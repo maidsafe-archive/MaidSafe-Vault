@@ -11,51 +11,112 @@
 
 #include <signal.h>
 
+#include <condition_variable>
 #include <iostream>
 #include <fstream>
 #include <memory>
 #include <string>
 #include <mutex>
-#include <thread>
-
-#include "boost/filesystem.hpp"
+//#include <thread>
+//
+#include "boost/filesystem/convenience.hpp"
+#include "boost/filesystem/path.hpp"
 #include "boost/program_options.hpp"
-#include "boost/thread/condition_variable.hpp"
-#include "boost/thread/mutex.hpp"
-#include "boost/tokenizer.hpp"
-
+//#include "boost/thread/condition_variable.hpp"
+//#include "boost/thread/mutex.hpp"
+//#include "boost/tokenizer.hpp"
+//
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/log.h"
-#include "maidsafe/common/utils.h"
+//#include "maidsafe/common/utils.h"
 
 #include "maidsafe/private/lifestuff_manager/vault_controller.h"
 
-#include "maidsafe/pd/client/utils.h"
-#include "maidsafe/pd/common/key_manager.h"
-#include "maidsafe/pd/common/return_codes.h"
-#include "maidsafe/pd/vault/node.h"
-#include "maidsafe/pd/vault/utils.h"
+#include "maidsafe/vault/types.h"
+
 
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
-const std::string kVaultVersion = "MaidSafe PD Vault " + maidsafe::kApplicationVersion;
+namespace {
 
-std::mutex mutex_;
-std::condition_variable cond_var_;
-bool ctrlc_pressed(false);
+std::mutex g_mutex;
+std::condition_variable g_cond_var;
+bool g_ctrlc_pressed(false);
 
-void ctrlc_handler(int signum) {
+void SigHandler(int signum) {
   LOG(kInfo) << " Signal received: " << signum;
-  boost::mutex::scoped_lock lock(mutex_);
-  ctrlc_pressed = true;
-  cond_var_.notify_one();
+  {
+    std::lock_guard<std::mutex> lock(g_mutex);
+    g_ctrlc_pressed = true;
+  }
+  g_cond_var.notify_one();
 }
+
+fs::path GetPathFromProgramOption(const std::string& option_name,
+                                  po::variables_map* variables_map,
+                                  bool is_dir,
+                                  bool create_new_if_absent) {
+  fs::path option_path;
+  if (variables_map->count(option_name))
+    option_path = variables_map->at(option_name).as<std::string>();
+  if (option_path.empty())
+    return fs::path();
+
+  boost::system::error_code ec;
+  if (!fs::exists(option_path, ec) || ec) {
+    if (!create_new_if_absent) {
+      LOG(kError) << "GetPathFromProgramOption - Invalid " << option_name << ", " << option_path
+                  << " doesn't exist or can't be accessed (" << ec.message() << ")";
+      return fs::path();
+    }
+
+    if (is_dir) {  // Create new dir
+      fs::create_directories(option_path, ec);
+      if (ec) {
+        LOG(kError) << "GetPathFromProgramOption - Unable to create new dir " << option_path << " ("
+                    << ec.message() << ")";
+        return fs::path();
+      }
+    } else {  // Create new file
+      if (option_path.has_filename()) {
+        try {
+          std::ofstream ofs(option_path.c_str());
+        }
+        catch(const std::exception &e) {
+          LOG(kError) << "GetPathFromProgramOption - Exception while creating new file: "
+                      << e.what();
+          return fs::path();
+        }
+      }
+    }
+  }
+
+  if (is_dir) {
+    if (!fs::is_directory(option_path, ec) || ec) {
+      LOG(kError) << "GetPathFromProgramOption - Invalid " << option_name << ", " << option_path
+                  << " is not a directory (" << ec.message() << ")";
+      return fs::path();
+    }
+  } else {
+    if (!fs::is_regular_file(option_path, ec) || ec) {
+      LOG(kError) << "GetPathFromProgramOption - Invalid " << option_name << ", " << option_path
+                  << " is not a regular file (" << ec.message() << ")";
+      return fs::path();
+    }
+  }
+
+  LOG(kInfo) << "GetPathFromProgramOption - " << option_name << " is " << option_path;
+  return option_path;
+}
+
+}  // unnamed namespace
+
 
 int main(int argc, char* argv[]) {
   maidsafe::log::Logging::Instance().Initialise(argc, argv);
 
-  std::cout << kVaultVersion << std::endl;
+  std::cout << "MaidSafe PD Vault " + maidsafe::kApplicationVersion + "\n";
 
 #ifdef NDEBUG
   try {
@@ -123,22 +184,21 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    fs::path chunk_path = maidsafe::pd::vault::GetPathFromProgramOption(
-        "chunk_path", &variables_map, true, true);
+    fs::path chunk_path = GetPathFromProgramOption("chunk_path", &variables_map, true, true);
     if (chunk_path.empty()) {
       std::cout << "Can't start vault without a chunk storage location set." << std::endl;
       return 1;
     }
 
     std::string usr_id("lifestuff");
-    if (variables_map.count("usr_id")) {
+    if (variables_map.count("usr_id"))
       usr_id = variables_map.at("usr_id").as<std::string>();
-    }
+
     maidsafe::priv::lifestuff_manager::VaultController vault_controller(usr_id);
     bool using_vault_controller(false);
     if (variables_map.count("vmid")) {
       std::string vmid = variables_map.at("vmid").as<std::string>();
-      if (!vault_controller.Start(vmid, []() { ctrlc_handler(SIGTERM); })) {
+      if (!vault_controller.Start(vmid, []() { SigHandler(SIGTERM); })) {
         LOG(kError) << "Could not start vault controller.";
         using_vault_controller = false;
       } else {
@@ -172,10 +232,9 @@ int main(int argc, char* argv[]) {
     }
 
     maidsafe::Fob fob;
-    maidsafe::pd::AccountName account_name;
+    maidsafe::vault::AccountName account_name;
 
-    boost::filesystem::path keys_path(maidsafe::pd::vault::GetPathFromProgramOption(
-        "keys_path", &variables_map, false, false));
+    fs::path keys_path(GetPathFromProgramOption("keys_path", &variables_map, false, false));
     if (fs::exists(keys_path, error_code)) {
       auto all_keys = maidsafe::pd::ReadKeyDirectory(keys_path);
       for (size_t i = 0; i < all_keys.size(); ++i) {
@@ -186,7 +245,7 @@ int main(int argc, char* argv[]) {
                                          all_keys[i].second.keys.public_key,
                                          all_keys[i].second.validation_token)) {
           std::cout << "Could not add identity #" << i << " from keys file." << std::endl;
-          return 1;
+          return 2;
         }
         if (static_cast<int>(i) == identity_index) {
           fob = all_keys[i].second;
@@ -204,7 +263,7 @@ int main(int argc, char* argv[]) {
           (using_vault_controller &&
            !vault_controller.GetIdentity(fob, name, endpoints_from_lifestuff_manager))) {
         std::cout << "No identity available, can't start vault." << std::endl;
-        return 1;
+        return 3;
       }
       account_name = maidsafe::pd::AccountName(name);
     }
@@ -234,7 +293,7 @@ int main(int argc, char* argv[]) {
     // Vault statistics
 #ifndef __APPLE__
     if (variables_map.count("plugins_path")) {
-      boost::filesystem::path plugins_path(variables_map.at("plugins_path").as<std::string>());
+      fs::path plugins_path(variables_map.at("plugins_path").as<std::string>());
       if (!plugins_path.empty())
         node->set_vault_stats_needed(true, plugins_path);
     }
@@ -247,37 +306,37 @@ int main(int argc, char* argv[]) {
       vault_controller.ConfirmJoin(result == maidsafe::pd::kSuccess);
     if (result != maidsafe::pd::kSuccess) {
       std::cout << "Error during vault start-up. (" << result << ")" << std::endl;
-      return 1;
+      return 4;
     }
 
 
 #ifndef WIN32
-    signal(SIGHUP, ctrlc_handler);
+    signal(SIGHUP, SigHandler);
 #endif
 
-    signal(SIGINT, ctrlc_handler);
-    signal(SIGTERM, ctrlc_handler);
+    signal(SIGINT, SigHandler);
+    signal(SIGTERM, SigHandler);
     std::cout << "Vault running as " << maidsafe::HexSubstr(node->fob().identity) << std::endl;
     {
-      boost::mutex::scoped_lock lock(mutex_);
-      cond_var_.wait(lock, [] { return ctrlc_pressed; });  // NOLINT
+      std::unique_lock<std::mutex> lock(g_mutex);
+      g_cond_var.wait(lock, [] { return g_ctrlc_pressed; });  // NOLINT
     }
 
     std::cout << "Stopping vault..." << std::endl;
     result = node->Stop();
     if (result != maidsafe::pd::kSuccess) {
       std::cout << "Error during vault shutdown. (" << result << ")" << std::endl;
-      return 1;
+      return 5;
     }
 #ifdef NDEBUG
   }
   catch(const std::exception& e) {
     std::cout << "Exception: " << e.what() << std::endl;
-    return 1;
+    return 6;
   }
   catch(...) {
     std::cout << "Exception of unknown type." << std::endl;
-    return 1;
+    return 7;
   }
 #endif
 

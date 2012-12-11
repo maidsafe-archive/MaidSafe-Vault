@@ -34,7 +34,7 @@ set(VaultAllFiles ${VaultSources} ${VaultHeaders})
 set(StyleAllFiles ${VaultAllFiles})
 source_group("Vault Source Files" FILES ${VaultSources})
 source_group("Vault Header Files" FILES ${VaultHeaders})
-list(REMOVE_ITEM VaultSources ${VaultSourcesRootDir}/vault_main.cc)
+list(REMOVE_ITEM VaultAllFiles ${VaultSourcesRootDir}/vault_main.cc)
 
 file(GLOB VaultTestsSources ${VaultSourcesRootDir}/tests/*.cc)
 file(GLOB VaultTestsHeaders ${VaultSourcesRootDir}/tests/*.h)
@@ -48,15 +48,15 @@ list(REMOVE_ITEM VaultTestsAllFiles ${VaultSourcesRootDir}/tests/key_helper.cc)
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
-# ms_add_static_library(vault ${ALL_FILES_PASSPORT_DIR})
+ms_add_static_library(vault ${VaultAllFiles})
 ms_add_executable(lifestuff_vault Production ${VaultSourcesRootDir}/vault_main.cc)
 
-# target_link_libraries(maidsafe_vault maidsafe_common maidsafe_private maidsafe_utilities)
-# target_link_libraries(lifestuff_vault maidsafe_vault)
+target_link_libraries(maidsafe_vault maidsafe_common maidsafe_private maidsafe_utilities)
+target_link_libraries(lifestuff_vault maidsafe_vault)
 
 if(MAIDSAFE_TESTING)
   ms_add_executable(TESTvault "Tests/Vault" ${VaultTestsAllFiles})
-  # target_link_libraries(TESTvault maidsafe_vault)
+  target_link_libraries(TESTvault maidsafe_vault)
   ms_add_executable(vault_key_helper Tools ${VaultSourcesRootDir}/tests/key_helper.cc)
 endif()
 
