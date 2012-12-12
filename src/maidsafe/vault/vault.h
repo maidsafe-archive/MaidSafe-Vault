@@ -31,7 +31,7 @@
 #include "maidsafe/vault/pmid_account_holder.h"
 #include "maidsafe/vault/maid_account_holder.h"
 #include "maidsafe/vault/data_holder.h"
-#include "maidsafe/vault/.h"
+
 
 namespace maidsafe {
 
@@ -48,8 +48,10 @@ class Vault {
   Vault(Pmid pmid, boost::filesystem::path vault_root_dir);
 #endif
   Vault();
+  ~Vault();  // must issue StopSending() to all identity objects (MM etc.) 
+            // Then ensure routing is destroyed next then allothers in ny order at this time
  private:
-  Routing routing_;
+  std::unique_ptr<routing::Routing> routing_;
   Demultiplexer demux_;
   MaidAccountHolder maid_account_holder_;
   PmidAccountHolder pmid_account_holder_;
