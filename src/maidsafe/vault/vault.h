@@ -37,28 +37,24 @@ namespace maidsafe {
 
 namespace vault {
 
-typedef Nfs<GetFromMetaDataManager,
+typedef NetworkFileSystem<GetFromMetaDataManager,
         PutToMetaDataManager,
         PostToDirect,
         template<DeleteLocal, DeleteFromMetaDataManager>>PmidAccountHolderNfs;
 
 class Vault {
  public:
-  Vault(PmidFob);
-  Start() {
-    pm
-        id_account_holder_(pmid_nfs_);
-   ...
-  }
-  Stop();
-  Reload();
+#ifdef TESTING
+  Vault(Pmid pmid, boost::filesystem::path vault_root_dir);
+#endif
+  Vault();
  private:
-  PmidAccountHolderNfs pmid_nfs_;
-  Demultipliplexer demux_;
+  Routing routing_;
+  Demultiplexer demux_;
+  MaidAccountHolder maid_account_holder_;
+  PmidAccountHolder pmid_account_holder_;
   MetaDataManager meta_data_manager_;
   DataHolder data_holder_;
-  PmidAccountHolder pmid_account_holder_;
-  ...
 };
 
 
