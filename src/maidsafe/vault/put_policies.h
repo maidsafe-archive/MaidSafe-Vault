@@ -24,44 +24,50 @@
 #include "maidsafe/common/asio_service.h"
 #include "maidsafe/common/rsa.h"
 
-#include "maidsafe/nfs/nfs.h"
-
-#include "maidsafe/vault/demultiplexer.h"
-#include "maidsafe/vault/meta_data_manager.h"
-#include "maidsafe/vault/pmid_account_holder.h"
-#include "maidsafe/vault/maid_account_holder.h"
-#include "maidsafe/vault/data_holder.h"
-#include "maidsafe/vault/.h"
+#include "maidsafe/pd/client/node.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-typedef Nfs<GetFromMetaDataManager,
-        PutToMetaDataManager,
-        PostToDirect,
-        template<DeleteLocal, DeleteFromMetaDataManager>>PmidAccountHolderNfs;
-
-class Vault {
+template <typename T>
+class PutToMetaDataManager {
  public:
-  Vault(PmidFob);
-  Start() {
-    pm
-        id_account_holder_(pmid_nfs_);
-   ...
+  static void  PutPolicy<>(name, callback, routing, fob) {
   }
-  Stop();
-  Reload();
- private:
-  PmidAccountHolderNfs pmid_nfs_;
-  Demultipliplexer demux_;
-  MetaDataManager meta_data_manager_;
-  DataHolder data_holder_;
-  PmidAccountHolder pmid_account_holder_;
-  ...
+  static void  PutPolicy<MutableData>(name, callback, routing, fob) {
+
+  }
+
+ protected:
+  ~PutToMetaDataManager() {}
 };
 
+template <typename T>
+class PutToPmidAccountHolder {
+ public:
+  static void  PutPolicy<>(name, callback, routing, fob) {
+  }
+  static void  PutPolicy<MutableData>(name, callback, routing, fob) {
 
+  }
+
+ protected:
+  ~PutToPmidAccountHolder() {}
+};
+
+template <typename T>
+class PutToDataHolder {
+ public:
+  static void  PutPolicy<>(name, callback, routing, fob) {
+  }
+  static void  PutPolicy<MutableData>(name, callback, routing, fob) {
+
+  }
+
+ protected:
+  ~PutToDataHolder() {}
+};
 
 }  // namespace vault
 

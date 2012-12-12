@@ -1,0 +1,48 @@
+package maidsafe.vault.proto;
+option optimize_for = LITE_RUNTIME;
+
+enum kMessageType {
+  PutMaidAccoutHolderToMetaDataManager = 0;
+  PutMetaDataManagerToPmidAccountHolder = 1;
+  PutPmidAccountHolderToDataHolder = 3;
+  GetFromMetaDataManager = 4;
+  GetFromDataHolder = 5;
+}
+
+enum kDataType {
+  ImmutableData = 0;
+  MutableData = 1;
+  SignatureData = 2;
+}
+
+message PublicKey {
+  required bytes public_key = 1;
+}
+
+message Signature {
+  required bytes signature = 1;
+  required bytes id = 2;
+}
+
+message Content {
+  optional bytes data = 1;
+  optional PublicKey public_key = 2;
+  optional bytes id = 3;
+  repeated bytes ids = 4;
+  optional Signature signature = 5;
+  optional bytes version = 6;
+}
+
+message Data {
+  required kDataType type = 1;
+  required bytes name = 2;
+  required Content content = 3;
+}
+
+message Fob {
+  required bytes identity = 1;
+  required bytes encoded_private_key = 2;
+  required bytes encoded_public_key = 3;
+  required bytes validation_token = 4;
+  optional bytes signed_by = 5;
+}
