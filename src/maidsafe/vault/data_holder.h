@@ -30,6 +30,16 @@ namespace maidsafe {
 
 namespace vault {
 
+class DataHolder {
+ public:
+  DataHolder(routing::Routing& routing);
+  void OnMessageRecieved(const proto::Message& proto_message);
+  void StopSending();
+ private:
+  DataStore data_store_;
+  DataHolderNfs nfs_;
+};
+
 
 }  // namespace vault
 
