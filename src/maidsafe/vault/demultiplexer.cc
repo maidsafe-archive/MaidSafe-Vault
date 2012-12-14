@@ -9,32 +9,27 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_DEMULTIPLEXER_H_
-#define MAIDSAFE_VAULT_DEMULTIPLEXER_H_
+
+#include "maidsafe/vault/demultiplexer.h"
 
 #include <string>
+
 
 namespace maidsafe {
 
 namespace vault {
 
-class Demultiplexer {
- public:
-  Demultiplexer(DataHolder& data_holder,
-                MaidAccountHolder& maid_account_holder,
-                MetadataManager& metadata_manager,
-                PmidAccountHolder& pmid_account_holder);
-  void HandleMessage(const std::string& message);
+Demultiplexer::Demultiplexer(DataHolder& data_holder,
+                             MaidAccountHolder& maid_account_holder,
+                             MetadataManager& metadata_manager,
+                             PmidAccountHolder& pmid_account_holder) {
 
- private:
-  DataHolder& data_holder_;
-  MaidAccountHolder& maid_account_holder_;
-  MetadataManager& metadata_manager_;
-  PmidAccountHolder& mpid_account_holder_;
-};
+
+}
+
+void Demultiplexer::HandleMessage(const std::string& message) {
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_DEMULTIPLEXER_H_

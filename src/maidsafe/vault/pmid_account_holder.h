@@ -30,8 +30,12 @@ namespace maidsafe {
 
 namespace vault {
 
-class PmidAccountManager {
+class PmidAccountHolder {
+ public:
+  PmidAccountHolder(routing::Routing& routing);
+  void HandleMessage(const proto::Message& proto_message);
 
+ private:
 };
 
 }  // namespace vault

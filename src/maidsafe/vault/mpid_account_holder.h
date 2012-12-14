@@ -12,24 +12,19 @@
 #ifndef MAIDSAFE_VAULT_VAULT_H_
 #define MAIDSAFE_VAULT_VAULT_H_
 
-#include <map>
-#include <memory>
 #include <string>
 #include <vector>
-
-#include "boost/filesystem/path.hpp"
-#include "boost/date_time/posix_time/ptime.hpp"
-#include "boost/thread/mutex.hpp"
-
-#include "maidsafe/common/asio_service.h"
-#include "maidsafe/common/rsa.h"
-
-#include "maidsafe/pd/client/node.h"
 
 namespace maidsafe {
 
 namespace vault {
 
+class MpidAccountHolder {
+ public:
+  MpidAccountHolder(routing::Routing& routing);
+  void HandleMessage(const proto::Message& proto_message);
+ private:
+};
 
 }  // namespace vault
 
