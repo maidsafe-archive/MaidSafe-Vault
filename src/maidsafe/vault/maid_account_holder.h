@@ -16,12 +16,10 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <fstream>
 
 #include "boost/filesystem/path.hpp"
-#include "boost/date_time/posix_time/ptime.hpp"
-#include "boost/thread/mutex.hpp"
 
-#include "maidsafe/common/asio_service.h"
 #include "maidsafe/common/rsa.h"
 
 #include "maidsafe/pd/client/node.h"
@@ -32,10 +30,16 @@ namespace vault {
 
 class MaidAccountHolder {
  public:
-  MaidAccountHolder(routing::Routing& routing);
-  void HandleMessage(const proto::Message& proto_message);
+  MaidAccountHolder(routing::Routing& routing, boost::filesystem::path vault_root_dir);
+  void HandleMessage(const Message& message);
 
  private:
+  bool SavePmidDataToDisk(Pmid);
+  std::vector<Identity> ReadPmidDataFromDisk(Pmid);
+  bool checkMessageSignature(Message& message);
+  std::vector<Identity> pmid_data_elements_stored_;
+  boost::filesystem::path vault_root_dir_;
+
 };
 
 }  // namespace vault
