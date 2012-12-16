@@ -9,31 +9,20 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_VAULT_H_
-#define MAIDSAFE_VAULT_VAULT_H_
-
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
-
-#include "boost/filesystem/path.hpp"
-#include "boost/date_time/posix_time/ptime.hpp"
-#include "boost/thread/mutex.hpp"
-
-#include "maidsafe/common/asio_service.h"
-#include "maidsafe/common/rsa.h"
-
-#include "maidsafe/pd/client/node.h"
+#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_H_
+#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_H_
 
 namespace maidsafe {
+
+namespace nfs { class Message; }
+//namespace routing { class Routing; }
 
 namespace vault {
 
 class MaidAccountHolder {
  public:
-  MaidAccountHolder(routing::Routing& routing);
-  void HandleMessage(const proto::Message& proto_message);
+  MaidAccountHolder(/*routing::Routing& routing*/);
+  void HandleMessage(const nfs::Message& message);
 
  private:
 };
@@ -42,4 +31,4 @@ class MaidAccountHolder {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VAULT_H_
+#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_H_

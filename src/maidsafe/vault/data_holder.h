@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_VAULT_H_
-#define MAIDSAFE_VAULT_VAULT_H_
+#ifndef MAIDSAFE_VAULT_DATA_HOLDER_H_
+#define MAIDSAFE_VAULT_DATA_HOLDER_H_
 
 #include <map>
 #include <memory>
@@ -24,25 +24,28 @@
 #include "maidsafe/common/asio_service.h"
 #include "maidsafe/common/rsa.h"
 
-#include "maidsafe/pd/client/node.h"
-
 namespace maidsafe {
+
+namespace nfs { class Message; }
+namespace routing { class Routing; }
 
 namespace vault {
 
+
 class DataHolder {
  public:
-  DataHolder(routing::Routing& routing);
-  void OnMessageRecieved(const proto::Message& proto_message);
+  DataHolder(/*routing::Routing& routing*/);
+  void HandleMessage(const nfs::Message& message);
+  bool HaveCache(nfs::Message& message);
+  void StoreCache(const nfs::Message& message);
   void StopSending();
  private:
-  DataStore data_store_;
-  DataHolderNfs nfs_;
+//  DataStore data_store_;
+//  DataHolderNfs nfs_;
 };
-
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VAULT_H_
+#endif  // MAIDSAFE_VAULT_DATA_HOLDER_H_

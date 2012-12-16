@@ -9,20 +9,20 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_VAULT_H_
-#define MAIDSAFE_VAULT_VAULT_H_
-
-#include <string>
-#include <vector>
+#ifndef MAIDSAFE_VAULT_META_DATA_MANAGER_H_
+#define MAIDSAFE_VAULT_META_DATA_MANAGER_H_
 
 namespace maidsafe {
+
+namespace nfs { class Message; }
+//namespace routing { class Routing; }
 
 namespace vault {
 
 class MetadataManager {
  public:
-  MetadataManager(routing::Routing& routing);
-  void HandleMessage(const proto::Message& proto_message);
+  MetadataManager(/*routing::Routing& routing*/);
+  void HandleMessage(const nfs::Message& message);
 
  private:
 };
@@ -31,4 +31,4 @@ class MetadataManager {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VAULT_H_
+#endif  // MAIDSAFE_VAULT_META_DATA_MANAGER_H_

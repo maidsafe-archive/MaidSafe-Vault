@@ -9,28 +9,20 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_H_
-#define MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_H_
-
-#include <string>
-#include <vector>
+#include "maidsafe/vault/maid_account_holder.h"
 
 namespace maidsafe {
 
-namespace nfs { class Message; }
-namespace routing { class Routing; }
-
 namespace vault {
 
-class MpidAccountHolder {
- public:
-  MpidAccountHolder(routing::Routing& routing);
-  void HandleMessage(const nfs::Message& message);
- private:
-};
+MaidAccountHolder::MaidAccountHolder(/*routing::Routing& routing*/) {
+
+}
+
+void MaidAccountHolder::HandleMessage(const nfs::Message& /*message*/) {
+
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_H_
