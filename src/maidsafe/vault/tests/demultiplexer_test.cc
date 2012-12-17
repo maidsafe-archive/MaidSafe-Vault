@@ -10,6 +10,7 @@
  *  the explicit written permission of the board of directors of maidsafe.net. *
  ******************************************************************************/
 
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/test.h"
 
@@ -81,13 +82,78 @@ class DemultiplexerTest : public testing::Test {
 
   protobuf::Message GenerateTypelessMessage() {
     protobuf::Message message;
-    message.set_action_type(RandomUint32() % 4);  // % 4 to match kActionType enum - improve?
-    message.set_data_type(RandomUint32() % 3);  // % 3 to match kDataType enum - improve?
+    // TODO(Alison) - % 4 to match kActionType enum - improve?
+    message.set_action_type(RandomUint32() % 4);
+    // TODO(Alison) - % 3 to match kDataType enum - improve?
+    message.set_data_type(RandomUint32() % 3);
     message.set_destination(RandomAlphaNumericString(10));
     message.set_destination(RandomAlphaNumericString(10));
     message.set_destination(RandomAlphaNumericString(10));
     message.set_destination(RandomAlphaNumericString(10));
     return message;
+  }
+
+  protobuf::Message GenerateValidMessage(uint16_t& expect_mah,
+                                         uint16_t& expect_mdm,
+                                         uint16_t& expect_pah,
+                                         uint16_t& expect_dh) {
+    // TODO(Alison) - % 4 to match kPersonaType enum - improve?
+    protobuf::kPersonaType type(static_cast<protobuf::kPersonaType>(RandomUint32() % 4));
+    switch (type) {
+      case protobuf::kPersonaType::MaidAccountHolder:
+        ++expect_mah;
+        break;
+      case protobuf::kPersonaType::MetaDataManager:
+        ++expect_mdm;
+        break;
+      case protobuf::kPersonaType::PmidAccountHolder:
+        ++expect_pah;
+        break;
+      case profobuf::kPersonaType::DataHolder:
+        ++expect_dh;
+        break;
+      case default:
+        ASSERT_TRUE(false) << "This type of message shouldn't occur here!";
+        break;
+    }
+    return GenerateValidMessage(type);
+  }
+
+  std::vector<protobuf::Message> GenerateValidMessages(const uint16_t& num_messages,
+                                                       uint16_t& expect_mah,
+                                                       uint16_t& expect_mdm,
+                                                       uint16_t& expect_pah,
+                                                       uint16_t& expect_dh) {
+    std::vector<protobuf::Message> messages;
+    if (num_messages == 0) {
+      LOG(kError) << "Generated 0 messages.";
+      return messages;
+    }
+    for (uint16_t i(0); i < num_messages; ++i) {
+      messages.push_back(GenerateValidMessage(expect_mah, expect_mdm, expect_pah, expect_dh));
+    }
+    return messages;
+  }
+
+  std::vector<protobuf::Message> GenerateMixedMessages(const uint16_t& num_messages,
+                                                       uint16_t& expect_mah,
+                                                       uint16_t& expect_mdm,
+                                                       uint16_t& expect_pah,
+                                                       uint16_t& expect_dh) {
+    std::vector<protobuf::Message> messages;
+    if (num_messages == 0) {
+      LOG(kError) << "Generated 0 messages.";
+      return messages;
+    }
+    for (uint16_t i(0); i < 100; ++i) {
+      // TODO(Alison) - currently approx 1/20 messages will be typeless - allow more flexibility?
+      if (RandomUint32() % 20 != 0) {
+        messages.push_back(GenerateValidMessage(expect_mah, expect_mdm, expect_pah, expect_dh));
+      } else {
+        messages.push_back(GenerateTypelessMessage());
+      }
+    }
+    return messages;
   }
 
  protected:
@@ -269,34 +335,15 @@ TEST_F(DemultiplexerTest, FUNC_ValidMessages) {
 }
 
 TEST_F(DemultiplexerTest, FUNC_ValidMessagesRepeat) {
-  std::vector<protobuf::Message> messages;
   uint16_t expect_mah(0),
            expect_mdm(0),
            expect_pah(0),
            expect_dh(0);
-
-  for (uint16_t i(0); i < 100; ++i) {
-    // % 4 to match kPersonaType enum - improve?
-    protobuf::kPersonaType type(static_cast<protobuf::kPersonaType>(RandomUint32() % 4));
-    switch (type) {
-      case protobuf::kPersonaType::MaidAccountHolder:
-        ++expect_mah;
-        break;
-      case protobuf::kPersonaType::MetaDataManager:
-        ++expect_mdm;
-        break;
-      case protobuf::kPersonaType::PmidAccountHolder:
-        ++expect_pah;
-        break;
-      case profobuf::kPersonaType::DataHolder:
-        ++expect_dh;
-        break;
-      case default:
-        ASSERT_TRUE(false) << "This type of message shouldn't occur here!";
-        break;
-    }
-    messages.push_back(GenerateValidMessage(type));
-  }
+  std::vector<protobuf::Message> messages(GenerateValidMessages(100,
+                                                                expect_mah,
+                                                                expect_mdm,
+                                                                expect_pah,
+                                                                expect_dh))
 
   EXPECT_CALL(maid_account_holder_, HandleMessage()).Times(expect_mah);
   EXPECT_CALL(meta_data_manager_, HandleMessage()).Times(expect_mdm);
@@ -305,41 +352,44 @@ TEST_F(DemultiplexerTest, FUNC_ValidMessagesRepeat) {
 
   for (auto message : messages)
     demultiplexer_.HandleMessage(message);
+}
+
+TEST_F(DemultiplexerTest, FUNC_ValidMessagesParallel) {
+  uint16_t expect_mah(0),
+           expect_mdm(0),
+           expect_pah(0),
+           expect_dh(0);
+
+  std::vector<protobuf::Message> messages(GenerateValidMessages(100,
+                                                                expect_mah,
+                                                                expect_mdm,
+                                                                expect_pah,
+                                                                expect_dh));
+
+  EXPECT_CALL(maid_account_holder_, HandleMessage()).Times(expect_mah);
+  EXPECT_CALL(meta_data_manager_, HandleMessage()).Times(expect_mdm);
+  EXPECT_CALL(pmid_account_holder_, HandleMessage()).Times(expect_pah);
+  EXPECT_CALL(data_holder_, HandleMessage()).Times(expect_dh);
+
+  std::vector<boost::thread> threads;
+    for (auto message : messages) {
+    threads.push_back(boost::thread([&] { demultiplexer_.HandleMessage(message); }));
+  }
+  for (auto thread : threads)
+    thread.join();
 }
 
 TEST_F(DemultiplexerTest, FUNC_MixedMessagesRepeat) {
-  std::vector<protobuf::Message> messages;
   uint16_t expect_mah(0),
            expect_mdm(0),
            expect_pah(0),
            expect_dh(0);
 
-  for (uint16_t i(0); i < 100; ++i) {
-    if (RandomUint32() % 20 != 0) {
-      // % 4 to match kPersonaType enum - improve?
-      protobuf::kPersonaType type(static_cast<protobuf::kPersonaType>(RandomUint32() % 4));
-      switch (type) {
-        case protobuf::kPersonaType::MaidAccountHolder:
-          ++expect_mah;
-          break;
-        case protobuf::kPersonaType::MetaDataManager:
-          ++expect_mdm;
-          break;
-        case protobuf::kPersonaType::PmidAccountHolder:
-          ++expect_pah;
-          break;
-        case profobuf::kPersonaType::DataHolder:
-          ++expect_dh;
-          break;
-        case default:
-          ASSERT_TRUE(false) << "This type of message shouldn't occur here!";
-          break;
-      }
-      messages.push_back(GenerateValidMessage(type));
-    } else {
-      messages.push_back(GenerateTypelessMessage());
-    }
-  }
+  std::vector<protobuf::Messages> messages(GenerateMixedMessages(100,
+                                                                 expect_mah,
+                                                                 expect_mdm,
+                                                                 expect_pah,
+                                                                 expect_dh));
 
   EXPECT_CALL(maid_account_holder_, HandleMessage()).Times(expect_mah);
   EXPECT_CALL(meta_data_manager_, HandleMessage()).Times(expect_mdm);
@@ -349,6 +399,33 @@ TEST_F(DemultiplexerTest, FUNC_MixedMessagesRepeat) {
   for (auto message : messages)
     demultiplexer_.HandleMessage(message);
 }
+
+TEST_F(DemultiplexerTest, FUNC_MixedMessagesParallel) {
+  uint16_t expect_mah(0),
+           expect_mdm(0),
+           expect_pah(0),
+           expect_dh(0);
+
+  std::vector<protobuf::Message> messages(GenerateMixedMessages(100,
+                                                                expect_mah,
+                                                                expect_mdm,
+                                                                expect_pah,
+                                                                expect_dh));
+
+  EXPECT_CALL(maid_account_holder_, HandleMessage()).Times(expect_mah);
+  EXPECT_CALL(meta_data_manager_, HandleMessage()).Times(expect_mdm);
+  EXPECT_CALL(pmid_account_holder_, HandleMessage()).Times(expect_pah);
+  EXPECT_CALL(data_holder_, HandleMessage()).Times(expect_dh);
+
+  std::vector<boost::thread> threads;
+    for (auto message : messages) {
+    threads.push_back(boost::thread([&] { demultiplexer_.HandleMessage(message); }));
+  }
+  for (auto thread : threads)
+    thread.join();
+}
+
+// TODO(Alison) - add tests for caching
 
 }  // namespace test
 
