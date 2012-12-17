@@ -15,7 +15,8 @@ namespace maidsafe {
 
 namespace vault {
 
-MaidAccountHolder::MaidAccountHolder(/*routing::Routing& routing*/) {
+MaidAccountHolder::MaidAccountHolder(/*routing::Routing& routing*/)
+  : vault_root_dir_() {
 
 }
 

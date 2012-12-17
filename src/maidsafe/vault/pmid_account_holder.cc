@@ -15,8 +15,8 @@ namespace maidsafe {
 
 namespace vault {
 
-PmidAccountHolder::PmidAccountHolder(/*routing::Routing& routing*/) {
-
+PmidAccountHolder::PmidAccountHolder(/*routing::Routing& routing*/)
+    : vault_root_dir_() {
 }
 
 void PmidAccountHolder::HandleMessage(const nfs::Message& /*message*/) {
