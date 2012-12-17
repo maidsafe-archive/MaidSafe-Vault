@@ -44,7 +44,7 @@ void Demultiplexer::HandleMessage(const std::string& serialised_message) {
 }
 
 void Demultiplexer::HandleMessageType(const nfs::Message& message) {
-  switch (message.persona_type()) {
+  switch (message.destination_persona_type()) {
     case nfs::PersonaType::kMaidAccountHolder :
       maid_account_holder_.HandleMessage(message);
       break;
@@ -76,7 +76,7 @@ bool Demultiplexer::HaveCache(std::string& serialised_message) {
 }
 
 bool Demultiplexer::HandleHaveCache(nfs::Message& message) {
-  if (message.persona_type() == nfs::PersonaType::kDataHolder) {
+  if (message.destination_persona_type() == nfs::PersonaType::kDataHolder) {
     return data_holder_.HaveCache(message);
   } else {
     LOG(kError) << "Unhandled personatype for cache request";
@@ -94,7 +94,7 @@ void Demultiplexer::StoreCache(const std::string& serialised_message) {
 }
 
 void Demultiplexer::HandleStoreCache(const nfs::Message& message) {
-  if (message.persona_type() == nfs::PersonaType::kDataHolder)
+  if (message.destination_persona_type() == nfs::PersonaType::kDataHolder)
     return data_holder_.StoreCache(message);
   else
     LOG(kError) << "Unhandled personatype for store cache request";
