@@ -48,7 +48,7 @@ class Vault {
   Vault(Pmid pmid, boost::filesystem::path vault_root_dir);
 #endif
   Vault();
-  ~Vault();  // must issue StopSending() to all identity objects (MM etc.) 
+  ~Vault();  // must issue StopSending() to all identity objects (MM etc.)
             // Then ensure routing is destroyed next then allothers in ny order at this time
  private:
   std::unique_ptr<routing::Routing> routing_;

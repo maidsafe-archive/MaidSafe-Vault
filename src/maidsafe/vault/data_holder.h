@@ -9,40 +9,42 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_VAULT_H_
-#define MAIDSAFE_VAULT_VAULT_H_
+#ifndef MAIDSAFE_VAULT_DATA_HOLDER_H_
+#define MAIDSAFE_VAULT_DATA_HOLDER_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-
 #include "boost/filesystem/path.hpp"
-#include "boost/date_time/posix_time/ptime.hpp"
-#include "boost/thread/mutex.hpp"
-
-#include "maidsafe/common/asio_service.h"
+#include "maidsafe/routing/routing_api.h"
+#include "maidsafe/nfs/network_file_system.h"
+#include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/common/rsa.h"
 
-#include "maidsafe/pd/client/node.h"
-
 namespace maidsafe {
+
+namespace nfs { class Message; }
 
 namespace vault {
 
 class DataHolder {
  public:
-  DataHolder(routing::Routing& routing);
-  void OnMessageRecieved(const proto::Message& proto_message);
-  void StopSending();
+  DataHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
+  ~DataHolder();
+  void HandleMessage(const nfs::Message& message);
  private:
-  DataStore data_store_;
-  DataHolderNfs nfs_;
+  void HandlePutMessage(const Message& message);
+  void HandleGetMessage(const Message& message);
+  void HandlePostMessage(const Message& message);
+  void HandleDeleteMessage(const Message& message);
+  boost::filesystem::path vault_root_dir_;
+  routing::Routing& routing_;
+  DiskBasedStorage disk_storage_;
 };
-
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VAULT_H_
+#endif  // MAIDSAFE_VAULT_DATA_HOLDER_H_

@@ -9,66 +9,40 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_PUT_POLICIES_H_
-#define MAIDSAFE_VAULT_PUT_POLICIES_H_
+#ifndef MAIDSAFE_VAULT_DISK_BASED_STORAGE_H_
+#define MAIDSAFE_VAULT_DISK_BASED_STORAGE_H_
 
-#include <map>
-#include <memory>
-#include <string>
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
-#include "boost/date_time/posix_time/ptime.hpp"
-#include "boost/thread/mutex.hpp"
 
-#include "maidsafe/common/asio_service.h"
+#include "maidsfe/vault/disk_based_storage.pb.h"
+
 #include "maidsafe/common/rsa.h"
+#include "maidsafe/common/active.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
-template <typename T>
-class PutToMetaDataManager {
+class DiskBasedContainer {
  public:
-  static void  PutPolicy<>(name, callback, routing, fob) {
-  }
-  static void  PutPolicy<MutableData>(name, callback, routing, fob) {
-
-  }
-
- protected:
-  ~PutToMetaDataManager() {}
-};
-
-template <typename T>
-class PutToPmidAccountHolder {
- public:
-  static void  PutPolicy<>(name, callback, routing, fob) {
-  }
-  static void  PutPolicy<MutableData>(name, callback, routing, fob) {
-
-  }
-
- protected:
-  ~PutToPmidAccountHolder() {}
-};
-
-template <typename T>
-class PutToDataHolder {
- public:
-  static void  PutPolicy<>(name, callback, routing, fob) {
-  }
-  static void  PutPolicy<MutableData>(name, callback, routing, fob) {
-
-  }
-
- protected:
-  ~PutToDataHolder() {}
+  DiskBasedContainer(boost::fileystem::path root_dir, Identity name);
+  ~DiskBasedContainer();
+  void Add(Identity name);
+  void remove(Identity name);
+  unit64_t Size();  // return total size of all data elements
+ private:
+  bool Find();
+  Active active_;  // async writes ?
+  // either write all saves assuming unique or
+  // refund user in real time as we find out otherwise (i.e.
+  // check for unique on insert asynchronously 
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PUT_POLICIES_H_
+#endif  // MAIDSAFE_VAULT_DISK_BASED_STORAGE_H_

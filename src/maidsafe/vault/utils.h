@@ -9,66 +9,43 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_PUT_POLICIES_H_
-#define MAIDSAFE_VAULT_PUT_POLICIES_H_
+#ifndef MAIDSAFE_VAULT_UTILS_H_
+#define MAIDSAFE_VAULT_UTILS_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
+#include <fstream>
 
 #include "boost/filesystem/path.hpp"
-#include "boost/date_time/posix_time/ptime.hpp"
-#include "boost/thread/mutex.hpp"
 
-#include "maidsafe/common/asio_service.h"
 #include "maidsafe/common/rsa.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-template <typename T>
-class PutToMetaDataManager {
- public:
-  static void  PutPolicy<>(name, callback, routing, fob) {
-  }
-  static void  PutPolicy<MutableData>(name, callback, routing, fob) {
+// will confirm signature matches src ID private key
+// signed the type (three enums) and payload. Will do a Get from MM
+bool checkMessageSignature(Message& message);
 
-  }
-
- protected:
-  ~PutToMetaDataManager() {}
-};
-
-template <typename T>
-class PutToPmidAccountHolder {
- public:
-  static void  PutPolicy<>(name, callback, routing, fob) {
-  }
-  static void  PutPolicy<MutableData>(name, callback, routing, fob) {
-
-  }
-
- protected:
-  ~PutToPmidAccountHolder() {}
-};
-
-template <typename T>
-class PutToDataHolder {
- public:
-  static void  PutPolicy<>(name, callback, routing, fob) {
-  }
-  static void  PutPolicy<MutableData>(name, callback, routing, fob) {
-
-  }
-
- protected:
-  ~PutToDataHolder() {}
+// this can be pmid lists for a maid
+// data stored for a maid
+// data stored on a pmid
+// data hodlers for a MM
+class DiskBasedStorage {
+  DiskBasedSorage(boost::filesystem::path name);
+  bool Save(Identity name);
+  bool Find(Identity name);
+  bool Delete(Identity name);
+  std::vector<Identity> ReadAll();
+ private:
+  boost::filesystem::path name_;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PUT_POLICIES_H_
+#endif  // MAIDSAFE_VAULT_UTILS_H_

@@ -9,29 +9,27 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-//#include "maidsafe/vault/vault.h"
-
-//#include "maidsafe/nfs/nfs.h"
-
-//#include "maidsafe/vault/demultiplexer.h"
-//#include "maidsafe/vault/meta_data_manager.h"
-//#include "maidsafe/vault/pmid_account_holder.h"
-//#include "maidsafe/vault/maid_account_holder.h"
-//#include "maidsafe/vault/data_holder.h"
-
-
+#include "maidsafe/vault/data_holder.h"
 namespace maidsafe {
 
 namespace vault {
 
-//Vault::Vault()
-//    : routing_(), // TODO(Prakash): create routing object here. Need fob?
-//      maid_account_holder_(), // Pass routing ref ?
-//      meta_data_manager_(),
-//      pmid_account_holder_(),
-//      data_holder_(),
-//      demux_(maid_account_holder_, meta_data_manager_, pmid_account_holder_, data_holder_) {
-//}
+DataHolder::DataHolder(/*routing::Routing& routing*/) {
+
+}
+
+void DataHolder::HandleMessage(const nfs::Message& /*message*/) {
+}
+
+bool DataHolder::HaveCache(nfs::Message& /*message*/) {
+  return false;
+}
+
+void DataHolder::StoreCache(const nfs::Message& /*message*/) {
+}
+
+void DataHolder::StopSending() {
+}
 
 }  // namespace vault
 

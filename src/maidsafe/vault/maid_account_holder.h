@@ -26,13 +26,15 @@
 
 namespace maidsafe {
 
+namespace nfs { class Message; }
+
 namespace vault {
 
 class MaidAccountHolder {
  public:
   MaidAccountHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
-  MaidAccountHolder();
-  void HandleMessage(const Message& message);
+  ~MaidAccountHolder();
+  void HandleMessage(const nfs::Message& message);
  private:
   void HandlePutMessage(const Message& message);
   void HandleGetMessage(const Message& message);
@@ -47,4 +49,4 @@ class MaidAccountHolder {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_HOLDER_MANAGER_H_
+#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_H_

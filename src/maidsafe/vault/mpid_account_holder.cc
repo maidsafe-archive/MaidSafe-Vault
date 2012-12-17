@@ -9,66 +9,23 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_PUT_POLICIES_H_
-#define MAIDSAFE_VAULT_PUT_POLICIES_H_
-
-#include <map>
-#include <memory>
 #include <string>
 #include <vector>
 
-#include "boost/filesystem/path.hpp"
-#include "boost/date_time/posix_time/ptime.hpp"
-#include "boost/thread/mutex.hpp"
-
-#include "maidsafe/common/asio_service.h"
-#include "maidsafe/common/rsa.h"
-
 namespace maidsafe {
+
+namespace nfs { class Message; }
+namespace routing { class Routing; }
 
 namespace vault {
 
-template <typename T>
-class PutToMetaDataManager {
+class MpidAccountHolder {
  public:
-  static void  PutPolicy<>(name, callback, routing, fob) {
-  }
-  static void  PutPolicy<MutableData>(name, callback, routing, fob) {
-
-  }
-
- protected:
-  ~PutToMetaDataManager() {}
-};
-
-template <typename T>
-class PutToPmidAccountHolder {
- public:
-  static void  PutPolicy<>(name, callback, routing, fob) {
-  }
-  static void  PutPolicy<MutableData>(name, callback, routing, fob) {
-
-  }
-
- protected:
-  ~PutToPmidAccountHolder() {}
-};
-
-template <typename T>
-class PutToDataHolder {
- public:
-  static void  PutPolicy<>(name, callback, routing, fob) {
-  }
-  static void  PutPolicy<MutableData>(name, callback, routing, fob) {
-
-  }
-
- protected:
-  ~PutToDataHolder() {}
+  MpidAccountHolder(routing::Routing& routing);
+  void HandleMessage(const nfs::Message& message);
+ private:
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_PUT_POLICIES_H_

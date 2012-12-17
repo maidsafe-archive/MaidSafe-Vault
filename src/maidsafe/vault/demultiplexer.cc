@@ -14,20 +14,90 @@
 
 #include <string>
 
+#include "maidsafe/nfs/message.h"
+#include "maidsafe/vault/maid_account_holder.h"
+#include "maidsafe/vault/meta_data_manager.h"
+#include "maidsafe/vault/pmid_account_holder.h"
+#include "maidsafe/vault/data_holder.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-Demultiplexer::Demultiplexer(DataHolder& data_holder,
-                             MaidAccountHolder& maid_account_holder,
+Demultiplexer::Demultiplexer(MaidAccountHolder& maid_account_holder,
                              MetadataManager& metadata_manager,
-                             PmidAccountHolder& pmid_account_holder) {
-
-
+                             PmidAccountHolder& pmid_account_holder,
+                             DataHolder& data_holder)
+    : maid_account_holder_(maid_account_holder),
+      metadata_manager_(metadata_manager),
+      pmid_account_holder_(pmid_account_holder),
+      data_holder_(data_holder) {
 }
 
-void Demultiplexer::HandleMessage(const std::string& message) {
+void Demultiplexer::HandleMessage(const std::string& serialised_message) {
+  try {
+    nfs::Message message(nfs::ParseFromString(serialised_message));
+    HandleMessageType(message);
+  } catch(const std::exception& ex) {
+    LOG(kError) << "Caught exception on handling new message : " << ex.what();
+  }
+}
+
+void Demultiplexer::HandleMessageType(const nfs::Message& message) {
+  switch (message.persona_type()) {
+    case nfs::PersonaType::kMaidAccoutHolder :
+      maid_account_holder_.HandleMessage(message);
+      break;
+    case nfs::PersonaType::kMetaDataManager :
+      metadata_manager_.HandleMessage(message);
+      break;
+    case nfs::PersonaType::kPmidAccountHolder :
+      pmid_account_holder_.HandleMessage(message);
+      break;
+    case nfs::PersonaType::kDataHolder :
+      data_holder_.HandleMessage(message);
+      break;
+    default :
+      LOG(kError) << "Unhandled personatype";
+  }
+}
+
+bool Demultiplexer::HaveCache(std::string& serialised_message) {
+  try {
+    nfs::Message message(nfs::ParseFromString(serialised_message));
+    if (HandleHaveCache(message)) {
+      serialised_message = std::move(nfs::SerialiseAsString(message));
+      return true;
+    }
+  } catch(const std::exception& ex) {
+    LOG(kError) << "Caught exception on handling cache request : " << ex.what();
+  }
+  return false;
+}
+
+bool Demultiplexer::HandleHaveCache(nfs::Message& message) {
+  if (message.persona_type() == nfs::PersonaType::kDataHolder) {
+    return data_holder_.HaveCache(message);
+  } else {
+    LOG(kError) << "Unhandled personatype for cache request";
+    return false;
+  }
+}
+
+void Demultiplexer::StoreCache(const std::string& serialised_message) {
+  try {
+    nfs::Message message(nfs::ParseFromString(serialised_message));
+    HandleStoreCache(message);
+  } catch(const std::exception& ex) {
+    LOG(kError) << "Caught exception on handling store cache request : " << ex.what();
+  }
+}
+
+void Demultiplexer::HandleStoreCache(const nfs::Message& message) {
+  if (message.persona_type() == nfs::PersonaType::kDataHolder)
+    return data_holder_.StoreCache(message);
+  else
+    LOG(kError) << "Unhandled personatype for store cache request";
 }
 
 }  // namespace vault
