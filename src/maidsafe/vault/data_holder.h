@@ -28,6 +28,8 @@ namespace nfs { class Message; }
 
 namespace vault {
 
+typedef Nfs<NoGet, NoPut, NoPost, NoDelete> DataHolderNfs;
+
 class DataHolder {
  public:
   DataHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
