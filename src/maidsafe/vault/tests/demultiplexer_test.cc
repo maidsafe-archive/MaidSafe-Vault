@@ -15,38 +15,33 @@
 #include "maidsafe/common/test.h"
 
 #include "maidsafe/vault/demultiplexer.h"
+#include "maidsafe/vault/maid_account_holder.h"
+#include "maidsafe/vault/meta_data_manager.h"
+#include "maidsafe/vault/pmid_account_holder.h"
+#include "maidsafe/vault/data_holder.h"
 
 #include "maidsafe/nfs/message.h"
 
 namespace maidsafe {
 
-namespace vault {
+namespace nfs {
 
-// TODO(Alison) - replace these with actual objects
-class MaidAccountHolder {
- public:
-  MaidAccountHolder();
-  virtual ~MaidAccountHolder();
-  virtual void HandleMessage(nfs::Message message);
-};
-class MetadataManager {
- public:
-  MetadataManager();
-  virtual ~MetadataManager();
-  virtual void HandleMessage(nfs::Message message);
-};
-class PmidAccountHolder {
- public:
-  PmidAccountHolder();
-  virtual ~PmidAccountHolder();
-  virtual void HandleMessage(nfs::Message message);
-};
-class DataHolder {
- public:
-  DataHolder();
-  virtual ~DataHolder();
-  virtual void HandleMessage(nfs::Message message);
-};
+bool operator==(const nfs::Message& lhs, const nfs::Message& rhs) {
+  if (lhs.action_type() != rhs.action_type() ||
+      lhs.destination_persona_type() != rhs.destination_persona_type() ||
+      lhs.source_persona_type() != rhs.source_persona_type() ||
+      lhs.data_type() != rhs.data_type() ||
+      lhs.destination() != rhs.destination() ||
+      lhs.source() != rhs.source() ||
+      lhs.content() != rhs.content() ||
+      lhs.signature() != rhs.signature())
+    return false;
+  return true;
+}
+
+}  // namespace nfs
+
+namespace vault {
 
 // TODO(Alison) - move mocks to separate file?
 class MockMaidAccountHolder : public MaidAccountHolder {
@@ -99,7 +94,6 @@ class MockDataHolder : public DataHolder {
 
 namespace test {
 
-
 class DemultiplexerTest : public testing::Test {
  public:
   DemultiplexerTest()
@@ -119,11 +113,13 @@ class DemultiplexerTest : public testing::Test {
            testing::Mock::VerifyAndClearExpectations(&data_holder_);
   }
 
-  nfs::Message GenerateValidMessage(const nfs::PersonaType& type) {
+  nfs::Message GenerateValidMessage(const nfs::PersonaType& dest_type) {
     // TODO(Alison) - % 4 to match kActionType enum - improve?
     // TODO(Alison) - % 3 to match kDataType enum - improve?
+    // TODO(Alison) - % 4 to match kPersonaType enum - improve?
     nfs::Message message(static_cast<nfs::ActionType>(RandomUint32() % 4),
-                         type,
+                         dest_type,
+                         static_cast<nfs::PersonaType>(RandomUint32() % 4),
                          RandomUint32() % 3,
                          NodeId(NodeId::kRandomId),
                          NodeId(NodeId::kRandomId),
@@ -137,8 +133,8 @@ class DemultiplexerTest : public testing::Test {
                                     uint16_t& expect_pah,
                                     uint16_t& expect_dh) {
     // TODO(Alison) - % 4 to match PersonaType enum - improve?
-    nfs::PersonaType type(static_cast<nfs::PersonaType>(RandomUint32() % 4));
-    switch (type) {
+    nfs::PersonaType dest_type(static_cast<nfs::PersonaType>(RandomUint32() % 4));
+    switch (dest_type) {
       case nfs::PersonaType::kMaidAccountHolder:
         ++expect_mah;
         break;
@@ -156,7 +152,7 @@ class DemultiplexerTest : public testing::Test {
         assert(false);
         break;
     }
-    return GenerateValidMessage(type);
+    return GenerateValidMessage(dest_type);
   }
 
   std::vector<nfs::Message> GenerateValidMessages(const uint16_t& num_messages,
@@ -325,22 +321,22 @@ TEST_F(DemultiplexerTest, FUNC_ValidMessages) {
     if (messages.size() > 1)
       index = RandomUint32() % messages.size();
 
-    if (messages.at(index).persona_type() == nfs::PersonaType::kMaidAccountHolder)
+    if (messages.at(index).destination_persona_type() == nfs::PersonaType::kMaidAccountHolder)
       EXPECT_CALL(maid_account_holder_, HandleMessage(messages.at(index))).Times(1);
     else
       EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
 
-    if (messages.at(index).persona_type() == nfs::PersonaType::kMetaDataManager)
+    if (messages.at(index).destination_persona_type() == nfs::PersonaType::kMetaDataManager)
       EXPECT_CALL(meta_data_manager_, HandleMessage(messages.at(index))).Times(1);
     else
       EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(0);
 
-    if (messages.at(index).persona_type() == nfs::PersonaType::kPmidAccountHolder)
+    if (messages.at(index).destination_persona_type() == nfs::PersonaType::kPmidAccountHolder)
       EXPECT_CALL(pmid_account_holder_, HandleMessage(messages.at(index))).Times(1);
     else
       EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
 
-    if (messages.at(index).persona_type() == nfs::PersonaType::kDataHolder)
+    if (messages.at(index).destination_persona_type() == nfs::PersonaType::kDataHolder)
       EXPECT_CALL(data_holder_, HandleMessage(messages.at(index))).Times(1);
     else
       EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
