@@ -39,7 +39,14 @@ class GetFromDataHolder {
   ~GetFromDataHolder() {}
 };
 
-}
+template <typename T>
+class NoGet {
+ public:
+  static void  Get<>(name, callback, routing, fob) {
+  }
+ protected:
+  ~NoGet() {}
+};
 
 }  // namespace vault
 
