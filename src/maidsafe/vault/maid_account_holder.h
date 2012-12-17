@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_VAULT_H_
-#define MAIDSAFE_VAULT_VAULT_H_
+#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_H_
+#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_H_
 
 #include <map>
 #include <memory>
@@ -19,10 +19,10 @@
 #include <fstream>
 
 #include "boost/filesystem/path.hpp"
-
+#include "maidsafe/routing/routing_api.h"
+#include "maidsafe/nfs/network_file_system.h"
+#include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/common/rsa.h"
-
-#include "maidsafe/pd/client/node.h"
 
 namespace maidsafe {
 
@@ -30,20 +30,21 @@ namespace vault {
 
 class MaidAccountHolder {
  public:
-  MaidAccountHolder(routing::Routing& routing, boost::filesystem::path vault_root_dir);
+  MaidAccountHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
+  MaidAccountHolder();
   void HandleMessage(const Message& message);
-
  private:
-  bool SavePmidDataToDisk(Pmid);
-  std::vector<Identity> ReadPmidDataFromDisk(Pmid);
-  bool checkMessageSignature(Message& message);
-  std::vector<Identity> pmid_data_elements_stored_;
+  void HandlePutMessage(const Message& message);
+  void HandleGetMessage(const Message& message);
+  void HandlePostMessage(const Message& message);
+  void HandleDeleteMessage(const Message& message);
   boost::filesystem::path vault_root_dir_;
-
+  routing::Routing& routing_;
+  DiskBasedStorage disk_storage_;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VAULT_H_
+#endif  // MAIDSAFE_VAULT_MAID_HOLDER_MANAGER_H_
