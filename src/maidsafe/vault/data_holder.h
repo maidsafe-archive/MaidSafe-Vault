@@ -34,10 +34,13 @@ class DataHolder {
  public:
   DataHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
   ~DataHolder();
-  void HandleMessage(const nfs::Message& message);
+  void HandleMessage(const nfs::Message& message, reply_functor reply_func);
  private:
   void HandlePutMessage(const Message& message);
-  void HandleGetMessage(const Message& message);
+  void HandleGetMessage(const Message& message, reply_functor reply_func);
+  // {
+  // 
+  // }
   void HandlePostMessage(const Message& message);
   void HandleDeleteMessage(const Message& message);
   boost::filesystem::path vault_root_dir_;
