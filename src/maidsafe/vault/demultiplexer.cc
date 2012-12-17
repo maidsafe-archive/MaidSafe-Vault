@@ -45,7 +45,7 @@ void Demultiplexer::HandleMessage(const std::string& serialised_message) {
 
 void Demultiplexer::HandleMessageType(const nfs::Message& message) {
   switch (message.persona_type()) {
-    case nfs::PersonaType::kMaidAccoutHolder :
+    case nfs::PersonaType::kMaidAccountHolder :
       maid_account_holder_.HandleMessage(message);
       break;
     case nfs::PersonaType::kMetaDataManager :
