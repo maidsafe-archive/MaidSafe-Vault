@@ -9,42 +9,40 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_DATA_HOLDER_H_
-#define MAIDSAFE_VAULT_DATA_HOLDER_H_
+#ifndef MAIDSAFE_VAULT_DISK_BASED_STORAGE_H_
+#define MAIDSAFE_VAULT_DISK_BASED_STORAGE_H_
 
-#include <map>
-#include <memory>
-#include <string>
 #include <vector>
+
 #include "boost/filesystem/path.hpp"
-#include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/network_file_system.h"
-#include "maidsafe/vault/disk_based_storage.h"
+
+#include "maidsfe/vault/disk_based_storage.pb.h"
+
 #include "maidsafe/common/rsa.h"
+#include "maidsafe/common/active.h"
+
 
 namespace maidsafe {
 
-namespace nfs { class Message; }
-
 namespace vault {
 
-class DataHolder {
+class DiskBasedContainer {
  public:
-  DataHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
-  ~DataHolder();
-  void HandleMessage(const nfs::Message& message);
+  DiskBasedContainer(boost::fileystem::path root_dir, Identity name);
+  ~DiskBasedContainer();
+  void Add(Identity name);
+  void remove(Identity name);
+  unit64_t Size();  // return total size of all data elements
  private:
-  void HandlePutMessage(const Message& message);
-  void HandleGetMessage(const Message& message);
-  void HandlePostMessage(const Message& message);
-  void HandleDeleteMessage(const Message& message);
-  boost::filesystem::path vault_root_dir_;
-  routing::Routing& routing_;
-  DiskBasedStorage disk_storage_;
+  bool Find();
+  Active active_;  // async writes ?
+  // either write all saves assuming unique or
+  // refund user in real time as we find out otherwise (i.e.
+  // check for unique on insert asynchronously 
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_HOLDER_H_
+#endif  // MAIDSAFE_VAULT_DISK_BASED_STORAGE_H_

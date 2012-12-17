@@ -1,0 +1,12 @@
+package maidsafe.disk_based_storage.proto;
+option optimize_for = LITE_RUNTIME;
+
+
+message Element {
+  required bytes name = 1;
+  required int64 size = 2;
+}
+
+message Storage {
+  repeated Element element = 1;
+}

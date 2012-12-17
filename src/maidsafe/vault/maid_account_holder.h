@@ -12,19 +12,37 @@
 #ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_H_
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_H_
 
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+#include <fstream>
+
+#include "boost/filesystem/path.hpp"
+#include "maidsafe/routing/routing_api.h"
+#include "maidsafe/nfs/network_file_system.h"
+#include "maidsafe/vault/disk_based_storage.h"
+#include "maidsafe/common/rsa.h"
+
 namespace maidsafe {
 
 namespace nfs { class Message; }
-//namespace routing { class Routing; }
 
 namespace vault {
 
 class MaidAccountHolder {
  public:
-  MaidAccountHolder(/*routing::Routing& routing*/);
+  MaidAccountHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
+  ~MaidAccountHolder();
   void HandleMessage(const nfs::Message& message);
-
  private:
+  void HandlePutMessage(const Message& message);
+  void HandleGetMessage(const Message& message);
+  void HandlePostMessage(const Message& message);
+  void HandleDeleteMessage(const Message& message);
+  boost::filesystem::path vault_root_dir_;
+  routing::Routing& routing_;
+  DiskBasedStorage disk_storage_;
 };
 
 }  // namespace vault

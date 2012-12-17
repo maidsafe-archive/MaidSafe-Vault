@@ -9,42 +9,43 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_DATA_HOLDER_H_
-#define MAIDSAFE_VAULT_DATA_HOLDER_H_
+#ifndef MAIDSAFE_VAULT_UTILS_H_
+#define MAIDSAFE_VAULT_UTILS_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
+#include <fstream>
+
 #include "boost/filesystem/path.hpp"
-#include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/network_file_system.h"
-#include "maidsafe/vault/disk_based_storage.h"
+
 #include "maidsafe/common/rsa.h"
 
 namespace maidsafe {
 
-namespace nfs { class Message; }
-
 namespace vault {
 
-class DataHolder {
- public:
-  DataHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
-  ~DataHolder();
-  void HandleMessage(const nfs::Message& message);
+// will confirm signature matches src ID private key
+// signed the type (three enums) and payload. Will do a Get from MM
+bool checkMessageSignature(Message& message);
+
+// this can be pmid lists for a maid
+// data stored for a maid
+// data stored on a pmid
+// data hodlers for a MM
+class DiskBasedStorage {
+  DiskBasedSorage(boost::filesystem::path name);
+  bool Save(Identity name);
+  bool Find(Identity name);
+  bool Delete(Identity name);
+  std::vector<Identity> ReadAll();
  private:
-  void HandlePutMessage(const Message& message);
-  void HandleGetMessage(const Message& message);
-  void HandlePostMessage(const Message& message);
-  void HandleDeleteMessage(const Message& message);
-  boost::filesystem::path vault_root_dir_;
-  routing::Routing& routing_;
-  DiskBasedStorage disk_storage_;
+  boost::filesystem::path name_;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_HOLDER_H_
+#endif  // MAIDSAFE_VAULT_UTILS_H_
