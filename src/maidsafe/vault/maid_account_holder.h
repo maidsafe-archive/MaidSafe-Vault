@@ -19,9 +19,9 @@
 #include <fstream>
 
 #include "boost/filesystem/path.hpp"
-#include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/network_file_system.h"
-#include "maidsafe/vault/disk_based_storage.h"
+//#include "maidsafe/routing/routing_api.h"
+//#include "maidsafe/nfs/network_file_system.h"
+//#include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/common/rsa.h"
 
 namespace maidsafe {
@@ -32,17 +32,17 @@ namespace vault {
 
 class MaidAccountHolder {
  public:
-  MaidAccountHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
+  MaidAccountHolder(/*routing::Routing& routing, const boost::filesystem::path vault_root_dir*/);
   ~MaidAccountHolder();
   void HandleMessage(const nfs::Message& message);
  private:
-  void HandlePutMessage(const Message& message);
-  void HandleGetMessage(const Message& message);
-  void HandlePostMessage(const Message& message);
-  void HandleDeleteMessage(const Message& message);
+  void HandlePutMessage(const nfs::Message& message);
+  void HandleGetMessage(const nfs::Message& message);
+  void HandlePostMessage(const nfs::Message& message);
+  void HandleDeleteMessage(const nfs::Message& message);
   boost::filesystem::path vault_root_dir_;
-  routing::Routing& routing_;
-  DiskBasedStorage disk_storage_;
+//  routing::Routing& routing_;
+//  DiskBasedStorage disk_storage_;
 };
 
 }  // namespace vault

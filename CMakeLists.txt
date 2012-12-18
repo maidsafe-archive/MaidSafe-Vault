@@ -53,7 +53,8 @@ list(REMOVE_ITEM VaultTestsAllFiles ${VaultSourcesRootDir}/tests/key_helper.cc)
 ms_add_static_library(vault ${VaultAllFiles})
 ms_add_executable(lifestuff_vault Production ${VaultSourcesRootDir}/vault_main.cc)
 
-target_link_libraries(maidsafe_vault maidsafe_common maidsafe_private maidsafe_utilities)
+#target_link_libraries(maidsafe_vault maidsafe_common maidsafe_private maidsafe_utilities)
+target_link_libraries(maidsafe_vault maidsafe_common maidsafe_private)
 target_link_libraries(lifestuff_vault maidsafe_vault)
 
 if(MAIDSAFE_TESTING)

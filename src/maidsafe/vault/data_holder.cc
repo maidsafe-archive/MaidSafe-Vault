@@ -14,7 +14,8 @@ namespace maidsafe {
 
 namespace vault {
 
-DataHolder::DataHolder(/*routing::Routing& routing*/) {
+DataHolder::DataHolder(/*routing::Routing& routing*/)
+    : vault_root_dir_() {
 
 }
 

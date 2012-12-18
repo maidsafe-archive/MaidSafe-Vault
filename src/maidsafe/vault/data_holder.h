@@ -17,9 +17,9 @@
 #include <string>
 #include <vector>
 #include "boost/filesystem/path.hpp"
-#include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/network_file_system.h"
-#include "maidsafe/vault/disk_based_storage.h"
+//#include "maidsafe/routing/routing_api.h"
+//#include "maidsafe/nfs/network_file_system.h"
+//#include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/common/rsa.h"
 
 namespace maidsafe {
@@ -32,20 +32,21 @@ typedef Nfs<NoGet, NoPut, NoPost, NoDelete> DataHolderNfs;
 
 class DataHolder {
  public:
-  DataHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
+  DataHolder(/*routing::Routing& routing, const boost::filesystem::path vault_root_dir*/);
   ~DataHolder();
-  void HandleMessage(const nfs::Message& message, reply_functor reply_func);
+  void HandleMessage(const nfs::Message& message);
+  bool HaveCache(nfs::Message& message);
+  void StoreCache(const nfs::Message& message);
+  void StopSending();
+
  private:
-  void HandlePutMessage(const Message& message);
-  void HandleGetMessage(const Message& message, reply_functor reply_func);
-  // {
-  // 
-  // }
-  void HandlePostMessage(const Message& message);
-  void HandleDeleteMessage(const Message& message);
+  void HandlePutMessage(const nfs::Message& message);
+  void HandleGetMessage(const nfs::Message& message);
+  void HandlePostMessage(const nfs::Message& message);
+  void HandleDeleteMessage(const nfs::Message& message);
   boost::filesystem::path vault_root_dir_;
-  routing::Routing& routing_;
-  DiskBasedStorage disk_storage_;
+//  routing::Routing& routing_;
+//  DiskBasedStorage disk_storage_;
 };
 
 }  // namespace vault
