@@ -112,7 +112,11 @@ fs::path GetPathFromProgramOption(const std::string& option_name,
 
 }  // unnamed namespace
 
-
+// this should
+// 1: Start a vault_controller
+// 2: start vault object
+// All additional code should be refactored to the 40 line limit and 
+// placed behind ifdef TESTING 
 int main(int argc, char* argv[]) {
   maidsafe::log::Logging::Instance().Initialise(argc, argv);
 
