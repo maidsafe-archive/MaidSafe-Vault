@@ -22,8 +22,11 @@
 
 #include "maidsafe/nfs/message.h"
 
+// TODO(Alison) - redesign tests to not use Mocks for personas
+
 namespace maidsafe {
 
+/*
 namespace nfs {
 
 bool operator==(const nfs::Message& lhs, const nfs::Message& rhs) {
@@ -40,9 +43,11 @@ bool operator==(const nfs::Message& lhs, const nfs::Message& rhs) {
 }
 
 }  // namespace nfs
+*/
 
 namespace vault {
 
+/*
 // TODO(Alison) - move mocks to separate file?
 class MockMaidAccountHolder : public MaidAccountHolder {
  public:
@@ -91,9 +96,11 @@ class MockDataHolder : public DataHolder {
   MockDataHolder &operator=(const MockDataHolder&);
   MockDataHolder(const MockDataHolder&);
 };
+*/
 
 namespace test {
 
+/*
 class DemultiplexerTest : public testing::Test {
  public:
   DemultiplexerTest()
@@ -113,14 +120,27 @@ class DemultiplexerTest : public testing::Test {
            testing::Mock::VerifyAndClearExpectations(&data_holder_);
   }
 
+  nfs::Message GenerateValidMessage() {
+    // TODO(Alison) - % 4 to match ActionType enum - improve?
+    // TODO(Alison) - % 4 to match PersonaType enum - improve?
+    nfs::Message message(static_cast<nfs::ActionType>(RandomUint32() % 4),
+                         static_cast<nfs::PersonaType>(RandomUint32() % 4),
+                         static_cast<nfs::PersonaType>(RandomUint32() % 4),
+                         RandomUint32(),
+                         NodeId(NodeId::kRandomId),
+                         NodeId(NodeId::kRandomId),
+                         RandomAlphaNumericString(10),
+                         RandomAlphaNumericString(10));
+    return message;
+  }
+
   nfs::Message GenerateValidMessage(const nfs::PersonaType& dest_type) {
-    // TODO(Alison) - % 4 to match kActionType enum - improve?
-    // TODO(Alison) - % 3 to match kDataType enum - improve?
-    // TODO(Alison) - % 4 to match kPersonaType enum - improve?
+    // TODO(Alison) - % 4 to match ActionType enum - improve?
+    // TODO(Alison) - % 4 to match PersonaType enum - improve?
     nfs::Message message(static_cast<nfs::ActionType>(RandomUint32() % 4),
                          dest_type,
                          static_cast<nfs::PersonaType>(RandomUint32() % 4),
-                         RandomUint32() % 3,
+                         RandomUint32(),
                          NodeId(NodeId::kRandomId),
                          NodeId(NodeId::kRandomId),
                          RandomAlphaNumericString(10),
@@ -459,7 +479,75 @@ TEST_F(DemultiplexerTest, FUNC_MixedMessagesParallel) {
     thread.join();
 }
 
-// TODO(Alison) - add tests for caching
+TEST_F(DemultiplexerTest, FUNC_BadMessageHaveCache) {
+  std::string bad_message(RandomAlphaNumericString(1 + RandomUint32() % 50));
+  std::string bad_message_passed(bad_message);
+  EXPECT_FALSE(demultiplexer_.HaveCache(bad_message_passed));
+  EXPECT_EQ(bad_message, bad_message_passed);
+}
+
+TEST_F(DemultiplexerTest, FUNC_ValidMessageHaveCache) {
+  nfs::Message message(GenerateValidMessage());
+  std::string string(SerialiseAsString(message));
+  std::string passed_string(string);
+  EXPECT_FALSE(demultiplexer_.HaveCache(passed_string));
+  EXPECT_EQ(string, passed_string);
+}
+
+TEST_F(DemultiplexerTest, FUNC_StoreCacheHaveCache) {
+  for (uint16_t i(0); i < 20; ++i) {
+    nfs::Message message(GenerateValidMessage());
+    std::string string(SerialiseAsString(message));
+    demultiplexer_.StoreCache(string);
+    std::string passed_string(string);
+    if (message.destination_persona_type() == nfs::PersonaType::kDataHolder) {
+      EXPECT_TRUE(demultiplexer_.HaveCache(passed_string));
+      // TODO(Alison) - relationship between string and passed string?
+    } else {
+      EXPECT_FALSE(demultiplexer_.HaveCache(passed_string));
+      EXPECT_EQ(string, passed_string);
+    }
+  }
+}
+
+TEST_F(DemultiplexerTest, FUNC_RepeatStoreCache) {
+  nfs::Message message(GenerateValidMessage(nfs::PersonaType::kDataHolder));
+  std::string string(SerialiseAsString(message));
+  std::string passed_string(string);
+
+  demultiplexer_.StoreCache(string);
+  EXPECT_TRUE(demultiplexer_.HaveCache(passed_string));
+  // TODO(Alison) - relationship between string and passed string?
+
+  passed_string = string;
+  demultiplexer_.StoreCache(string);
+  EXPECT_TRUE(demultiplexer_.HaveCache(passed_string));
+  // TODO(Alison) - relationship between string and passed string?
+}
+
+TEST_F(DemultiplexerTest, FUNC_RetrieveOldCache) {
+  int buffer_size(10);  // TODO(Alison) - get real buffer size
+  nfs::Message message(GenerateValidMessage(nfs::PersonaType::kDataHolder));
+  std::string string(SerialiseAsString(message));
+  std::string passed_string(string);
+  demultiplexer_.StoreCache(string);
+  EXPECT_TRUE(demultiplexer_.HaveCache(passed_string));
+  // TODO(Alison) - relationship between string and passed string?
+
+  for (uint16_t i(0); i < buffer_size; ++i) {
+    std::string temp_string(SerialiseAsString(GenerateValidMessage(nfs::PersonaType::kDataHolder)));
+    demultiplexer_.StoreCache(temp_string);
+    std::string temp_passed_string(temp_string);
+    EXPECT_TRUE(demultiplexer_.HaveCache(temp_passed_string));
+    // TODO(Alison) - relationship between string and passed string?
+  }
+
+  // expect original message to be pushed out of buffer
+  passed_string = string;
+  EXPECT_FALSE(demultiplexer_.HaveCache(passed_string));
+  EXPECT_EQ(string, passed_string);
+}
+*/
 
 }  // namespace test
 
