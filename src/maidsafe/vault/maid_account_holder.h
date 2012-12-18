@@ -34,7 +34,7 @@ class MaidAccountHolder {
  public:
   MaidAccountHolder(/*routing::Routing& routing, const boost::filesystem::path vault_root_dir*/);
   ~MaidAccountHolder();
-  void HandleMessage(const nfs::Message& message);
+  void HandleMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
  private:
   void HandlePutMessage(const nfs::Message& message);
   void HandleGetMessage(const nfs::Message& message);

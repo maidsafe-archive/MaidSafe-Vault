@@ -19,7 +19,8 @@ DataHolder::DataHolder(/*routing::Routing& routing*/)
 
 }
 
-void DataHolder::HandleMessage(const nfs::Message& /*message*/) {
+void DataHolder::HandleMessage(const nfs::Message& /*message*/,
+                               routing::ReplyFunctor /*reply_functor*/) {
 }
 
 bool DataHolder::HaveCache(nfs::Message& /*message*/) {

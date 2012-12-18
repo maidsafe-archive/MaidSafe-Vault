@@ -18,7 +18,8 @@ namespace vault {
 MetadataManager::MetadataManager(/*routing::Routing& routing*/) {
 }
 
-void MetadataManager::HandleMessage(const nfs::Message& /*message*/) {
+void MetadataManager::HandleMessage(const nfs::Message& /*message*/,
+                                    routing::ReplyFunctor /*reply_functor*/) {
 
 }
 

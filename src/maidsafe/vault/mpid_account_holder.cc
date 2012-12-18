@@ -22,7 +22,7 @@ namespace vault {
 class MpidAccountHolder {
  public:
   MpidAccountHolder(routing::Routing& routing);
-  void HandleMessage(const nfs::Message& message);
+  void HandleMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
  private:
 };
 

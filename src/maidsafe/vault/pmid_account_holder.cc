@@ -19,7 +19,8 @@ PmidAccountHolder::PmidAccountHolder(/*routing::Routing& routing*/)
     : vault_root_dir_() {
 }
 
-void PmidAccountHolder::HandleMessage(const nfs::Message& /*message*/) {
+void PmidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
+                                      routing::ReplyFunctor reply_functor) {
 }
 
 }  // namespace vault

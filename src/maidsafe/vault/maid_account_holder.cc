@@ -20,7 +20,8 @@ MaidAccountHolder::MaidAccountHolder(/*routing::Routing& routing*/)
 
 }
 
-void MaidAccountHolder::HandleMessage(const nfs::Message& /*message*/) {
+void MaidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
+                                      routing::ReplyFunctor /*reply_functor*/) {
 
 }
 

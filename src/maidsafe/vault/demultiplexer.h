@@ -12,7 +12,10 @@
 #ifndef MAIDSAFE_VAULT_DEMULTIPLEXER_H_
 #define MAIDSAFE_VAULT_DEMULTIPLEXER_H_
 
+#include <functional>
 #include <string>
+
+#include"maidsafe/routing/api_config.h"
 
 namespace maidsafe {
 
@@ -33,12 +36,12 @@ class Demultiplexer {
                 MetadataManager& metadata_manager,
                 PmidAccountHolder& pmid_account_holder,
                 DataHolder& data_holder);
-  void HandleMessage(const std::string& serialised_message);
+  void HandleMessage(const std::string& serialised_message, routing::ReplyFunctor reply_functor);
   bool HaveCache(std::string& serialised_message);
   void StoreCache(const std::string& serialised_message);
 
  private:
-  void HandleMessageType(const nfs::Message& message);
+  void HandleMessageType(const nfs::Message& message, routing::ReplyFunctor reply_functor);
   bool HandleHaveCache(nfs::Message &message);
   void HandleStoreCache(const nfs::Message& message);
 

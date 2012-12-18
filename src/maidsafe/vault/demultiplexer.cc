@@ -34,28 +34,30 @@ Demultiplexer::Demultiplexer(MaidAccountHolder& maid_account_holder,
       data_holder_(data_holder) {
 }
 
-void Demultiplexer::HandleMessage(const std::string& serialised_message) {
+void Demultiplexer::HandleMessage(const std::string& serialised_message,
+                                  routing::ReplyFunctor reply_functor) {
   try {
     nfs::Message message(nfs::ParseFromString(serialised_message));
-    HandleMessageType(message);
+    HandleMessageType(message, reply_functor);
   } catch(const std::exception& ex) {
     LOG(kError) << "Caught exception on handling new message : " << ex.what();
   }
 }
 
-void Demultiplexer::HandleMessageType(const nfs::Message& message) {
+void Demultiplexer::HandleMessageType(const nfs::Message& message,
+                                      routing::ReplyFunctor reply_functor) {
   switch (message.destination_persona_type()) {
     case nfs::PersonaType::kMaidAccountHolder :
-      maid_account_holder_.HandleMessage(message);
+      maid_account_holder_.HandleMessage(message, reply_functor);
       break;
     case nfs::PersonaType::kMetaDataManager :
-      metadata_manager_.HandleMessage(message);
+      metadata_manager_.HandleMessage(message, reply_functor);
       break;
     case nfs::PersonaType::kPmidAccountHolder :
-      pmid_account_holder_.HandleMessage(message);
+      pmid_account_holder_.HandleMessage(message, reply_functor);
       break;
     case nfs::PersonaType::kDataHolder :
-      data_holder_.HandleMessage(message);
+      data_holder_.HandleMessage(message, reply_functor);
       break;
     default :
       LOG(kError) << "Unhandled personatype";

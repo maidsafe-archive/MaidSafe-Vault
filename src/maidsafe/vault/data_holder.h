@@ -34,7 +34,7 @@ class DataHolder {
  public:
   DataHolder(/*routing::Routing& routing, const boost::filesystem::path vault_root_dir*/);
   ~DataHolder();
-  void HandleMessage(const nfs::Message& message);
+  void HandleMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
   bool HaveCache(nfs::Message& message);
   void StoreCache(const nfs::Message& message);
   void StopSending();
