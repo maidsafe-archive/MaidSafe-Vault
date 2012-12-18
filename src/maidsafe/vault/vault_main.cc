@@ -110,18 +110,8 @@ fs::path GetPathFromProgramOption(const std::string& option_name,
   return option_path;
 }
 
-}  // unnamed namespace
 
-// this should
-// 1: Start a vault_controller
-// 2: start vault object
-// All additional code should be refactored to the 40 line limit and 
-// placed behind ifdef TESTING 
-int main(int argc, char* argv[]) {
-  maidsafe::log::Logging::Instance().Initialise(argc, argv);
-
-  std::cout << "MaidSafe PD Vault " + maidsafe::kApplicationVersion + "\n";
-
+int OptionMenu(int argc, char* argv[]) {
 #ifdef NDEBUG
   try {
 #endif
@@ -172,9 +162,6 @@ int main(int argc, char* argv[]) {
       return 0;
     }
 
-    if (variables_map.count("stop"))
-      return 0;
-
     // loading config file
     if (!config_file.empty()) {
       fs::path config_path(config_file);
@@ -188,150 +175,7 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    fs::path chunk_path = GetPathFromProgramOption("chunk_path", &variables_map, true, true);
-    if (chunk_path.empty()) {
-      std::cout << "Can't start vault without a chunk storage location set." << std::endl;
-      return 1;
-    }
-
-    std::string usr_id("lifestuff");
-    if (variables_map.count("usr_id"))
-      usr_id = variables_map.at("usr_id").as<std::string>();
-
-    maidsafe::priv::lifestuff_manager::VaultController vault_controller(usr_id);
-    bool using_vault_controller(false);
-    if (variables_map.count("vmid")) {
-      std::string vmid = variables_map.at("vmid").as<std::string>();
-      if (!vault_controller.Start(vmid, []() { SigHandler(SIGTERM); })) {
-        LOG(kError) << "Could not start vault controller.";
-        using_vault_controller = false;
-      } else {
-        using_vault_controller = true;
-      }
-    }
-
-    // bootstrap endpoint
-    std::vector<boost::asio::ip::udp::endpoint> peer_endpoints;
-    if (variables_map.count("peer")) {
-      std::string peer = variables_map.at("peer").as<std::string>();
-      size_t delim = peer.rfind(':');
-      try {
-        boost::asio::ip::udp::endpoint ep;
-        ep.port(boost::lexical_cast<uint16_t>(peer.substr(delim + 1)));
-        ep.address(boost::asio::ip::address::from_string(peer.substr(0, delim)));
-        peer_endpoints.push_back(ep);
-        LOG(kInfo) << "Going to bootstrap off endpoint " << ep;
-      }
-      catch(...) {
-        std::cout << "Could not parse IPv4 peer endpoint from " << peer << std::endl;
-      }
-    }
-
-    auto node = std::make_shared<maidsafe::pd::vault::Node>();
-
-    // Cache capacity
-    if (variables_map.count("cache_capacity")) {
-      uintmax_t cache_capacity(variables_map.at("cache_capacity").as<uintmax_t>());
-      node->set_cache_capacity(cache_capacity);
-    }
-
-    maidsafe::Fob fob;
-    maidsafe::vault::AccountName account_name;
-
-    fs::path keys_path(GetPathFromProgramOption("keys_path", &variables_map, false, false));
-    if (fs::exists(keys_path, error_code)) {
-      auto all_keys = maidsafe::pd::ReadKeyDirectory(keys_path);
-      for (size_t i = 0; i < all_keys.size(); ++i) {
-        if (!node->key_manager()->AddKey(all_keys[i].first.identity,
-                                         all_keys[i].first.keys.public_key,
-                                         all_keys[i].first.validation_token) ||
-            !node->key_manager()->AddKey(all_keys[i].second.identity,
-                                         all_keys[i].second.keys.public_key,
-                                         all_keys[i].second.validation_token)) {
-          std::cout << "Could not add identity #" << i << " from keys file." << std::endl;
-          return 2;
-        }
-        if (static_cast<int>(i) == identity_index) {
-          fob = all_keys[i].second;
-          account_name = maidsafe::pd::AccountName(all_keys[i].first.identity);
-          LOG(kInfo) << "Using identity #" << i << " from keys file.";
-        }
-      }
-      LOG(kInfo) << "Added " << all_keys.size() << " keys.";
-    }
-    std::vector<std::pair<std::string, uint16_t>> endpoints_from_lifestuff_manager;
-    // Set up identity
-    if (!fob.identity.IsInitialised()) {
-      std::string name;
-      if (!using_vault_controller ||
-          (using_vault_controller &&
-           !vault_controller.GetIdentity(fob, name, endpoints_from_lifestuff_manager))) {
-        std::cout << "No identity available, can't start vault." << std::endl;
-        return 3;
-      }
-      account_name = maidsafe::pd::AccountName(name);
-    }
-
-    for (auto it(endpoints_from_lifestuff_manager.rbegin());
-         it != endpoints_from_lifestuff_manager.rend();
-        ++it) {
-      boost::asio::ip::udp::endpoint ep;
-      ep.port((*it).second);
-      ep.address(boost::asio::ip::address::from_string((*it).first));
-      peer_endpoints.push_back(ep);
-      LOG(kVerbose) << "Received bootstrap endpoint " << ep << " from LifeStuffManager";
-    }
-
-    node->set_fob(fob);
-    node->set_account_name(account_name.IsInitialised() ? account_name
-                                                        : maidsafe::pd::AccountName(fob.identity));
-    if (using_vault_controller)
-      node->set_on_new_bootstrap_endpoint(
-          [&vault_controller](const boost::asio::ip::udp::endpoint &endpoint) {
-            std::pair<std::string, uint16_t> endpoint_pair;
-            endpoint_pair.first = endpoint.address().to_string();
-            endpoint_pair.second = endpoint.port();
-            vault_controller.SendEndpointToLifeStuffManager(endpoint_pair);
-          });
-
-    // Vault statistics
-#ifndef __APPLE__
-    if (variables_map.count("plugins_path")) {
-      fs::path plugins_path(variables_map.at("plugins_path").as<std::string>());
-      if (!plugins_path.empty())
-        node->set_vault_stats_needed(true, plugins_path);
-    }
-#endif
-
-    // Starting Vault
-    std::cout << "Starting vault..." << std::endl;
-    int result = node->Start(chunk_path, peer_endpoints);
-    if (using_vault_controller)
-      vault_controller.ConfirmJoin(result == maidsafe::pd::kSuccess);
-    if (result != maidsafe::pd::kSuccess) {
-      std::cout << "Error during vault start-up. (" << result << ")" << std::endl;
-      return 4;
-    }
-
-
-#ifndef WIN32
-    signal(SIGHUP, SigHandler);
-#endif
-
-    signal(SIGINT, SigHandler);
-    signal(SIGTERM, SigHandler);
-    std::cout << "Vault running as " << maidsafe::HexSubstr(node->fob().identity) << std::endl;
-    {
-      std::unique_lock<std::mutex> lock(g_mutex);
-      g_cond_var.wait(lock, [] { return g_ctrlc_pressed; });  // NOLINT
-    }
-
-    std::cout << "Stopping vault..." << std::endl;
-    result = node->Stop();
-    if (result != maidsafe::pd::kSuccess) {
-      std::cout << "Error during vault shutdown. (" << result << ")" << std::endl;
-      return 5;
-    }
+    return ProcessOption(variables_map, identity_index);
 #ifdef NDEBUG
   }
   catch(const std::exception& e) {
@@ -343,6 +187,121 @@ int main(int argc, char* argv[]) {
     return 7;
   }
 #endif
+}
+
+int ProcessOption(const po::variables_map& variables_map, int identity_index) {
+  fs::path chunk_path = GetPathFromProgramOption("chunk_path", &variables_map, true, true);
+  if (chunk_path.empty()) {
+    std::cout << "Can't start vault without a chunk storage location set." << std::endl;
+    return 1;
+  }
+
+  std::string usr_id("lifestuff");
+  if (variables_map.count("usr_id"))
+    usr_id = variables_map.at("usr_id").as<std::string>();
+
+  maidsafe::priv::lifestuff_manager::VaultController vault_controller(usr_id);
+  bool using_vault_controller(false);
+  std::string vmid(usr_id);
+  if (variables_map.count("vmid"))
+   vmid = variables_map.at("vmid").as<std::string>();
+
+  if (!vault_controller.Start(vmid, []() { SigHandler(SIGTERM); })) {
+    LOG(kError) << "Could not start vault controller.";
+    using_vault_controller = false;
+  } else {
+    using_vault_controller = true;
+  }
+
+  // bootstrap endpoint
+  std::vector<boost::asio::ip::udp::endpoint> peer_endpoints;
+  if (variables_map.count("peer")) {
+    std::string peer = variables_map.at("peer").as<std::string>();
+    size_t delim = peer.rfind(':');
+    try {
+      boost::asio::ip::udp::endpoint ep;
+      ep.port(boost::lexical_cast<uint16_t>(peer.substr(delim + 1)));
+      ep.address(boost::asio::ip::address::from_string(peer.substr(0, delim)));
+      peer_endpoints.push_back(ep);
+      LOG(kInfo) << "Going to bootstrap off endpoint " << ep;
+    }
+    catch(...) {
+      std::cout << "Could not parse IPv4 peer endpoint from " << peer << std::endl;
+    }
+  }
+
+  // Load keys
+  fs::path keys_path(GetPathFromProgramOption("keys_path", &variables_map, false, false));
+  maidsafe::Fob fob;
+  maidsafe::vault::AccountName account_name;
+  if (fs::exists(keys_path, error_code)) {
+    auto all_keys = maidsafe::pd::ReadKeyDirectory(keys_path);
+    fob = all_keys[identity_index].second;
+    account_name = maidsafe::pd::AccountName(all_keys[i].first.identity);
+    LOG(kInfo) << "Added " << all_keys.size() << " keys."
+               << " Using identity #" << i << " from keys file.";
+  }
+
+#ifndef WIN32
+  signal(SIGHUP, SigHandler);
+#endif
+  signal(SIGINT, SigHandler);
+  signal(SIGTERM, SigHandler);
+
+  // Starting Vault
+  std::cout << "Starting vault..." << std::endl;
+  auto vault = std::make_shared<maidsafe::vault::vault>(
+      fob, chunk_path,
+      [&vault_controller](const boost::asio::ip::udp::endpoint &endpoint) {
+            std::pair<std::string, uint16_t> endpoint_pair;
+            endpoint_pair.first = endpoint.address().to_string();
+            endpoint_pair.second = endpoint.port();
+            vault_controller.SendEndpointToLifeStuffManager(endpoint_pair);
+          });
+
+  int result(maidsafe::pd::kSuccess);
+  if (using_vault_controller)
+    vault_controller.ConfirmJoin(result == maidsafe::pd::kSuccess);
+  if (result != maidsafe::pd::kSuccess) {
+    std::cout << "Error during vault start-up. (" << result << ")" << std::endl;
+    return 4;
+  }
+
+  std::vector<std::pair<std::string, uint16_t>> endpoints_from_lifestuff_manager;
+  // Set up identity
+  if (!fob.identity.IsInitialised()) {
+    std::string name;
+    if (!using_vault_controller ||
+        (using_vault_controller &&
+          !vault_controller.GetIdentity(fob, name, endpoints_from_lifestuff_manager))) {
+      std::cout << "No identity available, can't start vault." << std::endl;
+      return 3;
+    }
+    account_name = maidsafe::pd::AccountName(name);
+  }
+
+  std::cout << "Vault running as " << maidsafe::HexSubstr(fob.identity) << std::endl;
+  {
+    std::unique_lock<std::mutex> lock(g_mutex);
+    g_cond_var.wait(lock, [] { return g_ctrlc_pressed; });  // NOLINT
+  }
+
+  std::cout << "Stopping vault..." << std::endl;
+}
+
+}  // unnamed namespace
+
+// this should
+// 1: Start a vault_controller
+// 2: start vault object
+// All additional code should be refactored to the 40 line limit and
+// placed behind ifdef TESTING
+int main(int argc, char* argv[]) {
+  maidsafe::log::Logging::Instance().Initialise(argc, argv);
+
+  std::cout << "MaidSafe PD Vault " + maidsafe::kApplicationVersion + "\n";
+
+  OptionMenu(argc, argv);
 
   return 0;
 }
