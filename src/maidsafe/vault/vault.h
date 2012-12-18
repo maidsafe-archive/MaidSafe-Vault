@@ -18,13 +18,7 @@
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
-#include "boost/date_time/posix_time/ptime.hpp"
-#include "boost/thread/mutex.hpp"
-
-#include "maidsafe/common/asio_service.h"
-#include "maidsafe/common/rsa.h"
-
-#include "maidsafe/nfs/nfs.h"
+#include "boost/asio/ip/udp.hpp"
 
 #include "maidsafe/vault/demultiplexer.h"
 #include "maidsafe/vault/meta_data_manager.h"
@@ -32,22 +26,15 @@
 #include "maidsafe/vault/maid_account_holder.h"
 #include "maidsafe/vault/data_holder.h"
 
-
 namespace maidsafe {
-
+namespace routing { class Routing; }  // namespace routing
 namespace vault {
-
-typedef NetworkFileSystem<GetFromMetaDataManager,
-        PutToMetaDataManager,
-        PostToDirect,
-        template<DeleteLocal, DeleteFromMetaDataManager>>PmidAccountHolderNfs;
 
 class Vault {
  public:
-#ifdef TESTING
-  Vault(Pmid pmid, boost::filesystem::path vault_root_dir);
-#endif
-  Vault();
+  Vault(Pmid pmid,
+        boost::filesystem::path vault_root_dir,
+        std::function<void>(udp::endpoint) on_new_bootstrap_endpoint);
   ~Vault();  // must issue StopSending() to all identity objects (MM etc.)
             // Then ensure routing is destroyed next then allothers in ny order at this time
  private:
@@ -58,8 +45,6 @@ class Vault {
   MetaDataManager meta_data_manager_;
   DataHolder data_holder_;
 };
-
-
 
 }  // namespace vault
 
