@@ -30,6 +30,14 @@ namespace maidsafe {
 
 namespace vault {
 
+template <typename T, typename U>
+class NoDelete {
+ public:
+  static void Delete<>(T::name_type name, T data, U callback) {
+  }
+ protected:
+  ~NoDelete() {}
+};
 
 }  // namespace vault
 

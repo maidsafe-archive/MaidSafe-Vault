@@ -10,6 +10,8 @@
  **************************************************************************************************/
 
 #include "maidsafe/vault/data_holder.h"
+
+#include "maidsafe/nfs/message.h"
 namespace maidsafe {
 
 namespace vault {
@@ -19,15 +21,37 @@ DataHolder::DataHolder(routing::Routing& /*routing*/, const boost::filesystem::p
 
 }
 
-void DataHolder::HandleMessage(const nfs::Message& /*message*/,
+void DataHolder::HandleMessage(const nfs::Message& message,
                                routing::ReplyFunctor /*reply_functor*/) {
+  switch (message.action_type()) {
+    case nfs::ActionType::kGet :
+      HandleGetMessage(message);
+      break;
+    case nfs::ActionType::kPut :
+      HandlePutMessage(message);
+      break;
+    case nfs::ActionType::kPost :
+      HandlePostMessage(message);
+      break;
+    case nfs::ActionType::kDelete :
+      HandleDeleteMessage(message);
+      break;
+    default :
+      LOG(kError) << "Unhandled action type";
+  }
 }
 
-bool DataHolder::HaveCache(nfs::Message& /*message*/) {
+bool DataHolder::HaveCache(nfs::Message& /*message*/,
+                           const routing::Routing& /*routing*/,
+                           const DiskBasedStorage& /*disk_storage*/) {
   return false;
+  //return disk_storage.Find(message.signature()); // TODO:(Team):FIXME
 }
 
-void DataHolder::StoreCache(const nfs::Message& /*message*/) {
+void DataHolder::StoreCache(const nfs::Message& /*message*/,
+                            const routing::Routing& /*routing*/,
+                            const DiskBasedStorage& /*disk_storage*/) {
+//  disk_storage.Save(message.signature());
 }
 
 void DataHolder::StopSending() {

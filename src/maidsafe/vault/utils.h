@@ -22,20 +22,23 @@
 
 #include "maidsafe/common/rsa.h"
 
+
 namespace maidsafe {
+
+namespace nfs { class Message; }
 
 namespace vault {
 
 // will confirm signature matches src ID private key
 // signed the type (three enums) and payload. Will do a Get from MM
-bool checkMessageSignature(Message& message);
+bool checkMessageSignature(nfs::Message& message);
 
 // this can be pmid lists for a maid
 // data stored for a maid
 // data stored on a pmid
 // data hodlers for a MM
 class DiskBasedStorage {
-  DiskBasedSorage(boost::filesystem::path name);
+  DiskBasedStorage(boost::filesystem::path name);
   bool Save(Identity name);
   bool Find(Identity name);
   bool Delete(Identity name);

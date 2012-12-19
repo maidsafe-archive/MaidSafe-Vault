@@ -17,10 +17,17 @@
 #include <string>
 #include <vector>
 #include "boost/filesystem/path.hpp"
-#include "maidsafe/routing/api_config.h"
-//#include "maidsafe/nfs/nfs.h"
-//#include "maidsafe/vault/disk_based_storage.h"
+#include <boost/graph/graph_concepts.hpp>
+
 #include "maidsafe/common/rsa.h"
+
+#include "maidsafe/routing/api_config.h"
+
+//#include "maidsafe/nfs/network_file_system.h"
+//#include "maidsafe/vault/disk_based_storage.h"
+
+
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -29,7 +36,7 @@ namespace nfs { class Message; }
 
 namespace vault {
 
-//typedef Nfs<NoGet, NoPut, NoPost, NoDelete> DataHolderNfs;
+//typedef Nfs<NoGet, NoPut, NoPost, NoDelete> DataHolderNfs;  // TODO:(Team):FIXME
 
 class DataHolder {
  public:
@@ -37,7 +44,13 @@ class DataHolder {
   ~DataHolder();
   void HandleMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
   bool HaveCache(nfs::Message& message);
+  bool HaveCache(nfs::Message& message,
+                 const routing::Routing& routing,
+                 const DiskBasedStorage& disk_storage);
   void StoreCache(const nfs::Message& message);
+  void StoreCache(const nfs::Message& message,
+                  const routing::Routing& routing,
+                  const DiskBasedStorage& disk_storage);
   void StopSending();
 
  private:

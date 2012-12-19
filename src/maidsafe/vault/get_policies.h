@@ -42,7 +42,7 @@ class GetFromDataHolder {
 template <typename T>
 class NoGet {
  public:
-  static void  Get<>(name, callback, routing, fob) {
+  static void Get<>(T::name_type name) {
   }
  protected:
   ~NoGet() {}
