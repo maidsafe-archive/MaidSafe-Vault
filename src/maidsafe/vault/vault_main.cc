@@ -123,8 +123,8 @@ int OptionMenu(int argc, char* argv[]) {
     generic_options.add_options()
         ("help,h", "Print this help message")
 //         ("version,v", "Display version")
-        ("start", "Start vault")
-        ("stop", "Stop vault")
+//        ("start", "Start vault")
+//        ("stop", "Stop vault")
 //         ("first_node,f", po::bool_switch(), "First node of the network.")
         ("config", po::value(&config_file)->default_value(config_file), "Path to config file");
 
@@ -232,14 +232,23 @@ int ProcessOption(const po::variables_map& variables_map, int identity_index) {
 
   // Load keys
   fs::path keys_path(GetPathFromProgramOption("keys_path", &variables_map, false, false));
-  maidsafe::Fob fob;
-  maidsafe::vault::AccountName account_name;
+  std::unique_ptr<passport::Pmid> pmid;
   if (fs::exists(keys_path, error_code)) {
     auto all_keys = maidsafe::pd::ReadKeyDirectory(keys_path);
-    fob = all_keys[identity_index].second;
-    account_name = maidsafe::pd::AccountName(all_keys[i].first.identity);
+    pmid = all_keys[identity_index].second;
     LOG(kInfo) << "Added " << all_keys.size() << " keys."
                << " Using identity #" << i << " from keys file.";
+  }
+
+  std::vector<std::pair<std::string, uint16_t>> endpoints_from_lifestuff_manager;
+  // Set up identity via vault_controller, if not from file
+  if (!(*pmid).name().first.IsInitialised()) {
+    if (!using_vault_controller ||
+        (using_vault_controller &&
+          !vault_controller.GetIdentity(pmid, endpoints_from_lifestuff_manager))) {
+      std::cout << "No identity available, can't start vault." << std::endl;
+      return 3;
+    }
   }
 
 #ifndef WIN32
@@ -251,7 +260,7 @@ int ProcessOption(const po::variables_map& variables_map, int identity_index) {
   // Starting Vault
   std::cout << "Starting vault..." << std::endl;
   auto vault = std::make_shared<maidsafe::vault::vault>(
-      fob, chunk_path,
+      pmid, chunk_path,
       [&vault_controller](const boost::asio::ip::udp::endpoint &endpoint) {
             std::pair<std::string, uint16_t> endpoint_pair;
             endpoint_pair.first = endpoint.address().to_string();
@@ -267,20 +276,7 @@ int ProcessOption(const po::variables_map& variables_map, int identity_index) {
     return 4;
   }
 
-  std::vector<std::pair<std::string, uint16_t>> endpoints_from_lifestuff_manager;
-  // Set up identity
-  if (!fob.identity.IsInitialised()) {
-    std::string name;
-    if (!using_vault_controller ||
-        (using_vault_controller &&
-          !vault_controller.GetIdentity(fob, name, endpoints_from_lifestuff_manager))) {
-      std::cout << "No identity available, can't start vault." << std::endl;
-      return 3;
-    }
-    account_name = maidsafe::pd::AccountName(name);
-  }
-
-  std::cout << "Vault running as " << maidsafe::HexSubstr(fob.identity) << std::endl;
+  std::cout << "Vault running as " << maidsafe::HexSubstr((*pmid).name().first) << std::endl;
   {
     std::unique_lock<std::mutex> lock(g_mutex);
     g_cond_var.wait(lock, [] { return g_ctrlc_pressed; });  // NOLINT
