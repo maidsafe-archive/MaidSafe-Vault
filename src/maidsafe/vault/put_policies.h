@@ -67,6 +67,15 @@ class PutToDataHolder {
   ~PutToDataHolder() {}
 };
 
+template <typename T>
+class NoPut {
+ public:
+  static void Put<>(name, callback, routing, fob) {
+  }
+ protected:
+  ~NoPut() {}
+};
+
 }  // namespace vault
 
 }  // namespace maidsafe
