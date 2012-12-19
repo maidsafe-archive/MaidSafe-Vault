@@ -17,10 +17,13 @@
 #include <string>
 #include <vector>
 #include "boost/filesystem/path.hpp"
+#include <boost/graph/graph_concepts.hpp>
 //#include "maidsafe/routing/routing_api.h"
 //#include "maidsafe/nfs/network_file_system.h"
 //#include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/common/rsa.h"
+
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -35,8 +38,12 @@ class DataHolder {
   DataHolder(/*routing::Routing& routing, const boost::filesystem::path vault_root_dir*/);
   ~DataHolder();
   void HandleMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
-  bool HaveCache(nfs::Message& message);
-  void StoreCache(const nfs::Message& message);
+  bool HaveCache(nfs::Message& message,
+                 const routing::Routing& routing,
+                 const DiskBasedStorage& disk_storage);
+  void StoreCache(const nfs::Message& message,
+                  const routing::Routing& routing,
+                  const DiskBasedStorage& disk_storage);
   void StopSending();
 
  private:

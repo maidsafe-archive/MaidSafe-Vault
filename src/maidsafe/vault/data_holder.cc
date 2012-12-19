@@ -19,15 +19,36 @@ DataHolder::DataHolder(/*routing::Routing& routing*/)
 
 }
 
-void DataHolder::HandleMessage(const nfs::Message& /*message*/,
+void DataHolder::HandleMessage(const nfs::Message& message,
                                routing::ReplyFunctor /*reply_functor*/) {
+  switch (message.action_type()) {
+    case nfs::ActionType::kGet :
+      HandleGetMessage(message);
+      break;
+    case nfs::ActionType::kPut :
+      HandlePutMessage(message);
+      break;
+    casenfs::ActionType::kPost :
+      HandlePostMessage(message);
+      break;
+    case nfs::ActionType::kDelete :
+      HandleDeleteMessage(message);
+      break;
+    default :
+      LOG(kError) << "Unhandled action type";
+  }
 }
 
-bool DataHolder::HaveCache(nfs::Message& /*message*/) {
-  return false;
+bool DataHolder::HaveCache(const nfs::Message& message,
+                           const routing::Routing& /*routing*/,
+                           const DiskBasedStorage& disk_storage) {
+  return disk_storage.Find(message.signature());
 }
 
-void DataHolder::StoreCache(const nfs::Message& /*message*/) {
+void DataHolder::StoreCache(const nfs::Message& message,
+                            const routing::Routing& /*routing*/,
+                            const DiskBasedStorage& disk_storage) {
+  disk_storage.Save(message.signature());
 }
 
 void DataHolder::StopSending() {
