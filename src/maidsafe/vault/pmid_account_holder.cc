@@ -15,12 +15,13 @@ namespace maidsafe {
 
 namespace vault {
 
-PmidAccountHolder::PmidAccountHolder(/*routing::Routing& routing*/)
+PmidAccountHolder::PmidAccountHolder(routing::Routing& /*routing*/,
+                                     const boost::filesystem::path /*vault_root_dir*/)
     : vault_root_dir_() {
 }
 
 void PmidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
-                                      routing::ReplyFunctor reply_functor) {
+                                      const routing::ReplyFunctor& /*reply_functor*/) {
 }
 
 }  // namespace vault

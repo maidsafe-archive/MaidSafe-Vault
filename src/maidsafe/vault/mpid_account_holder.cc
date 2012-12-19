@@ -12,6 +12,10 @@
 #include <string>
 #include <vector>
 
+#include "boost/filesystem.hpp"
+
+#include "maidsafe/routing/api_config.h"
+
 namespace maidsafe {
 
 namespace nfs { class Message; }
@@ -21,8 +25,8 @@ namespace vault {
 
 class MpidAccountHolder {
  public:
-  MpidAccountHolder(routing::Routing& routing);
-  void HandleMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+  MpidAccountHolder(routing::Routing& /*routing*/, const boost::filesystem::path /*vault_root_dir*/);
+  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
  private:
 };
 

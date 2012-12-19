@@ -15,13 +15,14 @@ namespace maidsafe {
 
 namespace vault {
 
-MaidAccountHolder::MaidAccountHolder(/*routing::Routing& routing*/)
+MaidAccountHolder::MaidAccountHolder(routing::Routing& /*routing*/,
+                                     const boost::filesystem::path /*vault_root_dir*/)
   : vault_root_dir_() {
 
 }
 
 void MaidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
-                                      routing::ReplyFunctor /*reply_functor*/) {
+                                      const routing::ReplyFunctor& /*reply_functor*/) {
 
 }
 

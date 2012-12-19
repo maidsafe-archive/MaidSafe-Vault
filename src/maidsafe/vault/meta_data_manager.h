@@ -12,17 +12,21 @@
 #ifndef MAIDSAFE_VAULT_META_DATA_MANAGER_H_
 #define MAIDSAFE_VAULT_META_DATA_MANAGER_H_
 
+#include "boost/filesystem.hpp"
+
+#include "maidsafe/routing/api_config.h"
+
 namespace maidsafe {
 
 namespace nfs { class Message; }
-//namespace routing { class Routing; }
+namespace routing { class Routing; }
 
 namespace vault {
 
 class MetadataManager {
  public:
-  MetadataManager(/*routing::Routing& routing*/);
-  void HandleMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+  MetadataManager(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
+  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
 
  private:
 };

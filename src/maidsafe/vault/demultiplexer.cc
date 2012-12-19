@@ -35,7 +35,7 @@ Demultiplexer::Demultiplexer(MaidAccountHolder& maid_account_holder,
 }
 
 void Demultiplexer::HandleMessage(const std::string& serialised_message,
-                                  routing::ReplyFunctor reply_functor) {
+                                  const routing::ReplyFunctor& reply_functor) {
   try {
     nfs::Message message(nfs::ParseFromString(serialised_message));
     HandleMessageType(message, reply_functor);
@@ -45,7 +45,7 @@ void Demultiplexer::HandleMessage(const std::string& serialised_message,
 }
 
 void Demultiplexer::HandleMessageType(const nfs::Message& message,
-                                      routing::ReplyFunctor reply_functor) {
+                                      const routing::ReplyFunctor &reply_functor) {
   switch (message.destination_persona_type()) {
     case nfs::PersonaType::kMaidAccountHolder :
       maid_account_holder_.HandleMessage(message, reply_functor);

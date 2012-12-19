@@ -12,19 +12,23 @@
 #ifndef MAIDSAFE_VAULT_VAULT_H_
 #define MAIDSAFE_VAULT_VAULT_H_
 
-#include <map>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
-#include "boost/asio/ip/udp.hpp"
 
+#include "maidsafe/passport/types.h"
+
+#include "maidsafe/routing/api_config.h"
+
+#include "maidsafe/vault/data_holder.h"
 #include "maidsafe/vault/demultiplexer.h"
+#include "maidsafe/vault/maid_account_holder.h"
 #include "maidsafe/vault/meta_data_manager.h"
 #include "maidsafe/vault/pmid_account_holder.h"
-#include "maidsafe/vault/maid_account_holder.h"
-#include "maidsafe/vault/data_holder.h"
+
 
 namespace maidsafe {
 namespace routing { class Routing; }  // namespace routing
@@ -32,18 +36,33 @@ namespace vault {
 
 class Vault {
  public:
-  Vault(Pmid pmid,
+  Vault(passport::Pmid pmid,
         boost::filesystem::path vault_root_dir,
-        std::function<void>(udp::endpoint) on_new_bootstrap_endpoint);
+        std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint,
+        const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints =
+            std::vector<boost::asio::ip::udp::endpoint>());
   ~Vault();  // must issue StopSending() to all identity objects (MM etc.)
             // Then ensure routing is destroyed next then allothers in ny order at this time
  private:
+  int InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+  routing::Functors InitialiseRoutingCallbacks();
+  void OnNetworkStatusChange(const int& network_health);
+  void OnPublicKeyRequested(const NodeId &node_id,
+                            const routing::GivePublicKeyFunctor &give_key);
+  void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
+  void OnStoreCacheData(const std::string& message);
+  bool OnHaveCacheData(std::string& message);
+  void OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint);
+
+
+  std::mutex network_status_mutex_;
+  int network_health_;
   std::unique_ptr<routing::Routing> routing_;
-  Demultiplexer demux_;
   MaidAccountHolder maid_account_holder_;
+  MetadataManager meta_data_manager_;
   PmidAccountHolder pmid_account_holder_;
-  MetaDataManager meta_data_manager_;
   DataHolder data_holder_;
+  Demultiplexer demux_;
 };
 
 }  // namespace vault

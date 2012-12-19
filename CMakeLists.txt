@@ -21,9 +21,11 @@ project(vault)
 include(../../cmake_modules/maidsafe_standard_setup.cmake)
 
 include_directories(${common_SOURCE_DIR}/include)
+include_directories(${passport_SOURCE_DIR}/include)
 include_directories(${private_SOURCE_DIR}/include)
 include_directories(${nfs_SOURCE_DIR}/include)
 include_directories(${routing_SOURCE_DIR}/include)
+include_directories(${rudp_SOURCE_DIR}/include)
 
 
 #==================================================================================================#
@@ -53,8 +55,7 @@ list(REMOVE_ITEM VaultTestsAllFiles ${VaultSourcesRootDir}/tests/key_helper.cc)
 ms_add_static_library(vault ${VaultAllFiles})
 ms_add_executable(lifestuff_vault Production ${VaultSourcesRootDir}/vault_main.cc)
 
-#target_link_libraries(maidsafe_vault maidsafe_common maidsafe_private maidsafe_utilities)
-target_link_libraries(maidsafe_vault maidsafe_common maidsafe_private)
+target_link_libraries(maidsafe_vault maidsafe_common maidsafe_private maidsafe_utilities)
 target_link_libraries(lifestuff_vault maidsafe_vault)
 
 if(MAIDSAFE_TESTING)
@@ -71,6 +72,10 @@ rename_outdated_built_exes()
 #==================================================================================================#
 include(maidsafe_standard_flags)
 
+
+if(UNIX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-effc++")
+endif()
 
 #==================================================================================================#
 # Tests                                                                                            #

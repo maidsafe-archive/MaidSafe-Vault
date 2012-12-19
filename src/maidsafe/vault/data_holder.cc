@@ -14,7 +14,7 @@ namespace maidsafe {
 
 namespace vault {
 
-DataHolder::DataHolder(/*routing::Routing& routing*/)
+DataHolder::DataHolder(routing::Routing& /*routing*/, const boost::filesystem::path /*vault_root_dir*/)
     : vault_root_dir_() {
 
 }

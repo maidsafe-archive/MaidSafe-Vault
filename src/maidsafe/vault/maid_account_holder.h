@@ -19,22 +19,23 @@
 #include <fstream>
 
 #include "boost/filesystem/path.hpp"
-//#include "maidsafe/routing/routing_api.h"
+#include "maidsafe/routing/api_config.h"
 //#include "maidsafe/nfs/network_file_system.h"
 //#include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/common/rsa.h"
 
 namespace maidsafe {
 
+namespace routing { class Routing; }
 namespace nfs { class Message; }
 
 namespace vault {
 
 class MaidAccountHolder {
  public:
-  MaidAccountHolder(/*routing::Routing& routing, const boost::filesystem::path vault_root_dir*/);
+  MaidAccountHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
   ~MaidAccountHolder();
-  void HandleMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
  private:
   void HandlePutMessage(const nfs::Message& message);
   void HandleGetMessage(const nfs::Message& message);
