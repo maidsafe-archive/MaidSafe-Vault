@@ -10,15 +10,17 @@
  **************************************************************************************************/
 
 #include "maidsafe/vault/data_holder.h"
-
+#include "boost/filesystem/path.hpp"
+#include "boost/filesystem/filesystem.hpp"
 #include "maidsafe/nfs/message.h"
+
 namespace maidsafe {
 
 namespace vault {
 
-DataHolder::DataHolder(routing::Routing& /*routing*/, const boost::filesystem::path /*vault_root_dir*/)
-    : vault_root_dir_() {
-
+DataHolder::DataHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir)
+    : persona_dir_(vault_root_dir + "data_holder") {
+      boost::filesystem::exists(persona_dir_) ||  boost::filesystem::create_directory(persona_dir);
 }
 
 void DataHolder::HandleMessage(const nfs::Message& message,
@@ -41,9 +43,9 @@ void DataHolder::HandleMessage(const nfs::Message& message,
   }
 }
 
-bool DataHolder::HaveCache(nfs::Message& /*message*/,
-                           const routing::Routing& /*routing*/,
-                           const DiskBasedStorage& /*disk_storage*/) {
+bool DataHolder::HaveCache(nfs::Message& message,
+                           const routing::Routing& routing,
+                           const DaraStore& data_store) {
   return false;
   //return disk_storage.Find(message.signature()); // TODO:(Team):FIXME
 }

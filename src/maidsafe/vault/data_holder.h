@@ -29,7 +29,7 @@
 #include "maidsafe/vault/delete_policies.h"
 #include "maidsafe/vault/put_policies.h"
 #include "maidsafe/nfs/nfs.h"
-//#include "maidsafe/vault/disk_based_storage.h"
+#include "maidsafe/private/data_store.h"
 
 
 #include "maidsafe/vault/utils.h"
@@ -41,7 +41,7 @@ namespace nfs { class Message; }
 
 namespace vault {
 
-typedef Nfs<NoGet, NoPut, NoPost, NoDelete> DataHolderNfs;  // TODO:(Team):FIXME
+typedef Nfs<NoGet, NoPut, NoPost, NoDelete> DataHolderNfs;
 
 class DataHolder {
  public:
@@ -63,9 +63,9 @@ class DataHolder {
   void HandleGetMessage(const nfs::Message& message);
   void HandlePostMessage(const nfs::Message& message);
   void HandleDeleteMessage(const nfs::Message& message);
-  boost::filesystem::path vault_root_dir_;
-//  routing::Routing& routing_;
-//  DiskBasedStorage disk_storage_;
+  boost::filesystem::path persona_dir_;
+  routing::Routing& routing_;
+  DataStore dara_store_;
 };
 
 }  // namespace vault
