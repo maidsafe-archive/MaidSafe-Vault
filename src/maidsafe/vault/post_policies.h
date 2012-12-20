@@ -16,10 +16,10 @@ namespace maidsafe {
 
 namespace vault {
 
-template <typename T, typename U>
+template <typename T>
 class NoPost {
  public:
-  static void Post<>(T::name_type name, T data, U callback) {
+  static void Post(typename T::name_type /* name */) {
   }
  protected:
   ~NoPost() {}

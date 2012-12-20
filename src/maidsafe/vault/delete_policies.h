@@ -18,22 +18,18 @@
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
-#include "boost/date_time/posix_time/ptime.hpp"
-#include "boost/thread/mutex.hpp"
 
-#include "maidsafe/common/asio_service.h"
 #include "maidsafe/common/rsa.h"
 
-#include "maidsafe/pd/client/node.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-template <typename T, typename U>
+template <typename T>
 class NoDelete {
  public:
-  static void Delete<>(T::name_type name, T data, U callback) {
+  static void Delete(typename T::name_type /* name */) {
   }
  protected:
   ~NoDelete() {}

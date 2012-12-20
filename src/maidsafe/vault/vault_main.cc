@@ -30,7 +30,7 @@
 #include "maidsafe/common/log.h"
 //#include "maidsafe/common/utils.h"
 
-#include "maidsafe/private/lifestuff_manager/vault_controller.h"
+#include "maidsafe/lifestuff_manager/vault_controller.h"
 
 #include "maidsafe/vault/types.h"
 

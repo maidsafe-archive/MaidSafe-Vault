@@ -27,50 +27,50 @@
 namespace maidsafe {
 
 namespace vault {
-
-template <typename T>
-class PutToMetaDataManager {
- public:
-  static void  PutPolicy<>(name, callback, routing, fob) {
-  }
-  static void  PutPolicy<MutableData>(name, callback, routing, fob) {
-
-  }
-
- protected:
-  ~PutToMetaDataManager() {}
-};
-
-template <typename T>
-class PutToPmidAccountHolder {
- public:
-  static void  PutPolicy<>(name, callback, routing, fob) {
-  }
-  static void  PutPolicy<MutableData>(name, callback, routing, fob) {
-
-  }
-
- protected:
-  ~PutToPmidAccountHolder() {}
-};
-
-template <typename T>
-class PutToDataHolder {
- public:
-  static void  PutPolicy<>(name, callback, routing, fob) {
-  }
-  static void  PutPolicy<MutableData>(name, callback, routing, fob) {
-
-  }
-
- protected:
-  ~PutToDataHolder() {}
-};
-
+// 
+// template <typename T>
+// class PutToMetaDataManager {
+//  public:
+//   static void  PutPolicy(name, routing, fob) {
+//   }
+//   static void  PutPolicy<MutableData>(name, callback, routing, fob) {
+// 
+//   }
+// 
+//  protected:
+//   ~PutToMetaDataManager() {}
+// };
+// 
+// template <typename T>
+// class PutToPmidAccountHolder {
+//  public:
+//   static void  PutPolicy<>(name, callback, routing, fob) {
+//   }
+//   static void  PutPolicy<MutableData>(name, callback, routing, fob) {
+// 
+//   }
+// 
+//  protected:
+//   ~PutToPmidAccountHolder() {}
+// };
+// 
+// template <typename T>
+// class PutToDataHolder {
+//  public:
+//   static void  PutPolicy<>(name, callback, routing, fob) {
+//   }
+//   static void  PutPolicy<MutableData>(name, callback, routing, fob) {
+// 
+//   }
+// 
+//  protected:
+//   ~PutToDataHolder() {}
+// };
+// 
 template <typename T>
 class NoPut {
  public:
-  static void Put<>(name, callback, routing, fob) {
+  static void Put(typename T::name_type /* name */) {
   }
  protected:
   ~NoPut() {}

@@ -23,7 +23,12 @@
 
 #include "maidsafe/routing/api_config.h"
 
-//#include "maidsafe/nfs/network_file_system.h"
+
+#include "maidsafe/vault/get_policies.h"
+#include "maidsafe/vault/post_policies.h"
+#include "maidsafe/vault/delete_policies.h"
+#include "maidsafe/vault/put_policies.h"
+#include "maidsafe/nfs/nfs.h"
 //#include "maidsafe/vault/disk_based_storage.h"
 
 
@@ -36,7 +41,7 @@ namespace nfs { class Message; }
 
 namespace vault {
 
-//typedef Nfs<NoGet, NoPut, NoPost, NoDelete> DataHolderNfs;  // TODO:(Team):FIXME
+typedef Nfs<NoGet, NoPut, NoPost, NoDelete> DataHolderNfs;  // TODO:(Team):FIXME
 
 class DataHolder {
  public:

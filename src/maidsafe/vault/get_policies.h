@@ -18,31 +18,27 @@
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
-#include "boost/date_time/posix_time/ptime.hpp"
-#include "boost/thread/mutex.hpp"
 
-#include "maidsafe/common/asio_service.h"
 #include "maidsafe/common/rsa.h"
 
-#include "maidsafe/pd/client/node.h"
 
 namespace maidsafe {
 
 namespace vault {
 // MetaDataManager will need this if the get request comes that far
-template <typename T>
 class GetFromDataHolder {
  public:
-  static void  GetPolicy<>(name, callback, routing, fob) {
+template <typename T>
+  static void Get(typename T::name_type /* name */) {
   }
  protected:
   ~GetFromDataHolder() {}
 };
 
-template <typename T>
 class NoGet {
  public:
-  static void Get<>(T::name_type name) {
+template <typename T>
+  static void Get(typename T::name_type /* name */) {
   }
  protected:
   ~NoGet() {}
