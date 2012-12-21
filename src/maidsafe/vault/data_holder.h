@@ -29,7 +29,7 @@
 #include "maidsafe/vault/delete_policies.h"
 #include "maidsafe/vault/put_policies.h"
 #include "maidsafe/nfs/nfs.h"
-//#include "maidsafe/vault/disk_based_storage.h"
+#include "maidsafe/private/data_store.h"
 
 
 #include "maidsafe/vault/utils.h"
@@ -41,7 +41,7 @@ namespace nfs { class Message; }
 
 namespace vault {
 
-typedef Nfs<NoGet, NoPut, NoPost, NoDelete> DataHolderNfs;  // TODO:(Team):FIXME
+typedef Nfs<NoGet, NoPut, NoPost, NoDelete> DataHolderNfs;
 
 class DataHolder {
  public:
@@ -49,23 +49,22 @@ class DataHolder {
   ~DataHolder();
   void HandleMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
   bool HaveCache(nfs::Message& message);
-  bool HaveCache(nfs::Message& message,
-                 const routing::Routing& routing,
-                 const DiskBasedStorage& disk_storage);
   void StoreCache(const nfs::Message& message);
-  void StoreCache(const nfs::Message& message,
-                  const routing::Routing& routing,
-                  const DiskBasedStorage& disk_storage);
   void StopSending();
+  void ResumeSending();
 
  private:
   void HandlePutMessage(const nfs::Message& message);
   void HandleGetMessage(const nfs::Message& message);
   void HandlePostMessage(const nfs::Message& message);
   void HandleDeleteMessage(const nfs::Message& message);
-  boost::filesystem::path vault_root_dir_;
-//  routing::Routing& routing_;
-//  DiskBasedStorage disk_storage_;
+  boost::filesystem::path persona_dir_;
+  boost::filesystem::path persona_dir_permenent_;
+  boost::filesystem::path persona_dir_cache;
+  routing::Routing& routing_;
+  DataStore permenent_data_store_;
+  DataStore cache_data_store_;
+  std::atomic<bool> stop_sending_;
 };
 
 }  // namespace vault

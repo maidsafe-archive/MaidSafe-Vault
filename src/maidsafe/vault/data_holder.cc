@@ -10,19 +10,42 @@
  **************************************************************************************************/
 
 #include "maidsafe/vault/data_holder.h"
-
+#include "boost/filesystem/path.hpp"
+#include "boost/filesystem/filesystem.hpp"
 #include "maidsafe/nfs/message.h"
+#include "maidsafe/common/types.h"
+#include "maidsafe/data_store/data_buffer.h"
+
 namespace maidsafe {
 
 namespace vault {
 
-DataHolder::DataHolder(routing::Routing& /*routing*/, const boost::filesystem::path /*vault_root_dir*/)
-    : vault_root_dir_() {
+MemoryUsage mem_usage = 524288000;  // 500Mb
+MemoryUsage perm_usage = mem_usage * 0.1;
+MemoryUsage cache_usage = mem_usage * 0.9;
+boost::filesystem::space_info space(vault_root_dir);
+DiskUsage disk_total = space.available();
+DiskUsage permenent_size = disk_total * 0.9;
+DiskUsage cache_size = disk_total * 0.1;
 
-}
+DataHolder::DataHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir)
+    : persona_dir_(vault_root_dir + "data_holder"),
+      persona_dir_permenent_(persona_dir_ + "permenent"),
+      persona_dir_cache_(persona_dir_ + "cache"),
+      permenent_data_store_(mem_usage, permement_size, std::nullptr_t, permenent_size),
+      cache_data_store_(mem_usage, cache_size, [] {}, cache_size),
+      stop_sending_(false)
+      {
+        boost::filesystem::exists(persona_dir_) ||
+            boost::filesystem::create_directory(persona_dir_);
+        boost::filesystem::exists(persona_dir_permement_) ||
+            boost::filesystem::create_directory(persona_dir_permenent_);
+        boost::filesystem::exists(persona_dir_cache_) ||
+            boost::filesystem::create_directory(persona_dir_cache_);
+      }
 
 void DataHolder::HandleMessage(const nfs::Message& message,
-                               routing::ReplyFunctor /*reply_functor*/) {
+                               routing::ReplyFunctor reply_functor) {
   switch (message.action_type()) {
     case nfs::ActionType::kGet :
       HandleGetMessage(message);
@@ -41,20 +64,49 @@ void DataHolder::HandleMessage(const nfs::Message& message,
   }
 }
 
-bool DataHolder::HaveCache(nfs::Message& /*message*/,
-                           const routing::Routing& /*routing*/,
-                           const DiskBasedStorage& /*disk_storage*/) {
-  return false;
-  //return disk_storage.Find(message.signature()); // TODO:(Team):FIXME
+void DataHolder::HandlePutMessage(const nfs::Message& message) {
+  permenent_data_store.Store(message.data_type() message.content().name());
 }
 
-void DataHolder::StoreCache(const nfs::Message& /*message*/,
-                            const routing::Routing& /*routing*/,
-                            const DiskBasedStorage& /*disk_storage*/) {
-//  disk_storage.Save(message.signature());
+void DataHolder::HandleGetMessage(const nfs::Message& message) {
+  message.set_data(cache_data_store.Get(message.data_type() message.content().name());
+}
+
+void DataHolder::HandlePostMessage(const nfs::Message& message) {
+// no op
+}
+
+void DataHolder::HandleDeleteMessage(const nfs::Message& message) {
+  permenent_data_store.Delete(message.data_type() message.content().name());
+}
+
+// Cache Handling
+
+bool DataHolder::HaveCache(nfs::Message& message) {
+  try {
+    message.set_data(cache_data_store.Get(message.data_type() message.content().name());
+  }
+  catch (std::exception& error) {
+  LOG(kInfo) << "data not cached on this node " << error.what();
+  }
+  return false;
+}
+
+void DataHolder::StoreCache(const nfs::Message& message) {
+  try {
+    cache_data_store.Store(message.data_type() message.content().name());
+  }
+  catch (std::exception& error) {
+  LOG(kInfo) << "data could not be cached on this node " << error.what();
+  }
+}
+
+void DataHolder::ResumeSending() {
+  stop_sending_ = false;
 }
 
 void DataHolder::StopSending() {
+  stop_sending_ = true;
 }
 
 }  // namespace vault
