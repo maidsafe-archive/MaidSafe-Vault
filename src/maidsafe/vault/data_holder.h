@@ -49,14 +49,9 @@ class DataHolder {
   ~DataHolder();
   void HandleMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
   bool HaveCache(nfs::Message& message);
-  bool HaveCache(nfs::Message& message,
-                 const routing::Routing& routing,
-                 const DiskBasedStorage& disk_storage);
   void StoreCache(const nfs::Message& message);
-  void StoreCache(const nfs::Message& message,
-                  const routing::Routing& routing,
-                  const DiskBasedStorage& disk_storage);
   void StopSending();
+  void ResumeSending();
 
  private:
   void HandlePutMessage(const nfs::Message& message);
@@ -64,8 +59,12 @@ class DataHolder {
   void HandlePostMessage(const nfs::Message& message);
   void HandleDeleteMessage(const nfs::Message& message);
   boost::filesystem::path persona_dir_;
+  boost::filesystem::path persona_dir_permenent_;
+  boost::filesystem::path persona_dir_cache;
   routing::Routing& routing_;
-  DataStore dara_store_;
+  DataStore permenent_data_store_;
+  DataStore cache_data_store_;
+  std::atomic<bool> stop_sending_;
 };
 
 }  // namespace vault
