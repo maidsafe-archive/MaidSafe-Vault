@@ -20,11 +20,6 @@
 #include <mutex>
 #include <string>
 
-int main() {
-  return 0;
-}
-
-
 #include "boost/filesystem.hpp"
 #include "boost/asio.hpp"
 #include "boost/program_options.hpp"
@@ -47,24 +42,15 @@ int main() {
 // #include "maidsafe/private/chunk_store/buffered_chunk_store.h"
 // #include "maidsafe/private/chunk_store/remote_chunk_store.h"
 // #include "maidsafe/private/lifestuff_manager/client_controller.h"
-// #include "maidsafe/private/utils/utilities.h"
 
 #include "maidsafe/routing/node_info.h"
 #include "maidsafe/routing/routing_api.h"
 
-// #include "maidsafe/pd/client/node.h"
-// #include "maidsafe/pd/client/utils.h"
-// #include "maidsafe/pd/common/local_key_manager.h"
-// #include "maidsafe/pd/common/utils.h"
-
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 namespace asymm = maidsafe::rsa;
-namespace pca = maidsafe::priv::chunk_actions;
-namespace pcs = maidsafe::priv::chunk_store;
-namespace utils = maidsafe::priv::utils;
 
-typedef std::vector<passport::Pmid> PmidVector;
+typedef std::vector<maidsafe::passport::Pmid> PmidVector;
 
 const std::string kHelperVersion = "MaidSafe Vault KeysHelper " + maidsafe::kApplicationVersion;
 
@@ -81,15 +67,17 @@ void ctrlc_handler(int /*signum*/) {
 
 void PrintKeys(const PmidVector &all_pmids) {
   for (size_t i = 0; i < all_pmids.size(); ++i)
-    std::cout << '\t' << i << "\t PMID " << maidsafe::HexSubstr(all_pmids[i].name().first)
+    std::cout << '\t' << i << "\t PMID " << maidsafe::HexSubstr(all_pmids[i].name().data.string())
               << (i < 2 ? " (bootstrap)" : "") << std::endl;
 }
 
 bool CreateKeys(const size_t &pmids_count, PmidVector &all_pmids) {
-  all_pmids.resize(pmids_count);
-  for (size_t i = 0; i < all_pmids.size(); ++i) {
+  all_pmids.clear();
+  for (size_t i = 0; i < pmids_count; ++i) {
     try {
-      auto pmid = maidsafe::pd::GenerateIdentity();
+      maidsafe::passport::Anmaid anmaid;
+      maidsafe::passport::Maid maid(anmaid);
+      maidsafe::passport::Pmid pmid(maid);
       all_pmids.push_back(pmid);
     }
     catch(const std::exception& /*ex*/) {
@@ -170,18 +158,20 @@ bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {
     maidsafe::routing::NodeInfo info1, info2;
   } bootstrap_data;
 
-  auto make_node_info = [&] (const passport::Pmid& pmid)->maidsafe::routing::NodeInfo {
+  auto make_node_info = [&] (const maidsafe::passport::Pmid& pmid)->maidsafe::routing::NodeInfo {
     maidsafe::routing::NodeInfo node;
-    node.node_id = maidsafe::NodeId(pmid.name().first);
+    node.node_id = maidsafe::NodeId(pmid.name().data.string());
     node.public_key = pmid.public_key();
     return node;
   };
 
   LOG(kInfo) << "Creating zero state routing network...";
   bootstrap_data.info1 = make_node_info(all_pmids[0]);
-  bootstrap_data.routing1.reset(new maidsafe::routing::Routing(all_pmids[0], false));
+  bootstrap_data.routing1.reset(new maidsafe::routing::Routing(/*
+      std::shared_ptr<maidsafe::passport::Pmid>(new maidsafe::passport::Pmid*/&(all_pmids[0])));
   bootstrap_data.info2 = make_node_info(all_pmids[1]);
-  bootstrap_data.routing2.reset(new maidsafe::routing::Routing(all_pmids[1], false));
+  bootstrap_data.routing2.reset(new maidsafe::routing::Routing(/*
+      std::shared_ptr<maidsafe::passport::Pmid>(new maidsafe::passport::Pmid*/&(all_pmids[1])));
 
 
   maidsafe::routing::Functors functors1, functors2;
@@ -218,20 +208,20 @@ bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {
     return true;
   }
 
-  maidsafe::priv::lifestuff_manager::ClientController client_controller(
-      [](const maidsafe::NonEmptyString&) {});
-  for (size_t i = 2; i < all_pmids.size(); ++i) {
-    if (client_controller.StartVault(all_pmids[i], all_pmids[i].name().first, "")) {
-      LOG(kSuccess) << "SetupNetwork - Started vault "
-                    << maidsafe::HexSubstr(all_pmids[i].name().first);
-    } else {
-      LOG(kError) << "SetupNetwork - Could not start vault "
-                  << maidsafe::HexSubstr(all_pmids[i].name().first);
-      return false;
-    }
-  }
-
-  maidsafe::Sleep(boost::posix_time::seconds(1));  // to keep bootstrap nodes alive for a bit
+//   maidsafe::priv::lifestuff_manager::ClientController client_controller(
+//       [](const maidsafe::NonEmptyString&) {});
+//   for (size_t i = 2; i < all_pmids.size(); ++i) {
+//     if (client_controller.StartVault(all_pmids[i], all_pmids[i].name().first, "")) {
+//       LOG(kSuccess) << "SetupNetwork - Started vault "
+//                     << maidsafe::HexSubstr(all_pmids[i].name().first);
+//     } else {
+//       LOG(kError) << "SetupNetwork - Could not start vault "
+//                   << maidsafe::HexSubstr(all_pmids[i].name().first);
+//       return false;
+//     }
+//   }
+//
+//   maidsafe::Sleep(boost::posix_time::seconds(1));  // to keep bootstrap nodes alive for a bit
 
   return true;
 }
@@ -707,7 +697,7 @@ int main(int argc, char* argv[]) {
       return 0;
     }
 
-    PmidsVector all_pmids;
+    PmidVector all_pmids;
     fs::path keys_path(GetPathFromProgramOption("keys_path", &variables_map, false, true));
     fs::path chunk_path(GetPathFromProgramOption("chunk_path", &variables_map, true, true));
 
@@ -731,22 +721,22 @@ int main(int argc, char* argv[]) {
     if (do_create) {
       if (CreateKeys(pmids_count, all_pmids)) {
         std::cout << "Created " << all_pmids.size() << " pmids." << std::endl;
-        if (maidsafe::pd::WriteKeyDirectory(keys_path, all_pmids))
-          std::cout << "Wrote keys to " << keys_path << std::endl;
-        else
-          std::cout << "Could not write keys to " << keys_path << std::endl;
+//         if (maidsafe::pd::WriteKeyDirectory(keys_path, all_pmids))
+//           std::cout << "Wrote keys to " << keys_path << std::endl;
+//         else
+//           std::cout << "Could not write keys to " << keys_path << std::endl;
       } else {
         std::cout << "Could not create keys." << std::endl;
       }
     } else if (do_load) {
-      try {
-        all_pmids = maidsafe::pd::ReadKeyDirectory(keys_path);
-        std::cout << "Loaded " << all_pmids.size() << " pmids from " << keys_path << std::endl;
-      }
-      catch(const std::exception& /*ex*/) {
-        all_pmids.clear();
-        std::cout << "Could not load keys from " << keys_path << std::endl;
-      }
+//       try {
+//         all_pmids = maidsafe::pd::ReadKeyDirectory(keys_path);
+//         std::cout << "Loaded " << all_pmids.size() << " pmids from " << keys_path << std::endl;
+//       }
+//       catch(const std::exception& /*ex*/) {
+//         all_pmids.clear();
+//         std::cout << "Could not load keys from " << keys_path << std::endl;
+//       }
     }
 
     if (do_print)

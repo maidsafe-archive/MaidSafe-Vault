@@ -62,6 +62,7 @@ if(MAIDSAFE_TESTING)
   ms_add_executable(TESTvault "Tests/Vault" ${VaultTestsAllFiles})
   target_link_libraries(TESTvault maidsafe_vault)
   ms_add_executable(vault_key_helper Tools ${VaultSourcesRootDir}/tests/key_helper.cc)
+  target_link_libraries(vault_key_helper maidsafe_routing)
 endif()
 
 rename_outdated_built_exes()
