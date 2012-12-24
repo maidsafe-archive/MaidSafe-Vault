@@ -721,22 +721,22 @@ int main(int argc, char* argv[]) {
     if (do_create) {
       if (CreateKeys(pmids_count, all_pmids)) {
         std::cout << "Created " << all_pmids.size() << " pmids." << std::endl;
-//         if (maidsafe::pd::WriteKeyDirectory(keys_path, all_pmids))
-//           std::cout << "Wrote keys to " << keys_path << std::endl;
-//         else
-//           std::cout << "Could not write keys to " << keys_path << std::endl;
+        if (maidsafe::passport::detail::WritePmidList(keys_path, all_pmids))
+          std::cout << "Wrote keys to " << keys_path << std::endl;
+        else
+          std::cout << "Could not write keys to " << keys_path << std::endl;
       } else {
         std::cout << "Could not create keys." << std::endl;
       }
     } else if (do_load) {
-//       try {
-//         all_pmids = maidsafe::pd::ReadKeyDirectory(keys_path);
-//         std::cout << "Loaded " << all_pmids.size() << " pmids from " << keys_path << std::endl;
-//       }
-//       catch(const std::exception& /*ex*/) {
-//         all_pmids.clear();
-//         std::cout << "Could not load keys from " << keys_path << std::endl;
-//       }
+      try {
+        all_pmids = maidsafe::passport::detail::ReadPmidList(keys_path);
+        std::cout << "Loaded " << all_pmids.size() << " pmids from " << keys_path << std::endl;
+      }
+      catch(const std::exception& /*ex*/) {
+        all_pmids.clear();
+        std::cout << "Could not load keys from " << keys_path << std::endl;
+      }
     }
 
     if (do_print)
