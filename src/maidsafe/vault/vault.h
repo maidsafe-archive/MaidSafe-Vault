@@ -23,12 +23,12 @@
 
 #include "maidsafe/routing/api_config.h"
 
+#include "maidsafe/vault/key_getter.h"
 #include "maidsafe/vault/data_holder.h"
-#include "maidsafe/vault/demultiplexer.h"
 #include "maidsafe/vault/maid_account_holder.h"
 #include "maidsafe/vault/meta_data_manager.h"
 #include "maidsafe/vault/pmid_account_holder.h"
-
+#include "maidsafe/vault/demultiplexer.h"
 
 namespace maidsafe {
 namespace routing { class Routing; }  // namespace routing
@@ -58,6 +58,7 @@ class Vault {
   std::mutex network_status_mutex_;
   int network_health_;
   std::unique_ptr<routing::Routing> routing_;
+  KeyGetter key_getter_;
   MaidAccountHolder maid_account_holder_;
   MetadataManager meta_data_manager_;
   PmidAccountHolder pmid_account_holder_;
