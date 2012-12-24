@@ -19,6 +19,8 @@
 
 #include "boost/filesystem/path.hpp"
 
+#include "maidsafe/common/asio_service.h"
+
 #include "maidsafe/passport/types.h"
 
 #include "maidsafe/routing/api_config.h"
@@ -46,17 +48,23 @@ class Vault {
  private:
   int InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
   routing::Functors InitialiseRoutingCallbacks();
+  void OnMessageReceived(const std::string& message,  const routing::ReplyFunctor reply_functor);
+  void DoOnMessageReceived(const std::string& message, const routing::ReplyFunctor reply_functor)
   void OnNetworkStatusChange(const int& network_health);
-  void OnPublicKeyRequested(const NodeId &node_id,
-                            const routing::GivePublicKeyFunctor &give_key);
+  void DoOnNetworkStatusChange(const int& network_health);
+  void OnPublicKeyRequested(const NodeId &node_id, const routing::GivePublicKeyFunctor &give_key);
+  void DoOnPublicKeyRequested(const NodeId &node_id, const routing::GivePublicKeyFunctor &give_key);
   void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
+  void DoOnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
   void OnStoreCacheData(const std::string& message);
-  bool OnHaveCacheData(std::string& message);
+  void DoOnStoreCacheData(const std::string& message);
+  bool HaveCacheData(std::string& message);
   void OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint);
-
+  void DoOnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint);
 
   std::mutex network_status_mutex_;
   int network_health_;
+  std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint_;
   std::unique_ptr<routing::Routing> routing_;
   KeyGetter key_getter_;
   MaidAccountHolder maid_account_holder_;
@@ -64,6 +72,7 @@ class Vault {
   PmidAccountHolder pmid_account_holder_;
   DataHolder data_holder_;
   Demultiplexer demux_;
+  AsioService asio_service_;
 };
 
 }  // namespace vault
