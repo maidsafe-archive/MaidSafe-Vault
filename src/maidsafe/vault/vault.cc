@@ -20,10 +20,11 @@ namespace maidsafe {
 namespace vault {
 Vault::Vault(passport::Pmid pmid,
              boost::filesystem::path vault_root_dir,
-             std::function<void(boost::asio::ip::udp::endpoint)> /*on_new_bootstrap_endpoint*/,
+             std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint,
              const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints)
     : network_status_mutex_(),
       routing_(new routing::Routing(&pmid)),
+      key_getter_(routing_),
       maid_account_holder_(*routing_, vault_root_dir),
       meta_data_manager_(*routing_, vault_root_dir),
       pmid_account_holder_(*routing_, vault_root_dir),
@@ -85,8 +86,8 @@ void Vault::OnNetworkStatusChange(const int& network_health) {
 }
 
 void Vault::OnPublicKeyRequested(const NodeId& /*node_id*/,
-                                 const routing::GivePublicKeyFunctor& /*give_key*/) {
-
+                                 const routing::GivePublicKeyFunctor& give_key) {
+  key_getter_.HandleGetKey(node_id, give_key);
 }
 
 void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
@@ -101,8 +102,8 @@ bool Vault::OnHaveCacheData(std::string& message) {
   return demux_.HaveCache(message);
 }
 
-void Vault::OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& /*endpoint*/) {
-
+void Vault::OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint) {
+  on_new_bootstrap_endpoint(endpoint);
 }
 
 }  // namespace vault
