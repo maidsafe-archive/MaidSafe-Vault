@@ -54,16 +54,17 @@ class DataHolder {
   void ResumeSending();
 
  private:
-  void HandlePutMessage(const nfs::Message& message);
-  void HandleGetMessage(const nfs::Message& message);
-  void HandlePostMessage(const nfs::Message& message);
-  void HandleDeleteMessage(const nfs::Message& message);
+  void HandlePutMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+  void HandleGetMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+  void HandlePostMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+  void HandleDeleteMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
   boost::filesystem::path persona_dir_;
   boost::filesystem::path persona_dir_permenent_;
   boost::filesystem::path persona_dir_cache;
   routing::Routing& routing_;
   DataStore permenent_data_store_;
   DataStore cache_data_store_;
+  DataStore mem_only_cache_;
   std::atomic<bool> stop_sending_;
 };
 
