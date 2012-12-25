@@ -23,7 +23,10 @@ KeyGetter::KeyGetter(routing::Routing& routing)
 
 }
 
-void HandleGetKey(NodeId /*node_id*/, const routing::GivePublicKeyFunctor& give_key) {
+KeyGetter::~KeyGetter() {}
+
+void KeyGetter::HandleGetKey(const NodeId& /*node_id*/,
+                             const routing::GivePublicKeyFunctor& give_key) {
   asymm::PublicKey key;  // get key from network for node id
   give_key(key);
 }

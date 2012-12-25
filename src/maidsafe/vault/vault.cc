@@ -14,8 +14,6 @@
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/routing/node_info.h"
 
-//#include "maidsafe/nfs/nfs.h"
-
 namespace maidsafe {
 
 namespace vault {
@@ -35,6 +33,11 @@ Vault::Vault(passport::Pmid pmid,
       asio_service_(2) {
   asio_service_.Start();
   InitRouting(peer_endpoints);
+}
+
+Vault::~Vault() {
+// call stop on all component
+
 }
 
 int Vault::InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {

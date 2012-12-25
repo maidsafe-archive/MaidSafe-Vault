@@ -20,6 +20,9 @@ PmidAccountHolder::PmidAccountHolder(routing::Routing& /*routing*/,
     : vault_root_dir_() {
 }
 
+PmidAccountHolder::~PmidAccountHolder() {
+}
+
 void PmidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
                                       const routing::ReplyFunctor& /*reply_functor*/) {
 }

@@ -47,6 +47,9 @@ DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
             boost::filesystem::create_directory(persona_dir_cache_);
       }
 
+DataHolder::~DataHolder() {
+}
+
 void DataHolder::HandleMessage(const nfs::Message& message,
                                const routing::ReplyFunctor& reply_functor) {
   switch (message.action_type()) {
