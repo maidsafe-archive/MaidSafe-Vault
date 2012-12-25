@@ -16,6 +16,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "boost/filesystem.hpp"
 #include "boost/filesystem/path.hpp"
 #include <boost/graph/graph_concepts.hpp>
 
@@ -58,6 +60,12 @@ class DataHolder {
   void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+
+  boost::filesystem::space_info space_info_;
+  DiskUsage disk_total_;
+  DiskUsage permanent_size_;
+  DiskUsage cache_size_;
+
   boost::filesystem::path persona_dir_;
   boost::filesystem::path persona_dir_permanent_;
   boost::filesystem::path persona_dir_cache_;

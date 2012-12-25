@@ -24,19 +24,24 @@ MemoryUsage mem_usage = MemoryUsage(524288000);  // 500Mb
 MemoryUsage perm_usage = MemoryUsage(mem_usage * 0.2);
 MemoryUsage cache_usage = MemoryUsage(mem_usage * 0.4);
 MemoryUsage mem_only_cache_usage = MemoryUsage(mem_usage * 0.4);
-boost::filesystem::space_info space = boost::filesystem::space("vault_root_dir");  // FIXME
-DiskUsage disk_total = DiskUsage(space.available);
-DiskUsage permanent_size = DiskUsage(disk_total * 0.8);
-DiskUsage cache_size = DiskUsage(disk_total * 0.1);
+//boost::filesystem::space_info space = boost::filesystem::space("vault_root_dir");  // FIXME
+
+//DiskUsage disk_total = DiskUsage(space.available);
+//DiskUsage permanent_size = DiskUsage(disk_total * 0.8);
+//DiskUsage cache_size = DiskUsage(disk_total * 0.1);
 }
 
 DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
-    : persona_dir_(vault_root_dir / "data_holder"),
+    : space_info_(boost::filesystem::space(vault_root_dir)),
+      disk_total_(space_info_.available),
+      permanent_size_(disk_total_ * 0.8),
+      cache_size_(disk_total_ * 0.1),
+      persona_dir_(vault_root_dir / "data_holder"),
       persona_dir_permanent_(persona_dir_ / "permenent"),
       persona_dir_cache_(persona_dir_ / "cache"),
-      permanent_data_store_(perm_usage, permanent_size, nullptr, persona_dir_permanent_),
-      cache_data_store_(cache_usage, cache_size, nullptr, persona_dir_cache_),
-      mem_only_cache_(mem_only_cache_usage, DiskUsage(0), nullptr, persona_dir_cache_),
+      permanent_data_store_(perm_usage, permanent_size_, nullptr, persona_dir_permanent_),
+      cache_data_store_(cache_usage, cache_size_, nullptr, persona_dir_cache_),
+      mem_only_cache_(mem_only_cache_usage, DiskUsage(0), nullptr, persona_dir_cache_),  //FIXME
       stop_sending_(false)
       {
         boost::filesystem::exists(persona_dir_) ||
