@@ -10,8 +10,11 @@
  **************************************************************************************************/
 
 #include "maidsafe/vault/data_holder.h"
+
 #include "boost/filesystem/path.hpp"
 #include "boost/filesystem.hpp"
+
+#include "maidsafe/common/utils.h"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_store/data_buffer.h"
@@ -81,9 +84,12 @@ void DataHolder::HandlePutMessage(const nfs::Message& /*message*/,
 //  permanent_data_store_.Store(message.data_type(), message.content().name());
 }
 
-void DataHolder::HandleGetMessage(const nfs::Message& /*message*/,
-                                  const routing::ReplyFunctor& /*reply_functor*/) {
-//  message.set_data(cache_data_store.Get(message.data_type() message.content().name());
+void DataHolder::HandleGetMessage(const nfs::Message& message,
+                                  const routing::ReplyFunctor& reply_functor) {
+  TaggedValue<Identity, passport::detail::AnsmidTag> key;
+  key.data = Identity(message.content().string());
+  auto result(permanent_data_store_.Get(key));
+  reply_functor(result.string());
 }
 
 void DataHolder::HandlePostMessage(const nfs::Message& /*message*/,

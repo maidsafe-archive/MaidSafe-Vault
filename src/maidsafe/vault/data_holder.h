@@ -41,7 +41,11 @@ namespace maidsafe {
 namespace routing { class Routing; }
 namespace nfs { class Message; }
 
+
 namespace vault {
+
+namespace test { class DataHolderTest; }
+
 
 //typedef nfs::NetworkFileSystem<NoGet, NoPut, NoPost, NoDelete> DataHolderNfs;
 
@@ -56,6 +60,7 @@ class DataHolder {
   void ResumeSending();
 
  private:
+  friend class test::DataHolderTest;
   void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);

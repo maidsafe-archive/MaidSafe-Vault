@@ -1,48 +1,52 @@
-// /*******************************************************************************
-// *  Copyright 2012 maidsafe.net limited                                        *
-// *                                                                             *
-// *  The following source code is property of maidsafe.net limited and is not   *
-// *  meant for external use.  The use of this code is governed by the licence   *
-// *  file licence.txt found in the root of this directory and also on           *
-// *  www.maidsafe.net.                                                          *
-// *                                                                             *
-// *  You are not free to copy, amend or otherwise use this source code without  *
-// *  the explicit written permission of the board of directors of maidsafe.net. *
-// ******************************************************************************/
+ /*******************************************************************************
+ *  Copyright 2012 maidsafe.net limited                                        *
+ *                                                                             *
+ *  The following source code is property of maidsafe.net limited and is not   *
+ *  meant for external use.  The use of this code is governed by the licence   *
+ *  file licence.txt found in the root of this directory and also on           *
+ *  www.maidsafe.net.                                                          *
+ *                                                                             *
+ *  You are not free to copy, amend or otherwise use this source code without  *
+ *  the explicit written permission of the board of directors of maidsafe.net. *
+ ******************************************************************************/
 
-//#include <memory>
-//#include "boost/filesystem/path.hpp"
+#include <memory>
+#include "boost/filesystem/path.hpp"
 
-//#include "maidsafe/common/log.h"
-//#include "maidsafe/common/utils.h"
-//#include "maidsafe/common/test.h"
+#include "maidsafe/common/log.h"
+#include "maidsafe/common/utils.h"
+#include "maidsafe/common/test.h"
 
-//#include "maidsafe/routing/routing_api.h"
-//#include "maidsafe/vault/data_holder.h"
+#include "maidsafe/nfs/message.h"
+#include "maidsafe/vault/data_holder.h"
 
-//namespace maidsafe {
+namespace maidsafe {
 
-//namespace vault {
+namespace vault {
 
-//namespace test {
+namespace test {
 
-//class DataHolderTest : public testing::Test {
-// public:
-//  DataHolderTest()
-//      : vault_root_directory_("vault-root-directory") {
-//    auto pmid(passport::Pmid(MakeMaid()));
-//    routing_.reset(new Routing(&pmid));
-//    data_holder_.reset(routing_, vault_root_directory_);
-//  }
-
-// protected:
+class DataHolderTest : public testing::Test {
+ public:
+  DataHolderTest()
+      : vault_root_directory_("vault-root-directory"),
+        data_holder_(vault_root_directory_) {}
 //  std::shared_ptr<routing::Routing> routing_;
-//  std::shared_ptr<DataHolder> data_holder_;
-//  boost::filesystem::path vault_root_directory_;
-//};
+ protected:
+  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
+    data_holder_.HandlePutMessage(message, reply_functor);
+  }
+
+  void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
+    data_holder_.HandleGetMessage(message, reply_functor);
+  }
+
+  boost::filesystem::path vault_root_directory_;
+  DataHolder data_holder_;
+};
 
 //TEST(DataHolderTest, BEH_HandleMessage) {
-//  NodeId destination(this->routing_->kNodeId()), source(NodeId::kRandomId);
+//  NodeId destination(NodeId::kRandomId), source(NodeId::kRandomId);
 //  NonEmptyString content(RandomAlphaNumericString(256));
 //  asymm::Signature signature;
 //  nfs::Message message(nfs::ActionType::kPut,
@@ -120,32 +124,25 @@
 //  EXPECT_EQ(message.content(), retrieved);
 //}
 
-//TEST(DataHolderTest, BEH_HandleGetMessage) {
-//  NodeId destination(this->routing_->kNodeId()), source(NodeId::kRandomId);
-//  NonEmptyString content(RandomAlphaNumericString(256));
-//  asymm::Signature signature;
-//  nfs::Message message(nfs::ActionType::kPut,
-//                       nfs::PersonaType::kDataHolder,
-//                       nfs::PersonaType::kPmidAccountHolder,
-//                       0,
-//                       destination,
-//                       source,
-//                       content,
-//                       signature);
-//  std::string retrieved;
-//  this->data_holder_->handleGetMessage(message,
-//                                       [&](const std::string& data) {
-//                                         retrieved = data;
-//                                       });
-//  EXPECT_TRUE(retrieved.empty());
-//  data_holder_->HandlePutMessage(message,
-//                                 [&](const std::string&) {});
-//  this->data_holder_->handleGetMessage(message,
-//                                       [&](const std::string& data) {
-//                                         retrieved = data;
-//                                       });
-//  EXPECT_TRUE(!retrieved.empty());
-//}
+TEST_F(DataHolderTest, BEH_HandleGetMessage) {
+  const NodeId destination(NodeId::kRandomId), source(NodeId::kRandomId);
+  const NonEmptyString content(RandomAlphaNumericString(256));
+  const asymm::Signature signature;
+  nfs::Message message(nfs::ActionType::kPut,
+                       nfs::PersonaType::kDataHolder,
+                       nfs::PersonaType::kPmidAccountHolder,
+                       0,
+                       destination,
+                       source,
+                       content,
+                       signature);
+  std::string retrieved;
+  this->HandleGetMessage(message,
+                        [&](const std::string& data) {
+                          retrieved = data;
+                        });
+  EXPECT_TRUE(retrieved.empty());
+}
 
 //TEST(DataHolderTest, BEH_HandlePostMessage) {
 //}
@@ -181,9 +178,9 @@
 //  EXPECT_TRUE(retrieved.empty());
 //}
 
-//}  // namespace test
+}  // namespace test
 
-//}  // namespace vault
+}  // namespace vault
 
-//}  // namespace maidsafe
+}  // namespace maidsafe
 
