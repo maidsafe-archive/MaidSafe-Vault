@@ -16,7 +16,11 @@
 
 #include "maidsafe/routing/api_config.h"
 
+
+
 namespace maidsafe {
+
+namespace routing { class Routing; }
 
 namespace vault {
 
@@ -24,7 +28,7 @@ class KeyGetter {
  public:
   KeyGetter(routing::Routing& routing);
   ~KeyGetter();
-  void HandleGetKey(const nfs::Message& message, const routing::GivePublicKeyFunctor& /*give_key*/);
+  void HandleGetKey(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key);
 
  private:
   routing::Routing& routing_;

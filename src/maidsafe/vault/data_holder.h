@@ -23,14 +23,14 @@
 
 #include "maidsafe/routing/api_config.h"
 
-
 #include "maidsafe/vault/get_policies.h"
 #include "maidsafe/vault/post_policies.h"
 #include "maidsafe/vault/delete_policies.h"
 #include "maidsafe/vault/put_policies.h"
-#include "maidsafe/nfs/nfs.h"
-#include "maidsafe/private/data_store.h"
 
+#include "maidsafe/nfs/nfs.h"
+
+#include "maidsafe/data_store/data_store.h"
 
 #include "maidsafe/vault/utils.h"
 
@@ -41,30 +41,29 @@ namespace nfs { class Message; }
 
 namespace vault {
 
-typedef Nfs<NoGet, NoPut, NoPost, NoDelete> DataHolderNfs;
+//typedef nfs::NetworkFileSystem<NoGet, NoPut, NoPost, NoDelete> DataHolderNfs;
 
 class DataHolder {
  public:
-  DataHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
+  DataHolder(const boost::filesystem::path& vault_root_dir);
   ~DataHolder();
-  void HandleMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   bool HaveCache(nfs::Message& message);
   void StoreCache(const nfs::Message& message);
   void StopSending();
   void ResumeSending();
 
  private:
-  void HandlePutMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
-  void HandleGetMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
-  void HandlePostMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
-  void HandleDeleteMessage(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   boost::filesystem::path persona_dir_;
-  boost::filesystem::path persona_dir_permenent_;
-  boost::filesystem::path persona_dir_cache;
-  routing::Routing& routing_;
-  DataStore permenent_data_store_;
-  DataStore cache_data_store_;
-  DataStore mem_only_cache_;
+  boost::filesystem::path persona_dir_permanent_;
+  boost::filesystem::path persona_dir_cache_;
+  data_store::DataStore<data_store::DataBuffer> permanent_data_store_;
+  data_store::DataStore<data_store::DataBuffer> cache_data_store_;
+  data_store::DataStore<data_store::DataBuffer> mem_only_cache_;
   std::atomic<bool> stop_sending_;
 };
 

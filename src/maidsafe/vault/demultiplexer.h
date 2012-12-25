@@ -42,7 +42,7 @@ class Demultiplexer {
   void StoreCache(const std::string& serialised_message);
 
  private:
-  void HandleMessageType(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleMessageType(nfs::Message &message, const routing::ReplyFunctor& reply_functor);
   bool HandleHaveCache(nfs::Message &message);
   void HandleStoreCache(const nfs::Message& message);
 

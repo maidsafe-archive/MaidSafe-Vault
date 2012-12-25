@@ -12,14 +12,14 @@
 #include "maidsafe/vault/key_getter.h"
 
 #include "maidsafe/routing/routing_api.h"
+#include "maidsafe/nfs/nfs.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-KeyGetter::KeyGetter(routing::Routing& /*routing*/,
-                     const boost::filesystem::path /*vault_root_dir*/)
-  : Routing_(Routing) {
+KeyGetter::KeyGetter(routing::Routing& routing)
+  : routing_(routing) {
 
 }
 

@@ -48,8 +48,8 @@ class Vault {
  private:
   int InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
   routing::Functors InitialiseRoutingCallbacks();
-  void OnMessageReceived(const std::string& message,  const routing::ReplyFunctor reply_functor);
-  void DoOnMessageReceived(const std::string& message, const routing::ReplyFunctor reply_functor)
+  void OnMessageReceived(const std::string& message,  const routing::ReplyFunctor& reply_functor);
+  void DoOnMessageReceived(const std::string& message, const routing::ReplyFunctor& reply_functor);
   void OnNetworkStatusChange(const int& network_health);
   void DoOnNetworkStatusChange(const int& network_health);
   void OnPublicKeyRequested(const NodeId &node_id, const routing::GivePublicKeyFunctor &give_key);

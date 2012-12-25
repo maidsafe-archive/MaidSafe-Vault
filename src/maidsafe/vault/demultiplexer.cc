@@ -37,15 +37,16 @@ Demultiplexer::Demultiplexer(MaidAccountHolder& maid_account_holder,
 void Demultiplexer::HandleMessage(const std::string& serialised_message,
                                   const routing::ReplyFunctor& reply_functor) {
   try {
-    nfs::Message message(nfs::ParseFromString(serialised_message));
+    nfs::Message message((nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
+
     HandleMessageType(message, reply_functor);
   } catch(const std::exception& ex) {
     LOG(kError) << "Caught exception on handling new message : " << ex.what();
   }
 }
 
-void Demultiplexer::HandleMessageType(const nfs::Message& message,
-                                      const routing::ReplyFunctor &reply_functor) {
+void Demultiplexer::HandleMessageType(nfs::Message& message,
+                                      const routing::ReplyFunctor& reply_functor) {
   switch (message.destination_persona_type()) {
     case nfs::PersonaType::kMaidAccountHolder :
       maid_account_holder_.HandleMessage(message, reply_functor);
@@ -66,9 +67,9 @@ void Demultiplexer::HandleMessageType(const nfs::Message& message,
 
 bool Demultiplexer::HaveCache(std::string& serialised_message) {
   try {
-    nfs::Message message(nfs::ParseFromString(serialised_message));
+    nfs::Message message((nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
     if (HandleHaveCache(message)) {
-      serialised_message = std::move(nfs::SerialiseAsString(message));
+      serialised_message = message.Serialise().data.string();
       return true;
     }
   } catch(const std::exception& ex) {
@@ -88,7 +89,7 @@ bool Demultiplexer::HandleHaveCache(nfs::Message& message) {
 
 void Demultiplexer::StoreCache(const std::string& serialised_message) {
   try {
-    nfs::Message message(nfs::ParseFromString(serialised_message));
+    nfs::Message message((nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
     HandleStoreCache(message);
   } catch(const std::exception& ex) {
     LOG(kError) << "Caught exception on handling store cache request : " << ex.what();

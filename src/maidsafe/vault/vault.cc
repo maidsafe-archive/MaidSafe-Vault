@@ -12,6 +12,7 @@
 #include "maidsafe/vault/vault.h"
 
 #include "maidsafe/routing/routing_api.h"
+#include "maidsafe/routing/node_info.h"
 
 //#include "maidsafe/nfs/nfs.h"
 
@@ -25,11 +26,11 @@ Vault::Vault(passport::Pmid pmid,
     : network_status_mutex_(),
       on_new_bootstrap_endpoint_(on_new_bootstrap_endpoint),
       routing_(new routing::Routing(&pmid)),
-      key_getter_(routing_),
+      key_getter_(*routing_),
       maid_account_holder_(*routing_, vault_root_dir),
       meta_data_manager_(*routing_, vault_root_dir),
       pmid_account_holder_(*routing_, vault_root_dir),
-      data_holder_(*routing_, vault_root_dir),
+      data_holder_(vault_root_dir),
       demux_(maid_account_holder_, meta_data_manager_, pmid_account_holder_, data_holder_),
       asio_service_(2) {
   asio_service_.Start();
@@ -73,12 +74,12 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
 }
 
 void Vault::OnMessageReceived(const std::string& message,
-                              const routing::ReplyFunctor reply_functor) {
+                              const routing::ReplyFunctor& reply_functor) {
   asio_service_.service().post([=]() { DoOnMessageReceived(message, reply_functor); });  // NOLINT (Prakash)
 }
 
 void Vault::DoOnMessageReceived(const std::string& message,
-                                const routing::ReplyFunctor reply_functor) {
+                                const routing::ReplyFunctor& reply_functor) {
   demux_.HandleMessage(message, reply_functor);
 }
 
@@ -89,15 +90,15 @@ void Vault::OnNetworkStatusChange(const int& network_health) {
 void Vault::DoOnNetworkStatusChange(const int& network_health) {
   if (network_health >= 0) {
     if (network_health >= network_health_)
-      LOG(kVerbose) << "Init - " << DebugId(routing_.kNodeId())
+      LOG(kVerbose) << "Init - " << DebugId(routing_->kNodeId())
                     << " - Network health is " << network_health
                     << "% (was " << network_health_ << "%)";
     else
-      LOG(kWarning) << "Init - " << DebugId(routing_.kNodeId())
+      LOG(kWarning) << "Init - " << DebugId(routing_->kNodeId())
                     << " - Network health is " << network_health
                     << "% (was " << network_health_ << "%)";
   } else {
-    LOG(kWarning) << "Init - " << DebugId(routing_.kNodeId())
+    LOG(kWarning) << "Init - " << DebugId(routing_->kNodeId())
                   << " - Network is down (" << network_health << ")";
   }
   network_health_ = network_health;
@@ -109,7 +110,7 @@ void Vault::OnPublicKeyRequested(const NodeId& node_id,
   asio_service_.service().post([=]() { DoOnPublicKeyRequested(node_id, give_key); });  // NOLINT (Prakash)
 }
 
-void Vault::DoOnPublicKeyRequested(const NodeId& /*node_id*/,
+void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
                                    const routing::GivePublicKeyFunctor& give_key) {
   key_getter_.HandleGetKey(node_id, give_key);
 }

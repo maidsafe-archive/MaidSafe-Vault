@@ -11,7 +11,7 @@
 
 #include "maidsafe/vault/data_holder.h"
 #include "boost/filesystem/path.hpp"
-#include "boost/filesystem/filesystem.hpp"
+#include "boost/filesystem.hpp"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_store/data_buffer.h"
@@ -20,47 +20,47 @@ namespace maidsafe {
 
 namespace vault {
 namespace {
-MemoryUsage mem_usage = 524288000;  // 500Mb
-MemoryUsage perm_usage = mem_usage * 0.2;
-MemoryUsage cache_usage = mem_usage * 0.4;
-MemoryUsage mem_only_cache_usage = mem_usage * 0.4;
-boost::filesystem::space_info space(vault_root_dir);
-DiskUsage disk_total = space.available();
-DiskUsage permenent_size = disk_total * 0.8;
-DiskUsage cache_size = disk_total * 0.1;
+MemoryUsage mem_usage = MemoryUsage(524288000);  // 500Mb
+MemoryUsage perm_usage = MemoryUsage(mem_usage * 0.2);
+MemoryUsage cache_usage = MemoryUsage(mem_usage * 0.4);
+MemoryUsage mem_only_cache_usage = MemoryUsage(mem_usage * 0.4);
+boost::filesystem::space_info space = boost::filesystem::space("vault_root_dir");  // FIXME
+DiskUsage disk_total = DiskUsage(space.available);
+DiskUsage permanent_size = DiskUsage(disk_total * 0.8);
+DiskUsage cache_size = DiskUsage(disk_total * 0.1);
 }
 
-DataHolder::DataHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir)
-    : persona_dir_(vault_root_dir + "data_holder"),
-      persona_dir_permenent_(persona_dir_ + "permenent"),
-      persona_dir_cache_(persona_dir_ + "cache"),
-      permenent_data_store_(perm_usage, permement_size, std::nullptr_t, permenent_size),
-      cache_data_store_(cache_usage, cache_size, [] {}, cache_size),
-      mem_only_cache_(mem_only_cache_usage, 0, [] {}, cache_size),
+DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
+    : persona_dir_(vault_root_dir / "data_holder"),
+      persona_dir_permanent_(persona_dir_ / "permenent"),
+      persona_dir_cache_(persona_dir_ / "cache"),
+      permanent_data_store_(perm_usage, permanent_size, nullptr, persona_dir_permanent_),
+      cache_data_store_(cache_usage, cache_size, nullptr, persona_dir_cache_),
+      mem_only_cache_(mem_only_cache_usage, DiskUsage(0), nullptr, persona_dir_cache_),
       stop_sending_(false)
       {
         boost::filesystem::exists(persona_dir_) ||
             boost::filesystem::create_directory(persona_dir_);
-        boost::filesystem::exists(persona_dir_permement_) ||
-            boost::filesystem::create_directory(persona_dir_permenent_);
+        boost::filesystem::exists(persona_dir_permanent_) ||
+            boost::filesystem::create_directory(persona_dir_permanent_);
         boost::filesystem::exists(persona_dir_cache_) ||
             boost::filesystem::create_directory(persona_dir_cache_);
       }
 
 void DataHolder::HandleMessage(const nfs::Message& message,
-                               routing::ReplyFunctor reply_functor) {
+                               const routing::ReplyFunctor& reply_functor) {
   switch (message.action_type()) {
     case nfs::ActionType::kGet :
-      HandleGetMessage(message);
+      HandleGetMessage(message, reply_functor);
       break;
     case nfs::ActionType::kPut :
-      HandlePutMessage(message);
+      HandlePutMessage(message, reply_functor);
       break;
     case nfs::ActionType::kPost :
-      HandlePostMessage(message);
+      HandlePostMessage(message, reply_functor);
       break;
     case nfs::ActionType::kDelete :
-      HandleDeleteMessage(message);
+      HandleDeleteMessage(message, reply_functor);
       break;
     default :
       LOG(kError) << "Unhandled action type";
@@ -68,31 +68,31 @@ void DataHolder::HandleMessage(const nfs::Message& message,
 }
 //need to fill in reply functors
 // also in real system check msg.src came from a close node
-void DataHolder::HandlePutMessage(const nfs::Message& message,
-                                  routing::ReplyFunctor reply_functor) {
-  permenent_data_store.Store(message.data_type() message.content().name());
+void DataHolder::HandlePutMessage(const nfs::Message& /*message*/,
+                                  const routing::ReplyFunctor& /*reply_functor*/) {
+//  permanent_data_store_.Store(message.data_type(), message.content().name());
 }
 
-void DataHolder::HandleGetMessage(const nfs::Message& message,
-                                  routing::ReplyFunctor reply_functor) {
-  message.set_data(cache_data_store.Get(message.data_type() message.content().name());
+void DataHolder::HandleGetMessage(const nfs::Message& /*message*/,
+                                  const routing::ReplyFunctor& /*reply_functor*/) {
+//  message.set_data(cache_data_store.Get(message.data_type() message.content().name());
 }
 
-void DataHolder::HandlePostMessage(const nfs::Message& message,
-                                   routing::ReplyFunctor reply_functor) {
+void DataHolder::HandlePostMessage(const nfs::Message& /*message*/,
+                                   const routing::ReplyFunctor& /*reply_functor*/) {
 // no op
 }
 
-void DataHolder::HandleDeleteMessage(const nfs::Message& message,
-                                     routing::ReplyFunctor reply_functor) {
-  permenent_data_store.Delete(message.data_type() message.content().name());
+void DataHolder::HandleDeleteMessage(const nfs::Message& /*message*/,
+                                     const routing::ReplyFunctor& /*reply_functor*/) {
+//  permenent_data_store.Delete(message.data_type() message.content().name());
 }
 
 // Cache Handling
 
-bool DataHolder::HaveCache(nfs::Message& message) {
+bool DataHolder::HaveCache(nfs::Message& /*message*/) {
   try {
-    message.set_data(cache_data_store.Get(message.data_type() message.content().name());
+//    message.set_data(cache_data_store.Get(message.data_type() message.content().name());
     return true;
   }
   catch (std::exception& error) {
@@ -101,9 +101,9 @@ bool DataHolder::HaveCache(nfs::Message& message) {
   }
 }
 
-void DataHolder::StoreCache(const nfs::Message& message) {
+void DataHolder::StoreCache(const nfs::Message& /*message*/) {
   try {
-    cache_data_store.Store(message.data_type() message.content());
+//    cache_data_store.Store(message.data_type() message.content());
   }
   catch (std::exception& error) {
   LOG(kInfo) << "data could not be cached on this node " << error.what();
