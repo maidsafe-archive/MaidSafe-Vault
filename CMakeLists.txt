@@ -56,7 +56,7 @@ ms_add_static_library(vault ${VaultAllFiles})
 ms_add_executable(lifestuff_vault Production ${VaultSourcesRootDir}/vault_main.cc)
 
 target_link_libraries(maidsafe_vault maidsafe_nfs maidsafe_routing maidsafe_common maidsafe_private)
-target_link_libraries(lifestuff_vault maidsafe_vault)
+target_link_libraries(lifestuff_vault maidsafe_vault maidsafe_routing maidsafe_lifestuff_manager)
 
 if(MAIDSAFE_TESTING)
   ms_add_executable(TESTvault "Tests/Vault" ${VaultTestsAllFiles})
