@@ -52,6 +52,7 @@ void SigHandler(int signum) {
   }
   g_cond_var.notify_one();
 }
+int ProcessOption(const po::variables_map& variables_map, int identity_index);
 
 fs::path GetPathFromProgramOption(const std::string& option_name,
                                   po::variables_map* variables_map,
@@ -189,7 +190,7 @@ int OptionMenu(int argc, char* argv[]) {
 #endif
 }
 
-int ProcessOption(const po::variables_map& variables_map, int identity_index) {
+int ProcessOption(po::variables_map& variables_map, int identity_index) {
   fs::path chunk_path = GetPathFromProgramOption("chunk_path", &variables_map, true, true);
   if (chunk_path.empty()) {
     std::cout << "Can't start vault without a chunk storage location set." << std::endl;
@@ -200,7 +201,7 @@ int ProcessOption(const po::variables_map& variables_map, int identity_index) {
   if (variables_map.count("usr_id"))
     usr_id = variables_map.at("usr_id").as<std::string>();
 
-  maidsafe::priv::lifestuff_manager::VaultController vault_controller(usr_id);
+  maidsafe::lifestuff_manager::VaultController vault_controller(usr_id);
   bool using_vault_controller(false);
   std::string vmid(usr_id);
   if (variables_map.count("vmid"))
@@ -232,7 +233,7 @@ int ProcessOption(const po::variables_map& variables_map, int identity_index) {
 
   // Load keys
   fs::path keys_path(GetPathFromProgramOption("keys_path", &variables_map, false, false));
-  std::unique_ptr<passport::Pmid> pmid;
+  std::unique_ptr<maidsafe::passport::Pmid> pmid;
   if (fs::exists(keys_path, error_code)) {
     auto all_keys = maidsafe::pd::ReadKeyDirectory(keys_path);
     pmid = all_keys[identity_index].second;
