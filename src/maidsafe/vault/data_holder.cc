@@ -40,7 +40,7 @@ DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
       permanent_size_(disk_total_ * 0.8),
       cache_size_(disk_total_ * 0.1),
       persona_dir_(vault_root_dir / "data_holder"),
-      persona_dir_permanent_(persona_dir_ / "permenent"),
+      persona_dir_permanent_(persona_dir_ / "permanent"),
       persona_dir_cache_(persona_dir_ / "cache"),
       permanent_data_store_(perm_usage, permanent_size_, nullptr, persona_dir_permanent_),
       cache_data_store_(cache_usage, cache_size_, nullptr, persona_dir_cache_),
@@ -62,7 +62,7 @@ void DataHolder::HandleMessage(const nfs::Message& message,
                                const routing::ReplyFunctor& reply_functor) {
   switch (message.action_type()) {
     case nfs::ActionType::kGet :
-      HandleGetMessage(message, reply_functor);
+      HandleGetMessage<T>(message, reply_functor);
       break;
     case nfs::ActionType::kPut :
       HandlePutMessage(message, reply_functor);
@@ -79,11 +79,21 @@ void DataHolder::HandleMessage(const nfs::Message& message,
 }
 //need to fill in reply functors
 // also in real system check msg.src came from a close node
-void DataHolder::HandlePutMessage(const nfs::Message& /*message*/,
-                                  const routing::ReplyFunctor& /*reply_functor*/) {
-//  permanent_data_store_.Store(message.data_type(), message.content().name());
+template <typename Data>
+void DataHolder::HandlePutMessage(const nfs::Message& message,
+                                  const routing::ReplyFunctor& reply_functor) {
+try {
+  permanent_data_store_.Store<Data>(Data::name_type(Identity(message.destination_.string())),
+                                  message.content());
+    reply_functor(serialised_return_code) // (0));
+} catch (std::Exception& ex) {
+    reply_functor(serialised_retun_code); // non 0 plus optional message  
+    // error code // at the moment this will go back to client
+    // in production it will g back to 
+}
 }
 
+template <typename Data>
 void DataHolder::HandleGetMessage(const nfs::Message& message,
                                   const routing::ReplyFunctor& reply_functor) {
   TaggedValue<Identity, passport::detail::AnsmidTag> key;
@@ -97,6 +107,7 @@ void DataHolder::HandlePostMessage(const nfs::Message& /*message*/,
 // no op
 }
 
+template <typename Data>
 void DataHolder::HandleDeleteMessage(const nfs::Message& /*message*/,
                                      const routing::ReplyFunctor& /*reply_functor*/) {
 //  permenent_data_store.Delete(message.data_type() message.content().name());
