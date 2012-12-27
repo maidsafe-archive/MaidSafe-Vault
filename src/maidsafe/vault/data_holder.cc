@@ -84,11 +84,11 @@ template <typename Data>
 void DataHolder::HandlePutMessage(const nfs::Message& message,
                                   const routing::ReplyFunctor& reply_functor) {
   try {
-    permanent_data_store_.Store<Data>(Data::name_type(Identity(message.destination_.string())),
+    permanent_data_store_.Store<Data>(Data::name_type(Identity(message.destination().string())),
                                         message.content());
-    reply_functor(nfs::ReturnCode(0, "").Serialise().data.string());
+    reply_functor(nfs::ReturnCode(0).Serialise().data.string());
   } catch (std::exception& ex) {
-    reply_functor(nfs::ReturnCode(-1, "").Serialise().data.string()); // non 0 plus optional message
+    reply_functor(nfs::ReturnCode(-1).Serialise().data.string()); // non 0 plus optional message
     // error code // at the moment this will go back to client
     // in production it will g back to 
   }
