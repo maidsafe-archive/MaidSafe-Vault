@@ -62,7 +62,7 @@ void DataHolder::HandleMessage(const nfs::Message& message,
                                const routing::ReplyFunctor& reply_functor) {
   switch (message.action_type()) {
     case nfs::ActionType::kGet :
-      HandleGetMessage(message, reply_functor);
+      HandleGetMessage<T>(message, reply_functor);
       break;
     case nfs::ActionType::kPut :
       HandlePutMessage(message, reply_functor);
@@ -82,8 +82,8 @@ void DataHolder::HandleMessage(const nfs::Message& message,
 template <typename Data>
 void DataHolder::HandlePutMessage(const nfs::Message& message,
                                   const routing::ReplyFunctor& reply_functor) {
-try {                                      
-  permanent_data_store_.Store<Data>(Data::name_type(Identity(message.destination_id().string())),
+try {
+  permanent_data_store_.Store<Data>(Data::name_type(Identity(message.destination_.string())),
                                   message.content());
     reply_functor(serialised_return_code) // (0));
 } catch (std::Exception& ex) {
@@ -93,6 +93,7 @@ try {
 }
 }
 
+template <typename Data>
 void DataHolder::HandleGetMessage(const nfs::Message& message,
                                   const routing::ReplyFunctor& reply_functor) {
   TaggedValue<Identity, passport::detail::AnsmidTag> key;
@@ -106,6 +107,7 @@ void DataHolder::HandlePostMessage(const nfs::Message& /*message*/,
 // no op
 }
 
+template <typename Data>
 void DataHolder::HandleDeleteMessage(const nfs::Message& /*message*/,
                                      const routing::ReplyFunctor& /*reply_functor*/) {
 //  permenent_data_store.Delete(message.data_type() message.content().name());

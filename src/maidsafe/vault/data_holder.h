@@ -61,9 +61,12 @@ class DataHolder {
 
  private:
   friend class test::DataHolderTest;
+  template <typename Data>
   void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  template <typename Data>
   void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  template <typename Data>
   void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
 
   boost::filesystem::space_info space_info_;
