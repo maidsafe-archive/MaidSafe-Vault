@@ -53,6 +53,8 @@ class DataHolder {
  public:
   DataHolder(const boost::filesystem::path& vault_root_dir);
   ~DataHolder();
+
+  template <typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   bool HaveCache(nfs::Message& message);
   void StoreCache(const nfs::Message& message);
@@ -65,6 +67,7 @@ class DataHolder {
   void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template <typename Data>
   void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  template <typename Data>
   void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template <typename Data>
   void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);

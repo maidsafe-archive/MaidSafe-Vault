@@ -26,24 +26,24 @@ namespace vault {
 
 namespace test {
 
-class DataHolderTest : public testing::Test {
- public:
-  DataHolderTest()
-      : vault_root_directory_("vault-root-directory"),
-        data_holder_(vault_root_directory_) {}
-//  std::shared_ptr<routing::Routing> routing_;
- protected:
-  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
-    data_holder_.HandlePutMessage(message, reply_functor);
-  }
+//class DataHolderTest : public testing::Test {
+// public:
+//  DataHolderTest()
+//      : vault_root_directory_("vault-root-directory"),
+//        data_holder_(vault_root_directory_) {}
+////  std::shared_ptr<routing::Routing> routing_;
+// protected:
+//  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
+//    data_holder_.HandlePutMessage(message, reply_functor);
+//  }
 
-  void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
-    data_holder_.HandleGetMessage(message, reply_functor);
-  }
+//  void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
+//    data_holder_.HandleGetMessage(message, reply_functor);
+//  }
 
-  boost::filesystem::path vault_root_directory_;
-  DataHolder data_holder_;
-};
+//  boost::filesystem::path vault_root_directory_;
+//  DataHolder data_holder_;
+//};
 
 //TEST(DataHolderTest, BEH_HandleMessage) {
 //  NodeId destination(NodeId::kRandomId), source(NodeId::kRandomId);
@@ -124,25 +124,25 @@ class DataHolderTest : public testing::Test {
 //  EXPECT_EQ(message.content(), retrieved);
 //}
 
-TEST_F(DataHolderTest, BEH_HandleGetMessage) {
-  const NodeId destination(NodeId::kRandomId), source(NodeId::kRandomId);
-  const NonEmptyString content(RandomAlphaNumericString(256));
-  const asymm::Signature signature;
-  nfs::Message message(nfs::ActionType::kPut,
-                       nfs::PersonaType::kDataHolder,
-                       nfs::PersonaType::kPmidAccountHolder,
-                       0,
-                       destination,
-                       source,
-                       content,
-                       signature);
-  std::string retrieved;
-  this->HandleGetMessage(message,
-                        [&](const std::string& data) {
-                          retrieved = data;
-                        });
-  EXPECT_TRUE(retrieved.empty());
-}
+//TEST_F(DataHolderTest, BEH_HandleGetMessage) {
+//  const NodeId destination(NodeId::kRandomId), source(NodeId::kRandomId);
+//  const NonEmptyString content(RandomAlphaNumericString(256));
+//  const asymm::Signature signature;
+//  nfs::Message message(nfs::ActionType::kPut,
+//                       nfs::PersonaType::kDataHolder,
+//                       nfs::PersonaType::kPmidAccountHolder,
+//                       0,
+//                       destination,
+//                       source,
+//                       content,
+//                       signature);
+//  std::string retrieved;
+//  this->HandleGetMessage(message,
+//                        [&](const std::string& data) {
+//                          retrieved = data;
+//                        });
+//  EXPECT_TRUE(retrieved.empty());
+//}
 
 //TEST(DataHolderTest, BEH_HandlePostMessage) {
 //}

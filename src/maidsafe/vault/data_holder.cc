@@ -58,20 +58,21 @@ DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
 DataHolder::~DataHolder() {
 }
 
+template <typename Data>
 void DataHolder::HandleMessage(const nfs::Message& message,
                                const routing::ReplyFunctor& reply_functor) {
   switch (message.action_type()) {
     case nfs::ActionType::kGet :
-      HandleGetMessage<T>(message, reply_functor);
+      HandleGetMessage<Data>(message, reply_functor);
       break;
     case nfs::ActionType::kPut :
-      HandlePutMessage(message, reply_functor);
+      HandlePutMessage<Data>(message, reply_functor);
       break;
     case nfs::ActionType::kPost :
-      HandlePostMessage(message, reply_functor);
+      HandlePostMessage<Data>(message, reply_functor);
       break;
     case nfs::ActionType::kDelete :
-      HandleDeleteMessage(message, reply_functor);
+      HandleDeleteMessage<Data>(message, reply_functor);
       break;
     default :
       LOG(kError) << "Unhandled action type";
@@ -82,15 +83,15 @@ void DataHolder::HandleMessage(const nfs::Message& message,
 template <typename Data>
 void DataHolder::HandlePutMessage(const nfs::Message& message,
                                   const routing::ReplyFunctor& reply_functor) {
-try {
-  permanent_data_store_.Store<Data>(Data::name_type(Identity(message.destination_.string())),
-                                  message.content());
-    reply_functor(serialised_return_code) // (0));
-} catch (std::Exception& ex) {
-    reply_functor(serialised_retun_code); // non 0 plus optional message  
+  try {
+    permanent_data_store_.Store<Data>(Data::name_type(Identity(message.destination_.string())),
+                                        message.content());
+    reply_functor(nfs::ReturnCode(0, "").Serialise().data.string());
+  } catch (std::exception& ex) {
+    reply_functor(nfs::ReturnCode(-1, "").Serialise().data.string()); // non 0 plus optional message
     // error code // at the moment this will go back to client
     // in production it will g back to 
-}
+  }
 }
 
 template <typename Data>
@@ -102,6 +103,7 @@ void DataHolder::HandleGetMessage(const nfs::Message& message,
   reply_functor(result.string());
 }
 
+template <typename Data>
 void DataHolder::HandlePostMessage(const nfs::Message& /*message*/,
                                    const routing::ReplyFunctor& /*reply_functor*/) {
 // no op
