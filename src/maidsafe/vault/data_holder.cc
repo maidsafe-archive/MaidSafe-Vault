@@ -40,7 +40,7 @@ DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
       permanent_size_(disk_total_ * 0.8),
       cache_size_(disk_total_ * 0.1),
       persona_dir_(vault_root_dir / "data_holder"),
-      persona_dir_permanent_(persona_dir_ / "permenent"),
+      persona_dir_permanent_(persona_dir_ / "permanent"),
       persona_dir_cache_(persona_dir_ / "cache"),
       permanent_data_store_(perm_usage, permanent_size_, nullptr, persona_dir_permanent_),
       cache_data_store_(cache_usage, cache_size_, nullptr, persona_dir_cache_),
