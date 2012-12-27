@@ -79,9 +79,18 @@ void DataHolder::HandleMessage(const nfs::Message& message,
 }
 //need to fill in reply functors
 // also in real system check msg.src came from a close node
-void DataHolder::HandlePutMessage(const nfs::Message& /*message*/,
-                                  const routing::ReplyFunctor& /*reply_functor*/) {
-//  permanent_data_store_.Store(message.data_type(), message.content().name());
+template <typename Data>
+void DataHolder::HandlePutMessage(const nfs::Message& message,
+                                  const routing::ReplyFunctor& reply_functor) {
+try {                                      
+  permanent_data_store_.Store<Data>(Data::name_type(Identity(message.destination_id().string())),
+                                  message.content());
+    reply_functor(serialised_return_code) // (0));
+} catch (std::Exception& ex) {
+    reply_functor(serialised_retun_code); // non 0 plus optional message  
+    // error code // at the moment this will go back to client
+    // in production it will g back to 
+}
 }
 
 void DataHolder::HandleGetMessage(const nfs::Message& message,
