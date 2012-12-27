@@ -12,6 +12,8 @@
 #ifndef MAIDSAFE_VAULT_KEY_GETTER_H_
 #define MAIDSAFE_VAULT_KEY_GETTER_H_
 
+#include <chrono>
+#include <future>
 #include <string>
 
 #include "maidsafe/routing/api_config.h"
@@ -24,15 +26,36 @@ namespace routing { class Routing; }
 
 namespace vault {
 
-class KeyGetter {
+class PublicKeyGetter {
  public:
-  KeyGetter(routing::Routing& routing);
-  ~KeyGetter();
+  PublicKeyGetter(routing::Routing& routing);
+  ~PublicKeyGetter();
   void HandleGetKey(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key);
 
  private:
+  struct PendingKey {
+    PendingKey(std::future<asymm::PublicKey> future_in, routing::GivePublicKeyFunctor give_key_in)
+        : future(std::move(future_in)),
+          give_key(give_key_in) {
+    }
+    std::future<asymm::PublicKey> future;
+    routing::GivePublicKeyFunctor give_key;
+  };
+  void Run();
+  void AddPendingKey(std::shared_ptr<PendingKey> pending_key);
+
   routing::Routing& routing_;
+  bool running_;
+  std::vector<std::shared_ptr<PendingKey>> pending_keys_;
+  std::mutex flags_mutex_, mutex_;
+  std::condition_variable condition_;
+  std::shared_ptr<std::thread> thread_;
 };
+
+template<typename Future>
+bool is_ready(std::future<Future>& f) {
+  return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+}
 
 }  // namespace vault
 

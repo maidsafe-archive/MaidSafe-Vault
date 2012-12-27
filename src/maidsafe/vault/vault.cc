@@ -24,7 +24,7 @@ Vault::Vault(passport::Pmid pmid,
     : network_status_mutex_(),
       on_new_bootstrap_endpoint_(on_new_bootstrap_endpoint),
       routing_(new routing::Routing(&pmid)),
-      key_getter_(*routing_),
+      public_key_getter_(*routing_),
       maid_account_holder_(*routing_, vault_root_dir),
       meta_data_manager_(*routing_, vault_root_dir),
       pmid_account_holder_(*routing_, vault_root_dir),
@@ -115,7 +115,7 @@ void Vault::OnPublicKeyRequested(const NodeId& node_id,
 
 void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
                                    const routing::GivePublicKeyFunctor& give_key) {
-  key_getter_.HandleGetKey(node_id, give_key);
+  public_key_getter_.HandleGetKey(node_id, give_key);
 }
 
 void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes) {

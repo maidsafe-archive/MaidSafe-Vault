@@ -25,7 +25,7 @@
 
 #include "maidsafe/routing/api_config.h"
 
-#include "maidsafe/vault/key_getter.h"
+#include "maidsafe/vault/public_key_getter.h"
 #include "maidsafe/vault/data_holder.h"
 #include "maidsafe/vault/maid_account_holder.h"
 #include "maidsafe/vault/meta_data_manager.h"
@@ -66,7 +66,7 @@ class Vault {
   int network_health_;
   std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint_;
   std::unique_ptr<routing::Routing> routing_;
-  KeyGetter key_getter_;
+  PublicKeyGetter public_key_getter_;
   MaidAccountHolder maid_account_holder_;
   MetadataManager meta_data_manager_;
   PmidAccountHolder pmid_account_holder_;
