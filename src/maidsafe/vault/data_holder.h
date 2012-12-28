@@ -56,8 +56,10 @@ class DataHolder {
 
   template <typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  bool HaveCache(nfs::Message& message);
-  void StoreCache(const nfs::Message& message);
+  template <typename Data>
+  bool IsInCache(nfs::Message& message);
+  template <typename Data>
+  void StoreInCache(const nfs::Message& message);
   void StopSending();
   void ResumeSending();
 
@@ -66,7 +68,21 @@ class DataHolder {
   template <typename Data>
   void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template <typename Data>
-  void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
+    try {
+      NonEmptyString result(
+          cache_data_store_.Get(typename Data::name_type(
+                                    Identity(message.destination().string()))));
+      std::string string(result.string());
+      reply_functor(string);
+    } catch (std::exception& ex) {
+      //reply_functor(nfs::ReturnCode(-1).Serialise().data.string()); // non 0 plus optional message
+      reply_functor("");
+      // error code // at the moment this will go back to client
+      // in production it will g back to
+    }
+  }
+
   template <typename Data>
   void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template <typename Data>
@@ -85,6 +101,20 @@ class DataHolder {
   data_store::DataStore<data_store::DataBuffer> mem_only_cache_;
   std::atomic<bool> stop_sending_;
 };
+
+template <typename Data>
+void DataHolder::HandlePutMessage(const nfs::Message& message,
+                                  const routing::ReplyFunctor& reply_functor) {
+  try {
+    permanent_data_store_.Store(typename Data::name_type(Identity(message.destination().string())),
+                                    message.content());
+    reply_functor(nfs::ReturnCode(0).Serialise().data.string());
+  } catch (std::exception& ex) {
+    reply_functor(nfs::ReturnCode(-1).Serialise().data.string()); // non 0 plus optional message
+    // error code // at the moment this will go back to client
+    // in production it will g back to
+  }
+}
 
 }  // namespace vault
 

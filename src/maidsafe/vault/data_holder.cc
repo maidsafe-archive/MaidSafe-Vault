@@ -37,14 +37,14 @@ MemoryUsage mem_only_cache_usage = MemoryUsage(mem_usage * 0.4);
 DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
     : space_info_(boost::filesystem::space(vault_root_dir)),
       disk_total_(space_info_.available),
-      permanent_size_(disk_total_ * 0.8),
-      cache_size_(disk_total_ * 0.1),
+      permanent_size_(disk_total_ * 0.08),
+      cache_size_(disk_total_ * 0.01),
       persona_dir_(vault_root_dir / "data_holder"),
       persona_dir_permanent_(persona_dir_ / "permanent"),
       persona_dir_cache_(persona_dir_ / "cache"),
       permanent_data_store_(perm_usage, permanent_size_, nullptr, persona_dir_permanent_),
       cache_data_store_(cache_usage, cache_size_, nullptr, persona_dir_cache_),
-      mem_only_cache_(mem_only_cache_usage, DiskUsage(0), nullptr, persona_dir_cache_),  //FIXME
+      mem_only_cache_(mem_only_cache_usage, permanent_size_, nullptr, persona_dir_cache_),  //FIXME
       stop_sending_(false)
       {
         boost::filesystem::exists(persona_dir_) ||
@@ -80,28 +80,33 @@ void DataHolder::HandleMessage(const nfs::Message& message,
 }
 //need to fill in reply functors
 // also in real system check msg.src came from a close node
-template <typename Data>
-void DataHolder::HandlePutMessage(const nfs::Message& message,
-                                  const routing::ReplyFunctor& reply_functor) {
-  try {
-    permanent_data_store_.Store<Data>(Data::name_type(Identity(message.destination().string())),
-                                        message.content());
-    reply_functor(nfs::ReturnCode(0).Serialise().data.string());
-  } catch (std::exception& ex) {
-    reply_functor(nfs::ReturnCode(-1).Serialise().data.string()); // non 0 plus optional message
-    // error code // at the moment this will go back to client
-    // in production it will g back to 
-  }
-}
+//template <typename Data>
+//void DataHolder::HandlePutMessage(const nfs::Message& message,
+//                                  const routing::ReplyFunctor& reply_functor) {
+//  try {
+//    permanent_data_store_.Store<Data>(Data::name_type(Identity(message.destination().string())),
+//                                        message.content());
+//    reply_functor(nfs::ReturnCode(0).Serialise().data.string());
+//  } catch (std::exception& ex) {
+//    reply_functor(nfs::ReturnCode(-1).Serialise().data.string()); // non 0 plus optional message
+//    // error code // at the moment this will go back to client
+//    // in production it will g back to
+//  }
+//}
 
-template <typename Data>
-void DataHolder::HandleGetMessage(const nfs::Message& message,
-                                  const routing::ReplyFunctor& reply_functor) {
-  TaggedValue<Identity, passport::detail::AnsmidTag> key;
-  key.data = Identity(message.content().string());
-  auto result(permanent_data_store_.Get(key));
-  reply_functor(result.string());
-}
+//template <typename Data>
+//void DataHolder::HandleGetMessage(const nfs::Message& message,
+//                                  const routing::ReplyFunctor& reply_functor) {
+//  try {
+//    NonEmptyString result(cache_data_store_.Get<data_store::DataBuffer>(
+//        typename Data::name_type(Identity(message.destination().string()))));
+//    reply_functor(nfs::ReturnCode(0).Serialise().data.string());
+//  } catch (std::exception& ex) {
+//    reply_functor(nfs::ReturnCode(-1).Serialise().data.string()); // non 0 plus optional message
+//    // error code // at the moment this will go back to client
+//    // in production it will g back to
+//  }
+//}
 
 template <typename Data>
 void DataHolder::HandlePostMessage(const nfs::Message& /*message*/,
@@ -116,11 +121,18 @@ void DataHolder::HandleDeleteMessage(const nfs::Message& /*message*/,
 }
 
 // Cache Handling
-
-bool DataHolder::HaveCache(nfs::Message& /*message*/) {
+template <typename Data>
+bool DataHolder::IsInCache(nfs::Message& message) {
+  NonEmptyString result;
   try {
-//    message.set_data(cache_data_store.Get(message.data_type() message.content().name());
-    return true;
+    if (is_long_term_cacheable<Data>::value) {
+      result = cache_data_store_.Get<Data>(
+                   Data::name_type(Identity(message.destination().string())));
+    } else {
+      result = mem_only_cache_.Get<Data>(
+                   Data::name_type(Identity(message.destination().string())));
+    }
+    return (!result.string().empty());
   }
   catch (std::exception& error) {
     LOG(kInfo) << "data not cached on this node " << error.what();
@@ -128,12 +140,21 @@ bool DataHolder::HaveCache(nfs::Message& /*message*/) {
   }
 }
 
-void DataHolder::StoreCache(const nfs::Message& /*message*/) {
+template <typename Data>
+void DataHolder::StoreInCache(const nfs::Message& message) {
   try {
-//    cache_data_store.Store(message.data_type() message.content());
+    if (is_long_term_cacheable<Data>::value) {
+      cache_data_store_.Store<Data>(
+          Data::name_type(Identity(message.destination().string())),
+                          message.content());
+    } else {
+      mem_only_cache_.Store<Data>(
+          Data::name_type(Identity(message.destination().string())),
+                          message.content());
+    }
   }
   catch (std::exception& error) {
-  LOG(kInfo) << "data could not be cached on this node " << error.what();
+    LOG(kInfo) << "data could not be cached on this node " << error.what();
   }
 }
 

@@ -26,24 +26,34 @@ namespace vault {
 
 namespace test {
 
-//class DataHolderTest : public testing::Test {
-// public:
-//  DataHolderTest()
-//      : vault_root_directory_("vault-root-directory"),
-//        data_holder_(vault_root_directory_) {}
-////  std::shared_ptr<routing::Routing> routing_;
-// protected:
-//  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
-//    data_holder_.HandlePutMessage(message, reply_functor);
-//  }
+class DataHolderTest : public testing::Test {
+ public:
+  DataHolderTest()
+    : vault_root_directory_([]()->boost::filesystem::path {
+                   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
+//                   return (*test_path / RandomAlphaNumericString(8));
+//                   boost::filesystem::path vault_root_dir(*test_path / RandomAlphaNumericString(8));
+                   boost::filesystem::path vault_root_dir("/tmp/Maidsafe_test");
+                   //assert(boost::filesystem::create_directory(vault_root_dir));
+                   return vault_root_dir;
+                 } ()),
+        data_holder_(vault_root_directory_) {
+  }
+//  std::shared_ptr<routing::Routing> routing_;
+ protected:
+  template <typename Data>
+  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
+    data_holder_.HandlePutMessage<Data>(message, reply_functor);
+  }
 
-//  void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
-//    data_holder_.HandleGetMessage(message, reply_functor);
-//  }
+  template <typename Data>
+  void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
+    data_holder_.HandleGetMessage<Data>(message, reply_functor);
+  }
 
-//  boost::filesystem::path vault_root_directory_;
-//  DataHolder data_holder_;
-//};
+  boost::filesystem::path vault_root_directory_;
+  DataHolder data_holder_;
+};
 
 //TEST(DataHolderTest, BEH_HandleMessage) {
 //  NodeId destination(NodeId::kRandomId), source(NodeId::kRandomId);
@@ -104,45 +114,47 @@ namespace test {
 //  EXPECT_TRUE(data_holder_->stop_sending_, false);
 //}
 
-//TEST(DataHolderTest, BEH_HandlePutMessage) {
-//  NodeId destination(this->routing_->kNodeId()), source(NodeId::kRandomId);
-//  NonEmptyString content(RandomAlphaNumericString(256));
-//  asymm::Signature signature;
-//  nfs::Message message(nfs::ActionType::kPut,
-//                       nfs::PersonaType::kDataHolder,
-//                       nfs::PersonaType::kPmidAccountHolder,
-//                       0,
-//                       destination,
-//                       source,
-//                       content,
-//                       signature);
+TEST_F(DataHolderTest, BEH_HandlePutMessage) {
+  NodeId destination(NodeId::kRandomId), source(NodeId::kRandomId);
+  NonEmptyString content(RandomAlphaNumericString(256));
+  asymm::Signature signature;
+  nfs::Message message(nfs::ActionType::kPut,
+                       nfs::PersonaType::kDataHolder,
+                       nfs::PersonaType::kPmidAccountHolder,
+                       0,
+                       destination,
+                       source,
+                       content,
+                       signature);
 
-//  std::string retrieved;
-//  data_holder_->HandlePutMessage(message,
-//                                 [&](const std::string&) {});
-//  retrieved = data_holder_->permenent_data_store.Get(message);
-//  EXPECT_EQ(message.content(), retrieved);
-//}
+  std::string retrieved;
+  this->HandlePutMessage<passport::Anmaid>(message, [&](const std::string&) {});
+  this->HandleGetMessage<passport::Anmaid>(message,
+                                           [&](const std::string& data) {
+                                             retrieved = data;
+                                           });
+  EXPECT_EQ(message.content().string(), retrieved);
+}
 
-//TEST_F(DataHolderTest, BEH_HandleGetMessage) {
-//  const NodeId destination(NodeId::kRandomId), source(NodeId::kRandomId);
-//  const NonEmptyString content(RandomAlphaNumericString(256));
-//  const asymm::Signature signature;
-//  nfs::Message message(nfs::ActionType::kPut,
-//                       nfs::PersonaType::kDataHolder,
-//                       nfs::PersonaType::kPmidAccountHolder,
-//                       0,
-//                       destination,
-//                       source,
-//                       content,
-//                       signature);
-//  std::string retrieved;
-//  this->HandleGetMessage(message,
-//                        [&](const std::string& data) {
-//                          retrieved = data;
-//                        });
-//  EXPECT_TRUE(retrieved.empty());
-//}
+TEST_F(DataHolderTest, BEH_HandleGetMessage) {
+  const NodeId destination(NodeId::kRandomId), source(NodeId::kRandomId);
+  const NonEmptyString content(RandomAlphaNumericString(256));
+  const asymm::Signature signature;
+  nfs::Message message(nfs::ActionType::kPut,
+                       nfs::PersonaType::kDataHolder,
+                       nfs::PersonaType::kPmidAccountHolder,
+                       0,
+                       destination,
+                       source,
+                       content,
+                       signature);
+  std::string retrieved;
+  this->HandleGetMessage<passport::Anmaid>(message,
+                                           [&](const std::string& data) {
+                                             retrieved = data;
+                                           });
+  EXPECT_TRUE(retrieved.empty());
+}
 
 //TEST(DataHolderTest, BEH_HandlePostMessage) {
 //}

@@ -38,7 +38,7 @@ class Demultiplexer {
                 DataHolder& data_holder);
   void HandleMessage(const std::string& serialised_message,
                      const routing::ReplyFunctor& reply_functor);
-  bool HaveCache(std::string& serialised_message);
+  bool IsInCache(std::string& serialised_message);
   void StoreCache(const std::string& serialised_message);
 
  private:
@@ -51,7 +51,7 @@ class Demultiplexer {
                                        const routing::ReplyFunctor& reply_functor);
   void HandleDataHolderDataType(nfs::Message& message,
                                 const routing::ReplyFunctor& reply_functor);
-  bool HandleHaveCache(nfs::Message &message);
+  bool HandleIsInCache(nfs::Message &message);
   void HandleStoreCache(const nfs::Message& message);
 
   MaidAccountHolder& maid_account_holder_;

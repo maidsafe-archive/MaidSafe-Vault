@@ -135,7 +135,7 @@ void Vault::DoOnStoreCacheData(const std::string& message) {
 }
 
 bool Vault::HaveCacheData(std::string& message) {  // Need to be on routing's thread
-  return demux_.HaveCache(message);
+  return demux_.IsInCache(message);
 }
 
 void Vault::OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint) {

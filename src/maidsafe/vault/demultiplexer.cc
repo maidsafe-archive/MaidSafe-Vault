@@ -160,10 +160,10 @@ void Demultiplexer::HandleDataHolderDataType(nfs::Message& /*message*/,
 //  }
 }
 
-bool Demultiplexer::HaveCache(std::string& serialised_message) {
+bool Demultiplexer::IsInCache(std::string& serialised_message) {
   try {
     nfs::Message message((nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
-    if (HandleHaveCache(message)) {
+    if (HandleIsInCache(message)) {
       serialised_message = message.Serialise().data.string();
       return true;
     }
@@ -173,9 +173,9 @@ bool Demultiplexer::HaveCache(std::string& serialised_message) {
   return false;
 }
 
-bool Demultiplexer::HandleHaveCache(nfs::Message& message) {
+bool Demultiplexer::HandleIsInCache(nfs::Message& message) {
   if (message.destination_persona_type() == nfs::PersonaType::kDataHolder) {
-    return data_holder_.HaveCache(message);
+    return true; /*data_holder_.IsInCache<passport::Anmid>(message);*/ // FIXME
   } else {
     LOG(kError) << "Unhandled personatype for cache request";
     return false;
@@ -193,7 +193,7 @@ void Demultiplexer::StoreCache(const std::string& serialised_message) {
 
 void Demultiplexer::HandleStoreCache(const nfs::Message& message) {
   if (message.destination_persona_type() == nfs::PersonaType::kDataHolder)
-    return data_holder_.StoreCache(message);
+    return; /*data_holder_.StoreInCache<passport::Anmid>(message);*/ // FIXME
   else
     LOG(kError) << "Unhandled personatype for store cache request";
 }
