@@ -17,8 +17,8 @@
 
 #include "maidsafe/routing/api_config.h"
 
-#include "maidsafe/nfs/network_file_system.h"
-#include "maidsafe/vault/disk_based_storage.h"
+//#include "maidsafe/nfs/network_file_system.h"
+//#include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/common/rsa.h"
 
 namespace maidsafe {
@@ -32,15 +32,17 @@ class MpidAccountHolder {
  public:
   MpidAccountHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
   ~MpidAccountHolder();
+  template <typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+
  private:
-  void HandlePutMessage(const Message& message);
-  void HandleGetMessage(const Message& message);
-  void HandlePostMessage(const Message& message);
-  void HandleDeleteMessage(const Message& message);
-  boost::filesystem::path vault_root_dir_;
-  routing::Routing& routing_;
-  DiskBasedStorage disk_storage_;
+//  void HandlePutMessage(const Message& message);
+//  void HandleGetMessage(const Message& message);
+//  void HandlePostMessage(const Message& message);
+//  void HandleDeleteMessage(const Message& message);
+//  boost::filesystem::path vault_root_dir_;
+//  routing::Routing& routing_;
+//  DiskBasedStorage disk_storage_;
 };
 
 }  // namespace vault

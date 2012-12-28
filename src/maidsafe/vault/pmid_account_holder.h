@@ -34,6 +34,7 @@ class PmidAccountHolder {
  public:
   PmidAccountHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
   ~PmidAccountHolder();
+  template <typename Data>
   void HandleMessage(const nfs::Message& message,
                      const routing::ReplyFunctor& reply_functor);
  private:
