@@ -22,41 +22,42 @@
 namespace maidsafe {
 
 namespace vault {
+
 namespace {
+
 MemoryUsage mem_usage = MemoryUsage(524288000);  // 500Mb
-MemoryUsage perm_usage = MemoryUsage(mem_usage * 0.2);
-MemoryUsage cache_usage = MemoryUsage(mem_usage * 0.4);
-MemoryUsage mem_only_cache_usage = MemoryUsage(mem_usage * 0.4);
+MemoryUsage perm_usage = MemoryUsage(mem_usage / 5);
+MemoryUsage cache_usage = MemoryUsage(mem_usage * 2 / 5);
+MemoryUsage mem_only_cache_usage = MemoryUsage(mem_usage * 2 / 5);
 //boost::filesystem::space_info space = boost::filesystem::space("vault_root_dir");  // FIXME
 
 //DiskUsage disk_total = DiskUsage(space.available);
 //DiskUsage permanent_size = DiskUsage(disk_total * 0.8);
 //DiskUsage cache_size = DiskUsage(disk_total * 0.1);
-}
+
+}  // unnamed namespace
 
 DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
     : space_info_(boost::filesystem::space(vault_root_dir)),
       disk_total_(space_info_.available),
-      permanent_size_(disk_total_ * 0.08),
-      cache_size_(disk_total_ * 0.01),
+      permanent_size_(disk_total_ * 4 / 5),
+      cache_size_(disk_total_ / 10),
       persona_dir_(vault_root_dir / "data_holder"),
       persona_dir_permanent_(persona_dir_ / "permanent"),
       persona_dir_cache_(persona_dir_ / "cache"),
       permanent_data_store_(perm_usage, permanent_size_, nullptr, persona_dir_permanent_),
       cache_data_store_(cache_usage, cache_size_, nullptr, persona_dir_cache_),
-      mem_only_cache_(mem_only_cache_usage, permanent_size_, nullptr, persona_dir_cache_),  //FIXME
-      stop_sending_(false)
-      {
-        boost::filesystem::exists(persona_dir_) ||
-            boost::filesystem::create_directory(persona_dir_);
-        boost::filesystem::exists(persona_dir_permanent_) ||
-            boost::filesystem::create_directory(persona_dir_permanent_);
-        boost::filesystem::exists(persona_dir_cache_) ||
-            boost::filesystem::create_directory(persona_dir_cache_);
-      }
-
-DataHolder::~DataHolder() {
+      mem_only_cache_(mem_only_cache_usage, DiskUsage(0), nullptr, persona_dir_cache_),  //FIXME
+      stop_sending_(false) {
+  boost::filesystem::exists(persona_dir_) ||
+      boost::filesystem::create_directory(persona_dir_);
+  boost::filesystem::exists(persona_dir_permanent_) ||
+      boost::filesystem::create_directory(persona_dir_permanent_);
+  boost::filesystem::exists(persona_dir_cache_) ||
+      boost::filesystem::create_directory(persona_dir_cache_);
 }
+
+DataHolder::~DataHolder() {}
 
 template <typename Data>
 void DataHolder::HandleMessage(const nfs::Message& message,
@@ -78,6 +79,7 @@ void DataHolder::HandleMessage(const nfs::Message& message,
       LOG(kError) << "Unhandled action type";
   }
 }
+
 //need to fill in reply functors
 // also in real system check msg.src came from a close node
 //template <typename Data>

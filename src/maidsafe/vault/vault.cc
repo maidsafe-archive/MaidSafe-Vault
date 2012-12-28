@@ -131,7 +131,7 @@ void Vault::OnStoreCacheData(const std::string& message) {  // post/move data?
 }
 
 void Vault::DoOnStoreCacheData(const std::string& message) {
-  demux_.StoreCache(message);
+  demux_.StoreInCache(message);
 }
 
 bool Vault::HaveCacheData(std::string& message) {  // Need to be on routing's thread

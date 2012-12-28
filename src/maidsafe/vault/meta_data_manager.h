@@ -26,6 +26,8 @@ namespace vault {
 class MetadataManager {
  public:
   MetadataManager(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
+
+  template <typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
 
  private:

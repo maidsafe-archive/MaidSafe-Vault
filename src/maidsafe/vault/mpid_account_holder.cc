@@ -9,6 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
+#include "maidsafe/vault/mpid_account_holder.h"
+
 #include <string>
 #include <vector>
 
@@ -23,13 +25,14 @@ namespace routing { class Routing; }
 
 namespace vault {
 
-class MpidAccountHolder {
- public:
-  MpidAccountHolder(routing::Routing& /*routing*/, const boost::filesystem::path /*vault_root_dir*/);
-  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
- private:
-};
+MpidAccountHolder::MpidAccountHolder(routing::Routing& /*routing*/,
+                                     const boost::filesystem::path /*vault_root_dir*/) {
+}
+template <typename Data>
+void MpidAccountHolder::HandleMessage(const nfs::Message& message,
+                                      const routing::ReplyFunctor& reply_functor) {
 
+}
 }  // namespace vault
 
 }  // namespace maidsafe
