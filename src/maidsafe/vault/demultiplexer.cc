@@ -28,14 +28,14 @@ namespace vault {
 
 namespace {
   template <typename PersonaType>
-  void HandleDataType(nfs::Message& /*message*/,
-                                     const routing::ReplyFunctor& /*reply_functor*/,
-                                     PersonaType& /*persona_type*/) {
+  void HandleDataType(nfs::Message& message,
+                                     const routing::ReplyFunctor& reply_functor,
+                                     PersonaType& persona_type) {
 //static assert
-//    switch (message.data_type()) {
-//      case passport::Smid::name_type::tag_type::kEnumValue:
-//        persona_type.HandleMessage<passport::Smid>(message, reply_functor);
-//        break;
+   switch (message.data_type()) {
+     case passport::Smid::name_type::tag_type::kEnumValue:
+       persona_type.template HandleMessage<passport::Smid>(message, reply_functor);
+       break;
   //    case passport::Tmid::name_type::tag_type::kEnumValue:
   //      persona_type.HandleMessage<passport::Tmid>(message, reply_functor);
   //      break;
@@ -66,9 +66,9 @@ namespace {
   //    case passport::PublicPmid::name_type::tag_type::kEnumValue:
   //      persona_type.HandleMessage<passport::PublicAnsmid>(message, reply_functor);
   //      break;
-//      default :
-//        LOG(kError) << "Unhandled data type";
-//    }
+     default :
+       LOG(kError) << "Unhandled data type";
+   }
   }
 
   }
