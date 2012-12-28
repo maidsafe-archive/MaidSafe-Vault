@@ -48,6 +48,12 @@ class MaidAccountHolder {
 //  DiskBasedStorage disk_storage_;
 };
 
+template <typename Data>
+void MaidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
+                                      const routing::ReplyFunctor& /*reply_functor*/) {
+
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

@@ -68,21 +68,7 @@ class DataHolder {
   template <typename Data>
   void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template <typename Data>
-  void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
-    try {
-      NonEmptyString result(
-          cache_data_store_.Get(typename Data::name_type(
-                                    Identity(message.destination().string()))));
-      std::string string(result.string());
-      reply_functor(string);
-    } catch (std::exception& ex) {
-      //reply_functor(nfs::ReturnCode(-1).Serialise().data.string()); // non 0 plus optional message
-      reply_functor("");
-      // error code // at the moment this will go back to client
-      // in production it will g back to
-    }
-  }
-
+  void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template <typename Data>
   void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template <typename Data>
@@ -103,6 +89,44 @@ class DataHolder {
 };
 
 template <typename Data>
+void DataHolder::HandleMessage(const nfs::Message& message,
+                               const routing::ReplyFunctor& reply_functor) {
+  switch (message.action_type()) {
+    case nfs::ActionType::kGet :
+      HandleGetMessage<Data>(message, reply_functor);
+      break;
+    case nfs::ActionType::kPut :
+      HandlePutMessage<Data>(message, reply_functor);
+      break;
+    case nfs::ActionType::kPost :
+      HandlePostMessage<Data>(message, reply_functor);
+      break;
+    case nfs::ActionType::kDelete :
+      HandleDeleteMessage<Data>(message, reply_functor);
+      break;
+    default :
+      LOG(kError) << "Unhandled action type";
+  }
+}
+
+template <typename Data>
+void DataHolder::HandleGetMessage(const nfs::Message& message,
+                                  const routing::ReplyFunctor& reply_functor) {
+  try {
+    NonEmptyString result(
+        cache_data_store_.Get(typename Data::name_type(
+                                  Identity(message.destination().string()))));
+    std::string string(result.string());
+    reply_functor(string);
+  } catch (std::exception& ex) {
+    //reply_functor(nfs::ReturnCode(-1).Serialise().data.string()); // non 0 plus optional message
+    reply_functor("");
+    // error code // at the moment this will go back to client
+    // in production it will g back to
+  }
+}
+
+template <typename Data>
 void DataHolder::HandlePutMessage(const nfs::Message& message,
                                   const routing::ReplyFunctor& reply_functor) {
   try {
@@ -114,6 +138,18 @@ void DataHolder::HandlePutMessage(const nfs::Message& message,
     // error code // at the moment this will go back to client
     // in production it will g back to
   }
+}
+
+template <typename Data>
+void DataHolder::HandlePostMessage(const nfs::Message& /*message*/,
+                                   const routing::ReplyFunctor& /*reply_functor*/) {
+// no op
+}
+
+template <typename Data>
+void DataHolder::HandleDeleteMessage(const nfs::Message& /*message*/,
+                                     const routing::ReplyFunctor& /*reply_functor*/) {
+//  permenent_data_store.Delete(message.data_type() message.content().name());
 }
 
 }  // namespace vault

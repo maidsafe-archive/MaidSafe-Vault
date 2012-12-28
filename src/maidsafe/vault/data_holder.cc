@@ -59,69 +59,6 @@ DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
 
 DataHolder::~DataHolder() {}
 
-template <typename Data>
-void DataHolder::HandleMessage(const nfs::Message& message,
-                               const routing::ReplyFunctor& reply_functor) {
-  switch (message.action_type()) {
-    case nfs::ActionType::kGet :
-      HandleGetMessage<Data>(message, reply_functor);
-      break;
-    case nfs::ActionType::kPut :
-      HandlePutMessage<Data>(message, reply_functor);
-      break;
-    case nfs::ActionType::kPost :
-      HandlePostMessage<Data>(message, reply_functor);
-      break;
-    case nfs::ActionType::kDelete :
-      HandleDeleteMessage<Data>(message, reply_functor);
-      break;
-    default :
-      LOG(kError) << "Unhandled action type";
-  }
-}
-
-//need to fill in reply functors
-// also in real system check msg.src came from a close node
-//template <typename Data>
-//void DataHolder::HandlePutMessage(const nfs::Message& message,
-//                                  const routing::ReplyFunctor& reply_functor) {
-//  try {
-//    permanent_data_store_.Store<Data>(Data::name_type(Identity(message.destination().string())),
-//                                        message.content());
-//    reply_functor(nfs::ReturnCode(0).Serialise().data.string());
-//  } catch (std::exception& ex) {
-//    reply_functor(nfs::ReturnCode(-1).Serialise().data.string()); // non 0 plus optional message
-//    // error code // at the moment this will go back to client
-//    // in production it will g back to
-//  }
-//}
-
-//template <typename Data>
-//void DataHolder::HandleGetMessage(const nfs::Message& message,
-//                                  const routing::ReplyFunctor& reply_functor) {
-//  try {
-//    NonEmptyString result(cache_data_store_.Get<data_store::DataBuffer>(
-//        typename Data::name_type(Identity(message.destination().string()))));
-//    reply_functor(nfs::ReturnCode(0).Serialise().data.string());
-//  } catch (std::exception& ex) {
-//    reply_functor(nfs::ReturnCode(-1).Serialise().data.string()); // non 0 plus optional message
-//    // error code // at the moment this will go back to client
-//    // in production it will g back to
-//  }
-//}
-
-template <typename Data>
-void DataHolder::HandlePostMessage(const nfs::Message& /*message*/,
-                                   const routing::ReplyFunctor& /*reply_functor*/) {
-// no op
-}
-
-template <typename Data>
-void DataHolder::HandleDeleteMessage(const nfs::Message& /*message*/,
-                                     const routing::ReplyFunctor& /*reply_functor*/) {
-//  permenent_data_store.Delete(message.data_type() message.content().name());
-}
-
 // Cache Handling
 template <typename Data>
 bool DataHolder::IsInCache(nfs::Message& message) {

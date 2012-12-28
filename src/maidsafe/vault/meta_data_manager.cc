@@ -19,12 +19,6 @@ MetadataManager::MetadataManager(routing::Routing& /*routing*/,
                                  const boost::filesystem::path /*vault_root_dir*/) {
 }
 
-template <typename Data>
-void MetadataManager::HandleMessage(const nfs::Message& /*message*/,
-                                    const routing::ReplyFunctor& /*reply_functor*/) {
-
-}
-
 }  // namespace vault
 
 }  // namespace maidsafe

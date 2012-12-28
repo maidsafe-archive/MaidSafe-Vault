@@ -33,6 +33,14 @@ class MetadataManager {
  private:
 };
 
+
+template <typename Data>
+void MetadataManager::HandleMessage(const nfs::Message& /*message*/,
+                                    const routing::ReplyFunctor& /*reply_functor*/) {
+
+}
+
+
 }  // namespace vault
 
 }  // namespace maidsafe

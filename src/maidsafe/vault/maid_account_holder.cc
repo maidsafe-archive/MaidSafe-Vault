@@ -24,12 +24,6 @@ MaidAccountHolder::MaidAccountHolder(routing::Routing& /*routing*/,
 MaidAccountHolder::~MaidAccountHolder() {
 }
 
-template <typename Data>
-void MaidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
-                                      const routing::ReplyFunctor& /*reply_functor*/) {
-
-}
-
 }  // namespace vault
 
 }  // namespace maidsafe

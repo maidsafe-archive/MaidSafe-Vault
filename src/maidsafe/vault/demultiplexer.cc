@@ -29,43 +29,43 @@ namespace vault {
 namespace {
   template <typename PersonaType>
   void HandleDataType(nfs::Message& message,
-                                     const routing::ReplyFunctor& /*reply_functor*/,
-                                     PersonaType& /*persona_type*/) {
+                                     const routing::ReplyFunctor& reply_functor,
+                                     PersonaType& persona_type) {
 //static assert
    switch (message.data_type()) {
-//     case passport::Smid::name_type::tag_type::kEnumValue:
-//       persona_type.template HandleMessage<passport::Smid>(message, reply_functor);
-//       break;
-  //    case passport::Tmid::name_type::tag_type::kEnumValue:
-  //      persona_type.HandleMessage<passport::Tmid>(message, reply_functor);
-  //      break;
-  //    case passport::Mid::name_type::tag_type::kEnumValue:
-  //      persona_type.HandleMessage<passport::Mid>(message, reply_functor);
-  //      break;
-  //    case passport::PublicAnmaid::name_type::tag_type::kEnumValue:
-  //      persona_type.HandleMessage<passport::PublicAnmaid>(message, reply_functor);
-  //      break;
-  //    case passport::PublicAnmid::name_type::tag_type::kEnumValue:
-  //      persona_type.HandleMessage<passport::PublicAnmid>(message, reply_functor);
-  //      break;
-  //    case passport::PublicAnmpid::name_type::tag_type::kEnumValue:
-  //      persona_type.HandleMessage<passport::PublicAnmpid>(message, reply_functor);
-  //      break;
-  //    case passport::PublicAnsmid::name_type::tag_type::kEnumValue:
-  //      persona_type.HandleMessage<passport::PublicAnsmid>(message, reply_functor);
-  //      break;
-  //    case passport::PublicAntmid::name_type::tag_type::kEnumValue:
-  //      persona_type.HandleMessage<passport::PublicAntmid>(message, reply_functor);
-  //      break;
-  //    case passport::PublicMaid::name_type::tag_type::kEnumValue:
-  //      persona_type.HandleMessage<passport::PublicMaid>(message, reply_functor);
-  //      break;
-  //    case passport::PublicMpid::name_type::tag_type::kEnumValue:
-  //      persona_type.HandleMessage<passport::PublicMpid>(message, reply_functor);
-  //      break;
-  //    case passport::PublicPmid::name_type::tag_type::kEnumValue:
-  //      persona_type.HandleMessage<passport::PublicAnsmid>(message, reply_functor);
-  //      break;
+     case passport::Smid::name_type::tag_type::kEnumValue:
+       persona_type.template HandleMessage<passport::Smid>(message, reply_functor);
+       break;
+      case passport::Tmid::name_type::tag_type::kEnumValue:
+        persona_type.template HandleMessage<passport::Tmid>(message, reply_functor);
+        break;
+      case passport::Mid::name_type::tag_type::kEnumValue:
+        persona_type.template HandleMessage<passport::Mid>(message, reply_functor);
+        break;
+      case passport::PublicAnmaid::name_type::tag_type::kEnumValue:
+        persona_type.template HandleMessage<passport::PublicAnmaid>(message, reply_functor);
+        break;
+      case passport::PublicAnmid::name_type::tag_type::kEnumValue:
+        persona_type.template HandleMessage<passport::PublicAnmid>(message, reply_functor);
+        break;
+      case passport::PublicAnmpid::name_type::tag_type::kEnumValue:
+        persona_type.template HandleMessage<passport::PublicAnmpid>(message, reply_functor);
+        break;
+      case passport::PublicAnsmid::name_type::tag_type::kEnumValue:
+        persona_type.template HandleMessage<passport::PublicAnsmid>(message, reply_functor);
+        break;
+      case passport::PublicAntmid::name_type::tag_type::kEnumValue:
+        persona_type.template HandleMessage<passport::PublicAntmid>(message, reply_functor);
+        break;
+      case passport::PublicMaid::name_type::tag_type::kEnumValue:
+        persona_type.template HandleMessage<passport::PublicMaid>(message, reply_functor);
+        break;
+      case passport::PublicMpid::name_type::tag_type::kEnumValue:
+        persona_type.template HandleMessage<passport::PublicMpid>(message, reply_functor);
+        break;
+      case passport::PublicPmid::name_type::tag_type::kEnumValue:
+        persona_type.template HandleMessage<passport::PublicAnsmid>(message, reply_functor);
+        break;
      default :
        LOG(kError) << "Unhandled data type";
    }

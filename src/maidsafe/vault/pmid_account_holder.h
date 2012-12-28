@@ -47,6 +47,11 @@ class PmidAccountHolder {
 //  DiskBasedStorage disk_storage_;
 };
 
+template <typename Data>
+void PmidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
+                                      const routing::ReplyFunctor& /*reply_functor*/) {
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

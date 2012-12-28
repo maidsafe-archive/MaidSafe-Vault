@@ -23,11 +23,6 @@ PmidAccountHolder::PmidAccountHolder(routing::Routing& /*routing*/,
 PmidAccountHolder::~PmidAccountHolder() {
 }
 
-template <typename Data>
-void PmidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
-                                      const routing::ReplyFunctor& /*reply_functor*/) {
-}
-
 }  // namespace vault
 
 }  // namespace maidsafe
