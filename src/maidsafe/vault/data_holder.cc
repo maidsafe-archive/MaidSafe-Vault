@@ -90,7 +90,7 @@ void DataHolder::HandlePutMessage(const nfs::Message& message,
   } catch (std::exception& ex) {
     reply_functor(nfs::ReturnCode(-1).Serialise().data.string()); // non 0 plus optional message
     // error code // at the moment this will go back to client
-    // in production it will g back to 
+    // in production it will g back to
   }
 }
 
