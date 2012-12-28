@@ -267,69 +267,51 @@ bool StoreKeys(const PmidVector& all_pmids,
   return true;
 }
 
-// bool VerifyKeys(const FobPairVector& all_keys,
-//                 const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
-//   std::unique_ptr<maidsafe::pd::Node> client(new maidsafe::pd::Node);
-//   auto test_path = maidsafe::test::CreateTestPath("MaidSafe_Test_KeysHelper");
-//   if (client->Start(*test_path, peer_endpoints) != 0) {
-//     LOG(kError) << "VerifyKeys - Could not start anon client to verify keys.";
-//     return false;
-//   }
-//   pcs::RemoteChunkStore rcs(client->chunk_store(), client->chunk_manager(),
-//                             client->chunk_action_authority());
-//   std::atomic<size_t> verified_keys(0);
-//   auto verify_keys = [&rcs, &verified_keys](const maidsafe::Fob &fob, const maidsafe::Fob &owner) {
-//     auto name = maidsafe::priv::ApplyTypeToName(fob.identity,
-//                                                 maidsafe::priv::ChunkType::kSignaturePacket);
-//     auto content = rcs.Get(name, maidsafe::Fob());
-//     if (content.empty()) {
-//       LOG(kError) << "VerifyKeys - Failed to retrieve " << maidsafe::pd::DebugChunkName(name);
-//       return;
-//     }
-//     maidsafe::priv::chunk_actions::SignedData signed_data;
-//     if (!signed_data.ParseFromString(content)) {
-//       LOG(kError) << "VerifyKeys - Failed to parse " << maidsafe::pd::DebugChunkName(name);
-//       return;
-//     }
-//     if (signed_data.data().empty() || signed_data.signature().empty()) {
-//       LOG(kError) << "VerifyKeys - No data/signature in " << maidsafe::pd::DebugChunkName(name);
-//       return;
-//     }
-//     try {
-//       if (!asymm::CheckSignature(maidsafe::asymm::PlainText(signed_data.data()),
-//                                  maidsafe::asymm::Signature(signed_data.signature()),
-//                                  owner.keys.private_key)) {
-//         LOG(kError) << "VerifyKeys - Failed to validate " << maidsafe::pd::DebugChunkName(name);
-//         return;
-//       }
-//     }
-//     catch(const std::exception& ex) {
-//       LOG(kError) << "VerifyKeys - Corrupt data/signature in "
-//                   << maidsafe::pd::DebugChunkName(name) << " - " << ex.what();
-//       return;
-//     }
-//     LOG(kSuccess) << "VerifyKeys - Successfully verified " << maidsafe::pd::DebugChunkName(name);
-//     ++verified_keys;
-//   };
-//
-//   std::vector<std::future<void>> futures;
-//   for (auto &fobs : all_keys) {
-//     futures.push_back(std::async(std::launch::async, verify_keys, fobs.first, fobs.first));
-//     futures.push_back(std::async(std::launch::async, verify_keys, fobs.second, fobs.first));
-//   }
-//   for (auto &future : futures)
-//     future.get();
-//   rcs.WaitForCompletion();
-//   client->Stop();
-//
-//   if (verified_keys < 2 * all_keys.size()) {
-//     LOG(kError) << "VerifyKeys - Could only verify " << verified_keys << " out of "
-//                 << (2 * all_keys.size()) << " keys.";
-//     return false;
-//   }
-//   LOG(kSuccess) << "VerifyKeys - Verified all " << verified_keys << " keys.";
-//   return true;
-// }
+bool VerifyKeys(const PmidVector& all_pmids,
+                const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
+  maidsafe::passport::Anmaid client_anmaid;
+  maidsafe::passport::Maid client_maid(client_anmaid);
+  maidsafe::passport::Pmid client_pmid(client_maid);
+  maidsafe::routing::Routing client_routing(&client_pmid);
+  maidsafe::routing::Functors functors;
+  client_routing.Join(functors, peer_endpoints);
+  maidsafe::nfs::KeyGetterNfs key_getter_nfs(client_routing, client_pmid);
+
+  std::atomic<size_t> verified_keys(0);
+  auto verify_keys = [&key_getter_nfs, &verified_keys](const maidsafe::passport::Pmid& pmid) {
+    maidsafe::passport::PublicPmid p_pmid(pmid);
+    auto fetched_data = key_getter_nfs.Get<maidsafe::passport::PublicPmid>(p_pmid.name());
+    maidsafe::passport::PublicPmid fetched_key = fetched_data.get();
+    if (!fetched_key.name().data.IsInitialised()) {
+      LOG(kError) << "VerifyKeys - Failed to retrieve "
+                  << maidsafe::HexSubstr(pmid.name().data.string());
+      return;
+    }
+    if (!maidsafe::rsa::MatchingKeys(fetched_key.public_key(), pmid.public_key())) {
+      LOG(kError) << "VerifyKeys - fetched key mis-match "
+                  << maidsafe::HexSubstr(pmid.name().data.string());
+      return;
+    }
+    LOG(kSuccess) << "VerifyKeys - Successfully verified "
+                  << maidsafe::HexSubstr(pmid.name().data.string());
+    ++verified_keys;
+  };
+
+  std::vector<std::future<void>> futures;
+  for (auto &pmid : all_pmids) {
+    futures.push_back(std::async(std::launch::async, verify_keys, pmid));
+  }
+  for (auto &future : futures)
+    future.get();
+
+  if (verified_keys < all_pmids.size()) {
+    LOG(kError) << "VerifyKeys - Could only verify " << verified_keys << " out of "
+                << all_pmids.size() << " keys.";
+    return false;
+  }
+  LOG(kSuccess) << "VerifyKeys - Verified all " << verified_keys << " keys.";
+  return true;
+}
 
 // bool StoreChunks(const FobPairVector& all_keys,
 //                  const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
@@ -758,14 +740,14 @@ int main(int argc, char* argv[]) {
       }
     }
 
-//     if (do_verify) {
-//       if (VerifyKeys(all_pmids, peer_endpoints)) {
-//         std::cout << "Verified keys on network." << std::endl;
-//       } else {
-//         std::cout << "Could not verify all keys on network." << std::endl;
-//         result = -1;
-//       }
-//     }
+    if (do_verify) {
+      if (VerifyKeys(all_pmids, peer_endpoints)) {
+        std::cout << "Verified keys on network." << std::endl;
+      } else {
+        std::cout << "Could not verify all keys on network." << std::endl;
+        result = -1;
+      }
+    }
 
 //     if (do_test) {
 //       if (all_pmids.size() < 4) {
