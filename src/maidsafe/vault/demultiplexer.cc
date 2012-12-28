@@ -36,34 +36,34 @@ namespace {
 //      case passport::Smid::name_type::tag_type::kEnumValue:
 //        persona_type.HandleMessage<passport::Smid>(message, reply_functor);
 //        break;
-  //    case passport::Tmid::type_enum_value():
+  //    case passport::Tmid::name_type::tag_type::kEnumValue:
   //      persona_type.HandleMessage<passport::Tmid>(message, reply_functor);
   //      break;
-  //    case passport::Mid::type_enum_value():
+  //    case passport::Mid::name_type::tag_type::kEnumValue:
   //      persona_type.HandleMessage<passport::Mid>(message, reply_functor);
   //      break;
-  //    case passport::PublicAnmaid::type_enum_value():
+  //    case passport::PublicAnmaid::name_type::tag_type::kEnumValue:
   //      persona_type.HandleMessage<passport::PublicAnmaid>(message, reply_functor);
   //      break;
-  //    case passport::PublicAnmid::type_enum_value():
+  //    case passport::PublicAnmid::name_type::tag_type::kEnumValue:
   //      persona_type.HandleMessage<passport::PublicAnmid>(message, reply_functor);
   //      break;
-  //    case passport::PublicAnmpid::type_enum_value():
+  //    case passport::PublicAnmpid::name_type::tag_type::kEnumValue:
   //      persona_type.HandleMessage<passport::PublicAnmpid>(message, reply_functor);
   //      break;
-  //    case passport::PublicAnsmid::type_enum_value():
+  //    case passport::PublicAnsmid::name_type::tag_type::kEnumValue:
   //      persona_type.HandleMessage<passport::PublicAnsmid>(message, reply_functor);
   //      break;
-  //    case passport::PublicAntmid::type_enum_value():
+  //    case passport::PublicAntmid::name_type::tag_type::kEnumValue:
   //      persona_type.HandleMessage<passport::PublicAntmid>(message, reply_functor);
   //      break;
-  //    case passport::PublicMaid::type_enum_value():
+  //    case passport::PublicMaid::name_type::tag_type::kEnumValue:
   //      persona_type.HandleMessage<passport::PublicMaid>(message, reply_functor);
   //      break;
-  //    case passport::PublicMpid::type_enum_value():
+  //    case passport::PublicMpid::name_type::tag_type::kEnumValue:
   //      persona_type.HandleMessage<passport::PublicMpid>(message, reply_functor);
   //      break;
-  //    case passport::PublicPmid::type_enum_value():
+  //    case passport::PublicPmid::name_type::tag_type::kEnumValue:
   //      persona_type.HandleMessage<passport::PublicAnsmid>(message, reply_functor);
   //      break;
 //      default :
