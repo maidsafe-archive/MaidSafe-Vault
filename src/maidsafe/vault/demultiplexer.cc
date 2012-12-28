@@ -14,6 +14,8 @@
 
 #include <string>
 
+#include "maidsafe/passport/types.h"
+
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/vault/maid_account_holder.h"
 #include "maidsafe/vault/meta_data_manager.h"
@@ -23,6 +25,53 @@
 namespace maidsafe {
 
 namespace vault {
+
+namespace {
+  template <typename PersonaType>
+  void HandleDataType(nfs::Message& /*message*/,
+                                     const routing::ReplyFunctor& /*reply_functor*/,
+                                     PersonaType& /*persona_type*/) {
+//static assert
+//    switch (message.data_type()) {
+//      case passport::Smid::name_type::tag_type::kEnumValue:
+//        persona_type.HandleMessage<passport::Smid>(message, reply_functor);
+//        break;
+  //    case passport::Tmid::type_enum_value():
+  //      persona_type.HandleMessage<passport::Tmid>(message, reply_functor);
+  //      break;
+  //    case passport::Mid::type_enum_value():
+  //      persona_type.HandleMessage<passport::Mid>(message, reply_functor);
+  //      break;
+  //    case passport::PublicAnmaid::type_enum_value():
+  //      persona_type.HandleMessage<passport::PublicAnmaid>(message, reply_functor);
+  //      break;
+  //    case passport::PublicAnmid::type_enum_value():
+  //      persona_type.HandleMessage<passport::PublicAnmid>(message, reply_functor);
+  //      break;
+  //    case passport::PublicAnmpid::type_enum_value():
+  //      persona_type.HandleMessage<passport::PublicAnmpid>(message, reply_functor);
+  //      break;
+  //    case passport::PublicAnsmid::type_enum_value():
+  //      persona_type.HandleMessage<passport::PublicAnsmid>(message, reply_functor);
+  //      break;
+  //    case passport::PublicAntmid::type_enum_value():
+  //      persona_type.HandleMessage<passport::PublicAntmid>(message, reply_functor);
+  //      break;
+  //    case passport::PublicMaid::type_enum_value():
+  //      persona_type.HandleMessage<passport::PublicMaid>(message, reply_functor);
+  //      break;
+  //    case passport::PublicMpid::type_enum_value():
+  //      persona_type.HandleMessage<passport::PublicMpid>(message, reply_functor);
+  //      break;
+  //    case passport::PublicPmid::type_enum_value():
+  //      persona_type.HandleMessage<passport::PublicAnsmid>(message, reply_functor);
+  //      break;
+//      default :
+//        LOG(kError) << "Unhandled data type";
+//    }
+  }
+
+  }
 
 Demultiplexer::Demultiplexer(MaidAccountHolder& maid_account_holder,
                              MetadataManager& metadata_manager,
@@ -49,115 +98,20 @@ void Demultiplexer::HandleMessagePersonaType(nfs::Message& message,
                                              const routing::ReplyFunctor& reply_functor) {
   switch (message.destination_persona_type()) {
     case nfs::PersonaType::kMaidAccountHolder :
-      HandleMaidAccountHolderDataType(message, reply_functor);
+      HandleDataType<MaidAccountHolder>(message, reply_functor, maid_account_holder_);
     break;
     case nfs::PersonaType::kMetaDataManager :
-      HandleMetadataManagerDataType(message, reply_functor);
+      HandleDataType<MetadataManager>(message, reply_functor, metadata_manager_);
       break;
     case nfs::PersonaType::kPmidAccountHolder :
-      HandlePmidAccountHolderDataType(message, reply_functor);
+      HandleDataType<PmidAccountHolder>(message, reply_functor, pmid_account_holder_);
       break;
     case nfs::PersonaType::kDataHolder :
-      HandleDataHolderDataType(message, reply_functor);
+      HandleDataType<DataHolder>(message, reply_functor, data_holder_);
       break;
     default :
       LOG(kError) << "Unhandled personatype";
   }
-}
-
-void Demultiplexer::HandleMaidAccountHolderDataType(nfs::Message& /*message*/,
-                                                    const routing::ReplyFunctor& /*reply_functor*/) {
-  //static assert
-//  switch (message.data_type()) {
-//    case passport::Smid::type_enum_value():
-//      maid_account_holder_.HandleMessage<passport::Smid>(message, reply_functor);
-//      break;
-//    case passport::Tmid::type_enum_value():
-//      maid_account_holder_.HandleMessage<passport::Tmid>(message, reply_functor);
-//      break;
-//    case passport::Mid::type_enum_value():
-//      maid_account_holder_.HandleMessage<passport::Mid>(message, reply_functor);
-//      break;
-//    case passport::PublicAnmaid::type_enum_value():
-//      maid_account_holder_.HandleMessage<passport::PublicAnmaid>(message, reply_functor);
-//      break;
-//    case passport::PublicAnmid::type_enum_value():
-//      maid_account_holder_.HandleMessage<passport::PublicAnmid>(message, reply_functor);
-//      break;
-//    case passport::PublicAnmpid::type_enum_value():
-//      maid_account_holder_.HandleMessage<passport::PublicAnmpid>(message, reply_functor);
-//      break;
-//    case passport::PublicAnsmid::type_enum_value():
-//      maid_account_holder_.HandleMessage<passport::PublicAnsmid>(message, reply_functor);
-//      break;
-//    case passport::PublicAntmid::type_enum_value():
-//      maid_account_holder_.HandleMessage<passport::PublicAntmid>(message, reply_functor);
-//      break;
-//    case passport::PublicMaid::type_enum_value():
-//      maid_account_holder_.HandleMessage<passport::PublicMaid>(message, reply_functor);
-//      break;
-//    case passport::PublicMpid::type_enum_value():
-//      maid_account_holder_.HandleMessage<passport::PublicMpid>(message, reply_functor);
-//      break;
-//    case passport::PublicPmid::type_enum_value():
-//      maid_account_holder_.HandleMessage<passport::PublicAnsmid>(message, reply_functor);
-//      break;
-//    default :
-//      LOG(kError) << "Unhandled data type";
-//  }
-}
-
-void Demultiplexer::HandleMetadataManagerDataType(nfs::Message& /*message*/,
-                                                  const routing::ReplyFunctor& /*reply_functor*/) {
-
-}
-
-void Demultiplexer::HandlePmidAccountHolderDataType(nfs::Message& /*message*/,
-                                                    const routing::ReplyFunctor& /*reply_functor*/) {
-
-}
-
-
-void Demultiplexer::HandleDataHolderDataType(nfs::Message& /*message*/,
-                                             const routing::ReplyFunctor& /*reply_functor*/) {
-//static assert
-//  switch (message.data_type()) {
-//    case passport::Smid::type_enum_value():
-//      data_holder_.HandleMessage<passport::Smid>(message, reply_functor);
-//      break;
-//    case passport::Tmid::type_enum_value():
-//      data_holder_.HandleMessage<passport::Tmid>(message, reply_functor);
-//      break;
-//    case passport::Mid::type_enum_value():
-//      data_holder_.HandleMessage<passport::Mid>(message, reply_functor);
-//      break;
-//    case passport::PublicAnmaid::type_enum_value():
-//      data_holder_.HandleMessage<passport::PublicAnmaid>(message, reply_functor);
-//      break;
-//    case passport::PublicAnmid::type_enum_value():
-//      data_holder_.HandleMessage<passport::PublicAnmid>(message, reply_functor);
-//      break;
-//    case passport::PublicAnmpid::type_enum_value():
-//      data_holder_.HandleMessage<passport::PublicAnmpid>(message, reply_functor);
-//      break;
-//    case passport::PublicAnsmid::type_enum_value():
-//      data_holder_.HandleMessage<passport::PublicAnsmid>(message, reply_functor);
-//      break;
-//    case passport::PublicAntmid::type_enum_value():
-//      data_holder_.HandleMessage<passport::PublicAntmid>(message, reply_functor);
-//      break;
-//    case passport::PublicMaid::type_enum_value():
-//      data_holder_.HandleMessage<passport::PublicMaid>(message, reply_functor);
-//      break;
-//    case passport::PublicMpid::type_enum_value():
-//      data_holder_.HandleMessage<passport::PublicMpid>(message, reply_functor);
-//      break;
-//    case passport::PublicPmid::type_enum_value():
-//      data_holder_.HandleMessage<passport::PublicAnsmid>(message, reply_functor);
-//      break;
-//    default :
-//      LOG(kError) << "Unhandled data type";
-//  }
 }
 
 bool Demultiplexer::HaveCache(std::string& serialised_message) {
