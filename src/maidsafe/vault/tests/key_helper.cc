@@ -43,6 +43,8 @@
 // #include "maidsafe/private/chunk_store/remote_chunk_store.h"
 // #include "maidsafe/private/lifestuff_manager/client_controller.h"
 
+#include "maidsafe/nfs/nfs.h"
+
 #include "maidsafe/routing/node_info.h"
 #include "maidsafe/routing/routing_api.h"
 
@@ -226,51 +228,44 @@ bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {
   return true;
 }
 
-// bool StoreKeys(const FobPairVector& all_keys,
-//                const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
-//   std::unique_ptr<maidsafe::pd::Node> client(new maidsafe::pd::Node);
-//   for (auto &keys : all_keys)  // PMIDs
-//     client->key_manager()->AddKey(keys.second.identity,
-//                                   keys.second.keys.public_key,
-//                                   keys.second.validation_token);
-//   auto test_path = maidsafe::test::CreateTestPath("MaidSafe_Test_KeysHelper");
-//   if (client->Start(*test_path, peer_endpoints) != 0) {
-//     LOG(kError) << "StoreKeys - Could not start anon client to store keys.";
-//     return false;
-//   }
-//   pcs::RemoteChunkStore rcs(client->chunk_store(), client->chunk_manager(),
-//                             client->chunk_action_authority());
-//   std::atomic<size_t> stored_keys(0);
-//   auto cb = [&stored_keys](bool result) {
-//     if (result)
-//       ++stored_keys;
-//   };
-//   auto store_keys = [&rcs, &cb](const maidsafe::Fob &fob, const maidsafe::Fob &owner) {
-//     maidsafe::pd::ChunkName name;
-//     maidsafe::NonEmptyString content;
-//     maidsafe::pd::CreateSignaturePacket(fob, name, content);
-//     rcs.Store(name, content, cb, owner);
-//   };
-//   maidsafe::AsioService asio_service(10);
-//   asio_service.Start();
-//   for (auto &fobs : all_keys)  // store all MAIDs first
-//     asio_service.service().post([&store_keys, fobs]() { store_keys(fobs.first, fobs.first); });  // NOLINT
-//   maidsafe::Sleep(boost::posix_time::millisec(500));
-//   rcs.WaitForCompletion();
-//   for (auto &fobs : all_keys)  // then store all PMIDs
-//     asio_service.service().post([&store_keys, fobs]() { store_keys(fobs.second, fobs.first); });  // NOLINT
-//   maidsafe::Sleep(boost::posix_time::millisec(500));
-//   rcs.WaitForCompletion();
-//   asio_service.Stop();
-//   client->Stop();
-//   if (stored_keys < 2 * all_keys.size()) {
-//     LOG(kError) << "StoreKeys - Could only store " << stored_keys << " out of "
-//                 << (2 * all_keys.size()) << " keys.";
-//     return false;
-//   }
-//   LOG(kSuccess) << "StoreKeys - Stored all " << stored_keys << " keys.";
-//   return true;
-// }
+bool StoreKeys(const PmidVector& all_pmids,
+               const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
+  maidsafe::passport::Anmaid client_anmaid;
+  maidsafe::passport::Maid client_maid(client_anmaid);
+  maidsafe::passport::Pmid client_pmid(client_maid);
+  maidsafe::routing::Routing client_routing(&client_pmid);
+  maidsafe::routing::Functors functors;
+  client_routing.Join(functors, peer_endpoints);
+  maidsafe::nfs::ClientMaidNfs client_nfs(client_routing, client_maid);
+
+  std::atomic<size_t> error_stored_keys(0);
+  // on_error call back
+  maidsafe::nfs::OnError cb = [&error_stored_keys](maidsafe::nfs::Message /*result*/) {
+      ++error_stored_keys;
+  };
+  auto store_keys = [&client_nfs, &cb](const maidsafe::passport::Pmid& pmid,
+                                       const maidsafe::passport::Pmid& /*owner*/) {
+    maidsafe::passport::PublicPmid p_pmid(pmid);
+    client_nfs.Put(p_pmid, cb);
+  };
+  maidsafe::AsioService asio_service(10);
+  asio_service.Start();
+  for (auto &pmid : all_pmids)  // store all PMIDs
+    asio_service.service().post([&store_keys, pmid, all_pmids]() { store_keys(pmid, all_pmids[0]); });  // NOLINT
+
+  // shall eventually use future
+  maidsafe::Sleep(boost::posix_time::millisec(10000));
+
+  asio_service.Stop();
+
+  if (error_stored_keys > 0) {
+    LOG(kError) << "StoreKeys - Could only store " << error_stored_keys << " out of "
+                << all_pmids.size() << " keys.";
+    return false;
+  }
+  LOG(kSuccess) << "StoreKeys - Stored all " << all_pmids.size() << " keys.";
+  return true;
+}
 
 // bool VerifyKeys(const FobPairVector& all_keys,
 //                 const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
@@ -754,14 +749,14 @@ int main(int argc, char* argv[]) {
       }
     }
 
-//     if (do_store) {
-//       if (StoreKeys(all_pmids, peer_endpoints)) {
-//         std::cout << "Stored keys on network." << std::endl;
-//       } else {
-//         std::cout << "Could not store all keys on network." << std::endl;
-//         result = -1;
-//       }
-//     }
+    if (do_store) {
+      if (StoreKeys(all_pmids, peer_endpoints)) {
+        std::cout << "Stored keys on network." << std::endl;
+      } else {
+        std::cout << "Could not store all keys on network." << std::endl;
+        result = -1;
+      }
+    }
 
 //     if (do_verify) {
 //       if (VerifyKeys(all_pmids, peer_endpoints)) {
