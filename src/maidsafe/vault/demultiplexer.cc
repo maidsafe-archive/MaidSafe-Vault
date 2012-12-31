@@ -17,6 +17,7 @@
 #include "maidsafe/passport/types.h"
 
 #include "maidsafe/nfs/message.h"
+#include "maidsafe/detail/data_type_values.h"
 #include "maidsafe/vault/maid_account_holder.h"
 #include "maidsafe/vault/meta_data_manager.h"
 #include "maidsafe/vault/pmid_account_holder.h"
@@ -27,61 +28,70 @@ namespace maidsafe {
 namespace vault {
 
 namespace {
-  template <typename PersonaType>
-  void HandleDataType(nfs::Message& message,
-                                     const routing::ReplyFunctor& reply_functor,
-                                     PersonaType& persona_type) {
-//static assert
-   switch (message.data_type()) {
-     case passport::Smid::name_type::tag_type::kEnumValue:
-       persona_type.template HandleMessage<passport::Smid>(message, reply_functor);
-       break;
-      case passport::Tmid::name_type::tag_type::kEnumValue:
-        persona_type.template HandleMessage<passport::Tmid>(message, reply_functor);
-        break;
-      case passport::Mid::name_type::tag_type::kEnumValue:
-        persona_type.template HandleMessage<passport::Mid>(message, reply_functor);
-        break;
-      case passport::PublicAnmaid::name_type::tag_type::kEnumValue:
-        persona_type.template HandleMessage<passport::PublicAnmaid>(message, reply_functor);
-        break;
-      case passport::PublicAnmid::name_type::tag_type::kEnumValue:
-        persona_type.template HandleMessage<passport::PublicAnmid>(message, reply_functor);
-        break;
-      case passport::PublicAnmpid::name_type::tag_type::kEnumValue:
-        persona_type.template HandleMessage<passport::PublicAnmpid>(message, reply_functor);
-        break;
-      case passport::PublicAnsmid::name_type::tag_type::kEnumValue:
-        persona_type.template HandleMessage<passport::PublicAnsmid>(message, reply_functor);
-        break;
-      case passport::PublicAntmid::name_type::tag_type::kEnumValue:
-        persona_type.template HandleMessage<passport::PublicAntmid>(message, reply_functor);
-        break;
-      case passport::PublicMaid::name_type::tag_type::kEnumValue:
-        persona_type.template HandleMessage<passport::PublicMaid>(message, reply_functor);
-        break;
-      case passport::PublicMpid::name_type::tag_type::kEnumValue:
-        persona_type.template HandleMessage<passport::PublicMpid>(message, reply_functor);
-        break;
-      case passport::PublicPmid::name_type::tag_type::kEnumValue:
-        persona_type.template HandleMessage<passport::PublicAnsmid>(message, reply_functor);
-        break;
-     default :
-       LOG(kError) << "Unhandled data type";
-   }
+template <typename PersonaType>
+void HandleDataType(nfs::Message& message,
+                    const routing::ReplyFunctor& reply_functor,
+                    PersonaType& persona_type) {
+  //static assert
+  switch (message.data_type()) {
+    case static_cast<int>(DataTagValue::kSmidValue):
+      persona_type.template HandleMessage<passport::Smid>(message, reply_functor);
+      break;
+    case static_cast<int>(DataTagValue::kTmidValue):
+      persona_type.template HandleMessage<passport::Tmid>(message, reply_functor);
+      break;
+    case static_cast<int>(DataTagValue::kMidValue):
+      persona_type.template HandleMessage<passport::Mid>(message, reply_functor);
+      break;
+    case static_cast<int>(DataTagValue::kAnMaidValue):
+      persona_type.template HandleMessage<passport::PublicAnmaid>(message, reply_functor);
+      break;
+    case static_cast<int>(DataTagValue::kAnMidValue):
+      persona_type.template HandleMessage<passport::PublicAnmid>(message, reply_functor);
+      break;
+    case static_cast<int>(DataTagValue::kAnPmidValue):
+      persona_type.template HandleMessage<passport::PublicAnmpid>(message, reply_functor);
+      break;
+    case static_cast<int>(DataTagValue::kAnSmidValue):
+      persona_type.template HandleMessage<passport::PublicAnsmid>(message, reply_functor);
+      break;
+    case static_cast<int>(DataTagValue::kAnTmidValue):
+      persona_type.template HandleMessage<passport::PublicAntmid>(message, reply_functor);
+      break;
+    case static_cast<int>(DataTagValue::kMaidValue):
+      persona_type.template HandleMessage<passport::PublicMaid>(message, reply_functor);
+      break;
+    case static_cast<int>(DataTagValue::kMpidValue):
+      persona_type.template HandleMessage<passport::PublicMpid>(message, reply_functor);
+      break;
+    case static_cast<int>(DataTagValue::kAnSmidValue):
+      persona_type.template HandleMessage<passport::PublicAnsmid>(message, reply_functor);
+      break;
+    case static_cast<int>(DataTagValue::kImmutabableDataValue):
+      persona_type.template HandleMessage<ImmutableData>(message, reply_functor);
+      break;
+    case static_cast<int>(DataTagValue::kMutabableDataValue):
+      persona_type.template HandleMessage<MutableData>(message, reply_functor);
+      break;
+    // case static_cast<int>(DataTagValue::kMessageDataValue):
+    //   persona_type.template HandlePostMessage(message, reply_functor);
+    //   break;
+    default :
+      LOG(kError) << "Unhandled data type";
   }
+}
 
-  }
+}  // unnamed namespace
 
 Demultiplexer::Demultiplexer(MaidAccountHolder& maid_account_holder,
                              MetadataManager& metadata_manager,
                              PmidAccountHolder& pmid_account_holder,
                              DataHolder& data_holder)
-    : maid_account_holder_(maid_account_holder),
-      metadata_manager_(metadata_manager),
-      pmid_account_holder_(pmid_account_holder),
-      data_holder_(data_holder) {
-}
+  : maid_account_holder_(maid_account_holder),
+    metadata_manager_(metadata_manager),
+    pmid_account_holder_(pmid_account_holder),
+    data_holder_(data_holder) {
+    }
 
 void Demultiplexer::HandleMessage(const std::string& serialised_message,
                                   const routing::ReplyFunctor& reply_functor) {
@@ -99,7 +109,7 @@ void Demultiplexer::HandleMessagePersonaType(nfs::Message& message,
   switch (message.destination_persona_type()) {
     case nfs::PersonaType::kMaidAccountHolder :
       HandleDataType<MaidAccountHolder>(message, reply_functor, maid_account_holder_);
-    break;
+      break;
     case nfs::PersonaType::kMetaDataManager :
       HandleDataType<MetadataManager>(message, reply_functor, metadata_manager_);
       break;
