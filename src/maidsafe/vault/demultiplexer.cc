@@ -49,9 +49,6 @@ void HandleDataType(nfs::Message& message,
     case detail::DataTagValue::kAnmidValue:
       persona_type.template HandleMessage<passport::PublicAnmid>(message, reply_functor);
       break;
-    case detail::DataTagValue::kAnpmidValue:
-      persona_type.template HandleMessage<passport::PublicAnmpid>(message, reply_functor);
-      break;
     case detail::DataTagValue::kAnsmidValue:
       persona_type.template HandleMessage<passport::PublicAnsmid>(message, reply_functor);
       break;
