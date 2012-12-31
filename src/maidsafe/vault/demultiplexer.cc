@@ -34,43 +34,40 @@ void HandleDataType(nfs::Message& message,
                     PersonaType& persona_type) {
   //static assert
   switch (message.data_type()) {
-    case static_cast<int>(DataTagValue::kSmidValue):
+    case detail::DataTagValue::kSmidValue:
       persona_type.template HandleMessage<passport::Smid>(message, reply_functor);
       break;
-    case static_cast<int>(DataTagValue::kTmidValue):
+    case detail::DataTagValue::kTmidValue:
       persona_type.template HandleMessage<passport::Tmid>(message, reply_functor);
       break;
-    case static_cast<int>(DataTagValue::kMidValue):
+    case detail::DataTagValue::kMidValue:
       persona_type.template HandleMessage<passport::Mid>(message, reply_functor);
       break;
-    case static_cast<int>(DataTagValue::kAnMaidValue):
+    case detail::DataTagValue::kAnmaidValue:
       persona_type.template HandleMessage<passport::PublicAnmaid>(message, reply_functor);
       break;
-    case static_cast<int>(DataTagValue::kAnMidValue):
+    case detail::DataTagValue::kAnmidValue:
       persona_type.template HandleMessage<passport::PublicAnmid>(message, reply_functor);
       break;
-    case static_cast<int>(DataTagValue::kAnPmidValue):
+    case detail::DataTagValue::kAnpmidValue:
       persona_type.template HandleMessage<passport::PublicAnmpid>(message, reply_functor);
       break;
-    case static_cast<int>(DataTagValue::kAnSmidValue):
+    case detail::DataTagValue::kAnsmidValue:
       persona_type.template HandleMessage<passport::PublicAnsmid>(message, reply_functor);
       break;
-    case static_cast<int>(DataTagValue::kAnTmidValue):
+    case detail::DataTagValue::kAntmidValue:
       persona_type.template HandleMessage<passport::PublicAntmid>(message, reply_functor);
       break;
-    case static_cast<int>(DataTagValue::kMaidValue):
+    case detail::DataTagValue::kMaidValue:
       persona_type.template HandleMessage<passport::PublicMaid>(message, reply_functor);
       break;
-    case static_cast<int>(DataTagValue::kMpidValue):
+    case detail::DataTagValue::kMpidValue:
       persona_type.template HandleMessage<passport::PublicMpid>(message, reply_functor);
       break;
-    case static_cast<int>(DataTagValue::kAnSmidValue):
-      persona_type.template HandleMessage<passport::PublicAnsmid>(message, reply_functor);
-      break;
-    case static_cast<int>(DataTagValue::kImmutabableDataValue):
+    case detail::DataTagValue::kImmutableDataValue:
       persona_type.template HandleMessage<ImmutableData>(message, reply_functor);
       break;
-    case static_cast<int>(DataTagValue::kMutabableDataValue):
+    case detail::DataTagValue::kMutableDataValue:
       persona_type.template HandleMessage<MutableData>(message, reply_functor);
       break;
     // case static_cast<int>(DataTagValue::kMessageDataValue):
