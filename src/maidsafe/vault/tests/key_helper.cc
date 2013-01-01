@@ -48,9 +48,9 @@
 #include "maidsafe/routing/node_info.h"
 #include "maidsafe/routing/routing_api.h"
 
+
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
-namespace asymm = maidsafe::rsa;
 
 typedef std::vector<maidsafe::passport::Pmid> PmidVector;
 
@@ -275,7 +275,7 @@ bool VerifyKeys(const PmidVector& all_pmids,
   maidsafe::routing::Routing client_routing(&client_pmid);
   maidsafe::routing::Functors functors;
   client_routing.Join(functors, peer_endpoints);
-  maidsafe::nfs::KeyGetterNfs key_getter_nfs(client_routing, client_pmid);
+  maidsafe::nfs::KeyGetterNfs key_getter_nfs(client_routing);
 
   std::atomic<size_t> verified_keys(0);
   auto verify_keys = [&key_getter_nfs, &verified_keys](const maidsafe::passport::Pmid& pmid) {
@@ -287,7 +287,7 @@ bool VerifyKeys(const PmidVector& all_pmids,
                   << maidsafe::HexSubstr(pmid.name().data.string());
       return;
     }
-    if (!maidsafe::rsa::MatchingKeys(fetched_key.public_key(), pmid.public_key())) {
+    if (!maidsafe::asymm::MatchingKeys(fetched_key.public_key(), pmid.public_key())) {
       LOG(kError) << "VerifyKeys - fetched key mis-match "
                   << maidsafe::HexSubstr(pmid.name().data.string());
       return;
