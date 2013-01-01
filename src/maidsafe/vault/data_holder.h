@@ -115,10 +115,10 @@ void DataHolder::HandleGetMessage(const nfs::Message& message,
   try {
     NonEmptyString result(
         cache_data_store_.Get(typename Data::name_type(
-                                  Identity(message.destination().string()))));
+                                  Identity(message.destination()->node_id.string()))));
     std::string string(result.string());
     reply_functor(string);
-  } catch (std::exception& ex) {
+  } catch (std::exception& /*ex*/) {
     //reply_functor(nfs::ReturnCode(-1).Serialise().data.string()); // non 0 plus optional message
     reply_functor("");
     // error code // at the moment this will go back to client
@@ -130,10 +130,11 @@ template <typename Data>
 void DataHolder::HandlePutMessage(const nfs::Message& message,
                                   const routing::ReplyFunctor& reply_functor) {
   try {
-    permanent_data_store_.Store(typename Data::name_type(Identity(message.destination().string())),
-                                    message.content());
+    permanent_data_store_.Store(typename Data::name_type(
+                                    Identity(message.destination()->node_id.string())),
+                                message.content());
     reply_functor(nfs::ReturnCode(0).Serialise().data.string());
-  } catch (std::exception& ex) {
+  } catch (std::exception& /*ex*/) {
     reply_functor(nfs::ReturnCode(-1).Serialise().data.string()); // non 0 plus optional message
     // error code // at the moment this will go back to client
     // in production it will g back to

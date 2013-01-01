@@ -115,17 +115,14 @@ class DataHolderTest : public testing::Test {
 //}
 
 TEST_F(DataHolderTest, BEH_HandlePutMessage) {
-  NodeId destination(NodeId::kRandomId), source(NodeId::kRandomId);
+  nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
+                                                           NodeId(NodeId::kRandomId)));
+  nfs::Message::Source source(nfs::Message::Peer(nfs::PersonaType::kPmidAccountHolder,
+                                                 NodeId(NodeId::kRandomId)));
   NonEmptyString content(RandomAlphaNumericString(256));
   asymm::Signature signature;
-  nfs::Message message(nfs::ActionType::kPut,
-                       nfs::PersonaType::kDataHolder,
-                       nfs::PersonaType::kPmidAccountHolder,
-                       detail::DataTagValue::kAnmaidValue,
-                       destination,
-                       source,
-                       content,
-                       signature);
+  nfs::Message message(nfs::ActionType::kPut, destination, source,
+                       detail::DataTagValue::kAnmaidValue, content, signature);
 
   std::string retrieved;
   this->HandlePutMessage<passport::Anmaid>(message, [&](const std::string&) {});
@@ -137,17 +134,14 @@ TEST_F(DataHolderTest, BEH_HandlePutMessage) {
 }
 
 TEST_F(DataHolderTest, BEH_HandleGetMessage) {
-  const NodeId destination(NodeId::kRandomId), source(NodeId::kRandomId);
+  nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
+                                                           NodeId(NodeId::kRandomId)));
+  nfs::Message::Source source(nfs::Message::Peer(nfs::PersonaType::kPmidAccountHolder,
+                                                 NodeId(NodeId::kRandomId)));
   const NonEmptyString content(RandomAlphaNumericString(256));
   const asymm::Signature signature;
-  nfs::Message message(nfs::ActionType::kPut,
-                       nfs::PersonaType::kDataHolder,
-                       nfs::PersonaType::kPmidAccountHolder,
-                       detail::DataTagValue::kAnmaidValue,
-                       destination,
-                       source,
-                       content,
-                       signature);
+  nfs::Message message(nfs::ActionType::kGet, destination, source,
+                       detail::DataTagValue::kAnmaidValue, content, signature);
   std::string retrieved;
   this->HandleGetMessage<passport::Anmaid>(message,
                                            [&](const std::string& data) {
