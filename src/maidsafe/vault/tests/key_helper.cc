@@ -13,19 +13,17 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <iostream>  // NOLINT
-#include <fstream>  // NOLINT
-#include <future>  // NOLINT
+#include <fstream>
+#include <future>
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <vector>
 
-#include "boost/filesystem.hpp"
-#include "boost/asio.hpp"
+#include "boost/filesystem/operations.hpp"
+#include "boost/filesystem/path.hpp"
 #include "boost/program_options.hpp"
-#include "boost/thread/condition_variable.hpp"
-#include "boost/thread/mutex.hpp"
-#include "boost/tokenizer.hpp"
 
 #include "maidsafe/common/asio_service.h"
 #include "maidsafe/common/config.h"
@@ -36,14 +34,8 @@
 
 #include "maidsafe/passport/types.h"
 
-// #include "maidsafe/private/chunk_actions/chunk_action_authority.h"
-// #include "maidsafe/private/chunk_actions/chunk_pb.h"
-// #include "maidsafe/private/chunk_actions/chunk_type.h"
-// #include "maidsafe/private/chunk_store/buffered_chunk_store.h"
-// #include "maidsafe/private/chunk_store/remote_chunk_store.h"
-// #include "maidsafe/private/lifestuff_manager/client_controller.h"
-
 #include "maidsafe/nfs/nfs.h"
+#include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/routing/node_info.h"
 #include "maidsafe/routing/routing_api.h"
@@ -52,17 +44,20 @@
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
+namespace {
+
 typedef std::vector<maidsafe::passport::Pmid> PmidVector;
 
 const std::string kHelperVersion = "MaidSafe Vault KeysHelper " + maidsafe::kApplicationVersion;
 
-boost::mutex mutex_;
-boost::condition_variable cond_var_;
+std::mutex mutex_;
+std::condition_variable cond_var_;
 bool ctrlc_pressed(false);
 
-void ctrlc_handler(int /*signum*/) {
+void CtrlCHandler(int /*signum*/) {
+typedef std::vector<maidsafe::passport::Pmid> PmidVector;
 //   LOG(kInfo) << " Signal received: " << signum;
-  boost::mutex::scoped_lock lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
   ctrlc_pressed = true;
   cond_var_.notify_one();
 }
@@ -169,14 +164,19 @@ bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {
 
   LOG(kInfo) << "Creating zero state routing network...";
   bootstrap_data.info1 = make_node_info(all_pmids[0]);
-  bootstrap_data.routing1.reset(new maidsafe::routing::Routing(/*
-      std::shared_ptr<maidsafe::passport::Pmid>(new maidsafe::passport::Pmid*/&(all_pmids[0])));
+  bootstrap_data.routing1.reset(new maidsafe::routing::Routing(&(all_pmids[0])));
   bootstrap_data.info2 = make_node_info(all_pmids[1]);
-  bootstrap_data.routing2.reset(new maidsafe::routing::Routing(/*
-      std::shared_ptr<maidsafe::passport::Pmid>(new maidsafe::passport::Pmid*/&(all_pmids[1])));
+  bootstrap_data.routing2.reset(new maidsafe::routing::Routing(&(all_pmids[1])));
 
+  maidsafe::nfs::PublicKeyGetter public_key_getter(*bootstrap_data.routing1, all_pmids);
 
   maidsafe::routing::Functors functors1, functors2;
+  functors1.request_public_key = functors2.request_public_key =
+      [&public_key_getter](maidsafe::NodeId node_id,
+                            const maidsafe::routing::GivePublicKeyFunctor& give_key) {
+          public_key_getter.HandleGetKey(node_id, give_key);
+      };
+
   boost::asio::ip::udp::endpoint endpoint1(maidsafe::GetLocalIp(),
                                            maidsafe::test::GetRandomPort());
   boost::asio::ip::udp::endpoint endpoint2(maidsafe::GetLocalIp(),
@@ -203,8 +203,8 @@ bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {
     std::cout << "Bootstrap nodes are running, press Ctrl+C to terminate." << std::endl
               << "Endpoints: " << endpoint1 << " and "
               << endpoint2 << std::endl;
-    signal(SIGINT, ctrlc_handler);
-    boost::mutex::scoped_lock lock(mutex_);
+    signal(SIGINT, CtrlCHandler);
+    std::unique_lock<std::mutex> lock(mutex_);
     cond_var_.wait(lock, [] { return ctrlc_pressed; });  // NOLINT
     std::cout << "Shutting down bootstrap nodes." << std::endl;
     return true;
@@ -346,7 +346,7 @@ bool VerifyKeys(const PmidVector& all_pmids,
 //                              client2->chunk_action_authority());
 //
 //   std::cout << "Going to store chunks, press Ctrl+C to stop." << std::endl;
-//   signal(SIGINT, ctrlc_handler);
+//   signal(SIGINT, CtrlCHandler);
 //   size_t num_chunks(0), num_store(0), num_get(0);
 //   std::vector<std::pair<maidsafe::pd::ChunkName, maidsafe::NonEmptyString>> chunks;
 //   boost::mutex::scoped_lock lock(mutex_);
@@ -597,6 +597,8 @@ bool VerifyKeys(const PmidVector& all_pmids,
 //             << " operations for " << kNumChunks << " chunks successfully." << std::endl;
 //   return succeeded_ops == total_ops;
 // }
+
+}  // unnamed namespace
 
 int main(int argc, char* argv[]) {
   maidsafe::log::Logging::Instance().Initialise(argc, argv);
