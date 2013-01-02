@@ -66,10 +66,10 @@ bool DataHolder::IsInCache(nfs::Message& message) {
   try {
     if (is_long_term_cacheable<Data>::value) {
       result = cache_data_store_.Get<Data>(
-                   Data::name_type(Identity(message.destination().string())));
+                   Data::name_type(message.destination()));
     } else {
       result = mem_only_cache_.Get<Data>(
-                   Data::name_type(Identity(message.destination().string())));
+                   Data::name_type(message.destination()));
     }
     return (!result.string().empty());
   }
@@ -84,11 +84,11 @@ void DataHolder::StoreInCache(const nfs::Message& message) {
   try {
     if (is_long_term_cacheable<Data>::value) {
       cache_data_store_.Store<Data>(
-          Data::name_type(Identity(message.destination().string())),
+          Data::name_type(message.destination()),
                           message.content());
     } else {
       mem_only_cache_.Store<Data>(
-          Data::name_type(Identity(message.destination().string())),
+          Data::name_type(message.destination()),
                           message.content());
     }
   }
