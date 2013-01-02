@@ -30,9 +30,10 @@ class DataHolderTest : public testing::Test {
  public:
   DataHolderTest()
     : vault_root_directory_([]()->boost::filesystem::path {
-                   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
-                   return (*test_path / RandomAlphaNumericString(8));
-                   boost::filesystem::path vault_root_dir(*test_path / RandomAlphaNumericString(8));
+                   maidsafe::test::TestPath test_path(
+                      maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
+                   boost::filesystem::path vault_root_dir(
+                      *test_path / RandomAlphaNumericString(8));
                    assert(boost::filesystem::create_directories(vault_root_dir));
                    return vault_root_dir;
                  } ()),
