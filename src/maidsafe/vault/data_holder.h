@@ -21,6 +21,7 @@
 #include "boost/filesystem/path.hpp"
 #include <boost/graph/graph_concepts.hpp>
 
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/rsa.h"
 
 #include "maidsafe/routing/api_config.h"
@@ -91,6 +92,7 @@ class DataHolder {
 template <typename Data>
 void DataHolder::HandleMessage(const nfs::Message& message,
                                const routing::ReplyFunctor& reply_functor) {
+  LOG(kInfo) << "received message at Data holder";
   switch (message.action_type()) {
     case nfs::ActionType::kGet :
       HandleGetMessage<Data>(message, reply_functor);

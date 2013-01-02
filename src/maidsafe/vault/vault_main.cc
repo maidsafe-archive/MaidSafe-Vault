@@ -30,6 +30,7 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
+#include "maidsafe/routing/parameters.h"
 #include "maidsafe/routing/return_codes.h"
 
 #include "maidsafe/lifestuff_manager/vault_controller.h"
@@ -186,6 +187,7 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
 
   // Starting Vault
   std::cout << "Starting vault..." << std::endl;
+  maidsafe::routing::Parameters::append_local_live_port_endpoint = true;  // To allow bootstrapping off vaults on local machine
   auto vault = std::make_shared<maidsafe::vault::Vault>(
       *pmid,
       chunk_path,

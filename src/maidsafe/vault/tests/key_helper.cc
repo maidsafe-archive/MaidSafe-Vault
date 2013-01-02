@@ -38,6 +38,7 @@
 #include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/routing/node_info.h"
+#include "maidsafe/routing/parameters.h"
 #include "maidsafe/routing/routing_api.h"
 
 
@@ -235,7 +236,19 @@ bool StoreKeys(const PmidVector& all_pmids,
   maidsafe::passport::Pmid client_pmid(client_maid);
   maidsafe::routing::Routing client_routing(nullptr);
   maidsafe::routing::Functors functors;
+
+  std::promise<bool> join_promise;
+  auto join_future = join_promise.get_future();
+  functors.network_status = [&join_promise](int result) { join_promise.set_value(result == 0);};
+  maidsafe::routing::Parameters::append_local_live_port_endpoint = true;  // To allow bootstrapping off vaults on local machine
   client_routing.Join(functors, peer_endpoints);
+
+  if (!join_future.get()) {
+    LOG(kError) << "Failed to bootstrap anonymous node for storing keys";
+    return false;
+  }
+  LOG(kInfo) << "Bootstrapped anonymous node to store keys";
+
   maidsafe::nfs::ClientMaidNfs client_nfs(client_routing, client_maid);
 
   std::atomic<size_t> error_stored_keys(0);
@@ -274,7 +287,21 @@ bool VerifyKeys(const PmidVector& all_pmids,
   maidsafe::passport::Pmid client_pmid(client_maid);
   maidsafe::routing::Routing client_routing(&client_pmid);
   maidsafe::routing::Functors functors;
+
+  std::promise<bool> join_promise;
+  auto join_future = join_promise.get_future();
+  functors.network_status = [&join_promise](int result) { join_promise.set_value(result == 0);};
+  maidsafe::routing::Parameters::append_local_live_port_endpoint = true;  // To allow bootstrapping off vaults on local machine
+
   client_routing.Join(functors, peer_endpoints);
+
+  if (!join_future.get()) {
+    LOG(kError) << "Failed to bootstrap anonymous node to verify keys";
+    return false;
+  }
+
+  LOG(kInfo) << "Bootstrapped anonymous node to verify keys";
+
   maidsafe::nfs::KeyGetterNfs key_getter_nfs(client_routing);
 
   std::atomic<size_t> verified_keys(0);

@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "maidsafe/common/log.h"
 #include "maidsafe/passport/types.h"
 
 #include "maidsafe/nfs/message.h"
@@ -91,7 +92,7 @@ void Demultiplexer::HandleMessage(const std::string& serialised_message,
                                   const routing::ReplyFunctor& reply_functor) {
   try {
     nfs::Message message((nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
-
+    LOG(kInfo) << "received message !!";
     HandleMessagePersonaType(message, reply_functor);
   } catch(const std::exception& ex) {
     LOG(kError) << "Caught exception on handling new message : " << ex.what();
