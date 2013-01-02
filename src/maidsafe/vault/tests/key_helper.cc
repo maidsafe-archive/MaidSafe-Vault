@@ -233,7 +233,7 @@ bool StoreKeys(const PmidVector& all_pmids,
   maidsafe::passport::Anmaid client_anmaid;
   maidsafe::passport::Maid client_maid(client_anmaid);
   maidsafe::passport::Pmid client_pmid(client_maid);
-  maidsafe::routing::Routing client_routing(&client_pmid);
+  maidsafe::routing::Routing client_routing(nullptr);
   maidsafe::routing::Functors functors;
   client_routing.Join(functors, peer_endpoints);
   maidsafe::nfs::ClientMaidNfs client_nfs(client_routing, client_maid);

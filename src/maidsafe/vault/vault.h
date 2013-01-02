@@ -39,9 +39,11 @@ namespace vault {
 
 class Vault {
  public:
-  Vault(passport::Pmid pmid,
-        boost::filesystem::path vault_root_dir,
+  // pmids_from_file must only be non-empty for zero-state network.
+  Vault(const passport::Pmid& pmid,
+        const boost::filesystem::path& vault_root_dir,
         std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint,
+        const std::vector<passport::Pmid>& pmids_from_file = std::vector<passport::Pmid>(),
         const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints =
             std::vector<boost::asio::ip::udp::endpoint>());
   ~Vault();  // must issue StopSending() to all identity objects (MM etc.)

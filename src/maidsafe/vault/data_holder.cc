@@ -46,8 +46,8 @@ DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
       persona_dir_permanent_(persona_dir_ / "permanent"),
       persona_dir_cache_(persona_dir_ / "cache"),
       permanent_data_store_(perm_usage, permanent_size_, nullptr, persona_dir_permanent_),
-      cache_data_store_(cache_usage, cache_size_, nullptr, persona_dir_cache_),
-      mem_only_cache_(mem_only_cache_usage, DiskUsage(0), nullptr, persona_dir_cache_),  //FIXME
+      cache_data_store_(cache_usage, DiskUsage(cache_size_ / 2), nullptr, persona_dir_cache_),  //FIXME - DiskUsage
+      mem_only_cache_(mem_only_cache_usage, DiskUsage(cache_size_ / 2), nullptr, persona_dir_cache_),  //FIXME - DiskUsage should be 0
       stop_sending_(false) {
   boost::filesystem::exists(persona_dir_) ||
       boost::filesystem::create_directory(persona_dir_);

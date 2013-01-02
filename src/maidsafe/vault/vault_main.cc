@@ -158,11 +158,12 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
   // Load keys
   fs::path keys_path(GetPathFromProgramOption("keys_path", &variables_map, false, false));
   std::unique_ptr<maidsafe::passport::Pmid> pmid;
+  std::vector<maidsafe::passport::Pmid> all_pmids;
   if (fs::exists(keys_path, error_code)) {
-    auto all_keys = maidsafe::passport::detail::ReadPmidList(keys_path);
+    all_pmids = maidsafe::passport::detail::ReadPmidList(keys_path);
     pmid = std::unique_ptr<maidsafe::passport::Pmid>(
-                  new maidsafe::passport::Pmid(all_keys[identity_index]));
-    LOG(kInfo) << "Added " << all_keys.size() << " keys."
+                  new maidsafe::passport::Pmid(all_pmids[identity_index]));
+    LOG(kInfo) << "Added " << all_pmids.size() << " keys."
                << " Using identity #" << identity_index << " from keys file.";
   }
 
@@ -186,13 +187,16 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
   // Starting Vault
   std::cout << "Starting vault..." << std::endl;
   auto vault = std::make_shared<maidsafe::vault::Vault>(
-      *pmid, chunk_path,
+      *pmid,
+      chunk_path,
       [&vault_controller](const boost::asio::ip::udp::endpoint &endpoint) {
             std::pair<std::string, uint16_t> endpoint_pair;
             endpoint_pair.first = endpoint.address().to_string();
             endpoint_pair.second = endpoint.port();
             vault_controller.SendEndpointToLifeStuffManager(endpoint_pair);
-          });
+          },
+      all_pmids,
+      peer_endpoints);
 
   int result(maidsafe::routing::ReturnCode::kSuccess);
   if (using_vault_controller)
@@ -257,8 +261,7 @@ int OptionMenu(int argc, char* argv[]) {
                                                   allow_unregistered().run(), variables_map);
     po::notify(variables_map);
 
-    if (variables_map.count("help") ||
-        !(variables_map.count("start") || variables_map.count("stop"))) {
+    if (variables_map.count("help")) {
       std::cout << cmdline_options << std::endl;
       return 0;
     }
