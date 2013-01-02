@@ -25,21 +25,17 @@ namespace maidsafe {
 namespace vault {
 
 namespace test {
+namespace {
+maidsafe::test::TestPath test_path(
+                      maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
+}
 
 class DataHolderTest : public testing::Test {
  public:
   DataHolderTest()
-    : vault_root_directory_([]()->boost::filesystem::path {
-                   maidsafe::test::TestPath test_path(
-                      maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
-                   boost::filesystem::path vault_root_dir(
-                      *test_path / RandomAlphaNumericString(8));
-                   assert(boost::filesystem::create_directories(vault_root_dir));
-                   return vault_root_dir;
-                 } ()),
+    : vault_root_directory_(*test_path),
         data_holder_(vault_root_directory_) {
   }
-//  std::shared_ptr<routing::Routing> routing_;
  protected:
   template <typename Data>
   void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
