@@ -56,44 +56,6 @@ DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
 
 DataHolder::~DataHolder() {}
 
-// Cache Handling
-template<typename Data>
-bool DataHolder::IsInCache(nfs::Message& message) {
-  NonEmptyString result;
-  try {
-    if (is_long_term_cacheable<Data>::value) {
-      result = cache_data_store_.Get<Data>(
-                   Data::name_type(message.destination()));
-    } else {
-      result = mem_only_cache_.Get<Data>(
-                   Data::name_type(message.destination()));
-    }
-    return (!result.string().empty());
-  }
-  catch (std::exception& error) {
-    LOG(kInfo) << "data not cached on this node " << error.what();
-    return false;
-  }
-}
-
-template<typename Data>
-void DataHolder::StoreInCache(const nfs::Message& message) {
-  try {
-    if (is_long_term_cacheable<Data>::value) {
-      cache_data_store_.Store<Data>(
-          Data::name_type(message.destination()),
-                          message.content());
-    } else {
-      mem_only_cache_.Store<Data>(
-          Data::name_type(message.destination()),
-                          message.content());
-    }
-  }
-  catch (std::exception& error) {
-    LOG(kInfo) << "data could not be cached on this node " << error.what();
-  }
-}
-
 void DataHolder::ResumeSending() {
   stop_sending_ = false;
 }
