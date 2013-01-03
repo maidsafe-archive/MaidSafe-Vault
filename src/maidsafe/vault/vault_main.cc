@@ -17,15 +17,11 @@
 #include <memory>
 #include <string>
 #include <mutex>
-//#include <thread>
-//
+
 #include "boost/filesystem/convenience.hpp"
 #include "boost/filesystem/path.hpp"
 #include "boost/program_options.hpp"
-//#include "boost/thread/condition_variable.hpp"
-//#include "boost/thread/mutex.hpp"
-//#include "boost/tokenizer.hpp"
-//
+
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"

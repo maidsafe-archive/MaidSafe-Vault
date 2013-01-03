@@ -327,7 +327,7 @@ bool VerifyKeys(const PmidVector& all_pmids,
 
   std::vector<std::future<void>> futures;
   for (auto &pmid : all_pmids) {
-    futures.push_back(std::async(std::launch::async, verify_keys, pmid));
+    futures.push_back(std::async(verify_keys, pmid));
   }
   for (auto &future : futures)
     future.get();
