@@ -34,6 +34,8 @@
 
 #include "maidsafe/passport/types.h"
 
+#include "maidsafe/data_types/immutable_data.h"
+
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/public_key_getter.h"
 
@@ -341,60 +343,75 @@ bool VerifyKeys(const PmidVector& all_pmids,
   return true;
 }
 
-// bool StoreChunks(const FobPairVector& all_keys,
-//                  const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
-//   BOOST_ASSERT(all_keys.size() >= 4);
-//
-//   std::unique_ptr<maidsafe::pd::Node> client(new maidsafe::pd::Node);
-//   auto test_path = maidsafe::test::CreateTestPath("MaidSafe_Test_KeysHelper");
-//   {
-//     maidsafe::Fob fob(all_keys[2].first);  // MAID of ID #2
-//     client->set_account_name(maidsafe::pd::AccountName(fob.identity.string()));
-//     client->set_fob(fob);
-//     if (client->Start(*test_path, peer_endpoints) != 0) {
-//       std::cout << "Failed to start client to store chunks." << std::endl;
-//       return false;
-//     }
-//   }
-//   pcs::RemoteChunkStore rcs(client->chunk_store(), client->chunk_manager(),
-//                             client->chunk_action_authority());
-//
-//   std::unique_ptr<maidsafe::pd::Node> client2(new maidsafe::pd::Node);
-//   auto test_path2 = maidsafe::test::CreateTestPath("MaidSafe_Test_KeysHelper");
-//   {
-//     maidsafe::Fob fob(all_keys[3].first);  // MAID of ID #3
-//     client2->set_account_name(fob.identity);
-//     client2->set_fob(fob);
-//     if (client2->Start(*test_path2, peer_endpoints) != 0) {
-//       std::cout << "Failed to start client to retrieve chunks." << std::endl;
-//       return false;
-//     }
-//   }
-//   pcs::RemoteChunkStore rcs2(client2->chunk_store(), client2->chunk_manager(),
-//                              client2->chunk_action_authority());
-//
-//   std::cout << "Going to store chunks, press Ctrl+C to stop." << std::endl;
-//   signal(SIGINT, CtrlCHandler);
-//   size_t num_chunks(0), num_store(0), num_get(0);
-//   std::vector<std::pair<maidsafe::pd::ChunkName, maidsafe::NonEmptyString>> chunks;
-//   boost::mutex::scoped_lock lock(mutex_);
-//   while(!cond_var_.timed_wait(lock, bptime::seconds(3), [] { return ctrlc_pressed; })) {  // NOLINT
-//     maidsafe::NonEmptyString content(maidsafe::RandomString(1 << 18));  // 256 KB
-//     maidsafe::pd::ChunkName name(
-//         maidsafe::crypto::Hash<maidsafe::crypto::SHA512>(content).string());
-//     bool success(false);
-//     ++num_chunks;
-//     std::cout << "Storing chunk " << maidsafe::pd::DebugChunkName(name) << " ..." << std::endl;
-//     if (rcs.Store(name, content, [&success](bool result) { success = result; }, maidsafe::Fob()) &&
-//         rcs.WaitForCompletion() &&
-//         success) {
-//       std::cout << "Stored chunk " << maidsafe::pd::DebugChunkName(name) << std::endl;
-//       ++num_store;
-//       chunks.push_back(std::make_pair(name, content));
-//     } else {
-//       std::cout << "Failed to store chunk " << maidsafe::pd::DebugChunkName(name) << std::endl;
-//     }
-//   }
+bool StoreChunks(const PmidVector& all_pmids,
+                 const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
+  BOOST_ASSERT(all_pmids.size() >= 4);
+
+  maidsafe::passport::Anmaid client_anmaid_1, client_anmaid_2;
+  maidsafe::passport::Maid client_maid_1(client_anmaid_1), client_maid_2(client_anmaid_2);
+  maidsafe::passport::Pmid client_pmid_1(client_maid_1), client_pmid_2(client_maid_2);
+  maidsafe::routing::Routing client_routing_1(nullptr), client_routing_2(nullptr);
+  maidsafe::routing::Functors functors_1, functors_2;
+
+  if (!RoutingJoin(client_routing_1, functors_1, peer_endpoints).get()) {
+    LOG(kError) << "Failed to bootstrap anonymous node for storing chunks";
+    return false;
+  }
+  if (!RoutingJoin(client_routing_2, functors_2, peer_endpoints).get()) {
+    LOG(kError) << "Failed to bootstrap anonymous node for fetching chunks";
+    return false;
+  }
+  LOG(kInfo) << "Bootstrapped anonymous node to store and fetch chunks";
+  maidsafe::nfs::ClientMaidNfs client_nfs_1(client_routing_1, client_maid_1),
+                               client_nfs_2(client_routing_2, client_maid_2);
+
+  std::cout << "Going to store chunks, press Ctrl+C to stop." << std::endl;
+  signal(SIGINT, CtrlCHandler);
+  size_t num_chunks(0), num_store(0), num_get(0);
+  std::vector<std::pair<maidsafe::ImmutableData::name_type, maidsafe::NonEmptyString>> chunks;
+
+  std::unique_lock<std::mutex> lock(mutex_);
+  while(!cond_var_.wait_for(lock, std::chrono::seconds(3), [] { return ctrlc_pressed; })) {  // NOLINT
+    maidsafe::NonEmptyString content(maidsafe::RandomString(1 << 18));  // 256 KB
+    maidsafe::ImmutableData::name_type name(
+        maidsafe::crypto::Hash<maidsafe::crypto::SHA512>(content));
+    bool success(true);
+    // on_error call back
+    maidsafe::nfs::OnError cb = [&success](maidsafe::nfs::Message /*result*/) {
+        success = false;
+    };
+    ++num_chunks;
+    std::cout << "Storing chunk " << maidsafe::HexSubstr(name.data.string())
+              << " ..." << std::endl;
+    maidsafe::ImmutableData chunk_data(name, content);
+    client_nfs_1.Put(chunk_data, cb);
+    // shall eventually use future
+    maidsafe::Sleep(boost::posix_time::millisec(3000));
+
+    if (success) {
+      std::cout << "Stored chunk " << maidsafe::HexSubstr(name.data.string()) << std::endl;
+      ++num_store;
+      chunks.push_back(std::make_pair(name, content));
+    } else {
+      std::cout << "Failed to store chunk " << maidsafe::HexSubstr(name.data.string())
+                << std::endl;
+    }
+    // The current client is anonymous, which incurs a 10 mins faded out for stored data
+    std::cout << "Going to retrieve the stored chunk" << std::endl;
+    auto fetched_data = client_nfs_2.Get<maidsafe::ImmutableData>(name);
+    maidsafe::ImmutableData fetched_chunk = fetched_data.get();
+    if (fetched_chunk.name().data.IsInitialised()) {
+      if ((fetched_chunk.name() == chunk_data.name()) &&
+          (fetched_chunk.data() == chunk_data.data()))
+        ++num_get;
+      else
+        LOG(kError) << "Retrieved chunk mismatch with origin : "
+                    << maidsafe::HexSubstr(name.data.string());
+    } else {
+      LOG(kError) << "Failed to retrieve chunk : " << maidsafe::HexSubstr(name.data.string());
+    }
+  }
+  // TODO(team): following test code works only with named client
 //   std::cout << "Stored " << num_store << " out of " << num_chunks << " chunks." << std::endl;
 //
 //   ctrlc_pressed = false;  // reset
@@ -418,11 +435,9 @@ bool VerifyKeys(const PmidVector& all_pmids,
 //   }
 //   std::cout << "Stored " << num_store << " and retrieved " << num_get << " out of " << num_chunks
 //             << " chunks." << std::endl;
-//
-//   client->Stop();
-//   client2->Stop();
-//   return num_get == num_chunks;
-// }
+
+  return num_get == num_chunks;
+}
 
 // bool ExtendedTest(const size_t& chunk_set_count,
 //                   const FobPairVector& all_keys,
@@ -779,15 +794,15 @@ int main(int argc, char* argv[]) {
       }
     }
 
-//     if (do_test) {
-//       if (all_pmids.size() < 4) {
-//         std::cout << "Need to have at least 4 keys to run test." << std::endl;
-//         result = -1;
-//       } else if (!StoreChunks(all_pmids, peer_endpoints)) {
-//         std::cout << "Could not store and retrieve test chunks." << std::endl;
-//         result = -1;
-//       }
-//     }
+    if (do_test) {
+      if (all_pmids.size() < 4) {
+        std::cout << "Need to have at least 4 keys to run test." << std::endl;
+        result = -1;
+      } else if (!StoreChunks(all_pmids, peer_endpoints)) {
+        std::cout << "Could not store and retrieve test chunks." << std::endl;
+        result = -1;
+      }
+    }
 
 //     if (do_extended) {
 //       if (all_pmids.size() < 5) {

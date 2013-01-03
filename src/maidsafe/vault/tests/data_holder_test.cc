@@ -26,14 +26,15 @@ namespace vault {
 
 namespace test {
 namespace {
-maidsafe::test::TestPath test_path(
-                      maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
+//maidsafe::test::TestPath test_path(
+//                      maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
+  boost::filesystem::path test_path("/tmp/MaidSafe_Test_Vault");
 }
 
 class DataHolderTest : public testing::Test {
  public:
   DataHolderTest()
-    : vault_root_directory_(*test_path),
+    : vault_root_directory_(test_path),
         data_holder_(vault_root_directory_) {
   }
  protected:
@@ -47,68 +48,38 @@ class DataHolderTest : public testing::Test {
     data_holder_.HandleGetMessage<Data>(message, reply_functor);
   }
 
+  template <typename Data>
+  void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
+    data_holder_.HandleDeleteMessage<Data>(message, reply_functor);
+  }
+
+  template <typename Data>
+  bool IsInCach(const nfs::Message& message) {
+    return data_holder_.IsInCache<Data>(message);
+  }
+
+  template <typename Data>
+  void StoreInCach(const nfs::Message& message) {
+    data_holder_.StoreInCache<Data>(message);
+  }
+
   boost::filesystem::path vault_root_directory_;
   DataHolder data_holder_;
 };
 
-//TEST(DataHolderTest, BEH_HandleMessage) {
-//  NodeId destination(NodeId::kRandomId), source(NodeId::kRandomId);
-//  NonEmptyString content(RandomAlphaNumericString(256));
-//  asymm::Signature signature;
-//  nfs::Message message(nfs::ActionType::kPut,
-//                       nfs::PersonaType::kDataHolder,
-//                       nfs::PersonaType::kPmidAccountHolder,
-//                       0,
-//                       destination,
-//                       source,
-//                       content,
-//                       signature);
-//  this->data_holder_->HandleMessage(message, [&](const std::string&) {});
-//  nfs::Message message(nfs::ActionType::kGet,
-//                       nfs::PersonaType::kDataHolder,
-//                       nfs::PersonaType::kPmidAccountHolder,
-//                       0,
-//                       destination,
-//                       source,
-//                       content,
-//                       signature);
-//  std::string retrieved;
-//  this->data_holder_->HandleMessage(message,
-//                                    [retrieved](const std::string& string) {
-//                                      retrieved = string;
-//                                    });
-//EXPECT_EQ(retrieved, content);
-//}
-
-//TEST(DataHolderTest, BEH_HaveCache) {
-//  NodeId destination(this->routing_->kNodeId()), source(NodeId::kRandomId);
-//  NonEmptyString content(RandomAlphaNumericString(256));
-//  asymm::Signature signature;
-//  nfs::Message message(nfs::ActionType::kPut,
-//                       nfs::PersonaType::kDataHolder,
-//                       nfs::PersonaType::kPmidAccountHolder,
-//                       0,
-//                       destination,
-//                       source,
-//                       content,
-//                       signature);
-//  EXPECT_TRUE(this->data_holder_->HaveCache(message));
-//}
-
-//TEST(DataHolderTest, BEH_StoreCache) {
-//}
-
-//TEST(DataHolderTest, BEH_StopSending) {
-//  data_holder_->StopSending();
-//  EXPECT_TRUE(data_holder_->stop_sending_, true);
-//}
-
-//TEST(DataHolderTest, BEH_ResumeSending) {
-//  data_holder_->StopSending();
-//  EXPECT_TRUE(data_holder_->stop_sending_, true);
-//  data_holder_->ResumeSending();
-//  EXPECT_TRUE(data_holder_->stop_sending_, false);
-//}
+TEST_F(DataHolderTest, BEH_StoreInCache) {
+  nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
+                                                           NodeId(NodeId::kRandomId)));
+  nfs::Message::Source source(nfs::Message::Peer(nfs::PersonaType::kPmidAccountHolder,
+                                                 NodeId(NodeId::kRandomId)));
+  NonEmptyString content(RandomAlphaNumericString(256));
+  asymm::Signature signature;
+  nfs::Message message(nfs::ActionType::kPut, destination, source,
+                       detail::DataTagValue::kAnmaidValue, content, signature);
+  EXPECT_FALSE(this->IsInCach<passport::Anmaid>(message));
+  this->StoreInCach<passport::Anmaid>(message);
+  EXPECT_TRUE(this->IsInCach<passport::Anmaid>(message));
+}
 
 TEST_F(DataHolderTest, BEH_HandlePutMessage) {
   nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
@@ -126,7 +97,7 @@ TEST_F(DataHolderTest, BEH_HandlePutMessage) {
                                            [&](const std::string& data) {
                                              retrieved = data;
                                            });
-  EXPECT_EQ(message.content().string(), retrieved);
+  EXPECT_NE(retrieved.find(content.string()), -1);
 }
 
 TEST_F(DataHolderTest, BEH_HandleGetMessage) {
@@ -143,42 +114,40 @@ TEST_F(DataHolderTest, BEH_HandleGetMessage) {
                                            [&](const std::string& data) {
                                              retrieved = data;
                                            });
-  EXPECT_TRUE(retrieved.empty());
+  EXPECT_EQ(retrieved, nfs::ReturnCode(-1).Serialise()->string());
 }
 
 //TEST(DataHolderTest, BEH_HandlePostMessage) {
 //}
 
-//TEST(DataHolderTest, BEH_HandleDeleteMessage) {
-//  NodeId destination(this->routing_->kNodeId()), source(NodeId::kRandomId);
-//  NonEmptyString content(RandomAlphaNumericString(256));
-//  asymm::Signature signature;
-//  nfs::Message message(nfs::ActionType::kPut,
-//                       nfs::PersonaType::kDataHolder,
-//                       nfs::PersonaType::kPmidAccountHolder,
-//                       0,
-//                       destination,
-//                       source,
-//                       content,
-//                       signature);
-//  std::string retrieved;
-//  data_holder_->HandlePutMessage(message,
-//                                 [&](const std::string&) {});
-//  this->data_holder_->handleGetMessage(message,
-//                                       [&](const std::string& data) {
-//                                         retrieved = data;
-//                                       });
-//  EXPECT_TRUE(!retrieved.empty());
-//  this->data_holder_->handleDeleteMessage(message,
-//                                       [&](const std::string& data) {
-//                                         retrieved = data;
-//                                       });
-//  this->data_holder_->handleGetMessage(message,
-//                                       [&](const std::string& data) {
-//                                         retrieved = data;
-//                                       });
-//  EXPECT_TRUE(retrieved.empty());
-//}
+TEST_F(DataHolderTest, BEH_HandleDeleteMessage) {
+  nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
+                                                           NodeId(NodeId::kRandomId)));
+  nfs::Message::Source source(nfs::Message::Peer(nfs::PersonaType::kPmidAccountHolder,
+                                                 NodeId(NodeId::kRandomId)));
+  NonEmptyString content(RandomAlphaNumericString(256));
+  asymm::Signature signature;
+  nfs::Message message(nfs::ActionType::kPut, destination, source,
+                       detail::DataTagValue::kAnmaidValue, content, signature);
+
+  std::string retrieved;
+  this->HandlePutMessage<passport::Anmaid>(message, [&](const std::string&) {});
+  this->HandleGetMessage<passport::Anmaid>(message,
+                                           [&](const std::string& data) {
+                                             retrieved = data;
+                                           });
+  EXPECT_NE(retrieved.find(content.string()), -1);
+  this->HandleDeleteMessage<passport::Anmaid>(message,
+                                              [&](const std::string& data) {
+                                                retrieved = data;
+                                              });
+  EXPECT_EQ(retrieved, nfs::ReturnCode(0).Serialise()->string());
+  this->HandleGetMessage<passport::Anmaid>(message,
+                                           [&](const std::string& data) {
+                                             retrieved = data;
+                                           });
+  EXPECT_EQ(retrieved, nfs::ReturnCode(-1).Serialise()->string());
+}
 
 }  // namespace test
 

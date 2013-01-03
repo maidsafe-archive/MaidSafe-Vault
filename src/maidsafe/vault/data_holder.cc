@@ -26,7 +26,7 @@ MemoryUsage mem_usage = MemoryUsage(524288000);  // 500Mb
 MemoryUsage perm_usage = MemoryUsage(mem_usage / 5);
 MemoryUsage cache_usage = MemoryUsage(mem_usage * 2 / 5);
 MemoryUsage mem_only_cache_usage = MemoryUsage(mem_usage * 2 / 5);
-//boost::filesystem::space_info space = boost::filesystem::space("vault_root_dir");  // FIXME
+//boost::filesystem::space_info space = boost::filesystem::space("/tmp/vault_root_dir\\");  // FIXME
 
 //DiskUsage disk_total = DiskUsage(space.available);
 //DiskUsage permanent_size = DiskUsage(disk_total * 0.8);
@@ -55,44 +55,6 @@ DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
 }
 
 DataHolder::~DataHolder() {}
-
-// Cache Handling
-template<typename Data>
-bool DataHolder::IsInCache(nfs::Message& message) {
-  NonEmptyString result;
-  try {
-    if (is_long_term_cacheable<Data>::value) {
-      result = cache_data_store_.Get<Data>(
-                   Data::name_type(message.destination()));
-    } else {
-      result = mem_only_cache_.Get<Data>(
-                   Data::name_type(message.destination()));
-    }
-    return (!result.string().empty());
-  }
-  catch (std::exception& error) {
-    LOG(kInfo) << "data not cached on this node " << error.what();
-    return false;
-  }
-}
-
-template<typename Data>
-void DataHolder::StoreInCache(const nfs::Message& message) {
-  try {
-    if (is_long_term_cacheable<Data>::value) {
-      cache_data_store_.Store<Data>(
-          Data::name_type(message.destination()),
-                          message.content());
-    } else {
-      mem_only_cache_.Store<Data>(
-          Data::name_type(message.destination()),
-                          message.content());
-    }
-  }
-  catch (std::exception& error) {
-    LOG(kInfo) << "data could not be cached on this node " << error.what();
-  }
-}
 
 void DataHolder::ResumeSending() {
   stop_sending_ = false;
