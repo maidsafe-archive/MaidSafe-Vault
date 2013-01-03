@@ -11,12 +11,9 @@
 
 #include "maidsafe/vault/data_holder.h"
 
-#include "boost/filesystem/path.hpp"
-#include "boost/filesystem.hpp"
-
 #include "maidsafe/common/utils.h"
-#include "maidsafe/nfs/message.h"
 #include "maidsafe/common/types.h"
+
 #include "maidsafe/data_store/data_buffer.h"
 
 namespace maidsafe {
@@ -60,7 +57,7 @@ DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
 DataHolder::~DataHolder() {}
 
 // Cache Handling
-template <typename Data>
+template<typename Data>
 bool DataHolder::IsInCache(nfs::Message& message) {
   NonEmptyString result;
   try {
@@ -79,7 +76,7 @@ bool DataHolder::IsInCache(nfs::Message& message) {
   }
 }
 
-template <typename Data>
+template<typename Data>
 void DataHolder::StoreInCache(const nfs::Message& message) {
   try {
     if (is_long_term_cacheable<Data>::value) {

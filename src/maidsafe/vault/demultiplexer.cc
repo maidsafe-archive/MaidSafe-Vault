@@ -129,7 +129,7 @@ bool Demultiplexer::IsInCache(std::string& serialised_message) {
   try {
     nfs::Message message((nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
     if (HandleHaveCache(message)) {
-      serialised_message = message.Serialise().data.string();
+      serialised_message = message.Serialise()->string();
       return true;
     }
   } catch(const std::exception& ex) {
