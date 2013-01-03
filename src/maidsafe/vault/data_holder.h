@@ -51,7 +51,7 @@ class DataHolder {
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  bool IsInCache(nfs::Message& message);
+  bool IsInCache(const nfs::Message& message);
   template<typename Data>
   void StoreInCache(const nfs::Message& message);
   void StopSending();
@@ -113,8 +113,7 @@ void DataHolder::HandleGetMessage(nfs::Message message,
                             Identity(message.destination()->node_id.string()))));
     reply_functor(message.Serialise()->string());
   } catch (std::exception& /*ex*/) {
-    //reply_functor(nfs::ReturnCode(-1).Serialise()->string()); // non 0 plus optional message
-    reply_functor("");
+    reply_functor(nfs::ReturnCode(-1).Serialise()->string()); // non 0 plus optional message
     // error code // at the moment this will go back to client
     // in production it will g back to
   }
@@ -141,14 +140,16 @@ void DataHolder::HandlePostMessage(const nfs::Message& /*message*/,
 }
 
 template<typename Data>
-void DataHolder::HandleDeleteMessage(const nfs::Message& /*message*/,
-                                     const routing::ReplyFunctor& /*reply_functor*/) {
-//  permenent_data_store.Delete(message.data_type() message.content().name());
+void DataHolder::HandleDeleteMessage(const nfs::Message& message,
+                                     const routing::ReplyFunctor& reply_functor) {
+  permanent_data_store_.Delete(typename Data::name_type(
+      Identity(message.destination()->node_id.string())));
+  reply_functor(nfs::ReturnCode(0).Serialise()->string());
 }
 
 // Cache Handling
 template<typename Data>
-bool DataHolder::IsInCache(nfs::Message& message) {
+bool DataHolder::IsInCache(const nfs::Message& message) {
   NonEmptyString result;
   try {
     if (is_long_term_cacheable<Data>::value) {
