@@ -229,6 +229,21 @@ bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {
   return true;
 }
 
+std::future<bool> RoutingJoin(maidsafe::routing::Routing& routing,
+                              maidsafe::routing::Functors& functors,
+                              const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
+  std::once_flag join_promise_set_flag;
+  std::promise<bool> join_promise;
+  functors.network_status = [&join_promise_set_flag, &join_promise](int result) {
+      std::call_once(join_promise_set_flag,
+                     [&join_promise, &result] { join_promise.set_value(result == 0); });  // NOLINT (Fraser)
+  };
+  // To allow bootstrapping off vaults on local machine
+  maidsafe::routing::Parameters::append_local_live_port_endpoint = true;
+  routing.Join(functors, peer_endpoints);
+  return std::move(join_promise.get_future());
+}
+
 bool StoreKeys(const PmidVector& all_pmids,
                const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
   maidsafe::passport::Anmaid client_anmaid;
@@ -237,13 +252,7 @@ bool StoreKeys(const PmidVector& all_pmids,
   maidsafe::routing::Routing client_routing(nullptr);
   maidsafe::routing::Functors functors;
 
-  std::promise<bool> join_promise;
-  auto join_future = join_promise.get_future();
-  functors.network_status = [&join_promise](int result) { join_promise.set_value(result == 0);};
-  maidsafe::routing::Parameters::append_local_live_port_endpoint = true;  // To allow bootstrapping off vaults on local machine
-  client_routing.Join(functors, peer_endpoints);
-
-  if (!join_future.get()) {
+  if (!RoutingJoin(client_routing, functors, peer_endpoints).get()) {
     LOG(kError) << "Failed to bootstrap anonymous node for storing keys";
     return false;
   }
@@ -285,21 +294,13 @@ bool VerifyKeys(const PmidVector& all_pmids,
   maidsafe::passport::Anmaid client_anmaid;
   maidsafe::passport::Maid client_maid(client_anmaid);
   maidsafe::passport::Pmid client_pmid(client_maid);
-  maidsafe::routing::Routing client_routing(&client_pmid);
+  maidsafe::routing::Routing client_routing(nullptr);
   maidsafe::routing::Functors functors;
 
-  std::promise<bool> join_promise;
-  auto join_future = join_promise.get_future();
-  functors.network_status = [&join_promise](int result) { join_promise.set_value(result == 0);};
-  maidsafe::routing::Parameters::append_local_live_port_endpoint = true;  // To allow bootstrapping off vaults on local machine
-
-  client_routing.Join(functors, peer_endpoints);
-
-  if (!join_future.get()) {
+  if (!RoutingJoin(client_routing, functors, peer_endpoints).get()) {
     LOG(kError) << "Failed to bootstrap anonymous node to verify keys";
     return false;
   }
-
   LOG(kInfo) << "Bootstrapped anonymous node to verify keys";
 
   maidsafe::nfs::KeyGetterNfs key_getter_nfs(client_routing);
