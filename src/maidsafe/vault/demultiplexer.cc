@@ -35,18 +35,6 @@ void HandleDataType(nfs::Message& message,
                     PersonaType& persona_type) {
   //static assert
   switch (message.data_type()) {
-    case detail::DataTagValue::kSmidValue:
-      persona_type.template HandleMessage<passport::Smid>(message, reply_functor);
-      break;
-    case detail::DataTagValue::kTmidValue:
-      persona_type.template HandleMessage<passport::Tmid>(message, reply_functor);
-      break;
-    case detail::DataTagValue::kMidValue:
-      persona_type.template HandleMessage<passport::Mid>(message, reply_functor);
-      break;
-    case detail::DataTagValue::kAnmaidValue:
-      persona_type.template HandleMessage<passport::PublicAnmaid>(message, reply_functor);
-      break;
     case detail::DataTagValue::kAnmidValue:
       persona_type.template HandleMessage<passport::PublicAnmid>(message, reply_functor);
       break;
@@ -56,8 +44,26 @@ void HandleDataType(nfs::Message& message,
     case detail::DataTagValue::kAntmidValue:
       persona_type.template HandleMessage<passport::PublicAntmid>(message, reply_functor);
       break;
+    case detail::DataTagValue::kAnmaidValue:
+      persona_type.template HandleMessage<passport::PublicAnmaid>(message, reply_functor);
+      break;
     case detail::DataTagValue::kMaidValue:
       persona_type.template HandleMessage<passport::PublicMaid>(message, reply_functor);
+      break;
+    case detail::DataTagValue::kPmidValue:
+      persona_type.template HandleMessage<passport::PublicPmid>(message, reply_functor);
+      break;
+    case detail::DataTagValue::kMidValue:
+      persona_type.template HandleMessage<passport::Mid>(message, reply_functor);
+      break;
+    case detail::DataTagValue::kSmidValue:
+      persona_type.template HandleMessage<passport::Smid>(message, reply_functor);
+      break;
+    case detail::DataTagValue::kTmidValue:
+      persona_type.template HandleMessage<passport::Tmid>(message, reply_functor);
+      break;
+    case detail::DataTagValue::kAnmpidValue:
+      persona_type.template HandleMessage<passport::PublicAnmpid>(message, reply_functor);
       break;
     case detail::DataTagValue::kMpidValue:
       persona_type.template HandleMessage<passport::PublicMpid>(message, reply_functor);
