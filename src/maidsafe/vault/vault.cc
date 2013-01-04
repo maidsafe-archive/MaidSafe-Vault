@@ -27,7 +27,7 @@ Vault::Vault(const passport::Pmid& pmid,
       on_new_bootstrap_endpoint_(on_new_bootstrap_endpoint),
       routing_(new routing::Routing(&pmid)),
       public_key_getter_(*routing_, pmids_from_file),
-      maid_account_holder_(*routing_, vault_root_dir),
+      maid_account_holder_(pmid, *routing_, vault_root_dir),
       meta_data_manager_(*routing_, vault_root_dir),
       pmid_account_holder_(*routing_, vault_root_dir),
       data_holder_(vault_root_dir),
@@ -127,15 +127,25 @@ void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
     }
   });
 
-  //public_key_getter_.HandleGetKey(node_id, get_key_future);
+  //public_key_getter_.HandleGetKey(node_id, get_key_future); // FIXME Brian
 }
 
 void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes) {
-  asio_service_.service().post([=]() { DoOnCloseNodeReplaced(new_close_nodes); });  // NOLINT (Prakash)
-}
+  asio_service_.service().post([=]() {
+      maid_account_holder_.OnCloseNodeReplaced(new_close_nodes);
+  });
 
-void Vault::DoOnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
-//  pass it to all persona
+  asio_service_.service().post([=]() {
+      meta_data_manager_.OnCloseNodeReplaced(new_close_nodes);
+  });
+
+  asio_service_.service().post([=]() {
+      pmid_account_holder_.OnCloseNodeReplaced(new_close_nodes);
+  });
+
+  asio_service_.service().post([=]() {
+      data_holder_.OnCloseNodeReplaced(new_close_nodes);
+  });
 }
 
 void Vault::OnStoreCacheData(const std::string& message) {  // post/move data?

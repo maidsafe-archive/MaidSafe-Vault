@@ -156,7 +156,7 @@ void DoOnPublicKeyRequested(const maidsafe::NodeId& node_id,
       LOG(kError) << "Failed to get key for " << DebugId(node_id) << " : " << ex.what();
     }
   });
-  //public_key_getter_.HandleGetKey(node_id, get_key_future);
+  //public_key_getter_.HandleGetKey(node_id, get_key_future);  // FIXME Brian
 }
 
 bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {

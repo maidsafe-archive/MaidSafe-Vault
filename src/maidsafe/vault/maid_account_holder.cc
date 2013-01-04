@@ -15,12 +15,17 @@ namespace maidsafe {
 
 namespace vault {
 
-MaidAccountHolder::MaidAccountHolder(routing::Routing& /*routing*/,
+MaidAccountHolder::MaidAccountHolder(const passport::Pmid& /*pmid*/,
+                                     routing::Routing& /*routing*/,
                                      const boost::filesystem::path& vault_root_dir)
   : kRootDir_(vault_root_dir / "maids")/*,
     nfs_(routing, pmid)*/ {}
 
 MaidAccountHolder::~MaidAccountHolder() {
+}
+
+void MaidAccountHolder::OnCloseNodeReplaced(
+    const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
 }
 
 }  // namespace vault

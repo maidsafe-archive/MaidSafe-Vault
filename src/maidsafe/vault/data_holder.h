@@ -54,6 +54,9 @@ class DataHolder {
   bool IsInCache(const nfs::Message& message);
   template<typename Data>
   void StoreInCache(const nfs::Message& message);
+
+  void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
+
   void StopSending();
   void ResumeSending();
 

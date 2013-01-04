@@ -19,6 +19,9 @@ MetadataManager::MetadataManager(routing::Routing& /*routing*/,
                                  const boost::filesystem::path /*vault_root_dir*/) {
 }
 
+void MetadataManager::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

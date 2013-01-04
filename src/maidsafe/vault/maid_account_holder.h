@@ -30,10 +30,12 @@ namespace vault {
 
 class MaidAccountHolder {
  public:
-  MaidAccountHolder(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
+  MaidAccountHolder(const passport::Pmid& pmid, routing::Routing& routing,
+                    const boost::filesystem::path& vault_root_dir);
   ~MaidAccountHolder();
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
 
  private:
   template<typename Data>
