@@ -58,7 +58,6 @@ std::condition_variable cond_var_;
 bool ctrlc_pressed(false);
 
 void CtrlCHandler(int /*signum*/) {
-typedef std::vector<maidsafe::passport::Pmid> PmidVector;
 //   LOG(kInfo) << " Signal received: " << signum;
   std::lock_guard<std::mutex> lock(mutex_);
   ctrlc_pressed = true;
@@ -255,7 +254,7 @@ bool StoreKeys(const PmidVector& all_pmids,
   maidsafe::routing::Functors functors;
 
   if (!RoutingJoin(client_routing, functors, peer_endpoints).get()) {
-    LOG(kError) << "Failed to bootstrap anonymous node for storing keys";
+    std::cout << "Failed to bootstrap anonymous node for storing keys";
     return false;
   }
   LOG(kInfo) << "Bootstrapped anonymous node to store keys";
@@ -283,7 +282,7 @@ bool StoreKeys(const PmidVector& all_pmids,
   asio_service.Stop();
 
   if (error_stored_keys > 0) {
-    LOG(kError) << "StoreKeys - Could only store " << error_stored_keys << " out of "
+    std::cout << "StoreKeys - Could not store " << error_stored_keys << " out of "
                 << all_pmids.size() << " keys.";
     return false;
   }
@@ -311,14 +310,20 @@ bool VerifyKeys(const PmidVector& all_pmids,
   auto verify_keys = [&key_getter_nfs, &verified_keys](const maidsafe::passport::Pmid& pmid) {
     maidsafe::passport::PublicPmid p_pmid(pmid);
     auto fetched_data = key_getter_nfs.Get<maidsafe::passport::PublicPmid>(p_pmid.name());
-    maidsafe::passport::PublicPmid fetched_key = fetched_data.get();
-    if (!fetched_key.name().data.IsInitialised()) {
+    try {
+      maidsafe::passport::PublicPmid fetched_key = fetched_data.get();
+      if (!fetched_key.name().data.IsInitialised()) {
+        LOG(kError) << "VerifyKeys - Failed to retrieve "
+                    << maidsafe::HexSubstr(pmid.name().data.string());
+        return;
+      }
+      if (!maidsafe::asymm::MatchingKeys(fetched_key.public_key(), pmid.public_key())) {
+        LOG(kError) << "VerifyKeys - fetched key mis-match "
+                    << maidsafe::HexSubstr(pmid.name().data.string());
+        return;
+      }
+    } catch (...) {
       LOG(kError) << "VerifyKeys - Failed to retrieve "
-                  << maidsafe::HexSubstr(pmid.name().data.string());
-      return;
-    }
-    if (!maidsafe::asymm::MatchingKeys(fetched_key.public_key(), pmid.public_key())) {
-      LOG(kError) << "VerifyKeys - fetched key mis-match "
                   << maidsafe::HexSubstr(pmid.name().data.string());
       return;
     }
@@ -402,13 +407,17 @@ bool StoreChunks(const PmidVector& all_pmids,
     maidsafe::ImmutableData fetched_chunk = fetched_data.get();
     if (fetched_chunk.name().data.IsInitialised()) {
       if ((fetched_chunk.name() == chunk_data.name()) &&
-          (fetched_chunk.data() == chunk_data.data()))
+          (fetched_chunk.data() == chunk_data.data())) {
         ++num_get;
-      else
-        LOG(kError) << "Retrieved chunk mismatch with origin : "
-                    << maidsafe::HexSubstr(name.data.string());
+        std::cout << "Stored chunk : " << maidsafe::HexSubstr(name.data.string())
+                  << " successfully retrieved." << std::endl;
+      } else {
+        std::cout << "Retrieved chunk mismatch with origin : "
+                  << maidsafe::HexSubstr(name.data.string()) << std::endl;
+      }
     } else {
-      LOG(kError) << "Failed to retrieve chunk : " << maidsafe::HexSubstr(name.data.string());
+      std::cout << "Failed to retrieve chunk : " << maidsafe::HexSubstr(name.data.string())
+                << std::endl;
     }
   }
   // TODO(team): following test code works only with named client
