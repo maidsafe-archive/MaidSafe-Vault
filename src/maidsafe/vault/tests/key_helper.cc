@@ -175,9 +175,9 @@ bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {
 
   maidsafe::routing::Functors functors1, functors2;
   functors1.request_public_key = functors2.request_public_key =
-      [&public_key_getter](maidsafe::NodeId node_id,
-                            const maidsafe::routing::GivePublicKeyFunctor& give_key) {
-          public_key_getter.HandleGetKey(node_id, give_key);
+      [&public_key_getter](maidsafe::NodeId /*node_id*/,
+                            const maidsafe::routing::GivePublicKeyFunctor& /*give_key*/) {
+          //public_key_getter.HandleGetKey(node_id, give_key); //FIXME Prakash
       };
 
   boost::asio::ip::udp::endpoint endpoint1(maidsafe::GetLocalIp(),
