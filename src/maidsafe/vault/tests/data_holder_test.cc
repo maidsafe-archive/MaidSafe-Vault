@@ -26,11 +26,10 @@ namespace vault {
 
 namespace test {
 
-namespace {
-// maidsafe::test::TestPath test_path(
-//                       maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
-  boost::filesystem::path test_path("/tmp/MaidSafe_Test_Vault");
-}
+  namespace {
+    boost::filesystem::path test_path(boost::filesystem::temp_directory_path() / "Maidsafe_Test");
+    boost::filesystem::path::create_directories(test_path);
+  }
 
 template<class T>
 class DataHolderTest : public testing::Test {
@@ -38,6 +37,11 @@ class DataHolderTest : public testing::Test {
   DataHolderTest()
     : vault_root_directory_(test_path),
         data_holder_(vault_root_directory_) {
+
+  }
+
+  ~DataHolderTest() {
+    boost::filesystem::remove(vault_root_directory_);
   }
 
  protected:
