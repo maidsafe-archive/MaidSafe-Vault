@@ -144,6 +144,21 @@ fs::path GetPathFromProgramOption(const std::string &option_name,
   return option_path;
 }
 
+
+void DoOnPublicKeyRequested(const maidsafe::NodeId& node_id,
+                            const maidsafe::routing::GivePublicKeyFunctor& give_key) {
+  auto get_key_future([node_id, give_key] (std::future<maidsafe::passport::PublicPmid> key_future) {
+    try {
+      maidsafe::passport::PublicPmid key = key_future.get();
+      give_key(key.public_key());
+    }
+    catch(const std::exception& ex) {
+      LOG(kError) << "Failed to get key for " << DebugId(node_id) << " : " << ex.what();
+    }
+  });
+  //public_key_getter_.HandleGetKey(node_id, get_key_future);
+}
+
 bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {
   BOOST_ASSERT(all_pmids.size() >= 2);
 
@@ -174,9 +189,9 @@ bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {
 
   maidsafe::routing::Functors functors1, functors2;
   functors1.request_public_key = functors2.request_public_key =
-      [&public_key_getter](maidsafe::NodeId /*node_id*/,
-                            const maidsafe::routing::GivePublicKeyFunctor& /*give_key*/) {
-          //public_key_getter.HandleGetKey(node_id, give_key); //FIXME Prakash
+      [&public_key_getter](maidsafe::NodeId node_id,
+                             const maidsafe::routing::GivePublicKeyFunctor& give_key) {
+        DoOnPublicKeyRequested(node_id, give_key);
       };
 
   boost::asio::ip::udp::endpoint endpoint1(maidsafe::GetLocalIp(),
