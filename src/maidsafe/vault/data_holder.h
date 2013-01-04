@@ -61,9 +61,9 @@ class DataHolder {
 
  private:
   template<typename Data>
-  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  template<typename Data>
   void HandleGetMessage(nfs::Message message, const routing::ReplyFunctor& reply_functor);
+  template<typename Data>
+  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>

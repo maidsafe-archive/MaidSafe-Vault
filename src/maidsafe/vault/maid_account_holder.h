@@ -20,31 +20,35 @@
 
 #include "boost/filesystem/path.hpp"
 #include "maidsafe/routing/api_config.h"
-//#include "maidsafe/nfs/network_file_system.h"
-//#include "maidsafe/vault/disk_based_storage.h"
-#include "maidsafe/common/rsa.h"
+#include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/nfs.h"
+#include "maidsafe/vault/disk_based_storage.h"
+
 
 namespace maidsafe {
-
-namespace routing { class Routing; }
-namespace nfs { class Message; }
 
 namespace vault {
 
 class MaidAccountHolder {
  public:
-  MaidAccountHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
+  MaidAccountHolder(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
   ~MaidAccountHolder();
-  template <typename Data>
+  template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
 
  private:
-  void HandlePutMessage(const nfs::Message& message);
-  void HandleGetMessage(const nfs::Message& message);
-  void HandlePostMessage(const nfs::Message& message);
-  void HandleDeleteMessage(const nfs::Message& message);
-  boost::filesystem::path vault_root_dir_;
-//  routing::Routing& routing_;
+  template<typename Data>
+  void HandleGetMessage(nfs::Message message, const routing::ReplyFunctor& reply_functor);
+  template<typename Data>
+  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  template<typename Data>
+  void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  template<typename Data>
+  void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void SendSyncData();
+
+  const boost::filesystem::path kRootDir_;
+  nfs::MaidAccountHolderNfs nfs_;
 //  DiskBasedStorage disk_storage_;
 };
 
