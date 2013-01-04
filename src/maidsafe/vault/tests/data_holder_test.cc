@@ -1,14 +1,14 @@
- /*******************************************************************************
- *  Copyright 2012 maidsafe.net limited                                        *
- *                                                                             *
- *  The following source code is property of maidsafe.net limited and is not   *
- *  meant for external use.  The use of this code is governed by the licence   *
- *  file licence.txt found in the root of this directory and also on           *
- *  www.maidsafe.net.                                                          *
- *                                                                             *
- *  You are not free to copy, amend or otherwise use this source code without  *
- *  the explicit written permission of the board of directors of maidsafe.net. *
- ******************************************************************************/
+/*******************************************************************************
+*  Copyright 2012 maidsafe.net limited                                        *
+*                                                                             *
+*  The following source code is property of maidsafe.net limited and is not   *
+*  meant for external use.  The use of this code is governed by the licence   *
+*  file licence.txt found in the root of this directory and also on           *
+*  www.maidsafe.net.                                                          *
+*                                                                             *
+*  You are not free to copy, amend or otherwise use this source code without  *
+*  the explicit written permission of the board of directors of maidsafe.net. *
+******************************************************************************/
 
 #include <memory>
 #include "boost/filesystem/path.hpp"
@@ -25,49 +25,50 @@ namespace maidsafe {
 namespace vault {
 
 namespace test {
+
 namespace {
-//maidsafe::test::TestPath test_path(
-//                      maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
+// maidsafe::test::TestPath test_path(
+//                       maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
   boost::filesystem::path test_path("/tmp/MaidSafe_Test_Vault");
 }
 
+template<class T>
 class DataHolderTest : public testing::Test {
  public:
   DataHolderTest()
     : vault_root_directory_(test_path),
         data_holder_(vault_root_directory_) {
   }
+
  protected:
-  template <typename Data>
   void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
-    data_holder_.HandlePutMessage<Data>(message, reply_functor);
+    data_holder_.HandlePutMessage<T>(message, reply_functor);
   }
 
-  template <typename Data>
   void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
-    data_holder_.HandleGetMessage<Data>(message, reply_functor);
+    data_holder_.HandleGetMessage<T>(message, reply_functor);
   }
 
-  template <typename Data>
-  void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
-    data_holder_.HandleDeleteMessage<Data>(message, reply_functor);
+  void HandleDeleteMessage(const nfs::Message& message,
+                           const routing::ReplyFunctor& reply_functor) {
+    data_holder_.HandleDeleteMessage<T>(message, reply_functor);
   }
 
-  template <typename Data>
   bool IsInCach(const nfs::Message& message) {
-    return data_holder_.IsInCache<Data>(message);
+    return data_holder_.IsInCache<T>(message);
   }
 
-  template <typename Data>
   void StoreInCach(const nfs::Message& message) {
-    data_holder_.StoreInCache<Data>(message);
+    data_holder_.StoreInCache<T>(message);
   }
 
   boost::filesystem::path vault_root_directory_;
   DataHolder data_holder_;
 };
 
-TEST_F(DataHolderTest, BEH_StoreInCache) {
+TYPED_TEST_CASE_P(DataHolderTest);
+
+TYPED_TEST_P(DataHolderTest, BEH_StoreInCache) {
   nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
                                                            NodeId(NodeId::kRandomId)));
   nfs::Message::Source source(nfs::Message::Peer(nfs::PersonaType::kPmidAccountHolder,
@@ -76,12 +77,12 @@ TEST_F(DataHolderTest, BEH_StoreInCache) {
   asymm::Signature signature;
   nfs::Message message(nfs::ActionType::kPut, destination, source,
                        detail::DataTagValue::kAnmaidValue, content, signature);
-  EXPECT_FALSE(this->IsInCach<passport::Anmaid>(message));
-  this->StoreInCach<passport::Anmaid>(message);
-  EXPECT_TRUE(this->IsInCach<passport::Anmaid>(message));
+  EXPECT_FALSE(this->IsInCach(message));
+  this->StoreInCach(message);
+  EXPECT_TRUE(this->IsInCach(message));
 }
 
-TEST_F(DataHolderTest, BEH_HandlePutMessage) {
+TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
   nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
                                                            NodeId(NodeId::kRandomId)));
   nfs::Message::Source source(nfs::Message::Peer(nfs::PersonaType::kPmidAccountHolder,
@@ -92,15 +93,15 @@ TEST_F(DataHolderTest, BEH_HandlePutMessage) {
                        detail::DataTagValue::kAnmaidValue, content, signature);
 
   std::string retrieved;
-  this->HandlePutMessage<passport::Anmaid>(message, [&](const std::string&) {});
-  this->HandleGetMessage<passport::Anmaid>(message,
-                                           [&](const std::string& data) {
-                                             retrieved = data;
-                                           });
+  this->HandlePutMessage(message, [&](const std::string&) {});
+  this->HandleGetMessage(message,
+                         [&](const std::string& data) {
+                           retrieved = data;
+                         });
   EXPECT_NE(retrieved.find(content.string()), -1);
 }
 
-TEST_F(DataHolderTest, BEH_HandleGetMessage) {
+TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
   nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
                                                            NodeId(NodeId::kRandomId)));
   nfs::Message::Source source(nfs::Message::Peer(nfs::PersonaType::kPmidAccountHolder,
@@ -110,17 +111,14 @@ TEST_F(DataHolderTest, BEH_HandleGetMessage) {
   nfs::Message message(nfs::ActionType::kGet, destination, source,
                        detail::DataTagValue::kAnmaidValue, content, signature);
   std::string retrieved;
-  this->HandleGetMessage<passport::Anmaid>(message,
-                                           [&](const std::string& data) {
-                                             retrieved = data;
-                                           });
+  this->HandleGetMessage(message,
+                         [&](const std::string& data) {
+                           retrieved = data;
+                          });
   EXPECT_EQ(retrieved, nfs::ReturnCode(-1).Serialise()->string());
 }
 
-//TEST(DataHolderTest, BEH_HandlePostMessage) {
-//}
-
-TEST_F(DataHolderTest, BEH_HandleDeleteMessage) {
+TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
   nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
                                                            NodeId(NodeId::kRandomId)));
   nfs::Message::Source source(nfs::Message::Peer(nfs::PersonaType::kPmidAccountHolder,
@@ -131,23 +129,36 @@ TEST_F(DataHolderTest, BEH_HandleDeleteMessage) {
                        detail::DataTagValue::kAnmaidValue, content, signature);
 
   std::string retrieved;
-  this->HandlePutMessage<passport::Anmaid>(message, [&](const std::string&) {});
-  this->HandleGetMessage<passport::Anmaid>(message,
-                                           [&](const std::string& data) {
-                                             retrieved = data;
-                                           });
+  this->HandlePutMessage(message, [&](const std::string&) {});
+  this->HandleGetMessage(message,
+                         [&](const std::string& data) {
+                           retrieved = data;
+                          });
   EXPECT_NE(retrieved.find(content.string()), -1);
-  this->HandleDeleteMessage<passport::Anmaid>(message,
-                                              [&](const std::string& data) {
-                                                retrieved = data;
-                                              });
+  this->HandleDeleteMessage(message,
+                            [&](const std::string& data) {
+                              retrieved = data;
+                            });
   EXPECT_EQ(retrieved, nfs::ReturnCode(0).Serialise()->string());
-  this->HandleGetMessage<passport::Anmaid>(message,
-                                           [&](const std::string& data) {
-                                             retrieved = data;
-                                           });
+  this->HandleGetMessage(message,
+                         [&](const std::string& data) {
+                           retrieved = data;
+                         });
   EXPECT_EQ(retrieved, nfs::ReturnCode(-1).Serialise()->string());
 }
+
+REGISTER_TYPED_TEST_CASE_P(DataHolderTest, BEH_StoreInCache, BEH_HandlePutMessage,
+                           BEH_HandleGetMessage, BEH_HandleDeleteMessage);
+
+typedef ::testing::Types<passport::Anmaid, passport::Anmid, passport::Anmpid,
+                         passport::Ansmid, passport::Antmid, passport::Maid,
+                         passport::Mid, passport::Mpid, passport::Pmid,
+                         passport::PublicAnmaid, passport::PublicAnmid,
+                         passport::PublicAnmpid, passport::PublicAnsmid,
+                         passport::PublicAntmid, passport::PublicMaid,
+                         passport::PublicMpid, passport::PublicPmid,
+                         passport::Smid, passport::Stmid, passport::Tmid> DataHoldetTestTypes;
+INSTANTIATE_TYPED_TEST_CASE_P(DH, DataHolderTest, DataHoldetTestTypes);
 
 }  // namespace test
 

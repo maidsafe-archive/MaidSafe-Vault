@@ -40,12 +40,12 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace test { class DataHolderTest; }
+namespace test { template<class T> class DataHolderTest; }
 
 
 class DataHolder {
  public:
-  DataHolder(const boost::filesystem::path& vault_root_dir);
+  explicit DataHolder(const boost::filesystem::path& vault_root_dir);
   ~DataHolder();
 
   template<typename Data>
@@ -57,7 +57,7 @@ class DataHolder {
   void StopSending();
   void ResumeSending();
 
-  friend class test::DataHolderTest;
+  template<class T> friend class test::DataHolderTest;
 
  private:
   template<typename Data>
@@ -112,8 +112,8 @@ void DataHolder::HandleGetMessage(nfs::Message message,
     message.set_content(permanent_data_store_.Get(typename Data::name_type(
                             Identity(message.destination()->node_id.string()))));
     reply_functor(message.Serialise()->string());
-  } catch (std::exception& /*ex*/) {
-    reply_functor(nfs::ReturnCode(-1).Serialise()->string()); // non 0 plus optional message
+  } catch(std::exception& /*ex*/) {
+    reply_functor(nfs::ReturnCode(-1).Serialise()->string());  // non 0 plus optional message
     // error code // at the moment this will go back to client
     // in production it will g back to
   }
@@ -126,8 +126,8 @@ void DataHolder::HandlePutMessage(const nfs::Message& message,
     permanent_data_store_.Store(typename Data::name_type(
         Identity(message.destination()->node_id.string())), message.content());
     reply_functor(nfs::ReturnCode(0).Serialise()->string());
-  } catch (std::exception& /*ex*/) {
-    reply_functor(nfs::ReturnCode(-1).Serialise()->string()); // non 0 plus optional message
+  } catch(std::exception& /*ex*/) {
+    reply_functor(nfs::ReturnCode(-1).Serialise()->string());  // non 0 plus optional message
     // error code // at the moment this will go back to client
     // in production it will g back to
   }
@@ -161,7 +161,7 @@ bool DataHolder::IsInCache(const nfs::Message& message) {
     }
     return (!result.string().empty());
   }
-  catch (std::exception& error) {
+  catch(std::exception& error) {
     LOG(kInfo) << "data not cached on this node " << error.what();
     return false;
   }
@@ -178,7 +178,7 @@ void DataHolder::StoreInCache(const nfs::Message& message) {
           Identity(message.destination()->node_id.string())), message.content());
     }
   }
-  catch (std::exception& error) {
+  catch(std::exception& error) {
     LOG(kInfo) << "data could not be cached on this node " << error.what();
   }
 }

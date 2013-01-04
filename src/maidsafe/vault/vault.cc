@@ -115,9 +115,9 @@ void Vault::OnPublicKeyRequested(const NodeId& node_id,
   asio_service_.service().post([=]() { DoOnPublicKeyRequested(node_id, give_key); });  // NOLINT (Prakash)
 }
 
-void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
-                                   const routing::GivePublicKeyFunctor& give_key) {
-  public_key_getter_.HandleGetKey(node_id, give_key);
+void Vault::DoOnPublicKeyRequested(const NodeId& /*node_id*/,
+                                   const routing::GivePublicKeyFunctor& /*give_key*/) {
+//  public_key_getter_.HandleGetKey(node_id, give_key);
 }
 
 void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes) {
