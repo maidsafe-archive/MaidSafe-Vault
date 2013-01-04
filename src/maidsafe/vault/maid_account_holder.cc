@@ -16,10 +16,9 @@ namespace maidsafe {
 namespace vault {
 
 MaidAccountHolder::MaidAccountHolder(routing::Routing& /*routing*/,
-                                     const boost::filesystem::path /*vault_root_dir*/)
-  : vault_root_dir_() {
-
-}
+                                     const boost::filesystem::path& vault_root_dir)
+  : kRootDir_(vault_root_dir / "maids")/*,
+    nfs_(routing, pmid)*/ {}
 
 MaidAccountHolder::~MaidAccountHolder() {
 }

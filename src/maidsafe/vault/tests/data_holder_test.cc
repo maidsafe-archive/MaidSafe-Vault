@@ -10,7 +10,11 @@
 *  the explicit written permission of the board of directors of maidsafe.net. *
 ******************************************************************************/
 
+#include "maidsafe/vault/data_holder.h"
+
 #include <memory>
+
+#include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/log.h"
@@ -18,7 +22,7 @@
 #include "maidsafe/common/test.h"
 
 #include "maidsafe/nfs/message.h"
-#include "maidsafe/vault/data_holder.h"
+
 
 namespace maidsafe {
 
@@ -26,19 +30,12 @@ namespace vault {
 
 namespace test {
 
-namespace {
-// maidsafe::test::TestPath test_path(
-//                       maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
-  boost::filesystem::path test_path("/tmp/MaidSafe_Test_Vault");
-}
-
 template<class T>
 class DataHolderTest : public testing::Test {
  public:
   DataHolderTest()
-    : vault_root_directory_(test_path),
-        data_holder_(vault_root_directory_) {
-  }
+      : vault_root_directory_(maidsafe::test::CreateTestPath("MaidSafe_Test_DataHolder")),
+        data_holder_(*vault_root_directory_) {}
 
  protected:
   void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
@@ -62,7 +59,7 @@ class DataHolderTest : public testing::Test {
     data_holder_.StoreInCache<T>(message);
   }
 
-  boost::filesystem::path vault_root_directory_;
+  maidsafe::test::TestPath vault_root_directory_;
   DataHolder data_holder_;
 };
 
