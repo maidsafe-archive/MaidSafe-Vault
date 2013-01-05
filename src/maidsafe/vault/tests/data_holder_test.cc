@@ -41,22 +41,12 @@ class DataHolderTest : public testing::Test {
   void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
     data_holder_.HandlePutMessage<T>(message, reply_functor);
   }
-
   void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
     data_holder_.HandleGetMessage<T>(message, reply_functor);
   }
-
   void HandleDeleteMessage(const nfs::Message& message,
                            const routing::ReplyFunctor& reply_functor) {
     data_holder_.HandleDeleteMessage<T>(message, reply_functor);
-  }
-
-  bool IsInCache(nfs::Message& message) {
-    return data_holder_.IsInCache<T>(message);
-  }
-
-  void StoreInCache(const nfs::Message& message) {
-    data_holder_.StoreInCache<T>(message);
   }
 
   maidsafe::test::TestPath vault_root_directory_;
@@ -64,20 +54,6 @@ class DataHolderTest : public testing::Test {
 };
 
 TYPED_TEST_CASE_P(DataHolderTest);
-
-TYPED_TEST_P(DataHolderTest, BEH_StoreInCache) {
-  nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
-                                                           NodeId(NodeId::kRandomId)));
-  nfs::Message::Source source(nfs::Message::Peer(nfs::PersonaType::kPmidAccountHolder,
-                                                 NodeId(NodeId::kRandomId)));
-  NonEmptyString content(RandomAlphaNumericString(256));
-  asymm::Signature signature;
-  nfs::Message message(nfs::ActionType::kPut, destination, source,
-                       detail::DataTagValue::kAnmaidValue, content, signature);
-  EXPECT_FALSE(this->IsInCache(message));
-  this->StoreInCache(message);
-  EXPECT_TRUE(this->IsInCache(message));
-}
 
 TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
   nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
@@ -144,18 +120,70 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
   EXPECT_EQ(retrieved, nfs::ReturnCode(-1).Serialise()->string());
 }
 
-REGISTER_TYPED_TEST_CASE_P(DataHolderTest, BEH_StoreInCache, BEH_HandlePutMessage,
-                           BEH_HandleGetMessage, BEH_HandleDeleteMessage);
+REGISTER_TYPED_TEST_CASE_P(DataHolderTest,
+                           BEH_HandlePutMessage,
+                           BEH_HandleGetMessage,
+                           BEH_HandleDeleteMessage);
 
-typedef ::testing::Types<passport::Anmaid, passport::Anmid, passport::Anmpid,
-                         passport::Ansmid, passport::Antmid, passport::Maid,
-                         passport::Mid, passport::Mpid, passport::Pmid,
-                         passport::PublicAnmaid, passport::PublicAnmid,
-                         passport::PublicAnmpid, passport::PublicAnsmid,
-                         passport::PublicAntmid, passport::PublicMaid,
-                         passport::PublicMpid, passport::PublicPmid,
-                         passport::Smid, passport::Stmid, passport::Tmid> DataHoldetTestTypes;
-INSTANTIATE_TYPED_TEST_CASE_P(DH, DataHolderTest, DataHoldetTestTypes);
+typedef testing::Types<passport::PublicAnmid,
+                       passport::PublicAnsmid,
+                       passport::PublicAntmid,
+                       passport::PublicAnmaid,
+                       passport::PublicMaid,
+                       passport::PublicPmid,
+                       passport::Mid,
+                       passport::Smid,
+                       passport::Tmid,
+                       passport::PublicAnmpid,
+                       passport::PublicMpid,
+                       ImmutableData,
+                       MutableData> AllTypes;
+
+INSTANTIATE_TYPED_TEST_CASE_P(NoCache, DataHolderTest, AllTypes);
+
+
+
+template<class T>
+class DataHolderCacheableTest : public DataHolderTest<T> {
+ protected:
+  bool GetFromCache(nfs::Message& message) {
+    return data_holder_.GetFromCache<T>(message);
+  }
+  void StoreInCache(const nfs::Message& message) {
+    data_holder_.StoreInCache<T>(message);
+  }
+};
+
+TYPED_TEST_CASE_P(DataHolderCacheableTest);
+
+TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
+  nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
+                                                           NodeId(NodeId::kRandomId)));
+  nfs::Message::Source source(nfs::Message::Peer(nfs::PersonaType::kPmidAccountHolder,
+                                                 NodeId(NodeId::kRandomId)));
+  NonEmptyString content(RandomAlphaNumericString(256));
+  asymm::Signature signature;
+  nfs::Message message(nfs::ActionType::kPut, destination, source,
+                       detail::DataTagValue::kAnmaidValue, content, signature);
+  EXPECT_FALSE(this->GetFromCache(message));
+  this->StoreInCache(message);
+  EXPECT_TRUE(this->GetFromCache(message));
+}
+
+REGISTER_TYPED_TEST_CASE_P(DataHolderCacheableTest, BEH_StoreInCache);
+
+typedef testing::Types<passport::PublicAnmid,
+                       passport::PublicAnsmid,
+                       passport::PublicAntmid,
+                       passport::PublicAnmaid,
+                       passport::PublicMaid,
+                       passport::PublicPmid,
+                       passport::PublicAnmpid,
+                       passport::PublicMpid,
+                       ImmutableData,
+                       MutableData> CacheableTypes;
+
+INSTANTIATE_TYPED_TEST_CASE_P(Cache, DataHolderCacheableTest, CacheableTypes);
 
 }  // namespace test
 

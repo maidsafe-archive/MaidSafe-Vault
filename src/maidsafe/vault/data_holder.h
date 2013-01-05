@@ -23,11 +23,6 @@
 
 #include "maidsafe/routing/routing_api.h"
 
-#include "maidsafe/vault/get_policies.h"
-#include "maidsafe/vault/post_policies.h"
-#include "maidsafe/vault/delete_policies.h"
-#include "maidsafe/vault/put_policies.h"
-
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/message.h"
 
@@ -48,7 +43,7 @@ class DataHolder {
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  bool IsInCache(nfs::Message& message);
+  bool GetFromCache(nfs::Message& message);
   template<typename Data>
   void StoreInCache(const nfs::Message& message);
 

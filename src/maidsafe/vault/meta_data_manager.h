@@ -27,7 +27,7 @@ class MetadataManager {
  public:
   MetadataManager(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
 
-  template <typename Data>
+  template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
 
@@ -35,7 +35,7 @@ class MetadataManager {
 };
 
 
-template <typename Data>
+template<typename Data>
 void MetadataManager::HandleMessage(const nfs::Message& /*message*/,
                                     const routing::ReplyFunctor& /*reply_functor*/) {
 
