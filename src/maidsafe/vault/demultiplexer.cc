@@ -109,7 +109,7 @@ void Demultiplexer::HandleMessagePersonaType(nfs::Message& message,
     case nfs::PersonaType::kMaidAccountHolder :
       HandleDataType<MaidAccountHolder>(message, reply_functor, maid_account_holder_);
       break;
-    case nfs::PersonaType::kMetaDataManager :
+    case nfs::PersonaType::kMetadataManager :
       HandleDataType<MetadataManager>(message, reply_functor, metadata_manager_);
       break;
     case nfs::PersonaType::kPmidAccountHolder :

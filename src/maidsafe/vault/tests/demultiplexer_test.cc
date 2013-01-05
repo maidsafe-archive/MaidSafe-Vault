@@ -158,7 +158,7 @@ class DemultiplexerTest : public testing::Test {
       case nfs::PersonaType::kMaidAccountHolder:
         ++expect_mah;
         break;
-      case nfs::PersonaType::kMetaDataManager:
+      case nfs::PersonaType::kMetadataManager:
         ++expect_mdm;
         break;
       case nfs::PersonaType::kPmidAccountHolder:
@@ -229,8 +229,8 @@ TEST_F(DemultiplexerTest, FUNC_MaidAccountHolderRepeat) {
   }
 }
 
-TEST_F(DemultiplexerTest, FUNC_MetaDataManager) {
-  nfs::Message message(GenerateValidMessage(nfs::PersonaType::kMetaDataManager));
+TEST_F(DemultiplexerTest, FUNC_MetadataManager) {
+  nfs::Message message(GenerateValidMessage(nfs::PersonaType::kMetadataManager));
 
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(meta_data_manager_, HandleMessage(message)).Times(1);
@@ -240,14 +240,14 @@ TEST_F(DemultiplexerTest, FUNC_MetaDataManager) {
   demultiplexer_.HandleMessage(SerialiseAsString(message));
 }
 
-TEST_F(DemultiplexerTest, FUNC_MetaDataManagerRepeat) {
+TEST_F(DemultiplexerTest, FUNC_MetadataManagerRepeat) {
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(100);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
 
   for (uint16_t i(0); i < 100; ++i) {
-    nfs::Message message(GenerateValidMessage(nfs::PersonaType::kMetaDataManager));
+    nfs::Message message(GenerateValidMessage(nfs::PersonaType::kMetadataManager));
     demultiplexer_.HandleMessage(SerialiseAsString(message));
   }
 }
@@ -332,7 +332,7 @@ TEST_F(DemultiplexerTest, FUNC_EmptyMessage) {
 TEST_F(DemultiplexerTest, FUNC_ValidMessages) {
   std::vector<nfs::Message> messages;
   messages.push_back(GenerateValidMessage(nfs::PersonaType::kMaidAccountHolder));
-  messages.push_back(GenerateValidMessage(nfs::PersonaType::kMetaDataManager));
+  messages.push_back(GenerateValidMessage(nfs::PersonaType::kMetadataManager));
   messages.push_back(GenerateValidMessage(nfs::PersonaType::kPmidAccountHolder));
   messages.push_back(GenerateValidMessage(nfs::PersonaType::kDataHolder));
 
@@ -346,7 +346,7 @@ TEST_F(DemultiplexerTest, FUNC_ValidMessages) {
     else
       EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
 
-    if (messages.at(index).destination_persona_type() == nfs::PersonaType::kMetaDataManager)
+    if (messages.at(index).destination_persona_type() == nfs::PersonaType::kMetadataManager)
       EXPECT_CALL(meta_data_manager_, HandleMessage(messages.at(index))).Times(1);
     else
       EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(0);
