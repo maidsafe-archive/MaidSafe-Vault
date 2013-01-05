@@ -13,13 +13,13 @@
 #define MAIDSAFE_VAULT_DATA_HOLDER_H_
 
 #include <atomic>
-#include <exception>
-#include <string>
+#include <type_traits>
+#include <vector>
 
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 
-#include "maidsafe/common/log.h"
+#include "maidsafe/common/types.h"
 
 #include "maidsafe/routing/routing_api.h"
 
@@ -33,15 +33,12 @@
 
 #include "maidsafe/data_store/data_store.h"
 
-#include "maidsafe/vault/utils.h"
-
 
 namespace maidsafe {
 
 namespace vault {
 
 namespace test { template<class T> class DataHolderTest; }
-
 
 class DataHolder {
  public:
@@ -51,7 +48,7 @@ class DataHolder {
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  bool IsInCache(const nfs::Message& message);
+  bool IsInCache(nfs::Message& message);
   template<typename Data>
   void StoreInCache(const nfs::Message& message);
 
@@ -71,12 +68,27 @@ class DataHolder {
   void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  // For short-term cacheable types
+  template<typename Data>
+  NonEmptyString CacheGet(const typename Data::name_type& name, std::false_type);
+  // For long-term cacheable types
+  template<typename Data>
+  NonEmptyString CacheGet(const typename Data::name_type& name, std::true_type);
+  // For short-term cacheable types
+  template<typename Data>
+  void CacheStore(const typename Data::name_type& name,
+                  const NonEmptyString& value,
+                  std::false_type);
+  // For long-term cacheable types
+  template<typename Data>
+  void CacheStore(const typename Data::name_type& name,
+                  const NonEmptyString& value,
+                  std::true_type);
 
   boost::filesystem::space_info space_info_;
   DiskUsage disk_total_;
   DiskUsage permanent_size_;
   DiskUsage cache_size_;
-
   boost::filesystem::path persona_dir_;
   boost::filesystem::path persona_dir_permanent_;
   boost::filesystem::path persona_dir_cache_;
@@ -86,108 +98,10 @@ class DataHolder {
   std::atomic<bool> stop_sending_;
 };
 
-template<typename Data>
-void DataHolder::HandleMessage(const nfs::Message& message,
-                               const routing::ReplyFunctor& reply_functor) {
-  LOG(kInfo) << "received message at Data holder";
-  switch (message.action_type()) {
-    case nfs::ActionType::kGet :
-      HandleGetMessage<Data>(message, reply_functor);
-      break;
-    case nfs::ActionType::kPut :
-      HandlePutMessage<Data>(message, reply_functor);
-      break;
-    case nfs::ActionType::kPost :
-      HandlePostMessage<Data>(message, reply_functor);
-      break;
-    case nfs::ActionType::kDelete :
-      HandleDeleteMessage<Data>(message, reply_functor);
-      break;
-    default :
-      LOG(kError) << "Unhandled action type";
-  }
-}
-
-template<typename Data>
-void DataHolder::HandleGetMessage(nfs::Message message,
-                                  const routing::ReplyFunctor& reply_functor) {
-  try {
-    message.set_content(permanent_data_store_.Get(typename Data::name_type(
-                            Identity(message.destination()->node_id.string()))));
-    reply_functor(message.Serialise()->string());
-  } catch(std::exception& /*ex*/) {
-    reply_functor(nfs::ReturnCode(-1).Serialise()->string());  // non 0 plus optional message
-    // error code // at the moment this will go back to client
-    // in production it will g back to
-  }
-}
-
-template<typename Data>
-void DataHolder::HandlePutMessage(const nfs::Message& message,
-                                  const routing::ReplyFunctor& reply_functor) {
-  try {
-    permanent_data_store_.Store(typename Data::name_type(
-        Identity(message.destination()->node_id.string())), message.content());
-    reply_functor(nfs::ReturnCode(0).Serialise()->string());
-  } catch(std::exception& /*ex*/) {
-    reply_functor(nfs::ReturnCode(-1).Serialise()->string());  // non 0 plus optional message
-    // error code // at the moment this will go back to client
-    // in production it will g back to
-  }
-}
-
-template<typename Data>
-void DataHolder::HandlePostMessage(const nfs::Message& /*message*/,
-                                   const routing::ReplyFunctor& /*reply_functor*/) {
-// no op
-}
-
-template<typename Data>
-void DataHolder::HandleDeleteMessage(const nfs::Message& message,
-                                     const routing::ReplyFunctor& reply_functor) {
-  permanent_data_store_.Delete(typename Data::name_type(
-      Identity(message.destination()->node_id.string())));
-  reply_functor(nfs::ReturnCode(0).Serialise()->string());
-}
-
-// Cache Handling
-template<typename Data>
-bool DataHolder::IsInCache(const nfs::Message& message) {
-  NonEmptyString result;
-  try {
-    if (is_long_term_cacheable<Data>::value) {
-      result = cache_data_store_.Get(typename Data::name_type(
-                   Identity(message.destination()->node_id.string())));
-    } else {
-      result = mem_only_cache_.Get(typename Data::name_type(
-                   Identity(message.destination()->node_id.string())));
-    }
-    return (!result.string().empty());
-  }
-  catch(std::exception& error) {
-    LOG(kInfo) << "data not cached on this node " << error.what();
-    return false;
-  }
-}
-
-template<typename Data>
-void DataHolder::StoreInCache(const nfs::Message& message) {
-  try {
-    if (is_long_term_cacheable<Data>::value) {
-      cache_data_store_.Store(typename Data::name_type(
-          Identity(message.destination()->node_id.string())), message.content());
-    } else {
-      mem_only_cache_.Store(typename Data::name_type(
-          Identity(message.destination()->node_id.string())), message.content());
-    }
-  }
-  catch(std::exception& error) {
-    LOG(kInfo) << "data could not be cached on this node " << error.what();
-  }
-}
-
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#include "maidsafe/vault/data_holder-inl.h"
 
 #endif  // MAIDSAFE_VAULT_DATA_HOLDER_H_

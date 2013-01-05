@@ -51,11 +51,11 @@ class DataHolderTest : public testing::Test {
     data_holder_.HandleDeleteMessage<T>(message, reply_functor);
   }
 
-  bool IsInCach(const nfs::Message& message) {
+  bool IsInCache(nfs::Message& message) {
     return data_holder_.IsInCache<T>(message);
   }
 
-  void StoreInCach(const nfs::Message& message) {
+  void StoreInCache(const nfs::Message& message) {
     data_holder_.StoreInCache<T>(message);
   }
 
@@ -74,9 +74,9 @@ TYPED_TEST_P(DataHolderTest, BEH_StoreInCache) {
   asymm::Signature signature;
   nfs::Message message(nfs::ActionType::kPut, destination, source,
                        detail::DataTagValue::kAnmaidValue, content, signature);
-  EXPECT_FALSE(this->IsInCach(message));
-  this->StoreInCach(message);
-  EXPECT_TRUE(this->IsInCach(message));
+  EXPECT_FALSE(this->IsInCache(message));
+  this->StoreInCache(message);
+  EXPECT_TRUE(this->IsInCache(message));
 }
 
 TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
