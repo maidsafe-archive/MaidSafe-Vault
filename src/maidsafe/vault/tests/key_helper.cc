@@ -274,7 +274,7 @@ bool StoreKeys(const PmidVector& all_pmids,
   }
   LOG(kInfo) << "Bootstrapped anonymous node to store keys";
 
-  maidsafe::nfs::ClientMaidNfs client_nfs(client_routing, client_maid);
+  maidsafe::nfs::TemporaryClientMaidNfs client_nfs(client_routing, client_maid);
 
   std::atomic<size_t> error_stored_keys(0);
   // on_error call back
@@ -382,7 +382,7 @@ bool StoreChunks(const PmidVector& all_pmids,
     return false;
   }
   LOG(kInfo) << "Bootstrapped anonymous node to store and fetch chunks";
-  maidsafe::nfs::ClientMaidNfs client_nfs_1(client_routing_1, client_maid_1),
+  maidsafe::nfs::TemporaryClientMaidNfs client_nfs_1(client_routing_1, client_maid_1),
                                client_nfs_2(client_routing_2, client_maid_2);
 
   std::cout << "Going to store chunks, press Ctrl+C to stop." << std::endl;

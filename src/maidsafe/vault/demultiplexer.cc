@@ -20,7 +20,7 @@
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/detail/data_type_values.h"
 #include "maidsafe/vault/maid_account_holder.h"
-#include "maidsafe/vault/meta_data_manager.h"
+#include "maidsafe/vault/metadata_manager.h"
 #include "maidsafe/vault/pmid_account_holder.h"
 #include "maidsafe/vault/data_holder.h"
 

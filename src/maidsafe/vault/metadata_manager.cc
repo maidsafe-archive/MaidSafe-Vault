@@ -9,7 +9,7 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#include "maidsafe/vault/meta_data_manager.h"
+#include "maidsafe/vault/metadata_manager.h"
 
 namespace maidsafe {
 
