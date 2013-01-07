@@ -147,10 +147,10 @@ template<class T>
 class DataHolderCacheableTest : public DataHolderTest<T> {
  protected:
   bool GetFromCache(nfs::Message& message) {
-    return data_holder_.GetFromCache<T>(message);
+    return this->data_holder_.template GetFromCache<T>(message);
   }
   void StoreInCache(const nfs::Message& message) {
-    data_holder_.StoreInCache<T>(message);
+    this->data_holder_.template StoreInCache<T>(message);
   }
 };
 
