@@ -23,7 +23,7 @@
 
 #include "maidsafe/passport/types.h"
 
-#include "maidsafe/routing/api_config.h"
+#include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/nfs/public_key_getter.h"
 
@@ -33,8 +33,9 @@
 #include "maidsafe/vault/pmid_account_holder.h"
 #include "maidsafe/vault/demultiplexer.h"
 
+
 namespace maidsafe {
-namespace routing { class Routing; }  // namespace routing
+
 namespace vault {
 
 class Vault {
@@ -43,7 +44,8 @@ class Vault {
   Vault(const passport::Pmid& pmid,
         const boost::filesystem::path& vault_root_dir,
         std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint,
-        const std::vector<passport::Pmid>& pmids_from_file = std::vector<passport::Pmid>(),
+        const std::vector<passport::PublicPmid>& pmids_from_file =
+            std::vector<passport::PublicPmid>(),
         const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints =
             std::vector<boost::asio::ip::udp::endpoint>());
   ~Vault();  // must issue StopSending() to all identity objects (MM etc.)

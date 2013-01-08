@@ -155,13 +155,16 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
   // Load keys
   fs::path keys_path(GetPathFromProgramOption("keys_path", &variables_map, false, false));
   std::unique_ptr<maidsafe::passport::Pmid> pmid;
-  std::vector<maidsafe::passport::Pmid> all_pmids;
+  std::vector<maidsafe::passport::PublicPmid> all_public_pmids;
   if (fs::exists(keys_path, error_code)) {
-    all_pmids = maidsafe::passport::detail::ReadPmidList(keys_path);
+    auto all_pmids = maidsafe::passport::detail::ReadPmidList(keys_path);
     pmid = std::unique_ptr<maidsafe::passport::Pmid>(
                   new maidsafe::passport::Pmid(all_pmids[identity_index]));
     LOG(kInfo) << "Added " << all_pmids.size() << " keys."
                << " Using identity #" << identity_index << " from keys file.";
+    all_public_pmids.reserve(all_pmids.size());
+    for (auto& pmid : all_pmids)
+      all_public_pmids.push_back(maidsafe::passport::PublicPmid(pmid));
   }
 
   std::vector<std::pair<std::string, uint16_t>> endpoints_from_lifestuff_manager;
@@ -175,7 +178,7 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
     }
   }
 
-#ifndef WIN32
+#ifndef MAIDSAFE_WIN32
   signal(SIGHUP, SigHandler);
 #endif
   signal(SIGINT, SigHandler);
@@ -193,7 +196,7 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
             endpoint_pair.second = endpoint.port();
             vault_controller.SendEndpointToLifeStuffManager(endpoint_pair);
           },
-      all_pmids,
+      all_public_pmids,
       peer_endpoints);
 
   int result(maidsafe::routing::ReturnCode::kSuccess);

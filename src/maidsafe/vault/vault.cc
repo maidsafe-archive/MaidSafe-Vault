@@ -21,7 +21,7 @@ namespace vault {
 Vault::Vault(const passport::Pmid& pmid,
              const boost::filesystem::path& vault_root_dir,
              std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint,
-             const std::vector<passport::Pmid>& pmids_from_file,
+             const std::vector<passport::PublicPmid>& pmids_from_file,
              const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints)
     : network_status_mutex_(),
       on_new_bootstrap_endpoint_(on_new_bootstrap_endpoint),

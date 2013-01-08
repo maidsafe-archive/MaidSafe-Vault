@@ -185,7 +185,11 @@ bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {
   bootstrap_data.info2 = make_node_info(all_pmids[1]);
   bootstrap_data.routing2.reset(new maidsafe::routing::Routing(&(all_pmids[1])));
 
-  maidsafe::nfs::PublicKeyGetter public_key_getter(*bootstrap_data.routing1, all_pmids);
+  std::vector<maidsafe::passport::PublicPmid> all_public_pmids;
+  all_public_pmids.reserve(all_pmids.size());
+  for (auto& pmid : all_pmids)
+    all_public_pmids.push_back(maidsafe::passport::PublicPmid(pmid));
+  maidsafe::nfs::PublicKeyGetter public_key_getter(*bootstrap_data.routing1, all_public_pmids);
 
   maidsafe::routing::Functors functors1, functors2;
   functors1.request_public_key = functors2.request_public_key =
