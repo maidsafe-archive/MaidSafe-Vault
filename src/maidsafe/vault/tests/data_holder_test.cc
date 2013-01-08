@@ -10,7 +10,11 @@
 *  the explicit written permission of the board of directors of maidsafe.net. *
 ******************************************************************************/
 
+#include "maidsafe/vault/data_holder.h"
+
 #include <memory>
+
+#include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/log.h"
@@ -18,7 +22,7 @@
 #include "maidsafe/common/test.h"
 
 #include "maidsafe/nfs/message.h"
-#include "maidsafe/vault/data_holder.h"
+
 
 namespace maidsafe {
 
@@ -26,65 +30,30 @@ namespace vault {
 
 namespace test {
 
-  namespace {
-    boost::filesystem::path test_path(boost::filesystem::temp_directory_path() / "Maidsafe_Test");
-    boost::filesystem::path::create_directories(test_path);
-  }
-
 template<class T>
 class DataHolderTest : public testing::Test {
  public:
   DataHolderTest()
-    : vault_root_directory_(test_path),
-        data_holder_(vault_root_directory_) {
-
-  }
-
-  ~DataHolderTest() {
-    boost::filesystem::remove(vault_root_directory_);
-  }
+      : vault_root_directory_(maidsafe::test::CreateTestPath("MaidSafe_Test_DataHolder")),
+        data_holder_(*vault_root_directory_) {}
 
  protected:
   void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
     data_holder_.HandlePutMessage<T>(message, reply_functor);
   }
-
   void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor) {
     data_holder_.HandleGetMessage<T>(message, reply_functor);
   }
-
   void HandleDeleteMessage(const nfs::Message& message,
                            const routing::ReplyFunctor& reply_functor) {
     data_holder_.HandleDeleteMessage<T>(message, reply_functor);
   }
 
-  bool IsInCach(const nfs::Message& message) {
-    return data_holder_.IsInCache<T>(message);
-  }
-
-  void StoreInCach(const nfs::Message& message) {
-    data_holder_.StoreInCache<T>(message);
-  }
-
-  boost::filesystem::path vault_root_directory_;
+  maidsafe::test::TestPath vault_root_directory_;
   DataHolder data_holder_;
 };
 
 TYPED_TEST_CASE_P(DataHolderTest);
-
-TYPED_TEST_P(DataHolderTest, BEH_StoreInCache) {
-  nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
-                                                           NodeId(NodeId::kRandomId)));
-  nfs::Message::Source source(nfs::Message::Peer(nfs::PersonaType::kPmidAccountHolder,
-                                                 NodeId(NodeId::kRandomId)));
-  NonEmptyString content(RandomAlphaNumericString(256));
-  asymm::Signature signature;
-  nfs::Message message(nfs::ActionType::kPut, destination, source,
-                       detail::DataTagValue::kAnmaidValue, content, signature);
-  EXPECT_FALSE(this->IsInCach(message));
-  this->StoreInCach(message);
-  EXPECT_TRUE(this->IsInCach(message));
-}
 
 TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
   nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
@@ -151,18 +120,170 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
   EXPECT_EQ(retrieved, nfs::ReturnCode(-1).Serialise()->string());
 }
 
-REGISTER_TYPED_TEST_CASE_P(DataHolderTest, BEH_StoreInCache, BEH_HandlePutMessage,
-                           BEH_HandleGetMessage, BEH_HandleDeleteMessage);
+TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
+  uint32_t events(RandomUint32() % 500);
+  std::vector<nfs::Message> messages;
+  std::vector<std::future<void>> future_puts, future_deletes, future_gets;
 
-typedef ::testing::Types<passport::Anmaid, passport::Anmid, passport::Anmpid,
-                         passport::Ansmid, passport::Antmid, passport::Maid,
-                         passport::Mid, passport::Mpid, passport::Pmid,
-                         passport::PublicAnmaid, passport::PublicAnmid,
-                         passport::PublicAnmpid, passport::PublicAnsmid,
-                         passport::PublicAntmid, passport::PublicMaid,
-                         passport::PublicMpid, passport::PublicPmid,
-                         passport::Smid, passport::Stmid, passport::Tmid> DataHoldetTestTypes;
-INSTANTIATE_TYPED_TEST_CASE_P(DH, DataHolderTest, DataHoldetTestTypes);
+  for (uint32_t i = 0; i != events; ++i) {
+    nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
+                                                             NodeId(NodeId::kRandomId)));
+    nfs::Message::Source source(nfs::Message::Peer(nfs::PersonaType::kPmidAccountHolder,
+                                                   NodeId(NodeId::kRandomId)));
+    NonEmptyString content(RandomAlphaNumericString(256));
+    asymm::Signature signature;
+    std::string retrieved;
+    nfs::Message message(nfs::ActionType::kPut, destination, source,
+                         detail::DataTagValue::kAnmaidValue, content, signature);
+
+    uint32_t event(RandomUint32() % 3);
+    switch (event) {
+      case 0: {
+        if (!messages.empty()) {
+          nfs::Message message = messages[RandomUint32() % messages.size()];
+          future_deletes.push_back(std::async([this, message, &retrieved] {
+                                               this->HandleDeleteMessage(
+                                                   message,
+                                                   [&](const std::string& data) {
+                                                     retrieved = data;
+                                                   });
+                                  }));
+        } else {
+          future_deletes.push_back(std::async([this, message, &retrieved] {
+                                               this->HandleDeleteMessage(
+                                                  message,
+                                                  [&](const std::string& data) {
+                                                    retrieved = data;
+                                                  });
+                                   }));
+        }
+        break;
+      }
+     case 1: {
+        future_puts.push_back(std::async([this, message, &retrieved] {
+                                          this->HandlePutMessage(
+                                             message,
+                                             [&](const std::string& data) {
+                                               retrieved = data;
+                                             });
+                             }));
+        break;
+      }
+      case 2: {
+        if (!messages.empty()) {
+          nfs::Message message = messages[RandomUint32() % messages.size()];
+          future_gets.push_back(std::async([this, message, &retrieved] {
+                                            this->HandleGetMessage(
+                                               message,
+                                               [&](const std::string& data) {
+                                                 retrieved = data;
+                                               });
+                                }));
+        } else {
+          future_gets.push_back(std::async([this, message, &retrieved] {
+                                            this->HandleGetMessage(
+                                               message,
+                                               [&](const std::string& data) {
+                                                 retrieved = data;
+                                               });
+                                          }));
+        }
+        break;
+      }
+    }
+  }
+
+  for (auto& future_put : future_puts)
+    EXPECT_NO_THROW(future_put.get());
+
+  for (auto& future_delete : future_deletes) {
+    try {
+      future_delete.get();
+    }
+    catch(const std::exception& e) {
+      std::string msg(e.what());
+      LOG(kError) << msg;
+    }
+  }
+
+  for (auto& future_get : future_gets) {
+    try {
+      future_get.get();
+    }
+    catch(const std::exception& e) {
+      std::string msg(e.what());
+      LOG(kError) << msg;
+    }
+  }
+}
+
+REGISTER_TYPED_TEST_CASE_P(DataHolderTest,
+                           BEH_HandlePutMessage,
+                           BEH_HandleGetMessage,
+                           BEH_HandleDeleteMessage,
+                           BEH_RandomAsync);
+
+typedef testing::Types<passport::PublicAnmid,
+                       passport::PublicAnsmid,
+                       passport::PublicAntmid,
+                       passport::PublicAnmaid,
+                       passport::PublicMaid,
+                       passport::PublicPmid,
+                       passport::Mid,
+                       passport::Smid,
+                       passport::Tmid,
+                       passport::PublicAnmpid,
+                       passport::PublicMpid,
+                       ImmutableData,
+                       MutableData> AllTypes;
+
+INSTANTIATE_TYPED_TEST_CASE_P(NoCache, DataHolderTest, AllTypes);
+
+
+
+template<class T>
+class DataHolderCacheableTest : public DataHolderTest<T> {
+ protected:
+  bool GetFromCache(nfs::Message& message) {
+    return this->data_holder_.template GetFromCache<T>(message);
+  }
+  void StoreInCache(const nfs::Message& message) {
+    this->data_holder_.template StoreInCache<T>(message);
+  }
+};
+
+TYPED_TEST_CASE_P(DataHolderCacheableTest);
+
+TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
+  nfs::Message::Destination destination(nfs::Message::Peer(nfs::PersonaType::kDataHolder,
+                                                           NodeId(NodeId::kRandomId)));
+  nfs::Message::Source source(nfs::Message::Peer(nfs::PersonaType::kPmidAccountHolder,
+                                                 NodeId(NodeId::kRandomId)));
+  NonEmptyString content(RandomAlphaNumericString(256));
+  asymm::Signature signature;
+  nfs::Message message(nfs::ActionType::kPut, destination, source,
+                       detail::DataTagValue::kAnmaidValue, content, signature);
+  EXPECT_FALSE(this->GetFromCache(message));
+  this->StoreInCache(message);
+  EXPECT_TRUE(this->GetFromCache(message));
+}
+
+
+
+REGISTER_TYPED_TEST_CASE_P(DataHolderCacheableTest, BEH_StoreInCache);
+
+typedef testing::Types<passport::PublicAnmid,
+                       passport::PublicAnsmid,
+                       passport::PublicAntmid,
+                       passport::PublicAnmaid,
+                       passport::PublicMaid,
+                       passport::PublicPmid,
+                       passport::PublicAnmpid,
+                       passport::PublicMpid,
+                       ImmutableData,
+                       MutableData> CacheableTypes;
+
+INSTANTIATE_TYPED_TEST_CASE_P(Cache, DataHolderCacheableTest, CacheableTypes);
 
 }  // namespace test
 
