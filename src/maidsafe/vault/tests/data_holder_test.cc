@@ -135,6 +135,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
     std::string retrieved;
     nfs::Message message(nfs::ActionType::kPut, destination, source,
                          detail::DataTagValue::kAnmaidValue, content, signature);
+	messages.push_back(message);
 
     uint32_t event(RandomUint32() % 3);
     switch (event) {
