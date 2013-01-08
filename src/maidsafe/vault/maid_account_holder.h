@@ -23,6 +23,7 @@
 
 #include "maidsafe/routing/api_config.h"
 
+#include "maidsafe/nfs/maid_account.h"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/nfs.h"
 
@@ -39,6 +40,10 @@ class MaidAccountHolder {
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
+  void Serialise();
+  void Serialise(const passport::Maid& maid);
+  void Serialise(const passport::Pmid& pmid);
+  void RemoveAccount(const passport::Maid& maid);
 
  private:
   template<typename Data>
@@ -50,20 +55,18 @@ class MaidAccountHolder {
   template<typename Data>
   void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void SendSyncData();
+  bool HandleNewComer(const passport::PublicMaid& p_maid);
 
   const boost::filesystem::path kRootDir_;
   nfs::MaidAccountHolderNfs nfs_;
+  std::vector<maidsafe::nfs::MaidAccount> maid_accounts_;
 //  DiskBasedStorage disk_storage_;
 };
-
-template<typename Data>
-void MaidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
-                                      const routing::ReplyFunctor& /*reply_functor*/) {
-
-}
 
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#include "maidsafe/vault/maid_account_holder-inl.h"
 
 #endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_H_

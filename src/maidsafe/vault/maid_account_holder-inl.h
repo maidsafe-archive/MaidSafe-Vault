@@ -71,7 +71,7 @@ void MaidAccountHolder::HandlePutMessage(const nfs::Message& /*message*/,
 template<typename Data>
 void MaidAccountHolder::HandlePostMessage(const nfs::Message& /*message*/,
                                           const routing::ReplyFunctor& /*reply_functor*/) {
-// no op
+// HandleNewComer(p_maid);
 }
 
 template<typename Data>
