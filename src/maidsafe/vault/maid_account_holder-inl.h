@@ -55,7 +55,8 @@ void MaidAccountHolder::HandleGetMessage(nfs::Message /*message*/,
   auto fetched_data = nfs_.Get<maidsafe::nfs::MaidAccount>(p_pmid.name());
   try {
     maidsafe::nfs::MaidAccount fetched_account = fetched_data.get();
-  } catch (...) {
+  }
+  catch(...) {
     LOG(kError) << "MaidAccountHolder - Failed to retrieve "
                 << maidsafe::HexSubstr(p_pmid.name().data.string());
     return;
@@ -63,9 +64,52 @@ void MaidAccountHolder::HandleGetMessage(nfs::Message /*message*/,
 }
 
 template<typename Data>
-void MaidAccountHolder::HandlePutMessage(const nfs::Message& /*message*/,
-                                         const routing::ReplyFunctor& /*reply_functor*/) {
-// no op
+void MaidAccountHolder::HandlePutMessage(const nfs::Message& message,
+                                         const routing::ReplyFunctor& reply_functor) {
+  if (!routing_.IsNodeIdInGroupRange(message.source().data.node_id)) {  // provisional call to Is..
+    reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+    return;
+  }
+  bool is_registered(false);
+  for (auto& maid_account : maid_accounts_) {
+    for (auto& pmid_total : maid_account.pmid_totals) {
+      if (NodeId(pmid_total.registration.pmid_id) == message.source()->node_id &&
+            pmid_total.registration.register_) {
+        auto get_key_future([&message](std::future<passport::PublicMaid> future) {
+            try {
+              passport::PublicMaid public_maid(future.get());
+              asymm::PublicKey public_key(public_maid.public_key());
+              if (!asymm::CheckSignature(message.content(), message.signature(), public_key))
+                ThrowError(NfsErrors::invalid_signature);
+            }
+            catch(...) {
+              LOG(kError) << "Exception thrown getting public key.";
+              ThrowError(NfsErrors::invalid_parameter);
+            }
+        });
+        public_key_getter_.HandleGetKey<passport::PublicMaid>(
+            passport::PublicMaid::name_type(maid_account.maid_id), get_key_future);
+        is_registered = true;
+        break;
+      }
+    }
+    if (is_registered)
+      break;
+  }
+  if (!is_registered) {
+    reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+    return;
+  }
+  if (is_payable<Data>::value) {
+  } else {
+    try {
+      // nfs_.Put(message, reply_functor);
+    }
+    catch(const std::exception&) {
+      reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+    }
+  }
+  reply_functor(nfs::ReturnCode(0).Serialise()->string());
 }
 
 template<typename Data>

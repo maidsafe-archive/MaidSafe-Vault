@@ -25,6 +25,7 @@
 
 #include "maidsafe/nfs/maid_account.h"
 #include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/public_key_getter.h"
 #include "maidsafe/nfs/nfs.h"
 
 
@@ -57,10 +58,11 @@ class MaidAccountHolder {
   void SendSyncData();
   bool HandleNewComer(const passport::PublicMaid& p_maid);
 
+  routing::Routing& routing_;
   const boost::filesystem::path kRootDir_;
   nfs::MaidAccountHolderNfs nfs_;
   std::vector<maidsafe::nfs::MaidAccount> maid_accounts_;
-//  DiskBasedStorage disk_storage_;
+  nfs::PublicKeyGetter public_key_getter_;
 };
 
 }  // namespace vault
