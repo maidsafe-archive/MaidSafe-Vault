@@ -18,8 +18,11 @@
 #include <vector>
 #include <fstream>
 
+#include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
+
 #include "maidsafe/routing/api_config.h"
+
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/nfs.h"
 
@@ -49,7 +52,7 @@ class MaidAccountHolder {
   void SendSyncData();
 
   const boost::filesystem::path kRootDir_;
-//  nfs::MaidAccountHolderNfs nfs_;
+  nfs::MaidAccountHolderNfs nfs_;
 //  DiskBasedStorage disk_storage_;
 };
 
