@@ -19,9 +19,42 @@ MetaDataManager::MetaDataManager(routing::Routing& routing,
                                  const boost::filesystem::path& /*vault_root_dir*/): routing_(routing) {
 }
 
+MetaDataManager::~MetaDataManager() {}
+
 void MetaDataManager::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
 }
 
+void MetaDataManager::Serialise() {}
+
+
+
+template<typename Data>
+void MetaDataManager::HandlePutMessage(const nfs::Message& /*message*/,
+                                       const routing::ReplyFunctor& /*reply_functor*/) {}
+
+template<typename Data>
+void MetaDataManager::HandlePostMessage(const nfs::Message& /*message*/,
+                                        const routing::ReplyFunctor& /*reply_functor*/) {}
+
+template<typename Data>
+void MetaDataManager::HandleDeleteMessage(const nfs::Message& /*message*/,
+                                          const routing::ReplyFunctor& /*reply_functor*/) {}
+
+void MetaDataManager::SendSyncData() {}
+
+bool MetaDataManager::HandleNodeDown(NodeId& /*node*/) {
+  return false;
+}
+
+bool MetaDataManager::HandleNodeUp(NodeId& /*node*/) {
+  return false;
+}
+
+// On error handler
+template<typename Data>
+void MetaDataManager::OnPutErrorHandler(nfs::Message message) {}
+template<typename Data>
+void MetaDataManager::OnDeleteErrorHandler(nfs::Message message) {}
 }  // namespace vault
 
 }  // namespace maidsafe

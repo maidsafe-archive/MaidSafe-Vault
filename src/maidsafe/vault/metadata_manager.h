@@ -60,6 +60,10 @@ class MetaDataManager {
 //  nfs::MetaDataManagerNfs nfs_;
 };
 
+template<typename Data>
+void MetaDataManager::HandleMessage(const nfs::Message& /*message*/,
+                                    const routing::ReplyFunctor& /*reply_functor*/) {
+}
 
 }  // namespace vault
 
