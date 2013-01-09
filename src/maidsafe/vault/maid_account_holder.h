@@ -26,6 +26,7 @@
 #include "maidsafe/nfs/maid_account.h"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/nfs.h"
+#include "maidsafe/nfs/public_key_getter.h"
 
 
 namespace maidsafe {
@@ -35,6 +36,7 @@ namespace vault {
 class MaidAccountHolder {
  public:
   MaidAccountHolder(const passport::Pmid& pmid, routing::Routing& routing,
+                    nfs::PublicKeyGetter& public_key_getter,
                     const boost::filesystem::path& vault_root_dir);
   ~MaidAccountHolder();
   template<typename Data>
@@ -55,10 +57,14 @@ class MaidAccountHolder {
   template<typename Data>
   void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void SendSyncData();
-  bool HandleNewComer(const passport::PublicMaid& p_maid);
+//   bool HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid);
+//   bool OnKeyFetched(const passport::/*PublicMaid*/PublicPmid& p_maid,
+//                     const passport::PublicPmid& p_pmid);
+  bool HandleNewComer(nfs::PmidRegistration& pmid_registration);
 
   const boost::filesystem::path kRootDir_;
   nfs::MaidAccountHolderNfs nfs_;
+  nfs::PublicKeyGetter& public_key_getter_;
   std::vector<maidsafe::nfs::MaidAccount> maid_accounts_;
 //  DiskBasedStorage disk_storage_;
 };
