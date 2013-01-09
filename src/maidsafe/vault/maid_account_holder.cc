@@ -19,7 +19,8 @@ MaidAccountHolder::MaidAccountHolder(const passport::Pmid& pmid,
                                      routing::Routing& routing,
                                      nfs::PublicKeyGetter& public_key_getter,
                                      const boost::filesystem::path& vault_root_dir)
-  : kRootDir_(vault_root_dir / "maids"),
+  : routing_(routing),
+    kRootDir_(vault_root_dir / "maids"),
     nfs_(routing, pmid),
     public_key_getter_(public_key_getter),
     maid_accounts_() {
@@ -27,11 +28,19 @@ MaidAccountHolder::MaidAccountHolder(const passport::Pmid& pmid,
 
   boost::filesystem::directory_iterator end_iter;
   for (boost::filesystem::directory_iterator dir_iter(kRootDir_);
-       dir_iter != end_iter ; ++dir_iter) {
+       dir_iter != end_iter;
+       ++dir_iter) {
     if (boost::filesystem::is_regular_file(dir_iter->status())) {
       std::string account_content;
-      if (ReadFile(*dir_iter, &account_content))
-        maid_accounts_.push_back(maidsafe::nfs::MaidAccount(NonEmptyString(account_content)));
+      if (ReadFile(*dir_iter, &account_content)) {
+        maidsafe::nfs::MaidAccount maid_account;
+        maid_account.Parse(NonEmptyString(account_content));
+        if (Identity(dir_iter->path().string()) != maid_account.maid_id()) {
+          boost::filesystem::remove(*dir_iter);
+          continue;
+        }
+        maid_accounts_.push_back(maid_account);
+      }
     }
   }
 }
