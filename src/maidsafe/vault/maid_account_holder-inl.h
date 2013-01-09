@@ -26,89 +26,82 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace {
+
+bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id) {
+  return routing.IsNodeIdInGroupRange(node_id);  // provisional call to Is..
+}
+
+}  // namespace
+
 template<typename Data>
 void MaidAccountHolder::HandleMessage(const nfs::Message& message,
                                       const routing::ReplyFunctor& reply_functor) {
   LOG(kInfo) << "received message at Data holder";
+  // TODO(Team): Check the message content for validity with the MAID key we'll have eventually.
   switch (message.action_type()) {
-    case nfs::ActionType::kGet :
+    case nfs::ActionType::kGet:
       HandleGetMessage<Data>(message, reply_functor);
       break;
-    case nfs::ActionType::kPut :
+    case nfs::ActionType::kPut:
       HandlePutMessage<Data>(message, reply_functor);
       break;
-    case nfs::ActionType::kPost :
+    case nfs::ActionType::kPost:
       HandlePostMessage<Data>(message, reply_functor);
       break;
-    case nfs::ActionType::kDelete :
+    case nfs::ActionType::kDelete:
       HandleDeleteMessage<Data>(message, reply_functor);
       break;
-    default :
-      LOG(kError) << "Unhandled action type";
+    default: LOG(kError) << "Unhandled action type";
   }
 }
 
 template<typename Data>
 void MaidAccountHolder::HandleGetMessage(nfs::Message /*message*/,
                                          const routing::ReplyFunctor& /*reply_functor*/) {
-  maidsafe::passport::PublicPmid p_pmid(pmid_);
-  auto fetched_data = nfs_.Get<maidsafe::nfs::MaidAccount>(p_pmid.name());
-  try {
-    maidsafe::nfs::MaidAccount fetched_account = fetched_data.get();
-  }
-  catch(...) {
-    LOG(kError) << "MaidAccountHolder - Failed to retrieve "
-                << maidsafe::HexSubstr(p_pmid.name().data.string());
-    return;
-  }
+//  maidsafe::passport::PublicPmid p_pmid(/*pmid_*/);
+//  auto fetched_data = nfs_.Get<nfs::MaidAccount>(p_pmid.name());
+//  try {
+//    maidsafe::nfs::MaidAccount fetched_account = fetched_data.get();
+//  }
+//  catch(...) {
+//    LOG(kError) << "MaidAccountHolder - Failed to retrieve "
+//                << maidsafe::HexSubstr(p_pmid.name().data.string());
+//    return;
+//  }
 }
 
 template<typename Data>
 void MaidAccountHolder::HandlePutMessage(const nfs::Message& message,
                                          const routing::ReplyFunctor& reply_functor) {
-  if (!routing_.IsNodeIdInGroupRange(message.source().data.node_id)) {  // provisional call to Is..
+  if (!NodeRangeCheck(routing_, message.source().data.node_id)) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
     return;
   }
-  bool is_registered(false);
-  for (auto& maid_account : maid_accounts_) {
-    for (auto& pmid_total : maid_account.pmid_totals) {
-      if (NodeId(pmid_total.registration.pmid_id) == message.source()->node_id &&
-            pmid_total.registration.register_) {
-        auto get_key_future([&message](std::future<passport::PublicMaid> future) {
-            try {
-              passport::PublicMaid public_maid(future.get());
-              asymm::PublicKey public_key(public_maid.public_key());
-              if (!asymm::CheckSignature(message.content(), message.signature(), public_key))
-                ThrowError(NfsErrors::invalid_signature);
-            }
-            catch(...) {
-              LOG(kError) << "Exception thrown getting public key.";
-              ThrowError(NfsErrors::invalid_parameter);
-            }
-        });
-        public_key_getter_.HandleGetKey<passport::PublicMaid>(
-            passport::PublicMaid::name_type(maid_account.maid_id), get_key_future);
-        is_registered = true;
-        break;
-      }
-    }
-    if (is_registered)
-      break;
-  }
-  if (!is_registered) {
+
+  auto maid_account_it = std::find_if(maid_accounts_.begin(),
+                                      maid_accounts_.end(),
+                                      [&message] (const maidsafe::nfs::MaidAccount& maid_account) {
+                                        return maid_account.maid_id.string() ==
+                                               message.source().data.node_id.string();
+                                      });
+  if (maid_account_it == maid_accounts_.end()) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
     return;
   }
+
   if (is_payable<Data>::value) {
-  } else {
-    try {
-      // nfs_.Put(message, reply_functor);
-    }
-    catch(const std::exception&) {
-      reply_functor(nfs::ReturnCode(-1).Serialise()->string());
-    }
+    // TODO(Team): Check if we should allow the store based on PMID account information
+    nfs::DataElement data_element(Identity(message.destination().data.node_id.string()),
+                                  static_cast<int32_t>(message.content().string().size()));
+    (*maid_account_it).data_elements.push_back(data_element);
   }
+
+  nfs::OnError on_error_callback = [this] (nfs::Message message) {
+                                     this->OnPutErrorHandler<Data>(message);
+                                   };
+  nfs_.Put<Data>(message, on_error_callback);
+
   reply_functor(nfs::ReturnCode(0).Serialise()->string());
 }
 
@@ -119,9 +112,52 @@ void MaidAccountHolder::HandlePostMessage(const nfs::Message& /*message*/,
 }
 
 template<typename Data>
-void MaidAccountHolder::HandleDeleteMessage(const nfs::Message& /*message*/,
-                                            const routing::ReplyFunctor& /*reply_functor*/) {
-// no op
+void MaidAccountHolder::HandleDeleteMessage(const nfs::Message& message,
+                                            const routing::ReplyFunctor& reply_functor) {
+  if (!NodeRangeCheck(routing_, message.source().data.node_id)) {
+    reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+    return;
+  }
+
+  auto maid_account_it = std::find_if(maid_accounts_.begin(),
+                                      maid_accounts_.end(),
+                                      [&message] (const maidsafe::nfs::MaidAccount& maid_account) {
+                                        return maid_account.maid_id.string() ==
+                                               message.source().data.node_id.string();
+                                      });
+  if (maid_account_it == maid_accounts_.end()) {
+    reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+    return;
+  }
+
+  auto identity_it = std::find_if((*maid_account_it).data_elements.begin(),
+                                  (*maid_account_it).data_elements.end(),
+                                  [&message] (const nfs::DataElement& data_element) {
+                                    return data_element.data_id.string() ==
+                                           message.destination().data.node_id.string();
+                                  });
+  bool found_data_item(identity_it != (*maid_account_it).data_elements.end());
+  if (found_data_item) {
+    // Send message on to MetadataManager
+    nfs::OnError on_error_callback = [this] (nfs::Message message) {
+                                       this->OnDeleteErrorHandler<Data>(message);
+                                     };
+    nfs_.Delete<Data>(message, on_error_callback);
+  }
+
+  reply_functor(nfs::ReturnCode(found_data_item ? 0 : -1).Serialise()->string());
+}
+
+template<typename Data>
+void MaidAccountHolder::OnPutErrorHandler(nfs::Message message) {
+  nfs_.Put<Data>(message,
+                 [this] (nfs::Message message) { this->OnPutErrorHandler<Data>(message); });
+}
+
+template<typename Data>
+void MaidAccountHolder::OnDeleteErrorHandler(nfs::Message message) {
+  nfs_.Delete<Data>(message,
+                    [this] (nfs::Message message) { this->OnDeleteErrorHandler<Data>(message); });
 }
 
 }  // namespace vault

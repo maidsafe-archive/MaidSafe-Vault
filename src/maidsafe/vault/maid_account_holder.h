@@ -58,6 +58,12 @@ class MaidAccountHolder {
   void SendSyncData();
   bool HandleNewComer(const passport::PublicMaid& p_maid);
 
+  // On error handler
+  template<typename Data>
+  void OnPutErrorHandler(nfs::Message message);
+  template<typename Data>
+  void OnDeleteErrorHandler(nfs::Message message);
+
   routing::Routing& routing_;
   const boost::filesystem::path kRootDir_;
   nfs::MaidAccountHolderNfs nfs_;
