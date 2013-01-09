@@ -51,15 +51,7 @@ void MaidAccountHolder::HandleMessage(const nfs::Message& message,
 template<typename Data>
 void MaidAccountHolder::HandleGetMessage(nfs::Message /*message*/,
                                          const routing::ReplyFunctor& /*reply_functor*/) {
-  maidsafe::passport::PublicPmid p_pmid(pmid_);
-  auto fetched_data = nfs_.Get<maidsafe::nfs::MaidAccount>(p_pmid.name());
-  try {
-    maidsafe::nfs::MaidAccount fetched_account = fetched_data.get();
-  } catch (...) {
-    LOG(kError) << "MaidAccountHolder - Failed to retrieve "
-                << maidsafe::HexSubstr(p_pmid.name().data.string());
-    return;
-  }
+// no op
 }
 
 template<typename Data>
