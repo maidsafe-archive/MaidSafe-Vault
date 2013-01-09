@@ -12,34 +12,53 @@
 #ifndef MAIDSAFE_VAULT_META_DATA_MANAGER_H_
 #define MAIDSAFE_VAULT_META_DATA_MANAGER_H_
 
-#include "boost/filesystem.hpp"
+#include "boost/filesystem/operations.hpp"
+#include "boost/filesystem/path.hpp"
 
 #include "maidsafe/routing/api_config.h"
 
-namespace maidsafe {
+#include "maidsafe/nfs/maid_account.h"
+#include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/public_key_getter.h"
+#include "maidsafe/nfs/nfs.h"
+#include "maidsafe/nfs/public_key_getter.h"
 
-namespace nfs { class Message; }
-namespace routing { class Routing; }
+namespace maidsafe {
 
 namespace vault {
 
-class MetadataManager {
+class MetaDataManager {
  public:
-  MetadataManager(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
-
+  MetaDataManager(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
+  ~MetaDataManager();
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
+  void Serialise();
 
  private:
+  template<typename Data>
+  void HandleGetMessage(nfs::Message message, const routing::ReplyFunctor& reply_functor);
+  template<typename Data>
+  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  template<typename Data>
+  void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  template<typename Data>
+  void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void SendSyncData();
+  bool HandleNodeDown(NodeId& node);  // use nodeinfo as later we may extract/set rank
+  bool HandleNodeUp(NodeId& node);
+
+  // On error handler
+  template<typename Data>
+  void OnPutErrorHandler(nfs::Message message);
+  template<typename Data>
+  void OnDeleteErrorHandler(nfs::Message message);
+
+  routing::Routing& routing_;
+  const boost::filesystem::path kRootDir_;
+//  nfs::MetaDataManagerNfs nfs_;
 };
-
-
-template<typename Data>
-void MetadataManager::HandleMessage(const nfs::Message& /*message*/,
-                                    const routing::ReplyFunctor& /*reply_functor*/) {
-
-}
 
 
 }  // namespace vault

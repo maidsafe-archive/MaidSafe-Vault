@@ -15,11 +15,11 @@ namespace maidsafe {
 
 namespace vault {
 
-MetadataManager::MetadataManager(routing::Routing& /*routing*/,
-                                 const boost::filesystem::path /*vault_root_dir*/) {
+MetaDataManager::MetaDataManager(routing::Routing& routing,
+                                 const boost::filesystem::path& /*vault_root_dir*/): routing_(routing) {
 }
 
-void MetadataManager::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
+void MetaDataManager::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
 }
 
 }  // namespace vault
