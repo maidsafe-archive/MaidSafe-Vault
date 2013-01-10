@@ -156,7 +156,7 @@ void DoOnPublicKeyRequested(const maidsafe::NodeId& node_id,
       LOG(kError) << "Failed to get key for " << DebugId(node_id) << " : " << ex.what();
     }
   });
-  //public_key_getter_.HandleGetKey(node_id, get_key_future);  // FIXME Brian
+  // public_key_getter_.HandleGetKey(node_id, get_key_future);  // FIXME Brian
 }
 
 bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {
@@ -341,7 +341,8 @@ bool VerifyKeys(const PmidVector& all_pmids,
                     << maidsafe::HexSubstr(pmid.name().data.string());
         return;
       }
-    } catch (...) {
+    }
+    catch(...) {
       LOG(kError) << "VerifyKeys - Failed to retrieve "
                   << maidsafe::HexSubstr(pmid.name().data.string());
       return;
@@ -451,9 +452,11 @@ bool StoreChunks(const PmidVector& all_pmids,
 //                                [&i, &chunks] { return i >= chunks.size() || ctrlc_pressed; })) {  // NOLINT
 //     std::cout << "Retrieving chunk " << maidsafe::pd::DebugChunkName(chunks[i].first) << " ..."
 //               << std::endl;
-//     std::string content(rcs2.Get(chunks[i].first, maidsafe::Fob()));  // retrieve with second client
+//     // retrieve with second client
+//     std::string content(rcs2.Get(chunks[i].first, maidsafe::Fob()));
 //     if (content == chunks[i].second.string()) {
-//       std::cout << "Retrieved chunk " << maidsafe::pd::DebugChunkName(chunks[i].first) << std::endl;
+//       std::cout << "Retrieved chunk " << maidsafe::pd::DebugChunkName(chunks[i].first)
+//                 << std::endl;
 //       ++num_get;
 //     } else {
 //       std::cout << "Failed to retrieve chunk " << maidsafe::pd::DebugChunkName(chunks[i].first)
@@ -511,8 +514,9 @@ bool StoreChunks(const PmidVector& all_pmids,
 //             maidsafe::NonEmptyString(maidsafe::RandomString(1 << 16)),  // 64 KB
 //             chunk_fob.keys.private_key,
 //             chunk_contents);
-//         chunk_name = maidsafe::priv::ApplyTypeToName(maidsafe::NodeId(maidsafe::NodeId::kRandomId),
-//                                                      maidsafe::priv::ChunkType::kModifiableByOwner);
+//         chunk_name = maidsafe::priv::ApplyTypeToName(
+//                          maidsafe::NodeId(maidsafe::NodeId::kRandomId),
+//                          maidsafe::priv::ChunkType::kModifiableByOwner);
 //         break;
 //       case 2:  // SIG
 //         chunk_fob = maidsafe::pd::GenerateIdentity();
@@ -642,7 +646,9 @@ bool StoreChunks(const PmidVector& all_pmids,
 //                     chunk_type != maidsafe::priv::ChunkType::kSignaturePacket);
 //           break;
 //         case 8:  // get all chunks again, only SIG should fail due to revokation
-//           do_rcs_op(RcsOp::kGet, chunk, chunk_type != maidsafe::priv::ChunkType::kSignaturePacket);
+//           do_rcs_op(RcsOp::kGet,
+//                     chunk,
+//                     chunk_type != maidsafe::priv::ChunkType::kSignaturePacket);
 //           break;
 //         case 9:  // delete all chunks to clean up
 //           do_rcs_op(RcsOp::kDelete, chunk, true);

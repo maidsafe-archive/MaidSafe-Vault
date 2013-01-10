@@ -17,8 +17,8 @@
 
 #include "maidsafe/routing/api_config.h"
 
-//#include "maidsafe/nfs/network_file_system.h"
-//#include "maidsafe/vault/disk_based_storage.h"
+//  #include "maidsafe/nfs/network_file_system.h"
+//  #include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/common/rsa.h"
 
 namespace maidsafe {
@@ -48,9 +48,7 @@ class MpidAccountHolder {
 
 template<typename Data>
 void MpidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
-                                      const routing::ReplyFunctor& /*reply_functor*/) {
-
-}
+                                      const routing::ReplyFunctor& /*reply_functor*/) {}
 
 }  // namespace vault
 

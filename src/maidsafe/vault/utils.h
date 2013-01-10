@@ -58,21 +58,22 @@ class PmidAccoundHolderStorage {
 // Will create a binary split file
 // this can probably be ordered in oldest first (by file as a clump)
 // can be sorted in memory for efficiency but only read the file we need
-// so in normal operation only load most recent copy 
+// so in normal operation only load most recent copy
 // only for delete back in time will we need to open older files
 // multiple copies will have multiple entries (maybe some in newer files)
-template <class StoragePolicy> // must provide Put()->bool / Delete->bool
-                            // Serialise() and Parse()
+template <class StoragePolicy>  // must provide Put()->bool / Delete->bool
+                                // Serialise() and Parse()
 class FileSplitter : public StoragePolicy {
-  public:
-   FileSplitter(boost::filesystem::path fullname);  // read all files
-  ~FileSplitter(); // store all files
-  private:
+ public:
+  explicit FileSplitter(boost::filesystem::path fullname);  // read all files
+  ~FileSplitter();  // store all files
+
+ private:
 };
 
 template <class T>
 class DiskBasedStorage {
-  DiskBasedStorage(boost::filesystem::path name);
+  explicit DiskBasedStorage(boost::filesystem::path name);
   bool Put(Identity name);
   T Get(Identity name);
   bool Delete(Identity name);

@@ -11,22 +11,25 @@
 
 #include "maidsafe/vault/metadata_manager.h"
 
+#include <string>
+#include <vector>
+
 namespace maidsafe {
 
 namespace vault {
 
 MetadataManager::MetadataManager(routing::Routing& routing,
-                                 const boost::filesystem::path& /*vault_root_dir*/): routing_(routing) {
-}
+                                 const boost::filesystem::path& vault_root_dir)
+    : kRootDir_(vault_root_dir),
+      routing_(routing),
+      data_elements_manager_(vault_root_dir) {}
 
 MetadataManager::~MetadataManager() {}
 
-void MetadataManager::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
-}
+void MetadataManager::OnCloseNodeReplaced(
+    const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {}
 
 void MetadataManager::Serialise() {}
-
-
 
 template<typename Data>
 void MetadataManager::HandlePutMessage(const nfs::Message& /*message*/,
@@ -42,12 +45,37 @@ void MetadataManager::HandleDeleteMessage(const nfs::Message& /*message*/,
 
 void MetadataManager::SendSyncData() {}
 
-bool MetadataManager::HandleNodeDown(NodeId& /*node*/) {
-  return false;
+bool MetadataManager::HandleNodeDown(const nfs::PostMessage& message, NodeId& node) {
+  try {
+    int64_t online_holders(-1);
+    data_elements_manager_.MoveNodeToOnline(message.name(), Identity(node.string()));
+    if (online_holders < 3) {
+      // TODO(Team): Get content. There is no manager available yet.
+
+      // Select new holder
+      NodeId new_holder(routing_.GetRandomExistingNode());
+
+      // TODO(Team): Put content. There is no manager available yet.
+    }
+  }
+  catch(const std::exception &e) {
+    LOG(kError) << "HandleNodeDown - Dropping process after exception: " << e.what();
+    return false;
+  }
+
+  return true;
 }
 
-bool MetadataManager::HandleNodeUp(NodeId& /*node*/) {
-  return false;
+bool MetadataManager::HandleNodeUp(const nfs::PostMessage& message, NodeId& node) {
+  try {
+    data_elements_manager_.MoveNodeToOnline(message.name(), Identity(node.string()));
+  }
+  catch(const std::exception &e) {
+    LOG(kError) << "HandleNodeUp - Dropping process after exception: " << e.what();
+    return false;
+  }
+
+  return true;
 }
 
 // On error handler

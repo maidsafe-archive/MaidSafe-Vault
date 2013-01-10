@@ -33,7 +33,7 @@ template<typename PersonaType>
 void HandleDataType(nfs::Message& message,
                     const routing::ReplyFunctor& reply_functor,
                     PersonaType& persona_type) {
-  //static assert
+  // static assert
   switch (message.data_type()) {
     case detail::DataTagValue::kAnmidValue:
       persona_type.template HandleMessage<passport::PublicAnmid>(message, reply_functor);

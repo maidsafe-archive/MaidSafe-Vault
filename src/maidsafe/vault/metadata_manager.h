@@ -9,17 +9,20 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_META_DATA_MANAGER_H_
-#define MAIDSAFE_VAULT_META_DATA_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_H_
+#define MAIDSAFE_VAULT_METADATA_MANAGER_H_
+
+#include <vector>
 
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/routing/api_config.h"
 
+#include "maidsafe/nfs/data_elements_manager.h"
 #include "maidsafe/nfs/maid_account.h"
 #include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/public_key_getter.h"
+#include "maidsafe/nfs/post_message.h"
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/public_key_getter.h"
 
@@ -46,8 +49,10 @@ class MetadataManager {
   template<typename Data>
   void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void SendSyncData();
-  bool HandleNodeDown(NodeId& node);  // use nodeinfo as later we may extract/set rank
-  bool HandleNodeUp(NodeId& node);
+
+  // use nodeinfo as later we may extract/set rank
+  bool HandleNodeDown(const nfs::PostMessage& message, NodeId& node);
+  bool HandleNodeUp(const nfs::PostMessage& message, NodeId& node);
 
   // On error handler
   template<typename Data>
@@ -55,8 +60,9 @@ class MetadataManager {
   template<typename Data>
   void OnDeleteErrorHandler(nfs::Message message);
 
-  routing::Routing& routing_;
   const boost::filesystem::path kRootDir_;
+  routing::Routing& routing_;
+  nfs::DataElementsManager data_elements_manager_;
 //  nfs::MetadataManagerNfs nfs_;
 };
 
@@ -69,4 +75,4 @@ void MetadataManager::HandleMessage(const nfs::Message& /*message*/,
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_META_DATA_MANAGER_H_
+#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_H_

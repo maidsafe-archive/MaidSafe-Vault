@@ -23,7 +23,8 @@ PmidAccountHolder::PmidAccountHolder(routing::Routing& /*routing*/,
 PmidAccountHolder::~PmidAccountHolder() {
 }
 
-void PmidAccountHolder::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
+void PmidAccountHolder::OnCloseNodeReplaced(
+    const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
 }
 
 }  // namespace vault

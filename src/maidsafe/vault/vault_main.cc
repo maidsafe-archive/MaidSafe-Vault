@@ -125,7 +125,7 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
   bool using_vault_controller(false);
   std::string vmid(usr_id);
   if (variables_map.count("vmid"))
-   vmid = variables_map.at("vmid").as<std::string>();
+    vmid = variables_map.at("vmid").as<std::string>();
 
   if (!vault_controller.Start(vmid, []() { SigHandler(SIGTERM); })) {
     LOG(kError) << "Could not start vault controller.";
@@ -186,7 +186,10 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
 
   // Starting Vault
   std::cout << "Starting vault..." << std::endl;
-  maidsafe::routing::Parameters::append_local_live_port_endpoint = true;  // To allow bootstrapping off vaults on local machine
+
+  // To allow bootstrapping off vaults on local machine
+  maidsafe::routing::Parameters::append_local_live_port_endpoint = true;
+
   auto vault = std::make_shared<maidsafe::vault::Vault>(
       *pmid,
       chunk_path,
@@ -207,7 +210,8 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
     return 4;
   }
 
-  std::cout << "Vault running as " << maidsafe::HexSubstr((*pmid).name().data.string()) << std::endl;
+  std::cout << "Vault running as "
+            << maidsafe::HexSubstr((*pmid).name().data.string()) << std::endl;
   {
     std::unique_lock<std::mutex> lock(g_mutex);
     g_cond_var.wait(lock, [] { return g_ctrlc_pressed; });  // NOLINT
