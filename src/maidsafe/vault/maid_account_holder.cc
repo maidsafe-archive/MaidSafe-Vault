@@ -35,11 +35,12 @@ MaidAccountHolder::MaidAccountHolder(const passport::Pmid& pmid,
       if (ReadFile(*dir_iter, &account_content)) {
         maidsafe::nfs::MaidAccount maid_account;
         maid_account.Parse(NonEmptyString(account_content));
-        if (Identity(dir_iter->path().string()) != maid_account.maid_id()) {
-          boost::filesystem::remove(*dir_iter);
-          continue;
+        if (Identity(dir_iter->path().filename().string()) == maid_account.maid_id()) {
+          maid_accounts_.push_back(maid_account);
+        } else {
+          if (!boost::filesystem::remove(*dir_iter))  // can throw!
+            LOG(kError) << "Failed to remove corrupt file " << *dir_iter;
         }
-        maid_accounts_.push_back(maid_account);
       }
     }
   }

@@ -27,7 +27,6 @@
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/public_key_getter.h"
 #include "maidsafe/nfs/nfs.h"
-#include "maidsafe/nfs/public_key_getter.h"
 
 
 namespace maidsafe {

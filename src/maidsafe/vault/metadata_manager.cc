@@ -16,21 +16,18 @@ namespace maidsafe {
 namespace vault {
 
 MetadataManager::MetadataManager(routing::Routing& routing,
-                                 const boost::filesystem::path& /*vault_root_dir*/): routing_(routing) {
-}
+                                 const boost::filesystem::path& /*vault_root_dir*/)
+  : routing_(routing),
+    nfs_(routing),
+    request_queue_() {}
 
 MetadataManager::~MetadataManager() {}
 
-void MetadataManager::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
-}
+void MetadataManager::OnCloseNodeReplaced(
+  const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {}
 
 void MetadataManager::Serialise() {}
 
-
-
-template<typename Data>
-void MetadataManager::HandlePutMessage(const nfs::Message& /*message*/,
-                                       const routing::ReplyFunctor& /*reply_functor*/) {}
 
 template<typename Data>
 void MetadataManager::HandlePostMessage(const nfs::Message& /*message*/,

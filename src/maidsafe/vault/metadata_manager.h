@@ -9,8 +9,10 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_META_DATA_MANAGER_H_
-#define MAIDSAFE_VAULT_META_DATA_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_H_
+#define MAIDSAFE_VAULT_METADATA_MANAGER_H_
+
+#include <vector>
 
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
@@ -21,7 +23,7 @@
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/public_key_getter.h"
 #include "maidsafe/nfs/nfs.h"
-#include "maidsafe/nfs/public_key_getter.h"
+#include "maidsafe/nfs/request_queue.h"
 
 namespace maidsafe {
 
@@ -57,7 +59,8 @@ class MetadataManager {
 
   routing::Routing& routing_;
   const boost::filesystem::path kRootDir_;
-//  nfs::MetadataManagerNfs nfs_;
+  nfs::MetadataManagerNfs nfs_;
+  nfs::RequestQueue request_queue_;
 };
 
 template<typename Data>
@@ -69,4 +72,6 @@ void MetadataManager::HandleMessage(const nfs::Message& /*message*/,
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_META_DATA_MANAGER_H_
+#include "maidsafe/vault/metadata_manager-inl.h"
+
+#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_H_
