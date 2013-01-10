@@ -26,13 +26,13 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace {
+namespace { //NOLINT
 
 bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id) {
   return routing.IsNodeIdInGroupRange(node_id);  // provisional call to Is..
 }
 
-}  // namespace
+}  // unamed namespace
 
 template<typename Data>
 void MaidAccountHolder::HandleMessage(const nfs::Message& message,
@@ -100,18 +100,14 @@ void MaidAccountHolder::HandleDeleteMessage(const nfs::Message& message,
     return;
   }
 
-  auto identity_it = std::find_if((*maid_account_it).data_elements().begin(),
-                                  (*maid_account_it).data_elements().end(),
-                                  [&message] (const nfs::DataElement& data_element) {
-                                    return data_element.data_id() == message.name();
-                                  });
-  bool found_data_item(identity_it != (*maid_account_it).data_elements().end());
+  bool found_data_item(maid_account_it->HasDataElement(message.name()));
   if (found_data_item) {
     // Send message on to MetadataManager
     nfs::OnError on_error_callback = [this] (nfs::Message message) {
                                        this->OnDeleteErrorHandler<Data>(message);
                                      };
     nfs_.Delete<Data>(message, on_error_callback);
+    maid_account_it->RemoveDataElement(message.name());
   }
 
   reply_functor(nfs::ReturnCode(found_data_item ? 0 : -1).Serialise()->string());
@@ -137,7 +133,9 @@ void MaidAccountHolder::AdjustAccount(const nfs::Message& message,
     // information
     nfs::DataElement data_element(message.name(),
                                   static_cast<int32_t>(message.content().string().size()));
-    (*maid_account_it).data_elements().push_back(data_element);
+    // TODO(Team): BEFORE_RELEASE Check if there will be case having a data_element bearing same
+    // data_id, and what shall be done in that case (i.e. reject PUT or update the data_element)
+    maid_account_it->PushDataElement(data_element);
   } else {
     assert(message.action_type() == nfs::ActionType::kDelete);
     // TODO(Team): BEFORE_RELEASE Handle delete.
