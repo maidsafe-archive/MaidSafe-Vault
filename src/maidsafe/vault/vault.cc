@@ -126,10 +126,10 @@ void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
 }
 
 void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes) {
-  asio_service_.service().post([=] { maid_account_holder_.OnCloseNodeReplaced(new_close_nodes); });
-  asio_service_.service().post([=] { metadata_manager_.OnCloseNodeReplaced(new_close_nodes); });
-  asio_service_.service().post([=] { pmid_account_holder_.OnCloseNodeReplaced(new_close_nodes); });
-  asio_service_.service().post([=] { data_holder_.OnCloseNodeReplaced(new_close_nodes); });
+  asio_service_.service().post([=] { maid_account_holder_.CloseNodeReplaced(new_close_nodes); });
+  asio_service_.service().post([=] { metadata_manager_.CloseNodeReplaced(new_close_nodes); });
+  asio_service_.service().post([=] { pmid_account_holder_.CloseNodeReplaced(new_close_nodes); });
+  asio_service_.service().post([=] { data_holder_.CloseNodeReplaced(new_close_nodes); });
 }
 
 bool Vault::OnGetFromCache(std::string& message) {  // Need to be on routing's thread

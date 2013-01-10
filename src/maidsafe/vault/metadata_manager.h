@@ -35,8 +35,8 @@ class MetadataManager {
   ~MetadataManager();
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
   void Serialise();
+  void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
 
  private:
   template<typename Data>

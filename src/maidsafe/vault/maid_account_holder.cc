@@ -125,8 +125,58 @@ bool MaidAccountHolder::HandleNewComer(nfs::PmidRegistration& pmid_registration)
 MaidAccountHolder::~MaidAccountHolder() {
 }
 
-void MaidAccountHolder::OnCloseNodeReplaced(
+void MaidAccountHolder::CloseNodeReplaced(
     const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
+  SendSyncData();
+}
+
+void MaidAccountHolder::SendSyncData() {
+  for (auto& account : maid_accounts_) {
+    nfs::PostMessage message(nfs::PostActionType::kSynchronise,
+                             nfs::PersonaType::kMaidAccountHolder,
+                             nfs::Message::Source(nfs::PersonaType::kMaidAccountHolder,
+                                                  routing_.kNodeId()),
+                             account.maid_id(),
+                             account.Serialise(),
+                             maidsafe::rsa::Signature());
+    nfs_.PostSyncData(message,
+                      [this](nfs::PostMessage message) { this->OnPostErrorHandler(message); });
+  }
+}
+
+bool MaidAccountHolder::HandleReceivedSyncData(const NonEmptyString &serialised_account) {
+  maidsafe::nfs::MaidAccount maid_account(serialised_account);
+  return WriteFile(kRootDir_ / maid_account.maid_id().string(), serialised_account.string());
+}
+
+void MaidAccountHolder::HandlePostMessage(const nfs::PostMessage& message,
+                                          const routing::ReplyFunctor& reply_functor) {
+// HandleNewComer(p_maid);
+  nfs::PostActionType action_type(message.post_action_type());
+  NodeId source_id(message.source().node_id);
+  switch (action_type) {
+    case nfs::PostActionType::kRegisterPmid:
+      break;
+    case nfs::PostActionType::kConnect:
+      break;
+    case nfs::PostActionType::kGetPmidSize:
+      break;
+    case nfs::PostActionType::kNodeDown:
+      break;
+    case nfs::PostActionType::kSynchronise:
+      if (NodeRangeCheck(routing_, source_id)) {
+        HandleReceivedSyncData(message.content());
+      } else {
+        reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+      }
+      break;
+    default:
+      LOG(kError) << "Unhandled Post action type";
+  }
+}
+
+void MaidAccountHolder::OnPostErrorHandler(nfs::PostMessage /*message*/) {
+  // TODO(Team): BEFORE_RELEASE implement
 }
 
 }  // namespace vault

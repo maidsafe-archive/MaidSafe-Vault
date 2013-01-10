@@ -11,6 +11,8 @@
 
 #include "maidsafe/vault/metadata_manager.h"
 
+#include <vector>
+
 namespace maidsafe {
 
 namespace vault {
@@ -23,7 +25,7 @@ MetadataManager::MetadataManager(routing::Routing& routing,
 
 MetadataManager::~MetadataManager() {}
 
-void MetadataManager::OnCloseNodeReplaced(
+void MetadataManager::CloseNodeReplaced(
   const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {}
 
 void MetadataManager::Serialise() {}
