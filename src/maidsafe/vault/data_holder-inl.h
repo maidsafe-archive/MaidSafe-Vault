@@ -47,12 +47,17 @@ void DataHolder::HandleMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-void DataHolder::HandleGetMessage(nfs::Message message,
+void DataHolder::HandleGetMessage(const nfs::Message& message,
                                   const routing::ReplyFunctor& reply_functor) {
   try {
-    message.set_content(permanent_data_store_.Get(typename Data::name_type(
-                            Identity(message.destination()->node_id.string()))));
-    reply_functor(message.Serialise()->string());
+    nfs::Message response(message.action_type(),
+                          message.destination_persona_type(),
+                          message.source(),
+                          message.data_type(),
+                          message.name(),
+                          permanent_data_store_.Get(typename Data::name_type(message.name())),
+                          asymm::Signature());
+    reply_functor(response.Serialise()->string());
   } catch(std::exception& /*ex*/) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());  // non 0 plus optional message
     // error code // at the moment this will go back to client
@@ -64,8 +69,7 @@ template<typename Data>
 void DataHolder::HandlePutMessage(const nfs::Message& message,
                                   const routing::ReplyFunctor& reply_functor) {
   try {
-    permanent_data_store_.Store(typename Data::name_type(
-        Identity(message.destination()->node_id.string())), message.content());
+    permanent_data_store_.Store(typename Data::name_type(message.name()), message.content());
     reply_functor(nfs::ReturnCode(0).Serialise()->string());
   } catch(std::exception& /*ex*/) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());  // non 0 plus optional message
@@ -83,35 +87,20 @@ void DataHolder::HandlePostMessage(const nfs::Message& /*message*/,
 template<typename Data>
 void DataHolder::HandleDeleteMessage(const nfs::Message& message,
                                      const routing::ReplyFunctor& reply_functor) {
-  permanent_data_store_.Delete(typename Data::name_type(
-      Identity(message.destination()->node_id.string())));
+  permanent_data_store_.Delete(typename Data::name_type(message.name()));
   reply_functor(nfs::ReturnCode(0).Serialise()->string());
 }
 
 // Cache Handling
 template<typename Data>
-bool DataHolder::GetFromCache(nfs::Message& message) {
-  NonEmptyString result;
-  try {
-    auto name(typename Data::name_type(Identity(message.destination()->node_id.string())));
-    message.set_content(CacheGet<Data>(name, is_long_term_cacheable<Data>()));
-    return message.content().IsInitialised();
-  }
-  catch(std::exception& error) {
-    LOG(kInfo) << "data not cached on this node " << error.what();
-    return false;
-  }
+NonEmptyString DataHolder::GetFromCache(const nfs::Message& message) {
+  return CacheGet<Data>(typename Data::name_type(message.name()), is_long_term_cacheable<Data>());
 }
 
 template<typename Data>
 void DataHolder::StoreInCache(const nfs::Message& message) {
-  try {
-    auto name(typename Data::name_type(Identity(message.destination()->node_id.string())));
-    CacheStore<Data>(name, message.content(), is_long_term_cacheable<Data>());
-  }
-  catch(std::exception& error) {
-    LOG(kInfo) << "data could not be cached on this node " << error.what();
-  }
+  CacheStore<Data>(typename Data::name_type(message.name()), message.content(),
+                   is_long_term_cacheable<Data>());
 }
 
 template<typename Data>

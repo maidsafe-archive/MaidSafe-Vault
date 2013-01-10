@@ -43,7 +43,7 @@ class Demultiplexer {
 
  private:
   void HandleMessagePersonaType(nfs::Message &message, const routing::ReplyFunctor& reply_functor);
-  bool HandleGetFromCache(nfs::Message &message);
+  NonEmptyString HandleGetFromCache(nfs::Message &message);
   void HandleStoreInCache(const nfs::Message& message);
 
   MaidAccountHolder& maid_account_holder_;

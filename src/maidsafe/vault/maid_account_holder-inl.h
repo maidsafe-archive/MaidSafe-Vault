@@ -65,7 +65,7 @@ void MaidAccountHolder::HandleGetMessage(nfs::Message /*message*/,
 template<typename Data>
 void MaidAccountHolder::HandlePutMessage(const nfs::Message& message,
                                          const routing::ReplyFunctor& reply_functor) {
-  if (!NodeRangeCheck(routing_, message.source().data.node_id)) {
+  if (!NodeRangeCheck(routing_, message.source().node_id)) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
     return;
   }
@@ -84,7 +84,7 @@ void MaidAccountHolder::HandlePostMessage(const nfs::Message& /*message*/,
 template<typename Data>
 void MaidAccountHolder::HandleDeleteMessage(const nfs::Message& message,
                                             const routing::ReplyFunctor& reply_functor) {
-  if (!NodeRangeCheck(routing_, message.source().data.node_id)) {
+  if (!NodeRangeCheck(routing_, message.source().node_id)) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
     return;
   }
@@ -93,7 +93,7 @@ void MaidAccountHolder::HandleDeleteMessage(const nfs::Message& message,
                                       maid_accounts_.end(),
                                       [&message] (const maidsafe::nfs::MaidAccount& maid_account) {
                                         return maid_account.maid_id().string() ==
-                                               message.source().data.node_id.string();
+                                               message.source().node_id.string();
                                       });
   if (maid_account_it == maid_accounts_.end()) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
@@ -102,9 +102,8 @@ void MaidAccountHolder::HandleDeleteMessage(const nfs::Message& message,
 
   auto identity_it = std::find_if((*maid_account_it).data_elements().begin(),
                                   (*maid_account_it).data_elements().end(),
-                                  [&message] (const nfs::DataElement& data_element)->bool {
-                                    return data_element.data_id().string() ==
-                                           message.destination().data.node_id.string();
+                                  [&message] (const nfs::DataElement& data_element) {
+                                    return data_element.data_id() == message.name();
                                   });
   bool found_data_item(identity_it != (*maid_account_it).data_elements().end());
   if (found_data_item) {
@@ -126,7 +125,7 @@ void MaidAccountHolder::AdjustAccount(const nfs::Message& message,
                                       maid_accounts_.end(),
                                       [&message] (const nfs::MaidAccount& maid_account) {
                                         return maid_account.maid_id().string() ==
-                                            message.source()->node_id.string();
+                                            message.source().node_id.string();
                                       });
   if (maid_account_it == maid_accounts_.end()) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
@@ -136,7 +135,7 @@ void MaidAccountHolder::AdjustAccount(const nfs::Message& message,
   if (message.action_type() == nfs::ActionType::kPut) {
     // TODO(Team): BEFORE_RELEASE Check if we should allow the store based on PMID account
     // information
-    nfs::DataElement data_element(Identity(message.destination().data.node_id.string()),
+    nfs::DataElement data_element(message.name(),
                                   static_cast<int32_t>(message.content().string().size()));
     (*maid_account_it).data_elements().push_back(data_element);
   } else {
