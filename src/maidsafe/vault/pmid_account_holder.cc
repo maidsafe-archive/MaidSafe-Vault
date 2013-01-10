@@ -17,14 +17,12 @@ namespace vault {
 
 PmidAccountHolder::PmidAccountHolder(routing::Routing& /*routing*/,
                                      const boost::filesystem::path /*vault_root_dir*/)
-    : vault_root_dir_() {
-}
+    : vault_root_dir_() {}
 
 PmidAccountHolder::~PmidAccountHolder() {
 }
 
-void PmidAccountHolder::OnCloseNodeReplaced(
-    const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
+void PmidAccountHolder::CloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {  //  NOLINT (fine when not commented)
 }
 
 }  // namespace vault

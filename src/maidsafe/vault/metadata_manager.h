@@ -24,7 +24,7 @@
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/post_message.h"
 #include "maidsafe/nfs/nfs.h"
-#include "maidsafe/nfs/public_key_getter.h"
+#include "maidsafe/nfs/request_queue.h"
 
 namespace maidsafe {
 
@@ -36,8 +36,8 @@ class MetadataManager {
   ~MetadataManager();
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
   void Serialise();
+  void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
 
  private:
   template<typename Data>
@@ -63,7 +63,8 @@ class MetadataManager {
   const boost::filesystem::path kRootDir_;
   routing::Routing& routing_;
   nfs::DataElementsManager data_elements_manager_;
-//  nfs::MetadataManagerNfs nfs_;
+  nfs::MetadataManagerNfs nfs_;
+  nfs::RequestQueue request_queue_;
 };
 
 template<typename Data>
@@ -74,5 +75,7 @@ void MetadataManager::HandleMessage(const nfs::Message& /*message*/,
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#include "maidsafe/vault/metadata_manager-inl.h"
 
 #endif  // MAIDSAFE_VAULT_METADATA_MANAGER_H_

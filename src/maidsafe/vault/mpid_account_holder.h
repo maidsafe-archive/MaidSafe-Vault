@@ -17,8 +17,8 @@
 
 #include "maidsafe/routing/api_config.h"
 
-//  #include "maidsafe/nfs/network_file_system.h"
-//  #include "maidsafe/vault/disk_based_storage.h"
+// #include "maidsafe/nfs/network_file_system.h"
+// #include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/common/rsa.h"
 
 namespace maidsafe {
@@ -34,7 +34,7 @@ class MpidAccountHolder {
   ~MpidAccountHolder();
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
+  void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
 
  private:
 //  void HandlePutMessage(const Message& message);

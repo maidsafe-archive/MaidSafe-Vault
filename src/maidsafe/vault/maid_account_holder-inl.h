@@ -46,9 +46,6 @@ void MaidAccountHolder::HandleMessage(const nfs::Message& message,
     case nfs::ActionType::kPut:
       HandlePutMessage<Data>(message, reply_functor);
       break;
-    case nfs::ActionType::kPost:
-      HandlePostMessage<Data>(message, reply_functor);
-      break;
     case nfs::ActionType::kDelete:
       HandleDeleteMessage<Data>(message, reply_functor);
       break;
@@ -73,12 +70,6 @@ void MaidAccountHolder::HandlePutMessage(const nfs::Message& message,
   AdjustAccount<Data>(message, reply_functor, is_payable<Data>());
   nfs_.Put<Data>(message, [this](nfs::Message message) { this->OnPutErrorHandler<Data>(message); });
   reply_functor(nfs::ReturnCode(0).Serialise()->string());
-}
-
-template<typename Data>
-void MaidAccountHolder::HandlePostMessage(const nfs::Message& /*message*/,
-                                          const routing::ReplyFunctor& /*reply_functor*/) {
-// HandleNewComer(p_maid);
 }
 
 template<typename Data>
