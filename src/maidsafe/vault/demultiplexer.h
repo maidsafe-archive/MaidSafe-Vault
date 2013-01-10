@@ -26,14 +26,14 @@ class Message;
 namespace vault {
 
 class MaidAccountHolder;
-class MetaDataManager;
+class MetadataManager;
 class PmidAccountHolder;
 class DataHolder;
 
 class Demultiplexer {
  public:
   Demultiplexer(MaidAccountHolder& maid_account_holder,
-                MetaDataManager& metadata_manager,
+                MetadataManager& metadata_manager,
                 PmidAccountHolder& pmid_account_holder,
                 DataHolder& data_holder);
   void HandleMessage(const std::string& serialised_message,
@@ -47,7 +47,7 @@ class Demultiplexer {
   void HandleStoreInCache(const nfs::Message& message);
 
   MaidAccountHolder& maid_account_holder_;
-  MetaDataManager& metadata_manager_;
+  MetadataManager& metadata_manager_;
   PmidAccountHolder& pmid_account_holder_;
   DataHolder& data_holder_;
 };

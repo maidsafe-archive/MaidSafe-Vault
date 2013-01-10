@@ -15,46 +15,48 @@ namespace maidsafe {
 
 namespace vault {
 
-MetaDataManager::MetaDataManager(routing::Routing& routing,
+MetadataManager::MetadataManager(routing::Routing& routing,
                                  const boost::filesystem::path& /*vault_root_dir*/): routing_(routing) {
 }
 
-MetaDataManager::~MetaDataManager() {}
+MetadataManager::~MetadataManager() {}
 
-void MetaDataManager::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
+void MetadataManager::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
 }
 
-void MetaDataManager::Serialise() {}
+void MetadataManager::Serialise() {}
 
 
 
 template<typename Data>
-void MetaDataManager::HandlePutMessage(const nfs::Message& /*message*/,
+void MetadataManager::HandlePutMessage(const nfs::Message& /*message*/,
                                        const routing::ReplyFunctor& /*reply_functor*/) {}
 
 template<typename Data>
-void MetaDataManager::HandlePostMessage(const nfs::Message& /*message*/,
+void MetadataManager::HandlePostMessage(const nfs::Message& /*message*/,
                                         const routing::ReplyFunctor& /*reply_functor*/) {}
 
 template<typename Data>
-void MetaDataManager::HandleDeleteMessage(const nfs::Message& /*message*/,
+void MetadataManager::HandleDeleteMessage(const nfs::Message& /*message*/,
                                           const routing::ReplyFunctor& /*reply_functor*/) {}
 
-void MetaDataManager::SendSyncData() {}
+void MetadataManager::SendSyncData() {}
 
-bool MetaDataManager::HandleNodeDown(NodeId& /*node*/) {
+bool MetadataManager::HandleNodeDown(NodeId& /*node*/) {
   return false;
 }
 
-bool MetaDataManager::HandleNodeUp(NodeId& /*node*/) {
+bool MetadataManager::HandleNodeUp(NodeId& /*node*/) {
   return false;
 }
 
 // On error handler
 template<typename Data>
-void MetaDataManager::OnPutErrorHandler(nfs::Message message) {}
+void MetadataManager::OnPutErrorHandler(nfs::Message message) {}
+
 template<typename Data>
-void MetaDataManager::OnDeleteErrorHandler(nfs::Message message) {}
+void MetadataManager::OnDeleteErrorHandler(nfs::Message message) {}
+
 }  // namespace vault
 
 }  // namespace maidsafe

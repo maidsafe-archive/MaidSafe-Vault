@@ -27,10 +27,10 @@ namespace maidsafe {
 
 namespace vault {
 
-class MetaDataManager {
+class MetadataManager {
  public:
-  MetaDataManager(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
-  ~MetaDataManager();
+  MetadataManager(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
+  ~MetadataManager();
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
@@ -57,11 +57,11 @@ class MetaDataManager {
 
   routing::Routing& routing_;
   const boost::filesystem::path kRootDir_;
-//  nfs::MetaDataManagerNfs nfs_;
+//  nfs::MetadataManagerNfs nfs_;
 };
 
 template<typename Data>
-void MetaDataManager::HandleMessage(const nfs::Message& /*message*/,
+void MetadataManager::HandleMessage(const nfs::Message& /*message*/,
                                     const routing::ReplyFunctor& /*reply_functor*/) {
 }
 

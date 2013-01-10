@@ -105,17 +105,17 @@ class DemultiplexerTest : public testing::Test {
  public:
   DemultiplexerTest()
       : maid_account_holder_(),
-        meta_data_manager_(),
+        metadata_manager_(),
         pmid_account_holder_(),
         data_holder_(),
         demultiplexer_(maid_account_holder_,
-                       meta_data_manager_,
+                       metadata_manager_,
                        pmid_account_holder_,
                        data_holder_) {}
 
   bool VerifyAndClearAllExpectations() {
     return testing::Mock::VerifyAndClearExpectations(&maid_account_holder_) &&
-           testing::Mock::VerifyAndClearExpectations(&meta_data_manager_) &&
+           testing::Mock::VerifyAndClearExpectations(&metadata_manager_) &&
            testing::Mock::VerifyAndClearExpectations(&pmid_account_holder_) &&
            testing::Mock::VerifyAndClearExpectations(&data_holder_);
   }
@@ -200,7 +200,7 @@ class DemultiplexerTest : public testing::Test {
 
  public:
   MockMaidAccountHolder maid_account_holder_;
-  MockMetadataManager meta_data_manager_;
+  MockMetadataManager metadata_manager_;
   MockPmidAccountHolder pmid_account_holder_;
   MockDataHolder data_holder_;
   Demultiplexer demultiplexer_;
@@ -210,7 +210,7 @@ TEST_F(DemultiplexerTest, FUNC_MaidAccountHolder) {
   nfs::Message message(GenerateValidMessage(nfs::PersonaType::kMaidAccountHolder));
 
   EXPECT_CALL(maid_account_holder_, HandleMessage(message)).Times(1);
-  EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
 
@@ -219,7 +219,7 @@ TEST_F(DemultiplexerTest, FUNC_MaidAccountHolder) {
 
 TEST_F(DemultiplexerTest, FUNC_MaidAccountHolderRepeat) {
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(100);
-  EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
 
@@ -233,7 +233,7 @@ TEST_F(DemultiplexerTest, FUNC_MetadataManager) {
   nfs::Message message(GenerateValidMessage(nfs::PersonaType::kMetadataManager));
 
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(meta_data_manager_, HandleMessage(message)).Times(1);
+  EXPECT_CALL(metadata_manager_, HandleMessage(message)).Times(1);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
 
@@ -242,7 +242,7 @@ TEST_F(DemultiplexerTest, FUNC_MetadataManager) {
 
 TEST_F(DemultiplexerTest, FUNC_MetadataManagerRepeat) {
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(100);
+  EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(100);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
 
@@ -256,7 +256,7 @@ TEST_F(DemultiplexerTest, FUNC_PmidAccountHolder) {
   nfs::Message message(GenerateValidMessage(nfs::PersonaType::kPmidAccountHolder));
 
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(message)).Times(0);
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(1);
 
@@ -265,7 +265,7 @@ TEST_F(DemultiplexerTest, FUNC_PmidAccountHolder) {
 
 TEST_F(DemultiplexerTest, FUNC_PmidAccountHolderRepeat) {
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(100);
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
 
@@ -279,7 +279,7 @@ TEST_F(DemultiplexerTest, FUNC_DataHolder) {
   nfs::Message message(GenerateValidMessage(nfs::PersonaType::kDataHolder));
 
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(data_holder_, HandleMessage(message)).Times(1);
 
@@ -288,7 +288,7 @@ TEST_F(DemultiplexerTest, FUNC_DataHolder) {
 
 TEST_F(DemultiplexerTest, FUNC_DataHolderRepeat) {
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(100);
 
@@ -300,7 +300,7 @@ TEST_F(DemultiplexerTest, FUNC_DataHolderRepeat) {
 
 TEST_F(DemultiplexerTest, FUNC_Scrambled) {
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
 
@@ -309,7 +309,7 @@ TEST_F(DemultiplexerTest, FUNC_Scrambled) {
 
 TEST_F(DemultiplexerTest, FUNC_ScrambledRepeat) {
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
 
@@ -321,7 +321,7 @@ TEST_F(DemultiplexerTest, FUNC_ScrambledRepeat) {
 
 TEST_F(DemultiplexerTest, FUNC_EmptyMessage) {
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
 
@@ -347,9 +347,9 @@ TEST_F(DemultiplexerTest, FUNC_ValidMessages) {
       EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
 
     if (messages.at(index).destination_persona_type() == nfs::PersonaType::kMetadataManager)
-      EXPECT_CALL(meta_data_manager_, HandleMessage(messages.at(index))).Times(1);
+      EXPECT_CALL(metadata_manager_, HandleMessage(messages.at(index))).Times(1);
     else
-      EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(0);
+      EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(0);
 
     if (messages.at(index).destination_persona_type() == nfs::PersonaType::kPmidAccountHolder)
       EXPECT_CALL(pmid_account_holder_, HandleMessage(messages.at(index))).Times(1);
@@ -379,7 +379,7 @@ TEST_F(DemultiplexerTest, FUNC_ValidMessagesRepeat) {
                                                            expect_dh));
 
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(expect_mah);
-  EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(expect_mdm);
+  EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(expect_mdm);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(expect_pah);
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(expect_dh);
 
@@ -401,7 +401,7 @@ TEST_F(DemultiplexerTest, FUNC_ValidMessagesParallel) {
                                                            expect_dh));
 
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(expect_mah);
-  EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(expect_mdm);
+  EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(expect_mdm);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(expect_pah);
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(expect_dh);
 
@@ -429,7 +429,7 @@ TEST_F(DemultiplexerTest, FUNC_MixedMessagesRepeat) {
                                                            expect_dh));
 
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(expect_mah);
-  EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(expect_mdm);
+  EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(expect_mdm);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(expect_pah);
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(expect_dh);
 
@@ -456,7 +456,7 @@ TEST_F(DemultiplexerTest, FUNC_MixedMessagesParallel) {
                                                            expect_dh));
 
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(expect_mah);
-  EXPECT_CALL(meta_data_manager_, HandleMessage(testing::_)).Times(expect_mdm);
+  EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(expect_mdm);
   EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(expect_pah);
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(expect_dh);
 

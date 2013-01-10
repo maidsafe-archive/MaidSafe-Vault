@@ -72,7 +72,7 @@ class Vault {
   std::unique_ptr<routing::Routing> routing_;
   nfs::PublicKeyGetter public_key_getter_;
   MaidAccountHolder maid_account_holder_;
-  MetaDataManager meta_data_manager_;
+  MetadataManager metadata_manager_;
   PmidAccountHolder pmid_account_holder_;
   DataHolder data_holder_;
   Demultiplexer demux_;
