@@ -57,6 +57,16 @@ class MaidAccountHolder {
   void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  // Handles payable data type(s)
+  template<typename Data>
+  void AdjustAccount(const nfs::Message& message,
+                     const routing::ReplyFunctor& reply_functor,
+                     std::true_type);
+  // no-op for non-payable data
+  template<typename Data>
+  void AdjustAccount(const nfs::Message& /*message*/,
+                     const routing::ReplyFunctor& /*reply_functor*/,
+                     std::false_type) {}
   void SendSyncData();
 //   bool HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid);
 //   bool OnKeyFetched(const passport::/*PublicMaid*/PublicPmid& p_maid,
