@@ -9,8 +9,9 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_META_DATA_MANAGER_H_
-#define MAIDSAFE_VAULT_META_DATA_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_H_
+#define MAIDSAFE_VAULT_METADATA_MANAGER_H_
+#include <vector>
 
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
@@ -21,7 +22,6 @@
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/public_key_getter.h"
 #include "maidsafe/nfs/nfs.h"
-#include "maidsafe/nfs/public_key_getter.h"
 
 namespace maidsafe {
 
@@ -33,8 +33,8 @@ class MetadataManager {
   ~MetadataManager();
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
   void Serialise();
+  void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
 
  private:
   template<typename Data>
@@ -69,4 +69,4 @@ void MetadataManager::HandleMessage(const nfs::Message& /*message*/,
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_META_DATA_MANAGER_H_
+#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_H_

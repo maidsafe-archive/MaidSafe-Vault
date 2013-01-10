@@ -25,10 +25,9 @@
 
 #include "maidsafe/nfs/maid_account.h"
 #include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/post_message.h"
 #include "maidsafe/nfs/public_key_getter.h"
 #include "maidsafe/nfs/nfs.h"
-#include "maidsafe/nfs/public_key_getter.h"
-
 
 namespace maidsafe {
 
@@ -42,7 +41,9 @@ class MaidAccountHolder {
   ~MaidAccountHolder();
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
+  void HandlePostMessage(const nfs::PostMessage& message,
+                         const routing::ReplyFunctor& reply_functor);
+  void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
   void Serialise();
   void Serialise(const passport::Maid& maid);
   void Serialise(const passport::Pmid& pmid);
@@ -53,8 +54,6 @@ class MaidAccountHolder {
   void HandleGetMessage(nfs::Message message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  template<typename Data>
-  void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   // Handles payable data type(s)
@@ -68,6 +67,7 @@ class MaidAccountHolder {
                      const routing::ReplyFunctor& /*reply_functor*/,
                      std::false_type) {}
   void SendSyncData();
+  bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
 //   bool HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid);
 //   bool OnKeyFetched(const passport::/*PublicMaid*/PublicPmid& p_maid,
 //                     const passport::PublicPmid& p_pmid);
@@ -78,6 +78,7 @@ class MaidAccountHolder {
   void OnPutErrorHandler(nfs::Message message);
   template<typename Data>
   void OnDeleteErrorHandler(nfs::Message message);
+  void OnPostErrorHandler(nfs::PostMessage message);
 
   routing::Routing& routing_;
   const boost::filesystem::path kRootDir_;

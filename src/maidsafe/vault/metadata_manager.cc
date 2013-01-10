@@ -11,17 +11,20 @@
 
 #include "maidsafe/vault/metadata_manager.h"
 
+#include <vector>
+
 namespace maidsafe {
 
 namespace vault {
 
 MetadataManager::MetadataManager(routing::Routing& routing,
-                                 const boost::filesystem::path& /*vault_root_dir*/): routing_(routing) {
+                                 const boost::filesystem::path& /*vault_root_dir*/)
+    : routing_(routing) {
 }
 
 MetadataManager::~MetadataManager() {}
 
-void MetadataManager::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
+void MetadataManager::CloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
 }
 
 void MetadataManager::Serialise() {}
