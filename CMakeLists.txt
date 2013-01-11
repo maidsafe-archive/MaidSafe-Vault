@@ -18,6 +18,8 @@ set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 cmake_minimum_required(VERSION 2.8.7 FATAL_ERROR)
 project(vault)
 
+set(PROTO_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
+file(GLOB_RECURSE PROTO_FILES RELATIVE ${PROTO_SOURCE_DIR} "${PROTO_SOURCE_DIR}/maidsafe/vault/*.proto")
 include(../../cmake_modules/maidsafe_standard_setup.cmake)
 
 include_directories(${common_SOURCE_DIR}/include)
@@ -32,13 +34,63 @@ include_directories(${rudp_SOURCE_DIR}/include)
 # Set up all files as GLOBs                                                                        #
 #==================================================================================================#
 set(VaultSourcesRootDir ${PROJECT_SOURCE_DIR}/src/maidsafe/vault)
+file(GLOB_RECURSE VaultProtos ${VaultSourcesRootDir}/*.proto)
+file(GLOB_RECURSE VaultProtoSources ${VaultSourcesRootDir}/*.pb.cc)
+file(GLOB_RECURSE VaultProtoHeaders ${VaultSourcesRootDir}/*pb.h)
+set(VaultProtos ${VaultProtos} ${VaultProtoSources} ${VaultProtoHeaders})
+source_group("Vault Proto Files" FILES ${VaultProtos})
+
 file(GLOB VaultSources ${VaultSourcesRootDir}/*.cc)
 file(GLOB VaultHeaders ${VaultSourcesRootDir}/*.h)
-set(VaultAllFiles ${VaultSources} ${VaultHeaders})
-set(StyleAllFiles ${VaultAllFiles})
+list(REMOVE_ITEM VaultSources ${VaultProtos})
+list(REMOVE_ITEM VaultHeaders ${VaultProtos})
 source_group("Vault Source Files" FILES ${VaultSources})
 source_group("Vault Header Files" FILES ${VaultHeaders})
-list(REMOVE_ITEM VaultAllFiles ${VaultSourcesRootDir}/vault_main.cc)
+list(REMOVE_ITEM VaultSources ${VaultSourcesRootDir}/vault_main.cc)
+
+file(GLOB VaultDataHolderSources ${VaultSourcesRootDir}/data_holder/*.cc)
+file(GLOB VaultDataHolderHeaders ${VaultSourcesRootDir}/data_holder/*.h)
+list(REMOVE_ITEM VaultDataHolderSources ${VaultProtos})
+list(REMOVE_ITEM VaultDataHolderHeaders ${VaultProtos})
+source_group("Data Holder Source Files" FILES ${VaultDataHolderSources})
+source_group("Data Holder Header Files" FILES ${VaultDataHolderHeaders})
+
+file(GLOB VaultMaidAccountHolderSources ${VaultSourcesRootDir}/maid_account_holder/*.cc)
+file(GLOB VaultMaidAccountHolderHeaders ${VaultSourcesRootDir}/maid_account_holder/*.h)
+list(REMOVE_ITEM VaultMaidAccountHolderSources ${VaultProtos})
+list(REMOVE_ITEM VaultMaidAccountHolderHeaders ${VaultProtos})
+source_group("MAID Account Holder Source Files" FILES ${VaultMaidAccountHolderSources})
+source_group("MAID Account Holder Header Files" FILES ${VaultMaidAccountHolderHeaders})
+
+file(GLOB VaultMetadataManagerSources ${VaultSourcesRootDir}/metadata_manager/*.cc)
+file(GLOB VaultMetadataManagerHeaders ${VaultSourcesRootDir}/metadata_manager/*.h)
+list(REMOVE_ITEM VaultMetadataManagerSources ${VaultProtos})
+list(REMOVE_ITEM VaultMetadataManagerHeaders ${VaultProtos})
+source_group("Metadata Manager Source Files" FILES ${VaultMetadataManagerSources})
+source_group("Metadata Manager Header Files" FILES ${VaultMetadataManagerHeaders})
+
+file(GLOB VaultMpidAccountHolderSources ${VaultSourcesRootDir}/mpid_account_holder/*.cc)
+file(GLOB VaultMpidAccountHolderHeaders ${VaultSourcesRootDir}/mpid_account_holder/*.h)
+list(REMOVE_ITEM VaultMpidAccountHolderSources ${VaultProtos})
+list(REMOVE_ITEM VaultMpidAccountHolderHeaders ${VaultProtos})
+source_group("MPID Account Holder Source Files" FILES ${VaultMpidAccountHolderSources})
+source_group("MPID Account Holder Header Files" FILES ${VaultMpidAccountHolderHeaders})
+
+file(GLOB VaultPmidAccountHolderSources ${VaultSourcesRootDir}/pmid_account_holder/*.cc)
+file(GLOB VaultPmidAccountHolderHeaders ${VaultSourcesRootDir}/pmid_account_holder/*.h)
+list(REMOVE_ITEM VaultPmidAccountHolderSources ${VaultProtos})
+list(REMOVE_ITEM VaultPmidAccountHolderHeaders ${VaultProtos})
+source_group("PMID Account Holder Source Files" FILES ${VaultPmidAccountHolderSources})
+source_group("PMID Account Holder Header Files" FILES ${VaultPmidAccountHolderHeaders})
+
+set(VaultAllFiles ${VaultSources} ${VaultHeaders}
+                  ${VaultDataHolderSources} ${VaultDataHolderHeaders}
+                  ${VaultMaidAccountHolderSources} ${VaultMaidAccountHolderHeaders}
+                  ${VaultMetadataManagerSources} ${VaultMetadataManagerHeaders}
+                  ${VaultMpidAccountHolderSources} ${VaultMpidAccountHolderHeaders}
+                  ${VaultPmidAccountHolderSources} ${VaultPmidAccountHolderHeaders})
+set(StyleAllFiles ${VaultAllFiles})
+set(VaultAllFiles ${VaultAllFiles} ${VaultProtos})
 
 file(GLOB VaultTestsSources ${VaultSourcesRootDir}/tests/*.cc)
 file(GLOB VaultTestsHeaders ${VaultSourcesRootDir}/tests/*.h)

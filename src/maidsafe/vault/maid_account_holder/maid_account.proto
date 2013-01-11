@@ -1,0 +1,16 @@
+package maidsafe.vault.protobuf;
+import "maidsafe/vault/pmid_account_holder/pmid_account.proto";
+option optimize_for = LITE_RUNTIME;
+
+message PmidTotals {
+  required bytes serialised_pmid_registration = 1;
+  required PmidRecord pmid_record = 2;
+}
+
+message MaidAccount {
+  required bytes maid_name = 1;
+  repeated PmidTotals pmid_totals = 2;
+  repeated DataElements data_put_to_network = 3;
+  required int64 total_data_stored_by_pmids = 4;
+  required int64 total_data_put_to_network = 5;
+}

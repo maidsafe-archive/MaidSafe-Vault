@@ -9,34 +9,16 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_TYPES_H_
-#define MAIDSAFE_VAULT_TYPES_H_
+#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_PB_H_
+#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_PB_H_
 
-#include "maidsafe/common/tagged_value.h"
-#include "maidsafe/common/types.h"
+#ifdef __MSVC__
+#  pragma warning(push)
+#  pragma warning(disable: 4127 4244 4267)
+#endif
+#include "maidsafe/vault/metadata_manager/metadata.pb.h"
+#ifdef __MSVC__
+#  pragma warning(pop)
+#endif
 
-#include "maidsafe/nfs/nfs.h"
-
-
-namespace maidsafe {
-
-namespace vault {
-
-typedef TaggedValue<Identity, struct VaultIdentityTag> AccountName;
-
-typedef nfs::NetworkFileSystem<GetFromMaidAccountHolder<PersonaType::kMaidAccountHolder>,
-                          PutToMetadataManager,
-                          PostSynchronisation<PersonaType::kMaidAccountHolder>,
-                          DeleteFromMetadataManager> MaidAccountHolderNfs;
-
-typedef nfs::NetworkFileSystem<GetFromPmidAccountHolder,
-                          PutToPmidAccountHolder,
-                          NoPost<passport::Pmid>,
-                          DeleteFromPmidAccountHolder> MetadataManagerNfs;
-
-
-}  // namespace vault
-
-}  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_TYPES_H_
+#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_PB_H_
