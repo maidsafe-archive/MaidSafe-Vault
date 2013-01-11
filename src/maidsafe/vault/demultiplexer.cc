@@ -33,7 +33,7 @@ template<typename PersonaType>
 void HandleDataType(nfs::Message& message,
                     const routing::ReplyFunctor& reply_functor,
                     PersonaType& persona_type) {
-  //static assert
+  // static assert
   switch (message.data_type()) {
     case detail::DataTagValue::kAnmidValue:
       persona_type.template HandleMessage<passport::PublicAnmid>(message, reply_functor);
@@ -105,7 +105,7 @@ void Demultiplexer::HandleMessage(const std::string& serialised_message,
 
 void Demultiplexer::HandleMessagePersonaType(nfs::Message& message,
                                              const routing::ReplyFunctor& reply_functor) {
-  switch (message.destination()->persona_type) {
+  switch (message.destination_persona_type()) {
     case nfs::PersonaType::kMaidAccountHolder :
       HandleDataType<MaidAccountHolder>(message, reply_functor, maid_account_holder_);
       break;
@@ -119,14 +119,22 @@ void Demultiplexer::HandleMessagePersonaType(nfs::Message& message,
       HandleDataType<DataHolder>(message, reply_functor, data_holder_);
       break;
     default :
-      LOG(kError) << "Unhandled personatype";
+      LOG(kError) << "Unhandled PersonaType";
   }
 }
 
 bool Demultiplexer::GetFromCache(std::string& serialised_message) {
   try {
-    nfs::Message message((nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
-    if (HandleGetFromCache(message)) {
+    nfs::Message request((nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
+    auto cached_content(HandleGetFromCache(request));
+    if (cached_content.IsInitialised()) {
+      nfs::Message message(request.action_type(),
+                           request.destination_persona_type(),
+                           request.source(),
+                           request.data_type(),
+                           request.name(),
+                           cached_content,
+                           asymm::Signature());
       serialised_message = message.Serialise()->string();
       return true;
     }
@@ -136,7 +144,7 @@ bool Demultiplexer::GetFromCache(std::string& serialised_message) {
   return false;
 }
 
-bool Demultiplexer::HandleGetFromCache(nfs::Message& message) {
+NonEmptyString Demultiplexer::HandleGetFromCache(nfs::Message& message) {
   switch (message.data_type()) {
     case detail::DataTagValue::kAnmidValue:
       return data_holder_.GetFromCache<passport::PublicAnmid>(message);
@@ -161,7 +169,7 @@ bool Demultiplexer::HandleGetFromCache(nfs::Message& message) {
     default :
       LOG(kError) << "Unhandled data type";
   }
-  return false;
+  return NonEmptyString();
 }
 
 void Demultiplexer::StoreInCache(const std::string& serialised_message) {

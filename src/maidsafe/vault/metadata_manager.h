@@ -9,46 +9,35 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_H_
-#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_H_
+#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_H_
+#define MAIDSAFE_VAULT_METADATA_MANAGER_H_
 
-#include <map>
-#include <memory>
-#include <string>
 #include <vector>
-#include <fstream>
 
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/routing/api_config.h"
 
+#include "maidsafe/nfs/data_elements_manager.h"
 #include "maidsafe/nfs/maid_account.h"
 #include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/post_message.h"
-#include "maidsafe/nfs/public_key_getter.h"
-
+#include "maidsafe/nfs/nfs.h"
+#include "maidsafe/nfs/request_queue.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-class MaidAccountHolder {
+class MetadataManager {
  public:
-  MaidAccountHolder(const passport::Pmid& pmid, routing::Routing& routing,
-                    nfs::PublicKeyGetter& public_key_getter,
-                    const boost::filesystem::path& vault_root_dir);
-  ~MaidAccountHolder();
+  MetadataManager(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
+  ~MetadataManager();
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  void HandlePostMessage(const nfs::PostMessage& message,
-                         const routing::ReplyFunctor& reply_functor);
-  void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
   void Serialise();
-  void Serialise(const passport::Maid& maid);
-  void Serialise(const passport::Pmid& pmid);
-  void RemoveAccount(const passport::Maid& maid);
+  void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
 
  private:
   template<typename Data>
@@ -57,41 +46,36 @@ class MaidAccountHolder {
   void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  // Handles payable data type(s)
-  template<typename Data>
-  void AdjustAccount(const nfs::Message& message,
-                     const routing::ReplyFunctor& reply_functor,
-                     std::true_type);
-  // no-op for non-payable data
-  template<typename Data>
-  void AdjustAccount(const nfs::Message& /*message*/,
-                     const routing::ReplyFunctor& /*reply_functor*/,
-                     std::false_type) {}
   void SendSyncData();
-  bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
-//   bool HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid);
-//   bool OnKeyFetched(const passport::/*PublicMaid*/PublicPmid& p_maid,
-//                     const passport::PublicPmid& p_pmid);
-  bool HandleNewComer(nfs::PmidRegistration& pmid_registration);
+
+  // use nodeinfo as later we may extract/set rank
+  void HandlePostMessage(const nfs::PostMessage& message,
+                         const routing::ReplyFunctor& reply_functor);
+  bool HandleNodeDown(const nfs::PostMessage& message, NodeId& node);
+  bool HandleNodeUp(const nfs::PostMessage& message, NodeId& node);
 
   // On error handler
   template<typename Data>
   void OnPutErrorHandler(nfs::Message message);
   template<typename Data>
   void OnDeleteErrorHandler(nfs::Message message);
-  void OnPostErrorHandler(nfs::PostMessage message);
 
-  routing::Routing& routing_;
   const boost::filesystem::path kRootDir_;
-  nfs::MaidAccountHolderNfs nfs_;
-  nfs::PublicKeyGetter& public_key_getter_;
-  std::vector<maidsafe::nfs::MaidAccount> maid_accounts_;
+  routing::Routing& routing_;
+  nfs::DataElementsManager data_elements_manager_;
+  nfs::MetadataManagerNfs nfs_;
+  nfs::RequestQueue request_queue_;
 };
+
+template<typename Data>
+void MetadataManager::HandleMessage(const nfs::Message& /*message*/,
+                                    const routing::ReplyFunctor& /*reply_functor*/) {
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/maid_account_holder-inl.h"
+#include "maidsafe/vault/metadata_manager-inl.h"
 
-#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_H_
+#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_H_

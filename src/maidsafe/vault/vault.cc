@@ -27,11 +27,11 @@ Vault::Vault(const passport::Pmid& pmid,
       on_new_bootstrap_endpoint_(on_new_bootstrap_endpoint),
       routing_(new routing::Routing(&pmid)),
       public_key_getter_(*routing_, pmids_from_file),
-      maid_account_holder_(pmid, *routing_, vault_root_dir),
-      meta_data_manager_(*routing_, vault_root_dir),
+      maid_account_holder_(pmid, *routing_, public_key_getter_, vault_root_dir),
+      metadata_manager_(*routing_, vault_root_dir),
       pmid_account_holder_(*routing_, vault_root_dir),
       data_holder_(vault_root_dir),
-      demux_(maid_account_holder_, meta_data_manager_, pmid_account_holder_, data_holder_),
+      demux_(maid_account_holder_, metadata_manager_, pmid_account_holder_, data_holder_),
       asio_service_(2) {
   asio_service_.Start();
   InitRouting(peer_endpoints);
@@ -126,10 +126,10 @@ void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
 }
 
 void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes) {
-  asio_service_.service().post([=] { maid_account_holder_.OnCloseNodeReplaced(new_close_nodes); });
-  asio_service_.service().post([=] { meta_data_manager_.OnCloseNodeReplaced(new_close_nodes); });
-  asio_service_.service().post([=] { pmid_account_holder_.OnCloseNodeReplaced(new_close_nodes); });
-  asio_service_.service().post([=] { data_holder_.OnCloseNodeReplaced(new_close_nodes); });
+  asio_service_.service().post([=] { maid_account_holder_.CloseNodeReplaced(new_close_nodes); });
+  asio_service_.service().post([=] { metadata_manager_.CloseNodeReplaced(new_close_nodes); });
+  asio_service_.service().post([=] { pmid_account_holder_.CloseNodeReplaced(new_close_nodes); });
+  asio_service_.service().post([=] { data_holder_.CloseNodeReplaced(new_close_nodes); });
 }
 
 bool Vault::OnGetFromCache(std::string& message) {  // Need to be on routing's thread
