@@ -56,6 +56,10 @@ DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
 
 DataHolder::~DataHolder() {}
 
+
+void DataHolder::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
+}
+
 void DataHolder::ResumeSending() {
   stop_sending_ = false;
 }

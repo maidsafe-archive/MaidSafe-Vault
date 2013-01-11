@@ -23,18 +23,19 @@
 
 #include "maidsafe/passport/types.h"
 
-#include "maidsafe/routing/api_config.h"
+#include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/vault/data_holder.h"
 #include "maidsafe/vault/maid_account_holder.h"
-#include "maidsafe/vault/meta_data_manager.h"
+#include "maidsafe/vault/metadata_manager.h"
 #include "maidsafe/vault/pmid_account_holder.h"
 #include "maidsafe/vault/demultiplexer.h"
 
+
 namespace maidsafe {
-namespace routing { class Routing; }  // namespace routing
+
 namespace vault {
 
 class Vault {
@@ -43,7 +44,8 @@ class Vault {
   Vault(const passport::Pmid& pmid,
         const boost::filesystem::path& vault_root_dir,
         std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint,
-        const std::vector<passport::Pmid>& pmids_from_file = std::vector<passport::Pmid>(),
+        const std::vector<passport::PublicPmid>& pmids_from_file =
+            std::vector<passport::PublicPmid>(),
         const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints =
             std::vector<boost::asio::ip::udp::endpoint>());
   ~Vault();  // must issue StopSending() to all identity objects (MM etc.)
@@ -58,10 +60,9 @@ class Vault {
   void OnPublicKeyRequested(const NodeId &node_id, const routing::GivePublicKeyFunctor &give_key);
   void DoOnPublicKeyRequested(const NodeId &node_id, const routing::GivePublicKeyFunctor &give_key);
   void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
-  void DoOnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
-  void OnStoreCacheData(const std::string& message);
-  void DoOnStoreCacheData(const std::string& message);
-  bool HaveCacheData(std::string& message);
+  bool OnGetFromCache(std::string& message);
+  void OnStoreInCache(const std::string& message);
+  void DoOnStoreInCache(const std::string& message);
   void OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint);
   void DoOnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint);
 

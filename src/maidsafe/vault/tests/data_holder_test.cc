@@ -269,8 +269,6 @@ TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
   EXPECT_TRUE(this->GetFromCache(message));
 }
 
-
-
 REGISTER_TYPED_TEST_CASE_P(DataHolderCacheableTest, BEH_StoreInCache);
 
 typedef testing::Types<passport::PublicAnmid,
