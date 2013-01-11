@@ -50,10 +50,10 @@ class PutToMetadataManager {
 
     routing::ResponseFunctor callback =
         [on_error, new_message](const std::vector<std::string>& serialised_messages) {
-          HandlePutResponse<Data>(on_error, new_message, serialised_messages);
+          nfs::HandlePutResponse<Data>(on_error, new_message, serialised_messages);
         };
     routing_.Send(NodeId(new_message.name().string()), message.Serialise()->string(),
-                  callback, routing::DestinationType::kGroup, IsCacheable<Data>());
+                  callback, routing::DestinationType::kGroup, nfs::IsCacheable<Data>());
   }
 
  protected:
@@ -83,10 +83,10 @@ class PutToPmidAccountHolder {
 
     routing::ResponseFunctor callback =
         [on_error, new_message](const std::vector<std::string>& serialised_messages) {
-          HandlePutResponse<Data>(on_error, new_message, serialised_messages);
+          nfs::HandlePutResponse<Data>(on_error, new_message, serialised_messages);
         };
     routing_.Send(routing_.GetRandomExistingNode(), message.Serialise()->string(),
-                  callback, routing::DestinationType::kGroup, IsCacheable<Data>());
+                  callback, routing::DestinationType::kGroup, nfs::IsCacheable<Data>());
   }
 
  protected:
@@ -99,27 +99,26 @@ class PutToPmidAccountHolder {
 
 class PutToDataHolder {
  public:
-  PutToDataHolder(routing::Routing& routing)
+  explicit PutToDataHolder(routing::Routing& routing)
       : routing_(routing),
         source_(nfs::Message::Source(nfs::PersonaType::kPmidAccountHolder, routing.kNodeId())) {}
 
   template<typename Data>
-  void Put(const Data& data, nfs::OnError on_error) {
-    NonEmptyString content(data.Serialise());
-    nfs::Message message(ActionType::kPut,
-                         PersonaType::kDataHolder,
-                         source_,
-                         Data::name_type::tag_type::kEnumValue,
-                         data.name(),
-                         content,
-                         asymm::Sign(content, signing_fob_.private_key()));
+  void Put(const nfs::Message& message, nfs::OnError on_error) {
+    nfs::Message new_message(message.action_type(),
+                             message.destination_persona_type(),
+                             source_,
+                             message.data_type(),
+                             message.name(),
+                             message.content(),
+                             message.signature());
 
     routing::ResponseFunctor callback =
-        [on_error, message](const std::vector<std::string>& serialised_messages) {
-          HandlePutResponse<Data>(on_error, message, serialised_messages);
+        [on_error, new_message](const std::vector<std::string>& serialised_messages) {
+          nfs::HandlePutResponse<Data>(on_error, new_message, serialised_messages);
         };
-    routing_.Send(NodeId(data.name()->string()), message.Serialise()->string(), callback,
-                  routing::DestinationType::kGroup, IsCacheable<Data>());
+    routing_.Send(NodeId(new_message.name().string()), new_message.Serialise()->string(), callback,
+                  routing::DestinationType::kGroup, nfs::IsCacheable<Data>());
   }
 
  protected:

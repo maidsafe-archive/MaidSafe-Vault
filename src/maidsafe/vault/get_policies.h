@@ -44,11 +44,11 @@ class GetFromDataHolder {
         [promise](const std::vector<std::string>& serialised_messages) {
           HandleGetResponse(promise, serialised_messages);
         };
-    Message message(ActionType::kGet, PersonaType::kDataHolder, source_,
-                    Data::name_type::tag_type::kEnumValue, name.data, NonEmptyString(),
-                    asymm::Signature());
+    nfs::Message message(nfs::ActionType::kGet, nfs::PersonaType::kDataHolder, source_,
+                         Data::name_type::tag_type::kEnumValue, name.data, NonEmptyString(),
+                         asymm::Signature());
     routing_.Send(NodeId(name->string()), message.Serialise()->string(), callback,
-                  routing::DestinationType::kGroup, IsCacheable<Data>());
+                  routing::DestinationType::kGroup, nfs::IsCacheable<Data>());
     return std::move(future);
   }
 

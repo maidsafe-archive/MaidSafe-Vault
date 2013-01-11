@@ -16,6 +16,7 @@
 #include <mutex>
 
 #include "maidsafe/common/types.h"
+#include "maidsafe/nfs/pmid_registration.h"
 
 
 namespace maidsafe {
@@ -52,7 +53,7 @@ class PmidSize {
 
 class PmidTotal {
  public:
-  PmidTotal(PmidRegistration registration_in, PmidSize pmid_size_in)
+  PmidTotal(nfs::PmidRegistration registration_in, PmidSize pmid_size_in)
     : registration(registration_in), pmid_size(pmid_size_in) {}
 
   NonEmptyString Serialise();
@@ -62,7 +63,7 @@ class PmidTotal {
   Identity pmid_id() { return registration.pmid_id(); }
 
  private:
-  PmidRegistration registration;
+  nfs::PmidRegistration registration;
   PmidSize pmid_size;
 };
 
@@ -79,48 +80,6 @@ class DataElement {
  private:
   Identity data_id_;
   int32_t data_size;
-};
-
-class MaidAccount {
- public:
-  MaidAccount() : maid_id_(), pmid_totals_(), data_elements_(), mutex_() {}
-
-  explicit MaidAccount(Identity maid_id_in)
-    : maid_id_(maid_id_in), pmid_totals_(), data_elements_(), mutex_() {}
-
-  explicit MaidAccount(const NonEmptyString& serialised_maidaccount)
-    : maid_id_(), pmid_totals_(), data_elements_(), mutex_() {
-    Parse(serialised_maidaccount);
-  }
-
-  MaidAccount(const MaidAccount& other)
-    : maid_id_(other.maid_id_),
-      pmid_totals_(other.pmid_totals_),
-      data_elements_(other.data_elements_),
-      mutex_() {}
-
-  MaidAccount& operator=(const MaidAccount& other);
-
-  void Parse(const NonEmptyString& serialised_maidaccount);
-  NonEmptyString Serialise();
-
-  void PushPmidTotal(PmidTotal pmid_total);
-  void RemovePmidTotal(Identity pmid_id);
-  void UpdatePmidTotal(PmidTotal pmid_total);
-  bool HasPmidTotal(Identity pmid_id);
-
-  void PushDataElement(DataElement data_element);
-  void RemoveDataElement(Identity data_id);
-  void UpdateDataElement(DataElement data_element);
-  bool HasDataElement(Identity data_id);
-
-  Identity maid_id() const { return maid_id_; }
-
- private:
-  Identity maid_id_;
-  std::vector<PmidTotal> pmid_totals_;
-  std::vector<DataElement> data_elements_;
-  std::mutex mutex_;
 };
 
 }  // namespace vault

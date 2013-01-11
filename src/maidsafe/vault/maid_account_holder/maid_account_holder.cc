@@ -36,9 +36,9 @@ MaidAccountHolder::MaidAccountHolder(const passport::Pmid& pmid,
     if (boost::filesystem::is_regular_file(dir_iter->status())) {
       std::string account_content;
       if (ReadFile(*dir_iter, &account_content)) {
-        maidsafe::nfs::MaidAccount maid_account;
+        MaidAccount maid_account;
         maid_account.Parse(NonEmptyString(account_content));
-        if (Identity(dir_iter->path().filename().string()) == maid_account.maid_id()) {
+        if (Identity(dir_iter->path().filename().string()) == maid_account.maid_name().data) {
           maid_accounts_.push_back(maid_account);
         } else {
           if (!boost::filesystem::remove(*dir_iter))  // can throw!
@@ -51,14 +51,14 @@ MaidAccountHolder::MaidAccountHolder(const passport::Pmid& pmid,
 
 void MaidAccountHolder::Serialise() {
   for (auto& account : maid_accounts_)
-    WriteFile(kRootDir_ / account.maid_id().string(), account.Serialise().string());
+    WriteFile(kRootDir_ / account.maid_name().data.string(), account.Serialise().string());
 }
 
 void MaidAccountHolder::Serialise(const passport::Maid& maid) {
   auto itr = maid_accounts_.begin();
   while (itr != maid_accounts_.end()) {
-    if ((*itr).maid_id().string() == maid.name().data.string()) {
-      WriteFile(kRootDir_ / (*itr).maid_id().string(), (*itr).Serialise().string());
+    if ((*itr).maid_name().data.string() == maid.name().data.string()) {
+      WriteFile(kRootDir_ / (*itr).maid_name().data.string(), (*itr).Serialise().string());
       break;
     }
     ++itr;
@@ -68,8 +68,8 @@ void MaidAccountHolder::Serialise(const passport::Maid& maid) {
 void MaidAccountHolder::RemoveAccount(const passport::Maid& maid) {
   auto itr = maid_accounts_.begin();
   while (itr != maid_accounts_.end()) {
-    if ((*itr).maid_id().string() == maid.name().data.string()) {
-      boost::filesystem::remove(kRootDir_ / (*itr).maid_id().string());
+    if ((*itr).maid_name().data.string() == maid.name().data.string()) {
+      boost::filesystem::remove(kRootDir_ / (*itr).maid_name().data.string());
       break;
     }
     ++itr;
@@ -119,8 +119,8 @@ void MaidAccountHolder::Serialise(const passport::Pmid& /*pmid*/) {}
 
 bool MaidAccountHolder::HandleNewComer(const nfs::PmidRegistration& pmid_registration) {
   Identity maid_id(pmid_registration.maid_id());
-  maidsafe::nfs::MaidAccount maid_account(maid_id);
-  maid_account.PushPmidTotal(nfs::PmidTotal(pmid_registration, nfs::PmidSize(maid_id)));
+  MaidAccount maid_account(maid_id);
+  maid_account.PushPmidTotal(PmidTotal(pmid_registration, PmidSize(maid_id)));
   return WriteFile(kRootDir_ / maid_id.string(), maid_account.Serialise().string());
 }
 
@@ -139,7 +139,7 @@ void MaidAccountHolder::SendSyncData() {
                              nfs::PersonaType::kMaidAccountHolder,
                              nfs::Message::Source(nfs::PersonaType::kMaidAccountHolder,
                                                   routing_.kNodeId()),
-                             account.maid_id(),
+                             account.maid_name(),
                              account.Serialise(),
                              maidsafe::rsa::Signature());
     nfs_.PostSyncData(message,
@@ -148,8 +148,8 @@ void MaidAccountHolder::SendSyncData() {
 }
 
 bool MaidAccountHolder::HandleReceivedSyncData(const NonEmptyString &serialised_account) {
-  maidsafe::nfs::MaidAccount maid_account(serialised_account);
-  return WriteFile(kRootDir_ / maid_account.maid_id().string(), serialised_account.string());
+  MaidAccount maid_account(serialised_account);
+  return WriteFile(kRootDir_ / maid_account.maid_name().data.string(), serialised_account.string());
 }
 
 void MaidAccountHolder::HandlePostMessage(const nfs::PostMessage& message,
@@ -167,7 +167,7 @@ void MaidAccountHolder::HandlePostMessage(const nfs::PostMessage& message,
     case nfs::PostActionType::kNodeDown:
       break;
     case nfs::PostActionType::kSynchronise:
-      if (NodeRangeCheck(routing_, source_id)) {
+      if (detail::NodeRangeCheck(routing_, source_id)) {
         HandleReceivedSyncData(message.content());
       } else {
         reply_functor(nfs::ReturnCode(-1).Serialise()->string());

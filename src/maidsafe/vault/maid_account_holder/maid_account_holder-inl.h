@@ -18,6 +18,7 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
+#include "maidsafe/vault/maid_account_holder/maid_account.h"
 #include "maidsafe/vault/utils.h"
 
 
@@ -82,7 +83,7 @@ void MaidAccountHolder::HandleDeleteMessage(const nfs::Message& message,
   auto maid_account_it = std::find_if(maid_accounts_.begin(),
                                       maid_accounts_.end(),
                                       [&message] (const MaidAccount& maid_account) {
-                                        return maid_account.maid_id().string() ==
+                                        return maid_account.maid_name().data.string() ==
                                                message.source().node_id.string();
                                       });
   if (maid_account_it == maid_accounts_.end()) {
@@ -109,8 +110,8 @@ void MaidAccountHolder::AdjustAccount(const nfs::Message& message,
                                       std::true_type) {
   auto maid_account_it = std::find_if(maid_accounts_.begin(),
                                       maid_accounts_.end(),
-                                      [&message] (const nfs::MaidAccount& maid_account) {
-                                        return maid_account.maid_id().string() ==
+                                      [&message] (const MaidAccount& maid_account) {
+                                        return maid_account.maid_name().data.string() ==
                                             message.source().node_id.string();
                                       });
   if (maid_account_it == maid_accounts_.end()) {
@@ -121,11 +122,11 @@ void MaidAccountHolder::AdjustAccount(const nfs::Message& message,
   if (message.action_type() == nfs::ActionType::kPut) {
     // TODO(Team): BEFORE_RELEASE Check if we should allow the store based on PMID account
     // information
-    nfs::DataElement data_element(message.name(),
-                                  static_cast<int32_t>(message.content().string().size()));
-    // TODO(Team): BEFORE_RELEASE Check if there will be case having a data_element bearing same
-    // data_id, and what shall be done in that case (i.e. reject PUT or update the data_element)
-    maid_account_it->PushDataElement(data_element);
+//    DataElements data_element(message.name(),
+//                              static_cast<int32_t>(message.content().string().size()));
+//    // TODO(Team): BEFORE_RELEASE Check if there will be case having a data_element bearing same
+//    // data_id, and what shall be done in that case (i.e. reject PUT or update the data_element)
+//    maid_account_it->PushDataElement(data_element);
   } else {
     assert(message.action_type() == nfs::ActionType::kDelete);
     // TODO(Team): BEFORE_RELEASE Handle delete.

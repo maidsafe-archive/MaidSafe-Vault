@@ -18,7 +18,7 @@
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/passport/types.h"
-
+#include "maidsafe/vault/pmid_account_holder/pmid_account.h"
 
 namespace maidsafe {
 
@@ -28,16 +28,16 @@ class MaidAccount {
  public:
   MaidAccount() : maid_name_(), pmid_totals_(), data_elements_(), mutex_() {}
 
-  explicit MaidAccount(Identity maid_id_in)
-    : maid_id_(maid_id_in), pmid_totals_(), data_elements_(), mutex_() {}
+  explicit MaidAccount(Identity maid_name_in)
+    : maid_name_(maid_name_in), pmid_totals_(), data_elements_(), mutex_() {}
 
   explicit MaidAccount(const NonEmptyString& serialised_maidaccount)
-    : maid_id_(), pmid_totals_(), data_elements_(), mutex_() {
+    : maid_name_(), pmid_totals_(), data_elements_(), mutex_() {
     Parse(serialised_maidaccount);
   }
 
   MaidAccount(const MaidAccount& other)
-    : maid_id_(other.maid_id_),
+    : maid_name_(other.maid_name_),
       pmid_totals_(other.pmid_totals_),
       data_elements_(other.data_elements_),
       mutex_() {}

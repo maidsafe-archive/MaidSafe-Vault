@@ -34,9 +34,9 @@ namespace vault {
 template<nfs::PersonaType persona>
 class PostSynchronisation {
  public:
-  PostSynchronisation(routing::Routing& routing)
+  explicit PostSynchronisation(routing::Routing& routing)
       : routing_(routing),
-        source_(Message::Source(persona, routing.kNodeId())) {}
+        source_(nfs::Message::Source(persona, routing.kNodeId())) {}
 
   void PostSyncData(const nfs::PostMessage& message, nfs::OnPostError on_error) {
     nfs::PostMessage new_message(message.post_action_type(),
