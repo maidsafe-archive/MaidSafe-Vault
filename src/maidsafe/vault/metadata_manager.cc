@@ -33,9 +33,27 @@ void MetadataManager::CloseNodeReplaced(const std::vector<routing::NodeInfo>& /*
 
 void MetadataManager::Serialise() {}
 
-template<typename Data>
-void MetadataManager::HandlePostMessage(const nfs::Message& /*message*/,
-                                        const routing::ReplyFunctor& /*reply_functor*/) {}
+void MetadataManager::HandlePostMessage(const nfs::PostMessage& message,
+                                        const routing::ReplyFunctor& reply_functor) {
+  // TODO(Team): Validate message
+  nfs::PostActionType action_type(message.post_action_type());
+  NodeId source_id(message.source().node_id);
+  switch (action_type) {
+    case nfs::PostActionType::kNodeUp:
+        if (!HandleNodeUp(message, source_id)) {
+          LOG(kError) << "Replying with failure on kNodeUp.";
+          reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+        }
+        break;
+    case nfs::PostActionType::kNodeDown:
+        if (!HandleNodeDown(message, source_id)) {
+          LOG(kError) << "Replying with failure on kNodeDown.";
+          reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+        }
+        break;
+    default: LOG(kError) << "Unhandled Post action type";
+  }
+}
 
 template<typename Data>
 void MetadataManager::HandleDeleteMessage(const nfs::Message& /*message*/,
@@ -43,10 +61,13 @@ void MetadataManager::HandleDeleteMessage(const nfs::Message& /*message*/,
 
 void MetadataManager::SendSyncData() {}
 
-bool MetadataManager::HandleNodeDown(const nfs::PostMessage& message, NodeId& node) {
+bool MetadataManager::HandleNodeDown(const nfs::PostMessage& message, NodeId& /*node*/) {
+  // TODO(Team): Parse message. Can't be done until the post messages are available.
+  //             The node id inside is the one that should be passed to the MoveNodeToOnline
+
   try {
     int64_t online_holders(-1);
-    data_elements_manager_.MoveNodeToOnline(message.name(), Identity(node.string()));
+    data_elements_manager_.MoveNodeToOffline(message.name(), Identity(), online_holders);
     if (online_holders < 3) {
       // TODO(Team): Get content. There is no manager available yet.
 
@@ -64,9 +85,11 @@ bool MetadataManager::HandleNodeDown(const nfs::PostMessage& message, NodeId& no
   return true;
 }
 
-bool MetadataManager::HandleNodeUp(const nfs::PostMessage& message, NodeId& node) {
+bool MetadataManager::HandleNodeUp(const nfs::PostMessage& message, NodeId& /*node*/) {
+  // TODO(Team): Parse message. Can't be done until the post messages are available.
+  //             The node id inside is the one that should be passed to the MoveNodeToOnline
   try {
-    data_elements_manager_.MoveNodeToOnline(message.name(), Identity(node.string()));
+    data_elements_manager_.MoveNodeToOnline(message.name(), Identity());
   }
   catch(const std::exception &e) {
     LOG(kError) << "HandleNodeUp - Dropping process after exception: " << e.what();

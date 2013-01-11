@@ -25,7 +25,7 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void MetadataManager::HandlePutMessage(const nfs::Message& message,
+void MetadataManager::HandlePutMessage(const nfs::Message& /*message*/,
                                        const routing::ReplyFunctor& reply_functor) {
 //  if (request_queue_.Push(message.id(), message.name()))
 //    nfs_.Put<Data>(message, reply_functor);

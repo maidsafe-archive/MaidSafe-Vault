@@ -45,12 +45,12 @@ class MetadataManager {
   template<typename Data>
   void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  template<typename Data>
   void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void SendSyncData();
 
   // use nodeinfo as later we may extract/set rank
+  void HandlePostMessage(const nfs::PostMessage& message,
+                         const routing::ReplyFunctor& reply_functor);
   bool HandleNodeDown(const nfs::PostMessage& message, NodeId& node);
   bool HandleNodeUp(const nfs::PostMessage& message, NodeId& node);
 
