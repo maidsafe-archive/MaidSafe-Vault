@@ -19,12 +19,13 @@
 
 #include "maidsafe/routing/api_config.h"
 
-#include "maidsafe/nfs/data_elements_manager.h"
-#include "maidsafe/nfs/maid_account.h"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/post_message.h"
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/request_queue.h"
+
+#include "maidsafe/vault/metadata_manager/data_elements_manager.h"
+
 
 namespace maidsafe {
 
@@ -62,8 +63,8 @@ class MetadataManager {
 
   const boost::filesystem::path kRootDir_;
   routing::Routing& routing_;
-  nfs::DataElementsManager data_elements_manager_;
-  nfs::MetadataManagerNfs nfs_;
+  DataElementsManager data_elements_manager_;
+  MetadataManagerNfs nfs_;
   nfs::RequestQueue request_queue_;
 };
 
@@ -76,6 +77,6 @@ void MetadataManager::HandleMessage(const nfs::Message& /*message*/,
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/metadata_manager-inl.h"
+#include "maidsafe/vault/metadata_manager/metadata_manager-inl.h"
 
 #endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_H_

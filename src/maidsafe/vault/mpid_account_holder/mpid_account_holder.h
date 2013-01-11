@@ -12,6 +12,8 @@
 #ifndef MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HOLDER_H_
 #define MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HOLDER_H_
 
+#include <vector>
+
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message.h"

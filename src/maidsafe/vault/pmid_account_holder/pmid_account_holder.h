@@ -24,6 +24,7 @@
 // #include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/common/rsa.h"
 
+
 namespace maidsafe {
 
 namespace vault {

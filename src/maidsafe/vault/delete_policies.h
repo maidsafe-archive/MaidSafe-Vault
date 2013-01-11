@@ -12,46 +12,41 @@
 #ifndef MAIDSAFE_VAULT_DELETE_POLICIES_H_
 #define MAIDSAFE_VAULT_DELETE_POLICIES_H_
 
-#include <future>
 #include <string>
 #include <vector>
 
-#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/passport/types.h"
 
 #include "maidsafe/routing/routing_api.h"
 
-#include "maidsafe/nfs/utils.h"
+#include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/types.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-class DeleteFromPmidAccountHolder {
- public:
-  explicit DeleteFromPmidAccountHolder(const routing::Routing&);
-};
-
 class DeleteFromMetadataManager {
  public:
   DeleteFromMetadataManager(routing::Routing& routing, const passport::Pmid& signing_pmid)
-    : routing_(routing),
-      signing_pmid_(signing_pmid),
-      source_(Message::Source(PersonaType::kMaidAccountHolder, routing.kNodeId())) {}
+      : routing_(routing),
+        signing_pmid_(signing_pmid),
+        source_(nfs::Message::Source(nfs::PersonaType::kMaidAccountHolder, routing.kNodeId())) {}
 
   template<typename Data>
-  void Delete(const Message& message, OnError on_error) {
-    Message new_message(message.action_type(),
-                        message.destination_persona_type(),
-                        source_,
-                        message.data_type(),
-                        message.name(),
-                        message.content(),
-                        asymm::Sign(message.content(), signing_pmid_.private_key()));
+  void Delete(const nfs::Message& message, nfs::OnError on_error) {
+    nfs::Message new_message(message.action_type(),
+                             message.destination_persona_type(),
+                             source_,
+                             message.data_type(),
+                             message.name(),
+                             message.content(),
+                             asymm::Sign(message.content(), signing_pmid_.private_key()));
 
     routing::ResponseFunctor callback =
         [on_error, new_message](const std::vector<std::string>& serialised_messages) {
@@ -67,7 +62,35 @@ class DeleteFromMetadataManager {
  private:
   routing::Routing& routing_;
   passport::Pmid signing_pmid_;
-  Message::Source source_;
+  nfs::Message::Source source_;
+};
+
+class DeleteFromPmidAccountHolder {
+ public:
+  explicit DeleteFromPmidAccountHolder(routing::Routing& routing)
+      : routing_(routing),
+        source_(nfs::Message::Source(nfs::PersonaType::kMetadataManager, routing.kNodeId())) {}
+
+ protected:
+  ~DeleteFromPmidAccountHolder() {}
+
+ private:
+  routing::Routing& routing_;
+  nfs::Message::Source source_;
+};
+
+class DeleteFromDataHolder {
+ public:
+  explicit DeleteFromDataHolder(routing::Routing& routing)
+      : routing_(routing),
+        source_(nfs::Message::Source(nfs::PersonaType::kPmidAccountHolder, routing.kNodeId())) {}
+
+ protected:
+  ~DeleteFromDataHolder() {}
+
+ private:
+  routing::Routing& routing_;
+  nfs::Message::Source source_;
 };
 
 }  // namespace vault

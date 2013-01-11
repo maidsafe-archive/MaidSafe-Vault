@@ -9,10 +9,11 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#include "maidsafe/vault/metadata_manager.h"
+#include "maidsafe/vault/metadata_manager/metadata_manager.h"
 
 #include <string>
 #include <vector>
+
 
 namespace maidsafe {
 

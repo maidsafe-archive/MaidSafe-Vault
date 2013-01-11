@@ -9,11 +9,11 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#include "maidsafe/nfs/data_elements_manager.h"
+#include "maidsafe/vault/metadata_manager/data_elements_manager.h"
 
 #include "boost/filesystem/operations.hpp"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/nfs/containers_pb.h"
+
 
 namespace maidsafe {
 

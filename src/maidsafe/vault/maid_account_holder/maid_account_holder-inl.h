@@ -25,13 +25,13 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace { //NOLINT
+namespace detail {
 
 bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id) {
   return routing.IsNodeIdInGroupRange(node_id);  // provisional call to Is..
 }
 
-}  // unamed namespace
+}  // namespace detail
 
 template<typename Data>
 void MaidAccountHolder::HandleMessage(const nfs::Message& message,
@@ -61,7 +61,7 @@ void MaidAccountHolder::HandleGetMessage(nfs::Message /*message*/,
 template<typename Data>
 void MaidAccountHolder::HandlePutMessage(const nfs::Message& message,
                                          const routing::ReplyFunctor& reply_functor) {
-  if (!NodeRangeCheck(routing_, message.source().node_id)) {
+  if (!detail::NodeRangeCheck(routing_, message.source().node_id)) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
     return;
   }
@@ -74,14 +74,14 @@ void MaidAccountHolder::HandlePutMessage(const nfs::Message& message,
 template<typename Data>
 void MaidAccountHolder::HandleDeleteMessage(const nfs::Message& message,
                                             const routing::ReplyFunctor& reply_functor) {
-  if (!NodeRangeCheck(routing_, message.source().node_id)) {
+  if (!detail::NodeRangeCheck(routing_, message.source().node_id)) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
     return;
   }
 
   auto maid_account_it = std::find_if(maid_accounts_.begin(),
                                       maid_accounts_.end(),
-                                      [&message] (const maidsafe::nfs::MaidAccount& maid_account) {
+                                      [&message] (const MaidAccount& maid_account) {
                                         return maid_account.maid_id().string() ==
                                                message.source().node_id.string();
                                       });

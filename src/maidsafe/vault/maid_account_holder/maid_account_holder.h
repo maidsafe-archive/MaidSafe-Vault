@@ -24,9 +24,11 @@
 #include "maidsafe/routing/api_config.h"
 
 #include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/nfs.h"
+#include "maidsafe/nfs/pmid_registration.h"
 #include "maidsafe/nfs/post_message.h"
 #include "maidsafe/nfs/public_key_getter.h"
+
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
@@ -74,7 +76,7 @@ class MaidAccountHolder {
 //   bool HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid);
 //   bool OnKeyFetched(const passport::/*PublicMaid*/PublicPmid& p_maid,
 //                     const passport::PublicPmid& p_pmid);
-  bool HandleNewComer(nfs::PmidRegistration& pmid_registration);
+  bool HandleNewComer(const nfs::PmidRegistration& pmid_registration);
 
   // On error handler
   template<typename Data>

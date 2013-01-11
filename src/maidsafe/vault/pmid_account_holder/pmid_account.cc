@@ -9,12 +9,8 @@
  *  permission of the board of directors of MaidSafe.net.                                          *
  **************************************************************************************************/
 
-#include "maidsafe/common/utils.h"
+#include "maidsafe/vault/pmid_account_holder/pmid_account.h"
 
-#include "maidsafe/nfs/maid_account.h"
-
-#include "maidsafe/nfs/containers_pb.h"
-#include "maidsafe/nfs/post_messages_pb.h"
 
 namespace maidsafe {
 

@@ -17,22 +17,30 @@
 
 #include "maidsafe/nfs/nfs.h"
 
+#include "maidsafe/vault/get_policies.h"
+#include "maidsafe/vault/put_policies.h"
+#include "maidsafe/vault/post_policies.h"
+#include "maidsafe/vault/delete_policies.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
-typedef TaggedValue<Identity, struct VaultIdentityTag> AccountName;
+typedef nfs::NetworkFileSystem<nfs::NoGet,
+                               PutToMetadataManager,
+                               PostSynchronisation<nfs::PersonaType::kMaidAccountHolder>,
+                               DeleteFromMetadataManager> MaidAccountHolderNfs;
 
-typedef nfs::NetworkFileSystem<GetFromMaidAccountHolder<PersonaType::kMaidAccountHolder>,
-                          PutToMetadataManager,
-                          PostSynchronisation<PersonaType::kMaidAccountHolder>,
-                          DeleteFromMetadataManager> MaidAccountHolderNfs;
+typedef nfs::NetworkFileSystem<GetFromDataHolder,
+                               PutToPmidAccountHolder,
+                               PostSynchronisation<nfs::PersonaType::kMetadataManager>,
+                               DeleteFromPmidAccountHolder> MetadataManagerNfs;
 
-typedef nfs::NetworkFileSystem<GetFromPmidAccountHolder,
-                          PutToPmidAccountHolder,
-                          NoPost<passport::Pmid>,
-                          DeleteFromPmidAccountHolder> MetadataManagerNfs;
+typedef nfs::NetworkFileSystem<nfs::NoGet,
+                               PutToDataHolder,
+                               PostSynchronisation<nfs::PersonaType::kPmidAccountHolder>,
+                               DeleteFromDataHolder> PmidAccountHolderNfs;
 
 
 }  // namespace vault

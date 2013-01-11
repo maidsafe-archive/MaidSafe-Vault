@@ -117,7 +117,7 @@ void MaidAccountHolder::Serialise(const passport::Pmid& /*pmid*/) {}
 //                    maid_account.Serialise().string());
 // }
 
-bool MaidAccountHolder::HandleNewComer(nfs::PmidRegistration& pmid_registration) {
+bool MaidAccountHolder::HandleNewComer(const nfs::PmidRegistration& pmid_registration) {
   Identity maid_id(pmid_registration.maid_id());
   maidsafe::nfs::MaidAccount maid_account(maid_id);
   maid_account.PushPmidTotal(nfs::PmidTotal(pmid_registration, nfs::PmidSize(maid_id)));

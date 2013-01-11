@@ -16,6 +16,7 @@
 
 #include "maidsafe/common/types.h"
 
+
 namespace maidsafe {
 
 namespace vault {

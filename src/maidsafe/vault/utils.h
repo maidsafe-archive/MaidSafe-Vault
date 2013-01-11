@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
-#include "unordered_map"
+
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/rsa.h"

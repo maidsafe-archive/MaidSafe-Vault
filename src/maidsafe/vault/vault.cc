@@ -14,6 +14,7 @@
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/routing/node_info.h"
 
+
 namespace maidsafe {
 
 namespace vault {

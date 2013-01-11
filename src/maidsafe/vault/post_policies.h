@@ -12,52 +12,39 @@
 #ifndef MAIDSAFE_VAULT_POST_POLICIES_H_
 #define MAIDSAFE_VAULT_POST_POLICIES_H_
 
-#include <future>
 #include <string>
 #include <vector>
 
-#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/passport/types.h"
 
 #include "maidsafe/routing/routing_api.h"
 
-#include "maidsafe/nfs/utils.h"
+#include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/types.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
-template<typename SigningFob>
-class NoPost {
- public:
-  NoPost() {}
-  explicit NoPost(routing::Routing& /*routing*/) {}
-  explicit NoPost(routing::Routing& /*routing*/, const SigningFob& /*signing_fob*/) {}
-
-  template<typename Data>
-  void Post(const typename Data::name_type& /*name*/) {}
-
- protected:
-  ~NoPost() {}
-};
-
-template<PersonaType persona>
+template<nfs::PersonaType persona>
 class PostSynchronisation {
  public:
-  PostSynchronisation(routing::Routing& routing, const passport::Pmid& /*signing_pmid*/)
+  PostSynchronisation(routing::Routing& routing)
       : routing_(routing),
         source_(Message::Source(persona, routing.kNodeId())) {}
 
-  void PostSyncData(const PostMessage& message, OnPostError on_error) {
-    PostMessage new_message(message.post_action_type(),
-                            message.destination_persona_type(),
-                            source_,
-                            message.name(),
-                            message.content(),
-                            maidsafe::rsa::Signature());
+  void PostSyncData(const nfs::PostMessage& message, nfs::OnPostError on_error) {
+    nfs::PostMessage new_message(message.post_action_type(),
+                                 message.destination_persona_type(),
+                                 source_,
+                                 message.name(),
+                                 message.content(),
+                                 maidsafe::rsa::Signature());
 
     routing::ResponseFunctor callback =
         [on_error, new_message](const std::vector<std::string>& serialised_messages) {
@@ -72,7 +59,7 @@ class PostSynchronisation {
 
  private:
   routing::Routing& routing_;
-  Message::Source source_;
+  nfs::Message::Source source_;
 };
 
 }  // namespace vault
