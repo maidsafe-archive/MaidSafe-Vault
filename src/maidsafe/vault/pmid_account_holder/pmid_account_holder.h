@@ -9,8 +9,8 @@
  *  written permission of the board of directors of PmidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_H_
-#define MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_H_
+#ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HOLDER_H_
+#define MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HOLDER_H_
 
 #include <map>
 #include <memory>
@@ -18,15 +18,13 @@
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
-#include "maidsafe/routing/api_config.h"
+#include "maidsafe/routing/routing_api.h"
+#include "maidsafe/nfs/message.h"
 // #include "maidsafe/nfs/network_file_system.h"
 // #include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/common/rsa.h"
 
 namespace maidsafe {
-
-namespace routing { class Routing; }
-namespace nfs { class Message; }
 
 namespace vault {
 
@@ -59,4 +57,4 @@ void PmidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
 }  // namespace maidsafe
 
 
-#endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_H_
+#endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HOLDER_H_

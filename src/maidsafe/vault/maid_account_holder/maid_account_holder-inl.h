@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_INL_H_
-#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_INL_H_
+#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_INL_H_
+#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_INL_H_
 
 #include <exception>
 #include <string>
@@ -20,7 +20,6 @@
 
 #include "maidsafe/vault/utils.h"
 
-#include "maidsafe/nfs/maid_account.h"
 
 namespace maidsafe {
 
@@ -149,4 +148,4 @@ void MaidAccountHolder::OnDeleteErrorHandler(nfs::Message message) {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_INL_H_
+#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_INL_H_

@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_DATA_HOLDER_INL_H_
-#define MAIDSAFE_VAULT_DATA_HOLDER_INL_H_
+#ifndef MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_INL_H_
+#define MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_INL_H_
 
 #include <exception>
 #include <string>
@@ -139,4 +139,4 @@ void DataHolder::CacheStore(const typename Data::name_type& name,
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_HOLDER_INL_H_
+#endif  // MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_INL_H_

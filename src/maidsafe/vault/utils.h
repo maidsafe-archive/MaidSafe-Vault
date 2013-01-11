@@ -26,8 +26,6 @@
 
 namespace maidsafe {
 
-namespace nfs { class Message; }
-
 namespace vault {
 
 // will confirm signature matches src ID private key

@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_NFS_DATA_ELEMENTS_MANAGER_H_
-#define MAIDSAFE_NFS_DATA_ELEMENTS_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_DATA_ELEMENTS_MANAGER_H_
+#define MAIDSAFE_VAULT_METADATA_MANAGER_DATA_ELEMENTS_MANAGER_H_
 
 #include "boost/filesystem/path.hpp"
 
@@ -18,7 +18,7 @@
 
 namespace maidsafe {
 
-namespace nfs {
+namespace vault {
 
 namespace protobuf { class DataElementsManaged; }
 
@@ -46,8 +46,8 @@ class DataElementsManager {
   void SerialiseAndSaveElement(const protobuf::DataElementsManaged & element);
 };
 
-}  // namespace nfs
+}  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_NFS_DATA_ELEMENTS_MANAGER_H_
+#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_DATA_ELEMENTS_MANAGER_H_

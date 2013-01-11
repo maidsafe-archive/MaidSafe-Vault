@@ -12,16 +12,13 @@
 #ifndef MAIDSAFE_VAULT_DEMULTIPLEXER_H_
 #define MAIDSAFE_VAULT_DEMULTIPLEXER_H_
 
-#include <functional>
 #include <string>
 
-#include"maidsafe/routing/routing_api.h"
+#include "maidsafe/routing/routing_api.h"
+#include "maidsafe/nfs/nfs.h"
+
 
 namespace maidsafe {
-
-namespace nfs {
-class Message;
-}
 
 namespace vault {
 

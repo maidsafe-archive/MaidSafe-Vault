@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_NFS_POST_POLICIES_H_
-#define MAIDSAFE_NFS_POST_POLICIES_H_
+#ifndef MAIDSAFE_VAULT_POST_POLICIES_H_
+#define MAIDSAFE_VAULT_POST_POLICIES_H_
 
 #include <future>
 #include <string>
@@ -28,7 +28,7 @@
 
 namespace maidsafe {
 
-namespace nfs {
+namespace vault {
 
 template<typename SigningFob>
 class NoPost {
@@ -75,8 +75,8 @@ class PostSynchronisation {
   Message::Source source_;
 };
 
-}  // namespace nfs
+}  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_NFS_POST_POLICIES_H_
+#endif  // MAIDSAFE_VAULT_POST_POLICIES_H_

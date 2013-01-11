@@ -17,7 +17,7 @@
 
 namespace maidsafe {
 
-namespace nfs {
+namespace vault {
 
 namespace {
 
@@ -196,6 +196,6 @@ void DataElementsManager::SerialiseAndSaveElement(const protobuf::DataElementsMa
 }
 
 
-}  // namespace nfs
+}  // namespace vault
 
 }  // namespace maidsafe

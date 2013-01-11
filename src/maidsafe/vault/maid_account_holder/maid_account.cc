@@ -18,7 +18,7 @@
 
 namespace maidsafe {
 
-namespace nfs {
+namespace vault {
 
 void PmidRegistration::Parse(const NonEmptyString& serialised_pmidregistration) {
   nfs::protobuf::PmidRegistration proto_pmidregistration;
@@ -198,6 +198,6 @@ bool MaidAccount::HasDataElement(Identity data_id) {
   return (data_element_it != data_elements_.end());
 }
 
-}  // namespace nfs
+}  // namespace vault
 
 }  // namespace maidsafe

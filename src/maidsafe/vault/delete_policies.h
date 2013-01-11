@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_NFS_DELETE_POLICIES_H_
-#define MAIDSAFE_NFS_DELETE_POLICIES_H_
+#ifndef MAIDSAFE_VAULT_DELETE_POLICIES_H_
+#define MAIDSAFE_VAULT_DELETE_POLICIES_H_
 
 #include <future>
 #include <string>
@@ -29,30 +29,11 @@
 
 namespace maidsafe {
 
-namespace nfs {
+namespace vault {
 
 class DeleteFromPmidAccountHolder {
  public:
   explicit DeleteFromPmidAccountHolder(const routing::Routing&);
-};
-
-
-template<typename SigningFob>
-class NoDelete {
- public:
-  NoDelete() {}
-  NoDelete(routing::Routing& routing, const SigningFob& signing_fob)
-      : routing_(routing),
-        signing_fob_(signing_fob) {}
-  template<typename Data>
-  void Delete(const Message& /*message*/, OnError /*on_error*/) {}
-
- protected:
-  ~NoDelete() {}
-
- private:
-  routing::Routing& routing_;
-  SigningFob signing_fob_;
 };
 
 class DeleteFromMetadataManager {
@@ -89,8 +70,8 @@ class DeleteFromMetadataManager {
   Message::Source source_;
 };
 
-}  // namespace nfs
+}  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_NFS_DELETE_POLICIES_H_
+#endif  // MAIDSAFE_VAULT_DELETE_POLICIES_H_

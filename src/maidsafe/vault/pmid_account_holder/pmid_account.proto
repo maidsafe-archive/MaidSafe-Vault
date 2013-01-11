@@ -12,6 +12,7 @@ message PmidRecord {
 message DataElements {
   required bytes name = 1;
   required int32 size = 2;
+  optional int32 version = 3;
 }
 
 message PmidAccount {

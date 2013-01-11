@@ -9,28 +9,23 @@
  *  written permission of the board of directors of MpidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_H_
-#define MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_H_
+#ifndef MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HOLDER_H_
+#define MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HOLDER_H_
 
-#include <string>
-#include <vector>
-
-#include "maidsafe/routing/api_config.h"
-
-// #include "maidsafe/nfs/network_file_system.h"
-// #include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/common/rsa.h"
+#include "maidsafe/routing/routing_api.h"
+#include "maidsafe/nfs/message.h"
+
+// #include "maidsafe/vault/disk_based_storage.h"
+
 
 namespace maidsafe {
-
-namespace routing { class Routing; }
-namespace nfs { class Message; }
 
 namespace vault {
 
 class MpidAccountHolder {
  public:
-  MpidAccountHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
+  MpidAccountHolder(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
   ~MpidAccountHolder();
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
@@ -55,4 +50,4 @@ void MpidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
 }  // namespace maidsafe
 
 
-#endif  // MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_H_
+#endif  // MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HOLDER_H_

@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_H_
-#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_H_
+#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_H_
+#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_H_
 
 #include <map>
 #include <memory>
@@ -23,7 +23,6 @@
 
 #include "maidsafe/routing/api_config.h"
 
-#include "maidsafe/nfs/maid_account.h"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/post_message.h"
@@ -34,9 +33,12 @@ namespace maidsafe {
 
 namespace vault {
 
+class MaidAccount;
+
 class MaidAccountHolder {
  public:
-  MaidAccountHolder(const passport::Pmid& pmid, routing::Routing& routing,
+  MaidAccountHolder(const passport::Pmid& pmid,
+                    routing::Routing& routing,
                     nfs::PublicKeyGetter& public_key_getter,
                     const boost::filesystem::path& vault_root_dir);
   ~MaidAccountHolder();
@@ -83,15 +85,15 @@ class MaidAccountHolder {
 
   routing::Routing& routing_;
   const boost::filesystem::path kRootDir_;
-  nfs::MaidAccountHolderNfs nfs_;
+  MaidAccountHolderNfs nfs_;
   nfs::PublicKeyGetter& public_key_getter_;
-  std::vector<maidsafe::nfs::MaidAccount> maid_accounts_;
+  std::vector<MaidAccount> maid_accounts_;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/maid_account_holder-inl.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_holder-inl.h"
 
-#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_H_
+#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_H_

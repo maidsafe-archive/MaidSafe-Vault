@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_NFS_GET_POLICIES_H_
-#define MAIDSAFE_NFS_GET_POLICIES_H_
+#ifndef MAIDSAFE_VAULT_GET_POLICIES_H_
+#define MAIDSAFE_VAULT_GET_POLICIES_H_
 
 #include <algorithm>
 #include <future>
@@ -30,7 +30,7 @@
 
 namespace maidsafe {
 
-namespace nfs {
+namespace vault {
 
 class GetFromPmidAccountHolder {
  public:
@@ -160,8 +160,8 @@ class GetFromKeyFile {
 #endif
 
 
-}  // namespace nfs
+}  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_NFS_GET_POLICIES_H_
+#endif  // MAIDSAFE_VAULT_GET_POLICIES_H_

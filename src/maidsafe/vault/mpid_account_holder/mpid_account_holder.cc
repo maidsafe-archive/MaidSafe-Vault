@@ -9,24 +9,15 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#include "maidsafe/vault/mpid_account_holder.h"
+#include "maidsafe/vault/mpid_account_holder/mpid_account_holder.h"
 
-#include <string>
-#include <vector>
-
-#include "boost/filesystem.hpp"
-
-#include "maidsafe/routing/api_config.h"
 
 namespace maidsafe {
-
-namespace nfs { class Message; }
-namespace routing { class Routing; }
 
 namespace vault {
 
 MpidAccountHolder::MpidAccountHolder(routing::Routing& /*routing*/,
-                                     const boost::filesystem::path /*vault_root_dir*/) {
+                                     const boost::filesystem::path& /*vault_root_dir*/) {
 }
 
 void MpidAccountHolder::CloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {  //  NOLINT (fine when not commented)

@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_DATA_HOLDER_H_
-#define MAIDSAFE_VAULT_DATA_HOLDER_H_
+#ifndef MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_H_
+#define MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_H_
 
 #include <atomic>
 #include <type_traits>
@@ -97,6 +97,6 @@ class DataHolder {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/data_holder-inl.h"
+#include "maidsafe/vault/data_holder/data_holder-inl.h"
 
-#endif  // MAIDSAFE_VAULT_DATA_HOLDER_H_
+#endif  // MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_H_
