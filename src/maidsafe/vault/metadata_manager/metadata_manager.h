@@ -25,7 +25,7 @@
 #include "maidsafe/nfs/request_queue.h"
 
 #include "maidsafe/vault/metadata_manager/data_elements_manager.h"
-
+#include "maidsafe/vault/types.h"
 
 namespace maidsafe {
 

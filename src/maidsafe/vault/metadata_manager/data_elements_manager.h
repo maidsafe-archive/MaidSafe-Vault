@@ -21,30 +21,30 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace protobuf { class DataElementsManaged; }
+namespace protobuf { class MetadataElement; }
 
 class DataElementsManager {
  public:
   explicit DataElementsManager(const boost::filesystem::path& vault_root_dir);
-  void AddDataElement(const Identity& data_id,
+  void AddDataElement(const Identity& data_name,
                       int32_t element_size,
-                      const Identity& online_pmid_id,
-                      const Identity& offline_pmid_id);
-  void RemoveDataElement(const Identity& data_id);
-  void MoveNodeToOffline(const Identity& data_id, const Identity& pmid_id, int64_t& holders);
-  void MoveNodeToOnline(const Identity& data_id, const Identity& pmid_id);
+                      const Identity& online_pmid_name,
+                      const Identity& offline_pmid_name);
+  void RemoveDataElement(const Identity& data_name);
+  void MoveNodeToOffline(const Identity& data_name, const Identity& pmid_name, int64_t& holders);
+  void MoveNodeToOnline(const Identity& data_name, const Identity& pmid_name);
 
-  void AddOnlinePmid(const Identity& data_id, const Identity& online_pmid_id);
-  void RemoveOnlinePmid(const Identity& data_id, const Identity& online_pmid_id);
-  void AddOfflinePmid(const Identity& data_id, const Identity& offline_pmid_id);
-  void RemoveOfflinePmid(const Identity& data_id, const Identity& offline_pmid_id);
+  void AddOnlinePmid(const Identity& data_name, const Identity& online_pmid_name);
+  void RemoveOnlinePmid(const Identity& data_name, const Identity& online_pmid_name);
+  void AddOfflinePmid(const Identity& data_name, const Identity& offline_pmid_name);
+  void RemoveOfflinePmid(const Identity& data_name, const Identity& offline_pmid_name);
 
  private:
   boost::filesystem::path vault_metadata_dir_;
 
-  void CheckDataElementExists(const Identity& data_id);
-  void ReadAndParseElement(const Identity& data_id, protobuf::DataElementsManaged& element);
-  void SerialiseAndSaveElement(const protobuf::DataElementsManaged & element);
+  void CheckDataElementExists(const Identity& data_name);
+  void ReadAndParseElement(const Identity& data_name, protobuf::MetadataElement& element);
+  void SerialiseAndSaveElement(const protobuf::MetadataElement& element);
 };
 
 }  // namespace vault

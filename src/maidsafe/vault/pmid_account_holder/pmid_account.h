@@ -23,20 +23,20 @@ namespace maidsafe {
 
 namespace vault {
 
-class PmidSize {
+class PmidRecord {
  public:
-  explicit PmidSize(Identity pmid_id_in)
-    : pmid_id(pmid_id_in),
-      num_data_elements(0),
-      total_size(0),
-      lost_size(0),
-      lost_number_of_elements(0) {}
-  explicit PmidSize(const NonEmptyString& serialised_pmidsize)
-    : pmid_id(),
-      num_data_elements(0),
-      total_size(0),
-      lost_size(0),
-      lost_number_of_elements(0) {
+  explicit PmidRecord(Identity pmid_name_in)
+    : pmid_name(pmid_name_in),
+      stored_count(0),
+      stored_total_size(0),
+      lost_count(0),
+      lost_total_size(0) {}
+  explicit PmidRecord(const NonEmptyString& serialised_pmidsize)
+    : pmid_name(),
+      stored_count(0),
+      stored_total_size(0),
+      lost_count(0),
+      lost_total_size(0) {
     Parse(serialised_pmidsize);
   }
 
@@ -44,17 +44,17 @@ class PmidSize {
   NonEmptyString Serialise();
 
  private:
-  Identity pmid_id;
-  int32_t num_data_elements;
-  int64_t total_size;
-  int64_t lost_size;
-  int64_t lost_number_of_elements;
+  Identity pmid_name;
+  int64_t stored_count;
+  int64_t stored_total_size;
+  int64_t lost_count;
+  int64_t lost_total_size;
 };
 
 class PmidTotal {
  public:
-  PmidTotal(nfs::PmidRegistration registration_in, PmidSize pmid_size_in)
-    : registration(registration_in), pmid_size(pmid_size_in) {}
+  PmidTotal(nfs::PmidRegistration registration_in, PmidRecord pmid_record_in)
+    : registration(registration_in), pmid_record(pmid_record_in) {}
 
   NonEmptyString Serialise();
   bool IsRecordOf(Identity& pmid_id) const {
@@ -64,22 +64,22 @@ class PmidTotal {
 
  private:
   nfs::PmidRegistration registration;
-  PmidSize pmid_size;
+  PmidRecord pmid_record;
 };
 
 class DataElement {
  public:
-  DataElement() : data_id_(), data_size(0) {}
+  DataElement() : name_(), size(0) {}
 
-  DataElement(Identity data_id_in, int32_t data_size_in)
-    : data_id_(data_id_in), data_size(data_size_in) {}
+  DataElement(Identity data_name_in, int32_t data_size_in)
+    : name_(data_name_in), size(data_size_in) {}
 
   NonEmptyString Serialise();
-  Identity data_id() const { return data_id_; }
+  Identity name() const { return name_; }
 
  private:
-  Identity data_id_;
-  int32_t data_size;
+  Identity name_;
+  int32_t size;
 };
 
 }  // namespace vault

@@ -38,6 +38,10 @@ class PostSynchronisation {
       : routing_(routing),
         source_(nfs::Message::Source(persona, routing.kNodeId())) {}
 
+  explicit PostSynchronisation(routing::Routing& routing, const passport::Pmid& /*signing_pmid*/)
+      : routing_(routing),
+        source_(nfs::Message::Source(persona, routing.kNodeId())) {}
+
   void PostSyncData(const nfs::PostMessage& message, nfs::OnPostError on_error) {
     nfs::PostMessage new_message(message.post_action_type(),
                                  message.destination_persona_type(),

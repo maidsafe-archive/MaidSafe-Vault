@@ -120,7 +120,7 @@ void MaidAccountHolder::Serialise(const passport::Pmid& /*pmid*/) {}
 bool MaidAccountHolder::HandleNewComer(const nfs::PmidRegistration& pmid_registration) {
   Identity maid_id(pmid_registration.maid_id());
   MaidAccount maid_account(maid_id);
-  maid_account.PushPmidTotal(PmidTotal(pmid_registration, PmidSize(maid_id)));
+  maid_account.PushPmidTotal(PmidTotal(pmid_registration, PmidRecord(maid_id)));
   return WriteFile(kRootDir_ / maid_id.string(), maid_account.Serialise().string());
 }
 
@@ -142,8 +142,9 @@ void MaidAccountHolder::SendSyncData() {
                              account.maid_name(),
                              account.Serialise(),
                              maidsafe::rsa::Signature());
-    nfs_.PostSyncData(message,
-                      [this](nfs::PostMessage message) { this->OnPostErrorHandler(message); });
+    nfs_.PostSyncData(message, [this](nfs::PostMessage message) {
+                                  this->OnPostErrorHandler(message);
+                               });
   }
 }
 
