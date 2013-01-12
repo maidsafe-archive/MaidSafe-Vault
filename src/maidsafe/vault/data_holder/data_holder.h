@@ -84,9 +84,6 @@ class DataHolder {
   DiskUsage disk_total_;
   DiskUsage permanent_size_;
   DiskUsage cache_size_;
-  boost::filesystem::path persona_dir_;
-  boost::filesystem::path persona_dir_permanent_;
-  boost::filesystem::path persona_dir_cache_;
   data_store::DataStore<data_store::DataBuffer> permanent_data_store_;
   data_store::DataStore<data_store::DataBuffer> cache_data_store_;
   data_store::DataStore<data_store::DataBuffer> mem_only_cache_;

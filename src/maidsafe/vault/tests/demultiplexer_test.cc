@@ -15,10 +15,10 @@
 #include "maidsafe/common/test.h"
 
 #include "maidsafe/vault/demultiplexer.h"
-#include "maidsafe/vault/maid_account_holder.h"
-#include "maidsafe/vault/metadata_manager.h"
-#include "maidsafe/vault/pmid_account_holder.h"
-#include "maidsafe/vault/data_holder.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_holder.h"
+#include "maidsafe/vault/metadata_manager/metadata_manager.h"
+#include "maidsafe/vault/pmid_account_holder/pmid_account_holder.h"
+#include "maidsafe/vault/data_holder/data_holder.h"
 
 #include "maidsafe/nfs/message.h"
 

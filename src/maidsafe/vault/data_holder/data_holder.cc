@@ -40,19 +40,13 @@ DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
       disk_total_(space_info_.available),
       permanent_size_(disk_total_ * 4 / 5),
       cache_size_(disk_total_ / 10),
-      persona_dir_(vault_root_dir / "data_holder"),
-      persona_dir_permanent_(persona_dir_ / "permanent"),
-      persona_dir_cache_(persona_dir_ / "cache"),
-      permanent_data_store_(perm_usage, permanent_size_, nullptr, persona_dir_permanent_),
-      cache_data_store_(cache_usage, DiskUsage(cache_size_ / 2), nullptr, persona_dir_cache_),  // FIXME - DiskUsage  NOLINT
-      mem_only_cache_(mem_only_cache_usage, DiskUsage(cache_size_ / 2), nullptr, persona_dir_cache_),  // FIXME - DiskUsage should be 0  NOLINT
-      stop_sending_(false) {
-  boost::filesystem::exists(persona_dir_) || boost::filesystem::create_directory(persona_dir_);
-  boost::filesystem::exists(persona_dir_permanent_) ||
-      boost::filesystem::create_directory(persona_dir_permanent_);
-  boost::filesystem::exists(persona_dir_cache_) ||
-      boost::filesystem::create_directory(persona_dir_cache_);
-}
+      permanent_data_store_(perm_usage, permanent_size_, nullptr,
+                            vault_root_dir / "data_holder" / "permanent"),
+      cache_data_store_(cache_usage, DiskUsage(cache_size_ / 2), nullptr,
+                        vault_root_dir / "data_holder" / "cache"),  // FIXME - DiskUsage  NOLINT
+      mem_only_cache_(mem_only_cache_usage, DiskUsage(cache_size_ / 2), nullptr,
+                      vault_root_dir / "data_holder" / "cache"),  // FIXME - DiskUsage should be 0  NOLINT
+      stop_sending_(false) {}
 
 DataHolder::~DataHolder() {}
 

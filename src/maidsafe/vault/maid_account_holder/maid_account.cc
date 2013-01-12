@@ -23,59 +23,32 @@ namespace maidsafe {
 
 namespace vault {
 
-void MaidAccount::Parse(const NonEmptyString& serialised_maidaccount) {
-  protobuf::MaidAccount proto_maid_account;
-  if (!proto_maid_account.ParseFromString(serialised_maidaccount.string()) ||
-      !proto_maid_account.IsInitialized()) {
+MaidAccount::MaidAccount(const MaidName& maid_name)
+    : mutex_(),
+      proto_maid_account_(),
+      kMaidName_(maid_name) {}
+
+MaidAccount::MaidAccount(const NonEmptyString& serialised_maid_account)
+    : mutex_(),
+      proto_maid_account_([&serialised_maid_account]()->protobuf::MaidAccount {
+                              protobuf::MaidAccount proto_maid_account;
+                              proto_maid_account.ParseFromString(serialised_maid_account.string());
+                              return proto_maid_account;
+                          }()),
+      kMaidName_(Identity(proto_maid_account_.maid_name())) {
+  if (!proto_maid_account_.IsInitialized()) {
     LOG(kError) << "Failed to parse maid_account.";
     ThrowError(NfsErrors::maid_account_parsing_error);
   }
+}
 
+NonEmptyString MaidAccount::Serialise() const {
   std::lock_guard<std::mutex> lock(mutex_);
-  maid_name_.data = Identity(proto_maid_account.maid_name());
-
-  data_elements_.clear();
-  for (int i(0); i != proto_maid_account.total_data_put_to_network(); ++i) {
-    data_elements_.push_back(DataElement(
-        Identity(proto_maid_account.data_put_to_network(i).name()),
-          proto_maid_account.data_put_to_network(i).size()));
-  }
-
-  pmid_totals_.clear();
-  for (int i(0); i != proto_maid_account.total_data_put_to_network(); ++i) {
-    pmid_totals_.push_back(
-        PmidTotal(nfs::PmidRegistration(NonEmptyString(
-                      proto_maid_account.pmid_totals(i).serialised_pmid_registration())),
-                  PmidRecord(NonEmptyString(
-                      proto_maid_account.pmid_totals(i).pmid_record().SerializeAsString()))));
-  }
+  return NonEmptyString(proto_maid_account_.SerializeAsString());
 }
 
-NonEmptyString MaidAccount::Serialise() {
-  std::lock_guard<std::mutex> lock(mutex_);
-  protobuf::MaidAccount proto_maid_account;
-  proto_maid_account.set_maid_name(maid_name_.data.string());
-  for (auto& pmid_total : pmid_totals_) {
-    protobuf::PmidTotals proto_pmid_total;
-    proto_pmid_total.ParseFromString(pmid_total.Serialise().string());
-    *(proto_maid_account.add_pmid_totals()) = proto_pmid_total;
-  }
-  for (auto& data_element : data_elements_) {
-    protobuf::DataElements proto_data_elements;
-    proto_data_elements.ParseFromString(data_element.Serialise().string());
-    *(proto_maid_account.add_data_put_to_network()) = proto_data_elements;
-  }
-  return NonEmptyString(proto_maid_account.SerializeAsString());
-}
-
-MaidAccount& MaidAccount::operator=(const MaidAccount& other) {
-  maid_name_ = other.maid_name_;
-  pmid_totals_ = other.pmid_totals_;
-  data_elements_ = other.data_elements_;
-  return *this;
-}
-
-void MaidAccount::PushPmidTotal(PmidTotal pmid_total) {
+/*
+void MaidAccount::PushPmidTotal(PmidTotals pmid_total) {
   std::lock_guard<std::mutex> lock(mutex_);
   pmid_totals_.push_back(pmid_total);
 }
@@ -90,7 +63,7 @@ void MaidAccount::RemovePmidTotal(Identity pmid_id) {
   }
 }
 
-void MaidAccount::UpdatePmidTotal(PmidTotal pmid_total) {
+void MaidAccount::UpdatePmidTotal(PmidTotals pmid_total) {
   RemovePmidTotal(pmid_total.pmid_id());
   PushPmidTotal(pmid_total);
 }
@@ -98,7 +71,7 @@ void MaidAccount::UpdatePmidTotal(PmidTotal pmid_total) {
 bool MaidAccount::HasPmidTotal(Identity pmid_id) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto pmid_total_it = std::find_if(pmid_totals_.begin(), pmid_totals_.end(),
-                                    [&pmid_id] (const PmidTotal& pmid_total) {
+                                    [&pmid_id] (const PmidTotals& pmid_total) {
                                       return pmid_total.IsRecordOf(pmid_id);
                                     });
   return (pmid_total_it != pmid_totals_.end());
@@ -132,6 +105,7 @@ bool MaidAccount::HasDataElement(Identity name) {
                                       });
   return (data_element_it != data_elements_.end());
 }
+*/
 
 }  // namespace vault
 

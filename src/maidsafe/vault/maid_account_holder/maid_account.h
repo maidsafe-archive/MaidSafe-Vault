@@ -17,8 +17,9 @@
 
 #include "maidsafe/common/types.h"
 
-#include "maidsafe/passport/types.h"
-#include "maidsafe/vault/pmid_account_holder/pmid_account.h"
+#include "maidsafe/vault/types.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_pb.h"
+
 
 namespace maidsafe {
 
@@ -26,44 +27,26 @@ namespace vault {
 
 class MaidAccount {
  public:
-  MaidAccount() : maid_name_(), pmid_totals_(), data_elements_(), mutex_() {}
+  explicit MaidAccount(const MaidName& maid_name);
+  explicit MaidAccount(const NonEmptyString& serialised_maid_account);
+  NonEmptyString Serialise() const;
 
-  explicit MaidAccount(Identity maid_name_in)
-    : maid_name_(maid_name_in), pmid_totals_(), data_elements_(), mutex_() {}
+  void Add(const protobuf::PmidTotals& pmid_totals);
+  void Remove(const PmidName& pmid_name);
+  void Update(const protobuf::PmidTotals& pmid_total);
+  bool Has(const PmidName& pmid_name) const;
 
-  explicit MaidAccount(const NonEmptyString& serialised_maidaccount)
-    : maid_name_(), pmid_totals_(), data_elements_(), mutex_() {
-    Parse(serialised_maidaccount);
-  }
+  void Add(const protobuf::PutData& put_data);
+  void Remove(const Identity& data_name) { (void)data_name; }
+  void Update(const protobuf::PutData& put_data);
+  bool Has(const Identity& data_name) const { (void)data_name; return true; }
 
-  MaidAccount(const MaidAccount& other)
-    : maid_name_(other.maid_name_),
-      pmid_totals_(other.pmid_totals_),
-      data_elements_(other.data_elements_),
-      mutex_() {}
-
-  MaidAccount& operator=(const MaidAccount& other);
-
-  void Parse(const NonEmptyString& serialised_maidaccount);
-  NonEmptyString Serialise();
-
-  void PushPmidTotal(PmidTotal pmid_total);
-  void RemovePmidTotal(Identity pmid_id);
-  void UpdatePmidTotal(PmidTotal pmid_total);
-  bool HasPmidTotal(Identity pmid_id);
-
-  void PushDataElement(DataElement data_element);
-  void RemoveDataElement(Identity data_id);
-  void UpdateDataElement(DataElement data_element);
-  bool HasDataElement(Identity data_id);
-
-  passport::PublicMaid::name_type maid_name() const { return maid_name_; }
+  MaidName maid_name() const { return kMaidName_; }
 
  private:
-  passport::PublicMaid::name_type maid_name_;
-  std::vector<PmidTotal> pmid_totals_;
-  std::vector<DataElement> data_elements_;
-  std::mutex mutex_;
+  mutable std::mutex mutex_;
+  protobuf::MaidAccount proto_maid_account_;
+  const MaidName kMaidName_;
 };
 
 }  // namespace vault

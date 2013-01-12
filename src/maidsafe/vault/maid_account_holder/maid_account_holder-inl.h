@@ -28,9 +28,7 @@ namespace vault {
 
 namespace detail {
 
-bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id) {
-  return routing.IsNodeIdInGroupRange(node_id);  // provisional call to Is..
-}
+bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id);
 
 }  // namespace detail
 
@@ -91,14 +89,14 @@ void MaidAccountHolder::HandleDeleteMessage(const nfs::Message& message,
     return;
   }
 
-  bool found_data_item(maid_account_it->HasDataElement(message.name()));
+  bool found_data_item(maid_account_it->Has(message.name()));
   if (found_data_item) {
     // Send message on to MetadataManager
     nfs::OnError on_error_callback = [this] (nfs::Message message) {
                                        this->OnDeleteErrorHandler<Data>(message);
                                      };
     nfs_.Delete<Data>(message, on_error_callback);
-    maid_account_it->RemoveDataElement(message.name());
+    maid_account_it->Remove(message.name());
   }
 
   reply_functor(nfs::ReturnCode(found_data_item ? 0 : -1).Serialise()->string());

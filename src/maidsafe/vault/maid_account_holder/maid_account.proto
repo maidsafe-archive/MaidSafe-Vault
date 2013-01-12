@@ -7,10 +7,20 @@ message PmidTotals {
   required PmidRecord pmid_record = 2;
 }
 
+// Data put to the network by the client
+message PutData {
+  required DataElement data_element = 1;
+  optional int32 replications = 2;
+}
+
 message MaidAccount {
   required bytes maid_name = 1;
   repeated PmidTotals pmid_totals = 2;
-  repeated DataElements data_put_to_network = 3;
+  repeated PutData recent_put_data = 3;
   required int64 total_data_stored_by_pmids = 4;
-  required int64 total_data_put_to_network = 5;
+  required int64 total_put_data = 5;
+}
+
+message ArchivedData {
+  repeated PutData put_data = 1;
 }

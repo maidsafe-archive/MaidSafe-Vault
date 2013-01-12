@@ -48,7 +48,7 @@ class MaidAccountHolder {
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandlePostMessage(const nfs::PostMessage& message,
                          const routing::ReplyFunctor& reply_functor);
-  void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
+  void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes) { (void)new_close_nodes; }
   void Serialise();
   void Serialise(const passport::Maid& maid);
   void Serialise(const passport::Pmid& pmid);

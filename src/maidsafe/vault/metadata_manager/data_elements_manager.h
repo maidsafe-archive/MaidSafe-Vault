@@ -16,6 +16,8 @@
 
 #include "maidsafe/common/types.h"
 
+#include "maidsafe/vault/types.h"
+
 
 namespace maidsafe {
 
@@ -28,16 +30,16 @@ class DataElementsManager {
   explicit DataElementsManager(const boost::filesystem::path& vault_root_dir);
   void AddDataElement(const Identity& data_name,
                       int32_t element_size,
-                      const Identity& online_pmid_name,
-                      const Identity& offline_pmid_name);
+                      const PmidName& online_pmid_name,
+                      const PmidName& offline_pmid_name);
   void RemoveDataElement(const Identity& data_name);
-  void MoveNodeToOffline(const Identity& data_name, const Identity& pmid_name, int64_t& holders);
-  void MoveNodeToOnline(const Identity& data_name, const Identity& pmid_name);
+  void MoveNodeToOffline(const Identity& data_name, const PmidName& pmid_name, int64_t& holders);
+  void MoveNodeToOnline(const Identity& data_name, const PmidName& pmid_name);
 
-  void AddOnlinePmid(const Identity& data_name, const Identity& online_pmid_name);
-  void RemoveOnlinePmid(const Identity& data_name, const Identity& online_pmid_name);
-  void AddOfflinePmid(const Identity& data_name, const Identity& offline_pmid_name);
-  void RemoveOfflinePmid(const Identity& data_name, const Identity& offline_pmid_name);
+  void AddOnlinePmid(const Identity& data_name, const PmidName& online_pmid_name);
+  void RemoveOnlinePmid(const Identity& data_name, const PmidName& online_pmid_name);
+  void AddOfflinePmid(const Identity& data_name, const PmidName& offline_pmid_name);
+  void RemoveOfflinePmid(const Identity& data_name, const PmidName& offline_pmid_name);
 
  private:
   boost::filesystem::path vault_metadata_dir_;

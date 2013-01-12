@@ -47,7 +47,7 @@ void MetadataManager::SendSyncData() {}
 bool MetadataManager::HandleNodeDown(const nfs::PostMessage& message, NodeId& node) {
   try {
     int64_t online_holders(-1);
-    data_elements_manager_.MoveNodeToOnline(message.name(), Identity(node.string()));
+    data_elements_manager_.MoveNodeToOnline(message.name(), PmidName(Identity(node.string())));
     if (online_holders < 3) {
       // TODO(Team): Get content. There is no manager available yet.
 
@@ -67,7 +67,7 @@ bool MetadataManager::HandleNodeDown(const nfs::PostMessage& message, NodeId& no
 
 bool MetadataManager::HandleNodeUp(const nfs::PostMessage& message, NodeId& node) {
   try {
-    data_elements_manager_.MoveNodeToOnline(message.name(), Identity(node.string()));
+    data_elements_manager_.MoveNodeToOnline(message.name(), PmidName(Identity(node.string())));
   }
   catch(const std::exception &e) {
     LOG(kError) << "HandleNodeUp - Dropping process after exception: " << e.what();

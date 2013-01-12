@@ -16,70 +16,27 @@
 #include <mutex>
 
 #include "maidsafe/common/types.h"
+
 #include "maidsafe/nfs/pmid_registration.h"
+
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-class PmidRecord {
+struct PmidRecord {
  public:
-  explicit PmidRecord(Identity pmid_name_in)
-    : pmid_name(pmid_name_in),
-      stored_count(0),
-      stored_total_size(0),
-      lost_count(0),
-      lost_total_size(0) {}
-  explicit PmidRecord(const NonEmptyString& serialised_pmidsize)
-    : pmid_name(),
-      stored_count(0),
-      stored_total_size(0),
-      lost_count(0),
-      lost_total_size(0) {
-    Parse(serialised_pmidsize);
-  }
+  explicit PmidRecord(const PmidName& pmid_name);
+  explicit PmidRecord(const NonEmptyString& serialised_pmid_record);
+  NonEmptyString Serialise() const;
 
-  void Parse(const NonEmptyString& serialised_pmidsize);
-  NonEmptyString Serialise();
-
- private:
-  Identity pmid_name;
+  const PmidName kPmidName;
   int64_t stored_count;
   int64_t stored_total_size;
   int64_t lost_count;
   int64_t lost_total_size;
-};
-
-class PmidTotal {
- public:
-  PmidTotal(nfs::PmidRegistration registration_in, PmidRecord pmid_record_in)
-    : registration(registration_in), pmid_record(pmid_record_in) {}
-
-  NonEmptyString Serialise();
-  bool IsRecordOf(Identity& pmid_id) const {
-    return pmid_id == registration.pmid_id();
-  }
-  Identity pmid_id() { return registration.pmid_id(); }
-
- private:
-  nfs::PmidRegistration registration;
-  PmidRecord pmid_record;
-};
-
-class DataElement {
- public:
-  DataElement() : name_(), size(0) {}
-
-  DataElement(Identity data_name_in, int32_t data_size_in)
-    : name_(data_name_in), size(data_size_in) {}
-
-  NonEmptyString Serialise();
-  Identity name() const { return name_; }
-
- private:
-  Identity name_;
-  int32_t size;
 };
 
 }  // namespace vault

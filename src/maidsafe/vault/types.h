@@ -17,6 +17,8 @@
 
 #include "maidsafe/nfs/nfs.h"
 
+#include "maidsafe/passport/types.h"
+
 #include "maidsafe/vault/get_policies.h"
 #include "maidsafe/vault/put_policies.h"
 #include "maidsafe/vault/post_policies.h"
@@ -41,6 +43,10 @@ typedef nfs::NetworkFileSystem<nfs::NoGet,
                                PutToDataHolder,
                                PostSynchronisation<nfs::PersonaType::kPmidAccountHolder>,
                                DeleteFromDataHolder> PmidAccountHolderNfs;
+
+typedef passport::PublicMaid::name_type MaidName;
+typedef passport::PublicPmid::name_type PmidName;
+typedef passport::PublicMpid::name_type MpidName;
 
 
 }  // namespace vault

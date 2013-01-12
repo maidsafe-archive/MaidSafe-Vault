@@ -73,8 +73,8 @@ DataElementsManager::DataElementsManager(const boost::filesystem::path& vault_ro
 
 void DataElementsManager::AddDataElement(const Identity& data_name,
                                          int32_t element_size,
-                                         const Identity& online_pmid_name,
-                                         const Identity& offline_pmid_name) {
+                                         const PmidName& online_pmid_name,
+                                         const PmidName& offline_pmid_name) {
   protobuf::MetadataElement element;
   try {
     CheckDataElementExists(data_name);
@@ -88,8 +88,8 @@ void DataElementsManager::AddDataElement(const Identity& data_name,
     element.set_data_name(data_name.string());
     element.set_element_size(element_size);
     element.set_number_stored(1);
-    element.add_online_pmid_name(online_pmid_name.string());
-    element.add_offline_pmid_name(offline_pmid_name.string());
+    element.add_online_pmid_name(online_pmid_name->string());
+    element.add_offline_pmid_name(offline_pmid_name->string());
   }
 
   SerialiseAndSaveElement(element);
@@ -101,60 +101,60 @@ void DataElementsManager::RemoveDataElement(const Identity& data_name) {
 }
 
 void DataElementsManager::MoveNodeToOffline(const Identity& data_name,
-                                            const Identity& pmid_name,
+                                            const PmidName& pmid_name,
                                             int64_t& holders) {
   CheckDataElementExists(data_name);
   protobuf::MetadataElement element;
   ReadAndParseElement(data_name, element);
-  bool found(RemovePmidFromOnlineList(pmid_name.string(), element));
+  bool found(RemovePmidFromOnlineList(pmid_name->string(), element));
   if (found) {
     holders = static_cast<int64_t>(element.element_size());
-    element.add_offline_pmid_name(pmid_name.string());
+    element.add_offline_pmid_name(pmid_name->string());
     SerialiseAndSaveElement(element);
   }
 }
 
-void DataElementsManager::MoveNodeToOnline(const Identity& data_name, const Identity& pmid_name) {
+void DataElementsManager::MoveNodeToOnline(const Identity& data_name, const PmidName& pmid_name) {
   CheckDataElementExists(data_name);
   protobuf::MetadataElement element;
   ReadAndParseElement(data_name, element);
-  bool found(RemovePmidFromOfflineList(pmid_name.string(), element));
+  bool found(RemovePmidFromOfflineList(pmid_name->string(), element));
   if (found) {
-    element.add_online_pmid_name(pmid_name.string());
+    element.add_online_pmid_name(pmid_name->string());
     SerialiseAndSaveElement(element);
   }
 }
 
 void DataElementsManager::AddOnlinePmid(const Identity& data_name,
-                                        const Identity& online_pmid_name) {
+                                        const PmidName& online_pmid_name) {
   CheckDataElementExists(data_name);
   protobuf::MetadataElement element;
   ReadAndParseElement(data_name, element);
-  element.add_online_pmid_name(online_pmid_name.string());
+  element.add_online_pmid_name(online_pmid_name->string());
   SerialiseAndSaveElement(element);
 }
 
 void DataElementsManager::RemoveOnlinePmid(const Identity& data_name,
-                                           const Identity& online_pmid_name) {
+                                           const PmidName& online_pmid_name) {
   CheckDataElementExists(data_name);
   protobuf::MetadataElement element;
   ReadAndParseElement(data_name, element);
-  bool found(RemovePmidFromOnlineList(online_pmid_name.string(), element));
+  bool found(RemovePmidFromOnlineList(online_pmid_name->string(), element));
   if (found)
     SerialiseAndSaveElement(element);
 }
 
 void DataElementsManager::AddOfflinePmid(const Identity& data_name,
-                                         const Identity& offline_pmid_name) {
+                                         const PmidName& offline_pmid_name) {
   CheckDataElementExists(data_name);
   protobuf::MetadataElement element;
   ReadAndParseElement(data_name, element);
-  element.add_offline_pmid_name(offline_pmid_name.string());
+  element.add_offline_pmid_name(offline_pmid_name->string());
   SerialiseAndSaveElement(element);
 }
 
 void DataElementsManager::RemoveOfflinePmid(const Identity& data_name,
-                                            const Identity& offline_pmid_name) {
+                                            const PmidName& offline_pmid_name) {
   CheckDataElementExists(data_name);
   protobuf::MetadataElement element;
   ReadAndParseElement(data_name, element);
@@ -162,7 +162,7 @@ void DataElementsManager::RemoveOfflinePmid(const Identity& data_name,
   // remove the pmid
   std::vector<std::string> pmid_names;
   for (int n(0); n < element.element_size(); ++n) {
-    if (element.offline_pmid_name(n) != offline_pmid_name.string())
+    if (element.offline_pmid_name(n) != offline_pmid_name->string())
       pmid_names.push_back(element.offline_pmid_name(n));
   }
   element.clear_offline_pmid_name();

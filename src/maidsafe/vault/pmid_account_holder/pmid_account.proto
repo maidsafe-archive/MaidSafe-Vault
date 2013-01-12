@@ -9,7 +9,7 @@ message PmidRecord {
   required int64 lost_total_size = 5;
 }
 
-message DataElements {
+message DataElement {
   required bytes name = 1;
   required int32 size = 2;
   optional int32 version = 3;
@@ -17,5 +17,5 @@ message DataElements {
 
 message PmidAccount {
   required PmidRecord pmid_record = 1;
-  repeated DataElements data_stored = 2;
+  repeated DataElement data_stored = 2;
 }
