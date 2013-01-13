@@ -114,10 +114,105 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
   EXPECT_EQ(retrieved, nfs::ReturnCode(-1).Serialise()->string());
 }
 
+TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
+  uint32_t events(RandomUint32() % 100);
+  std::vector<nfs::Message> messages;
+  std::vector<std::future<void>> future_puts, future_deletes, future_gets;
+
+  for (uint32_t i = 0; i != events; ++i) {
+    nfs::Message::Source source(nfs::PersonaType::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+    NonEmptyString content(RandomAlphaNumericString(256));
+    asymm::Signature signature;
+    std::string retrieved;
+    nfs::Message message(nfs::ActionType::kPut, nfs::PersonaType::kDataHolder, source,
+                         detail::DataTagValue::kAnmaidValue, Identity(RandomString(NodeId::kSize)),
+                         content, signature);
+    messages.push_back(message);
+
+    uint32_t event(RandomUint32() % 3);
+    switch (event) {
+      case 0: {
+        if (!messages.empty()) {
+          nfs::Message message = messages[RandomUint32() % messages.size()];
+          future_deletes.push_back(std::async([this, message, &retrieved] {
+                                               this->HandleDeleteMessage(
+                                                   message,
+                                                   [&](const std::string& /*data*/) {
+                                                   });
+                                  }));
+        } else {
+          future_deletes.push_back(std::async([this, message, &retrieved] {
+                                               this->HandleDeleteMessage(
+                                                  message,
+                                                  [&](const std::string& data) {
+                                                    retrieved = data;
+                                                  });
+                                   }));
+        }
+        break;
+      }
+     case 1: {
+        future_puts.push_back(std::async([this, message, &retrieved] {
+                                          this->HandlePutMessage(
+                                             message,
+                                             [&](const std::string& /*data*/) {
+                                             });
+                             }));
+        break;
+      }
+      case 2: {
+        if (!messages.empty()) {
+          nfs::Message message = messages[RandomUint32() % messages.size()];
+          future_gets.push_back(std::async([this, message, &retrieved] {
+                                            this->HandleGetMessage(
+                                               message,
+                                               [&](const std::string& data) {
+                                                 assert(!data.empty());
+                                               });
+                                }));
+        } else {
+          future_gets.push_back(std::async([this, message, &retrieved] {
+                                            this->HandleGetMessage(
+                                               message,
+                                               [&](const std::string& data) {
+                                                 retrieved = data;
+                                               });
+                                          }));
+        }
+        break;
+      }
+    }
+  }
+
+  for (auto& future_put : future_puts)
+    future_put.get();
+
+  for (auto& future_delete : future_deletes) {
+    try {
+      future_delete.get();
+    }
+    catch(const std::exception& e) {
+      std::string msg(e.what());
+      LOG(kError) << msg;
+    }
+  }
+
+  for (auto& future_get : future_gets) {
+    try {
+      future_get.get();
+    }
+    catch(const std::exception& e) {
+      std::string msg(e.what());
+      LOG(kError) << msg;
+    }
+  }
+}
+
 REGISTER_TYPED_TEST_CASE_P(DataHolderTest,
                            BEH_HandlePutMessage,
                            BEH_HandleGetMessage,
-                           BEH_HandleDeleteMessage);
+                           BEH_HandleDeleteMessage,
+                           BEH_RandomAsync);
 
 typedef testing::Types<passport::PublicAnmid,
                        passport::PublicAnsmid,
@@ -134,7 +229,6 @@ typedef testing::Types<passport::PublicAnmid,
                        MutableData> AllTypes;
 
 INSTANTIATE_TYPED_TEST_CASE_P(NoCache, DataHolderTest, AllTypes);
-
 
 
 template<class T>
