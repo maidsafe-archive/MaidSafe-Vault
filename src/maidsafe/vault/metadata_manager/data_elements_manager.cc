@@ -196,7 +196,10 @@ void DataElementsManager::SerialiseAndSaveElement(const protobuf::MetadataElemen
     ThrowError(NfsErrors::managed_element_serialisation_error);
   }
 
-  WriteFile(vault_metadata_dir_ / EncodeToBase64(element.data_name()), serialised_element);
+  if (!WriteFile(vault_metadata_dir_ / EncodeToBase64(element.data_name()), serialised_element)) {
+    LOG(kError) << "Failed to write data ID: " << Base64Substr(element.data_name());
+    ThrowError(NfsErrors::managed_element_serialisation_error);
+  }
 }
 
 
