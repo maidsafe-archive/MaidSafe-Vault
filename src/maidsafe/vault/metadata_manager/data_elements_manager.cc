@@ -11,10 +11,14 @@
 
 #include "maidsafe/vault/metadata_manager/data_elements_manager.h"
 
-#include "maidsafe/vault/metadata_manager/metadata_pb.h"
+#include <string>
+#include <vector>
 
 #include "boost/filesystem/operations.hpp"
+
 #include "maidsafe/common/utils.h"
+
+#include "maidsafe/vault/metadata_manager/metadata_pb.h"
 
 
 namespace maidsafe {
@@ -26,7 +30,7 @@ namespace {
 bool RemovePmidFromOnlineList(const std::string& pmid, protobuf::MetadataElement& element) {
   std::vector<std::string> pmid_names;
   bool found(false);
-  for (int n(0); n < element.element_size(); ++n) {
+  for (int n(0); n < element.online_pmid_name_size(); ++n) {
     if (element.online_pmid_name(n) == pmid)
       found = true;
     else
@@ -45,7 +49,7 @@ bool RemovePmidFromOnlineList(const std::string& pmid, protobuf::MetadataElement
 bool RemovePmidFromOfflineList(const std::string& pmid, protobuf::MetadataElement& element) {
   std::vector<std::string> pmid_names;
   bool found(false);
-  for (int n(0); n < element.element_size(); ++n) {
+  for (int n(0); n < element.offline_pmid_name_size(); ++n) {
     if (element.offline_pmid_name(n) == pmid)
       found = true;
     else
@@ -158,19 +162,9 @@ void DataElementsManager::RemoveOfflinePmid(const Identity& data_name,
   CheckDataElementExists(data_name);
   protobuf::MetadataElement element;
   ReadAndParseElement(data_name, element);
-
-  // remove the pmid
-  std::vector<std::string> pmid_names;
-  for (int n(0); n < element.element_size(); ++n) {
-    if (element.offline_pmid_name(n) != offline_pmid_name->string())
-      pmid_names.push_back(element.offline_pmid_name(n));
-  }
-  element.clear_offline_pmid_name();
-  for (auto& pmid_name : pmid_names)
-    element.add_offline_pmid_name(pmid_name);
-
-  // Save the result
-  SerialiseAndSaveElement(element);
+  bool found(RemovePmidFromOfflineList(offline_pmid_name->string(), element));
+  if (found)
+    SerialiseAndSaveElement(element);
 }
 
 void DataElementsManager::CheckDataElementExists(const Identity& data_name) {

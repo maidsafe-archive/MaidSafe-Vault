@@ -13,6 +13,8 @@
 
 #include <vector>
 
+#include "boost/filesystem/operations.hpp"
+
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
