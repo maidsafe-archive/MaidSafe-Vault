@@ -14,6 +14,7 @@
 
 #include <exception>
 #include <string>
+#include <vector>
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
@@ -40,6 +41,42 @@ void MetadataManager::HandlePutMessage(const nfs::Message& message,
     nfs_.Put<Data>(message, on_error_callback);
   }
   reply_functor(nfs::ReturnCode(0).Serialise()->string());
+}
+
+template<typename Data>
+void MetadataManager::HandleGetMessage(nfs::Message message,
+                                       const routing::ReplyFunctor& reply_functor) {
+  std::vector<Identity> online_dataholders(
+      data_elements_manager_.GetOnlinePmid(Identity(message.name())));
+  std::vector<std::future<Data>> futures;
+  for (auto& online_dataholder : online_dataholders)
+    futures.emplace_back(nfs_.Get<Data>(message.name(),
+                                        nfs::Message::Source(nfs::PersonaType::kMetadataManager,
+                                                             routing_.kNodeId()),
+                                        online_dataholder));
+
+  auto fetched_data = futures.begin();
+  while (futures.size() > 0) {
+    if (fetched_data->wait_for(0) == std::future_status::ready) {
+      try {
+        Data fetched_chunk = fetched_data->get();
+        if (fetched_chunk.name().data.IsInitialised()) {
+          reply_functor(fetched_chunk.data.string());
+          return;
+        }
+      } catch(...) {
+        // no op
+      }
+      fetched_data = futures.erase(fetched_data);
+    } else {
+      ++fetched_data;
+    }
+    Sleep(boost::posix_time::milliseconds(1));
+    if (fetched_data == futures.end())
+      fetched_data = futures.begin();
+  }
+
+  reply_functor(nfs::ReturnCode(-1).Serialise()->string());
 }
 
 // On error handler's
