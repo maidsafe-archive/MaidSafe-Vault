@@ -100,13 +100,6 @@ bool MetadataManager::HandleNodeUp(const nfs::PostMessage& message, NodeId& /*no
   return true;
 }
 
-// On error handler
-template<typename Data>
-void MetadataManager::OnPutErrorHandler(nfs::Message message) {}
-
-template<typename Data>
-void MetadataManager::OnDeleteErrorHandler(nfs::Message message) {}
-
 }  // namespace vault
 
 }  // namespace maidsafe

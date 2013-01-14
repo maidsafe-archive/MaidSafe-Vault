@@ -26,12 +26,43 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void MetadataManager::HandlePutMessage(const nfs::Message& /*message*/,
+void MetadataManager::HandlePutMessage(const nfs::Message& message,
                                        const routing::ReplyFunctor& reply_functor) {
-//  if (request_queue_.Push(message.id(), message.name()))
-//    nfs_.Put<Data>(message, reply_functor);
+  if (!detail::NodeRangeCheck(routing_, message.source().node_id)) {
+    reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+    return;
+  }
+
+  if (request_queue_.Push(message.id(), message.name())) {
+    nfs::OnError on_error_callback = [this] (nfs::Message message) {
+                                        this->OnPutErrorHandler<Data>(message);
+                                     };
+    nfs_.Put<Data>(message, on_error_callback);
+  }
   reply_functor(nfs::ReturnCode(0).Serialise()->string());
 }
+
+// On error handler's
+template<typename Data>
+void MetadataManager::OnPutErrorHandler(nfs::Message message) {
+  if (detail::NodeRangeCheck(routing_, message.source().node_id))
+    nfs_.Put<Data>(message,
+                   [this] (nfs::Message message) {
+                     this->OnPutErrorHandler<Data>(message);
+                   });
+}
+
+template<typename Data>
+void MetadataManager::OnDeleteErrorHandler(nfs::Message message) {
+  if (detail::NodeRangeCheck(routing_, message.source().node_id))
+    nfs_.Delete<Data>(message,
+                      [this] (nfs::Message message) {
+                        this->OnDeleteErrorHandler<Data>(message);
+                      });
+}
+
+template<typename Data>
+void MetadataManager::OnPostErrorHandler(nfs::PostMessage message) {}
 
 }  // namespace vault
 

@@ -23,10 +23,19 @@
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/active.h"
 
+#include "maidsafe/routing/routing_api.h"
+
+#include "maidsafe/nfs/message.h"
 
 namespace maidsafe {
 
 namespace vault {
+
+namespace detail {
+
+bool NodeRangeCheck(maidsafe::routing::Routing& routing, const NodeId& node_id);
+
+}  // namespace detail
 
 // will confirm signature matches src ID private key
 // signed the type (three enums) and payload. Will do a Get from MM
