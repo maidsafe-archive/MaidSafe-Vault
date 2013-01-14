@@ -90,7 +90,7 @@ class MaidAccountHolder {
   MaidAccountHolderNfs nfs_;
   nfs::PublicKeyGetter& public_key_getter_;
 //  std::vector<MaidAccount> maid_accounts_;
-  MaidAccountHandler maid_acount_handler_;
+  MaidAccountHandler maid_account_handler_;
 };
 
 }  // namespace vault

@@ -34,7 +34,7 @@ MaidAccountHolder::MaidAccountHolder(const passport::Pmid& pmid,
       kRootDir_(vault_root_dir / "maids"),
       nfs_(routing, pmid),
       public_key_getter_(public_key_getter),
-      maid_acount_handler_(vault_root_dir)/*,
+      maid_account_handler_(vault_root_dir)/*,
       maid_accounts_()*/ {
   boost::filesystem::exists(kRootDir_) || boost::filesystem::create_directory(kRootDir_);
 

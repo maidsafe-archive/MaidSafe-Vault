@@ -12,6 +12,9 @@
 #ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_MANAGER_H_
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_MANAGER_H_
 
+#include <future>
+#include <vector>
+
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/active.h"
@@ -28,8 +31,11 @@ class MaidAccountHandler {
   MaidAccountHandler(const boost::filesystem::path& vault_root_dir);
 
   // Data operations
-  void AddDataElement(const protobuf::MaidAccountStorage& valid_storage_element);
-  void DeleteDataElement(const MaidName& maid_name);
+  void AddDataElement(const MaidName& maid_name, const protobuf::PutData& data);
+  void UpdateReplicationCount(const MaidName& maid_name,
+                              const protobuf::PutData& data,
+                              int32_t replications);
+  void DeleteDataElement(const MaidName& maid_name, const protobuf::PutData& data);
   // Optional
   // void GetDataElement(protobuf::MaidAccountStorage& storage_element_with_name);
   // int32_t GetDuplicates(const MaidName& maid_name);
@@ -37,9 +43,13 @@ class MaidAccountHandler {
   // PmidInfo operations
   void AddPmidToAccount(const protobuf::MaidPmidsInfo& new_pmid_for_maid);
   void RemovePmidFromAccount(const MaidName& maid_name, const PmidName& pmid_name);
-  void GetMaidAccountTotals(protobuf::MaidPmidsInfo& info_with_maid_name);
-  void UpdateTotalDataPutByMaid(const MaidName& maid_name, int64_t delta);
-  void UpdateTotalDataHeldByPmids(const MaidName& maid_name, int64_t delta);
+  void GetMaidAccountTotals(protobuf::MaidPmidsInfo& info_with_maid_name) const;
+  void UpdatePmidTotals(const MaidName& maid_name, const protobuf::PmidTotals& pmid_totals);
+
+  // Sync operations
+  std::vector<MaidName> GetMaidNames() const;
+  size_t GetMaidAccountFileCount() const;
+  std::future<std::string> GetMaidAccountFile(size_t index) const;
   // Optional
   // void GetPmidAccountDetails(protobuf::PmidRecord& pmid_record);
 
