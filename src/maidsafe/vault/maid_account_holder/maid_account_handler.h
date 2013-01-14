@@ -54,9 +54,16 @@ class MaidAccountHandler {
   // void GetPmidAccountDetails(protobuf::PmidRecord& pmid_record);
 
  private:
+  const boost::filesystem::path maid_accounts_path_;
   std::vector<protobuf::MaidPmidsInfo> maid_pmid_info_;
+  std::vector<protobuf::MaidAccountStorage> maid_storage_fifo_;
   Active active_;
   // File handler extracted from template version
+
+  bool MatchMaidStorageFifoEntry(const protobuf::MaidAccountStorage& maid_storage,
+                                 const MaidName& maid_name,
+                                 const protobuf::PutData& data,
+                                 int &index);
 };
 
 }  // namespace vault
