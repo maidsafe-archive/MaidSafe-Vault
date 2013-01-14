@@ -29,7 +29,7 @@
 #include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/vault/types.h"
-
+#include "maidsafe/vault/maid_account_holder/maid_account_handler.h"
 
 namespace maidsafe {
 
@@ -49,10 +49,10 @@ class MaidAccountHolder {
   void HandlePostMessage(const nfs::PostMessage& message,
                          const routing::ReplyFunctor& reply_functor);
   void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes) { (void)new_close_nodes; }
-  void Serialise();
-  void Serialise(const passport::Maid& maid);
-  void Serialise(const passport::Pmid& pmid);
-  void RemoveAccount(const passport::Maid& maid);
+//  void Serialise();
+//  void Serialise(const passport::Maid& maid);
+//  void Serialise(const passport::Pmid& pmid);
+//  void RemoveAccount(const passport::Maid& maid);
 
  private:
   template<typename Data>
@@ -89,7 +89,8 @@ class MaidAccountHolder {
   const boost::filesystem::path kRootDir_;
   MaidAccountHolderNfs nfs_;
   nfs::PublicKeyGetter& public_key_getter_;
-  std::vector<MaidAccount> maid_accounts_;
+//  std::vector<MaidAccount> maid_accounts_;
+  MaidAccountHandler maid_acount_handler_;
 };
 
 }  // namespace vault

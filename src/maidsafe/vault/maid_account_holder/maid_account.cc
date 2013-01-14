@@ -23,29 +23,29 @@ namespace maidsafe {
 
 namespace vault {
 
-MaidAccount::MaidAccount(const MaidName& maid_name)
-    : mutex_(),
-      proto_maid_account_(),
-      kMaidName_(maid_name) {}
+//  MaidAccount::MaidAccount(const MaidName& maid_name)
+//      : mutex_(),
+//        proto_maid_account_(),
+//        kMaidName_(maid_name) {}
 
-MaidAccount::MaidAccount(const NonEmptyString& serialised_maid_account)
-    : mutex_(),
-      proto_maid_account_([&serialised_maid_account]()->protobuf::MaidAccount {
-                              protobuf::MaidAccount proto_maid_account;
-                              proto_maid_account.ParseFromString(serialised_maid_account.string());
-                              return proto_maid_account;
-                          }()),
-      kMaidName_(Identity(proto_maid_account_.maid_name())) {
-  if (!proto_maid_account_.IsInitialized()) {
-    LOG(kError) << "Failed to parse maid_account.";
-    ThrowError(NfsErrors::maid_account_parsing_error);
-  }
-}
+//  MaidAccount::MaidAccount(const NonEmptyString& serialised_maid_account)
+//      : mutex_(),
+//        proto_maid_account_([&serialised_maid_account]()->protobuf::MaidAccount {
+//                                protobuf::MaidAccount proto_maid_account;
+//                                proto_maid_account.ParseFromString(serialised_maid_account.string());
+//                                return proto_maid_account;
+//                            }()),
+//        kMaidName_(Identity(proto_maid_account_.maid_name())) {
+//    if (!proto_maid_account_.IsInitialized()) {
+//      LOG(kError) << "Failed to parse maid_account.";
+//      ThrowError(NfsErrors::maid_account_parsing_error);
+//    }
+//  }
 
-NonEmptyString MaidAccount::Serialise() const {
-  std::lock_guard<std::mutex> lock(mutex_);
-  return NonEmptyString(proto_maid_account_.SerializeAsString());
-}
+//  NonEmptyString MaidAccount::Serialise() const {
+//    std::lock_guard<std::mutex> lock(mutex_);
+//    return NonEmptyString(proto_maid_account_.SerializeAsString());
+//  }
 
 /*
 void MaidAccount::PushPmidTotal(PmidTotals pmid_total) {
