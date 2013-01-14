@@ -13,6 +13,10 @@
 #define MAIDSAFE_VAULT_ACTIVE_FILE_HANDLER_INL_H_
 
 #include "boost/filesystem/operations.hpp"
+#include "google/protobuf/descriptor.h"
+#include "google/protobuf/message.h"
+
+namespace gp = google::protobuf;
 
 namespace maidsafe {
 
@@ -22,6 +26,7 @@ template <typename C, typename E>
 ActiveFileHandler<C, E>::ActiveFileHandler(const boost::filesystem::path& base_path,
                                         const boost::filesystem::path& file_name)
     : active_(),
+      kMaxElementCount_(1000),
       current_element_count_(0),
       current_file_(0),
       file_name_(file_name),
@@ -73,6 +78,68 @@ void ActiveFileHandler<C, E>::CheckForExistingFiles() {
   std::string field_name(container.GetDescriptor()->field(0)->full_name());
   current_element_count_ =
       static_cast<int>(container.GetReflection()->FieldSize(&container, field_name));
+}
+
+template <typename C, typename E>
+void ActiveFileHandler<C, E>::Write(Identity name, const E& container_element) {
+  active_.Send([=] () { this->DoWrite(name, container_element); });  // NOLINT (Dan)
+}
+
+template <typename C, typename E>
+void ActiveFileHandler<C, E>::Delete(Identity name, const E& container_element) {
+  active_.Send([=] () { this->DoDelete(name, container_element); });  // NOLINT (Dan)
+}
+
+template <typename C, typename E>
+void ActiveFileHandler<C, E>::DoWrite(Identity name, const E& container_element) {
+
+}
+
+template <typename C, typename E>
+void ActiveFileHandler<C, E>::DoDelete(Identity name, E container_element) {
+
+}
+
+template <typename C, typename E>
+void ActiveFileHandler<C, E>::SearchFilesForIndex() {
+  C container;
+  NonEmptyString content;
+  for (int n(current_file_); n != -1; --n) {
+    std::string file_name(file_name_.string() + boost::lexical_cast<std::string>(n));
+    content = ReadFile(base_path_ / file_name);
+    container.Clear();
+    if (!container.ParseFromString()) {
+      LOG(kInfo) << "Failed to parse. Skipping file " << file_name;
+      continue;
+    }
+
+    // Check index to find the correct one
+    const gp::FieldDescriptor* field_descriptor_0(container.GetDescriptor()->field(0));
+    std::string field_name(field_descriptor_0->full_name());
+    const gp::Reflection* reflection(container.GetReflection());
+    int count(static_cast<int>(reflection->FieldSize(&container, field_name)));
+    for (int n(0); n != count; ++count) {
+      E element(reflection->GetRepeatedMessage(container, field_descriptor_0, n));
+      // Check element
+    }
+  }
+}
+
+template <typename C, typename E>
+void ActiveFileHandler<C, E>::IncreaseFileContainer() {
+  if (++current_element_count_ == kMaxElementCount_) {
+    ++current_file_;
+    curent_file_path_ = base_path_ /
+                        (file_name_.string() + boost::lexical_cast<std::string>(current_file_));
+  }
+}
+
+template <typename C, typename E>
+void ActiveFileHandler<C, E>::DecreaseFileContainer(int file_index, int file_element_count) {
+  if (file_element_count == 0) {
+    boost::filesystem::remove(base_path_ /
+                              (file_name_.string() + boost::lexical_cast<std::string>(file_index)));
+  }
 }
 
 }  // namespace vault

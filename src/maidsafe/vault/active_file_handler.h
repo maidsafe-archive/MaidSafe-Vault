@@ -27,15 +27,23 @@ class ActiveFileHandler {
 
   void Write(Identity name, const E& container_element);
   void Read(Identity name, E& container_element);
-  void Delete(Identity name, E container_element);
+  void Delete(Identity name, const E& container_element);
 
  private:
   Active active_;
+  const int kMaxElementCount_;
   int current_element_count_, current_file_;
   const boost::filesystem::path file_name_;
   boost::filesystem::path base_path_, curent_file_path_;
 
   void CheckForExistingFiles();
+  void DoWrite(Identity name, const E& container_element);
+//  void DoRead();
+  void DoDelete(Identity name, E container_element);
+
+  void SearchFilesForIndex();
+  void IncreaseFileContainer();
+  void DecreaseFileContainer(int file_index, int file_element_count);
 };
 
 }  // namespace vault
