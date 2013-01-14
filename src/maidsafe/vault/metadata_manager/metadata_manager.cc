@@ -40,7 +40,7 @@ void MetadataManager::HandlePostMessage(const nfs::PostMessage& message,
   nfs::PostActionType action_type(message.post_action_type());
   NodeId source_id(message.source().node_id);
   switch (action_type) {
-    case nfs::PostActionType::kNodeUp:
+    case nfs::PostActionType::kConnect:
         if (!HandleNodeUp(message, source_id)) {
           LOG(kError) << "Replying with failure on kNodeUp.";
           reply_functor(nfs::ReturnCode(-1).Serialise()->string());
