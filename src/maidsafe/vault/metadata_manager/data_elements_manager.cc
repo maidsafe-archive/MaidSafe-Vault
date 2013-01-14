@@ -112,7 +112,7 @@ void DataElementsManager::MoveNodeToOffline(const Identity& data_name,
   ReadAndParseElement(data_name, element);
   bool found(RemovePmidFromOnlineList(pmid_name->string(), element));
   if (found) {
-    holders = static_cast<int64_t>(element.element_size());
+    holders = static_cast<int64_t>(element.online_pmid_name_size());
     element.add_offline_pmid_name(pmid_name->string());
     SerialiseAndSaveElement(element);
   }

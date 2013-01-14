@@ -136,6 +136,7 @@ class DataElementsManagerTest : public testing::Test {
  public:
   bool CheckDataExistenceAndIntegrity(const Identity& data_name,
                                       const int32_t& element_size,
+                                      const int64_t& number_stored,
                                       const std::set<PmidName>& online_pmids,
                                       const std::set<PmidName>& offline_pmids) {
     protobuf::MetadataElement element;
@@ -144,6 +145,11 @@ class DataElementsManagerTest : public testing::Test {
 
     if (element.element_size() != element_size) {
       LOG(kError) << "Data has wrong size.";
+      return false;
+    }
+
+    if (element.number_stored() != number_stored) {
+      LOG(kError) << "Wrong number stored.";
       return false;
     }
 
@@ -162,8 +168,9 @@ class DataElementsManagerTest : public testing::Test {
     return true;
   }
 
-  bool CheckDataExistenceAndIntegrity(const Identity &data_name,
+  bool CheckDataExistenceAndIntegrity(const Identity& data_name,
                                       const int32_t &element_size,
+                                      const int64_t& number_stored,
                                       const PmidName& online_pmid,
                                       const PmidName& offline_pmid) {
     protobuf::MetadataElement element;
@@ -175,10 +182,77 @@ class DataElementsManagerTest : public testing::Test {
       return false;
     }
 
+    if (element.number_stored() != number_stored) {
+      LOG(kError) << "Wrong number stored.";
+      return false;
+    }
+
     if (!CheckPmidIds(element, online_pmid, offline_pmid))
       return false;
 
     return true;
+  }
+
+  void AddPmidIds(const Identity& data_name,
+                  const int32_t& element_size,
+                  const uint16_t& max_value,
+                  const int64_t number_stored,
+                  std::set<PmidName>& online_pmid_names,
+                  std::set<PmidName>& offline_pmid_names,
+                  std::vector<PmidName>& online_for_change,
+                  std::vector<PmidName>& offline_for_change,
+                  int64_t& expected_holders) {
+    for (uint16_t i(0); i < max_value; ++i) {
+      PmidName online_pmid_name(GenerateIdentity());
+      data_elements_manager_.AddOnlinePmid(data_name, online_pmid_name);
+      online_pmid_names.insert(online_pmid_name);
+      ++expected_holders;
+      ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name,
+                                                 element_size,
+                                                 number_stored,
+                                                 online_pmid_names,
+                                                 offline_pmid_names));
+      if (RandomUint32() % 3 == 0)
+        online_for_change.push_back(online_pmid_name);
+
+      PmidName offline_pmid_name(GenerateIdentity());
+      data_elements_manager_.AddOfflinePmid(data_name, offline_pmid_name);
+      offline_pmid_names.insert(offline_pmid_name);
+      ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name,
+                                                 element_size,
+                                                 number_stored,
+                                                 online_pmid_names,
+                                                 offline_pmid_names));
+      if (RandomUint32() % 3 == 0)
+        offline_for_change.push_back(offline_pmid_name);
+    }
+  }
+
+  void AddPmidIds(const Identity& data_name,
+                  const int32_t& element_size,
+                  const uint16_t& max_value,
+                  const int64_t number_stored,
+                  std::set<PmidName>& online_pmid_names,
+                  std::set<PmidName>& offline_pmid_names) {
+    for (uint16_t i(0); i < max_value; ++i) {
+      PmidName online_pmid_name(GenerateIdentity());
+      data_elements_manager_.AddOnlinePmid(data_name, online_pmid_name);
+      online_pmid_names.insert(online_pmid_name);
+      ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name,
+                                                 element_size,
+                                                 number_stored,
+                                                 online_pmid_names,
+                                                 offline_pmid_names));
+
+      PmidName offline_pmid_name(GenerateIdentity());
+      data_elements_manager_.AddOfflinePmid(data_name, offline_pmid_name);
+      offline_pmid_names.insert(offline_pmid_name);
+      ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name,
+                                                 element_size,
+                                                 number_stored,
+                                                 online_pmid_names,
+                                                 offline_pmid_names));
+    }
   }
 
   const maidsafe::test::TestPath kTestRoot_;
@@ -192,6 +266,7 @@ class DataElementsManagerOneElementTest : public DataElementsManagerTest {
   DataElementsManagerOneElementTest()
       : data_name_(GenerateIdentity()),
         element_size_(RandomInt32()),
+        number_stored_(0),
         online_pmid_name_(GenerateIdentity()),
         offline_pmid_name_(GenerateIdentity()) {}
 
@@ -199,120 +274,139 @@ class DataElementsManagerOneElementTest : public DataElementsManagerTest {
   void SetUp() {
     online_pmid_names_.insert(online_pmid_name_);
     offline_pmid_names_.insert(offline_pmid_name_);
+    data_elements_manager_.AddDataElement(data_name_,
+                                          element_size_,
+                                          online_pmid_name_,
+                                          offline_pmid_name_);
+    ++number_stored_;
+
+    EXPECT_TRUE(CheckDataExistenceAndIntegrity(data_name_,
+                                               element_size_,
+                                               number_stored_,
+                                               online_pmid_names_,
+                                               offline_pmid_names_));
+    LOG(kInfo) << "SetUp complete!";
   }
 
  public:
   Identity data_name_;
   int32_t element_size_;
+  int64_t number_stored_;
   PmidName online_pmid_name_;
   PmidName offline_pmid_name_;
   std::set<PmidName> online_pmid_names_;
   std::set<PmidName> offline_pmid_names_;
 };
 
-TEST_F(DataElementsManagerOneElementTest, BEH_AddDataElement) {
-  // Add and check data element, then re-add it and check again
-  for (uint16_t i(0); i < 2; ++i) {
+TEST_F(DataElementsManagerOneElementTest, BEH_ReAddDataElement) {
+  // Re-add the added element and check it again
+  for (uint16_t i(0); i < 20; ++i) {
     data_elements_manager_.AddDataElement(data_name_,
                                           element_size_,
                                           online_pmid_name_,
                                           offline_pmid_name_);
+    ++number_stored_;
 
     EXPECT_TRUE(CheckDataExistenceAndIntegrity(data_name_,
                                                element_size_,
+                                               number_stored_,
                                                online_pmid_names_,
                                                offline_pmid_names_));
   }
 }
 
 TEST_F(DataElementsManagerOneElementTest, BEH_AddChangedDataElement) {
-  // Add and check data element, then add another data element with the same id, but with other
+  // Add another data element with the same id as original one, but with other
   // fields different, and check that original data element's content hasn't changed.
-  for (uint16_t i(0); i < 2; ++i) {
-    if (i == 0) {
-      data_elements_manager_.AddDataElement(data_name_,
-                                            element_size_,
-                                            online_pmid_name_,
-                                            offline_pmid_name_);
-    } else {
-      data_elements_manager_.AddDataElement(data_name_,
-                                            RandomInt32(),
-                                            PmidName(GenerateIdentity()),
-                                            PmidName(GenerateIdentity()));
-    }
+  for (uint16_t i(0); i < 20; ++i) {
+    data_elements_manager_.AddDataElement(data_name_,
+                                          RandomInt32(),
+                                          PmidName(GenerateIdentity()),
+                                          PmidName(GenerateIdentity()));
+    ++number_stored_;
 
     EXPECT_TRUE(CheckDataExistenceAndIntegrity(data_name_,
                                                element_size_,
+                                               number_stored_,
                                                online_pmid_names_,
                                                offline_pmid_names_));
   }
 }
 
 TEST_F(DataElementsManagerOneElementTest, BEH_AddAndRemoveDataElement) {
-  data_elements_manager_.AddDataElement(data_name_, element_size_, online_pmid_name_,
-                                        offline_pmid_name_);
-  EXPECT_TRUE(CheckDataExistenceAndIntegrity(data_name_,
-                                             element_size_,
-                                             online_pmid_names_,
-                                             offline_pmid_names_));
+  for (uint16_t i(0); i < 5; ++i) {
+    LOG(kInfo) << "Loop number: " << i;
+    EXPECT_NO_THROW(data_elements_manager_.RemoveDataElement(data_name_));
+    number_stored_ = 0;
+    EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name_)));
 
-  data_elements_manager_.RemoveDataElement(data_name_);
-  EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name_)));
-
-  data_elements_manager_.AddDataElement(data_name_, element_size_, online_pmid_name_,
-                                        offline_pmid_name_);
-  EXPECT_TRUE(CheckDataExistenceAndIntegrity(data_name_,
-                                             element_size_,
-                                             online_pmid_names_,
-                                             offline_pmid_names_));
+    for (uint16_t j(0); j < 1 + RandomUint32() % 20; ++j) {
+      LOG(kInfo) << "Loop number: " << i << "\t\tSubloop number: " << j;
+      data_elements_manager_.AddDataElement(data_name_,
+                                            element_size_,
+                                            online_pmid_name_,
+                                            offline_pmid_name_);
+      ++number_stored_;
+      EXPECT_TRUE(CheckDataExistenceAndIntegrity(data_name_,
+                                                 element_size_,
+                                                 number_stored_,
+                                                 online_pmid_names_,
+                                                 offline_pmid_names_));
+    }
+  }
 }
 
-TEST_F(DataElementsManagerTest, BEH_RemoveNonexistentDataElement) {
+TEST_F(DataElementsManagerTest, BEH_NonexistentDataElement) {
   Identity data_name(GenerateIdentity());
+  PmidName pmid_name(GenerateIdentity());
+  int64_t holders;
 
   EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name)));
 
   // TODO(Alison) - sensitise to NfsErrors::failed_to_find_managed_element?
   EXPECT_THROW(data_elements_manager_.RemoveDataElement(data_name),
                std::exception);
+  EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name)));
 
+  EXPECT_THROW(data_elements_manager_.AddOnlinePmid(data_name, pmid_name),
+               std::exception);
+  EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name)));
+
+  EXPECT_THROW(data_elements_manager_.AddOfflinePmid(data_name, pmid_name),
+               std::exception);
+  EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name)));
+
+  EXPECT_THROW(data_elements_manager_.RemoveOnlinePmid(data_name, pmid_name),
+               std::exception);
+  EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name)));
+
+  EXPECT_THROW(data_elements_manager_.RemoveOfflinePmid(data_name, pmid_name),
+               std::exception);
+  EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name)));
+
+  EXPECT_THROW(data_elements_manager_.MoveNodeToOffline(data_name, pmid_name, holders),
+               std::exception);
+  EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name)));
+
+  EXPECT_THROW(data_elements_manager_.MoveNodeToOnline(data_name, pmid_name),
+               std::exception);
   EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name)));
 }
 
 TEST_F(DataElementsManagerOneElementTest, BEH_AddRemovePmids) {
-  // TODO(Alison) - tidy/condense this test
-  data_elements_manager_.AddDataElement(data_name_, element_size_, online_pmid_name_,
-                                        offline_pmid_name_);
-
-  ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name_,
-                                             element_size_,
-                                             online_pmid_names_,
-                                             offline_pmid_names_));
-
-  // Add, and randomly select some for removal later
   std::vector<PmidName> online_for_removal;
   std::vector<PmidName> offline_for_removal;
-  for (uint16_t i(0); i < 20; ++i) {  // TODO(Alison) - max value?
-    PmidName online_pmid_name(GenerateIdentity());
-    data_elements_manager_.AddOnlinePmid(data_name_, online_pmid_name);
-    online_pmid_names_.insert(online_pmid_name);
-    ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name_,
-                                               element_size_,
-                                               online_pmid_names_,
-                                               offline_pmid_names_));
-    if (RandomUint32() % 3 == 0)
-      online_for_removal.push_back(online_pmid_name);
-
-    PmidName offline_pmid_name(GenerateIdentity());
-    data_elements_manager_.AddOfflinePmid(data_name_, offline_pmid_name);
-    offline_pmid_names_.insert(offline_pmid_name);
-    ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name_,
-                                               element_size_,
-                                               online_pmid_names_,
-                                               offline_pmid_names_));
-    if (RandomUint32() % 3 == 0)
-      offline_for_removal.push_back(offline_pmid_name);
-  }
+  int64_t expected_holders(1);
+  uint16_t num_pmids_to_add(20);  // TODO(Alison) - preferred value of this?
+  AddPmidIds(data_name_,
+             element_size_,
+             num_pmids_to_add,
+             number_stored_,
+             online_pmid_names_,
+             offline_pmid_names_,
+             online_for_removal,
+             offline_for_removal,
+             expected_holders);
 
   // Remove some (try to randomise orders a bit)
   while (!online_for_removal.empty() && !offline_for_removal.empty()) {
@@ -324,6 +418,7 @@ TEST_F(DataElementsManagerOneElementTest, BEH_AddRemovePmids) {
       online_for_removal.erase(online_for_removal.begin() + index);
       ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name_,
                                                  element_size_,
+                                                 number_stored_,
                                                  online_pmid_names_,
                                                  offline_pmid_names_));
     }
@@ -336,36 +431,79 @@ TEST_F(DataElementsManagerOneElementTest, BEH_AddRemovePmids) {
       offline_for_removal.erase(offline_for_removal.begin() + index);
       ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name_,
                                                  element_size_,
+                                                 number_stored_,
                                                  online_pmid_names_,
                                                  offline_pmid_names_));
     }
   }
 
-
   // Add some more
-  for (uint16_t i(0); i < 20; ++i) {  // TODO(Alison) - max value?
-    PmidName online_pmid_name(GenerateIdentity());
-    data_elements_manager_.AddOnlinePmid(data_name_, online_pmid_name);
-    online_pmid_names_.insert(online_pmid_name);
-    ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name_,
-                                               element_size_,
-                                               online_pmid_names_,
-                                               offline_pmid_names_));
-
-    PmidName offline_pmid_name(GenerateIdentity());
-    data_elements_manager_.AddOfflinePmid(data_name_, offline_pmid_name);
-    offline_pmid_names_.insert(offline_pmid_name);
-    ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name_,
-                                               element_size_,
-                                               online_pmid_names_,
-                                               offline_pmid_names_));
-  }
+  AddPmidIds(data_name_,
+             element_size_,
+             num_pmids_to_add,
+             number_stored_,
+             online_pmid_names_,
+             offline_pmid_names_);
 }
 
 TEST_F(DataElementsManagerOneElementTest, BEH_MovePmids) {
-  // TODO(Alison)
-  // Move Pmids between online and offline. Check that sets are correct and that the number of
-  // 'holders' is updated correctly
+  // Populate with online/offline pmid ids, and randomly select some for moving later
+  std::vector<PmidName> online_for_moving;
+  std::vector<PmidName> offline_for_moving;
+  int64_t expected_holders(1);  // include initially added online_pmid_name_
+  uint16_t num_pmids_to_add(20);  // TODO(Alison) - preferred value of this?
+  AddPmidIds(data_name_,
+             element_size_,
+             num_pmids_to_add,
+             number_stored_,
+             online_pmid_names_,
+             offline_pmid_names_,
+             online_for_moving,
+             offline_for_moving,
+             expected_holders);
+
+  // Move pmid ids between online and offline (try to randomise orders a bit)
+  int64_t holders(0);
+  while (!online_for_moving.empty() && !offline_for_moving.empty()) {
+    if (!online_for_moving.empty() && (RandomUint32() % 4 != 0)) {
+      size_t index(RandomUint32() % online_for_moving.size());
+      PmidName to_move(online_for_moving.at(index));
+      data_elements_manager_.MoveNodeToOffline(data_name_, to_move, holders);
+      --expected_holders;
+      EXPECT_EQ(expected_holders, holders);
+      online_pmid_names_.erase(to_move);
+      offline_pmid_names_.insert(to_move);
+      online_for_moving.erase(online_for_moving.begin() + index);
+      ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name_,
+                                                 element_size_,
+                                                 number_stored_,
+                                                 online_pmid_names_,
+                                                 offline_pmid_names_));
+    }
+
+    if (!offline_for_moving.empty() && (RandomUint32() % 4 != 0)) {
+      size_t index(RandomUint32() % offline_for_moving.size());
+      PmidName to_move(offline_for_moving.at(index));
+      data_elements_manager_.MoveNodeToOnline(data_name_, to_move);
+      ++expected_holders;
+      offline_pmid_names_.erase(to_move);
+      online_pmid_names_.insert(to_move);
+      offline_for_moving.erase(offline_for_moving.begin() + index);
+      ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name_,
+                                                 element_size_,
+                                                 number_stored_,
+                                                 online_pmid_names_,
+                                                 offline_pmid_names_));
+    }
+  }
+
+  // Add some more
+  AddPmidIds(data_name_,
+             element_size_,
+             num_pmids_to_add,
+             number_stored_,
+             online_pmid_names_,
+             offline_pmid_names_);
 }
 
 TEST_F(DataElementsManagerTest, BEH_ManyDataElements) {
@@ -392,11 +530,12 @@ TEST_F(DataElementsManagerTest, BEH_ManyDataElements) {
   for (uint16_t i(0); i < max; ++i) {
     ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_names.at(i),
                                                element_sizes.at(i),
+                                               1,
                                                online_pmid_names.at(i),
                                                offline_pmid_names.at(i)));
   }
 
-  // Remove elements
+  // Remove some elements
   for (uint16_t i(0); i < max; i += 2) {
     data_elements_manager_.RemoveDataElement(data_names.at(i));
   }
@@ -408,6 +547,7 @@ TEST_F(DataElementsManagerTest, BEH_ManyDataElements) {
   for (uint16_t i(1); i < max; i += 2) {
     ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_names.at(i),
                                                element_sizes.at(i),
+                                               1,
                                                online_pmid_names.at(i),
                                                offline_pmid_names.at(i)));
   }
@@ -424,19 +564,220 @@ TEST_F(DataElementsManagerTest, BEH_ManyDataElements) {
   for (uint16_t i(0); i < max; ++i) {
     ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_names.at(i),
                                                element_sizes.at(i),
+                                               1,
                                                online_pmid_names.at(i),
                                                offline_pmid_names.at(i)));
   }
 }
 
-// TODO(Alison) - test Pmid operations on multiple data elements (cf. 'BEH_ManyDataElements' test)
+TEST_F(DataElementsManagerTest, BEH_RandomProtobuf) {
+  Identity data_name(GenerateIdentity());
 
-// TODO(Alison) - add threaded tests
+  WriteFile(vault_metadata_dir_ / EncodeToBase64(data_name.string()),
+            RandomAlphaNumericString(RandomUint32() % 100));
+  EXPECT_THROW(data_elements_manager_.AddOnlinePmid(data_name, PmidName(GenerateIdentity())),
+               std::exception);
+  EXPECT_THROW(data_elements_manager_.AddOfflinePmid(data_name, PmidName(GenerateIdentity())),
+               std::exception);
+  EXPECT_THROW(data_elements_manager_.RemoveOnlinePmid(data_name, PmidName(GenerateIdentity())),
+               std::exception);
+  EXPECT_THROW(data_elements_manager_.RemoveOfflinePmid(data_name, PmidName(GenerateIdentity())),
+               std::exception);
+  int64_t holders;
+  EXPECT_THROW(data_elements_manager_.MoveNodeToOffline(data_name,
+                                                        PmidName(GenerateIdentity()),
+                                                        holders),
+               std::exception);
+  EXPECT_THROW(data_elements_manager_.MoveNodeToOnline(data_name, PmidName(GenerateIdentity())),
+               std::exception);
 
-// TODO(Alison) - test that badly formatted protobufs are handled correctly (especially with
-// strings of length != 64)
+  // replaces bad file - TODO(Alison) - check validity of this
+  EXPECT_NO_THROW(data_elements_manager_.AddDataElement(data_name,
+                                                        RandomInt32(),
+                                                        PmidName(GenerateIdentity()),
+                                                        PmidName(GenerateIdentity())));
+  EXPECT_NO_THROW(data_elements_manager_.AddOnlinePmid(data_name, PmidName(GenerateIdentity())));
+  EXPECT_NO_THROW(data_elements_manager_.AddOfflinePmid(data_name, PmidName(GenerateIdentity())));
+  EXPECT_NO_THROW(data_elements_manager_.RemoveOnlinePmid(data_name, PmidName(GenerateIdentity())));
+  EXPECT_NO_THROW(data_elements_manager_.RemoveOfflinePmid(data_name,
+                                                           PmidName(GenerateIdentity())));
+  EXPECT_NO_THROW(data_elements_manager_.MoveNodeToOffline(data_name,
+                                                           PmidName(GenerateIdentity()),
+                                                           holders));
+  EXPECT_NO_THROW(data_elements_manager_.MoveNodeToOnline(data_name, PmidName(GenerateIdentity())));
+}
 
-// TODO(Alison) - test private functions?
+TEST_F(DataElementsManagerTest, DISABLED_BEH_BadProtobuf) {
+  // TODO(Alison) - check validity of this test
+  Identity data_name(GenerateIdentity());
+
+  for (uint16_t i(0); i < 3; ++i) {
+    protobuf::MetadataElement element;
+    element.set_data_name(data_name.string());
+    element.set_element_size(RandomInt32());
+    if (i == 0) {  // negative number stored - ok?
+      element.set_number_stored(-1);
+      element.add_online_pmid_name(RandomAlphaNumericString(64));
+      element.add_offline_pmid_name(RandomAlphaNumericString(64));
+    } else if (i == 1) {  // too small online pmid name
+      element.set_number_stored(1);
+      element.add_online_pmid_name(RandomAlphaNumericString(RandomUint32() % 64));
+      element.add_offline_pmid_name(RandomAlphaNumericString(64));
+    } else {  // too big offline pmid name
+      element.set_number_stored(1);
+      element.add_online_pmid_name(RandomAlphaNumericString(64));
+      element.add_offline_pmid_name(RandomAlphaNumericString(65 + RandomUint32() % 100));
+    }
+    std::string serialised_element(element.SerializeAsString());
+    EXPECT_FALSE(serialised_element.empty());
+    WriteFile(vault_metadata_dir_ / EncodeToBase64(data_name.string()), serialised_element);
+
+    EXPECT_THROW(data_elements_manager_.AddOnlinePmid(data_name, PmidName(GenerateIdentity())),
+                 std::exception);
+    EXPECT_THROW(data_elements_manager_.AddOfflinePmid(data_name, PmidName(GenerateIdentity())),
+                 std::exception);
+    EXPECT_THROW(data_elements_manager_.RemoveOnlinePmid(data_name, PmidName(GenerateIdentity())),
+                 std::exception);
+    EXPECT_THROW(data_elements_manager_.RemoveOfflinePmid(data_name, PmidName(GenerateIdentity())),
+                 std::exception);
+    int64_t holders;
+    EXPECT_THROW(data_elements_manager_.MoveNodeToOffline(data_name,
+                                                          PmidName(GenerateIdentity()),
+                                                          holders),
+                 std::exception);
+    EXPECT_THROW(data_elements_manager_.MoveNodeToOnline(data_name, PmidName(GenerateIdentity())),
+                 std::exception);
+  }
+}
+
+TEST_F(DataElementsManagerTest, BEH_ManyDataElementsExtensive) {
+  int64_t number_stored(1);  // only have one for each element in this test
+  std::vector<Identity> data_names;
+  std::vector<int32_t> element_sizes;
+  std::vector<std::set<PmidName>> online_pmid_names, offline_pmid_names;
+
+  std::vector<std::vector<PmidName>> online_for_removal, offline_for_removal, online_for_moving,
+                                     offline_for_moving;
+
+  // initial population, and selection of PmidNames for removing/moving later
+  uint16_t max(100);
+  uint16_t threshold(75);
+  for (uint16_t i(0); i < max; ++i) {
+    data_names.push_back(GenerateIdentity());
+    element_sizes.push_back(RandomInt32());
+    PmidName online_pmid_name(GenerateIdentity());
+    PmidName offline_pmid_name(GenerateIdentity());
+
+    online_pmid_names.push_back(std::set<PmidName>());
+    online_pmid_names.back().insert(online_pmid_name);
+    offline_pmid_names.push_back(std::set<PmidName>());
+    offline_pmid_names.back().insert(offline_pmid_name);
+
+    data_elements_manager_.AddDataElement(data_names.back(),
+                                          element_sizes.back(),
+                                          online_pmid_name,
+                                          offline_pmid_name);
+    CheckDataExistenceAndIntegrity(data_names.back(),
+                                   element_sizes.back(),
+                                   number_stored,
+                                   online_pmid_name,
+                                   offline_pmid_name);
+
+    if (i < threshold) {
+      online_for_removal.push_back(std::vector<PmidName>());
+      offline_for_removal.push_back(std::vector<PmidName>());
+      online_for_moving.push_back(std::vector<PmidName>());
+      offline_for_moving.push_back(std::vector<PmidName>());
+
+      int32_t decider(RandomUint32() % 16);
+      if (decider == 0)
+        online_for_removal.back().push_back(online_pmid_name);
+      if (decider == 4)
+        offline_for_removal.back().push_back(offline_pmid_name);
+      if (decider == 8)
+        online_for_removal.back().push_back(online_pmid_name);
+      if (decider == 12)
+        offline_for_removal.back().push_back(offline_pmid_name);
+    }
+  }
+
+  // Remove/move/add online/offline PmidNames
+  for (uint16_t i(0); i < threshold; ++i) {
+    for (auto pmid_name : online_for_removal.at(i)) {
+      data_elements_manager_.RemoveOnlinePmid(data_names.at(i), pmid_name);
+      online_pmid_names.at(i).erase(pmid_name);
+    }
+    for (auto pmid_name : offline_for_removal.at(i)) {
+      data_elements_manager_.RemoveOfflinePmid(data_names.at(i), pmid_name);
+      offline_pmid_names.at(i).erase(pmid_name);
+    }
+    for (auto pmid_name : online_for_moving.at(i)) {
+      int64_t holders;
+      data_elements_manager_.MoveNodeToOffline(data_names.at(i), pmid_name, holders);
+      online_pmid_names.at(i).erase(pmid_name);
+      offline_pmid_names.at(i).insert(pmid_name);
+    }
+    for (auto pmid_name : offline_for_removal.at(i)) {
+      data_elements_manager_.MoveNodeToOnline(data_names.at(i), pmid_name);
+      offline_pmid_names.at(i).erase(pmid_name);
+      online_pmid_names.at(i).insert(pmid_name);
+    }
+    uint32_t decider(RandomUint32() % 3);
+    if (decider == 0) {
+      PmidName pmid_name(GenerateIdentity());
+      data_elements_manager_.AddOnlinePmid(data_names.at(i), pmid_name);
+      online_pmid_names.at(i).insert(pmid_name);
+    }
+    if (decider == 1) {
+      PmidName pmid_name(GenerateIdentity());
+      data_elements_manager_.AddOfflinePmid(data_names.at(i), pmid_name);
+      offline_pmid_names.at(i).insert(pmid_name);
+    }
+  }
+
+  // Remove some data elements
+  for (uint16_t i(threshold); i < max; ++i) {
+    data_elements_manager_.RemoveDataElement(data_names.at(i));
+  }
+  data_names.resize(threshold);
+  element_sizes.resize(threshold);
+  online_pmid_names.resize(threshold);
+  offline_pmid_names.resize(threshold);
+
+  // Add some data elements
+  for (uint16_t i(0); i < max - threshold; ++i) {
+    data_names.push_back(GenerateIdentity());
+    element_sizes.push_back(RandomInt32());
+    PmidName online_pmid_name(GenerateIdentity());
+    PmidName offline_pmid_name(GenerateIdentity());
+
+    online_pmid_names.push_back(std::set<PmidName>());
+    online_pmid_names.back().insert(online_pmid_name);
+    offline_pmid_names.push_back(std::set<PmidName>());
+    offline_pmid_names.back().insert(offline_pmid_name);
+
+    data_elements_manager_.AddDataElement(data_names.back(),
+                                          element_sizes.back(),
+                                          online_pmid_name,
+                                          offline_pmid_name);
+  }
+
+  // wait for operations to finish
+
+  // check data existence and integrity
+  for (uint16_t i(0); i < max; ++i) {
+    CheckDataExistenceAndIntegrity(data_names.at(i),
+                                   element_sizes.at(i),
+                                   number_stored,
+                                   online_pmid_names.at(i),
+                                   offline_pmid_names.at(i));
+  }
+}
+
+
+TEST_F(DataElementsManagerTest, BEH_ManyDataElementsThreaded) {
+  // TODO(Alison) - As BEH_ManyDataElementsExtensive, but put operations in threads
+}
 
 }  // namespace test
 
