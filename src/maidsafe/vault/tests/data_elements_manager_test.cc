@@ -35,6 +35,8 @@ Identity GenerateIdentity() {
   return Identity(RandomAlphaNumericString(64));
 }
 
+// TODO(Alison) - update to test GetOnlinePmid, when API has been finalised.
+
 class DataElementsManagerTest : public testing::Test {
  public:
   DataElementsManagerTest()
@@ -315,9 +317,10 @@ TEST_F(DataElementsManagerOneElementTest, BEH_ReAddDataElement) {
   }
 }
 
-TEST_F(DataElementsManagerOneElementTest, BEH_AddChangedDataElement) {
-  // Add another data element with the same id as original one, but with other
-  // fields different, and check that original data element's content hasn't changed.
+TEST_F(DataElementsManagerOneElementTest, DISABLED_BEH_AddChangedDataElement) {
+  // TODO(Alison) - this test currently check that, when two elements with the same data name
+  // are added, it is the first element that stays (the first element is added in the test setup).
+  // This test should be updated when it has been decided if this is the correct behaviour.
   for (uint16_t i(0); i < 20; ++i) {
     data_elements_manager_.AddDataElement(data_name_,
                                           RandomInt32(),
@@ -335,13 +338,11 @@ TEST_F(DataElementsManagerOneElementTest, BEH_AddChangedDataElement) {
 
 TEST_F(DataElementsManagerOneElementTest, BEH_AddAndRemoveDataElement) {
   for (uint16_t i(0); i < 5; ++i) {
-    LOG(kInfo) << "Loop number: " << i;
     EXPECT_NO_THROW(data_elements_manager_.RemoveDataElement(data_name_));
     number_stored_ = 0;
     EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name_)));
 
     for (uint16_t j(0); j < 1 + RandomUint32() % 20; ++j) {
-      LOG(kInfo) << "Loop number: " << i << "\t\tSubloop number: " << j;
       data_elements_manager_.AddDataElement(data_name_,
                                             element_size_,
                                             online_pmid_name_,
@@ -570,7 +571,12 @@ TEST_F(DataElementsManagerTest, BEH_ManyDataElements) {
   }
 }
 
-TEST_F(DataElementsManagerTest, BEH_RandomProtobuf) {
+TEST_F(DataElementsManagerTest, DISABLED_BEH_RandomProtobuf) {
+  // TODO(Alison) - This test currently places a random file in memory, then checks that the
+  // data_elements_manager_ throws when it tries to use the file. It then checks that calling
+  // AddDataElement for an element with the same data_name overwrites the 'corrupt' file, and
+  // nothing should thrown any more.
+  // This test should be updated when it has been decided if this is the correct functionality.
   Identity data_name(GenerateIdentity());
 
   WriteFile(vault_metadata_dir_ / EncodeToBase64(data_name.string()),
@@ -591,7 +597,7 @@ TEST_F(DataElementsManagerTest, BEH_RandomProtobuf) {
   EXPECT_THROW(data_elements_manager_.MoveNodeToOnline(data_name, PmidName(GenerateIdentity())),
                std::exception);
 
-  // replaces bad file - TODO(Alison) - check validity of this
+  // Add element of same name - expect 'corrupt' file to be overwritten
   EXPECT_NO_THROW(data_elements_manager_.AddDataElement(data_name,
                                                         RandomInt32(),
                                                         PmidName(GenerateIdentity()),
@@ -608,14 +614,18 @@ TEST_F(DataElementsManagerTest, BEH_RandomProtobuf) {
 }
 
 TEST_F(DataElementsManagerTest, DISABLED_BEH_BadProtobuf) {
-  // TODO(Alison) - check validity of this test
+  // TODO(Alison) - This test currently places a file in memory, with one of the entries having
+  // an allowed but incorrect value - e.g. the number of copies should be non-negative, and Pmid
+  // names should be of length 64. Currently the test expects that the 'corrupt' file should
+  // cause functions to thrown.
+  // This test should be updated when it has been decided if this functionality is correct.
   Identity data_name(GenerateIdentity());
 
   for (uint16_t i(0); i < 3; ++i) {
     protobuf::MetadataElement element;
     element.set_data_name(data_name.string());
     element.set_element_size(RandomInt32());
-    if (i == 0) {  // negative number stored - ok?
+    if (i == 0) {  // negative number stored
       element.set_number_stored(-1);
       element.add_online_pmid_name(RandomAlphaNumericString(64));
       element.add_offline_pmid_name(RandomAlphaNumericString(64));
@@ -651,7 +661,10 @@ TEST_F(DataElementsManagerTest, DISABLED_BEH_BadProtobuf) {
 }
 
 TEST_F(DataElementsManagerTest, BEH_ManyDataElementsExtensive) {
-  int64_t number_stored(1);  // only have one for each element in this test
+  // TODO(Alison) - after the API has been finalised, this est can be made more thorough by calling
+  // AddDataElement more than once with the same data_name_. The use of 'number_stored' will need
+  // to be updated accordingly.
+  int64_t number_stored(1);  // currently only have one for each element in this test
   std::vector<Identity> data_names;
   std::vector<int32_t> element_sizes;
   std::vector<std::set<PmidName>> online_pmid_names, offline_pmid_names;
@@ -762,7 +775,7 @@ TEST_F(DataElementsManagerTest, BEH_ManyDataElementsExtensive) {
                                           offline_pmid_name);
   }
 
-  // wait for operations to finish
+  // TODO(Alison) - Add some data elements that have already been added (see note at top of test)
 
   // check data existence and integrity
   for (uint16_t i(0); i < max; ++i) {
@@ -775,8 +788,10 @@ TEST_F(DataElementsManagerTest, BEH_ManyDataElementsExtensive) {
 }
 
 
-TEST_F(DataElementsManagerTest, BEH_ManyDataElementsThreaded) {
-  // TODO(Alison) - As BEH_ManyDataElementsExtensive, but put operations in threads
+TEST_F(DataElementsManagerTest, DISABLED_BEH_ManyDataElementsThreaded) {
+  // TODO(Alison) - once the API and behaviour of DataElementsManager has been confirmed, this test
+  // can be written by copying BEH_ManyDataElementsExtensive, and changing the operations involving
+  // data_elements_manager_ to be ran in threads.
 }
 
 }  // namespace test
