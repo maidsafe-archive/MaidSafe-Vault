@@ -34,12 +34,12 @@ void MetadataManager::HandlePutMessage(const nfs::Message& message,
     return;
   }
 
-  if (request_queue_.Push(message.id(), message.name())) {
-    nfs::OnError on_error_callback = [this] (nfs::Message message) {
-                                        this->OnPutErrorHandler<Data>(message);
-                                     };
-    nfs_.Put<Data>(message, on_error_callback);
-  }
+  // if (request_queue_.Push(message.id(), message.name())) {
+  //   nfs::OnError on_error_callback = [this] (nfs::Message message) {
+  //                                      this->OnPutErrorHandler<Data>(message);
+  //                                    };
+  //   nfs_.Put<Data>(message, on_error_callback);
+  // }
   reply_functor(nfs::ReturnCode(0).Serialise()->string());
 }
 
