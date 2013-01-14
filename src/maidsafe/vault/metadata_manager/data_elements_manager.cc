@@ -167,6 +167,17 @@ void DataElementsManager::RemoveOfflinePmid(const Identity& data_name,
     SerialiseAndSaveElement(element);
 }
 
+std::vector<Identity> DataElementsManager::GetOnlinePmid(const Identity& data_id) {
+  CheckDataElementExists(data_id);
+  protobuf::MetadataElement element;
+  ReadAndParseElement(data_id, element);
+  std::vector<Identity> online_pmids;
+  for (int n(0); n < element.online_pmid_name_size(); ++n) {
+    online_pmids.push_back(Identity(element.online_pmid_name(n)));
+  }
+  return online_pmids;
+}
+
 void DataElementsManager::CheckDataElementExists(const Identity& data_name) {
   if (!boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name))) {
     LOG(kError) << "Failed to find data ID: " << Base64Substr(data_name);
