@@ -79,6 +79,29 @@ void MetadataManager::HandleGetMessage(nfs::Message message,
   reply_functor(nfs::ReturnCode(-1).Serialise()->string());
 }
 
+template<typename Data>
+void MetadataManager::HandleDeleteMessage(const nfs::Message& message,
+                                          const routing::ReplyFunctor& reply_functor) {
+  Identity data_id(message.name());
+  int64_t num_follower(data_elements_manager_.DecreaseDataElement(data_id));
+  if (num_follower == 0) {
+    std::vector<Identity> online_dataholders(data_elements_manager_.GetOnlinePmid(data_id));
+    data_elements_manager_.RemoveDataElement(data_id);
+
+    for (auto& online_dataholder : online_dataholders) {
+      // TODO(Team) : double check whether signing key required
+      nfs::Message message(nfs::ActionType::kDelete, nfs::PersonaType::kPmidAccountHolder,
+                           nfs::Message::Source(nfs::PersonaType::kMetadataManager,
+                                                routing_.kNodeId()),
+                           Data::name_type::tag_type::kEnumValue,
+                           online_dataholder, data_id,
+                           asymm::Signature());
+      nfs_.Delete<Data>(message, nullptr);
+    }
+  }
+  reply_functor(nfs::ReturnCode(num_follower).Serialise()->string());
+}
+
 // On error handler's
 template<typename Data>
 void MetadataManager::OnPutErrorHandler(nfs::Message message) {

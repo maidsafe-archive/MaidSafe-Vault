@@ -35,6 +35,7 @@ class DataElementsManager {
                       const PmidName& online_pmid_name,
                       const PmidName& offline_pmid_name);
   void RemoveDataElement(const Identity& data_name);
+  int64_t DecreaseDataElement(const Identity& data_name);
   void MoveNodeToOffline(const Identity& data_name, const PmidName& pmid_name, int64_t& holders);
   void MoveNodeToOnline(const Identity& data_name, const PmidName& pmid_name);
 

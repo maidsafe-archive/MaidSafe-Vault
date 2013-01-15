@@ -56,10 +56,6 @@ void MetadataManager::HandlePostMessage(const nfs::PostMessage& message,
   }
 }
 
-template<typename Data>
-void MetadataManager::HandleDeleteMessage(const nfs::Message& /*message*/,
-                                          const routing::ReplyFunctor& /*reply_functor*/) {}
-
 void MetadataManager::SendSyncData() {}
 
 bool MetadataManager::HandleNodeDown(const nfs::PostMessage& message, NodeId& /*node*/) {
