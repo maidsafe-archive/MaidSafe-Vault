@@ -9,10 +9,11 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_MANAGER_H_
-#define MAIDSAFE_VAULT_MAID_ACCOUNT_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HANDLER_H_
+#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HANDLER_H_
 
 #include <future>
+#include <string>
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
@@ -28,13 +29,11 @@ namespace vault {
 
 class MaidAccountHandler {
  public:
-  MaidAccountHandler(const boost::filesystem::path& vault_root_dir);
+  explicit MaidAccountHandler(const boost::filesystem::path& vault_root_dir);
 
   // Data operations
   void AddDataElement(const MaidName& maid_name, const protobuf::PutData& data);
-  void UpdateReplicationCount(const MaidName& maid_name,
-                              const protobuf::PutData& data,
-                              int32_t replications);
+  void UpdateReplicationCount(const MaidName& maid_name, const protobuf::PutData& data);
   void DeleteDataElement(const MaidName& maid_name, const protobuf::PutData& data);
   // Optional
   // void GetDataElement(protobuf::MaidAccountStorage& storage_element_with_name);
@@ -64,19 +63,49 @@ class MaidAccountHandler {
   const boost::filesystem::path maid_accounts_path_;
   std::vector<protobuf::MaidPmidsInfo> maid_pmid_info_;
   std::vector<protobuf::MaidAccountStorage> maid_storage_fifo_;
-  std::vector<MaidAcountingFileInfo> acounting_file_info_;
+  std::vector<MaidAcountingFileInfo> accounting_file_info_;
   Active active_;
-  // File handler extracted from template version
+  std::mutex local_vectors_mutex_;
 
+  void FindAccountingEntry(const MaidName& maid_name,
+                           std::vector<MaidAcountingFileInfo>::iterator& it);
+  void FindFifoEntryAndIncrement(const MaidName& maid_name, const protobuf::PutData& data);
+  void AddEntryInFileAndFifo(const MaidName& maid_name, const protobuf::PutData& data);
+  void ActOnAccountFiles(const MaidName& maid_name,
+                         const protobuf::PutData& data,
+                         int current_file);
   bool MatchMaidStorageFifoEntry(const protobuf::MaidAccountStorage& maid_storage,
                                  const MaidName& maid_name,
                                  const protobuf::PutData& data,
                                  int &index);
-  void IncrementDuplicationAndStoreToFile(const MaidName& maid_name, const protobuf::PutData& data);
+  void ReadAndParseArchivedDataFile(const MaidName& maid_name,
+                                    boost::filesystem::path& filepath,
+                                    NonEmptyString& current_content,
+                                    protobuf::ArchivedData& archived_data,
+                                    int current_file);
+  bool AnalyseAndModifyArchivedElement(const protobuf::PutData& data,
+                                       const boost::filesystem::path& filepath,
+                                       protobuf::ArchivedData& archived_data,
+                                       int n);
+  void IncrementCurrentFileCounters(const MaidName& maid_name, bool just_element_count);
+  bool IterateArchivedElements(const MaidName& maid_name,
+                               const protobuf::PutData& data,
+                               boost::filesystem::path& filepath,
+                               protobuf::ArchivedData& archived_data,
+                               int current_file);
+  void DoUpdateReplicationCount(const MaidName& maid_name,
+                                const protobuf::PutData& data,
+                                int current_file);
+  void DeleteDataEntryFromFifo(const MaidName& maid_name, const protobuf::PutData& data);
+  void RemoveDateElementEntryFromArchivedData(protobuf::ArchivedData& archived_data,
+                                              int index);
+  void DoDeleteDataElement(const MaidName& maid_name,
+                           const protobuf::PutData& data,
+                           int current_file);
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_MANAGER_H_
+#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HANDLER_H_

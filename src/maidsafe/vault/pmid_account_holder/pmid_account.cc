@@ -11,9 +11,12 @@
 
 #include "maidsafe/vault/pmid_account_holder/pmid_account.h"
 
+#include <string>
+
+#include "maidsafe/common/log.h"
+
 #include "maidsafe/vault/pmid_account_holder/pmid_account_pb.h"
 #include "maidsafe/vault/maid_account_holder/maid_account_pb.h"
-#include "maidsafe/common/log.h"
 
 namespace maidsafe {
 

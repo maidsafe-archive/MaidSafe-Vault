@@ -11,9 +11,6 @@
 
 #include "maidsafe/vault/maid_account_holder/maid_account_holder.h"
 
-#include "maidsafe/vault/maid_account_holder/maid_account.h"
-
-
 namespace maidsafe {
 
 namespace vault {
@@ -34,8 +31,7 @@ MaidAccountHolder::MaidAccountHolder(const passport::Pmid& pmid,
       kRootDir_(vault_root_dir / "maids"),
       nfs_(routing, pmid),
       public_key_getter_(public_key_getter),
-      maid_account_handler_(vault_root_dir)/*,
-      maid_accounts_()*/ {
+      maid_account_handler_(vault_root_dir) {
   boost::filesystem::exists(kRootDir_) || boost::filesystem::create_directory(kRootDir_);
 
   boost::filesystem::directory_iterator end_iter;
@@ -57,12 +53,12 @@ MaidAccountHolder::MaidAccountHolder(const passport::Pmid& pmid,
   }
 }
 
-//void MaidAccountHolder::Serialise() {
+// void MaidAccountHolder::Serialise() {
 //  for (auto& account : maid_accounts_)
 //    WriteFile(kRootDir_ / account.maid_name().data.string(), account.Serialise().string());
-//}
+// }
 
-//void MaidAccountHolder::Serialise(const passport::Maid& maid) {
+// void MaidAccountHolder::Serialise(const passport::Maid& maid) {
 //  auto itr = maid_accounts_.begin();
 //  while (itr != maid_accounts_.end()) {
 //    if ((*itr).maid_name().data.string() == maid.name().data.string()) {
@@ -71,9 +67,9 @@ MaidAccountHolder::MaidAccountHolder(const passport::Pmid& pmid,
 //    }
 //    ++itr;
 //  }
-//}
+// }
 
-//void MaidAccountHolder::RemoveAccount(const passport::Maid& maid) {
+// void MaidAccountHolder::RemoveAccount(const passport::Maid& maid) {
 //  auto itr = maid_accounts_.begin();
 //  while (itr != maid_accounts_.end()) {
 //    if ((*itr).maid_name().data.string() == maid.name().data.string()) {
@@ -82,7 +78,7 @@ MaidAccountHolder::MaidAccountHolder(const passport::Pmid& pmid,
 //    }
 //    ++itr;
 //  }
-//}
+// }
 
 // bool MaidAccountHolder::HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid) {
 //   std::promise<bool> result_promise;
@@ -155,7 +151,8 @@ void MaidAccountHolder::SendSyncData() {
 
 bool MaidAccountHolder::HandleReceivedSyncData(const NonEmptyString &/*serialised_account*/) {
 //  MaidAccount maid_account(serialised_account);
-//  return WriteFile(kRootDir_ / maid_account.maid_name().data.string(), serialised_account.string());
+//  return WriteFile(kRootDir_ / maid_account.maid_name().data.string(),
+//                   serialised_account.string());
   return false;
 }
 

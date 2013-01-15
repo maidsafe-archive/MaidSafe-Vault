@@ -18,7 +18,6 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/vault/maid_account_holder/maid_account.h"
 #include "maidsafe/vault/utils.h"
 
 
