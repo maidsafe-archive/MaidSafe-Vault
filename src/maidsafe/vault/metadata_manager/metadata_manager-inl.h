@@ -89,6 +89,9 @@ void MetadataManager::HandleDeleteMessage(const nfs::Message& message,
     data_elements_manager_.RemoveDataElement(data_id);
 
     for (auto& online_dataholder : online_dataholders) {
+      nfs::OnError on_error_callback = [this] (nfs::Message message) {
+                                         this->OnDeleteErrorHandler<Data>(message);
+                                       };
       // TODO(Team) : double check whether signing key required
       nfs::Message message(nfs::ActionType::kDelete, nfs::PersonaType::kPmidAccountHolder,
                            nfs::Message::Source(nfs::PersonaType::kMetadataManager,
@@ -96,7 +99,7 @@ void MetadataManager::HandleDeleteMessage(const nfs::Message& message,
                            Data::name_type::tag_type::kEnumValue,
                            online_dataholder, data_id,
                            asymm::Signature());
-      nfs_.Delete<Data>(message, nullptr);
+      nfs_.Delete<Data>(message, on_error_callback);
     }
   }
   reply_functor(nfs::ReturnCode(num_follower).Serialise()->string());
