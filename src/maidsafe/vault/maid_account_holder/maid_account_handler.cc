@@ -16,11 +16,25 @@ namespace maidsafe {
 namespace vault {
 
 const boost::filesystem::path kMaidAccountsName("maid_accounts");
+const int kMaxFileElementSize(1000);
+
+MaidAccountHandler::MaidAcountingFileInfo::MaidAcountingFileInfo()
+  : maid_name(),
+    element_count(0),
+    current_file(0) {}
+
+MaidAccountHandler::MaidAcountingFileInfo::MaidAcountingFileInfo(const MaidName& maid_name_in,
+                                                                 int element_count_in,
+                                                                 int current_file_in)
+    : maid_name(maid_name_in),
+      element_count(element_count_in),
+      current_file(current_file_in) {}
 
 MaidAccountHandler::MaidAccountHandler(const boost::filesystem::path& vault_root_dir)
     : maid_accounts_path_(vault_root_dir / kMaidAccountsName),
       maid_pmid_info_(),
       maid_storage_fifo_(),
+      acounting_file_info_(),
       active_() {}
 
 void MaidAccountHandler::AddDataElement(const MaidName& maid_name, const protobuf::PutData& data) {
@@ -40,6 +54,7 @@ void MaidAccountHandler::AddDataElement(const MaidName& maid_name, const protobu
   } else {
     (*data_element).mutable_recent_put_data(index)->CopyFrom(data);
     // Store to disk
+    active_.Send([=] () { IncrementDuplicationAndStoreToFile(maid_name, data); });
   }
 }
 
@@ -61,6 +76,51 @@ bool MaidAccountHandler::MatchMaidStorageFifoEntry(const protobuf::MaidAccountSt
   return false;
 }
 
+void MaidAccountHandler::IncrementDuplicationAndStoreToFile(const MaidName& maid_name,
+                                                            const protobuf::PutData& data) {
+  auto accounting_info_it(std::find_if(acounting_file_info_.begin(),
+                                       acounting_file_info_.end(),
+                                       [&maid_name] (const MaidAcountingFileInfo& file_info) {
+                                         return file_info.maid_name == maid_name;
+                                       }));
+  if (accounting_info_it == acounting_file_info_.end()) {
+    LOG(kError) << "We seem to think we have the account but no record of files: "
+                << Base64Substr(maid_name.data);
+    // TODO(Team): We might be able to by-pass or recover from this error. Leaving exception as
+    //             to debug since it shouldn't really happen.
+    throw std::exception();
+  }
+
+  if ((*accounting_info_it).element_count == kMaxFileElementSize) {
+    LOG(kInfo) << "Need new file: " << Base64Substr(maid_name.data);
+    (*accounting_info_it).element_count = 1;
+    ++(*accounting_info_it).current_file;
+  }
+
+  // Find the entry to the account
+  boost::filesystem::path file_path(
+      maid_accounts_path_ / (EncodeToBase64(maid_name.data) + "." +
+                             boost::lexical_cast<std::string>((*accounting_info_it).current_file)));
+  NonEmptyString current_content(ReadFile(file_path));
+  protobuf::ArchivedData archived_data;
+  if (!archived_data.ParseFromString(current_content.string())) {
+    LOG(kError) << "Failed to parse. Data could be corrupted.";
+    throw std::exception();
+  }
+
+  for (int n(0); n != archived_data.put_data_size(); ++n) {
+    if (archived_data.put_data(n).data_element().name() == data.data_element().name() &&
+        archived_data.put_data(n).data_element().version() == data.data_element().version()) {
+      archived_data.mutable_put_data(n)->set_replications(archived_data.put_data(n).replications());
+      if (!WriteFile(file_path, archived_data.SerializeAsString())) {
+        LOG(kError) << "Failed to write file after increasing replication: " << file_path;
+        throw std::exception();
+      } else {
+        n = archived_data.put_data_size();
+      }
+    }
+  }
+}
 
 }  // namespace vault
 

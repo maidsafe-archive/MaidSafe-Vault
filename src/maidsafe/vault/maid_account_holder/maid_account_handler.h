@@ -54,9 +54,17 @@ class MaidAccountHandler {
   // void GetPmidAccountDetails(protobuf::PmidRecord& pmid_record);
 
  private:
+  struct MaidAcountingFileInfo {
+    MaidAcountingFileInfo();
+    MaidAcountingFileInfo(const MaidName& maid_name_in, int element_count_in, int current_file_in);
+    MaidName maid_name;
+    int element_count, current_file;
+  };
+
   const boost::filesystem::path maid_accounts_path_;
   std::vector<protobuf::MaidPmidsInfo> maid_pmid_info_;
   std::vector<protobuf::MaidAccountStorage> maid_storage_fifo_;
+  std::vector<MaidAcountingFileInfo> acounting_file_info_;
   Active active_;
   // File handler extracted from template version
 
@@ -64,6 +72,7 @@ class MaidAccountHandler {
                                  const MaidName& maid_name,
                                  const protobuf::PutData& data,
                                  int &index);
+  void IncrementDuplicationAndStoreToFile(const MaidName& maid_name, const protobuf::PutData& data);
 };
 
 }  // namespace vault
