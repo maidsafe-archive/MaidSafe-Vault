@@ -9,24 +9,12 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_UTILS_H_
-#define MAIDSAFE_VAULT_UTILS_H_
-
-#include "maidsafe/routing/routing_api.h"
-
+#include "maidsafe/vault/disk_based_storage.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-namespace detail {
-
-bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id);
-
-}  // namespace detail
-
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_UTILS_H_
