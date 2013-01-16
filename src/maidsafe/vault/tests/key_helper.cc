@@ -254,10 +254,10 @@ std::future<bool> RoutingJoin(maidsafe::routing::Routing& routing,
                               const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
   std::once_flag join_promise_set_flag;
   std::promise<bool> join_promise;
-  functors.network_status = [&join_promise_set_flag, &join_promise](int result) {
-      std::call_once(join_promise_set_flag,
-                     [&join_promise, &result] { join_promise.set_value(result == 0); });  // NOLINT (Fraser)
-  };
+  functors.network_status = [&join_promise_set_flag, &join_promise] (int result) {
+                              std::call_once(join_promise_set_flag,
+                              [&join_promise, &result] { join_promise.set_value(result == 0); });  // NOLINT (Fraser)
+                            };
   // To allow bootstrapping off vaults on local machine
   maidsafe::routing::Parameters::append_local_live_port_endpoint = true;
   routing.Join(functors, peer_endpoints);

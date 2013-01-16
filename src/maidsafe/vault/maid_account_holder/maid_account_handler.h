@@ -13,6 +13,7 @@
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HANDLER_H_
 
 #include <future>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -47,8 +48,8 @@ class MaidAccountHandler {
 
   // Sync operations
   std::vector<MaidName> GetMaidNames() const;
-  size_t GetMaidAccountFileCount() const;
-  std::future<std::string> GetMaidAccountFile(size_t index) const;
+  size_t GetMaidAccountFileCount(const MaidName& maid_name) const;
+  std::future<std::string> GetMaidAccountFile(const MaidName& maid_name, size_t index) const;
   // Optional
   // void GetPmidAccountDetails(protobuf::PmidRecord& pmid_record);
 
@@ -64,11 +65,13 @@ class MaidAccountHandler {
   std::vector<protobuf::MaidPmidsInfo> maid_pmid_info_;
   std::vector<protobuf::MaidAccountStorage> maid_storage_fifo_;
   std::vector<MaidAcountingFileInfo> accounting_file_info_;
-  Active active_;
+  mutable Active active_;
   mutable std::mutex local_vectors_mutex_;
 
   void FindAccountingEntry(const MaidName& maid_name,
                            std::vector<MaidAcountingFileInfo>::iterator& it);
+  void FindAccountingEntry(const MaidName& maid_name,
+                           std::vector<MaidAcountingFileInfo>::const_iterator& it) const;
   void FindFifoEntryAndIncrement(const MaidName& maid_name, const protobuf::PutData& data);
   void AddEntryInFileAndFifo(const MaidName& maid_name, const protobuf::PutData& data);
   void ActOnAccountFiles(const MaidName& maid_name,
@@ -82,7 +85,7 @@ class MaidAccountHandler {
                                     boost::filesystem::path& filepath,
                                     NonEmptyString& current_content,
                                     protobuf::ArchivedData& archived_data,
-                                    int current_file);
+                                    int current_file) const;
   bool AnalyseAndModifyArchivedElement(const protobuf::PutData& data,
                                        const boost::filesystem::path& filepath,
                                        protobuf::ArchivedData& archived_data,
@@ -105,6 +108,9 @@ class MaidAccountHandler {
   void FindMaidInfo(const std::string& maid_name,
                     std::vector<protobuf::MaidPmidsInfo>::iterator& it);
   void FindAndUpdateTotalPutData(const MaidName& maid_name, int64_t data_increase);
+  void ReadFileContentsIntoString(const MaidName& maid_name,
+                                  size_t index,
+                                  std::shared_ptr<std::promise<std::string> > promise) const;
 };
 
 }  // namespace vault

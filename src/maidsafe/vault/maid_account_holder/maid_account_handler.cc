@@ -39,6 +39,7 @@ const boost::filesystem::path kMaidAccountsName("maid_accounts");
 const size_t kMaxElementSize(1000);
 typedef std::vector<protobuf::MaidAccountStorage>::iterator MaidAccountStorageIterator;
 typedef std::vector<protobuf::MaidPmidsInfo>::iterator MaidPmidsInfoIterator;
+typedef std::shared_ptr<std::promise<std::string> > StringPromisePtr;
 
 MaidAccountHandler::MaidAcountingFileInfo::MaidAcountingFileInfo()
   : maid_name(),
@@ -191,11 +192,42 @@ void MaidAccountHandler::UpdatePmidTotals(const MaidName& maid_name,
 }
 
 // Sync operations
-//  std::vector<MaidName> MaidAccountHandler::GetMaidNames() const;
-//  size_t MaidAccountHandler::GetMaidAccountFileCount() const;
-//  std::future<std::string> MaidAccountHandler::GetMaidAccountFile(size_t index) const;
+std::vector<MaidName> MaidAccountHandler::GetMaidNames() const {
+  std::lock_guard<std::mutex> guard(local_vectors_mutex_);
+  std::vector<MaidName> maid_names;
+  for (auto& info : accounting_file_info_)
+    maid_names.push_back(info.maid_name);
+  return std::move(maid_names);
+}
+
+size_t MaidAccountHandler::GetMaidAccountFileCount(const MaidName& maid_name) const {
+  std::lock_guard<std::mutex> guard(local_vectors_mutex_);
+  std::vector<MaidAcountingFileInfo>::const_iterator it;
+  FindAccountingEntry(maid_name, it);
+  return size_t((*it).current_file);
+}
+
+std::future<std::string> MaidAccountHandler::GetMaidAccountFile(const MaidName& maid_name,
+                                                                size_t index) const {
+  StringPromisePtr promise(std::make_shared<std::promise<std::string> >());
+  std::future<std::string> future(promise->get_future());
+  active_.Send([&maid_name, &index, promise, this] () {
+                 ReadFileContentsIntoString(maid_name, index, promise);
+               });
+  return std::move(future);
+}
 
 // Private members
+void MaidAccountHandler::ReadFileContentsIntoString(const MaidName& maid_name,
+                                                    size_t index,
+                                                    StringPromisePtr promise) const {
+  boost::filesystem::path filepath;
+  NonEmptyString current_content;
+  protobuf::ArchivedData archived_data;
+  ReadAndParseArchivedDataFile(maid_name, filepath, current_content, archived_data, index);
+  promise->set_value(current_content.string());
+}
+
 void MaidAccountHandler::FindAndUpdateTotalPutData(const MaidName& maid_name,
                                                       int64_t data_increase) {
   MaidPmidsInfoIterator it;
@@ -285,20 +317,6 @@ void MaidAccountHandler::DoUpdateReplicationCount(const MaidName& maid_name,
   protobuf::ArchivedData archive_data;
   if (!IterateArchivedElements(maid_name, data, file_path, archive_data, current_file)) {
     LOG(kError) << "Failed to perform the update of replication: " << Base64Substr(maid_name.data);
-    throw std::exception();
-  }
-}
-
-void MaidAccountHandler::FindAccountingEntry(const MaidName& maid_name,
-                                             std::vector<MaidAcountingFileInfo>::iterator& it) {
-  it = std::find_if(accounting_file_info_.begin(),
-                    accounting_file_info_.end(),
-                    [&maid_name] (const MaidAcountingFileInfo& file_info) {
-                      return file_info.maid_name == maid_name;
-                    });
-  if (it == accounting_file_info_.end()) {
-    LOG(kError) << "We seem to think we have the account but no record of files: "
-                << Base64Substr(maid_name.data);
     throw std::exception();
   }
 }
@@ -418,7 +436,7 @@ void MaidAccountHandler::ReadAndParseArchivedDataFile(const MaidName& maid_name,
                                                       boost::filesystem::path& filepath,
                                                       NonEmptyString& current_content,
                                                       protobuf::ArchivedData& archived_data,
-                                                      int current_file) {
+                                                      int current_file) const {
   filepath = GetMaidAccountFileName(maid_name, maid_accounts_path_, current_file);
   current_content = ReadFile(filepath);
   if (!archived_data.ParseFromString(current_content.string())) {
@@ -445,6 +463,35 @@ void MaidAccountHandler::IncrementCurrentFileCounters(const MaidName& maid_name,
   } else {
     (*it).element_count = 0;
     ++(*it).current_file;
+  }
+}
+
+void MaidAccountHandler::FindAccountingEntry(const MaidName& maid_name,
+                                             std::vector<MaidAcountingFileInfo>::iterator& it) {
+  it = std::find_if(accounting_file_info_.begin(),
+                    accounting_file_info_.end(),
+                    [&maid_name] (const MaidAcountingFileInfo& file_info) {
+                      return file_info.maid_name == maid_name;
+                    });
+  if (it == accounting_file_info_.end()) {
+    LOG(kError) << "We seem to think we have the account but no record of files: "
+                << Base64Substr(maid_name.data);
+    throw std::exception();
+  }
+}
+
+void MaidAccountHandler::FindAccountingEntry(
+    const MaidName& maid_name,
+    std::vector<MaidAcountingFileInfo>::const_iterator& it) const {
+  it = std::find_if(accounting_file_info_.begin(),
+                    accounting_file_info_.end(),
+                    [&maid_name] (const MaidAcountingFileInfo& file_info) {
+                      return file_info.maid_name == maid_name;
+                    });
+  if (it == accounting_file_info_.end()) {
+    LOG(kError) << "We seem to think we have the account but no record of files: "
+                << Base64Substr(maid_name.data);
+    throw std::exception();
   }
 }
 
