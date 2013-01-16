@@ -25,12 +25,6 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace detail {
-
-bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id);
-
-}  // namespace detail
-
 template<typename Data>
 void MaidAccountHolder::HandleMessage(const nfs::Message& message,
                                       const routing::ReplyFunctor& reply_functor) {
@@ -65,7 +59,10 @@ void MaidAccountHolder::HandlePutMessage(const nfs::Message& message,
   }
 
   AdjustAccount<Data>(message, reply_functor, is_payable<Data>());
-  nfs_.Put<Data>(message, [this](nfs::Message message) { this->OnPutErrorHandler<Data>(message); });
+  nfs::OnError on_error_callback = [this](nfs::Message message) {
+                                      this->OnPutErrorHandler<Data>(message);
+                                   };
+  nfs_.Put<Data>(message, on_error_callback);
   reply_functor(nfs::ReturnCode(0).Serialise()->string());
 }
 
@@ -132,14 +129,20 @@ void MaidAccountHolder::AdjustAccount(const nfs::Message& /*message*/,
 
 template<typename Data>
 void MaidAccountHolder::OnPutErrorHandler(nfs::Message message) {
-  nfs_.Put<Data>(message,
-                 [this] (nfs::Message message) { this->OnPutErrorHandler<Data>(message); });
+  if (detail::NodeRangeCheck(routing_, message.source().node_id))
+    nfs_.Put<Data>(message,
+                   [this] (nfs::Message message) {
+                     this->OnPutErrorHandler<Data>(message);
+                   });
 }
 
 template<typename Data>
 void MaidAccountHolder::OnDeleteErrorHandler(nfs::Message message) {
-  nfs_.Delete<Data>(message,
-                    [this] (nfs::Message message) { this->OnDeleteErrorHandler<Data>(message); });
+  if (detail::NodeRangeCheck(routing_, message.source().node_id))
+    nfs_.Delete<Data>(message,
+                      [this] (nfs::Message message) {
+                        this->OnDeleteErrorHandler<Data>(message);
+                      });
 }
 
 }  // namespace vault

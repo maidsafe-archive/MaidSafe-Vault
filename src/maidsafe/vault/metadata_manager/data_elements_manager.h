@@ -12,6 +12,8 @@
 #ifndef MAIDSAFE_VAULT_METADATA_MANAGER_DATA_ELEMENTS_MANAGER_H_
 #define MAIDSAFE_VAULT_METADATA_MANAGER_DATA_ELEMENTS_MANAGER_H_
 
+#include <vector>
+
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/types.h"
@@ -33,6 +35,7 @@ class DataElementsManager {
                       const PmidName& online_pmid_name,
                       const PmidName& offline_pmid_name);
   void RemoveDataElement(const Identity& data_name);
+  int64_t DecreaseDataElement(const Identity& data_name);
   void MoveNodeToOffline(const Identity& data_name, const PmidName& pmid_name, int64_t& holders);
   void MoveNodeToOnline(const Identity& data_name, const PmidName& pmid_name);
 
@@ -40,6 +43,8 @@ class DataElementsManager {
   void RemoveOnlinePmid(const Identity& data_name, const PmidName& online_pmid_name);
   void AddOfflinePmid(const Identity& data_name, const PmidName& offline_pmid_name);
   void RemoveOfflinePmid(const Identity& data_name, const PmidName& offline_pmid_name);
+
+  std::vector<Identity> GetOnlinePmid(const Identity& data_id);
 
  private:
   boost::filesystem::path vault_metadata_dir_;

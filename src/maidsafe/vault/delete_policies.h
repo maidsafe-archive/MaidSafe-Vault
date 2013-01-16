@@ -71,6 +71,24 @@ class DeleteFromPmidAccountHolder {
       : routing_(routing),
         source_(nfs::Message::Source(nfs::PersonaType::kMetadataManager, routing.kNodeId())) {}
 
+  template<typename Data>
+  void Delete(const nfs::Message& message, nfs::OnError on_error) {
+    nfs::Message new_message(message.action_type(),
+                             message.destination_persona_type(),
+                             source_,
+                             message.data_type(),
+                             message.name(),
+                             message.content(),
+                             message.signature());
+
+    routing::ResponseFunctor callback =
+        [on_error, new_message](const std::vector<std::string>& serialised_messages) {
+          nfs::HandleDeleteResponse<Data>(on_error, new_message, serialised_messages);
+        };
+    routing_.Send(NodeId(new_message.name().string()), message.Serialise()->string(),
+                  callback, routing::DestinationType::kGroup, nfs::IsCacheable<Data>());
+  }
+
  protected:
   ~DeleteFromPmidAccountHolder() {}
 
