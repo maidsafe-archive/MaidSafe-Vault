@@ -38,6 +38,7 @@ bool ArchivedElementEntryMatchesPutData(const protobuf::ArchivedData& archived_d
 const boost::filesystem::path kMaidAccountsName("maid_accounts");
 const size_t kMaxElementSize(1000);
 typedef std::vector<protobuf::MaidAccountStorage>::iterator MaidAccountStorageIterator;
+typedef std::vector<protobuf::MaidPmidsInfo>::iterator MaidPmidsInfoIterator;
 
 MaidAccountHandler::MaidAcountingFileInfo::MaidAcountingFileInfo()
   : maid_name(),
@@ -59,12 +60,14 @@ MaidAccountHandler::MaidAccountHandler(const boost::filesystem::path& vault_root
       active_(),
       local_vectors_mutex_() {}
 
+// Data operations
 void MaidAccountHandler::AddDataElement(const MaidName& maid_name, const protobuf::PutData& data) {
   std::vector<MaidAcountingFileInfo>::iterator accounting_info_it;
   {
     std::lock_guard<std::mutex> guard(local_vectors_mutex_);
     FindAccountingEntry(maid_name, accounting_info_it);
     FindFifoEntryAndIncrement(maid_name, data);
+    FindAndUpdateTotalPutData(maid_name, data.data_element().size());
   }
   active_.Send([=] () {
                  ActOnAccountFiles(maid_name, data, (*accounting_info_it).current_file);
@@ -78,6 +81,10 @@ void MaidAccountHandler::UpdateReplicationCount(const MaidName& maid_name,
     std::lock_guard<std::mutex> guard(local_vectors_mutex_);
     FindAccountingEntry(maid_name, accounting_info_it);
     FindFifoEntryAndIncrement(maid_name, data);
+    FindAndUpdateTotalPutData(maid_name,
+                              data.replications() > 0 ?
+                                  data.data_element().size() :
+                                  -data.data_element().size());
   }
 
   active_.Send([=] () {
@@ -94,6 +101,7 @@ void MaidAccountHandler::DeleteDataElement(const MaidName& maid_name,
     std::lock_guard<std::mutex> guard(local_vectors_mutex_);
     FindAccountingEntry(maid_name, accounting_info_it);
     DeleteDataEntryFromFifo(maid_name, data);
+    FindAndUpdateTotalPutData(maid_name, -data.data_element().size());
   }
 
   active_.Send([=] () {
@@ -101,6 +109,110 @@ void MaidAccountHandler::DeleteDataElement(const MaidName& maid_name,
                                      data,
                                      (*accounting_info_it).current_file);
                });
+}
+
+// PmidInfo operations
+void MaidAccountHandler::AddPmidToAccount(const protobuf::MaidPmidsInfo& new_pmid_for_maid) {
+  if (new_pmid_for_maid.pmid_totals_size() != 1) {
+    LOG(kError) << "Invalid number of PmidTotals: " << new_pmid_for_maid.pmid_totals_size()
+                << " for MAID: " << Base64Substr(new_pmid_for_maid.maid_name());
+    throw std::exception();
+  }
+
+  std::lock_guard<std::mutex> guard(local_vectors_mutex_);
+  MaidPmidsInfoIterator it;
+  FindMaidInfo(new_pmid_for_maid.maid_name(), it);
+
+  for (int n(0); n != (*it).pmid_totals_size(); ++n) {
+    if ((*it).pmid_totals(n).pmid_record().pmid_name() ==
+        new_pmid_for_maid.pmid_totals(0).pmid_record().pmid_name()) {
+      LOG(kError) << "PMID("
+                  << Base64Substr(new_pmid_for_maid.pmid_totals(0).pmid_record().pmid_name())
+                  << ") already exists in MAID(" << Base64Substr(new_pmid_for_maid.maid_name())
+                  << ")";
+      throw std::exception();
+    }
+  }
+
+  (*it).add_pmid_totals()->CopyFrom(new_pmid_for_maid.pmid_totals(0));
+}
+
+void MaidAccountHandler::RemovePmidFromAccount(const MaidName& maid_name,
+                                               const PmidName& pmid_name) {
+  std::lock_guard<std::mutex> guard(local_vectors_mutex_);
+  MaidPmidsInfoIterator it;
+  FindMaidInfo(maid_name.data.string(), it);
+
+  std::vector<protobuf::PmidTotals> temp_totals;
+  for (int n(0); n != (*it).pmid_totals_size(); ++n) {
+    if ((*it).pmid_totals(n).pmid_record().pmid_name() == pmid_name.data.string())
+      continue;
+    temp_totals.push_back((*it).pmid_totals(n));
+  }
+  if (temp_totals.size() != static_cast<size_t>((*it).pmid_totals_size())) {
+    (*it).clear_pmid_totals();
+    for (auto& pmid_total : temp_totals)
+      (*it).add_pmid_totals()->CopyFrom(pmid_total);
+  }
+}
+
+void MaidAccountHandler::GetMaidAccountTotals(protobuf::MaidPmidsInfo& info_with_maid_name) const {
+  std::lock_guard<std::mutex> guard(local_vectors_mutex_);
+  std::vector<protobuf::MaidPmidsInfo>::const_iterator it(
+        std::find_if(maid_pmid_info_.begin(),
+                     maid_pmid_info_.end(),
+                     [&info_with_maid_name] (const protobuf::MaidPmidsInfo& info) {
+                       return info.maid_name() == info_with_maid_name.maid_name();
+                     }));
+  if (it == maid_pmid_info_.end()) {
+    LOG(kError) << "MAID account doesn't exist: " << Base64Substr(info_with_maid_name.maid_name());
+    throw std::exception();
+  }
+  info_with_maid_name = *it;
+}
+
+void MaidAccountHandler::UpdatePmidTotals(const MaidName& maid_name,
+                                          const protobuf::PmidTotals& pmid_totals) {
+  std::lock_guard<std::mutex> guard(local_vectors_mutex_);
+  MaidPmidsInfoIterator it;
+  FindMaidInfo(maid_name.data.string(), it);
+
+  for (int n(0); n != (*it).pmid_totals_size(); ++n) {
+    if ((*it).pmid_totals(n).pmid_record().pmid_name() == pmid_totals.pmid_record().pmid_name()) {
+      (*it).add_pmid_totals()->CopyFrom(pmid_totals);
+      return;
+    }
+  }
+
+  // Didn't find PMID in the records.
+  LOG(kError) << "No PMID(" << Base64Substr(maid_name.data) << ") in that MAID("
+              << Base64Substr(pmid_totals.pmid_record().pmid_name()) << ") to update";
+  throw std::exception();
+}
+
+// Sync operations
+//  std::vector<MaidName> MaidAccountHandler::GetMaidNames() const;
+//  size_t MaidAccountHandler::GetMaidAccountFileCount() const;
+//  std::future<std::string> MaidAccountHandler::GetMaidAccountFile(size_t index) const;
+
+// Private members
+void MaidAccountHandler::FindAndUpdateTotalPutData(const MaidName& maid_name,
+                                                      int64_t data_increase) {
+  MaidPmidsInfoIterator it;
+  FindMaidInfo(maid_name.data.string(), it);
+  (*it).set_total_put_data((*it).total_put_data() + data_increase);
+}
+
+void MaidAccountHandler::FindMaidInfo(const std::string& maid_name, MaidPmidsInfoIterator& it) {
+  it = std::find_if(maid_pmid_info_.begin(),
+                    maid_pmid_info_.end(),
+                    [&maid_name] (const protobuf::MaidPmidsInfo& info) {
+                      return info.maid_name() == maid_name;
+                    });
+  if (it == maid_pmid_info_.end()) {
+    LOG(kError) << "MAID account doesn't exist: " << Base64Substr(maid_name);
+    throw std::exception();
+  }
 }
 
 void MaidAccountHandler::DoDeleteDataElement(const MaidName& maid_name,

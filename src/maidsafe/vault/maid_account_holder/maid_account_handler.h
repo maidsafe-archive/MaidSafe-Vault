@@ -65,7 +65,7 @@ class MaidAccountHandler {
   std::vector<protobuf::MaidAccountStorage> maid_storage_fifo_;
   std::vector<MaidAcountingFileInfo> accounting_file_info_;
   Active active_;
-  std::mutex local_vectors_mutex_;
+  mutable std::mutex local_vectors_mutex_;
 
   void FindAccountingEntry(const MaidName& maid_name,
                            std::vector<MaidAcountingFileInfo>::iterator& it);
@@ -102,6 +102,9 @@ class MaidAccountHandler {
   void DoDeleteDataElement(const MaidName& maid_name,
                            const protobuf::PutData& data,
                            int current_file);
+  void FindMaidInfo(const std::string& maid_name,
+                    std::vector<protobuf::MaidPmidsInfo>::iterator& it);
+  void FindAndUpdateTotalPutData(const MaidName& maid_name, int64_t data_increase);
 };
 
 }  // namespace vault
