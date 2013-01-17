@@ -14,6 +14,7 @@
 
 #include <vector>
 #include <mutex>
+#include <functional>
 
 #include "maidsafe/common/types.h"
 
@@ -27,6 +28,8 @@ namespace vault {
 
 class MaidAccount {
  public:
+  struct {   }structure;
+  typedef MaidName name_type;
   explicit MaidAccount(const MaidName& maid_name);
   explicit MaidAccount(const NonEmptyString& serialised_maid_account);
   NonEmptyString Serialise() const;
@@ -34,17 +37,17 @@ class MaidAccount {
   void Add(const protobuf::PmidTotals& pmid_totals);
   void Remove(const PmidName& pmid_name);
   void Update(const protobuf::PmidTotals& pmid_total);
-  bool Has(const PmidName& pmid_name) const;
-
-  void Add(const protobuf::PutData& put_data);
-  void Remove(const Identity& data_name) { (void)data_name; }
-  void Update(const protobuf::PutData& put_data);
-  bool Has(const Identity& data_name) const { (void)data_name; return true; }
+  template<typename Data>
+  bool ModifyOrAddDataElement(const typename Data::name_type& name,
+                              int32_t version,
+                              const structure& serialised_value,
+                              std::function<void(std::string&)> modify_functor);
+  void DeleteDataElement(const typename Data::name_type& name,
+                         int32_t version);
 
   MaidName maid_name() const { return kMaidName_; }
 
  private:
-  mutable std::mutex mutex_;
   protobuf::MaidAccount proto_maid_account_;
   const MaidName kMaidName_;
 };

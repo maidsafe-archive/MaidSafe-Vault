@@ -21,16 +21,16 @@ namespace maidsafe {
 namespace vault {
 
 template <typename AccountType, typename ModifyPolicy>
-class AccountHolder : public ModifyPolicy {
+class AccountHandler : public ModifyPolicy {
  public:
-  AccountHolder(const passport::Pmid& pmid,
+  AccountHandler(const passport::Pmid& pmid,
                 routing::Routing& routing,
                 nfs::PublicKeyGetter& public_key_getter,
                 const boost::filesystem::path& vault_root_dir) 
       : ModifyPolicy(&mutex_, &accounts_),
         mutex_(), accounts_() {};
   // TODO Check these references are valid and usable in the 'inherited' object
-  ~AccountHolder();
+  ~AccountHandler();
   bool AddAccount(const AccountType& account);
   bool DeleteAccount(const typename AccountType::name_type& account);
   // modify here will use the policy class ModifyPolicy members !!
@@ -47,7 +47,7 @@ class AccountHolder : public ModifyPolicy {
   bool ModifyOrAddDataElement(const typename AccountType::name_type& account,
                               const typename Data::name_type& name,
                               int32_t version,
-                              const std::string& serialised_value,
+                              const AccountType::structure account_structure,
                               std::function<void(std::string&)> modify_functor);
  private:
   mutable std::mutex mutex_;
