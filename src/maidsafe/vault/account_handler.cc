@@ -35,26 +35,28 @@ namespace maidsafe {
 
 namespace vault {
 
-class MaidAccount;
-
-class MaidAccountHolder {
+class Account;
+template <typename Persona>
+class AccountHolder {
  public:
-  MaidAccountHolder(const passport::Pmid& pmid,
+  AccountHolder(const passport::Pmid& pmid,
                     routing::Routing& routing,
                     nfs::PublicKeyGetter& public_key_getter,
                     const boost::filesystem::path& vault_root_dir);
-  ~MaidAccountHolder();
-  template<typename Data>
+  ~AccountHolder();
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  void HandlePostMessage(const nfs::PostMessage& message,
-                         const routing::ReplyFunctor& reply_functor);
-  void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes) { (void)new_close_nodes; }
+  void HandleSynchronise(const std::vector<routing::NodeInfo>& new_close_nodes);
   void Serialise();
   void Serialise(const passport::Maid& maid);
   void Serialise(const passport::Pmid& pmid);
   void RemoveAccount(const passport::Maid& maid);
 
  private:
+  template<typename Data>
+  void HandleDataMessage(const nfs::DataMessage& message,
+                         const routing::ReplyFunctor& reply_functor);
+  void HandlePostMessage(const nfs::GenericMessage& message,
+                         const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void HandleGetMessage(nfs::Message message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
@@ -87,9 +89,9 @@ class MaidAccountHolder {
 
   routing::Routing& routing_;
   const boost::filesystem::path kRootDir_;
-  MaidAccountHolderNfs nfs_;
+  AccountHolderNfs nfs_;
   nfs::PublicKeyGetter& public_key_getter_;
-  std::vector<MaidAccount> maid_accounts_;
+  std::vector<Account> maid_accounts_;
 };
 
 }  // namespace vault
