@@ -20,7 +20,7 @@
 #include "maidsafe/routing/api_config.h"
 
 #include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/post_message.h"
+#include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/request_queue.h"
 

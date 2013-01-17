@@ -25,21 +25,21 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void DataHolder::HandleMessage(const nfs::Message& message,
+void DataHolder::HandleMessage(const nfs::DataMessage& data_message,
                                const routing::ReplyFunctor& reply_functor) {
   LOG(kInfo) << "received message at Data holder";
-  switch (message.action_type()) {
-    case nfs::ActionType::kGet :
-      HandleGetMessage<Data>(message, reply_functor);
+  switch (data_message.action_type()) {
+    case nfs::DataMessage::ActionType::kGet :
+      HandleGetMessage<Data>(data_message, reply_functor);
       break;
     case nfs::ActionType::kPut :
-      HandlePutMessage<Data>(message, reply_functor);
+      HandlePutMessage<Data>(data_message, reply_functor);
       break;
     case nfs::ActionType::kPost :
-      HandlePostMessage<Data>(message, reply_functor);
+      HandlePostMessage<Data>(data_message, reply_functor);
       break;
     case nfs::ActionType::kDelete :
-      HandleDeleteMessage<Data>(message, reply_functor);
+      HandleDeleteMessage<Data>(data_message, reply_functor);
       break;
     default :
       LOG(kError) << "Unhandled action type";
@@ -47,10 +47,10 @@ void DataHolder::HandleMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-void DataHolder::HandleGetMessage(const nfs::Message& message,
+void DataHolder::HandleGetMessage(const nfs::DataMessage& data_message,
                                   const routing::ReplyFunctor& reply_functor) {
   try {
-    nfs::Message response(message.action_type(),
+    nfs::DataMessage response(message.action_type(),
                           message.destination_persona_type(),
                           message.source(),
                           message.data_type(),

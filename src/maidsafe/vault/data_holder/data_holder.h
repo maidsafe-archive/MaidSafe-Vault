@@ -41,7 +41,8 @@ class DataHolder {
   ~DataHolder();
 
   template<typename Data>
-  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleMessage(const nfs::DataMessage& data_message,
+                     const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   NonEmptyString GetFromCache(const nfs::Message& message);
   template<typename Data>

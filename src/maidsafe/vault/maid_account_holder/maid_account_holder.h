@@ -25,7 +25,7 @@
 
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/pmid_registration.h"
-#include "maidsafe/nfs/post_message.h"
+#include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/vault/types.h"
