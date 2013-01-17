@@ -24,11 +24,11 @@
 #include "maidsafe/common/active.h"
 #include "maidsafe/common/types.h"
 
-#include "maidsafe/vault/disk_based_storage_messages_pb.h"
-
 namespace maidsafe {
 
 namespace vault {
+
+namespace protobuf { class DiskStoredElement; }
 
 class DiskBasedStorage {
   // Initialise with root.leaf() == MAID name / PMID name, etc.
@@ -36,16 +36,16 @@ class DiskBasedStorage {
 
   // Element handling
   template<typename Data>
-  void Store(typename const Data::name_type& name,
+  void Store(const typename Data::name_type& name,
              int32_t version,
              const std::string& serialised_value);
   template<typename Data>
-  void Delete(typename const Data::name_type& name, int32_t version);
+  void Delete(const typename Data::name_type& name, int32_t version);
   template<typename Data>
-  void Modify(typename const Data::name_type& name,
+  void Modify(const typename Data::name_type& name,
               int32_t version,
               const std::function<void(std::string&)>& functor,
-              const std::string& serialised value);
+              const std::string& serialised_value);
 
   // Synchronisation helpers
   uint32_t GetFileCount() const;
@@ -59,6 +59,22 @@ class DiskBasedStorage {
   mutable Active active_;
   typedef std::pair<uint32_t, std::string> FileData;
   std::vector<FileData> file_data_;
+  mutable std::mutex file_data_mutex_;
+
+  template<typename Data>
+  void DoStore(const typename Data::name_type& name,
+               int32_t version,
+               const std::string& serialised_value);
+  template<typename Data>
+  void DoDelete(const typename Data::name_type& name, int32_t version);
+  template<typename Data>
+  void DoModify(const typename Data::name_type& name,
+                int32_t version,
+                const std::function<void(std::string&)>& functor,
+                const std::string& serialised_value);
+
+  void AddToLatestFile(const protobuf::DiskStoredElement& element);
+  void SearchAndDeleteEntry(const protobuf::DiskStoredElement& element);
 };
 
 }  // namespace vault

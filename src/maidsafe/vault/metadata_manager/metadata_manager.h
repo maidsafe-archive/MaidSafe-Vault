@@ -22,8 +22,6 @@
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/post_message.h"
 #include "maidsafe/nfs/nfs.h"
-#include "maidsafe/nfs/request_queue.h"
-
 #include "maidsafe/vault/metadata_manager/data_elements_manager.h"
 #include "maidsafe/vault/types.h"
 
@@ -67,7 +65,7 @@ class MetadataManager {
   routing::Routing& routing_;
   DataElementsManager data_elements_manager_;
   MetadataManagerNfs nfs_;
-  nfs::RequestQueue request_queue_;
+//  nfs::RequestQueue request_queue_;
 };
 
 template<typename Data>

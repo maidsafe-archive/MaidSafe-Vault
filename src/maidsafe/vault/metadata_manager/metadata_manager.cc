@@ -24,8 +24,8 @@ MetadataManager::MetadataManager(routing::Routing& routing,
     : kRootDir_(vault_root_dir),
       routing_(routing),
       data_elements_manager_(vault_root_dir),
-      nfs_(routing),
-      request_queue_() {}
+      nfs_(routing)/*,
+      request_queue_()*/ {}
 
 MetadataManager::~MetadataManager() {}
 
