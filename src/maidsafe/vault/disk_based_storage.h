@@ -17,14 +17,14 @@
 #include <future>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/active.h"
 #include "maidsafe/common/types.h"
 
-#include "maidsafe/routing/routing_api.h"
-
+#include "maidsafe/vault/disk_based_storage_messages_pb.h"
 
 namespace maidsafe {
 
@@ -44,7 +44,8 @@ class DiskBasedStorage {
   template<typename Data>
   void Modify(typename const Data::name_type& name,
               int32_t version,
-              std::function<void(std::string&)> functor);
+              const std::function<void(std::string&)>& functor,
+              const std::string& serialised value);
 
   // Synchronisation helpers
   uint32_t GetFileCount() const;
@@ -56,6 +57,8 @@ class DiskBasedStorage {
  private:
   const boost::filesystem::path kRoot_;
   mutable Active active_;
+  typedef std::pair<uint32_t, std::string> FileData;
+  std::vector<FileData> file_data_;
 };
 
 }  // namespace vault
