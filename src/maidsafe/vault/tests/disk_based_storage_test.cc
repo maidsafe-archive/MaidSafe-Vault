@@ -44,21 +44,9 @@ class DiskStorageTest : public testing::Test {
   maidsafe::test::TestPath root_directory_;
 };
 
-typedef testing::Types<passport::PublicAnmid,
-                       passport::PublicAnsmid,
-                       passport::PublicAntmid,
-                       passport::PublicAnmaid,
-                       passport::PublicMaid,
-                       passport::PublicPmid,
-                       passport::Mid,
-                       passport::Smid,
-                       passport::Tmid,
-                       passport::PublicAnmpid,
-                       passport::PublicMpid> AllTypes;
+typedef testing::Types<passport::Anmid> AllTypes;
 
 TYPED_TEST_CASE(DiskStorageTest, AllTypes);
-
-// TYPED_TEST_CASE_P(DiskStorageTest);
 
 TYPED_TEST(DiskStorageTest, BEH_ConstructorDestructor) {
   fs::path root_path(*(this->root_directory_) / RandomString(6));
@@ -73,7 +61,6 @@ TYPED_TEST(DiskStorageTest, BEH_ConstructorDestructor) {
 
 TYPED_TEST(DiskStorageTest, BEH_FileHandlers) {
   fs::path root_path(*(this->root_directory_) / RandomString(6));
-  boost::system::error_code error_code;
   DiskBasedStorage disk_based_storage(root_path);
 
   std::map<fs::path, NonEmptyString> files;
@@ -90,6 +77,7 @@ TYPED_TEST(DiskStorageTest, BEH_FileHandlers) {
   std::vector<boost::filesystem::path> file_paths = disk_based_storage.GetFileNames();
   EXPECT_EQ(file_paths.size(), num_files);
 
+  boost::system::error_code error_code;
   auto itr = files.begin();
   do {
     fs::path path((*itr).first);
@@ -106,27 +94,37 @@ TYPED_TEST(DiskStorageTest, BEH_FileHandlers) {
 TYPED_TEST(DiskStorageTest, BEH_FileHandlersWithCorruptingThread) {
 }
 
-TYPED_TEST(DiskStorageTest, BEH_Store) {
+TYPED_TEST(DiskStorageTest, BEH_ElementHandlers) {
+  fs::path root_path(*(this->root_directory_) / RandomString(6));
+  DiskBasedStorage disk_based_storage(root_path);
+
+  std::string file_name(RandomString(crypto::SHA512::DIGESTSIZE));
+  typename TypeParam::name_type name((Identity(file_name)));
+  int32_t version(RandomUint32());
+  std::string serialised_value(RandomString(10000));
+  disk_based_storage.Store<TypeParam>(name, version, serialised_value);
+  boost::system::error_code error_code;
+  EXPECT_TRUE(fs::exists(root_path / file_name, error_code));
+  {
+    auto result = disk_based_storage.GetFile(root_path / file_name);
+    NonEmptyString fetched_content = result.get();
+    EXPECT_EQ(fetched_content.string(), serialised_value);
+  }
+
+  std::string new_serialised_value(RandomString(10000));
+  disk_based_storage.Modify<TypeParam>(name, version, nullptr, new_serialised_value);
+  {
+    auto result = disk_based_storage.GetFile(root_path / file_name);
+    NonEmptyString fetched_content = result.get();
+    EXPECT_EQ(fetched_content.string(), new_serialised_value);
+  }
+
+  disk_based_storage.Delete<TypeParam>(name, version);
+  EXPECT_FALSE(fs::exists(root_path / file_name, error_code));
 }
 
-// REGISTER_TYPED_TEST_CASE_P(DiskStorageTest,
-//                            BEH_Constructor);
-//
-// typedef testing::Types<passport::PublicAnmid,
-//                        passport::PublicAnsmid,
-//                        passport::PublicAntmid,
-//                        passport::PublicAnmaid,
-//                        passport::PublicMaid,
-//                        passport::PublicPmid,
-//                        passport::Mid,
-//                        passport::Smid,
-//                        passport::Tmid,
-//                        passport::PublicAnmpid,
-//                        passport::PublicMpid,
-//                        ImmutableData,
-//                        MutableData> AllTypes;
-//
-// INSTANTIATE_TYPED_TEST_CASE_P(DISKStorage, DiskStorageTest, AllTypes);
+TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultThreads) {
+}
 
 }  // namespace test
 
