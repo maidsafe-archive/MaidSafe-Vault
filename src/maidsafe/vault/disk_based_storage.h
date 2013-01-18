@@ -24,11 +24,11 @@
 #include "maidsafe/common/active.h"
 #include "maidsafe/common/types.h"
 
+#include "maidsafe/vault/disk_based_storage_messages_pb.h"
+
 namespace maidsafe {
 
 namespace vault {
-
-namespace protobuf { class DiskStoredElement; }
 
 class DiskBasedStorage {
  public:
@@ -60,6 +60,11 @@ class DiskBasedStorage {
   mutable Active active_;
   typedef std::pair<uint32_t, std::string> FileData;
   std::vector<FileData> file_data_;
+  class Changer;
+
+  void TraverseAndVerifyFiles(const boost::filesystem::path& root);
+  uint32_t VerifyFileHashAndCountElements(const std::string& hash, size_t file_number);
+  void AddToFileData(const std::string& hash, size_t file_number, uint32_t element_count);
 
   template<typename Data>
   void DoStore(const typename Data::name_type& name,
@@ -76,7 +81,20 @@ class DiskBasedStorage {
   void DoWriteFile(const boost::filesystem::path& path, const NonEmptyString& content);
 
   void AddToLatestFile(const protobuf::DiskStoredElement& element);
-  void SearchAndDeleteEntry(const protobuf::DiskStoredElement& element);
+  void SearchForAndDeleteEntry(const protobuf::DiskStoredElement& element);
+  void SearchForAndModifyEntry(const protobuf::DiskStoredElement& element,
+                               const std::function<void(std::string&)>& functor);
+  void SearchForEntryAndExecuteOperation(const protobuf::DiskStoredElement& element,
+                                         Changer& changer);
+  void ReadAndParseFile(const std::string& hash,
+                        size_t file_index,
+                        protobuf::DiskStoredFile& disk_file,
+                        boost::filesystem::path& file_path,
+                        NonEmptyString& file_content) const;
+  void UpdateFileAfterModification(std::vector<FileData>::reverse_iterator& it,
+                                   size_t file_index,
+                                   protobuf::DiskStoredFile& disk_file,
+                                   boost::filesystem::path& file_path);
 };
 
 }  // namespace vault

@@ -52,7 +52,7 @@ void DiskBasedStorage::DoDelete(const typename Data::name_type& name, int32_t ve
   element.set_data_name(name.data.string());
   element.set_version(version);
 
-  SearchAndDeleteEntry(element);
+  SearchForAndDeleteEntry(element);
 }
 
 template<typename Data>
@@ -66,10 +66,16 @@ void DiskBasedStorage::Modify(const typename Data::name_type& name,
 }
 
 template<typename Data>
-void DiskBasedStorage::DoModify(const typename Data::name_type& /*name*/,
-                                int32_t /*version*/,
-                                const std::function<void(std::string&)>& /*functor*/,
-                                const std::string& /*serialised_value*/) {
+void DiskBasedStorage::DoModify(const typename Data::name_type& name,
+                                int32_t version,
+                                const std::function<void(std::string&)>& functor,
+                                const std::string& serialised_value) {
+  protobuf::DiskStoredElement element;
+  element.set_data_name(name.data.string());
+  element.set_version(version);
+  element.set_serialised_value(serialised_value);
+
+  SearchForAndModifyEntry(element, functor);
 }
 
 }  // namespace vault
