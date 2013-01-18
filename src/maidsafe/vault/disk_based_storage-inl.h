@@ -23,7 +23,7 @@ void DiskBasedStorage::Store(const typename Data::name_type& name,
                              int32_t version,
                              const std::string& serialised_value) {
   active_.Send([name, version, serialised_value, this] () {
-                 DoStore(name, version, serialised_value);
+                 this->DoStore<Data>(name, version, serialised_value);
                });
 }
 
@@ -42,7 +42,7 @@ void DiskBasedStorage::DoStore(const typename Data::name_type& name,
 template<typename Data>
 void DiskBasedStorage::Delete(const typename Data::name_type& name, int32_t version) {
   active_.Send([name, version, this] () {
-                 DoDelete(name, version);
+                 this->DoDelete<Data>(name, version);
                });
 }
 
@@ -61,7 +61,7 @@ void DiskBasedStorage::Modify(const typename Data::name_type& name,
                               const std::function<void(std::string&)>& functor,
                               const std::string& serialised_value) {
   active_.Send([name, version, functor, serialised_value, this] () {
-                 DoModify(name, version, functor, serialised_value);
+                 this->DoModify<Data>(name, version, functor, serialised_value);
                });
 }
 
