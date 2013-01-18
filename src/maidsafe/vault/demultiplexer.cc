@@ -38,43 +38,43 @@ void HandleDataType(nfs::DataMessage& data_message,
   // static assert
   switch (data_message.data().type) {
     case maidsafe::detail::DataTagValue::kAnmidValue:
-      persona_type.HandleDataMessage<passport::PublicAnmid>(data_message, reply_functor);
+      persona_type.template HandleDataMessage<passport::PublicAnmid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kAnsmidValue:
-      persona_type.HandleDataMessage<passport::PublicAnsmid>(data_message, reply_functor);
+      persona_type.template HandleDataMessage<passport::PublicAnsmid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kAntmidValue:
-      persona_type.HandleDataMessage<passport::PublicAntmid>(data_message, reply_functor);
+      persona_type.template HandleDataMessage<passport::PublicAntmid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kAnmaidValue:
-      persona_type.HandleDataMessage<passport::PublicAnmaid>(data_message, reply_functor);
+      persona_type.template HandleDataMessage<passport::PublicAnmaid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kMaidValue:
-      persona_type.HandleDataMessage<passport::PublicMaid>(data_message, reply_functor);
+      persona_type.template HandleDataMessage<passport::PublicMaid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kPmidValue:
-      persona_type.HandleDataMessage<passport::PublicPmid>(data_message, reply_functor);
+      persona_type.template HandleDataMessage<passport::PublicPmid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kMidValue:
-      persona_type.HandleDataMessage<passport::Mid>(data_message, reply_functor);
+      persona_type.template HandleDataMessage<passport::Mid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kSmidValue:
-      persona_type.HandleDataMessage<passport::Smid>(data_message, reply_functor);
+      persona_type.template HandleDataMessage<passport::Smid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kTmidValue:
-      persona_type.HandleDataMessage<passport::Tmid>(data_message, reply_functor);
+      persona_type.template HandleDataMessage<passport::Tmid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kAnmpidValue:
-      persona_type.HandleDataMessage<passport::PublicAnmpid>(data_message, reply_functor);
+      persona_type.template HandleDataMessage<passport::PublicAnmpid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kMpidValue:
-      persona_type.HandleDataMessage<passport::PublicMpid>(data_message, reply_functor);
+      persona_type.template HandleDataMessage<passport::PublicMpid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kImmutableDataValue:
-      persona_type.HandleDataMessage<ImmutableData>(data_message, reply_functor);
+      persona_type.template HandleDataMessage<ImmutableData>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kMutableDataValue:
-      persona_type.HandleDataMessage<MutableData>(data_message, reply_functor);
+      persona_type.template HandleDataMessage<MutableData>(data_message, reply_functor);
       break;
     default :
       LOG(kError) << "Unhandled data type";

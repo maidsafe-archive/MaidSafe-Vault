@@ -79,10 +79,10 @@ class PutToPmidAccountHolder {
         data_message.action_type(),
         data_message.destination_persona_type(),
         source_,
-        DataMessage::Data(data_message.data().type,
-                          data_message.data().name,
-                          data_message.data().content,
-                          data_message.data().version));
+        nfs::DataMessage::Data(data_message.data().type,
+                               data_message.data().name,
+                               data_message.data().content,
+                               data_message.data().version));
     nfs::Message message(nfs::DataMessage::message_type_identifier,
                          new_data_message.Serialise().data);
     routing::ResponseFunctor callback =
@@ -113,10 +113,10 @@ class PutToDataHolder {
         data_message.action_type(),
         data_message.destination_persona_type(),
         source_,
-        DataMessage::Data(data_message.data().type,
-                          data_message.data().name,
-                          data_message.data().content,
-                          data_message.data().version));
+        nfs::DataMessage::Data(data_message.data().type,
+                               data_message.data().name,
+                               data_message.data().content,
+                               data_message.data().version));
     nfs::Message message(nfs::DataMessage::message_type_identifier,
                          new_data_message.Serialise().data);
     routing::ResponseFunctor callback =
