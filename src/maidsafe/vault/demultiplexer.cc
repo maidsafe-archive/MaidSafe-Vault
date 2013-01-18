@@ -15,6 +15,9 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/detail/data_type_values.h"
+#include "maidsafe/nfs/data_message.h"
+#include "maidsafe/nfs/generic_message.h"
+#include "maidsafe/nfs/message.h"
 
 #include "maidsafe/vault/data_holder/data_holder.h"
 #include "maidsafe/vault/maid_account_holder/maid_account_holder.h"
@@ -33,45 +36,45 @@ void HandleDataType(nfs::DataMessage& data_message,
                     const routing::ReplyFunctor& reply_functor,
                     PersonaType& persona_type) {
   // static assert
-  switch (message.data_type()) {
+  switch (data_message.data().type) {
     case maidsafe::detail::DataTagValue::kAnmidValue:
-      persona_type.template HandleMessage<passport::PublicAnmid>(data_message, reply_functor);
+      persona_type.HandleDataMessage<passport::PublicAnmid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kAnsmidValue:
-      persona_type.template HandleMessage<passport::PublicAnsmid>(data_message, reply_functor);
+      persona_type.HandleDataMessage<passport::PublicAnsmid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kAntmidValue:
-      persona_type.template HandleMessage<passport::PublicAntmid>(data_message, reply_functor);
+      persona_type.HandleDataMessage<passport::PublicAntmid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kAnmaidValue:
-      persona_type.template HandleMessage<passport::PublicAnmaid>(data_message, reply_functor);
+      persona_type.HandleDataMessage<passport::PublicAnmaid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kMaidValue:
-      persona_type.template HandleMessage<passport::PublicMaid>(data_message, reply_functor);
+      persona_type.HandleDataMessage<passport::PublicMaid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kPmidValue:
-      persona_type.template HandleMessage<passport::PublicPmid>(data_message, reply_functor);
+      persona_type.HandleDataMessage<passport::PublicPmid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kMidValue:
-      persona_type.template HandleMessage<passport::Mid>(data_message, reply_functor);
+      persona_type.HandleDataMessage<passport::Mid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kSmidValue:
-      persona_type.template HandleMessage<passport::Smid>(data_message, reply_functor);
+      persona_type.HandleDataMessage<passport::Smid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kTmidValue:
-      persona_type.template HandleMessage<passport::Tmid>(data_message, reply_functor);
+      persona_type.HandleDataMessage<passport::Tmid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kAnmpidValue:
-      persona_type.template HandleMessage<passport::PublicAnmpid>(data_message, reply_functor);
+      persona_type.HandleDataMessage<passport::PublicAnmpid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kMpidValue:
-      persona_type.template HandleMessage<passport::PublicMpid>(data_message, reply_functor);
+      persona_type.HandleDataMessage<passport::PublicMpid>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kImmutableDataValue:
-      persona_type.template HandleMessage<ImmutableData>(data_message, reply_functor);
+      persona_type.HandleDataMessage<ImmutableData>(data_message, reply_functor);
       break;
     case maidsafe::detail::DataTagValue::kMutableDataValue:
-      persona_type.template HandleMessage<MutableData>(data_message, reply_functor);
+      persona_type.HandleDataMessage<MutableData>(data_message, reply_functor);
       break;
     default :
       LOG(kError) << "Unhandled data type";
@@ -94,7 +97,20 @@ void Demultiplexer::HandleMessage(const std::string& serialised_message,
                                   const routing::ReplyFunctor& reply_functor) {
   try {
     nfs::Message message((nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
-//    HandleMessagePersonaType(message, reply_functor);
+    switch (message.inner_message_type()) {
+      case nfs::DataMessage::message_type_identifier : {
+        nfs::DataMessage data_message(message.serialised_inner_message<nfs::DataMessage>());
+        HandleDataMessagePersonaType(data_message, reply_functor);
+        break;
+      }
+      case nfs::GenericMessage::message_type_identifier : {
+        nfs::GenericMessage generic_msg(message.serialised_inner_message<nfs::GenericMessage>());
+        HandleGenericMessagePersonaType(generic_msg, reply_functor);
+        break;
+      }
+      default :
+        LOG(kError) << "Unhandled inner_message_type";
+    }
   } catch(const std::exception& ex) {
     LOG(kError) << "Caught exception on handling new message: " << ex.what();
   }
@@ -129,18 +145,19 @@ bool Demultiplexer::GetFromCache(std::string& serialised_message) {
     nfs::Message request_message(
         (nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
     nfs::DataMessage request_data_message(
-        (request_message.serialised_inner_message<DataMessage>()));
+        (request_message.serialised_inner_message<nfs::DataMessage>()));
     auto cached_content(HandleGetFromCache(request_data_message));
     if (cached_content.IsInitialised()) {
-      nfs::DataMessage response_data_message(request_data_message.action_type(),
-                                             request_data_message.destination_persona_type(),
-                                             request_data_message.source(),
-                                             request_data_message.data_type(),
-                                             request_data_message.name(),
-                                             request_data_message);
-      Message respons_message(DataMessage::message_type_identifier,
-                              response_data_message.Serialise().data, asymm::Signature());
-      serialised_message = respons_message.Serialise()->string();
+      nfs::DataMessage response_data_message(
+          request_data_message.action_type(),
+          request_data_message.destination_persona_type(),
+          request_data_message.source(),
+          nfs::DataMessage::Data(request_data_message.data().type,
+                                 request_data_message.data().name,
+                                 cached_content));
+      nfs::Message response_message(nfs::DataMessage::message_type_identifier,
+                                    response_data_message.Serialise().data);
+      serialised_message = response_message.Serialise()->string();
       return true;
     }
   } catch(const std::exception& ex) {
@@ -180,7 +197,7 @@ NonEmptyString Demultiplexer::HandleGetFromCache(nfs::DataMessage& data_message)
 void Demultiplexer::StoreInCache(const std::string& serialised_message) {
   try {
     nfs::Message message((nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
-    nfs::DataMessage data_message((message.serialised_inner_message<DataMessage>()));
+    nfs::DataMessage data_message((message.serialised_inner_message<nfs::DataMessage>()));
     HandleStoreInCache(data_message);
   } catch(const std::exception& ex) {
     LOG(kError) << "Caught exception on handling store in cache request: " << ex.what();

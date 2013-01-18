@@ -18,7 +18,7 @@ namespace vault {
 
 PmidAccountHolder::PmidAccountHolder(routing::Routing& /*routing*/,
                                      const boost::filesystem::path /*vault_root_dir*/)
-    : vault_root_dir_() {}
+     {}
 
 PmidAccountHolder::~PmidAccountHolder() {
 }

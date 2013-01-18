@@ -34,7 +34,7 @@ class GetFromDataHolder {
  public:
   explicit GetFromDataHolder(routing::Routing& routing)
       : routing_(routing),
-        source_(nfs::Message::Source(nfs::PersonaType::kMetadataManager, routing.kNodeId())) {}
+        source_(nfs::MessageSource(nfs::PersonaType::kMetadataManager, routing.kNodeId())) {}
 
   template<typename Data>
   std::future<Data> Get(const typename Data::name_type& name) {
@@ -45,8 +45,7 @@ class GetFromDataHolder {
           HandleGetResponse(promise, serialised_messages);
         };
     nfs::Message message(nfs::ActionType::kGet, nfs::PersonaType::kDataHolder, source_,
-                         Data::name_type::tag_type::kEnumValue, name.data, NonEmptyString(),
-                         asymm::Signature());
+                         Data::name_type::tag_type::kEnumValue, name.data, NonEmptyString());
     routing_.Send(NodeId(name->string()), message.Serialise()->string(), callback,
                   routing::DestinationType::kGroup, nfs::IsCacheable<Data>());
     return std::move(future);
@@ -57,7 +56,7 @@ class GetFromDataHolder {
 
  private:
   routing::Routing& routing_;
-  nfs::Message::Source source_;
+  nfs::MessageSource source_;
 };
 
 }  // namespace vault
