@@ -24,22 +24,27 @@ namespace maidsafe {
 
 namespace vault {
 
+template<typename Data, typename MessageType>
+void HandleMessage(const MessageType& message,
+                   const routing::ReplyFunctor& reply_functor) {
+//  if (nfs::DataMessage::message_type_identifier == message.type()) {  // FIXME Prakash
+    HandleDataMessage(message, reply_functor);
+//  }
+}
+
 template<typename Data>
-void DataHolder::HandleMessage(const nfs::Message& message,
-                               const routing::ReplyFunctor& reply_functor) {
+void DataHolder::HandleDataMessage(const nfs::DataMessage& data_message,
+                                   const routing::ReplyFunctor& reply_functor) {
   LOG(kInfo) << "received message at Data holder";
-  switch (message.action_type()) {
-    case nfs::ActionType::kGet :
-      HandleGetMessage<Data>(message, reply_functor);
+  switch (data_message.action_type()) {
+    case nfs::DataMessage::ActionType::kGet :
+      HandleGetMessage<Data>(data_message, reply_functor);
       break;
-    case nfs::ActionType::kPut :
-      HandlePutMessage<Data>(message, reply_functor);
+    case nfs::DataMessage::ActionType::kPut :
+      HandlePutMessage<Data>(data_message, reply_functor);
       break;
-    case nfs::ActionType::kPost :
-      HandlePostMessage<Data>(message, reply_functor);
-      break;
-    case nfs::ActionType::kDelete :
-      HandleDeleteMessage<Data>(message, reply_functor);
+    case nfs::DataMessage::ActionType::kDelete :
+      HandleDeleteMessage<Data>(data_message, reply_functor);
       break;
     default :
       LOG(kError) << "Unhandled action type";
@@ -47,16 +52,19 @@ void DataHolder::HandleMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-void DataHolder::HandleGetMessage(const nfs::Message& message,
+void DataHolder::HandleGetMessage(const nfs::DataMessage& data_message,
                                   const routing::ReplyFunctor& reply_functor) {
   try {
-    nfs::Message response(message.action_type(),
-                          message.destination_persona_type(),
-                          message.source(),
-                          message.data_type(),
-                          message.name(),
-                          permanent_data_store_.Get(typename Data::name_type(message.name())),
-                          asymm::Signature());
+  // TODO(Fraser#5#): 2013-01-18 - Take version into account properly here
+    nfs::DataMessage response(
+        data_message.action_type(),
+        data_message.destination_persona_type(),
+        data_message.source(),
+        nfs::DataMessage::Data(
+            data_message.data().type,
+            data_message.data().name,
+            permanent_data_store_.Get(typename Data::name_type(data_message.data().name)),
+            data_message.data().version));
     reply_functor(response.Serialise()->string());
   } catch(std::exception& /*ex*/) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());  // non 0 plus optional message
@@ -66,10 +74,11 @@ void DataHolder::HandleGetMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-void DataHolder::HandlePutMessage(const nfs::Message& message,
+void DataHolder::HandlePutMessage(const nfs::DataMessage& data_message,
                                   const routing::ReplyFunctor& reply_functor) {
   try {
-    permanent_data_store_.Store(typename Data::name_type(message.name()), message.content());
+    permanent_data_store_.Store(typename Data::name_type(data_message.data().name),
+                                data_message.data().content);
     reply_functor(nfs::ReturnCode(0).Serialise()->string());
   } catch(std::exception& /*ex*/) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());  // non 0 plus optional message
@@ -79,27 +88,28 @@ void DataHolder::HandlePutMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-void DataHolder::HandlePostMessage(const nfs::Message& /*message*/,
-                                   const routing::ReplyFunctor& /*reply_functor*/) {
-// no op
-}
-
-template<typename Data>
-void DataHolder::HandleDeleteMessage(const nfs::Message& message,
+void DataHolder::HandleDeleteMessage(const nfs::DataMessage& data_message,
                                      const routing::ReplyFunctor& reply_functor) {
-  permanent_data_store_.Delete(typename Data::name_type(message.name()));
+  permanent_data_store_.Delete(typename Data::name_type(data_message.data().name));
   reply_functor(nfs::ReturnCode(0).Serialise()->string());
 }
 
+//  template<typename Data>
+//  void DataHolder::HandlePostMessage(const nfs::Message& /*message*/,
+//                                     const routing::ReplyFunctor& /*reply_functor*/) {
+//  // no op
+//  }
+
 // Cache Handling
 template<typename Data>
-NonEmptyString DataHolder::GetFromCache(const nfs::Message& message) {
-  return CacheGet<Data>(typename Data::name_type(message.name()), is_long_term_cacheable<Data>());
+NonEmptyString DataHolder::GetFromCache(const nfs::DataMessage& data_message) {
+  return CacheGet<Data>(typename Data::name_type(data_message.data().name),
+                        is_long_term_cacheable<Data>());
 }
 
 template<typename Data>
-void DataHolder::StoreInCache(const nfs::Message& message) {
-  CacheStore<Data>(typename Data::name_type(message.name()), message.content(),
+void DataHolder::StoreInCache(const nfs::DataMessage& data_message) {
+  CacheStore<Data>(typename Data::name_type(data_message.data().name), data_message.data().content,
                    is_long_term_cacheable<Data>());
 }
 

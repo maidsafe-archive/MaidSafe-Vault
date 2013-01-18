@@ -166,7 +166,7 @@ void DiskBasedStorage::SearchAndDeleteEntry(const protobuf::DiskStoredElement& e
         RemoveElement(disk_file, n);
         file_content = NonEmptyString(disk_file.SerializeAsString());
         (*it).second = EncodeToBase32(crypto::Hash<crypto::SHA512>(file_content));
-        WriteFile(file_path, new_content);
+        WriteFile(file_path, file_content);
         boost::filesystem::rename(file_path, GetFilePath(kRoot_, (*it).second, file_index));
         return;
       }

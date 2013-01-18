@@ -282,9 +282,8 @@ bool StoreKeys(const PmidVector& all_pmids,
 
   std::atomic<size_t> error_stored_keys(0);
   // on_error call back
-  maidsafe::nfs::OnError cb = [&error_stored_keys](maidsafe::nfs::Message /*result*/) {
-      ++error_stored_keys;
-  };
+  maidsafe::nfs::DataMessage::OnError cb(
+      [&error_stored_keys](maidsafe::nfs::DataMessage /*result*/) { ++error_stored_keys; });
   auto store_keys = [&client_nfs, &cb](const maidsafe::passport::Pmid& pmid,
                                        const maidsafe::passport::Pmid& /*owner*/) {
     maidsafe::passport::PublicPmid p_pmid(pmid);
@@ -402,9 +401,8 @@ bool StoreChunks(const PmidVector& all_pmids,
         maidsafe::crypto::Hash<maidsafe::crypto::SHA512>(content));
     bool success(true);
     // on_error call back
-    maidsafe::nfs::OnError cb = [&success](maidsafe::nfs::Message /*result*/) {
-        success = false;
-    };
+    maidsafe::nfs::DataMessage::OnError cb(
+        [&success](maidsafe::nfs::DataMessage /*result*/) { success = false; });
     ++num_chunks;
     std::cout << "Storing chunk " << maidsafe::HexSubstr(name.data.string())
               << " ..." << std::endl;
