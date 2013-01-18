@@ -167,6 +167,104 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlers) {
 }
 
 TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultThreads) {
+  fs::path root_path(*(this->root_directory_) / RandomString(6));
+  DiskBasedStorage disk_based_storage(root_path);
+
+  std::vector<std::shared_ptr<Active>> active_list;
+  std::map<std::pair<std::string, int32_t>, std::string> element_list;
+  uint32_t num_files(10), max_file_size(10000);
+  for (uint32_t i(0); i < num_files; ++i) {
+    std::shared_ptr<Active> active_ptr;
+    active_ptr.reset(new Active());
+    active_list.push_back(active_ptr);
+
+    std::string file_name(RandomString(crypto::SHA512::DIGESTSIZE));
+    typename TypeParam::name_type name((Identity(file_name)));
+    int32_t version(RandomUint32());
+    std::string serialised_value(RandomString(max_file_size));
+    element_list.insert(std::make_pair(std::make_pair(file_name, version),
+                                       serialised_value));
+    disk_based_storage.Store<TypeParam>(name, version, serialised_value);
+  }
+
+  // Check previous stored element does exist and contained content is correct
+  boost::system::error_code error_code;
+  auto itr = element_list.begin();
+  size_t i(0);
+  do {
+    std::string file_name = (*itr).first.first;
+    std::string serialised_value = (*itr).second;
+    EXPECT_TRUE(fs::exists(root_path / file_name, error_code));
+    active_list[i]->Send([&disk_based_storage,
+                          root_path, file_name, serialised_value] () {
+                            auto result = disk_based_storage.GetFile(root_path / file_name);
+                            NonEmptyString fetched_content = result.get();
+                            EXPECT_EQ(fetched_content.string(), serialised_value);
+                          });
+    ++itr;
+    ++i;
+  } while (itr != element_list.end());
+
+  // Generate new content for each element
+  itr = element_list.begin();
+  do {
+    (*itr).second = RandomString(max_file_size);
+    ++itr;
+  } while (itr != element_list.end());
+
+  // Modify each element's content parallel
+  itr = element_list.begin();
+  i = 0;
+  do {
+    std::string file_name = (*itr).first.first;
+    typename TypeParam::name_type name((Identity(file_name)));
+    int32_t version = (*itr).first.second;
+    std::string new_serialised_value = (*itr).second;
+    active_list[i]->Send([&disk_based_storage,
+                          name, version, new_serialised_value] () {
+                            disk_based_storage.Modify<TypeParam>(name, version, nullptr,
+                                                                 new_serialised_value);
+                          });
+    ++itr;
+    ++i;
+  } while (itr != element_list.end());
+
+  // Parallel Verify each element's content has been properly updated
+  itr = element_list.begin();
+  i = 0;
+  do {
+    std::string file_name = (*itr).first.first;
+    std::string new_serialised_value = (*itr).second;
+    active_list[i]->Send([&disk_based_storage,
+                          root_path, file_name, new_serialised_value] () {
+                            auto result = disk_based_storage.GetFile(root_path / file_name);
+                            NonEmptyString fetched_content = result.get();
+                            EXPECT_EQ(fetched_content.string(), new_serialised_value);
+                          });
+    ++itr;
+    ++i;
+  } while (itr != element_list.end());
+
+  // Parallel delete all elements
+  itr = element_list.begin();
+  i = 0;
+  do {
+    std::string file_name = (*itr).first.first;
+    typename TypeParam::name_type name((Identity(file_name)));
+    int32_t version = (*itr).first.second;
+    active_list[i]->Send([&disk_based_storage, name, version] () {
+                            disk_based_storage.Delete<TypeParam>(name, version);
+                          });
+    ++itr;
+    ++i;
+  } while (itr != element_list.end());
+
+  itr = element_list.begin();
+  do {
+    std::string file_name = (*itr).first.first;
+    EXPECT_FALSE(fs::exists(root_path / file_name, error_code));
+    ++itr;
+  } while (itr != element_list.end());
 }
 
 }  // namespace test
