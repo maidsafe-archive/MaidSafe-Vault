@@ -44,7 +44,17 @@ class DiskStorageTest : public testing::Test {
   maidsafe::test::TestPath root_directory_;
 };
 
-typedef testing::Types<passport::Anmid> AllTypes;
+typedef testing::Types<passport::PublicAnmid,
+                       passport::PublicAnsmid,
+                       passport::PublicAntmid,
+                       passport::PublicAnmaid,
+                       passport::PublicMaid,
+                       passport::PublicPmid,
+                       passport::Mid,
+                       passport::Smid,
+                       passport::Tmid,
+                       passport::PublicAnmpid,
+                       passport::PublicMpid> AllTypes;
 
 TYPED_TEST_CASE(DiskStorageTest, AllTypes);
 
@@ -92,6 +102,39 @@ TYPED_TEST(DiskStorageTest, BEH_FileHandlers) {
 }
 
 TYPED_TEST(DiskStorageTest, BEH_FileHandlersWithCorruptingThread) {
+  // File handlers of DiskBasedStorage are non-blocking, using a separate Active object
+  Active active;
+  fs::path root_path(*(this->root_directory_) / RandomString(6));
+  DiskBasedStorage disk_based_storage(root_path);
+
+  std::map<fs::path, NonEmptyString> files;
+  uint32_t num_files(10), max_file_size(10000);
+  for (uint32_t i(0); i < num_files; ++i) {
+    NonEmptyString file_content(RandomString(RandomUint32() % max_file_size));
+    fs::path file_path(root_path / RandomString(num_files));
+    files.insert(std::make_pair(file_path, file_content));
+    active.Send([file_path] () {
+                  maidsafe::WriteFile(file_path, RandomString(100));
+                });
+    disk_based_storage.WriteFile(file_path, file_content);
+  }
+
+  Active active_delete;
+  boost::system::error_code error_code;
+  auto itr = files.begin();
+  do {
+    fs::path path((*itr).first);
+    EXPECT_TRUE(fs::exists(path, error_code));
+
+    active.Send([&disk_based_storage, path] () {
+                  auto result = disk_based_storage.GetFile(path);
+                  NonEmptyString content(result.get());
+                  EXPECT_TRUE(content.IsInitialised());
+                });
+    active_delete.Send([path] () { fs::remove(path); });
+
+    ++itr;
+  } while (itr != files.end());
 }
 
 TYPED_TEST(DiskStorageTest, BEH_ElementHandlers) {
