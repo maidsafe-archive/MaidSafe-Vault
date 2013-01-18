@@ -31,6 +31,7 @@ namespace vault {
 namespace protobuf { class DiskStoredElement; }
 
 class DiskBasedStorage {
+ public:
   // Initialise with root.leaf() == MAID name / PMID name, etc.
   explicit DiskBasedStorage(const boost::filesystem::path& root);
 
