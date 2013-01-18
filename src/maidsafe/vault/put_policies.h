@@ -36,13 +36,13 @@ class PutToMetadataManager {
   PutToMetadataManager(routing::Routing& routing, const passport::Pmid& signing_pmid)
       : routing_(routing),
         signing_pmid_(signing_pmid),
-        source_(nfs::MessageSource(nfs::PersonaType::kMaidAccountHolder, routing.kNodeId())) {}
+        source_(nfs::MessageSource(nfs::Persona::kMaidAccountHolder, routing.kNodeId())) {}
 
   template<typename Data>
   void Put(const nfs::DataMessage& data_message, nfs::DataMessage::OnError on_error) {
     nfs::DataMessage new_data_message(
-        data_message.action_type(),
-        data_message.destination_persona_type(),
+        data_message.action(),
+        data_message.destination_persona(),
         source_,
         nfs::DataMessage::Data(data_message.data().type,
                                data_message.data().name,
@@ -71,13 +71,13 @@ class PutToPmidAccountHolder {
  public:
   explicit PutToPmidAccountHolder(routing::Routing& routing)
       : routing_(routing),
-        source_(nfs::MessageSource(nfs::PersonaType::kMetadataManager, routing.kNodeId())) {}
+        source_(nfs::MessageSource(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
 
   template<typename Data>
   void Put(const nfs::DataMessage& data_message, nfs::DataMessage::OnError on_error) {
     nfs::DataMessage new_data_message(
-        data_message.action_type(),
-        data_message.destination_persona_type(),
+        data_message.action(),
+        data_message.destination_persona(),
         source_,
         nfs::DataMessage::Data(data_message.data().type,
                                data_message.data().name,
@@ -105,13 +105,13 @@ class PutToDataHolder {
  public:
   explicit PutToDataHolder(routing::Routing& routing)
       : routing_(routing),
-        source_(nfs::MessageSource(nfs::PersonaType::kPmidAccountHolder, routing.kNodeId())) {}
+        source_(nfs::MessageSource(nfs::Persona::kPmidAccountHolder, routing.kNodeId())) {}
 
   template<typename Data>
   void Put(const nfs::DataMessage& data_message, nfs::DataMessage::OnError on_error) {
     nfs::DataMessage new_data_message(
-        data_message.action_type(),
-        data_message.destination_persona_type(),
+        data_message.action(),
+        data_message.destination_persona(),
         source_,
         nfs::DataMessage::Data(data_message.data().type,
                                data_message.data().name,

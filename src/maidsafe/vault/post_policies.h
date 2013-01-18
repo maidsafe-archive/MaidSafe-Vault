@@ -31,7 +31,7 @@ namespace maidsafe {
 
 namespace vault {
 
-template<nfs::PersonaType persona>
+template<nfs::Persona persona>
 class PostSynchronisation {
  public:
   explicit PostSynchronisation(routing::Routing& routing)

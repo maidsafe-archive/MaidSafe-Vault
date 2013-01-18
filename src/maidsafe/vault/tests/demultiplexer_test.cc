@@ -30,9 +30,9 @@ namespace maidsafe {
 namespace nfs {
 
 bool operator==(const nfs::Message& lhs, const nfs::Message& rhs) {
-  if (lhs.action_type() != rhs.action_type() ||
-      lhs.destination_persona_type() != rhs.destination_persona_type() ||
-      lhs.source_persona_type() != rhs.source_persona_type() ||
+  if (lhs.action() != rhs.action() ||
+      lhs.destination_persona() != rhs.destination_persona() ||
+      lhs.source_persona() != rhs.source_persona() ||
       lhs.data_type() != rhs.data_type() ||
       lhs.destination() != rhs.destination() ||
       lhs.source() != rhs.source() ||
@@ -121,11 +121,11 @@ class DemultiplexerTest : public testing::Test {
   }
 
   nfs::Message GenerateValidMessage() {
-    // TODO(Alison) - % 4 to match ActionType enum - improve?
-    // TODO(Alison) - % 4 to match PersonaType enum - improve?
-    nfs::Message message(static_cast<nfs::ActionType>(RandomUint32() % 4),
-                         static_cast<nfs::PersonaType>(RandomUint32() % 4),
-                         static_cast<nfs::PersonaType>(RandomUint32() % 4),
+    // TODO(Alison) - % 4 to match Action enum - improve?
+    // TODO(Alison) - % 4 to match Persona enum - improve?
+    nfs::Message message(static_cast<nfs::Action>(RandomUint32() % 4),
+                         static_cast<nfs::Persona>(RandomUint32() % 4),
+                         static_cast<nfs::Persona>(RandomUint32() % 4),
                          RandomUint32(),
                          NodeId(NodeId::kRandomId),
                          NodeId(NodeId::kRandomId),
@@ -134,12 +134,12 @@ class DemultiplexerTest : public testing::Test {
     return message;
   }
 
-  nfs::Message GenerateValidMessage(const nfs::PersonaType& dest_type) {
-    // TODO(Alison) - % 4 to match ActionType enum - improve?
-    // TODO(Alison) - % 4 to match PersonaType enum - improve?
-    nfs::Message message(static_cast<nfs::ActionType>(RandomUint32() % 4),
+  nfs::Message GenerateValidMessage(const nfs::Persona& dest_type) {
+    // TODO(Alison) - % 4 to match Action enum - improve?
+    // TODO(Alison) - % 4 to match Persona enum - improve?
+    nfs::Message message(static_cast<nfs::Action>(RandomUint32() % 4),
                          dest_type,
-                         static_cast<nfs::PersonaType>(RandomUint32() % 4),
+                         static_cast<nfs::Persona>(RandomUint32() % 4),
                          RandomUint32(),
                          NodeId(NodeId::kRandomId),
                          NodeId(NodeId::kRandomId),
@@ -152,19 +152,19 @@ class DemultiplexerTest : public testing::Test {
                                     uint16_t& expect_mdm,
                                     uint16_t& expect_pah,
                                     uint16_t& expect_dh) {
-    // TODO(Alison) - % 4 to match PersonaType enum - improve?
-    nfs::PersonaType dest_type(static_cast<nfs::PersonaType>(RandomUint32() % 4));
+    // TODO(Alison) - % 4 to match Persona enum - improve?
+    nfs::Persona dest_type(static_cast<nfs::Persona>(RandomUint32() % 4));
     switch (dest_type) {
-      case nfs::PersonaType::kMaidAccountHolder:
+      case nfs::Persona::kMaidAccountHolder:
         ++expect_mah;
         break;
-      case nfs::PersonaType::kMetadataManager:
+      case nfs::Persona::kMetadataManager:
         ++expect_mdm;
         break;
-      case nfs::PersonaType::kPmidAccountHolder:
+      case nfs::Persona::kPmidAccountHolder:
         ++expect_pah;
         break;
-      case nfs::PersonaType::kDataHolder:
+      case nfs::Persona::kDataHolder:
         ++expect_dh;
         break;
       default:
@@ -207,7 +207,7 @@ class DemultiplexerTest : public testing::Test {
 };
 
 TEST_F(DemultiplexerTest, FUNC_MaidAccountHolder) {
-  nfs::Message message(GenerateValidMessage(nfs::PersonaType::kMaidAccountHolder));
+  nfs::Message message(GenerateValidMessage(nfs::Persona::kMaidAccountHolder));
 
   EXPECT_CALL(maid_account_holder_, HandleMessage(message)).Times(1);
   EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(0);
@@ -224,13 +224,13 @@ TEST_F(DemultiplexerTest, FUNC_MaidAccountHolderRepeat) {
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
 
   for (uint16_t i(0); i < 100; ++i) {
-    nfs::Message message(GenerateValidMessage(nfs::PersonaType::kMaidAccountHolder));
+    nfs::Message message(GenerateValidMessage(nfs::Persona::kMaidAccountHolder));
     demultiplexer_.HandleMessage(SerialiseAsString(message));
   }
 }
 
 TEST_F(DemultiplexerTest, FUNC_MetadataManager) {
-  nfs::Message message(GenerateValidMessage(nfs::PersonaType::kMetadataManager));
+  nfs::Message message(GenerateValidMessage(nfs::Persona::kMetadataManager));
 
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(metadata_manager_, HandleMessage(message)).Times(1);
@@ -247,13 +247,13 @@ TEST_F(DemultiplexerTest, FUNC_MetadataManagerRepeat) {
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
 
   for (uint16_t i(0); i < 100; ++i) {
-    nfs::Message message(GenerateValidMessage(nfs::PersonaType::kMetadataManager));
+    nfs::Message message(GenerateValidMessage(nfs::Persona::kMetadataManager));
     demultiplexer_.HandleMessage(SerialiseAsString(message));
   }
 }
 
 TEST_F(DemultiplexerTest, FUNC_PmidAccountHolder) {
-  nfs::Message message(GenerateValidMessage(nfs::PersonaType::kPmidAccountHolder));
+  nfs::Message message(GenerateValidMessage(nfs::Persona::kPmidAccountHolder));
 
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(0);
@@ -270,13 +270,13 @@ TEST_F(DemultiplexerTest, FUNC_PmidAccountHolderRepeat) {
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
 
   for (uint16_t i(0); i < 100; ++i) {
-    nfs::Message message(GenerateValidMessage(nfs::PersonaType::kPmidAccountHolder));
+    nfs::Message message(GenerateValidMessage(nfs::Persona::kPmidAccountHolder));
     demultiplexer_.HandleMessage(SerialiseAsString(message));
   }
 }
 
 TEST_F(DemultiplexerTest, FUNC_DataHolder) {
-  nfs::Message message(GenerateValidMessage(nfs::PersonaType::kDataHolder));
+  nfs::Message message(GenerateValidMessage(nfs::Persona::kDataHolder));
 
   EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
   EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(0);
@@ -293,7 +293,7 @@ TEST_F(DemultiplexerTest, FUNC_DataHolderRepeat) {
   EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(100);
 
   for (uint16_t i(0); i < 100; ++i) {
-    nfs::Message message(GenerateValidMessage(nfs::PersonaType::kDataHolder));
+    nfs::Message message(GenerateValidMessage(nfs::Persona::kDataHolder));
     demultiplexer_.HandleMessage(SerialiseAsString(message));
   }
 }
@@ -331,32 +331,32 @@ TEST_F(DemultiplexerTest, FUNC_EmptyMessage) {
 
 TEST_F(DemultiplexerTest, FUNC_ValidMessages) {
   std::vector<nfs::Message> messages;
-  messages.push_back(GenerateValidMessage(nfs::PersonaType::kMaidAccountHolder));
-  messages.push_back(GenerateValidMessage(nfs::PersonaType::kMetadataManager));
-  messages.push_back(GenerateValidMessage(nfs::PersonaType::kPmidAccountHolder));
-  messages.push_back(GenerateValidMessage(nfs::PersonaType::kDataHolder));
+  messages.push_back(GenerateValidMessage(nfs::Persona::kMaidAccountHolder));
+  messages.push_back(GenerateValidMessage(nfs::Persona::kMetadataManager));
+  messages.push_back(GenerateValidMessage(nfs::Persona::kPmidAccountHolder));
+  messages.push_back(GenerateValidMessage(nfs::Persona::kDataHolder));
 
   while (messages.size() > 0) {
     uint16_t index(0);
     if (messages.size() > 1)
       index = RandomUint32() % messages.size();
 
-    if (messages.at(index).destination_persona_type() == nfs::PersonaType::kMaidAccountHolder)
+    if (messages.at(index).destination_persona() == nfs::Persona::kMaidAccountHolder)
       EXPECT_CALL(maid_account_holder_, HandleMessage(messages.at(index))).Times(1);
     else
       EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
 
-    if (messages.at(index).destination_persona_type() == nfs::PersonaType::kMetadataManager)
+    if (messages.at(index).destination_persona() == nfs::Persona::kMetadataManager)
       EXPECT_CALL(metadata_manager_, HandleMessage(messages.at(index))).Times(1);
     else
       EXPECT_CALL(metadata_manager_, HandleMessage(testing::_)).Times(0);
 
-    if (messages.at(index).destination_persona_type() == nfs::PersonaType::kPmidAccountHolder)
+    if (messages.at(index).destination_persona() == nfs::Persona::kPmidAccountHolder)
       EXPECT_CALL(pmid_account_holder_, HandleMessage(messages.at(index))).Times(1);
     else
       EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
 
-    if (messages.at(index).destination_persona_type() == nfs::PersonaType::kDataHolder)
+    if (messages.at(index).destination_persona() == nfs::Persona::kDataHolder)
       EXPECT_CALL(data_holder_, HandleMessage(messages.at(index))).Times(1);
     else
       EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
@@ -500,7 +500,7 @@ TEST_F(DemultiplexerTest, FUNC_StoreCacheHaveCache) {
     std::string string(SerialiseAsString(message));
     demultiplexer_.StoreCache(string);
     std::string passed_string(string);
-    if (message.destination_persona_type() == nfs::PersonaType::kDataHolder) {
+    if (message.destination_persona() == nfs::Persona::kDataHolder) {
       EXPECT_TRUE(demultiplexer_.HaveCache(passed_string));
       // TODO(Alison) - relationship between string and passed string?
     } else {
@@ -511,7 +511,7 @@ TEST_F(DemultiplexerTest, FUNC_StoreCacheHaveCache) {
 }
 
 TEST_F(DemultiplexerTest, FUNC_RepeatStoreCache) {
-  nfs::Message message(GenerateValidMessage(nfs::PersonaType::kDataHolder));
+  nfs::Message message(GenerateValidMessage(nfs::Persona::kDataHolder));
   std::string string(SerialiseAsString(message));
   std::string passed_string(string);
 
@@ -527,7 +527,7 @@ TEST_F(DemultiplexerTest, FUNC_RepeatStoreCache) {
 
 TEST_F(DemultiplexerTest, FUNC_RetrieveOldCache) {
   int buffer_size(10);  // TODO(Alison) - get real buffer size
-  nfs::Message message(GenerateValidMessage(nfs::PersonaType::kDataHolder));
+  nfs::Message message(GenerateValidMessage(nfs::Persona::kDataHolder));
   std::string string(SerialiseAsString(message));
   std::string passed_string(string);
   demultiplexer_.StoreCache(string);
@@ -535,7 +535,7 @@ TEST_F(DemultiplexerTest, FUNC_RetrieveOldCache) {
   // TODO(Alison) - relationship between string and passed string?
 
   for (uint16_t i(0); i < buffer_size; ++i) {
-    std::string temp_string(SerialiseAsString(GenerateValidMessage(nfs::PersonaType::kDataHolder)));
+    std::string temp_string(SerialiseAsString(GenerateValidMessage(nfs::Persona::kDataHolder)));
     demultiplexer_.StoreCache(temp_string);
     std::string temp_passed_string(temp_string);
     EXPECT_TRUE(demultiplexer_.HaveCache(temp_passed_string));

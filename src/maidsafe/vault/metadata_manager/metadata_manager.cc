@@ -37,16 +37,16 @@ void MetadataManager::Serialise() {}
 void MetadataManager::HandleGenericMessage(const nfs::GenericMessage& generic_message,
                                         const routing::ReplyFunctor& reply_functor) {
   // TODO(Team): Validate message
-  nfs::GenericMessage::ActionType action_type(generic_message.action_type());
+  nfs::GenericMessage::Action action(generic_message.action());
   NodeId source_id(generic_message.source().node_id);
-  switch (action_type) {
-    case nfs::GenericMessage::ActionType::kNodeUp:
+  switch (action) {
+    case nfs::GenericMessage::Action::kNodeUp:
         if (!HandleNodeUp(generic_message, source_id)) {
           LOG(kError) << "Replying with failure on kNodeUp.";
           reply_functor(nfs::ReturnCode(-1).Serialise()->string());
         }
         break;
-    case nfs::GenericMessage::ActionType::kNodeDown:
+    case nfs::GenericMessage::Action::kNodeDown:
         if (!HandleNodeDown(generic_message, source_id)) {
           LOG(kError) << "Replying with failure on kNodeDown.";
           reply_functor(nfs::ReturnCode(-1).Serialise()->string());
