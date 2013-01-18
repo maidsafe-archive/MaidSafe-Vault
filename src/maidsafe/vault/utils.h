@@ -21,7 +21,9 @@ namespace vault {
 
 namespace detail {
 
-bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id);
+inline bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id) {
+  return routing.IsNodeIdInGroupRange(node_id);
+}
 
 }  // namespace detail
 

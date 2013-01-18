@@ -17,9 +17,9 @@ namespace vault {
 
 namespace detail {
 
-bool NodeRangeCheck(maidsafe::routing::Routing& routing, const NodeId& node_id) {
-  return routing.IsNodeIdInGroupRange(node_id);  // provisional call to Is..
-}
+// bool NodeRangeCheck(maidsafe::routing::Routing& routing, const NodeId& node_id) {
+//   return routing.IsNodeIdInGroupRange(node_id);  // provisional call to Is..
+// }
 
 }  // namespace detail
 

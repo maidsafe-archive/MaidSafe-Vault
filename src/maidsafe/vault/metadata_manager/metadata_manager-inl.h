@@ -51,8 +51,8 @@ void MetadataManager::HandleGetMessage(nfs::DataMessage data_message,
   std::vector<std::future<Data>> futures;
   for (auto& online_dataholder : online_dataholders)
     futures.emplace_back(nfs_.Get<Data>(data_message.data().name,
-                                        nfs::Message::Source(nfs::PersonaType::kMetadataManager,
-                                                             routing_.kNodeId()),
+                                        nfs::MessageSource(nfs::PersonaType::kMetadataManager,
+                                                           routing_.kNodeId()),
                                         online_dataholder));
 
   auto fetched_data = futures.begin();
@@ -89,13 +89,13 @@ void MetadataManager::HandleDeleteMessage(const nfs::DataMessage& data_message,
     data_elements_manager_.RemoveDataElement(data_id);
 
     for (auto& online_dataholder : online_dataholders) {
-      nfs::OnError on_error_callback(
+      nfs::DataMessage::OnError on_error_callback(
           [this](nfs::DataMessage data_msg) { this->OnDeleteErrorHandler<Data>(data_msg); });
       // TODO(Team) : double check whether signing key required
       nfs::DataMessage new_message(
-          nfs::ActionType::kDelete,
+          nfs::DataMessage::ActionType::kDelete,
           nfs::PersonaType::kPmidAccountHolder,
-          nfs::Message::Source(nfs::PersonaType::kMetadataManager, routing_.kNodeId()),
+          nfs::MessageSource(nfs::PersonaType::kMetadataManager, routing_.kNodeId()),
           nfs::DataMessage::Data(Data::name_type::tag_type::kEnumValue,
                                  online_dataholder,
                                  data_id));
