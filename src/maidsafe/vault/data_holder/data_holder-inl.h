@@ -24,6 +24,14 @@ namespace maidsafe {
 
 namespace vault {
 
+template<typename Data, typename MessageType>
+void HandleMessage(const MessageType& message,
+                   const routing::ReplyFunctor& reply_functor) {
+//  if (nfs::DataMessage::message_type_identifier == message.type()) {  // FIXME Prakash
+    HandleDataMessage(message, reply_functor);
+//  }
+}
+
 template<typename Data>
 void DataHolder::HandleDataMessage(const nfs::DataMessage& data_message,
                                    const routing::ReplyFunctor& reply_functor) {

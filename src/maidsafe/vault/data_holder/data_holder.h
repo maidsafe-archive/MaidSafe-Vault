@@ -25,6 +25,8 @@
 
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/data_message.h"
+#include "maidsafe/nfs/generic_message.h"
 
 #include "maidsafe/data_store/data_store.h"
 
@@ -43,6 +45,7 @@ class DataHolder {
   template<typename Data>
   void HandleDataMessage(const nfs::DataMessage& data_message,
                          const routing::ReplyFunctor& reply_functor);
+
   template<typename Data>
   NonEmptyString GetFromCache(const nfs::DataMessage& data_message);
   template<typename Data>

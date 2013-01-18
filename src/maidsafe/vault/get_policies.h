@@ -44,7 +44,7 @@ class GetFromDataHolder {
         [promise](const std::vector<std::string>& serialised_messages) {
           HandleGetResponse(promise, serialised_messages);
         };
-    nfs::Message message(nfs::ActionType::kGet, nfs::PersonaType::kDataHolder, source_,
+    nfs::Message message(nfs::DataMessage::ActionType::kGet, nfs::PersonaType::kDataHolder, source_,
                          Data::name_type::tag_type::kEnumValue, name.data, NonEmptyString());
     routing_.Send(NodeId(name->string()), message.Serialise()->string(), callback,
                   routing::DestinationType::kGroup, nfs::IsCacheable<Data>());

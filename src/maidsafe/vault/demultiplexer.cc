@@ -137,7 +137,7 @@ void Demultiplexer::HandleDataMessagePersonaType(nfs::DataMessage& data_message,
 }
 
 void Demultiplexer::HandleGenericMessagePersonaType(nfs::GenericMessage& /*generic_message*/,
-                                                    const routing::ReplyFunctor& /*reply_functor*/) {
+                                                  const routing::ReplyFunctor& /*reply_functor*/) {
 }
 
 bool Demultiplexer::GetFromCache(std::string& serialised_message) {
