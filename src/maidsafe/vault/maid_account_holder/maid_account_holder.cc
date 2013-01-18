@@ -18,14 +18,6 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace detail {
-
-bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id) {
-  return routing.IsNodeIdInGroupRange(node_id);  // provisional call to Is..
-}
-
-}  // namespace detail
-
 MaidAccountHolder::MaidAccountHolder(const passport::Pmid& pmid,
                                      routing::Routing& routing,
                                      nfs::PublicKeyGetter& public_key_getter,

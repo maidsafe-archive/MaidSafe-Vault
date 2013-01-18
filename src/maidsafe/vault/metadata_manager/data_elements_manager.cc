@@ -104,6 +104,29 @@ void DataElementsManager::RemoveDataElement(const Identity& data_name) {
   boost::filesystem::remove(vault_metadata_dir_ / EncodeToBase64(data_name));
 }
 
+int64_t DataElementsManager::DecreaseDataElement(const Identity& data_name) {
+  int64_t number_stored(-1);
+  try {
+    protobuf::MetadataElement element;
+    CheckDataElementExists(data_name);
+    // Decrease counter
+    ReadAndParseElement(data_name, element);
+    number_stored = element.number_stored();
+    // prevent over decreasing, return 0 to trigger a removal in that case
+    if (number_stored > 0) {
+      --number_stored;
+      element.set_number_stored(number_stored);
+      SerialiseAndSaveElement(element);
+    } else {
+      number_stored = 0;
+    }
+  }
+  catch(...) {
+    LOG(kError) << "Failed to find element of " << HexSubstr(data_name.string());
+  }
+  return number_stored;
+}
+
 void DataElementsManager::MoveNodeToOffline(const Identity& data_name,
                                             const PmidName& pmid_name,
                                             int64_t& holders) {
@@ -112,7 +135,7 @@ void DataElementsManager::MoveNodeToOffline(const Identity& data_name,
   ReadAndParseElement(data_name, element);
   bool found(RemovePmidFromOnlineList(pmid_name->string(), element));
   if (found) {
-    holders = static_cast<int64_t>(element.element_size());
+    holders = static_cast<int64_t>(element.online_pmid_name_size());
     element.add_offline_pmid_name(pmid_name->string());
     SerialiseAndSaveElement(element);
   }
@@ -165,6 +188,17 @@ void DataElementsManager::RemoveOfflinePmid(const Identity& data_name,
   bool found(RemovePmidFromOfflineList(offline_pmid_name->string(), element));
   if (found)
     SerialiseAndSaveElement(element);
+}
+
+std::vector<Identity> DataElementsManager::GetOnlinePmid(const Identity& data_id) {
+  CheckDataElementExists(data_id);
+  protobuf::MetadataElement element;
+  ReadAndParseElement(data_id, element);
+  std::vector<Identity> online_pmids;
+  for (int n(0); n < element.online_pmid_name_size(); ++n) {
+    online_pmids.push_back(Identity(element.online_pmid_name(n)));
+  }
+  return online_pmids;
 }
 
 void DataElementsManager::CheckDataElementExists(const Identity& data_name) {

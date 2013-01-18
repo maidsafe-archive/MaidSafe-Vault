@@ -9,11 +9,7 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_UTILS_H_
-#define MAIDSAFE_VAULT_UTILS_H_
-
-#include "maidsafe/routing/routing_api.h"
-
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -21,12 +17,12 @@ namespace vault {
 
 namespace detail {
 
-bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id);
+bool NodeRangeCheck(maidsafe::routing::Routing& routing, const NodeId& node_id) {
+  return routing.IsNodeIdInGroupRange(node_id);  // provisional call to Is..
+}
 
 }  // namespace detail
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_UTILS_H_

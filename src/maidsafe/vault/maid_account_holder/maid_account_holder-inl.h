@@ -26,12 +26,6 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace detail {
-
-bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id);
-
-}  // namespace detail
-
 template<typename Data>
 void MaidAccountHolder::HandleDataMessage(const nfs::DataMessage& data_message,
                                           const routing::ReplyFunctor& reply_functor) {
