@@ -121,7 +121,7 @@ void Demultiplexer::HandleDataMessagePersonaType(nfs::DataMessage& data_message,
 }
 
 void Demultiplexer::HandleGenericMessagePersonaType(nfs::GenericMessage& /*generic_message*/,
-                                                    const routing::ReplyFunctor& /*reply_functor*/) {
+                                                  const routing::ReplyFunctor& /*reply_functor*/) {
 }
 
 bool Demultiplexer::GetFromCache(std::string& serialised_message) {
@@ -132,14 +132,16 @@ bool Demultiplexer::GetFromCache(std::string& serialised_message) {
         (request_message.serialised_inner_message<DataMessage>()));
     auto cached_content(HandleGetFromCache(request_data_message));
     if (cached_content.IsInitialised()) {
+      nfs::DataMessage::Data data(request_data_message.data().type,
+                                  request_data_message.data().name,
+                                  cached_content);
       nfs::DataMessage response_data_message(request_data_message.action_type(),
                                              request_data_message.destination_persona_type(),
                                              request_data_message.source(),
-                                             request_data_message.data_type(),
-                                             request_data_message.name(),
-                                             request_data_message);
-      Message respons_message(DataMessage::message_type_identifier,
-                              response_data_message.Serialise().data, asymm::Signature());
+                                             data);
+
+      nfs::Message respons_message(DataMessage::message_type_identifier,
+                                   response_data_message.Serialise().data, asymm::Signature());
       serialised_message = respons_message.Serialise()->string();
       return true;
     }

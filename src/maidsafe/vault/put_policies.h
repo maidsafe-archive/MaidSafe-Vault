@@ -36,17 +36,18 @@ class PutToMetadataManager {
   PutToMetadataManager(routing::Routing& routing, const passport::Pmid& signing_pmid)
       : routing_(routing),
         signing_pmid_(signing_pmid),
-        source_(nfs::Message::Source(nfs::PersonaType::kMaidAccountHolder, routing.kNodeId())) {}
+        source_(nfs::MessageSource(nfs::PersonaType::kMaidAccountHolder, routing.kNodeId())) {}
 
   template<typename Data>
-  void Put(const nfs::Message& message, nfs::OnError on_error) {
-    nfs::Message new_message(message.action_type(),
-                             message.destination_persona_type(),
-                             source_,
-                             message.data_type(),
-                             message.name(),
-                             message.content(),
-                             asymm::Sign(message.content(), signing_pmid_.private_key()));
+  void Put(const nfs::DataMessage& message, nfs::DataMessage::OnError on_error) {
+    nfs::DataMessage new_message(message.action_type(),
+                                 message.destination_persona_type(),
+                                 source_,
+                                 nfs::DataMessage::Data(message.data_type(),
+                                                        message.data().name,
+                                                        message.data().content));
+
+  // asymm::Sign(message.content(), signing_pmid_.private_key()));
 
     routing::ResponseFunctor callback =
         [on_error, new_message](const std::vector<std::string>& serialised_messages) {
@@ -62,7 +63,7 @@ class PutToMetadataManager {
  private:
   routing::Routing& routing_;
   passport::Pmid signing_pmid_;
-  nfs::Message::Source source_;
+  nfs::MessageSource source_;
 };
 
 class PutToPmidAccountHolder {
@@ -72,8 +73,8 @@ class PutToPmidAccountHolder {
         source_(nfs::Message::Source(nfs::PersonaType::kMetadataManager, routing.kNodeId())) {}
 
   template<typename Data>
-  void Put(const nfs::Message& message, nfs::OnError on_error) {
-    nfs::Message new_message(message.action_type(),
+  void Put(const nfs::DataMessage& message, nfs::OnError on_error) {
+    nfs::DataMessage new_message(message.action_type(),
                              message.destination_persona_type(),
                              source_,
                              message.data_type(),
