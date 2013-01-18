@@ -72,10 +72,10 @@ TYPED_TEST(DiskStorageTest, BEH_FileHandlers) {
     disk_based_storage.WriteFile(file_path, file_content);
   }
 
-  uint32_t file_count(disk_based_storage.GetFileCount());
-  EXPECT_EQ(file_count, num_files);
-  std::vector<boost::filesystem::path> file_paths = disk_based_storage.GetFileNames();
-  EXPECT_EQ(file_paths.size(), num_files);
+  std::future<uint32_t> file_count(disk_based_storage.GetFileCount());
+  EXPECT_EQ(file_count.get(), num_files);
+  std::future<DiskBasedStorage::PathVector> file_paths = disk_based_storage.GetFileNames();
+  EXPECT_EQ(file_paths.get().size(), num_files);
 
   boost::system::error_code error_code;
   auto itr = files.begin();

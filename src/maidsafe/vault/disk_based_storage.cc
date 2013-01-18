@@ -56,47 +56,28 @@ void RemoveElement(protobuf::DiskStoredFile& disk_file, int index_to_remove) {
 const size_t kNewFileTrigger(999);
 const std::string kEmptyFileHash("empty file hash");
 typedef std::promise<NonEmptyString> NonEmptyStringPromise;
+typedef std::promise<uint32_t> Uint32tPromise;
+typedef std::promise<DiskBasedStorage::PathVector> VectorPathPromise;
 
 DiskBasedStorage::DiskBasedStorage(const boost::filesystem::path& root)
     : kRoot_(root),
       active_(),
-      file_data_(),
-      file_data_mutex_() {}
+      file_data_() {}
 
-uint32_t DiskBasedStorage::GetFileCount() const {
-  std::lock_guard<std::mutex> guard(file_data_mutex_);
-  return static_cast<uint32_t>(file_data_.size());
-}
-
-// File names are index no. + hash of contents
-std::vector<boost::filesystem::path> DiskBasedStorage::GetFileNames() const {
-  std::vector<boost::filesystem::path> file_names;
-  {
-    std::lock_guard<std::mutex> guard(file_data_mutex_);
-    for (size_t n(0); n < file_data_.size(); ++n)
-      file_names.push_back(GetFilePath(kRoot_, file_data_[n].second, n));
-  }
-  return std::move(file_names);
-}
-
-void DiskBasedStorage::WriteFile(const boost::filesystem::path& path,
-                                 const NonEmptyString& content) {
-  std::string filename(path.filename().string());
-  size_t file_number;
-  std::string hash;
-  ExtractElementsFromFilename(filename, hash, file_number);
-  assert(EncodeToBase32(crypto::Hash<crypto::SHA512>(content)) == hash && "Content doesn't hash.");
-  std::string old_hash;
-  {
-    std::lock_guard<std::mutex> guard(file_data_mutex_);
-    assert(file_data_[file_number].second != hash && "Hash is the same as it's currently held.");
-    old_hash = file_data_[file_number].second;
-    file_data_[file_number].second = hash;
-  }
-  active_.Send([path, content, file_number, old_hash, this] () {
-                 maidsafe::WriteFile(path, content.string());
-                 boost::filesystem::remove(GetFilePath(kRoot_, old_hash, file_number));
+std::future<uint32_t> DiskBasedStorage::GetFileCount() const {
+  std::shared_ptr<Uint32tPromise> promise(std::make_shared<Uint32tPromise>());
+  std::future<uint32_t> future(promise->get_future());
+  active_.Send([promise, this] () {
+                 promise->set_value(static_cast<uint32_t>(file_data_.size()));
                });
+  return std::move(future);
+}
+
+std::future<DiskBasedStorage::PathVector> DiskBasedStorage::GetFileNames() const {
+  std::shared_ptr<VectorPathPromise> promise(std::make_shared<VectorPathPromise>());
+  std::future<DiskBasedStorage::PathVector> future(promise->get_future());
+  active_.Send([promise, this] () { DoGetFileNames(promise); });
+  return std::move(future);
 }
 
 std::future<NonEmptyString> DiskBasedStorage::GetFile(const boost::filesystem::path& path) const {
@@ -115,8 +96,35 @@ std::future<NonEmptyString> DiskBasedStorage::GetFile(const boost::filesystem::p
   return std::move(future);
 }
 
+void DiskBasedStorage::WriteFile(const boost::filesystem::path& path,
+                                 const NonEmptyString& content) {
+  active_.Send([path, content, this] () { DoWriteFile(path, content); });  // NOLINT (Dan)
+}
+
+// File names are index no. + hash of contents
+void DiskBasedStorage::DoGetFileNames(std::shared_ptr<VectorPathPromise> promise) const {
+  std::vector<boost::filesystem::path> file_names;
+  for (size_t n(0); n < file_data_.size(); ++n)
+    file_names.push_back(GetFilePath(kRoot_, file_data_[n].second, n));
+  promise->set_value(file_names);
+}
+
+void DiskBasedStorage::DoWriteFile(const boost::filesystem::path& path,
+                                   const NonEmptyString& content) {
+  std::string filename(path.filename().string());
+  size_t file_number;
+  std::string hash;
+  ExtractElementsFromFilename(filename, hash, file_number);
+  assert(EncodeToBase32(crypto::Hash<crypto::SHA512>(content)) == hash && "Content doesn't hash.");
+  std::string old_hash;
+  assert(file_data_[file_number].second != hash && "Hash is the same as it's currently held.");
+  old_hash = file_data_[file_number].second;
+  file_data_[file_number].second = hash;
+  maidsafe::WriteFile(path, content.string());
+  boost::filesystem::remove(GetFilePath(kRoot_, old_hash, file_number));
+}
+
 void DiskBasedStorage::AddToLatestFile(const protobuf::DiskStoredElement& element) {
-  std::lock_guard<std::mutex> guard(file_data_mutex_);
   size_t latest_file_index(file_data_.size() - 1);
   protobuf::DiskStoredFile disk_file;
   boost::filesystem::path latest_file_path;
@@ -146,7 +154,6 @@ void DiskBasedStorage::AddToLatestFile(const protobuf::DiskStoredElement& elemen
 }
 
 void DiskBasedStorage::SearchAndDeleteEntry(const protobuf::DiskStoredElement& element) {
-  std::lock_guard<std::mutex> guard(file_data_mutex_);
   size_t file_index(file_data_.size() - 1);
   boost::filesystem::path file_path;
   protobuf::DiskStoredFile disk_file;

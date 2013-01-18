@@ -32,6 +32,7 @@ namespace protobuf { class DiskStoredElement; }
 
 class DiskBasedStorage {
  public:
+  typedef std::vector<boost::filesystem::path> PathVector;
   // Initialise with root.leaf() == MAID name / PMID name, etc.
   explicit DiskBasedStorage(const boost::filesystem::path& root);
 
@@ -49,18 +50,16 @@ class DiskBasedStorage {
               const std::string& serialised_value);
 
   // Synchronisation helpers
-  uint32_t GetFileCount() const;
-  // File names are index no. + hash of contents
-  std::vector<boost::filesystem::path> GetFileNames() const;
-  void WriteFile(const boost::filesystem::path& path, const NonEmptyString& content);
+  std::future<uint32_t> GetFileCount() const;
+  std::future<PathVector> GetFileNames() const;  // File names are index no. + hash of contents
   std::future<NonEmptyString> GetFile(const boost::filesystem::path& path) const;
+  void WriteFile(const boost::filesystem::path& path, const NonEmptyString& content);
 
  private:
   const boost::filesystem::path kRoot_;
   mutable Active active_;
   typedef std::pair<uint32_t, std::string> FileData;
   std::vector<FileData> file_data_;
-  mutable std::mutex file_data_mutex_;
 
   template<typename Data>
   void DoStore(const typename Data::name_type& name,
@@ -73,6 +72,8 @@ class DiskBasedStorage {
                 int32_t version,
                 const std::function<void(std::string&)>& functor,
                 const std::string& serialised_value);
+  void DoGetFileNames(std::shared_ptr<std::promise<PathVector> > promise) const;
+  void DoWriteFile(const boost::filesystem::path& path, const NonEmptyString& content);
 
   void AddToLatestFile(const protobuf::DiskStoredElement& element);
   void SearchAndDeleteEntry(const protobuf::DiskStoredElement& element);
