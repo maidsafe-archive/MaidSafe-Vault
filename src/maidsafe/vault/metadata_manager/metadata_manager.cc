@@ -56,10 +56,6 @@ void MetadataManager::HandleGenericMessage(const nfs::GenericMessage& generic_me
   }
 }
 
-template<typename Data>
-void MetadataManager::HandleDeleteMessage(const nfs::DataMessage& /*data_message*/,
-                                          const routing::ReplyFunctor& /*reply_functor*/) {}
-
 void MetadataManager::SendSyncData() {}
 
 bool MetadataManager::HandleNodeDown(const nfs::GenericMessage& generic_message, NodeId& /*node*/) {
@@ -94,13 +90,6 @@ bool MetadataManager::HandleNodeUp(const nfs::GenericMessage& generic_message, N
 
   return true;
 }
-
-// On error handler
-template<typename Data>
-void MetadataManager::OnPutErrorHandler(nfs::DataMessage data_message) {}
-
-template<typename Data>
-void MetadataManager::OnDeleteErrorHandler(nfs::DataMessage data_message) {}
 
 }  // namespace vault
 

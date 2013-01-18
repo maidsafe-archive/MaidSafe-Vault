@@ -38,7 +38,7 @@ class GetFromDataHolder {
 
   template<typename Data>
   std::future<Data> Get(const typename Data::name_type& name,
-                        nfs::Message::Source source,
+                        nfs::MessageSource source,
                         const Identity& dest_id) {
     auto promise(std::make_shared<std::promise<Data>>());  // NOLINT (Fraser)
     std::future<Data> future(promise->get_future());
@@ -46,8 +46,12 @@ class GetFromDataHolder {
         [promise](const std::vector<std::string>& serialised_messages) {
           HandleGetResponse(promise, serialised_messages);
         };
-    nfs::Message message(nfs::DataMessage::ActionType::kGet, nfs::PersonaType::kDataHolder, source_,
-                         Data::name_type::tag_type::kEnumValue, name.data, NonEmptyString());
+    nfs::DataMessage data_message(
+        nfs::DataMessage::ActionType::kGet,
+        nfs::PersonaType::kDataHolder,
+        source_,
+        nfs::DataMessage::Data(Data::name_type::tag_type::kEnumValue, name.data, NonEmptyString()));
+    nfs::Message message(nfs::DataMessage::message_type_identifier, data_message.Serialise().data);
     routing_.Send(NodeId(dest_id), message.Serialise()->string(), callback,
                   routing::DestinationType::kDirect, nfs::IsCacheable<Data>());
     return std::move(future);

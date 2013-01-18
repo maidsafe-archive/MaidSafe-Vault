@@ -21,6 +21,8 @@
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/test.h"
 
+#include "maidsafe/detail/data_type_values.h"
+
 #include "maidsafe/nfs/data_message.h"
 
 
@@ -60,7 +62,7 @@ TYPED_TEST_CASE_P(DataHolderTest);
 TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
   nfs::MessageSource source(nfs::PersonaType::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   NonEmptyString content(RandomAlphaNumericString(256));
-  nfs::DataMessage::Data data(detail::DataTagValue::kAnmaidValue,
+  nfs::DataMessage::Data data(maidsafe::detail::DataTagValue::kAnmaidValue,
                               Identity(RandomString(NodeId::kSize)), content, RandomInt32());
   nfs::DataMessage data_message(nfs::DataMessage::ActionType::kPut, nfs::PersonaType::kDataHolder,
                                 source, data);
@@ -77,7 +79,7 @@ TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
 TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
   nfs::MessageSource source(nfs::PersonaType::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   const NonEmptyString content(RandomAlphaNumericString(256));
-  nfs::DataMessage::Data data(detail::DataTagValue::kAnmaidValue,
+  nfs::DataMessage::Data data(maidsafe::detail::DataTagValue::kAnmaidValue,
                               Identity(RandomString(NodeId::kSize)), content, RandomInt32());
   nfs::DataMessage data_message(nfs::DataMessage::ActionType::kGet, nfs::PersonaType::kDataHolder,
                                 source, data);
@@ -92,7 +94,7 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
 TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
   nfs::MessageSource source(nfs::PersonaType::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   NonEmptyString content(RandomAlphaNumericString(256));
-  nfs::DataMessage::Data data(detail::DataTagValue::kAnmaidValue,
+  nfs::DataMessage::Data data(maidsafe::detail::DataTagValue::kAnmaidValue,
                               Identity(RandomString(NodeId::kSize)), content, RandomInt32());
   nfs::DataMessage data_message(nfs::DataMessage::ActionType::kPut, nfs::PersonaType::kDataHolder,
                                 source, data);
@@ -125,7 +127,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
     nfs::MessageSource source(nfs::PersonaType::kPmidAccountHolder, NodeId(NodeId::kRandomId));
     NonEmptyString content(RandomAlphaNumericString(256));
     std::string retrieved;
-    nfs::DataMessage::Data data(detail::DataTagValue::kAnmaidValue,
+    nfs::DataMessage::Data data(maidsafe::detail::DataTagValue::kAnmaidValue,
                                 Identity(RandomString(NodeId::kSize)), content, RandomInt32());
     nfs::DataMessage data_message(nfs::DataMessage::ActionType::kPut, nfs::PersonaType::kDataHolder,
                                   source, data);
@@ -249,7 +251,7 @@ TYPED_TEST_CASE_P(DataHolderCacheableTest);
 TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
   nfs::MessageSource source(nfs::PersonaType::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   NonEmptyString content(RandomAlphaNumericString(256));
-  nfs::DataMessage::Data data(detail::DataTagValue::kAnmaidValue,
+  nfs::DataMessage::Data data(maidsafe::detail::DataTagValue::kAnmaidValue,
                               Identity(RandomString(NodeId::kSize)), content, RandomInt32());
   nfs::DataMessage data_message(nfs::DataMessage::ActionType::kPut, nfs::PersonaType::kDataHolder,
                                 source, data);

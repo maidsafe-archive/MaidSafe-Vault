@@ -27,9 +27,9 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void MetadataManager::HandlePutMessage(const nfs::DataMessage& /*data_message*/,
+void MetadataManager::HandlePutMessage(const nfs::DataMessage& data_message,
                                        const routing::ReplyFunctor& reply_functor) {
-  if (!detail::NodeRangeCheck(routing_, message.source().node_id)) {
+  if (!detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
     return;
   }
@@ -44,13 +44,13 @@ void MetadataManager::HandlePutMessage(const nfs::DataMessage& /*data_message*/,
 }
 
 template<typename Data>
-void MetadataManager::HandleGetMessage(nfs::Message message,
+void MetadataManager::HandleGetMessage(nfs::DataMessage data_message,
                                        const routing::ReplyFunctor& reply_functor) {
   std::vector<Identity> online_dataholders(
-      data_elements_manager_.GetOnlinePmid(Identity(message.name())));
+      data_elements_manager_.GetOnlinePmid(Identity(data_message.data().name)));
   std::vector<std::future<Data>> futures;
   for (auto& online_dataholder : online_dataholders)
-    futures.emplace_back(nfs_.Get<Data>(message.name(),
+    futures.emplace_back(nfs_.Get<Data>(data_message.data().name,
                                         nfs::Message::Source(nfs::PersonaType::kMetadataManager,
                                                              routing_.kNodeId()),
                                         online_dataholder));
@@ -80,26 +80,26 @@ void MetadataManager::HandleGetMessage(nfs::Message message,
 }
 
 template<typename Data>
-void MetadataManager::HandleDeleteMessage(const nfs::Message& message,
+void MetadataManager::HandleDeleteMessage(const nfs::DataMessage& data_message,
                                           const routing::ReplyFunctor& reply_functor) {
-  Identity data_id(message.name());
+  Identity data_id(data_message.data().name);
   int64_t num_follower(data_elements_manager_.DecreaseDataElement(data_id));
   if (num_follower == 0) {
     std::vector<Identity> online_dataholders(data_elements_manager_.GetOnlinePmid(data_id));
     data_elements_manager_.RemoveDataElement(data_id);
 
     for (auto& online_dataholder : online_dataholders) {
-      nfs::OnError on_error_callback = [this] (nfs::Message message) {
-                                         this->OnDeleteErrorHandler<Data>(message);
-                                       };
+      nfs::OnError on_error_callback(
+          [this](nfs::DataMessage data_msg) { this->OnDeleteErrorHandler<Data>(data_msg); });
       // TODO(Team) : double check whether signing key required
-      nfs::Message message(nfs::ActionType::kDelete, nfs::PersonaType::kPmidAccountHolder,
-                           nfs::Message::Source(nfs::PersonaType::kMetadataManager,
-                                                routing_.kNodeId()),
-                           Data::name_type::tag_type::kEnumValue,
-                           online_dataholder, data_id,
-                           asymm::Signature());
-      nfs_.Delete<Data>(message, on_error_callback);
+      nfs::DataMessage new_message(
+          nfs::ActionType::kDelete,
+          nfs::PersonaType::kPmidAccountHolder,
+          nfs::Message::Source(nfs::PersonaType::kMetadataManager, routing_.kNodeId()),
+          nfs::DataMessage::Data(Data::name_type::tag_type::kEnumValue,
+                                 online_dataholder,
+                                 data_id));
+      nfs_.Delete<Data>(new_message, on_error_callback);
     }
   }
   reply_functor(nfs::ReturnCode(num_follower).Serialise()->string());
@@ -107,25 +107,23 @@ void MetadataManager::HandleDeleteMessage(const nfs::Message& message,
 
 // On error handler's
 template<typename Data>
-void MetadataManager::OnPutErrorHandler(nfs::Message message) {
-  if (detail::NodeRangeCheck(routing_, message.source().node_id))
-    nfs_.Put<Data>(message,
-                   [this] (nfs::Message message) {
-                     this->OnPutErrorHandler<Data>(message);
-                   });
+void MetadataManager::OnPutErrorHandler(nfs::DataMessage data_message) {
+  if (detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
+    nfs_.Put<Data>(data_message,
+         [this](nfs::DataMessage data_msg) { this->OnPutErrorHandler<Data>(data_msg); });
+  }
 }
 
 template<typename Data>
-void MetadataManager::OnDeleteErrorHandler(nfs::Message message) {
-  if (detail::NodeRangeCheck(routing_, message.source().node_id))
-    nfs_.Delete<Data>(message,
-                      [this] (nfs::Message message) {
-                        this->OnDeleteErrorHandler<Data>(message);
-                      });
+void MetadataManager::OnDeleteErrorHandler(nfs::DataMessage data_message) {
+  if (detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
+    nfs_.Delete<Data>(data_message,
+        [this](nfs::DataMessage data_msg) { this->OnDeleteErrorHandler<Data>(data_msg); });
+  }
 }
 
 template<typename Data>
-void MetadataManager::OnPostErrorHandler(nfs::PostMessage message) {}
+void MetadataManager::OnGenericErrorHandler(nfs::GenericMessage generic_message) {}
 
 }  // namespace vault
 

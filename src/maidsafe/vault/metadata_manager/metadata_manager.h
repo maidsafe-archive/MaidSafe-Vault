@@ -64,7 +64,7 @@ class MetadataManager {
   template<typename Data>
   void OnDeleteErrorHandler(nfs::DataMessage data_message);
   template<typename Data>
-  void OnPostErrorHandler(nfs::PostMessage message);
+  void OnGenericErrorHandler(nfs::GenericMessage message);
 
   const boost::filesystem::path kRootDir_;
   routing::Routing& routing_;
