@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_INL_H_
-#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_INL_H_
+#ifndef MAIDSAFE_VAULT_ACCOUNT_HOLDER_INL_H_
+#define MAIDSAFE_VAULT_ACCOUNT_HOLDER_INL_H_
 
 #include <exception>
 #include <string>
@@ -27,7 +27,7 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void MaidAccountHolder::HandleMessage(const nfs::Message& message,
+void AccountHolder::HandleMessage(const nfs::Message& message,
                                       const routing::ReplyFunctor& reply_functor) {
   LOG(kInfo) << "received message at Data holder";
   // TODO(Team): Check the message content for validity with the MAID key we'll have eventually.
@@ -46,13 +46,13 @@ void MaidAccountHolder::HandleMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-void MaidAccountHolder::HandleGetMessage(nfs::Message /*message*/,
+void AccountHolder::HandleGetMessage(nfs::Message /*message*/,
                                          const routing::ReplyFunctor& /*reply_functor*/) {
 // no op
 }
 
 template<typename Data>
-void MaidAccountHolder::HandlePutMessage(const nfs::Message& message,
+void AccountHolder::HandlePutMessage(const nfs::Message& message,
                                          const routing::ReplyFunctor& reply_functor) {
   if (!detail::NodeRangeCheck(routing_, message.source().node_id)) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
@@ -68,7 +68,7 @@ void MaidAccountHolder::HandlePutMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-void MaidAccountHolder::HandleDeleteMessage(const nfs::Message& message,
+void AccountHolder::HandleDeleteMessage(const nfs::Message& message,
                                             const routing::ReplyFunctor& reply_functor) {
   if (!detail::NodeRangeCheck(routing_, message.source().node_id)) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
@@ -77,7 +77,7 @@ void MaidAccountHolder::HandleDeleteMessage(const nfs::Message& message,
 
   auto maid_account_it = std::find_if(maid_accounts_.begin(),
                                       maid_accounts_.end(),
-                                      [&message] (const MaidAccount& maid_account) {
+                                      [&message] (const Account& maid_account) {
                                         return maid_account.maid_name().data.string() ==
                                                message.source().node_id.string();
                                       });
@@ -100,12 +100,12 @@ void MaidAccountHolder::HandleDeleteMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-void MaidAccountHolder::AdjustAccount(const nfs::Message& message,
+void AccountHolder::AdjustAccount(const nfs::Message& message,
                                       const routing::ReplyFunctor& reply_functor,
                                       std::true_type) {
   auto maid_account_it = std::find_if(maid_accounts_.begin(),
                                       maid_accounts_.end(),
-                                      [&message] (const MaidAccount& maid_account) {
+                                      [&message] (const Account& maid_account) {
                                         return maid_account.maid_name().data.string() ==
                                             message.source().node_id.string();
                                       });
@@ -129,7 +129,7 @@ void MaidAccountHolder::AdjustAccount(const nfs::Message& message,
 }
 
 template<typename Data>
-void MaidAccountHolder::OnPutErrorHandler(nfs::Message message) {
+void AccountHolder::OnPutErrorHandler(nfs::Message message) {
   if (detail::NodeRangeCheck(routing_, message.source().node_id))
     nfs_.Put<Data>(message,
                    [this] (nfs::Message message) {
@@ -138,7 +138,7 @@ void MaidAccountHolder::OnPutErrorHandler(nfs::Message message) {
 }
 
 template<typename Data>
-void MaidAccountHolder::OnDeleteErrorHandler(nfs::Message message) {
+void AccountHolder::OnDeleteErrorHandler(nfs::Message message) {
   if (detail::NodeRangeCheck(routing_, message.source().node_id))
     nfs_.Delete<Data>(message,
                       [this] (nfs::Message message) {
@@ -150,4 +150,4 @@ void MaidAccountHolder::OnDeleteErrorHandler(nfs::Message message) {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_INL_H_
+#endif  // MAIDSAFE_VAULT_ACCOUNT_HOLDER_INL_H_
