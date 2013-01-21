@@ -9,6 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
+#include <string>
+
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
@@ -29,7 +31,7 @@ void ExtractElementsFromFilename(const std::string& filename,
     LOG(kError) << "No dot in the file name.";
     throw std::exception();
   }
-  file_number = static_cast<size_t>(std::stoi(std::string(filename.begin(), it - 1)));
+  file_number = static_cast<size_t>(std::stoi(std::string(filename.begin(), it)));
   hash = std::string(it + 1, filename.end());
 }
 

@@ -64,7 +64,8 @@ class DiskBasedStorage::Changer {
     std::string element_to_modify(disk_file.disk_element(index).SerializeAsString());
     functor_(element_to_modify);
     protobuf::DiskStoredElement modified_element;
-    assert(modified_element.ParseFromString(element_to_modify) && "Returned element doesn't parse.");
+    assert(modified_element.ParseFromString(element_to_modify) &&
+           "Returned element doesn't parse.");
     disk_file.mutable_disk_element(index)->CopyFrom(modified_element);
   }
 };
@@ -179,12 +180,17 @@ void DiskBasedStorage::DoWriteFile(const boost::filesystem::path& path,
   std::string hash;
   d::ExtractElementsFromFilename(filename, hash, file_number);
   assert(EncodeToBase32(crypto::Hash<crypto::SHA512>(content)) == hash && "Content doesn't hash.");
-  std::string old_hash;
-  assert(file_data_[file_number].second != hash && "Hash is the same as it's currently held.");
-  old_hash = file_data_[file_number].second;
-  file_data_[file_number].second = hash;
+
+  std::vector<FileData>::iterator file_itr = FileExists(file_number);
+  if (file_itr != file_data_.end()) {
+    std::string old_hash((*file_itr).second);
+    assert(old_hash != hash && "Hash is the same as it's currently held.");
+    (*file_itr).second = hash;
+    boost::filesystem::remove(d::GetFilePath(kRoot_, old_hash, file_number));
+  } else {
+    file_data_.push_back(std::make_pair(file_number, hash));
+  }
   maidsafe::WriteFile(path, content.string());
-  boost::filesystem::remove(d::GetFilePath(kRoot_, old_hash, file_number));
 }
 
 void DiskBasedStorage::AddToLatestFile(const protobuf::DiskStoredElement& element) {
@@ -267,6 +273,17 @@ void DiskBasedStorage::UpdateFileAfterModification(std::vector<FileData>::revers
   (*it).second = EncodeToBase32(crypto::Hash<crypto::SHA512>(file_content));
   maidsafe::WriteFile(file_path, file_content.string());
   boost::filesystem::rename(file_path, d::GetFilePath(kRoot_, (*it).second, file_index));
+}
+
+std::vector<DiskBasedStorage::FileData>::iterator
+    DiskBasedStorage::FileExists(size_t file_number) {
+  auto itr = file_data_.begin();
+  while (itr != file_data_.end()) {
+    if ((*itr).first == file_number)
+      return itr;
+    ++itr;
+  }
+  return file_data_.end();
 }
 
 }  // namespace vault
