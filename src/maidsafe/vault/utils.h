@@ -12,6 +12,8 @@
 #ifndef MAIDSAFE_VAULT_UTILS_H_
 #define MAIDSAFE_VAULT_UTILS_H_
 
+#include <string>
+
 #include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/vault/disk_based_storage_messages_pb.h"
