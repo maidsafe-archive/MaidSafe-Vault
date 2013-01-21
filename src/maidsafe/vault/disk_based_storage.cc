@@ -88,7 +88,8 @@ class DiskBasedStorage::Changer {
     std::string element_to_modify(disk_file.disk_element(index).SerializeAsString());
     functor_(element_to_modify);
     protobuf::DiskStoredElement modified_element;
-    assert(modified_element.ParseFromString(element_to_modify) && "Returned element doesn't parse.");
+    assert(modified_element.ParseFromString(element_to_modify) &&
+           "Returned element doesn't parse.");
     disk_file.mutable_disk_element(index)->CopyFrom(modified_element);
   }
 };
@@ -196,18 +197,25 @@ void DiskBasedStorage::DoGetFileNames(std::shared_ptr<VectorPathPromise> promise
 }
 
 void DiskBasedStorage::DoPutFile(const boost::filesystem::path& path,
-                                   const NonEmptyString& content) {
+                                 const NonEmptyString& content) {
   std::string filename(path.filename().string());
   size_t file_number;
   std::string hash;
   d::ExtractElementsFromFilename(filename, hash, file_number);
   assert(EncodeToBase32(crypto::Hash<crypto::SHA512>(content)) == hash && "Content doesn't hash.");
-  std::string old_hash;
-  assert(file_data_[file_number].second != hash && "Hash is the same as it's currently held.");
-  old_hash = file_data_[file_number].second;
-  file_data_[file_number].second = hash;
+  protobuf::DiskStoredFile disk_file;
+  assert(disk_file.ParseFromString(content.string()));
+  if (file_number < file_data_.size()) {
+    std::string old_hash(file_data_[file_number].second);
+    assert(old_hash != hash && "Hash is the same as it's currently held.");
+    file_data_[file_number].second = hash;
+    boost::filesystem::remove(d::GetFilePath(kRoot_, old_hash, file_number));
+  } else {
+    while (file_number > file_data_.size())
+      file_data_.push_back(std::make_pair(0, kEmptyFileHash));
+    file_data_.push_back(std::make_pair(disk_file.disk_element_size(), hash));
+  }
   WriteFile(path, content.string());
-  boost::filesystem::remove(d::GetFilePath(kRoot_, old_hash, file_number));
 }
 
 void DiskBasedStorage::AddToLatestFile(const protobuf::DiskStoredElement& element) {
