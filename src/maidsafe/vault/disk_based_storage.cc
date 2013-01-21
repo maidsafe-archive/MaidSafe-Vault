@@ -181,13 +181,19 @@ void DiskBasedStorage::DoWriteFile(const boost::filesystem::path& path,
   d::ExtractElementsFromFilename(filename, hash, file_number);
   assert(EncodeToBase32(crypto::Hash<crypto::SHA512>(content)) == hash && "Content doesn't hash.");
 
-  std::vector<FileData>::iterator file_itr = FileExists(file_number);
-  if (file_itr != file_data_.end()) {
-    std::string old_hash((*file_itr).second);
+  if (file_number < file_data_.size()) {
+    std::string old_hash(file_data_[file_number].second);
     assert(old_hash != hash && "Hash is the same as it's currently held.");
-    (*file_itr).second = hash;
+    file_data_[file_number].second = hash;
     boost::filesystem::remove(d::GetFilePath(kRoot_, old_hash, file_number));
   } else {
+    while (file_number > file_data_.size()) {
+      std::string dummy_content(RandomString(20));
+      std::string dummy_hash(EncodeToBase32(crypto::Hash<crypto::SHA512>(dummy_content)));
+      file_data_.push_back(std::make_pair(file_data_.size(), dummy_hash));
+      boost::filesystem::path dummy_path(d::GetFilePath(kRoot_, dummy_hash, file_data_.size()));
+      maidsafe::WriteFile(path, dummy_content);
+    }
     file_data_.push_back(std::make_pair(file_number, hash));
   }
   maidsafe::WriteFile(path, content.string());
@@ -273,17 +279,6 @@ void DiskBasedStorage::UpdateFileAfterModification(std::vector<FileData>::revers
   (*it).second = EncodeToBase32(crypto::Hash<crypto::SHA512>(file_content));
   maidsafe::WriteFile(file_path, file_content.string());
   boost::filesystem::rename(file_path, d::GetFilePath(kRoot_, (*it).second, file_index));
-}
-
-std::vector<DiskBasedStorage::FileData>::iterator
-    DiskBasedStorage::FileExists(size_t file_number) {
-  auto itr = file_data_.begin();
-  while (itr != file_data_.end()) {
-    if ((*itr).first == file_number)
-      return itr;
-    ++itr;
-  }
-  return file_data_.end();
 }
 
 }  // namespace vault

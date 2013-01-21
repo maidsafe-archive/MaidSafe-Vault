@@ -95,7 +95,6 @@ class DiskBasedStorage {
                                    size_t file_index,
                                    protobuf::DiskStoredFile& disk_file,
                                    boost::filesystem::path& file_path);
-  std::vector<FileData>::iterator FileExists(size_t file_number);
 };
 
 }  // namespace vault

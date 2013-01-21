@@ -74,10 +74,15 @@ TYPED_TEST(DiskStorageTest, BEH_FileHandlers) {
   DiskBasedStorage disk_based_storage(root_path);
   std::map<fs::path, NonEmptyString> files;
   uint32_t num_files(100), max_file_size(10000);
+  std::vector<uint32_t> file_numbers;
+  for (uint32_t i(0); i < num_files; ++i)
+    file_numbers.push_back(i);
+  std::random_shuffle(file_numbers.begin(), file_numbers.end());
+
   for (uint32_t i(0); i < num_files; ++i) {
     NonEmptyString file_content(RandomString(RandomUint32() % max_file_size));
     std::string hash(EncodeToBase32(crypto::Hash<crypto::SHA512>(file_content)));
-    std::string file_name(std::to_string(i) + "." + hash);
+    std::string file_name(std::to_string(file_numbers[i]) + "." + hash);
     fs::path file_path(root_path / file_name);
     files.insert(std::make_pair(file_path, file_content));
     disk_based_storage.WriteFile(file_path, file_content);
