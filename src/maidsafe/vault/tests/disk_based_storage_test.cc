@@ -112,20 +112,28 @@ TYPED_TEST(DiskStorageTest, BEH_FileHandlersWithCorruptingThread) {
   Active active;
   fs::path root_path(*(this->root_directory_) / RandomString(6));
   DiskBasedStorage disk_based_storage(root_path);
-
   std::map<fs::path, NonEmptyString> files;
   uint32_t num_files(10), max_file_size(10000);
   for (uint32_t i(0); i < num_files; ++i) {
     NonEmptyString file_content(RandomString(RandomUint32() % max_file_size));
-    fs::path file_path(root_path / RandomString(num_files));
+    std::string hash(EncodeToBase32(crypto::Hash<crypto::SHA512>(file_content)));
+    std::string file_name(std::to_string(i) + "." + hash);
+    fs::path file_path(root_path / file_name);
     files.insert(std::make_pair(file_path, file_content));
+  }
+
+  for (auto itr(files.begin()); itr != files.end(); ++itr) {
+    fs::path file_path((*itr).first);
     active.Send([file_path] () {
                   maidsafe::WriteFile(file_path, RandomString(100));
                 });
-    disk_based_storage.PutFile(file_path, file_content);
+    disk_based_storage.PutFile(file_path, (*itr).second);
   }
 
-  Active active_delete;
+  std::future<uint32_t> file_count(disk_based_storage.GetFileCount());
+  EXPECT_EQ(file_count.get(), num_files);
+
+//   Active active_delete;
   boost::system::error_code error_code;
   auto itr = files.begin();
   do {
@@ -134,10 +142,17 @@ TYPED_TEST(DiskStorageTest, BEH_FileHandlersWithCorruptingThread) {
 
     active.Send([&disk_based_storage, path] () {
                   auto result = disk_based_storage.GetFile(path);
-                  NonEmptyString content(result.get());
-                  EXPECT_TRUE(content.IsInitialised());
+                  do {
+                    Sleep(boost::posix_time::milliseconds(1));
+                  } while (!result.valid());
+                  EXPECT_FALSE(result.has_exception()) << "Get exception when trying to get "
+                                                       << path.filename();
+                  if (!result.has_exception()) {
+                    NonEmptyString content(result.get());
+                    EXPECT_TRUE(content.IsInitialised());
+                  }
                 });
-    active_delete.Send([path] () { fs::remove(path); });
+//     active_delete.Send([path] () { fs::remove(path); });
 
     ++itr;
   } while (itr != files.end());

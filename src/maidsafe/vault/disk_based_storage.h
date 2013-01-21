@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <map>
 
 #include "boost/filesystem/path.hpp"
 
