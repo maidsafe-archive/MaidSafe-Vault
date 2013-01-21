@@ -14,6 +14,7 @@
 
 #include "maidsafe/routing/routing_api.h"
 
+#include "maidsafe/vault/disk_based_storage_messages_pb.h"
 
 namespace maidsafe {
 
@@ -24,6 +25,17 @@ namespace detail {
 inline bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id) {
   return routing.IsNodeIdInGroupRange(node_id);
 }
+
+void ExtractElementsFromFilename(const std::string& filename,
+                                 std::string& hash,
+                                 size_t& file_number);
+
+boost::filesystem::path GetFilePath(const boost::filesystem::path& base_path,
+                                    const std::string& hash,
+                                    size_t file_number);
+
+bool MatchingDiskElements(const protobuf::DiskStoredElement& lhs,
+                          const protobuf::DiskStoredElement& rhs);
 
 }  // namespace detail
 

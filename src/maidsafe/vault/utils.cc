@@ -21,6 +21,29 @@ namespace detail {
 //   return routing.IsNodeIdInGroupRange(node_id);  // provisional call to Is..
 // }
 
+void ExtractElementsFromFilename(const std::string& filename,
+                                 std::string& hash,
+                                 size_t& file_number) {
+  auto it(std::find(filename.begin(), filename.end(), '.'));
+  if (it == filename.end()) {
+    LOG(kError) << "No dot in the file name.";
+    throw std::exception();
+  }
+  file_number = static_cast<size_t>(std::stoi(std::string(filename.begin(), it - 1)));
+  hash = std::string(it + 1, filename.end());
+}
+
+boost::filesystem::path GetFilePath(const boost::filesystem::path& base_path,
+                                    const std::string& hash,
+                                    size_t file_number) {
+  return base_path / (std::to_string(file_number) + "." + hash);
+}
+
+bool MatchingDiskElements(const protobuf::DiskStoredElement& lhs,
+                          const protobuf::DiskStoredElement& rhs) {
+  return lhs.data_name() == rhs.data_name() && lhs.version() == lhs.version();
+}
+
 }  // namespace detail
 
 }  // namespace vault

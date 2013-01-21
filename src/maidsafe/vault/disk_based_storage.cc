@@ -17,34 +17,13 @@
 
 #include "maidsafe/common/utils.h"
 
+#include "maidsafe/vault/utils.h"
+
 namespace maidsafe {
 
 namespace vault {
 
 namespace {
-
-void ExtractElementsFromFilename(const std::string& filename,
-                                 std::string& hash,
-                                 size_t& file_number) {
-  auto it(std::find(filename.begin(), filename.end(), '.'));
-  if (it == filename.end()) {
-    LOG(kError) << "No dot in the file name.";
-    throw std::exception();
-  }
-  hash = std::string(filename.begin(), it - 1);
-  file_number = static_cast<size_t>(std::stoi(std::string(it + 1, filename.end())));
-}
-
-boost::filesystem::path GetFilePath(const boost::filesystem::path& base_path,
-                                    const std::string& hash,
-                                    size_t file_number) {
-  return base_path / (hash + "." + std::to_string(file_number));
-}
-
-bool MatchingDiskElements(const protobuf::DiskStoredElement& lhs,
-                          const protobuf::DiskStoredElement& rhs) {
-  return lhs.data_name() == rhs.data_name() && lhs.version() == lhs.version();
-}
 
 const size_t kNewFileTrigger(999);
 const std::string kEmptyFileHash("empty file hash");
@@ -52,6 +31,7 @@ const std::string kEmptyFileHash("empty file hash");
 typedef std::promise<NonEmptyString> NonEmptyStringPromise;
 typedef std::promise<uint32_t> Uint32tPromise;
 typedef std::promise<DiskBasedStorage::PathVector> VectorPathPromise;
+namespace d = maidsafe::vault::detail;
 
 }  // namespace
 
@@ -105,9 +85,9 @@ void DiskBasedStorage::TraverseAndVerifyFiles(const boost::filesystem::path& roo
   size_t file_number(-1);
   for (; root_itr != end_itr; ++root_itr) {
     try {
-      ExtractElementsFromFilename(boost::filesystem::path(*root_itr).filename().string(),
-                                  hash,
-                                  file_number);
+      d::ExtractElementsFromFilename(boost::filesystem::path(*root_itr).filename().string(),
+                                     hash,
+                                     file_number);
       uint32_t element_count(VerifyFileHashAndCountElements(hash, file_number));
       AddToFileData(hash, file_number, element_count);
     }
@@ -137,12 +117,13 @@ void DiskBasedStorage::AddToFileData(const std::string& hash,
     for (uint32_t n(file_data_.size() -1); n != element_count; ++n)
       file_data_.push_back(std::make_pair(0, kEmptyFileHash));
     file_data_.push_back(std::make_pair(element_count, hash));
-  } else if (file_data_[file_number].second != kEmptyFileHash) {
+  } else if (file_data_[file_number].second == hash) {
     LOG(kInfo) << "Already filled file index: " << file_number;
-    throw std::exception();
-  } else {
+  } else if (file_data_[file_number].second == kEmptyFileHash) {
     file_data_[file_number].first = element_count;
     file_data_[file_number].second = hash;
+  } else {
+    LOG(kWarning) << "Unexpected content in vector: " << file_number;
   }
 }
 
@@ -187,7 +168,7 @@ void DiskBasedStorage::WriteFile(const boost::filesystem::path& path,
 void DiskBasedStorage::DoGetFileNames(std::shared_ptr<VectorPathPromise> promise) const {
   std::vector<boost::filesystem::path> file_names;
   for (size_t n(0); n < file_data_.size(); ++n)
-    file_names.push_back(GetFilePath(kRoot_, file_data_[n].second, n));
+    file_names.push_back(d::GetFilePath(kRoot_, file_data_[n].second, n));
   promise->set_value(file_names);
 }
 
@@ -196,14 +177,14 @@ void DiskBasedStorage::DoWriteFile(const boost::filesystem::path& path,
   std::string filename(path.filename().string());
   size_t file_number;
   std::string hash;
-  ExtractElementsFromFilename(filename, hash, file_number);
+  d::ExtractElementsFromFilename(filename, hash, file_number);
   assert(EncodeToBase32(crypto::Hash<crypto::SHA512>(content)) == hash && "Content doesn't hash.");
   std::string old_hash;
   assert(file_data_[file_number].second != hash && "Hash is the same as it's currently held.");
   old_hash = file_data_[file_number].second;
   file_data_[file_number].second = hash;
   maidsafe::WriteFile(path, content.string());
-  boost::filesystem::remove(GetFilePath(kRoot_, old_hash, file_number));
+  boost::filesystem::remove(d::GetFilePath(kRoot_, old_hash, file_number));
 }
 
 void DiskBasedStorage::AddToLatestFile(const protobuf::DiskStoredElement& element) {
@@ -230,9 +211,9 @@ void DiskBasedStorage::AddToLatestFile(const protobuf::DiskStoredElement& elemen
   }
 
   maidsafe::WriteFile(latest_file_path, new_content.string());
-  boost::filesystem::rename(latest_file_path, GetFilePath(kRoot_,
-                                                          file_data_[latest_file_index].second,
-                                                          latest_file_index));
+  boost::filesystem::rename(latest_file_path, d::GetFilePath(kRoot_,
+                                                             file_data_[latest_file_index].second,
+                                                             latest_file_index));
 }
 
 void DiskBasedStorage::SearchForAndDeleteEntry(const protobuf::DiskStoredElement& element) {
@@ -255,7 +236,7 @@ void DiskBasedStorage::SearchForEntryAndExecuteOperation(const protobuf::DiskSto
   for (auto it(file_data_.rbegin()); it != file_data_.rend(); ++it, --file_index) {
     ReadAndParseFile((*it).second, file_index, disk_file, file_path, file_content);
     for (int n(disk_file.disk_element_size()); n != -1; --n) {
-      if (MatchingDiskElements(disk_file.disk_element(n), element)) {
+      if (d::MatchingDiskElements(disk_file.disk_element(n), element)) {
         changer.Execute(disk_file, file_index);
         UpdateFileAfterModification(it, file_index, disk_file, file_path);
         return;
@@ -270,7 +251,7 @@ void DiskBasedStorage::ReadAndParseFile(const std::string& hash,
                                         boost::filesystem::path& file_path,
                                         NonEmptyString& file_content) const {
   disk_file.Clear();
-  file_path = GetFilePath(kRoot_, hash, file_index);
+  file_path = d::GetFilePath(kRoot_, hash, file_index);
   file_content = ReadFile(file_path);
   if (!disk_file.ParseFromString(file_content.string())) {
     LOG(kError) << "Failure to parse file content.";
@@ -285,7 +266,7 @@ void DiskBasedStorage::UpdateFileAfterModification(std::vector<FileData>::revers
   NonEmptyString file_content(NonEmptyString(disk_file.SerializeAsString()));
   (*it).second = EncodeToBase32(crypto::Hash<crypto::SHA512>(file_content));
   maidsafe::WriteFile(file_path, file_content.string());
-  boost::filesystem::rename(file_path, GetFilePath(kRoot_, (*it).second, file_index));
+  boost::filesystem::rename(file_path, d::GetFilePath(kRoot_, (*it).second, file_index));
 }
 
 }  // namespace vault
