@@ -27,94 +27,90 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void AccountHolder::HandleMessage(const nfs::Message& message,
-                                      const routing::ReplyFunctor& reply_functor) {
-  LOG(kInfo) << "received message at Data holder";
+void MaidAccountHolder::HandleDataMessage(const nfs::DataMessage& data_message,
+                                          const routing::ReplyFunctor& reply_functor) {
   // TODO(Team): Check the message content for validity with the MAID key we'll have eventually.
-  switch (message.action_type()) {
-    case nfs::ActionType::kGet:
-      HandleGetMessage<Data>(message, reply_functor);
+  switch (data_message.action_type()) {
+    case nfs::DataMessage::ActionType::kGet:
+      HandleGetMessage<Data>(data_message, reply_functor);
       break;
-    case nfs::ActionType::kPut:
-      HandlePutMessage<Data>(message, reply_functor);
+    case nfs::DataMessage::ActionType::kPut:
+      HandlePutMessage<Data>(data_message, reply_functor);
       break;
-    case nfs::ActionType::kDelete:
-      HandleDeleteMessage<Data>(message, reply_functor);
+    case nfs::DataMessage::ActionType::kDelete:
+      HandleDeleteMessage<Data>(data_message, reply_functor);
       break;
     default: LOG(kError) << "Unhandled action type";
   }
 }
 
 template<typename Data>
-void AccountHolder::HandleGetMessage(nfs::Message /*message*/,
-                                         const routing::ReplyFunctor& /*reply_functor*/) {
+void AccountHolder::HandleGetMessage(const nfs::DataMessage& /*data_message*/,
+                                     const routing::ReplyFunctor& /*reply_functor*/) {
 // no op
 }
 
 template<typename Data>
-void AccountHolder::HandlePutMessage(const nfs::Message& message,
-                                         const routing::ReplyFunctor& reply_functor) {
-  if (!detail::NodeRangeCheck(routing_, message.source().node_id)) {
+void AccountHolder::HandlePutMessage(const nfs::DataMessage& data_message,
+                                     const routing::ReplyFunctor& reply_functor) {
+  if (!detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
     return;
   }
 
-  AdjustAccount<Data>(message, reply_functor, is_payable<Data>());
-  nfs::OnError on_error_callback = [this](nfs::Message message) {
-                                      this->OnPutErrorHandler<Data>(message);
-                                   };
-  nfs_.Put<Data>(message, on_error_callback);
+  AdjustAccount<Data>(data_message, reply_functor, is_payable<Data>());
+  nfs_.Put<Data>(data_message,
+      [this](nfs::DataMessage data_msg) { this->OnPutErrorHandler<Data>(data_msg); });
   reply_functor(nfs::ReturnCode(0).Serialise()->string());
 }
 
 template<typename Data>
-void AccountHolder::HandleDeleteMessage(const nfs::Message& message,
-                                            const routing::ReplyFunctor& reply_functor) {
-  if (!detail::NodeRangeCheck(routing_, message.source().node_id)) {
+void AccountHolder::HandleDeleteMessage(const nfs::DataMessage& data_message,
+                                        const routing::ReplyFunctor& reply_functor) {
+  if (!detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
     return;
   }
 
   auto maid_account_it = std::find_if(maid_accounts_.begin(),
                                       maid_accounts_.end(),
-                                      [&message] (const Account& maid_account) {
+                                      [&data_message] (const Account& account) {
                                         return maid_account.maid_name().data.string() ==
-                                               message.source().node_id.string();
+                                               data_message.source().node_id.string();
                                       });
   if (maid_account_it == maid_accounts_.end()) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
     return;
   }
 
-  bool found_data_item(maid_account_it->Has(message.name()));
+  bool found_data_item(maid_account_it->Has(data_message.data().name));
   if (found_data_item) {
     // Send message on to MetadataManager
-    nfs::OnError on_error_callback = [this] (nfs::Message message) {
-                                       this->OnDeleteErrorHandler<Data>(message);
-                                     };
-    nfs_.Delete<Data>(message, on_error_callback);
-    maid_account_it->Remove(message.name());
+    nfs::DataMessage::OnError on_error_callback(
+        [this] (nfs::DataMessage data_msg) { this->OnDeleteErrorHandler<Data>(data_msg); });
+    nfs_.Delete<Data>(data_message, on_error_callback);
+    maid_account_it->Remove(data_message.data().name);
   }
 
   reply_functor(nfs::ReturnCode(found_data_item ? 0 : -1).Serialise()->string());
 }
 
 template<typename Data>
-void AccountHolder::AdjustAccount(const nfs::Message& message,
-                                      const routing::ReplyFunctor& reply_functor,
-                                      std::true_type) {
+void AccountHolder::AdjustAccount(const nfs::DataMessage& data_message,
+                                  const routing::ReplyFunctor& reply_functor,
+                                  std::true_type) {
   auto maid_account_it = std::find_if(maid_accounts_.begin(),
                                       maid_accounts_.end(),
-                                      [&message] (const Account& maid_account) {
+                                      [&data_message] (const Account& account) {
                                         return maid_account.maid_name().data.string() ==
-                                            message.source().node_id.string();
+                                            data_message.source().node_id.string();
                                       });
   if (maid_account_it == maid_accounts_.end()) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
     return;
   }
 
-  if (message.action_type() == nfs::ActionType::kPut) {
+  if (data_message.action_type() == nfs::DataMessage::ActionType::kPut) {
     // TODO(Team): BEFORE_RELEASE Check if we should allow the store based on PMID account
     // information
 //    DataElements data_element(message.name(),
@@ -123,27 +119,21 @@ void AccountHolder::AdjustAccount(const nfs::Message& message,
 //    // data_id, and what shall be done in that case (i.e. reject PUT or update the data_element)
 //    maid_account_it->PushDataElement(data_element);
   } else {
-    assert(message.action_type() == nfs::ActionType::kDelete);
+    assert(data_message.action_type() == nfs::DataMessage::ActionType::kDelete);
     // TODO(Team): BEFORE_RELEASE Handle delete.
   }
 }
 
 template<typename Data>
-void AccountHolder::OnPutErrorHandler(nfs::Message message) {
-  if (detail::NodeRangeCheck(routing_, message.source().node_id))
-    nfs_.Put<Data>(message,
-                   [this] (nfs::Message message) {
-                     this->OnPutErrorHandler<Data>(message);
-                   });
+void AccountHolder::OnPutErrorHandler(nfs::DataMessage data_message) {
+  nfs_.Put<Data>(data_message,
+                 [this] (nfs::DataMessage data_msg) { this->OnPutErrorHandler<Data>(data_msg); });
 }
 
 template<typename Data>
-void AccountHolder::OnDeleteErrorHandler(nfs::Message message) {
-  if (detail::NodeRangeCheck(routing_, message.source().node_id))
-    nfs_.Delete<Data>(message,
-                      [this] (nfs::Message message) {
-                        this->OnDeleteErrorHandler<Data>(message);
-                      });
+void AccountHolder::OnDeleteErrorHandler(nfs::DataMessage data_message) {
+  nfs_.Delete<Data>(data_message,
+       [this] (nfs::DataMessage data_msg) { this->OnDeleteErrorHandler<Data>(data_msg); });
 }
 
 }  // namespace vault

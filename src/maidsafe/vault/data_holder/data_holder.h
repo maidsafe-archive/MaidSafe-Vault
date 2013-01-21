@@ -25,6 +25,8 @@
 
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/data_message.h"
+#include "maidsafe/nfs/generic_message.h"
 
 #include "maidsafe/data_store/data_store.h"
 
@@ -41,11 +43,13 @@ class DataHolder {
   ~DataHolder();
 
   template<typename Data>
-  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleDataMessage(const nfs::DataMessage& data_message,
+                         const routing::ReplyFunctor& reply_functor);
+
   template<typename Data>
-  NonEmptyString GetFromCache(const nfs::Message& message);
+  NonEmptyString GetFromCache(const nfs::DataMessage& data_message);
   template<typename Data>
-  void StoreInCache(const nfs::Message& message);
+  void StoreInCache(const nfs::DataMessage& data_message);
 
   void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
 
@@ -56,13 +60,16 @@ class DataHolder {
 
  private:
   template<typename Data>
-  void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleGetMessage(const nfs::DataMessage& data_message,
+                        const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandlePutMessage(const nfs::DataMessage& data_message,
+                        const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  template<typename Data>
-  void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleDeleteMessage(const nfs::DataMessage& data_message,
+                           const routing::ReplyFunctor& reply_functor);
+//  template<typename Data>
+//  void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   // For short-term cacheable types
   template<typename Data>
   NonEmptyString CacheGet(const typename Data::name_type& name, std::false_type);

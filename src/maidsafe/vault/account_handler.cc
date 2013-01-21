@@ -25,7 +25,7 @@
 
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/pmid_registration.h"
-#include "maidsafe/nfs/post_message.h"
+#include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/vault/types.h"
@@ -44,33 +44,35 @@ class AccountHolder {
                     nfs::PublicKeyGetter& public_key_getter,
                     const boost::filesystem::path& vault_root_dir);
   ~AccountHolder();
-  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleDataMessage(const nfs::DataMessage& data_message,
+                         const routing::ReplyFunctor& reply_functor);
+  void HandleGenericMessage(const nfs::GenericMessage& generic_message,
+                            const routing::ReplyFunctor& reply_functor);
   void HandleSynchronise(const std::vector<routing::NodeInfo>& new_close_nodes);
   void Serialise();
-  void Serialise(const passport::Maid& maid);
-  void Serialise(const passport::Pmid& pmid);
+  void Serialise() const;
+  void Serialise(const passport::Maid& maid) const;
+  void Serialise(const passport::Pmid& pmid) const;
   void RemoveAccount(const passport::Maid& maid);
 
  private:
   template<typename Data>
-  void HandleDataMessage(const nfs::DataMessage& message,
-                         const routing::ReplyFunctor& reply_functor);
-  void HandlePostMessage(const nfs::GenericMessage& message,
-                         const routing::ReplyFunctor& reply_functor);
+  void HandleGetMessage(const nfs::DataMessage& data_message,
+                        const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandleGetMessage(nfs::Message message, const routing::ReplyFunctor& reply_functor);
+  void HandlePutMessage(const nfs::DataMessage& data_message,
+                        const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  template<typename Data>
-  void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleDeleteMessage(const nfs::DataMessage& data_message,
+                           const routing::ReplyFunctor& reply_functor);
   // Handles payable data type(s)
   template<typename Data>
-  void AdjustAccount(const nfs::Message& message,
+  void AdjustAccount(const nfs::DataMessage& data_message,
                      const routing::ReplyFunctor& reply_functor,
                      std::true_type);
   // no-op for non-payable data
   template<typename Data>
-  void AdjustAccount(const nfs::Message& /*message*/,
+  void AdjustAccount(const nfs::DataMessage& /*data_message*/,
                      const routing::ReplyFunctor& /*reply_functor*/,
                      std::false_type) {}
   void SendSyncData();
@@ -82,10 +84,10 @@ class AccountHolder {
 
   // On error handler
   template<typename Data>
-  void OnPutErrorHandler(nfs::Message message);
+  void OnPutErrorHandler(nfs::DataMessage data_message);
   template<typename Data>
-  void OnDeleteErrorHandler(nfs::Message message);
-  void OnPostErrorHandler(nfs::PostMessage message);
+  void OnDeleteErrorHandler(nfs::DataMessage data_message);
+  void OnPostErrorHandler(nfs::GenericMessage generic_message);
 
   routing::Routing& routing_;
   const boost::filesystem::path kRootDir_;

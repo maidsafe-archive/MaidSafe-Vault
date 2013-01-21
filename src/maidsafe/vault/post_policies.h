@@ -36,25 +36,21 @@ class PostSynchronisation {
  public:
   explicit PostSynchronisation(routing::Routing& routing)
       : routing_(routing),
-        source_(nfs::Message::Source(persona, routing.kNodeId())) {}
+        source_(nfs::MessageSource(persona, routing.kNodeId())) {}
 
   explicit PostSynchronisation(routing::Routing& routing, const passport::Pmid& /*signing_pmid*/)
       : routing_(routing),
-        source_(nfs::Message::Source(persona, routing.kNodeId())) {}
+        source_(nfs::MessageSource(persona, routing.kNodeId())) {}
 
-  void PostSyncData(const nfs::PostMessage& message, nfs::OnPostError on_error) {
-    nfs::PostMessage new_message(message.post_action_type(),
-                                 message.destination_persona_type(),
-                                 source_,
-                                 message.name(),
-                                 message.content(),
-                                 maidsafe::rsa::Signature());
-
+  void PostSyncData(const nfs::GenericMessage& generic_message,
+                    nfs::GenericMessage::OnError on_error) {
+    nfs::Message message(nfs::GenericMessage::message_type_identifier,
+                         generic_message.Serialise().data);
     routing::ResponseFunctor callback =
-        [on_error, new_message](const std::vector<std::string>& serialised_messages) {
-          HandlePostResponse(on_error, new_message, serialised_messages);
+        [on_error, generic_message](const std::vector<std::string>& serialised_messages) {
+          HandleGenericResponse(on_error, generic_message, serialised_messages);
         };
-    routing_.Send(NodeId(new_message.name().string()), message.Serialise()->string(),
+    routing_.Send(NodeId(generic_message.name().string()), message.Serialise()->string(),
                   callback, routing::DestinationType::kGroup, false);
   }
 
@@ -63,7 +59,7 @@ class PostSynchronisation {
 
  private:
   routing::Routing& routing_;
-  nfs::Message::Source source_;
+  nfs::MessageSource source_;
 };
 
 }  // namespace vault

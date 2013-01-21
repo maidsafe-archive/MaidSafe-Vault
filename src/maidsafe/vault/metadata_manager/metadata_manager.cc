@@ -25,7 +25,7 @@ MetadataManager::MetadataManager(routing::Routing& routing,
       routing_(routing),
       data_elements_manager_(vault_root_dir),
       nfs_(routing),
-      request_queue_() {}
+      request_accumulator_() {}
 
 MetadataManager::~MetadataManager() {}
 
@@ -34,20 +34,20 @@ void MetadataManager::CloseNodeReplaced(const std::vector<routing::NodeInfo>& /*
 
 void MetadataManager::Serialise() {}
 
-void MetadataManager::HandlePostMessage(const nfs::PostMessage& message,
+void MetadataManager::HandleGenericMessage(const nfs::GenericMessage& generic_message,
                                         const routing::ReplyFunctor& reply_functor) {
   // TODO(Team): Validate message
-  nfs::PostActionType action_type(message.post_action_type());
-  NodeId source_id(message.source().node_id);
+  nfs::GenericMessage::ActionType action_type(generic_message.action_type());
+  NodeId source_id(generic_message.source().node_id);
   switch (action_type) {
-    case nfs::PostActionType::kConnect:
-        if (!HandleNodeUp(message, source_id)) {
+    case nfs::GenericMessage::ActionType::kNodeUp:
+        if (!HandleNodeUp(generic_message, source_id)) {
           LOG(kError) << "Replying with failure on kNodeUp.";
           reply_functor(nfs::ReturnCode(-1).Serialise()->string());
         }
         break;
-    case nfs::PostActionType::kNodeDown:
-        if (!HandleNodeDown(message, source_id)) {
+    case nfs::GenericMessage::ActionType::kNodeDown:
+        if (!HandleNodeDown(generic_message, source_id)) {
           LOG(kError) << "Replying with failure on kNodeDown.";
           reply_functor(nfs::ReturnCode(-1).Serialise()->string());
         }
@@ -58,13 +58,10 @@ void MetadataManager::HandlePostMessage(const nfs::PostMessage& message,
 
 void MetadataManager::SendSyncData() {}
 
-bool MetadataManager::HandleNodeDown(const nfs::PostMessage& message, NodeId& /*node*/) {
-  // TODO(Team): Parse message. Can't be done until the post messages are available.
-  //             The node id inside is the one that should be passed to the MoveNodeToOnline
-
+bool MetadataManager::HandleNodeDown(const nfs::GenericMessage& generic_message, NodeId& /*node*/) {
   try {
     int64_t online_holders(-1);
-    data_elements_manager_.MoveNodeToOffline(message.name(), PmidName(), online_holders);
+    data_elements_manager_.MoveNodeToOffline(generic_message.name(), PmidName(), online_holders);
     if (online_holders < 3) {
       // TODO(Team): Get content. There is no manager available yet.
 
@@ -82,11 +79,9 @@ bool MetadataManager::HandleNodeDown(const nfs::PostMessage& message, NodeId& /*
   return true;
 }
 
-bool MetadataManager::HandleNodeUp(const nfs::PostMessage& message, NodeId& /*node*/) {
-  // TODO(Team): Parse message. Can't be done until the post messages are available.
-  //             The node id inside is the one that should be passed to the MoveNodeToOnline
+bool MetadataManager::HandleNodeUp(const nfs::GenericMessage& generic_message, NodeId& /*node*/) {
   try {
-    data_elements_manager_.MoveNodeToOnline(message.name(), PmidName());
+    data_elements_manager_.MoveNodeToOnline(generic_message.name(), PmidName());
   }
   catch(const std::exception &e) {
     LOG(kError) << "HandleNodeUp - Dropping process after exception: " << e.what();

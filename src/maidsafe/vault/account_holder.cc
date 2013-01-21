@@ -48,12 +48,12 @@ MaidAccountHolder::MaidAccountHolder(const passport::Pmid& pmid,
   }
 }
 
-void MaidAccountHolder::Serialise() {
+void MaidAccountHolder::Serialise() const {
   for (auto& account : maid_accounts_)
     WriteFile(kRootDir_ / account.maid_name().data.string(), account.Serialise().string());
 }
 
-void MaidAccountHolder::Serialise(const passport::Maid& maid) {
+void MaidAccountHolder::Serialise(const passport::Maid& maid) const {
   auto itr = maid_accounts_.begin();
   while (itr != maid_accounts_.end()) {
     if ((*itr).maid_name().data.string() == maid.name().data.string()) {
@@ -131,16 +131,14 @@ MaidAccountHolder::~MaidAccountHolder() {}
 
 void MaidAccountHolder::SendSyncData() {
   for (auto& account : maid_accounts_) {
-    nfs::PostMessage message(nfs::PostActionType::kSynchronise,
-                             nfs::PersonaType::kMaidAccountHolder,
-                             nfs::Message::Source(nfs::PersonaType::kMaidAccountHolder,
-                                                  routing_.kNodeId()),
-                             account.maid_name(),
-                             account.Serialise(),
-                             maidsafe::rsa::Signature());
-    nfs_.PostSyncData(message, [this](nfs::PostMessage message) {
-                                  this->OnPostErrorHandler(message);
-                               });
+    nfs::GenericMessage generic_message(
+        nfs::GenericMessage::ActionType::kSynchronise,
+        nfs::PersonaType::kMaidAccountHolder,
+        nfs::MessageSource(nfs::PersonaType::kMaidAccountHolder, routing_.kNodeId()),
+        account.maid_name().data,
+        account.Serialise());
+    nfs_.PostSyncData(generic_message,
+        [this](nfs::GenericMessage message) { this->OnPostErrorHandler(message); });
   }
 }
 
@@ -149,23 +147,23 @@ bool MaidAccountHolder::HandleReceivedSyncData(const NonEmptyString &serialised_
   return WriteFile(kRootDir_ / maid_account.maid_name().data.string(), serialised_account.string());
 }
 
-void MaidAccountHolder::HandlePostMessage(const nfs::PostMessage& message,
-                                          const routing::ReplyFunctor& reply_functor) {
+void MaidAccountHolder::HandleGenericMessage(const nfs::GenericMessage& generic_message,
+                                             const routing::ReplyFunctor& reply_functor) {
 // HandleNewComer(p_maid);
-  nfs::PostActionType action_type(message.post_action_type());
-  NodeId source_id(message.source().node_id);
+  nfs::GenericMessage::ActionType action_type(generic_message.action_type());
+  NodeId source_id(generic_message.source().node_id);
   switch (action_type) {
-    case nfs::PostActionType::kRegisterPmid:
+    case nfs::GenericMessage::ActionType::kRegisterPmid:
       break;
-    case nfs::PostActionType::kConnect:
+    case nfs::GenericMessage::ActionType::kConnect:
       break;
-    case nfs::PostActionType::kGetPmidSize:
+    case nfs::GenericMessage::ActionType::kGetPmidSize:
       break;
-    case nfs::PostActionType::kNodeDown:
+    case nfs::GenericMessage::ActionType::kNodeDown:
       break;
-    case nfs::PostActionType::kSynchronise:
+    case nfs::GenericMessage::ActionType::kSynchronise:
       if (detail::NodeRangeCheck(routing_, source_id)) {
-        HandleReceivedSyncData(message.content());
+        HandleReceivedSyncData(generic_message.content());
       } else {
         reply_functor(nfs::ReturnCode(-1).Serialise()->string());
       }
@@ -175,7 +173,7 @@ void MaidAccountHolder::HandlePostMessage(const nfs::PostMessage& message,
   }
 }
 
-void MaidAccountHolder::OnPostErrorHandler(nfs::PostMessage /*message*/) {
+void MaidAccountHolder::OnPostErrorHandler(nfs::GenericMessage /*generic_message*/) {
   // TODO(Team): BEFORE_RELEASE implement
 }
 
