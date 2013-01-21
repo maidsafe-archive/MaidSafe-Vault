@@ -79,7 +79,7 @@ TYPED_TEST(DiskStorageTest, BEH_FileHandlers) {
     NonEmptyString file_content(RandomString(RandomUint32() % max_file_size));
     fs::path file_path(root_path / RandomString(num_files));
     files.insert(std::make_pair(file_path, file_content));
-    disk_based_storage.WriteFile(file_path, file_content);
+    disk_based_storage.PutFile(file_path, file_content);
   }
 
   std::future<uint32_t> file_count(disk_based_storage.GetFileCount());
@@ -116,7 +116,7 @@ TYPED_TEST(DiskStorageTest, BEH_FileHandlersWithCorruptingThread) {
     active.Send([file_path] () {
                   maidsafe::WriteFile(file_path, RandomString(100));
                 });
-    disk_based_storage.WriteFile(file_path, file_content);
+    disk_based_storage.PutFile(file_path, file_content);
   }
 
   Active active_delete;
