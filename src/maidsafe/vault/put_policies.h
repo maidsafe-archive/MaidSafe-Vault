@@ -50,12 +50,14 @@ class PutToMetadataManager {
                                data_message.data().version));
     nfs::Message message(nfs::DataMessage::message_type_identifier,
                          new_data_message.Serialise().data);
-    routing::ResponseFunctor callback =
-        [on_error, new_data_message](const std::vector<std::string>& serialised_messages) {
-          nfs::HandlePutResponse<Data>(on_error, new_data_message, serialised_messages);
-        };
-    routing_.Send(NodeId(new_data_message.data().name.string()), message.Serialise()->string(),
-                  callback, routing::DestinationType::kGroup, nfs::IsCacheable<Data>());
+//    routing::ResponseFunctor callback =
+//        [on_error, new_data_message](const std::vector<std::string>& serialised_messages) {
+//          nfs::HandlePutResponse<Data>(on_error, new_data_message, serialised_messages);
+//        };
+    auto futures(std::make_shared<std::vector<std::future<std::string>>>(
+        routing_.SendGroup(NodeId(new_data_message.data().name.string()),
+                           message.Serialise()->string(), nfs::IsCacheable<Data>())));
+    nfs::HandlePutResponse<Data>(on_error, new_data_message, futures);
   }
 
  protected:

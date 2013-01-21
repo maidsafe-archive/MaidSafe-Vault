@@ -50,12 +50,12 @@ class DeleteFromMetadataManager {
                                data_message.data().version));
     nfs::Message message(nfs::DataMessage::message_type_identifier,
                          new_data_message.Serialise().data);
-    routing::ResponseFunctor callback =
-        [on_error, new_data_message](const std::vector<std::string>& serialised_messages) {
-          nfs::HandleDeleteResponse<Data>(on_error, new_data_message, serialised_messages);
-        };
+//    routing::ResponseFunctor callback =
+//        [on_error, new_data_message](const std::vector<std::string>& serialised_messages) {
+//          nfs::HandleDeleteResponse<Data>(on_error, new_data_message, serialised_messages);
+//        };
     routing_.Send(NodeId(new_data_message.data().name.string()), message.Serialise()->string(),
-                  callback, routing::DestinationType::kGroup, nfs::IsCacheable<Data>());
+                  nfs::IsCacheable<Data>());
   }
 
  protected:
