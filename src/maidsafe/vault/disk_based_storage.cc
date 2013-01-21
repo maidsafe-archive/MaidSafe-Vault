@@ -240,10 +240,12 @@ void DiskBasedStorage::AddToLatestFile(const protobuf::DiskStoredElement& elemen
     file_hashes_.push_back(kEmptyFileHash);
   }
 
-  WriteFile(latest_file_path, new_content.string());
-  boost::filesystem::rename(latest_file_path, d::GetFilePath(kRoot_,
-                                                             file_hashes_.at(latest_file_index),
-                                                             latest_file_index));
+  boost::filesystem::path new_path(d::GetFilePath(kRoot_,
+                                                  file_hashes_.at(latest_file_index),
+                                                  latest_file_index));
+  WriteFile(new_path, new_content.string());
+  if ((!latest_file_path.empty()) && (latest_file_path != new_path))
+    boost::filesystem::remove(latest_file_path);
 }
 
 void DiskBasedStorage::SearchForAndDeleteEntry(const protobuf::DiskStoredElement& element) {
@@ -265,7 +267,7 @@ void DiskBasedStorage::SearchForEntryAndExecuteOperation(const protobuf::DiskSto
   NonEmptyString file_content;
   for (auto it(file_hashes_.rbegin()); it != file_hashes_.rend(); ++it, --file_index) {
     ReadAndParseFile(*it, file_index, disk_file, file_path, file_content);
-    for (int n(disk_file.disk_element_size()); n != -1; --n) {
+    for (int n(disk_file.disk_element_size() - 1); n != -1; --n) {
       if (d::MatchingDiskElements(disk_file.disk_element(n), element)) {
         changer.Execute(disk_file, file_index);
         UpdateFileAfterModification(it, file_index, disk_file, file_path);
