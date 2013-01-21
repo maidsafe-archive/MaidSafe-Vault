@@ -48,47 +48,7 @@ source_group("Vault Source Files" FILES ${VaultSources})
 source_group("Vault Header Files" FILES ${VaultHeaders})
 list(REMOVE_ITEM VaultSources ${VaultSourcesRootDir}/vault_main.cc)
 
-file(GLOB VaultDataHolderSources ${VaultSourcesRootDir}/data_holder/*.cc)
-file(GLOB VaultDataHolderHeaders ${VaultSourcesRootDir}/data_holder/*.h)
-list(REMOVE_ITEM VaultDataHolderSources ${VaultProtos})
-list(REMOVE_ITEM VaultDataHolderHeaders ${VaultProtos})
-source_group("Data Holder Source Files" FILES ${VaultDataHolderSources})
-source_group("Data Holder Header Files" FILES ${VaultDataHolderHeaders})
-
-file(GLOB VaultMaidAccountHolderSources ${VaultSourcesRootDir}/maid_account_holder/*.cc)
-file(GLOB VaultMaidAccountHolderHeaders ${VaultSourcesRootDir}/maid_account_holder/*.h)
-list(REMOVE_ITEM VaultMaidAccountHolderSources ${VaultProtos})
-list(REMOVE_ITEM VaultMaidAccountHolderHeaders ${VaultProtos})
-source_group("MAID Account Holder Source Files" FILES ${VaultMaidAccountHolderSources})
-source_group("MAID Account Holder Header Files" FILES ${VaultMaidAccountHolderHeaders})
-
-file(GLOB VaultMetadataManagerSources ${VaultSourcesRootDir}/metadata_manager/*.cc)
-file(GLOB VaultMetadataManagerHeaders ${VaultSourcesRootDir}/metadata_manager/*.h)
-list(REMOVE_ITEM VaultMetadataManagerSources ${VaultProtos})
-list(REMOVE_ITEM VaultMetadataManagerHeaders ${VaultProtos})
-source_group("Metadata Manager Source Files" FILES ${VaultMetadataManagerSources})
-source_group("Metadata Manager Header Files" FILES ${VaultMetadataManagerHeaders})
-
-file(GLOB VaultMpidAccountHolderSources ${VaultSourcesRootDir}/mpid_account_holder/*.cc)
-file(GLOB VaultMpidAccountHolderHeaders ${VaultSourcesRootDir}/mpid_account_holder/*.h)
-list(REMOVE_ITEM VaultMpidAccountHolderSources ${VaultProtos})
-list(REMOVE_ITEM VaultMpidAccountHolderHeaders ${VaultProtos})
-source_group("MPID Account Holder Source Files" FILES ${VaultMpidAccountHolderSources})
-source_group("MPID Account Holder Header Files" FILES ${VaultMpidAccountHolderHeaders})
-
-file(GLOB VaultPmidAccountHolderSources ${VaultSourcesRootDir}/pmid_account_holder/*.cc)
-file(GLOB VaultPmidAccountHolderHeaders ${VaultSourcesRootDir}/pmid_account_holder/*.h)
-list(REMOVE_ITEM VaultPmidAccountHolderSources ${VaultProtos})
-list(REMOVE_ITEM VaultPmidAccountHolderHeaders ${VaultProtos})
-source_group("PMID Account Holder Source Files" FILES ${VaultPmidAccountHolderSources})
-source_group("PMID Account Holder Header Files" FILES ${VaultPmidAccountHolderHeaders})
-
-set(VaultAllFiles ${VaultSources} ${VaultHeaders}
-                  ${VaultDataHolderSources} ${VaultDataHolderHeaders}
-                  ${VaultMaidAccountHolderSources} ${VaultMaidAccountHolderHeaders}
-                  ${VaultMetadataManagerSources} ${VaultMetadataManagerHeaders}
-                  ${VaultMpidAccountHolderSources} ${VaultMpidAccountHolderHeaders}
-                  ${VaultPmidAccountHolderSources} ${VaultPmidAccountHolderHeaders})
+set(VaultAllFiles ${VaultSources} ${VaultHeaders})
 set(StyleAllFiles ${VaultAllFiles})
 set(VaultAllFiles ${VaultAllFiles} ${VaultProtos})
 

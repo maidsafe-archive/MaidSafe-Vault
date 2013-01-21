@@ -1,5 +1,5 @@
 package maidsafe.vault.protobuf;
-import "maidsafe/vault/pmid_account_holder/pmid_account.proto";
+import "maidsafe/vault/pmid_account.proto";
 option optimize_for = LITE_RUNTIME;
 
 message PmidTotals {

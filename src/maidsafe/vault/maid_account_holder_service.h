@@ -9,23 +9,22 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_H_
-#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_H_
+#ifndef MAIDSAFE_VAULT_SERVICE_H_
+#define MAIDSAFE_VAULT_SERVICE_H_
 
-#include <map>
-#include <memory>
-#include <string>
+#include <type_traits>
 #include <vector>
-#include <fstream>
 
-#include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
+
+#include "maidsafe/common/types.h"
+
+#include "maidsafe/passport/types.h"
 
 #include "maidsafe/routing/api_config.h"
 
-#include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/pmid_registration.h"
-#include "maidsafe/nfs/post_message.h"
+#include "maidsafe/nfs/data_message.h"
+#include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/vault/types.h"
@@ -35,44 +34,42 @@ namespace maidsafe {
 
 namespace vault {
 
-class Account;
-template <typename Persona>
-class AccountHolder {
+template<typename Account>
+class AccountHandler;
+
+template<typename Account, typename Nfs>
+class Service {
  public:
-  AccountHolder(const passport::Pmid& pmid,
-                    routing::Routing& routing,
-                    nfs::PublicKeyGetter& public_key_getter,
-                    const boost::filesystem::path& vault_root_dir);
-  ~AccountHolder();
-  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  Service(const passport::Pmid& pmid,
+          routing::Routing& routing,
+          nfs::PublicKeyGetter& public_key_getter,
+          const boost::filesystem::path& vault_root_dir);
+  ~Service();
+  template<typename Data>
+  void HandleDataMessage(const nfs::DataMessage& data_message,
+                         const routing::ReplyFunctor& reply_functor);
+  void HandleGenericMessage(const nfs::GenericMessage& generic_message,
+                            const routing::ReplyFunctor& reply_functor);
   void HandleSynchronise(const std::vector<routing::NodeInfo>& new_close_nodes);
-  void Serialise();
-  void Serialise(const passport::Maid& maid);
-  void Serialise(const passport::Pmid& pmid);
-  void RemoveAccount(const passport::Maid& maid);
 
  private:
   template<typename Data>
-  void HandleDataMessage(const nfs::DataMessage& message,
-                         const routing::ReplyFunctor& reply_functor);
-  void HandlePostMessage(const nfs::GenericMessage& message,
-                         const routing::ReplyFunctor& reply_functor);
+  void HandleGetMessage(const nfs::DataMessage& data_message,
+                        const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandleGetMessage(nfs::Message message, const routing::ReplyFunctor& reply_functor);
+  void HandlePutMessage(const nfs::DataMessage& data_message,
+                        const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleDeleteMessage(const nfs::DataMessage& data_message,
+                           const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  // Handles payable data type(s)
-  template<typename Data>
-  void AdjustAccount(const nfs::Message& message,
+  void AdjustAccount(const nfs::DataMessage& data_message,
                      const routing::ReplyFunctor& reply_functor,
                      std::true_type);
-  // no-op for non-payable data
   template<typename Data>
-  void AdjustAccount(const nfs::Message& /*message*/,
-                     const routing::ReplyFunctor& /*reply_functor*/,
-                     std::false_type) {}
+  void AdjustAccount(const nfs::DataMessage& data_message,
+                     const routing::ReplyFunctor& reply_functor,
+                     std::false_type);
   void SendSyncData();
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
 //   bool HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid);
@@ -82,22 +79,22 @@ class AccountHolder {
 
   // On error handler
   template<typename Data>
-  void OnPutErrorHandler(nfs::Message message);
+  void OnPutErrorHandler(nfs::DataMessage data_message);
   template<typename Data>
-  void OnDeleteErrorHandler(nfs::Message message);
-  void OnPostErrorHandler(nfs::PostMessage message);
+  void OnDeleteErrorHandler(nfs::DataMessage data_message);
+  void OnGenericErrorHandler(nfs::GenericMessage generic_message);
 
   routing::Routing& routing_;
   const boost::filesystem::path kRootDir_;
-  AccountHolderNfs nfs_;
+  Nfs nfs_;
   nfs::PublicKeyGetter& public_key_getter_;
-  std::vector<Account> maid_accounts_;
+  AccountHandler<Account> account_handler_;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/maid_account_holder/maid_account_holder-inl.h"
+#include "maidsafe/vault/service-inl.h"
 
-#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_H_
+#endif  // MAIDSAFE_VAULT_SERVICE_H_

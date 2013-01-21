@@ -42,10 +42,11 @@ class MaidAccount {
                               int32_t version,
                               const structure& serialised_value,
                               std::function<void(std::string&)> modify_functor);
+  template<typename Data>
   void DeleteDataElement(const typename Data::name_type& name,
                          int32_t version);
 
-  MaidName maid_name() const { return kMaidName_; }
+  MaidName name() const { return kMaidName_; }
 
  private:
   protobuf::MaidAccount proto_maid_account_;

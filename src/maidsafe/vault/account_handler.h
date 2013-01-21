@@ -13,51 +13,64 @@
 #define MAIDSAFE_VAULT_ACCOUNT_HANDLER_H_
 
 #include <mutex>
+#include <string>
 #include <vector>
+
+#include "boost/filesystem/path.hpp"
+
+#include "maidsafe/common/types.h"
+
+#include "maidsafe/passport/types.h"
+
+#include "maidsafe/routing/api_config.h"
+
+#include "maidsafe/nfs/public_key_getter.h"
+
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-template <typename AccountType, typename ModifyPolicy>
+template<typename Account, typename ModifyPolicy>
 class AccountHandler : public ModifyPolicy {
  public:
   AccountHandler(const passport::Pmid& pmid,
-                routing::Routing& routing,
-                nfs::PublicKeyGetter& public_key_getter,
-                const boost::filesystem::path& vault_root_dir) 
-      : ModifyPolicy(&mutex_, &accounts_),
-        mutex_(), accounts_() {};
-  // TODO Check these references are valid and usable in the 'inherited' object
-  ~AccountHandler();
-  bool AddAccount(const AccountType& account);
-  bool DeleteAccount(const typename AccountType::name_type& account);
+                 routing::Routing& routing,
+                 nfs::PublicKeyGetter& public_key_getter,
+                 const boost::filesystem::path& vault_root_dir);
+  bool AddAccount(const Account& account);
+  bool DeleteAccount(const typename Account::name_type& account_name);
   // modify here will use the policy class ModifyPolicy members !!
-  AccountType GetAccount(const typename AccountType::name_type& account) const;
-  std::vector<AccountType::name_type> GetAccountNames() const;
+  Account GetAccount(const typename Account::name_type& account_name) const;
+  std::vector<Account::name_type> GetAccountNames() const;
 
-  template <typename Data>
-  bool DeleteDataElement(const typename AccountType::name_type& account,
-                         const typename Data::name_type& name,
-                         int32_t version);
+  template<typename Data>
+  bool DeleteDataElement(const typename Account::name_type& account_name,
+                         const typename Data::name_type& data_name,
+                         int32_t data_version);
   // This will atomically attempt to modify then add if not found
   // a nullptr can be passed to make this add only
-  template <typename Data>
-  bool ModifyOrAddDataElement(const typename AccountType::name_type& account,
-                              const typename Data::name_type& name,
-                              int32_t version,
-                              const AccountType::structure account_structure,
+  template<typename Data>
+  bool ModifyOrAddDataElement(const typename Account::name_type& account_name,
+                              const typename Data::name_type& data_name,
+                              int32_t data_version,
+                              const Account::structure& account_structure,
                               std::function<void(std::string&)> modify_functor);
  private:
+  std::vector<Account>::iterator FindAccount(const typename Account::name_type& account_name);
+  std::vector<Account>::const_iterator FindAccount(
+      const typename Account::name_type& account_name) const;
+
   mutable std::mutex mutex_;
-  std::vector<AccountType> accounts_;
+  std::vector<Account> accounts_;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/maid_account_holder/maid_account_holder-inl.h"
+#include "maidsafe/vault/account_handler-inl.h"
 
 #endif  // MAIDSAFE_VAULT_ACCOUNT_HANDLER_H_

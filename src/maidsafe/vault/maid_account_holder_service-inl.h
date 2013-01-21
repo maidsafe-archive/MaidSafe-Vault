@@ -45,13 +45,13 @@ void MaidAccountHolder::HandleDataMessage(const nfs::DataMessage& data_message,
 }
 
 template<typename Data>
-void AccountHolder::HandleGetMessage(const nfs::DataMessage& /*data_message*/,
+void Service::HandleGetMessage(const nfs::DataMessage& /*data_message*/,
                                      const routing::ReplyFunctor& /*reply_functor*/) {
 // no op
 }
 
 template<typename Data>
-void AccountHolder::HandlePutMessage(const nfs::DataMessage& data_message,
+void Service::HandlePutMessage(const nfs::DataMessage& data_message,
                                      const routing::ReplyFunctor& reply_functor) {
   if (!detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
@@ -65,7 +65,7 @@ void AccountHolder::HandlePutMessage(const nfs::DataMessage& data_message,
 }
 
 template<typename Data>
-void AccountHolder::HandleDeleteMessage(const nfs::DataMessage& data_message,
+void Service::HandleDeleteMessage(const nfs::DataMessage& data_message,
                                         const routing::ReplyFunctor& reply_functor) {
   if (!detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
@@ -96,7 +96,7 @@ void AccountHolder::HandleDeleteMessage(const nfs::DataMessage& data_message,
 }
 
 template<typename Data>
-void AccountHolder::AdjustAccount(const nfs::DataMessage& data_message,
+void Service::AdjustAccount(const nfs::DataMessage& data_message,
                                   const routing::ReplyFunctor& reply_functor,
                                   std::true_type) {
   auto maid_account_it = std::find_if(maid_accounts_.begin(),
@@ -125,13 +125,13 @@ void AccountHolder::AdjustAccount(const nfs::DataMessage& data_message,
 }
 
 template<typename Data>
-void AccountHolder::OnPutErrorHandler(nfs::DataMessage data_message) {
+void Service::OnPutErrorHandler(nfs::DataMessage data_message) {
   nfs_.Put<Data>(data_message,
                  [this] (nfs::DataMessage data_msg) { this->OnPutErrorHandler<Data>(data_msg); });
 }
 
 template<typename Data>
-void AccountHolder::OnDeleteErrorHandler(nfs::DataMessage data_message) {
+void Service::OnDeleteErrorHandler(nfs::DataMessage data_message) {
   nfs_.Delete<Data>(data_message,
        [this] (nfs::DataMessage data_msg) { this->OnDeleteErrorHandler<Data>(data_msg); });
 }
