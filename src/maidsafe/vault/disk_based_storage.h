@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <map>
 
 #include "boost/filesystem/path.hpp"
 
@@ -33,6 +34,7 @@ namespace vault {
 class DiskBasedStorage {
  public:
   typedef std::vector<boost::filesystem::path> PathVector;
+  typedef std::map<std::string, std::pair<int32_t, std::string> > OrderingMap;
   // Initialise with root.leaf() == MAID name / PMID name, etc.
   explicit DiskBasedStorage(const boost::filesystem::path& root);
 
@@ -53,7 +55,7 @@ class DiskBasedStorage {
   std::future<uint32_t> GetFileCount() const;
   std::future<PathVector> GetFileNames() const;  // File names are index no. + hash of contents
   std::future<NonEmptyString> GetFile(const boost::filesystem::path& path) const;
-  void WriteFile(const boost::filesystem::path& path, const NonEmptyString& content);
+  void PutFile(const boost::filesystem::path& path, const NonEmptyString& content);
 
  private:
   const boost::filesystem::path kRoot_;
@@ -78,7 +80,7 @@ class DiskBasedStorage {
                 const std::function<void(std::string&)>& functor,
                 const std::string& serialised_value);
   void DoGetFileNames(std::shared_ptr<std::promise<PathVector> > promise) const;
-  void DoWriteFile(const boost::filesystem::path& path, const NonEmptyString& content);
+  void DoPutFile(const boost::filesystem::path& path, const NonEmptyString& content);
 
   void AddToLatestFile(const protobuf::DiskStoredElement& element);
   void SearchForAndDeleteEntry(const protobuf::DiskStoredElement& element);
@@ -95,6 +97,13 @@ class DiskBasedStorage {
                                    size_t file_index,
                                    protobuf::DiskStoredFile& disk_file,
                                    boost::filesystem::path& file_path);
+  void MergeFilesAfterAlteration(size_t file_index);
+  void AddToDiskFile(const boost::filesystem::path& previous_path,
+                     protobuf::DiskStoredFile& previous_file_disk,
+                     OrderingMap::reverse_iterator& r_it,
+                     size_t file_index,
+                     size_t begin,
+                     size_t end);
 };
 
 }  // namespace vault
