@@ -59,8 +59,7 @@ class DiskBasedStorage {
  private:
   const boost::filesystem::path kRoot_;
   mutable Active active_;
-  typedef std::pair<uint32_t, std::string> FileData;
-  std::vector<FileData> file_data_;
+  std::vector<std::string> file_hashes_;
   class Changer;
 
   void TraverseAndVerifyFiles(const boost::filesystem::path& root);
@@ -92,7 +91,7 @@ class DiskBasedStorage {
                         protobuf::DiskStoredFile& disk_file,
                         boost::filesystem::path& file_path,
                         NonEmptyString& file_content) const;
-  void UpdateFileAfterModification(std::vector<FileData>::reverse_iterator& it,
+  void UpdateFileAfterModification(std::vector<std::string>::reverse_iterator& it,
                                    size_t file_index,
                                    protobuf::DiskStoredFile& disk_file,
                                    boost::filesystem::path& file_path);
