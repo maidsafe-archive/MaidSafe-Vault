@@ -86,7 +86,8 @@ class DiskBasedStorage {
   void SearchForAndModifyEntry(const protobuf::DiskStoredElement& element,
                                const std::function<void(std::string&)>& functor);
   void SearchForEntryAndExecuteOperation(const protobuf::DiskStoredElement& element,
-                                         Changer& changer);
+                                         Changer& changer,
+                                         bool reorder);
   void ReadAndParseFile(const std::string& hash,
                         size_t file_index,
                         protobuf::DiskStoredFile& disk_file,
@@ -95,8 +96,9 @@ class DiskBasedStorage {
   void UpdateFileAfterModification(std::vector<std::string>::reverse_iterator& it,
                                    size_t file_index,
                                    protobuf::DiskStoredFile& disk_file,
-                                   boost::filesystem::path& file_path);
-  void MergeFilesAfterAlteration(size_t file_index);
+                                   boost::filesystem::path& file_path,
+                                   bool reorder);
+  void MergeFilesAfterAlteration(size_t current_index);
   void AddToDiskFile(const boost::filesystem::path& previous_path,
                      protobuf::DiskStoredFile& previous_file_disk,
                      OrderingMap::reverse_iterator& r_it,
