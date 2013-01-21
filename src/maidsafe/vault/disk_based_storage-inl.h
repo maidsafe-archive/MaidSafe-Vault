@@ -12,6 +12,8 @@
 #ifndef MAIDSAFE_VAULT_DISK_BASED_STORAGE_INL_H_
 #define MAIDSAFE_VAULT_DISK_BASED_STORAGE_INL_H_
 
+#include <string>
+
 #include "maidsafe/vault/disk_based_storage_messages_pb.h"
 
 namespace maidsafe {
@@ -60,6 +62,7 @@ void DiskBasedStorage::Modify(const typename Data::name_type& name,
                               int32_t version,
                               const std::function<void(std::string&)>& functor,
                               const std::string& serialised_value) {
+  assert(functor && "Null functor not allowed!");
   active_.Send([name, version, functor, serialised_value, this] () {
                  this->DoModify<Data>(name, version, functor, serialised_value);
                });
