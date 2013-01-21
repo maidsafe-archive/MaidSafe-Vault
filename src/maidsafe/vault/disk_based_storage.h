@@ -36,13 +36,13 @@ class DiskBasedStorage {
 
   // Element handling
   template<typename Data>
-  void Store(typename const Data::name_type& name,
+  void Store(const typename Data::name_type& name,
              int32_t version,
              const std::string& serialised_value);
   template<typename Data>
-  void Delete(typename const Data::name_type& name, int32_t version);
+  void Delete(const typename Data::name_type& name, int32_t version);
   template<typename Data>
-  void Modify(typename const Data::name_type& name,
+  void Modify(const typename Data::name_type& name,
               int32_t version,
               std::function<void(std::string&)> functor);
 
