@@ -28,7 +28,7 @@
 #include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/vault/types.h"
-
+#include "maidsafe/vault/maid_account_holder/maid_account_handler.h"
 
 namespace maidsafe {
 
@@ -88,7 +88,8 @@ class Service {
   const boost::filesystem::path kRootDir_;
   Nfs nfs_;
   nfs::PublicKeyGetter& public_key_getter_;
-  AccountHandler<Account> account_handler_;
+//  std::vector<MaidAccount> maid_accounts_;
+  MaidAccountHandler maid_account_handler_;
 };
 
 }  // namespace vault

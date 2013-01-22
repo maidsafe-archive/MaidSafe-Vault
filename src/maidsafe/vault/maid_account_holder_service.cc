@@ -11,9 +11,6 @@
 
 #include "maidsafe/vault/maid_account_holder/maid_account_holder.h"
 
-#include "maidsafe/vault/maid_account_holder/maid_account.h"
-
-
 namespace maidsafe {
 
 namespace vault {
@@ -26,7 +23,7 @@ MaidAccountHolder::MaidAccountHolder(const passport::Pmid& pmid,
       kRootDir_(vault_root_dir / "maids"),
       nfs_(routing, pmid),
       public_key_getter_(public_key_getter),
-      maid_accounts_() {
+      maid_account_handler_(vault_root_dir) {
   boost::filesystem::exists(kRootDir_) || boost::filesystem::create_directory(kRootDir_);
 
   boost::filesystem::directory_iterator end_iter;
@@ -38,42 +35,42 @@ MaidAccountHolder::MaidAccountHolder(const passport::Pmid& pmid,
     std::string account_content;
     if (!ReadFile(*dir_iter, &account_content))
       continue;
-    maidsafe::vault::MaidAccount maid_account((NonEmptyString(account_content)));
-    if (dir_iter->path().filename().string() == maid_account.maid_name()->string()) {
+//    maidsafe::vault::MaidAccount maid_account((NonEmptyString(account_content)));
+//    if (dir_iter->path().filename().string() == maid_account.maid_name()->string()) {
 //      maid_accounts_.push_back(maid_account);
-    } else {
-      if (!boost::filesystem::remove(*dir_iter))  // can throw!
-        LOG(kError) << "Failed to remove corrupt file " << *dir_iter;
-    }
+//    } else {
+//      if (!boost::filesystem::remove(*dir_iter))  // can throw!
+//        LOG(kError) << "Failed to remove corrupt file " << *dir_iter;
+//    }
   }
 }
 
 void MaidAccountHolder::Serialise() const {
-  for (auto& account : maid_accounts_)
-    WriteFile(kRootDir_ / account.maid_name().data.string(), account.Serialise().string());
+//  for (auto& account : maid_accounts_)
+//    WriteFile(kRootDir_ / account.maid_name().data.string(), account.Serialise().string());
 }
 
-void MaidAccountHolder::Serialise(const passport::Maid& maid) const {
-  auto itr = maid_accounts_.begin();
-  while (itr != maid_accounts_.end()) {
-    if ((*itr).maid_name().data.string() == maid.name().data.string()) {
-      WriteFile(kRootDir_ / (*itr).maid_name().data.string(), (*itr).Serialise().string());
-      break;
-    }
-    ++itr;
-  }
+void MaidAccountHolder::Serialise(const passport::Maid& /*maid*/) const {
+//  auto itr = maid_accounts_.begin();
+//  while (itr != maid_accounts_.end()) {
+//    if ((*itr).maid_name().data.string() == maid.name().data.string()) {
+//      WriteFile(kRootDir_ / (*itr).maid_name().data.string(), (*itr).Serialise().string());
+//      break;
+//    }
+//    ++itr;
+//  }
 }
 
-void MaidAccountHolder::RemoveAccount(const passport::Maid& maid) {
-  auto itr = maid_accounts_.begin();
-  while (itr != maid_accounts_.end()) {
-    if ((*itr).maid_name().data.string() == maid.name().data.string()) {
-      boost::filesystem::remove(kRootDir_ / (*itr).maid_name().data.string());
-      break;
-    }
-    ++itr;
-  }
-}
+// void MaidAccountHolder::RemoveAccount(const passport::Maid& maid) {
+//  auto itr = maid_accounts_.begin();
+//  while (itr != maid_accounts_.end()) {
+//    if ((*itr).maid_name().data.string() == maid.name().data.string()) {
+//      boost::filesystem::remove(kRootDir_ / (*itr).maid_name().data.string());
+//      break;
+//    }
+//    ++itr;
+//  }
+// }
 
 // bool MaidAccountHolder::HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid) {
 //   std::promise<bool> result_promise;
@@ -130,21 +127,23 @@ MaidAccountHolder::~MaidAccountHolder() {}
 // }
 
 void MaidAccountHolder::SendSyncData() {
-  for (auto& account : maid_accounts_) {
-    nfs::GenericMessage generic_message(
-        nfs::GenericMessage::ActionType::kSynchronise,
-        nfs::PersonaType::kMaidAccountHolder,
-        nfs::MessageSource(nfs::PersonaType::kMaidAccountHolder, routing_.kNodeId()),
-        account.maid_name().data,
-        account.Serialise());
-    nfs_.PostSyncData(generic_message,
-        [this](nfs::GenericMessage message) { this->OnPostErrorHandler(message); });
-  }
+//  for (auto& account : maid_accounts_) {
+//    nfs::GenericMessage generic_message(
+//        nfs::GenericMessage::ActionType::kSynchronise,
+//        nfs::PersonaType::kMaidAccountHolder,
+//        nfs::MessageSource(nfs::PersonaType::kMaidAccountHolder, routing_.kNodeId()),
+//        account.maid_name().data,
+//        account.Serialise());
+//    nfs_.PostSyncData(generic_message,
+//        [this](nfs::GenericMessage message) { this->OnPostErrorHandler(message); });
+//  }
 }
 
-bool MaidAccountHolder::HandleReceivedSyncData(const NonEmptyString &serialised_account) {
-  MaidAccount maid_account(serialised_account);
-  return WriteFile(kRootDir_ / maid_account.maid_name().data.string(), serialised_account.string());
+bool MaidAccountHolder::HandleReceivedSyncData(const NonEmptyString &/*serialised_account*/) {
+//  MaidAccount maid_account(serialised_account);
+//  return WriteFile(kRootDir_ / maid_account.maid_name().data.string(),
+//                   serialised_account.string());
+  return false;
 }
 
 void MaidAccountHolder::HandleGenericMessage(const nfs::GenericMessage& generic_message,

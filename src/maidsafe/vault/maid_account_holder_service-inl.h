@@ -18,7 +18,6 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/vault/maid_account_holder/maid_account.h"
 #include "maidsafe/vault/utils.h"
 
 
@@ -72,43 +71,43 @@ void Service::HandleDeleteMessage(const nfs::DataMessage& data_message,
     return;
   }
 
-  auto maid_account_it = std::find_if(maid_accounts_.begin(),
-                                      maid_accounts_.end(),
-                                      [&data_message] (const Account& account) {
-                                        return maid_account.maid_name().data.string() ==
-                                               data_message.source().node_id.string();
-                                      });
-  if (maid_account_it == maid_accounts_.end()) {
-    reply_functor(nfs::ReturnCode(-1).Serialise()->string());
-    return;
-  }
+//  auto maid_account_it = std::find_if(maid_accounts_.begin(),
+//                                      maid_accounts_.end(),
+//                                      [&data_message] (const MaidAccount& maid_account) {
+//                                        return maid_account.maid_name().data.string() ==
+//                                               data_message.source().node_id.string();
+//                                      });
+//  if (maid_account_it == maid_accounts_.end()) {
+//    reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+//    return;
+//  }
 
-  bool found_data_item(maid_account_it->Has(data_message.data().name));
-  if (found_data_item) {
-    // Send message on to MetadataManager
-    nfs::DataMessage::OnError on_error_callback(
-        [this] (nfs::DataMessage data_msg) { this->OnDeleteErrorHandler<Data>(data_msg); });
-    nfs_.Delete<Data>(data_message, on_error_callback);
-    maid_account_it->Remove(data_message.data().name);
-  }
+//  bool found_data_item(maid_account_it->Has(data_message.data().name));
+//  if (found_data_item) {
+//    // Send message on to MetadataManager
+//    nfs::DataMessage::OnError on_error_callback(
+//        [this] (nfs::DataMessage data_msg) { this->OnDeleteErrorHandler<Data>(data_msg); });
+//    nfs_.Delete<Data>(data_message, on_error_callback);
+//    maid_account_it->Remove(data_message.data().name);
+//  }
 
-  reply_functor(nfs::ReturnCode(found_data_item ? 0 : -1).Serialise()->string());
+//  reply_functor(nfs::ReturnCode(found_data_item ? 0 : -1).Serialise()->string());
 }
 
 template<typename Data>
-void Service::AdjustAccount(const nfs::DataMessage& data_message,
-                                  const routing::ReplyFunctor& reply_functor,
-                                  std::true_type) {
-  auto maid_account_it = std::find_if(maid_accounts_.begin(),
-                                      maid_accounts_.end(),
-                                      [&data_message] (const Account& account) {
-                                        return maid_account.maid_name().data.string() ==
-                                            data_message.source().node_id.string();
-                                      });
-  if (maid_account_it == maid_accounts_.end()) {
-    reply_functor(nfs::ReturnCode(-1).Serialise()->string());
-    return;
-  }
+void MaidAccountHolder::AdjustAccount(const nfs::DataMessage& data_message,
+                                      const routing::ReplyFunctor& /*reply_functor*/,
+                                      std::true_type) {
+//  auto maid_account_it = std::find_if(maid_accounts_.begin(),
+//                                      maid_accounts_.end(),
+//                                      [&data_message] (const MaidAccount& maid_account) {
+//                                        return maid_account.maid_name().data.string() ==
+//                                            data_message.source().node_id.string();
+//                                      });
+//  if (maid_account_it == maid_accounts_.end()) {
+//    reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+//    return;
+//  }
 
   if (data_message.action_type() == nfs::DataMessage::ActionType::kPut) {
     // TODO(Team): BEFORE_RELEASE Check if we should allow the store based on PMID account
