@@ -60,11 +60,11 @@ class DataHolderTest : public testing::Test {
 TYPED_TEST_CASE_P(DataHolderTest);
 
 TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
-  nfs::MessageSource source(nfs::PersonaType::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+  nfs::MessageSource source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   NonEmptyString content(RandomAlphaNumericString(256));
   nfs::DataMessage::Data data(maidsafe::detail::DataTagValue::kAnmaidValue,
                               Identity(RandomString(NodeId::kSize)), content, RandomInt32());
-  nfs::DataMessage data_message(nfs::DataMessage::ActionType::kPut, nfs::PersonaType::kDataHolder,
+  nfs::DataMessage data_message(nfs::DataMessage::Action::kPut, nfs::Persona::kDataHolder,
                                 source, data);
 
   std::string retrieved;
@@ -77,11 +77,11 @@ TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
 }
 
 TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
-  nfs::MessageSource source(nfs::PersonaType::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+  nfs::MessageSource source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   const NonEmptyString content(RandomAlphaNumericString(256));
   nfs::DataMessage::Data data(maidsafe::detail::DataTagValue::kAnmaidValue,
                               Identity(RandomString(NodeId::kSize)), content, RandomInt32());
-  nfs::DataMessage data_message(nfs::DataMessage::ActionType::kGet, nfs::PersonaType::kDataHolder,
+  nfs::DataMessage data_message(nfs::DataMessage::Action::kGet, nfs::Persona::kDataHolder,
                                 source, data);
   std::string retrieved;
   this->HandleGetMessage(data_message,
@@ -92,11 +92,11 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
 }
 
 TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
-  nfs::MessageSource source(nfs::PersonaType::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+  nfs::MessageSource source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   NonEmptyString content(RandomAlphaNumericString(256));
   nfs::DataMessage::Data data(maidsafe::detail::DataTagValue::kAnmaidValue,
                               Identity(RandomString(NodeId::kSize)), content, RandomInt32());
-  nfs::DataMessage data_message(nfs::DataMessage::ActionType::kPut, nfs::PersonaType::kDataHolder,
+  nfs::DataMessage data_message(nfs::DataMessage::Action::kPut, nfs::Persona::kDataHolder,
                                 source, data);
 
   std::string retrieved;
@@ -124,12 +124,12 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
   std::vector<std::future<void>> future_puts, future_deletes, future_gets;
 
   for (uint32_t i = 0; i != events; ++i) {
-    nfs::MessageSource source(nfs::PersonaType::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+    nfs::MessageSource source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
     NonEmptyString content(RandomAlphaNumericString(256));
     std::string retrieved;
     nfs::DataMessage::Data data(maidsafe::detail::DataTagValue::kAnmaidValue,
                                 Identity(RandomString(NodeId::kSize)), content, RandomInt32());
-    nfs::DataMessage data_message(nfs::DataMessage::ActionType::kPut, nfs::PersonaType::kDataHolder,
+    nfs::DataMessage data_message(nfs::DataMessage::Action::kPut, nfs::Persona::kDataHolder,
                                   source, data);
     data_messages.push_back(data_message);
 
@@ -249,11 +249,11 @@ class DataHolderCacheableTest : public DataHolderTest<T> {
 TYPED_TEST_CASE_P(DataHolderCacheableTest);
 
 TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
-  nfs::MessageSource source(nfs::PersonaType::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+  nfs::MessageSource source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   NonEmptyString content(RandomAlphaNumericString(256));
   nfs::DataMessage::Data data(maidsafe::detail::DataTagValue::kAnmaidValue,
                               Identity(RandomString(NodeId::kSize)), content, RandomInt32());
-  nfs::DataMessage data_message(nfs::DataMessage::ActionType::kPut, nfs::PersonaType::kDataHolder,
+  nfs::DataMessage data_message(nfs::DataMessage::Action::kPut, nfs::Persona::kDataHolder,
                                 source, data);
   EXPECT_THROW(this->GetFromCache(data_message), std::system_error);
   this->StoreInCache(data_message);

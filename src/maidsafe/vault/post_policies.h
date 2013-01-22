@@ -31,7 +31,7 @@ namespace maidsafe {
 
 namespace vault {
 
-template<nfs::PersonaType persona>
+template<nfs::Persona persona>
 class PostSynchronisation {
  public:
   explicit PostSynchronisation(routing::Routing& routing)
@@ -46,12 +46,11 @@ class PostSynchronisation {
                     nfs::GenericMessage::OnError on_error) {
     nfs::Message message(nfs::GenericMessage::message_type_identifier,
                          generic_message.Serialise().data);
-    routing::ResponseFunctor callback =
-        [on_error, generic_message](const std::vector<std::string>& serialised_messages) {
-          HandleGenericResponse(on_error, generic_message, serialised_messages);
-        };
-    routing_.Send(NodeId(generic_message.name().string()), message.Serialise()->string(),
-                  callback, routing::DestinationType::kGroup, false);
+//    routing::ResponseFunctor callback =
+//        [on_error, generic_message](const std::vector<std::string>& serialised_messages) {
+//          HandleGenericResponse(on_error, generic_message, serialised_messages);
+//        };
+    routing_.Send(NodeId(generic_message.name().string()), message.Serialise()->string(), false);
   }
 
  protected:
