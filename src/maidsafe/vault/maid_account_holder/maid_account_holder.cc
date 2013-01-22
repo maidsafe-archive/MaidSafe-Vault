@@ -132,9 +132,9 @@ MaidAccountHolder::~MaidAccountHolder() {}
 void MaidAccountHolder::SendSyncData() {
   for (auto& account : maid_accounts_) {
     nfs::GenericMessage generic_message(
-        nfs::GenericMessage::ActionType::kSynchronise,
-        nfs::PersonaType::kMaidAccountHolder,
-        nfs::MessageSource(nfs::PersonaType::kMaidAccountHolder, routing_.kNodeId()),
+        nfs::GenericMessage::Action::kSynchronise,
+        nfs::Persona::kMaidAccountHolder,
+        nfs::MessageSource(nfs::Persona::kMaidAccountHolder, routing_.kNodeId()),
         account.maid_name().data,
         account.Serialise());
     nfs_.PostSyncData(generic_message,
@@ -150,18 +150,18 @@ bool MaidAccountHolder::HandleReceivedSyncData(const NonEmptyString &serialised_
 void MaidAccountHolder::HandleGenericMessage(const nfs::GenericMessage& generic_message,
                                              const routing::ReplyFunctor& reply_functor) {
 // HandleNewComer(p_maid);
-  nfs::GenericMessage::ActionType action_type(generic_message.action_type());
+  nfs::GenericMessage::Action action(generic_message.action());
   NodeId source_id(generic_message.source().node_id);
-  switch (action_type) {
-    case nfs::GenericMessage::ActionType::kRegisterPmid:
+  switch (action) {
+    case nfs::GenericMessage::Action::kRegisterPmid:
       break;
-    case nfs::GenericMessage::ActionType::kConnect:
+    case nfs::GenericMessage::Action::kConnect:
       break;
-    case nfs::GenericMessage::ActionType::kGetPmidSize:
+    case nfs::GenericMessage::Action::kGetPmidSize:
       break;
-    case nfs::GenericMessage::ActionType::kNodeDown:
+    case nfs::GenericMessage::Action::kNodeDown:
       break;
-    case nfs::GenericMessage::ActionType::kSynchronise:
+    case nfs::GenericMessage::Action::kSynchronise:
       if (detail::NodeRangeCheck(routing_, source_id)) {
         HandleReceivedSyncData(generic_message.content());
       } else {

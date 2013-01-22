@@ -34,7 +34,7 @@ class GetFromDataHolder {
  public:
   explicit GetFromDataHolder(routing::Routing& routing)
       : routing_(routing),
-        source_(nfs::MessageSource(nfs::PersonaType::kMetadataManager, routing.kNodeId())) {}
+        source_(nfs::MessageSource(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
 
   template<typename Data>
   std::future<Data> Get(const typename Data::name_type& name,
@@ -47,8 +47,8 @@ class GetFromDataHolder {
           HandleGetResponse(promise, serialised_messages);
         };
     nfs::DataMessage data_message(
-        nfs::DataMessage::ActionType::kGet,
-        nfs::PersonaType::kDataHolder,
+        nfs::DataMessage::Action::kGet,
+        nfs::Persona::kDataHolder,
         source_,
         nfs::DataMessage::Data(Data::name_type::tag_type::kEnumValue, name.data, NonEmptyString()));
     nfs::Message message(nfs::DataMessage::message_type_identifier, data_message.Serialise().data);

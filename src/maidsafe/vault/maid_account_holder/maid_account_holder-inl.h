@@ -30,14 +30,14 @@ template<typename Data>
 void MaidAccountHolder::HandleDataMessage(const nfs::DataMessage& data_message,
                                           const routing::ReplyFunctor& reply_functor) {
   // TODO(Team): Check the message content for validity with the MAID key we'll have eventually.
-  switch (data_message.action_type()) {
-    case nfs::DataMessage::ActionType::kGet:
+  switch (data_message.action()) {
+    case nfs::DataMessage::Action::kGet:
       HandleGetMessage<Data>(data_message, reply_functor);
       break;
-    case nfs::DataMessage::ActionType::kPut:
+    case nfs::DataMessage::Action::kPut:
       HandlePutMessage<Data>(data_message, reply_functor);
       break;
-    case nfs::DataMessage::ActionType::kDelete:
+    case nfs::DataMessage::Action::kDelete:
       HandleDeleteMessage<Data>(data_message, reply_functor);
       break;
     default: LOG(kError) << "Unhandled action type";
@@ -110,7 +110,7 @@ void MaidAccountHolder::AdjustAccount(const nfs::DataMessage& data_message,
     return;
   }
 
-  if (data_message.action_type() == nfs::DataMessage::ActionType::kPut) {
+  if (data_message.action() == nfs::DataMessage::Action::kPut) {
     // TODO(Team): BEFORE_RELEASE Check if we should allow the store based on PMID account
     // information
 //    DataElements data_element(message.name(),
@@ -119,7 +119,7 @@ void MaidAccountHolder::AdjustAccount(const nfs::DataMessage& data_message,
 //    // data_id, and what shall be done in that case (i.e. reject PUT or update the data_element)
 //    maid_account_it->PushDataElement(data_element);
   } else {
-    assert(data_message.action_type() == nfs::DataMessage::ActionType::kDelete);
+    assert(data_message.action() == nfs::DataMessage::Action::kDelete);
     // TODO(Team): BEFORE_RELEASE Handle delete.
   }
 }
