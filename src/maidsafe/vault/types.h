@@ -12,12 +12,16 @@
 #ifndef MAIDSAFE_VAULT_TYPES_H_
 #define MAIDSAFE_VAULT_TYPES_H_
 
+#include "boost/variant/variant.hpp"
+
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/nfs/nfs.h"
 
 #include "maidsafe/passport/types.h"
+#include "maidsafe/data_types/immutable_data.h"
+#include "maidsafe/data_types/mutable_data.h"
 
 #include "maidsafe/vault/get_policies.h"
 #include "maidsafe/vault/put_policies.h"
@@ -48,6 +52,19 @@ typedef passport::PublicMaid::name_type MaidName;
 typedef passport::PublicPmid::name_type PmidName;
 typedef passport::PublicMpid::name_type MpidName;
 
+typedef boost::variant<passport::PublicAnmid::name_type,
+                       passport::PublicAnsmid::name_type,
+                       passport::PublicAntmid::name_type,
+                       passport::PublicAnmaid::name_type,
+                       passport::PublicMaid::name_type,
+                       passport::PublicPmid::name_type,
+                       passport::Mid::name_type,
+                       passport::Smid::name_type,
+                       passport::Tmid::name_type,
+                       passport::PublicAnmpid::name_type,
+                       passport::PublicMpid::name_type,
+                       ImmutableData::name_type,
+                       MutableData::name_type> DataNameVariant;
 
 }  // namespace vault
 

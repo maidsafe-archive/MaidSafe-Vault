@@ -9,8 +9,10 @@ message PmidTotals {
 
 // Data put to the network by the client
 message PutData {
-  required DataElement data_element = 1;
-  optional int32 replications = 2;
+  required int32 type = 1;
+  required bytes name = 2;
+  required int32 size = 3;
+  optional int32 replications = 4;
 }
 
 message MaidAccount {
@@ -21,6 +23,6 @@ message MaidAccount {
   required int64 total_put_data = 5;
 }
 
-message ArchivedData {
+message ArchivedMaidData {
   repeated PutData put_data = 1;
 }

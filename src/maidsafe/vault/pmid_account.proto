@@ -10,12 +10,16 @@ message PmidRecord {
 }
 
 message DataElement {
-  required bytes name = 1;
-  required int32 size = 2;
-  optional int32 version = 3;
+  required int32 type = 1;
+  required bytes name = 2;
+  required int32 size = 3;
 }
 
 message PmidAccount {
   required PmidRecord pmid_record = 1;
   repeated DataElement data_stored = 2;
+}
+
+message ArchivedPmidData {
+  repeated DataElement data_stored = 1;
 }

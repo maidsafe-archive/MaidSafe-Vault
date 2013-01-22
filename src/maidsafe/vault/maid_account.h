@@ -12,45 +12,57 @@
 #ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_H_
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_H_
 
+#include <map>
 #include <vector>
-#include <mutex>
-#include <functional>
 
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/maid_account_holder/maid_account_pb.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
+struct PmidTotals;
+
 class MaidAccount {
  public:
-  struct {   }structure;
   typedef MaidName name_type;
   explicit MaidAccount(const MaidName& maid_name);
   explicit MaidAccount(const NonEmptyString& serialised_maid_account);
   NonEmptyString Serialise() const;
+  void Merge(MaidAccount&& other);
 
-  void Add(const protobuf::PmidTotals& pmid_totals);
-  void Remove(const PmidName& pmid_name);
-  void Update(const protobuf::PmidTotals& pmid_total);
+  void RegisterPmid(const NonEmptyString& serialised_pmid_registration);
+  void UnregisterPmid(const PmidName& pmid_name);
+  void UpdatePmidTotals(const PmidTotals& pmid_totals);
+
   template<typename Data>
-  bool ModifyOrAddDataElement(const typename Data::name_type& name,
-                              int32_t version,
-                              const structure& serialised_value,
-                              std::function<void(std::string&)> modify_functor);
+  void PutData(const typename Data::name_type& name, int32_t size, int32_t replications);
   template<typename Data>
-  void DeleteDataElement(const typename Data::name_type& name,
-                         int32_t version);
+  bool DeleteData(const typename Data::name_type& name);
+  template<typename Data>
+  void UpdateReplications(const typename Data::name_type& name, int32_t replications);
+
+  void PutArchivedData(const boost::filesystem::path& path, const NonEmptyString& archived_data);
 
   MaidName name() const { return kMaidName_; }
 
  private:
-  protobuf::MaidAccount proto_maid_account_;
+  struct PutDataDetails {
+    PutDataDetails();
+    PutDataDetails(int32_t size_in, int32_t replications_in);
+    PutDataDetails(const PutDataDetails& other);
+    PutDataDetails& operator=(const PutDataDetails& other);
+    PutDataDetails(PutDataDetails&& other);
+    PutDataDetails& operator=(PutDataDetails&& other);
+    int32_t size, replications;
+  };
   const MaidName kMaidName_;
+  std::vector<PmidTotals> pmid_totals_;
+  std::map<DataNameVariant, PutDataDetails> recent_put_data_;
+  int64_t total_data_stored_by_pmids_, total_put_data_;
 };
 
 }  // namespace vault
