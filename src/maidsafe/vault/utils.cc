@@ -43,7 +43,10 @@ boost::filesystem::path GetFilePath(const boost::filesystem::path& base_path,
 
 bool MatchingDiskElements(const protobuf::DiskStoredElement& lhs,
                           const protobuf::DiskStoredElement& rhs) {
-  return lhs.data_name() == rhs.data_name() && lhs.version() == lhs.version();
+  return lhs.data_name() == rhs.data_name() &&
+         lhs.version() == rhs.version() &&
+         (rhs.serialised_value().empty() ?
+             true : lhs.serialised_value() == rhs.serialised_value());
 }
 
 }  // namespace detail

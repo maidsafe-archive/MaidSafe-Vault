@@ -25,6 +25,8 @@
 
 #include "maidsafe/nfs/message.h"
 
+#include "maidsafe/vault/utils.h"
+
 
 namespace fs = boost::filesystem;
 
@@ -42,6 +44,25 @@ class DiskStorageTest : public testing::Test {
 
  protected:
   maidsafe::test::TestPath root_directory_;
+
+  std::string GenerateFileContent(uint32_t max_file_size) {
+    protobuf::DiskStoredFile disk_file;
+    protobuf::DiskStoredElement disk_element;
+    disk_element.set_data_name(RandomString(64));
+    disk_element.set_version(RandomUint32() % 100);
+    disk_element.set_serialised_value(RandomString(RandomUint32() % max_file_size));
+    disk_file.add_disk_element()->CopyFrom(disk_element);
+    return disk_file.SerializeAsString();
+  }
+
+  void ChangeDiskElement(std::string& serialised_disk_element,
+                         const std::string& new_serialised_value) {
+    protobuf::DiskStoredElement disk_element;
+    assert(disk_element.ParseFromString(serialised_disk_element) &&
+           "Received element doesn't parse.");
+    disk_element.set_serialised_value(new_serialised_value);
+    serialised_disk_element = disk_element.SerializeAsString();
+  }
 };
 
 typedef testing::Types<passport::PublicAnmid,
@@ -65,6 +86,9 @@ TYPED_TEST(DiskStorageTest, BEH_ConstructorDestructor) {
   {
     DiskBasedStorage disk_based_storage(root_path);
     EXPECT_TRUE(fs::exists(root_path, error_code));
+    // An empty file shall be generated in constructor
+    std::future<uint32_t> file_count(disk_based_storage.GetFileCount());
+    EXPECT_EQ(file_count.get(), 1);
   }
   EXPECT_TRUE(fs::exists(root_path, error_code));
 }
@@ -80,7 +104,7 @@ TYPED_TEST(DiskStorageTest, BEH_FileHandlers) {
   std::random_shuffle(file_numbers.begin(), file_numbers.end());
 
   for (uint32_t i(0); i < num_files; ++i) {
-    NonEmptyString file_content(RandomString(RandomUint32() % max_file_size));
+    NonEmptyString file_content(this->GenerateFileContent(max_file_size));
     std::string hash(EncodeToBase32(crypto::Hash<crypto::SHA512>(file_content)));
     std::string file_name(std::to_string(file_numbers[i]) + "." + hash);
     fs::path file_path(root_path / file_name);
@@ -115,7 +139,7 @@ TYPED_TEST(DiskStorageTest, BEH_FileHandlersWithCorruptingThread) {
   std::map<fs::path, NonEmptyString> files;
   uint32_t num_files(10), max_file_size(10000);
   for (uint32_t i(0); i < num_files; ++i) {
-    NonEmptyString file_content(RandomString(RandomUint32() % max_file_size));
+    NonEmptyString file_content(this->GenerateFileContent(max_file_size));
     std::string hash(EncodeToBase32(crypto::Hash<crypto::SHA512>(file_content)));
     std::string file_name(std::to_string(i) + "." + hash);
     fs::path file_path(root_path / file_name);
@@ -162,29 +186,57 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlers) {
   fs::path root_path(*(this->root_directory_) / RandomString(6));
   DiskBasedStorage disk_based_storage(root_path);
 
-  std::string file_name(RandomString(crypto::SHA512::DIGESTSIZE));
-  typename TypeParam::name_type name((Identity(file_name)));
+  typename TypeParam::name_type name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
   int32_t version(RandomUint32());
   std::string serialised_value(RandomString(10000));
   disk_based_storage.Store<TypeParam>(name, version, serialised_value);
+
+  protobuf::DiskStoredElement element;
+  element.set_data_name(name.data.string());
+  element.set_version(version);
+  element.set_serialised_value(serialised_value);
+  protobuf::DiskStoredFile disk_file;
+  disk_file.add_disk_element()->CopyFrom(element);
+  std::string hash = EncodeToBase32(crypto::Hash<crypto::SHA512>(disk_file.SerializeAsString()));
+  fs::path file_path = maidsafe::vault::detail::GetFilePath(
+      root_path, hash, disk_based_storage.GetFileCount().get() - 1);
+
+  Sleep(boost::posix_time::milliseconds(10));
   boost::system::error_code error_code;
-  EXPECT_TRUE(fs::exists(root_path / file_name, error_code));
+  EXPECT_TRUE(fs::exists(file_path, error_code));
   {
-    auto result = disk_based_storage.GetFile(root_path / file_name);
+    auto result = disk_based_storage.GetFile(file_path);
     NonEmptyString fetched_content = result.get();
-    EXPECT_EQ(fetched_content.string(), serialised_value);
+    EXPECT_EQ(fetched_content.string(), disk_file.SerializeAsString());
   }
 
   std::string new_serialised_value(RandomString(10000));
-  disk_based_storage.Modify<TypeParam>(name, version, nullptr, new_serialised_value);
+  element.set_serialised_value(new_serialised_value);
+  disk_file.clear_disk_element();
+  disk_file.add_disk_element()->CopyFrom(element);
+
+  disk_based_storage.Modify<TypeParam>(name, version,
+                                       [this, new_serialised_value]
+                                          (std::string& serialised_disk_element) {
+                                         this->ChangeDiskElement(serialised_disk_element,
+                                                                 new_serialised_value); },
+                                       serialised_value);
+
+  std::string new_hash = EncodeToBase32(
+                            crypto::Hash<crypto::SHA512>(disk_file.SerializeAsString()));
+  fs::path new_file_path = maidsafe::vault::detail::GetFilePath(
+      root_path, new_hash, disk_based_storage.GetFileCount().get() - 1);
   {
-    auto result = disk_based_storage.GetFile(root_path / file_name);
+    auto result = disk_based_storage.GetFile(new_file_path);
     NonEmptyString fetched_content = result.get();
-    EXPECT_EQ(fetched_content.string(), new_serialised_value);
+    EXPECT_EQ(fetched_content.string(), disk_file.SerializeAsString());
+    EXPECT_FALSE(fs::exists(file_path, error_code));
+    EXPECT_TRUE(fs::exists(new_file_path, error_code));
   }
 
   disk_based_storage.Delete<TypeParam>(name, version);
-  EXPECT_FALSE(fs::exists(root_path / file_name, error_code));
+  Sleep(boost::posix_time::milliseconds(10));
+  EXPECT_FALSE(fs::exists(new_file_path, error_code));
 }
 
 TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultThreads) {
