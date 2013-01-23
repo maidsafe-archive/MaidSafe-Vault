@@ -12,11 +12,17 @@
 #ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_H_
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_H_
 
+#include <cstdint>
 #include <map>
 #include <vector>
 
-#include "maidsafe/common/types.h"
+#include "boost/filesystem/path.hpp"
 
+#include "maidsafe/common/types.h"
+#include "maidsafe/nfs/pmid_registration.h"
+
+#include "maidsafe/vault/disk_based_storage.h"
+#include "maidsafe/vault/pmid_record.h"
 #include "maidsafe/vault/types.h"
 
 
@@ -29,27 +35,35 @@ struct PmidTotals;
 class MaidAccount {
  public:
   typedef MaidName name_type;
-  explicit MaidAccount(const MaidName& maid_name);
-  explicit MaidAccount(const NonEmptyString& serialised_maid_account);
-  NonEmptyString Serialise() const;
-  void Merge(MaidAccount&& other);
+  typedef TaggedValue<NonEmptyString, struct SerialisedMaidAccountTag> serialised_type;
+  MaidAccount(const MaidName& maid_name, const boost::filesystem::path& root);
+  MaidAccount(const serialised_type& serialised_maid_account, const boost::filesystem::path& root);
+  serialised_type Serialise() const;
 
-  void RegisterPmid(const NonEmptyString& serialised_pmid_registration);
+  void RegisterPmid(const nfs::PmidRegistration::serialised_type& serialised_pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);
   void UpdatePmidTotals(const PmidTotals& pmid_totals);
 
+  std::vector<boost::filesystem::path> GetArchiveFileNames() const;
+  NonEmptyString GetArchiveFile(const boost::filesystem::path& path) const;
+  void PutArchiveFile(const boost::filesystem::path& path, const NonEmptyString& content);
+
   template<typename Data>
-  void PutData(const typename Data::name_type& name, int32_t size, int32_t replications);
+  void PutData(const typename Data::name_type& name, int32_t size, int32_t replication_count);
   template<typename Data>
   bool DeleteData(const typename Data::name_type& name);
   template<typename Data>
-  void UpdateReplications(const typename Data::name_type& name, int32_t replications);
-
-  void PutArchivedData(const boost::filesystem::path& path, const NonEmptyString& archived_data);
+  void UpdateReplicationCount(const typename Data::name_type& name, int32_t new_replication_count);
 
   MaidName name() const { return kMaidName_; }
+  int64_t total_data_stored_by_pmids() const { return total_data_stored_by_pmids_; }
+  int64_t total_put_data() const { return total_put_data_; }
 
  private:
+  MaidAccount(const MaidAccount&);
+  MaidAccount& operator=(const MaidAccount&);
+  MaidAccount(MaidAccount&&);
+  MaidAccount& operator=(MaidAccount&&);
   struct PutDataDetails {
     PutDataDetails();
     PutDataDetails(int32_t size_in, int32_t replications_in);
@@ -63,6 +77,17 @@ class MaidAccount {
   std::vector<PmidTotals> pmid_totals_;
   std::map<DataNameVariant, PutDataDetails> recent_put_data_;
   int64_t total_data_stored_by_pmids_, total_put_data_;
+  DiskBasedStorage archive_;
+};
+
+struct PmidTotals {
+  PmidTotals();
+  PmidTotals(const PmidTotals&);
+  PmidTotals& operator=(const PmidTotals&);
+  PmidTotals(PmidTotals&&);
+  PmidTotals& operator=(PmidTotals&&);
+  nfs::PmidRegistration::serialised_type serialised_pmid_registration;
+  PmidRecord pmid_record;
 };
 
 }  // namespace vault

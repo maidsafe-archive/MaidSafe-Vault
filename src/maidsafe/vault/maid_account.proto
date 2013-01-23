@@ -12,19 +12,15 @@ message PutData {
   required int32 type = 1;
   required bytes name = 2;
   required int32 size = 3;
-  optional int32 replications = 4;
+  optional int32 replication_count = 4;
 }
 
-message MaidPmidsInfo {
+message MaidAccount {
   required bytes maid_name = 1;
   repeated PmidTotals pmid_totals = 2;
-  required int64 total_data_stored_by_pmids = 3;
-  required int64 total_put_data = 4;
-}
-
-message MaidAccountStorage {
-  required bytes maid_name = 1;
-  repeated PutData recent_put_data = 2;
+  repeated PutData recent_put_data = 3;
+  required int64 total_data_stored_by_pmids = 4;
+  required int64 total_put_data = 5;
 }
 
 message ArchivedMaidData {

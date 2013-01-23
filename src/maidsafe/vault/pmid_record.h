@@ -9,46 +9,38 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_H_
-#define MAIDSAFE_VAULT_PMID_ACCOUNT_H_
-
-#include <map>
-
-#include "boost/filesystem/path.hpp"
+#ifndef MAIDSAFE_VAULT_PMID_RECORD_H_
+#define MAIDSAFE_VAULT_PMID_RECORD_H_
 
 #include "maidsafe/common/types.h"
 
-#include "maidsafe/vault/disk_based_storage.h"
-#include "maidsafe/vault/pmid_record.h"
-#include "maidsafe/vault/types.h"
+#include "maidsafe/vault/pmid_account_pb.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-class PmidAccount {
+struct PmidRecord {
  public:
-  typedef PmidName name_type;
-  typedef TaggedValue<NonEmptyString, struct SerialisedMaidAccountTag> serialised_type;
-  PmidAccount(const PmidName& pmid_name, const boost::filesystem::path& root);
-  PmidAccount(const serialised_type& serialised_pmid_account, const boost::filesystem::path& root);
+  typedef TaggedValue<NonEmptyString, struct SerialisedPmidRecordTag> serialised_type;
+  explicit PmidRecord(const PmidName& pmid_name);
+  explicit PmidRecord(const serialised_type& serialised_pmid_record);
   serialised_type Serialise() const;
-
-
-
- private:
   PmidAccount(const PmidAccount&);
   PmidAccount& operator=(const PmidAccount&);
   PmidAccount(PmidAccount&&);
   PmidAccount& operator=(PmidAccount&&);
-  PmidRecord pmid_record_;
-  std::map<DataNameVariant, int32_t> recent_data_stored_;
-  DiskBasedStorage archive_;
+
+  const PmidName kPmidName;
+  int64_t stored_count;
+  int64_t stored_total_size;
+  int64_t lost_count;
+  int64_t lost_total_size;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_H_
+#endif  // MAIDSAFE_VAULT_PMID_RECORD_H_

@@ -12,61 +12,71 @@
 #ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HANDLER_H_
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HANDLER_H_
 
-#include <future>
-#include <memory>
+#include <cstdint>
+#include <mutex>
 #include <string>
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
 
-#include "maidsafe/common/active.h"
+#include "maidsafe/common/types.h"
+#include "maidsafe/passport/types.h"
+#include "maidsafe/routing/routing_api.h"
+#include "maidsafe/nfs/public_key_getter.h"
 
-#include "maidsafe/vault/maid_account_holder/maid_account_pb.h"
 #include "maidsafe/vault/types.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
+class MaidAccount;
+struct PmidTotals;
+
 class MaidAccountHandler {
  public:
-  explicit MaidAccountHandler(const boost::filesystem::path& vault_root_dir);
+  MaidAccountHandler(const passport::Pmid& pmid,
+                     routing::Routing& routing,
+                     nfs::PublicKeyGetter& public_key_getter,
+                     const boost::filesystem::path& vault_root_dir);
+  // Account operations
+  bool AddAccount(const MaidAccount& maid_account);
+  bool DeleteAccount(const MaidName& account_name);
+  MaidAccount GetAccount(const MaidName& account_name) const;
 
-  // Data operations
-  void AddDataElement(const MaidName& maid_name, const protobuf::PutData& data);
-  void UpdateReplicationCount(const MaidName& maid_name, const protobuf::PutData& data);
-  void DeleteDataElement(const MaidName& maid_name, const protobuf::PutData& data);
-  // Optional
-  // void GetDataElement(protobuf::MaidAccountStorage& storage_element_with_name);
-  // int32_t GetDuplicates(const MaidName& maid_name);
-
-  // PmidInfo operations
-  void AddPmidToAccount(const protobuf::MaidPmidsInfo& new_pmid_for_maid);
-  void RemovePmidFromAccount(const MaidName& maid_name, const PmidName& pmid_name);
-  void GetMaidAccountTotals(protobuf::MaidPmidsInfo& info_with_maid_name) const;
-  void UpdatePmidTotals(const MaidName& maid_name, const protobuf::PmidTotals& pmid_totals);
+  void RegisterPmid(const MaidName& account_name,
+                    const NonEmptyString& serialised_pmid_registration);
+  void UnregisterPmid(const MaidName& maid_name, const PmidName& pmid_name);
+  void UpdatePmidTotals(const MaidName& maid_name, const PmidTotals& pmid_totals);
 
   // Sync operations
-  std::vector<MaidName> GetMaidNames() const;
-  size_t GetMaidAccountFileCount(const MaidName& maid_name) const;
-  std::future<std::string> GetMaidAccountFile(const MaidName& maid_name, size_t index) const;
-  // Optional
-  // void GetPmidAccountDetails(protobuf::PmidRecord& pmid_record);
+  std::vector<MaidName> GetAccountNames() const;
+  std::vector<boost::filesystem::path> GetArchiveFileNames(const MaidName& account_name) const;
+  NonEmptyString GetArchiveFile(const MaidName& account_name,
+                                const boost::filesystem::path& path) const;
+  void PutArchiveFile(const MaidName& account_name,
+                      const boost::filesystem::path& path,
+                      const NonEmptyString& content);
+
+  // Data operations
+  template<typename Data>
+  void PutData(const MaidName& maid_name,
+               const typename Data::name_type& data_name,
+               int32_t size,
+               int32_t replication_count);
+  template<typename Data>
+  void DeleteData(const MaidName& maid_name, const typename Data::name_type& data_name);
+  template<typename Data>
+  void UpdateReplicationCount(const MaidName& maid_name,
+                              const typename Data::name_type& data_name,
+                              int32_t new_replication_count);
 
  private:
-  struct MaidAcountingFileInfo {
-    MaidAcountingFileInfo();
-    MaidAcountingFileInfo(const MaidName& maid_name_in, int element_count_in, int current_file_in);
-    MaidName maid_name;
-    int element_count, current_file;
-  };
-
-  const boost::filesystem::path maid_accounts_path_;
-  std::vector<protobuf::MaidPmidsInfo> maid_pmid_info_;
-  std::vector<protobuf::MaidAccountStorage> maid_storage_fifo_;
-  std::vector<MaidAcountingFileInfo> accounting_file_info_;
-  mutable Active active_;
-  mutable std::mutex local_vectors_mutex_;
+  MaidAccountHandler(const MaidAccountHandler&);
+  MaidAccountHandler& operator=(const MaidAccountHandler&);
+  MaidAccountHandler(MaidAccountHandler&&);
+  MaidAccountHandler& operator=(MaidAccountHandler&&);
 
   void FindAccountingEntry(const MaidName& maid_name,
                            std::vector<MaidAcountingFileInfo>::iterator& it);
@@ -111,6 +121,10 @@ class MaidAccountHandler {
   void ReadFileContentsIntoString(const MaidName& maid_name,
                                   size_t index,
                                   std::shared_ptr<std::promise<std::string> > promise) const;
+
+  const boost::filesystem::path kMaidAccountsRoot_;
+  mutable std::mutex mutex_;
+  std::vector<MaidAccount> maid_accounts_;
 };
 
 }  // namespace vault
