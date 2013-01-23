@@ -270,7 +270,7 @@ void DiskBasedStorage::SearchForEntryAndExecuteOperation(const protobuf::DiskSto
     ReadAndParseFile(*it, file_index, disk_file, file_path, file_content);
     for (int n(disk_file.disk_element_size() - 1); n != -1; --n) {
       if (d::MatchingDiskElements(disk_file.disk_element(n), element)) {
-        changer.Execute(disk_file, file_index);
+        changer.Execute(disk_file, n);
         UpdateFileAfterModification(it, file_index, disk_file, file_path, reorder);
         return;
       }
