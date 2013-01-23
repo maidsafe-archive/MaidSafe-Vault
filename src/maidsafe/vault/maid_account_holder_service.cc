@@ -127,7 +127,7 @@ MaidAccountHolder::~MaidAccountHolder() {}
 // }
 
 void MaidAccountHolder::SendSyncData() {
-//
+//  for (auto& account : maid_accounts_) {
 //    nfs::GenericMessage generic_message(
 //        nfs::GenericMessage::Action::kSynchronise,
 //        nfs::Persona::kMaidAccountHolder,
