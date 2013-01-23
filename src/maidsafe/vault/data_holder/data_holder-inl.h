@@ -36,14 +36,14 @@ template<typename Data>
 void DataHolder::HandleDataMessage(const nfs::DataMessage& data_message,
                                    const routing::ReplyFunctor& reply_functor) {
   LOG(kInfo) << "received message at Data holder";
-  switch (data_message.action_type()) {
-    case nfs::DataMessage::ActionType::kGet :
+  switch (data_message.action()) {
+    case nfs::DataMessage::Action::kGet :
       HandleGetMessage<Data>(data_message, reply_functor);
       break;
-    case nfs::DataMessage::ActionType::kPut :
+    case nfs::DataMessage::Action::kPut :
       HandlePutMessage<Data>(data_message, reply_functor);
       break;
-    case nfs::DataMessage::ActionType::kDelete :
+    case nfs::DataMessage::Action::kDelete :
       HandleDeleteMessage<Data>(data_message, reply_functor);
       break;
     default :
@@ -57,8 +57,8 @@ void DataHolder::HandleGetMessage(const nfs::DataMessage& data_message,
   try {
   // TODO(Fraser#5#): 2013-01-18 - Take version into account properly here
     nfs::DataMessage response(
-        data_message.action_type(),
-        data_message.destination_persona_type(),
+        data_message.action(),
+        data_message.destination_persona(),
         data_message.source(),
         nfs::DataMessage::Data(
             data_message.data().type,

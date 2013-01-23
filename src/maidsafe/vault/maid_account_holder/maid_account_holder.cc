@@ -149,18 +149,18 @@ bool MaidAccountHolder::HandleReceivedSyncData(const NonEmptyString &/*serialise
 void MaidAccountHolder::HandleGenericMessage(const nfs::GenericMessage& generic_message,
                                              const routing::ReplyFunctor& reply_functor) {
 // HandleNewComer(p_maid);
-  nfs::GenericMessage::ActionType action_type(generic_message.action_type());
+  nfs::GenericMessage::Action action(generic_message.action());
   NodeId source_id(generic_message.source().node_id);
-  switch (action_type) {
-    case nfs::GenericMessage::ActionType::kRegisterPmid:
+  switch (action) {
+    case nfs::GenericMessage::Action::kRegisterPmid:
       break;
-    case nfs::GenericMessage::ActionType::kConnect:
+    case nfs::GenericMessage::Action::kConnect:
       break;
-    case nfs::GenericMessage::ActionType::kGetPmidSize:
+    case nfs::GenericMessage::Action::kGetPmidSize:
       break;
-    case nfs::GenericMessage::ActionType::kNodeDown:
+    case nfs::GenericMessage::Action::kNodeDown:
       break;
-    case nfs::GenericMessage::ActionType::kSynchronise:
+    case nfs::GenericMessage::Action::kSynchronise:
       if (detail::NodeRangeCheck(routing_, source_id)) {
         HandleReceivedSyncData(generic_message.content());
       } else {
