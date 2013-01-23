@@ -39,10 +39,10 @@ class Demultiplexer {
   void StoreInCache(const std::string& serialised_message);
 
  private:
-  void HandleDataMessagePersonaType(nfs::DataMessage& data_message,
-                                    const routing::ReplyFunctor& reply_functor);
-  void HandleGenericMessagePersonaType(nfs::GenericMessage& generic_message,
-                                       const routing::ReplyFunctor& reply_functor);
+  void HandleDataMessagePersona(nfs::DataMessage& data_message,
+                                const routing::ReplyFunctor& reply_functor);
+  void HandleGenericMessagePersona(nfs::GenericMessage& generic_message,
+                                   const routing::ReplyFunctor& reply_functor);
   NonEmptyString HandleGetFromCache(nfs::DataMessage& data_message);
   void HandleStoreInCache(const nfs::DataMessage& data_message);
 

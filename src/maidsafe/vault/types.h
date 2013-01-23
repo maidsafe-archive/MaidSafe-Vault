@@ -31,17 +31,17 @@ namespace vault {
 
 typedef nfs::NetworkFileSystem<nfs::NoGet,
                                PutToMetadataManager,
-                               PostSynchronisation<nfs::PersonaType::kMaidAccountHolder>,
+                               PostSynchronisation<nfs::Persona::kMaidAccountHolder>,
                                DeleteFromMetadataManager> MaidAccountHolderNfs;
 
 typedef nfs::NetworkFileSystem<GetFromDataHolder,
                                PutToPmidAccountHolder,
-                               PostSynchronisation<nfs::PersonaType::kMetadataManager>,
+                               PostSynchronisation<nfs::Persona::kMetadataManager>,
                                DeleteFromPmidAccountHolder> MetadataManagerNfs;
 
 typedef nfs::NetworkFileSystem<nfs::NoGet,
                                PutToDataHolder,
-                               PostSynchronisation<nfs::PersonaType::kPmidAccountHolder>,
+                               PostSynchronisation<nfs::Persona::kPmidAccountHolder>,
                                DeleteFromDataHolder> PmidAccountHolderNfs;
 
 typedef passport::PublicMaid::name_type MaidName;

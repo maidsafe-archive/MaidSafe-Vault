@@ -270,7 +270,7 @@ void DiskBasedStorage::SearchForEntryAndExecuteOperation(const protobuf::DiskSto
     ReadAndParseFile(*it, file_index, disk_file, file_path, file_content);
     for (int n(disk_file.disk_element_size() - 1); n != -1; --n) {
       if (d::MatchingDiskElements(disk_file.disk_element(n), element)) {
-        changer.Execute(disk_file, file_index);
+        changer.Execute(disk_file, n);
         UpdateFileAfterModification(it, file_index, disk_file, file_path, reorder);
         return;
       }
@@ -297,15 +297,27 @@ void DiskBasedStorage::UpdateFileAfterModification(std::vector<std::string>::rev
                                                    protobuf::DiskStoredFile& disk_file,
                                                    boost::filesystem::path& file_path,
                                                    bool reorder) {
-  NonEmptyString file_content(NonEmptyString(disk_file.SerializeAsString()));
-  *it = EncodeToBase32(crypto::Hash<crypto::SHA512>(file_content));
-  WriteFile(file_path, file_content.string());
-  boost::filesystem::rename(file_path, d::GetFilePath(kRoot_, *it, file_index));
-  if (reorder)
-    MergeFilesAfterAlteration(file_index);
+  try {
+    NonEmptyString file_content(NonEmptyString(disk_file.SerializeAsString()));
+    *it = EncodeToBase32(crypto::Hash<crypto::SHA512>(file_content));
+    WriteFile(file_path, file_content.string());
+    boost::filesystem::path new_path(d::GetFilePath(kRoot_, *it, file_index));
+    boost::filesystem::rename(file_path, new_path);
+    if (reorder)
+      MergeFilesAfterAlteration(file_index);
+  } catch(std::exception& /*e*/) {
+    *it = kEmptyFileHash;
+    boost::filesystem::remove(file_path);
+  }
 }
 
 void DiskBasedStorage::MergeFilesAfterAlteration(size_t current_index) {
+  // Handle single file case
+  if (file_hashes_.size() == 1U) {
+    LOG(kInfo) << "Just one file. No need to merge.";
+    return;
+  }
+
   // Handle edge case
   size_t previous_index(current_index - 1);
   if (current_index == 0) {
