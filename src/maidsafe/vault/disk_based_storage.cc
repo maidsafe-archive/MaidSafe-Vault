@@ -12,6 +12,7 @@
 #include "maidsafe/vault/disk_based_storage.h"
 
 #include <memory>
+#include <algorithm>
 
 #include "boost/filesystem/operations.hpp"
 
@@ -284,6 +285,10 @@ void DiskBasedStorage::ReadAndParseFile(const std::string& hash,
                                         boost::filesystem::path& file_path,
                                         NonEmptyString& file_content) const {
   disk_file.Clear();
+  if (hash == kEmptyFileHash) {
+    LOG(kInfo) << "Empty file, no need to read.";
+    return;
+  }
   file_path = d::GetFilePath(kRoot_, hash, file_index);
   file_content = ReadFile(file_path);
   if (!disk_file.ParseFromString(file_content.string())) {
@@ -325,6 +330,12 @@ void DiskBasedStorage::MergeFilesAfterAlteration(size_t current_index) {
     current_index = 1;
   }
 
+  // Handle empty current file
+  if (file_hashes_.at(current_index) == kEmptyFileHash) {
+    LOG(kInfo) << "Current file empty. No need to merge.";
+    return;
+  }
+
   boost::filesystem::path current_path(d::GetFilePath(kRoot_,
                                                       file_hashes_.at(current_index),
                                                       current_index)),
@@ -344,7 +355,8 @@ void DiskBasedStorage::MergeFilesAfterAlteration(size_t current_index) {
   auto r_it(ordering.rbegin());
 
   // Lower index file
-  AddToDiskFile(previous_path, previous_file_disk, r_it, previous_index, 0, kNewFileTrigger);
+  AddToDiskFile(previous_path, previous_file_disk, r_it, previous_index, 0,
+                std::min(ordering.size(), kNewFileTrigger));
   if (total_elements > kNewFileTrigger) {
     // Higher index file
     AddToDiskFile(current_path,
@@ -356,8 +368,12 @@ void DiskBasedStorage::MergeFilesAfterAlteration(size_t current_index) {
   } else {
     // Higher file will disappear and we need to rename files
     boost::filesystem::remove(current_path);
-    for (size_t n(current_index); n != file_hashes_.size() - 1; ++n)
+    for (size_t n(current_index); n != file_hashes_.size() - 1; ++n) {
       file_hashes_.at(n) = file_hashes_.at(n + 1);
+      boost::filesystem::path old_path(d::GetFilePath(kRoot_, file_hashes_.at(n), n + 1));
+      boost::filesystem::path new_path(d::GetFilePath(kRoot_, file_hashes_.at(n), n));
+      boost::filesystem::rename(old_path, new_path);
+    }
     file_hashes_.pop_back();
   }
 }
@@ -373,11 +389,10 @@ void DiskBasedStorage::AddToDiskFile(const boost::filesystem::path& previous_pat
     AddDataToElement(r_it, disk_element);
   }
   NonEmptyString previous_content(previous_file_disk.SerializeAsString());
-  crypto::SHA512Hash previous_hash(crypto::Hash<crypto::SHA512>(previous_content));
+  std::string previous_hash(EncodeToBase32(crypto::Hash<crypto::SHA512>(previous_content)));
   WriteFile(previous_path, previous_content.string());
-  boost::filesystem::rename(previous_path,
-                            d::GetFilePath(kRoot_, previous_hash.string(), file_index));
-  file_hashes_.at(file_index) = previous_hash.string();
+  boost::filesystem::rename(previous_path, d::GetFilePath(kRoot_, previous_hash, file_index));
+  file_hashes_.at(file_index) = previous_hash;
 }
 
 }  // namespace vault
