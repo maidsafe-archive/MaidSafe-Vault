@@ -49,9 +49,9 @@ class MaidAccount {
   void PutArchiveFile(const boost::filesystem::path& path, const NonEmptyString& content);
 
   template<typename Data>
-  void PutData(const typename Data::name_type& name, int32_t size, int32_t replication_count);
+  void PutData(const typename Data::name_type& name, int32_t size, int32_t replication_count); -- throw if not enough space
   template<typename Data>
-  bool DeleteData(const typename Data::name_type& name);
+  bool DeleteData(const typename Data::name_type& name); -- throw if data entry doesn't exist
   template<typename Data>
   void UpdateReplicationCount(const typename Data::name_type& name, int32_t new_replication_count);
 
@@ -82,10 +82,13 @@ class MaidAccount {
 
 struct PmidTotals {
   PmidTotals();
-  PmidTotals(const PmidTotals&);
-  PmidTotals& operator=(const PmidTotals&);
-  PmidTotals(PmidTotals&&);
-  PmidTotals& operator=(PmidTotals&&);
+  PmidTotals(const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
+             const PmidRecord& pmid_record_in);
+  PmidTotals(const PmidTotals& other);
+  PmidTotals& operator=(const PmidTotals& other);
+  PmidTotals(PmidTotals&& other);
+  PmidTotals& operator=(PmidTotals&& other);
+
   nfs::PmidRegistration::serialised_type serialised_pmid_registration;
   PmidRecord pmid_record;
 };

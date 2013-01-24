@@ -364,7 +364,7 @@ TEST_F(DataElementsManagerTest, BEH_NonexistentDataElement) {
 
   EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name)));
 
-  // TODO(Alison) - sensitise to NfsErrors::failed_to_find_managed_element?
+  // TODO(Alison) - sensitise to CommonErrors::no_such_element?
   EXPECT_THROW(data_elements_manager_.RemoveDataElement(data_name),
                std::exception);
   EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name)));

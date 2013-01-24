@@ -16,7 +16,7 @@
 #  pragma warning(push)
 #  pragma warning(disable: 4127 4244 4267)
 #endif
-#include "maidsafe/vault/pmid_account_holder/pmid_account.pb.h"
+#include "maidsafe/vault/pmid_account.pb.h"
 #ifdef __MSVC__
 #  pragma warning(pop)
 #endif

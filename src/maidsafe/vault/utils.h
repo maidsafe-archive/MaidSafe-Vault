@@ -17,8 +17,11 @@
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/routing/routing_api.h"
+#include "maidsafe/nfs/data_message.h"
 
 #include "maidsafe/vault/disk_based_storage_messages_pb.h"
+#include "maidsafe/vault/types.h"
+
 
 namespace maidsafe {
 
@@ -29,6 +32,10 @@ namespace detail {
 inline bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id) {
   return routing.IsNodeIdInGroupRange(node_id);
 }
+
+bool ShouldRetry(routing::Routing& routing, const nfs::DataMessage& data_message);
+
+MaidName GetSourceMaidName(const nfs::DataMessage& data_message);
 
 void ExtractElementsFromFilename(const std::string& filename,
                                  std::string& hash,
@@ -43,8 +50,9 @@ bool MatchingDiskElements(const protobuf::DiskStoredElement& lhs,
 
 // Ensure the mutex protecting accounts is locked throughout this call
 template<typename Account>
-std::vector<Account>::iterator FindAccount(std::vector<Account>& accounts,
-                                           const typename Account::name_type& account_name) {
+typename std::vector<Account>::iterator FindAccount(
+    const std::vector<Account>& accounts,
+    const typename Account::name_type& account_name) {
   return std::find_if(accounts.begin(),
                       accounts.end(),
                       [&account_name](const Account& account) {
@@ -53,7 +61,7 @@ std::vector<Account>::iterator FindAccount(std::vector<Account>& accounts,
 }
 
 template<typename Account>
-bool AddAccount(std::mutex& mutex, std::vector<Account>& accounts, const Account& account) {
+bool AddAccount(std::mutex& mutex, const std::vector<Account>& accounts, const Account& account) {
   std::lock_guard<std::mutex> lock(mutex);
   if (FindAccount(accounts, account.name()) != accounts.end())
     return false;
@@ -63,7 +71,7 @@ bool AddAccount(std::mutex& mutex, std::vector<Account>& accounts, const Account
 
 template<typename Account>
 bool DeleteAccount(std::mutex& mutex,
-                   std::vector<Account>& accounts,
+                   const std::vector<Account>& accounts,
                    const typename Account::name_type& account_name) {
   std::lock_guard<std::mutex> lock(mutex);
   auto itr(FindAccount(accounts, account_name));
@@ -74,15 +82,37 @@ bool DeleteAccount(std::mutex& mutex,
 }
 
 template<typename Account>
-Account GetAccount(std::mutex& mutex,
-                   std::vector<Account>& accounts,
-                   const typename Account::name_type& account_name) {
+typename Account::serialised_type GetSerialisedAccount(
+    std::mutex& mutex,
+    const std::vector<Account>& accounts,
+    const typename Account::name_type& account_name) {
   std::lock_guard<std::mutex> lock(mutex);
   auto itr(FindAccount(accounts, account_name));
   if (itr == accounts.end())
-    ThrowError(CommonErrors::no_such_element);
+    ThrowError(VaultErrors::no_such_account);
 
-  return *itr;
+  return (*itr).Serialise();
+}
+
+template<typename Nfs, typename Data>
+inline void RetryOnPutOrDeleteError(
+    routing::Routing& routing, Nfs& nfs, nfs::DataMessage data_message) {
+  if (ShouldRetry(routing, data_message)) {
+    if (data_message.action() == nfs::DataMessage::Action::kPut) {
+      nfs.Put<Data>(
+          data_message,
+          [&routing, &nfs](nfs::DataMessage data_msg) {
+              RetryOnError<Nfs, Data, nfs::DataMessage::Action::kPut>(routing, nfs, data_msg);
+          });
+    } else {
+      assert(data_message.action() == nfs::DataMessage::Action::kDelete);
+      nfs.Delete<Data>(
+          data_message,
+          [&routing, &nfs](nfs::DataMessage data_msg) {
+              RetryOnError<Nfs, Data, nfs::DataMessage::Action::kDelete>(routing, nfs, data_msg);
+          });
+    }
+  }
 }
 
 }  // namespace detail

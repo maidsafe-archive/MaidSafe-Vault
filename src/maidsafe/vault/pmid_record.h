@@ -12,27 +12,33 @@
 #ifndef MAIDSAFE_VAULT_PMID_RECORD_H_
 #define MAIDSAFE_VAULT_PMID_RECORD_H_
 
+#include <cstdint>
+
 #include "maidsafe/common/types.h"
 
-#include "maidsafe/vault/pmid_account_pb.h"
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
+namespace protobuf { class PmidRecord; }
+
 struct PmidRecord {
  public:
   typedef TaggedValue<NonEmptyString, struct SerialisedPmidRecordTag> serialised_type;
-  explicit PmidRecord(const PmidName& pmid_name);
+  PmidRecord();
+  explicit PmidRecord(const PmidName& pmid_name_in);
   explicit PmidRecord(const serialised_type& serialised_pmid_record);
+  explicit PmidRecord(const protobuf::PmidRecord& proto_pmid_record);
   serialised_type Serialise() const;
-  PmidAccount(const PmidAccount&);
-  PmidAccount& operator=(const PmidAccount&);
-  PmidAccount(PmidAccount&&);
-  PmidAccount& operator=(PmidAccount&&);
+  PmidRecord(const PmidRecord& other);
+  PmidRecord& operator=(const PmidRecord& other);
+  PmidRecord(PmidRecord&& other);
+  PmidRecord& operator=(PmidRecord&& other);
 
-  const PmidName kPmidName;
+  PmidName pmid_name;
   int64_t stored_count;
   int64_t stored_total_size;
   int64_t lost_count;

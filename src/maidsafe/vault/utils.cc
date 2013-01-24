@@ -9,9 +9,12 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
+#include "maidsafe/vault/utils.h"
+
 #include <string>
 
-#include "maidsafe/vault/utils.h"
+#include "maidsafe/common/types.h"
+
 
 namespace maidsafe {
 
@@ -22,6 +25,18 @@ namespace detail {
 // bool NodeRangeCheck(maidsafe::routing::Routing& routing, const NodeId& node_id) {
 //   return routing.IsNodeIdInGroupRange(node_id);  // provisional call to Is..
 // }
+
+bool ShouldRetry(routing::Routing& routing, const nfs::DataMessage& data_message) {
+  return routing.network_status() > 0 &&
+         routing.EstimateInGroup(data_message.source().node_id,
+                                 NodeId(data_message.data().name.string()));
+}
+
+MaidName GetSourceMaidName(const nfs::DataMessage& data_message) {
+  if (data_message.source().persona != nfs::Persona::kClientMaid)
+    ThrowError(VaultErrors::permission_denied);
+  return MaidName(Identity(data_message.source().node_id.string()));
+}
 
 void ExtractElementsFromFilename(const std::string& filename,
                                  std::string& hash,

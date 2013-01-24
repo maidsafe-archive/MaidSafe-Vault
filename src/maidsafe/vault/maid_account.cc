@@ -23,26 +23,48 @@ namespace maidsafe {
 
 namespace vault {
 
-MaidAccount::MaidAccount(const MaidName& maid_name)
-    : mutex_(),
-      proto_maid_account_(),
-      kMaidName_(maid_name) {}
+MaidAccount::MaidAccount(const MaidName& maid_name, const boost::filesystem::path& root)
+    : kMaidName_(maid_name),
+      pmid_totals_(),
+      recent_put_data_(),
+      total_data_stored_by_pmids_(0),
+      total_put_data_(0),
+      archive_(root / EncodeToBase32(kMaidName_.data)) {}
 
-MaidAccount::MaidAccount(const NonEmptyString& serialised_maid_account)
-    : mutex_(),
-      proto_maid_account_([&serialised_maid_account]()->protobuf::MaidAccount {
-                              protobuf::MaidAccount proto_maid_account;
-                              proto_maid_account.ParseFromString(serialised_maid_account.string());
-                              return proto_maid_account;
-                          }()),
-      kMaidName_(Identity(proto_maid_account_.maid_name())) {
-  if (!proto_maid_account_.IsInitialized()) {
+MaidAccount::MaidAccount(const serialised_type& serialised_maid_account,
+                         const boost::filesystem::path& root)
+    : kMaidName_([&serialised_maid_account]()->Identity {
+                     protobuf::MaidAccount proto_maid_account;
+                     proto_maid_account.ParseFromString(serialised_maid_account->string());
+                     return Identity(proto_maid_account.maid_name());
+                 }()),
+      pmid_totals_(),
+      recent_put_data_(),
+      total_data_stored_by_pmids_(0),
+      total_put_data_(0),
+      archive_(root / EncodeToBase32(kMaidName_.data)) {
+  protobuf::MaidAccount proto_maid_account;
+  if (!proto_maid_account.ParseFromString(serialised_maid_account->string())) {
     LOG(kError) << "Failed to parse maid_account.";
-    ThrowError(NfsErrors::maid_account_parsing_error);
+    ThrowError(CommonErrors::parsing_error);
   }
+
+  for (int i(0); i != proto_maid_account.pmid_totals_size(); ++i) {
+    pmid_totals_.emplace_back(
+        nfs::PmidRegistration::serialised_type(NonEmptyString(
+            proto_maid_account.pmid_totals(i).serialised_pmid_registration())),
+        PmidRecord(proto_maid_account.pmid_totals(i).pmid_record()));
+  }
+
+  for (int i(0); i != proto_maid_account.recent_put_data_size(); ++i) {
+    recent_put_data_.emplace(std::make_pair());
+  }
+
+  total_data_stored_by_pmids_ = proto_maid_account.total_data_stored_by_pmids();
+  total_put_data_ = proto_maid_account.total_put_data();
 }
 
-NonEmptyString MaidAccount::Serialise() const {
+MaidAccount::serialised_type MaidAccount::Serialise() const {
   std::lock_guard<std::mutex> lock(mutex_);
   return NonEmptyString(proto_maid_account_.SerializeAsString());
 }
@@ -106,6 +128,34 @@ bool MaidAccount::HasDataElement(Identity name) {
   return (data_element_it != data_elements_.end());
 }
 */
+
+PmidTotals::PmidTotals() : serialised_pmid_registration(), pmid_record() {}
+
+PmidTotals::PmidTotals(
+    const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
+    const PmidRecord& pmid_record_in)
+        : serialised_pmid_registration(serialised_pmid_registration_in),
+          pmid_record(pmid_record_in) {}
+
+PmidTotals::PmidTotals(const PmidTotals& other)
+    : serialised_pmid_registration(other.serialised_pmid_registration),
+      pmid_record(other.pmid_record) {}
+
+PmidTotals& PmidTotals::operator=(const PmidTotals& other) {
+  serialised_pmid_registration = other.serialised_pmid_registration;
+  pmid_record = other.pmid_record;
+  return *this;
+}
+
+PmidTotals::PmidTotals(PmidTotals&& other)
+    : serialised_pmid_registration(std::move(other.serialised_pmid_registration)),
+      pmid_record(std::move(other.pmid_record)) {}
+
+PmidTotals& PmidTotals::operator=(PmidTotals&& other) {
+  serialised_pmid_registration = std::move(other.serialised_pmid_registration);
+  pmid_record = std::move(other.pmid_record);
+  return *this;
+}
 
 }  // namespace vault
 

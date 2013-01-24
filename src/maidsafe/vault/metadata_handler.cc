@@ -203,7 +203,7 @@ std::vector<Identity> DataElementsManager::GetOnlinePmid(const Identity& data_id
 void DataElementsManager::CheckDataElementExists(const Identity& data_name) {
   if (!boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name))) {
     LOG(kError) << "Failed to find data ID: " << Base64Substr(data_name);
-    ThrowError(NfsErrors::failed_to_find_managed_element);
+    ThrowError(CommonErrors::no_such_element);
   }
 }
 
@@ -212,7 +212,7 @@ void DataElementsManager::ReadAndParseElement(const Identity& data_name,
   NonEmptyString serialised_element(ReadFile(vault_metadata_dir_ / EncodeToBase64(data_name)));
   if (!element.ParseFromString(serialised_element.string())) {
     LOG(kError) << "Failed to parse data ID: " << Base64Substr(data_name);
-    ThrowError(NfsErrors::managed_element_parsing_error);
+    ThrowError(CommonErrors::parsing_error);
   }
 }
 
@@ -220,12 +220,12 @@ void DataElementsManager::SerialiseAndSaveElement(const protobuf::MetadataElemen
   std::string serialised_element(element.SerializeAsString());
   if (serialised_element.empty()) {
     LOG(kError) << "Failed to serialise data ID: " << Base64Substr(element.data_name());
-    ThrowError(NfsErrors::managed_element_serialisation_error);
+    ThrowError(CommonErrors::serialisation_error);
   }
 
   if (!WriteFile(vault_metadata_dir_ / EncodeToBase64(element.data_name()), serialised_element)) {
     LOG(kError) << "Failed to write data ID: " << Base64Substr(element.data_name());
-    ThrowError(NfsErrors::managed_element_serialisation_error);
+    ThrowError(CommonErrors::serialisation_error);
   }
 }
 
