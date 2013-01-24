@@ -101,6 +101,6 @@ class DataHolder {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/data_holder/data_holder-inl.h"
+#include "maidsafe/vault/data_holder_service-inl.h"
 
 #endif  // MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_H_

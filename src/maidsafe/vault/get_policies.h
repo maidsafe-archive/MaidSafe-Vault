@@ -37,10 +37,8 @@ class GetFromDataHolder {
         source_(nfs::MessageSource(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
 
   template<typename Data>
-  std::future<Data> Get(const typename Data::name_type& name,
-                        nfs::MessageSource source,
-                        const Identity& dest_id) {
-    auto promise(std::make_shared<std::promise<Data>>());  // NOLINT (Fraser)
+  std::future<Data> Get(const typename Data::name_type& name, const Identity& dest_id) {
+    auto promise(std::make_shared<std::promise<Data>>());
     std::future<Data> future(promise->get_future());
     routing::ResponseFunctor callback =
         [promise](const std::vector<std::string>& serialised_messages) {

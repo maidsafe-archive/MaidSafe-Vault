@@ -35,9 +35,8 @@ void MaidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_
       data_message.action() != nfs::DataMessage::Action::kGet) {
     ThrowError(VaultErrors::operation_not_supported);
   }
-  if (!detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
+  if (!routing_.IsConnectedToClient(data_message.source().node_id))
     ThrowError(VaultErrors::permission_denied);
-  }
 }
 
 void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
@@ -55,7 +54,7 @@ void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& g
     case nfs::GenericMessage::Action::kNodeDown:
       break;
     case nfs::GenericMessage::Action::kSynchronise:
-      if (detail::NodeRangeCheck(routing_, source_id)) {
+      if (routing_.IsConnectedToClient(source_id)) {
         HandleReceivedSyncData(generic_message.content());
       } else {
         reply_functor(nfs::ReturnCode(-1).Serialise()->string());

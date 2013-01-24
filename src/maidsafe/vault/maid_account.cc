@@ -15,6 +15,7 @@
 
 #include "maidsafe/common/utils.h"
 
+#include "maidsafe/vault/demultiplexer.h"
 #include "maidsafe/vault/pmid_account.h"
 #include "maidsafe/vault/maid_account_pb.h"
 
@@ -57,7 +58,10 @@ MaidAccount::MaidAccount(const serialised_type& serialised_maid_account,
   }
 
   for (int i(0); i != proto_maid_account.recent_put_data_size(); ++i) {
-    recent_put_data_.emplace(std::make_pair());
+    auto& recent_put_data(proto_maid_account.recent_put_data(i));
+    recent_put_data_.emplace(std::make_pair(
+        GetDataNameVariant(recent_put_data.type(), Identity(recent_put_data.name())),
+        PutDataDetails(recent_put_data.size(), recent_put_data.replication_count())));
   }
 
   total_data_stored_by_pmids_ = proto_maid_account.total_data_stored_by_pmids();
@@ -128,6 +132,7 @@ bool MaidAccount::HasDataElement(Identity name) {
   return (data_element_it != data_elements_.end());
 }
 */
+
 
 PmidTotals::PmidTotals() : serialised_pmid_registration(), pmid_record() {}
 

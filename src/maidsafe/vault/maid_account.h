@@ -32,6 +32,8 @@ namespace vault {
 
 struct PmidTotals;
 
+namespace protobuf { class PutData; }
+
 class MaidAccount {
  public:
   typedef MaidName name_type;
@@ -60,10 +62,6 @@ class MaidAccount {
   int64_t total_put_data() const { return total_put_data_; }
 
  private:
-  MaidAccount(const MaidAccount&);
-  MaidAccount& operator=(const MaidAccount&);
-  MaidAccount(MaidAccount&&);
-  MaidAccount& operator=(MaidAccount&&);
   struct PutDataDetails {
     PutDataDetails();
     PutDataDetails(int32_t size_in, int32_t replications_in);
@@ -73,9 +71,16 @@ class MaidAccount {
     PutDataDetails& operator=(PutDataDetails&& other);
     int32_t size, replications;
   };
+  typedef std::map<DataNameVariant, PutDataDetails> RecentPutData;
+
+  MaidAccount(const MaidAccount&);
+  MaidAccount& operator=(const MaidAccount&);
+  MaidAccount(MaidAccount&&);
+  MaidAccount& operator=(MaidAccount&&);
+
   const MaidName kMaidName_;
   std::vector<PmidTotals> pmid_totals_;
-  std::map<DataNameVariant, PutDataDetails> recent_put_data_;
+  RecentPutData recent_put_data_;
   int64_t total_data_stored_by_pmids_, total_put_data_;
   DiskBasedStorage archive_;
 };

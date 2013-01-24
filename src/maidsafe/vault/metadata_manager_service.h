@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_H_
-#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_SERVICE_H_
+#define MAIDSAFE_VAULT_METADATA_MANAGER_SERVICE_H_
 
 #include <vector>
 
@@ -24,8 +24,9 @@
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/accumulator.h"
 
-#include "maidsafe/vault/metadata_manager/data_elements_manager.h"
+#include "maidsafe/vault/metadata_handler.h"
 #include "maidsafe/vault/types.h"
+
 
 namespace maidsafe {
 
@@ -82,6 +83,6 @@ void MetadataManager::HandleDataMessage(const nfs::DataMessage& /*data_message*/
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/metadata_manager/metadata_manager-inl.h"
+#include "maidsafe/vault/metadata_manager_service-inl.h"
 
-#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_H_
+#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_SERVICE_H_

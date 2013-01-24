@@ -98,6 +98,9 @@ template<typename Nfs, typename Data>
 inline void RetryOnPutOrDeleteError(
     routing::Routing& routing, Nfs& nfs, nfs::DataMessage data_message) {
   if (ShouldRetry(routing, data_message)) {
+    // TODO(Fraser#5#): 2013-01-24 - Replace this with repeating asio timer?  Incorporate larger
+    //                  gaps between attempts.
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     if (data_message.action() == nfs::DataMessage::Action::kPut) {
       nfs.Put<Data>(
           data_message,

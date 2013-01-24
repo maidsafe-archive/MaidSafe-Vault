@@ -15,6 +15,8 @@
 
 #include "maidsafe/common/types.h"
 
+#include "maidsafe/vault/parameters.h"
+
 
 namespace maidsafe {
 
@@ -27,7 +29,7 @@ namespace detail {
 // }
 
 bool ShouldRetry(routing::Routing& routing, const nfs::DataMessage& data_message) {
-  return routing.network_status() > 0 &&
+  return routing.network_status() >= Parameters::kMinNetworkHealth &&
          routing.EstimateInGroup(data_message.source().node_id,
                                  NodeId(data_message.data().name.string()));
 }

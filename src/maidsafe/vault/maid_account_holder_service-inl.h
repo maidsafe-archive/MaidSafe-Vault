@@ -36,7 +36,7 @@ void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_me
       return reply_functor(return_code.Serialise()->string());
 
     ValidateDataMessage(data_message);
-    check with MM if data is unique
+    check with MM if data is unique.  If MM says already stored, check if we stored it.  If so success, else failure.
     AdjustAccount<Data>(data_message, is_payable<Data>());
     SendDataMessage<Data>(data_message);
 

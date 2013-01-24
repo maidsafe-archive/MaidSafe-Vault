@@ -49,7 +49,7 @@ class Vault {
         const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints =
             std::vector<boost::asio::ip::udp::endpoint>());
   ~Vault();  // must issue StopSending() to all identity objects (MM etc.)
-            // Then ensure routing is destroyed next then allothers in ny order at this time
+             // Then ensure routing is destroyed next then all others in any order at this time
  private:
   int InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
   routing::Functors InitialiseRoutingCallbacks();
