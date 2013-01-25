@@ -45,6 +45,8 @@ void ExtractElementsFromFilename(const std::string& filename,
                                  std::string& hash,
                                  size_t& file_number);
 
+boost::filesystem::path GetFileName(const std::string& hash, size_t file_number);
+
 boost::filesystem::path GetFilePath(const boost::filesystem::path& base_path,
                                     const std::string& hash,
                                     size_t file_number);

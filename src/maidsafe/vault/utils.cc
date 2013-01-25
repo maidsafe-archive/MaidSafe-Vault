@@ -52,18 +52,20 @@ void ExtractElementsFromFilename(const std::string& filename,
   hash = std::string(it + 1, filename.end());
 }
 
+boost::filesystem::path GetFileName(const std::string& hash, size_t file_number) {
+  return boost::filesystem::path(std::to_string(file_number) + "." + hash);
+}
+
 boost::filesystem::path GetFilePath(const boost::filesystem::path& base_path,
                                     const std::string& hash,
                                     size_t file_number) {
-  return base_path / (std::to_string(file_number) + "." + hash);
+  return base_path / GetFileName(file_number,hash);
 }
 
 bool MatchingDiskElements(const protobuf::DiskStoredElement& lhs,
                           const protobuf::DiskStoredElement& rhs) {
-  return lhs.data_name() == rhs.data_name() &&
-         lhs.version() == rhs.version() &&
-         (rhs.serialised_value().empty() ?
-             true : lhs.serialised_value() == rhs.serialised_value());
+  return lhs.data_name() == rhs.data_name() && lhs.version() == rhs.version() &&
+         (rhs.serialised_value().empty() ? true : lhs.serialised_value() == rhs.serialised_value());
 }
 
 }  // namespace detail

@@ -36,24 +36,21 @@ namespace vault {
 
 namespace test {
 
-typedef std::map<std::string, std::pair<uint32_t, std::string>> ElementMap;
+typedef std::map<std::string, std::string> ElementMap;
 
 template <typename D>
-void StoreAnElement(uint32_t index, uint32_t max_file_size,
+void StoreAnElement(uint32_t max_file_size,
                     DiskBasedStorage& disk_based_storage,
                     ElementMap& element_list) {
   typename D::name_type name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
-  int32_t version(RandomUint32());
   std::string serialised_value(EncodeToBase32(RandomString(max_file_size)));
 
   protobuf::DiskStoredElement element;
   element.set_data_name(name.data.string());
-  element.set_version(version);
   element.set_serialised_value(serialised_value);
 
-  element_list.insert(std::make_pair(serialised_value,
-                                      std::make_pair(index, element.SerializeAsString())));
-  disk_based_storage.Store<D>(name, version, serialised_value);
+  element_list.insert(std::make_pair(serialised_value, element.SerializeAsString()));
+  disk_based_storage.Store<D>(name, serialised_value);
 }
 
 template <typename T>
@@ -69,7 +66,6 @@ class DiskStorageTest : public testing::Test {
     protobuf::DiskStoredFile disk_file;
     protobuf::DiskStoredElement disk_element;
     disk_element.set_data_name(RandomString(64));
-    disk_element.set_version(RandomUint32() % 100);
     disk_element.set_serialised_value(RandomString(RandomUint32() % max_file_size));
     disk_file.add_disk_element()->CopyFrom(disk_element);
     return disk_file.SerializeAsString();
@@ -96,12 +92,12 @@ class DiskStorageTest : public testing::Test {
     EXPECT_EQ(fetched_disk_file.disk_element_size(), element_list.size());
     for (auto itr(element_list.begin()); itr != element_list.end(); ++itr) {
       protobuf::DiskStoredElement element;
-      element.ParseFromString((*itr).second.second);
+      element.ParseFromString((*itr).second);
       bool found_match(false);
       for (int i(0); i < fetched_disk_file.disk_element_size(); ++i)
         if (detail::MatchingDiskElements(fetched_disk_file.disk_element(i), element))
           found_match = true;
-      EXPECT_TRUE(found_match) << "can't find match element for element " << (*itr).second.first;
+      EXPECT_TRUE(found_match) << "can't find match element for element " << (*itr).second;
       if (!found_match)
         return false;
     }
@@ -236,13 +232,11 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlers) {
   DiskBasedStorage disk_based_storage(root_path);
 
   typename TypeParam::name_type name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
-  int32_t version(RandomUint32());
   std::string serialised_value(RandomString(10000));
-  disk_based_storage.Store<TypeParam>(name, version, serialised_value);
+  disk_based_storage.Store<TypeParam>(name, serialised_value);
 
   protobuf::DiskStoredElement element;
   element.set_data_name(name.data.string());
-  element.set_version(version);
   element.set_serialised_value(serialised_value);
   protobuf::DiskStoredFile disk_file;
   disk_file.add_disk_element()->CopyFrom(element);
@@ -264,17 +258,19 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlers) {
   disk_file.clear_disk_element();
   disk_file.add_disk_element()->CopyFrom(element);
 
-  disk_based_storage.Modify<TypeParam>(name, version,
+  disk_based_storage.Modify<TypeParam>(name,
                                        [this, new_serialised_value]
-                                          (std::string& serialised_disk_element) {
+                                       (std::string& serialised_disk_element) {
                                          this->ChangeDiskElement(serialised_disk_element,
-                                                                 new_serialised_value); },
+                                                                 new_serialised_value);
+                                       },
                                        serialised_value);
 
   std::string new_hash = EncodeToBase32(
                             crypto::Hash<crypto::SHA512>(disk_file.SerializeAsString()));
-  fs::path new_file_path = detail::GetFilePath(
-      root_path, new_hash, disk_based_storage.GetFileCount().get() - 1);
+  fs::path new_file_path = detail::GetFilePath(root_path,
+                                               new_hash,
+                                               disk_based_storage.GetFileCount().get() - 1);
   {
     auto result = disk_based_storage.GetFile(new_file_path);
     NonEmptyString fetched_content = result.get();
@@ -283,7 +279,7 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlers) {
     EXPECT_TRUE(fs::exists(new_file_path, error_code));
   }
 
-  disk_based_storage.Delete<TypeParam>(name, version);
+  disk_based_storage.Delete<TypeParam>(name);
   Sleep(boost::posix_time::milliseconds(10));
   EXPECT_FALSE(fs::exists(new_file_path, error_code));
 }
@@ -300,7 +296,7 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultThreads) {
     active_ptr.reset(new Active());
     active_list.push_back(active_ptr);
 
-    StoreAnElement<TypeParam>(i, max_file_size, disk_based_storage, element_list);
+    StoreAnElement<TypeParam>(max_file_size, disk_based_storage, element_list);
   }
 
   EXPECT_TRUE(this->VerifyElements(disk_based_storage, element_list));
@@ -309,9 +305,9 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultThreads) {
   for (auto itr(element_list.begin()); itr != element_list.end(); ++itr) {
     std::string new_serialised_value(EncodeToBase32(RandomString(max_file_size)));
     protobuf::DiskStoredElement element;
-    element.ParseFromString((*itr).second.second);
+    element.ParseFromString((*itr).second);
     element.set_serialised_value(new_serialised_value);
-    (*itr).second = std::make_pair((*itr).second.first, element.SerializeAsString());
+    (*itr).second = element.SerializeAsString();
   }
 
   // Modify each element's content parallel
@@ -319,21 +315,21 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultThreads) {
   int i = 0;
   do {
     protobuf::DiskStoredElement element;
-    element.ParseFromString((*itr).second.second);
+    element.ParseFromString((*itr).second);
     typename TypeParam::name_type name((Identity(element.data_name())));
-    int32_t version = element.version();
     std::string old_serialised_value = (*itr).first;
     std::string new_serialised_value = element.serialised_value();
 
-    active_list[i]->Send([this, &disk_based_storage,
-                          name, version, old_serialised_value, new_serialised_value] () {
-                            disk_based_storage.Modify<TypeParam>(name, version,
-                                [this, new_serialised_value]
-                                    (std::string& serialised_disk_element) {
-                                      this->ChangeDiskElement(serialised_disk_element,
-                                                              new_serialised_value); },
-                                old_serialised_value);
-                          });
+    active_list[i]->Send(
+        [this, &disk_based_storage, name, old_serialised_value, new_serialised_value] {
+          disk_based_storage.Modify<TypeParam>(name,
+                                               [this, new_serialised_value]
+                                               (std::string& serialised_disk_element) {
+                                                 this->ChangeDiskElement(serialised_disk_element,
+                                                                         new_serialised_value);
+                                               },
+                                               old_serialised_value);
+        });
     ++itr;
     ++i;
   } while (itr != element_list.end());
@@ -347,12 +343,11 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultThreads) {
   i = 0;
   do {
     protobuf::DiskStoredElement element;
-    element.ParseFromString((*itr).second.second);
+    element.ParseFromString((*itr).second);
     typename TypeParam::name_type name((Identity(element.data_name())));
-    int32_t version = element.version();
-    active_list[i]->Send([&disk_based_storage, name, version] () {
-                            disk_based_storage.Delete<TypeParam>(name, version);
-                          });
+    active_list[i]->Send([&disk_based_storage, name] () {
+                           disk_based_storage.Delete<TypeParam>(name);
+                         });
     ++itr;
     ++i;
   } while (itr != element_list.end());
@@ -370,19 +365,18 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultFiles) {
   uint32_t num_files(29), max_file_size(100);
 
   for (uint32_t i(0); i < num_files; ++i)
-    StoreAnElement<TypeParam>(i, max_file_size, disk_based_storage, element_list);
+    StoreAnElement<TypeParam>(max_file_size, disk_based_storage, element_list);
 
   EXPECT_EQ(this->VerifyFiles(3, disk_based_storage).size(), 3);
-  StoreAnElement<TypeParam>(num_files + 1, max_file_size, disk_based_storage, element_list);
+  StoreAnElement<TypeParam>(max_file_size, disk_based_storage, element_list);
   EXPECT_EQ(this->VerifyFiles(4, disk_based_storage).size(), 3);
 
   // Delete all elements
   for (auto itr(element_list.begin()); itr != element_list.end(); ++itr) {
     protobuf::DiskStoredElement element;
-    element.ParseFromString((*itr).second.second);
+    element.ParseFromString((*itr).second);
     typename TypeParam::name_type name((Identity(element.data_name())));
-    int32_t version = element.version();
-    disk_based_storage.Delete<TypeParam>(name, version);
+    disk_based_storage.Delete<TypeParam>(name);
   };
 
   // The file count will vary depends on the sequence of deletion

@@ -40,8 +40,7 @@ typedef std::promise<DiskBasedStorage::PathVector> VectorPathPromise;
 void AddDataToElement(const DiskBasedStorage::OrderingMap::reverse_iterator& r_it,
                       protobuf::DiskStoredElement*& disk_element) {
   disk_element->set_data_name((*r_it).first);
-  disk_element->set_version((*r_it).second.first);
-  disk_element->set_serialised_value((*r_it).second.second);
+  disk_element->set_serialised_value((*r_it).second);
 }
 
 void AddElementsToOrdering(const protobuf::DiskStoredFile& current_file_disk,
@@ -50,14 +49,12 @@ void AddElementsToOrdering(const protobuf::DiskStoredFile& current_file_disk,
   for (int c(0); c != current_file_disk.disk_element_size(); ++c) {
     ordering.insert(
         std::make_pair(current_file_disk.disk_element(c).data_name(),
-                       std::make_pair(current_file_disk.disk_element(c).version(),
-                                      current_file_disk.disk_element(c).serialised_value())));
+                       current_file_disk.disk_element(c).serialised_value()));
   }
   for (int p(0); p != previous_file_disk.disk_element_size(); ++p) {
     ordering.insert(
         std::make_pair(previous_file_disk.disk_element(p).data_name(),
-                       std::make_pair(previous_file_disk.disk_element(p).version(),
-                                      previous_file_disk.disk_element(p).serialised_value())));
+                       previous_file_disk.disk_element(p).serialised_value()));
   }
 }
 
@@ -173,7 +170,7 @@ std::future<DiskBasedStorage::PathVector> DiskBasedStorage::GetFileNames() const
                    std::vector<fs::path> file_names;
                    for (size_t n(0); n < file_hashes_.size(); ++n) {
                      if (file_hashes_.at(n) != kEmptyFileHash)
-                       file_names.push_back(detail::GetFilePath(kRoot_, file_hashes_.at(n), n));
+                       file_names.push_back(detail::GetFileName(file_hashes_.at(n), n));
                    }
                    promise->set_value(file_names);
                });
@@ -189,20 +186,34 @@ std::future<NonEmptyString> DiskBasedStorage::GetFile(const fs::path& path) cons
   //   throw std::exception();
   std::shared_ptr<NonEmptyStringPromise> promise(std::make_shared<NonEmptyStringPromise>());
   std::future<NonEmptyString> future(promise->get_future());
-  active_.Send([path, promise, this] () { promise->set_value(ReadFile(path)); });
+  active_.Send([path, promise, this] () {
+                 try {
+                   promise->set_value(ReadFile(kRoot_ / path));
+                 }
+                 catch(...) {
+                   promise->set_exception(std::current_exception());
+                 }
+               });
   return std::move(future);
 }
 
 void DiskBasedStorage::PutFile(const fs::path& path, const NonEmptyString& content) {
-  active_.Send([path, content, this] () { DoPutFile(path, content); });
-}
-
-void DiskBasedStorage::DoPutFile(const fs::path& path, const NonEmptyString& content) {
-  std::string filename(path.filename().string());
   size_t file_number;
   std::string hash;
-  detail::ExtractElementsFromFilename(filename, hash, file_number);
-  assert(EncodeToBase32(crypto::Hash<crypto::SHA512>(content)) == hash && "Content doesn't hash.");
+  detail::ExtractElementsFromFilename(path.string(), hash, file_number);
+  if (EncodeToBase32(crypto::Hash<crypto::SHA512>(content)) != hash) {
+    LOG(kError) << "Content doesn't hash.";
+    throw std::exception();
+  }
+  active_.Send([path, content, file_number, hash, this] () {
+                 DoPutFile(kRoot_ / path, content, file_number, hash);
+               });
+}
+
+void DiskBasedStorage::DoPutFile(const fs::path& path,
+                                 const NonEmptyString& content,
+                                 size_t file_number,
+                                 const std::string& hash) {
   protobuf::DiskStoredFile disk_file;
   assert(disk_file.ParseFromString(content.string()));
   if (file_number < file_hashes_.size()) {

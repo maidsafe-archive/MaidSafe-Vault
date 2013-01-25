@@ -35,20 +35,18 @@ namespace vault {
 class DiskBasedStorage {
  public:
   typedef std::vector<boost::filesystem::path> PathVector;
-  typedef std::map<std::string, std::pair<int32_t, std::string>> OrderingMap;
+  typedef std::map<std::string, std::string> OrderingMap;
   // Initialise with root.leaf() == MAID name / PMID name, etc.
   explicit DiskBasedStorage(const boost::filesystem::path& root);
 
   // Element handling
   template<typename Data>
   void Store(const typename Data::name_type& name,
-             int32_t version,
              const std::string& serialised_value);
   template<typename Data>
-  void Delete(const typename Data::name_type& name, int32_t version);
+  void Delete(const typename Data::name_type& name);
   template<typename Data>
   void Modify(const typename Data::name_type& name,
-              int32_t version,
               const std::function<void(std::string&)>& functor,
               const std::string& serialised_value);
 
@@ -69,7 +67,10 @@ class DiskBasedStorage {
   void TraverseAndVerifyFiles(const boost::filesystem::path& root);
   uint32_t VerifyFileHashAndCountElements(const std::string& hash, size_t file_number);
   void AddToFileData(const std::string& hash, size_t file_number, uint32_t element_count);
-  void DoPutFile(const boost::filesystem::path& path, const NonEmptyString& content);
+  void DoPutFile(const boost::filesystem::path& path,
+                 const NonEmptyString& content,
+                 size_t file_number,
+                 const std::string& hash);
 
   void AddToLatestFile(const protobuf::DiskStoredElement& element);
   void SearchForAndDeleteEntry(const protobuf::DiskStoredElement& element);

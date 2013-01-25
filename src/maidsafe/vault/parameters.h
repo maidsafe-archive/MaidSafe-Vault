@@ -12,6 +12,7 @@
 #ifndef MAIDSAFE_VAULT_PARAMETERS_H_
 #define MAIDSAFE_VAULT_PARAMETERS_H_
 
+#include <cstddef>
 
 namespace maidsafe {
 

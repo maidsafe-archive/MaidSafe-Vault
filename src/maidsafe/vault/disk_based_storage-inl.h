@@ -23,37 +23,32 @@ namespace vault {
 
 template<typename Data>
 void DiskBasedStorage::Store(const typename Data::name_type& name,
-                             int32_t version,
                              const std::string& serialised_value) {
-  active_.Send([name, version, serialised_value, this] {
+  active_.Send([name, serialised_value, this] {
                    protobuf::DiskStoredElement element;
                    element.set_data_name(name.data.string());
-                   element.set_version(version);
                    element.set_serialised_value(serialised_value);
                    this->AddToLatestFile(element);
                });
 }
 
 template<typename Data>
-void DiskBasedStorage::Delete(const typename Data::name_type& name, int32_t version) {
-  active_.Send([name, version, this] {
+void DiskBasedStorage::Delete(const typename Data::name_type& name) {
+  active_.Send([name, this] {
                    protobuf::DiskStoredElement element;
                    element.set_data_name(name.data.string());
-                   element.set_version(version);
                    this->SearchForAndDeleteEntry(element);
                });
 }
 
 template<typename Data>
 void DiskBasedStorage::Modify(const typename Data::name_type& name,
-                              int32_t version,
                               const std::function<void(std::string&)>& functor,
                               const std::string& serialised_value) {
   assert(functor && "Null functor not allowed!");
-  active_.Send([name, version, functor, serialised_value, this] () {
+  active_.Send([name, functor, serialised_value, this] () {
                    protobuf::DiskStoredElement element;
                    element.set_data_name(name.data.string());
-                   element.set_version(version);
                    element.set_serialised_value(serialised_value);
                    this->SearchForAndModifyEntry(element, functor);
                });
