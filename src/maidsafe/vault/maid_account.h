@@ -85,7 +85,7 @@ class MaidAccount {
   std::vector<PmidTotals>::iterator Find(const PmidName& pmid_name);
 
   const MaidName kMaidName_;
-  maidsafe::detail::GetTagValueAndIdentity type_and_name_visitor_;
+  GetTagValueAndIdentityVisitor type_and_name_visitor_;
   std::vector<PmidTotals> pmid_totals_;
   std::deque<PutDataDetails> recent_put_data_;
   int64_t total_data_stored_by_pmids_, total_put_data_;

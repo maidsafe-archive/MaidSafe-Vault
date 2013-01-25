@@ -65,9 +65,8 @@ MaidAccount::MaidAccount(const serialised_type& serialised_maid_account, const f
   for (int i(0); i != proto_maid_account.recent_put_data_size(); ++i) {
     auto& recent_put_data(proto_maid_account.recent_put_data(i));
     recent_put_data_.emplace_back(
-        maidsafe::detail::GetDataNameVariant(
-            static_cast<maidsafe::detail::DataTagValue>(recent_put_data.type()),
-            Identity(recent_put_data.name())),
+        GetDataNameVariant(static_cast<DataTagValue>(recent_put_data.type()),
+                           Identity(recent_put_data.name())),
         recent_put_data.size(),
         recent_put_data.replication_count());
   }
