@@ -63,15 +63,15 @@ TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
   nfs::MessageSource source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   NonEmptyString content(RandomAlphaNumericString(256));
   nfs::DataMessage::Data data(maidsafe::detail::DataTagValue::kAnmaidValue,
-                              Identity(RandomString(NodeId::kSize)), content, RandomInt32());
+                              Identity(RandomString(NodeId::kSize)), content);
   nfs::DataMessage data_message(nfs::DataMessage::Action::kPut, nfs::Persona::kDataHolder,
                                 source, data);
 
   std::string retrieved;
   this->HandlePutMessage(data_message, [&](const std::string&) {});
   this->HandleGetMessage(data_message,
-                         [&](const std::string& data) {
-                           retrieved = data;
+                         [&](const std::string& result) {
+                           retrieved = result;
                          });
   EXPECT_NE(retrieved.find(content.string()), -1);
 }
@@ -80,13 +80,13 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
   nfs::MessageSource source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   const NonEmptyString content(RandomAlphaNumericString(256));
   nfs::DataMessage::Data data(maidsafe::detail::DataTagValue::kAnmaidValue,
-                              Identity(RandomString(NodeId::kSize)), content, RandomInt32());
+                              Identity(RandomString(NodeId::kSize)), content);
   nfs::DataMessage data_message(nfs::DataMessage::Action::kGet, nfs::Persona::kDataHolder,
                                 source, data);
   std::string retrieved;
   this->HandleGetMessage(data_message,
-                         [&](const std::string& data) {
-                           retrieved = data;
+                         [&](const std::string& result) {
+                           retrieved = result;
                           });
   EXPECT_EQ(retrieved, nfs::ReturnCode(-1).Serialise()->string());
 }
@@ -95,101 +95,85 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
   nfs::MessageSource source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   NonEmptyString content(RandomAlphaNumericString(256));
   nfs::DataMessage::Data data(maidsafe::detail::DataTagValue::kAnmaidValue,
-                              Identity(RandomString(NodeId::kSize)), content, RandomInt32());
-  nfs::DataMessage data_message(nfs::DataMessage::Action::kPut, nfs::Persona::kDataHolder,
+                              Identity(RandomString(NodeId::kSize)), content);
+  nfs::DataMessage data_message(nfs::DataMessage::Action::kDelete, nfs::Persona::kDataHolder,
                                 source, data);
 
   std::string retrieved;
   this->HandlePutMessage(data_message, [&](const std::string&) {});
   this->HandleGetMessage(data_message,
-                         [&](const std::string& data) {
-                           retrieved = data;
+                         [&](const std::string& result) {
+                           retrieved = result;
                           });
   EXPECT_NE(retrieved.find(content.string()), -1);
   this->HandleDeleteMessage(data_message,
-                            [&](const std::string& data) {
-                              retrieved = data;
+                            [&](const std::string& result) {
+                              retrieved = result;
                             });
   EXPECT_EQ(retrieved, nfs::ReturnCode(0).Serialise()->string());
   this->HandleGetMessage(data_message,
-                         [&](const std::string& data) {
-                           retrieved = data;
+                         [&](const std::string& result) {
+                           retrieved = result;
                          });
   EXPECT_EQ(retrieved, nfs::ReturnCode(-1).Serialise()->string());
 }
 
 TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
   uint32_t events(RandomUint32() % 100);
-  std::vector<nfs::DataMessage> data_messages;
   std::vector<std::future<void>> future_puts, future_deletes, future_gets;
 
   for (uint32_t i = 0; i != events; ++i) {
     nfs::MessageSource source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
     NonEmptyString content(RandomAlphaNumericString(256));
-    std::string retrieved;
     nfs::DataMessage::Data data(maidsafe::detail::DataTagValue::kAnmaidValue,
-                                Identity(RandomString(NodeId::kSize)), content, RandomInt32());
+                                Identity(RandomString(NodeId::kSize)), content);
     nfs::DataMessage data_message(nfs::DataMessage::Action::kPut, nfs::Persona::kDataHolder,
                                   source, data);
-    data_messages.push_back(data_message);
 
     uint32_t event(RandomUint32() % 3);
     switch (event) {
       case 0: {
-        if (!data_messages.empty()) {
-          nfs::DataMessage data_msg = data_messages[RandomUint32() % data_messages.size()];
-          future_deletes.push_back(std::async([this, data_msg, &retrieved] {
-                                               this->HandleDeleteMessage(
-                                                   data_msg,
-                                                   [&](const std::string& /*data*/) {
-                                                   });
-                                  }));
-        } else {
-          future_deletes.push_back(std::async([this, data_message, &retrieved] {
-                                               this->HandleDeleteMessage(
-                                                  data_message,
-                                                  [&](const std::string& data) {
-                                                    retrieved = data;
-                                                  });
-                                   }));
-        }
+        future_deletes.push_back(std::async([this, data_message] {
+                                            this->HandleDeleteMessage(
+                                                data_message,
+                                                [&](const std::string& result) {
+                                                  assert(!result.empty());
+                                                });
+                                 }));
         break;
       }
-     case 1: {
-        future_puts.push_back(std::async([this, data_message, &retrieved] {
-                                          this->HandlePutMessage(
+      case 1: {
+        future_puts.push_back(std::async([this, data_message] {
+                                         this->HandlePutMessage(
                                              data_message,
-                                             [&](const std::string& /*data*/) {
+                                             [&](const std::string& result) {
+                                               assert(!result.empty());
                                              });
-                             }));
+                              }));
         break;
       }
       case 2: {
-        if (!data_messages.empty()) {
-          nfs::DataMessage data_msg = data_messages[RandomUint32() % data_messages.size()];
-          future_gets.push_back(std::async([this, data_msg, &retrieved] {
-                                            this->HandleGetMessage(
-                                               data_msg,
-                                               [&](const std::string& data) {
-                                                 assert(!data.empty());
-                                               });
-                                }));
-        } else {
-          future_gets.push_back(std::async([this, data_message, &retrieved] {
-                                            this->HandleGetMessage(
-                                               data_message,
-                                               [&](const std::string& data) {
-                                                 retrieved = data;
-                                               });
-                                          }));
-        }
+        future_gets.push_back(std::async([this, data_message] {
+                                         this->HandleGetMessage(
+                                             data_message,
+                                             [&](const std::string& result) {
+                                               assert(!result.empty());
+                                             });
+                              }));
         break;
       }
     }
   }
 
-  for (auto& future_put : future_puts)
-    future_put.get();
+  for (auto& future_put : future_puts) {
+    try {
+      future_put.get();
+    }
+    catch(const std::exception& e) {
+      std::string msg(e.what());
+      LOG(kError) << msg;
+    }
+  }
 
   for (auto& future_delete : future_deletes) {
     try {
@@ -252,7 +236,7 @@ TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
   nfs::MessageSource source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   NonEmptyString content(RandomAlphaNumericString(256));
   nfs::DataMessage::Data data(maidsafe::detail::DataTagValue::kAnmaidValue,
-                              Identity(RandomString(NodeId::kSize)), content, RandomInt32());
+                              Identity(RandomString(NodeId::kSize)), content);
   nfs::DataMessage data_message(nfs::DataMessage::Action::kPut, nfs::Persona::kDataHolder,
                                 source, data);
   EXPECT_THROW(this->GetFromCache(data_message), std::system_error);

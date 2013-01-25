@@ -29,24 +29,57 @@ namespace vault {
 template<typename Data>
 void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
-  try {
-    nfs::ReturnCode return_code(MakeError(CommonErrors::success));
-    auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
-    if (accumulator_.CheckHandled(request_id, return_code))
-      return reply_functor(return_code.Serialise()->string());
+  nfs::ReturnCode return_code(MakeError(CommonErrors::success));
+  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
+  if (accumulator_.CheckHandled(request_id, return_code))
+    return reply_functor(return_code.Serialise()->string());
 
+  if (data_message.action() == nfs::DataMessage::Action::kPut) {
+    HandlePut<Data>(data_message, reply_functor);
+  } else if (data_message.action() == nfs::DataMessage::Action::kDelete) {
+    HandleDelete<Data>(data_message, reply_functor);
+  } else {
+    return_code = nfs::ReturnCode(MakeError(VaultErrors::operation_not_supported));
+    accumulator_.SetHandled(request_id, return_code);
+    reply_functor(return_code.Serialise()->string());
+  }
+}
+
+template<typename Data>
+void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
+                                         const routing::ReplyFunctor& reply_functor) {
+  nfs::ReturnCode return_code(MakeError(CommonErrors::success));
+  try {
     ValidateDataMessage(data_message);
     check with MM if data is unique.  If MM says already stored, check if we stored it.  If so success, else failure.
     AdjustAccount<Data>(data_message, is_payable<Data>());
     SendDataMessage<Data>(data_message);
-
-    assert(return_code.value() == static_cast<int>(CommonErrors::success));
-    accumulator_.SetHandled(request_id, return_code);
-    reply_functor(return_code.Serialise()->string());
   }
   catch(const std::system_error& error) {
-    reply_functor(nfs::ReturnCode(error).Serialise()->string());
+    LOG(kWarning) << error.what();
+    return_code = nfs::ReturnCode(error);
   }
+  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
+  accumulator_.SetHandled(request_id, return_code);
+  reply_functor(return_code.Serialise()->string());
+}
+
+template<typename Data>
+void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message,
+                                            const routing::ReplyFunctor& reply_functor) {
+  try {
+    ValidateDataMessage(data_message);
+    AdjustAccount<Data>(data_message, is_payable<Data>());
+    SendDataMessage<Data>(data_message);
+  }
+  catch(const std::system_error& error) {
+    LOG(kWarning) << error.what();
+    // Always return succeess for Deletes
+  }
+  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
+  nfs::ReturnCode return_code(MakeError(CommonErrors::success));
+  accumulator_.SetHandled(request_id, return_code);
+  reply_functor(return_code.Serialise()->string());
 }
 
 template<typename Data>

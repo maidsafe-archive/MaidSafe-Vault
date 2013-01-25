@@ -47,6 +47,11 @@ class MaidAccountHolderService {
   void HandleSynchronise(const std::vector<routing::NodeInfo>& new_close_nodes);
 
  private:
+  template<typename Data>
+  void HandlePut(const nfs::DataMessage& data_message, const routing::ReplyFunctor& reply_functor);
+  template<typename Data>
+  void HandleDelete(const nfs::DataMessage& data_message,
+                    const routing::ReplyFunctor& reply_functor);
   void ValidateDataMessage(const nfs::DataMessage& data_message);
   template<typename Data>
   void AdjustAccount(const nfs::DataMessage& data_message, std::true_type);
