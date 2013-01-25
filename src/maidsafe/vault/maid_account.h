@@ -13,17 +13,19 @@
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_H_
 
 #include <cstdint>
-#include <map>
+#include <deque>
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/types.h"
+#include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/pmid_registration.h"
 
 #include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/vault/pmid_record.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/utils.h"
 
 
 namespace maidsafe {
@@ -51,9 +53,9 @@ class MaidAccount {
   void PutArchiveFile(const boost::filesystem::path& path, const NonEmptyString& content);
 
   template<typename Data>
-  void PutData(const typename Data::name_type& name, int32_t size, int32_t replication_count); -- throw if not enough space
+  void PutData(const typename Data::name_type& name, int32_t size, int32_t replication_count);
   template<typename Data>
-  bool DeleteData(const typename Data::name_type& name); -- throw if data entry doesn't exist
+  bool DeleteData(const typename Data::name_type& name);
   template<typename Data>
   void UpdateReplicationCount(const typename Data::name_type& name, int32_t new_replication_count);
 
@@ -64,23 +66,28 @@ class MaidAccount {
  private:
   struct PutDataDetails {
     PutDataDetails();
-    PutDataDetails(int32_t size_in, int32_t replications_in);
+    PutDataDetails(const DataNameVariant& data_name_variant_in,
+                   int32_t size_in,
+                   int32_t replications_in);
     PutDataDetails(const PutDataDetails& other);
     PutDataDetails& operator=(const PutDataDetails& other);
     PutDataDetails(PutDataDetails&& other);
     PutDataDetails& operator=(PutDataDetails&& other);
+
+    DataNameVariant data_name_variant;
     int32_t size, replications;
   };
-  typedef std::map<DataNameVariant, PutDataDetails> RecentPutData;
 
   MaidAccount(const MaidAccount&);
   MaidAccount& operator=(const MaidAccount&);
   MaidAccount(MaidAccount&&);
   MaidAccount& operator=(MaidAccount&&);
+  std::vector<PmidTotals>::iterator Find(const PmidName& pmid_name);
 
   const MaidName kMaidName_;
+  maidsafe::detail::GetTagValueAndIdentity type_and_name_visitor_;
   std::vector<PmidTotals> pmid_totals_;
-  RecentPutData recent_put_data_;
+  std::deque<PutDataDetails> recent_put_data_;
   int64_t total_data_stored_by_pmids_, total_put_data_;
   DiskBasedStorage archive_;
 };
@@ -101,5 +108,7 @@ struct PmidTotals {
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#include "maidsafe/vault/maid_account-inl.h"
 
 #endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_H_

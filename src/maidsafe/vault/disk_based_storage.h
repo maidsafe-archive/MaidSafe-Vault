@@ -15,10 +15,10 @@
 #include <cstdint>
 #include <functional>
 #include <future>
-#include <string>
-#include <vector>
-#include <utility>
 #include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "boost/filesystem/path.hpp"
 
@@ -27,6 +27,7 @@
 
 #include "maidsafe/vault/disk_based_storage_messages_pb.h"
 
+
 namespace maidsafe {
 
 namespace vault {
@@ -34,7 +35,7 @@ namespace vault {
 class DiskBasedStorage {
  public:
   typedef std::vector<boost::filesystem::path> PathVector;
-  typedef std::map<std::string, std::pair<int32_t, std::string> > OrderingMap;
+  typedef std::map<std::string, std::pair<int32_t, std::string>> OrderingMap;
   // Initialise with root.leaf() == MAID name / PMID name, etc.
   explicit DiskBasedStorage(const boost::filesystem::path& root);
 
@@ -58,27 +59,16 @@ class DiskBasedStorage {
   void PutFile(const boost::filesystem::path& path, const NonEmptyString& content);
 
  private:
-  const boost::filesystem::path kRoot_;
-  mutable Active active_;
-  std::vector<std::string> file_hashes_;
   class Changer;
+
+  DiskBasedStorage(const DiskBasedStorage&);
+  DiskBasedStorage& operator=(const DiskBasedStorage&);
+  DiskBasedStorage(DiskBasedStorage&&);
+  DiskBasedStorage& operator=(DiskBasedStorage&&);
 
   void TraverseAndVerifyFiles(const boost::filesystem::path& root);
   uint32_t VerifyFileHashAndCountElements(const std::string& hash, size_t file_number);
   void AddToFileData(const std::string& hash, size_t file_number, uint32_t element_count);
-
-  template<typename Data>
-  void DoStore(const typename Data::name_type& name,
-               int32_t version,
-               const std::string& serialised_value);
-  template<typename Data>
-  void DoDelete(const typename Data::name_type& name, int32_t version);
-  template<typename Data>
-  void DoModify(const typename Data::name_type& name,
-                int32_t version,
-                const std::function<void(std::string&)>& functor,
-                const std::string& serialised_value);
-  void DoGetFileNames(std::shared_ptr<std::promise<PathVector> > promise) const;
   void DoPutFile(const boost::filesystem::path& path, const NonEmptyString& content);
 
   void AddToLatestFile(const protobuf::DiskStoredElement& element);
@@ -105,6 +95,10 @@ class DiskBasedStorage {
                      size_t file_index,
                      size_t begin,
                      size_t end);
+
+  const boost::filesystem::path kRoot_;
+  mutable Active active_;
+  std::vector<std::string> file_hashes_;
 };
 
 }  // namespace vault

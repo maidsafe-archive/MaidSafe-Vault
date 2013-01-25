@@ -11,8 +11,9 @@
 
 #include "maidsafe/vault/disk_based_storage.h"
 
-#include <memory>
 #include <algorithm>
+#include <limits>
+#include <memory>
 
 #include "boost/filesystem/operations.hpp"
 
@@ -112,7 +113,7 @@ DiskBasedStorage::DiskBasedStorage(const fs::path& root)
 
 void DiskBasedStorage::TraverseAndVerifyFiles(const fs::path& root) {
   std::string hash;
-  size_t file_number(-1);
+  size_t file_number(std::numeric_limits<size_t>::max());
   fs::directory_iterator root_itr(root), end_itr;
   for (; root_itr != end_itr; ++root_itr) {
     try {
@@ -168,7 +169,14 @@ std::future<uint32_t> DiskBasedStorage::GetFileCount() const {
 std::future<DiskBasedStorage::PathVector> DiskBasedStorage::GetFileNames() const {
   std::shared_ptr<VectorPathPromise> promise(std::make_shared<VectorPathPromise>());
   std::future<DiskBasedStorage::PathVector> future(promise->get_future());
-  active_.Send([promise, this] () { DoGetFileNames(promise); });
+  active_.Send([promise, this] {
+                   std::vector<fs::path> file_names;
+                   for (size_t n(0); n < file_hashes_.size(); ++n) {
+                     if (file_hashes_.at(n) != kEmptyFileHash)
+                       file_names.push_back(detail::GetFilePath(kRoot_, file_hashes_.at(n), n));
+                   }
+                   promise->set_value(file_names);
+               });
   return std::move(future);
 }
 
@@ -181,22 +189,12 @@ std::future<NonEmptyString> DiskBasedStorage::GetFile(const fs::path& path) cons
   //   throw std::exception();
   std::shared_ptr<NonEmptyStringPromise> promise(std::make_shared<NonEmptyStringPromise>());
   std::future<NonEmptyString> future(promise->get_future());
-  active_.Send([path, promise, this] () { promise->set_value(ReadFile(path)); });  // NOLINT (Dan)
+  active_.Send([path, promise, this] () { promise->set_value(ReadFile(path)); });
   return std::move(future);
 }
 
 void DiskBasedStorage::PutFile(const fs::path& path, const NonEmptyString& content) {
-  active_.Send([path, content, this] () { DoPutFile(path, content); });  // NOLINT (Dan)
-}
-
-// File names are index no. + hash of contents
-void DiskBasedStorage::DoGetFileNames(std::shared_ptr<VectorPathPromise> promise) const {
-  std::vector<fs::path> file_names;
-  for (size_t n(0); n < file_hashes_.size(); ++n) {
-    if (file_hashes_.at(n) != kEmptyFileHash)
-      file_names.push_back(detail::GetFilePath(kRoot_, file_hashes_.at(n), n));
-  }
-  promise->set_value(file_names);
+  active_.Send([path, content, this] () { DoPutFile(path, content); });
 }
 
 void DiskBasedStorage::DoPutFile(const fs::path& path, const NonEmptyString& content) {

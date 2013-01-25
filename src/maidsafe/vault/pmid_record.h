@@ -27,12 +27,10 @@ namespace protobuf { class PmidRecord; }
 
 struct PmidRecord {
  public:
-  typedef TaggedValue<NonEmptyString, struct SerialisedPmidRecordTag> serialised_type;
   PmidRecord();
   explicit PmidRecord(const PmidName& pmid_name_in);
-  explicit PmidRecord(const serialised_type& serialised_pmid_record);
   explicit PmidRecord(const protobuf::PmidRecord& proto_pmid_record);
-  serialised_type Serialise() const;
+  protobuf::PmidRecord ToProtobuf() const;
   PmidRecord(const PmidRecord& other);
   PmidRecord& operator=(const PmidRecord& other);
   PmidRecord(PmidRecord&& other);

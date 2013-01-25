@@ -14,7 +14,7 @@
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/passport/types.h"
-#include "maidsafe/detail/data_type_values.h"
+#include "maidsafe/data_types/detail/data_type_values.h"
 #include "maidsafe/nfs/data_message.h"
 #include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/message.h"
@@ -74,38 +74,6 @@ void HandleDataType(nfs::DataMessage& data_message,
 
 }  // unnamed namespace
 
-DataNameVariant GetDataNameVariant(int32_t type, const Identity& name) {
-  switch (type) {
-    case maidsafe::detail::DataTagValue::kAnmidValue:
-      return DataNameVariant(passport::PublicAnmid::name_type(name));
-    case maidsafe::detail::DataTagValue::kAnsmidValue:
-      return DataNameVariant(passport::PublicAnsmid::name_type(name));
-    case maidsafe::detail::DataTagValue::kAntmidValue:
-      return DataNameVariant(passport::PublicAntmid::name_type(name));
-    case maidsafe::detail::DataTagValue::kAnmaidValue:
-      return DataNameVariant(passport::PublicAnmaid::name_type(name));
-    case maidsafe::detail::DataTagValue::kMaidValue:
-      return DataNameVariant(passport::PublicMaid::name_type(name));
-    case maidsafe::detail::DataTagValue::kPmidValue:
-      return DataNameVariant(passport::PublicPmid::name_type(name));
-    case maidsafe::detail::DataTagValue::kMidValue:
-      return DataNameVariant(passport::Mid::name_type(name));
-    case maidsafe::detail::DataTagValue::kSmidValue:
-      return DataNameVariant(passport::Smid::name_type(name));
-    case maidsafe::detail::DataTagValue::kTmidValue:
-      return DataNameVariant(passport::Tmid::name_type(name));
-    case maidsafe::detail::DataTagValue::kAnmpidValue:
-      return DataNameVariant(passport::PublicAnmpid::name_type(name));
-    case maidsafe::detail::DataTagValue::kMpidValue:
-      return DataNameVariant(passport::PublicMpid::name_type(name));
-    case maidsafe::detail::DataTagValue::kImmutableDataValue:
-      return DataNameVariant(ImmutableData::name_type(name));
-    case maidsafe::detail::DataTagValue::kMutableDataValue:
-      return DataNameVariant(MutableData::name_type(name));
-    default:
-      LOG(kError) << "Unhandled data type";
-  }
-}
 
 Demultiplexer::Demultiplexer(MaidAccountHolder& maid_account_holder,
                              MetadataManager& metadata_manager,

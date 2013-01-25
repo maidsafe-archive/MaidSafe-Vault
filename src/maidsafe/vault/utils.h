@@ -13,9 +13,13 @@
 #define MAIDSAFE_VAULT_UTILS_H_
 
 #include <mutex>
+#include <utility>
 #include <vector>
 
+#include "boost/variant/static_visitor.hpp"
+
 #include "maidsafe/common/error.h"
+#include "maidsafe/data_types/detail/data_type_values.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/data_message.h"
 

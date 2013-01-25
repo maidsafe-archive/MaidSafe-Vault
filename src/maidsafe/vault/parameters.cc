@@ -19,6 +19,7 @@ namespace vault {
 namespace detail {
 
 const int Parameters::kMinNetworkHealth(12);
+size_t Parameters::max_recent_data_list_size(1000);
 
 }  // namespace detail
 

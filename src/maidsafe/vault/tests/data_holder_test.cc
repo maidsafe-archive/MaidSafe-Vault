@@ -21,7 +21,7 @@
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/test.h"
 
-#include "maidsafe/detail/data_type_values.h"
+#include "maidsafe/data_types/detail/data_type_values.h"
 
 #include "maidsafe/nfs/data_message.h"
 

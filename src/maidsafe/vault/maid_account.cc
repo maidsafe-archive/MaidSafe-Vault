@@ -13,6 +13,8 @@
 
 #include <string>
 
+#include "boost/variant/apply_visitor.hpp"
+
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/vault/demultiplexer.h"
@@ -20,25 +22,28 @@
 #include "maidsafe/vault/maid_account_pb.h"
 
 
+namespace fs = boost::filesystem;
+
 namespace maidsafe {
 
 namespace vault {
 
-MaidAccount::MaidAccount(const MaidName& maid_name, const boost::filesystem::path& root)
+MaidAccount::MaidAccount(const MaidName& maid_name, const fs::path& root)
     : kMaidName_(maid_name),
+      type_and_name_visitor_(),
       pmid_totals_(),
       recent_put_data_(),
       total_data_stored_by_pmids_(0),
       total_put_data_(0),
       archive_(root / EncodeToBase32(kMaidName_.data)) {}
 
-MaidAccount::MaidAccount(const serialised_type& serialised_maid_account,
-                         const boost::filesystem::path& root)
+MaidAccount::MaidAccount(const serialised_type& serialised_maid_account, const fs::path& root)
     : kMaidName_([&serialised_maid_account]()->Identity {
                      protobuf::MaidAccount proto_maid_account;
                      proto_maid_account.ParseFromString(serialised_maid_account->string());
                      return Identity(proto_maid_account.maid_name());
                  }()),
+      type_and_name_visitor_(),
       pmid_totals_(),
       recent_put_data_(),
       total_data_stored_by_pmids_(0),
@@ -59,9 +64,12 @@ MaidAccount::MaidAccount(const serialised_type& serialised_maid_account,
 
   for (int i(0); i != proto_maid_account.recent_put_data_size(); ++i) {
     auto& recent_put_data(proto_maid_account.recent_put_data(i));
-    recent_put_data_.emplace(std::make_pair(
-        GetDataNameVariant(recent_put_data.type(), Identity(recent_put_data.name())),
-        PutDataDetails(recent_put_data.size(), recent_put_data.replication_count())));
+    recent_put_data_.emplace_back(
+        maidsafe::detail::GetDataNameVariant(
+            static_cast<maidsafe::detail::DataTagValue>(recent_put_data.type()),
+            Identity(recent_put_data.name())),
+        recent_put_data.size(),
+        recent_put_data.replication_count());
   }
 
   total_data_stored_by_pmids_ = proto_maid_account.total_data_stored_by_pmids();
@@ -69,69 +77,72 @@ MaidAccount::MaidAccount(const serialised_type& serialised_maid_account,
 }
 
 MaidAccount::serialised_type MaidAccount::Serialise() const {
-  std::lock_guard<std::mutex> lock(mutex_);
-  return NonEmptyString(proto_maid_account_.SerializeAsString());
-}
+  protobuf::MaidAccount proto_maid_account;
+  proto_maid_account.set_maid_name(kMaidName_->string());
 
-/*
-void MaidAccount::PushPmidTotal(PmidTotals pmid_total) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  pmid_totals_.push_back(pmid_total);
-}
-
-void MaidAccount::RemovePmidTotal(Identity pmid_id) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  for (auto itr = pmid_totals_.begin(); itr != pmid_totals_.end(); ++itr) {
-    if ((*itr).IsRecordOf(pmid_id)) {
-      pmid_totals_.erase(itr);
-      return;
-    }
+  for (auto& pmid_total : pmid_totals_) {
+    auto proto_pmid_totals(proto_maid_account.add_pmid_totals());
+    proto_pmid_totals->set_serialised_pmid_registration(
+        pmid_total.serialised_pmid_registration->string());
+    *(proto_pmid_totals->mutable_pmid_record()) = pmid_total.pmid_record.ToProtobuf();
   }
-}
 
-void MaidAccount::UpdatePmidTotal(PmidTotals pmid_total) {
-  RemovePmidTotal(pmid_total.pmid_id());
-  PushPmidTotal(pmid_total);
-}
-
-bool MaidAccount::HasPmidTotal(Identity pmid_id) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  auto pmid_total_it = std::find_if(pmid_totals_.begin(), pmid_totals_.end(),
-                                    [&pmid_id] (const PmidTotals& pmid_total) {
-                                      return pmid_total.IsRecordOf(pmid_id);
-                                    });
-  return (pmid_total_it != pmid_totals_.end());
-}
-
-void MaidAccount::PushDataElement(DataElement data_element) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  data_elements_.push_back(data_element);
-}
-
-void MaidAccount::RemoveDataElement(Identity name) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  for (auto itr = data_elements_.begin(); itr != data_elements_.end(); ++itr) {
-    if ((*itr).name() == name) {
-      data_elements_.erase(itr);
-      return;
-    }
+  for (auto& recent_put_data_item : recent_put_data_) {
+    auto proto_recent_put_data(proto_maid_account.add_recent_put_data());
+    auto type_and_name(boost::apply_visitor(type_and_name_visitor_,
+                                            recent_put_data_item.data_name_variant));
+    proto_recent_put_data->set_type(static_cast<int32_t>(type_and_name.first));
+    proto_recent_put_data->set_name(type_and_name.second.string());
+    proto_recent_put_data->set_size(recent_put_data_item.size);
+    proto_recent_put_data->set_replication_count(recent_put_data_item.replications);
   }
+
+  proto_maid_account.set_total_data_stored_by_pmids(total_data_stored_by_pmids_);
+  proto_maid_account.set_total_put_data(total_put_data_);
+
+  return serialised_type(NonEmptyString(proto_maid_account.SerializeAsString()));
 }
 
-void MaidAccount::UpdateDataElement(DataElement data_element) {
-  RemoveDataElement(data_element.name());
-  PushDataElement(data_element);
+std::vector<PmidTotals>::iterator MaidAccount::Find(const PmidName& pmid_name) {
+  return std::find_if(pmid_totals_.begin(),
+                      pmid_totals_.end(),
+                      [&pmid_name](const PmidTotals& pmid_totals) {
+                        return pmid_name == pmid_totals.pmid_record.pmid_name;
+                      });
 }
 
-bool MaidAccount::HasDataElement(Identity name) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  auto data_element_it = std::find_if(data_elements_.begin(), data_elements_.end(),
-                                      [&name] (const DataElement& data_element) {
-                                        return data_element.name() == name;
-                                      });
-  return (data_element_it != data_elements_.end());
+void MaidAccount::RegisterPmid(
+    const nfs::PmidRegistration::serialised_type& serialised_pmid_registration) {
+  pmid_totals_.emplace_back(serialised_pmid_registration, PmidRecord());
 }
-*/
+
+void MaidAccount::UnregisterPmid(const PmidName& pmid_name) {
+  auto itr(Find(pmid_name));
+  if (itr != pmid_totals_.end())
+    pmid_totals_.erase(itr);
+}
+
+void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
+  auto itr(Find(pmid_totals.pmid_record.pmid_name));
+  if (itr == pmid_totals_.end())
+    ThrowError(CommonErrors::no_such_element);
+  *itr = pmid_totals;
+}
+
+std::vector<fs::path> MaidAccount::GetArchiveFileNames() const {
+  auto future(archive_.GetFileNames());
+  return future.get();
+}
+
+NonEmptyString MaidAccount::GetArchiveFile(const fs::path& path) const {
+  auto future(archive_.GetFile(path));
+  return future.get();
+}
+
+void MaidAccount::PutArchiveFile(const fs::path& path, const NonEmptyString& content) {
+  archive_.PutFile(path, content);
+}
+
 
 
 PmidTotals::PmidTotals() : serialised_pmid_registration(), pmid_record() {}

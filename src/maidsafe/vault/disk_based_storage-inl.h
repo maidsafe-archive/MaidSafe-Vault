@@ -16,6 +16,7 @@
 
 #include "maidsafe/vault/disk_based_storage_messages_pb.h"
 
+
 namespace maidsafe {
 
 namespace vault {
@@ -24,37 +25,23 @@ template<typename Data>
 void DiskBasedStorage::Store(const typename Data::name_type& name,
                              int32_t version,
                              const std::string& serialised_value) {
-  active_.Send([name, version, serialised_value, this] () {
-                 this->DoStore<Data>(name, version, serialised_value);
+  active_.Send([name, version, serialised_value, this] {
+                   protobuf::DiskStoredElement element;
+                   element.set_data_name(name.data.string());
+                   element.set_version(version);
+                   element.set_serialised_value(serialised_value);
+                   this->AddToLatestFile(element);
                });
-}
-
-template<typename Data>
-void DiskBasedStorage::DoStore(const typename Data::name_type& name,
-                               int32_t version,
-                               const std::string& serialised_value) {
-  protobuf::DiskStoredElement element;
-  element.set_data_name(name.data.string());
-  element.set_version(version);
-  element.set_serialised_value(serialised_value);
-
-  AddToLatestFile(element);
 }
 
 template<typename Data>
 void DiskBasedStorage::Delete(const typename Data::name_type& name, int32_t version) {
-  active_.Send([name, version, this] () {
-                 this->DoDelete<Data>(name, version);
+  active_.Send([name, version, this] {
+                   protobuf::DiskStoredElement element;
+                   element.set_data_name(name.data.string());
+                   element.set_version(version);
+                   this->SearchForAndDeleteEntry(element);
                });
-}
-
-template<typename Data>
-void DiskBasedStorage::DoDelete(const typename Data::name_type& name, int32_t version) {
-  protobuf::DiskStoredElement element;
-  element.set_data_name(name.data.string());
-  element.set_version(version);
-
-  SearchForAndDeleteEntry(element);
 }
 
 template<typename Data>
@@ -64,21 +51,12 @@ void DiskBasedStorage::Modify(const typename Data::name_type& name,
                               const std::string& serialised_value) {
   assert(functor && "Null functor not allowed!");
   active_.Send([name, version, functor, serialised_value, this] () {
-                 this->DoModify<Data>(name, version, functor, serialised_value);
+                   protobuf::DiskStoredElement element;
+                   element.set_data_name(name.data.string());
+                   element.set_version(version);
+                   element.set_serialised_value(serialised_value);
+                   this->SearchForAndModifyEntry(element, functor);
                });
-}
-
-template<typename Data>
-void DiskBasedStorage::DoModify(const typename Data::name_type& name,
-                                int32_t version,
-                                const std::function<void(std::string&)>& functor,
-                                const std::string& serialised_value) {
-  protobuf::DiskStoredElement element;
-  element.set_data_name(name.data.string());
-  element.set_version(version);
-  element.set_serialised_value(serialised_value);
-
-  SearchForAndModifyEntry(element, functor);
 }
 
 }  // namespace vault

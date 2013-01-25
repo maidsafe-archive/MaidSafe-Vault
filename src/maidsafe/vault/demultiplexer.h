@@ -12,14 +12,11 @@
 #ifndef MAIDSAFE_VAULT_DEMULTIPLEXER_H_
 #define MAIDSAFE_VAULT_DEMULTIPLEXER_H_
 
-#include <cstdint>
 #include <string>
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/nfs.h"
-
-#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
@@ -30,8 +27,6 @@ class MaidAccountHolder;
 class MetadataManager;
 class PmidAccountHolder;
 class DataHolder;
-
-DataNameVariant GetDataNameVariant(int32_t type, const Identity& name);
 
 class Demultiplexer {
  public:
