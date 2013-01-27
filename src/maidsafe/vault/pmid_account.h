@@ -33,10 +33,19 @@ class PmidAccount {
   typedef TaggedValue<NonEmptyString, struct SerialisedMaidAccountTag> serialised_type;
   PmidAccount(const PmidName& pmid_name, const boost::filesystem::path& root);
   PmidAccount(const serialised_type& serialised_pmid_account, const boost::filesystem::path& root);
-  serialised_type Serialise() const;
+  std::vector<boost::filesystem::path> GetArchiveFileNames() const;
+  NonEmptyString GetArchiveFile(const boost::filesystem::path& path) const;
+  void PutArchiveFile(const boost::filesystem::path& path, const NonEmptyString& content);
 
+  template<typename Data>
+  void PutData(const typename Data::name_type& name, int32_t size, int32_t replication_count);
+  template<typename Data>
+  bool DeleteData(const typename Data::name_type& name);
+  template<typename Data>
 
-
+  MaidName name() const { return kMaidName_; }
+  int64_t total_data_stored_by_pmids() const { return total_data_stored_by_pmids_; }
+  int64_t total_put_data() const { return total_put_data_; }
  private:
   PmidAccount(const PmidAccount&);
   PmidAccount& operator=(const PmidAccount&);

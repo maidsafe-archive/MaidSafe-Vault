@@ -124,6 +124,19 @@ inline void RetryOnPutOrDeleteError(
   }
 }
 
+struct PmidTotals {
+  PmidTotals();
+  PmidTotals(const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
+             const PmidRecord& pmid_record_in);
+  PmidTotals(const PmidTotals& other);
+  PmidTotals& operator=(const PmidTotals& other);
+  PmidTotals(PmidTotals&& other);
+  PmidTotals& operator=(PmidTotals&& other);
+
+  nfs::PmidRegistration::serialised_type serialised_pmid_registration;
+  PmidRecord pmid_record;
+};
+
 }  // namespace detail
 
 }  // namespace vault

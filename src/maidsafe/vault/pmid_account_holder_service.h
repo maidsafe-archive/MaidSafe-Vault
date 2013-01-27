@@ -32,23 +32,41 @@ namespace maidsafe {
 namespace vault {
 
 class PmidAccountHolder {
- public:
-  PmidAccountHolder(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
-  ~PmidAccountHolder();
+  public:
+  PmidAccountHolderService(const passport::Pmid& pmid,
+                           routing::Routing& routing,
+                           nfs::PublicKeyGetter& public_key_getter,
+                           const boost::filesystem::path& vault_root_dir);
   template<typename Data>
   void HandleDataMessage(const nfs::DataMessage& data_message,
                          const routing::ReplyFunctor& reply_functor);
-  void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
+  void HandleGenericMessage(const nfs::GenericMessage& generic_message,
+                            const routing::ReplyFunctor& reply_functor);
+  void HandleSynchronise(const std::vector<routing::NodeInfo>& new_close_nodes);
 
  private:
-//  routing::Routing& routing_;
-//  DiskBasedStorage disk_storage_;
+  template<typename Data>
+  void HandlePut(const nfs::DataMessage& data_message, const routing::ReplyFunctor& reply_functor);
+  template<typename Data>
+  void HandleDelete(const nfs::DataMessage& data_message,
+                    const routing::ReplyFunctor& reply_functor);
+  template<typename Data>
+  void ValidateDataMessage(const nfs::DataMessage& data_message);
+  template<typename Data>
+  void AdjustAccount(const nfs::DataMessage& data_message);
+  template<typename Data>
+  void SendDataMessage(const nfs::DataMessage& data_message);
+
+  bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
+
+  routing::Routing& routing_;
+  nfs::PublicKeyGetter& public_key_getter_;
+  nfs::Accumulator accumulator_;
+  PmidAccountHandler pmid_account_handler_;
+  PmidAccountHolderNfs nfs_;
 };
 
-template<typename Data>
-void PmidAccountHolder::HandleDataMessage(const nfs::DataMessage& /*data_message*/,
-                                          const routing::ReplyFunctor& /*reply_functor*/) {
-}
+
 
 }  // namespace vault
 
