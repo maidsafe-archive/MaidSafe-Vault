@@ -25,6 +25,7 @@
 
 #include "maidsafe/nfs/message.h"
 
+#include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/utils.h"
 
 

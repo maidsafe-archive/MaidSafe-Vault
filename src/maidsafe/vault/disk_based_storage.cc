@@ -19,8 +19,8 @@
 
 #include "maidsafe/common/utils.h"
 
+#include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/utils.h"
-
 
 namespace fs = boost::filesystem;
 
@@ -30,7 +30,6 @@ namespace vault {
 
 namespace {
 
-const size_t kNewFileTrigger(10000);
 const std::string kEmptyFileHash("empty file hash");
 
 typedef std::promise<NonEmptyString> NonEmptyStringPromise;
@@ -245,7 +244,7 @@ void DiskBasedStorage::AddToLatestFile(const protobuf::DiskStoredElement& elemen
   disk_file.add_disk_element()->CopyFrom(element);
   NonEmptyString new_content(disk_file.SerializeAsString());
   file_hashes_.at(latest_file_index) = EncodeToBase32(crypto::Hash<crypto::SHA512>(new_content));
-  if (disk_file.disk_element_size() == int(kNewFileTrigger)) {
+  if (disk_file.disk_element_size() == int(detail::Parameters::max_file_element_count())) {
     // Increment the file
     file_hashes_.push_back(kEmptyFileHash);
   }
@@ -349,9 +348,9 @@ void DiskBasedStorage::MergeFilesAfterAlteration(size_t current_index) {
   fs::path current_path(detail::GetFilePath(kRoot_,
                                             file_hashes_.at(current_index),
                                             current_index)),
-                         previous_path(detail::GetFilePath(kRoot_,
-                                                           file_hashes_.at(previous_index),
-                                                           previous_index));
+           previous_path(detail::GetFilePath(kRoot_,
+                                             file_hashes_.at(previous_index),
+                                             previous_index));
   NonEmptyString current_content(ReadFile(current_path)), previous_content(ReadFile(previous_path));
   protobuf::DiskStoredFile current_file_disk, previous_file_disk;
   current_file_disk.ParseFromString(current_content.string());
@@ -365,15 +364,19 @@ void DiskBasedStorage::MergeFilesAfterAlteration(size_t current_index) {
   auto r_it(ordering.rbegin());
 
   // Lower index file
-  AddToDiskFile(previous_path, previous_file_disk, r_it, previous_index, 0,
-                std::min(ordering.size(), kNewFileTrigger));
-  if (total_elements > kNewFileTrigger) {
+  AddToDiskFile(previous_path,
+                previous_file_disk,
+                r_it,
+                previous_index,
+                0,
+                std::min(ordering.size(), detail::Parameters::max_file_element_count()));
+  if (total_elements > detail::Parameters::max_file_element_count()) {
     // Higher index file
     AddToDiskFile(current_path,
                   current_file_disk,
                   r_it,
                   current_index,
-                  kNewFileTrigger,
+                  detail::Parameters::max_file_element_count(),
                   total_elements);
   } else {
     // Higher file will disappear and we need to rename files

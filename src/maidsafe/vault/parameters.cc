@@ -23,24 +23,23 @@ namespace detail {
 
 const int Parameters::kMinNetworkHealth(12);
 size_t Parameters::max_recent_data_list_size(1000);
+size_t Parameters::max_file_element_count_ = 10000;
+size_t Parameters::min_file_element_count_ = 5000;
 
-void Parameters::set_file_element_count_limits(size_t max_file_element_count,
+bool Parameters::set_file_element_count_limits(size_t max_file_element_count,
                                                size_t min_file_element_count) {
   if (min_file_element_count < max_file_element_count / 2) {
     LOG(kError) << "min_file_element_count must be at least half of max_file_element_count";
     throw std::exception();
   }
-  Parameters::max_file_element_count_ = max_file_element_count;
-  Parameters::min_file_element_count_ = min_file_element_count;
+  max_file_element_count_ = max_file_element_count;
+  min_file_element_count_ = min_file_element_count;
+  return true;
 }
 
-size_t Parameters::max_file_element_count() {
-  return Parameters::max_file_element_count_;
-}
+size_t Parameters::max_file_element_count() { return max_file_element_count_; }
 
-size_t Parameters::min_file_element_count() {
-  return Parameters::min_file_element_count_;
-}
+size_t Parameters::min_file_element_count() { return min_file_element_count_; }
 
 }  // namespace detail
 
