@@ -24,14 +24,14 @@ namespace maidsafe {
 namespace vault {
 
 class MaidAccountHolder;
-class MetadataManager;
+class MetadataManagerService;
 class PmidAccountHolder;
 class DataHolder;
 
 class Demultiplexer {
  public:
   Demultiplexer(MaidAccountHolder& maid_account_holder,
-                MetadataManager& metadata_manager,
+                MetadataManagerService& metadata_manager_service,
                 PmidAccountHolder& pmid_account_holder,
                 DataHolder& data_holder);
   void HandleMessage(const std::string& serialised_message,
@@ -48,7 +48,7 @@ class Demultiplexer {
   void HandleStoreInCache(const nfs::DataMessage& data_message);
 
   MaidAccountHolder& maid_account_holder_;
-  MetadataManager& metadata_manager_;
+  MetadataManagerService& metadata_manager_service_;
   PmidAccountHolder& pmid_account_holder_;
   DataHolder& data_holder_;
 };

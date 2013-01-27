@@ -76,11 +76,11 @@ void HandleDataType(nfs::DataMessage& data_message,
 
 
 Demultiplexer::Demultiplexer(MaidAccountHolder& maid_account_holder,
-                             MetadataManager& metadata_manager,
+                             MetadataManagerService& metadata_manager_service,
                              PmidAccountHolder& pmid_account_holder,
                              DataHolder& data_holder)
     : maid_account_holder_(maid_account_holder),
-      metadata_manager_(metadata_manager),
+      metadata_manager_service_(metadata_manager_service),
       pmid_account_holder_(pmid_account_holder),
       data_holder_(data_holder) {}
 
@@ -112,7 +112,7 @@ void Demultiplexer::HandleDataMessagePersona(nfs::DataMessage& data_message,
     case nfs::Persona::kMaidAccountHolder:
       return HandleDataType<MaidAccountHolder>(data_message, reply_functor, maid_account_holder_);
     case nfs::Persona::kMetadataManager:
-      return HandleDataType<MetadataManager>(data_message, reply_functor, metadata_manager_);
+      return HandleDataType<MetadataManagerService>(data_message, reply_functor, metadata_manager_service_);
     case nfs::Persona::kPmidAccountHolder:
       return HandleDataType<PmidAccountHolder>(data_message, reply_functor, pmid_account_holder_);
     case nfs::Persona::kDataHolder:

@@ -32,15 +32,18 @@ namespace maidsafe {
 
 namespace vault {
 
-class MetadataManager {
+class MetadataManagerService {
  public:
-  MetadataManager(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
-  ~MetadataManager();
+  MetadataManagerService(const passport::Pmid& pmid,
+                         routing::Routing& routing,
+                         nfs::PublicKeyGetter& public_key_getter,
+                         const boost::filesystem::path& vault_root_dir);
   template<typename Data>
   void HandleDataMessage(const nfs::DataMessage& data_message,
                          const routing::ReplyFunctor& reply_functor);
-  void Serialise();
-  void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
+  void HandleGenericMessage(const nfs::GenericMessage& generic_message,
+                            const routing::ReplyFunctor& reply_functor);
+  void HandleSynchronise(const std::vector<routing::NodeInfo>& new_close_nodes);
 
  private:
   template<typename Data>
@@ -75,7 +78,7 @@ class MetadataManager {
 };
 
 template<typename Data>
-void MetadataManager::HandleDataMessage(const nfs::DataMessage& /*data_message*/,
+void MetadataManagerService::HandleDataMessage(const nfs::DataMessage& /*data_message*/,
                                         const routing::ReplyFunctor& /*reply_functor*/) {
 }
 

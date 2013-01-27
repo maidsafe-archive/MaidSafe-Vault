@@ -27,7 +27,7 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void MetadataManager::HandlePutMessage(const nfs::DataMessage& data_message,
+void MetadataManagerService::HandlePutMessage(const nfs::DataMessage& data_message,
                                        const routing::ReplyFunctor& reply_functor) {
   if (!detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());
@@ -44,7 +44,7 @@ void MetadataManager::HandlePutMessage(const nfs::DataMessage& data_message,
 }
 
 template<typename Data>
-void MetadataManager::HandleGetMessage(nfs::DataMessage data_message,
+void MetadataManagerService::HandleGetMessage(nfs::DataMessage data_message,
                                        const routing::ReplyFunctor& reply_functor) {
   std::vector<Identity> online_dataholders(
       data_elements_manager_.GetOnlinePmid(Identity(data_message.data().name)));
@@ -80,7 +80,7 @@ void MetadataManager::HandleGetMessage(nfs::DataMessage data_message,
 }
 
 template<typename Data>
-void MetadataManager::HandleDeleteMessage(const nfs::DataMessage& data_message,
+void MetadataManagerService::HandleDeleteMessage(const nfs::DataMessage& data_message,
                                           const routing::ReplyFunctor& reply_functor) {
   Identity data_id(data_message.data().name);
   int64_t num_follower(data_elements_manager_.DecreaseDataElement(data_id));
@@ -107,7 +107,7 @@ void MetadataManager::HandleDeleteMessage(const nfs::DataMessage& data_message,
 
 // On error handler's
 template<typename Data>
-void MetadataManager::OnPutErrorHandler(nfs::DataMessage data_message) {
+void MetadataManagerService::OnPutErrorHandler(nfs::DataMessage data_message) {
   if (detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
     nfs_.Put<Data>(data_message,
          [this](nfs::DataMessage data_msg) { this->OnPutErrorHandler<Data>(data_msg); });
@@ -115,7 +115,7 @@ void MetadataManager::OnPutErrorHandler(nfs::DataMessage data_message) {
 }
 
 template<typename Data>
-void MetadataManager::OnDeleteErrorHandler(nfs::DataMessage data_message) {
+void MetadataManagerService::OnDeleteErrorHandler(nfs::DataMessage data_message) {
   if (detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
     nfs_.Delete<Data>(data_message,
         [this](nfs::DataMessage data_msg) { this->OnDeleteErrorHandler<Data>(data_msg); });
@@ -123,7 +123,7 @@ void MetadataManager::OnDeleteErrorHandler(nfs::DataMessage data_message) {
 }
 
 template<typename Data>
-void MetadataManager::OnGenericErrorHandler(nfs::GenericMessage generic_message) {}
+void MetadataManagerService::OnGenericErrorHandler(nfs::GenericMessage generic_message) {}
 
 }  // namespace vault
 

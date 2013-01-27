@@ -29,7 +29,7 @@
 
 #include "maidsafe/vault/data_holder/data_holder.h"
 #include "maidsafe/vault/maid_account_holder/maid_account_holder.h"
-#include "maidsafe/vault/metadata_manager/metadata_manager.h"
+#include "maidsafe/vault/metadata_manager/metadata_manager_service.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_account_holder.h"
 #include "maidsafe/vault/demultiplexer.h"
 
@@ -72,7 +72,7 @@ class Vault {
   std::unique_ptr<routing::Routing> routing_;
   nfs::PublicKeyGetter public_key_getter_;
   MaidAccountHolder maid_account_holder_;
-  MetadataManager metadata_manager_;
+  MetadataManagerService metadata_manager_service_;
   PmidAccountHolder pmid_account_holder_;
   DataHolder data_holder_;
   Demultiplexer demux_;

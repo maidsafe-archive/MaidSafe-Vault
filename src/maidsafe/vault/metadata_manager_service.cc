@@ -9,7 +9,7 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#include "maidsafe/vault/metadata_manager/metadata_manager.h"
+#include "maidsafe/vault/metadata_manager/metadata_manager_service_service.h"
 
 #include <string>
 #include <vector>
@@ -19,7 +19,7 @@ namespace maidsafe {
 
 namespace vault {
 
-MetadataManager::MetadataManager(routing::Routing& routing,
+MetadataManagerService::MetadataManagerService(routing::Routing& routing,
                                  const boost::filesystem::path& vault_root_dir)
     : kRootDir_(vault_root_dir),
       routing_(routing),
@@ -27,14 +27,14 @@ MetadataManager::MetadataManager(routing::Routing& routing,
       nfs_(routing),
       request_accumulator_() {}
 
-MetadataManager::~MetadataManager() {}
+MetadataManagerService::~MetadataManagerService() {}
 
-void MetadataManager::CloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
+void MetadataManagerService::CloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
 }
 
-void MetadataManager::Serialise() {}
+void MetadataManagerService::Serialise() {}
 
-void MetadataManager::HandleGenericMessage(const nfs::GenericMessage& generic_message,
+void MetadataManagerService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
                                         const routing::ReplyFunctor& reply_functor) {
   // TODO(Team): Validate message
   nfs::GenericMessage::Action action(generic_message.action());
@@ -56,9 +56,9 @@ void MetadataManager::HandleGenericMessage(const nfs::GenericMessage& generic_me
   }
 }
 
-void MetadataManager::SendSyncData() {}
+void MetadataManagerService::SendSyncData() {}
 
-bool MetadataManager::HandleNodeDown(const nfs::GenericMessage& generic_message, NodeId& /*node*/) {
+bool MetadataManagerService::HandleNodeDown(const nfs::GenericMessage& generic_message, NodeId& /*node*/) {
   try {
     int64_t online_holders(-1);
     data_elements_manager_.MoveNodeToOffline(generic_message.name(), PmidName(), online_holders);
@@ -79,7 +79,7 @@ bool MetadataManager::HandleNodeDown(const nfs::GenericMessage& generic_message,
   return true;
 }
 
-bool MetadataManager::HandleNodeUp(const nfs::GenericMessage& generic_message, NodeId& /*node*/) {
+bool MetadataManagerService::HandleNodeUp(const nfs::GenericMessage& generic_message, NodeId& /*node*/) {
   try {
     data_elements_manager_.MoveNodeToOnline(generic_message.name(), PmidName());
   }
