@@ -36,25 +36,10 @@ typedef std::promise<NonEmptyString> NonEmptyStringPromise;
 typedef std::promise<uint32_t> Uint32tPromise;
 typedef std::promise<DiskBasedStorage::PathVector> VectorPathPromise;
 
-void AddDataToElement(const DiskBasedStorage::OrderingMap::reverse_iterator& r_it,
+void AddDataToElement(const DiskBasedStorage::OrderingMap::iterator& it,
                       protobuf::DiskStoredElement*& disk_element) {
-  disk_element->set_data_name((*r_it).first);
-  disk_element->set_serialised_value((*r_it).second);
-}
-
-void AddElementsToOrdering(const protobuf::DiskStoredFile& current_file_disk,
-                           const protobuf::DiskStoredFile& previous_file_disk,
-                           DiskBasedStorage::OrderingMap& ordering) {
-  for (int c(0); c != current_file_disk.disk_element_size(); ++c) {
-    ordering.insert(
-        std::make_pair(current_file_disk.disk_element(c).data_name(),
-                       current_file_disk.disk_element(c).serialised_value()));
-  }
-  for (int p(0); p != previous_file_disk.disk_element_size(); ++p) {
-    ordering.insert(
-        std::make_pair(previous_file_disk.disk_element(p).data_name(),
-                       previous_file_disk.disk_element(p).serialised_value()));
-  }
+  disk_element->set_data_name((*it).first);
+  disk_element->set_serialised_value((*it).second);
 }
 
 }  // namespace
@@ -255,7 +240,6 @@ void DiskBasedStorage::AddToLatestFile(const protobuf::DiskStoredElement& elemen
   WriteFile(new_path, new_content.string());
   if ((!latest_file_path.empty()) && (latest_file_path != new_path))
     fs::remove(latest_file_path);
-  MergeFilesAfterAlteration(latest_file_index);
 }
 
 void DiskBasedStorage::SearchForAndDeleteEntry(const protobuf::DiskStoredElement& element) {
@@ -308,104 +292,91 @@ void DiskBasedStorage::ReadAndParseFile(const std::string& hash,
 
 void DiskBasedStorage::UpdateFileAfterModification(std::vector<std::string>::reverse_iterator& it,
                                                    size_t file_index,
-                                                   protobuf::DiskStoredFile& disk_file,
-                                                   fs::path& file_path,
+                                                   const protobuf::DiskStoredFile& disk_file,
+                                                   const fs::path& file_path,
                                                    bool reorder) {
   try {
     NonEmptyString file_content(NonEmptyString(disk_file.SerializeAsString()));
     *it = EncodeToBase32(crypto::Hash<crypto::SHA512>(file_content));
     WriteFile(file_path, file_content.string());
-    fs::path new_path(detail::GetFilePath(kRoot_, *it, file_index));
-    fs::rename(file_path, new_path);
-    if (reorder)
-      MergeFilesAfterAlteration(file_index);
-  } catch(std::exception& /*e*/) {
+    fs::rename(file_path, detail::GetFilePath(kRoot_, *it, file_index));
+    if (reorder &&
+        disk_file.disk_element_size() < int(detail::Parameters::min_file_element_count())) {
+      MergeFilesAfterDelete();
+    }
+  } catch(const std::exception& /*e*/) {
     *it = kEmptyFileHash;
     fs::remove(file_path);
   }
 }
 
-void DiskBasedStorage::MergeFilesAfterAlteration(size_t current_index) {
-  // Handle single file case
-  if (file_hashes_.size() == 1U) {
-    LOG(kInfo) << "Just one file. No need to merge.";
+void DiskBasedStorage::MergeFilesAfterDelete() {
+  if (CheckSpecialMergeCases())
     return;
-  }
 
-  // Handle edge case
-  size_t previous_index(current_index - 1);
-  if (current_index == 0) {
-    previous_index = 0;
-    current_index = 1;
-  }
-
-  // Handle empty current file
-  if (file_hashes_.at(current_index) == kEmptyFileHash) {
-    LOG(kInfo) << "Current file empty. No need to merge.";
-    return;
-  }
-
-  fs::path current_path(detail::GetFilePath(kRoot_,
-                                            file_hashes_.at(current_index),
-                                            current_index)),
-           previous_path(detail::GetFilePath(kRoot_,
-                                             file_hashes_.at(previous_index),
-                                             previous_index));
-  NonEmptyString current_content(ReadFile(current_path)), previous_content(ReadFile(previous_path));
-  protobuf::DiskStoredFile current_file_disk, previous_file_disk;
-  current_file_disk.ParseFromString(current_content.string());
-  previous_file_disk.ParseFromString(previous_content.string());
   OrderingMap ordering;
-  AddElementsToOrdering(current_file_disk, previous_file_disk, ordering);
-
-  current_file_disk.Clear();
-  previous_file_disk.Clear();
-  size_t total_elements(ordering.size());
-  auto r_it(ordering.rbegin());
-
-  // Lower index file
-  AddToDiskFile(previous_path,
-                previous_file_disk,
-                r_it,
-                previous_index,
-                0,
-                std::min(ordering.size(), detail::Parameters::max_file_element_count()));
-  if (total_elements > detail::Parameters::max_file_element_count()) {
-    // Higher index file
-    AddToDiskFile(current_path,
-                  current_file_disk,
-                  r_it,
-                  current_index,
-                  detail::Parameters::max_file_element_count(),
-                  total_elements);
-  } else {
-    // Higher file will disappear and we need to rename files
-    fs::remove(current_path);
-    for (size_t n(current_index); n != file_hashes_.size() - 1; ++n) {
-      file_hashes_.at(n) = file_hashes_.at(n + 1);
-      fs::path old_path(detail::GetFilePath(kRoot_, file_hashes_.at(n), n + 1));
-      fs::path new_path(detail::GetFilePath(kRoot_, file_hashes_.at(n), n));
-      fs::rename(old_path, new_path);
-    }
-    file_hashes_.pop_back();
+  size_t current_counter(1), new_counter(0), file_hashes_max(file_hashes_.size());
+  while (current_counter != file_hashes_max) {
+    fs::path current_path(detail::GetFilePath(kRoot_,
+                                              file_hashes_.at(new_counter),
+                                              new_counter));
+    NonEmptyString current_content(ReadFile(current_path));
+    protobuf::DiskStoredFile current_file_disk;
+    current_file_disk.ParseFromString(current_content.string());
+    HandleNextFile(current_path, current_file_disk, ordering, current_counter, new_counter);
   }
 }
 
-void DiskBasedStorage::AddToDiskFile(const fs::path& previous_path,
-                                     protobuf::DiskStoredFile& previous_file_disk,
-                                     OrderingMap::reverse_iterator& r_it,
-                                     size_t file_index,
-                                     size_t begin,
-                                     size_t end) {
-  for (size_t n(begin); n != end; ++n, ++r_it) {
-    protobuf::DiskStoredElement* disk_element(previous_file_disk.add_disk_element());
-    AddDataToElement(r_it, disk_element);
+bool DiskBasedStorage::CheckSpecialMergeCases() {
+  // Handle single file case
+  if (file_hashes_.size() == 1U) {
+    LOG(kInfo) << "Just one file. No need to merge.";
+    return true;
   }
-  NonEmptyString previous_content(previous_file_disk.SerializeAsString());
-  std::string previous_hash(EncodeToBase32(crypto::Hash<crypto::SHA512>(previous_content)));
-  WriteFile(previous_path, previous_content.string());
-  fs::rename(previous_path, detail::GetFilePath(kRoot_, previous_hash, file_index));
-  file_hashes_.at(file_index) = previous_hash;
+
+  return false;
+}
+
+void DiskBasedStorage::HandleNextFile(const boost::filesystem::path& current_path,
+                                      const protobuf::DiskStoredFile& current_file_disk,
+                                      OrderingMap& ordering,
+                                      size_t& current_counter,
+                                      size_t& new_counter) {
+  for (int n(0); n != current_file_disk.disk_element_size(); ++n) {
+    ordering.insert(std::make_pair(current_file_disk.disk_element(n).data_name(),
+                                   current_file_disk.disk_element(n).serialised_value()));
+  }
+
+  NonEmptyString content;
+  protobuf::DiskStoredFile file_disk;
+  while (ordering.size() < detail::Parameters::max_file_element_count() ||
+         current_counter != file_hashes_.size()) {
+    // Read another file and add elements
+    content = ReadFile(detail::GetFilePath(kRoot_,
+                                           file_hashes_.at(current_counter),
+                                           current_counter));
+    ++current_counter;
+    file_disk.ParseFromString(content.string());
+    for (int n(0); n != current_file_disk.disk_element_size(); ++n) {
+      ordering.insert(std::make_pair(current_file_disk.disk_element(n).data_name(),
+                                     current_file_disk.disk_element(n).serialised_value()));
+    }
+  }
+
+  file_disk.Clear();
+  auto itr(ordering.begin());
+  for (size_t i(0); i != detail::Parameters::max_file_element_count(); ++i, ++itr) {
+    protobuf::DiskStoredElement* element(file_disk.add_disk_element());
+    AddDataToElement(itr, element);
+  }
+  ordering.erase(ordering.begin(), itr);
+
+  content = NonEmptyString(file_disk.SerializeAsString());
+  WriteFile(current_path, content.string());
+  file_hashes_.at(new_counter) = crypto::Hash<crypto::SHA512>(content).string();
+  boost::filesystem::rename(current_path,
+                            detail::GetFilePath(kRoot_, file_hashes_.at(new_counter), new_counter));
+  ++new_counter;
 }
 
 }  // namespace vault

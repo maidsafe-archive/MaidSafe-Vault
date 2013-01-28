@@ -86,16 +86,16 @@ class DiskBasedStorage {
                         NonEmptyString& file_content) const;
   void UpdateFileAfterModification(std::vector<std::string>::reverse_iterator& it,
                                    size_t file_index,
-                                   protobuf::DiskStoredFile& disk_file,
-                                   boost::filesystem::path& file_path,
+                                   const protobuf::DiskStoredFile &disk_file,
+                                   const boost::filesystem::path &file_path,
                                    bool reorder);
-  void MergeFilesAfterAlteration(size_t current_index);
-  void AddToDiskFile(const boost::filesystem::path& previous_path,
-                     protobuf::DiskStoredFile& previous_file_disk,
-                     OrderingMap::reverse_iterator& r_it,
-                     size_t file_index,
-                     size_t begin,
-                     size_t end);
+  void MergeFilesAfterDelete();
+  bool CheckSpecialMergeCases();
+  void HandleNextFile(const boost::filesystem::path& current_path,
+                      const protobuf::DiskStoredFile& current_file_disk,
+                      OrderingMap& ordering,
+                      size_t& current_counter,
+                      size_t& new_counter);
 
   const boost::filesystem::path kRoot_;
   mutable Active active_;

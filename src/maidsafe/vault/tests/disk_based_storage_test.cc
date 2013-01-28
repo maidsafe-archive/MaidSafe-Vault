@@ -37,7 +37,18 @@ namespace vault {
 
 namespace test {
 
-typedef std::map<std::string, std::string> ElementMap;
+struct DiskElement {
+  DiskElement(const std::string& the_name,
+              const std::string& the_serialised_value,
+              const std::string& the_serialised_element)
+      : name(the_name),
+        serialised_value(the_serialised_value),
+        serialised_element(the_serialised_element) {}
+  DiskElement() : name(), serialised_value(), serialised_element() {}
+  std::string name, serialised_value, serialised_element;
+};
+
+typedef std::vector<DiskElement> ElementMap;
 
 template <typename D>
 void StoreAnElement(uint32_t max_file_size,
@@ -49,8 +60,11 @@ void StoreAnElement(uint32_t max_file_size,
   protobuf::DiskStoredElement element;
   element.set_data_name(name.data.string());
   element.set_serialised_value(serialised_value);
+  DiskElement disk_element(element.data_name(),
+                           element.serialised_value(),
+                           element.SerializeAsString());
 
-  element_list.insert(std::make_pair(serialised_value, element.SerializeAsString()));
+  element_list.push_back(disk_element);
   disk_based_storage.Store<D>(name, serialised_value);
 }
 
@@ -93,12 +107,14 @@ class DiskStorageTest : public testing::Test {
     EXPECT_EQ(fetched_disk_file.disk_element_size(), element_list.size());
     for (auto itr(element_list.begin()); itr != element_list.end(); ++itr) {
       protobuf::DiskStoredElement element;
-      element.ParseFromString((*itr).second);
+      element.ParseFromString((*itr).serialised_element);
       bool found_match(false);
-      for (int i(0); i < fetched_disk_file.disk_element_size(); ++i)
+      for (int i(0); i != fetched_disk_file.disk_element_size(); ++i) {
         if (detail::MatchingDiskElements(fetched_disk_file.disk_element(i), element))
           found_match = true;
-      EXPECT_TRUE(found_match) << "can't find match element for element " << (*itr).second;
+      }
+      EXPECT_TRUE(found_match) << "can't find match element for element "
+                               << Base32Substr((*itr).name);
       if (!found_match)
         return false;
     }
@@ -306,9 +322,9 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultThreads) {
   for (auto itr(element_list.begin()); itr != element_list.end(); ++itr) {
     std::string new_serialised_value(EncodeToBase32(RandomString(max_file_size)));
     protobuf::DiskStoredElement element;
-    element.ParseFromString((*itr).second);
+    element.ParseFromString((*itr).serialised_element);
     element.set_serialised_value(new_serialised_value);
-    (*itr).second = element.SerializeAsString();
+    (*itr).serialised_element = element.SerializeAsString();
   }
 
   // Modify each element's content parallel
@@ -316,9 +332,9 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultThreads) {
   int i = 0;
   do {
     protobuf::DiskStoredElement element;
-    element.ParseFromString((*itr).second);
+    element.ParseFromString((*itr).serialised_element);
     typename TypeParam::name_type name((Identity(element.data_name())));
-    std::string old_serialised_value = (*itr).first;
+    std::string old_serialised_value = (*itr).serialised_value;
     std::string new_serialised_value = element.serialised_value();
 
     active_list[i]->Send(
@@ -344,7 +360,7 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultThreads) {
   i = 0;
   do {
     protobuf::DiskStoredElement element;
-    element.ParseFromString((*itr).second);
+    element.ParseFromString((*itr).serialised_element);
     typename TypeParam::name_type name((Identity(element.data_name())));
     active_list[i]->Send([&disk_based_storage, name] () {
                            disk_based_storage.Delete<TypeParam>(name);
@@ -375,7 +391,7 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultFiles) {
   // Delete all elements
   for (auto itr(element_list.begin()); itr != element_list.end(); ++itr) {
     protobuf::DiskStoredElement element;
-    element.ParseFromString((*itr).second);
+    element.ParseFromString((*itr).serialised_element);
     typename TypeParam::name_type name((Identity(element.data_name())));
     disk_based_storage.Delete<TypeParam>(name);
   };
@@ -383,6 +399,32 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultFiles) {
   // The file count will vary depends on the sequence of deletion
   // However, the file names shall always be 0
   EXPECT_EQ(0, disk_based_storage.GetFileNames().get().size());
+}
+
+TYPED_TEST(DiskStorageTest, BEH_FileMerging) {
+  // Testing with max = 10, min = 5
+  detail::Parameters::set_file_element_count_limits(10, 5);
+  std::shared_ptr<DiskBasedStorage> disk_based_storage;
+  ElementMap element_list;
+
+  // This bit can probably be made a function to reset the containers and do another case
+  while (element_list.size() != 50U) {
+    disk_based_storage = std::make_shared<DiskBasedStorage>(*this->root_directory_);
+    element_list.clear();
+    for (uint32_t i(0); i < 50U; ++i)
+      StoreAnElement<TypeParam>(100U, *disk_based_storage, element_list);
+  }
+
+  // Do a trivial case, where only one file goes down to 4
+
+  // Delete elements so that we have (file index - element count) that tests an interesting scenario
+  // For example: 0 - 8, 1 - 7, 2 - 5, 3 - 9, 4 - 10. Then, delete an element from index 2.
+  // The resulting file scheme should be: 0 - 10,  1 - 10,  2 - 10, 3 - 8
+
+
+  // Another interesting scenario: 0 - 8, 1 - 7, 2 - 5, 3 - 5, 4 - 5.
+  // Then, delete an element from index 2.
+  // The resulting file scheme should be: 0 - 10,  1 - 10,  2 - 9
 }
 
 }  // namespace test

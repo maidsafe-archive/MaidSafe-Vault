@@ -27,7 +27,7 @@ struct Parameters {
   // Max number of recent entries in account classes.
   static size_t max_recent_data_list_size;
 
-  static bool set_file_element_count_limits(size_t max_file_element_count,
+  static void set_file_element_count_limits(size_t max_file_element_count,
                                             size_t min_file_element_count);
   static size_t max_file_element_count();
   static size_t min_file_element_count();
