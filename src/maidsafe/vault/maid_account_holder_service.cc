@@ -31,7 +31,7 @@ MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
       nfs_(routing, pmid) {}
 
 void MaidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_message) {
-  if (!routing_.IsConnectedToClient(data_message.source().node_id))
+  if (!routing_.IsConnectedToClient(data_message.this_persona().node_id))
     ThrowError(VaultErrors::permission_denied);
 }
 

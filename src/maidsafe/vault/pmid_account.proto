@@ -23,8 +23,3 @@ message PmidAccount {
 message ArchivedPmidData {
   repeated DataElement data_stored = 1;
 }
-message PmidTotals {
-  required bytes serialised_pmid_registration = 1;
-  required PmidRecord pmid_record = 2;
-}
-
