@@ -9,14 +9,12 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#include "maidsafe/vault/account_handler.h"
+#include "maidsafe/vault/pmid_account_handler.h"
 
 
 namespace maidsafe {
 
 namespace vault {
-
-
 
 }  // namespace vault
 

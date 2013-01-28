@@ -101,8 +101,9 @@ typename Account::serialised_type GetSerialisedAccount(
 }
 
 template<typename Nfs, typename Data>
-inline void RetryOnPutOrDeleteError(
-    routing::Routing& routing, Nfs& nfs, nfs::DataMessage data_message) {
+inline void RetryOnPutOrDeleteError(routing::Routing& routing,
+                                    Nfs& nfs,
+                                    nfs::DataMessage data_message) {
   if (ShouldRetry(routing, data_message)) {
     // TODO(Fraser#5#): 2013-01-24 - Replace this with repeating asio timer?  Incorporate larger
     //                  gaps between attempts.

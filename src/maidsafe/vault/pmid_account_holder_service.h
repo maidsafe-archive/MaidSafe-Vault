@@ -18,14 +18,17 @@
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
+
+#include "maidsafe/common/rsa.h"
+
 #include "maidsafe/routing/routing_api.h"
+
 #include "maidsafe/nfs/data_message.h"
 #include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/message.h"
-// #include "maidsafe/nfs/network_file_system.h"
-// #include "maidsafe/vault/disk_based_storage.h"
-#include "maidsafe/common/rsa.h"
 
+#include "maidsafe/vault/pmid_account_handler.h"
+#include "maidsafe/vault/types.h"
 
 namespace maidsafe {
 
@@ -58,6 +61,8 @@ class PmidAccountHolder {
   void SendDataMessage(const nfs::DataMessage& data_message);
 
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
+
+  void ValidateDataMessage(const nfs::DataMessage& data_message);
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;

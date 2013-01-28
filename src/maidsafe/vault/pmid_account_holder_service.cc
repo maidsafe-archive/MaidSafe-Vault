@@ -9,21 +9,38 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#include "maidsafe/vault/pmid_account_holder/pmid_account_holder.h"
+#include "maidsafe/vault/pmid_account_holder_service.h"
 
+#include "maidsafe/common/error.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-PmidAccountHolder::PmidAccountHolder(routing::Routing& /*routing*/,
-                                     const boost::filesystem::path /*vault_root_dir*/)
-     {}
+PmidAccountHolder::PmidAccountHolder(routing::Routing& routing,
+                                     nfs::PublicKeyGetter& public_key_getter,
+                                     const boost::filesystem::path vault_root_dir)
+  : routing_(routing),
+    public_key_getter_(public_key_getter),
+    accumulator_(),
+    pmid_account_handler_(vault_root_dir),
+    nfs_(routing) {}
 
-PmidAccountHolder::~PmidAccountHolder() {
-}
 
 void PmidAccountHolder::CloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {  //  NOLINT (fine when not commented)
+}
+
+void PmidAccountHolder::ValidateDataMessage(const nfs::DataMessage& data_message) {
+  if (!data_message.HasTargetId()) {
+    LOG(kError) << "No target ID, can't forward the message.";
+    ThrowError(VaultErrors::permission_denied);
+  }
+
+  if (routing_.EstimateInGroup(data_message.this_persona().node_id,
+                               NodeId(data_message.data().name))) {
+    LOG(kError) << "Message doesn't seem to come from the right group.";
+    ThrowError(VaultErrors::permission_denied);
+  }
 }
 
 }  // namespace vault
