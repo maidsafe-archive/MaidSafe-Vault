@@ -1,33 +1,30 @@
 /***************************************************************************************************
- *  Copyright 2012 PmidSafe.net limited                                                            *
+ *  Copyright 2012 MaidSafe.net limited                                                            *
  *                                                                                                 *
- *  The following source code is property of PmidSafe.net limited and is not meant for external    *
+ *  The following source code is property of MaidSafe.net limited and is not meant for external    *
  *  use.  The use of this code is governed by the licence file licence.txt found in the root of    *
  *  this directory and also on www.pmidsafe.net.                                                   *
  *                                                                                                 *
  *  You are not free to copy, amend or otherwise use this source code without the explicit         *
- *  written permission of the board of directors of PmidSafe.net.                                  *
+ *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef pmidSAFE_VAULT_ACCOUNT_HANDLER_H_
-#define pmidSAFE_VAULT_ACCOUNT_HANDLER_H_
+#ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_HANDLER_H_
+#define MAIDSAFE_VAULT_PMID_ACCOUNT_HANDLER_H_
 
+#include <cstdint>
 #include <mutex>
-#include <string>
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/types.h"
 
-#include "maidsafe/passport/types.h"
-
-#include "maidsafe/routing/api_config.h"
-
+#include "maidsafe/vault/pmid_account.h"
 #include "maidsafe/vault/types.h"
 
 
-namespace pmidsafe {
+namespace maidsafe {
 
 namespace vault {
 
@@ -55,7 +52,6 @@ class PmidAccountHandler {
                int32_t size);
   template<typename Data>
   void DeleteData(const PmidName& account_name, const typename Data::name_type& data_name);
-  template<typename Data>
 
  private:
   PmidAccountHandler(const PmidAccountHandler&);
@@ -69,8 +65,8 @@ class PmidAccountHandler {
 
 }  // namespace vault
 
-}  // namespace pmidsafe
+}  // namespace maidsafe
 
-#include "pmidsafe/vault/account_handler-inl.h"
+#include "maidsafe/vault/pmid_account_handler-inl.h"
 
-#endif  // pmidSAFE_VAULT_ACCOUNT_HANDLER_H_
+#endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_HANDLER_H_

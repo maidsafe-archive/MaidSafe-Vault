@@ -32,7 +32,8 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace protobuf { class PutData; }
+struct PmidTotals;
+
 
 class MaidAccount {
  public:
@@ -88,6 +89,19 @@ class MaidAccount {
   std::deque<PutDataDetails> recent_put_data_;
   int64_t total_data_stored_by_pmids_, total_put_data_;
   DiskBasedStorage archive_;
+};
+
+struct PmidTotals {
+  PmidTotals();
+  PmidTotals(const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
+             const PmidRecord& pmid_record_in);
+  PmidTotals(const PmidTotals& other);
+  PmidTotals& operator=(const PmidTotals& other);
+  PmidTotals(PmidTotals&& other);
+  PmidTotals& operator=(PmidTotals&& other);
+
+  nfs::PmidRegistration::serialised_type serialised_pmid_registration;
+  PmidRecord pmid_record;
 };
 
 }  // namespace vault
