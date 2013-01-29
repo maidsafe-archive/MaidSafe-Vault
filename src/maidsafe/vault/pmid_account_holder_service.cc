@@ -43,6 +43,10 @@ void PmidAccountHolder::ValidateDataMessage(const nfs::DataMessage& data_message
   }
 }
 
+void PmidAccountHolder::InformOfDataHolderUp(const PmidName& pmid_name) {
+  InformAboutDataHolderUp(pmid_name, nfs::GenericMessage::kNodeUp);
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

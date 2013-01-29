@@ -63,6 +63,7 @@ class PmidAccountHolder {
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
 
   void ValidateDataMessage(const nfs::DataMessage& data_message);
+  void InformOfDataHolderUp(const PmidName& pmid_name);
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
