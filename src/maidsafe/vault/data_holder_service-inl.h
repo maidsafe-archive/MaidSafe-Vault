@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_INL_H_
-#define MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_INL_H_
+#ifndef MAIDSAFE_VAULT_DATA_HOLDER_SERVICE_INL_H_
+#define MAIDSAFE_VAULT_DATA_HOLDER_SERVICE_INL_H_
 
 #include <exception>
 #include <string>
@@ -54,6 +54,11 @@ void DataHolder::HandleDataMessage(const nfs::DataMessage& data_message,
 template<typename Data>
 void DataHolder::HandleGetMessage(const nfs::DataMessage& data_message,
                                   const routing::ReplyFunctor& reply_functor) {
+  if (data_message.this_persona().persona != nfs::Persona::kMetadataManager) {
+    LOG(kError) << "Get can only come from MM.";
+    reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+    return;
+  }
   try {
   // TODO(Fraser#5#): 2013-01-18 - Take version into account properly here
     nfs::DataMessage response(
@@ -75,6 +80,11 @@ void DataHolder::HandleGetMessage(const nfs::DataMessage& data_message,
 template<typename Data>
 void DataHolder::HandlePutMessage(const nfs::DataMessage& data_message,
                                   const routing::ReplyFunctor& reply_functor) {
+  if (data_message.this_persona().persona != nfs::Persona::kPmidAccountHolder) {
+    LOG(kError) << "Put can only come from PmidAccountHolder.";
+    reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+    return;
+  }
   try {
     permanent_data_store_.Store(typename Data::name_type(data_message.data().name),
                                 data_message.data().content);
@@ -89,6 +99,11 @@ void DataHolder::HandlePutMessage(const nfs::DataMessage& data_message,
 template<typename Data>
 void DataHolder::HandleDeleteMessage(const nfs::DataMessage& data_message,
                                      const routing::ReplyFunctor& reply_functor) {
+  if (data_message.this_persona().persona != nfs::Persona::kPmidAccountHolder) {
+    LOG(kError) << "Delete can only come from PmidAccountHolder.";
+    reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+    return;
+  }
   permanent_data_store_.Delete(typename Data::name_type(data_message.data().name));
   reply_functor(nfs::ReturnCode(0).Serialise()->string());
 }
@@ -148,4 +163,4 @@ void DataHolder::CacheStore(const typename Data::name_type& name,
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_INL_H_
+#endif  // MAIDSAFE_VAULT_DATA_HOLDER_SERVICE_INL_H_
