@@ -9,7 +9,7 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#include "maidsafe/vault/data_holder/data_holder.h"
+#include "maidsafe/vault/data_holder_service.h"
 
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/types.h"

@@ -35,9 +35,9 @@ void PmidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_me
 
   ValidateDataMessage(data_message);
 
-  if (data_message.action() == nfs::DataMessage::Action::kPut) {
+  if (data_message.data().action == nfs::DataMessage::Action::kPut) {
     HandlePut<Data>(data_message, reply_functor);
-  } else if (data_message.action() == nfs::DataMessage::Action::kDelete) {
+  } else if (data_message.data().action == nfs::DataMessage::Action::kDelete) {
     HandleDelete<Data>(data_message, reply_functor);
   } else {
     return_code = nfs::ReturnCode(MakeError(VaultErrors::operation_not_supported));
@@ -47,8 +47,23 @@ void PmidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_me
 }
 
 template<typename Data>
-void PmidAccountHolderService::HandlePut(const nfs::DataMessage& /*data_message*/,
-                                         const routing::ReplyFunctor& /*reply_functor*/) {}
+void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
+                                         const routing::ReplyFunctor& reply_functor) {
+  nfs::ReturnCode return_code(MakeError(CommonErrors::success));
+  try {
+    pmid_account_handler_.PutData<Data>(data_message.target_id(),
+                                        data_message.data().name,
+                                        data_message.data().content.string.size());
+    SendDataMessage<Data>(data_message);
+  }
+  catch(const std::system_error& error) {
+    LOG(kError) << "Failure deleting data from account: " << error.what();
+    return_code = nfs::ReturnCode(error);
+  }
+  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
+  accumulator_.SetHandled(request_id, return_code);
+  reply_functor(return_code.Serialise()->string());
+}
 
 template<typename Data>
 void PmidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message,
@@ -69,17 +84,21 @@ void PmidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
 
 template<typename Data>
 void PmidAccountHolderService::SendDataMessage(const nfs::DataMessage& data_message) {
-  assert(data_message.action() == nfs::DataMessage::Action::kDelete);
-  nfs::DataMessage new_data_message(nfs::Persona::kDataHolder,
-                                    nfs::PersonaId(nfs::Persona::kPmidAccountHolder,
-                                                   routing_.node_id()),
-                                    data_message.data());
-  nfs_.Delete<Data>(new_data_message,
-                    [&routing_, &nfs_] (nfs::DataMessage data_msg) {
-                      detail::RetryOnPutOrDeleteError<PmidAccountHolderNfs, Data>(routing_,
-                                                                                  nfs_,
-                                                                                  data_msg);
-                    });
+  if (data_message.data().action == nfs::DataMessage::Action::kPut) {
+    nfs_.Put<Data>(data_message,
+                   [this] (nfs::DataMessage data_msg) {
+                     pmid_account_handler_.DeleteData<Data>(data_msg.target_id(),
+                                                            data_msg.data().name);
+                   });
+  } else {
+    assert(data_message.data().action == nfs::DataMessage::Action::kDelete);
+    nfs_.Delete<Data>(data_message,
+                      [this] (nfs::DataMessage data_msg) {
+                        detail::RetryOnPutOrDeleteError<PmidAccountHolderNfs, Data>(routing_,
+                                                                                    nfs_,
+                                                                                    data_msg);
+                      });
+  }
 }
 
 }  // namespace vault

@@ -36,11 +36,11 @@ class PostSynchronisation {
  public:
   explicit PostSynchronisation(routing::Routing& routing)
       : routing_(routing),
-        source_(nfs::MessageSource(persona, routing.kNodeId())) {}
+        source_(nfs::PersonaId(persona, routing.kNodeId())) {}
 
   explicit PostSynchronisation(routing::Routing& routing, const passport::Pmid& /*signing_pmid*/)
       : routing_(routing),
-        source_(nfs::MessageSource(persona, routing.kNodeId())) {}
+        source_(nfs::PersonaId(persona, routing.kNodeId())) {}
 
   void PostSyncData(const nfs::GenericMessage& generic_message,
                     nfs::GenericMessage::OnError /*on_error*/) {
@@ -58,7 +58,7 @@ class PostSynchronisation {
 
  private:
   routing::Routing& routing_;
-  nfs::MessageSource source_;
+  nfs::PersonaId source_;
 };
 
 }  // namespace vault

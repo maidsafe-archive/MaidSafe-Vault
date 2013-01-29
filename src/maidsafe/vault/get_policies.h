@@ -34,7 +34,7 @@ class GetFromDataHolder {
  public:
   explicit GetFromDataHolder(routing::Routing& routing)
       : routing_(routing),
-        source_(nfs::MessageSource(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
+        source_(nfs::PersonaId(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
 
   template<typename Data>
   std::future<Data> Get(const typename Data::name_type& name, const Identity& dest_id) {
@@ -60,7 +60,7 @@ class GetFromDataHolder {
 
  private:
   routing::Routing& routing_;
-  nfs::MessageSource source_;
+  nfs::PersonaId source_;
 };
 
 }  // namespace vault

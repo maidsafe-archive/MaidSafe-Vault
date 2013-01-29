@@ -108,19 +108,17 @@ inline void RetryOnPutOrDeleteError(routing::Routing& routing,
     // TODO(Fraser#5#): 2013-01-24 - Replace this with repeating asio timer?  Incorporate larger
     //                  gaps between attempts.
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    if (data_message.action() == nfs::DataMessage::Action::kPut) {
-      nfs.Put<Data>(
-          data_message,
-          [&routing, &nfs](nfs::DataMessage data_msg) {
-              RetryOnError<Nfs, Data, nfs::DataMessage::Action::kPut>(routing, nfs, data_msg);
-          });
+    if (data_message.data().action == nfs::DataMessage::Action::kPut) {
+      nfs.Put(data_message,
+              [&routing, &nfs] (nfs::DataMessage data_msg) {
+                RetryOnPutOrDeleteError<Nfs, Data>(routing, nfs, data_msg);
+              });
     } else {
-      assert(data_message.action() == nfs::DataMessage::Action::kDelete);
-      nfs.Delete<Data>(
-          data_message,
-          [&routing, &nfs](nfs::DataMessage data_msg) {
-              RetryOnError<Nfs, Data, nfs::DataMessage::Action::kDelete>(routing, nfs, data_msg);
-          });
+      assert(data_message.data().action == nfs::DataMessage::Action::kDelete);
+      nfs.Delete(data_message,
+                [&routing, &nfs] (nfs::DataMessage data_msg) {
+                  RetryOnPutOrDeleteError<Nfs, Data>(routing, nfs, data_msg);
+                });
     }
   }
 }

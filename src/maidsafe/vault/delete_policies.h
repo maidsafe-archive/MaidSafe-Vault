@@ -36,25 +36,25 @@ class DeleteFromMetadataManager {
   DeleteFromMetadataManager(routing::Routing& routing, const passport::Pmid& signing_pmid)
       : routing_(routing),
         signing_pmid_(signing_pmid),
-        source_(nfs::MessageSource(nfs::Persona::kMaidAccountHolder, routing.kNodeId())) {}
+        source_(nfs::PersonaId(nfs::Persona::kMaidAccountHolder, routing.kNodeId())) {}
 
   template<typename Data>
   void Delete(const nfs::DataMessage& data_message, nfs::DataMessage::OnError /*on_error*/) {
     nfs::DataMessage new_data_message(
-        data_message.action(),
-        data_message.destination_persona(),
+        data_message.next_persona(),
         source_,
         nfs::DataMessage::Data(data_message.data().type,
                                data_message.data().name,
                                data_message.data().content,
-                               data_message.data().version));
+                               data_message.data().action));
     nfs::Message message(nfs::DataMessage::message_type_identifier,
                          new_data_message.Serialise().data);
 //    routing::ResponseFunctor callback =
 //        [on_error, new_data_message](const std::vector<std::string>& serialised_messages) {
 //          nfs::HandleDeleteResponse<Data>(on_error, new_data_message, serialised_messages);
 //        };
-    routing_.Send(NodeId(new_data_message.data().name.string()), message.Serialise()->string(),
+    routing_.Send(NodeId(new_data_message.data().name.string()),
+                  message.Serialise()->string(),
                   nfs::IsCacheable<Data>());
   }
 
@@ -64,31 +64,33 @@ class DeleteFromMetadataManager {
  private:
   routing::Routing& routing_;
   passport::Pmid signing_pmid_;
-  nfs::MessageSource source_;
+  nfs::PersonaId source_;
 };
 
 class DeleteFromPmidAccountHolder {
  public:
   explicit DeleteFromPmidAccountHolder(routing::Routing& routing)
       : routing_(routing),
-        source_(nfs::MessageSource(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
+        source_(nfs::PersonaId(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
 
   template<typename Data>
   void Delete(const nfs::DataMessage& data_message, nfs::DataMessage::OnError on_error) {
-    nfs::DataMessage new_message(data_message.action(),
-                                 data_message.destination_persona(),
+    nfs::DataMessage new_message(data_message.next_persona(),
                                  source_,
                                  nfs::DataMessage::Data(data_message.data().type,
                                                         data_message.data().name,
                                                         data_message.data().content,
-                                                        data_message.data().version));
+                                                        data_message.data().action));
     nfs::Message message(nfs::DataMessage::message_type_identifier, new_message.Serialise().data);
-    routing::ResponseFunctor callback =
-        [on_error, new_message](const std::vector<std::string>& serialised_messages) {
-          nfs::HandleDeleteResponse<Data>(on_error, new_message, serialised_messages);
-        };
-    routing_.Send(NodeId(new_message.data().name.string()), message.Serialise()->string(),
-                  callback, routing::DestinationType::kGroup, nfs::IsCacheable<Data>());
+//    routing::ResponseFunctor callback =
+//        [on_error, new_message](const std::vector<std::string>& serialised_messages) {
+//          nfs::HandleDeleteResponse<Data>(on_error, new_message, serialised_messages);
+//        };
+//    routing_.Send(NodeId(new_message.data().name.string()), message.Serialise()->string(),
+//                  callback, routing::DestinationType::kGroup, nfs::IsCacheable<Data>());
+    routing_.Send(NodeId(new_message.data().name.string()),
+                  message.Serialise()->string(),
+                  nfs::IsCacheable<Data>());
   }
 
  protected:
@@ -96,21 +98,37 @@ class DeleteFromPmidAccountHolder {
 
  private:
   routing::Routing& routing_;
-  nfs::MessageSource source_;
+  nfs::PersonaId source_;
 };
 
 class DeleteFromDataHolder {
  public:
   explicit DeleteFromDataHolder(routing::Routing& routing)
       : routing_(routing),
-        source_(nfs::MessageSource(nfs::Persona::kPmidAccountHolder, routing.kNodeId())) {}
+        source_(nfs::PersonaId(nfs::Persona::kPmidAccountHolder, routing.kNodeId())) {}
 
- protected:
+  template<typename Data>
+  void Delete(const nfs::DataMessage& data_message, nfs::DataMessage::OnError /*on_error*/) {
+    nfs::DataMessage new_data_message(
+        data_message.next_persona(),
+        source_,
+        nfs::DataMessage::Data(data_message.data().type,
+                               data_message.data().name,
+                               data_message.data().content,
+                               data_message.data().action));
+    nfs::Message message(nfs::DataMessage::message_type_identifier,
+                         new_data_message.Serialise().data);
+    routing_.Send(NodeId(new_data_message.data().name.string()),
+                  message.Serialise()->string(),
+                  nfs::IsCacheable<Data>());
+  }
+
+protected:
   ~DeleteFromDataHolder() {}
 
  private:
   routing::Routing& routing_;
-  nfs::MessageSource source_;
+  nfs::PersonaId source_;
 };
 
 }  // namespace vault

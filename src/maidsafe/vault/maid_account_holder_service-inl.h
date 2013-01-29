@@ -30,13 +30,13 @@ template<typename Data>
 void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
   nfs::ReturnCode return_code(MakeError(CommonErrors::success));
-  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
+  auto request_id(std::make_pair(data_message.message_id(), data_message.this_persona().persona));
   if (accumulator_.CheckHandled(request_id, return_code))
     return reply_functor(return_code.Serialise()->string());
 
-  if (data_message.action() == nfs::DataMessage::Action::kPut) {
+  if (data_message.data().action == nfs::DataMessage::Action::kPut) {
     HandlePut<Data>(data_message, reply_functor);
-  } else if (data_message.action() == nfs::DataMessage::Action::kDelete) {
+  } else if (data_message.data().action == nfs::DataMessage::Action::kDelete) {
     HandleDelete<Data>(data_message, reply_functor);
   } else {
     return_code = nfs::ReturnCode(MakeError(VaultErrors::operation_not_supported));
@@ -59,7 +59,7 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     LOG(kWarning) << error.what();
     return_code = nfs::ReturnCode(error);
   }
-  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
+  auto request_id(std::make_pair(data_message.message_id(), data_message.this_persona().persona));
   accumulator_.SetHandled(request_id, return_code);
   reply_functor(return_code.Serialise()->string());
 }
@@ -76,7 +76,7 @@ void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
     LOG(kWarning) << error.what();
     // Always return succeess for Deletes
   }
-  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
+  auto request_id(std::make_pair(data_message.message_id(), data_message.this_persona().persona));
   nfs::ReturnCode return_code(MakeError(CommonErrors::success));
   accumulator_.SetHandled(request_id, return_code);
   reply_functor(return_code.Serialise()->string());
@@ -84,14 +84,14 @@ void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
 
 template<typename Data>
 void MaidAccountHolderService::AdjustAccount(const nfs::DataMessage& data_message, std::true_type) {
-  if (data_message.action() == nfs::DataMessage::Action::kPut) {
+  if (data_message.data().action == nfs::DataMessage::Action::kPut) {
     maid_account_handler_.PutData<Data>(
         detail::GetSourceMaidName(data_message),
         Data::name_type(data_message.data().name),
         static_cast<int32_t>(data_message.data().content.string().size()),
         1);
   } else {
-    assert(data_message.action() == nfs::DataMessage::Action::kDelete);
+    assert(data_message.data().action == nfs::DataMessage::Action::kDelete);
     maid_account_handler_.DeleteData<Data>(detail::GetSourceMaidName(data_message),
                                            Data::name_type(data_message.data().name));
   }
@@ -99,19 +99,21 @@ void MaidAccountHolderService::AdjustAccount(const nfs::DataMessage& data_messag
 
 template<typename Data>
 void MaidAccountHolderService::SendDataMessage(const nfs::DataMessage& data_message) {
-  if (data_message.action() == nfs::DataMessage::Action::kPut) {
-    nfs_.Put<Data>(
-        data_message,
-        [&routing_, &nfs_](nfs::DataMessage data_msg) {
-            detail::RetryOnPutOrDeleteError<MaidAccountHolderNfs, Data>(routing_, nfs_, data_msg);
-        });
+  if (data_message.data().action == nfs::DataMessage::Action::kPut) {
+    nfs_.Put<Data>(data_message,
+                   [this] (nfs::DataMessage data_msg) {
+                     detail::RetryOnPutOrDeleteError<MaidAccountHolderNfs, Data>(routing_,
+                                                                                 nfs_,
+                                                                                 data_msg);
+                   });
   } else {
-    assert(data_message.action() == nfs::DataMessage::Action::kDelete);
-    nfs_.Delete<Data>(
-        data_message,
-        [&routing_, &nfs_](nfs::DataMessage data_msg) {
-            detail::RetryOnPutOrDeleteError<MaidAccountHolderNfs, Data>(routing_, nfs_, data_msg);
-        });
+    assert(data_message.data().action == nfs::DataMessage::Action::kDelete);
+    nfs_.Delete<Data>(data_message,
+                      [this] (nfs::DataMessage data_msg) {
+                        detail::RetryOnPutOrDeleteError<MaidAccountHolderNfs, Data>(routing_,
+                                                                                    nfs_,
+                                                                                    data_msg);
+                      });
   }
 }
 

@@ -135,7 +135,7 @@ bool Demultiplexer::GetFromCache(std::string& serialised_message) {
     auto cached_content(HandleGetFromCache(request_data_message));
     if (cached_content.IsInitialised()) {
       nfs::DataMessage response_data_message(
-          request_data_message.action(),
+          request_data_message.data().action,
           request_data_message.destination_persona(),
           request_data_message.source(),
           nfs::DataMessage::Data(request_data_message.data().type,

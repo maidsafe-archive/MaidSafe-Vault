@@ -36,7 +36,7 @@ template<typename Data>
 void DataHolder::HandleDataMessage(const nfs::DataMessage& data_message,
                                    const routing::ReplyFunctor& reply_functor) {
   LOG(kInfo) << "received message at Data holder";
-  switch (data_message.action()) {
+  switch (data_message.data().action) {
     case nfs::DataMessage::Action::kGet :
       HandleGetMessage<Data>(data_message, reply_functor);
       break;
@@ -57,14 +57,13 @@ void DataHolder::HandleGetMessage(const nfs::DataMessage& data_message,
   try {
   // TODO(Fraser#5#): 2013-01-18 - Take version into account properly here
     nfs::DataMessage response(
-        data_message.action(),
-        data_message.destination_persona(),
+        data_message.next_persona(),
         data_message.source(),
         nfs::DataMessage::Data(
             data_message.data().type,
             data_message.data().name,
             permanent_data_store_.Get(typename Data::name_type(data_message.data().name)),
-            data_message.data().version));
+            data_message.data().action));
     reply_functor(response.Serialise()->string());
   } catch(std::exception& /*ex*/) {
     reply_functor(nfs::ReturnCode(-1).Serialise()->string());  // non 0 plus optional message
