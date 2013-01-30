@@ -20,7 +20,7 @@
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/vault/parameters.h"
-#include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/types.h"
 
 namespace fs = boost::filesystem;
 
@@ -42,12 +42,28 @@ void AddDataToElement(const DiskBasedStorage::OrderingMap::iterator& it,
   disk_element->set_serialised_value((*it).second);
 }
 
+void ExtractElementsFromFilename(const std::string& filename,
+                                 std::string& hash,
+                                 size_t& file_number) {
+  auto it(std::find(filename.begin(), filename.end(), '.'));
+  if (it == filename.end()) {
+    LOG(kError) << "No dot in the file name.";
+    ThrowError(VaultErrors::failed_elements_extraction);
+  }
+  file_number = static_cast<size_t>(std::stoi(std::string(filename.begin(), it)));
+  hash = std::string(it + 1, filename.end());
+}
+
+boost::filesystem::path GetFileName(const std::string& hash, size_t file_number) {
+  return boost::filesystem::path(std::to_string(file_number) + "." + hash);
+}
+
 }  // namespace
 
 class DiskBasedStorage::Changer {
  public:
   Changer() : functor_(nullptr) {}
-  Changer(const std::function<void(std::string&)> functor) : functor_(functor) {}
+  explicit Changer(const std::function<void(std::string&)> functor) : functor_(functor) {}
 
   void Execute(protobuf::DiskStoredFile& disk_file, int index) {
     if (functor_)
@@ -83,10 +99,14 @@ DiskBasedStorage::DiskBasedStorage(const fs::path& root)
     : kRoot_(root),
       active_(),
       file_hashes_() {
-  if (fs::exists(root))
-    TraverseAndVerifyFiles(root);
-  else
+  if (fs::exists(root)) {
+    if (fs::is_directory(root))
+      TraverseAndVerifyFiles(root);
+    else
+      ThrowError(VaultErrors::path_not_a_directory);
+  } else {
     fs::create_directory(root);
+  }
 
   if (file_hashes_.empty())
     file_hashes_.push_back(kEmptyFileHash);
@@ -98,9 +118,9 @@ void DiskBasedStorage::TraverseAndVerifyFiles(const fs::path& root) {
   fs::directory_iterator root_itr(root), end_itr;
   for (; root_itr != end_itr; ++root_itr) {
     try {
-      detail::ExtractElementsFromFilename(fs::path(*root_itr).filename().string(),
-                                          hash,
-                                          file_number);
+      ExtractElementsFromFilename(fs::path(*root_itr).filename().string(),
+                                  hash,
+                                  file_number);
       uint32_t element_count(VerifyFileHashAndCountElements(hash, file_number));
       AddToFileData(hash, file_number, element_count);
     }
@@ -118,7 +138,7 @@ uint32_t DiskBasedStorage::VerifyFileHashAndCountElements(const std::string& has
   ReadAndParseFile(hash, file_number, disk_file, file_path, file_content);
   if (EncodeToBase32(crypto::Hash<crypto::SHA512>(file_content)) != hash) {
     LOG(kInfo) << "Contents don't hash to what file name contains.";
-    throw std::exception();
+    ThrowError(VaultErrors::hash_failure);
   }
   return static_cast<uint32_t>(disk_file.disk_element_size());
 }
@@ -154,7 +174,7 @@ std::future<DiskBasedStorage::PathVector> DiskBasedStorage::GetFileNames() const
                    std::vector<fs::path> file_names;
                    for (size_t n(0); n < file_hashes_.size(); ++n) {
                      if (file_hashes_.at(n) != kEmptyFileHash)
-                       file_names.push_back(detail::GetFileName(file_hashes_.at(n), n));
+                       file_names.push_back(GetFileName(file_hashes_.at(n), n));
                    }
                    promise->set_value(file_names);
                });
@@ -167,7 +187,7 @@ std::future<NonEmptyString> DiskBasedStorage::GetFile(const fs::path& path) cons
   // size_t file_number;
   // ExtractElementsFromFilename(path.filename().string(), hash, file_number);
   // if (file_data_.at(file_number) != hash)
-  //   throw std::exception();
+  //   ThrowError(VaultErrors::hash_failure);
   std::shared_ptr<NonEmptyStringPromise> promise(std::make_shared<NonEmptyStringPromise>());
   std::future<NonEmptyString> future(promise->get_future());
   active_.Send([path, promise, this] () {
@@ -184,10 +204,10 @@ std::future<NonEmptyString> DiskBasedStorage::GetFile(const fs::path& path) cons
 void DiskBasedStorage::PutFile(const fs::path& path, const NonEmptyString& content) {
   size_t file_number;
   std::string hash;
-  detail::ExtractElementsFromFilename(path.string(), hash, file_number);
+  ExtractElementsFromFilename(path.string(), hash, file_number);
   if (EncodeToBase32(crypto::Hash<crypto::SHA512>(content)) != hash) {
     LOG(kError) << "Content doesn't hash.";
-    throw std::exception();
+    ThrowError(VaultErrors::hash_failure);
   }
   active_.Send([path, content, file_number, hash, this] () {
                  DoPutFile(kRoot_ / path, content, file_number, hash);
@@ -204,7 +224,7 @@ void DiskBasedStorage::DoPutFile(const fs::path& path,
     std::string old_hash(file_hashes_.at(file_number));
     assert(old_hash != hash && "Hash is the same as it's currently held.");
     file_hashes_.at(file_number) = hash;
-    fs::remove(detail::GetFilePath(kRoot_, old_hash, file_number));
+    fs::remove(GetFilePath(kRoot_, old_hash, file_number));
   } else {
     while (file_number > file_hashes_.size())
       file_hashes_.push_back(kEmptyFileHash);
@@ -234,9 +254,7 @@ void DiskBasedStorage::AddToLatestFile(const protobuf::DiskStoredElement& elemen
     file_hashes_.push_back(kEmptyFileHash);
   }
 
-  fs::path new_path(detail::GetFilePath(kRoot_,
-                                        file_hashes_.at(latest_file_index),
-                                        latest_file_index));
+  fs::path new_path(GetFilePath(kRoot_, file_hashes_.at(latest_file_index), latest_file_index));
   WriteFile(new_path, new_content.string());
   if ((!latest_file_path.empty()) && (latest_file_path != new_path))
     fs::remove(latest_file_path);
@@ -263,7 +281,7 @@ void DiskBasedStorage::SearchForEntryAndExecuteOperation(const protobuf::DiskSto
   for (auto it(file_hashes_.rbegin()); it != file_hashes_.rend(); ++it, --file_index) {
     ReadAndParseFile(*it, file_index, disk_file, file_path, file_content);
     for (int n(disk_file.disk_element_size() - 1); n != -1; --n) {
-      if (detail::MatchingDiskElements(disk_file.disk_element(n), element)) {
+      if (MatchingDiskElements(disk_file.disk_element(n), element)) {
         changer.Execute(disk_file, n);
         UpdateFileAfterModification(it, file_index, disk_file, file_path, reorder);
         return;
@@ -282,11 +300,11 @@ void DiskBasedStorage::ReadAndParseFile(const std::string& hash,
     LOG(kInfo) << "Empty file, no need to read.";
     return;
   }
-  file_path = detail::GetFilePath(kRoot_, hash, file_index);
+  file_path = GetFilePath(kRoot_, hash, file_index);
   file_content = ReadFile(file_path);
   if (!disk_file.ParseFromString(file_content.string())) {
     LOG(kError) << "Failure to parse file content.";
-    throw std::exception();
+    ThrowError(VaultErrors::parse_failure);
   }
 }
 
@@ -299,7 +317,7 @@ void DiskBasedStorage::UpdateFileAfterModification(std::vector<std::string>::rev
     NonEmptyString file_content(NonEmptyString(disk_file.SerializeAsString()));
     *it = EncodeToBase32(crypto::Hash<crypto::SHA512>(file_content));
     WriteFile(file_path, file_content.string());
-    fs::rename(file_path, detail::GetFilePath(kRoot_, *it, file_index));
+    fs::rename(file_path, GetFilePath(kRoot_, *it, file_index));
     if (reorder &&
         disk_file.disk_element_size() < int(detail::Parameters::min_file_element_count())) {
       MergeFilesAfterDelete();
@@ -317,9 +335,7 @@ void DiskBasedStorage::MergeFilesAfterDelete() {
   OrderingMap ordering;
   size_t current_counter(1), new_counter(0), file_hashes_max(file_hashes_.size());
   while (current_counter != file_hashes_max) {
-    fs::path current_path(detail::GetFilePath(kRoot_,
-                                              file_hashes_.at(new_counter),
-                                              new_counter));
+    fs::path current_path(GetFilePath(kRoot_, file_hashes_.at(new_counter), new_counter));
     NonEmptyString current_content(ReadFile(current_path));
     protobuf::DiskStoredFile current_file_disk;
     current_file_disk.ParseFromString(current_content.string());
@@ -352,9 +368,7 @@ void DiskBasedStorage::HandleNextFile(const boost::filesystem::path& current_pat
   while (ordering.size() < detail::Parameters::max_file_element_count() ||
          current_counter != file_hashes_.size()) {
     // Read another file and add elements
-    content = ReadFile(detail::GetFilePath(kRoot_,
-                                           file_hashes_.at(current_counter),
-                                           current_counter));
+    content = ReadFile(GetFilePath(kRoot_, file_hashes_.at(current_counter), current_counter));
     ++current_counter;
     file_disk.ParseFromString(content.string());
     for (int n(0); n != current_file_disk.disk_element_size(); ++n) {
@@ -375,8 +389,23 @@ void DiskBasedStorage::HandleNextFile(const boost::filesystem::path& current_pat
   WriteFile(current_path, content.string());
   file_hashes_.at(new_counter) = crypto::Hash<crypto::SHA512>(content).string();
   boost::filesystem::rename(current_path,
-                            detail::GetFilePath(kRoot_, file_hashes_.at(new_counter), new_counter));
+                            GetFilePath(kRoot_, file_hashes_.at(new_counter), new_counter));
   ++new_counter;
+}
+
+// Helper functions
+
+boost::filesystem::path DiskBasedStorage::GetFilePath(const boost::filesystem::path& base_path,
+                                                      const std::string& hash,
+                                                      size_t file_number) {
+  return base_path / GetFileName(hash, file_number);
+}
+
+// This function expects lhs to have data name and value always
+bool DiskBasedStorage::MatchingDiskElements(const protobuf::DiskStoredElement& lhs,
+                                            const protobuf::DiskStoredElement& rhs) const {
+  return lhs.data_name() == rhs.data_name() &&
+         (rhs.serialised_value().empty() ? true : lhs.serialised_value() == rhs.serialised_value());
 }
 
 }  // namespace vault

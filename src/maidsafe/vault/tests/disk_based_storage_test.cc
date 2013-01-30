@@ -77,6 +77,13 @@ class DiskStorageTest : public testing::Test {
  protected:
   maidsafe::test::TestPath root_directory_;
 
+  boost::filesystem::path GetFilePath(const DiskBasedStorage& disk_based_storage,
+                                      const boost::filesystem::path& base_path,
+                                      const std::string& hash,
+                                      size_t file_number) {
+    return disk_based_storage.GetFilePath(base_path, hash, file_number);
+  }
+
   std::string GenerateFileContent(uint32_t max_file_size) {
     protobuf::DiskStoredFile disk_file;
     protobuf::DiskStoredElement disk_element;
@@ -110,7 +117,7 @@ class DiskStorageTest : public testing::Test {
       element.ParseFromString((*itr).serialised_element);
       bool found_match(false);
       for (int i(0); i != fetched_disk_file.disk_element_size(); ++i) {
-        if (detail::MatchingDiskElements(fetched_disk_file.disk_element(i), element))
+        if (disk_based_storage.MatchingDiskElements(fetched_disk_file.disk_element(i), element))
           found_match = true;
       }
       EXPECT_TRUE(found_match) << "can't find match element for element "
@@ -258,8 +265,10 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlers) {
   protobuf::DiskStoredFile disk_file;
   disk_file.add_disk_element()->CopyFrom(element);
   std::string hash = EncodeToBase32(crypto::Hash<crypto::SHA512>(disk_file.SerializeAsString()));
-  fs::path file_path = detail::GetFilePath(
-      root_path, hash, disk_based_storage.GetFileCount().get() - 1);
+  fs::path file_path = this->GetFilePath(disk_based_storage,
+                                         root_path,
+                                         hash,
+                                         disk_based_storage.GetFileCount().get() - 1);
 
   Sleep(boost::posix_time::milliseconds(10));
   boost::system::error_code error_code;
@@ -285,9 +294,10 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlers) {
 
   std::string new_hash = EncodeToBase32(
                             crypto::Hash<crypto::SHA512>(disk_file.SerializeAsString()));
-  fs::path new_file_path = detail::GetFilePath(root_path,
-                                               new_hash,
-                                               disk_based_storage.GetFileCount().get() - 1);
+  fs::path new_file_path(this->GetFilePath(disk_based_storage,
+                                           root_path,
+                                           new_hash,
+                                           disk_based_storage.GetFileCount().get() - 1));
   {
     auto result = disk_based_storage.GetFile(new_file_path);
     NonEmptyString fetched_content = result.get();

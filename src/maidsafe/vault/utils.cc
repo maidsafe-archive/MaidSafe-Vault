@@ -35,37 +35,9 @@ bool ShouldRetry(routing::Routing& routing, const nfs::DataMessage& data_message
 }
 
 MaidName GetSourceMaidName(const nfs::DataMessage& data_message) {
-  if (data_message.source().persona != nfs::Persona::kClientMaid)
+  if (data_message.this_persona().persona != nfs::Persona::kClientMaid)
     ThrowError(VaultErrors::permission_denied);
-  return MaidName(Identity(data_message.source().node_id.string()));
-}
-
-void ExtractElementsFromFilename(const std::string& filename,
-                                 std::string& hash,
-                                 size_t& file_number) {
-  auto it(std::find(filename.begin(), filename.end(), '.'));
-  if (it == filename.end()) {
-    LOG(kError) << "No dot in the file name.";
-    throw std::exception();
-  }
-  file_number = static_cast<size_t>(std::stoi(std::string(filename.begin(), it)));
-  hash = std::string(it + 1, filename.end());
-}
-
-boost::filesystem::path GetFileName(const std::string& hash, size_t file_number) {
-  return boost::filesystem::path(std::to_string(file_number) + "." + hash);
-}
-
-boost::filesystem::path GetFilePath(const boost::filesystem::path& base_path,
-                                    const std::string& hash,
-                                    size_t file_number) {
-  return base_path / GetFileName(hash, file_number);
-}
-
-bool MatchingDiskElements(const protobuf::DiskStoredElement& lhs,
-                          const protobuf::DiskStoredElement& rhs) {
-  return lhs.data_name() == rhs.data_name() &&
-         (rhs.serialised_value().empty() ? true : lhs.serialised_value() == rhs.serialised_value());
+  return MaidName(Identity(data_message.this_persona().node_id.string()));
 }
 
 }  // namespace detail

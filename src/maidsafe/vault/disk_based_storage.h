@@ -32,6 +32,8 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace test {  template<class T> class DiskStorageTest; }
+
 class DiskBasedStorage {
  public:
   typedef std::vector<boost::filesystem::path> PathVector;
@@ -41,8 +43,7 @@ class DiskBasedStorage {
 
   // Element handling
   template<typename Data>
-  void Store(const typename Data::name_type& name,
-             const std::string& serialised_value);
+  void Store(const typename Data::name_type& name, const std::string& serialised_value);
   template<typename Data>
   void Delete(const typename Data::name_type& name);
   template<typename Data>
@@ -56,6 +57,7 @@ class DiskBasedStorage {
   std::future<NonEmptyString> GetFile(const boost::filesystem::path& path) const;
   void PutFile(const boost::filesystem::path& path, const NonEmptyString& content);
 
+  template<class T> friend class test::DiskStorageTest;
  private:
   class Changer;
 
@@ -96,6 +98,13 @@ class DiskBasedStorage {
                       OrderingMap& ordering,
                       size_t& current_counter,
                       size_t& new_counter);
+
+  // Helper functions
+  static boost::filesystem::path GetFilePath(const boost::filesystem::path& base_path,
+                                             const std::string& hash,
+                                             size_t file_number);
+  bool MatchingDiskElements(const protobuf::DiskStoredElement& lhs,
+                            const protobuf::DiskStoredElement& rhs) const;
 
   const boost::filesystem::path kRoot_;
   mutable Active active_;
