@@ -13,6 +13,7 @@
 #define MAIDSAFE_VAULT_UTILS_H_
 
 #include <mutex>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -54,7 +55,7 @@ typename std::vector<Account>::iterator FindAccount(
 }
 
 template<typename Account>
-bool AddAccount(std::mutex& mutex, const std::vector<Account>& accounts, const Account& account) {
+bool AddAccount(std::mutex& mutex, std::vector<Account>& accounts, const Account& account) {
   std::lock_guard<std::mutex> lock(mutex);
   if (FindAccount(accounts, account.name()) != accounts.end())
     return false;
@@ -64,13 +65,12 @@ bool AddAccount(std::mutex& mutex, const std::vector<Account>& accounts, const A
 
 template<typename Account>
 bool DeleteAccount(std::mutex& mutex,
-                   const std::vector<Account>& accounts,
+                   std::vector<Account>& accounts,
                    const typename Account::name_type& account_name) {
   std::lock_guard<std::mutex> lock(mutex);
   auto itr(FindAccount(accounts, account_name));
-  if (itr == accounts.end())
-    return false;
-  accounts.erase(itr);
+  if (itr != accounts.end())
+    accounts.erase(itr);
   return true;
 }
 
