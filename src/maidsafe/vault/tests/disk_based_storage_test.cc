@@ -77,11 +77,10 @@ class DiskStorageTest : public testing::Test {
  protected:
   maidsafe::test::TestPath root_directory_;
 
-  boost::filesystem::path GetFilePath(const DiskBasedStorage& disk_based_storage,
-                                      const boost::filesystem::path& base_path,
+  boost::filesystem::path GetFilePath(const boost::filesystem::path& base_path,
                                       const crypto::SHA512Hash& hash,
                                       size_t file_number) {
-    return disk_based_storage.GetFilePath(base_path, hash, file_number);
+    return DiskBasedStorage::GetFilePath(base_path, hash, file_number);
   }
 
   std::string GenerateFileContent(uint32_t max_file_size) {
@@ -117,7 +116,7 @@ class DiskStorageTest : public testing::Test {
       element.ParseFromString((*itr).serialised_element);
       bool found_match(false);
       for (int i(0); i != fetched_disk_file.disk_element_size(); ++i) {
-        if (disk_based_storage.MatchingDiskElements(fetched_disk_file.disk_element(i), element))
+        if (DiskBasedStorage::MatchingDiskElements(fetched_disk_file.disk_element(i), element))
           found_match = true;
       }
       EXPECT_TRUE(found_match) << "can't find match element for element "
@@ -265,8 +264,7 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlers) {
   protobuf::DiskStoredFile disk_file;
   disk_file.add_disk_element()->CopyFrom(element);
   crypto::SHA512Hash hash(crypto::Hash<crypto::SHA512>(disk_file.SerializeAsString()));
-  fs::path file_path = this->GetFilePath(disk_based_storage,
-                                         root_path,
+  fs::path file_path = this->GetFilePath(root_path,
                                          hash,
                                          disk_based_storage.GetFileCount().get() - 1);
 
@@ -293,8 +291,7 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlers) {
                                        serialised_value);
 
   crypto::SHA512Hash new_hash(crypto::Hash<crypto::SHA512>(disk_file.SerializeAsString()));
-  fs::path new_file_path(this->GetFilePath(disk_based_storage,
-                                           root_path,
+  fs::path new_file_path(this->GetFilePath(root_path,
                                            new_hash,
                                            disk_based_storage.GetFileCount().get() - 1));
   {

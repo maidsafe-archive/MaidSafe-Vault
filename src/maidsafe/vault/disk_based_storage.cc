@@ -419,8 +419,7 @@ void DiskBasedStorage::HandleNextFile(const boost::filesystem::path& current_pat
   ++new_counter;
 }
 
-// Helper functions
-
+// static Helper functions
 boost::filesystem::path DiskBasedStorage::GetFilePath(const boost::filesystem::path& base_path,
                                                       const crypto::SHA512Hash& hash,
                                                       size_t file_number) {
@@ -429,7 +428,7 @@ boost::filesystem::path DiskBasedStorage::GetFilePath(const boost::filesystem::p
 
 // This function expects lhs to have data name and value always
 bool DiskBasedStorage::MatchingDiskElements(const protobuf::DiskStoredElement& lhs,
-                                            const protobuf::DiskStoredElement& rhs) const {
+                                            const protobuf::DiskStoredElement& rhs) {
   return lhs.data_name() == rhs.data_name() &&
          (rhs.serialised_value().empty() ? true : lhs.serialised_value() == rhs.serialised_value());
 }

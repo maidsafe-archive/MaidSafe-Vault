@@ -44,13 +44,14 @@ class DiskBasedStorage {
 
   // Element handling
   template<typename Data>
-  void Store(const typename Data::name_type& name, const std::string& serialised_value);
+  std::future<void> Store(const typename Data::name_type& name,
+                          const std::string& serialised_value);
   template<typename Data>
-  void Delete(const typename Data::name_type& name);
+  std::future<void> Delete(const typename Data::name_type& name);
   template<typename Data>
-  void Modify(const typename Data::name_type& name,
-              const std::function<void(std::string&)>& functor,
-              const std::string& serialised_value);
+  std::future<void> Modify(const typename Data::name_type& name,
+                           const std::function<void(std::string&)>& functor,
+                           const std::string& serialised_value);
 
   // Synchronisation helpers
   std::future<uint32_t> GetFileCount() const;
@@ -104,8 +105,8 @@ class DiskBasedStorage {
   static boost::filesystem::path GetFilePath(const boost::filesystem::path& base_path,
                                              const crypto::SHA512Hash& hash,
                                              size_t file_number);
-  bool MatchingDiskElements(const protobuf::DiskStoredElement& lhs,
-                            const protobuf::DiskStoredElement& rhs) const;
+  static bool MatchingDiskElements(const protobuf::DiskStoredElement& lhs,
+                                   const protobuf::DiskStoredElement& rhs);
 
   const boost::filesystem::path kRoot_;
   mutable Active active_;

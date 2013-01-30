@@ -21,37 +21,70 @@ namespace maidsafe {
 
 namespace vault {
 
+typedef std::promise<void> VoidPromise;
+typedef std::shared_ptr<VoidPromise> VoidPromisePtr;
+
 template<typename Data>
-void DiskBasedStorage::Store(const typename Data::name_type& name,
-                             const std::string& serialised_value) {
-  active_.Send([name, serialised_value, this] {
+std::future<void> DiskBasedStorage::Store(const typename Data::name_type& name,
+                                          const std::string& serialised_value) {
+  VoidPromisePtr promise(std::make_shared<VoidPromise>());
+  std::future<void> future(promise->get_future());
+  active_.Send([name, serialised_value, promise, this] {
+                 try {
                    protobuf::DiskStoredElement element;
                    element.set_data_name(name.data.string());
                    element.set_serialised_value(serialised_value);
                    this->AddToLatestFile(element);
+                   promise->set_value();
+                 }
+                 catch(const std::exception& e) {
+                   LOG(kError) << "Execution of Store threw: " << e.what();
+                   promise->set_exception(std::current_exception());
+                 }
                });
+  return std::move(future);
 }
 
 template<typename Data>
-void DiskBasedStorage::Delete(const typename Data::name_type& name) {
-  active_.Send([name, this] {
+std::future<void> DiskBasedStorage::Delete(const typename Data::name_type& name) {
+  VoidPromisePtr promise(std::make_shared<VoidPromise>());
+  std::future<void> future(promise->get_future());
+  active_.Send([name, promise, this] {
+                 try {
                    protobuf::DiskStoredElement element;
                    element.set_data_name(name.data.string());
                    this->SearchForAndDeleteEntry(element);
+                   promise->set_value();
+                 }
+                 catch(const std::exception& e) {
+                   LOG(kError) << "Execution of Delete threw: " << e.what();
+                   promise->set_exception(std::current_exception());
+                 }
                });
+  return std::move(future);
 }
 
 template<typename Data>
-void DiskBasedStorage::Modify(const typename Data::name_type& name,
-                              const std::function<void(std::string&)>& functor,
-                              const std::string& serialised_value) {
+std::future<void> DiskBasedStorage::Modify(const typename Data::name_type& name,
+                                           const std::function<void(std::string&)>& functor,
+                                           const std::string& serialised_value) {
   assert(functor && "Null functor not allowed!");
-  active_.Send([name, functor, serialised_value, this] () {
+  VoidPromisePtr promise(std::make_shared<VoidPromise>());
+  std::future<void> future(promise->get_future());
+  active_.Send([name, functor, serialised_value, promise, this] () {
+                 try {
                    protobuf::DiskStoredElement element;
                    element.set_data_name(name.data.string());
                    element.set_serialised_value(serialised_value);
                    this->SearchForAndModifyEntry(element, functor);
+                   promise->set_value();
+                 }
+                 catch(const std::exception& e) {
+                   LOG(kError) << "Execution of Modify threw: " << e.what();
+                   promise->set_exception(std::current_exception());
+                 }
                });
+  return std::move(future);
 }
 
 }  // namespace vault
