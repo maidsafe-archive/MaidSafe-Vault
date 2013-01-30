@@ -23,6 +23,7 @@
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/active.h"
+#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/vault/disk_based_storage_messages_pb.h"
@@ -67,12 +68,12 @@ class DiskBasedStorage {
   DiskBasedStorage& operator=(DiskBasedStorage&&);
 
   void TraverseAndVerifyFiles(const boost::filesystem::path& root);
-  uint32_t VerifyFileHashAndCountElements(const std::string& hash, size_t file_number);
-  void AddToFileData(const std::string& hash, size_t file_number, uint32_t element_count);
+  uint32_t VerifyFileHashAndCountElements(const crypto::SHA512Hash& hash, size_t file_number);
+  void AddToFileData(const crypto::SHA512Hash& hash, size_t file_number, uint32_t element_count);
   void DoPutFile(const boost::filesystem::path& path,
                  const NonEmptyString& content,
                  size_t file_number,
-                 const std::string& hash);
+                 const crypto::SHA512Hash& hash);
 
   void AddToLatestFile(const protobuf::DiskStoredElement& element);
   void SearchForAndDeleteEntry(const protobuf::DiskStoredElement& element);
@@ -81,12 +82,12 @@ class DiskBasedStorage {
   void SearchForEntryAndExecuteOperation(const protobuf::DiskStoredElement& element,
                                          Changer& changer,
                                          bool reorder);
-  void ReadAndParseFile(const std::string& hash,
+  void ReadAndParseFile(const crypto::SHA512Hash& hash,
                         size_t file_index,
                         protobuf::DiskStoredFile& disk_file,
                         boost::filesystem::path& file_path,
                         NonEmptyString& file_content) const;
-  void UpdateFileAfterModification(std::vector<std::string>::reverse_iterator& it,
+  void UpdateFileAfterModification(std::vector<crypto::SHA512Hash>::reverse_iterator& it,
                                    size_t file_index,
                                    const protobuf::DiskStoredFile &disk_file,
                                    const boost::filesystem::path &file_path,
@@ -101,14 +102,14 @@ class DiskBasedStorage {
 
   // Helper functions
   static boost::filesystem::path GetFilePath(const boost::filesystem::path& base_path,
-                                             const std::string& hash,
+                                             const crypto::SHA512Hash& hash,
                                              size_t file_number);
   bool MatchingDiskElements(const protobuf::DiskStoredElement& lhs,
                             const protobuf::DiskStoredElement& rhs) const;
 
   const boost::filesystem::path kRoot_;
   mutable Active active_;
-  std::vector<std::string> file_hashes_;
+  std::vector<crypto::SHA512Hash> file_hashes_;
 };
 
 }  // namespace vault

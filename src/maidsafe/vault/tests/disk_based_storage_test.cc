@@ -79,7 +79,7 @@ class DiskStorageTest : public testing::Test {
 
   boost::filesystem::path GetFilePath(const DiskBasedStorage& disk_based_storage,
                                       const boost::filesystem::path& base_path,
-                                      const std::string& hash,
+                                      const crypto::SHA512Hash& hash,
                                       size_t file_number) {
     return disk_based_storage.GetFilePath(base_path, hash, file_number);
   }
@@ -178,8 +178,8 @@ TYPED_TEST(DiskStorageTest, BEH_FileHandlers) {
 
   for (uint32_t i(0); i < num_files; ++i) {
     NonEmptyString file_content(this->GenerateFileContent(max_file_size));
-    std::string hash(EncodeToBase32(crypto::Hash<crypto::SHA512>(file_content)));
-    std::string file_name(std::to_string(file_numbers[i]) + "." + hash);
+    crypto::SHA512Hash hash(crypto::Hash<crypto::SHA512>(file_content));
+    std::string file_name(std::to_string(file_numbers[i]) + "." + EncodeToBase32(hash));
     fs::path file_path(root_path / file_name);
     files.insert(std::make_pair(file_path, file_content));
     disk_based_storage.PutFile(file_path, file_content);
@@ -210,8 +210,8 @@ TYPED_TEST(DiskStorageTest, BEH_FileHandlersWithCorruptingThread) {
   uint32_t num_files(10), max_file_size(10000);
   for (uint32_t i(0); i < num_files; ++i) {
     NonEmptyString file_content(this->GenerateFileContent(max_file_size));
-    std::string hash(EncodeToBase32(crypto::Hash<crypto::SHA512>(file_content)));
-    std::string file_name(std::to_string(i) + "." + hash);
+    crypto::SHA512Hash hash(crypto::Hash<crypto::SHA512>(file_content));
+    std::string file_name(std::to_string(i) + "." + EncodeToBase32(hash));
     fs::path file_path(root_path / file_name);
     files.insert(std::make_pair(file_path, file_content));
   }
@@ -264,7 +264,7 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlers) {
   element.set_serialised_value(serialised_value);
   protobuf::DiskStoredFile disk_file;
   disk_file.add_disk_element()->CopyFrom(element);
-  std::string hash = EncodeToBase32(crypto::Hash<crypto::SHA512>(disk_file.SerializeAsString()));
+  crypto::SHA512Hash hash(crypto::Hash<crypto::SHA512>(disk_file.SerializeAsString()));
   fs::path file_path = this->GetFilePath(disk_based_storage,
                                          root_path,
                                          hash,
@@ -292,8 +292,7 @@ TYPED_TEST(DiskStorageTest, BEH_ElementHandlers) {
                                        },
                                        serialised_value);
 
-  std::string new_hash = EncodeToBase32(
-                            crypto::Hash<crypto::SHA512>(disk_file.SerializeAsString()));
+  crypto::SHA512Hash new_hash(crypto::Hash<crypto::SHA512>(disk_file.SerializeAsString()));
   fs::path new_file_path(this->GetFilePath(disk_based_storage,
                                            root_path,
                                            new_hash,
