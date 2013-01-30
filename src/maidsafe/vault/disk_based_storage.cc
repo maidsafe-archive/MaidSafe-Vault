@@ -63,7 +63,7 @@ DiskBasedStorage::DiskBasedStorage(const boost::filesystem::path& root)
     if (boost::filesystem::is_directory(root))
       TraverseAndVerifyFiles(root);
     else
-      ThrowError(VaultErrors::path_not_a_directory);
+      ThrowError(CommonErrors::path_not_a_directory);
   } else {
     boost::filesystem::create_directory(root);
   }
@@ -98,7 +98,7 @@ uint32_t DiskBasedStorage::VerifyFileHashAndCountElements(const crypto::SHA512Ha
   ReadAndParseFile(hash, file_number, disk_file, file_path, file_content);
   if (crypto::Hash<crypto::SHA512>(file_content) != hash) {
     LOG(kInfo) << "Contents don't hash to what file name contains.";
-    ThrowError(VaultErrors::hash_failure);
+    ThrowError(CommonErrors::hashing_error);
   }
   return static_cast<uint32_t>(disk_file.disk_element_size());
 }
@@ -147,7 +147,7 @@ std::future<NonEmptyString> DiskBasedStorage::GetFile(const boost::filesystem::p
   // size_t file_number;
   // ExtractElementsFromFilename(path.filename().string(), hash, file_number);
   // if (file_data_.at(file_number) != hash)
-  //   ThrowError(VaultErrors::hash_failure);
+  //   ThrowError(CommonErrors::hashing_error);
   std::shared_ptr<NonEmptyStringPromise> promise(std::make_shared<NonEmptyStringPromise>());
   std::future<NonEmptyString> future(promise->get_future());
   active_.Send([path, promise, this] () {
@@ -167,7 +167,7 @@ void DiskBasedStorage::PutFile(const boost::filesystem::path& path, const NonEmp
   ExtractElementsFromFilename(path.string(), hash, file_number);
   if (crypto::Hash<crypto::SHA512>(content) != hash) {
     LOG(kError) << "Content doesn't hash.";
-    ThrowError(VaultErrors::hash_failure);
+    ThrowError(CommonErrors::hashing_error);
   }
   active_.Send([path, content, file_number, hash, this] () {
                  DoPutFile(kRoot_ / path, content, file_number, hash);
@@ -223,7 +223,7 @@ void DiskBasedStorage::ReadAndParseFile(const crypto::SHA512Hash& hash,
   file_content = ReadFile(file_path);
   if (!disk_file.ParseFromString(file_content.string())) {
     LOG(kError) << "Failure to parse file content.";
-    ThrowError(VaultErrors::parse_failure);
+    ThrowError(CommonErrors::parsing_error);
   }
 }
 
