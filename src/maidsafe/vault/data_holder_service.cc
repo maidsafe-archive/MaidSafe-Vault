@@ -9,6 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
+#include <string>
+
 #include "maidsafe/vault/data_holder_service.h"
 
 #include "maidsafe/common/utils.h"
@@ -16,6 +18,7 @@
 
 #include "maidsafe/data_store/data_buffer.h"
 
+#include "maidsafe/vault/pmid_account_pb.h"
 
 namespace maidsafe {
 
@@ -35,18 +38,85 @@ MemoryUsage mem_only_cache_usage = MemoryUsage(mem_usage * 2 / 5);
 
 }  // unnamed namespace
 
-DataHolder::DataHolder(const boost::filesystem::path& vault_root_dir)
+DataHolder::DataHolder(routing::Routing& routing,
+                       const boost::filesystem::path& vault_root_dir)
     : space_info_(boost::filesystem::space(vault_root_dir)),
       disk_total_(space_info_.available),
       permanent_size_(disk_total_ * 4 / 5),
       cache_size_(disk_total_ / 10),
-      permanent_data_store_(perm_usage, permanent_size_, nullptr,
-                            vault_root_dir / "data_holder" / "permanent"),
+      permanent_data_store_(vault_root_dir / "data_holder" / "permanent", perm_usage),
       cache_data_store_(cache_usage, DiskUsage(cache_size_ / 2), nullptr,
                         vault_root_dir / "data_holder" / "cache"),  // FIXME - DiskUsage  NOLINT
       mem_only_cache_(mem_only_cache_usage, DiskUsage(cache_size_ / 2), nullptr,
                       vault_root_dir / "data_holder" / "cache"),  // FIXME - DiskUsage should be 0  NOLINT
-      stop_sending_(false) {}
+      stop_sending_(false),
+      nfs_(routing),
+      message_sequence_(),
+      elements_to_store_() {
+  nfs_.GetElementList();
+}
+
+void DataHolder::HandleGenericMessage(const nfs::GenericMessage& generic_message) {
+  // verify the action type is GetElementList and is from PmidAccountHolder Persona
+  nfs::GenericMessage::Action action(generic_message.action());
+  std::vector<data_store::PermanentStore::KeyType> fetched_element_list;
+  if ((action == nfs::GenericMessage::Action::kGetElementList) &&
+      (generic_message.source().persona == nfs::Persona::kPmidAccountHolder)) {
+    // Two optional field in GenericMessage will be created :
+    //    message_index : current sequence num
+    //    message_count : how many messages to be expected
+    // expect multiple responses: once message_count reaches, any after-coming msg can be ignored
+    //                            when receiving a duplicating message_index, just ignore the msg
+    if (message_sequence_.size() < generic_message.message_count()) {
+      auto itr = std::find(message_sequence_.begin(), message_sequence_.end(),
+                           generic_message.message_index);
+      if (itr == message_sequence_.end()) {
+        protobuf::ArchivedPmidData archived_pmid_data;
+        archived_pmid_data.ParseFromString(generic_message.content().string());
+        for (auto& data : archived_pmid_data.data_stored())
+          fetched_element_list.push_back(data_store::PermanentStore::KeyType(data.name()));
+        // Will avoid the duplicates ?
+        elements_to_store_.insert(fetched_element_list.begin(), fetched_element_list.end());
+        message_sequence_.insert(generic_message.message_index);
+
+        if (message_sequence_.size() == generic_message.message_count()) {
+          // End of response
+          std::async([this, elements_to_store_] {
+              std::vector<data_store::PermanentStore::KeyType> element_to_fetch =
+                  this->permanent_data_store_.ElementsToStore(elements_to_store);
+              this->FetchElement(element_to_fetch);
+              elements_to_store_.clear();
+          });
+        }
+      }
+    }
+  }
+}
+
+void DataHolder::FetchElement(const std::vector<data_store::PermanentStore::KeyType>& elements) {
+  std::vector<std::future<void>> future_gets;
+  for (auto& element : elements) {
+    future_gets.push_back(std::async([this, element] {
+          auto fetched_data = this->nfs_.Get(element);
+          try {
+            auto fetched_content = this->fetched_data.get();
+            this->permanent_data_store_.Put(element, fetched_content);
+          } catch(const std::exception& e) {
+            // no op
+          }
+        }));
+  }
+
+  for (auto& future_get : future_gets) {
+    try {
+      future_get.get();
+    }
+    catch(const std::exception& e) {
+      std::string msg(e.what());
+      LOG(kError) << msg;
+    }
+  }
+}
 
 DataHolder::~DataHolder() {}
 

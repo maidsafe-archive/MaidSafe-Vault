@@ -44,6 +44,11 @@ typedef nfs::NetworkFileSystem<nfs::NoGet,
                                PostSynchronisation<nfs::Persona::kPmidAccountHolder>,
                                DeleteFromDataHolder> PmidAccountHolderNfs;
 
+typedef nfs::NetworkFileSystem<nfs::GetFromMetadataManager<nfs::Persona::kDataHolder>,
+                               nfs::NoPut,
+                               PostSynchronisation<nfs::Persona::kDataHolder>,
+                               nfs::NoDelete<>> DataHolderNfs;
+
 typedef passport::PublicMaid::name_type MaidName;
 typedef passport::PublicPmid::name_type PmidName;
 typedef passport::PublicMpid::name_type MpidName;

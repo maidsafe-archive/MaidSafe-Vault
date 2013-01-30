@@ -27,10 +27,10 @@
 
 #include "maidsafe/nfs/public_key_getter.h"
 
-#include "maidsafe/vault/data_holder/data_holder.h"
-#include "maidsafe/vault/maid_account_holder/maid_account_holder.h"
-#include "maidsafe/vault/metadata_manager/metadata_manager_service.h"
-#include "maidsafe/vault/pmid_account_holder/pmid_account_holder.h"
+#include "maidsafe/vault/data_holder_service.h"
+#include "maidsafe/vault/maid_account_holder_service.h"
+#include "maidsafe/vault/metadata_manager_service.h"
+#include "maidsafe/vault/pmid_account_holder_service.h"
 #include "maidsafe/vault/demultiplexer.h"
 
 

@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_H_
-#define MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_H_
+#ifndef MAIDSAFE_VAULT_DATA_HOLDER_SERVICE_H_
+#define MAIDSAFE_VAULT_DATA_HOLDER_SERVICE_H_
 
 #include <atomic>
 #include <type_traits>
@@ -22,6 +22,8 @@
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/routing/routing_api.h"
+
+#include "maidsafe/data_store/permanent_store.h"
 
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/message.h"
@@ -91,10 +93,13 @@ class DataHolder {
   DiskUsage disk_total_;
   DiskUsage permanent_size_;
   DiskUsage cache_size_;
-  data_store::DataStore<data_store::DataBuffer> permanent_data_store_;
+  data_store::PermanentStore permanent_data_store_;
   data_store::DataStore<data_store::DataBuffer> cache_data_store_;
   data_store::DataStore<data_store::DataBuffer> mem_only_cache_;
   std::atomic<bool> stop_sending_;
+  DataHolderNfs nfs_;
+  std::vector<uint32_t> message_sequence_;
+  std::vector<data_store::PermanentStore::KeyType> elements_to_store_;
 };
 
 }  // namespace vault
@@ -103,4 +108,4 @@ class DataHolder {
 
 #include "maidsafe/vault/data_holder_service-inl.h"
 
-#endif  // MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_H_
+#endif  // MAIDSAFE_VAULT_DATA_HOLDER_SERVICE_H_
