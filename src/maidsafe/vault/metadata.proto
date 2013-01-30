@@ -5,7 +5,7 @@ message MetadataElement {
   required int32 type = 1;
   required bytes name = 2;
   required int32 size = 3;
-  required int64 duplicates = 4;
+  required int64 subscribers = 4;
   repeated bytes online_pmid_name = 5;
   repeated bytes offline_pmid_name = 6;
 }
