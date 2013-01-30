@@ -15,13 +15,15 @@
 
 #include "maidsafe/vault/pmid_account_pb.h"
 
+
 namespace maidsafe {
 
 namespace vault {
 
-PmidAccountHolder::PmidAccountHolder(routing::Routing& routing,
-                                     nfs::PublicKeyGetter& public_key_getter,
-                                     const boost::filesystem::path vault_root_dir)
+PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
+                                                   routing::Routing& routing,
+                                                   nfs::PublicKeyGetter& public_key_getter,
+                                                   const boost::filesystem::path& vault_root_dir)
   : routing_(routing),
     public_key_getter_(public_key_getter),
     accumulator_(),
@@ -29,10 +31,11 @@ PmidAccountHolder::PmidAccountHolder(routing::Routing& routing,
     nfs_(routing) {}
 
 
-void PmidAccountHolder::CloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {  //  NOLINT (fine when not commented)
+void PmidAccountHolderService::HandleSynchronise(
+    const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
 }
 
-void PmidAccountHolder::ValidateDataMessage(const nfs::DataMessage& data_message) {
+void PmidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_message) const {
   if (!data_message.HasTargetId()) {
     LOG(kError) << "No target ID, can't forward the message.";
     ThrowError(VaultErrors::permission_denied);
@@ -45,45 +48,32 @@ void PmidAccountHolder::ValidateDataMessage(const nfs::DataMessage& data_message
   }
 }
 
-void PmidAccountHolder::InformOfDataHolderDown(const PmidName& pmid_name) {
-  InformAboutDataHolderUp(pmid_name, nfs::GenericMessage::kNodeDown);
+void PmidAccountHolderService::InformOfDataHolderDown(const PmidName& pmid_name) {
+  InformAboutDataHolder(pmid_name, false);
 }
 
-void PmidAccountHolder::InformOfDataHolderUp(const PmidName& pmid_name) {
-  InformAboutDataHolderUp(pmid_name, nfs::GenericMessage::kNodeUp);
+void PmidAccountHolderService::InformOfDataHolderUp(const PmidName& pmid_name) {
+  InformAboutDataHolder(pmid_name, true);
 }
 
-void PmidAccountHolder::InformAboutDataHolder(const PmidName& pmid_name,
-                                              nfs::GenericMessage::Action action) {
-  std::vector<PmidName> metada_manager_ids;
-  GetDataNamesInAccount(pmid_name, metada_manager_ids);
-  for (PmidName& mm_id : metada_manager_ids)
-    SendSyncMessage(mm_id, action);
+void PmidAccountHolderService::InformAboutDataHolder(const PmidName& pmid_name, bool node_up) {
+  std::vector<PmidName> metadata_manager_ids(GetDataNamesInAccount(pmid_name));
+  for (PmidName& metadata_manager_id : metadata_manager_ids)
+    nfs_.DataHolderStatusChanged(metadata_manager_id, pmid_name);
 }
 
-void PmidAccountHolder::GetDataNamesInAccount(const PmidName& pmid_name,
-                                              std::vector<PmidName>& metada_manager_ids) {
+std::vector<PmidName> PmidAccountHolderService::GetDataNamesInAccount(
+    const PmidName& pmid_name) const {
   // TODO(Team): This function could be simplified if the account handler could give all
   //             data names for a particular account
-  NonEmptyString serialsied_account(pmid_account_handler_.GetSerialisedAccount(pmid_name));
+  NonEmptyString serialised_account(pmid_account_handler_.GetSerialisedAccount(pmid_name));
   protobuf::PmidAccount account;
-  account.ParseFromString(serialsied_account.string());
+  account.ParseFromString(serialised_account.string());
 
+  std::vector<PmidName> metadata_manager_ids;
   for (int n(0); n != account.recent_data_stored_size(); ++n)
-    metada_manager_ids.push_back(PmidName(account.recent_data_stored(n).name()));
-
-}
-
-void PmidAccountHolder::SendSyncMessage(const PmidName& pmid_name,
-                                        nfs::GenericMessage::Action action) {
-  nfs::GenericMessage generic_message(action,
-                                      nfs::Persona::kDataHolder,
-                                      nfs::PersonaId(nfs::Persona::kPmidAccountHolder,
-                                                     routing_.kNodeId()),
-                                      pmid_name,
-                                      NonEmptyString());
-  // nullptr as on_error functor since it's not used in the post policy
-  nfs_.PostSyncData<nfs::Persona::kPmidAccountHolder>(generic_message, nullptr);
+    metadata_manager_ids.push_back(PmidName(Identity(account.recent_data_stored(n).name())));
+  return metadata_manager_ids;
 }
 
 }  // namespace vault
