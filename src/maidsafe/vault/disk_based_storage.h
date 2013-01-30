@@ -62,6 +62,7 @@ class DiskBasedStorage {
   template<class T> friend class test::DiskStorageTest;
  private:
   class Changer;
+  template<typename Data> struct StoredElement;
 
   DiskBasedStorage(const DiskBasedStorage&);
   DiskBasedStorage& operator=(const DiskBasedStorage&);
@@ -76,11 +77,15 @@ class DiskBasedStorage {
                  size_t file_number,
                  const crypto::SHA512Hash& hash);
 
-  void AddToLatestFile(const protobuf::DiskStoredElement& element);
-  void SearchForAndDeleteEntry(const protobuf::DiskStoredElement& element);
-  void SearchForAndModifyEntry(const protobuf::DiskStoredElement& element,
+  template<typename Data>
+  void AddToLatestFile(const StoredElement<Data>& element);
+  template<typename Data>
+  void SearchForAndDeleteEntry(const StoredElement<Data>& element);
+  template<typename Data>
+  void SearchForAndModifyEntry(const StoredElement<Data>& element,
                                const std::function<void(std::string&)>& functor);
-  void SearchForEntryAndExecuteOperation(const protobuf::DiskStoredElement& element,
+  template<typename Data>
+  void SearchForEntryAndExecuteOperation(const StoredElement<Data>& element,
                                          Changer& changer,
                                          bool reorder);
   void ReadAndParseFile(const crypto::SHA512Hash& hash,
@@ -90,8 +95,8 @@ class DiskBasedStorage {
                         NonEmptyString& file_content) const;
   void UpdateFileAfterModification(std::vector<crypto::SHA512Hash>::reverse_iterator& it,
                                    size_t file_index,
-                                   const protobuf::DiskStoredFile &disk_file,
-                                   const boost::filesystem::path &file_path,
+                                   const protobuf::DiskStoredFile& disk_file,
+                                   const boost::filesystem::path& file_path,
                                    bool reorder);
   void MergeFilesAfterDelete();
   bool CheckSpecialMergeCases();
@@ -101,16 +106,22 @@ class DiskBasedStorage {
                       size_t& current_counter,
                       size_t& new_counter);
 
+  template<typename Data>
+  void AddDiskElementToFileDisk(const DiskBasedStorage::StoredElement<Data>& element,
+                                protobuf::DiskStoredFile& disk_file);
+
   // Helper functions
   static boost::filesystem::path GetFilePath(const boost::filesystem::path& base_path,
                                              const crypto::SHA512Hash& hash,
                                              size_t file_number);
-  static bool MatchingDiskElements(const protobuf::DiskStoredElement& lhs,
-                                   const protobuf::DiskStoredElement& rhs);
+  template<typename Data>
+  bool MatchingDiskElements(const protobuf::DiskStoredElement& lhs,
+                            const DiskBasedStorage::StoredElement<Data>& element) const;
 
   const boost::filesystem::path kRoot_;
   mutable Active active_;
   std::vector<crypto::SHA512Hash> file_hashes_;
+  const crypto::SHA512Hash kEmptyFileHash_;
 };
 
 }  // namespace vault

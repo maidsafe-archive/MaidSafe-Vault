@@ -14,8 +14,14 @@
 
 #include <string>
 
-#include "maidsafe/vault/disk_based_storage_messages_pb.h"
+#include "boost/filesystem/operations.hpp"
 
+#include "maidsafe/common/utils.h"
+
+#include "maidsafe/data_types/data_name_variant.h"
+
+#include "maidsafe/vault/disk_based_storage_messages_pb.h"
+#include "maidsafe/vault/parameters.h"
 
 namespace maidsafe {
 
@@ -24,17 +30,60 @@ namespace vault {
 typedef std::promise<void> VoidPromise;
 typedef std::shared_ptr<VoidPromise> VoidPromisePtr;
 
+class DiskBasedStorage::Changer {
+ public:
+  Changer() : functor_(nullptr) {}
+  explicit Changer(const std::function<void(std::string&)> functor) : functor_(functor) {}
+
+  void Execute(protobuf::DiskStoredFile& disk_file, int index) {
+    if (functor_)
+      ModifyElement(disk_file, index);
+    else
+      RemoveElement(disk_file, index);
+  }
+
+ private:
+  std::function<void(std::string&)> functor_;
+
+  void RemoveElement(protobuf::DiskStoredFile& disk_file, int index) {
+    protobuf::DiskStoredFile temp;
+    for (int n(0); n != disk_file.disk_element_size(); ++n) {
+      if (n != index)
+        temp.add_disk_element()->CopyFrom(disk_file.disk_element(n));
+    }
+
+    disk_file = temp;
+  }
+
+  void ModifyElement(protobuf::DiskStoredFile& disk_file, int index) {
+    std::string element_to_modify(disk_file.disk_element(index).SerializeAsString());
+    functor_(element_to_modify);
+    protobuf::DiskStoredElement modified_element;
+    assert(modified_element.ParseFromString(element_to_modify) &&
+           "Returned element doesn't parse.");
+    disk_file.mutable_disk_element(index)->CopyFrom(modified_element);
+  }
+};
+
+template<typename Data>
+struct DiskBasedStorage::StoredElement {
+   StoredElement() : name(), serialised_value() {}
+   StoredElement(const typename Data::name_type& the_name, const std::string& the_serialised_value)
+       : name(the_name),
+         serialised_value(the_serialised_value) {}
+   typename Data::name_type name;
+   std::string serialised_value;
+};
+
 template<typename Data>
 std::future<void> DiskBasedStorage::Store(const typename Data::name_type& name,
                                           const std::string& serialised_value) {
   VoidPromisePtr promise(std::make_shared<VoidPromise>());
   std::future<void> future(promise->get_future());
-  active_.Send([name, serialised_value, promise, this] {
+  StoredElement<Data> element(name, serialised_value);
+  active_.Send([element, promise, this] {
                  try {
-                   protobuf::DiskStoredElement element;
-                   element.set_data_name(name.data.string());
-                   element.set_serialised_value(serialised_value);
-                   this->AddToLatestFile(element);
+                   this->AddToLatestFile<Data>(element);
                    promise->set_value();
                  }
                  catch(const std::exception& e) {
@@ -49,11 +98,10 @@ template<typename Data>
 std::future<void> DiskBasedStorage::Delete(const typename Data::name_type& name) {
   VoidPromisePtr promise(std::make_shared<VoidPromise>());
   std::future<void> future(promise->get_future());
-  active_.Send([name, promise, this] {
+  StoredElement<Data> element(name, "");
+  active_.Send([element, promise, this] {
                  try {
-                   protobuf::DiskStoredElement element;
-                   element.set_data_name(name.data.string());
-                   this->SearchForAndDeleteEntry(element);
+                   this->SearchForAndDeleteEntry<Data>(element);
                    promise->set_value();
                  }
                  catch(const std::exception& e) {
@@ -71,12 +119,10 @@ std::future<void> DiskBasedStorage::Modify(const typename Data::name_type& name,
   assert(functor && "Null functor not allowed!");
   VoidPromisePtr promise(std::make_shared<VoidPromise>());
   std::future<void> future(promise->get_future());
-  active_.Send([name, functor, serialised_value, promise, this] () {
+  StoredElement<Data> element(name, serialised_value);
+  active_.Send([element, functor, promise, this] () {
                  try {
-                   protobuf::DiskStoredElement element;
-                   element.set_data_name(name.data.string());
-                   element.set_serialised_value(serialised_value);
-                   this->SearchForAndModifyEntry(element, functor);
+                   this->SearchForAndModifyEntry<Data>(element, functor);
                    promise->set_value();
                  }
                  catch(const std::exception& e) {
@@ -85,6 +131,101 @@ std::future<void> DiskBasedStorage::Modify(const typename Data::name_type& name,
                  }
                });
   return std::move(future);
+}
+
+template<typename Data>
+void DiskBasedStorage::AddToLatestFile(const DiskBasedStorage::StoredElement<Data>& element) {
+  size_t latest_file_index(file_hashes_.size() - 1);
+  protobuf::DiskStoredFile disk_file;
+  boost::filesystem::path latest_file_path;
+  NonEmptyString file_content;
+  if (file_hashes_.at(latest_file_index) != kEmptyFileHash_) {
+    ReadAndParseFile(file_hashes_.at(latest_file_index),
+                     latest_file_index,
+                     disk_file,
+                     latest_file_path,
+                     file_content);
+  }
+
+  AddDiskElementToFileDisk(element, disk_file);
+  NonEmptyString new_content(disk_file.SerializeAsString());
+  if (disk_file.disk_element_size() == int(detail::Parameters::max_file_element_count())) {
+    // Increment the file
+    file_hashes_.push_back(kEmptyFileHash_);
+  }
+
+  boost::filesystem::path new_path(GetFilePath(kRoot_,
+                                               file_hashes_.at(latest_file_index),
+                                               latest_file_index));
+  WriteFile(new_path, new_content.string());
+  if (!latest_file_path.empty() && latest_file_path != new_path) {
+    try {
+      boost::filesystem::remove(latest_file_path);
+    }
+    catch(const std::exception& e) {
+      LOG(kError) << "Failed to remove old file. Will erase new file to leave state as it was.";
+      boost::filesystem::remove(new_path);
+      ThrowError(VaultErrors::adding_to_file_failure);
+    }
+    file_hashes_.at(latest_file_index) = crypto::Hash<crypto::SHA512>(new_content);
+  }
+}
+
+template<typename Data>
+void DiskBasedStorage::SearchForAndDeleteEntry(
+    const DiskBasedStorage::StoredElement<Data>& element) {
+  Changer changer;
+  SearchForEntryAndExecuteOperation(element, changer, true);
+}
+
+template<typename Data>
+void DiskBasedStorage::SearchForAndModifyEntry(const DiskBasedStorage::StoredElement<Data>& element,
+                                               const std::function<void(std::string&)>& functor) {
+  Changer changer(functor);
+  SearchForEntryAndExecuteOperation(element, changer, false);
+}
+
+template<typename Data>
+void DiskBasedStorage::SearchForEntryAndExecuteOperation(
+    const DiskBasedStorage::StoredElement<Data>& element,
+    Changer& changer,
+    bool reorder) {
+  size_t file_index(file_hashes_.size() - 1);
+  boost::filesystem::path file_path;
+  protobuf::DiskStoredFile disk_file;
+  NonEmptyString file_content;
+  for (auto it(file_hashes_.rbegin()); it != file_hashes_.rend(); ++it, --file_index) {
+    ReadAndParseFile(*it, file_index, disk_file, file_path, file_content);
+    for (int n(disk_file.disk_element_size() - 1); n != -1; --n) {
+      if (MatchingDiskElements(disk_file.disk_element(n), element)) {
+        changer.Execute(disk_file, n);
+        UpdateFileAfterModification(it, file_index, disk_file, file_path, reorder);
+        return;
+      }
+    }
+  }
+}
+
+template<typename Data>
+void DiskBasedStorage::AddDiskElementToFileDisk(
+    const DiskBasedStorage::StoredElement<Data>& element,
+    protobuf::DiskStoredFile& disk_file) {
+  protobuf::DiskStoredElement* disk_element(disk_file.add_disk_element());
+  disk_element->set_data_name(element.name.data.string());
+  disk_element->set_serialised_value(element.serialised_value);
+  disk_element->set_data_type(static_cast<int32_t>(Data::name_type::tag_type::kEnumValue));
+}
+
+// This function expects lhs to have data name and value always
+template<typename Data>
+bool DiskBasedStorage::MatchingDiskElements(
+    const protobuf::DiskStoredElement& lhs,
+    const DiskBasedStorage::StoredElement<Data>& element) const {
+  return lhs.data_name() == element.name.data.string() &&
+         lhs.data_type() == static_cast<int32_t>(Data::name_type::tag_type::kEnumValue) &&
+         (element.serialised_value.empty() ?
+              true :
+              lhs.serialised_value() == element.serialised_value);
 }
 
 }  // namespace vault

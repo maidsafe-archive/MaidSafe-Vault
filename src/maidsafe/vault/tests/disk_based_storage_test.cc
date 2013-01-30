@@ -114,9 +114,12 @@ class DiskStorageTest : public testing::Test {
     for (auto itr(element_list.begin()); itr != element_list.end(); ++itr) {
       protobuf::DiskStoredElement element;
       element.ParseFromString((*itr).serialised_element);
+      typename T::name_type name(Identity(element.data_name()));
+      DiskBasedStorage::StoredElement<T> stored_element(name, element.serialised_value());
       bool found_match(false);
       for (int i(0); i != fetched_disk_file.disk_element_size(); ++i) {
-        if (DiskBasedStorage::MatchingDiskElements(fetched_disk_file.disk_element(i), element))
+        if (disk_based_storage.MatchingDiskElements(fetched_disk_file.disk_element(i),
+                                                    stored_element))
           found_match = true;
       }
       EXPECT_TRUE(found_match) << "can't find match element for element "
