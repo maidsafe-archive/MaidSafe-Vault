@@ -58,6 +58,7 @@ class PmidAccountHandler {
   PmidAccountHandler& operator=(const PmidAccountHandler&);
   PmidAccountHandler(PmidAccountHandler&&);
   PmidAccountHandler& operator=(PmidAccountHandler&&);
+
   const boost::filesystem::path kPmidAccountsRoot_;
   mutable std::mutex mutex_;
   std::vector<PmidAccount> pmid_accounts_;
