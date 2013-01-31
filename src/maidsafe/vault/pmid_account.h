@@ -43,9 +43,9 @@ class PmidAccount {
   bool DeleteData(const typename Data::name_type& name);
   template<typename Data>
 
-  MaidName name() const { return kMaidName_; }
-  int64_t total_data_stored_by_pmids() const { return total_data_stored_by_pmids_; }
-  int64_t total_put_data() const { return total_put_data_; }
+//  MaidName name() const { return pmid_record_; }
+  int64_t total_data_stored_by_pmids() const { return pmid_record_.stored_total_size; }
+//  int64_t total_put_data() const { return total_put_data_; }
  private:
   PmidAccount(const PmidAccount&);
   PmidAccount& operator=(const PmidAccount&);
