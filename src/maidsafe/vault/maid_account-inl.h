@@ -26,51 +26,51 @@ void MaidAccount::PutData(const typename Data::name_type& name,
     ThrowError(VaultErrors::not_enough_space);
 
   recent_put_data_.emplace_back(name, size, replication_count);
-  if (recent_put_data_.size() > Parameters::max_recent_data_list_size) {
+  if (recent_put_data_.size() > detail::Parameters::max_recent_data_list_size) {
     archive_.Store(recent_put_data_.front());
     recent_put_data_.pop_front();
   }
 }
 
 template<typename Data>
-bool MaidAccount::DeleteData(const typename Data::name_type& name) {
+void MaidAccount::DeleteData(const typename Data::name_type& /*name*/) {
 //  -- throw if data entry doesn't exist
 }
 
 template<typename Data>
-void MaidAccount::UpdateReplicationCount(const typename Data::name_type& name,
-                                         int32_t new_replication_count) {
+void MaidAccount::UpdateReplicationCount(const typename Data::name_type& /*name*/,
+                                         int32_t /*new_replication_count*/) {
 }
 
 
-//void MaidAccount::PushDataElement(DataElement data_element) {
-//  std::lock_guard<std::mutex> lock(mutex_);
-//  data_elements_.push_back(data_element);
-//}
-//
-//void MaidAccount::RemoveDataElement(Identity name) {
-//  std::lock_guard<std::mutex> lock(mutex_);
-//  for (auto itr = data_elements_.begin(); itr != data_elements_.end(); ++itr) {
-//    if ((*itr).name() == name) {
-//      data_elements_.erase(itr);
-//      return;
+//  void MaidAccount::PushDataElement(DataElement data_element) {
+//    std::lock_guard<std::mutex> lock(mutex_);
+//    data_elements_.push_back(data_element);
+//  }
+
+//  void MaidAccount::RemoveDataElement(Identity name) {
+//    std::lock_guard<std::mutex> lock(mutex_);
+//    for (auto itr = data_elements_.begin(); itr != data_elements_.end(); ++itr) {
+//      if ((*itr).name() == name) {
+//        data_elements_.erase(itr);
+//        return;
+//      }
 //    }
 //  }
-//}
-//
-//void MaidAccount::UpdateDataElement(DataElement data_element) {
-//  RemoveDataElement(data_element.name());
-//  PushDataElement(data_element);
-//}
-//
-//bool MaidAccount::HasDataElement(Identity name) {
-//  std::lock_guard<std::mutex> lock(mutex_);
-//  auto data_element_it = std::find_if(data_elements_.begin(), data_elements_.end(),
-//                                      [&name] (const DataElement& data_element) {
-//                                        return data_element.name() == name;
-//                                      });
-//  return (data_element_it != data_elements_.end());
-//}
+
+//  void MaidAccount::UpdateDataElement(DataElement data_element) {
+//    RemoveDataElement(data_element.name());
+//    PushDataElement(data_element);
+//  }
+
+//  bool MaidAccount::HasDataElement(Identity name) {
+//    std::lock_guard<std::mutex> lock(mutex_);
+//    auto data_element_it = std::find_if(data_elements_.begin(), data_elements_.end(),
+//                                        [&name] (const DataElement& data_element) {
+//                                          return data_element.name() == name;
+//                                        });
+//    return (data_element_it != data_elements_.end());
+//  }
 
 }  // namespace vault
 
