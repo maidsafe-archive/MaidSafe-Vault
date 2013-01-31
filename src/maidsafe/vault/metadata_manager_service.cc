@@ -29,7 +29,8 @@ MetadataManagerService::MetadataManagerService(routing::Routing& routing,
 
 MetadataManagerService::~MetadataManagerService() {}
 
-void MetadataManagerService::CloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
+void MetadataManagerService::CloseNodeReplaced(
+    const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
 }
 
 void MetadataManagerService::Serialise() {}
@@ -43,13 +44,14 @@ void MetadataManagerService::HandleGenericMessage(const nfs::GenericMessage& gen
     case nfs::GenericMessage::Action::kNodeUp:
         if (!HandleNodeUp(generic_message, source_id)) {
           LOG(kError) << "Replying with failure on kNodeUp.";
-          reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+          reply_functor(nfs::ReturnCode(VaultErrors::failed_handle_node_up).Serialise()->string());
         }
         break;
     case nfs::GenericMessage::Action::kNodeDown:
         if (!HandleNodeDown(generic_message, source_id)) {
           LOG(kError) << "Replying with failure on kNodeDown.";
-          reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+          reply_functor(nfs::ReturnCode(
+                            VaultErrors::failed_handle_node_down).Serialise()->string());
         }
         break;
     default: LOG(kError) << "Unhandled Post action type";
@@ -58,7 +60,8 @@ void MetadataManagerService::HandleGenericMessage(const nfs::GenericMessage& gen
 
 void MetadataManagerService::SendSyncData() {}
 
-bool MetadataManagerService::HandleNodeDown(const nfs::GenericMessage& generic_message, NodeId& /*node*/) {
+bool MetadataManagerService::HandleNodeDown(
+    const nfs::GenericMessage& generic_message, NodeId& /*node*/) {
   try {
     int64_t online_holders(-1);
     data_elements_manager_.MoveNodeToOffline(generic_message.name(), PmidName(), online_holders);
@@ -79,7 +82,8 @@ bool MetadataManagerService::HandleNodeDown(const nfs::GenericMessage& generic_m
   return true;
 }
 
-bool MetadataManagerService::HandleNodeUp(const nfs::GenericMessage& generic_message, NodeId& /*node*/) {
+bool MetadataManagerService::HandleNodeUp(
+    const nfs::GenericMessage& generic_message, NodeId& /*node*/) {
   try {
     data_elements_manager_.MoveNodeToOnline(generic_message.name(), PmidName());
   }

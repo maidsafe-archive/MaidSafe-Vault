@@ -9,6 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
+#include <string>
+
 #include "maidsafe/vault/maid_account_holder_service.h"
 
 #include "boost/filesystem/operations.hpp"
@@ -53,7 +55,7 @@ void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& g
       if (routing_.IsConnectedToClient(source_id)) {
         HandleReceivedSyncData(generic_message.content());
       } else {
-        reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+        reply_functor(nfs::ReturnCode(RoutingErrors::not_connected).Serialise()->string());
       }
       break;
     default:

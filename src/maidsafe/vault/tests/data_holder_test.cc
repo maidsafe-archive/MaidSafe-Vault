@@ -88,7 +88,7 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
                          [&](const std::string& result) {
                            retrieved = result;
                           });
-  EXPECT_EQ(retrieved, nfs::ReturnCode(-1).Serialise()->string());
+  EXPECT_EQ(retrieved, nfs::ReturnCode(VaultErrors::operation_not_supported).Serialise()->string());
 }
 
 TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
@@ -115,7 +115,7 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
                          [&](const std::string& result) {
                            retrieved = result;
                          });
-  EXPECT_EQ(retrieved, nfs::ReturnCode(-1).Serialise()->string());
+  EXPECT_EQ(retrieved, nfs::ReturnCode(CommonErrors::unknown).Serialise()->string());
 }
 
 TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
