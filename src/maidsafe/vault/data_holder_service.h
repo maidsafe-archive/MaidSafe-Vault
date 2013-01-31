@@ -14,6 +14,7 @@
 
 #include <atomic>
 #include <type_traits>
+#include <set>
 #include <vector>
 
 #include "boost/filesystem/operations.hpp"
@@ -98,8 +99,8 @@ class DataHolder {
   data_store::DataStore<data_store::DataBuffer> mem_only_cache_;
   std::atomic<bool> stop_sending_;
   DataHolderNfs nfs_;
-  std::vector<uint32_t> message_sequence_;
-  std::vector<data_store::PermanentStore::KeyType> elements_to_store_;
+  std::set<uint32_t> message_sequence_;
+  std::set<data_store::PermanentStore::KeyType> elements_to_store_;
 };
 
 }  // namespace vault
