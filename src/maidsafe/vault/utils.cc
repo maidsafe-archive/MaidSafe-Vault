@@ -40,6 +40,20 @@ MaidName GetSourceMaidName(const nfs::DataMessage& data_message) {
   return MaidName(Identity(data_message.this_persona().node_id.string()));
 }
 
+std::vector<std::future<nfs::ReturnCode>> GetMappedNfsFutures(
+    std::vector<std::future<std::string>>&& routing_futures,
+    nfs::ResponseMapper& response_mapper) {
+  std::vector<std::future<nfs::ReturnCode>> nfs_futures;
+  for (auto& routing_future : routing_futures) {
+    std::promise<nfs::ReturnCode> nfs_promise;
+    std::future<nfs::ReturnCode> nfs_future(nfs_promise.get_future());
+    response_mapper_.push_back(std::make_pair(std::move(routing_future),
+                                                        std::move(nfs_promise)));
+    nfs_futures.push_back(std::move(nfs_future));
+  }
+  return nfs_futures;
+}
+
 }  // namespace detail
 
 }  // namespace vault
