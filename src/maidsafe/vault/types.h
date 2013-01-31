@@ -19,30 +19,30 @@
 
 #include "maidsafe/passport/types.h"
 
-//  #include "maidsafe/vault/get_policies.h"
-//  #include "maidsafe/vault/put_policies.h"
-//  #include "maidsafe/vault/post_policies.h"
-//  #include "maidsafe/vault/delete_policies.h"
+#include "maidsafe/vault/get_policies.h"
+#include "maidsafe/vault/put_policies.h"
+#include "maidsafe/vault/post_policies.h"
+#include "maidsafe/vault/delete_policies.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-//  typedef nfs::NetworkFileSystem<nfs::NoGet,
-//                                 PutToMetadataManager,
-//                                 PostSynchronisation<nfs::Persona::kMaidAccountHolder>,
-//                                 DeleteFromMetadataManager> MaidAccountHolderNfs;
+typedef nfs::NetworkFileSystem<nfs::NoGet,
+                               PutToMetadataManager,
+                               PostSynchronisation<nfs::Persona::kMaidAccountHolder>,
+                               DeleteFromMetadataManager> MaidAccountHolderNfs;
 
-//  typedef nfs::NetworkFileSystem<GetFromDataHolder,
-//                                 PutToPmidAccountHolder,
-//                                 PostSynchronisation<nfs::Persona::kMetadataManager>,
-//                                 DeleteFromPmidAccountHolder> MetadataManagerNfs;
+typedef nfs::NetworkFileSystem<GetFromDataHolder,
+                               PutToPmidAccountHolder,
+                               PostSynchronisation<nfs::Persona::kMetadataManager>,
+                               DeleteFromPmidAccountHolder> MetadataManagerNfs;
 
-//  typedef nfs::NetworkFileSystem<nfs::NoGet,
-//                                 PutToDataHolder,
-//                                 PostSynchronisation<nfs::Persona::kPmidAccountHolder>,
-//                                 DeleteFromDataHolder> PmidAccountHolderNfs;
+typedef nfs::NetworkFileSystem<nfs::NoGet,
+                               PutToDataHolder,
+                               PostSynchronisation<nfs::Persona::kPmidAccountHolder>,
+                               DeleteFromDataHolder> PmidAccountHolderNfs;
 
 typedef passport::PublicMaid::name_type MaidName;
 typedef passport::PublicPmid::name_type PmidName;
