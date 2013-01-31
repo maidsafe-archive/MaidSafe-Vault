@@ -51,10 +51,18 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
                                          const routing::ReplyFunctor& reply_functor) {
   nfs::ReturnCode return_code(MakeError(CommonErrors::success));
   try {
-    pmid_account_handler_.PutData<Data>(data_message.target_id(),
-                                        data_message.data().name,
-                                        data_message.data().content.string.size());
-    SendDataMessage<Data>(data_message);
+    std::future<void> future(pmid_account_handler_.PutData<Data>(
+                                 data_message.target_id(),
+                                 data_message.data().name,
+                                 data_message.data().content.string.size()));
+    try {
+      future.get();
+      SendDataMessage<Data>(data_message);
+    }
+    catch(const std::exception& e) {
+      LOG(kError) << "Operation with the account threw: " << e.what();
+      return_code = nfs::ReturnCode(e);
+    }
   }
   catch(const std::system_error& error) {
     LOG(kError) << "Failure deleting data from account: " << error.what();
