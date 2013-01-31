@@ -52,7 +52,7 @@ class MaidAccountHolderService {
   template<typename Data>
   void HandleDelete(const nfs::DataMessage& data_message,
                     const routing::ReplyFunctor& reply_functor);
-  void ValidateDataMessage(const nfs::DataMessage& data_message);
+  void ValidateDataMessage(const nfs::DataMessage& data_message) const;
   template<typename Data>
   void AdjustAccount(const nfs::DataMessage& data_message, std::true_type);
   // no-op for non-payable data

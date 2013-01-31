@@ -30,7 +30,7 @@ MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
       maid_account_handler_(vault_root_dir),
       nfs_(routing, pmid) {}
 
-void MaidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_message) {
+void MaidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_message) const {
   if (!routing_.IsConnectedToClient(data_message.this_persona().node_id))
     ThrowError(VaultErrors::permission_denied);
 }
