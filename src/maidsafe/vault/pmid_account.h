@@ -13,6 +13,7 @@
 #define MAIDSAFE_VAULT_PMID_ACCOUNT_H_
 
 #include <map>
+#include <vector>
 
 #include "boost/filesystem/path.hpp"
 
@@ -31,19 +32,30 @@ class PmidAccount {
  public:
   typedef PmidName name_type;
   typedef TaggedValue<NonEmptyString, struct SerialisedMaidAccountTag> serialised_type;
+
+  enum class Status : int {
+    kNodeGoingUp,
+    kNodeUp,
+    kNodeGoingDown,
+    kNodeDown
+  };
+
   PmidAccount(const PmidName& pmid_name, const boost::filesystem::path& root);
   PmidAccount(const serialised_type& serialised_pmid_account, const boost::filesystem::path& root);
+
   std::vector<boost::filesystem::path> GetArchiveFileNames() const;
   NonEmptyString GetArchiveFile(const boost::filesystem::path& path) const;
   void PutArchiveFile(const boost::filesystem::path& path, const NonEmptyString& content);
+  void SerialiseRecords();
 
   template<typename Data>
   void PutData(const typename Data::name_type& name, int32_t size, int32_t replication_count);
   template<typename Data>
   bool DeleteData(const typename Data::name_type& name);
-  template<typename Data>
 
-//  MaidName name() const { return pmid_record_; }
+  PmidName name() const { return pmid_record_.pmid_name; }
+  Status GetStatus() { return account_status_; }
+  void SetStatus(Status status) { account_status_ = status; }
   int64_t total_data_stored_by_pmids() const { return pmid_record_.stored_total_size; }
 //  int64_t total_put_data() const { return total_put_data_; }
  private:
@@ -51,6 +63,8 @@ class PmidAccount {
   PmidAccount& operator=(const PmidAccount&);
   PmidAccount(PmidAccount&&);
   PmidAccount& operator=(PmidAccount&&);
+
+  Status account_status_;
   PmidRecord pmid_record_;
   std::map<DataNameVariant, int32_t> recent_data_stored_;
   DiskBasedStorage archive_;
