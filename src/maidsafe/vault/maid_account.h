@@ -63,7 +63,7 @@ class MaidAccount {
   template<typename Data>
   void UpdateReplicationCount(const typename Data::name_type& name, int32_t new_replication_count);
 
-  MaidName name() const { return kMaidName_; }
+  name_type name() const { return kMaidName_; }
   int64_t total_data_stored_by_pmids() const { return total_data_stored_by_pmids_; }
   int64_t total_put_data() const { return total_put_data_; }
 
@@ -90,7 +90,7 @@ class MaidAccount {
   MaidAccount& operator=(MaidAccount&&);
   std::vector<PmidTotals>::iterator Find(const PmidName& pmid_name);
 
-  const MaidName kMaidName_;
+  const name_type kMaidName_;
   GetTagValueAndIdentityVisitor type_and_name_visitor_;
   std::vector<PmidTotals> pmid_totals_;
   std::deque<PutDataDetails> recent_put_data_;

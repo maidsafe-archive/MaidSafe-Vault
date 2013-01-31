@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_INL_H_
-#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_INL_H_
+#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_SERVICE_INL_H_
+#define MAIDSAFE_VAULT_METADATA_MANAGER_SERVICE_INL_H_
 
 #include <exception>
 #include <string>
@@ -30,7 +30,7 @@ template<typename Data>
 void MetadataManagerService::HandlePutMessage(const nfs::DataMessage& data_message,
                                        const routing::ReplyFunctor& reply_functor) {
   if (!detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
-    reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+    reply_functor(nfs::ReturnCode(RoutingErrors::not_in_range).Serialise()->string());
     return;
   }
 
@@ -76,7 +76,7 @@ void MetadataManagerService::HandleGetMessage(nfs::DataMessage data_message,
       fetched_data = futures.begin();
   }
 
-  reply_functor(nfs::ReturnCode(-1).Serialise()->string());
+  reply_functor(nfs::ReturnCode(NfsErrors::failed_to_get_data).Serialise()->string());
 }
 
 template<typename Data>
@@ -129,4 +129,4 @@ void MetadataManagerService::OnGenericErrorHandler(nfs::GenericMessage generic_m
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_INL_H_
+#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_SERVICE_INL_H_
