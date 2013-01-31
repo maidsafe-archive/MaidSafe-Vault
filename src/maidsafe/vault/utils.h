@@ -45,11 +45,22 @@ MaidName GetSourceMaidName(const nfs::DataMessage& data_message);
 // Ensure the mutex protecting accounts is locked throughout this call
 template<typename Account>
 typename std::vector<Account>::iterator FindAccount(
+    std::vector<Account>& accounts,
+    const typename Account::name_type& account_name) {
+  return std::find_if(accounts.begin(),
+                      accounts.end(),
+                      [&account_name] (const Account& account) {
+                        return account_name == account.name();
+                      });
+}
+
+template<typename Account>
+typename std::vector<Account>::const_iterator ConstFindAccount(
     const std::vector<Account>& accounts,
     const typename Account::name_type& account_name) {
   return std::find_if(accounts.begin(),
                       accounts.end(),
-                      [&account_name](const Account& account) {
+                      [&account_name] (const Account& account) {
                         return account_name == account.name();
                       });
 }
@@ -80,7 +91,7 @@ typename Account::serialised_type GetSerialisedAccount(
     const std::vector<Account>& accounts,
     const typename Account::name_type& account_name) {
   std::lock_guard<std::mutex> lock(mutex);
-  auto itr(FindAccount(accounts, account_name));
+  auto itr(ConstFindAccount(accounts, account_name));
   if (itr == accounts.end())
     ThrowError(VaultErrors::no_such_account);
 

@@ -13,6 +13,7 @@
 #define MAIDSAFE_VAULT_ACCOUNT_HANDLER_INL_H_
 
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -26,7 +27,7 @@ void PmidAccountHandler::PutData(const PmidName& account_name,
   auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr).PutData<Data>(data_name, size, replication_count);
+  (*itr).PutData<Data>(data_name, size);
 }
 
 template<typename Data>

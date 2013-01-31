@@ -66,6 +66,8 @@ class PmidAccountHolderService {
   void InformAboutDataHolder(const PmidName& pmid_name, bool node_up);
   std::vector<PmidName> GetDataNamesInAccount(const PmidName& pmid_name) const;
 
+  void ProcessNodeDown(const PmidName& pmid_name);
+
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
   nfs::Accumulator accumulator_;

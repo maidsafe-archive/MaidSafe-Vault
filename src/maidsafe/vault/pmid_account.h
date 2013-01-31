@@ -31,7 +31,7 @@ namespace vault {
 class PmidAccount {
  public:
   typedef PmidName name_type;
-  typedef TaggedValue<NonEmptyString, struct SerialisedMaidAccountTag> serialised_type;
+  typedef TaggedValue<NonEmptyString, struct SerialisedPmidAccountTag> serialised_type;
 
   enum class Status : int {
     kNodeGoingUp,
@@ -47,6 +47,7 @@ class PmidAccount {
   NonEmptyString GetArchiveFile(const boost::filesystem::path& path) const;
   void PutArchiveFile(const boost::filesystem::path& path, const NonEmptyString& content);
   void SerialiseRecords();
+  serialised_type Serialise() const;
 
   template<typename Data>
   void PutData(const typename Data::name_type& name, int32_t size, int32_t replication_count);
@@ -54,7 +55,7 @@ class PmidAccount {
   bool DeleteData(const typename Data::name_type& name);
 
   PmidName name() const { return pmid_record_.pmid_name; }
-  Status GetStatus() { return account_status_; }
+  Status GetStatus() const { return account_status_; }
   void SetStatus(Status status) { account_status_ = status; }
   int64_t total_data_stored_by_pmids() const { return pmid_record_.stored_total_size; }
 //  int64_t total_put_data() const { return total_put_data_; }

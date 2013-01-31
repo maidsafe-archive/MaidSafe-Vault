@@ -33,6 +33,25 @@ PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
 
 void PmidAccountHolderService::HandleSynchronise(
     const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
+  std::vector<PmidName> accounts_held(pmid_account_handler_.GetAccountNames());
+  for (auto it(accounts_held.begin()); it != accounts_held.end(); ++it) {
+    if (!routing_.IsNodeIdInGroupRange(NodeId(*it))) {
+      pmid_account_handler_.DeleteAccount(*it);
+      it = accounts_held.erase(it);
+    } else {
+      ++it;
+    }
+  }
+
+  for (auto& account : accounts_held) {
+    bool is_connected(routing_.IsConnectedVault(NodeId(account)));
+    PmidAccount::Status account_status(pmid_account_handler_.AccountStatus());
+    if (account_status == PmidAccount::Status::kNodeUp && !is_connected) {
+      InformOfDataHolderDown(account);
+    } else if (account_status == PmidAccount::Status::kNodeDown && is_connected) {
+      InformOfDataHolderUp(account);
+    }
+  }
 }
 
 void PmidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_message) const {
@@ -75,6 +94,12 @@ std::vector<PmidName> PmidAccountHolderService::GetDataNamesInAccount(
     metadata_manager_ids.push_back(PmidName(Identity(account.recent_data_stored(n).name())));
   return metadata_manager_ids;
 }
+
+void PmidAccountHolderService::ProcessNodeDown(const PmidName& pmid_name) {
+  Sleep(boost::posix_time::minutes(3));
+
+}
+
 
 }  // namespace vault
 
