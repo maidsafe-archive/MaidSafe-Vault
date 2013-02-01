@@ -39,7 +39,7 @@ class GetFromDataHolder {
         source_(nfs::PersonaId(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
 
   template<typename Data>
-  std::vector<std::future<nfs::ReturnCode>> Get(const typename Data::name_type& name,
+  std::vector<std::future<nfs::Reply>> Get(const typename Data::name_type& name,
                                                 const Identity& dest_id) {
     auto promise(std::make_shared<std::promise<Data>>());
     std::future<Data> future(promise->get_future());

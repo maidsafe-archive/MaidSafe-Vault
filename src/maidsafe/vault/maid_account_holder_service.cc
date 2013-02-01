@@ -55,7 +55,7 @@ void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& g
       if (routing_.IsConnectedToClient(source_id)) {
         HandleReceivedSyncData(generic_message.content());
       } else {
-        reply_functor(nfs::ReturnCode(RoutingErrors::not_connected).Serialise()->string());
+        reply_functor(nfs::Reply(RoutingErrors::not_connected).Serialise()->string());
       }
       break;
     default:

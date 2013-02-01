@@ -56,7 +56,7 @@ void DataHolder::HandleGetMessage(const nfs::DataMessage& data_message,
                                   const routing::ReplyFunctor& reply_functor) {
   if (data_message.this_persona().persona != nfs::Persona::kMetadataManager) {
     LOG(kError) << "Get can only come from MM.";
-    reply_functor(nfs::ReturnCode(VaultErrors::operation_not_supported).Serialise()->string());
+    reply_functor(nfs::Reply(VaultErrors::operation_not_supported).Serialise()->string());
     return;
   }
   try {
@@ -71,7 +71,7 @@ void DataHolder::HandleGetMessage(const nfs::DataMessage& data_message,
             data_message.data().action));
     reply_functor(response.Serialise()->string());
   } catch(std::exception& /*ex*/) {
-    reply_functor(nfs::ReturnCode(CommonErrors::unknown).Serialise()->string());
+    reply_functor(nfs::Reply(CommonErrors::unknown).Serialise()->string());
     // error code // at the moment this will go back to client
     // in production it will g back to
   }
@@ -82,15 +82,15 @@ void DataHolder::HandlePutMessage(const nfs::DataMessage& data_message,
                                   const routing::ReplyFunctor& reply_functor) {
   if (data_message.this_persona().persona != nfs::Persona::kPmidAccountHolder) {
     LOG(kError) << "Put can only come from PmidAccountHolder.";
-    reply_functor(nfs::ReturnCode(VaultErrors::operation_not_supported).Serialise()->string());
+    reply_functor(nfs::Reply(VaultErrors::operation_not_supported).Serialise()->string());
     return;
   }
   try {
     permanent_data_store_.Store(typename Data::name_type(data_message.data().name),
                                 data_message.data().content);
-    reply_functor(nfs::ReturnCode(0).Serialise()->string());
+    reply_functor(nfs::Reply(0).Serialise()->string());
   } catch(std::exception& /*ex*/) {
-    reply_functor(nfs::ReturnCode(CommonErrors::unknown).Serialise()->string());
+    reply_functor(nfs::Reply(CommonErrors::unknown).Serialise()->string());
     // error code // at the moment this will go back to client
     // in production it will g back to
   }
@@ -101,11 +101,11 @@ void DataHolder::HandleDeleteMessage(const nfs::DataMessage& data_message,
                                      const routing::ReplyFunctor& reply_functor) {
   if (data_message.this_persona().persona != nfs::Persona::kPmidAccountHolder) {
     LOG(kError) << "Delete can only come from PmidAccountHolder.";
-    reply_functor(nfs::ReturnCode(VaultErrors::operation_not_supported).Serialise()->string());
+    reply_functor(nfs::Reply(VaultErrors::operation_not_supported).Serialise()->string());
     return;
   }
   permanent_data_store_.Delete(typename Data::name_type(data_message.data().name));
-  reply_functor(nfs::ReturnCode(0).Serialise()->string());
+  reply_functor(nfs::Reply(0).Serialise()->string());
 }
 
 //  template<typename Data>

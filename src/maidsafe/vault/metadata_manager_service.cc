@@ -44,13 +44,13 @@ void MetadataManagerService::HandleGenericMessage(const nfs::GenericMessage& gen
     case nfs::GenericMessage::Action::kNodeUp:
         if (!HandleNodeUp(generic_message, source_id)) {
           LOG(kError) << "Replying with failure on kNodeUp.";
-          reply_functor(nfs::ReturnCode(VaultErrors::failed_handle_node_up).Serialise()->string());
+          reply_functor(nfs::Reply(VaultErrors::failed_handle_node_up).Serialise()->string());
         }
         break;
     case nfs::GenericMessage::Action::kNodeDown:
         if (!HandleNodeDown(generic_message, source_id)) {
           LOG(kError) << "Replying with failure on kNodeDown.";
-          reply_functor(nfs::ReturnCode(
+          reply_functor(nfs::Reply(
                             VaultErrors::failed_handle_node_down).Serialise()->string());
         }
         break;

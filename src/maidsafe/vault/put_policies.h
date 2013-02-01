@@ -25,7 +25,7 @@
 
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/response_mapper.h"
-#include "maidsafe/nfs/return_code.h"
+#include "maidsafe/nfs/reply.h"
 #include "maidsafe/nfs/types.h"
 
 
@@ -43,7 +43,7 @@ class PutToMetadataManager {
         source_(nfs::PersonaId(nfs::Persona::kMaidAccountHolder, routing.kNodeId())) {}
 
   template<typename Data>
-  std::vector<std::future<nfs::ReturnCode>> Put(const nfs::DataMessage& data_message) {
+  std::vector<std::future<nfs::Reply>> Put(const nfs::DataMessage& data_message) {
     nfs::DataMessage new_data_message(
         data_message.next_persona(),
         source_,
@@ -78,7 +78,7 @@ class PutToPmidAccountHolder {
         source_(nfs::PersonaId(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
 
   template<typename Data>
-   std::vector<std::future<nfs::ReturnCode>> Put(const nfs::DataMessage& data_message) {
+   std::vector<std::future<nfs::Reply>> Put(const nfs::DataMessage& data_message) {
     nfs::DataMessage new_data_message(
         data_message.next_persona(),
         source_,
@@ -113,7 +113,7 @@ class PutToDataHolder {
         source_(nfs::PersonaId(nfs::Persona::kPmidAccountHolder, routing.kNodeId())) {}
 
   template<typename Data>
-  std::vector<std::future<nfs::ReturnCode>> Put(const nfs::DataMessage& data_message) {
+  std::vector<std::future<nfs::Reply>> Put(const nfs::DataMessage& data_message) {
     nfs::DataMessage new_data_message(
         data_message.next_persona(),
         source_,

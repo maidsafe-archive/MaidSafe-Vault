@@ -42,7 +42,7 @@ class DeleteFromMetadataManager {
         source_(nfs::PersonaId(nfs::Persona::kMaidAccountHolder, routing.kNodeId())) {}
 
   template<typename Data>
-  std::vector<std::future<nfs::ReturnCode>> Delete(const nfs::DataMessage& data_message) {
+  std::vector<std::future<nfs::Reply>> Delete(const nfs::DataMessage& data_message) {
     nfs::DataMessage new_data_message(
         data_message.next_persona(),
         source_,
@@ -78,7 +78,7 @@ class DeleteFromPmidAccountHolder {
         source_(nfs::PersonaId(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
 
   template<typename Data>
-  std::vector<std::future<nfs::ReturnCode>> Delete(const nfs::DataMessage& data_message) {
+  std::vector<std::future<nfs::Reply>> Delete(const nfs::DataMessage& data_message) {
     nfs::DataMessage new_message(data_message.next_persona(),
                                  source_,
                                  nfs::DataMessage::Data(data_message.data().type,
@@ -111,7 +111,7 @@ class DeleteFromDataHolder {
         source_(nfs::PersonaId(nfs::Persona::kPmidAccountHolder, routing.kNodeId())) {}
 
   template<typename Data>
-  std::vector<std::future<nfs::ReturnCode>> Delete(const nfs::DataMessage& data_message) {
+  std::vector<std::future<nfs::Reply>> Delete(const nfs::DataMessage& data_message) {
     nfs::DataMessage new_data_message(
         data_message.next_persona(),
         source_,
