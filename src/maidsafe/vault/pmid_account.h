@@ -41,7 +41,9 @@ class PmidAccount {
   };
 
   PmidAccount(const PmidName& pmid_name, const boost::filesystem::path& root);
-  PmidAccount(const serialised_type& serialised_pmid_account, const boost::filesystem::path& root);
+  PmidAccount(const serialised_type& serialised_pmid_account,
+              const boost::filesystem::path& root);
+  ~PmidAccount();
 
   std::vector<boost::filesystem::path> GetArchiveFileNames() const;
   NonEmptyString GetArchiveFile(const boost::filesystem::path& path) const;

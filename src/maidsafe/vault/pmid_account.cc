@@ -19,6 +19,37 @@ namespace maidsafe {
 
 namespace vault {
 
+PmidAccount::PmidAccount(const PmidName& pmid_name, const boost::filesystem::path& root)
+  : account_status_(Status::kNodeGoingUp),
+    pmid_record_(pmid_name),
+    recent_data_stored_(),
+    type_and_name_visitor_(),
+    archive_(root) {}
+
+PmidAccount::PmidAccount(const serialised_type& serialised_pmid_account,
+                         const boost::filesystem::path& root)
+  : account_status_(Status::kNodeGoingUp),
+    pmid_record_(),
+    recent_data_stored_(),
+    type_and_name_visitor_(),
+    archive_(root) {
+  protobuf::PmidAccount pmid_account;
+  if (!pmid_account.ParseFromString(serialised_pmid_account.data.string())) {
+    LOG(kError) << "Failed to parse pmid_account.";
+    ThrowError(CommonErrors::parsing_error);
+  }
+  pmid_record_ = PmidRecord(pmid_account.pmid_record());
+  for (auto& recent_data : pmid_account.recent_data_stored()) {
+      recent_data_stored_.insert(std::make_pair(
+          GetDataNameVariant(static_cast<DataTagValue>(recent_data.type()),
+          Identity(recent_data.name())), recent_data.size()));
+  }
+}
+
+PmidAccount::~PmidAccount() {
+  ArchiveRecords();
+}
+
 std::vector< boost::filesystem::path > PmidAccount::GetArchiveFileNames() const {
   return archive_.GetFileNames().get();
 }
