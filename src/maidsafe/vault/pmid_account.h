@@ -79,4 +79,6 @@ class PmidAccount {
 
 }  // namespace maidsafe
 
+#include "maidsafe/vault/pmid_account-inl.h"
+
 #endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_H_
