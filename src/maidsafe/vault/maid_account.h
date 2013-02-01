@@ -23,6 +23,7 @@
 #include "maidsafe/nfs/pmid_registration.h"
 
 #include "maidsafe/vault/disk_based_storage.h"
+#include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/pmid_record.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/utils.h"
@@ -31,6 +32,10 @@
 namespace maidsafe {
 
 namespace vault {
+
+namespace test {
+  class MaidAccountHandlerTest;
+}  // namespace test
 
 struct PmidTotals;
 
@@ -43,7 +48,7 @@ class MaidAccount {
   MaidAccount(const serialised_type& serialised_maid_account, const boost::filesystem::path& root);
   serialised_type Serialise() const;
 
-  void RegisterPmid(const nfs::PmidRegistration::serialised_type& serialised_pmid_registration);
+  void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);
   void UpdatePmidTotals(const PmidTotals& pmid_totals);
 
@@ -54,13 +59,15 @@ class MaidAccount {
   template<typename Data>
   void PutData(const typename Data::name_type& name, int32_t size, int32_t replication_count);
   template<typename Data>
-  bool DeleteData(const typename Data::name_type& name);
+  void DeleteData(const typename Data::name_type& name);
   template<typename Data>
   void UpdateReplicationCount(const typename Data::name_type& name, int32_t new_replication_count);
 
   name_type name() const { return kMaidName_; }
   int64_t total_data_stored_by_pmids() const { return total_data_stored_by_pmids_; }
   int64_t total_put_data() const { return total_put_data_; }
+
+  friend class test::MaidAccountHandlerTest;
 
  private:
   struct PutDataDetails {

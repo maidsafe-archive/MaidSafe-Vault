@@ -25,33 +25,52 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace protobuf { class MetadataElement; }
+namespace protobuf { class Metadata; }
 
-class DataElementsManager {
+class MetadataHandler {
  public:
-  explicit DataElementsManager(const boost::filesystem::path& vault_root_dir);
-  void AddDataElement(const Identity& data_name,
-                      int32_t element_size,
-                      const PmidName& online_pmid_name,
-                      const PmidName& offline_pmid_name);
-  void RemoveDataElement(const Identity& data_name);
-  int64_t DecreaseDataElement(const Identity& data_name);
-  void MoveNodeToOffline(const Identity& data_name, const PmidName& pmid_name, int64_t& holders);
-  void MoveNodeToOnline(const Identity& data_name, const PmidName& pmid_name);
+  explicit MetadataHandler(const boost::filesystem::path& vault_root_dir);
 
-  void AddOnlinePmid(const Identity& data_name, const PmidName& online_pmid_name);
-  void RemoveOnlinePmid(const Identity& data_name, const PmidName& online_pmid_name);
-  void AddOfflinePmid(const Identity& data_name, const PmidName& offline_pmid_name);
-  void RemoveOfflinePmid(const Identity& data_name, const PmidName& offline_pmid_name);
+  // This increments the subscribers count, or adds a new element if it doesn't exist.
+  template<typename Data>
+  void IncrementSubscribers(const typename Data::name_type& data_name, int32_t element_size);
+  // This decrements the subscribers count.  If it hits 0, the element is removed.
+  template<typename Data>
+  void DecrementSubscribers(const typename Data::name_type& data_name, int32_t element_size);
 
-  std::vector<Identity> GetOnlinePmid(const Identity& data_id);
+  // This is used when synchronising with other MMs.  It simply adds or replaces any existing
+  // element of the same type and name.
+  void PutMetadata(const Metadata& metadata);
+  // This is used when synchronising with other MMs.  If this node sends a sync (group message) for
+  // this element, and doesn't receive its own request, it's no longer responsible for this element.
+  template<typename Data>
+  void DeleteMetadata(const typename Data::name_type& data_name);
+
+  template<typename Data>
+  void MarkNodeDown(const typename Data::name_type& data_name,
+                    const PmidName& pmid_name,
+                    int& remaining_online_holders);
+  template<typename Data>
+  void MarkNodeUp(const typename Data::name_type& data_name, const PmidName& pmid_name);
+
+  // The data holder is assumed to be online
+  template<typename Data>
+  void AddDataHolder(const typename Data::name_type& data_name, const PmidName& online_pmid_name);
+  // The data holder could be online or offline
+  template<typename Data>
+  void RemoveDataHolder(const typename Data::name_type& data_name, const PmidName& pmid_name);
+
+  template<typename Data>
+  std::vector<PmidName> GetOnlineDataHolders(const typename Data::name_type& data_name) const;
 
  private:
-  boost::filesystem::path vault_metadata_dir_;
+  template<typename Data>
+  void CheckMetadataExists(const typename Data::name_type& data_name) const;
+  template<typename Data>
+  void ReadAndParseMetadata(const typename Data::name_type& data_name, protobuf::Metadata& element);
+  void SerialiseAndSaveMetadata(const protobuf::Metadata& element);
 
-  void CheckDataElementExists(const Identity& data_name);
-  void ReadAndParseElement(const Identity& data_name, protobuf::MetadataElement& element);
-  void SerialiseAndSaveElement(const protobuf::MetadataElement& element);
+  const boost::filesystem::path kMetadataRoot_;
 };
 
 }  // namespace vault
