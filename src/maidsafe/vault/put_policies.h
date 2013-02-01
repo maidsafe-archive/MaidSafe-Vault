@@ -35,11 +35,11 @@ namespace vault {
 
 class PutToMetadataManager {
  public:
-  PutToMetadataManager(routing::Routing& routing, const passport::Pmid& signing_pmid,
-                       nfs::ResponseMapper& response_mapper)
-      : routing_(routing),
+  PutToMetadataManager(nfs::NfsResponseMapper& response_mapper, routing::Routing& routing,
+                       const passport::Pmid& signing_pmid)
+      : response_mapper_(response_mapper),
+        routing_(routing),
         signing_pmid_(signing_pmid),
-        response_mapper_(response_mapper),
         source_(nfs::PersonaId(nfs::Persona::kMaidAccountHolder, routing.kNodeId())) {}
 
   template<typename Data>
@@ -53,28 +53,25 @@ class PutToMetadataManager {
                                data_message.data().action));
     nfs::Message message(nfs::DataMessage::message_type_identifier,
                          new_data_message.Serialise().data);
-    auto routing_futures(std::make_shared<std::vector<std::future<std::string>>>(
-        routing_.SendGroup(NodeId(new_data_message.data().name.string()),
-                           message.Serialise()->string(),
-                           nfs::IsCacheable<Data>())));
-    return GetMappedNfsFutures(std::move(routing_futures), response_mapper_);
+    return NfsSendGroup(NodeId(new_data_message.data().name.string()), message,
+                        nfs::IsCacheable<Data>(), response_mapper_, routing_);
   }
 
  protected:
   ~PutToMetadataManager() {}
 
  private:
+  nfs::NfsResponseMapper& response_mapper_;
   routing::Routing& routing_;
   passport::Pmid signing_pmid_;
-  nfs::ResponseMapper& response_mapper_;
   nfs::PersonaId source_;
 };
 
 class PutToPmidAccountHolder {
  public:
-  explicit PutToPmidAccountHolder(routing::Routing& routing, nfs::ResponseMapper& response_mapper)
-      : routing_(routing),
-        response_mapper_(response_mapper),
+  PutToPmidAccountHolder(nfs::NfsResponseMapper& response_mapper, routing::Routing& routing)
+      : response_mapper_(response_mapper),
+        routing_(routing),
         source_(nfs::PersonaId(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
 
   template<typename Data>
@@ -88,28 +85,24 @@ class PutToPmidAccountHolder {
                                data_message.data().action));
     nfs::Message message(nfs::DataMessage::message_type_identifier,
                          new_data_message.Serialise().data);
-    auto routing_futures(std::make_shared<std::vector<std::future<std::string>>>(
-        routing_.SendGroup(NodeId(new_data_message.data().name.string()),
-                           message.Serialise()->string(),
-                           nfs::IsCacheable<Data>())));
-
-    return GetMappedNfsFutures(std::move(routing_futures), response_mapper_);
+    return NfsSendGroup(NodeId(new_data_message.data().name.string()), message,
+                        nfs::IsCacheable<Data>(), response_mapper_, routing_);
   }
 
  protected:
   ~PutToPmidAccountHolder() {}
 
  private:
+  nfs::NfsResponseMapper& response_mapper_;
   routing::Routing& routing_;
-  nfs::ResponseMapper& response_mapper_;
   nfs::PersonaId source_;
 };
 
 class PutToDataHolder {
  public:
-  explicit PutToDataHolder(routing::Routing& routing, nfs::ResponseMapper& response_mapper)
-      : routing_(routing),
-        response_mapper_(response_mapper),
+  PutToDataHolder(nfs::NfsResponseMapper& response_mapper, routing::Routing& routing)
+      : response_mapper_(response_mapper),
+        routing_(routing),
         source_(nfs::PersonaId(nfs::Persona::kPmidAccountHolder, routing.kNodeId())) {}
 
   template<typename Data>
@@ -123,20 +116,17 @@ class PutToDataHolder {
                                data_message.data().action));
     nfs::Message message(nfs::DataMessage::message_type_identifier,
                          new_data_message.Serialise().data);
-    auto routing_futures(std::make_shared<std::vector<std::future<std::string>>>(
-        routing_.SendGroup(NodeId(new_data_message.data().name.string()),
-                           message.Serialise()->string(),
-                           nfs::IsCacheable<Data>())));
 
-    return GetMappedNfsFutures(std::move(routing_futures), response_mapper_);
+    return NfsSendGroup(NodeId(new_data_message.data().name.string()), message,
+                        nfs::IsCacheable<Data>(), response_mapper_, routing_);
   }
 
  protected:
   ~PutToDataHolder() {}
 
  private:
+  nfs::NfsResponseMapper& response_mapper_;
   routing::Routing& routing_;
-  nfs::ResponseMapper& response_mapper_;
   nfs::PersonaId source_;
 };
 

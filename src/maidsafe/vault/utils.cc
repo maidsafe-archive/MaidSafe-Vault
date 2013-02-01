@@ -40,14 +40,18 @@ MaidName GetSourceMaidName(const nfs::DataMessage& data_message) {
   return MaidName(Identity(data_message.source().node_id.string()));
 }
 
-std::vector<std::future<nfs::Reply>> GetMappedNfsFutures(
-    std::vector<std::future<std::string>>&& routing_futures,
-    nfs::ResponseMapper& response_mapper) {
+std::vector<std::future<nfs::Reply>> NfsSendGroup(const NodeId& target_id,
+                                                  const nfs::Message& message,
+                                                  bool is_cacheable,
+                                                  nfs::NfsResponseMapper& response_mapper,
+                                                  routing::Routing& routing) {
+  auto routing_futures(std::make_shared<std::vector<std::future<std::string>>>(
+      routing.SendGroup(target_id, message.Serialise()->string(), is_cacheable)));
   std::vector<std::future<nfs::Reply>> nfs_futures;
   for (auto& routing_future : routing_futures) {
     std::promise<nfs::Reply> nfs_promise;
     std::future<nfs::Reply> nfs_future(nfs_promise.get_future());
-    response_mapper_.push_back(std::make_pair(std::move(routing_future),
+    response_mapper.push_back(std::make_pair(std::move(routing_future),
                                                         std::move(nfs_promise)));
     nfs_futures.push_back(std::move(nfs_future));
   }
