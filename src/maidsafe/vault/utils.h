@@ -44,39 +44,41 @@ MaidName GetSourceMaidName(const nfs::DataMessage& data_message);
 
 // Ensure the mutex protecting accounts is locked throughout this call
 template<typename Account>
-typename std::vector<Account>::iterator FindAccount(
-    std::vector<Account>& accounts,
+typename std::vector<std::unique_ptr<Account> >::iterator FindAccount(
+    std::vector<std::unique_ptr<Account> >& accounts,
     const typename Account::name_type& account_name) {
   return std::find_if(accounts.begin(),
                       accounts.end(),
-                      [&account_name] (const Account& account) {
-                        return account_name == account.name();
+                      [&account_name] (const std::unique_ptr<Account>& account) {
+                        return account_name == account->name();
                       });
 }
 
 template<typename Account>
-typename std::vector<Account>::const_iterator ConstFindAccount(
-    const std::vector<Account>& accounts,
+typename std::vector<std::unique_ptr<Account> >::const_iterator ConstFindAccount(
+    const std::vector<std::unique_ptr<Account> >& accounts,
     const typename Account::name_type& account_name) {
   return std::find_if(accounts.begin(),
                       accounts.end(),
-                      [&account_name] (const Account& account) {
-                        return account_name == account.name();
+                      [&account_name] (const std::unique_ptr<Account>& account) {
+                        return account_name == account->name();
                       });
 }
 
 template<typename Account>
-bool AddAccount(std::mutex& mutex, std::vector<Account>& accounts, const Account& account) {
+bool AddAccount(std::mutex& mutex,
+                std::vector<std::unique_ptr<Account> >& accounts,
+                std::unique_ptr<Account> account) {
   std::lock_guard<std::mutex> lock(mutex);
-  if (FindAccount(accounts, account.name()) != accounts.end())
+  if (FindAccount(accounts, account->name()) != accounts.end())
     return false;
-  accounts.push_back(account);
+  accounts.push_back(std::move(account));
   return true;
 }
 
 template<typename Account>
 bool DeleteAccount(std::mutex& mutex,
-                   std::vector<Account>& accounts,
+                   std::vector<std::unique_ptr<Account> >& accounts,
                    const typename Account::name_type& account_name) {
   std::lock_guard<std::mutex> lock(mutex);
   auto itr(FindAccount(accounts, account_name));
@@ -88,14 +90,14 @@ bool DeleteAccount(std::mutex& mutex,
 template<typename Account>
 typename Account::serialised_type GetSerialisedAccount(
     std::mutex& mutex,
-    const std::vector<Account>& accounts,
+    const std::vector<std::unique_ptr<Account> >& accounts,
     const typename Account::name_type& account_name) {
   std::lock_guard<std::mutex> lock(mutex);
   auto itr(ConstFindAccount(accounts, account_name));
   if (itr == accounts.end())
     ThrowError(VaultErrors::no_such_account);
 
-  return (*itr).Serialise();
+  return (*itr)->Serialise();
 }
 
 template<typename Nfs, typename Data>

@@ -33,7 +33,7 @@ class MaidAccountHandler {
  public:
   explicit MaidAccountHandler(const boost::filesystem::path& vault_root_dir);
   // Account operations
-  bool AddAccount(const MaidAccount& maid_account);
+  bool AddAccount(std::unique_ptr<MaidAccount> maid_account);
   bool DeleteAccount(const MaidName& account_name);
 
   void RegisterPmid(const MaidName& account_name,
@@ -116,7 +116,7 @@ class MaidAccountHandler {
 
   const boost::filesystem::path kMaidAccountsRoot_;
   mutable std::mutex mutex_;
-  std::vector<MaidAccount> maid_accounts_;
+  std::vector<std::unique_ptr<MaidAccount> > maid_accounts_;
 };
 
 }  // namespace vault
