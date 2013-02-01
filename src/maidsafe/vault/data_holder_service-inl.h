@@ -54,7 +54,7 @@ void DataHolder::HandleDataMessage(const nfs::DataMessage& data_message,
 template<typename Data>
 void DataHolder::HandleGetMessage(const nfs::DataMessage& data_message,
                                   const routing::ReplyFunctor& reply_functor) {
-  if (data_message.this_persona().persona != nfs::Persona::kMetadataManager) {
+  if (data_message.source().persona != nfs::Persona::kMetadataManager) {
     LOG(kError) << "Get can only come from MM.";
     reply_functor(nfs::Reply(VaultErrors::operation_not_supported).Serialise()->string());
     return;
@@ -62,7 +62,7 @@ void DataHolder::HandleGetMessage(const nfs::DataMessage& data_message,
   try {
   // TODO(Fraser#5#): 2013-01-18 - Take version into account properly here
     nfs::DataMessage response(
-        data_message.next_persona(),
+        data_message.destination_persona(),
         data_message.source(),
         nfs::DataMessage::Data(
             data_message.data().type,
@@ -80,7 +80,7 @@ void DataHolder::HandleGetMessage(const nfs::DataMessage& data_message,
 template<typename Data>
 void DataHolder::HandlePutMessage(const nfs::DataMessage& data_message,
                                   const routing::ReplyFunctor& reply_functor) {
-  if (data_message.this_persona().persona != nfs::Persona::kPmidAccountHolder) {
+  if (data_message.source().persona != nfs::Persona::kPmidAccountHolder) {
     LOG(kError) << "Put can only come from PmidAccountHolder.";
     reply_functor(nfs::Reply(VaultErrors::operation_not_supported).Serialise()->string());
     return;
@@ -99,7 +99,7 @@ void DataHolder::HandlePutMessage(const nfs::DataMessage& data_message,
 template<typename Data>
 void DataHolder::HandleDeleteMessage(const nfs::DataMessage& data_message,
                                      const routing::ReplyFunctor& reply_functor) {
-  if (data_message.this_persona().persona != nfs::Persona::kPmidAccountHolder) {
+  if (data_message.source().persona != nfs::Persona::kPmidAccountHolder) {
     LOG(kError) << "Delete can only come from PmidAccountHolder.";
     reply_functor(nfs::Reply(VaultErrors::operation_not_supported).Serialise()->string());
     return;

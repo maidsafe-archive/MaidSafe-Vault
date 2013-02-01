@@ -52,7 +52,7 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
   nfs::Reply reply(MakeError(CommonErrors::success));
   try {
     std::future<void> future(pmid_account_handler_.PutData<Data>(
-                                 data_message.target_id(),
+                                 data_message.final_target_id(),
                                  data_message.data().name,
                                  data_message.data().content.string.size()));
     try {
@@ -77,7 +77,7 @@ template<typename Data>
 void PmidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message,
                                             const routing::ReplyFunctor& reply_functor) {
   try {
-    pmid_account_handler_.DeleteData<Data>(data_message.target_id(), data_message.data().name);
+    pmid_account_handler_.DeleteData<Data>(data_message.final_target_id(), data_message.data().name);
     SendDataMessage<Data>(data_message);
   }
   catch(const std::system_error& error) {
@@ -95,7 +95,7 @@ void PmidAccountHolderService::SendDataMessage(const nfs::DataMessage& data_mess
   if (data_message.data().action == nfs::DataMessage::Action::kPut) {
     nfs_.Put<Data>(data_message,
                    [this] (nfs::DataMessage data_msg) {
-                     pmid_account_handler_.DeleteData<Data>(data_msg.target_id(),
+                     pmid_account_handler_.DeleteData<Data>(data_msg.final_target_id(),
                                                             data_msg.data().name);
                    });
   } else {

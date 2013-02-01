@@ -35,9 +35,9 @@ bool ShouldRetry(routing::Routing& routing, const nfs::DataMessage& data_message
 }
 
 MaidName GetSourceMaidName(const nfs::DataMessage& data_message) {
-  if (data_message.this_persona().persona != nfs::Persona::kClientMaid)
+  if (data_message.source().persona != nfs::Persona::kClientMaid)
     ThrowError(VaultErrors::permission_denied);
-  return MaidName(Identity(data_message.this_persona().node_id.string()));
+  return MaidName(Identity(data_message.source().node_id.string()));
 }
 
 std::vector<std::future<nfs::Reply>> GetMappedNfsFutures(

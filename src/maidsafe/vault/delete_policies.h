@@ -44,7 +44,7 @@ class DeleteFromMetadataManager {
   template<typename Data>
   std::vector<std::future<nfs::Reply>> Delete(const nfs::DataMessage& data_message) {
     nfs::DataMessage new_data_message(
-        data_message.next_persona(),
+        data_message.destination_persona(),
         source_,
         nfs::DataMessage::Data(data_message.data().type,
                                data_message.data().name,
@@ -79,7 +79,7 @@ class DeleteFromPmidAccountHolder {
 
   template<typename Data>
   std::vector<std::future<nfs::Reply>> Delete(const nfs::DataMessage& data_message) {
-    nfs::DataMessage new_message(data_message.next_persona(),
+    nfs::DataMessage new_message(data_message.destination_persona(),
                                  source_,
                                  nfs::DataMessage::Data(data_message.data().type,
                                                         data_message.data().name,
@@ -113,7 +113,7 @@ class DeleteFromDataHolder {
   template<typename Data>
   std::vector<std::future<nfs::Reply>> Delete(const nfs::DataMessage& data_message) {
     nfs::DataMessage new_data_message(
-        data_message.next_persona(),
+        data_message.destination_persona(),
         source_,
         nfs::DataMessage::Data(data_message.data().type,
                                data_message.data().name,

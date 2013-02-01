@@ -30,7 +30,7 @@ template<typename Data>
 void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(MakeError(CommonErrors::success));
-  auto request_id(std::make_pair(data_message.message_id(), data_message.this_persona().persona));
+  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
   if (accumulator_.CheckHandled(request_id, reply))
     return reply_functor(reply.Serialise()->string());
 
@@ -59,7 +59,7 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     LOG(kWarning) << error.what();
     reply = nfs::Reply(error);
   }
-  auto request_id(std::make_pair(data_message.message_id(), data_message.this_persona().persona));
+  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
   accumulator_.SetHandled(request_id, reply);
   reply_functor(reply.Serialise()->string());
 }
@@ -76,7 +76,7 @@ void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
     LOG(kWarning) << error.what();
     // Always return succeess for Deletes
   }
-  auto request_id(std::make_pair(data_message.message_id(), data_message.this_persona().persona));
+  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
   nfs::Reply reply(MakeError(CommonErrors::success));
   accumulator_.SetHandled(request_id, reply);
   reply_functor(reply.Serialise()->string());

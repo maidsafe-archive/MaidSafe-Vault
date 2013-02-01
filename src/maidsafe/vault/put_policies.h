@@ -45,7 +45,7 @@ class PutToMetadataManager {
   template<typename Data>
   std::vector<std::future<nfs::Reply>> Put(const nfs::DataMessage& data_message) {
     nfs::DataMessage new_data_message(
-        data_message.next_persona(),
+        data_message.destination_persona(),
         source_,
         nfs::DataMessage::Data(data_message.data().type,
                                data_message.data().name,
@@ -80,7 +80,7 @@ class PutToPmidAccountHolder {
   template<typename Data>
    std::vector<std::future<nfs::Reply>> Put(const nfs::DataMessage& data_message) {
     nfs::DataMessage new_data_message(
-        data_message.next_persona(),
+        data_message.destination_persona(),
         source_,
         nfs::DataMessage::Data(data_message.data().type,
                                data_message.data().name,
@@ -115,7 +115,7 @@ class PutToDataHolder {
   template<typename Data>
   std::vector<std::future<nfs::Reply>> Put(const nfs::DataMessage& data_message) {
     nfs::DataMessage new_data_message(
-        data_message.next_persona(),
+        data_message.destination_persona(),
         source_,
         nfs::DataMessage::Data(data_message.data().type,
                                data_message.data().name,
