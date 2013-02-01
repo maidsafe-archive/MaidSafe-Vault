@@ -46,7 +46,7 @@ class PmidAccount {
   std::vector<boost::filesystem::path> GetArchiveFileNames() const;
   NonEmptyString GetArchiveFile(const boost::filesystem::path& path) const;
   void PutArchiveFile(const boost::filesystem::path& path, const NonEmptyString& content);
-  void SerialiseRecords();
+  void ArchiveRecords();
   serialised_type Serialise() const;
 
   template<typename Data>
@@ -65,9 +65,13 @@ class PmidAccount {
   PmidAccount(PmidAccount&&);
   PmidAccount& operator=(PmidAccount&&);
 
+  std::future<void> ArchiveDataRecord(const DataNameVariant& data_name_variant,
+                                      const int32_t data_size);
+
   Status account_status_;
   PmidRecord pmid_record_;
   std::map<DataNameVariant, int32_t> recent_data_stored_;
+  GetTagValueAndIdentityVisitor type_and_name_visitor_;
   DiskBasedStorage archive_;
 };
 
