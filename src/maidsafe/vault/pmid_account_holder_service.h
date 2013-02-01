@@ -34,8 +34,7 @@ namespace vault {
 
 class PmidAccountHolderService {
  public:
-  PmidAccountHolderService(const passport::Pmid& pmid,
-                           routing::Routing& routing,
+  PmidAccountHolderService(routing::Routing& routing,
                            nfs::PublicKeyGetter& public_key_getter,
                            const boost::filesystem::path& vault_root_dir);
   template<typename Data>
@@ -64,9 +63,17 @@ class PmidAccountHolderService {
   void InformOfDataHolderDown(const PmidName& pmid_name);
   void InformOfDataHolderUp(const PmidName& pmid_name);
   void InformAboutDataHolder(const PmidName& pmid_name, bool node_up);
-  std::vector<PmidName> GetDataNamesInAccount(const PmidName& pmid_name) const;
 
-  void ProcessNodeDown(const PmidName& pmid_name);
+  bool StatusHasReverted(const PmidName& pmid_name, bool node_up) const;
+  void RevertMessages(const PmidName& pmid_name,
+                      const std::vector<boost::filesystem::path>::reverse_iterator& begin,
+                      std::vector<boost::filesystem::path>::reverse_iterator& current,
+                      bool node_up);
+  std::set<PmidName> GetDataNamesInFile(const PmidName& pmid_name,
+                                        const boost::filesystem::path& path) const;
+  void SendMessages(const PmidName& pmid_name,
+                    const std::set<PmidName>& metadata_manager_ids,
+                    bool node_up);
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;

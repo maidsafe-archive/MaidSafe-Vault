@@ -20,8 +20,9 @@ namespace maidsafe {
 
 namespace vault {
 
-PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
-                                                   routing::Routing& routing,
+typedef std::vector<boost::filesystem::path> PathVector;
+
+PmidAccountHolderService::PmidAccountHolderService(routing::Routing& routing,
                                                    nfs::PublicKeyGetter& public_key_getter,
                                                    const boost::filesystem::path& vault_root_dir)
   : routing_(routing),
@@ -45,10 +46,12 @@ void PmidAccountHolderService::HandleSynchronise(
 
   for (auto& account : accounts_held) {
     bool is_connected(routing_.IsConnectedVault(NodeId(account)));
-    PmidAccount::Status account_status(pmid_account_handler_.AccountStatus());
+    PmidAccount::Status account_status(pmid_account_handler_.AccountStatus(account));
     if (account_status == PmidAccount::Status::kNodeUp && !is_connected) {
+      pmid_account_handler_.SetAccountStatus(account, PmidAccount::Status::kNodeGoingDown);
       InformOfDataHolderDown(account);
     } else if (account_status == PmidAccount::Status::kNodeDown && is_connected) {
+      pmid_account_handler_.SetAccountStatus(account, PmidAccount::Status::kNodeGoingUp);
       InformOfDataHolderUp(account);
     }
   }
@@ -76,30 +79,59 @@ void PmidAccountHolderService::InformOfDataHolderUp(const PmidName& pmid_name) {
 }
 
 void PmidAccountHolderService::InformAboutDataHolder(const PmidName& pmid_name, bool node_up) {
-  std::vector<PmidName> metadata_manager_ids(GetDataNamesInAccount(pmid_name));
-  for (PmidName& metadata_manager_id : metadata_manager_ids)
-    nfs_.DataHolderStatusChanged(metadata_manager_id, pmid_name);
+  Sleep(boost::posix_time::minutes(3));
+  PathVector names(pmid_account_handler_.GetArchiveFileNames(pmid_name));
+  for (auto ritr(names.rbegin()); ritr != names.rend(); ++ritr) {
+    if (StatusHasReverted(pmid_name, node_up)) {
+      RevertMessages(pmid_name, names.rbegin(), ritr, !node_up);
+      return;
+    }
+
+    std::set<PmidName> metadata_manager_ids(GetDataNamesInFile(pmid_name, *ritr));
+    SendMessages(pmid_name, metadata_manager_ids, node_up);
+  }
 }
 
-std::vector<PmidName> PmidAccountHolderService::GetDataNamesInAccount(
-    const PmidName& pmid_name) const {
-  // TODO(Team): This function could be simplified if the account handler could give all
-  //             data names for a particular account
-  NonEmptyString serialised_account(pmid_account_handler_.GetSerialisedAccount(pmid_name));
-  protobuf::PmidAccount account;
-  account.ParseFromString(serialised_account.string());
-
-  std::vector<PmidName> metadata_manager_ids;
-  for (int n(0); n != account.recent_data_stored_size(); ++n)
-    metadata_manager_ids.push_back(PmidName(Identity(account.recent_data_stored(n).name())));
+std::set<PmidName> PmidAccountHolderService::GetDataNamesInFile(
+    const PmidName& pmid_name,
+    const boost::filesystem::path& path) const {
+  NonEmptyString file_content(pmid_account_handler_.GetArchiveFile(pmid_name, path));
+  protobuf::ArchivedPmidData pmid_data;
+  pmid_data.ParseFromString(file_content.string());
+  std::set<PmidName> metadata_manager_ids;
+  for (int n(0); n != pmid_data.data_stored_size(); ++n)
+    metadata_manager_ids.insert(PmidName(Identity(pmid_data.data_stored(n).name())));
   return metadata_manager_ids;
 }
 
-void PmidAccountHolderService::ProcessNodeDown(const PmidName& pmid_name) {
-  Sleep(boost::posix_time::minutes(3));
-
+bool PmidAccountHolderService::StatusHasReverted(const PmidName& pmid_name, bool node_up) const {
+  PmidAccount::Status status(pmid_account_handler_.AccountStatus(pmid_name));
+  if (status == PmidAccount::Status::kNodeGoingDown && node_up)
+    return true;
+  else if (status == PmidAccount::Status::kNodeGoingUp && !node_up)
+    return true;
+  else
+    return false;
 }
 
+void PmidAccountHolderService::RevertMessages(const PmidName& pmid_name,
+                                              const PathVector::reverse_iterator& begin,
+                                              PathVector::reverse_iterator& current,
+                                              bool node_up) {
+  while (--current != begin) {
+    std::set<PmidName> metadata_manager_ids(GetDataNamesInFile(pmid_name, *current));
+    SendMessages(pmid_name, metadata_manager_ids, node_up);
+  }
+  pmid_account_handler_.SetAccountStatus(pmid_name, node_up ? PmidAccount::Status::kNodeDown :
+                                                              PmidAccount::Status::kNodeUp);
+}
+
+void PmidAccountHolderService::SendMessages(const PmidName& pmid_name,
+                                            const std::set<PmidName>& metadata_manager_ids,
+                                            bool node_up) {
+  for (const PmidName& metadata_manager_id : metadata_manager_ids)
+    nfs_.DataHolderStatusChanged(NodeId(metadata_manager_id), NodeId(pmid_name), node_up);
+}
 
 }  // namespace vault
 

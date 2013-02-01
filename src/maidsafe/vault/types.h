@@ -41,7 +41,7 @@ typedef nfs::NetworkFileSystem<GetFromDataHolder,
 
 typedef nfs::NetworkFileSystem<nfs::NoGet,
                                PutToDataHolder,
-                               PostSynchronisation<nfs::Persona::kPmidAccountHolder>,
+                               PmidAccountHolderPost,
                                DeleteFromDataHolder> PmidAccountHolderNfs;
 
 typedef nfs::NetworkFileSystem<nfs::GetFromMetadataManager<nfs::Persona::kDataHolder>,

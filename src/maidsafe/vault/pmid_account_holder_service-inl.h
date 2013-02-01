@@ -29,7 +29,7 @@ template<typename Data>
 void PmidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
   nfs::ReturnCode return_code(MakeError(CommonErrors::success));
-  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
+  auto request_id(std::make_pair(data_message.message_id(), data_message.this_persona().persona));
   if (accumulator_.CheckHandled(request_id, return_code))
     return reply_functor(return_code.Serialise()->string());
 
@@ -54,7 +54,7 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     std::future<void> future(pmid_account_handler_.PutData<Data>(
                                  data_message.target_id(),
                                  data_message.data().name,
-                                 data_message.data().content.string.size()));
+                                 data_message.data().content.string().size()));
     try {
       future.get();
       SendDataMessage<Data>(data_message);
@@ -68,7 +68,7 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     LOG(kError) << "Failure deleting data from account: " << error.what();
     return_code = nfs::ReturnCode(error);
   }
-  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
+  auto request_id(std::make_pair(data_message.message_id(), data_message.this_persona().persona));
   accumulator_.SetHandled(request_id, return_code);
   reply_functor(return_code.Serialise()->string());
 }
@@ -84,7 +84,7 @@ void PmidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
     LOG(kError) << "Failure deleting data from account: " << error.what();
     // Always return succeess for Deletes
   }
-  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
+  auto request_id(std::make_pair(data_message.message_id(), data_message.this_persona().persona));
   nfs::ReturnCode return_code(MakeError(CommonErrors::success));
   accumulator_.SetHandled(request_id, return_code);
   reply_functor(return_code.Serialise()->string());

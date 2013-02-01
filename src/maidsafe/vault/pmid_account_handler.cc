@@ -47,6 +47,15 @@ PmidAccount::Status PmidAccountHandler::AccountStatus(const PmidName& account_na
   return (*itr)->GetStatus();
 }
 
+void PmidAccountHandler::SetAccountStatus(const PmidName& account_name,
+                                          PmidAccount::Status status) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(detail::FindAccount(pmid_accounts_, account_name));
+  if (itr == pmid_accounts_.end())
+    ThrowError(VaultErrors::no_such_account);
+  return (*itr)->SetStatus(status);
+}
+
 std::vector<PmidName> PmidAccountHandler::GetAccountNames() const {
   std::vector<PmidName> account_names;
   std::lock_guard<std::mutex> lock(mutex_);

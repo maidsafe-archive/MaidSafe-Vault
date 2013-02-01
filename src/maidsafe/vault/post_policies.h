@@ -61,6 +61,42 @@ class PostSynchronisation {
   nfs::PersonaId source_;
 };
 
+class PmidAccountHolderPolicy {
+ public:
+  explicit PmidAccountHolderPolicy(routing::Routing& routing)
+      : routing_(routing),
+        source_(nfs::PersonaId(nfs::Persona::kPmidAccountHolder, routing.kNodeId())) {}
+  void DataHolderStatusChanged(const NodeId& /*next_node*/, const NodeId& /*this_node*/, bool /*node_up*/) {
+  }
+
+ private:
+  routing::Routing& routing_;
+  nfs::PersonaId source_;
+};
+
+class MetadataManagerPolicy {
+ public:
+  explicit MetadataManagerPolicy(routing::Routing& routing)
+      : routing_(routing),
+        source_(nfs::PersonaId(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
+  void DuplicateCopy();
+
+ private:
+  routing::Routing& routing_;
+  nfs::PersonaId source_;
+};
+
+template<typename T, typename SyncPolicy>
+class HostPost : public T, public SyncPolicy {
+ public:
+  explicit HostPost(routing::Routing& routing) : T(routing), SyncPolicy(routing) {}
+};
+
+typedef HostPost<PmidAccountHolderPolicy,
+                 PostSynchronisation<nfs::Persona::kPmidAccountHolder> > PmidAccountHolderPost;
+typedef HostPost<MetadataManagerPolicy,
+                 PostSynchronisation<nfs::Persona::kMetadataManager> > MetadataManagerPost;
+
 }  // namespace vault
 
 }  // namespace maidsafe
