@@ -41,12 +41,14 @@ class PmidAccount {
   };
 
   PmidAccount(const PmidName& pmid_name, const boost::filesystem::path& root);
-  PmidAccount(const serialised_type& serialised_pmid_account, const boost::filesystem::path& root);
+  PmidAccount(const serialised_type& serialised_pmid_account,
+              const boost::filesystem::path& root);
+  ~PmidAccount();
 
   std::vector<boost::filesystem::path> GetArchiveFileNames() const;
   NonEmptyString GetArchiveFile(const boost::filesystem::path& path) const;
   void PutArchiveFile(const boost::filesystem::path& path, const NonEmptyString& content);
-  void SerialiseRecords();
+  void ArchiveRecords();
   serialised_type Serialise() const;
 
   template<typename Data>
@@ -65,14 +67,20 @@ class PmidAccount {
   PmidAccount(PmidAccount&&);
   PmidAccount& operator=(PmidAccount&&);
 
+  std::future<void> ArchiveDataRecord(const DataNameVariant& data_name_variant,
+                                      const int32_t data_size);
+
   Status account_status_;
   PmidRecord pmid_record_;
   std::map<DataNameVariant, int32_t> recent_data_stored_;
+  GetTagValueAndIdentityVisitor type_and_name_visitor_;
   DiskBasedStorage archive_;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#include "maidsafe/vault/pmid_account-inl.h"
 
 #endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_H_
