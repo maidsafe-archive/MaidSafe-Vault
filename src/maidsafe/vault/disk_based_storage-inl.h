@@ -165,7 +165,7 @@ void DiskBasedStorage::AddToLatestFile(const DiskBasedStorage::StoredElement<Dat
     catch(const std::exception& e) {
       LOG(kError) << "Failed to remove old file. Will erase new file to leave state as it was.";
       boost::filesystem::remove(new_path);
-      ThrowError(VaultErrors::adding_to_file_failure);
+      ThrowError(VaultErrors::failed_to_handle_request);
     }
     file_hashes_.at(latest_file_index) = crypto::Hash<crypto::SHA512>(new_content);
   }

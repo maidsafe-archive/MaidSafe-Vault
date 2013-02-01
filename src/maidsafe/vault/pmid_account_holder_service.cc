@@ -63,7 +63,7 @@ void PmidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_
     ThrowError(VaultErrors::permission_denied);
   }
 
-  if (routing_.EstimateInGroup(data_message.this_persona().node_id,
+  if (routing_.EstimateInGroup(data_message.source().node_id,
                                NodeId(data_message.data().name))) {
     LOG(kError) << "Message doesn't seem to come from the right group.";
     ThrowError(VaultErrors::permission_denied);

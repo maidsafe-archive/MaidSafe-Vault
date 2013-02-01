@@ -25,7 +25,7 @@ PmidAccountHandler::PmidAccountHandler(const boost::filesystem::path& vault_root
     if (boost::filesystem::is_directory(kPmidAccountsRoot_))
       ;  // Check if its a PMID repo
     else
-      ThrowError(CommonErrors::path_not_a_directory);
+      ThrowError(CommonErrors::not_a_directory);
   } else {
     boost::filesystem::create_directories(kPmidAccountsRoot_);
   }
