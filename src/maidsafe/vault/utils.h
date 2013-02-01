@@ -110,6 +110,10 @@ inline void RetryOnPutOrDeleteError(routing::Routing& routing,
   }
 }
 
+std::vector<std::future<nfs::Reply>> GetMappedNfsFutures(
+    std::vector<std::future<std::string>>&& routing_futures,
+    nfs::ResponseMapper& response_mapper);
+
 }  // namespace detail
 
 }  // namespace vault

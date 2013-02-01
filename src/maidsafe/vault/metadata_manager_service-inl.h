@@ -30,7 +30,7 @@ template<typename Data>
 void MetadataManagerService::HandlePutMessage(const nfs::DataMessage& data_message,
                                        const routing::ReplyFunctor& reply_functor) {
   if (!detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
-    reply_functor(nfs::ReturnCode(RoutingErrors::not_in_range).Serialise()->string());
+    reply_functor(nfs::Reply(RoutingErrors::not_in_range).Serialise()->string());
     return;
   }
 
@@ -40,7 +40,7 @@ void MetadataManagerService::HandlePutMessage(const nfs::DataMessage& data_messa
   //                                    };
   //   nfs_.Put<Data>(message, on_error_callback);
   // }
-  reply_functor(nfs::ReturnCode(0).Serialise()->string());
+  reply_functor(nfs::Reply(0).Serialise()->string());
 }
 
 template<typename Data>
@@ -76,7 +76,7 @@ void MetadataManagerService::HandleGetMessage(nfs::DataMessage data_message,
       fetched_data = futures.begin();
   }
 
-  reply_functor(nfs::ReturnCode(NfsErrors::failed_to_get_data).Serialise()->string());
+  reply_functor(nfs::Reply(NfsErrors::failed_to_get_data).Serialise()->string());
 }
 
 template<typename Data>
@@ -102,7 +102,7 @@ void MetadataManagerService::HandleDeleteMessage(const nfs::DataMessage& data_me
       nfs_.Delete<Data>(new_message, on_error_callback);
     }
   }
-  reply_functor(nfs::ReturnCode(num_follower).Serialise()->string());
+  reply_functor(nfs::Reply(num_follower).Serialise()->string());
 }
 
 // On error handler's
