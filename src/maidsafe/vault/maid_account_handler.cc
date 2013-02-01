@@ -40,13 +40,12 @@ bool MaidAccountHandler::DeleteAccount(const MaidName& account_name) {
 }
 
 void MaidAccountHandler::RegisterPmid(
-    const MaidName& account_name,
-    const nfs::PmidRegistration::serialised_type& serialised_pmid_registration) {
+    const MaidName& account_name, const nfs::PmidRegistration& pmid_registration) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr).RegisterPmid(serialised_pmid_registration);
+  (*itr).RegisterPmid(pmid_registration);
 }
 
 void MaidAccountHandler::UnregisterPmid(const MaidName& account_name, const PmidName& pmid_name) {

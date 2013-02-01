@@ -42,8 +42,7 @@ class MaidAccountHandler {
   bool AddAccount(const MaidAccount& maid_account);
   bool DeleteAccount(const MaidName& account_name);
 
-  void RegisterPmid(const MaidName& account_name,
-                    const nfs::PmidRegistration::serialised_type& serialised_pmid_registration);
+  void RegisterPmid(const MaidName& account_name, const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const MaidName& account_name, const PmidName& pmid_name);
   void UpdatePmidTotals(const MaidName& account_name, const PmidTotals& pmid_totals);
 

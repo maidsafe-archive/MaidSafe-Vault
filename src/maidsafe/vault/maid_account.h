@@ -48,7 +48,7 @@ class MaidAccount {
   MaidAccount(const serialised_type& serialised_maid_account, const boost::filesystem::path& root);
   serialised_type Serialise() const;
 
-  void RegisterPmid(const nfs::PmidRegistration::serialised_type& serialised_pmid_registration);
+  void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);
   void UpdatePmidTotals(const PmidTotals& pmid_totals);
 
