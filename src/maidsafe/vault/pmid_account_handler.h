@@ -32,7 +32,7 @@ class PmidAccountHandler {
  public:
   explicit PmidAccountHandler(const boost::filesystem::path& vault_root_dir);
   // Account operations
-  bool AddAccount(const PmidAccount& pmid_account);
+  bool AddAccount(std::unique_ptr<PmidAccount> pmid_account);
   bool DeleteAccount(const PmidName& account_name);
   PmidAccount::Status AccountStatus(const PmidName& account_name) const;
 
@@ -62,7 +62,7 @@ class PmidAccountHandler {
 
   const boost::filesystem::path kPmidAccountsRoot_;
   mutable std::mutex mutex_;
-  std::vector<PmidAccount> pmid_accounts_;
+  std::vector<std::unique_ptr<PmidAccount> > pmid_accounts_;
 };
 
 }  // namespace vault

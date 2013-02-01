@@ -31,7 +31,7 @@ MaidAccountHandler::MaidAccountHandler(const boost::filesystem::path& vault_root
   fs::exists(kMaidAccountsRoot_) || fs::create_directory(kMaidAccountsRoot_);
 }
 
-bool MaidAccountHandler::AddAccount(const MaidAccount& maid_account) {
+bool MaidAccountHandler::AddAccount(std::unique_ptr<MaidAccount> maid_account) {
   return detail::AddAccount(mutex_, maid_accounts_, maid_account);
 }
 
