@@ -20,7 +20,8 @@ namespace vault {
 PmidAccountHandler::PmidAccountHandler(const boost::filesystem::path& vault_root_dir)
     : kPmidAccountsRoot_(vault_root_dir / "pmids"),
       mutex_(),
-      pmid_accounts_() {
+      pmid_accounts_(),
+      archived_accounts_() {
   if (boost::filesystem::exists(kPmidAccountsRoot_)) {
     if (boost::filesystem::is_directory(kPmidAccountsRoot_))
       ;  // Check if its a PMID repo
@@ -97,6 +98,29 @@ void PmidAccountHandler::PutArchiveFile(const PmidName& account_name,
   (*itr)->PutArchiveFile(path, content);
 }
 
+void PmidAccountHandler::MoveAccountToArchive(const PmidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(detail::FindAccount(pmid_accounts_, account_name));
+  if (itr == pmid_accounts_.end())
+    ThrowError(VaultErrors::no_such_account);
+  (*itr)->ArchiveRecords();
+
+  auto archive_itr(std::find(archived_accounts_.begin(), archived_accounts_.end(), account_name));
+#ifdef NDEBUG
+  if (archive_itr != archived_accounts_.end()) {
+    LOG(kInfo) << "PMID account already in the archive list.";
+    return;
+  }
+#else
+  assert(archive_itr != archived_accounts_.end());
+#endif
+  archived_accounts_.push_back(account_name);
+}
+
+void PmidAccountHandler::RemoveFromArchiveList(const PmidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  std::remove(archived_accounts_.begin(), archived_accounts_.end(), account_name);
+}
 
 }  // namespace vault
 

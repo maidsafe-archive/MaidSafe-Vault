@@ -46,6 +46,8 @@ class PmidAccountHandler {
   void PutArchiveFile(const PmidName& account_name,
                       const boost::filesystem::path& path,
                       const NonEmptyString& content);
+  void MoveAccountToArchive(const PmidName& account_name);
+  void RemoveFromArchiveList(const PmidName& account_name);
 
   // Data operations
   template<typename Data>
@@ -64,6 +66,7 @@ class PmidAccountHandler {
   const boost::filesystem::path kPmidAccountsRoot_;
   mutable std::mutex mutex_;
   std::vector<std::unique_ptr<PmidAccount> > pmid_accounts_;
+  std::vector<PmidName> archived_accounts_;
 };
 
 }  // namespace vault

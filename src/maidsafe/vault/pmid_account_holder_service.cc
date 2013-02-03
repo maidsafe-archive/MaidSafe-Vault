@@ -49,10 +49,8 @@ void PmidAccountHolderService::HandleSynchronise(
     bool is_connected(routing_.IsConnectedVault(NodeId(account)));
     PmidAccount::Status account_status(pmid_account_handler_.AccountStatus(account));
     if (account_status == PmidAccount::Status::kNodeUp && !is_connected) {
-      pmid_account_handler_.SetAccountStatus(account, PmidAccount::Status::kNodeGoingDown);
       InformOfDataHolderDown(account);
     } else if (account_status == PmidAccount::Status::kNodeDown && is_connected) {
-      pmid_account_handler_.SetAccountStatus(account, PmidAccount::Status::kNodeGoingUp);
       InformOfDataHolderUp(account);
     }
   }
@@ -72,11 +70,15 @@ void PmidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_
 }
 
 void PmidAccountHolderService::InformOfDataHolderDown(const PmidName& pmid_name) {
+  pmid_account_handler_.SetAccountStatus(pmid_name, PmidAccount::Status::kNodeGoingDown);
   InformAboutDataHolder(pmid_name, false);
+  pmid_account_handler_.MoveAccountToArchive(pmid_name);
 }
 
 void PmidAccountHolderService::InformOfDataHolderUp(const PmidName& pmid_name) {
+  pmid_account_handler_.SetAccountStatus(pmid_name, PmidAccount::Status::kNodeGoingUp);
   InformAboutDataHolder(pmid_name, true);
+  pmid_account_handler_.RemoveFromArchiveList(pmid_name);
 }
 
 void PmidAccountHolderService::InformAboutDataHolder(const PmidName& pmid_name, bool node_up) {
