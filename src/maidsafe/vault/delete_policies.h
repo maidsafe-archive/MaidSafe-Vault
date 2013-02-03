@@ -24,8 +24,8 @@
 #include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/response_mapper.h"
 #include "maidsafe/nfs/types.h"
-
 
 namespace maidsafe {
 
@@ -33,7 +33,9 @@ namespace vault {
 
 class DeleteFromMetadataManager {
  public:
-  DeleteFromMetadataManager(routing::Routing& routing, const passport::Pmid& signing_pmid)
+  DeleteFromMetadataManager(nfs::NfsResponseMapper& /*response_mapper*/,
+                            routing::Routing& routing,
+                            const passport::Pmid& signing_pmid)
       : routing_(routing),
         signing_pmid_(signing_pmid),
         source_(nfs::PersonaId(nfs::Persona::kMaidAccountHolder, routing.kNodeId())) {}
@@ -69,7 +71,7 @@ class DeleteFromMetadataManager {
 
 class DeleteFromPmidAccountHolder {
  public:
-  explicit DeleteFromPmidAccountHolder(routing::Routing& routing)
+  DeleteFromPmidAccountHolder(nfs::NfsResponseMapper& /*response_mapper*/, routing::Routing& routing)
       : routing_(routing),
         source_(nfs::PersonaId(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
 
@@ -103,7 +105,7 @@ class DeleteFromPmidAccountHolder {
 
 class DeleteFromDataHolder {
  public:
-  explicit DeleteFromDataHolder(routing::Routing& routing)
+  DeleteFromDataHolder(nfs::NfsResponseMapper& /*response_mapper*/, routing::Routing& routing)
       : routing_(routing),
         source_(nfs::PersonaId(nfs::Persona::kPmidAccountHolder, routing.kNodeId())) {}
 

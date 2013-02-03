@@ -22,14 +22,15 @@ namespace vault {
 
 typedef std::vector<boost::filesystem::path> PathVector;
 
-PmidAccountHolderService::PmidAccountHolderService(routing::Routing& routing,
+PmidAccountHolderService::PmidAccountHolderService(nfs::NfsResponseMapper& response_mapper,
+                                                   routing::Routing& routing,
                                                    nfs::PublicKeyGetter& public_key_getter,
                                                    const boost::filesystem::path& vault_root_dir)
   : routing_(routing),
     public_key_getter_(public_key_getter),
     accumulator_(),
     pmid_account_handler_(vault_root_dir),
-    nfs_(routing) {}
+    nfs_(response_mapper, routing) {}
 
 
 void PmidAccountHolderService::HandleSynchronise(

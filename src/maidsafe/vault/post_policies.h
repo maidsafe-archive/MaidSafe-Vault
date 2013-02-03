@@ -24,6 +24,7 @@
 #include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/response_mapper.h"
 #include "maidsafe/nfs/types.h"
 
 
@@ -34,7 +35,7 @@ namespace vault {
 template<nfs::Persona persona>
 class PostSynchronisation {
  public:
-  explicit PostSynchronisation(routing::Routing& routing)
+  PostSynchronisation(nfs::NfsResponseMapper& /*response_mapper*/, routing::Routing& routing)
       : routing_(routing),
         source_(nfs::PersonaId(persona, routing.kNodeId())) {}
 
@@ -63,7 +64,7 @@ class PostSynchronisation {
 
 class PmidAccountHolderPolicy {
  public:
-  explicit PmidAccountHolderPolicy(routing::Routing& routing)
+  PmidAccountHolderPolicy(nfs::NfsResponseMapper& /*response_mapper*/, routing::Routing& routing)
       : routing_(routing),
         source_(nfs::PersonaId(nfs::Persona::kPmidAccountHolder, routing.kNodeId())) {}
   void DataHolderStatusChanged(const NodeId& /*next_node*/, const NodeId& /*this_node*/, bool /*node_up*/) {
@@ -76,7 +77,7 @@ class PmidAccountHolderPolicy {
 
 class MetadataManagerPolicy {
  public:
-  explicit MetadataManagerPolicy(routing::Routing& routing)
+  MetadataManagerPolicy(nfs::NfsResponseMapper& /*response_mapper*/, routing::Routing& routing)
       : routing_(routing),
         source_(nfs::PersonaId(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
   void DuplicateCopy();
@@ -89,7 +90,9 @@ class MetadataManagerPolicy {
 template<typename T, typename SyncPolicy>
 class HostPost : public T, public SyncPolicy {
  public:
-  explicit HostPost(routing::Routing& routing) : T(routing), SyncPolicy(routing) {}
+  explicit HostPost(nfs::NfsResponseMapper& response_mapper, routing::Routing& routing)
+      : T(response_mapper, routing),
+        SyncPolicy(response_mapper, routing) {}
 };
 
 typedef HostPost<PmidAccountHolderPolicy,
