@@ -34,34 +34,14 @@ include_directories(${rudp_SOURCE_DIR}/include)
 # Set up all files as GLOBs                                                                        #
 #==================================================================================================#
 set(VaultSourcesRootDir ${PROJECT_SOURCE_DIR}/src/maidsafe/vault)
-file(GLOB_RECURSE VaultProtos ${VaultSourcesRootDir}/pmid_account.proto)
-file(GLOB_RECURSE VaultProtoSources ${VaultSourcesRootDir}/pmid_account.pb.cc)
-file(GLOB_RECURSE VaultProtoHeaders ${VaultSourcesRootDir}/pmid_account.pb.h)
+file(GLOB_RECURSE VaultProtos ${VaultSourcesRootDir}/*.proto)
+file(GLOB_RECURSE VaultProtoSources ${VaultSourcesRootDir}/*.pb.cc)
+file(GLOB_RECURSE VaultProtoHeaders ${VaultSourcesRootDir}/*pb.h)
 set(VaultProtos ${VaultProtos} ${VaultProtoSources} ${VaultProtoHeaders})
 source_group("Vault Proto Files" FILES ${VaultProtos})
 
-file(GLOB VaultSources ${VaultSourcesRootDir}/paramters.cc
-                       ${VaultSourcesRootDir}/disk_based_storage.cc
-                       ${VaultSourcesRootDir}/pmid_record.cc
-                       ${VaultSourcesRootDir}/pmid_account.cc
-                       ${VaultSourcesRootDir}/pmid_account_handler.cc
-                       ${VaultSourcesRootDir}/pmid_account_holder_service.cc)
-file(GLOB VaultHeaders ${VaultSourcesRootDir}/paramters.h
-                       ${VaultSourcesRootDir}/utils.h
-                       ${VaultSourcesRootDir}/types.h
-                       ${VaultSourcesRootDir}/delete_policies.h
-                       ${VaultSourcesRootDir}/get_policies.h
-                       ${VaultSourcesRootDir}/post_policies.h
-                       ${VaultSourcesRootDir}/put_policies.h
-                       ${VaultSourcesRootDir}/disk_based_storage.h
-                       ${VaultSourcesRootDir}/disk_based_storage-inl.h
-                       ${VaultSourcesRootDir}/pmid_record.h
-                       ${VaultSourcesRootDir}/pmid_account.h
-                       ${VaultSourcesRootDir}/pmid_account-inl.h
-                       ${VaultSourcesRootDir}/pmid_account_handler.h
-                       ${VaultSourcesRootDir}/pmid_account_handler-inl.h
-                       ${VaultSourcesRootDir}/pmid_account_holder_service.h
-                       ${VaultSourcesRootDir}/pmid_account_holder_service-inl.h)
+file(GLOB VaultSources ${VaultSourcesRootDir}/*.cc)
+file(GLOB VaultHeaders ${VaultSourcesRootDir}/*.h)
 list(REMOVE_ITEM VaultSources ${VaultProtos})
 list(REMOVE_ITEM VaultHeaders ${VaultProtos})
 source_group("Vault Source Files" FILES ${VaultSources})
@@ -72,13 +52,13 @@ set(VaultAllFiles ${VaultSources} ${VaultHeaders})
 set(StyleAllFiles ${VaultAllFiles})
 set(VaultAllFiles ${VaultAllFiles} ${VaultProtos})
 
-#file(GLOB VaultTestsSources ${VaultSourcesRootDir}/tests/*.cc)
-#file(GLOB VaultTestsHeaders ${VaultSourcesRootDir}/tests/*.h)
-#set(VaultTestsAllFiles ${VaultTestsSources} ${VaultTestsHeaders})
-#set(StyleAllFiles ${StyleAllFiles} ${VaultTestsAllFiles})
-#source_group("Tests Source Files" FILES ${VaultTestsSources})
-#source_group("Tests Header Files" FILES ${VaultTestsHeaders})
-#list(REMOVE_ITEM VaultTestsAllFiles ${VaultSourcesRootDir}/tests/key_helper.cc)
+file(GLOB VaultTestsSources ${VaultSourcesRootDir}/tests/*.cc)
+file(GLOB VaultTestsHeaders ${VaultSourcesRootDir}/tests/*.h)
+set(VaultTestsAllFiles ${VaultTestsSources} ${VaultTestsHeaders})
+set(StyleAllFiles ${StyleAllFiles} ${VaultTestsAllFiles})
+source_group("Tests Source Files" FILES ${VaultTestsSources})
+source_group("Tests Header Files" FILES ${VaultTestsHeaders})
+list(REMOVE_ITEM VaultTestsAllFiles ${VaultSourcesRootDir}/tests/key_helper.cc)
 
 
 #==================================================================================================#
@@ -91,10 +71,10 @@ target_link_libraries(maidsafe_vault maidsafe_nfs maidsafe_routing maidsafe_comm
 target_link_libraries(lifestuff_vault maidsafe_vault maidsafe_routing maidsafe_lifestuff_manager)
 
 if(MAIDSAFE_TESTING)
-#  ms_add_executable(TESTvault "Tests/Vault" ${VaultTestsAllFiles})
-#  target_link_libraries(TESTvault maidsafe_vault)
-#  ms_add_executable(vault_key_helper Tools ${VaultSourcesRootDir}/tests/key_helper.cc)
-#  target_link_libraries(vault_key_helper maidsafe_routing maidsafe_nfs maidsafe_private)
+  ms_add_executable(TESTvault "Tests/Vault" ${VaultTestsAllFiles})
+  target_link_libraries(TESTvault maidsafe_vault)
+  ms_add_executable(vault_key_helper Tools ${VaultSourcesRootDir}/tests/key_helper.cc)
+  target_link_libraries(vault_key_helper maidsafe_routing maidsafe_nfs maidsafe_private)
 endif()
 
 rename_outdated_built_exes()
@@ -118,7 +98,7 @@ endif()
 #==================================================================================================#
 if(MAIDSAFE_TESTING)
   add_style_test(${StyleAllFiles})
-#  add_gtests(TESTvault)
+  add_gtests(TESTvault)
 #   label_as_critical_tests(IdentityPacketsTest.BEH_Full
 #                           IdentityPacketsTest.BEH_ChangeDetails
 #                           PassportTest.BEH_SigningPackets

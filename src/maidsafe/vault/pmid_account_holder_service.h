@@ -62,6 +62,7 @@ class PmidAccountHolderService {
 
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
 
+  void CheckAccounts();
   bool AssessRange(const PmidName& account_name,
                    PmidAccount::DataHolderStatus account_status,
                    bool is_connected);

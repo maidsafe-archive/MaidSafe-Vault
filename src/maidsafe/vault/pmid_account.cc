@@ -37,10 +37,15 @@ PmidRecord ParsePmidRecord(const PmidAccount::serialised_type& serialised_pmid_a
   }
   return PmidRecord(pmid_account.pmid_record());
 }
-}
+
+}  // namespace
+
+typedef std::future<void> VoidFuture;
 
 PmidAccount::DataElement::DataElement()
-  : data_name_variant(), size() , type_and_name_visitor() {}
+    : data_name_variant(),
+      size() ,
+      type_and_name_visitor() {}
 
 PmidAccount::DataElement::DataElement(const DataNameVariant& data_name_variant_in,
                                       int32_t size_in)
@@ -77,7 +82,8 @@ protobuf::DataElement PmidAccount::DataElement::ToProtobuf() const {
 }
 
 std::pair<DataTagValue, Identity> PmidAccount::DataElement::GetTypeAndName() const {
-  std::pair<DataTagValue, Identity> type_and_name(boost::apply_visitor(type_and_name_visitor, data_name_variant));
+  std::pair<DataTagValue, Identity> type_and_name(boost::apply_visitor(type_and_name_visitor,
+                                                                       data_name_variant));
   return type_and_name;
 }
 
@@ -112,28 +118,14 @@ PmidAccount::~PmidAccount() {
   ArchiveAccount();
 }
 
-bool PmidAccount::SetDataHolderUp() {
-  try {
-    RestoreRecentData();
-  } catch(const std::exception& e) {
-    std::string msg(e.what());
-    LOG(kError) << "error in restore archived data : " << msg;
-    return false;
-  }
-  data_holder_status_ = DataHolderStatus::kUp;
-  return true;
+void PmidAccount::SetDataHolderGoingUp() {
+  RestoreRecentData();
+  data_holder_status_ = DataHolderStatus::kGoingUp;
 }
 
-bool PmidAccount::SetDataHolderDown() {
-  try {
-    ArchiveRecentData();
-  } catch(const std::exception& e) {
-    std::string msg(e.what());
-    LOG(kError) << "error in archive memory data : " << msg;
-    return false;
-  }
-  data_holder_status_ = DataHolderStatus::kDown;
-  return true;
+void PmidAccount::SetDataHolderGoingDown() {
+  ArchiveRecentData();
+  data_holder_status_ = DataHolderStatus::kGoingDown;
 }
 
 std::vector<PmidAccount::DataElement> PmidAccount::ParseArchiveFile(int32_t index) const {
@@ -160,9 +152,9 @@ void PmidAccount::ArchiveAccount() {
     crypto::SHA512Hash hash(crypto::Hash<crypto::SHA512>(pmid_record_.pmid_name.data.string()));
     std::string file_name(EncodeToBase32(hash));
     maidsafe::WriteFile(kRoot_ / file_name, pmid_record_.ToProtobuf().SerializeAsString());
-  } catch(const std::exception& e) {
-    std::string msg(e.what());
-    LOG(kError) << "error in archive memory data or account info: " << msg;
+  }
+  catch(const std::exception& e) {
+    LOG(kError) << "error in archive memory data or account info: " << e.what();
     ThrowError(CommonErrors::filesystem_io_error);
   }
 }
@@ -175,11 +167,10 @@ void PmidAccount::RestoreAccount() {
     protobuf::PmidRecord pmid_record;
     pmid_record.ParseFromString(content.string());
     pmid_record_ = PmidRecord(pmid_record);
-
     RestoreRecentData();
-  } catch(const std::exception& e) {
-    std::string msg(e.what());
-    LOG(kError) << "error in restore archived data and account info: " << msg;
+  }
+  catch(const std::exception& e) {
+    LOG(kError) << "error in restore archived data and account info: " << e.what();
     ThrowError(CommonErrors::filesystem_io_error);
   }
 }
@@ -206,11 +197,12 @@ void PmidAccount::PutArchiveFile(const boost::filesystem::path& path,
 }
 
 void PmidAccount::ArchiveRecentData() {
-  std::vector<std::future<void>> archiving;
+  std::vector<VoidFuture> archiving;
   for (auto& record : recent_data_stored_)
     archiving.emplace_back(ArchiveDataRecord(record));
   for (auto& archived : archiving)
     archived.get();
+  recent_data_stored_.clear();
 }
 
 void PmidAccount::RestoreRecentData() {
@@ -220,9 +212,9 @@ void PmidAccount::RestoreRecentData() {
     recent_data_stored_.push_back(element);
 }
 
-std::future<void> PmidAccount::ArchiveDataRecord(const PmidAccount::DataElement record) {
+VoidFuture PmidAccount::ArchiveDataRecord(const PmidAccount::DataElement record) {
   protobuf::DataElement data_element(record.ToProtobuf());
-  std::future<void> archiving;
+  VoidFuture archiving;
   auto type_and_name(record.GetTypeAndName());
   switch (type_and_name.first) {
     case DataTagValue::kAnmidValue:

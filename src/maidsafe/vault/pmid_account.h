@@ -59,13 +59,18 @@ class PmidAccount {
   // Returns true if notification to MetadataManagers should begin (i.e. state changed from kDown)
   //      1,  call RestoreRecentData();
   //      2,  change status
-  bool SetDataHolderUp();
+  void SetDataHolderGoingUp();
+  void SetDataHolderUp() { data_holder_status_ = DataHolderStatus::kUp; }
   // Returns true if notification to MetadataManagers should begin (i.e. state changed from kUp)
   //      1,  call ArchiveRecentData();
   //      2,  change status
-  bool SetDataHolderDown();
+  void SetDataHolderGoingDown();
+  void SetDataHolderDown() { data_holder_status_ = DataHolderStatus::kDown; }
   int32_t GetArchiveFileCount() const { return archive_.GetFileCount().get(); }
   std::vector<DataElement> ParseArchiveFile(int32_t index) const;
+  // Used when Data Holder has gone down or goes to the proximal group of nodes,
+  // but this vault is still responsible for the account.
+  void ArchiveRecentData();
 
   // Used when this vault is no longer responsible for the account
   void ArchiveAccount();
@@ -93,8 +98,6 @@ class PmidAccount {
   PmidAccount(PmidAccount&&);
   PmidAccount& operator=(PmidAccount&&);
 
-  // Used when Data Holder has gone down, but this vault is still responsible for the account.
-  void ArchiveRecentData();
   // Only restore the latest, no need to add into pmid_record infos (i.e. total_stored_size)
   void RestoreRecentData();
   std::future<void> ArchiveDataRecord(const PmidAccount::DataElement data_element);

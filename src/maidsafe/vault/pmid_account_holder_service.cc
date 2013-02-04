@@ -35,6 +35,12 @@ PmidAccountHolderService::PmidAccountHolderService(nfs::NfsResponseMapper& respo
 
 void PmidAccountHolderService::HandleSynchronise(
     const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
+  // Operations to be done when we this call is received
+  CheckAccounts();
+}
+
+void PmidAccountHolderService::CheckAccounts() {
+  // Non-archived
   std::vector<PmidName> accounts_held(pmid_account_handler_.GetAccountNames());
   for (auto it(accounts_held.begin()); it != accounts_held.end(); ++it) {
     bool is_connected(routing_.IsConnectedVault(NodeId(*it)));
@@ -42,6 +48,12 @@ void PmidAccountHolderService::HandleSynchronise(
     if (AssessRange(*it, account_status, is_connected))
       it = accounts_held.erase(it);
   }
+
+  // Archived
+  pmid_account_handler_.PruneArchivedAccounts(
+      [this] (const PmidName& pmid_name) {
+        return routing_.IsNodeIdInGroupRange(NodeId(pmid_name)) /* == routing::kOutwithRange*/;
+      });
 }
 
 bool PmidAccountHolderService::AssessRange(const PmidName& account_name,
@@ -50,13 +62,13 @@ bool PmidAccountHolderService::AssessRange(const PmidName& account_name,
   int temp_int(0);
   switch (temp_int/*routing_.IsNodeIdInGroupRange(NodeId(account_name))*/) {
     // TODO(Team): Change to check the range
-    case 0 /*kOutwithRange*/:
+    case 0 /*routing::kOutwithRange*/:
         pmid_account_handler_.MoveAccountToArchive(account_name);
         return true;
-    case 1 /*kInProximalRange*/:
-        // serialise the memory deque
+    case 1 /*routing::kInProximalRange*/:
+        // serialise the memory deque and put to file
         return false;
-    case 2 /*kInRange*/:
+    case 2 /*routing::kInRange*/:
         if (account_status == PmidAccount::DataHolderStatus::kUp && !is_connected) {
           InformOfDataHolderDown(account_name);
         } else if (account_status == PmidAccount::DataHolderStatus::kDown && is_connected) {
@@ -80,18 +92,19 @@ void PmidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_
 }
 
 void PmidAccountHolderService::InformOfDataHolderDown(const PmidName& pmid_name) {
-  pmid_account_handler_.SetDataHolderDown(pmid_name);
+  pmid_account_handler_.SetDataHolderGoingDown(pmid_name);
   InformAboutDataHolder(pmid_name, false);
-  // serialise the memory deque
+  pmid_account_handler_.SetDataHolderDown(pmid_name);
 }
 
 void PmidAccountHolderService::InformOfDataHolderUp(const PmidName& pmid_name) {
-  pmid_account_handler_.SetDataHolderUp(pmid_name);
+  pmid_account_handler_.SetDataHolderGoingUp(pmid_name);
   InformAboutDataHolder(pmid_name, true);
-  // initialise memory deque
+  pmid_account_handler_.SetDataHolderUp(pmid_name);
 }
 
 void PmidAccountHolderService::InformAboutDataHolder(const PmidName& pmid_name, bool node_up) {
+  // TODO(Team): Decide on a better strategy instead of sleep
   Sleep(boost::posix_time::minutes(3));
   PathVector names(pmid_account_handler_.GetArchiveFileNames(pmid_name));
   for (auto ritr(names.rbegin()); ritr != names.rend(); ++ritr) {

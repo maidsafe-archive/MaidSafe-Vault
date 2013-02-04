@@ -23,9 +23,7 @@ PmidAccountHandler::PmidAccountHandler(const boost::filesystem::path& vault_root
       pmid_accounts_(),
       archived_accounts_() {
   if (boost::filesystem::exists(kPmidAccountsRoot_)) {
-    if (boost::filesystem::is_directory(kPmidAccountsRoot_))
-      /*ThrowError()*/;  // Check if its a PMID repo
-    else
+    if (!boost::filesystem::is_directory(kPmidAccountsRoot_))
       ThrowError(CommonErrors::not_a_directory);
   } else {
     boost::filesystem::create_directories(kPmidAccountsRoot_);
@@ -49,20 +47,36 @@ PmidAccount::DataHolderStatus PmidAccountHandler::AccountStatus(
   return (*itr)->data_holder_status();
 }
 
-bool PmidAccountHandler::SetDataHolderDown(const PmidName& account_name) {
+void PmidAccountHandler::SetDataHolderGoingDown(const PmidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  return (*itr)->SetDataHolderDown();
+  (*itr)->SetDataHolderGoingDown();
 }
 
-bool PmidAccountHandler::SetDataHolderUp(const PmidName& account_name) {
+void PmidAccountHandler::SetDataHolderDown(const PmidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  return (*itr)->SetDataHolderUp();
+  (*itr)->SetDataHolderDown();
+}
+
+void PmidAccountHandler::SetDataHolderGoingUp(const PmidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
+  if (itr == pmid_accounts_.end())
+    ThrowError(VaultErrors::no_such_account);
+  (*itr)->SetDataHolderGoingUp();
+}
+
+void PmidAccountHandler::SetDataHolderUp(const PmidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
+  if (itr == pmid_accounts_.end())
+    ThrowError(VaultErrors::no_such_account);
+  (*itr)->SetDataHolderUp();
 }
 
 std::vector<PmidName> PmidAccountHandler::GetAccountNames() const {
@@ -71,6 +85,14 @@ std::vector<PmidName> PmidAccountHandler::GetAccountNames() const {
   for (auto& pmid_account : pmid_accounts_)
     account_names.push_back(pmid_account->name());
   return account_names;
+}
+
+std::vector<PmidName> PmidAccountHandler::GetArchivedAccountNames() const {
+  std::vector<PmidName> archived_names;
+  std::lock_guard<std::mutex> lock(mutex_);
+  for (auto& archived_account : archived_accounts_)
+    archived_names.push_back(archived_account);
+  return archived_names;
 }
 
 PmidAccount::serialised_type PmidAccountHandler::GetSerialisedAccount(
@@ -106,13 +128,20 @@ void PmidAccountHandler::PutArchiveFile(const PmidName& account_name,
   (*itr)->PutArchiveFile(path, content);
 }
 
+void PmidAccountHandler::PruneArchivedAccounts(
+    std::function<bool(const PmidName& account_name)> criteria) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  archived_accounts_.erase(std::remove_if(archived_accounts_.begin(),
+                                          archived_accounts_.end(),
+                                          criteria),
+                           archived_accounts_.end());
+}
+
 void PmidAccountHandler::MoveAccountToArchive(const PmidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(pmid_accounts_, account_name));
-  if (itr == pmid_accounts_.end())
-    ThrowError(VaultErrors::no_such_account);
-  (*itr)->SetDataHolderDown();
-  pmid_accounts_.erase(itr);
+  if (itr != pmid_accounts_.end())
+    pmid_accounts_.erase(itr);
 
   auto archive_itr(std::find(archived_accounts_.begin(), archived_accounts_.end(), account_name));
 #ifdef NDEBUG
@@ -126,9 +155,24 @@ void PmidAccountHandler::MoveAccountToArchive(const PmidName& account_name) {
   archived_accounts_.push_back(account_name);
 }
 
-void PmidAccountHandler::RemoveFromArchiveList(const PmidName& account_name) {
+void PmidAccountHandler::BringAccountBackFromArchive(const PmidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
+  auto archive_itr(std::find(archived_accounts_.begin(), archived_accounts_.end(), account_name));
+  if (archive_itr == archived_accounts_.end())
+    ThrowError(VaultErrors::no_such_account);
+
+  pmid_accounts_.push_back(std::unique_ptr<PmidAccount>(new PmidAccount(account_name,
+                                                                        kPmidAccountsRoot_)));
+
   std::remove(archived_accounts_.begin(), archived_accounts_.end(), account_name);
+}
+
+void PmidAccountHandler::ArchiveRecentData(const PmidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
+  if (itr == pmid_accounts_.end())
+    ThrowError(VaultErrors::no_such_account);
+  (*itr)->ArchiveRecentData();
 }
 
 }  // namespace vault
