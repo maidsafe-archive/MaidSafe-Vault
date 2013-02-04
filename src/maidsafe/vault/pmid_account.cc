@@ -18,6 +18,27 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace {
+
+size_t ExtractFileIndexFromFilename(const std::string& filename) {
+  auto it(std::find(filename.begin(), filename.end(), '.'));
+  if (it == filename.end()) {
+    LOG(kError) << "No dot in the file name.";
+    ThrowError(CommonErrors::unexpected_filename_format);
+  }
+  return static_cast<size_t>(std::stoi(std::string(filename.begin(), it)));
+}
+
+PmidRecord ParsePmidRecord(const PmidAccount::serialised_type& serialised_pmid_account) {
+  protobuf::PmidAccount pmid_account;
+  if (!pmid_account.ParseFromString(serialised_pmid_account.data.string())) {
+    LOG(kError) << "Failed to parse pmid_account.";
+    ThrowError(CommonErrors::parsing_error);
+  }
+  return PmidRecord(pmid_account.pmid_record());
+}
+}
+
 PmidAccount::DataElement::DataElement()
   : data_name_variant(), size() , type_and_name_visitor() {}
 
@@ -64,20 +85,21 @@ PmidAccount::PmidAccount(const PmidName& pmid_name, const boost::filesystem::pat
   : pmid_record_(pmid_name),
     data_holder_status_(DataHolderStatus::kGoingUp),
     recent_data_stored_(),
-    archive_(root) {}
+    kRoot_(root / EncodeToBase32(pmid_name.data.string())),
+    archive_(kRoot_) {}
 
 PmidAccount::PmidAccount(const serialised_type& serialised_pmid_account,
                          const boost::filesystem::path& root)
-  : pmid_record_(),
+  : pmid_record_(ParsePmidRecord(serialised_pmid_account)),
     data_holder_status_(DataHolderStatus::kGoingUp),
     recent_data_stored_(),
-    archive_(root) {
+    kRoot_(root / EncodeToBase32(pmid_record_.pmid_name.data.string())),
+    archive_(kRoot_) {
   protobuf::PmidAccount pmid_account;
   if (!pmid_account.ParseFromString(serialised_pmid_account.data.string())) {
     LOG(kError) << "Failed to parse pmid_account.";
     ThrowError(CommonErrors::parsing_error);
   }
-  pmid_record_ = PmidRecord(pmid_account.pmid_record());
   for (auto& recent_data : pmid_account.recent_data_stored()) {
     DataElement data_element(GetDataNameVariant(static_cast<DataTagValue>(recent_data.type()),
                                                 Identity(recent_data.name())),
@@ -90,6 +112,78 @@ PmidAccount::~PmidAccount() {
   ArchiveAccount();
 }
 
+bool PmidAccount::SetDataHolderUp() {
+  try {
+    RestoreRecentData();
+  } catch(const std::exception& e) {
+    std::string msg(e.what());
+    LOG(kError) << "error in restore archived data : " << msg;
+    return false;
+  }
+  data_holder_status_ = DataHolderStatus::kUp;
+  return true;
+}
+
+bool PmidAccount::SetDataHolderDown() {
+  try {
+    ArchiveRecentData();
+  } catch(const std::exception& e) {
+    std::string msg(e.what());
+    LOG(kError) << "error in archive memory data : " << msg;
+    return false;
+  }
+  data_holder_status_ = DataHolderStatus::kDown;
+  return true;
+}
+
+std::vector<PmidAccount::DataElement> PmidAccount::ParseArchiveFile(int32_t index) const {
+  std::vector<boost::filesystem::path> files(archive_.GetFileNames().get());
+  std::vector<PmidAccount::DataElement> data_elements;
+  for (auto& file : files) {
+    if (static_cast<size_t>(index) == ExtractFileIndexFromFilename(file.filename().string())) {
+      protobuf::ArchivedPmidData archived_pmid_data;
+      archived_pmid_data.ParseFromString(archive_.GetFile(file).get().string());
+      for (auto& data_record : archived_pmid_data.data_stored()) {
+        DataElement data_element(GetDataNameVariant(static_cast<DataTagValue>(data_record.type()),
+                                                    Identity(data_record.name())),
+                                 data_record.size());
+        data_elements.push_back(data_element);
+      }
+    }
+  }
+  return data_elements;
+}
+
+void PmidAccount::ArchiveAccount() {
+  try {
+    ArchiveRecentData();
+    crypto::SHA512Hash hash(crypto::Hash<crypto::SHA512>(pmid_record_.pmid_name.data.string()));
+    std::string file_name(EncodeToBase32(hash));
+    maidsafe::WriteFile(kRoot_ / file_name, pmid_record_.ToProtobuf().SerializeAsString());
+  } catch(const std::exception& e) {
+    std::string msg(e.what());
+    LOG(kError) << "error in archive memory data or account info: " << msg;
+    ThrowError(CommonErrors::filesystem_io_error);
+  }
+}
+
+void PmidAccount::RestoreAccount() {
+  try {
+    crypto::SHA512Hash hash(crypto::Hash<crypto::SHA512>(pmid_record_.pmid_name.data.string()));
+    std::string file_name(EncodeToBase32(hash));
+    NonEmptyString content(maidsafe::ReadFile(kRoot_ / file_name));
+    protobuf::PmidRecord pmid_record;
+    pmid_record.ParseFromString(content.string());
+    pmid_record_ = PmidRecord(pmid_record);
+
+    RestoreRecentData();
+  } catch(const std::exception& e) {
+    std::string msg(e.what());
+    LOG(kError) << "error in restore archived data and account info: " << msg;
+    ThrowError(CommonErrors::filesystem_io_error);
+  }
+}
+
 PmidAccount::serialised_type PmidAccount::Serialise() const {
   protobuf::PmidAccount pmid_account;
   *(pmid_account.mutable_pmid_record()) = pmid_record_.ToProtobuf();
@@ -98,7 +192,7 @@ PmidAccount::serialised_type PmidAccount::Serialise() const {
   return serialised_type(NonEmptyString(pmid_account.SerializeAsString()));
 }
 
-std::vector< boost::filesystem::path > PmidAccount::GetArchiveFileNames() const {
+std::vector<boost::filesystem::path> PmidAccount::GetArchiveFileNames() const {
   return archive_.GetFileNames().get();
 }
 
@@ -117,6 +211,13 @@ void PmidAccount::ArchiveRecentData() {
     archiving.emplace_back(ArchiveDataRecord(record));
   for (auto& archived : archiving)
     archived.get();
+}
+
+void PmidAccount::RestoreRecentData() {
+  int32_t file_count(archive_.GetFileCount().get());
+  std::vector<DataElement> latest_elements(ParseArchiveFile(file_count - 1));
+  for (auto& element : latest_elements)
+    recent_data_stored_.push_back(element);
 }
 
 std::future<void> PmidAccount::ArchiveDataRecord(const PmidAccount::DataElement record) {

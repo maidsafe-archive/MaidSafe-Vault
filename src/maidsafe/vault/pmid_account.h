@@ -102,6 +102,7 @@ class PmidAccount {
   PmidRecord pmid_record_;
   DataHolderStatus data_holder_status_;
   std::deque<DataElement> recent_data_stored_;
+  const boost::filesystem::path kRoot_;
   DiskBasedStorage archive_;
 };
 
