@@ -13,6 +13,7 @@
 #define MAIDSAFE_VAULT_PMID_ACCOUNT_HANDLER_H_
 
 #include <cstdint>
+#include <future>
 #include <mutex>
 #include <vector>
 
@@ -51,11 +52,12 @@ class PmidAccountHandler {
 
   // Data operations
   template<typename Data>
-  void PutData(const PmidName& account_name,
-               const typename Data::name_type& data_name,
-               int32_t size);
+  std::future<void> PutData(const PmidName& account_name,
+                            const typename Data::name_type& data_name,
+                            int32_t size);
   template<typename Data>
-  void DeleteData(const PmidName& account_name, const typename Data::name_type& data_name);
+  std::future<void> DeleteData(const PmidName& account_name,
+                               const typename Data::name_type& data_name);
 
  private:
   PmidAccountHandler(const PmidAccountHandler&);

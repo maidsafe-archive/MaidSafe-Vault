@@ -14,15 +14,14 @@
 
 #include <vector>
 
-#include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/routing/api_config.h"
-
-#include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/generic_message.h"
-#include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/accumulator.h"
+#include "maidsafe/nfs/generic_message.h"
+#include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/response_mapper.h"
+#include "maidsafe/nfs/nfs.h"
 
 #include "maidsafe/vault/metadata_handler.h"
 #include "maidsafe/vault/types.h"
@@ -35,6 +34,7 @@ namespace vault {
 class MetadataManagerService {
  public:
   MetadataManagerService(const passport::Pmid& pmid,
+                         nfs::NfsResponseMapper& response_mapper,
                          routing::Routing& routing,
                          nfs::PublicKeyGetter& public_key_getter,
                          const boost::filesystem::path& vault_root_dir);
@@ -43,24 +43,21 @@ class MetadataManagerService {
                          const routing::ReplyFunctor& reply_functor);
   void HandleGenericMessage(const nfs::GenericMessage& generic_message,
                             const routing::ReplyFunctor& reply_functor);
-  void HandleSynchronise(const std::vector<routing::NodeInfo>& new_close_nodes);
+  void TriggerSynchronise(const std::vector<routing::NodeInfo>& new_close_nodes);
 
  private:
   template<typename Data>
-  void HandleGetMessage(nfs::DataMessage data_message, const routing::ReplyFunctor& reply_functor);
+  void HandleGet(nfs::DataMessage data_message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandlePutMessage(const nfs::DataMessage& data_message,
-                        const routing::ReplyFunctor& reply_functor);
+  void HandlePut(const nfs::DataMessage& data_message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandleDeleteMessage(const nfs::DataMessage& data_message,
-                           const routing::ReplyFunctor& reply_functor);
-  void SendSyncData();
+  void HandleDelete(const nfs::DataMessage& data_message,
+                    const routing::ReplyFunctor& reply_functor);
+  template<typename Data>
+  void ValidateDataMessage(const nfs::DataMessage& data_message) const;
 
-  // use nodeinfo as later we may extract/set rank
-  void HandleGenericMessage(const nfs::GenericMessage& generic_message,
-                            const routing::ReplyFunctor& reply_functor);
-  bool HandleNodeDown(const nfs::GenericMessage& generic_message, NodeId& node);
-  bool HandleNodeUp(const nfs::GenericMessage& generic_message, NodeId& node);
+  void HandleNodeDown(const nfs::GenericMessage& generic_message, routing::NodeInfo& node_info);
+  void HandleNodeUp(const nfs::GenericMessage& generic_message, routing::NodeInfo& node_info);
 
   // On error handler
   template<typename Data>
@@ -70,11 +67,11 @@ class MetadataManagerService {
   template<typename Data>
   void OnGenericErrorHandler(nfs::GenericMessage message);
 
-  const boost::filesystem::path kRootDir_;
+  MetadataHandler metadata_handler_;
+  nfs::Accumulator accumulator_;
   routing::Routing& routing_;
-  DataElementsManager data_elements_manager_;
+  nfs::PublicKeyGetter& public_key_getter_;
   MetadataManagerNfs nfs_;
-  nfs::Accumulator request_accumulator_;
 };
 
 template<typename Data>

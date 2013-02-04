@@ -88,7 +88,7 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
                          [&](const std::string& result) {
                            retrieved = result;
                           });
-  EXPECT_EQ(retrieved, nfs::ReturnCode(VaultErrors::operation_not_supported).Serialise()->string());
+  EXPECT_EQ(retrieved, nfs::Reply(VaultErrors::operation_not_supported).Serialise()->string());
 }
 
 TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
@@ -110,12 +110,12 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
                             [&](const std::string& result) {
                               retrieved = result;
                             });
-  EXPECT_EQ(retrieved, nfs::ReturnCode(0).Serialise()->string());
+  EXPECT_EQ(retrieved, nfs::Reply(0).Serialise()->string());
   this->HandleGetMessage(data_message,
                          [&](const std::string& result) {
                            retrieved = result;
                          });
-  EXPECT_EQ(retrieved, nfs::ReturnCode(CommonErrors::unknown).Serialise()->string());
+  EXPECT_EQ(retrieved, nfs::Reply(CommonErrors::unknown).Serialise()->string());
 }
 
 TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
@@ -239,7 +239,7 @@ TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
                               Identity(RandomString(NodeId::kSize)), content);
   nfs::DataMessage data_message(nfs::DataMessage::Action::kPut, nfs::Persona::kDataHolder,
                                 source, data);
-  EXPECT_THROW(this->GetFromCache(data_message), std::system_error);
+  EXPECT_THROW(this->GetFromCache(data_message), maidsafe_error);
   this->StoreInCache(data_message);
   EXPECT_EQ(data_message.data().content, this->GetFromCache(data_message));
 }

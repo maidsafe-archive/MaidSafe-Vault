@@ -123,6 +123,12 @@ inline void RetryOnPutOrDeleteError(routing::Routing& routing,
   }
 }
 
+std::vector<std::future<nfs::Reply>> NfsSendGroup(const NodeId& target_id,
+                                                  const nfs::Message& message,
+                                                  bool is_cacheable,
+                                                  nfs::NfsResponseMapper& response_mapper,
+                                                  routing::Routing& routing);
+
 }  // namespace detail
 
 }  // namespace vault

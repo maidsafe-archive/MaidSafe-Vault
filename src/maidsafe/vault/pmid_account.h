@@ -30,6 +30,17 @@ namespace vault {
 
 class PmidAccount {
  public:
+  struct DataElement {
+    DataElement();
+    DataElement(const DataNameVariant& data_name_variant_in, int32_t size_in);
+    DataElement(const DataElement& other);
+    DataElement& operator=(const DataElement& other);
+    DataElement(DataElement&& other);
+    DataElement& operator=(DataElement&& other);
+
+    DataNameVariant data_name_variant;
+    int32_t size;
+  };
   typedef PmidName name_type;
   typedef TaggedValue<NonEmptyString, struct SerialisedPmidAccountTag> serialised_type;
 
@@ -51,6 +62,7 @@ class PmidAccount {
   void ArchiveRecords();
   serialised_type Serialise() const;
 
+  // Throw if the data is a duplicate
   template<typename Data>
   void PutData(const typename Data::name_type& name, int32_t size, int32_t replication_count);
   template<typename Data>

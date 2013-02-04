@@ -42,7 +42,7 @@ void ExtractElementsFromFilename(const std::string& filename,
   auto it(std::find(filename.begin(), filename.end(), '.'));
   if (it == filename.end()) {
     LOG(kError) << "No dot in the file name.";
-    ThrowError(VaultErrors::failed_to_handle_request);
+    ThrowError(CommonErrors::unexpected_filename_format);
   }
   file_number = static_cast<size_t>(std::stoi(std::string(filename.begin(), it)));
   hash = crypto::SHA512Hash(DecodeFromBase32(std::string(it + 1, filename.end())));
@@ -190,7 +190,7 @@ void DiskBasedStorage::DoPutFile(const boost::filesystem::path& path,
     catch(const std::exception& e) {
       LOG(kError) << "Failed to remove the old file asociated with index: " << file_number;
       boost::filesystem::remove(path);
-      ThrowError(VaultErrors::failed_to_handle_request);
+      ThrowError(CommonErrors::filesystem_io_error);
     }
     file_hashes_.at(file_number) = hash;
   } else {
@@ -204,7 +204,7 @@ void DiskBasedStorage::DoPutFile(const boost::filesystem::path& path,
     catch(const std::exception& e) {
       LOG(kError) << "failure writing new file at index: " << file_number;
       file_hashes_.resize(file_hashes_size);
-      ThrowError(VaultErrors::failed_to_handle_request);
+      ThrowError(CommonErrors::filesystem_io_error);
     }
   }
 }

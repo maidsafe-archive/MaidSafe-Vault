@@ -111,8 +111,14 @@ std::vector<PmidTotals>::iterator MaidAccount::Find(const PmidName& pmid_name) {
 }
 
 void MaidAccount::RegisterPmid(
-    const nfs::PmidRegistration::serialised_type& serialised_pmid_registration) {
-  pmid_totals_.emplace_back(serialised_pmid_registration, PmidRecord());
+    const nfs::PmidRegistration& pmid_registration) {
+  auto itr(Find(pmid_registration.pmid_name()));
+  if (itr == pmid_totals_.end()) {
+    nfs::PmidRegistration::serialised_type serialised_pmid_registration(
+        pmid_registration.Serialise());
+    pmid_totals_.emplace_back(serialised_pmid_registration,
+                              PmidRecord(pmid_registration.pmid_name()));
+  }
 }
 
 void MaidAccount::UnregisterPmid(const PmidName& pmid_name) {

@@ -33,33 +33,31 @@ namespace vault {
 
 class GetFromDataHolder {
  public:
-  GetFromDataHolder(nfs::NfsResponseMapper& /*response_mapper*/, routing::Routing& routing)
-      : routing_(routing),
+  GetFromDataHolder(nfs::NfsResponseMapper& response_mapper, routing::Routing& routing)
+      : response_mapper_(response_mapper),
+        routing_(routing),
         source_(nfs::PersonaId(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
 
   template<typename Data>
-  std::future<Data> Get(const typename Data::name_type& /*name*/, const Identity& /*dest_id*/) {
-    auto promise(std::make_shared<std::promise<Data>>());
-    std::future<Data> future(promise->get_future());
-//    routing::ResponseFunctor callback =
-//        [promise](const std::vector<std::string>& serialised_messages) {
-//          HandleGetResponse(promise, serialised_messages);
-//        };
-//    nfs::DataMessage data_message(
-//        nfs::DataMessage::Action::kGet,
-//        nfs::Persona::kDataHolder,
-//        source_,
-//        nfs::DataMessage::Data(Data::name_type::tag_type::kEnumValue, name.data, NonEmptyString()));
-//    nfs::Message message(nfs::DataMessage::message_type_identifier, data_message.Serialise().data);
-//    routing_.Send(NodeId(dest_id), message.Serialise()->string(), callback,
-//                  routing::DestinationType::kDirect, nfs::IsCacheable<Data>());
-    return std::move(future);
+  std::vector<std::future<nfs::Reply> > Get(const typename Data::name_type& name,
+                                            const Identity& dest_id) {
+//    auto promise(std::make_shared<std::promise<Data>>());
+//    std::future<Data> future(promise->get_future());
+    nfs::DataMessage data_message(
+        nfs::DataMessage::Action::kGet,
+        nfs::Persona::kDataHolder,
+        source_,
+        nfs::DataMessage::Data(Data::name_type::tag_type::kEnumValue, name.data, NonEmptyString()));
+    nfs::Message message(nfs::DataMessage::message_type_identifier, data_message.Serialise().data);
+    return NfsSendGroup(NodeId(dest_id), message, nfs::IsCacheable<Data>(), response_mapper_,
+                        routing_);
   }
 
  protected:
   ~GetFromDataHolder() {}
 
  private:
+  nfs::NfsResponseMapper& response_mapper_;
   routing::Routing& routing_;
   nfs::PersonaId source_;
 };
