@@ -24,7 +24,7 @@ PmidAccountHandler::PmidAccountHandler(const boost::filesystem::path& vault_root
       archived_accounts_() {
   if (boost::filesystem::exists(kPmidAccountsRoot_)) {
     if (boost::filesystem::is_directory(kPmidAccountsRoot_))
-      ;  // Check if its a PMID repo
+      ThrowError();  // Check if its a PMID repo
     else
       ThrowError(CommonErrors::not_a_directory);
   } else {
@@ -40,21 +40,22 @@ bool PmidAccountHandler::DeleteAccount(const PmidName& account_name) {
   return detail::DeleteAccount(mutex_, pmid_accounts_, account_name);
 }
 
-PmidAccount::Status PmidAccountHandler::AccountStatus(const PmidName& account_name) const {
+PmidAccount::DataHolderStatus PmidAccountHandler::AccountStatus(
+    const PmidName& account_name) const {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  return (*itr)->GetStatus();
+  return (*itr)->data_holder_status();
 }
 
 void PmidAccountHandler::SetAccountStatus(const PmidName& account_name,
-                                          PmidAccount::Status status) {
+                                          PmidAccount::DataHolderStatus status) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  return (*itr)->SetStatus(status);
+  (*itr)->SetStatus(status);
 }
 
 std::vector<PmidName> PmidAccountHandler::GetAccountNames() const {
@@ -105,7 +106,7 @@ void PmidAccountHandler::MoveAccountToArchive(const PmidName& account_name) {
   auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr)->ArchiveRecords();
+  (*itr)->SetDataHolderDown();
   pmid_accounts_.erase(itr);
 
   auto archive_itr(std::find(archived_accounts_.begin(), archived_accounts_.end(), account_name));

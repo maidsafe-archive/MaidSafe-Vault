@@ -35,8 +35,8 @@ class PmidAccountHandler {
   // Account operations
   bool AddAccount(std::unique_ptr<PmidAccount> pmid_account);
   bool DeleteAccount(const PmidName& account_name);
-  PmidAccount::Status AccountStatus(const PmidName& account_name) const;
-  void SetAccountStatus(const PmidName& account_name, PmidAccount::Status status);
+  PmidAccount::DataHolderStatus AccountStatus(const PmidName& account_name) const;
+  void SetAccountStatus(const PmidName& account_name, PmidAccount::DataHolderStatus status);
 
   // Sync operations
   std::vector<PmidName> GetAccountNames() const;

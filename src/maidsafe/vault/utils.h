@@ -42,6 +42,14 @@ bool ShouldRetry(routing::Routing& routing, const nfs::DataMessage& data_message
 
 MaidName GetSourceMaidName(const nfs::DataMessage& data_message);
 
+template<typename Data>
+bool IsDataElement(const typename Data::name_type& name,
+                   const DataNameVariant& data_name_variant) {
+  GetTagValueAndIdentityVisitor type_and_name_visitor;
+  auto type_and_name(boost::apply_visitor(type_and_name_visitor, data_name_variant));
+  return name == type_and_name.second;
+}
+
 // Ensure the mutex protecting accounts is locked throughout this call
 template<typename Account>
 typename std::vector<std::unique_ptr<Account> >::iterator FindAccount(

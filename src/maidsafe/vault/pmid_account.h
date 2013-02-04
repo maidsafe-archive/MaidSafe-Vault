@@ -12,14 +12,17 @@
 #ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_H_
 #define MAIDSAFE_VAULT_PMID_ACCOUNT_H_
 
-#include <map>
+#include <cstdint>
+#include <deque>
 #include <vector>
+#include <utility>
 
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/vault/disk_based_storage.h"
+#include "maidsafe/vault/pmid_account.pb.h"
 #include "maidsafe/vault/pmid_record.h"
 #include "maidsafe/vault/types.h"
 
@@ -38,54 +41,67 @@ class PmidAccount {
     DataElement(DataElement&& other);
     DataElement& operator=(DataElement&& other);
 
+    protobuf::DataElement ToProtobuf() const;
+    std::pair<DataTagValue, NonEmptyString> GetTypeAndName() const;
+
     DataNameVariant data_name_variant;
     int32_t size;
+    GetTagValueAndIdentityVisitor type_and_name_visitor_;
   };
+  enum class DataHolderStatus : int32_t { kDown, kGoingDown, kUp, kGoingUp };
   typedef PmidName name_type;
   typedef TaggedValue<NonEmptyString, struct SerialisedPmidAccountTag> serialised_type;
 
-  enum class Status : int {
-    kNodeGoingUp,
-    kNodeUp,
-    kNodeGoingDown,
-    kNodeDown
-  };
-
   PmidAccount(const PmidName& pmid_name, const boost::filesystem::path& root);
-  PmidAccount(const serialised_type& serialised_pmid_account,
-              const boost::filesystem::path& root);
+  PmidAccount(const serialised_type& serialised_pmid_account, const boost::filesystem::path& root);
   ~PmidAccount();
 
+  // Returns true if notification to MetadataManagers should begin (i.e. state changed from kDown)
+  //      1,  call RestoreRecentData();
+  //      2,  change status
+  bool SetDataHolderUp();
+  // Returns true if notification to MetadataManagers should begin (i.e. state changed from kUp)
+  //      1,  call ArchiveRecentData();
+  //      2,  change status
+  bool SetDataHolderDown();
+  int32_t GetArchiveFileCount() const { return archive_.GetFileCount().get(); }
+  std::vector<DataElement> ParseArchiveFile(int32_t index) const;
+
+  // Used when this vault is no longer responsible for the account
+  void ArchiveAccount();
+  void RestoreAccount();
+
+  // Used in synchronisation with other Pmid Account Holders - serialises all in-memory data
+  serialised_type Serialise() const;
   std::vector<boost::filesystem::path> GetArchiveFileNames() const;
   NonEmptyString GetArchiveFile(const boost::filesystem::path& path) const;
   void PutArchiveFile(const boost::filesystem::path& path, const NonEmptyString& content);
-  void ArchiveRecords();
-  serialised_type Serialise() const;
 
   // Throw if the data is a duplicate
   template<typename Data>
-  void PutData(const typename Data::name_type& name, int32_t size, int32_t replication_count);
+  std::future<void> PutData(const typename Data::name_type& name, int32_t size);
   template<typename Data>
-  bool DeleteData(const typename Data::name_type& name);
+  std::future<void> DeleteData(const typename Data::name_type& name);
 
-  PmidName name() const { return pmid_record_.pmid_name; }
-  Status GetStatus() const { return account_status_; }
-  void SetStatus(Status status) { account_status_ = status; }
+  name_type name() const { return pmid_record_.pmid_name; }
+  DataHolderStatus data_holder_status() const { return data_holder_status_; }
   int64_t total_data_stored_by_pmids() const { return pmid_record_.stored_total_size; }
-//  int64_t total_put_data() const { return total_put_data_; }
+
  private:
   PmidAccount(const PmidAccount&);
   PmidAccount& operator=(const PmidAccount&);
   PmidAccount(PmidAccount&&);
   PmidAccount& operator=(PmidAccount&&);
 
-  std::future<void> ArchiveDataRecord(const DataNameVariant& data_name_variant,
-                                      const int32_t data_size);
+  // Used when Data Holder has gone down, but this vault is still responsible for the account.
+  void ArchiveRecentData();
+  // Only restore the latest, no need to add into pmid_record infos (i.e. total_stored_size)
+  void RestoreRecentData();
+  std::future<void> ArchiveDataRecord(const PmidAccount::DataElement data_element);
 
-  Status account_status_;
   PmidRecord pmid_record_;
-  std::map<DataNameVariant, int32_t> recent_data_stored_;
-  GetTagValueAndIdentityVisitor type_and_name_visitor_;
+  DataHolderStatus data_holder_status_;
+  std::deque<DataElement> recent_data_stored_;
   DiskBasedStorage archive_;
 };
 

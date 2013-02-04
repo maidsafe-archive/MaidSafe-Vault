@@ -12,26 +12,37 @@
 #include <string>
 
 #include "maidsafe/vault/pmid_account.h"
-#include "maidsafe/vault/pmid_account.pb.h"
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
 namespace vault {
 
+protobuf::DataElement PmidAccount::DataElement::ToProtobuf() const {
+  auto type_and_name(boost::apply_visitor(type_and_name_visitor_, data_name_variant));
+  protobuf::DataElement data_element;
+  data_element.set_name(type_and_name.second.string());
+  data_element.set_type(static_cast<int32_t>(type_and_name.first));
+  data_element.set_size(size);
+  return data_element;
+}
+
+std::pair<DataTagValue, NonEmptyString> PmidAccount::DataElement::GetTypeAndName() const {
+  auto type_and_name(boost::apply_visitor(type_and_name_visitor_, data_name_variant));
+  return type_and_name;
+}
+
 PmidAccount::PmidAccount(const PmidName& pmid_name, const boost::filesystem::path& root)
-  : account_status_(Status::kNodeGoingUp),
-    pmid_record_(pmid_name),
+  : pmid_record_(pmid_name),
+    data_holder_status_(DataHolderStatus::kGoingUp),
     recent_data_stored_(),
-    type_and_name_visitor_(),
     archive_(root) {}
 
 PmidAccount::PmidAccount(const serialised_type& serialised_pmid_account,
                          const boost::filesystem::path& root)
-  : account_status_(Status::kNodeGoingUp),
-    pmid_record_(),
+  : pmid_record_(),
+    data_holder_status_(DataHolderStatus::kGoingUp),
     recent_data_stored_(),
-    type_and_name_visitor_(),
     archive_(root) {
   protobuf::PmidAccount pmid_account;
   if (!pmid_account.ParseFromString(serialised_pmid_account.data.string())) {
@@ -40,14 +51,23 @@ PmidAccount::PmidAccount(const serialised_type& serialised_pmid_account,
   }
   pmid_record_ = PmidRecord(pmid_account.pmid_record());
   for (auto& recent_data : pmid_account.recent_data_stored()) {
-      recent_data_stored_.insert(std::make_pair(
-          GetDataNameVariant(static_cast<DataTagValue>(recent_data.type()),
-          Identity(recent_data.name())), recent_data.size()));
+    DataElement data_element(GetDataNameVariant(static_cast<DataTagValue>(recent_data.type()),
+                                                Identity(recent_data.name())),
+                             recent_data.size());
+    recent_data_stored_.push_back(data_element);
   }
 }
 
 PmidAccount::~PmidAccount() {
-  ArchiveRecords();
+  ArchiveAccount();
+}
+
+PmidAccount::serialised_type PmidAccount::Serialise() const {
+  protobuf::PmidAccount pmid_account;
+  *(pmid_account.mutable_pmid_record()) = pmid_record_.ToProtobuf();
+  for (auto& record : recent_data_stored_)
+    pmid_account.add_recent_data_stored()->CopyFrom(record.ToProtobuf());
+  return serialised_type(NonEmptyString(pmid_account.SerializeAsString()));
 }
 
 std::vector< boost::filesystem::path > PmidAccount::GetArchiveFileNames() const {
@@ -63,99 +83,82 @@ void PmidAccount::PutArchiveFile(const boost::filesystem::path& path,
   archive_.PutFile(path, content);
 }
 
-void PmidAccount::ArchiveRecords() {
+void PmidAccount::ArchiveRecentData() {
   std::vector<std::future<void>> archiving;
   for (auto& record : recent_data_stored_)
-    archiving.emplace_back(ArchiveDataRecord(record.first, record.second));
+    archiving.emplace_back(ArchiveDataRecord(record));
   for (auto& archived : archiving)
     archived.get();
 }
 
-PmidAccount::serialised_type PmidAccount::Serialise() const {
-  protobuf::PmidAccount pmid_account;
-  *(pmid_account.mutable_pmid_record()) = pmid_record_.ToProtobuf();
-  for (auto& record : recent_data_stored_) {
-    auto type_and_name(boost::apply_visitor(type_and_name_visitor_, record.first));
-    protobuf::DataElement data_element;
-    data_element.set_name(type_and_name.second.string());
-    data_element.set_type(static_cast<int32_t>(type_and_name.first));
-    data_element.set_size(record.second);
-    pmid_account.add_recent_data_stored()->CopyFrom(data_element);
-  }
-  return serialised_type(NonEmptyString(pmid_account.SerializeAsString()));
-}
-
-std::future<void> PmidAccount::ArchiveDataRecord(const DataNameVariant& data_name_variant,
-                                                 const int32_t data_size) {
-  auto type_and_name(boost::apply_visitor(type_and_name_visitor_, data_name_variant));
-  protobuf::DataElement data_element;
-  data_element.set_name(type_and_name.second.string());
-  data_element.set_type(static_cast<int32_t>(type_and_name.first));
-  data_element.set_size(data_size);
+std::future<void> PmidAccount::ArchiveDataRecord(const PmidAccount::DataElement record) {
+  protobuf::DataElement data_element(record.ToProtobuf());
   std::future<void> archiving;
-
+  auto type_and_name(record.GetTypeAndName());
   switch (type_and_name.first) {
     case DataTagValue::kAnmidValue:
       archiving = archive_.Store<passport::PublicAnmid>(
-          passport::PublicAnmid::name_type(type_and_name.second),
+          passport::PublicAnmid::name_type(Identity(type_and_name.second.string())),
           data_element.SerializeAsString());
       break;
     case DataTagValue::kAnsmidValue:
       archiving = archive_.Store<passport::PublicAnsmid>(
-          passport::PublicAnsmid::name_type(type_and_name.second),
+          passport::PublicAnsmid::name_type(Identity(type_and_name.second.string())),
           data_element.SerializeAsString());
       break;
     case DataTagValue::kAntmidValue:
       archiving = archive_.Store<passport::PublicAntmid>(
-          passport::PublicAntmid::name_type(type_and_name.second),
+          passport::PublicAntmid::name_type(Identity(type_and_name.second.string())),
           data_element.SerializeAsString());
       break;
     case DataTagValue::kAnmaidValue:
       archiving = archive_.Store<passport::PublicAnmaid>(
-          passport::PublicAnmaid::name_type(type_and_name.second),
+          passport::PublicAnmaid::name_type(Identity(type_and_name.second.string())),
           data_element.SerializeAsString());
       break;
     case DataTagValue::kMaidValue:
       archiving = archive_.Store<passport::PublicMaid>(
-          passport::PublicMaid::name_type(type_and_name.second),
+          passport::PublicMaid::name_type(Identity(type_and_name.second.string())),
           data_element.SerializeAsString());
       break;
     case DataTagValue::kPmidValue:
       archiving = archive_.Store<passport::PublicPmid>(
-          passport::PublicPmid::name_type(type_and_name.second),
+          passport::PublicPmid::name_type(Identity(type_and_name.second.string())),
           data_element.SerializeAsString());
       break;
     case DataTagValue::kMidValue:
       archiving = archive_.Store<passport::Mid>(
-          passport::Mid::name_type(type_and_name.second),
+          passport::Mid::name_type(Identity(type_and_name.second.string())),
           data_element.SerializeAsString());
       break;
     case DataTagValue::kSmidValue:
       archiving = archive_.Store<passport::Smid>(
-          passport::Smid::name_type(type_and_name.second),
+          passport::Smid::name_type(Identity(type_and_name.second.string())),
           data_element.SerializeAsString());
       break;
     case DataTagValue::kTmidValue:
       archiving = archive_.Store<passport::Tmid>(
-          passport::Tmid::name_type(type_and_name.second),
+          passport::Tmid::name_type(Identity(type_and_name.second.string())),
           data_element.SerializeAsString());
       break;
     case DataTagValue::kAnmpidValue:
       archiving = archive_.Store<passport::PublicAnmpid>(
-          passport::PublicAnmpid::name_type(type_and_name.second),
+          passport::PublicAnmpid::name_type(Identity(type_and_name.second.string())),
           data_element.SerializeAsString());
       break;
     case DataTagValue::kMpidValue:
       archiving = archive_.Store<passport::PublicMpid>(
-          passport::PublicMpid::name_type(type_and_name.second),
+          passport::PublicMpid::name_type(Identity(type_and_name.second.string())),
           data_element.SerializeAsString());
       break;
     case DataTagValue::kImmutableDataValue:
-      archiving = archive_.Store<ImmutableData>(ImmutableData::name_type(type_and_name.second),
+      archiving = archive_.Store<ImmutableData>(ImmutableData::name_type(
+                                                    Identity(type_and_name.second.string())),
                                                 data_element.SerializeAsString());
       break;
     case DataTagValue::kMutableDataValue:
-      archiving = archive_.Store<MutableData>(MutableData::name_type(type_and_name.second),
+      archiving = archive_.Store<MutableData>(MutableData::name_type(
+                                                  Identity(type_and_name.second.string())),
                                               data_element.SerializeAsString());
       break;
     default: {

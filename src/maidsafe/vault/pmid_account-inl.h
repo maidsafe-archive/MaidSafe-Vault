@@ -12,39 +12,38 @@
 #ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_INL_H_
 #define MAIDSAFE_VAULT_PMID_ACCOUNT_INL_H_
 
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
 namespace vault {
 
 template<typename Data>
-void PmidAccount::PutData(const typename Data::name_type& name,
-                          int32_t size,
-                          int32_t replication_count) {
-  auto itr(recent_data_stored_.find(name));
-  if (itr == recent_data_stored_.end()) {
-    recent_data_stored_.insert(std::make_pair(name, size));
-    pmid_record_.stored_count++;
-    pmid_record_.stored_total_size += size;
-  }
+std::future<void> PmidAccount::PutData(const typename Data::name_type& name, int32_t size) {
+  for (auto& record : recent_data_stored_)
+    if (detail::IsDataElement<Data>(name, record.data_name_variant))
+      return std::future<void>();
+
+  DataElement data_element(GetDataNameVariant(Data::name_type::tag_value,
+                                              Identity(name)),
+                           size);
+  recent_data_stored_.push_back(data_element);
+  pmid_record_.stored_count++;
+  pmid_record_.stored_total_size += size;
+  return std::future<void>();
 }
 
 template<typename Data>
-bool PmidAccount::DeleteData(const typename Data::name_type& name) {
-  auto itr(recent_data_stored_.find(name));
-  if (itr != recent_data_stored_.end()) {
-    pmid_record_.stored_count--;
-    pmid_record_.stored_total_size -= itr->second;
-    recent_data_stored_.erase(itr);
-    try {
-      auto delete_future(archive_.Delete<Data>(name));
-      delete_future.get();
-      return true;
-    } catch(const std::exception& e) {
-      return false;
+std::future<void> PmidAccount::DeleteData(const typename Data::name_type& name) {
+  for (auto itr(recent_data_stored_.begin()); itr != recent_data_stored_.end(); ++itr)
+    if (/*itr->*/detail::IsDataElement<Data>(name, itr->data_name_variant)) {
+      pmid_record_.stored_count--;
+      pmid_record_.stored_total_size -= itr->size;
+      recent_data_stored_.erase(itr);
+
+      return archive_.Delete<Data>(name);
     }
-  }
-  return false;
+  return std::future<void>();
 }
 
 
