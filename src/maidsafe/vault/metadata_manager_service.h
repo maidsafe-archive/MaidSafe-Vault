@@ -34,7 +34,7 @@ namespace vault {
 class MetadataManagerService {
  public:
   MetadataManagerService(const passport::Pmid& pmid,
-                         nfs::ResponseMapper& response_mapper,
+                         nfs::NfsResponseMapper& response_mapper,
                          routing::Routing& routing,
                          nfs::PublicKeyGetter& public_key_getter,
                          const boost::filesystem::path& vault_root_dir);
@@ -67,11 +67,11 @@ class MetadataManagerService {
   template<typename Data>
   void OnGenericErrorHandler(nfs::GenericMessage message);
 
-  const boost::filesystem::path kRootDir_;
+  MetadataHandler metadata_handler_;
+  nfs::Accumulator accumulator_;
   routing::Routing& routing_;
-  DataElementsManager data_elements_manager_;
+  nfs::PublicKeyGetter& public_key_getter_;
   MetadataManagerNfs nfs_;
-  nfs::Accumulator request_accumulator_;
 };
 
 template<typename Data>
