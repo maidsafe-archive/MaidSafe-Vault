@@ -18,8 +18,36 @@ namespace maidsafe {
 
 namespace vault {
 
+PmidAccount::DataElement::DataElement()
+  : data_name_variant(), size() , type_and_name_visitor() {}
+
+PmidAccount::DataElement::DataElement(const DataNameVariant& data_name_variant_in,
+                                      int32_t size_in)
+  : data_name_variant(data_name_variant_in), size(size_in), type_and_name_visitor() {}
+
+PmidAccount::DataElement::DataElement(const PmidAccount::DataElement& other)
+  : data_name_variant(other.data_name_variant), size(other.size), type_and_name_visitor() {}
+
+PmidAccount::DataElement& PmidAccount::DataElement::operator=(
+    const PmidAccount::DataElement& other) {
+  data_name_variant = other.data_name_variant;
+  size = other.size;
+  return *this;
+}
+
+PmidAccount::DataElement::DataElement(PmidAccount::DataElement&& other)
+  : data_name_variant(std::move(other.data_name_variant)),
+    size(std::move(other.size)),
+    type_and_name_visitor() {}
+
+PmidAccount::DataElement& PmidAccount::DataElement::operator=(PmidAccount::DataElement&& other) {
+  data_name_variant = std::move(other.data_name_variant);
+  size = std::move(other.size);
+  return *this;
+}
+
 protobuf::DataElement PmidAccount::DataElement::ToProtobuf() const {
-  auto type_and_name(boost::apply_visitor(type_and_name_visitor_, data_name_variant));
+  auto type_and_name(boost::apply_visitor(type_and_name_visitor, data_name_variant));
   protobuf::DataElement data_element;
   data_element.set_name(type_and_name.second.string());
   data_element.set_type(static_cast<int32_t>(type_and_name.first));
@@ -28,7 +56,7 @@ protobuf::DataElement PmidAccount::DataElement::ToProtobuf() const {
 }
 
 std::pair<DataTagValue, NonEmptyString> PmidAccount::DataElement::GetTypeAndName() const {
-  auto type_and_name(boost::apply_visitor(type_and_name_visitor_, data_name_variant));
+  auto type_and_name(boost::apply_visitor(type_and_name_visitor, data_name_variant));
   return type_and_name;
 }
 

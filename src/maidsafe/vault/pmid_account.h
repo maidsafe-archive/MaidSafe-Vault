@@ -46,7 +46,7 @@ class PmidAccount {
 
     DataNameVariant data_name_variant;
     int32_t size;
-    GetTagValueAndIdentityVisitor type_and_name_visitor_;
+    GetTagValueAndIdentityVisitor type_and_name_visitor;
   };
   enum class DataHolderStatus : int32_t { kDown, kGoingDown, kUp, kGoingUp };
   typedef PmidName name_type;
