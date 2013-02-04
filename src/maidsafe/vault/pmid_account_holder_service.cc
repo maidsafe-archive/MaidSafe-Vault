@@ -37,23 +37,33 @@ void PmidAccountHolderService::HandleSynchronise(
     const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
   std::vector<PmidName> accounts_held(pmid_account_handler_.GetAccountNames());
   for (auto it(accounts_held.begin()); it != accounts_held.end(); ++it) {
-    if (!routing_.IsNodeIdInGroupRange(NodeId(*it))) {
-      pmid_account_handler_.DeleteAccount(*it);
-      pmid_account_handler_.RemoveFromArchiveList(*it);
+    bool is_connected(routing_.IsConnectedVault(NodeId(*it)));
+    PmidAccount::DataHolderStatus account_status(pmid_account_handler_.AccountStatus(*it));
+    if (AssessRange(*it, account_status, is_connected))
       it = accounts_held.erase(it);
-    } else {
-      ++it;
-    }
   }
+}
 
-  for (auto& account : accounts_held) {
-    bool is_connected(routing_.IsConnectedVault(NodeId(account)));
-    PmidAccount::Status account_status(pmid_account_handler_.AccountStatus(account));
-    if (account_status == PmidAccount::Status::kNodeUp && !is_connected) {
-      InformOfDataHolderDown(account);
-    } else if (account_status == PmidAccount::Status::kNodeDown && is_connected) {
-      InformOfDataHolderUp(account);
-    }
+bool PmidAccountHolderService::AssessRange(const PmidName& account_name,
+                                           PmidAccount::DataHolderStatus account_status,
+                                           bool is_connected) {
+  int temp_int(0);
+  switch (temp_int/*routing_.IsNodeIdInGroupRange(NodeId(account_name))*/) {
+    // TODO(Team): Change to check the range
+    case 0 /*kOutwithRange*/:
+        pmid_account_handler_.MoveAccountToArchive(account_name);
+        return true;
+    case 1 /*kInProximalRange*/:
+        // serialise the memory deque
+        return false;
+    case 2 /*kInRange*/:
+        if (account_status == PmidAccount::DataHolderStatus::kUp && !is_connected) {
+          InformOfDataHolderDown(account_name);
+        } else if (account_status == PmidAccount::DataHolderStatus::kDown && is_connected) {
+          InformOfDataHolderUp(account_name);
+        }
+        return false;
+    default: return false;
   }
 }
 
@@ -63,23 +73,22 @@ void PmidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_
     ThrowError(VaultErrors::permission_denied);
   }
 
-  if (routing_.EstimateInGroup(data_message.source().node_id,
-                               NodeId(data_message.data().name))) {
+  if (routing_.EstimateInGroup(data_message.source().node_id, NodeId(data_message.data().name))) {
     LOG(kError) << "Message doesn't seem to come from the right group.";
     ThrowError(VaultErrors::permission_denied);
   }
 }
 
 void PmidAccountHolderService::InformOfDataHolderDown(const PmidName& pmid_name) {
-  pmid_account_handler_.SetAccountStatus(pmid_name, PmidAccount::Status::kNodeGoingDown);
+  pmid_account_handler_.SetDataHolderDown(pmid_name);
   InformAboutDataHolder(pmid_name, false);
-  pmid_account_handler_.MoveAccountToArchive(pmid_name);
+  // serialise the memory deque
 }
 
 void PmidAccountHolderService::InformOfDataHolderUp(const PmidName& pmid_name) {
-  pmid_account_handler_.SetAccountStatus(pmid_name, PmidAccount::Status::kNodeGoingUp);
+  pmid_account_handler_.SetDataHolderUp(pmid_name);
   InformAboutDataHolder(pmid_name, true);
-  pmid_account_handler_.RemoveFromArchiveList(pmid_name);
+  // initialise memory deque
 }
 
 void PmidAccountHolderService::InformAboutDataHolder(const PmidName& pmid_name, bool node_up) {
@@ -109,10 +118,10 @@ std::set<PmidName> PmidAccountHolderService::GetDataNamesInFile(
 }
 
 bool PmidAccountHolderService::StatusHasReverted(const PmidName& pmid_name, bool node_up) const {
-  PmidAccount::Status status(pmid_account_handler_.AccountStatus(pmid_name));
-  if (status == PmidAccount::Status::kNodeGoingDown && node_up)
+  PmidAccount::DataHolderStatus status(pmid_account_handler_.AccountStatus(pmid_name));
+  if (status == PmidAccount::DataHolderStatus::kGoingDown && node_up)
     return true;
-  else if (status == PmidAccount::Status::kNodeGoingUp && !node_up)
+  else if (status == PmidAccount::DataHolderStatus::kGoingUp && !node_up)
     return true;
   else
     return false;
@@ -127,8 +136,9 @@ void PmidAccountHolderService::RevertMessages(const PmidName& pmid_name,
     SendMessages(pmid_name, metadata_manager_ids, node_up);
     --current;
   }
-  pmid_account_handler_.SetAccountStatus(pmid_name, node_up ? PmidAccount::Status::kNodeDown :
-                                                              PmidAccount::Status::kNodeUp);
+
+  node_up ?  pmid_account_handler_.SetDataHolderUp(pmid_name) :
+             pmid_account_handler_.SetDataHolderDown(pmid_name);
 }
 
 void PmidAccountHolderService::SendMessages(const PmidName& pmid_name,

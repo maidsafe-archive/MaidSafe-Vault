@@ -76,8 +76,8 @@ protobuf::DataElement PmidAccount::DataElement::ToProtobuf() const {
   return data_element;
 }
 
-std::pair<DataTagValue, NonEmptyString> PmidAccount::DataElement::GetTypeAndName() const {
-  auto type_and_name(boost::apply_visitor(type_and_name_visitor, data_name_variant));
+std::pair<DataTagValue, Identity> PmidAccount::DataElement::GetTypeAndName() const {
+  std::pair<DataTagValue, Identity> type_and_name(boost::apply_visitor(type_and_name_visitor, data_name_variant));
   return type_and_name;
 }
 
@@ -227,67 +227,62 @@ std::future<void> PmidAccount::ArchiveDataRecord(const PmidAccount::DataElement 
   switch (type_and_name.first) {
     case DataTagValue::kAnmidValue:
       archiving = archive_.Store<passport::PublicAnmid>(
-          passport::PublicAnmid::name_type(Identity(type_and_name.second.string())),
-          data_element.SerializeAsString());
+                      passport::PublicAnmid::name_type(type_and_name.second),
+                      data_element.SerializeAsString());
       break;
     case DataTagValue::kAnsmidValue:
       archiving = archive_.Store<passport::PublicAnsmid>(
-          passport::PublicAnsmid::name_type(Identity(type_and_name.second.string())),
-          data_element.SerializeAsString());
+                      passport::PublicAnsmid::name_type(type_and_name.second),
+                      data_element.SerializeAsString());
       break;
     case DataTagValue::kAntmidValue:
       archiving = archive_.Store<passport::PublicAntmid>(
-          passport::PublicAntmid::name_type(Identity(type_and_name.second.string())),
-          data_element.SerializeAsString());
+                      passport::PublicAntmid::name_type(type_and_name.second),
+                      data_element.SerializeAsString());
       break;
     case DataTagValue::kAnmaidValue:
       archiving = archive_.Store<passport::PublicAnmaid>(
-          passport::PublicAnmaid::name_type(Identity(type_and_name.second.string())),
-          data_element.SerializeAsString());
+                      passport::PublicAnmaid::name_type(type_and_name.second),
+                      data_element.SerializeAsString());
       break;
     case DataTagValue::kMaidValue:
       archiving = archive_.Store<passport::PublicMaid>(
-          passport::PublicMaid::name_type(Identity(type_and_name.second.string())),
-          data_element.SerializeAsString());
+                      passport::PublicMaid::name_type(type_and_name.second),
+                      data_element.SerializeAsString());
       break;
     case DataTagValue::kPmidValue:
       archiving = archive_.Store<passport::PublicPmid>(
-          passport::PublicPmid::name_type(Identity(type_and_name.second.string())),
-          data_element.SerializeAsString());
+                      passport::PublicPmid::name_type(type_and_name.second),
+                      data_element.SerializeAsString());
       break;
     case DataTagValue::kMidValue:
-      archiving = archive_.Store<passport::Mid>(
-          passport::Mid::name_type(Identity(type_and_name.second.string())),
-          data_element.SerializeAsString());
+      archiving = archive_.Store<passport::Mid>(passport::Mid::name_type(type_and_name.second),
+                                                data_element.SerializeAsString());
       break;
     case DataTagValue::kSmidValue:
-      archiving = archive_.Store<passport::Smid>(
-          passport::Smid::name_type(Identity(type_and_name.second.string())),
-          data_element.SerializeAsString());
+      archiving = archive_.Store<passport::Smid>(passport::Smid::name_type(type_and_name.second),
+                                                 data_element.SerializeAsString());
       break;
     case DataTagValue::kTmidValue:
-      archiving = archive_.Store<passport::Tmid>(
-          passport::Tmid::name_type(Identity(type_and_name.second.string())),
-          data_element.SerializeAsString());
+      archiving = archive_.Store<passport::Tmid>(passport::Tmid::name_type(type_and_name.second),
+                                                 data_element.SerializeAsString());
       break;
     case DataTagValue::kAnmpidValue:
       archiving = archive_.Store<passport::PublicAnmpid>(
-          passport::PublicAnmpid::name_type(Identity(type_and_name.second.string())),
-          data_element.SerializeAsString());
+                      passport::PublicAnmpid::name_type(type_and_name.second),
+                      data_element.SerializeAsString());
       break;
     case DataTagValue::kMpidValue:
       archiving = archive_.Store<passport::PublicMpid>(
-          passport::PublicMpid::name_type(Identity(type_and_name.second.string())),
-          data_element.SerializeAsString());
+                      passport::PublicMpid::name_type(type_and_name.second),
+                      data_element.SerializeAsString());
       break;
     case DataTagValue::kImmutableDataValue:
-      archiving = archive_.Store<ImmutableData>(ImmutableData::name_type(
-                                                    Identity(type_and_name.second.string())),
+      archiving = archive_.Store<ImmutableData>(ImmutableData::name_type(type_and_name.second),
                                                 data_element.SerializeAsString());
       break;
     case DataTagValue::kMutableDataValue:
-      archiving = archive_.Store<MutableData>(MutableData::name_type(
-                                                  Identity(type_and_name.second.string())),
+      archiving = archive_.Store<MutableData>(MutableData::name_type(type_and_name.second),
                                               data_element.SerializeAsString());
       break;
     default: {

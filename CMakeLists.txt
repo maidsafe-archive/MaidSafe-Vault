@@ -49,10 +49,15 @@ file(GLOB VaultSources ${VaultSourcesRootDir}/paramters.cc
 file(GLOB VaultHeaders ${VaultSourcesRootDir}/paramters.h
                        ${VaultSourcesRootDir}/utils.h
                        ${VaultSourcesRootDir}/types.h
+                       ${VaultSourcesRootDir}/delete_policies.h
+                       ${VaultSourcesRootDir}/get_policies.h
+                       ${VaultSourcesRootDir}/post_policies.h
+                       ${VaultSourcesRootDir}/put_policies.h
                        ${VaultSourcesRootDir}/disk_based_storage.h
                        ${VaultSourcesRootDir}/disk_based_storage-inl.h
                        ${VaultSourcesRootDir}/pmid_record.h
                        ${VaultSourcesRootDir}/pmid_account.h
+                       ${VaultSourcesRootDir}/pmid_account-inl.h
                        ${VaultSourcesRootDir}/pmid_account_handler.h
                        ${VaultSourcesRootDir}/pmid_account_handler-inl.h
                        ${VaultSourcesRootDir}/pmid_account_holder_service.h

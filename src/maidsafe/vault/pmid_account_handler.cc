@@ -24,7 +24,7 @@ PmidAccountHandler::PmidAccountHandler(const boost::filesystem::path& vault_root
       archived_accounts_() {
   if (boost::filesystem::exists(kPmidAccountsRoot_)) {
     if (boost::filesystem::is_directory(kPmidAccountsRoot_))
-      ThrowError();  // Check if its a PMID repo
+      /*ThrowError()*/;  // Check if its a PMID repo
     else
       ThrowError(CommonErrors::not_a_directory);
   } else {
@@ -49,13 +49,20 @@ PmidAccount::DataHolderStatus PmidAccountHandler::AccountStatus(
   return (*itr)->data_holder_status();
 }
 
-void PmidAccountHandler::SetAccountStatus(const PmidName& account_name,
-                                          PmidAccount::DataHolderStatus status) {
+bool PmidAccountHandler::SetDataHolderDown(const PmidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount(pmid_accounts_, account_name));
+  auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr)->SetStatus(status);
+  return (*itr)->SetDataHolderDown();
+}
+
+bool PmidAccountHandler::SetDataHolderUp(const PmidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
+  if (itr == pmid_accounts_.end())
+    ThrowError(VaultErrors::no_such_account);
+  return (*itr)->SetDataHolderUp();
 }
 
 std::vector<PmidName> PmidAccountHandler::GetAccountNames() const {
@@ -63,8 +70,6 @@ std::vector<PmidName> PmidAccountHandler::GetAccountNames() const {
   std::lock_guard<std::mutex> lock(mutex_);
   for (auto& pmid_account : pmid_accounts_)
     account_names.push_back(pmid_account->name());
-//  for (auto& archived : archived_accounts_)
-//    account_names.push_back(archived);
   return account_names;
 }
 

@@ -42,7 +42,7 @@ class PmidAccount {
     DataElement& operator=(DataElement&& other);
 
     protobuf::DataElement ToProtobuf() const;
-    std::pair<DataTagValue, NonEmptyString> GetTypeAndName() const;
+    std::pair<DataTagValue, Identity> GetTypeAndName() const;
 
     DataNameVariant data_name_variant;
     int32_t size;
