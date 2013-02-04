@@ -20,24 +20,24 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void PmidAccountHandler::PutData(const PmidName& account_name,
-                                 const typename Data::name_type& data_name,
-                                 int32_t size) {
+std::future<void> PmidAccountHandler::PutData(const PmidName& account_name,
+                                              const typename Data::name_type& data_name,
+                                              int32_t size) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr).PutData<Data>(data_name, size);
+  return (*itr).PutData<Data>(data_name, size);
 }
 
 template<typename Data>
-void PmidAccountHandler::DeleteData(const PmidName& account_name,
-                                    const typename Data::name_type& data_name) {
+std::future<void> PmidAccountHandler::DeleteData(const PmidName& account_name,
+                                                 const typename Data::name_type& data_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr).DeleteData<Data>(data_name);
+  return (*itr).DeleteData<Data>(data_name);
 }
 
 }  // namespace vault
