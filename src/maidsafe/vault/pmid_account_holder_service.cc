@@ -39,6 +39,7 @@ void PmidAccountHolderService::HandleSynchronise(
   for (auto it(accounts_held.begin()); it != accounts_held.end(); ++it) {
     if (!routing_.IsNodeIdInGroupRange(NodeId(*it))) {
       pmid_account_handler_.DeleteAccount(*it);
+      pmid_account_handler_.RemoveFromArchiveList(*it);
       it = accounts_held.erase(it);
     } else {
       ++it;
@@ -121,9 +122,10 @@ void PmidAccountHolderService::RevertMessages(const PmidName& pmid_name,
                                               const PathVector::reverse_iterator& begin,
                                               PathVector::reverse_iterator& current,
                                               bool node_up) {
-  while (--current != begin) {
+  while (current != begin) {
     std::set<PmidName> metadata_manager_ids(GetDataNamesInFile(pmid_name, *current));
     SendMessages(pmid_name, metadata_manager_ids, node_up);
+    --current;
   }
   pmid_account_handler_.SetAccountStatus(pmid_name, node_up ? PmidAccount::Status::kNodeDown :
                                                               PmidAccount::Status::kNodeUp);

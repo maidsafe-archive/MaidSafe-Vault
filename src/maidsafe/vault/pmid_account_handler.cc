@@ -62,6 +62,8 @@ std::vector<PmidName> PmidAccountHandler::GetAccountNames() const {
   std::lock_guard<std::mutex> lock(mutex_);
   for (auto& pmid_account : pmid_accounts_)
     account_names.push_back(pmid_account->name());
+//  for (auto& archived : archived_accounts_)
+//    account_names.push_back(archived);
   return account_names;
 }
 
@@ -104,6 +106,7 @@ void PmidAccountHandler::MoveAccountToArchive(const PmidName& account_name) {
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
   (*itr)->ArchiveRecords();
+  pmid_accounts_.erase(itr);
 
   auto archive_itr(std::find(archived_accounts_.begin(), archived_accounts_.end(), account_name));
 #ifdef NDEBUG
