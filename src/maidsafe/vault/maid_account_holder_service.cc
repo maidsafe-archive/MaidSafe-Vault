@@ -15,6 +15,8 @@
 
 #include "boost/filesystem/operations.hpp"
 
+#include "maidsafe/vault/maid_account_pb.h"
+
 
 namespace fs = boost::filesystem;
 
@@ -60,6 +62,14 @@ void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& g
       break;
     default:
       LOG(kError) << "Unhandled Post action type";
+  }
+}
+
+void MaidAccountHolderService::HandleSynchronise() {
+  // Lock Accumulator
+  auto account_names(maid_account_handler_.GetAccountNames());
+  for (auto& account_name : account_names) {
+    SendSyncData(account_name);
   }
 }
 
@@ -115,17 +125,27 @@ void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& g
 //   SendSyncData();
 // }
 
-void MaidAccountHolderService::SendSyncData() {
-//  for (auto& account : maid_accounts_) {
-//    nfs::GenericMessage generic_message(
-//        nfs::GenericMessage::Action::kSynchronise,
-//        nfs::Persona::kMaidAccountHolder,
-//        nfs::MessageSource(nfs::Persona::kMaidAccountHolder, routing_.kNodeId()),
-//        account.maid_name().data,
-//        account.Serialise());
-//    nfs_.PostSyncData(generic_message,
-//        [this](nfs::GenericMessage message) { this->OnPostErrorHandler(message); });
-//  }
+void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
+  protobuf::MaidAccountSyncInfo maid_account_sync_info;
+  maid_account_sync_info.maid_account(GetSerialisedAccount(account_name));
+  auto handled_requets(accumulator_.GetHandledRequests(maid_name));  // TODO Prakash
+  for (auto& handled_requet : handled_requets)
+    maid_account_sync_info.add_accumulator_entries(handled_request);
+  nfs::GenericMessage generic_message(
+      nfs::GenericMessage::Action::kSynchronise,
+      nfs::Persona::kMaidAccountHolder,
+      nfs::PersonaId(nfs::Persona::kMaidAccountHolder, routing_.kNodeId()),
+      account_name.data,
+      NonEmptyString(maid_account_sync_info.SerializeAsString()));
+  std::shared_ptr<std::vector<nfs::Reply>> shared_response;
+  std::function<void(std::string)> callback = [=](std::string response) {
+    HandleSendSyncDataResponse(shared_response);
+  };
+  nfs_.PostSyncData(generic_message, callback);
+}
+
+void HandleSendSyncDataResponse(std::shared_ptr<std::vector<nfs::Reply>> shared_response) {
+
 }
 
 bool MaidAccountHolderService::HandleReceivedSyncData(

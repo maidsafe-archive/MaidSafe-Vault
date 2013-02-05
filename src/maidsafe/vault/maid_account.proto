@@ -21,6 +21,12 @@ message MaidAccount {
   repeated PutData recent_put_data = 3;
   required int64 total_data_stored_by_pmids = 4;
   required int64 total_put_data = 5;
+  repeated bytes archive_file_names = 6;
+}
+
+message MaidAccountSyncInfo {
+  required bytes maid_account = 1;
+  repeated bytes accumulator_entries = 2;
 }
 
 message ArchivedMaidData {

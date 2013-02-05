@@ -99,6 +99,10 @@ MaidAccount::serialised_type MaidAccount::Serialise() const {
   proto_maid_account.set_total_data_stored_by_pmids(total_data_stored_by_pmids_);
   proto_maid_account.set_total_put_data(total_put_data_);
 
+  auto archive_file_names(GetArchiveFileNames());
+  for (auto archive_file_name : archive_file_names)
+    proto_maid_account.add_archive_file_names(archive_file_name);
+
   return serialised_type(NonEmptyString(proto_maid_account.SerializeAsString()));
 }
 
