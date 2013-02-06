@@ -42,7 +42,8 @@ class DeleteFromMetadataManager {
         source_(nfs::PersonaId(nfs::Persona::kMaidAccountHolder, routing.kNodeId())) {}
 
   template<typename Data>
-  std::vector<std::future<nfs::Reply>> Delete(const nfs::DataMessage& data_message) {
+  std::vector<std::future<nfs::Reply>> Delete(const nfs::DataMessage& data_message,
+                                              routing::ResponseFunctor callback) {
     nfs::DataMessage new_data_message(
         data_message.destination_persona(),
         source_,

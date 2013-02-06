@@ -44,9 +44,18 @@ class MaidAccountHolderService {
                          const routing::ReplyFunctor& reply_functor);
   void HandleGenericMessage(const nfs::GenericMessage& generic_message,
                             const routing::ReplyFunctor& reply_functor);
-  void HandleSynchronise();
+  void TriggerSync();
 
  private:
+
+  struct SharedResponse {
+    SharedResponse();
+
+    mutable std::mutex mutex;
+    int count;
+    bool this_node_in_group;
+  };
+
   template<typename Data>
   void HandlePut(const nfs::DataMessage& data_message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>

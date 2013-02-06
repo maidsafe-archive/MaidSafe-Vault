@@ -24,6 +24,11 @@ namespace maidsafe {
 
 namespace vault {
 
+SharedResponse::SharedResponse()
+    : mutex(),
+      count(0),
+      this_node_in_group(false) {}
+
 MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
                                                    nfs::PublicKeyGetter& public_key_getter,
@@ -65,7 +70,7 @@ void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& g
   }
 }
 
-void MaidAccountHolderService::HandleSynchronise() {
+void MaidAccountHolderService::TriggerSync() {
   // Lock Accumulator
   auto account_names(maid_account_handler_.GetAccountNames());
   for (auto& account_name : account_names) {
@@ -129,7 +134,7 @@ void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
   protobuf::MaidAccountSyncInfo maid_account_sync_info;
   maid_account_sync_info.maid_account(GetSerialisedAccount(account_name));
   auto handled_requets(accumulator_.GetHandledRequests(maid_name));  // TODO Prakash
-  for (auto& handled_requet : handled_requets)
+  for (auto& handled_request : handled_requets)
     maid_account_sync_info.add_accumulator_entries(handled_request);
   nfs::GenericMessage generic_message(
       nfs::GenericMessage::Action::kSynchronise,
@@ -137,15 +142,32 @@ void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
       nfs::PersonaId(nfs::Persona::kMaidAccountHolder, routing_.kNodeId()),
       account_name.data,
       NonEmptyString(maid_account_sync_info.SerializeAsString()));
-  std::shared_ptr<std::vector<nfs::Reply>> shared_response;
-  std::function<void(std::string)> callback = [=](std::string response) {
-    HandleSendSyncDataResponse(shared_response);
-  };
+  std::shared_ptr<nfs::SharedResponse> shared_response(std::make_shared<nfs::SharedResponse>());
+  routing::ResponseFunctor callback = [=](std::string response) {
+      protobuf::MaidAccountSyncResponse sync_response;
+      std::lock_gaurd<std::mutex> lock(shared_response->mutex);
+      {
+        try {
+          nfs::Reply reply(NonEmptyString(response));
+          if ((reply.error() == CommonErrors::success) &&
+              sync_response.ParseFromString(reply.data()) &&
+              sync_response.node_id() == routing_.kNodeId().string())
+            shared_response->this_node_in_group = true;
+        } catch(std::exception& ex) {
+          LOG(kError) << "Failed to parse reply : " ex.what();
+        }
+        ++shared_response->count;
+      }
+      if (sync_response.IsInitialised() && (sync_response.file_hash_requests_size() != 0))
+        HandleFileRequest(account_name, sync_response);
+    };
   nfs_.PostSyncData(generic_message, callback);
 }
 
-void HandleSendSyncDataResponse(std::shared_ptr<std::vector<nfs::Reply>> shared_response) {
-
+void HandleFileRequest(const MaidName& account_name,
+                       protobuf::MaidAccountSyncResponse request) {
+// get file from account -- need GetArchiveFile(account_name, file_name)
+// prepare MaidAccountSyncFiles
 }
 
 bool MaidAccountHolderService::HandleReceivedSyncData(
