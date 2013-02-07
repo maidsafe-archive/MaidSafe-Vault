@@ -53,8 +53,8 @@ class MaidAccount {
   void UpdatePmidTotals(const PmidTotals& pmid_totals);
 
   std::vector<boost::filesystem::path> GetArchiveFileNames() const;
-  NonEmptyString GetArchiveFile(const boost::filesystem::path& path) const;
-  void PutArchiveFile(const boost::filesystem::path& path, const NonEmptyString& content);
+  NonEmptyString GetArchiveFile(const boost::filesystem::path& filename) const;
+  void PutArchiveFile(const boost::filesystem::path& filename, const NonEmptyString& content);
 
   template<typename Data>
   void PutData(const typename Data::name_type& name, int32_t size, int32_t replication_count);

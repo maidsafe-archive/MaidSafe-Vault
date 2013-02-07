@@ -141,7 +141,8 @@ std::future<DiskBasedStorage::PathVector> DiskBasedStorage::GetFileNames() const
   return std::move(future);
 }
 
-std::future<NonEmptyString> DiskBasedStorage::GetFile(const boost::filesystem::path& path) const {
+std::future<NonEmptyString> DiskBasedStorage::GetFile(
+    const boost::filesystem::path& filename) const {
   // Check path? It might not exist anymore because of operations in the queue
   // crypto::SHA512Hash hash
   // size_t file_number;
@@ -150,9 +151,9 @@ std::future<NonEmptyString> DiskBasedStorage::GetFile(const boost::filesystem::p
   //   ThrowError(CommonErrors::hashing_error);
   std::shared_ptr<NonEmptyStringPromise> promise(std::make_shared<NonEmptyStringPromise>());
   std::future<NonEmptyString> future(promise->get_future());
-  active_.Send([path, promise, this] () {
+  active_.Send([filename, promise, this] () {
                  try {
-                   promise->set_value(ReadFile(kRoot_ / path));
+                   promise->set_value(ReadFile(kRoot_ / filename));
                  }
                  catch(...) {
                    promise->set_exception(std::current_exception());
@@ -161,16 +162,17 @@ std::future<NonEmptyString> DiskBasedStorage::GetFile(const boost::filesystem::p
   return std::move(future);
 }
 
-void DiskBasedStorage::PutFile(const boost::filesystem::path& path, const NonEmptyString& content) {
+void DiskBasedStorage::PutFile(const boost::filesystem::path& filename,
+                               const NonEmptyString& content) {
   size_t file_number;
   crypto::SHA512Hash hash;
-  ExtractElementsFromFilename(path.string(), hash, file_number);
+  ExtractElementsFromFilename(filename.string(), hash, file_number);
   if (crypto::Hash<crypto::SHA512>(content) != hash) {
     LOG(kError) << "Content doesn't hash.";
     ThrowError(CommonErrors::hashing_error);
   }
-  active_.Send([path, content, file_number, hash, this] () {
-                 DoPutFile(kRoot_ / path, content, file_number, hash);
+  active_.Send([filename, content, file_number, hash, this] () {
+                 DoPutFile(kRoot_ / filename, content, file_number, hash);
                });
 }
 

@@ -143,13 +143,13 @@ std::vector<fs::path> MaidAccount::GetArchiveFileNames() const {
   return future.get();
 }
 
-NonEmptyString MaidAccount::GetArchiveFile(const fs::path& path) const {
-  auto future(archive_.GetFile(path));
+NonEmptyString MaidAccount::GetArchiveFile(const fs::path& filename) const {
+  auto future(archive_.GetFile(filename));
   return future.get();
 }
 
-void MaidAccount::PutArchiveFile(const fs::path& path, const NonEmptyString& content) {
-  archive_.PutFile(path, content);
+void MaidAccount::PutArchiveFile(const fs::path& filename, const NonEmptyString& content) {
+  archive_.PutFile(filename, content);
 }
 
 

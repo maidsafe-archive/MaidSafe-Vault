@@ -56,8 +56,8 @@ class DiskBasedStorage {
   // Synchronisation helpers
   std::future<uint32_t> GetFileCount() const;
   std::future<PathVector> GetFileNames() const;  // File names are index no. + hash of contents
-  std::future<NonEmptyString> GetFile(const boost::filesystem::path& path) const;
-  void PutFile(const boost::filesystem::path& path, const NonEmptyString& content);
+  std::future<NonEmptyString> GetFile(const boost::filesystem::path& filename) const;
+  void PutFile(const boost::filesystem::path& filename, const NonEmptyString& content);
 
   template<class T> friend class test::DiskStorageTest;
  private:

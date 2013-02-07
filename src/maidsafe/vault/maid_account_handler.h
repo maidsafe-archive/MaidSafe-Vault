@@ -51,9 +51,9 @@ class MaidAccountHandler {
   MaidAccount::serialised_type GetSerialisedAccount(const MaidName& account_name) const;
   std::vector<boost::filesystem::path> GetArchiveFileNames(const MaidName& account_name) const;
   NonEmptyString GetArchiveFile(const MaidName& account_name,
-                                const boost::filesystem::path& path) const;
+                                const boost::filesystem::path& filename) const;
   void PutArchiveFile(const MaidName& account_name,
-                      const boost::filesystem::path& path,
+                      const boost::filesystem::path& filename,
                       const NonEmptyString& content);
 
   // Data operations

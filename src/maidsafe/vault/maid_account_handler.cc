@@ -88,22 +88,22 @@ std::vector<boost::filesystem::path> MaidAccountHandler::GetArchiveFileNames(
 }
 
 NonEmptyString MaidAccountHandler::GetArchiveFile(const MaidName& account_name,
-                                                  const boost::filesystem::path& path) const {
+                                                  const boost::filesystem::path& filename) const {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  return (*itr).GetArchiveFile(path);
+  return (*itr).GetArchiveFile(filename);
 }
 
 void MaidAccountHandler::PutArchiveFile(const MaidName& account_name,
-                                        const boost::filesystem::path& path,
+                                        const boost::filesystem::path& filename,
                                         const NonEmptyString& content) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr).PutArchiveFile(path, content);
+  (*itr).PutArchiveFile(filename, content);
 }
 
 }  // namespace vault
