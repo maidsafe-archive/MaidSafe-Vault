@@ -23,7 +23,6 @@
 #include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/response_mapper.h"
 #include "maidsafe/nfs/types.h"
 
 
@@ -33,9 +32,8 @@ namespace vault {
 
 class GetFromDataHolder {
  public:
-  GetFromDataHolder(nfs::NfsResponseMapper& response_mapper, routing::Routing& routing)
-      : response_mapper_(response_mapper),
-        routing_(routing),
+  GetFromDataHolder(routing::Routing& routing)
+      : routing_(routing),
         source_(nfs::PersonaId(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
 
   template<typename Data>
@@ -49,7 +47,7 @@ class GetFromDataHolder {
         source_,
         nfs::DataMessage::Data(Data::name_type::tag_type::kEnumValue, name.data, NonEmptyString()));
     nfs::Message message(nfs::DataMessage::message_type_identifier, data_message.Serialise().data);
-    return NfsSendGroup(NodeId(dest_id), message, nfs::IsCacheable<Data>(), response_mapper_,
+    return NfsSendGroup(NodeId(dest_id), message, nfs::IsCacheable<Data>(),
                         routing_);
   }
 
@@ -57,7 +55,6 @@ class GetFromDataHolder {
   ~GetFromDataHolder() {}
 
  private:
-  nfs::NfsResponseMapper& response_mapper_;
   routing::Routing& routing_;
   nfs::PersonaId source_;
 };

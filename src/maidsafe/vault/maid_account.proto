@@ -24,26 +24,6 @@ message MaidAccount {
   repeated bytes archive_file_names = 6;
 }
 
-message MaidAccountSyncInfo {
-  required bytes maid_account = 1;
-  repeated bytes accumulator_entries = 2;
-}
-
-message MaidAccountSyncResponse {
-  required bytes node_id = 1;
-  repeated bytes file_hash_requests = 2;
-}
-
-message MaidAccountFile {
-  required bytes name = 1;
-  required bytes contents = 2;
-}
-
-message MaidAccountSyncFiles {
-  required bytes maid_account = 1;
-  repeated MaidAccountFile files = 2;
-}
-
 message ArchivedMaidData {
   repeated PutData put_data = 1;
 }

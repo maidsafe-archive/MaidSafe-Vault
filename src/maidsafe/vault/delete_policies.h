@@ -24,7 +24,6 @@
 #include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/response_mapper.h"
 #include "maidsafe/nfs/types.h"
 
 
@@ -34,10 +33,9 @@ namespace vault {
 
 class DeleteFromMetadataManager {
  public:
-  DeleteFromMetadataManager(nfs::NfsResponseMapper& response_mapper, routing::Routing& routing,
+  DeleteFromMetadataManager(routing::Routing& routing,
                             const passport::Pmid& signing_pmid)
-      : response_mapper_(response_mapper),
-        routing_(routing),
+      : routing_(routing),
         signing_pmid_(signing_pmid),
         source_(nfs::PersonaId(nfs::Persona::kMaidAccountHolder, routing.kNodeId())) {}
 
@@ -54,14 +52,13 @@ class DeleteFromMetadataManager {
     nfs::Message message(nfs::DataMessage::message_type_identifier,
                          new_data_message.Serialise().data);
     return NfsSendGroup(NodeId(new_data_message.data().name.string()), message,
-                        nfs::IsCacheable<Data>(), response_mapper_, routing_);
+                        nfs::IsCacheable<Data>(), routing_);
   }
 
  protected:
   ~DeleteFromMetadataManager() {}
 
  private:
-  nfs::NfsResponseMapper& response_mapper_;
   routing::Routing& routing_;
   passport::Pmid signing_pmid_;
   nfs::PersonaId source_;
@@ -69,9 +66,8 @@ class DeleteFromMetadataManager {
 
 class DeleteFromPmidAccountHolder {
  public:
-  DeleteFromPmidAccountHolder(nfs::NfsResponseMapper& response_mapper, routing::Routing& routing)
-      : response_mapper_(response_mapper),
-        routing_(routing),
+  DeleteFromPmidAccountHolder(routing::Routing& routing)
+      : routing_(routing),
         source_(nfs::PersonaId(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
 
   template<typename Data>
@@ -84,23 +80,21 @@ class DeleteFromPmidAccountHolder {
                                                         data_message.data().action));
     nfs::Message message(nfs::DataMessage::message_type_identifier, new_message.Serialise().data);
     return NfsSendGroup(NodeId(new_message.data().name.string()), message,
-                        nfs::IsCacheable<Data>(), response_mapper_, routing_);
+                        nfs::IsCacheable<Data>(), routing_);
   }
 
  protected:
   ~DeleteFromPmidAccountHolder() {}
 
  private:
-  nfs::NfsResponseMapper& response_mapper_;
   routing::Routing& routing_;
   nfs::PersonaId source_;
 };
 
 class DeleteFromDataHolder {
  public:
-  DeleteFromDataHolder(nfs::NfsResponseMapper& response_mapper, routing::Routing& routing)
-      : response_mapper_(response_mapper),
-        routing_(routing),
+  DeleteFromDataHolder(routing::Routing& routing)
+      : routing_(routing),
         source_(nfs::PersonaId(nfs::Persona::kPmidAccountHolder, routing.kNodeId())) {}
 
   template<typename Data>
@@ -115,14 +109,13 @@ class DeleteFromDataHolder {
     nfs::Message message(nfs::DataMessage::message_type_identifier,
                          new_data_message.Serialise().data);
     return NfsSendGroup(NodeId(new_data_message.data().name.string()), message,
-                        nfs::IsCacheable<Data>(), response_mapper_, routing_);
+                        nfs::IsCacheable<Data>(), routing_);
   }
 
 protected:
   ~DeleteFromDataHolder() {}
 
  private:
-  nfs::NfsResponseMapper& response_mapper_;
   routing::Routing& routing_;
   nfs::PersonaId source_;
 };

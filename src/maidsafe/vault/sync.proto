@@ -1,0 +1,35 @@
+package maidsafe.vault.protobuf;
+option optimize_for = LITE_RUNTIME;
+
+message Sync {
+  required int32 action = 1;
+  required bytes sync_message = 2;
+}
+
+message ArchiveFile {
+  required bytes name = 1;
+  required bytes contents = 2;
+}
+
+message GetArchiveFiles {
+  repeated bytes file_hash_requested = 1;
+}
+
+message SyncInfo {
+  required bytes maid_account = 1;
+  repeated bytes accumulator_entries = 2;
+}
+
+message SyncInfoResponse {
+  required bytes node_id = 1;
+  optional GetArchiveFiles file_hash_requests = 2;
+}
+
+message SyncArchiveFiles {
+  required bytes maid_account = 1;
+  repeated ArchiveFile files = 2;
+}
+
+message SyncArchiveFilesResponse {
+  optional GetArchiveFiles file_hash_requests = 1;
+}

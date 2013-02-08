@@ -33,6 +33,8 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace protobuf { class MaidAccountSyncResponse; }
+
 class MaidAccountHolderService {
  public:
   MaidAccountHolderService(const passport::Pmid& pmid,
@@ -70,14 +72,17 @@ class MaidAccountHolderService {
   template<typename Data>
   void SendDataMessage(const nfs::DataMessage& data_message);
 
-  void SendSyncData();
+  void HandleSyncMessage(const NodeId& source_id, const std::string& serialised_sync_message,
+                         const routing::ReplyFunctor& reply_functor);
+  void SendSyncData(const MaidName& account_name);
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
 //   bool HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid);
 //   bool OnKeyFetched(const passport::/*PublicMaid*/PublicPmid& p_maid,
 //                     const passport::PublicPmid& p_pmid);
 //  bool HandleNewComer(const nfs::PmidRegistration& pmid_registration);
 //  void OnGenericErrorHandler(nfs::GenericMessage generic_message);
-
+  void HandleFileRequest(const MaidName& account_name,
+                         const protobuf::SyncInfoResponse& sync_response);
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
   nfs::Accumulator accumulator_;
