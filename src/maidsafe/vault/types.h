@@ -15,6 +15,7 @@
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 
+#include "maidsafe/nfs/data_policies.h"
 #include "maidsafe/nfs/nfs.h"
 
 #include "maidsafe/passport/types.h"
@@ -29,20 +30,23 @@ namespace maidsafe {
 
 namespace vault {
 
-typedef nfs::NetworkFileSystem<nfs::NoGet,
-                               PutToMetadataManager,
-                               PostSynchronisation<nfs::Persona::kMaidAccountHolder>,
-                               DeleteFromMetadataManager> MaidAccountHolderNfs;
+typedef nfs::NetworkFileSystem<
+    nfs::MaidAccountHolderPutPolicy,
+    nfs::MaidAccountHolderGetPolicy,
+    nfs::MaidAccountHolderDeletePolicy,
+    PostSynchronisation<nfs::Persona::kMaidAccountHolder>> MaidAccountHolderNfs;
 
-typedef nfs::NetworkFileSystem<GetFromDataHolder,
-                               PutToPmidAccountHolder,
-                               PostSynchronisation<nfs::Persona::kMetadataManager>,
-                               DeleteFromPmidAccountHolder> MetadataManagerNfs;
+typedef nfs::NetworkFileSystem<
+    nfs::MetadataManagerPutPolicy,
+    nfs::MetadataManagerGetPolicy,
+    nfs::MetadataManagerDeletePolicy,
+    PostSynchronisation<nfs::Persona::kMetadataManager>> MetadataManagerNfs;
 
-typedef nfs::NetworkFileSystem<nfs::NoGet,
-                               PutToDataHolder,
-                               PostSynchronisation<nfs::Persona::kPmidAccountHolder>,
-                               DeleteFromDataHolder> PmidAccountHolderNfs;
+typedef nfs::NetworkFileSystem<
+    nfs::PmidAccountHolderPutPolicy,
+    nfs::PmidAccountHolderGetPolicy,
+    nfs::PmidAccountHolderDeletePolicy,
+    PostSynchronisation<nfs::Persona::kPmidAccountHolder>> PmidAccountHolderNfs;
 
 typedef passport::PublicMaid::name_type MaidName;
 typedef passport::PublicPmid::name_type PmidName;

@@ -56,10 +56,13 @@ class MaidAccount {
   NonEmptyString GetArchiveFile(const boost::filesystem::path& filename) const;
   void PutArchiveFile(const boost::filesystem::path& filename, const NonEmptyString& content);
 
+  // This offers the strong exception guarantee
   template<typename Data>
   void PutData(const typename Data::name_type& name, int32_t size, int32_t replication_count);
+  // This offers the strong exception guarantee
   template<typename Data>
   void DeleteData(const typename Data::name_type& name);
+  // This offers the strong exception guarantee
   template<typename Data>
   void UpdateReplicationCount(const typename Data::name_type& name, int32_t new_replication_count);
 

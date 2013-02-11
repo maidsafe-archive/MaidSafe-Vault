@@ -29,7 +29,7 @@ namespace vault {
 template<typename Data>
 void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
-  nfs::Reply reply(MakeError(CommonErrors::success));
+  nfs::Reply reply(CommonErrors::success);
   auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
   if (accumulator_.CheckHandled(request_id, reply))
     return reply_functor(reply.Serialise()->string());
@@ -39,7 +39,7 @@ void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_me
   } else if (data_message.data().action == nfs::DataMessage::Action::kDelete) {
     HandleDelete<Data>(data_message, reply_functor);
   } else {
-    reply = nfs::Reply(MakeError(VaultErrors::operation_not_supported));
+    reply = nfs::Reply(VaultErrors::operation_not_supported);
     accumulator_.SetHandled(request_id, reply);
     reply_functor(reply.Serialise()->string());
   }
@@ -48,11 +48,13 @@ void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_me
 template<typename Data>
 void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
                                          const routing::ReplyFunctor& reply_functor) {
-  nfs::Reply reply(MakeError(CommonErrors::success));
+  nfs::Reply reply(CommonErrors::success);
   try {
     ValidateDataMessage(data_message);
-    // check with MM if data is unique.  If MM says already stored, check if we stored it.  If so success, else failure.
+    // Pay for 1 copy just now.  MetadataManager may require further payments, or removal if the
+    // data has to be unique and has already been put to network by a different Maid.
     AdjustAccount<Data>(data_message, is_payable<Data>());
+    Data data(data_message.data().name, Data::serialised_type(data_message.data().content));
     SendDataMessage<Data>(data_message);
   }
   catch(const std::system_error& error) {
@@ -63,6 +65,7 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
   accumulator_.SetHandled(request_id, reply);
   reply_functor(reply.Serialise()->string());
 }
+    // check with MM if data is unique.  If MM says already stored, check if we stored it.  If so success, else failure.
 
 template<typename Data>
 void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message,
@@ -74,22 +77,36 @@ void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
   }
   catch(const std::system_error& error) {
     LOG(kWarning) << error.what();
-    // Always return succeess for Deletes
+    // Always return success for Deletes
   }
   auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
-  nfs::Reply reply(MakeError(CommonErrors::success));
+  nfs::Reply reply(CommonErrors::success);
   accumulator_.SetHandled(request_id, reply);
   reply_functor(reply.Serialise()->string());
 }
 
 template<typename Data>
-void MaidAccountHolderService::AdjustAccount(const nfs::DataMessage& data_message, std::true_type) {
+void MaidAccountHolderService::AdjustAccount(const nfs::DataMessage& data_message,
+                                             std::true_type,
+                                             int32_t replication_count) {
   if (data_message.data().action == nfs::DataMessage::Action::kPut) {
-    maid_account_handler_.PutData<Data>(
-        detail::GetSourceMaidName(data_message),
-        Data::name_type(data_message.data().name),
-        static_cast<int32_t>(data_message.data().content.string().size()),
-        1);
+    try {
+      maid_account_handler_.PutData<Data>(
+          detail::GetSourceMaidName(data_message),
+          Data::name_type(data_message.data().name),
+          static_cast<int32_t>(data_message.data().content.string().size()),
+          replication_count);
+    }
+    catch(const maidsafe_error& error) {
+      if (error.code() != VaultErrors::no_such_account &&
+          error.code() != VaultErrors::not_enough_space) {
+
+      }
+    }
+    catch(const std::exception&) {
+
+    }
+    // TODO(Fraser#5#): 2013-02-08 - Consider having replication calculated by network.
   } else {
     assert(data_message.data().action == nfs::DataMessage::Action::kDelete);
     maid_account_handler_.DeleteData<Data>(detail::GetSourceMaidName(data_message),
