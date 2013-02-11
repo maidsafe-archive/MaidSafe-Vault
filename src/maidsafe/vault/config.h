@@ -20,7 +20,6 @@ namespace vault {
 
 namespace detail {
 
-extern 
 
 
 }  // namespace detail

@@ -12,6 +12,8 @@
 #ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_INL_H_
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_INL_H_
 
+#include "maidsafe/common/on_scope_exit.h"
+
 
 namespace maidsafe {
 
@@ -25,11 +27,13 @@ void MaidAccount::PutData(const typename Data::name_type& name,
   if (2 * total_data_stored_by_pmids_ < total_put_data_ + size)
     ThrowError(VaultErrors::not_enough_space);
 
+  on_scope_exit strong_guarantee(on_scope_exit::RevertValue(recent_put_data_));
   recent_put_data_.emplace_back(name, size, replication_count);
   if (recent_put_data_.size() > detail::Parameters::max_recent_data_list_size) {
     archive_.Store(recent_put_data_.front());
     recent_put_data_.pop_front();
   }
+  strong_guarantee.Release();
 }
 
 template<typename Data>

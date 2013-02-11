@@ -49,6 +49,10 @@ class MaidAccountHolderService {
   void TriggerSync();
 
  private:
+  MaidAccountHolderService(const MaidAccountHolderService&);
+  MaidAccountHolderService& operator=(const MaidAccountHolderService&);
+  MaidAccountHolderService(MaidAccountHolderService&&);
+  MaidAccountHolderService& operator=(MaidAccountHolderService&&);
 
   struct SharedResponse {
     SharedResponse();
@@ -65,7 +69,9 @@ class MaidAccountHolderService {
                     const routing::ReplyFunctor& reply_functor);
   void ValidateDataMessage(const nfs::DataMessage& data_message) const;
   template<typename Data>
-  void AdjustAccount(const nfs::DataMessage& data_message, std::true_type);
+  void AdjustAccount(const nfs::DataMessage& data_message,
+                     std::true_type,
+                     int32_t replication_count = 1);
   // no-op for non-payable data
   template<typename Data>
   void AdjustAccount(const nfs::DataMessage& data_message, std::false_type) {}
@@ -85,7 +91,7 @@ class MaidAccountHolderService {
                          const protobuf::SyncInfoResponse& sync_response);
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
-  nfs::Accumulator accumulator_;
+  nfs::Accumulator<MaidName> accumulator_;
   MaidAccountHandler maid_account_handler_;
   MaidAccountHolderNfs nfs_;
 };

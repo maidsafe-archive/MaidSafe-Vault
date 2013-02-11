@@ -25,7 +25,7 @@ namespace maidsafe {
 
 namespace vault {
 
-SharedResponse::SharedResponse()
+MaidAccountHolderService::SharedResponse::SharedResponse()
     : mutex(),
       count(0),
       this_node_in_group(false) {}
@@ -41,8 +41,10 @@ MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
       nfs_(routing, pmid) {}
 
 void MaidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_message) const {
-  if (!routing_.IsConnectedToClient(data_message.source().node_id))
+  if (!routing_.IsConnectedClient(data_message.source().node_id) ||
+      data_message.source().persona != nfs::Persona::kClientMaid) {
     ThrowError(VaultErrors::permission_denied);
+  }
 }
 
 void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
