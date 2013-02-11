@@ -51,7 +51,6 @@ void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& g
                                                     const routing::ReplyFunctor& reply_functor) {
 // HandleNewComer(p_maid);
   nfs::GenericMessage::Action action(generic_message.action());
-  NodeId source_id(generic_message.source().node_id);
   switch (action) {
     case nfs::GenericMessage::Action::kRegisterPmid:
       break;
@@ -62,32 +61,27 @@ void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& g
     case nfs::GenericMessage::Action::kNodeDown:
       break;
     case nfs::GenericMessage::Action::kSynchronise:
-      if (routing_.IsConnectedVault(source_id)) {
-        HandleSyncMessage(generic_message.content());
-      } else {
-        reply_functor(nfs::Reply(RoutingErrors::not_connected).Serialise()->string());
-      }
+      HandleSyncMessage(generic_message.content());
       break;
     default:
       LOG(kError) << "Unhandled Post action type";
   }
 }
 
-void MaidAccountHolderService::HandleSyncMessage(const NodeId& source_id,
-                                                 const std::string& serialised_sync_message,
+void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& generic_message,
                                                  const routing::ReplyFunctor& reply_functor) {
+  NodeId source_id(generic_message.source().node_id);
   if (!routing_.IsConnectedVault(source_id)) {
-      reply_functor(nfs::Reply(RoutingErrors::not_connected).Serialise()->string());
-    }
+    return reply_functor(nfs::Reply(RoutingErrors::not_connected).Serialise()->string());
+  }
   protobuf::Sync sync_message;
-  if (!sync_message.ParseFromString(serialised_sync_message) ||
-      !sync_message.IsInitialized()) {
-    LOG(kError) << "Error parsing.";
+  if (!sync_message.ParseFromString(generic_message.content()) || !sync_message.IsInitialized()) {
+    LOG(kError) << "Error parsing kSynchronise message.";
     reply_functor();  // FIXME  Is this needed ?
     return;
   }
-  Sync::Action sync_action = static_cast<Sync::Action>(sync_message.action());
 
+  Sync::Action sync_action = static_cast<Sync::Action>(sync_message.action());
   switch (sync_action) {
     case Sync::Action::kSyncInfo:
       break;
@@ -96,15 +90,7 @@ void MaidAccountHolderService::HandleSyncMessage(const NodeId& source_id,
     case Sync::Action::kSyncArchiveFiles:
       break;
     default:
-      LOG(kError) << "Unhandled Post action type";
-  }
-}
-
-void MaidAccountHolderService::TriggerSync() {
-  // Lock Accumulator
-  auto account_names(maid_account_handler_.GetAccountNames());
-  for (auto& account_name : account_names) {
-    SendSyncData(account_name);
+      LOG(kError) << "Unhandled kSynchronise action type";
   }
 }
 
@@ -160,19 +146,31 @@ void MaidAccountHolderService::TriggerSync() {
 //   SendSyncData();
 // }
 
+void MaidAccountHolderService::TriggerSync() {
+  // Lock Accumulator
+  auto account_names(maid_account_handler_.GetAccountNames());
+  for (auto& account_name : account_names) {
+    SendSyncData(account_name);
+  }
+}
+
 void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
   protobuf::SyncInfo sync_info;
-  sync_info.maid_account(GetSerialisedAccount(account_name));
-  auto handled_requets(accumulator_.GetHandledRequests(maid_name));  // TODO Prakash
+  sync_info.set_maid_account(maid_account(GetSerialisedAccount(account_name))->string());
+  auto handled_requets(accumulator_.SerialiseHandledRequests(maid_name));
   for (auto& handled_request : handled_requets)
-    sync_info.add_accumulator_entries(handled_request);
+    sync_info.add_accumulator_entries(handled_request->string());
+  protobuf::Sync sync_pb_message;
+  sync_pb_message.set_action(static_cast<int32_t>(Sync::Action::kSyncInfo));
+  sync_pb_message.set_sync_message(sync_info.SerializeAsString());
   nfs::GenericMessage generic_message(
       nfs::GenericMessage::Action::kSynchronise,
       nfs::Persona::kMaidAccountHolder,
       nfs::PersonaId(nfs::Persona::kMaidAccountHolder, routing_.kNodeId()),
       account_name.data,
-      NonEmptyString(sync_info.SerializeAsString()));
-  std::shared_ptr<nfs::SharedResponse> shared_response(std::make_shared<nfs::SharedResponse>());
+      NonEmptyString(sync_pb_message.SerializeAsString()));
+
+  std::shared_ptr<SharedResponse> shared_response(std::make_shared<SharedResponse>());
   routing::ResponseFunctor callback = [=](std::string response) {
       protobuf::SyncInfoResponse sync_response;
       {
@@ -198,16 +196,16 @@ void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
 void MaidAccountHolderService::HandleFileRequest(const MaidName& account_name,
                                                  const protobuf::GetArchiveFiles& requested_files) {
   if (!requested_files.ParseFromString(requested_files) || !requested_files.IsInitialized()) {
-    LOG(kError) << "Error parsing.";
+    LOG(kError) << "Error parsing GetArchiveFiles request.";
     return;
   }
 
-  for (auto& file_name : requested_files.file_hash_requested) {
+  for (auto& file_name : requested_files.file_hash_requested()) {
     try {
       auto file_contents = maid_account_handler_.GetArchiveFile(account_name, fs::path(file_name));
       protobuf::ArchiveFile maid_account_file;
       maid_account_file.set_name(file_name);
-      maid_account_file.set_contents(file_contents);
+      maid_account_file.set_contents(file_contents.string());
       protobuf::Sync Sync_message;
       Sync_message.set_action(static_cast<int32_t>(Sync::Action::kSyncArchiveFiles));
       Sync_message.set_sync_message(maid_account_file.SerializeAsString());

@@ -18,6 +18,7 @@ namespace maidsafe {
 namespace vault {
 
 class Sync {
+ public:
 
   enum class Action : int32_t {
     kSyncInfo,

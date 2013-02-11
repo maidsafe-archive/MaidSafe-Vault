@@ -26,6 +26,7 @@
 #include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/vault/maid_account_handler.h"
+#include "maidsafe/vault/sync_pb.h"
 #include "maidsafe/vault/types.h"
 
 
@@ -77,8 +78,7 @@ class MaidAccountHolderService {
   void AdjustAccount(const nfs::DataMessage& data_message, std::false_type) {}
   template<typename Data>
   void SendDataMessage(const nfs::DataMessage& data_message);
-
-  void HandleSyncMessage(const NodeId& source_id, const std::string& serialised_sync_message,
+  void HandleSyncMessage(const nfs::GenericMessage& generic_message,
                          const routing::ReplyFunctor& reply_functor);
   void SendSyncData(const MaidName& account_name);
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
@@ -88,7 +88,7 @@ class MaidAccountHolderService {
 //  bool HandleNewComer(const nfs::PmidRegistration& pmid_registration);
 //  void OnGenericErrorHandler(nfs::GenericMessage generic_message);
   void HandleFileRequest(const MaidName& account_name,
-                         const protobuf::SyncInfoResponse& sync_response);
+                         const protobuf::GetArchiveFiles& requested_files);
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
   nfs::Accumulator<MaidName> accumulator_;
