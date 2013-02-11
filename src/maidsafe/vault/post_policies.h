@@ -43,10 +43,11 @@ class PostSynchronisation {
         source_(nfs::PersonaId(persona, routing.kNodeId())) {}
 
   void PostSyncData(const nfs::GenericMessage& generic_message,
-                    nfs::GenericMessage::OnError /*on_error*/) {
+                    routing::ResponseFunctor response_functor) {
     nfs::Message message(nfs::GenericMessage::message_type_identifier,
                          generic_message.Serialise().data);
-    routing_.Send(NodeId(generic_message.name().string()), message.Serialise()->string(), false);
+    routing_.SendGroup(NodeId(generic_message.name().string()), message.Serialise()->string(),
+                       false, response_functor);
   }
 
  protected:

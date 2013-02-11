@@ -34,7 +34,7 @@ namespace vault {
 
 namespace detail {
 
-inline bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id) {
+inline routing::GroupRangeStatus NodeRangeCheck(routing::Routing& routing, const NodeId& node_id) {
   return routing.IsNodeIdInGroupRange(node_id);
 }
 
@@ -109,12 +109,6 @@ inline void RetryOnPutOrDeleteError(routing::Routing& routing,
     }
   }
 }
-
-std::vector<std::future<nfs::Reply>> NfsSendGroup(const NodeId& target_id,
-                                                  const nfs::Message& message,
-                                                  bool is_cacheable,
-                                                  nfs::NfsResponseMapper& response_mapper,
-                                                  routing::Routing& routing);
 
 }  // namespace detail
 

@@ -30,7 +30,7 @@ void MaidAccount::PutData(const typename Data::name_type& name,
   on_scope_exit strong_guarantee(on_scope_exit::RevertValue(recent_put_data_));
   recent_put_data_.emplace_back(name, size, replication_count);
   if (recent_put_data_.size() > detail::Parameters::max_recent_data_list_size) {
-    archive_.Store(recent_put_data_.front());
+//    archive_.Store(recent_put_data_.front());  // FIXME FRASER
     recent_put_data_.pop_front();
   }
   strong_guarantee.Release();

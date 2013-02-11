@@ -61,7 +61,7 @@ void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& g
     case nfs::GenericMessage::Action::kNodeDown:
       break;
     case nfs::GenericMessage::Action::kSynchronise:
-      HandleSyncMessage(generic_message.content());
+      HandleSyncMessage(generic_message, reply_functor);
       break;
     default:
       LOG(kError) << "Unhandled Post action type";
@@ -75,9 +75,10 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
     return reply_functor(nfs::Reply(RoutingErrors::not_connected).Serialise()->string());
   }
   protobuf::Sync sync_message;
-  if (!sync_message.ParseFromString(generic_message.content()) || !sync_message.IsInitialized()) {
+  if (!sync_message.ParseFromString(generic_message.content().string()) ||
+          !sync_message.IsInitialized()) {
     LOG(kError) << "Error parsing kSynchronise message.";
-    reply_functor();  // FIXME  Is this needed ?
+//    reply_functor();  // FIXME  Is this needed ?
     return;
   }
 
@@ -156,10 +157,10 @@ void MaidAccountHolderService::TriggerSync() {
 
 void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
   protobuf::SyncInfo sync_info;
-  sync_info.set_maid_account(maid_account(GetSerialisedAccount(account_name))->string());
-  auto handled_requets(accumulator_.SerialiseHandledRequests(maid_name));
-  for (auto& handled_request : handled_requets)
-    sync_info.add_accumulator_entries(handled_request->string());
+  sync_info.set_maid_account(maid_account_handler_.GetSerialisedAccount(account_name)->string());
+  nfs::Accumulator<MaidName>::serialised_requests handled_requets(
+      accumulator_.SerialiseHandledRequests(account_name));
+  sync_info.set_accumulator_entries(handled_requets->string());
   protobuf::Sync sync_pb_message;
   sync_pb_message.set_action(static_cast<int32_t>(Sync::Action::kSyncInfo));
   sync_pb_message.set_sync_message(sync_info.SerializeAsString());
@@ -171,23 +172,31 @@ void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
       NonEmptyString(sync_pb_message.SerializeAsString()));
 
   std::shared_ptr<SharedResponse> shared_response(std::make_shared<SharedResponse>());
-  routing::ResponseFunctor callback = [=](std::string response) {
+  routing::ResponseFunctor callback = [=](std::string /*response*/) {
       protobuf::SyncInfoResponse sync_response;
       {
         std::lock_guard<std::mutex> lock(shared_response->mutex);
         try {
-          nfs::Reply reply(NonEmptyString(response));
-          if ((reply.error() == CommonErrors::success) &&
-              sync_response.ParseFromString(reply.data()) &&
+            nfs::Reply::serialised_type serialised_reply(NonEmptyString(response));
+            nfs::Reply reply(serialised_reply);
+          if (/*(CommonErrors::success == reply.error()) &&*/  //FIXME Prakash
+              sync_response.ParseFromString(reply.data().string()) &&
               sync_response.node_id() == routing_.kNodeId().string())
             shared_response->this_node_in_group = true;
         } catch(const std::exception& ex) {
-          LOG(kError) << "Failed to parse reply : " ex.what();
+          LOG(kError) << "Failed to parse reply : " << ex.what();
         }
         ++shared_response->count;
       }
-      if (sync_response.IsInitialised() && (sync_response.has_file_hash_requests()))
-        HandleFileRequest(account_name, sync_response.file_hash_requests());
+      if (sync_response.IsInitialized() && (sync_response.has_file_hash_requests())) {
+          protobuf::GetArchiveFiles requested_files;
+//        if (!requested_files.ParseFromString(sync_response.file_hash_requests()) ||
+//            !requested_files.IsInitialized()) {
+//          LOG(kError) << "Error parsing GetArchiveFiles request.";
+//        } else {
+          HandleFileRequest(account_name, requested_files);
+//        }
+      }
       // lock & delete account ?
     };
   //nfs_.PostSyncData(generic_message, callback);
@@ -195,7 +204,7 @@ void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
 
 void MaidAccountHolderService::HandleFileRequest(const MaidName& account_name,
                                                  const protobuf::GetArchiveFiles& requested_files) {
-  if (!requested_files.ParseFromString(requested_files) || !requested_files.IsInitialized()) {
+  if (!requested_files.IsInitialized()) {
     LOG(kError) << "Error parsing GetArchiveFiles request.";
     return;
   }
