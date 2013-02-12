@@ -132,19 +132,15 @@ void MaidAccountHolderService::PutToAccount(const MaidName& account_name,
                                             int32_t replication_count,
                                             std::true_type) {
   // TODO(Fraser#5#): 2013-02-08 - Consider having replication calculated by network.
-  assert(data_message.data().action == nfs::DataMessage::Action::kPut);
-  maid_account_handler_.PutData<Data>(
-      detail::GetSourceMaidName(data_message),
-      Data::name_type(data_message.data().name),
-      static_cast<int32_t>(data_message.data().content.string().size()),
-      replication_count);
+//  assert(data_message.data().action == nfs::DataMessage::Action::kPut);
+  maid_account_handler_.PutData<Data>(account_name, data_name, data_name, size, replication_count);
 }
 
 template<typename Data>
 void MaidAccountHolderService::DeleteFromAccount(const MaidName& account_name,
                                                  const typename Data::name_type& data_name,
                                                  std::true_type) {
-  assert(data_message.data().action == nfs::DataMessage::Action::kDelete);
+//  assert(data_message.data().action == nfs::DataMessage::Action::kDelete);
   maid_account_handler_.DeleteData<Data>(account_name, data_name);
 }
 
@@ -153,22 +149,22 @@ template<typename Data>
 on_scope_exit MaidAccountHolderService::GetScopeExitForPut(
     const MaidName& account_name,
     const typename Data::name_type& data_name) {
-  on_scope_exit strong_guarantee([account_name, data_name]() {
+  on_scope_exit strong_guarantee([this, account_name, data_name]() {
     try {
-      DeleteFromAccount(account_name, data_name);
+      this->DeleteFromAccount(account_name, data_name);
     }
     catch(...) {}
   });
-  return on_scope_exit;
+  return strong_guarantee;
 }
 
 template<typename Data>
-MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
-                                          const MaidName& account_name,
-                                          const typename Data::name_type& data_name,
-                                          int32_t data_size,
-                                          routing::ReplyFunctor client_reply_functor,
-                                          std::true_type) {
+void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
+                                               const MaidName& account_name,
+                                               const typename Data::name_type& data_name,
+                                               int32_t data_size,
+                                               routing::ReplyFunctor client_reply_functor,
+                                               std::true_type) {
   try {
     if (overall_result.IsSuccess()) {
       PutToAccount<Data>(account_name, data_name, data_size, kDefaultPaymentFactor_,
@@ -186,12 +182,12 @@ MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
 }
 
 template<typename Data>
-MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
-                                          const MaidName& account_name,
-                                          const typename Data::name_type& data_name,
-                                          int32_t data_size,
-                                          routing::ReplyFunctor client_reply_functor,
-                                          std::false_type) {
+void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
+                                               const MaidName& account_name,
+                                               const typename Data::name_type& data_name,
+                                               int32_t data_size,
+                                               routing::ReplyFunctor client_reply_functor,
+                                               std::false_type) {
     // check with MM if data is unique.  If MM says already stored, check if we stored it.  If so success, else failure.
 
 }
