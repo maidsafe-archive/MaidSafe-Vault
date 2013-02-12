@@ -24,11 +24,6 @@ namespace vault {
 
 namespace detail {
 
-routing::GroupRangeStatus NodeRangeCheck(maidsafe::routing::Routing& routing,
-                                         const NodeId& node_id) {
-  return routing.IsNodeIdInGroupRange(node_id);  // provisional call to Is..
-}
-
 bool ShouldRetry(routing::Routing& routing, const nfs::DataMessage& data_message) {
   return routing.network_status() >= Parameters::kMinNetworkHealth &&
          routing.EstimateInGroup(data_message.source().node_id,

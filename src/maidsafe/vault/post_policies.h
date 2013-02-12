@@ -31,6 +31,45 @@ namespace maidsafe {
 
 namespace vault {
 
+template <typename SyncPolicy, typename VaultManagement>
+class VaultPostPolicy : public SyncPolicy, public VaultManagement {
+ public:
+  explicit VaultPostPolicy(routing::Routing& routing, const passport::Pmid& pmid)
+      : SyncPolicy(routing, pmid),
+        VaultManagement(routing, pmid) {}
+};
+
+template <nfs::Persona source_persona>
+class SyncPolicy {
+ public:
+  SyncPolicy(routing::Routing& routing, const passport::Pmid& pmid)
+      : routing_(routing),
+        pmid_(pmid) {}
+
+  routing::Routing& routing_;
+  const passport::Pmid& pmid_;
+};
+
+template <nfs::Persona source_persona>
+class VaultManagement {
+ public:
+  VaultManagement(routing::Routing& routing, const passport::Pmid& pmid)
+      : routing_(routing),
+        pmid_(pmid) {}
+
+  routing::Routing& routing_;
+  const passport::Pmid& pmid_;
+};
+
+typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMaidAccountHolder>,
+    VaultManagement<nfs::Persona::kMaidAccountHolder>> MaidAccountHolderPostPolicy;
+
+typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMetadataManager>,
+    VaultManagement<nfs::Persona::kMetadataManager>> MetadataManagerPostPolicy;
+
+typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kPmidAccountHolder>,
+    VaultManagement<nfs::Persona::kPmidAccountHolder>> PmidAccountHolderPostPolicy;
+
 //template<nfs::Persona persona>
 //class PostSynchronisation {
 // public:

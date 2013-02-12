@@ -33,19 +33,19 @@ typedef nfs::NetworkFileSystem<
     nfs::MaidAccountHolderPutPolicy,
     nfs::MaidAccountHolderGetPolicy,
     nfs::MaidAccountHolderDeletePolicy,
-    PostSynchronisation<nfs::Persona::kMaidAccountHolder>> MaidAccountHolderNfs;
+    MaidAccountHolderPostPolicy> MaidAccountHolderNfs;
 
 typedef nfs::NetworkFileSystem<
     nfs::MetadataManagerPutPolicy,
     nfs::MetadataManagerGetPolicy,
     nfs::MetadataManagerDeletePolicy,
-    PostSynchronisation<nfs::Persona::kMetadataManager>> MetadataManagerNfs;
+    MetadataManagerPostPolicy> MetadataManagerNfs;
 
 typedef nfs::NetworkFileSystem<
     nfs::PmidAccountHolderPutPolicy,
     nfs::PmidAccountHolderGetPolicy,
     nfs::PmidAccountHolderDeletePolicy,
-    PostSynchronisation<nfs::Persona::kPmidAccountHolder>> PmidAccountHolderNfs;
+    PmidAccountHolderPostPolicy> PmidAccountHolderNfs;
 
 typedef passport::PublicMaid::name_type MaidName;
 typedef passport::PublicPmid::name_type PmidName;
