@@ -31,32 +31,32 @@ namespace maidsafe {
 
 namespace vault {
 
-template<nfs::Persona persona>
-class PostSynchronisation {
- public:
-  explicit PostSynchronisation(routing::Routing& routing)
-      : routing_(routing),
-        source_(nfs::PersonaId(persona, routing.kNodeId())) {}
+//template<nfs::Persona persona>
+//class PostSynchronisation {
+// public:
+//  explicit PostSynchronisation(routing::Routing& routing)
+//      : routing_(routing),
+//        source_(nfs::PersonaId(persona, routing.kNodeId())) {}
 
-  explicit PostSynchronisation(routing::Routing& routing, const passport::Pmid& /*signing_pmid*/)
-      : routing_(routing),
-        source_(nfs::PersonaId(persona, routing.kNodeId())) {}
+//  explicit PostSynchronisation(routing::Routing& routing, const passport::Pmid& /*signing_pmid*/)
+//      : routing_(routing),
+//        source_(nfs::PersonaId(persona, routing.kNodeId())) {}
 
-  void PostSyncData(const nfs::GenericMessage& generic_message,
-                    routing::ResponseFunctor response_functor) {
-    nfs::Message message(nfs::GenericMessage::message_type_identifier,
-                         generic_message.Serialise().data);
-    routing_.SendGroup(NodeId(generic_message.name().string()), message.Serialise()->string(),
-                       false, response_functor);
-  }
+//  void PostSyncData(const nfs::GenericMessage& generic_message,
+//                    routing::ResponseFunctor response_functor) {
+//    nfs::Message message(nfs::GenericMessage::message_type_identifier,
+//                         generic_message.Serialise().data);
+//    routing_.SendGroup(NodeId(generic_message.name().string()), message.Serialise()->string(),
+//                       false, response_functor);
+//  }
 
- protected:
-  ~PostSynchronisation() {}
+// protected:
+//  ~PostSynchronisation() {}
 
- private:
-  routing::Routing& routing_;
-  nfs::PersonaId source_;
-};
+// private:
+//  routing::Routing& routing_;
+//  nfs::PersonaId source_;
+//};
 
 }  // namespace vault
 

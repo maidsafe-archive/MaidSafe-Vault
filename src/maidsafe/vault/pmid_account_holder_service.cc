@@ -28,7 +28,7 @@ PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
     public_key_getter_(public_key_getter),
     accumulator_(),
     pmid_account_handler_(vault_root_dir),
-    nfs_(routing) {}
+    nfs_(routing, pmid) {}
 
 
 void PmidAccountHolderService::HandleSynchronise(

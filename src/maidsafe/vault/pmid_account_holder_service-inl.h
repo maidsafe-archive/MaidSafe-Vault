@@ -51,12 +51,12 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
                                          const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
   try {
-    std::future<void> future(pmid_account_handler_.PutData<Data>(
-                                 data_message.data_holder(),
-                                 data_message.data().name,
-                                 data_message.data().content.string.size()));
+//    std::future<void> future(pmid_account_handler_.PutData<Data>(
+//                                 data_message.data_holder(),
+//                                 data_message.data().name,
+//                                 data_message.data().content.string.size()));
     try {
-      future.get();
+//      future.get();
       SendDataMessage<Data>(data_message);
     }
     catch(const std::exception& e) {

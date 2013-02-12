@@ -83,13 +83,13 @@ void HandleDataType(nfs::DataMessage& data_message,
 }  // unnamed namespace
 
 
-Demultiplexer::Demultiplexer(MaidAccountHolder& maid_account_holder,
+Demultiplexer::Demultiplexer(MaidAccountHolderService& maid_account_holder_service,
                              MetadataManagerService& metadata_manager_service,
-                             PmidAccountHolder& pmid_account_holder,
+                             PmidAccountHolderService& pmid_account_holder_service,
                              DataHolder& data_holder)
-    : maid_account_holder_(maid_account_holder),
+    : maid_account_holder_service_(maid_account_holder),
       metadata_manager_service_(metadata_manager_service),
-      pmid_account_holder_(pmid_account_holder),
+      pmid_account_holder_service_(pmid_account_holder_service),
       data_holder_(data_holder) {}
 
 void Demultiplexer::HandleMessage(const std::string& serialised_message,
@@ -118,11 +118,14 @@ void Demultiplexer::HandleDataMessagePersona(nfs::DataMessage& data_message,
                                              const routing::ReplyFunctor& reply_functor) {
   switch (data_message.destination_persona()) {
     case nfs::Persona::kMaidAccountHolder:
-      return HandleDataType<MaidAccountHolder>(data_message, reply_functor, maid_account_holder_);
+      return HandleDataType<MaidAccountHolder>(data_message, reply_functor,
+                                               maid_account_holder_service_);
     case nfs::Persona::kMetadataManager:
-      return HandleDataType<MetadataManagerService>(data_message, reply_functor, metadata_manager_service_);
+      return HandleDataType<MetadataManagerService>(data_message, reply_functor,
+                                                    metadata_manager_service_);
     case nfs::Persona::kPmidAccountHolder:
-      return HandleDataType<PmidAccountHolder>(data_message, reply_functor, pmid_account_holder_);
+      return HandleDataType<PmidAccountHolder>(data_message, reply_functor,
+                                               pmid_account_holder_service_);
     case nfs::Persona::kDataHolder:
       return HandleDataType<DataHolder>(data_message, reply_functor, data_holder_);
     default:

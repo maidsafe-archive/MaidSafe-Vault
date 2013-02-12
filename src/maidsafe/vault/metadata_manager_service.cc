@@ -9,7 +9,7 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#include "maidsafe/vault/metadata_manager/metadata_manager_service_service.h"
+#include "maidsafe/vault/metadata_manager_service.h"
 
 #include <string>
 #include <vector>
@@ -19,48 +19,47 @@ namespace maidsafe {
 
 namespace vault {
 
-MetadataManagerService::MetadataManagerService(routing::Routing& routing,
-                                 const boost::filesystem::path& vault_root_dir)
-    : kRootDir_(vault_root_dir),
-      routing_(routing),
-      data_elements_manager_(vault_root_dir),
-      nfs_(routing),
-      request_accumulator_() {}
+MetadataManagerService::MetadataManagerService(const passport::Pmid& pmid,
+                                               routing::Routing& routing,
+                                               nfs::PublicKeyGetter& public_key_getter,
+                                               const boost::filesystem::path& vault_root_dir)
+    : routing_(routing),
+      public_key_getter_(public_key_getter),
+      accumulator_(),
+      metadata_handler_(vault_root_dir),
+      nfs_(routing, pmid) {}
 
-MetadataManagerService::~MetadataManagerService() {}
+//MetadataManagerService::~MetadataManagerService() {}
 
-void MetadataManagerService::CloseNodeReplaced(
-    const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
+void MetadataManagerService::TriggerSync() {
 }
 
-void MetadataManagerService::Serialise() {}
+//void MetadataManagerService::Serialise() {}
 
 void MetadataManagerService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
-                                                  const routing::ReplyFunctor& reply_functor) {
+                                                  const routing::ReplyFunctor& /*reply_functor*/) {
   // TODO(Team): Validate message
   nfs::GenericMessage::Action action(generic_message.action());
-  NodeId source_id(generic_message.source().node_id);
   switch (action) {
     case nfs::GenericMessage::Action::kNodeUp:
       // No need to reply
-      HandleNodeUp(generic_message, source_id));
+      HandleNodeUp(generic_message);
       break;
     case nfs::GenericMessage::Action::kNodeDown:
       // No need to reply
-      HandleNodeDown(generic_message, source_id));
+      HandleNodeDown(generic_message);
       break;
     default:
       LOG(kError) << "Unhandled Post action type";
   }
 }
 
-void MetadataManagerService::SendSyncData() {}
+//void MetadataManagerService::SendSyncData() {}
 
-bool MetadataManagerService::HandleNodeDown(
-    const nfs::GenericMessage& generic_message, NodeId& /*node*/) {
+void MetadataManagerService::HandleNodeDown(const nfs::GenericMessage& /*generic_message*/) {
   try {
-    int64_t online_holders(-1);
-    data_elements_manager_.MoveNodeToOffline(generic_message.name(), PmidName(), online_holders);
+    int online_holders(-1);
+//    metadata_handler_.MarkNodeDown(generic_message.name(), PmidName(), online_holders);
     if (online_holders < 3) {
       // TODO(Team): Get content. There is no manager available yet.
 
@@ -72,23 +71,18 @@ bool MetadataManagerService::HandleNodeDown(
   }
   catch(const std::exception &e) {
     LOG(kError) << "HandleNodeDown - Dropping process after exception: " << e.what();
-    return false;
+    return;
   }
-
-  return true;
 }
 
-bool MetadataManagerService::HandleNodeUp(
-    const nfs::GenericMessage& generic_message, NodeId& /*node*/) {
+void MetadataManagerService::HandleNodeUp(const nfs::GenericMessage& /*generic_message*/) {
   try {
-    data_elements_manager_.MoveNodeToOnline(generic_message.name(), PmidName());
+//    metadata_handler_.MarkNodeUp(generic_message.name(), PmidName());
   }
   catch(const std::exception &e) {
     LOG(kError) << "HandleNodeUp - Dropping process after exception: " << e.what();
-    return false;
+    return;
   }
-
-  return true;
 }
 
 }  // namespace vault

@@ -23,16 +23,16 @@ namespace maidsafe {
 
 namespace vault {
 
-class MaidAccountHolder;
+class MaidAccountHolderService;
 class MetadataManagerService;
-class PmidAccountHolder;
+class PmidAccountHolderService;
 class DataHolder;
 
 class Demultiplexer {
  public:
-  Demultiplexer(MaidAccountHolder& maid_account_holder,
+  Demultiplexer(MaidAccountHolderService& maid_account_holder_service,
                 MetadataManagerService& metadata_manager_service,
-                PmidAccountHolder& pmid_account_holder,
+                PmidAccountHolderService& pmid_account_holder_service,
                 DataHolder& data_holder);
   void HandleMessage(const std::string& serialised_message,
                      const routing::ReplyFunctor& reply_functor);
@@ -47,9 +47,9 @@ class Demultiplexer {
   NonEmptyString HandleGetFromCache(nfs::DataMessage& data_message);
   void HandleStoreInCache(const nfs::DataMessage& data_message);
 
-  MaidAccountHolder& maid_account_holder_;
+  MaidAccountHolderService& maid_account_holder_service_;
   MetadataManagerService& metadata_manager_service_;
-  PmidAccountHolder& pmid_account_holder_;
+  PmidAccountHolderService& pmid_account_holder_service_;
   DataHolder& data_holder_;
 };
 

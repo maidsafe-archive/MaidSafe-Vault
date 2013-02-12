@@ -27,10 +27,10 @@
 
 #include "maidsafe/nfs/public_key_getter.h"
 
-#include "maidsafe/vault/data_holder/data_holder.h"
-#include "maidsafe/vault/maid_account_holder/maid_account_holder.h"
-#include "maidsafe/vault/metadata_manager/metadata_manager_service.h"
-#include "maidsafe/vault/pmid_account_holder/pmid_account_holder.h"
+#include "maidsafe/vault/data_holder_service.h"
+#include "maidsafe/vault/maid_account_holder_service.h"
+#include "maidsafe/vault/metadata_manager_service.h"
+#include "maidsafe/vault/pmid_account_holder_service.h"
 #include "maidsafe/vault/demultiplexer.h"
 
 
@@ -71,9 +71,9 @@ class Vault {
   std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint_;
   std::unique_ptr<routing::Routing> routing_;
   nfs::PublicKeyGetter public_key_getter_;
-  MaidAccountHolder maid_account_holder_;
+  MaidAccountHolderService maid_account_holder_service_;
   MetadataManagerService metadata_manager_service_;
-  PmidAccountHolder pmid_account_holder_;
+  PmidAccountHolderService pmid_account_holder_service_;
   DataHolder data_holder_;
   Demultiplexer demux_;
   AsioService asio_service_;

@@ -172,13 +172,12 @@ void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
       NonEmptyString(sync_pb_message.SerializeAsString()));
 
   std::shared_ptr<SharedResponse> shared_response(std::make_shared<SharedResponse>());
-  routing::ResponseFunctor callback = [=](std::string /*response*/) {
+  routing::ResponseFunctor callback = [=](std::string response) {
       protobuf::SyncInfoResponse sync_response;
       {
         std::lock_guard<std::mutex> lock(shared_response->mutex);
         try {
-            nfs::Reply::serialised_type serialised_reply(NonEmptyString(response));
-            nfs::Reply reply(serialised_reply);
+          nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(response))));
           if (/*(CommonErrors::success == reply.error()) &&*/  //FIXME Prakash
               sync_response.ParseFromString(reply.data().string()) &&
               sync_response.node_id() == routing_.kNodeId().string())

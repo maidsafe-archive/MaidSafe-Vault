@@ -40,7 +40,7 @@ class MetadataHandler {
 
   // This is used when synchronising with other MMs.  It simply adds or replaces any existing
   // element of the same type and name.
-  void PutMetadata(const Metadata& metadata);
+  void PutMetadata(const protobuf::Metadata& metadata);
   // This is used when synchronising with other MMs.  If this node sends a sync (group message) for
   // this element, and doesn't receive its own request, it's no longer responsible for this element.
   template<typename Data>

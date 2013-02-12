@@ -16,12 +16,15 @@
 
 #include "boost/filesystem/path.hpp"
 
+#include "maidsafe/data_types/data_name_variant.h"
+
 #include "maidsafe/routing/api_config.h"
+
 #include "maidsafe/nfs/accumulator.h"
 #include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/response_mapper.h"
 #include "maidsafe/nfs/nfs.h"
+#include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/vault/metadata_handler.h"
 #include "maidsafe/vault/types.h"
@@ -34,7 +37,6 @@ namespace vault {
 class MetadataManagerService {
  public:
   MetadataManagerService(const passport::Pmid& pmid,
-                         nfs::NfsResponseMapper& response_mapper,
                          routing::Routing& routing,
                          nfs::PublicKeyGetter& public_key_getter,
                          const boost::filesystem::path& vault_root_dir);
@@ -43,7 +45,7 @@ class MetadataManagerService {
                          const routing::ReplyFunctor& reply_functor);
   void HandleGenericMessage(const nfs::GenericMessage& generic_message,
                             const routing::ReplyFunctor& reply_functor);
-  void TriggerSynchronise(const std::vector<routing::NodeInfo>& new_close_nodes);
+  void TriggerSync();
 
  private:
   template<typename Data>
@@ -56,8 +58,8 @@ class MetadataManagerService {
   template<typename Data>
   void ValidateDataMessage(const nfs::DataMessage& data_message) const;
 
-  void HandleNodeDown(const nfs::GenericMessage& generic_message, routing::NodeInfo& node_info);
-  void HandleNodeUp(const nfs::GenericMessage& generic_message, routing::NodeInfo& node_info);
+  void HandleNodeDown(const nfs::GenericMessage& generic_message);
+  void HandleNodeUp(const nfs::GenericMessage& generic_message);
 
   // On error handler
   template<typename Data>
@@ -67,17 +69,12 @@ class MetadataManagerService {
   template<typename Data>
   void OnGenericErrorHandler(nfs::GenericMessage message);
 
-  MetadataHandler metadata_handler_;
-  nfs::Accumulator accumulator_;
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
+  nfs::Accumulator<DataNameVariant> accumulator_;
+  MetadataHandler metadata_handler_;
   MetadataManagerNfs nfs_;
 };
-
-template<typename Data>
-void MetadataManagerService::HandleDataMessage(const nfs::DataMessage& /*data_message*/,
-                                        const routing::ReplyFunctor& /*reply_functor*/) {
-}
 
 }  // namespace vault
 

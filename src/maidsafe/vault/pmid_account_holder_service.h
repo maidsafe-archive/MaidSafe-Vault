@@ -43,7 +43,7 @@ class PmidAccountHolderService {
                          const routing::ReplyFunctor& reply_functor);
   void HandleGenericMessage(const nfs::GenericMessage& generic_message,
                             const routing::ReplyFunctor& reply_functor);
-  void HandleSynchronise(const std::vector<routing::NodeInfo>& new_close_nodes);
+  void TriggerSync();
 
  private:
   template<typename Data>
@@ -68,7 +68,7 @@ class PmidAccountHolderService {
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
-  nfs::Accumulator accumulator_;
+  nfs::Accumulator<PmidName> accumulator_;
   PmidAccountHandler pmid_account_handler_;
   PmidAccountHolderNfs nfs_;
 };

@@ -27,9 +27,15 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void MetadataManagerService::HandlePutMessage(const nfs::DataMessage& data_message,
+void MetadataManagerService::HandleDataMessage(const nfs::DataMessage& /*data_message*/,
+                                        const routing::ReplyFunctor& /*reply_functor*/) {
+}
+
+template<typename Data>
+void MetadataManagerService::HandlePut(const nfs::DataMessage& data_message,
                                        const routing::ReplyFunctor& reply_functor) {
-  if (!detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
+  if (routing::GroupRangeStatus::kOutwithRange ==
+          detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
     reply_functor(nfs::Reply(RoutingErrors::not_in_range).Serialise()->string());
     return;
   }
@@ -44,65 +50,65 @@ void MetadataManagerService::HandlePutMessage(const nfs::DataMessage& data_messa
 }
 
 template<typename Data>
-void MetadataManagerService::HandleGetMessage(nfs::DataMessage data_message,
-                                       const routing::ReplyFunctor& reply_functor) {
-  std::vector<Identity> online_dataholders(
-      data_elements_manager_.GetOnlinePmid(Identity(data_message.data().name)));
-  std::vector<std::future<Data>> futures;
-  for (auto& online_dataholder : online_dataholders)
-    futures.emplace_back(nfs_.Get<Data>(data_message.data().name,
-                                        nfs::MessageSource(nfs::Persona::kMetadataManager,
-                                                           routing_.kNodeId()),
-                                        online_dataholder));
+void MetadataManagerService::HandleGet(nfs::DataMessage /*data_message*/,
+                                       const routing::ReplyFunctor& /*reply_functor*/) {
+//  std::vector<Identity> online_dataholders(
+//      data_elements_manager_.GetOnlinePmid(Identity(data_message.data().name)));
+//  std::vector<std::future<Data>> futures;
+//  for (auto& online_dataholder : online_dataholders)
+//    futures.emplace_back(nfs_.Get<Data>(data_message.data().name,
+//                                        nfs::MessageSource(nfs::Persona::kMetadataManager,
+//                                                           routing_.kNodeId()),
+//                                        online_dataholder));
 
-  auto fetched_data = futures.begin();
-  while (futures.size() > 0) {
-    if (fetched_data->wait_for(0) == std::future_status::ready) {
-      try {
-        Data fetched_chunk = fetched_data->get();
-        if (fetched_chunk.name().data.IsInitialised()) {
-          reply_functor(fetched_chunk.data.string());
-          return;
-        }
-      } catch(...) {
-        // no op
-      }
-      fetched_data = futures.erase(fetched_data);
-    } else {
-      ++fetched_data;
-    }
-    Sleep(boost::posix_time::milliseconds(1));
-    if (fetched_data == futures.end())
-      fetched_data = futures.begin();
-  }
+//  auto fetched_data = futures.begin();
+//  while (futures.size() > 0) {
+//    if (fetched_data->wait_for(0) == std::future_status::ready) {
+//      try {
+//        Data fetched_chunk = fetched_data->get();
+//        if (fetched_chunk.name().data.IsInitialised()) {
+//          reply_functor(fetched_chunk.data.string());
+//          return;
+//        }
+//      } catch(...) {
+//        // no op
+//      }
+//      fetched_data = futures.erase(fetched_data);
+//    } else {
+//      ++fetched_data;
+//    }
+//    Sleep(boost::posix_time::milliseconds(1));
+//    if (fetched_data == futures.end())
+//      fetched_data = futures.begin();
+//  }
 
-  reply_functor(nfs::Reply(NfsErrors::failed_to_get_data).Serialise()->string());
+//  reply_functor(nfs::Reply(NfsErrors::failed_to_get_data).Serialise()->string());
 }
 
 template<typename Data>
-void MetadataManagerService::HandleDeleteMessage(const nfs::DataMessage& data_message,
-                                          const routing::ReplyFunctor& reply_functor) {
-  Identity data_id(data_message.data().name);
-  int64_t num_follower(data_elements_manager_.DecreaseDataElement(data_id));
-  if (num_follower == 0) {
-    std::vector<Identity> online_dataholders(data_elements_manager_.GetOnlinePmid(data_id));
-    data_elements_manager_.RemoveDataElement(data_id);
+void MetadataManagerService::HandleDelete(const nfs::DataMessage& /*data_message*/,
+                                          const routing::ReplyFunctor& /*reply_functor*/) {
+//  Identity data_id(data_message.data().name);
+//  int64_t num_follower(data_elements_manager_.DecreaseDataElement(data_id));
+//  if (num_follower == 0) {
+//    std::vector<Identity> online_dataholders(data_elements_manager_.GetOnlinePmid(data_id));
+//    data_elements_manager_.RemoveDataElement(data_id);
 
-    for (auto& online_dataholder : online_dataholders) {
-      nfs::DataMessage::OnError on_error_callback(
-          [this](nfs::DataMessage data_msg) { this->OnDeleteErrorHandler<Data>(data_msg); });
-      // TODO(Team) : double check whether signing key required
-      nfs::DataMessage new_message(
-          nfs::DataMessage::Action::kDelete,
-          nfs::Persona::kPmidAccountHolder,
-          nfs::MessageSource(nfs::Persona::kMetadataManager, routing_.kNodeId()),
-          nfs::DataMessage::Data(Data::name_type::tag_type::kEnumValue,
-                                 online_dataholder,
-                                 data_id));
-      nfs_.Delete<Data>(new_message, on_error_callback);
-    }
-  }
-  reply_functor(nfs::Reply(num_follower).Serialise()->string());
+//    for (auto& online_dataholder : online_dataholders) {
+//      nfs::DataMessage::OnError on_error_callback(
+//          [this](nfs::DataMessage data_msg) { this->OnDeleteErrorHandler<Data>(data_msg); });
+//      // TODO(Team) : double check whether signing key required
+//      nfs::DataMessage new_message(
+//          nfs::DataMessage::Action::kDelete,
+//          nfs::Persona::kPmidAccountHolder,
+//          nfs::MessageSource(nfs::Persona::kMetadataManager, routing_.kNodeId()),
+//          nfs::DataMessage::Data(Data::name_type::tag_type::kEnumValue,
+//                                 online_dataholder,
+//                                 data_id));
+//      nfs_.Delete<Data>(new_message, on_error_callback);
+//    }
+//  }
+//  reply_functor(nfs::Reply(num_follower).Serialise()->string());
 }
 
 // On error handler's
