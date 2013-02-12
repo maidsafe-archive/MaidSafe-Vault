@@ -273,7 +273,9 @@ typedef testing::Types<passport::PublicAnmid,
                        passport::PublicAnmpid,
                        passport::PublicMpid,
                        ImmutableData,
-                       MutableData> AllTypes;
+                       OwnerDirectory,
+                       GroupDirectory,
+                       WorldDirectory> AllTypes;
 
 INSTANTIATE_TYPED_TEST_CASE_P(All, MaidAccountHandlerTypedTest, AllTypes);
 

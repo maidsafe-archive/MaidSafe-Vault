@@ -15,6 +15,10 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/data_types/data_type_values.h"
+#include "maidsafe/data_types/immutable_data.h"
+#include "maidsafe/data_types/owner_directory.h"
+#include "maidsafe/data_types/group_directory.h"
+#include "maidsafe/data_types/world_directory.h"
 #include "maidsafe/nfs/data_message.h"
 #include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/message.h"
@@ -65,8 +69,12 @@ void HandleDataType(nfs::DataMessage& data_message,
       return persona.template HandleDataMessage<passport::PublicMpid>(data_message, reply_functor);
     case DataTagValue::kImmutableDataValue:
       return persona.template HandleDataMessage<ImmutableData>(data_message, reply_functor);
-    case DataTagValue::kMutableDataValue:
-      return persona.template HandleDataMessage<MutableData>(data_message, reply_functor);
+    case DataTagValue::kOwnerDirectoryValue:
+      return persona.template HandleDataMessage<OwnerDirectory>(data_message, reply_functor);
+    case DataTagValue::kGroupDirectoryValue:
+      return persona.template HandleDataMessage<GroupDirectory>(data_message, reply_functor);
+    case DataTagValue::kWorldDirectoryValue:
+      return persona.template HandleDataMessage<WorldDirectory>(data_message, reply_functor);
     default:
       LOG(kError) << "Unhandled data type";
   }
@@ -89,11 +97,11 @@ void Demultiplexer::HandleMessage(const std::string& serialised_message,
   try {
     nfs::Message message((nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
     switch (message.inner_message_type()) {
-      case nfs::DataMessage::message_type_identifier: {
+      case nfs::MessageCategory::kData: {
         nfs::DataMessage data_message(message.serialised_inner_message<nfs::DataMessage>());
         return HandleDataMessagePersona(data_message, reply_functor);
       }
-      case nfs::GenericMessage::message_type_identifier: {
+      case nfs::MessageCategory::kGeneric: {
         nfs::GenericMessage generic_msg(message.serialised_inner_message<nfs::GenericMessage>());
         return HandleGenericMessagePersona(generic_msg, reply_functor);
       }
@@ -172,8 +180,12 @@ NonEmptyString Demultiplexer::HandleGetFromCache(nfs::DataMessage& data_message)
       return data_holder_.GetFromCache<passport::PublicMpid>(data_message);
     case DataTagValue::kImmutableDataValue:
       return data_holder_.GetFromCache<ImmutableData>(data_message);
-    case DataTagValue::kMutableDataValue:
-      return data_holder_.GetFromCache<MutableData>(data_message);
+    case DataTagValue::kOwnerDirectoryValue:
+      return data_holder_.GetFromCache<OwnerDirectory>(data_message);
+    case DataTagValue::kGroupDirectoryValue:
+      return data_holder_.GetFromCache<GroupDirectory>(data_message);
+    case DataTagValue::kWorldDirectoryValue:
+      return data_holder_.GetFromCache<WorldDirectory>(data_message);
     default:
       LOG(kError) << "Unhandled data type";
   }
@@ -211,8 +223,12 @@ void Demultiplexer::HandleStoreInCache(const nfs::DataMessage& data_message) {
       return data_holder_.StoreInCache<passport::PublicMpid>(data_message);
     case DataTagValue::kImmutableDataValue:
       return data_holder_.StoreInCache<ImmutableData>(data_message);
-    case DataTagValue::kMutableDataValue:
-      return data_holder_.StoreInCache<MutableData>(data_message);
+    case DataTagValue::kOwnerDirectoryValue:
+      return data_holder_.StoreInCache<OwnerDirectory>(data_message);
+    case DataTagValue::kGroupDirectoryValue:
+      return data_holder_.StoreInCache<GroupDirectory>(data_message);
+    case DataTagValue::kWorldDirectoryValue:
+      return data_holder_.StoreInCache<WorldDirectory>(data_message);
     default :
       LOG(kError) << "Unhandled data type";
   }

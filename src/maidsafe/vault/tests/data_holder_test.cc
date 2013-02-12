@@ -21,7 +21,13 @@
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/test.h"
 
+#include "maidsafe/passport/passport.h"
+
 #include "maidsafe/data_types/data_type_values.h"
+#include "maidsafe/data_types/immutable_data.h"
+#include "maidsafe/data_types/owner_directory.h"
+#include "maidsafe/data_types/group_directory.h"
+#include "maidsafe/data_types/world_directory.h"
 
 #include "maidsafe/nfs/data_message.h"
 
@@ -214,7 +220,9 @@ typedef testing::Types<passport::PublicAnmid,
                        passport::PublicAnmpid,
                        passport::PublicMpid,
                        ImmutableData,
-                       MutableData> AllTypes;
+                       OwnerDirectory,
+                       GroupDirectory,
+                       WorldDirectory> AllTypes;
 
 INSTANTIATE_TYPED_TEST_CASE_P(NoCache, DataHolderTest, AllTypes);
 
@@ -255,7 +263,9 @@ typedef testing::Types<passport::PublicAnmid,
                        passport::PublicAnmpid,
                        passport::PublicMpid,
                        ImmutableData,
-                       MutableData> CacheableTypes;
+                       OwnerDirectory,
+                       GroupDirectory,
+                       WorldDirectory> CacheableTypes;
 
 INSTANTIATE_TYPED_TEST_CASE_P(Cache, DataHolderCacheableTest, CacheableTypes);
 
