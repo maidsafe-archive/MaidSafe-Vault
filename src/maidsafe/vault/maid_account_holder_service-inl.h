@@ -19,6 +19,8 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
+#include "maidsafe/nfs/utils.h"
+
 #include "maidsafe/vault/utils.h"
 
 
@@ -49,89 +51,149 @@ template<typename Data>
 void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
                                          const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
+  nfs::Accumulator<MaidName>::RequestIdentity request_id;
   try {
     ValidateDataMessage(data_message);
-    // Pay for 1 copy just now.  MetadataManager may require further payments, or removal if the
-    // data has to be unique and has already been put to network by a different Maid.
-    AdjustAccount<Data>(data_message, is_payable<Data>());
     Data data(data_message.data().name, Data::serialised_type(data_message.data().content));
-    SendDataMessage<Data>(data_message);
+    MaidName account_name(detail::GetSourceMaidName(data_message));
+    auto data_name(GetDataName(data_message));
+    int32_t data_size(static_cast<int32_t>(data_message.data().content.string().size()));
+    auto put_op(std::make_shared<nfs::PutOrDeleteOp>(
+        kPutSuccessCountMin_,
+        [this, account_name, data_name, data_size, reply_functor](nfs::Reply overall_result) {
+            HandlePutResult(overall_result, account_name, data_name, data_size, reply_functor,
+                            is_unique_on_network<Data>());
+        }));
+    nfs_.Put(data,
+             data_message.data_holder(),
+             [put_op](std::string serialised_reply) {
+                 nfs::HandlePutOrDeleteReply(put_op, serialised_reply);
+             });
+    return;
   }
-  catch(const std::system_error& error) {
+  catch(const maidsafe_error& error) {
     LOG(kWarning) << error.what();
-    reply = nfs::Reply(error);
+    request_id = std::make_pair(data_message.message_id(), data_message.source().persona);
+    reply = nfs::Reply(error, data_message.Serialise().data), reply_functor);
   }
-  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
-  accumulator_.SetHandled(request_id, reply);
-  reply_functor(reply.Serialise()->string());
+  catch(...) {
+    LOG(kWarning) << "Unknown error.";
+    request_id = std::make_pair(data_message.message_id(), data_message.source().persona);
+    reply = nfs::Reply(CommonErrors::unknown, data_message.Serialise().data), reply_functor);
+  }
+  try {
+    SendReply(request_id, reply);
+  }
+  catch(...) {
+    LOG(kWarning) << "Exception while forming reply.";
+  }
 }
-    // check with MM if data is unique.  If MM says already stored, check if we stored it.  If so success, else failure.
 
 template<typename Data>
 void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message,
                                             const routing::ReplyFunctor& reply_functor) {
   try {
     ValidateDataMessage(data_message);
-    AdjustAccount<Data>(data_message, is_payable<Data>());
-    SendDataMessage<Data>(data_message);
+    auto data_name(GetDataName(data_message));
+    DeleteFromAccount<Data>(detail::GetSourceMaidName(data_message), data_name, is_payable<Data>());
+    nfs_.Delete<Data>(data_name, [](std::string /*serialised_reply*/) {});
   }
-  catch(const std::system_error& error) {
+  catch(const maidsafe_error& error) {
     LOG(kWarning) << error.what();
     // Always return success for Deletes
   }
-  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
-  nfs::Reply reply(CommonErrors::success);
+  catch(...) {
+    LOG(kWarning) << "Unknown error.";
+    // Always return success for Deletes
+  }
+  SendReply(std::make_pair(data_message.message_id(), data_message.source().persona),
+            nfs::Reply(CommonErrors::success, data_message.Serialise().data), reply_functor);
+}
+
+template<typename Data>
+typename Data::name_type MaidAccountHolderService::GetDataName(
+    const DataMessage& data_message) const {
+  // Hash the data name to obfuscate the list of chunks associated with the client.
+  return Data::name_type(crypto::Hash<crypto::SHA512>(data_message.data().name));
+}
+
+void MaidAccountHolderService::SendReply(
+    const nfs::Accumulator<MaidName>::RequestIdentity& request_id,
+    const nfs::Reply& reply,
+    const routing::ReplyFunctor& reply_functor) {
   accumulator_.SetHandled(request_id, reply);
   reply_functor(reply.Serialise()->string());
 }
 
 template<typename Data>
-void MaidAccountHolderService::AdjustAccount(const nfs::DataMessage& data_message,
-                                             std::true_type,
-                                             int32_t replication_count) {
-  if (data_message.data().action == nfs::DataMessage::Action::kPut) {
+void MaidAccountHolderService::PutToAccount(const MaidName& account_name,
+                                            const typename Data::name_type& data_name,
+                                            int32_t size,
+                                            int32_t replication_count,
+                                            std::true_type) {
+  // TODO(Fraser#5#): 2013-02-08 - Consider having replication calculated by network.
+  assert(data_message.data().action == nfs::DataMessage::Action::kPut);
+  maid_account_handler_.PutData<Data>(
+      detail::GetSourceMaidName(data_message),
+      Data::name_type(data_message.data().name),
+      static_cast<int32_t>(data_message.data().content.string().size()),
+      replication_count);
+}
+
+template<typename Data>
+void MaidAccountHolderService::DeleteFromAccount(const MaidName& account_name,
+                                                 const typename Data::name_type& data_name,
+                                                 std::true_type) {
+  assert(data_message.data().action == nfs::DataMessage::Action::kDelete);
+  maid_account_handler_.DeleteData<Data>(account_name, data_name);
+}
+
+
+template<typename Data>
+on_scope_exit MaidAccountHolderService::GetScopeExitForPut(
+    const MaidName& account_name,
+    const typename Data::name_type& data_name) {
+  on_scope_exit strong_guarantee([account_name, data_name]() {
     try {
-      maid_account_handler_.PutData<Data>(
-          detail::GetSourceMaidName(data_message),
-          Data::name_type(data_message.data().name),
-          static_cast<int32_t>(data_message.data().content.string().size()),
-          replication_count);
+      DeleteFromAccount(account_name, data_name);
     }
-    catch(const maidsafe_error& error) {
-      if (error.code() != VaultErrors::no_such_account &&
-          error.code() != VaultErrors::not_enough_space) {
+    catch(...) {}
+  });
+  return on_scope_exit;
+}
 
-      }
+template<typename Data>
+MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
+                                          const MaidName& account_name,
+                                          const typename Data::name_type& data_name,
+                                          int32_t data_size,
+                                          routing::ReplyFunctor client_reply_functor,
+                                          std::true_type) {
+  try {
+    if (overall_result.IsSuccess()) {
+      PutToAccount<Data>(account_name, data_name, data_size, kDefaultPaymentFactor_,
+                         is_payable<Data>());
+      on_scope_exit strong_guarantee(GetScopeExitForPut(account_name, data_name));
+      client_reply_functor(nfs::Reply(CommonErrors::success).Serialise()->string());
+      strong_guarantee.Release();
+    } else {
+      client_reply_functor(overall_result.Serialise()->string());
     }
-    catch(const std::exception&) {
-
-    }
-    // TODO(Fraser#5#): 2013-02-08 - Consider having replication calculated by network.
-  } else {
-    assert(data_message.data().action == nfs::DataMessage::Action::kDelete);
-    maid_account_handler_.DeleteData<Data>(detail::GetSourceMaidName(data_message),
-                                           Data::name_type(data_message.data().name));
+  }
+  catch(const std::exception& e) {
+    LOG(kError) << "Failed to Handle Put result: " << e.what();
   }
 }
 
 template<typename Data>
-void MaidAccountHolderService::SendDataMessage(const nfs::DataMessage& data_message) {
-  if (data_message.data().action == nfs::DataMessage::Action::kPut) {
-    nfs_.Put<Data>(data_message,
-                   [this] (nfs::DataMessage data_msg) {
-                     detail::RetryOnPutOrDeleteError<MaidAccountHolderNfs, Data>(routing_,
-                                                                                 nfs_,
-                                                                                 data_msg);
-                   });
-  } else {
-    assert(data_message.data().action == nfs::DataMessage::Action::kDelete);
-    nfs_.Delete<Data>(data_message,
-                      [this] (nfs::DataMessage data_msg) {
-                        detail::RetryOnPutOrDeleteError<MaidAccountHolderNfs, Data>(routing_,
-                                                                                    nfs_,
-                                                                                    data_msg);
-                      });
-  }
+MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
+                                          const MaidName& account_name,
+                                          const typename Data::name_type& data_name,
+                                          int32_t data_size,
+                                          routing::ReplyFunctor client_reply_functor,
+                                          std::false_type) {
+    // check with MM if data is unique.  If MM says already stored, check if we stored it.  If so success, else failure.
+
 }
 
 }  // namespace vault

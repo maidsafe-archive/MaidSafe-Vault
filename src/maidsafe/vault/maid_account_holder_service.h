@@ -68,16 +68,56 @@ class MaidAccountHolderService {
   template<typename Data>
   void HandleDelete(const nfs::DataMessage& data_message,
                     const routing::ReplyFunctor& reply_functor);
+  template<typename Data>
+  typename Data::name_type GetDataName(const DataMessage& data_message) const;
+  void SendReply(const nfs::Accumulator<MaidName>::RequestIdentity& request_id,
+                 const nfs::Reply& reply,
+                 const routing::ReplyFunctor& reply_functor);
   void ValidateDataMessage(const nfs::DataMessage& data_message) const;
   template<typename Data>
-  void AdjustAccount(const nfs::DataMessage& data_message,
-                     std::true_type,
-                     int32_t replication_count = 1);
+  void PutToAccount(const MaidName& account_name,
+                    const typename Data::name_type& data_name,
+                    int32_t size,
+                    int32_t replication_count,
+                    std::true_type);
   // no-op for non-payable data
   template<typename Data>
-  void AdjustAccount(const nfs::DataMessage& data_message, std::false_type) {}
+  void PutToAccount(const MaidName& account_name,
+                    const typename Data::name_type& data_name,
+                    int32_t size,
+                    int32_t replication_count,
+                    std::false_type) {}
   template<typename Data>
-  void SendDataMessage(const nfs::DataMessage& data_message);
+  void DeleteFromAccount(const MaidName& account_name,
+                         const typename Data::name_type& data_name,
+                         std::true_type);
+  // no-op for non-payable data
+  template<typename Data>
+  void DeleteFromAccount(const MaidName& account_name,
+                         const typename Data::name_type& data_name,
+                         std::false_type) {}
+
+  template<typename Data>
+  on_scope_exit GetScopeExitForPut(const MaidName& account_name,
+                                   const typename Data::name_type& data_name);
+
+  // Callback for Put where Data is_unique_on_network is true
+  template<typename Data>
+  void HandlePutResult(const nfs::Reply& overall_result,
+                       const MaidName& account_name,
+                       const typename Data::name_type& data_name,
+                       int32_t data_size,
+                       routing::ReplyFunctor client_reply_functor,
+                       std::true_type);
+  // Callback for Put where Data is_unique_on_network is false
+  template<typename Data>
+  void HandlePutResult(const nfs::Reply& overall_result,
+                       const MaidName& account_name,
+                       const typename Data::name_type& data_name,
+                       int32_t data_size,
+                       routing::ReplyFunctor client_reply_functor,
+                       std::false_type);
+
   void HandleSyncMessage(const nfs::GenericMessage& generic_message,
                          const routing::ReplyFunctor& reply_functor);
   void SendSyncData(const MaidName& account_name);
@@ -94,6 +134,8 @@ class MaidAccountHolderService {
   nfs::Accumulator<MaidName> accumulator_;
   MaidAccountHandler maid_account_handler_;
   MaidAccountHolderNfs nfs_;
+  static const int kPutSuccessCountMin_;
+  static const int kDefaultPaymentFactor_;
 };
 
 }  // namespace vault

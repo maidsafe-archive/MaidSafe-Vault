@@ -25,6 +25,16 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace detail {
+
+void SendReply();
+
+}  // namespace detail
+
+
+const int MaidAccountHolderService::kPutSuccessCountMin_(3);
+const int MaidAccountHolderService::kDefaultPaymentFactor_(4);
+
 MaidAccountHolderService::SharedResponse::SharedResponse()
     : mutex(),
       count(0),
