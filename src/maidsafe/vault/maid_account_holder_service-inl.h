@@ -56,7 +56,7 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     ValidateDataMessage(data_message);
     Data data(data_message.data().name, Data::serialised_type(data_message.data().content));
     MaidName account_name(detail::GetSourceMaidName(data_message));
-    auto data_name(GetDataName(data_message));
+    auto data_name(GetDataName<Data>(data_message));
     int32_t data_size(static_cast<int32_t>(data_message.data().content.string().size()));
     auto put_op(std::make_shared<nfs::PutOrDeleteOp>(
         kPutSuccessCountMin_,
@@ -74,15 +74,15 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
   catch(const maidsafe_error& error) {
     LOG(kWarning) << error.what();
     request_id = std::make_pair(data_message.message_id(), data_message.source().persona);
-    reply = nfs::Reply(error, data_message.Serialise().data), reply_functor);
+    reply = nfs::Reply(error, data_message.Serialise().data, reply_functor);
   }
   catch(...) {
     LOG(kWarning) << "Unknown error.";
     request_id = std::make_pair(data_message.message_id(), data_message.source().persona);
-    reply = nfs::Reply(CommonErrors::unknown, data_message.Serialise().data), reply_functor);
+    reply = nfs::Reply(CommonErrors::unknown, data_message.Serialise().data, reply_functor);
   }
   try {
-    SendReply(request_id, reply);
+    SendReply(request_id, reply, reply_functor);
   }
   catch(...) {
     LOG(kWarning) << "Exception while forming reply.";
@@ -94,7 +94,7 @@ void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
                                             const routing::ReplyFunctor& reply_functor) {
   try {
     ValidateDataMessage(data_message);
-    auto data_name(GetDataName(data_message));
+    auto data_name(GetDataName<Data>(data_message));
     DeleteFromAccount<Data>(detail::GetSourceMaidName(data_message), data_name, is_payable<Data>());
     nfs_.Delete<Data>(data_name, [](std::string /*serialised_reply*/) {});
   }
@@ -112,7 +112,7 @@ void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
 
 template<typename Data>
 typename Data::name_type MaidAccountHolderService::GetDataName(
-    const DataMessage& data_message) const {
+    const nfs::DataMessage& data_message) const {
   // Hash the data name to obfuscate the list of chunks associated with the client.
   return Data::name_type(crypto::Hash<crypto::SHA512>(data_message.data().name));
 }

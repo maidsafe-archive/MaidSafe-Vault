@@ -12,6 +12,7 @@
 #ifndef MAIDSAFE_VAULT_SYNC_H_
 #define MAIDSAFE_VAULT_SYNC_H_
 
+#include <cstdint>
 
 namespace maidsafe {
 

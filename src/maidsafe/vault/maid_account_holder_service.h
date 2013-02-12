@@ -69,7 +69,7 @@ class MaidAccountHolderService {
   void HandleDelete(const nfs::DataMessage& data_message,
                     const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  typename Data::name_type GetDataName(const DataMessage& data_message) const;
+  typename Data::name_type GetDataName(const nfs::DataMessage& data_message) const;
   void SendReply(const nfs::Accumulator<MaidName>::RequestIdentity& request_id,
                  const nfs::Reply& reply,
                  const routing::ReplyFunctor& reply_functor);
