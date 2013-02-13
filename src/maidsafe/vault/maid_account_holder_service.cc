@@ -213,7 +213,7 @@ void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
                          callback);
 }
 
-void MaidAccountHolderService::HandleFileRequest(const NodeId requester_node_id,
+void MaidAccountHolderService::HandleFileRequest(const NodeId& requester_node_id,
                                                  const MaidName& account_name,
                                                  const protobuf::GetArchiveFiles& requested_files) {
   if (!requested_files.IsInitialized()) {
