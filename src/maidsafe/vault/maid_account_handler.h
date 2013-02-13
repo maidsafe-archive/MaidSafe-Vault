@@ -60,14 +60,9 @@ class MaidAccountHandler {
   template<typename Data>
   void PutData(const MaidName& account_name,
                const typename Data::name_type& data_name,
-               int32_t size,
-               int32_t replication_count);
+               int32_t cost);
   template<typename Data>
   void DeleteData(const MaidName& account_name, const typename Data::name_type& data_name);
-  template<typename Data>
-  void UpdateReplicationCount(const MaidName& account_name,
-                              const typename Data::name_type& data_name,
-                              int32_t new_replication_count);
 
   friend class test::MaidAccountHandlerTest;
 

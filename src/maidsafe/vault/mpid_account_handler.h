@@ -59,12 +59,12 @@ class AccountHandler : public ModifyPolicy {
                               const typename Account::structure& account_structure,
                               std::function<void(std::string&)> modify_functor);
  private:
-  std::vector<Account>::iterator FindAccount(const typename Account::name_type& account_name);
-  std::vector<Account>::const_iterator FindAccount(
+  typename std::vector<Account>::iterator FindAccount(const typename Account::name_type& account_name);
+  typename std::vector<Account>::const_iterator FindAccount(
       const typename Account::name_type& account_name) const;
 
   mutable std::mutex mutex_;
-  std::vector<typename Account> accounts_;
+  std::vector<Account> accounts_;
 };
 
 }  // namespace vault

@@ -12,7 +12,7 @@
 #ifndef MAIDSAFE_VAULT_DISK_BASED_STORAGE_INL_H_
 #define MAIDSAFE_VAULT_DISK_BASED_STORAGE_INL_H_
 
-#include <string>
+#include <memory>
 
 #include "boost/filesystem/operations.hpp"
 
@@ -78,7 +78,7 @@ struct DiskBasedStorage::StoredElement {
 template<typename Data>
 std::future<void> DiskBasedStorage::Store(const typename Data::name_type& name,
                                           const std::string& serialised_value) {
-  VoidPromisePtr promise(std::make_shared<VoidPromise>());
+  auto promise(std::make_shared<VoidPromise>());
   std::future<void> future(promise->get_future());
   StoredElement<Data> element(name, serialised_value);
   active_.Send([element, promise, this] {
@@ -95,14 +95,13 @@ std::future<void> DiskBasedStorage::Store(const typename Data::name_type& name,
 }
 
 template<typename Data>
-std::future<void> DiskBasedStorage::Delete(const typename Data::name_type& name) {
-  VoidPromisePtr promise(std::make_shared<VoidPromise>());
-  std::future<void> future(promise->get_future());
+std::future<std::string> DiskBasedStorage::Delete(const typename Data::name_type& name) {
+  auto promise(std::make_shared<std::promise<std::string>>());
+  auto future(promise->get_future());
   StoredElement<Data> element(name, "");
   active_.Send([element, promise, this] {
                  try {
-                   this->SearchForAndDeleteEntry<Data>(element);
-                   promise->set_value();
+                   promise->set_value(this->SearchForAndDeleteEntry<Data>(element));
                  }
                  catch(const std::exception& e) {
                    LOG(kError) << "Execution of Delete threw: " << e.what();
@@ -172,7 +171,7 @@ void DiskBasedStorage::AddToLatestFile(const DiskBasedStorage::StoredElement<Dat
 }
 
 template<typename Data>
-void DiskBasedStorage::SearchForAndDeleteEntry(
+std::string DiskBasedStorage::SearchForAndDeleteEntry(
     const DiskBasedStorage::StoredElement<Data>& element) {
   Changer changer;
   SearchForEntryAndExecuteOperation(element, changer, true);

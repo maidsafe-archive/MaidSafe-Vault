@@ -22,6 +22,7 @@
 #include "maidsafe/nfs/utils.h"
 
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/maid_account_pb.h"
 
 
 namespace maidsafe {
@@ -160,34 +161,27 @@ template<typename Data>
 void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
                                                const MaidName& account_name,
                                                const typename Data::name_type& data_name,
-                                               int32_t data_size,
-                                               routing::ReplyFunctor client_reply_functor,
-                                               std::true_type) {
+                                               routing::ReplyFunctor client_reply_functor) {
   try {
     if (overall_result.IsSuccess()) {
-      PutToAccount<Data>(account_name, data_name, data_size, kDefaultPaymentFactor_,
-                         is_payable<Data>());
-      on_scope_exit strong_guarantee(GetScopeExitForPut(account_name, data_name));
+      protobuf::Cost cost;
+      cost.ParseFromString(overall_result.data()->string());
+      // TODO(Fraser#5#): 2013-02-13 - Have PutToAccount return percentage or amount remaining so
+      // if it falls below a threshold, we can trigger getting updated account info from the PAHs
+      // (not too frequently), & alert the client by returning an "error" via client_reply_functor.
+      PutToAccount<Data>(account_name, data_name, cost.value(), is_payable<Data>());
       client_reply_functor(nfs::Reply(CommonErrors::success).Serialise()->string());
-      strong_guarantee.Release();
     } else {
       client_reply_functor(overall_result.Serialise()->string());
     }
   }
+  catch (const maidsafe_error& me) {
+    client_reply_functor(nfs::Reply(me).Serialise()->string());
+  }
   catch(const std::exception& e) {
     LOG(kError) << "Failed to Handle Put result: " << e.what();
+    client_reply_functor(nfs::Reply(CommonErrors::unknown).Serialise()->string());
   }
-}
-
-template<typename Data>
-void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
-                                               const MaidName& account_name,
-                                               const typename Data::name_type& data_name,
-                                               int32_t data_size,
-                                               routing::ReplyFunctor client_reply_functor,
-                                               std::false_type) {
-    // check with MM if data is unique.  If MM says already stored, check if we stored it.  If so success, else failure.
-
 }
 
 }  // namespace vault

@@ -34,11 +34,22 @@ namespace maidsafe {
 namespace vault {
 
 namespace test {
-  class MaidAccountHandlerTest;
+class MaidAccountHandlerTest;
 }  // namespace test
 
-struct PmidTotals;
 
+struct PmidTotals {
+  PmidTotals();
+  PmidTotals(const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
+             const PmidRecord& pmid_record_in);
+  PmidTotals(const PmidTotals& other);
+  PmidTotals& operator=(const PmidTotals& other);
+  PmidTotals(PmidTotals&& other);
+  PmidTotals& operator=(PmidTotals&& other);
+
+  nfs::PmidRegistration::serialised_type serialised_pmid_registration;
+  PmidRecord pmid_record;
+};
 
 class MaidAccount {
  public:
@@ -58,33 +69,26 @@ class MaidAccount {
 
   // This offers the strong exception guarantee
   template<typename Data>
-  void PutData(const typename Data::name_type& name, int32_t size, int32_t replication_count);
+  void PutData(const typename Data::name_type& name, int32_t cost);
   // This offers the strong exception guarantee
   template<typename Data>
   void DeleteData(const typename Data::name_type& name);
-  // This offers the strong exception guarantee
-  template<typename Data>
-  void UpdateReplicationCount(const typename Data::name_type& name, int32_t new_replication_count);
 
   name_type name() const { return kMaidName_; }
-  int64_t total_data_stored_by_pmids() const { return total_data_stored_by_pmids_; }
-  int64_t total_put_data() const { return total_put_data_; }
 
   friend class test::MaidAccountHandlerTest;
 
  private:
   struct PutDataDetails {
     PutDataDetails();
-    PutDataDetails(const DataNameVariant& data_name_variant_in,
-                   int32_t size_in,
-                   int32_t replications_in);
+    PutDataDetails(const DataNameVariant& data_name_variant_in, int32_t cost_in);
     PutDataDetails(const PutDataDetails& other);
     PutDataDetails& operator=(const PutDataDetails& other);
     PutDataDetails(PutDataDetails&& other);
     PutDataDetails& operator=(PutDataDetails&& other);
 
     DataNameVariant data_name_variant;
-    int32_t size, replications;
+    int32_t cost;
   };
 
   MaidAccount(const MaidAccount&);
@@ -97,21 +101,8 @@ class MaidAccount {
   GetTagValueAndIdentityVisitor type_and_name_visitor_;
   std::vector<PmidTotals> pmid_totals_;
   std::deque<PutDataDetails> recent_put_data_;
-  int64_t total_data_stored_by_pmids_, total_put_data_;
+  int64_t total_claimed_available_size_by_pmids_, total_put_data_;
   DiskBasedStorage archive_;
-};
-
-struct PmidTotals {
-  PmidTotals();
-  PmidTotals(const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
-             const PmidRecord& pmid_record_in);
-  PmidTotals(const PmidTotals& other);
-  PmidTotals& operator=(const PmidTotals& other);
-  PmidTotals(PmidTotals&& other);
-  PmidTotals& operator=(PmidTotals&& other);
-
-  nfs::PmidRegistration::serialised_type serialised_pmid_registration;
-  PmidRecord pmid_record;
 };
 
 }  // namespace vault

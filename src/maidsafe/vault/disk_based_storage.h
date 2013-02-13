@@ -46,8 +46,9 @@ class DiskBasedStorage {
   template<typename Data>
   std::future<void> Store(const typename Data::name_type& name,
                           const std::string& serialised_value);
+  // This returns the serialised value which is deleted, or throws if not found.
   template<typename Data>
-  std::future<void> Delete(const typename Data::name_type& name);
+  std::future<std::string> Delete(const typename Data::name_type& name);
   template<typename Data>
   std::future<void> Modify(const typename Data::name_type& name,
                            const std::function<void(std::string&)>& functor,
@@ -80,7 +81,7 @@ class DiskBasedStorage {
   template<typename Data>
   void AddToLatestFile(const StoredElement<Data>& element);
   template<typename Data>
-  void SearchForAndDeleteEntry(const StoredElement<Data>& element);
+  std::string SearchForAndDeleteEntry(const StoredElement<Data>& element);
   template<typename Data>
   void SearchForAndModifyEntry(const StoredElement<Data>& element,
                                const std::function<void(std::string&)>& functor);

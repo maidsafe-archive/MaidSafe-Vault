@@ -28,12 +28,72 @@ namespace maidsafe {
 
 namespace vault {
 
+PmidTotals::PmidTotals() : serialised_pmid_registration(), pmid_record() {}
+
+PmidTotals::PmidTotals(
+    const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
+    const PmidRecord& pmid_record_in)
+        : serialised_pmid_registration(serialised_pmid_registration_in),
+          pmid_record(pmid_record_in) {}
+
+PmidTotals::PmidTotals(const PmidTotals& other)
+    : serialised_pmid_registration(other.serialised_pmid_registration),
+      pmid_record(other.pmid_record) {}
+
+PmidTotals& PmidTotals::operator=(const PmidTotals& other) {
+  serialised_pmid_registration = other.serialised_pmid_registration;
+  pmid_record = other.pmid_record;
+  return *this;
+}
+
+PmidTotals::PmidTotals(PmidTotals&& other)
+    : serialised_pmid_registration(std::move(other.serialised_pmid_registration)),
+      pmid_record(std::move(other.pmid_record)) {}
+
+PmidTotals& PmidTotals::operator=(PmidTotals&& other) {
+  serialised_pmid_registration = std::move(other.serialised_pmid_registration);
+  pmid_record = std::move(other.pmid_record);
+  return *this;
+}
+
+
+
+MaidAccount::PutDataDetails::PutDataDetails() : data_name_variant(), cost(0) {}
+
+
+MaidAccount::PutDataDetails::PutDataDetails(const DataNameVariant& data_name_variant_in,
+                                            int32_t cost_in)
+    : data_name_variant(data_name_variant_in),
+      cost(cost_in) {}
+
+MaidAccount::PutDataDetails::PutDataDetails(const PutDataDetails& other)
+  : data_name_variant(other.data_name_variant),
+    cost(other.cost) {}
+
+MaidAccount::PutDataDetails& MaidAccount::PutDataDetails::operator=(const PutDataDetails& other) {
+  data_name_variant = other.data_name_variant;
+  cost = other.cost;
+  return *this;
+}
+
+MaidAccount::PutDataDetails::PutDataDetails(PutDataDetails&& other)
+  : data_name_variant(std::move(other.data_name_variant)),
+    cost(std::move(other.cost)) {}
+
+MaidAccount::PutDataDetails& MaidAccount::PutDataDetails::operator=(PutDataDetails&& other) {
+  data_name_variant = std::move(other.data_name_variant);
+  cost = std::move(other.cost);
+  return *this;
+}
+
+
+
 MaidAccount::MaidAccount(const MaidName& maid_name, const fs::path& root)
     : kMaidName_(maid_name),
       type_and_name_visitor_(),
       pmid_totals_(),
       recent_put_data_(),
-      total_data_stored_by_pmids_(0),
+      total_claimed_available_size_by_pmids_(0),
       total_put_data_(0),
       archive_(root / EncodeToBase32(kMaidName_.data)) {}
 
@@ -46,7 +106,7 @@ MaidAccount::MaidAccount(const serialised_type& serialised_maid_account, const f
       type_and_name_visitor_(),
       pmid_totals_(),
       recent_put_data_(),
-      total_data_stored_by_pmids_(0),
+      total_claimed_available_size_by_pmids_(0),
       total_put_data_(0),
       archive_(root / EncodeToBase32(kMaidName_.data)) {
   protobuf::MaidAccount proto_maid_account;
@@ -71,7 +131,8 @@ MaidAccount::MaidAccount(const serialised_type& serialised_maid_account, const f
         recent_put_data.replication_count());
   }
 
-  total_data_stored_by_pmids_ = proto_maid_account.total_data_stored_by_pmids();
+  total_claimed_available_size_by_pmids_ =
+      proto_maid_account.total_claimed_available_size_by_pmids();
   total_put_data_ = proto_maid_account.total_put_data();
 }
 
@@ -96,7 +157,8 @@ MaidAccount::serialised_type MaidAccount::Serialise() const {
     proto_recent_put_data->set_replication_count(recent_put_data_item.replications);
   }
 
-  proto_maid_account.set_total_data_stored_by_pmids(total_data_stored_by_pmids_);
+  proto_maid_account.set_total_claimed_available_size_by_pmids(
+      total_claimed_available_size_by_pmids_);
   proto_maid_account.set_total_put_data(total_put_data_);
 
   auto archive_file_names(GetArchiveFileNames());
@@ -150,36 +212,6 @@ NonEmptyString MaidAccount::GetArchiveFile(const fs::path& filename) const {
 
 void MaidAccount::PutArchiveFile(const fs::path& filename, const NonEmptyString& content) {
   archive_.PutFile(filename, content);
-}
-
-
-
-PmidTotals::PmidTotals() : serialised_pmid_registration(), pmid_record() {}
-
-PmidTotals::PmidTotals(
-    const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
-    const PmidRecord& pmid_record_in)
-        : serialised_pmid_registration(serialised_pmid_registration_in),
-          pmid_record(pmid_record_in) {}
-
-PmidTotals::PmidTotals(const PmidTotals& other)
-    : serialised_pmid_registration(other.serialised_pmid_registration),
-      pmid_record(other.pmid_record) {}
-
-PmidTotals& PmidTotals::operator=(const PmidTotals& other) {
-  serialised_pmid_registration = other.serialised_pmid_registration;
-  pmid_record = other.pmid_record;
-  return *this;
-}
-
-PmidTotals::PmidTotals(PmidTotals&& other)
-    : serialised_pmid_registration(std::move(other.serialised_pmid_registration)),
-      pmid_record(std::move(other.pmid_record)) {}
-
-PmidTotals& PmidTotals::operator=(PmidTotals&& other) {
-  serialised_pmid_registration = std::move(other.serialised_pmid_registration);
-  pmid_record = std::move(other.pmid_record);
-  return *this;
 }
 
 }  // namespace vault

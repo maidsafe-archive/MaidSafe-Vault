@@ -21,13 +21,12 @@ namespace vault {
 template<typename Data>
 void MaidAccountHandler::PutData(const MaidName& account_name,
                                  const typename Data::name_type& data_name,
-                                 int32_t size,
-                                 int32_t replication_count) {
+                                 int32_t cost) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr).PutData<Data>(data_name, size, replication_count);
+  (*itr).PutData<Data>(data_name, cost);
 }
 
 template<typename Data>
@@ -38,17 +37,6 @@ void MaidAccountHandler::DeleteData(const MaidName& account_name,
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
   (*itr).DeleteData<Data>(data_name);
-}
-
-template<typename Data>
-void MaidAccountHandler::UpdateReplicationCount(const MaidName& account_name,
-                                                const typename Data::name_type& data_name,
-                                                int32_t new_replication_count) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount(maid_accounts_, account_name));
-  if (itr == maid_accounts_.end())
-    ThrowError(VaultErrors::no_such_account);
-  (*itr).UpdateReplicationCount<Data>(data_name, new_replication_count);
 }
 
 }  // namespace vault

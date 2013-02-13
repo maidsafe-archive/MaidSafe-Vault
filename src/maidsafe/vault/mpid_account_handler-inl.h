@@ -21,7 +21,7 @@ template<typename Account, typename ModifyPolicy>
 AccountHandler<Account, ModifyPolicy>::AccountHandler(const passport::Pmid& pmid,
                                                       routing::Routing& routing,
                                                       nfs::PublicKeyGetter& public_key_getter,
-                                                      const boost::filesystem::path& vault_root_dir) 
+                                                      const boost::filesystem::path& vault_root_dir)
 // TODO(Fraser#5#): 2013-01-21 - Check these references are valid and usable in ModifyPolicy ctor.
     : ModifyPolicy(&mutex_, &accounts_),
       mutex_(),

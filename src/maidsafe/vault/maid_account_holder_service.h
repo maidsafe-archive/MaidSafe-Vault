@@ -101,22 +101,11 @@ class MaidAccountHolderService {
   on_scope_exit GetScopeExitForPut(const MaidName& account_name,
                                    const typename Data::name_type& data_name);
 
-  // Callback for Put where Data is_unique_on_network is true
   template<typename Data>
   void HandlePutResult(const nfs::Reply& overall_result,
                        const MaidName& account_name,
                        const typename Data::name_type& data_name,
-                       int32_t data_size,
-                       routing::ReplyFunctor client_reply_functor,
-                       std::true_type);
-  // Callback for Put where Data is_unique_on_network is false
-  template<typename Data>
-  void HandlePutResult(const nfs::Reply& overall_result,
-                       const MaidName& account_name,
-                       const typename Data::name_type& data_name,
-                       int32_t data_size,
-                       routing::ReplyFunctor client_reply_functor,
-                       std::false_type);
+                       routing::ReplyFunctor client_reply_functor);
 
   void HandleSyncMessage(const nfs::GenericMessage& generic_message,
                          const routing::ReplyFunctor& reply_functor);
@@ -135,7 +124,6 @@ class MaidAccountHolderService {
   MaidAccountHandler maid_account_handler_;
   MaidAccountHolderNfs nfs_;
   static const int kPutSuccessCountMin_;
-  static const int kDefaultPaymentFactor_;
 };
 
 }  // namespace vault

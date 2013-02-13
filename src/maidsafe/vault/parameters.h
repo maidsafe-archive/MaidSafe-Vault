@@ -14,6 +14,7 @@
 
 #include <cstddef>
 
+
 namespace maidsafe {
 
 namespace vault {

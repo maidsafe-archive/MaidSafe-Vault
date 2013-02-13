@@ -12,6 +12,8 @@
 #ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_INL_H_
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_INL_H_
 
+#include <algorithm>
+
 #include "maidsafe/common/on_scope_exit.h"
 
 
@@ -20,61 +22,39 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void MaidAccount::PutData(const typename Data::name_type& name,
-                          int32_t size,
-                          int32_t replication_count) {
-  // TODO(Fraser#5#): 2013-01-25 - BEFORE_RELEASE - Decide factor.
-  if (2 * total_data_stored_by_pmids_ < total_put_data_ + size)
+void MaidAccount::PutData(const typename Data::name_type& name, int32_t cost) {
+  if (total_claimed_available_size_by_pmids_ < total_put_data_ + cost)
     ThrowError(VaultErrors::not_enough_space);
 
   on_scope_exit strong_guarantee(on_scope_exit::RevertValue(recent_put_data_));
-  recent_put_data_.emplace_back(name, size, replication_count);
+  recent_put_data_.emplace_back(name, cost);
   if (recent_put_data_.size() > detail::Parameters::max_recent_data_list_size) {
-//    archive_.Store(recent_put_data_.front());  // FIXME FRASER
+    auto archive_future(archive_.Store(recent_put_data_.front(), cost));
     recent_put_data_.pop_front();
+    // Wait to check exception is not thrown.
+    archive_future.get();
   }
+  total_put_data_ += cost;
   strong_guarantee.Release();
 }
 
 template<typename Data>
-void MaidAccount::DeleteData(const typename Data::name_type& /*name*/) {
-//  -- throw if data entry doesn't exist
+void MaidAccount::DeleteData(const typename Data::name_type& name) {
+  int32_t cost(0);
+  auto itr(std::find_if(recent_put_data_.begin(),
+                        recent_put_data_.end(),
+                        [&name](const PutDataDetails& put_data_details) {
+                            return DataNameVariant(name) == put_data_details.data_name_variant;
+                        }));
+  if (itr != recent_put_data_.end()) {
+    cost = (*itr).cost;
+    recent_put_data_.erase(itr);
+  } else {
+    auto archive_future(archive_.Delete(name));
+    cost = archive_future.get();
+  }
+  total_put_data_ -= cost;
 }
-
-template<typename Data>
-void MaidAccount::UpdateReplicationCount(const typename Data::name_type& /*name*/,
-                                         int32_t /*new_replication_count*/) {
-}
-
-
-//  void MaidAccount::PushDataElement(DataElement data_element) {
-//    std::lock_guard<std::mutex> lock(mutex_);
-//    data_elements_.push_back(data_element);
-//  }
-
-//  void MaidAccount::RemoveDataElement(Identity name) {
-//    std::lock_guard<std::mutex> lock(mutex_);
-//    for (auto itr = data_elements_.begin(); itr != data_elements_.end(); ++itr) {
-//      if ((*itr).name() == name) {
-//        data_elements_.erase(itr);
-//        return;
-//      }
-//    }
-//  }
-
-//  void MaidAccount::UpdateDataElement(DataElement data_element) {
-//    RemoveDataElement(data_element.name());
-//    PushDataElement(data_element);
-//  }
-
-//  bool MaidAccount::HasDataElement(Identity name) {
-//    std::lock_guard<std::mutex> lock(mutex_);
-//    auto data_element_it = std::find_if(data_elements_.begin(), data_elements_.end(),
-//                                        [&name] (const DataElement& data_element) {
-//                                          return data_element.name() == name;
-//                                        });
-//    return (data_element_it != data_elements_.end());
-//  }
 
 }  // namespace vault
 
