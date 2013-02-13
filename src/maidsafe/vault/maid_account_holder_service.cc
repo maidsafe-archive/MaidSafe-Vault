@@ -189,7 +189,7 @@ void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
           nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(response))));
           if (/*(CommonErrors::success == reply.error()) &&*/  //FIXME Prakash
               sync_response.ParseFromString(reply.data().string()) &&
-              sync_response.node_id() == routing_.kNodeId().string())
+              NodeId(sync_response.node_id()) == routing_.kNodeId())
             shared_response->this_node_in_group = true;
         } catch(const std::exception& ex) {
           LOG(kError) << "Failed to parse reply : " << ex.what();
@@ -202,15 +202,18 @@ void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
 //            !requested_files.IsInitialized()) {
 //          LOG(kError) << "Error parsing GetArchiveFiles request.";
 //        } else {
-          HandleFileRequest(account_name, requested_files);
+          HandleFileRequest(NodeId(sync_response.node_id()), account_name, requested_files);
 //        }
       }
       // lock & delete account ?
     };
-  //nfs_.PostSyncData(generic_message, callback);
+  nfs_.PostSyncDataGroup(account_name,
+                         NonEmptyString(sync_pb_message.SerializeAsString()),
+                         callback);
 }
 
-void MaidAccountHolderService::HandleFileRequest(const MaidName& account_name,
+void MaidAccountHolderService::HandleFileRequest(const NodeId& requester_node_id,
+                                                 const MaidName& account_name,
                                                  const protobuf::GetArchiveFiles& requested_files) {
   if (!requested_files.IsInitialized()) {
     LOG(kError) << "Error parsing GetArchiveFiles request.";
@@ -226,13 +229,9 @@ void MaidAccountHolderService::HandleFileRequest(const MaidName& account_name,
       protobuf::Sync Sync_message;
       Sync_message.set_action(static_cast<int32_t>(Sync::Action::kSyncArchiveFiles));
       Sync_message.set_sync_message(maid_account_file.SerializeAsString());
-      nfs::GenericMessage generic_message(
-          nfs::GenericMessage::Action::kSynchronise,
-          nfs::Persona::kMaidAccountHolder,
-          nfs::PersonaId(nfs::Persona::kMaidAccountHolder, routing_.kNodeId()),
-          account_name.data,
-          NonEmptyString(Sync_message.SerializeAsString()));
-//      nfs_.PostFileData(generic_message, callback); // FIXME
+      routing::ResponseFunctor callback;
+      nfs_.PostSyncDataDirect(requester_node_id, NonEmptyString(Sync_message.SerializeAsString()),
+                              callback);  // FIXME
     } catch(const std::exception& ex) {
       LOG(kError) << "Failed to send requested file contents : " << ex.what();
     }

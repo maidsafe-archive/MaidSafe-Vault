@@ -24,8 +24,11 @@
 #include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/generic_message.h"
+
 #include "maidsafe/nfs/types.h"
 
+#include "maidsafe/vault/sync.h"
 
 namespace maidsafe {
 
@@ -46,6 +49,39 @@ class SyncPolicy {
       : routing_(routing),
         pmid_(pmid) {}
 
+  template <typename Name>
+  void PostSyncDataGroup(const Name& name,
+                         const NonEmptyString& serialised_sync_data,
+                         const routing::ResponseFunctor& callback) {
+    nfs::GenericMessage generic_message(
+        nfs::GenericMessage::Action::kSynchronise,
+        source_persona,
+        nfs::PersonaId(source_persona, routing_.kNodeId()),
+        name.data,
+        serialised_sync_data);
+
+    nfs::Message message(nfs::GenericMessage::message_type_identifier,
+                         generic_message.Serialise().data);
+    routing_.SendGroup(NodeId(generic_message.name().string()), message.Serialise()->string(),
+                       false, callback);
+  }
+
+  void PostSyncDataDirect(const NodeId& target_node_id,
+                          const NonEmptyString& serialised_sync_data,
+                          const routing::ResponseFunctor& callback) {
+    nfs::GenericMessage generic_message(
+        nfs::GenericMessage::Action::kSynchronise,
+        source_persona,
+        nfs::PersonaId(source_persona, routing_.kNodeId()),
+        Identity(target_node_id.string()),
+        serialised_sync_data);
+    nfs::Message message(nfs::GenericMessage::message_type_identifier,
+                         generic_message.Serialise().data);
+    routing_.SendDirect(NodeId(generic_message.name().string()), message.Serialise()->string(),
+                        false, callback);
+  }
+
+ private:
   routing::Routing& routing_;
   const passport::Pmid& pmid_;
 };
@@ -56,6 +92,22 @@ class VaultManagement {
   VaultManagement(routing::Routing& routing, const passport::Pmid& pmid)
       : routing_(routing),
         pmid_(pmid) {}
+
+  void PostManagementMessageGroup(const nfs::GenericMessage generic_message,
+                                  const routing::ResponseFunctor& callback) {
+    nfs::Message message(nfs::GenericMessage::message_type_identifier,
+                         generic_message.Serialise().data);
+    routing_.SendGroup(NodeId(generic_message.name().string()), message.Serialise()->string(),
+                         false, callback);
+  }
+
+  void PostManagementMessageDirect(const nfs::GenericMessage generic_message,
+                                   const routing::ResponseFunctor& callback) {
+    nfs::Message message(nfs::GenericMessage::message_type_identifier,
+                         generic_message.Serialise().data);
+    routing_.SendDirect(NodeId(generic_message.name().string()), message.Serialise()->string(),
+                        false, callback);
+  }
 
   routing::Routing& routing_;
   const passport::Pmid& pmid_;
@@ -69,33 +121,6 @@ typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMetadataManager>,
 
 typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kPmidAccountHolder>,
     VaultManagement<nfs::Persona::kPmidAccountHolder>> PmidAccountHolderPostPolicy;
-
-//template<nfs::Persona persona>
-//class PostSynchronisation {
-// public:
-//  explicit PostSynchronisation(routing::Routing& routing)
-//      : routing_(routing),
-//        source_(nfs::PersonaId(persona, routing.kNodeId())) {}
-
-//  explicit PostSynchronisation(routing::Routing& routing, const passport::Pmid& /*signing_pmid*/)
-//      : routing_(routing),
-//        source_(nfs::PersonaId(persona, routing.kNodeId())) {}
-
-//  void PostSyncData(const nfs::GenericMessage& generic_message,
-//                    routing::ResponseFunctor response_functor) {
-//    nfs::Message message(nfs::GenericMessage::message_type_identifier,
-//                         generic_message.Serialise().data);
-//    routing_.SendGroup(NodeId(generic_message.name().string()), message.Serialise()->string(),
-//                       false, response_functor);
-//  }
-
-// protected:
-//  ~PostSynchronisation() {}
-
-// private:
-//  routing::Routing& routing_;
-//  nfs::PersonaId source_;
-//};
 
 }  // namespace vault
 

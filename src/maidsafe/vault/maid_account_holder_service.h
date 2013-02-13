@@ -116,7 +116,8 @@ class MaidAccountHolderService {
 //                     const passport::PublicPmid& p_pmid);
 //  bool HandleNewComer(const nfs::PmidRegistration& pmid_registration);
 //  void OnGenericErrorHandler(nfs::GenericMessage generic_message);
-  void HandleFileRequest(const MaidName& account_name,
+  void HandleFileRequest(const NodeId& requester_node_id,
+                         const MaidName& account_name,
                          const protobuf::GetArchiveFiles& requested_files);
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
