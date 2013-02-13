@@ -45,6 +45,18 @@ MaidName GetSourceMaidName(const nfs::DataMessage& data_message);
 // Ensure the mutex protecting accounts is locked throughout this call
 template<typename Account>
 typename std::vector<Account>::iterator FindAccount(
+    std::vector<Account>& accounts,
+    const typename Account::name_type& account_name) {
+  return std::find_if(accounts.begin(),
+                      accounts.end(),
+                      [&account_name](const Account& account) {
+                        return account_name == account.name();
+                      });
+}
+
+// Ensure the mutex protecting accounts is locked throughout this call
+template<typename Account>
+typename std::vector<Account>::const_iterator FindAccount(
     const std::vector<Account>& accounts,
     const typename Account::name_type& account_name) {
   return std::find_if(accounts.begin(),
