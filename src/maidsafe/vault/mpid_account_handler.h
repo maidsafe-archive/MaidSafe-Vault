@@ -44,7 +44,7 @@ class AccountHandler : public ModifyPolicy {
   bool DeleteAccount(const typename Account::name_type& account_name);
   // modify here will use the policy class ModifyPolicy members !!
   Account GetAccount(const typename Account::name_type& account_name) const;
-  std::vector<Account::name_type> GetAccountNames() const;
+  std::vector<typename Account::name_type> GetAccountNames() const;
 
   template<typename Data>
   bool DeleteDataElement(const typename Account::name_type& account_name,
@@ -56,7 +56,7 @@ class AccountHandler : public ModifyPolicy {
   bool ModifyOrAddDataElement(const typename Account::name_type& account_name,
                               const typename Data::name_type& data_name,
                               int32_t data_version,
-                              const Account::structure& account_structure,
+                              const typename Account::structure& account_structure,
                               std::function<void(std::string&)> modify_functor);
  private:
   std::vector<Account>::iterator FindAccount(const typename Account::name_type& account_name);
@@ -64,13 +64,13 @@ class AccountHandler : public ModifyPolicy {
       const typename Account::name_type& account_name) const;
 
   mutable std::mutex mutex_;
-  std::vector<Account> accounts_;
+  std::vector<typename Account> accounts_;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/account_handler-inl.h"
+#include "maidsafe/vault/mpid_account_handler-inl.h"
 
 #endif  // MAIDSAFE_VAULT_ACCOUNT_HANDLER_H_

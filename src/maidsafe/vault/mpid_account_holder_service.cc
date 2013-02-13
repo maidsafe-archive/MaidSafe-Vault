@@ -9,7 +9,7 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#include "maidsafe/vault/mpid_account_holder/mpid_account_holder.h"
+#include "maidsafe/vault/mpid_account_holder_service.h"
 
 
 namespace maidsafe {

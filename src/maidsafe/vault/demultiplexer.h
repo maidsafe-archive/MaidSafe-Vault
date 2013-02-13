@@ -17,6 +17,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/nfs.h"
+#include "maidsafe/nfs/generic_message.h"
 
 
 namespace maidsafe {

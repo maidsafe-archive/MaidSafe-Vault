@@ -190,7 +190,8 @@ void DiskBasedStorage::DoPutFile(const boost::filesystem::path& path,
       boost::filesystem::remove(GetFilePath(kRoot_, old_hash, file_number));
     }
     catch(const std::exception& e) {
-      LOG(kError) << "Failed to remove the old file asociated with index: " << file_number;
+      LOG(kError) << "Failed to remove the old file asociated with index: " << file_number
+                  << ": " << e.what();
       boost::filesystem::remove(path);
       ThrowError(CommonErrors::filesystem_io_error);
     }
@@ -204,7 +205,7 @@ void DiskBasedStorage::DoPutFile(const boost::filesystem::path& path,
       file_hashes_.push_back(hash);
     }
     catch(const std::exception& e) {
-      LOG(kError) << "failure writing new file at index: " << file_number;
+      LOG(kError) << "failure writing new file at index: " << file_number << ": " << e.what();
       file_hashes_.resize(file_hashes_size);
       ThrowError(CommonErrors::filesystem_io_error);
     }

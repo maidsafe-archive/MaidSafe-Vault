@@ -74,12 +74,12 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
   catch(const maidsafe_error& error) {
     LOG(kWarning) << error.what();
     request_id = std::make_pair(data_message.message_id(), data_message.source().persona);
-    reply = nfs::Reply(error, data_message.Serialise().data, reply_functor);
+    reply = nfs::Reply(error, data_message.Serialise().data);
   }
   catch(...) {
     LOG(kWarning) << "Unknown error.";
     request_id = std::make_pair(data_message.message_id(), data_message.source().persona);
-    reply = nfs::Reply(CommonErrors::unknown, data_message.Serialise().data, reply_functor);
+    reply = nfs::Reply(CommonErrors::unknown, data_message.Serialise().data);
   }
   try {
     SendReply(request_id, reply, reply_functor);
@@ -132,15 +132,13 @@ void MaidAccountHolderService::PutToAccount(const MaidName& account_name,
                                             int32_t replication_count,
                                             std::true_type) {
   // TODO(Fraser#5#): 2013-02-08 - Consider having replication calculated by network.
-//  assert(data_message.data().action == nfs::DataMessage::Action::kPut);
-  maid_account_handler_.PutData<Data>(account_name, data_name, data_name, size, replication_count);
+  maid_account_handler_.PutData<Data>(account_name, data_name, size, replication_count);
 }
 
 template<typename Data>
 void MaidAccountHolderService::DeleteFromAccount(const MaidName& account_name,
                                                  const typename Data::name_type& data_name,
                                                  std::true_type) {
-//  assert(data_message.data().action == nfs::DataMessage::Action::kDelete);
   maid_account_handler_.DeleteData<Data>(account_name, data_name);
 }
 
