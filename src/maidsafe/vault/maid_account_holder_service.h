@@ -110,6 +110,9 @@ class MaidAccountHolderService {
   void HandleSyncMessage(const nfs::GenericMessage& generic_message,
                          const routing::ReplyFunctor& reply_functor);
   void SendSyncData(const MaidName& account_name);
+  void HandleSendSyncDataCallback(const std::string& response,
+                                  const MaidName& account_name,
+                                  std::shared_ptr<SharedResponse> shared_response);
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
 //   bool HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid);
 //   bool OnKeyFetched(const passport::/*PublicMaid*/PublicPmid& p_maid,
@@ -118,7 +121,15 @@ class MaidAccountHolderService {
 //  void OnGenericErrorHandler(nfs::GenericMessage generic_message);
   void HandleFileRequest(const NodeId& requester_node_id,
                          const MaidName& account_name,
-                         const protobuf::GetArchiveFiles& requested_files);
+                         const protobuf::GetArchiveFiles& requested_files,
+                         std::shared_ptr<SharedResponse> shared_response);
+  void HandleFileRequestCallback(const NodeId& requester_node_id,
+                                 const std::string& response,
+                                 const MaidName& account_name,
+                                 std::shared_ptr<SharedResponse> shared_response);
+  void CheckAndDeleteAccount(const MaidName& account_name,
+                             std::shared_ptr<SharedResponse> shared_response);
+
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
   nfs::Accumulator<MaidName> accumulator_;
