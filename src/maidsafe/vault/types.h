@@ -20,6 +20,7 @@
 
 #include "maidsafe/passport/types.h"
 
+#include "maidsafe/vault/get_policies.h"
 #include "maidsafe/vault/put_policies.h"
 #include "maidsafe/vault/post_policies.h"
 #include "maidsafe/vault/delete_policies.h"

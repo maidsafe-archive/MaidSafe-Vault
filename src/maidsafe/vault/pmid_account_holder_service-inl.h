@@ -52,12 +52,12 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
                                          const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
   try {
-//    std::future<void> future(pmid_account_handler_.PutData<Data>(
-//                                 data_message.data_holder(),
-//                                 data_message.data().name,
-//                                 data_message.data().content.string.size()));
+    std::future<void> future(pmid_account_handler_.PutData<Data>(
+                                 data_message.final_target_id(),
+                                 data_message.data().name,
+                                 data_message.data().content.string().size()));
     try {
-//      future.get();
+      future.get();
       SendDataMessage<Data>(data_message);
     }
     catch(const std::exception& e) {
@@ -69,8 +69,7 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     LOG(kError) << "Failure deleting data from account: " << error.what();
     reply = nfs::Reply(error);
   }
-  auto request_id(std::make_pair(data_message.message_id(),
-                                 PmidName(Identity(data_message.source().node_id.string()))));
+  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
   accumulator_.SetHandled(request_id, reply);
   reply_functor(reply.Serialise()->string());
 }

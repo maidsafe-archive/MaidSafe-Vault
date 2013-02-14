@@ -19,10 +19,12 @@
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
+
 #include "maidsafe/nfs/accumulator.h"
 #include "maidsafe/nfs/data_message.h"
 #include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/public_key_getter.h"
+#include "maidsafe/nfs/response_mapper.h"
 
 #include "maidsafe/vault/pmid_account_handler.h"
 #include "maidsafe/vault/types.h"
@@ -34,7 +36,7 @@ namespace vault {
 
 class PmidAccountHolderService {
  public:
-  PmidAccountHolderService(const passport::Pmid& pmid,
+  PmidAccountHolderService(nfs::NfsResponseMapper& response_mapper,
                            routing::Routing& routing,
                            nfs::PublicKeyGetter& public_key_getter,
                            const boost::filesystem::path& vault_root_dir);
@@ -60,11 +62,25 @@ class PmidAccountHolderService {
 
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
 
+  void CheckAccounts();
+  bool AssessRange(const PmidName& account_name,
+                   PmidAccount::DataHolderStatus account_status,
+                   bool is_connected);
   void ValidateDataMessage(const nfs::DataMessage& data_message) const;
   void InformOfDataHolderDown(const PmidName& pmid_name);
   void InformOfDataHolderUp(const PmidName& pmid_name);
   void InformAboutDataHolder(const PmidName& pmid_name, bool node_up);
-  std::vector<PmidName> GetDataNamesInAccount(const PmidName& pmid_name) const;
+
+  bool StatusHasReverted(const PmidName& pmid_name, bool node_up) const;
+  void RevertMessages(const PmidName& pmid_name,
+                      const std::vector<boost::filesystem::path>::reverse_iterator& begin,
+                      std::vector<boost::filesystem::path>::reverse_iterator& current,
+                      bool node_up);
+  std::set<PmidName> GetDataNamesInFile(const PmidName& pmid_name,
+                                        const boost::filesystem::path& path) const;
+  void SendMessages(const PmidName& pmid_name,
+                    const std::set<PmidName>& metadata_manager_ids,
+                    bool node_up);
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;

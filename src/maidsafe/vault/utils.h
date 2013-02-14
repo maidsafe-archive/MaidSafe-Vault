@@ -35,13 +35,21 @@ namespace vault {
 
 namespace detail {
 
-inline routing::GroupRangeStatus NodeRangeCheck(routing::Routing& routing, const NodeId& node_id) {
+inline bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id) {
   return routing.IsNodeIdInGroupRange(node_id);
 }
 
 bool ShouldRetry(routing::Routing& routing, const nfs::DataMessage& data_message);
 
 MaidName GetSourceMaidName(const nfs::DataMessage& data_message);
+
+template<typename Data>
+bool IsDataElement(const typename Data::name_type& name,
+                   const DataNameVariant& data_name_variant) {
+  GetTagValueAndIdentityVisitor type_and_name_visitor;
+  auto type_and_name(boost::apply_visitor(type_and_name_visitor, data_name_variant));
+  return name == type_and_name.second;
+}
 
 // Ensure the mutex protecting accounts is locked throughout this call
 template<typename Account>
@@ -50,8 +58,8 @@ typename std::vector<std::unique_ptr<Account>>::iterator FindAccount(
     const typename Account::name_type& account_name) {
   return std::find_if(accounts.begin(),
                       accounts.end(),
-                      [&account_name](const std::unique_ptr<Account>& account) {
-                        return account_name == account->name();
+                      [&account_name](const Account& account) {
+                        return account_name == account.name();
                       });
 }
 
@@ -72,9 +80,9 @@ bool AddAccount(std::mutex& mutex,
                 std::vector<std::unique_ptr<Account>>& accounts,
                 std::unique_ptr<Account>&& account) {
   std::lock_guard<std::mutex> lock(mutex);
-  if (FindAccount(accounts, account->name()) != accounts.end())
+  if (FindAccount(accounts, account.name()) != accounts.end())
     return false;
-  accounts.push_back(std::move(account));
+  accounts.push_back(account);
   return true;
 }
 
@@ -95,7 +103,7 @@ typename Account::serialised_type GetSerialisedAccount(
     const std::vector<std::unique_ptr<Account>>& accounts,
     const typename Account::name_type& account_name) {
   std::lock_guard<std::mutex> lock(mutex);
-  auto itr(FindAccount(accounts, account_name));
+  auto itr(ConstFindAccount(accounts, account_name));
   if (itr == accounts.end())
     ThrowError(VaultErrors::no_such_account);
 
@@ -124,6 +132,12 @@ inline void RetryOnPutOrDeleteError(routing::Routing& routing,
     }
   }
 }
+
+std::vector<std::future<nfs::Reply>> NfsSendGroup(const NodeId& target_id,
+                                                  const nfs::Message& message,
+                                                  bool is_cacheable,
+                                                  nfs::NfsResponseMapper& response_mapper,
+                                                  routing::Routing& routing);
 
 }  // namespace detail
 

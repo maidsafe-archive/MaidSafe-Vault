@@ -26,7 +26,6 @@
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/types.h"
 
-
 namespace maidsafe {
 
 namespace vault {

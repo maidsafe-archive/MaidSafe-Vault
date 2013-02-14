@@ -83,44 +83,33 @@ class SyncPolicy {
 
  private:
   routing::Routing& routing_;
-  const passport::Pmid& pmid_;
+  nfs::PersonaId source_;
 };
 
-template <nfs::Persona source_persona>
-class VaultManagement {
+class MetadataManagerPolicy {
  public:
-  VaultManagement(routing::Routing& routing, const passport::Pmid& pmid)
+  MetadataManagerPolicy(nfs::NfsResponseMapper& /*response_mapper*/, routing::Routing& routing)
       : routing_(routing),
-        pmid_(pmid) {}
+        source_(nfs::PersonaId(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
+  void DuplicateCopy();
 
-  void PostManagementMessageGroup(const nfs::GenericMessage generic_message,
-                                  const routing::ResponseFunctor& callback) {
-    nfs::Message message(nfs::GenericMessage::message_type_identifier,
-                         generic_message.Serialise().data);
-    routing_.SendGroup(NodeId(generic_message.name().string()), message.Serialise()->string(),
-                         false, callback);
-  }
-
-  void PostManagementMessageDirect(const nfs::GenericMessage generic_message,
-                                   const routing::ResponseFunctor& callback) {
-    nfs::Message message(nfs::GenericMessage::message_type_identifier,
-                         generic_message.Serialise().data);
-    routing_.SendDirect(NodeId(generic_message.name().string()), message.Serialise()->string(),
-                        false, callback);
-  }
-
+ private:
   routing::Routing& routing_;
-  const passport::Pmid& pmid_;
+  nfs::PersonaId source_;
 };
 
-typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMaidAccountHolder>,
-    VaultManagement<nfs::Persona::kMaidAccountHolder>> MaidAccountHolderPostPolicy;
+template<typename T, typename SyncPolicy>
+class HostPost : public T, public SyncPolicy {
+ public:
+  explicit HostPost(nfs::NfsResponseMapper& response_mapper, routing::Routing& routing)
+      : T(response_mapper, routing),
+        SyncPolicy(response_mapper, routing) {}
+};
 
-typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMetadataManager>,
-    VaultManagement<nfs::Persona::kMetadataManager>> MetadataManagerPostPolicy;
-
-typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kPmidAccountHolder>,
-    VaultManagement<nfs::Persona::kPmidAccountHolder>> PmidAccountHolderPostPolicy;
+typedef HostPost<PmidAccountHolderPolicy,
+                 PostSynchronisation<nfs::Persona::kPmidAccountHolder> > PmidAccountHolderPost;
+typedef HostPost<MetadataManagerPolicy,
+                 PostSynchronisation<nfs::Persona::kMetadataManager> > MetadataManagerPost;
 
 }  // namespace vault
 

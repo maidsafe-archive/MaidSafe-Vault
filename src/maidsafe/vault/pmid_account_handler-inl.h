@@ -77,15 +77,15 @@ namespace vault {
 //    int32_t data_version) {
 //}
 
-//template<typename Account, typename ModifyPolicy>
-//template<typename Data>
-//bool AccountHandler<Account, ModifyPolicy>::ModifyOrAddDataElement(
-//    const typename Account::name_type& account_name,
-//    const typename Data::name_type& data_name,
-//    int32_t data_version,
-//    const Account::structure& account_structure,
-//    std::function<void(std::string&)> modify_functor) {
-//}
+template<typename Account, typename ModifyPolicy>
+template<typename Data>
+bool AccountHandler<Account, ModifyPolicy>::ModifyOrAddDataElement(
+    const typename Account::name_type& account_name,
+    const typename Data::name_type& data_name,
+    int32_t data_version,
+    const Account::structure& account_structure,
+    std::function<void(std::string&)> modify_functor) {
+}
 
 //template<typename Account, typename ModifyPolicy>
 //std::vector<Account>::iterator AccountHandler<Account, ModifyPolicy>::FindAccount(

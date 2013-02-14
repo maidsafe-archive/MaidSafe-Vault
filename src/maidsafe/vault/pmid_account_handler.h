@@ -33,11 +33,17 @@ class PmidAccountHandler {
  public:
   explicit PmidAccountHandler(const boost::filesystem::path& vault_root_dir);
   // Account operations
-  bool AddAccount(const PmidAccount& pmid_account);
+  bool AddAccount(std::unique_ptr<PmidAccount> pmid_account);
   bool DeleteAccount(const PmidName& account_name);
+  PmidAccount::DataHolderStatus AccountStatus(const PmidName& account_name) const;
+  void SetDataHolderGoingDown(const PmidName& account_name);
+  void SetDataHolderDown(const PmidName& account_name);
+  void SetDataHolderGoingUp(const PmidName& account_name);
+  void SetDataHolderUp(const PmidName& account_name);
 
   // Sync operations
   std::vector<PmidName> GetAccountNames() const;
+  std::vector<PmidName> GetArchivedAccountNames() const;
   PmidAccount::serialised_type GetSerialisedAccount(const PmidName& account_name) const;
   std::vector<boost::filesystem::path> GetArchiveFileNames(const PmidName& account_name) const;
   NonEmptyString GetArchiveFile(const PmidName& account_name,
@@ -45,6 +51,11 @@ class PmidAccountHandler {
   void PutArchiveFile(const PmidName& account_name,
                       const boost::filesystem::path& path,
                       const NonEmptyString& content);
+
+  void PruneArchivedAccounts(std::function<bool(const PmidName& account_name)> criteria);
+  void MoveAccountToArchive(const PmidName& account_name);
+  void BringAccountBackFromArchive(const PmidName& account_name);
+  void ArchiveRecentData(const PmidName& account_name);
 
   // Data operations
   template<typename Data>
@@ -60,9 +71,11 @@ class PmidAccountHandler {
   PmidAccountHandler& operator=(const PmidAccountHandler&);
   PmidAccountHandler(PmidAccountHandler&&);
   PmidAccountHandler& operator=(PmidAccountHandler&&);
+
   const boost::filesystem::path kPmidAccountsRoot_;
   mutable std::mutex mutex_;
-  std::vector<PmidAccount> pmid_accounts_;
+  std::vector<std::unique_ptr<PmidAccount> > pmid_accounts_;
+  std::vector<PmidName> archived_accounts_;
 };
 
 }  // namespace vault
