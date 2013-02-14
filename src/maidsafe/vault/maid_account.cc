@@ -127,8 +127,7 @@ MaidAccount::MaidAccount(const serialised_type& serialised_maid_account, const f
     recent_put_data_.emplace_back(
         GetDataNameVariant(static_cast<DataTagValue>(recent_put_data.type()),
                            Identity(recent_put_data.name())),
-        recent_put_data.size(),
-        recent_put_data.replication_count());
+        recent_put_data.cost());
   }
 
   total_claimed_available_size_by_pmids_ =
@@ -153,8 +152,7 @@ MaidAccount::serialised_type MaidAccount::Serialise() const {
                                             recent_put_data_item.data_name_variant));
     proto_recent_put_data->set_type(static_cast<int32_t>(type_and_name.first));
     proto_recent_put_data->set_name(type_and_name.second.string());
-    proto_recent_put_data->set_size(recent_put_data_item.size);
-    proto_recent_put_data->set_replication_count(recent_put_data_item.replications);
+    proto_recent_put_data->set_cost(recent_put_data_item.cost);
   }
 
   proto_maid_account.set_total_claimed_available_size_by_pmids(
@@ -162,8 +160,8 @@ MaidAccount::serialised_type MaidAccount::Serialise() const {
   proto_maid_account.set_total_put_data(total_put_data_);
 
   auto archive_file_names(GetArchiveFileNames());
-  for (auto archive_file_name : archive_file_names)
-    proto_maid_account.add_archive_file_names(archive_file_name);
+  for (auto& archive_file_name : archive_file_names)
+    proto_maid_account.add_archive_file_names(archive_file_name.string());
 
   return serialised_type(NonEmptyString(proto_maid_account.SerializeAsString()));
 }

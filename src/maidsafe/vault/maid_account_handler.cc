@@ -31,21 +31,21 @@ MaidAccountHandler::MaidAccountHandler(const boost::filesystem::path& vault_root
   fs::exists(kMaidAccountsRoot_) || fs::create_directory(kMaidAccountsRoot_);
 }
 
-bool MaidAccountHandler::AddAccount(const MaidAccount& maid_account) {
-  return detail::AddAccount(mutex_, maid_accounts_, maid_account);
+bool MaidAccountHandler::AddAccount(std::unique_ptr<MaidAccount>&& maid_account) {
+  return detail::AddAccount(mutex_, maid_accounts_, std::move(maid_account));
 }
 
 bool MaidAccountHandler::DeleteAccount(const MaidName& account_name) {
   return detail::DeleteAccount(mutex_, maid_accounts_, account_name);
 }
 
-void MaidAccountHandler::RegisterPmid(
-    const MaidName& account_name, const nfs::PmidRegistration& pmid_registration) {
+void MaidAccountHandler::RegisterPmid(const MaidName& account_name,
+                                      const nfs::PmidRegistration& pmid_registration) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr).RegisterPmid(pmid_registration);
+  (*itr)->RegisterPmid(pmid_registration);
 }
 
 void MaidAccountHandler::UnregisterPmid(const MaidName& account_name, const PmidName& pmid_name) {
@@ -53,7 +53,7 @@ void MaidAccountHandler::UnregisterPmid(const MaidName& account_name, const Pmid
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr).UnregisterPmid(pmid_name);
+  (*itr)->UnregisterPmid(pmid_name);
 }
 
 void MaidAccountHandler::UpdatePmidTotals(const MaidName& account_name,
@@ -62,14 +62,14 @@ void MaidAccountHandler::UpdatePmidTotals(const MaidName& account_name,
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr).UpdatePmidTotals(pmid_totals);
+  (*itr)->UpdatePmidTotals(pmid_totals);
 }
 
 std::vector<MaidName> MaidAccountHandler::GetAccountNames() const {
   std::vector<MaidName> account_names;
   std::lock_guard<std::mutex> lock(mutex_);
   for (auto& maid_account : maid_accounts_)
-    account_names.push_back(maid_account.name());
+    account_names.push_back(maid_account->name());
   return account_names;
 }
 
@@ -84,7 +84,7 @@ std::vector<boost::filesystem::path> MaidAccountHandler::GetArchiveFileNames(
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  return (*itr).GetArchiveFileNames();
+  return (*itr)->GetArchiveFileNames();
 }
 
 NonEmptyString MaidAccountHandler::GetArchiveFile(const MaidName& account_name,
@@ -93,7 +93,7 @@ NonEmptyString MaidAccountHandler::GetArchiveFile(const MaidName& account_name,
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  return (*itr).GetArchiveFile(filename);
+  return (*itr)->GetArchiveFile(filename);
 }
 
 void MaidAccountHandler::PutArchiveFile(const MaidName& account_name,
@@ -103,7 +103,7 @@ void MaidAccountHandler::PutArchiveFile(const MaidName& account_name,
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr).PutArchiveFile(filename, content);
+  (*itr)->PutArchiveFile(filename, content);
 }
 
 }  // namespace vault
