@@ -33,7 +33,7 @@ template<typename Data>
 void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
-  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
+  auto request_id(std::make_pair(data_message.message_id(), MaidName));
   if (accumulator_.CheckHandled(request_id, reply))
     return reply_functor(reply.Serialise()->string());
 

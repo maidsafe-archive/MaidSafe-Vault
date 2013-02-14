@@ -31,12 +31,11 @@ PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
     nfs_(routing, pmid) {}
 
 
-void PmidAccountHolderService::HandleSynchronise(
-    const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
+void PmidAccountHolderService::TriggerSync() {
 }
 
 void PmidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_message) const {
-  if (!data_message.HasTargetId()) {
+  if (!data_message.HasDataHolder()) {
     LOG(kError) << "No target ID, can't forward the message.";
     ThrowError(VaultErrors::permission_denied);
   }
@@ -58,8 +57,8 @@ void PmidAccountHolderService::InformOfDataHolderUp(const PmidName& pmid_name) {
 
 void PmidAccountHolderService::InformAboutDataHolder(const PmidName& pmid_name, bool node_up) {
   std::vector<PmidName> metadata_manager_ids(GetDataNamesInAccount(pmid_name));
-  for (PmidName& metadata_manager_id : metadata_manager_ids)
-    nfs_.DataHolderStatusChanged(metadata_manager_id, pmid_name);
+//  for (PmidName& metadata_manager_id : metadata_manager_ids)
+//    nfs_.DataHolderStatusChanged(metadata_manager_id, pmid_name);
 }
 
 std::vector<PmidName> PmidAccountHolderService::GetDataNamesInAccount(

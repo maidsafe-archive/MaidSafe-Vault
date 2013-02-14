@@ -29,7 +29,8 @@ template<typename Data>
 void PmidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
-  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
+  const auto request_id(std::make_pair(data_message.message_id(),
+                                       data_message.data_holder()));
   if (accumulator_.CheckHandled(request_id, reply))
     return reply_functor(reply.Serialise()->string());
 
@@ -68,7 +69,8 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     LOG(kError) << "Failure deleting data from account: " << error.what();
     reply = nfs::Reply(error);
   }
-  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
+  auto request_id(std::make_pair(data_message.message_id(),
+                                 PmidName(Identity(data_message.source().node_id.string()))));
   accumulator_.SetHandled(request_id, reply);
   reply_functor(reply.Serialise()->string());
 }
@@ -84,7 +86,8 @@ void PmidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
     LOG(kError) << "Failure deleting data from account: " << error.what();
     // Always return succeess for Deletes
   }
-  auto request_id(std::make_pair(data_message.message_id(), data_message.source().persona));
+  auto request_id(std::make_pair(data_message.message_id(),
+                                 PmidName(Identity(data_message.source().node_id.string()))));
   nfs::Reply reply(CommonErrors::success);
   accumulator_.SetHandled(request_id, reply);
   reply_functor(reply.Serialise()->string());

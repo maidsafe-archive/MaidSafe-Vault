@@ -61,8 +61,9 @@ Account AccountHandler<Account, ModifyPolicy>::GetAccount(
 }
 
 template<typename Account, typename ModifyPolicy>
-std::vector<Account::name_type> AccountHandler<Account, ModifyPolicy>::GetAccountNames() const {
-  std::vector<Account::name_type> account_names;
+  std::vector<typename Account::name_type> AccountHandler<Account, ModifyPolicy>::GetAccountNames()
+                                                                                  const {
+  std::vector<typename Account::name_type> account_names;
   std::lock_guard<std::mutex> lock(mutex_);
   for (auto& account : accounts_)
     account_names.push_back(account.name());
@@ -83,12 +84,12 @@ bool AccountHandler<Account, ModifyPolicy>::ModifyOrAddDataElement(
     const typename Account::name_type& account_name,
     const typename Data::name_type& data_name,
     int32_t data_version,
-    const Account::structure& account_structure,
+    const typename Account::structure& account_structure,
     std::function<void(std::string&)> modify_functor) {
 }
 
 template<typename Account, typename ModifyPolicy>
-std::vector<Account>::iterator AccountHandler<Account, ModifyPolicy>::FindAccount(
+typename std::vector<Account>::iterator AccountHandler<Account, ModifyPolicy>::FindAccount(
     const typename Account::name_type& account_name) {
   return std::find_if(accounts_.begin(),
                       accounts_.end(),
@@ -98,7 +99,7 @@ std::vector<Account>::iterator AccountHandler<Account, ModifyPolicy>::FindAccoun
 }
 
 template<typename Account, typename ModifyPolicy>
-std::vector<Account>::const_iterator AccountHandler<Account, ModifyPolicy>::FindAccount(
+typename std::vector<Account>::const_iterator AccountHandler<Account, ModifyPolicy>::FindAccount(
     const typename Account::name_type& account_name) const {
   return std::find_if(accounts_.begin(),
                       accounts_.end(),
