@@ -95,8 +95,6 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
   switch (sync_action) {
     case Sync::Action::kSyncInfo:
       break;
-    case Sync::Action::kGetArchiveFiles:
-      break;
     case Sync::Action::kSyncArchiveFiles:
       break;
     default:
@@ -167,8 +165,9 @@ void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
   protobuf::Sync sync_pb_message;
   sync_pb_message.set_action(static_cast<int32_t>(Sync::Action::kSyncInfo));
   sync_pb_message.set_sync_message(sync_info.SerializeAsString());
+  assert(sync_pb_message.IsInitialized() && "Uninitialised sync message");
   std::shared_ptr<SharedResponse> shared_response(std::make_shared<SharedResponse>());
-  routing::ResponseFunctor callback = [=](std::string response) {
+  auto callback = [=](std::string response) {
       this->HandleSendSyncDataCallback(response, account_name, shared_response);
     };
   nfs_.PostSyncDataGroup(account_name,
@@ -181,36 +180,38 @@ void MaidAccountHolderService::HandleSendSyncDataCallback(
     const MaidName& account_name,
     std::shared_ptr<SharedResponse> shared_response) {
   try {
-    protobuf::SyncInfoResponse sync_response;
+    protobuf::SyncInfoResponse sync_info_response;
     nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(response))));
-    if (!reply.IsSuccess() || !sync_response.ParseFromString(reply.data().string())) {
+    if (!reply.IsSuccess() || !sync_info_response.ParseFromString(reply.data().string())) {
       LOG(kError) << "Failed to parse reply";
       return;
     }
-    NodeId requester_node_id(sync_response.node_id());
+    NodeId requester_node_id(sync_info_response.node_id());
+    bool has_file_requests(sync_info_response.has_file_hash_requests());
     {
       std::lock_guard<std::mutex> lock(shared_response->mutex);
       if (requester_node_id == routing_.kNodeId())
         shared_response->this_node_in_group = true;
-      if (!sync_response.has_file_hash_requests())
+      if (!has_file_requests)
         ++shared_response->count;  //  Done with this node
     }
-    if (sync_response.has_file_hash_requests()) {
-      HandleFileRequest(requester_node_id, account_name, sync_response.file_hash_requests(),
+    if (has_file_requests) {
+      HandleFileRequest(requester_node_id, account_name, sync_info_response.file_hash_requests(),
                         shared_response);
     }
     CheckAndDeleteAccount(account_name, shared_response);
   } catch(const std::exception& ex) {
-    LOG(kError) << "Exception thrown while parsing reply : " << ex.what();
+    LOG(kError) << "Exception thrown while processing reply : " << ex.what();
   }
 }
 
 void MaidAccountHolderService::CheckAndDeleteAccount(
-    const MaidName& /*account_name*/,
+    const MaidName& account_name,
     std::shared_ptr<SharedResponse> shared_response) {
   std::lock_guard<std::mutex> lock(shared_response->mutex);
   if ((shared_response->count == 4) && !shared_response->this_node_in_group) {
-    //  Delete/Archive account account_name
+   LOG(kInfo) << "Deleting account after forwarding sync info";
+   maid_account_handler_.DeleteAccount(account_name);  // FIXME this need archiving account ?
   }
 }
 
@@ -218,26 +219,24 @@ void MaidAccountHolderService::HandleFileRequest(const NodeId& requester_node_id
                                                  const MaidName& account_name,
                                                  const protobuf::GetArchiveFiles& requested_files,
                                                  std::shared_ptr<SharedResponse> shared_response) {
-  if (!requested_files.IsInitialized()) {
-    LOG(kError) << "Error parsing GetArchiveFiles request.";
-    return;
-  }
-
+  assert(requested_files.IsInitialized());
   for (auto& file_name : requested_files.file_hash_requested()) {
     try {
       auto file_contents = maid_account_handler_.GetArchiveFile(account_name, fs::path(file_name));
       protobuf::ArchiveFile maid_account_file;
       maid_account_file.set_name(file_name);
       maid_account_file.set_contents(file_contents.string());
+      assert(maid_account_file.IsInitialized() && "Uninitialised maid_account_file");
       protobuf::Sync sync_message;
       sync_message.set_action(static_cast<int32_t>(Sync::Action::kSyncArchiveFiles));
       sync_message.set_sync_message(maid_account_file.SerializeAsString());
-      routing::ResponseFunctor callback = [=](std::string response) {
+      assert(sync_message.IsInitialized() && "Uninitialised sync message");
+      auto callback = [=](std::string response) {
           this->HandleFileRequestCallback(requester_node_id, response, account_name,
                                           shared_response);
         };
       nfs_.PostSyncDataDirect(requester_node_id, NonEmptyString(sync_message.SerializeAsString()),
-                              callback);  // FIXME
+                              callback);
     } catch(const std::exception& ex) {
       LOG(kError) << "Failed to send requested file contents : " << ex.what();
     }
@@ -251,21 +250,20 @@ void MaidAccountHolderService::HandleFileRequestCallback(
     std::shared_ptr<SharedResponse> shared_response) {
   try {
     nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(response))));
-    protobuf::SyncArchiveFilesResponse archive_file_request_response;
-    if (!reply.IsSuccess() ||
-        !archive_file_request_response.ParseFromString(reply.data().string())) {
+    protobuf::SyncArchiveFilesResponse archive_file_response;
+    if (!reply.IsSuccess() || !archive_file_response.ParseFromString(reply.data().string())) {
       LOG(kError) << "Failed to parse reply";
       return;
     }
-    if (!archive_file_request_response.has_file_hash_requests()) {
+    if (!archive_file_response.has_file_hash_requests()) {
       std::lock_guard<std::mutex> lock(shared_response->mutex);
       ++shared_response->count;  //  Done with this node
     } else {
-      HandleFileRequest(requester_node_id, account_name,
-                        archive_file_request_response.file_hash_requests(), shared_response);
+      HandleFileRequest(requester_node_id, account_name, archive_file_response.file_hash_requests(),
+                        shared_response);
     }
   } catch(const std::exception& ex) {
-    LOG(kError) << "Exception thrown while parsing reply : " << ex.what();
+    LOG(kError) << "Exception thrown while processing reply : " << ex.what();
   }
   CheckAndDeleteAccount(account_name, shared_response);
 }

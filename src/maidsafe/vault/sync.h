@@ -23,7 +23,6 @@ class Sync {
 
   enum class Action : int32_t {
     kSyncInfo,
-    kGetArchiveFiles,
     kSyncArchiveFiles
   };
 };
