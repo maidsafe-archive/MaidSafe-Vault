@@ -85,7 +85,7 @@ class SyncPolicy {
  private:
   routing::Routing& routing_;
   const nfs::PersonaId kSource_;
-  const passport::Pmid& kPmid_;
+  const passport::Pmid kPmid_;
 };
 
 template <nfs::Persona source_persona>
@@ -115,7 +115,7 @@ class VaultManagement {
 
   routing::Routing& routing_;
   const nfs::PersonaId kSource_;
-  const passport::Pmid& kPmid_;
+  const passport::Pmid kPmid_;
 };
 
 typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMaidAccountHolder>,
