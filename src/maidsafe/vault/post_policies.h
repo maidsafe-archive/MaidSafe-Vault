@@ -47,7 +47,7 @@ class SyncPolicy {
  public:
   SyncPolicy(routing::Routing& routing, const passport::Pmid& pmid)
       : routing_(routing),
-        pmid_(pmid) {}
+        kPmid_(pmid) {}
 
   template <typename Name>
   void PostSyncDataGroup(const Name& name,
@@ -56,7 +56,7 @@ class SyncPolicy {
     nfs::GenericMessage generic_message(
         nfs::GenericMessage::Action::kSynchronise,
         source_persona,
-        nfs::PersonaId(source_persona, routing_.kNodeId()),
+        kSource_,
         name.data,
         serialised_sync_data);
 
@@ -72,7 +72,7 @@ class SyncPolicy {
     nfs::GenericMessage generic_message(
         nfs::GenericMessage::Action::kSynchronise,
         source_persona,
-        nfs::PersonaId(source_persona, routing_.kNodeId()),
+        kSource_,
         Identity(target_node_id.string()),
         serialised_sync_data);
     nfs::Message message(nfs::GenericMessage::message_type_identifier,
@@ -83,7 +83,8 @@ class SyncPolicy {
 
  private:
   routing::Routing& routing_;
-  nfs::PersonaId source_;
+  const nfs::PersonaId kSource_;
+  const passport::Pmid kPmid_;
 };
 
 class MetadataManagerPolicy {
@@ -110,7 +111,10 @@ typedef HostPost<PmidAccountHolderPolicy,
                  PostSynchronisation<nfs::Persona::kPmidAccountHolder> > PmidAccountHolderPost;
 typedef HostPost<MetadataManagerPolicy,
                  PostSynchronisation<nfs::Persona::kMetadataManager> > MetadataManagerPost;
-
+// This should be moved to respective persona
+void HandlePutToMetadataManager();
+void HandlePutToPmidAccountHolder();
+void HandlePutToDataHolder();
 }  // namespace vault
 
 }  // namespace maidsafe

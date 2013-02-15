@@ -24,7 +24,6 @@
 #include "maidsafe/nfs/data_message.h"
 #include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/public_key_getter.h"
-#include "maidsafe/nfs/response_mapper.h"
 
 #include "maidsafe/vault/pmid_account_handler.h"
 #include "maidsafe/vault/types.h"
@@ -36,7 +35,7 @@ namespace vault {
 
 class PmidAccountHolderService {
  public:
-  PmidAccountHolderService(nfs::NfsResponseMapper& response_mapper,
+  PmidAccountHolderService(const passport::Pmid& pmid,
                            routing::Routing& routing,
                            nfs::PublicKeyGetter& public_key_getter,
                            const boost::filesystem::path& vault_root_dir);
