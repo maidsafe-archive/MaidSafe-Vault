@@ -41,7 +41,7 @@ bool PmidAccountHandler::DeleteAccount(const PmidName& account_name) {
 PmidAccount::DataHolderStatus PmidAccountHandler::AccountStatus(
     const PmidName& account_name) const {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
+  auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
   return (*itr)->data_holder_status();
@@ -49,7 +49,7 @@ PmidAccount::DataHolderStatus PmidAccountHandler::AccountStatus(
 
 void PmidAccountHandler::SetDataHolderGoingDown(const PmidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
+  auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
   (*itr)->SetDataHolderGoingDown();
@@ -57,7 +57,7 @@ void PmidAccountHandler::SetDataHolderGoingDown(const PmidName& account_name) {
 
 void PmidAccountHandler::SetDataHolderDown(const PmidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
+  auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
   (*itr)->SetDataHolderDown();
@@ -65,7 +65,7 @@ void PmidAccountHandler::SetDataHolderDown(const PmidName& account_name) {
 
 void PmidAccountHandler::SetDataHolderGoingUp(const PmidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
+  auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
   (*itr)->SetDataHolderGoingUp();
@@ -73,7 +73,7 @@ void PmidAccountHandler::SetDataHolderGoingUp(const PmidName& account_name) {
 
 void PmidAccountHandler::SetDataHolderUp(const PmidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
+  auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
   (*itr)->SetDataHolderUp();
@@ -103,7 +103,7 @@ PmidAccount::serialised_type PmidAccountHandler::GetSerialisedAccount(
 std::vector<boost::filesystem::path> PmidAccountHandler::GetArchiveFileNames(
     const PmidName& account_name) const {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
+  auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
   return (*itr)->GetArchiveFileNames();
@@ -112,7 +112,7 @@ std::vector<boost::filesystem::path> PmidAccountHandler::GetArchiveFileNames(
 NonEmptyString PmidAccountHandler::GetArchiveFile(const PmidName& account_name,
                                                   const boost::filesystem::path& path) const {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
+  auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
   return (*itr)->GetArchiveFile(path);
@@ -169,7 +169,7 @@ void PmidAccountHandler::BringAccountBackFromArchive(const PmidName& account_nam
 
 void PmidAccountHandler::ArchiveRecentData(const PmidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::ConstFindAccount(pmid_accounts_, account_name));
+  auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
   (*itr)->ArchiveRecentData();

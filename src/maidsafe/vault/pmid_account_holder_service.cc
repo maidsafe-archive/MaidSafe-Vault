@@ -155,13 +155,13 @@ void PmidAccountHolderService::RevertMessages(const PmidName& pmid_name,
              pmid_account_handler_.SetDataHolderDown(pmid_name);
 }
 
-void PmidAccountHolderService::SendMessages(const PmidName& pmid_name,
-                                            const std::set<PmidName>& metadata_manager_ids,
-                                            bool node_up) {
-  for (const PmidName& metadata_manager_id : metadata_manager_ids) {
+void PmidAccountHolderService::SendMessages(const PmidName& /*pmid_name*/,
+                                            const std::set<PmidName>& /*metadata_manager_ids*/,
+                                            bool /*node_up*/) {
+//  for (const PmidName& metadata_manager_id : metadata_manager_ids) {
     //TODO(dirvine) impliment
         //    nfs_.DataHolderStatusChanged(NodeId(metadata_manager_id), NodeId(pmid_name), node_up);
-  }
+//  }
 }
 
 }  // namespace vault

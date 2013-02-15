@@ -44,13 +44,15 @@ namespace test { template<class T> class DataHolderTest; }
 
 class DataHolder {
  public:
-  explicit DataHolder(const boost::filesystem::path& vault_root_dir);
+  explicit DataHolder(const passport::Pmid& pmid, routing::Routing& routing,
+                      const boost::filesystem::path& vault_root_dir);
   ~DataHolder();
 
   template<typename Data>
   void HandleDataMessage(const nfs::DataMessage& data_message,
                          const routing::ReplyFunctor& reply_functor);
-
+  void HandleGenericMessage(const nfs::GenericMessage& generic_message,
+                            const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   NonEmptyString GetFromCache(const nfs::DataMessage& data_message);
   template<typename Data>

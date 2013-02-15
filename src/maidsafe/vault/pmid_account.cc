@@ -273,10 +273,10 @@ VoidFuture PmidAccount::ArchiveDataRecord(const PmidAccount::DataElement record)
       archiving = archive_.Store<ImmutableData>(ImmutableData::name_type(type_and_name.second),
                                                 data_element.SerializeAsString());
       break;
-    case DataTagValue::kMutableDataValue:
-      archiving = archive_.Store<MutableData>(MutableData::name_type(type_and_name.second),
-                                              data_element.SerializeAsString());
-      break;
+//    case DataTagValue::kMutableDataValue:  / TODO (Fraser) BEFORE_RELEASE  FIXME
+//      archiving = archive_.Store<MutableData>(MutableData::name_type(type_and_name.second),
+//                                              data_element.SerializeAsString());
+//      break;
     default: {
       LOG(kError) << "Non handleable data type";
       ThrowError(CommonErrors::invalid_parameter);
