@@ -175,6 +175,7 @@ std::string DiskBasedStorage::SearchForAndDeleteEntry(
     const DiskBasedStorage::StoredElement<Data>& element) {
   Changer changer;
   SearchForEntryAndExecuteOperation(element, changer, true);
+  return std::string();  // TODO (Fraser) BEFORE_RELEASE what are we returning here?
 }
 
 template<typename Data>

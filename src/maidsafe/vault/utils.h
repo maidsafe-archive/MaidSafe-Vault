@@ -54,8 +54,8 @@ typename std::vector<std::unique_ptr<Account>>::iterator FindAccount(
     const typename Account::name_type& account_name) {
   return std::find_if(accounts.begin(),
                       accounts.end(),
-                      [&account_name](const Account& account) {
-                        return account_name == account.name();
+                      [&account_name](const std::unique_ptr<Account>& account) {
+                        return account_name == account->name();
                       });
 }
 
@@ -76,9 +76,9 @@ bool AddAccount(std::mutex& mutex,
                 std::vector<std::unique_ptr<Account>>& accounts,
                 std::unique_ptr<Account>&& account) {
   std::lock_guard<std::mutex> lock(mutex);
-  if (FindAccount(accounts, account.name()) != accounts.end())
+  if (FindAccount(accounts, account->name()) != accounts.end())
     return false;
-  accounts.push_back(account);
+  accounts.push_back(std::move(account));
   return true;
 }
 
@@ -99,7 +99,7 @@ typename Account::serialised_type GetSerialisedAccount(
     const std::vector<std::unique_ptr<Account>>& accounts,
     const typename Account::name_type& account_name) {
   std::lock_guard<std::mutex> lock(mutex);
-  auto itr(ConstFindAccount(accounts, account_name));
+  auto itr(FindAccount(accounts, account_name));
   if (itr == accounts.end())
     ThrowError(VaultErrors::no_such_account);
 
