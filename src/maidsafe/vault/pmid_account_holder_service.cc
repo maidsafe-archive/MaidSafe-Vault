@@ -22,7 +22,7 @@ namespace vault {
 
 typedef std::vector<boost::filesystem::path> PathVector;
 
-PmidAccountHolderService::PmidAccountHolderService(nfs::NfsResponseMapper& response_mapper,
+PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
                                                    nfs::PublicKeyGetter& public_key_getter,
                                                    const boost::filesystem::path& vault_root_dir)

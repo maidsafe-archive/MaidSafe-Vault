@@ -47,6 +47,7 @@ class SyncPolicy {
  public:
   SyncPolicy(routing::Routing& routing, const passport::Pmid& pmid)
       : routing_(routing),
+        kSource_(source_persona, routing_.kNodeId()),
         kPmid_(pmid) {}
 
   template <typename Name>
@@ -84,37 +85,48 @@ class SyncPolicy {
  private:
   routing::Routing& routing_;
   const nfs::PersonaId kSource_;
-  const passport::Pmid kPmid_;
+  const passport::Pmid& kPmid_;
 };
 
-class MetadataManagerPolicy {
+template <nfs::Persona source_persona>
+class VaultManagement {
  public:
-  MetadataManagerPolicy(nfs::NfsResponseMapper& /*response_mapper*/, routing::Routing& routing)
+  VaultManagement(routing::Routing& routing, const passport::Pmid& pmid)
       : routing_(routing),
-        source_(nfs::PersonaId(nfs::Persona::kMetadataManager, routing.kNodeId())) {}
-  void DuplicateCopy();
+        kSource_(source_persona, routing_.kNodeId()),
+        kPmid_(pmid) {}
+// Below two methods should be moved to utils and classified methods need to
+// be implemented per persona using common utility function
+  void PostManagementMessageGroup(const nfs::GenericMessage generic_message,
+                                  const routing::ResponseFunctor& callback) {
+    nfs::Message message(nfs::GenericMessage::message_type_identifier,
+                         generic_message.Serialise().data);
+    routing_.SendGroup(NodeId(generic_message.name().string()), message.Serialise()->string(),
+                         false, callback);
+  }
 
- private:
+  void PostManagementMessageDirect(const nfs::GenericMessage generic_message,
+                                   const routing::ResponseFunctor& callback) {
+    nfs::Message message(nfs::GenericMessage::message_type_identifier,
+                         generic_message.Serialise().data);
+    routing_.SendDirect(NodeId(generic_message.name().string()), message.Serialise()->string(),
+                        false, callback);
+  }
+
   routing::Routing& routing_;
-  nfs::PersonaId source_;
+  const nfs::PersonaId kSource_;
+  const passport::Pmid& kPmid_;
 };
 
-template<typename T, typename SyncPolicy>
-class HostPost : public T, public SyncPolicy {
- public:
-  explicit HostPost(nfs::NfsResponseMapper& response_mapper, routing::Routing& routing)
-      : T(response_mapper, routing),
-        SyncPolicy(response_mapper, routing) {}
-};
+typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMaidAccountHolder>,
+    VaultManagement<nfs::Persona::kMaidAccountHolder>> MaidAccountHolderPostPolicy;
 
-typedef HostPost<PmidAccountHolderPolicy,
-                 PostSynchronisation<nfs::Persona::kPmidAccountHolder> > PmidAccountHolderPost;
-typedef HostPost<MetadataManagerPolicy,
-                 PostSynchronisation<nfs::Persona::kMetadataManager> > MetadataManagerPost;
-// This should be moved to respective persona
-void HandlePutToMetadataManager();
-void HandlePutToPmidAccountHolder();
-void HandlePutToDataHolder();
+typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMetadataManager>,
+    VaultManagement<nfs::Persona::kMetadataManager>> MetadataManagerPostPolicy;
+
+typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kPmidAccountHolder>,
+    VaultManagement<nfs::Persona::kPmidAccountHolder>> PmidAccountHolderPostPolicy;
+
 }  // namespace vault
 
 }  // namespace maidsafe
