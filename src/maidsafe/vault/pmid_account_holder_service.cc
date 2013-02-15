@@ -33,8 +33,8 @@ PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
     nfs_(routing, pmid) {}
 
 
-void PmidAccountHolderService::HandleSynchronise(
-    const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
+void PmidAccountHolderService::TriggerSync(
+    /*const std::vector<routing::NodeInfo>& new_close_nodes*/) {
   // Operations to be done when we this call is received
   CheckAccounts();
 }
@@ -52,7 +52,8 @@ void PmidAccountHolderService::CheckAccounts() {
   // Archived
   pmid_account_handler_.PruneArchivedAccounts(
       [this] (const PmidName& pmid_name) {
-        return routing_.IsNodeIdInGroupRange(NodeId(pmid_name)) /* == routing::kOutwithRange*/;
+        return routing::GroupRangeStatus::kOutwithRange ==
+               routing_.IsNodeIdInGroupRange(NodeId(pmid_name));
       });
 }
 
@@ -157,8 +158,10 @@ void PmidAccountHolderService::RevertMessages(const PmidName& pmid_name,
 void PmidAccountHolderService::SendMessages(const PmidName& pmid_name,
                                             const std::set<PmidName>& metadata_manager_ids,
                                             bool node_up) {
-  for (const PmidName& metadata_manager_id : metadata_manager_ids)
-    nfs_.DataHolderStatusChanged(NodeId(metadata_manager_id), NodeId(pmid_name), node_up);
+  for (const PmidName& metadata_manager_id : metadata_manager_ids) {
+    //TODO(dirvine) impliment
+        //    nfs_.DataHolderStatusChanged(NodeId(metadata_manager_id), NodeId(pmid_name), node_up);
+  }
 }
 
 }  // namespace vault

@@ -33,6 +33,8 @@
 
 #include "maidsafe/data_store/data_store.h"
 
+#include "maidsafe/vault/types.h"
+
 
 namespace maidsafe {
 

@@ -35,7 +35,7 @@ template<typename Data>
 void MetadataManagerService::HandlePut(const nfs::DataMessage& data_message,
                                        const routing::ReplyFunctor& reply_functor) {
   if (routing::GroupRangeStatus::kOutwithRange ==
-          detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
+      routing_.IsNodeIdInGroupRange(data_message.source().node_id)) {
     reply_functor(nfs::Reply(RoutingErrors::not_in_range).Serialise()->string());
     return;
   }
@@ -114,7 +114,8 @@ void MetadataManagerService::HandleDelete(const nfs::DataMessage& /*data_message
 // On error handler's
 template<typename Data>
 void MetadataManagerService::OnPutErrorHandler(nfs::DataMessage data_message) {
-  if (detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
+  if (routing::GroupRangeStatus::kInRange ==
+      routing_.IsNodeIdInGroupRange(data_message.source().node_id)) {
     nfs_.Put<Data>(data_message,
          [this](nfs::DataMessage data_msg) { this->OnPutErrorHandler<Data>(data_msg); });
   }
@@ -122,14 +123,15 @@ void MetadataManagerService::OnPutErrorHandler(nfs::DataMessage data_message) {
 
 template<typename Data>
 void MetadataManagerService::OnDeleteErrorHandler(nfs::DataMessage data_message) {
-  if (detail::NodeRangeCheck(routing_, data_message.source().node_id)) {
+  if (routing::GroupRangeStatus::kInRange ==
+      routing_.IsNodeIdInGroupRange(data_message.source().node_id)) {
     nfs_.Delete<Data>(data_message,
         [this](nfs::DataMessage data_msg) { this->OnDeleteErrorHandler<Data>(data_msg); });
   }
 }
 
 template<typename Data>
-void MetadataManagerService::OnGenericErrorHandler(nfs::GenericMessage generic_message) {}
+void MetadataManagerService::OnGenericErrorHandler(nfs::GenericMessage /*generic_message*/) {}
 
 }  // namespace vault
 

@@ -33,7 +33,8 @@ template<typename Data>
 void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
-  auto request_id(std::make_pair(data_message.message_id(), MaidName));
+  auto request_id(std::make_pair(data_message.message_id(),
+                                 MaidName(Identity(data_message.source().node_id.string()))));
   if (accumulator_.CheckHandled(request_id, reply))
     return reply_functor(reply.Serialise()->string());
 
@@ -55,15 +56,14 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
   nfs::Accumulator<MaidName>::RequestIdentity request_id;
   try {
     ValidateDataMessage(data_message);
-    Data data(data_message.data().name, Data::serialised_type(data_message.data().content));
+    Data data(typename Data::name_type(data_message.data().name),
+              typename Data::serialised_type(data_message.data().content));
     MaidName account_name(detail::GetSourceMaidName(data_message));
     auto data_name(GetDataName<Data>(data_message));
-    int32_t data_size(static_cast<int32_t>(data_message.data().content.string().size()));
     auto put_op(std::make_shared<nfs::PutOrDeleteOp>(
         kPutSuccessCountMin_,
-        [this, account_name, data_name, data_size, reply_functor](nfs::Reply overall_result) {
-            HandlePutResult(overall_result, account_name, data_name, data_size, reply_functor,
-                            is_unique_on_network<Data>());
+        [this, account_name, data_name, reply_functor](nfs::Reply overall_result) {
+            HandlePutResult<Data>(overall_result, account_name, data_name, reply_functor);
         }));
     nfs_.Put(data,
              data_message.data_holder(),
@@ -74,12 +74,14 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
   }
   catch(const maidsafe_error& error) {
     LOG(kWarning) << error.what();
-    request_id = std::make_pair(data_message.message_id(), data_message.source().persona);
+    request_id = std::make_pair(data_message.message_id(),
+                                MaidName(Identity(data_message.source().node_id.string())));
     reply = nfs::Reply(error, data_message.Serialise().data);
   }
   catch(...) {
     LOG(kWarning) << "Unknown error.";
-    request_id = std::make_pair(data_message.message_id(), data_message.source().persona);
+    request_id = std::make_pair(data_message.message_id(),
+                                MaidName(Identity(data_message.source().node_id.string())));
     reply = nfs::Reply(CommonErrors::unknown, data_message.Serialise().data);
   }
   try {
@@ -107,7 +109,8 @@ void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
     LOG(kWarning) << "Unknown error.";
     // Always return success for Deletes
   }
-  SendReply(std::make_pair(data_message.message_id(), data_message.source().persona),
+  SendReply(std::make_pair(data_message.message_id(),
+                           MaidName(Identity(data_message.source().node_id.string()))),
             nfs::Reply(CommonErrors::success, data_message.Serialise().data), reply_functor);
 }
 
@@ -115,7 +118,7 @@ template<typename Data>
 typename Data::name_type MaidAccountHolderService::GetDataName(
     const nfs::DataMessage& data_message) const {
   // Hash the data name to obfuscate the list of chunks associated with the client.
-  return Data::name_type(crypto::Hash<crypto::SHA512>(data_message.data().name));
+  return typename Data::name_type(crypto::Hash<crypto::SHA512>(data_message.data().name));
 }
 
 void MaidAccountHolderService::SendReply(
@@ -129,11 +132,9 @@ void MaidAccountHolderService::SendReply(
 template<typename Data>
 void MaidAccountHolderService::PutToAccount(const MaidName& account_name,
                                             const typename Data::name_type& data_name,
-                                            int32_t size,
-                                            int32_t replication_count,
+                                            int32_t cost,
                                             std::true_type) {
-  // TODO(Fraser#5#): 2013-02-08 - Consider having replication calculated by network.
-  maid_account_handler_.PutData<Data>(account_name, data_name, size, replication_count);
+  maid_account_handler_.PutData<Data>(account_name, data_name, cost);
 }
 
 template<typename Data>
@@ -145,19 +146,6 @@ void MaidAccountHolderService::DeleteFromAccount(const MaidName& account_name,
 
 
 template<typename Data>
-on_scope_exit MaidAccountHolderService::GetScopeExitForPut(
-    const MaidName& account_name,
-    const typename Data::name_type& data_name) {
-  on_scope_exit strong_guarantee([this, account_name, data_name]() {
-    try {
-      this->DeleteFromAccount(account_name, data_name);
-    }
-    catch(...) {}
-  });
-  return strong_guarantee;
-}
-
-template<typename Data>
 void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
                                                const MaidName& account_name,
                                                const typename Data::name_type& data_name,
@@ -165,7 +153,7 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
   try {
     if (overall_result.IsSuccess()) {
       protobuf::Cost cost;
-      cost.ParseFromString(overall_result.data()->string());
+      cost.ParseFromString(overall_result.data().string());
       // TODO(Fraser#5#): 2013-02-13 - Have PutToAccount return percentage or amount remaining so
       // if it falls below a threshold, we can trigger getting updated account info from the PAHs
       // (not too frequently), & alert the client by returning an "error" via client_reply_functor.

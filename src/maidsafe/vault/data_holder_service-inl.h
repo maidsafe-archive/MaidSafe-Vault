@@ -86,8 +86,8 @@ void DataHolder::HandlePutMessage(const nfs::DataMessage& data_message,
     return;
   }
   try {
-    permanent_data_store_.Store(typename Data::name_type(data_message.data().name),
-                                data_message.data().content);
+    permanent_data_store_.Put(typename Data::name_type(data_message.data().name),
+                              data_message.data().content);
     reply_functor(nfs::Reply(0).Serialise()->string());
   } catch(std::exception& /*ex*/) {
     reply_functor(nfs::Reply(CommonErrors::unknown).Serialise()->string());

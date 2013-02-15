@@ -87,7 +87,7 @@ Demultiplexer::Demultiplexer(MaidAccountHolderService& maid_account_holder_servi
                              MetadataManagerService& metadata_manager_service,
                              PmidAccountHolderService& pmid_account_holder_service,
                              DataHolder& data_holder)
-    : maid_account_holder_service_(maid_account_holder),
+    : maid_account_holder_service_(maid_account_holder_service),
       metadata_manager_service_(metadata_manager_service),
       pmid_account_holder_service_(pmid_account_holder_service),
       data_holder_(data_holder) {}
@@ -118,14 +118,14 @@ void Demultiplexer::HandleDataMessagePersona(nfs::DataMessage& data_message,
                                              const routing::ReplyFunctor& reply_functor) {
   switch (data_message.destination_persona()) {
     case nfs::Persona::kMaidAccountHolder:
-      return HandleDataType<MaidAccountHolder>(data_message, reply_functor,
-                                               maid_account_holder_service_);
+      return HandleDataType<MaidAccountHolderService>(data_message, reply_functor,
+                                                      maid_account_holder_service_);
     case nfs::Persona::kMetadataManager:
       return HandleDataType<MetadataManagerService>(data_message, reply_functor,
                                                     metadata_manager_service_);
     case nfs::Persona::kPmidAccountHolder:
-      return HandleDataType<PmidAccountHolder>(data_message, reply_functor,
-                                               pmid_account_holder_service_);
+      return HandleDataType<PmidAccountHolderService>(data_message, reply_functor,
+                                                      pmid_account_holder_service_);
     case nfs::Persona::kDataHolder:
       return HandleDataType<DataHolder>(data_message, reply_functor, data_holder_);
     default:
@@ -146,12 +146,12 @@ bool Demultiplexer::GetFromCache(std::string& serialised_message) {
     auto cached_content(HandleGetFromCache(request_data_message));
     if (cached_content.IsInitialised()) {
       nfs::DataMessage response_data_message(
-          request_data_message.data().action,
           request_data_message.destination_persona(),
           request_data_message.source(),
           nfs::DataMessage::Data(request_data_message.data().type,
                                  request_data_message.data().name,
-                                 cached_content));
+                                 cached_content,
+                                 request_data_message.data().action));
       nfs::Message response_message(nfs::DataMessage::message_type_identifier,
                                     response_data_message.Serialise().data);
       serialised_message = response_message.Serialise()->string();

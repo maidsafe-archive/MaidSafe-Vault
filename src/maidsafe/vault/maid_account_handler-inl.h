@@ -17,7 +17,6 @@ namespace maidsafe {
 
 namespace vault {
 
-
 template<typename Data>
 void MaidAccountHandler::PutData(const MaidName& account_name,
                                  const typename Data::name_type& data_name,
@@ -26,7 +25,7 @@ void MaidAccountHandler::PutData(const MaidName& account_name,
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr).PutData<Data>(data_name, cost);
+  (*itr)->PutData<Data>(data_name, cost);
 }
 
 template<typename Data>
@@ -36,7 +35,7 @@ void MaidAccountHandler::DeleteData(const MaidName& account_name,
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr).DeleteData<Data>(data_name);
+  (*itr)->DeleteData<Data>(data_name);
 }
 
 }  // namespace vault

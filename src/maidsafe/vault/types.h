@@ -48,6 +48,13 @@ typedef nfs::NetworkFileSystem<
     nfs::PmidAccountHolderDeletePolicy,
     PmidAccountHolderPostPolicy> PmidAccountHolderNfs;
 
+// TODO (dirvine) BEFORE_RELEASE this is a hack to create a type for the dataholder, the proper implmentation is required ,,,,,,,,,,,,,,,,,,,,,
+typedef nfs::NetworkFileSystem<
+    nfs::PmidAccountHolderPutPolicy,
+    nfs::PmidAccountHolderGetPolicy,
+    nfs::PmidAccountHolderDeletePolicy,
+    PmidAccountHolderPostPolicy> DataHolderNfs;
+
 typedef passport::PublicMaid::name_type MaidName;
 typedef passport::PublicPmid::name_type PmidName;
 typedef passport::PublicMpid::name_type MpidName;

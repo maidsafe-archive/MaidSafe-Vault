@@ -77,15 +77,13 @@ class MaidAccountHolderService {
   template<typename Data>
   void PutToAccount(const MaidName& account_name,
                     const typename Data::name_type& data_name,
-                    int32_t size,
-                    int32_t replication_count,
+                    int32_t cost,
                     std::true_type);
   // no-op for non-payable data
   template<typename Data>
-  void PutToAccount(const MaidName& account_name,
-                    const typename Data::name_type& data_name,
-                    int32_t size,
-                    int32_t replication_count,
+  void PutToAccount(const MaidName& /*account_name*/,
+                    const typename Data::name_type& /*data_name*/,
+                    int32_t /*cost*/,
                     std::false_type) {}
   template<typename Data>
   void DeleteFromAccount(const MaidName& account_name,
@@ -93,13 +91,9 @@ class MaidAccountHolderService {
                          std::true_type);
   // no-op for non-payable data
   template<typename Data>
-  void DeleteFromAccount(const MaidName& account_name,
-                         const typename Data::name_type& data_name,
+  void DeleteFromAccount(const MaidName& /*account_name*/,
+                         const typename Data::name_type& /*data_name*/,
                          std::false_type) {}
-
-  template<typename Data>
-  on_scope_exit GetScopeExitForPut(const MaidName& account_name,
-                                   const typename Data::name_type& data_name);
 
   template<typename Data>
   void HandlePutResult(const nfs::Reply& overall_result,

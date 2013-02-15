@@ -127,6 +127,9 @@ typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMetadataManager>,
 typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kPmidAccountHolder>,
     VaultManagement<nfs::Persona::kPmidAccountHolder>> PmidAccountHolderPostPolicy;
 
+typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kDataHolder>,
+    VaultManagement<nfs::Persona::kDataHolder>> DataHolderPostPolicy;
+
 }  // namespace vault
 
 }  // namespace maidsafe

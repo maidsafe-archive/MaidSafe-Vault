@@ -35,10 +35,6 @@ namespace vault {
 
 namespace detail {
 
-inline bool NodeRangeCheck(routing::Routing& routing, const NodeId& node_id) {
-  return  routing::GroupRangeStatus::kInRange == routing.IsNodeIdInGroupRange(node_id);
-}
-
 bool ShouldRetry(routing::Routing& routing, const nfs::DataMessage& data_message);
 
 MaidName GetSourceMaidName(const nfs::DataMessage& data_message);
