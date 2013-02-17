@@ -12,6 +12,7 @@
 #include "maidsafe/vault/disk_based_storage.h"
 
 #include <iterator>
+#include <limits>
 
 #include "maidsafe/vault/types.h"
 
@@ -44,7 +45,11 @@ protobuf::DiskStoredFile ParseAndVerifyMessagedFile(
 
 }  // namespace
 
-DiskBasedStorage::DiskBasedStorage(const fs::path& root) : kRoot_(root), active_(), file_ids_() {
+DiskBasedStorage::DiskBasedStorage(const fs::path& root)
+    : kRoot_(root),
+      active_(),
+      file_ids_(),
+      oldest_non_full_file_index_(std::numeric_limits<int>::max()) {
   if (fs::exists(root)) {
     if (fs::is_directory(root))
       TraverseAndVerifyFiles();
@@ -59,10 +64,17 @@ void DiskBasedStorage::TraverseAndVerifyFiles() {
   assert(file_ids_.empty());
   fs::directory_iterator root_itr(kRoot_), end_itr;
   bool most_recent_file_full(false);
+  int oldest_non_full_file_index(oldest_non_full_file_index_);
   for (; root_itr != end_itr; ++root_itr) {
     try {
-      auto file_name_parts(GetAndVerifyFileNameParts(root_itr, most_recent_file_full));
-      file_ids_.insert(file_name_parts);
+      auto file_name_parts(GetAndVerifyFileNameParts(root_itr, most_recent_file_full,
+                                                     oldest_non_full_file_index));
+      if (!file_ids_.insert(file_name_parts).second) {
+        // TODO(Fraser#5#): 2013-02-14 - Consider different error to indicate probable malicious
+        //                               tampering with file contents.
+        ThrowError(CommonErrors::parsing_error);
+      }
+      oldest_non_full_file_index_ = oldest_non_full_file_index;
     }
     catch(const std::exception& e) {
       LOG(kWarning) << *root_itr << " is not a valid DiskStoredFile: " << e.what();
@@ -79,7 +91,8 @@ void DiskBasedStorage::TraverseAndVerifyFiles() {
 
 DiskBasedStorage::FileIdentity DiskBasedStorage::GetAndVerifyFileNameParts(
     fs::directory_iterator itr,
-    bool& most_recent_file_full) const {
+    bool& most_recent_file_full,
+    int& oldest_non_full_file_index) const {
   auto hash(crypto::HashFile<crypto::SHA512>(*itr));
   std::string expected_extension("." + EncodeToBase32(hash));
   if ((*itr).path().extension().string() != expected_extension) {
@@ -89,15 +102,20 @@ DiskBasedStorage::FileIdentity DiskBasedStorage::GetAndVerifyFileNameParts(
 
   FileIdentity file_id(std::make_pair(std::stoi((*itr).path().stem().string()), hash));
   auto file(ParseFile(file_id));
-  if (file.element_size() > detail::Parameters::max_file_element_count()) {
-    LOG(kWarning) << *itr << " has too many elements.";
+  if (file.element_size() > detail::Parameters::max_file_element_count() ||
+      file_id.first < 0) {
+    LOG(kWarning) << *itr << " has too many elements (" << file.element_size() << ") or index ("
+                  << file_id.first << ") < 0";
     // TODO(Fraser#5#): 2013-02-14 - Consider different error to indicate probable malicious
     //                               tampering with file contents.
     ThrowError(CommonErrors::parsing_error);
   }
 
+  bool full(file.element_size() == detail::Parameters::max_file_element_count());
   if (file_id.first > (*file_ids_.rbegin()).first)
-    most_recent_file_full = (file.element_size() == detail::Parameters::max_file_element_count());
+    most_recent_file_full = full;
+  if (!full && file_id.first < oldest_non_full_file_index)
+    oldest_non_full_file_index = file_id.first;
 
   return file_id;
 }
@@ -156,73 +174,67 @@ void DiskBasedStorage::SaveChangedFile(const FileIdentity& file_id,
 }
 
 void DiskBasedStorage::ReorganiseFiles() {
-  if (file_ids_.size() == 1U)
+  auto read_itr(GetReorganiseStartPoint());
+  if (read_itr == file_ids_.end())
     return;
 
+  auto write_itr(read_itr);
   std::vector<protobuf::DiskStoredElement> elements;
-  auto write_itr(GetReorganiseStartPoint(elements));
-  if (write_itr == file_ids_.end())
-    return;
+  elements.reserve(3 * detail::Parameters::max_file_element_count());
+  while (read_itr != file_ids_.end() && !elements.empty()) {
+    ReadIntoMemory(read_itr, elements);
+    WriteToDisk(write_itr, elements);
+  }
 
-  // Start copying
-  //size_t max_count(static_cast<size_t>(detail::Parameters::max_file_element_count()));
-  //auto read_itr(write_itr);
-  //++read_itr;
-  //std::vector<protobuf::DiskStoredElement> read_elements;
-  //for (; read_itr != file_ids_.end(); ++read_itr) {
-  //  auto read_file(ParseFile(*read_itr));
-  //  for (int i(0); i != read_file.element_size(); ++i)
-  //    read_elements.push_back(read_file.element(i));
-
-  //  while (!read_elements.empty()) {
-  //    size_t copy_count(std::min(max_count - write_elements.size(), read_elements.size()));
-  //    std::move(read_elements.begin(), read_elements.begin() + copy_count,
-  //              std::back_inserter(write_elements));
-  //    read_elements.erase(read_elements.begin(), read_elements.begin() + copy_count);
-  //    if (write_elements.size() == max_count) {
-  //      detail::SortElements(write_elements);
-  //      write_file.Clear();
-  //      for (int i(0); i != detail::Parameters::max_file_element_count(); ++i)
-  //        write_file.add_element()->CopyFrom(write_elements[i]);
-
-  //    }
-  //  }
-  //  copy to write_file
-
-  //}
-
-  //while (reader_itr != file_ids_.end()) {
-  //  if (writer.element_size())
-  //}
-
-  //erase remove file_ids_
-
-  //OrderingMap ordering;
-  //size_t current_counter(1), new_counter(0), file_hashes_max(file_ids_.size());
-  //while (current_counter != file_hashes_max) {
-  //  fs::path current_path(GetFilePath(kRoot_, file_hashes_.at(new_counter), new_counter));
-  //  NonEmptyString current_content(ReadFile(current_path));
-  //  protobuf::DiskStoredFile current_file_disk;
-  //  current_file_disk.ParseFromString(current_content.string());
-  //  HandleNextFile(current_path, current_file_disk, ordering, current_counter, new_counter);
-  //}
+  PruneFilesToEnd(write_itr);
+  oldest_non_full_file_index_ = std::numeric_limits<int>::max();
 }
 
-DiskBasedStorage::FileIdentities::iterator DiskBasedStorage::GetReorganiseStartPoint(
-    std::vector<protobuf::DiskStoredElement>& elements) {
-  // Find first non-full file in order to begin the reorganisation.
+DiskBasedStorage::FileIdentities::iterator DiskBasedStorage::GetReorganiseStartPoint() {
+  // Find first non-full file in order to begin the reorganisation.  Don't consider the last file.
+  if (oldest_non_full_file_index_ >= (*file_ids_.rbegin()).first)
+    return file_ids_.end();
+
   auto write_itr(file_ids_.begin());
-  protobuf::DiskStoredFile write_file;
-  elements.reserve(detail::Parameters::max_file_element_count());
-  for (; write_itr != file_ids_.end(); ++write_itr) {
-    write_file = ParseFile(*write_itr);
-    if (write_file.element_size() != detail::Parameters::max_file_element_count()) {
-      for (int i(0); i != write_file.element_size(); ++i)
-        elements.push_back(write_file.element(i));
-      break;
-    }
-  }
+  std::advance(write_itr, oldest_non_full_file_index_);
   return write_itr;
+}
+
+void DiskBasedStorage::ReadIntoMemory(FileIdentities::iterator &read_itr,
+                                      std::vector<protobuf::DiskStoredElement>& elements) {
+  while (read_itr != file_ids_.end() &&
+         static_cast<int>(elements.size()) < 2 * detail::Parameters::max_file_element_count()) {
+    auto read_file(ParseFile(*read_itr));
+    for (int i(0); i != read_file.element_size(); ++i)
+      elements.push_back(read_file.element(i));
+    ++read_itr;
+  }
+}
+
+void DiskBasedStorage::WriteToDisk(FileIdentities::iterator &write_itr,
+                                   std::vector<protobuf::DiskStoredElement>& elements) {
+  detail::SortElements(elements);
+  protobuf::DiskStoredFile write_file;
+  size_t count(std::min(elements.size(),
+                        static_cast<size_t>(detail::Parameters::max_file_element_count())));
+  for (size_t i(0); i != count; ++i)
+    write_file.add_element()->CopyFrom(elements[i]);
+
+  elements.erase(elements.begin(), elements.begin() + count);
+  SaveChangedFile(*write_itr, write_file);
+  ++write_itr;
+}
+
+void DiskBasedStorage::PruneFilesToEnd(const FileIdentities::iterator& first_itr) {
+  FileIdentities::iterator itr(first_itr);
+  while (itr != file_ids_.end()) {
+    fs::path file_path(kRoot_ / GetFileName(*itr));
+    boost::system::error_code ec;
+    if (!fs::remove(file_path, ec))
+      LOG(kWarning) << "Failed to remove " << file_path << " during prune: " << ec.message();
+    ++itr;
+  }
+  file_ids_.erase(first_itr, file_ids_.end());
 }
 
 std::future<uint32_t> DiskBasedStorage::GetFileCount() const {
@@ -288,10 +300,13 @@ void DiskBasedStorage::DoPutFile(const fs::path& filename,
     SaveChangedFile(*itr, file);
   }
 
-  // If it's the most recent file, check if its full and if so, add empty hash
-  if (file.element_size() == detail::Parameters::max_file_element_count() &&
-      (*itr).first == (*file_ids_.rbegin()).first) {
-    file_ids_.emplace(file_id.first + 1, crypto::SHA512Hash());
+  // If it's full & is the most recent file, add empty hash
+  if (file.element_size() == detail::Parameters::max_file_element_count()) {
+    if ((*itr).first == (*file_ids_.rbegin()).first)
+      file_ids_.emplace(file_id.first + 1, crypto::SHA512Hash());
+  } else {  // If it's not full, check if it's the oldest non-full.
+    if ((*itr).first < oldest_non_full_file_index_)
+      oldest_non_full_file_index_ = (*itr).first;
   }
 }
 

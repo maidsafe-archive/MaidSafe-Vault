@@ -135,6 +135,8 @@ void DiskBasedStorage::FindAndDeleteEntry(const typename Data::name_type& name,
       value = file.element(index).value();
       DeleteEntry(index, file);
       SaveChangedFile(*ritr, file);
+      if ((*ritr).first < oldest_non_full_file_index_)
+        oldest_non_full_file_index_ = (*ritr).first;
       reorganise_files = (file.element_size() < detail::Parameters::min_file_element_count() &&
                           ritr != file_ids_.rbegin());
       return;
