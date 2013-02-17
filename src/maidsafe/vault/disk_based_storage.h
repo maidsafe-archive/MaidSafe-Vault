@@ -73,7 +73,8 @@ class DiskBasedStorage {
 
   void TraverseAndVerifyFiles();
   FileIdentity GetAndVerifyFileNameParts(boost::filesystem::directory_iterator itr,
-                                         bool& most_recent_file_full) const;
+                                         bool& most_recent_file_full,
+                                         int& oldest_non_full_file_index) const;
 
   boost::filesystem::path GetFileName(const FileIdentity& file_id) const;
   protobuf::DiskStoredFile ParseFile(const FileIdentity& file_id) const;
@@ -98,8 +99,12 @@ class DiskBasedStorage {
   void SaveChangedFile(const FileIdentity& file_id, const protobuf::DiskStoredFile& file);
 
   void ReorganiseFiles();
-  FileIdentities::iterator GetReorganiseStartPoint(
-      std::vector<protobuf::DiskStoredElement>& elements);
+  FileIdentities::iterator GetReorganiseStartPoint();
+  void ReadIntoMemory(FileIdentities::iterator &read_itr,
+                      std::vector<protobuf::DiskStoredElement>& elements);
+  void WriteToDisk(FileIdentities::iterator &write_itr,
+                   std::vector<protobuf::DiskStoredElement>& elements);
+  void PruneFilesToEnd(const FileIdentities::iterator& first_itr);
 
   void DoPutFile(const boost::filesystem::path& filename,
                  const NonEmptyString& content,
@@ -108,6 +113,7 @@ class DiskBasedStorage {
   const boost::filesystem::path kRoot_;
   mutable Active active_;
   FileIdentities file_ids_;
+  int oldest_non_full_file_index_;
 };
 
 }  // namespace vault
