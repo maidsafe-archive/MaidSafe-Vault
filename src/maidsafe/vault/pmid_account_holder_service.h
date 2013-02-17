@@ -24,7 +24,7 @@
 #include "maidsafe/nfs/data_message.h"
 #include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/public_key_getter.h"
-
+#include "maidsafe/nfs/reply.h"
 #include "maidsafe/vault/pmid_account_handler.h"
 #include "maidsafe/vault/types.h"
 
@@ -58,7 +58,11 @@ class PmidAccountHolderService {
   void AdjustAccount(const nfs::DataMessage& data_message);
   template<typename Data>
   void SendDataMessage(const nfs::DataMessage& data_message);
-
+  template<typename Data>
+  void HandlePutResult(const nfs::Reply& overall_result,
+                       const int32_t size,
+                       const typename Data::name_type& data_name,
+                       routing::ReplyFunctor client_reply_functor);
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
 
   void CheckAccounts();

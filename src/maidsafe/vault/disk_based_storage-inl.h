@@ -15,7 +15,7 @@
 #include <algorithm>
 
 #include "maidsafe/common/utils.h"
-
+#include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/vault/parameters.h"
 
 
@@ -85,7 +85,7 @@ void DiskBasedStorage::AddElement(const typename Data::name_type& name,
 
   auto proto_element(file.add_element());
   proto_element->set_type(static_cast<int32_t>(Data::name_type::tag_type::kEnumValue));
-  proto_element->set_name(element.name->string());
+  proto_element->set_name(name.string());
   proto_element->set_value(value);
   assert(file.element_size() <= detail::Parameters::max_file_element_count());
 
@@ -107,7 +107,7 @@ std::future<int32_t> DiskBasedStorage::Delete(const typename Data::name_type& na
                  try {
                    int32_t value(0);
                    bool reorganise_files(false);
-                   this->FindAndDeleteEntry(name, value, reorganise_files)
+                   this->FindAndDeleteEntry(name, value, reorganise_files);
                    promise->set_value(value);
                    if (reorganise_files)
                      this->ReorganiseFiles();

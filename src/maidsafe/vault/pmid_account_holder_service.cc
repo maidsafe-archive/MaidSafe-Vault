@@ -122,11 +122,12 @@ void PmidAccountHolderService::InformAboutDataHolder(const PmidName& pmid_name, 
 std::set<PmidName> PmidAccountHolderService::GetDataNamesInFile(
     const PmidName& pmid_name,
     const boost::filesystem::path& path) const {
+  // pare file serialse as string sed to has pmidah to send to mm
   NonEmptyString file_content(pmid_account_handler_.GetArchiveFile(pmid_name, path));
-  protobuf::ArchivedPmidData pmid_data;
+  protobuf::PmidRecord pmid_data;
   pmid_data.ParseFromString(file_content.string());
   std::set<PmidName> metadata_manager_ids;
-  for (int n(0); n != pmid_data.data_stored_size(); ++n)
+  for (int n(0); n != pmid_data.stored_total_size(); ++n)
     metadata_manager_ids.insert(PmidName(Identity(pmid_data.data_stored(n).name())));
   return metadata_manager_ids;
 }

@@ -20,7 +20,7 @@
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/types.h"
-
+#include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/vault/pmid_account.pb.h"
 #include "maidsafe/vault/pmid_record.h"

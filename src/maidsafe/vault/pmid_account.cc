@@ -11,6 +11,7 @@
 
 #include <string>
 
+#include "maidsafe/private/data_types/data_name_variant.h"
 #include "maidsafe/vault/pmid_account.h"
 #include "maidsafe/vault/utils.h"
 
@@ -22,19 +23,15 @@ namespace {
 
 size_t ExtractFileIndexFromFilename(const std::string& filename) {
   auto it(std::find(filename.begin(), filename.end(), '.'));
-  if (it == filename.end()) {
-    LOG(kError) << "No dot in the file name.";
+  if (it == filename.end())
     ThrowError(CommonErrors::unexpected_filename_format);
-  }
   return static_cast<size_t>(std::stoi(std::string(filename.begin(), it)));
 }
 
 PmidRecord ParsePmidRecord(const PmidAccount::serialised_type& serialised_pmid_account) {
   protobuf::PmidAccount pmid_account;
-  if (!pmid_account.ParseFromString(serialised_pmid_account.data.string())) {
-    LOG(kError) << "Failed to parse pmid_account.";
+  if (!pmid_account.ParseFromString(serialised_pmid_account.data.string()))
     ThrowError(CommonErrors::parsing_error);
-  }
   return PmidRecord(pmid_account.pmid_record());
 }
 
