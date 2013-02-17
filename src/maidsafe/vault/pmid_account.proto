@@ -20,7 +20,3 @@ message PmidAccount {
   required PmidRecord pmid_record = 1;
   repeated DataElement recent_data_stored = 2;
 }
-
-message ArchivedPmidData {
-  repeated DataElement data_stored = 1;
-}

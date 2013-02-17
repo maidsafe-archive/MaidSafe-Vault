@@ -31,7 +31,7 @@ Vault::Vault(const passport::Pmid& pmid,
       maid_account_holder_service_(pmid, *routing_, public_key_getter_, vault_root_dir),
       metadata_manager_service_(pmid, *routing_, public_key_getter_, vault_root_dir),
       pmid_account_holder_service_(pmid, *routing_, public_key_getter_, vault_root_dir),
-      data_holder_(pmid, *routing_, vault_root_dir),
+      data_holder_(vault_root_dir),
       demux_(maid_account_holder_service_, metadata_manager_service_,
              pmid_account_holder_service_, data_holder_),
       asio_service_(2) {

@@ -24,8 +24,8 @@
 #include "maidsafe/data_types/data_type_values.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/data_message.h"
-#include "maidsafe/data_types/data_name_variant.h"
-#include "maidsafe/vault/disk_based_storage_messages_pb.h"
+
+#include "maidsafe/vault/disk_based_storage_pb.h"
 #include "maidsafe/vault/types.h"
 
 
@@ -128,7 +128,6 @@ inline void RetryOnPutOrDeleteError(routing::Routing& routing,
     }
   }
 }
-
 
 }  // namespace detail
 

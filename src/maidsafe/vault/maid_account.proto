@@ -23,10 +23,6 @@ message MaidAccount {
   repeated bytes archive_file_names = 6;
 }
 
-message ArchivedMaidData {
-  repeated PutData put_data = 1;
-}
-
 // Used as data field in MM's Reply to Put request.
 message Cost {
   required int32 value = 1;

@@ -12,78 +12,48 @@
 #ifndef MAIDSAFE_VAULT_DISK_BASED_STORAGE_INL_H_
 #define MAIDSAFE_VAULT_DISK_BASED_STORAGE_INL_H_
 
-#include <memory>
-
-#include "boost/filesystem/operations.hpp"
+#include <algorithm>
 
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/data_types/data_name_variant.h"
-
-#include "maidsafe/vault/disk_based_storage_messages_pb.h"
 #include "maidsafe/vault/parameters.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
-typedef std::promise<void> VoidPromise;
-typedef std::shared_ptr<VoidPromise> VoidPromisePtr;
+namespace detail {
 
-class DiskBasedStorage::Changer {
- public:
-  Changer() : functor_(nullptr) {}
-  explicit Changer(const std::function<void(std::string&)> functor) : functor_(functor) {}
+void SortElements(std::vector<protobuf::DiskStoredElement>& elements) {
+  std::sort(
+      elements.begin(),
+      elements.end(),
+      [](const protobuf::DiskStoredElement& lhs, const protobuf::DiskStoredElement& rhs)->bool {
+          return (lhs.name() < rhs.name()) ? true :
+                 (lhs.name() > rhs.name()) ? false : (lhs.type() < rhs.type());
+      });
+}
 
-  void Execute(protobuf::DiskStoredFile& disk_file, int index) {
-    if (functor_)
-      ModifyElement(disk_file, index);
-    else
-      RemoveElement(disk_file, index);
-  }
+void SortFile(protobuf::DiskStoredFile& file) {
+  assert(file.element_size() == detail::Parameters::max_file_element_count());
+  std::vector<protobuf::DiskStoredElement> elements;
+  elements.reserve(file.element_size());
+  for (int i(0); i != file.element_size(); ++i)
+    elements.push_back(file.element(i));
+  SortElements(elements);
+  for (int i(0); i != file.element_size(); ++i)
+    file.mutable_element(i)->CopyFrom(elements[i]);
+}
 
- private:
-  std::function<void(std::string&)> functor_;
-
-  void RemoveElement(protobuf::DiskStoredFile& disk_file, int index) {
-    protobuf::DiskStoredFile temp;
-    for (int n(0); n != disk_file.disk_element_size(); ++n) {
-      if (n != index)
-        temp.add_disk_element()->CopyFrom(disk_file.disk_element(n));
-    }
-
-    disk_file = temp;
-  }
-
-  void ModifyElement(protobuf::DiskStoredFile& disk_file, int index) {
-    std::string element_to_modify(disk_file.disk_element(index).SerializeAsString());
-    functor_(element_to_modify);
-    protobuf::DiskStoredElement modified_element;
-    assert(modified_element.ParseFromString(element_to_modify) &&
-           "Returned element doesn't parse.");
-    disk_file.mutable_disk_element(index)->CopyFrom(modified_element);
-  }
-};
+}  // namespace detail
 
 template<typename Data>
-struct DiskBasedStorage::StoredElement {
-   StoredElement() : name(), serialised_value() {}
-   StoredElement(const typename Data::name_type& the_name, const std::string& the_serialised_value)
-       : name(the_name),
-         serialised_value(the_serialised_value) {}
-   typename Data::name_type name;
-   std::string serialised_value;
-};
-
-template<typename Data>
-std::future<void> DiskBasedStorage::Store(const typename Data::name_type& name,
-                                          const std::string& serialised_value) {
-  auto promise(std::make_shared<VoidPromise>());
-  std::future<void> future(promise->get_future());
-  StoredElement<Data> element(name, serialised_value);
-  active_.Send([element, promise, this] {
+std::future<void> DiskBasedStorage::Store(const typename Data::name_type& name, int32_t value) {
+  auto promise(std::make_shared<std::promise<void>>());
+  active_.Send([name, value, promise, this] {
                  try {
-                   this->AddToLatestFile<Data>(element);
+                   this->AddToLatestFile(name, value);
                    promise->set_value();
                  }
                  catch(const std::exception& e) {
@@ -91,141 +61,99 @@ std::future<void> DiskBasedStorage::Store(const typename Data::name_type& name,
                    promise->set_exception(std::current_exception());
                  }
                });
-  return std::move(future);
+  return promise->get_future();
 }
 
 template<typename Data>
-std::future<std::string> DiskBasedStorage::Delete(const typename Data::name_type& name) {
-  auto promise(std::make_shared<std::promise<std::string>>());
-  auto future(promise->get_future());
-  StoredElement<Data> element(name, "");
-  active_.Send([element, promise, this] {
+void DiskBasedStorage::AddToLatestFile(const typename Data::name_type& name, int32_t value) {
+  FileIdentity file_id(*file_ids_.rbegin());
+  if (file_id.second.IsInitialised()) {  // The file already exists: add to this file.
+    auto file(ParseFile(file_id));
+    AddElement(name, value, file_id, file);
+  } else {  // The file doesn't already exist - create a new file.
+    protobuf::DiskStoredFile file;
+    AddElement(name, value, file_id, file);
+  }
+}
+
+template<typename Data>
+void DiskBasedStorage::AddElement(const typename Data::name_type& name,
+                                  int32_t value,
+                                  const FileIdentity& file_id,
+                                  protobuf::DiskStoredFile& file) {
+  on_scope_exit disk_stored_file_guarantee(on_scope_exit::RevertValue(file));
+
+  auto proto_element(file.add_element());
+  proto_element->set_type(static_cast<int32_t>(Data::name_type::tag_type::kEnumValue));
+  proto_element->set_name(element.name->string());
+  proto_element->set_value(value);
+  assert(file.element_size() <= detail::Parameters::max_file_element_count());
+
+  if (file.element_size() == detail::Parameters::max_file_element_count()) {
+    // Insert a placeholder with a default-initialised (invalid) hash to indicate we need a new
+    // file at the next AddToLatestFile.
+    file_ids_.emplace(file_id.first + 1, crypto::SHA512Hash());
+    detail::SortFile(file);
+  }
+
+  SaveChangedFile(file_id, file);
+  disk_stored_file_guarantee.Release();
+}
+
+template<typename Data>
+std::future<int32_t> DiskBasedStorage::Delete(const typename Data::name_type& name) {
+  auto promise(std::make_shared<std::promise<int32_t>>());
+  active_.Send([name, promise, this] {
                  try {
-                   promise->set_value(this->SearchForAndDeleteEntry<Data>(element));
+                   int32_t value(0);
+                   bool reorganise_files(false);
+                   this->FindAndDeleteEntry(name, value, reorganise_files)
+                   promise->set_value(value);
+                   if (reorganise_files)
+                     this->ReorganiseFiles();
                  }
                  catch(const std::exception& e) {
                    LOG(kError) << "Execution of Delete threw: " << e.what();
                    promise->set_exception(std::current_exception());
                  }
                });
-  return std::move(future);
+  return promise->get_future();
 }
 
 template<typename Data>
-std::future<void> DiskBasedStorage::Modify(const typename Data::name_type& name,
-                                           const std::function<void(std::string&)>& functor,
-                                           const std::string& serialised_value) {
-  assert(functor && "Null functor not allowed!");
-  VoidPromisePtr promise(std::make_shared<VoidPromise>());
-  std::future<void> future(promise->get_future());
-  StoredElement<Data> element(name, serialised_value);
-  active_.Send([element, functor, promise, this] () {
-                 try {
-                   this->SearchForAndModifyEntry<Data>(element, functor);
-                   promise->set_value();
-                 }
-                 catch(const std::exception& e) {
-                   LOG(kError) << "Execution of Modify threw: " << e.what();
-                   promise->set_exception(std::current_exception());
-                 }
-               });
-  return std::move(future);
-}
+void DiskBasedStorage::FindAndDeleteEntry(const typename Data::name_type& name,
+                                          int32_t& value,
+                                          bool& reorganise_files) {
+  auto ritr(file_ids_.rbegin());
+  if (!(*ritr).second.IsInitialised())
+    ++ritr;
 
-template<typename Data>
-void DiskBasedStorage::AddToLatestFile(const DiskBasedStorage::StoredElement<Data>& element) {
-  size_t latest_file_index(file_hashes_.size() - 1);
-  protobuf::DiskStoredFile disk_file;
-  boost::filesystem::path latest_file_path;
-  NonEmptyString file_content;
-  if (file_hashes_.at(latest_file_index) != kEmptyFileHash_) {
-    ReadAndParseFile(file_hashes_.at(latest_file_index),
-                     latest_file_index,
-                     disk_file,
-                     latest_file_path,
-                     file_content);
-  }
-
-  AddDiskElementToFileDisk(element, disk_file);
-  NonEmptyString new_content(disk_file.SerializeAsString());
-  if (disk_file.disk_element_size() == int(detail::Parameters::max_file_element_count())) {
-    // Increment the file
-    file_hashes_.push_back(kEmptyFileHash_);
-  }
-
-  boost::filesystem::path new_path(GetFilePath(kRoot_,
-                                               file_hashes_.at(latest_file_index),
-                                               latest_file_index));
-  WriteFile(new_path, new_content.string());
-  if (!latest_file_path.empty() && latest_file_path != new_path) {
-    try {
-      boost::filesystem::remove(latest_file_path);
-    }
-    catch(const std::exception& e) {
-      LOG(kError) << "Failed to remove old file. Will erase new file to leave state as it was.";
-      boost::filesystem::remove(new_path);
-      ThrowError(CommonErrors::filesystem_io_error);
-    }
-    file_hashes_.at(latest_file_index) = crypto::Hash<crypto::SHA512>(new_content);
-  }
-}
-
-template<typename Data>
-std::string DiskBasedStorage::SearchForAndDeleteEntry(
-    const DiskBasedStorage::StoredElement<Data>& element) {
-  Changer changer;
-  SearchForEntryAndExecuteOperation(element, changer, true);
-  return std::string();  // TODO (Fraser) BEFORE_RELEASE what are we returning here?
-}
-
-template<typename Data>
-void DiskBasedStorage::SearchForAndModifyEntry(const DiskBasedStorage::StoredElement<Data>& element,
-                                               const std::function<void(std::string&)>& functor) {
-  Changer changer(functor);
-  SearchForEntryAndExecuteOperation(element, changer, false);
-}
-
-template<typename Data>
-void DiskBasedStorage::SearchForEntryAndExecuteOperation(
-    const DiskBasedStorage::StoredElement<Data>& element,
-    Changer& changer,
-    bool reorder) {
-  size_t file_index(file_hashes_.size() - 1);
-  boost::filesystem::path file_path;
-  protobuf::DiskStoredFile disk_file;
-  NonEmptyString file_content;
-  for (auto it(file_hashes_.rbegin()); it != file_hashes_.rend(); ++it, --file_index) {
-    ReadAndParseFile(*it, file_index, disk_file, file_path, file_content);
-    for (int n(disk_file.disk_element_size() - 1); n != -1; --n) {
-      if (MatchingDiskElements(disk_file.disk_element(n), element)) {
-        changer.Execute(disk_file, n);
-        UpdateFileAfterModification(it, file_index, disk_file, file_path, reorder);
-        return;
-      }
+  for (; ritr != file_ids_.rend(); ++ritr) {
+    auto file(ParseFile(*ritr));
+    int index(GetEntryIndex(name, file));
+    if (index >= 0) {
+      value = file.element(index).value();
+      DeleteEntry(index, file);
+      SaveChangedFile(*ritr, file);
+      reorganise_files = (file.element_size() < detail::Parameters::min_file_element_count() &&
+                          ritr != file_ids_.rbegin());
+      return;
     }
   }
+
+  ThrowError(CommonErrors::no_such_element);
 }
 
 template<typename Data>
-void DiskBasedStorage::AddDiskElementToFileDisk(
-    const DiskBasedStorage::StoredElement<Data>& element,
-    protobuf::DiskStoredFile& disk_file) {
-  protobuf::DiskStoredElement* disk_element(disk_file.add_disk_element());
-  disk_element->set_data_name(element.name.data.string());
-  disk_element->set_serialised_value(element.serialised_value);
-  disk_element->set_data_type(static_cast<int32_t>(Data::name_type::tag_type::kEnumValue));
-}
-
-// This function expects lhs to have data name and value always
-template<typename Data>
-bool DiskBasedStorage::MatchingDiskElements(
-    const protobuf::DiskStoredElement& lhs,
-    const DiskBasedStorage::StoredElement<Data>& element) const {
-  return lhs.data_name() == element.name.data.string() &&
-         lhs.data_type() == static_cast<int32_t>(Data::name_type::tag_type::kEnumValue) &&
-         (element.serialised_value.empty() ?
-              true :
-              lhs.serialised_value() == element.serialised_value);
+int DiskBasedStorage::GetEntryIndex(const typename Data::name_type& name,
+                                    const protobuf::DiskStoredFile& file) const {
+  for (int i(0); i != file.element_size(); ++i) {
+    if (file.element(i).type() == static_cast<int32_t>(Data::name_type::tag_type::kEnumValue) &&
+        file.element(i).name() == name->string()) {
+      return i;
+    }
+  }
+  return -1;
 }
 
 }  // namespace vault

@@ -25,11 +25,11 @@ namespace detail {
 
 const int Parameters::kMinNetworkHealth(12);
 size_t Parameters::max_recent_data_list_size(1000);
-size_t Parameters::max_file_element_count_ = 1000;
-size_t Parameters::min_file_element_count_ = 500;
+int Parameters::max_file_element_count_ = 1000;
+int Parameters::min_file_element_count_ = 500;
 
-void Parameters::set_file_element_count_limits(size_t max_file_element_count,
-                                               size_t min_file_element_count) {
+void Parameters::set_file_element_count_limits(int max_file_element_count,
+                                               int min_file_element_count) {
   if (min_file_element_count < max_file_element_count / 2) {
     LOG(kError) << "min_file_element_count must be at least half of max_file_element_count";
     ThrowError(CommonErrors::invalid_parameter);
@@ -38,9 +38,9 @@ void Parameters::set_file_element_count_limits(size_t max_file_element_count,
   min_file_element_count_ = min_file_element_count;
 }
 
-size_t Parameters::max_file_element_count() { return max_file_element_count_; }
+int Parameters::max_file_element_count() { return max_file_element_count_; }
 
-size_t Parameters::min_file_element_count() { return min_file_element_count_; }
+int Parameters::min_file_element_count() { return min_file_element_count_; }
 
 }  // namespace detail
 
