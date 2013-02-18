@@ -9,6 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
+#include "maidsafe/vault/metadata_manager/metadata_handler.h"
+
 #include <string>
 #include <vector>
 
@@ -67,11 +69,11 @@ namespace vault {
 
 //const boost::filesystem::path kVaultDirectory("meta_data_manager");
 
-//MetadataHandler::MetadataHandler(const boost::filesystem::path& vault_root_dir)
-//    : vault_metadata_dir_(vault_root_dir / kVaultDirectory) {
-//  if (!boost::filesystem::exists(vault_metadata_dir_))
-//    boost::filesystem::create_directories(vault_metadata_dir_);
-//}
+MetadataHandler::MetadataHandler(const boost::filesystem::path& vault_root_dir)
+    : kMetadataRoot_(vault_root_dir) {  //FIXME  BEFORE_RELEASE
+  if (!boost::filesystem::exists(kMetadataRoot_))
+    boost::filesystem::create_directories(kMetadataRoot_);
+}
 
 //void MetadataHandler::AddDataElement(const Identity& data_name,
 //                                         int32_t element_size,

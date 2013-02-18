@@ -17,7 +17,18 @@ namespace maidsafe {
 
 namespace vault {
 
+template<typename Data>
+std::future<void> PmidAccountHandler::PutData(const PmidName& /*account_name*/,
+                                              const typename Data::name_type& /*data_name*/,
+                                              int32_t /*size*/) {
+  return std::future<void>();
+}
 
+template<typename Data>
+std::future<void> PmidAccountHandler::DeleteData(const PmidName& /*account_name*/,
+                                                 const typename Data::name_type& /*data_name*/) {
+  return std::future<void>();
+}
 
 }  // namespace vault
 

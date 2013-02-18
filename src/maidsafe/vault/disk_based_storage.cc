@@ -111,9 +111,10 @@ void DiskBasedStorage::TraverseAndVerifyFiles() {
   }
 
   if (file_ids_.empty())
-    file_ids_.emplace(0, crypto::SHA512Hash());
+    file_ids_.insert(std::make_pair(0, std::move(crypto::SHA512Hash())));
   else if (most_recent_file_full)
-    file_ids_.emplace((*file_ids_.rbegin()).first + 1, crypto::SHA512Hash());
+    file_ids_.insert(std::make_pair((*file_ids_.rbegin()).first + 1,
+                                    std::move(crypto::SHA512Hash())));
 }
 
 DiskBasedStorage::FileIdentity DiskBasedStorage::GetAndVerifyFileNameParts(
@@ -330,7 +331,7 @@ void DiskBasedStorage::DoPutFile(const fs::path& filename,
   // If it's full & is the most recent file, add empty hash
   if (file.element_size() == detail::Parameters::max_file_element_count()) {
     if ((*itr).first == (*file_ids_.rbegin()).first)
-      file_ids_.emplace(file_id.first + 1, crypto::SHA512Hash());
+      file_ids_.insert(std::make_pair(file_id.first + 1, std::move(crypto::SHA512Hash())));
   } else {  // If it's not full, check if it's the oldest non-full.
     if ((*itr).first < oldest_non_full_file_index_)
       oldest_non_full_file_index_ = (*itr).first;

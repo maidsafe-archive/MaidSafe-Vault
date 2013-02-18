@@ -37,403 +37,403 @@ namespace vault {
 
 namespace test {
 
-struct DiskElement {
-  DiskElement(const std::string& the_name,
-              const std::string& the_serialised_value,
-              const std::string& the_serialised_element)
-      : name(the_name),
-        serialised_value(the_serialised_value),
-        serialised_element(the_serialised_element) {}
-  DiskElement() : name(), serialised_value(), serialised_element() {}
-  std::string name, serialised_value, serialised_element;
-};
+//struct DiskElement {
+//  DiskElement(const std::string& the_name,
+//              const std::string& the_serialised_value,
+//              const std::string& the_serialised_element)
+//      : name(the_name),
+//        serialised_value(the_serialised_value),
+//        serialised_element(the_serialised_element) {}
+//  DiskElement() : name(), serialised_value(), serialised_element() {}
+//  std::string name, serialised_value, serialised_element;
+//};
 
-typedef std::vector<DiskElement> ElementMap;
+//typedef std::vector<DiskElement> ElementMap;
 
-template <typename D>
-void StoreAnElement(uint32_t max_file_size,
-                    DiskBasedStorage& disk_based_storage,
-                    ElementMap& element_list) {
-  typename D::name_type name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
-  std::string serialised_value(EncodeToBase32(RandomString(max_file_size)));
+//template <typename D>
+//void StoreAnElement(uint32_t max_file_size,
+//                    DiskBasedStorage& disk_based_storage,
+//                    ElementMap& element_list) {
+//  typename D::name_type name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
+//  std::string serialised_value(EncodeToBase32(RandomString(max_file_size)));
 
-  protobuf::DiskStoredElement element;
-  element.set_data_name(name.data.string());
-  element.set_serialised_value(serialised_value);
-  DiskElement disk_element(element.data_name(),
-                           element.serialised_value(),
-                           element.SerializeAsString());
+//  protobuf::DiskStoredElement element;
+//  element.set_data_name(name.data.string());
+//  element.set_serialised_value(serialised_value);
+//  DiskElement disk_element(element.data_name(),
+//                           element.serialised_value(),
+//                           element.SerializeAsString());
 
-  element_list.push_back(disk_element);
-  disk_based_storage.Store<D>(name, serialised_value);
-}
+//  element_list.push_back(disk_element);
+//  disk_based_storage.Store<D>(name, serialised_value);
+//}
 
-template <typename T>
-class DiskStorageTest : public testing::Test {
- public:
-  DiskStorageTest()
-      : root_directory_(maidsafe::test::CreateTestPath("MaidSafe_Test_DiskStorage")) {}
+//template <typename T>
+//class DiskStorageTest : public testing::Test {
+// public:
+//  DiskStorageTest()
+//      : root_directory_(maidsafe::test::CreateTestPath("MaidSafe_Test_DiskStorage")) {}
 
- protected:
-  maidsafe::test::TestPath root_directory_;
+// protected:
+//  maidsafe::test::TestPath root_directory_;
 
-  boost::filesystem::path GetFilePath(const boost::filesystem::path& base_path,
-                                      const crypto::SHA512Hash& hash,
-                                      size_t file_number) {
-    return DiskBasedStorage::GetFilePath(base_path, hash, file_number);
-  }
+//  boost::filesystem::path GetFilePath(const boost::filesystem::path& base_path,
+//                                      const crypto::SHA512Hash& hash,
+//                                      size_t file_number) {
+//    return DiskBasedStorage::GetFilePath(base_path, hash, file_number);
+//  }
 
-  std::string GenerateFileContent(uint32_t max_file_size) {
-    protobuf::DiskStoredFile disk_file;
-    protobuf::DiskStoredElement disk_element;
-    disk_element.set_data_name(RandomString(64));
-    disk_element.set_serialised_value(RandomString(RandomUint32() % max_file_size));
-    disk_file.add_disk_element()->CopyFrom(disk_element);
-    return disk_file.SerializeAsString();
-  }
+//  std::string GenerateFileContent(uint32_t max_file_size) {
+//    protobuf::DiskStoredFile disk_file;
+//    protobuf::DiskStoredElement disk_element;
+//    disk_element.set_data_name(RandomString(64));
+//    disk_element.set_serialised_value(RandomString(RandomUint32() % max_file_size));
+//    disk_file.add_disk_element()->CopyFrom(disk_element);
+//    return disk_file.SerializeAsString();
+//  }
 
-  void ChangeDiskElement(std::string& serialised_disk_element,
-                         const std::string& new_serialised_value) {
-    protobuf::DiskStoredElement disk_element;
-    assert(disk_element.ParseFromString(serialised_disk_element) &&
-           "Received element doesn't parse.");
-    disk_element.set_serialised_value(new_serialised_value);
-    serialised_disk_element = disk_element.SerializeAsString();
-  }
+//  void ChangeDiskElement(std::string& serialised_disk_element,
+//                         const std::string& new_serialised_value) {
+//    protobuf::DiskStoredElement disk_element;
+//    assert(disk_element.ParseFromString(serialised_disk_element) &&
+//           "Received element doesn't parse.");
+//    disk_element.set_serialised_value(new_serialised_value);
+//    serialised_disk_element = disk_element.SerializeAsString();
+//  }
 
-  bool VerifyElements(const DiskBasedStorage& disk_based_storage,
-                      const ElementMap& element_list) {
-    DiskBasedStorage::PathVector file_paths(VerifyFiles(1, disk_based_storage));
-    EXPECT_EQ(file_paths.size(), 1U);
+//  bool VerifyElements(const DiskBasedStorage& disk_based_storage,
+//                      const ElementMap& element_list) {
+//    DiskBasedStorage::PathVector file_paths(VerifyFiles(1, disk_based_storage));
+//    EXPECT_EQ(file_paths.size(), 1U);
 
-    auto result = disk_based_storage.GetFile(file_paths[0]);
-    NonEmptyString fetched_content = result.get();
-    protobuf::DiskStoredFile fetched_disk_file;
-    EXPECT_TRUE(fetched_disk_file.ParseFromString(fetched_content.string()));
-    EXPECT_EQ(fetched_disk_file.disk_element_size(), element_list.size());
-    for (auto itr(element_list.begin()); itr != element_list.end(); ++itr) {
-      protobuf::DiskStoredElement element;
-      element.ParseFromString((*itr).serialised_element);
-      typename T::name_type name(Identity(element.data_name()));
-      DiskBasedStorage::StoredElement<T> stored_element(name, element.serialised_value());
-      bool found_match(false);
-      for (int i(0); i != fetched_disk_file.disk_element_size(); ++i) {
-        if (disk_based_storage.MatchingDiskElements(fetched_disk_file.disk_element(i),
-                                                    stored_element))
-          found_match = true;
-      }
-      EXPECT_TRUE(found_match) << "can't find match element for element "
-                               << Base32Substr((*itr).name);
-      if (!found_match)
-        return false;
-    }
-    return true;
-  }
+//    auto result = disk_based_storage.GetFile(file_paths[0]);
+//    NonEmptyString fetched_content = result.get();
+//    protobuf::DiskStoredFile fetched_disk_file;
+//    EXPECT_TRUE(fetched_disk_file.ParseFromString(fetched_content.string()));
+//    EXPECT_EQ(fetched_disk_file.disk_element_size(), element_list.size());
+//    for (auto itr(element_list.begin()); itr != element_list.end(); ++itr) {
+//      protobuf::DiskStoredElement element;
+//      element.ParseFromString((*itr).serialised_element);
+//      typename T::name_type name(Identity(element.data_name()));
+//      DiskBasedStorage::StoredElement<T> stored_element(name, element.serialised_value());
+//      bool found_match(false);
+//      for (int i(0); i != fetched_disk_file.disk_element_size(); ++i) {
+//        if (disk_based_storage.MatchingDiskElements(fetched_disk_file.disk_element(i),
+//                                                    stored_element))
+//          found_match = true;
+//      }
+//      EXPECT_TRUE(found_match) << "can't find match element for element "
+//                               << Base32Substr((*itr).name);
+//      if (!found_match)
+//        return false;
+//    }
+//    return true;
+//  }
 
-  std::vector<boost::filesystem::path> VerifyFiles(uint32_t expected_file_num,
-                                                   const DiskBasedStorage& disk_based_storage) {
-    std::future<uint32_t> file_count(disk_based_storage.GetFileCount());
-    EXPECT_EQ(expected_file_num, file_count.get());
-    auto result_get_file_paths = disk_based_storage.GetFileNames();
-    DiskBasedStorage::PathVector file_paths(result_get_file_paths.get());
-    return file_paths;
-  }
-};
+//  std::vector<boost::filesystem::path> VerifyFiles(uint32_t expected_file_num,
+//                                                   const DiskBasedStorage& disk_based_storage) {
+//    std::future<uint32_t> file_count(disk_based_storage.GetFileCount());
+//    EXPECT_EQ(expected_file_num, file_count.get());
+//    auto result_get_file_paths = disk_based_storage.GetFileNames();
+//    DiskBasedStorage::PathVector file_paths(result_get_file_paths.get());
+//    return file_paths;
+//  }
+//};
 
-typedef testing::Types<passport::PublicAnmid,
-                       passport::PublicAnsmid,
-                       passport::PublicAntmid,
-                       passport::PublicAnmaid,
-                       passport::PublicMaid,
-                       passport::PublicPmid,
-                       passport::Mid,
-                       passport::Smid,
-                       passport::Tmid,
-                       passport::PublicAnmpid,
-                       passport::PublicMpid> AllTypes;
+//typedef testing::Types<passport::PublicAnmid,
+//                       passport::PublicAnsmid,
+//                       passport::PublicAntmid,
+//                       passport::PublicAnmaid,
+//                       passport::PublicMaid,
+//                       passport::PublicPmid,
+//                       passport::Mid,
+//                       passport::Smid,
+//                       passport::Tmid,
+//                       passport::PublicAnmpid,
+//                       passport::PublicMpid> AllTypes;
 
-TYPED_TEST_CASE(DiskStorageTest, AllTypes);
+//TYPED_TEST_CASE(DiskStorageTest, AllTypes);
 
-TYPED_TEST(DiskStorageTest, BEH_ConstructorDestructor) {
-  fs::path root_path(*(this->root_directory_) / RandomString(6));
-  boost::system::error_code error_code;
-  EXPECT_FALSE(fs::exists(root_path, error_code));
-  {
-    DiskBasedStorage disk_based_storage(root_path);
-    EXPECT_TRUE(fs::exists(root_path, error_code));
-    // An empty file shall be generated in memory only during constructor
-    EXPECT_EQ(this->VerifyFiles(1, disk_based_storage).size(), 0);
-  }
-  EXPECT_TRUE(fs::exists(root_path, error_code));
-}
+//TYPED_TEST(DiskStorageTest, BEH_ConstructorDestructor) {
+//  fs::path root_path(*(this->root_directory_) / RandomString(6));
+//  boost::system::error_code error_code;
+//  EXPECT_FALSE(fs::exists(root_path, error_code));
+//  {
+//    DiskBasedStorage disk_based_storage(root_path);
+//    EXPECT_TRUE(fs::exists(root_path, error_code));
+//    // An empty file shall be generated in memory only during constructor
+//    EXPECT_EQ(this->VerifyFiles(1, disk_based_storage).size(), 0);
+//  }
+//  EXPECT_TRUE(fs::exists(root_path, error_code));
+//}
 
-TYPED_TEST(DiskStorageTest, BEH_FileHandlers) {
-  fs::path root_path(*(this->root_directory_) / RandomString(6));
-  DiskBasedStorage disk_based_storage(root_path);
-  std::map<fs::path, NonEmptyString> files;
-  uint32_t num_files(100), max_file_size(10000);
-  std::vector<uint32_t> file_numbers;
-  for (uint32_t i(0); i < num_files; ++i)
-    file_numbers.push_back(i);
-  std::random_shuffle(file_numbers.begin(), file_numbers.end());
+//TYPED_TEST(DiskStorageTest, BEH_FileHandlers) {
+//  fs::path root_path(*(this->root_directory_) / RandomString(6));
+//  DiskBasedStorage disk_based_storage(root_path);
+//  std::map<fs::path, NonEmptyString> files;
+//  uint32_t num_files(100), max_file_size(10000);
+//  std::vector<uint32_t> file_numbers;
+//  for (uint32_t i(0); i < num_files; ++i)
+//    file_numbers.push_back(i);
+//  std::random_shuffle(file_numbers.begin(), file_numbers.end());
 
-  for (uint32_t i(0); i < num_files; ++i) {
-    NonEmptyString file_content(this->GenerateFileContent(max_file_size));
-    crypto::SHA512Hash hash(crypto::Hash<crypto::SHA512>(file_content));
-    std::string file_name(std::to_string(file_numbers[i]) + "." + EncodeToBase32(hash));
-    fs::path file_path(root_path / file_name);
-    files.insert(std::make_pair(file_path, file_content));
-    disk_based_storage.PutFile(file_path, file_content);
-  }
+//  for (uint32_t i(0); i < num_files; ++i) {
+//    NonEmptyString file_content(this->GenerateFileContent(max_file_size));
+//    crypto::SHA512Hash hash(crypto::Hash<crypto::SHA512>(file_content));
+//    std::string file_name(std::to_string(file_numbers[i]) + "." + EncodeToBase32(hash));
+//    fs::path file_path(root_path / file_name);
+//    files.insert(std::make_pair(file_path, file_content));
+//    disk_based_storage.PutFile(file_path, file_content);
+//  }
 
-  EXPECT_EQ(this->VerifyFiles(num_files, disk_based_storage).size(), num_files);
+//  EXPECT_EQ(this->VerifyFiles(num_files, disk_based_storage).size(), num_files);
 
-  boost::system::error_code error_code;
-  auto itr = files.begin();
-  do {
-    fs::path path((*itr).first);
-    EXPECT_TRUE(fs::exists(path, error_code));
+//  boost::system::error_code error_code;
+//  auto itr = files.begin();
+//  do {
+//    fs::path path((*itr).first);
+//    EXPECT_TRUE(fs::exists(path, error_code));
 
-    auto result = disk_based_storage.GetFile(path);
-    NonEmptyString content(result.get());
-    EXPECT_EQ(content, (*itr).second);
+//    auto result = disk_based_storage.GetFile(path);
+//    NonEmptyString content(result.get());
+//    EXPECT_EQ(content, (*itr).second);
 
-    ++itr;
-  } while (itr != files.end());
-}
+//    ++itr;
+//  } while (itr != files.end());
+//}
 
-TYPED_TEST(DiskStorageTest, BEH_FileHandlersWithCorruptingThread) {
-  // File handlers of DiskBasedStorage are non-blocking, using a separate Active object
-  Active active;
-  fs::path root_path(*(this->root_directory_) / RandomString(6));
-  DiskBasedStorage disk_based_storage(root_path);
-  std::map<fs::path, NonEmptyString> files;
-  uint32_t num_files(10), max_file_size(10000);
-  for (uint32_t i(0); i < num_files; ++i) {
-    NonEmptyString file_content(this->GenerateFileContent(max_file_size));
-    crypto::SHA512Hash hash(crypto::Hash<crypto::SHA512>(file_content));
-    std::string file_name(std::to_string(i) + "." + EncodeToBase32(hash));
-    fs::path file_path(root_path / file_name);
-    files.insert(std::make_pair(file_path, file_content));
-  }
+//TYPED_TEST(DiskStorageTest, BEH_FileHandlersWithCorruptingThread) {
+//  // File handlers of DiskBasedStorage are non-blocking, using a separate Active object
+//  Active active;
+//  fs::path root_path(*(this->root_directory_) / RandomString(6));
+//  DiskBasedStorage disk_based_storage(root_path);
+//  std::map<fs::path, NonEmptyString> files;
+//  uint32_t num_files(10), max_file_size(10000);
+//  for (uint32_t i(0); i < num_files; ++i) {
+//    NonEmptyString file_content(this->GenerateFileContent(max_file_size));
+//    crypto::SHA512Hash hash(crypto::Hash<crypto::SHA512>(file_content));
+//    std::string file_name(std::to_string(i) + "." + EncodeToBase32(hash));
+//    fs::path file_path(root_path / file_name);
+//    files.insert(std::make_pair(file_path, file_content));
+//  }
 
-  for (auto itr(files.begin()); itr != files.end(); ++itr) {
-    fs::path file_path((*itr).first);
-    active.Send([file_path] () {
-                  maidsafe::WriteFile(file_path, RandomString(100));
-                });
-    disk_based_storage.PutFile(file_path, (*itr).second);
-  }
+//  for (auto itr(files.begin()); itr != files.end(); ++itr) {
+//    fs::path file_path((*itr).first);
+//    active.Send([file_path] () {
+//                  maidsafe::WriteFile(file_path, RandomString(100));
+//                });
+//    disk_based_storage.PutFile(file_path, (*itr).second);
+//  }
 
-  EXPECT_EQ(this->VerifyFiles(num_files, disk_based_storage).size(), num_files);
+//  EXPECT_EQ(this->VerifyFiles(num_files, disk_based_storage).size(), num_files);
 
-//   Active active_delete;
-  boost::system::error_code error_code;
-  auto itr = files.begin();
-  do {
-    fs::path path((*itr).first);
-    EXPECT_TRUE(fs::exists(path, error_code));
+////   Active active_delete;
+//  boost::system::error_code error_code;
+//  auto itr = files.begin();
+//  do {
+//    fs::path path((*itr).first);
+//    EXPECT_TRUE(fs::exists(path, error_code));
 
-    active.Send([&disk_based_storage, path] () {
-                  auto result = disk_based_storage.GetFile(path);
-                  do {
-                    Sleep(boost::posix_time::milliseconds(1));
-                  } while (!result.valid());
-                  EXPECT_FALSE(result.has_exception()) << "Get exception when trying to get "
-                                                       << path.filename();
-                  if (!result.has_exception()) {
-                    NonEmptyString content(result.get());
-                    EXPECT_TRUE(content.IsInitialised());
-                  }
-                });
-//     active_delete.Send([path] () { fs::remove(path); });
+//    active.Send([&disk_based_storage, path] () {
+//                  auto result = disk_based_storage.GetFile(path);
+//                  do {
+//                    Sleep(boost::posix_time::milliseconds(1));
+//                  } while (!result.valid());
+//                  EXPECT_FALSE(result.has_exception()) << "Get exception when trying to get "
+//                                                       << path.filename();
+//                  if (!result.has_exception()) {
+//                    NonEmptyString content(result.get());
+//                    EXPECT_TRUE(content.IsInitialised());
+//                  }
+//                });
+////     active_delete.Send([path] () { fs::remove(path); });
 
-    ++itr;
-  } while (itr != files.end());
-}
+//    ++itr;
+//  } while (itr != files.end());
+//}
 
-TYPED_TEST(DiskStorageTest, BEH_ElementHandlers) {
-  fs::path root_path(*(this->root_directory_) / RandomString(6));
-  DiskBasedStorage disk_based_storage(root_path);
+//TYPED_TEST(DiskStorageTest, BEH_ElementHandlers) {
+//  fs::path root_path(*(this->root_directory_) / RandomString(6));
+//  DiskBasedStorage disk_based_storage(root_path);
 
-  typename TypeParam::name_type name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
-  std::string serialised_value(RandomString(10000));
-  disk_based_storage.Store<TypeParam>(name, serialised_value);
+//  typename TypeParam::name_type name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
+//  std::string serialised_value(RandomString(10000));
+//  disk_based_storage.Store<TypeParam>(name, serialised_value);
 
-  protobuf::DiskStoredElement element;
-  element.set_data_name(name.data.string());
-  element.set_serialised_value(serialised_value);
-  protobuf::DiskStoredFile disk_file;
-  disk_file.add_disk_element()->CopyFrom(element);
-  crypto::SHA512Hash hash(crypto::Hash<crypto::SHA512>(disk_file.SerializeAsString()));
-  fs::path file_path = this->GetFilePath(root_path,
-                                         hash,
-                                         disk_based_storage.GetFileCount().get() - 1);
+//  protobuf::DiskStoredElement element;
+//  element.set_data_name(name.data.string());
+//  element.set_serialised_value(serialised_value);
+//  protobuf::DiskStoredFile disk_file;
+//  disk_file.add_disk_element()->CopyFrom(element);
+//  crypto::SHA512Hash hash(crypto::Hash<crypto::SHA512>(disk_file.SerializeAsString()));
+//  fs::path file_path = this->GetFilePath(root_path,
+//                                         hash,
+//                                         disk_based_storage.GetFileCount().get() - 1);
 
-  Sleep(boost::posix_time::milliseconds(10));
-  boost::system::error_code error_code;
-  EXPECT_TRUE(fs::exists(file_path, error_code));
-  {
-    auto result = disk_based_storage.GetFile(file_path);
-    NonEmptyString fetched_content = result.get();
-    EXPECT_EQ(fetched_content.string(), disk_file.SerializeAsString());
-  }
+//  Sleep(boost::posix_time::milliseconds(10));
+//  boost::system::error_code error_code;
+//  EXPECT_TRUE(fs::exists(file_path, error_code));
+//  {
+//    auto result = disk_based_storage.GetFile(file_path);
+//    NonEmptyString fetched_content = result.get();
+//    EXPECT_EQ(fetched_content.string(), disk_file.SerializeAsString());
+//  }
 
-  std::string new_serialised_value(RandomString(10000));
-  element.set_serialised_value(new_serialised_value);
-  disk_file.clear_disk_element();
-  disk_file.add_disk_element()->CopyFrom(element);
+//  std::string new_serialised_value(RandomString(10000));
+//  element.set_serialised_value(new_serialised_value);
+//  disk_file.clear_disk_element();
+//  disk_file.add_disk_element()->CopyFrom(element);
 
-  disk_based_storage.Modify<TypeParam>(name,
-                                       [this, new_serialised_value]
-                                       (std::string& serialised_disk_element) {
-                                         this->ChangeDiskElement(serialised_disk_element,
-                                                                 new_serialised_value);
-                                       },
-                                       serialised_value);
+//  disk_based_storage.Modify<TypeParam>(name,
+//                                       [this, new_serialised_value]
+//                                       (std::string& serialised_disk_element) {
+//                                         this->ChangeDiskElement(serialised_disk_element,
+//                                                                 new_serialised_value);
+//                                       },
+//                                       serialised_value);
 
-  crypto::SHA512Hash new_hash(crypto::Hash<crypto::SHA512>(disk_file.SerializeAsString()));
-  fs::path new_file_path(this->GetFilePath(root_path,
-                                           new_hash,
-                                           disk_based_storage.GetFileCount().get() - 1));
-  {
-    auto result = disk_based_storage.GetFile(new_file_path);
-    NonEmptyString fetched_content = result.get();
-    EXPECT_EQ(fetched_content.string(), disk_file.SerializeAsString());
-    EXPECT_FALSE(fs::exists(file_path, error_code));
-    EXPECT_TRUE(fs::exists(new_file_path, error_code));
-  }
+//  crypto::SHA512Hash new_hash(crypto::Hash<crypto::SHA512>(disk_file.SerializeAsString()));
+//  fs::path new_file_path(this->GetFilePath(root_path,
+//                                           new_hash,
+//                                           disk_based_storage.GetFileCount().get() - 1));
+//  {
+//    auto result = disk_based_storage.GetFile(new_file_path);
+//    NonEmptyString fetched_content = result.get();
+//    EXPECT_EQ(fetched_content.string(), disk_file.SerializeAsString());
+//    EXPECT_FALSE(fs::exists(file_path, error_code));
+//    EXPECT_TRUE(fs::exists(new_file_path, error_code));
+//  }
 
-  disk_based_storage.Delete<TypeParam>(name);
-  Sleep(boost::posix_time::milliseconds(10));
-  EXPECT_FALSE(fs::exists(new_file_path, error_code));
-}
+//  disk_based_storage.Delete<TypeParam>(name);
+//  Sleep(boost::posix_time::milliseconds(10));
+//  EXPECT_FALSE(fs::exists(new_file_path, error_code));
+//}
 
-TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultThreads) {
-  fs::path root_path(*(this->root_directory_) / EncodeToBase32(RandomString(6)));
-  DiskBasedStorage disk_based_storage(root_path);
-  std::vector<std::shared_ptr<Active>> active_list;
-  ElementMap element_list;
-  uint32_t num_files(8), max_file_size(10000);
+//TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultThreads) {
+//  fs::path root_path(*(this->root_directory_) / EncodeToBase32(RandomString(6)));
+//  DiskBasedStorage disk_based_storage(root_path);
+//  std::vector<std::shared_ptr<Active>> active_list;
+//  ElementMap element_list;
+//  uint32_t num_files(8), max_file_size(10000);
 
-  for (uint32_t i(0); i < num_files; ++i) {
-    std::shared_ptr<Active> active_ptr;
-    active_ptr.reset(new Active());
-    active_list.push_back(active_ptr);
+//  for (uint32_t i(0); i < num_files; ++i) {
+//    std::shared_ptr<Active> active_ptr;
+//    active_ptr.reset(new Active());
+//    active_list.push_back(active_ptr);
 
-    StoreAnElement<TypeParam>(max_file_size, disk_based_storage, element_list);
-  }
+//    StoreAnElement<TypeParam>(max_file_size, disk_based_storage, element_list);
+//  }
 
-  EXPECT_TRUE(this->VerifyElements(disk_based_storage, element_list));
+//  EXPECT_TRUE(this->VerifyElements(disk_based_storage, element_list));
 
-  // Generate new content for each element
-  for (auto itr(element_list.begin()); itr != element_list.end(); ++itr) {
-    std::string new_serialised_value(EncodeToBase32(RandomString(max_file_size)));
-    protobuf::DiskStoredElement element;
-    element.ParseFromString((*itr).serialised_element);
-    element.set_serialised_value(new_serialised_value);
-    (*itr).serialised_element = element.SerializeAsString();
-  }
+//  // Generate new content for each element
+//  for (auto itr(element_list.begin()); itr != element_list.end(); ++itr) {
+//    std::string new_serialised_value(EncodeToBase32(RandomString(max_file_size)));
+//    protobuf::DiskStoredElement element;
+//    element.ParseFromString((*itr).serialised_element);
+//    element.set_serialised_value(new_serialised_value);
+//    (*itr).serialised_element = element.SerializeAsString();
+//  }
 
-  // Modify each element's content parallel
-  auto itr = element_list.begin();
-  int i = 0;
-  do {
-    protobuf::DiskStoredElement element;
-    element.ParseFromString((*itr).serialised_element);
-    typename TypeParam::name_type name((Identity(element.data_name())));
-    std::string old_serialised_value = (*itr).serialised_value;
-    std::string new_serialised_value = element.serialised_value();
+//  // Modify each element's content parallel
+//  auto itr = element_list.begin();
+//  int i = 0;
+//  do {
+//    protobuf::DiskStoredElement element;
+//    element.ParseFromString((*itr).serialised_element);
+//    typename TypeParam::name_type name((Identity(element.data_name())));
+//    std::string old_serialised_value = (*itr).serialised_value;
+//    std::string new_serialised_value = element.serialised_value();
 
-    active_list[i]->Send(
-        [this, &disk_based_storage, name, old_serialised_value, new_serialised_value] {
-          disk_based_storage.Modify<TypeParam>(name,
-                                               [this, new_serialised_value]
-                                               (std::string& serialised_disk_element) {
-                                                 this->ChangeDiskElement(serialised_disk_element,
-                                                                         new_serialised_value);
-                                               },
-                                               old_serialised_value);
-        });
-    ++itr;
-    ++i;
-  } while (itr != element_list.end());
+//    active_list[i]->Send(
+//        [this, &disk_based_storage, name, old_serialised_value, new_serialised_value] {
+//          disk_based_storage.Modify<TypeParam>(name,
+//                                               [this, new_serialised_value]
+//                                               (std::string& serialised_disk_element) {
+//                                                 this->ChangeDiskElement(serialised_disk_element,
+//                                                                         new_serialised_value);
+//                                               },
+//                                               old_serialised_value);
+//        });
+//    ++itr;
+//    ++i;
+//  } while (itr != element_list.end());
 
-  Sleep(boost::posix_time::milliseconds(100));
+//  Sleep(boost::posix_time::milliseconds(100));
 
-  EXPECT_TRUE(this->VerifyElements(disk_based_storage, element_list));
+//  EXPECT_TRUE(this->VerifyElements(disk_based_storage, element_list));
 
-  // Parallel delete all elements
-  itr = element_list.begin();
-  i = 0;
-  do {
-    protobuf::DiskStoredElement element;
-    element.ParseFromString((*itr).serialised_element);
-    typename TypeParam::name_type name((Identity(element.data_name())));
-    active_list[i]->Send([&disk_based_storage, name] () {
-                           disk_based_storage.Delete<TypeParam>(name);
-                         });
-    ++itr;
-    ++i;
-  } while (itr != element_list.end());
+//  // Parallel delete all elements
+//  itr = element_list.begin();
+//  i = 0;
+//  do {
+//    protobuf::DiskStoredElement element;
+//    element.ParseFromString((*itr).serialised_element);
+//    typename TypeParam::name_type name((Identity(element.data_name())));
+//    active_list[i]->Send([&disk_based_storage, name] () {
+//                           disk_based_storage.Delete<TypeParam>(name);
+//                         });
+//    ++itr;
+//    ++i;
+//  } while (itr != element_list.end());
 
-  Sleep(boost::posix_time::milliseconds(100));
+//  Sleep(boost::posix_time::milliseconds(100));
 
-  EXPECT_EQ(this->VerifyFiles(1, disk_based_storage).size(), 0);
-}
+//  EXPECT_EQ(this->VerifyFiles(1, disk_based_storage).size(), 0);
+//}
 
-//  NOTE: the following test case requires the kNewFileTrigger to be set as 10
-TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultFiles) {
-  fs::path root_path(*(this->root_directory_) / EncodeToBase32(RandomString(6)));
-  DiskBasedStorage disk_based_storage(root_path);
-  ElementMap element_list;
-  uint32_t num_files(29), max_file_size(100);
+////  NOTE: the following test case requires the kNewFileTrigger to be set as 10
+//TYPED_TEST(DiskStorageTest, BEH_ElementHandlersWithMultFiles) {
+//  fs::path root_path(*(this->root_directory_) / EncodeToBase32(RandomString(6)));
+//  DiskBasedStorage disk_based_storage(root_path);
+//  ElementMap element_list;
+//  uint32_t num_files(29), max_file_size(100);
 
-  for (uint32_t i(0); i < num_files; ++i)
-    StoreAnElement<TypeParam>(max_file_size, disk_based_storage, element_list);
+//  for (uint32_t i(0); i < num_files; ++i)
+//    StoreAnElement<TypeParam>(max_file_size, disk_based_storage, element_list);
 
-  EXPECT_EQ(this->VerifyFiles(3, disk_based_storage).size(), 3);
-  StoreAnElement<TypeParam>(max_file_size, disk_based_storage, element_list);
-  EXPECT_EQ(this->VerifyFiles(4, disk_based_storage).size(), 3);
+//  EXPECT_EQ(this->VerifyFiles(3, disk_based_storage).size(), 3);
+//  StoreAnElement<TypeParam>(max_file_size, disk_based_storage, element_list);
+//  EXPECT_EQ(this->VerifyFiles(4, disk_based_storage).size(), 3);
 
-  // Delete all elements
-  for (auto itr(element_list.begin()); itr != element_list.end(); ++itr) {
-    protobuf::DiskStoredElement element;
-    element.ParseFromString((*itr).serialised_element);
-    typename TypeParam::name_type name((Identity(element.data_name())));
-    disk_based_storage.Delete<TypeParam>(name);
-  };
+//  // Delete all elements
+//  for (auto itr(element_list.begin()); itr != element_list.end(); ++itr) {
+//    protobuf::DiskStoredElement element;
+//    element.ParseFromString((*itr).serialised_element);
+//    typename TypeParam::name_type name((Identity(element.data_name())));
+//    disk_based_storage.Delete<TypeParam>(name);
+//  };
 
-  // The file count will vary depends on the sequence of deletion
-  // However, the file names shall always be 0
-  EXPECT_EQ(0, disk_based_storage.GetFileNames().get().size());
-}
+//  // The file count will vary depends on the sequence of deletion
+//  // However, the file names shall always be 0
+//  EXPECT_EQ(0, disk_based_storage.GetFileNames().get().size());
+//}
 
-TYPED_TEST(DiskStorageTest, BEH_FileMerging) {
-  // Testing with max = 10, min = 5
-  detail::Parameters::set_file_element_count_limits(10, 5);
-  std::shared_ptr<DiskBasedStorage> disk_based_storage;
-  ElementMap element_list;
+//TYPED_TEST(DiskStorageTest, BEH_FileMerging) {
+//  // Testing with max = 10, min = 5
+//  detail::Parameters::set_file_element_count_limits(10, 5);
+//  std::shared_ptr<DiskBasedStorage> disk_based_storage;
+//  ElementMap element_list;
 
-  // This bit can probably be made a function to reset the containers and do another case
-  while (element_list.size() != 50U) {
-    disk_based_storage = std::make_shared<DiskBasedStorage>(*this->root_directory_);
-    element_list.clear();
-    for (uint32_t i(0); i < 50U; ++i)
-      StoreAnElement<TypeParam>(100U, *disk_based_storage, element_list);
-  }
+//  // This bit can probably be made a function to reset the containers and do another case
+//  while (element_list.size() != 50U) {
+//    disk_based_storage = std::make_shared<DiskBasedStorage>(*this->root_directory_);
+//    element_list.clear();
+//    for (uint32_t i(0); i < 50U; ++i)
+//      StoreAnElement<TypeParam>(100U, *disk_based_storage, element_list);
+//  }
 
-  // Do a trivial case, where only one file goes down to 4
+//  // Do a trivial case, where only one file goes down to 4
 
-  // Delete elements so that we have (file index - element count) that tests an interesting scenario
-  // For example: 0 - 8, 1 - 7, 2 - 5, 3 - 9, 4 - 10. Then, delete an element from index 2.
-  // The resulting file scheme should be: 0 - 10,  1 - 10,  2 - 10, 3 - 8
+//  // Delete elements so that we have (file index - element count) that tests an interesting scenario
+//  // For example: 0 - 8, 1 - 7, 2 - 5, 3 - 9, 4 - 10. Then, delete an element from index 2.
+//  // The resulting file scheme should be: 0 - 10,  1 - 10,  2 - 10, 3 - 8
 
 
-  // Another interesting scenario: 0 - 8, 1 - 7, 2 - 5, 3 - 5, 4 - 5.
-  // Then, delete an element from index 2.
-  // The resulting file scheme should be: 0 - 10,  1 - 10,  2 - 9
-}
+//  // Another interesting scenario: 0 - 8, 1 - 7, 2 - 5, 3 - 5, 4 - 5.
+//  // Then, delete an element from index 2.
+//  // The resulting file scheme should be: 0 - 10,  1 - 10,  2 - 9
+//}
 
 }  // namespace test
 

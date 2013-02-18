@@ -78,7 +78,7 @@ void DiskBasedStorage::AddElement(const typename Data::name_type& name,
   if (file.element_size() == detail::Parameters::max_file_element_count()) {
     // Insert a placeholder with a default-initialised (invalid) hash to indicate we need a new
     // file at the next AddToLatestFile.
-    file_ids_.emplace(file_id.first + 1, crypto::SHA512Hash());
+    file_ids_.insert(std::make_pair(file_id.first + 1, std::move(crypto::SHA512Hash())));
     detail::SortFile(file);
   }
 
