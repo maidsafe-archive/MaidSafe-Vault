@@ -116,7 +116,7 @@ void DiskBasedStorage::FindAndDeleteEntry(const typename Data::name_type& name,
 
   for (; ritr != file_ids_.rend(); ++ritr) {
     auto file(ParseFile(*ritr));
-    int index(GetEntryIndex(name, file));
+    int index(GetEntryIndex<Data>(name, file));
     if (index >= 0) {
       value = file.element(index).value();
       DeleteEntry(index, file);
