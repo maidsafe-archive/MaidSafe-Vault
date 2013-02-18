@@ -11,6 +11,7 @@
 
 #include "maidsafe/vault/sync.h"
 
+
 namespace maidsafe {
 
 namespace vault {

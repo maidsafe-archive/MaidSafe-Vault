@@ -10,11 +10,12 @@
 *  the explicit written permission of the board of directors of maidsafe.net. *
 ******************************************************************************/
 
-#include "maidsafe/vault/maid_account_handler.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_handler.h"
 
 #include <vector>
 
 #include "maidsafe/common/test.h"
+
 
 namespace maidsafe {
 

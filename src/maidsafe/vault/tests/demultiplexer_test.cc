@@ -10,17 +10,17 @@
  *  the explicit written permission of the board of directors of maidsafe.net. *
  ******************************************************************************/
 
+#include "maidsafe/vault/demultiplexer.h"
+
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/test.h"
+#include "maidsafe/nfs/message.h"
 
-#include "maidsafe/vault/demultiplexer.h"
 #include "maidsafe/vault/maid_account_holder/maid_account_holder.h"
 #include "maidsafe/vault/metadata_manager/metadata_manager_service.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_account_holder.h"
 #include "maidsafe/vault/data_holder/data_holder.h"
-
-#include "maidsafe/nfs/message.h"
 
 // TODO(Alison) - redesign tests to not use Mocks for personas
 

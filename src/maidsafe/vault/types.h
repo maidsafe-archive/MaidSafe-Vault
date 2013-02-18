@@ -14,12 +14,9 @@
 
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
-
+#include "maidsafe/passport/types.h"
 #include "maidsafe/nfs/data_policies.h"
 #include "maidsafe/nfs/nfs.h"
-
-#include "maidsafe/passport/types.h"
-
 
 #include "maidsafe/vault/put_policies.h"
 #include "maidsafe/vault/post_policies.h"
@@ -48,7 +45,7 @@ typedef nfs::NetworkFileSystem<
     nfs::PmidAccountHolderDeletePolicy,
     PmidAccountHolderPostPolicy> PmidAccountHolderNfs;
 
-// TODO (dirvine) BEFORE_RELEASE this is a hack to create a type for the dataholder, the proper implmentation is required ,,,,,,,,,,,,,,,,,,,,,
+// TODO(dirvine) BEFORE_RELEASE this is a hack to create a type for the dataholder, the proper implmentation is required ,,,,,,,,,,,,,,,,,,,,,
 typedef nfs::NetworkFileSystem<
     nfs::PmidAccountHolderPutPolicy,
     nfs::PmidAccountHolderGetPolicy,

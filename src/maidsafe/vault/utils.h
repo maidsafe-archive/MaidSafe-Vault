@@ -18,9 +18,8 @@
 #include <utility>
 #include <vector>
 
-#include "boost/variant/static_visitor.hpp"
-#include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/common/error.h"
+#include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/data_types/data_type_values.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/data_message.h"

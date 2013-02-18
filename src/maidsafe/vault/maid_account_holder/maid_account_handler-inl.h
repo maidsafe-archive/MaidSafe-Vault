@@ -9,33 +9,37 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_PUT_POLICIES_H_
-#define MAIDSAFE_VAULT_PUT_POLICIES_H_
-
-#include <string>
-#include <vector>
-
-#include "maidsafe/common/crypto.h"
-#include "maidsafe/common/rsa.h"
-#include "maidsafe/common/types.h"
-#include "maidsafe/passport/types.h"
-#include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/reply.h"
-#include "maidsafe/nfs/types.h"
+#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HANDLER_INL_H_
+#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HANDLER_INL_H_
 
 
 namespace maidsafe {
 
 namespace vault {
 
-// This should be moved to respective persona
-void HandlePutToMetadataManager();
-void HandlePutToPmidAccountHolder();
-void HandlePutToDataHolder();
+template<typename Data>
+void MaidAccountHandler::PutData(const MaidName& account_name,
+                                 const typename Data::name_type& data_name,
+                                 int32_t cost) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(detail::FindAccount(maid_accounts_, account_name));
+  if (itr == maid_accounts_.end())
+    ThrowError(VaultErrors::no_such_account);
+  (*itr)->PutData<Data>(data_name, cost);
+}
+
+template<typename Data>
+void MaidAccountHandler::DeleteData(const MaidName& account_name,
+                                    const typename Data::name_type& data_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(detail::FindAccount(maid_accounts_, account_name));
+  if (itr == maid_accounts_.end())
+    ThrowError(VaultErrors::no_such_account);
+  (*itr)->DeleteData<Data>(data_name);
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PUT_POLICIES_H_
+#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HANDLER_INL_H_

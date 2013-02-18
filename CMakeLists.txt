@@ -34,23 +34,94 @@ include_directories(${rudp_SOURCE_DIR}/include)
 # Set up all files as GLOBs                                                                        #
 #==================================================================================================#
 set(VaultSourcesRootDir ${PROJECT_SOURCE_DIR}/src/maidsafe/vault)
-file(GLOB_RECURSE VaultProtos ${VaultSourcesRootDir}/*.proto)
-file(GLOB_RECURSE VaultProtoSources ${VaultSourcesRootDir}/*.pb.cc)
-file(GLOB_RECURSE VaultProtoHeaders ${VaultSourcesRootDir}/*pb.h)
-set(VaultProtos ${VaultProtos} ${VaultProtoSources} ${VaultProtoHeaders})
-source_group("Vault Proto Files" FILES ${VaultProtos})
 
+file(GLOB VaultProtos ${VaultSourcesRootDir}/*.proto)
+file(GLOB VaultProtoSources ${VaultSourcesRootDir}/*.pb.cc)
+file(GLOB VaultProtoHeaders ${VaultSourcesRootDir}/*pb.h)
+set(VaultProtos ${VaultProtos} ${VaultProtoSources} ${VaultProtoHeaders})
 file(GLOB VaultSources ${VaultSourcesRootDir}/*.cc)
 file(GLOB VaultHeaders ${VaultSourcesRootDir}/*.h)
 list(REMOVE_ITEM VaultSources ${VaultProtos})
 list(REMOVE_ITEM VaultHeaders ${VaultProtos})
 source_group("Vault Source Files" FILES ${VaultSources})
 source_group("Vault Header Files" FILES ${VaultHeaders})
+source_group("Vault Proto Files" FILES ${VaultProtos})
 list(REMOVE_ITEM VaultSources ${VaultSourcesRootDir}/vault_main.cc)
 
-set(VaultAllFiles ${VaultSources} ${VaultHeaders})
+file(GLOB DataHolderProtos ${VaultSourcesRootDir}/data_holder/*.proto)
+file(GLOB DataHolderProtoSources ${VaultSourcesRootDir}/data_holder/*.pb.cc)
+file(GLOB DataHolderProtoHeaders ${VaultSourcesRootDir}/data_holder/*pb.h)
+set(DataHolderProtos ${DataHolderProtos} ${DataHolderProtoSources} ${DataHolderProtoHeaders})
+file(GLOB DataHolderSources ${VaultSourcesRootDir}/data_holder/*.cc)
+file(GLOB DataHolderHeaders ${VaultSourcesRootDir}/data_holder/*.h)
+# list(REMOVE_ITEM DataHolderSources ${DataHolderProtos})
+# list(REMOVE_ITEM DataHolderHeaders ${DataHolderProtos})
+source_group("Data Holder\\Source Files" FILES ${DataHolderSources})
+source_group("Data Holder\\Header Files" FILES ${DataHolderHeaders})
+source_group("Data Holder\\Proto Files" FILES ${DataHolderProtos})
+
+file(GLOB MaidAccountHolderProtos ${VaultSourcesRootDir}/maid_account_holder/*.proto)
+file(GLOB MaidAccountHolderProtoSources ${VaultSourcesRootDir}/maid_account_holder/*.pb.cc)
+file(GLOB MaidAccountHolderProtoHeaders ${VaultSourcesRootDir}/maid_account_holder/*pb.h)
+set(MaidAccountHolderProtos ${MaidAccountHolderProtos} ${MaidAccountHolderProtoSources} ${MaidAccountHolderProtoHeaders})
+file(GLOB MaidAccountHolderSources ${VaultSourcesRootDir}/maid_account_holder/*.cc)
+file(GLOB MaidAccountHolderHeaders ${VaultSourcesRootDir}/maid_account_holder/*.h)
+list(REMOVE_ITEM MaidAccountHolderSources ${MaidAccountHolderProtos})
+list(REMOVE_ITEM MaidAccountHolderHeaders ${MaidAccountHolderProtos})
+source_group("Maid Account Holder\\Source Files" FILES ${MaidAccountHolderSources})
+source_group("Maid Account Holder\\Header Files" FILES ${MaidAccountHolderHeaders})
+source_group("Maid Account Holder\\Proto Files" FILES ${MaidAccountHolderProtos})
+
+file(GLOB MetadataManagerProtos ${VaultSourcesRootDir}/metadata_manager/*.proto)
+file(GLOB MetadataManagerProtoSources ${VaultSourcesRootDir}/metadata_manager/*.pb.cc)
+file(GLOB MetadataManagerProtoHeaders ${VaultSourcesRootDir}/metadata_manager/*pb.h)
+set(MetadataManagerProtos ${MetadataManagerProtos} ${MetadataManagerProtoSources} ${MetadataManagerProtoHeaders})
+file(GLOB MetadataManagerSources ${VaultSourcesRootDir}/metadata_manager/*.cc)
+file(GLOB MetadataManagerHeaders ${VaultSourcesRootDir}/metadata_manager/*.h)
+list(REMOVE_ITEM MetadataManagerSources ${MetadataManagerProtos})
+list(REMOVE_ITEM MetadataManagerHeaders ${MetadataManagerProtos})
+source_group("Metadata Manager\\Source Files" FILES ${MetadataManagerSources})
+source_group("Metadata Manager\\Header Files" FILES ${MetadataManagerHeaders})
+source_group("Metadata Manager\\Proto Files" FILES ${MetadataManagerProtos})
+
+file(GLOB MpidAccountHolderProtos ${VaultSourcesRootDir}/mpid_account_holder/*.proto)
+file(GLOB MpidAccountHolderProtoSources ${VaultSourcesRootDir}/mpid_account_holder/*.pb.cc)
+file(GLOB MpidAccountHolderProtoHeaders ${VaultSourcesRootDir}/mpid_account_holder/*pb.h)
+set(MpidAccountHolderProtos ${MpidAccountHolderProtos} ${MpidAccountHolderProtoSources} ${MpidAccountHolderProtoHeaders})
+file(GLOB MpidAccountHolderSources ${VaultSourcesRootDir}/mpid_account_holder/*.cc)
+file(GLOB MpidAccountHolderHeaders ${VaultSourcesRootDir}/mpid_account_holder/*.h)
+# list(REMOVE_ITEM MpidAccountHolderSources ${MpidAccountHolderProtos})
+# list(REMOVE_ITEM MpidAccountHolderHeaders ${MpidAccountHolderProtos})
+source_group("Mpid Account Holder\\Source Files" FILES ${MpidAccountHolderSources})
+source_group("Mpid Account Holder\\Header Files" FILES ${MpidAccountHolderHeaders})
+source_group("Mpid Account Holder\\Proto Files" FILES ${MpidAccountHolderProtos})
+
+file(GLOB PmidAccountHolderProtos ${VaultSourcesRootDir}/pmid_account_holder/*.proto)
+file(GLOB PmidAccountHolderProtoSources ${VaultSourcesRootDir}/pmid_account_holder/*.pb.cc)
+file(GLOB PmidAccountHolderProtoHeaders ${VaultSourcesRootDir}/pmid_account_holder/*pb.h)
+set(PmidAccountHolderProtos ${PmidAccountHolderProtos} ${PmidAccountHolderProtoSources} ${PmidAccountHolderProtoHeaders})
+file(GLOB PmidAccountHolderSources ${VaultSourcesRootDir}/pmid_account_holder/*.cc)
+file(GLOB PmidAccountHolderHeaders ${VaultSourcesRootDir}/pmid_account_holder/*.h)
+list(REMOVE_ITEM PmidAccountHolderSources ${PmidAccountHolderProtos})
+list(REMOVE_ITEM PmidAccountHolderHeaders ${PmidAccountHolderProtos})
+source_group("Pmid Account Holder\\Source Files" FILES ${PmidAccountHolderSources})
+source_group("Pmid Account Holder\\Header Files" FILES ${PmidAccountHolderHeaders})
+source_group("Pmid Account Holder\\Proto Files" FILES ${PmidAccountHolderProtos})
+
+set(VaultAllFiles ${VaultSources} ${VaultHeaders}
+                  ${DataHolderSources} ${DataHolderHeaders}
+                  ${MaidAccountHolderSources} ${MaidAccountHolderHeaders}
+                  ${MetadataManagerSources} ${MetadataManagerHeaders}
+                  ${MpidAccountHolderSources} ${MpidAccountHolderHeaders}
+                  ${PmidAccountHolderSources} ${PmidAccountHolderHeaders})
 set(StyleAllFiles ${VaultAllFiles})
-set(VaultAllFiles ${VaultAllFiles} ${VaultProtos})
+set(VaultAllFiles ${VaultAllFiles}
+                  ${VaultProtos}
+                  ${DataHolderProtos}
+                  ${MaidAccountHolderProtos}
+                  ${MetadataManagerProtos}
+                  ${MpidAccountHolderProtos}
+                  ${PmidAccountHolderProtos})
 
 file(GLOB VaultTestsSources ${VaultSourcesRootDir}/tests/*.cc)
 file(GLOB VaultTestsHeaders ${VaultSourcesRootDir}/tests/*.h)
@@ -85,7 +156,8 @@ rename_outdated_built_exes()
 #==================================================================================================#
 include(maidsafe_standard_flags)
 
-ms_disable_warnings(${VaultProtoSources})
+ms_disable_warnings(${VaultProtoSources} ${DataHolderProtoSources} ${MaidAccountHolderProtoSources}
+                    ${MetadataManagerProtoSources} ${MpidAccountHolderProtoSources} ${PmidAccountHolderProtoSources})
 
 if(UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-effc++")

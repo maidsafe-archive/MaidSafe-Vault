@@ -20,17 +20,14 @@
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/asio_service.h"
-
 #include "maidsafe/passport/types.h"
-
 #include "maidsafe/routing/routing_api.h"
-
 #include "maidsafe/nfs/public_key_getter.h"
 
-#include "maidsafe/vault/data_holder_service.h"
-#include "maidsafe/vault/maid_account_holder_service.h"
-#include "maidsafe/vault/metadata_manager_service.h"
-#include "maidsafe/vault/pmid_account_holder_service.h"
+#include "maidsafe/vault/data_holder/data_holder_service.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_holder_service.h"
+#include "maidsafe/vault/metadata_manager/metadata_manager_service.h"
+#include "maidsafe/vault/pmid_account_holder/pmid_account_holder_service.h"
 #include "maidsafe/vault/demultiplexer.h"
 
 

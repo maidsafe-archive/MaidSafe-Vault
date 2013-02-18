@@ -9,33 +9,43 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_PUT_POLICIES_H_
-#define MAIDSAFE_VAULT_PUT_POLICIES_H_
+#ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_RECORD_H_
+#define MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_RECORD_H_
 
-#include <string>
-#include <vector>
+#include <cstdint>
 
-#include "maidsafe/common/crypto.h"
-#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/types.h"
-#include "maidsafe/passport/types.h"
-#include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/reply.h"
-#include "maidsafe/nfs/types.h"
+
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-// This should be moved to respective persona
-void HandlePutToMetadataManager();
-void HandlePutToPmidAccountHolder();
-void HandlePutToDataHolder();
+namespace protobuf { class PmidRecord; }
+
+struct PmidRecord {
+ public:
+  PmidRecord();
+  explicit PmidRecord(const PmidName& pmid_name_in);
+  explicit PmidRecord(const protobuf::PmidRecord& proto_pmid_record);
+  protobuf::PmidRecord ToProtobuf() const;
+  PmidRecord(const PmidRecord& other);
+  PmidRecord& operator=(const PmidRecord& other);
+  PmidRecord(PmidRecord&& other);
+  PmidRecord& operator=(PmidRecord&& other);
+
+  PmidName pmid_name;
+  int64_t stored_count;
+  int64_t stored_total_size;
+  int64_t lost_count;
+  int64_t lost_total_size;
+  int64_t claimed_available_size;
+};
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PUT_POLICIES_H_
+#endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_RECORD_H_

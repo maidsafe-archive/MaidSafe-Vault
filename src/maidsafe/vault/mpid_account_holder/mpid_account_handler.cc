@@ -9,33 +9,15 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_PUT_POLICIES_H_
-#define MAIDSAFE_VAULT_PUT_POLICIES_H_
-
-#include <string>
-#include <vector>
-
-#include "maidsafe/common/crypto.h"
-#include "maidsafe/common/rsa.h"
-#include "maidsafe/common/types.h"
-#include "maidsafe/passport/types.h"
-#include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/reply.h"
-#include "maidsafe/nfs/types.h"
+#include "maidsafe/vault/mpid_account_holder/mpid_account_handler.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-// This should be moved to respective persona
-void HandlePutToMetadataManager();
-void HandlePutToPmidAccountHolder();
-void HandlePutToDataHolder();
+
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_PUT_POLICIES_H_

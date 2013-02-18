@@ -13,9 +13,12 @@
 #define MAIDSAFE_VAULT_DISK_BASED_STORAGE_INL_H_
 
 #include <algorithm>
+#include <string>
+#include <vector>
 
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/on_scope_exit.h"
+
 #include "maidsafe/vault/parameters.h"
 
 

@@ -18,13 +18,11 @@
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/types.h"
-
 #include "maidsafe/passport/types.h"
-
 #include "maidsafe/routing/routing_api.h"
-
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/types.h"
+
 
 namespace maidsafe {
 

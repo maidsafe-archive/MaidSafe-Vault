@@ -9,33 +9,16 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_PUT_POLICIES_H_
-#define MAIDSAFE_VAULT_PUT_POLICIES_H_
+#ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_PB_H_
+#define MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_PB_H_
 
-#include <string>
-#include <vector>
+#ifdef __MSVC__
+#  pragma warning(push)
+#  pragma warning(disable: 4127 4244 4267)
+#endif
+#include "maidsafe/vault/pmid_account_holder/pmid_account.pb.h"
+#ifdef __MSVC__
+#  pragma warning(pop)
+#endif
 
-#include "maidsafe/common/crypto.h"
-#include "maidsafe/common/rsa.h"
-#include "maidsafe/common/types.h"
-#include "maidsafe/passport/types.h"
-#include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/reply.h"
-#include "maidsafe/nfs/types.h"
-
-
-namespace maidsafe {
-
-namespace vault {
-
-// This should be moved to respective persona
-void HandlePutToMetadataManager();
-void HandlePutToPmidAccountHolder();
-void HandlePutToDataHolder();
-
-}  // namespace vault
-
-}  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_PUT_POLICIES_H_
+#endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_PB_H_
