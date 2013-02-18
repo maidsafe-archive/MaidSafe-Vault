@@ -28,26 +28,9 @@ namespace vault {
 
 namespace detail {
 
-void SortElements(std::vector<protobuf::DiskStoredElement>& elements) {
-  std::sort(
-      elements.begin(),
-      elements.end(),
-      [](const protobuf::DiskStoredElement& lhs, const protobuf::DiskStoredElement& rhs)->bool {
-          return (lhs.name() < rhs.name()) ? true :
-                 (lhs.name() > rhs.name()) ? false : (lhs.type() < rhs.type());
-      });
-}
+void SortElements(std::vector<protobuf::DiskStoredElement>& elements);
 
-void SortFile(protobuf::DiskStoredFile& file) {
-  assert(file.element_size() == detail::Parameters::max_file_element_count());
-  std::vector<protobuf::DiskStoredElement> elements;
-  elements.reserve(file.element_size());
-  for (int i(0); i != file.element_size(); ++i)
-    elements.push_back(file.element(i));
-  SortElements(elements);
-  for (int i(0); i != file.element_size(); ++i)
-    file.mutable_element(i)->CopyFrom(elements[i]);
-}
+void SortFile(protobuf::DiskStoredFile& file);
 
 }  // namespace detail
 
@@ -56,7 +39,7 @@ std::future<void> DiskBasedStorage::Store(const typename Data::name_type& name, 
   auto promise(std::make_shared<std::promise<void>>());
   active_.Send([name, value, promise, this] {
                  try {
-                   this->AddToLatestFile(name, value);
+                   this->AddToLatestFile<Data>(name, value);
                    promise->set_value();
                  }
                  catch(const std::exception& e) {
@@ -72,10 +55,10 @@ void DiskBasedStorage::AddToLatestFile(const typename Data::name_type& name, int
   FileIdentity file_id(*file_ids_.rbegin());
   if (file_id.second.IsInitialised()) {  // The file already exists: add to this file.
     auto file(ParseFile(file_id));
-    AddElement(name, value, file_id, file);
+    AddElement<Data>(name, value, file_id, file);
   } else {  // The file doesn't already exist - create a new file.
     protobuf::DiskStoredFile file;
-    AddElement(name, value, file_id, file);
+    AddElement<Data>(name, value, file_id, file);
   }
 }
 
@@ -88,7 +71,7 @@ void DiskBasedStorage::AddElement(const typename Data::name_type& name,
 
   auto proto_element(file.add_element());
   proto_element->set_type(static_cast<int32_t>(Data::name_type::tag_type::kEnumValue));
-  proto_element->set_name(name.string());
+  proto_element->set_name(name->string());
   proto_element->set_value(value);
   assert(file.element_size() <= detail::Parameters::max_file_element_count());
 
@@ -110,7 +93,7 @@ std::future<int32_t> DiskBasedStorage::Delete(const typename Data::name_type& na
                  try {
                    int32_t value(0);
                    bool reorganise_files(false);
-                   this->FindAndDeleteEntry(name, value, reorganise_files);
+                   this->FindAndDeleteEntry<Data>(name, value, reorganise_files);
                    promise->set_value(value);
                    if (reorganise_files)
                      this->ReorganiseFiles();

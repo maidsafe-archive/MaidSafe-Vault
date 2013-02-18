@@ -52,37 +52,32 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
   nfs::Reply reply(CommonErrors::success);
   try {
     ValidateDataMessage(data_message);
-    Data data(typename Data::name_type(data_message.data().name),
-              typename Data::serialised_type(data_message.data().content));
-    int32_t size(data_message.data().content.string().size());
-    auto data_name(data_message.data().name);
+    typename Data::name_type data_name(data_message.data().name);
+    Data data(data_name, typename Data::serialised_type(data_message.data().content));
+    int32_t size(static_cast<int32_t>(data_message.data().content.string().size()));
     auto put_op(std::make_shared<nfs::PutOrDeleteOp>(
         1,
         [this, size, data_name, reply_functor](nfs::Reply overall_result) {
             HandlePutResult<Data>(overall_result, size, data_name, reply_functor);
         }));
-    nfs_.Put(data,
-             data_message.data_holder(),
+    nfs_.Put(data_message.data_holder(),
+             data,
              [put_op](std::string serialised_reply) {
                  nfs::HandlePutOrDeleteReply(put_op, serialised_reply);
              });
-    return;
-    std::future<void> future(pmid_account_handler_.PutData<Data>(
-                             data_message.data_holder(),
-                             PmidName(Identity(data_message.data().content)),
-                             data_message.data().content.string().size()));
-    try {
-      future.get();
-      SendDataMessage<Data>(data_message);
-    }
-    catch(const std::exception& e) {
-      LOG(kError) << "Operation with the account threw: " << e.what();
-      reply = nfs::Reply(e);
-    }
+//    return;
+    std::future<void> future(pmid_account_handler_.PutData<Data>(data_message.data_holder(),
+                                                                 data_name, size));
+    future.get();
+    SendDataMessage<Data>(data_message);
   }
-  catch(const std::system_error& error) {
-    LOG(kError) << "Failure deleting data from account: " << error.what();
+  catch(const maidsafe_error& error) {
+    LOG(kError) << "Failure putting data to account: " << error.what();
     reply = nfs::Reply(error);
+  }
+  catch(const std::exception& e) {
+    LOG(kError) << "Failure putting data to account: " << e.what();
+    reply = nfs::Reply(CommonErrors::unknown);
   }
   auto request_id(std::make_pair(data_message.message_id(),
                                  PmidName(Identity(data_message.source().node_id.string()))));
@@ -94,7 +89,8 @@ template<typename Data>
 void PmidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message,
                                             const routing::ReplyFunctor& reply_functor) {
   try {
-    pmid_account_handler_.DeleteData<Data>(data_message.data_holder(), data_message.data().name);
+    typename Data::name_type data_name(data_message.data().name);
+    pmid_account_handler_.DeleteData<Data>(data_message.data_holder(), data_name);
     SendDataMessage<Data>(data_message);
   }
   catch(const std::system_error& error) {
@@ -111,26 +107,29 @@ void PmidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
 template<typename Data>
 void PmidAccountHolderService::SendDataMessage(const nfs::DataMessage& data_message) {
   if (data_message.data().action == nfs::DataMessage::Action::kPut) {
-    nfs_.Put<Data>(data_message,
-                   [this] (nfs::DataMessage data_msg) {
-                     pmid_account_handler_.PutData<Data>(data_msg.data_holder(),
-                                                            data_msg.data().name);
-                   });
+//    typename Data::name_type data_name(data_message.data().name);
+//    Data data(data_name, typename Data::serialised_type(data_message.data().content));
+//    int32_t size(static_cast<int32_t>(data_message.data().content.string().size()));
+//    nfs_.Put<Data>(data_message.data_holder(),
+//                   data,
+//                   [this, data_name, size](nfs::DataMessage data_msg) {
+//                     pmid_account_handler_.PutData<Data>(data_msg.data_holder(), data_name, size);
+//                   });
   } else {
-    assert(data_message.data().action == nfs::DataMessage::Action::kDelete);
-    nfs_.Delete<Data>(data_message,
-                      [this] (nfs::DataMessage data_msg) {
-                        detail::RetryOnPutOrDeleteError<PmidAccountHolderNfs, Data>(routing_,
-                                                                                    nfs_,
-                                                                                    data_msg);
-                      });
+//    assert(data_message.data().action == nfs::DataMessage::Action::kDelete);
+//    nfs_.Delete<Data>(data_message,
+//                      [this](nfs::DataMessage data_msg) {
+//                        detail::RetryOnPutOrDeleteError<PmidAccountHolderNfs, Data>(routing_,
+//                                                                                    nfs_,
+//                                                                                    data_msg);
+//                      });
   }
 }
 
 template<typename Data>
 void PmidAccountHolderService::HandlePutResult(const nfs::Reply& data_holder_result,
-                                               int32_t size,
-                                               const typename Data::name_type& data_name,
+                                               int32_t /*size*/,
+                                               const typename Data::name_type& /*data_name*/,
                                                routing::ReplyFunctor mm_reply_functor) {
   try {
     if (data_holder_result.IsSuccess()) {

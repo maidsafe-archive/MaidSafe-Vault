@@ -57,6 +57,14 @@ void MaidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_
   }
 }
 
+void MaidAccountHolderService::SendReply(
+    const nfs::Accumulator<MaidName>::RequestIdentity& request_id,
+    const nfs::Reply& reply,
+    const routing::ReplyFunctor& reply_functor) {
+  accumulator_.SetHandled(request_id, reply);
+  reply_functor(reply.Serialise()->string());
+}
+
 void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
                                                     const routing::ReplyFunctor& reply_functor) {
 // HandleNewComer(p_maid);

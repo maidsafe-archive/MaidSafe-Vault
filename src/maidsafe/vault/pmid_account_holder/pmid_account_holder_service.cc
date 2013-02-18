@@ -127,8 +127,8 @@ std::set<PmidName> PmidAccountHolderService::GetDataNamesInFile(
   protobuf::PmidRecord pmid_data;
   pmid_data.ParseFromString(file_content.string());
   std::set<PmidName> metadata_manager_ids;
-  for (int n(0); n != pmid_data.stored_total_size(); ++n)
-    metadata_manager_ids.insert(PmidName(Identity(pmid_data.data_stored(n).name())));
+  //for (int n(0); n != pmid_data.stored_total_size(); ++n)
+  //  metadata_manager_ids.insert(PmidName(Identity(pmid_data.data_stored(n).name())));
   return metadata_manager_ids;
 }
 

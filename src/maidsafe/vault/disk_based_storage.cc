@@ -45,6 +45,33 @@ protobuf::DiskStoredFile ParseAndVerifyMessagedFile(
 
 }  // namespace
 
+
+namespace detail {
+
+void SortElements(std::vector<protobuf::DiskStoredElement>& elements) {
+  std::sort(
+      elements.begin(),
+      elements.end(),
+      [](const protobuf::DiskStoredElement& lhs, const protobuf::DiskStoredElement& rhs)->bool {
+          return (lhs.name() < rhs.name()) ? true :
+                 (lhs.name() > rhs.name()) ? false : (lhs.type() < rhs.type());
+      });
+}
+
+void SortFile(protobuf::DiskStoredFile& file) {
+  assert(file.element_size() == detail::Parameters::max_file_element_count());
+  std::vector<protobuf::DiskStoredElement> elements;
+  elements.reserve(file.element_size());
+  for (int i(0); i != file.element_size(); ++i)
+    elements.push_back(file.element(i));
+  SortElements(elements);
+  for (int i(0); i != file.element_size(); ++i)
+    file.mutable_element(i)->CopyFrom(elements[i]);
+}
+
+}  // namespace detail
+
+
 DiskBasedStorage::DiskBasedStorage(const fs::path& root)
     : kRoot_(root),
       active_(),

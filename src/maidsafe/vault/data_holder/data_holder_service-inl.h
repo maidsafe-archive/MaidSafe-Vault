@@ -88,7 +88,7 @@ void DataHolder::HandlePutMessage(const nfs::DataMessage& data_message,
   try {
     permanent_data_store_.Put(typename Data::name_type(data_message.data().name),
                               data_message.data().content);
-    reply_functor(nfs::Reply(0).Serialise()->string());
+    reply_functor(nfs::Reply(CommonErrors::success).Serialise()->string());
   } catch(std::exception& /*ex*/) {
     reply_functor(nfs::Reply(CommonErrors::unknown).Serialise()->string());
     // error code // at the moment this will go back to client
@@ -105,7 +105,7 @@ void DataHolder::HandleDeleteMessage(const nfs::DataMessage& data_message,
     return;
   }
   permanent_data_store_.Delete(typename Data::name_type(data_message.data().name));
-  reply_functor(nfs::Reply(0).Serialise()->string());
+  reply_functor(nfs::Reply(CommonErrors::success).Serialise()->string());
 }
 
 //  template<typename Data>

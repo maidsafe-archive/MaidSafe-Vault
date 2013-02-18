@@ -10,7 +10,7 @@
 *  the explicit written permission of the board of directors of maidsafe.net. *
 ******************************************************************************/
 
-#include "maidsafe/vault/data_holder/data_holder.h"
+#include "maidsafe/vault/data_holder/data_holder_service.h"
 
 #include <memory>
 

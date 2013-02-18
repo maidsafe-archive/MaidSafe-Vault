@@ -127,21 +127,21 @@ void PmidAccount::SetDataHolderGoingDown() {
   data_holder_status_ = DataHolderStatus::kGoingDown;
 }
 
-std::vector<PmidAccount::DataElement> PmidAccount::ParseArchiveFile(int32_t index) const {
-  std::vector<boost::filesystem::path> files(archive_.GetFileNames().get());
+std::vector<PmidAccount::DataElement> PmidAccount::ParseArchiveFile(int32_t /*index*/) const {
+//  std::vector<boost::filesystem::path> files(archive_.GetFileNames().get());
   std::vector<PmidAccount::DataElement> data_elements;
-  for (auto& file : files) {
-    if (static_cast<size_t>(index) == ExtractFileIndexFromFilename(file.filename().string())) {
-      protobuf::DiskStoredFile archived_pmid_data;
-      archived_pmid_data.ParseFromString(archive_.GetFile(file).get().string());
-      for (auto& data_record : archived_pmid_data.data_stored()) {
-        DataElement data_element(GetDataNameVariant(static_cast<DataTagValue>(data_record.type()),
-                                                    Identity(data_record.name())),
-                                 data_record.size());
-        data_elements.push_back(data_element);
-      }
-    }
-  }
+//  for (auto& file : files) {
+//    if (static_cast<size_t>(index) == ExtractFileIndexFromFilename(file.filename().string())) {
+//      protobuf::DiskStoredFile archived_pmid_data;
+//      archived_pmid_data.ParseFromString(archive_.GetFile(file).get().string());
+//      for (auto& data_record : archived_pmid_data.data_stored()) {
+//        DataElement data_element(GetDataNameVariant(static_cast<DataTagValue>(data_record.type()),
+//                                                    Identity(data_record.name())),
+//                                 data_record.size());
+//        data_elements.push_back(data_element);
+//      }
+//    }
+//  }
   return data_elements;
 }
 
@@ -212,65 +212,76 @@ void PmidAccount::RestoreRecentData() {
 }
 
 VoidFuture PmidAccount::ArchiveDataRecord(const PmidAccount::DataElement record) {
-  protobuf::DataElement data_element(record.ToProtobuf());
   VoidFuture archiving;
   auto type_and_name(record.GetTypeAndName());
   switch (type_and_name.first) {
     case DataTagValue::kAnmidValue:
       archiving = archive_.Store<passport::PublicAnmid>(
                       passport::PublicAnmid::name_type(type_and_name.second),
-                      data_element.SerializeAsString());
+                      record.size);
       break;
     case DataTagValue::kAnsmidValue:
       archiving = archive_.Store<passport::PublicAnsmid>(
                       passport::PublicAnsmid::name_type(type_and_name.second),
-                      data_element.SerializeAsString());
+                      record.size);
       break;
     case DataTagValue::kAntmidValue:
       archiving = archive_.Store<passport::PublicAntmid>(
                       passport::PublicAntmid::name_type(type_and_name.second),
-                      data_element.SerializeAsString());
+                      record.size);
       break;
     case DataTagValue::kAnmaidValue:
       archiving = archive_.Store<passport::PublicAnmaid>(
                       passport::PublicAnmaid::name_type(type_and_name.second),
-                      data_element.SerializeAsString());
+                      record.size);
       break;
     case DataTagValue::kMaidValue:
       archiving = archive_.Store<passport::PublicMaid>(
                       passport::PublicMaid::name_type(type_and_name.second),
-                      data_element.SerializeAsString());
+                      record.size);
       break;
     case DataTagValue::kPmidValue:
       archiving = archive_.Store<passport::PublicPmid>(
                       passport::PublicPmid::name_type(type_and_name.second),
-                      data_element.SerializeAsString());
+                      record.size);
       break;
     case DataTagValue::kMidValue:
       archiving = archive_.Store<passport::Mid>(passport::Mid::name_type(type_and_name.second),
-                                                data_element.SerializeAsString());
+                                                record.size);
       break;
     case DataTagValue::kSmidValue:
       archiving = archive_.Store<passport::Smid>(passport::Smid::name_type(type_and_name.second),
-                                                 data_element.SerializeAsString());
+                                                 record.size);
       break;
     case DataTagValue::kTmidValue:
       archiving = archive_.Store<passport::Tmid>(passport::Tmid::name_type(type_and_name.second),
-                                                 data_element.SerializeAsString());
+                                                 record.size);
       break;
     case DataTagValue::kAnmpidValue:
       archiving = archive_.Store<passport::PublicAnmpid>(
                       passport::PublicAnmpid::name_type(type_and_name.second),
-                      data_element.SerializeAsString());
+                      record.size);
       break;
     case DataTagValue::kMpidValue:
       archiving = archive_.Store<passport::PublicMpid>(
                       passport::PublicMpid::name_type(type_and_name.second),
-                      data_element.SerializeAsString());
+                      record.size);
       break;
     case DataTagValue::kImmutableDataValue:
       archiving = archive_.Store<ImmutableData>(ImmutableData::name_type(type_and_name.second),
-                                                data_element.SerializeAsString());
+                                                record.size);
+      break;
+    case DataTagValue::kOwnerDirectoryValue:
+      archiving = archive_.Store<OwnerDirectory>(OwnerDirectory::name_type(type_and_name.second),
+                                                 record.size);
+      break;
+    case DataTagValue::kGroupDirectoryValue:
+      archiving = archive_.Store<GroupDirectory>(GroupDirectory::name_type(type_and_name.second),
+                                                 record.size);
+      break;
+    case DataTagValue::kWorldDirectoryValue:
+      archiving = archive_.Store<WorldDirectory>(WorldDirectory::name_type(type_and_name.second),
+                                                 record.size);
       break;
 //    case DataTagValue::kMutableDataValue:  / TODO (Fraser) BEFORE_RELEASE  FIXME
 //      archiving = archive_.Store<MutableData>(MutableData::name_type(type_and_name.second),

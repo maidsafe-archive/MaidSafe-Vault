@@ -120,14 +120,6 @@ typename Data::name_type MaidAccountHolderService::GetDataName(
   return typename Data::name_type(crypto::Hash<crypto::SHA512>(data_message.data().name));
 }
 
-void MaidAccountHolderService::SendReply(
-    const nfs::Accumulator<MaidName>::RequestIdentity& request_id,
-    const nfs::Reply& reply,
-    const routing::ReplyFunctor& reply_functor) {
-  accumulator_.SetHandled(request_id, reply);
-  reply_functor(reply.Serialise()->string());
-}
-
 template<typename Data>
 void MaidAccountHolderService::PutToAccount(const MaidName& account_name,
                                             const typename Data::name_type& data_name,
