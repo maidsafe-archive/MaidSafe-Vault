@@ -48,22 +48,28 @@ class PmidAccountHolderService {
   void TriggerSync();
 
  private:
+  PmidAccountHolderService(const PmidAccountHolderService&);
+  PmidAccountHolderService& operator=(const PmidAccountHolderService&);
+  PmidAccountHolderService(PmidAccountHolderService&&);
+  PmidAccountHolderService& operator=(PmidAccountHolderService&&);
+
   template<typename Data>
   void HandlePut(const nfs::DataMessage& data_message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void HandleDelete(const nfs::DataMessage& data_message,
                     const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void ValidateDataMessage(const nfs::DataMessage& data_message) const;
+  void ValidateSender(const nfs::DataMessage& data_message) const;
   template<typename Data>
   void AdjustAccount(const nfs::DataMessage& data_message);
   template<typename Data>
   void SendDataMessage(const nfs::DataMessage& data_message);
   template<typename Data>
-  void HandlePutResult(const nfs::Reply& overall_result,
-                       const int32_t size,
+  void HandlePutResult(const nfs::Reply& data_holder_result,
+                       const PmidName& account_name,
                        const typename Data::name_type& data_name,
-                       routing::ReplyFunctor client_reply_functor);
+                       int32_t size,
+                       routing::ReplyFunctor mm_reply_functor);
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
 
   void CheckAccounts();

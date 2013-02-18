@@ -71,10 +71,7 @@ class MaidAccountHolderService {
                     const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   typename Data::name_type GetDataName(const nfs::DataMessage& data_message) const;
-  void SendReply(const nfs::Accumulator<MaidName>::RequestIdentity& request_id,
-                 const nfs::Reply& reply,
-                 const routing::ReplyFunctor& reply_functor);
-  void ValidateDataMessage(const nfs::DataMessage& data_message) const;
+  void ValidateSender(const nfs::DataMessage& data_message) const;
   template<typename Data>
   void PutToAccount(const MaidName& account_name,
                     const typename Data::name_type& data_name,

@@ -50,19 +50,13 @@ MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
       maid_account_handler_(vault_root_dir),
       nfs_(routing, pmid) {}
 
-void MaidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_message) const {
-  if (!routing_.IsConnectedClient(data_message.source().node_id) ||
-      data_message.source().persona != nfs::Persona::kClientMaid) {
+void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_message) const {
+  if (!routing_.IsConnectedClient(data_message.source().node_id))
     ThrowError(VaultErrors::permission_denied);
-  }
-}
 
-void MaidAccountHolderService::SendReply(
-    const nfs::Accumulator<MaidName>::RequestIdentity& request_id,
-    const nfs::Reply& reply,
-    const routing::ReplyFunctor& reply_functor) {
-  accumulator_.SetHandled(request_id, reply);
-  reply_functor(reply.Serialise()->string());
+  if (data_message.source().persona != nfs::Persona::kClientMaid ||
+      data_message.destination_persona() != nfs::Persona::kMaidAccountHolder)
+    ThrowError(CommonErrors::invalid_parameter);
 }
 
 void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
