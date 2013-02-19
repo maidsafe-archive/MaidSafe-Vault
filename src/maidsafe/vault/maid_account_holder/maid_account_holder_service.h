@@ -108,7 +108,7 @@ class MaidAccountHolderService {
   void HandleSendSyncDataCallback(const std::string& response,
                                   const MaidName& account_name,
                                   std::shared_ptr<SharedResponse> shared_response);
-  bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
+  bool HandleReceivedSyncInfo(const NonEmptyString& serialised_account);
 //   bool HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid);
 //   bool OnKeyFetched(const passport::/*PublicMaid*/PublicPmid& p_maid,
 //                     const passport::PublicPmid& p_pmid);

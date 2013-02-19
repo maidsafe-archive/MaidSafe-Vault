@@ -123,8 +123,8 @@ void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
       LOG(kError) << "Failed to get key for " << DebugId(node_id) << " : " << ex.what();
     }
   });
-
-  // public_key_getter_.HandleGetKey(node_id, get_key_future); // FIXME Brian
+//  passport::PublicPmid::name_type name(Identity(node_id.string()));
+//  public_key_getter_.HandleGetKey<passport::PublicPmid>(name, get_key_future); // FIXME Brian
 }
 
 void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes) {
