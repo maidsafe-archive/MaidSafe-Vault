@@ -18,12 +18,12 @@
 
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/api_config.h"
-#include "maidsafe/nfs/accumulator.h"
 #include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/public_key_getter.h"
 
+#include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/metadata_manager/metadata_handler.h"
 #include "maidsafe/vault/types.h"
 
@@ -69,7 +69,7 @@ class MetadataManagerService {
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
-  nfs::Accumulator<DataNameVariant> accumulator_;
+  Accumulator<DataNameVariant> accumulator_;
   MetadataHandler metadata_handler_;
   MetadataManagerNfs nfs_;
 };

@@ -19,8 +19,8 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 #include "maidsafe/nfs/utils.h"
-#include "maidsafe/nfs/accumulator.h"
 #include "maidsafe/nfs/reply.h"
+
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/maid_account_holder/maid_account_pb.h"
 
@@ -32,18 +32,17 @@ namespace vault {
 template<typename Data>
 void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
-  MaidName maid_name(Identity(data_message.source().node_id.string()));
-  nfs::Reply reply_out;
-  if (accumulator_.CheckHandled(data_message, reply_out))
-    return reply_functor(nfs::Reply(CommonErrors::success).Serialise()->string());
+  nfs::Reply reply(CommonErrors::success);
+  if (accumulator_.CheckHandled(data_message, reply))
+    return reply_functor(reply.Serialise()->string());
 
   if (data_message.data().action == nfs::DataMessage::Action::kPut) {
     HandlePut<Data>(data_message, reply_functor);
   } else if (data_message.data().action == nfs::DataMessage::Action::kDelete) {
     HandleDelete<Data>(data_message, reply_functor);
   } else {
-    auto reply = nfs::Reply(VaultErrors::operation_not_supported);
-    accumulator_.SetHandled(kRequestId, reply);
+    reply = nfs::Reply(VaultErrors::operation_not_supported);
+    accumulator_.SetHandled(data_message, reply);
     reply_functor(reply.Serialise()->string());
   }
 }
@@ -51,8 +50,7 @@ void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_me
 template<typename Data>
 void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
                                          const routing::ReplyFunctor& reply_functor) {
-  nfs::Reply reply(CommonErrors::success);
-  nfs::Accumulator<MaidName>::RequestIdentity request_id;
+  maidsafe_error return_code(CommonErrors::success);
   try {
     ValidateSender(data_message);
     Data data(typename Data::name_type(data_message.data().name),
@@ -73,19 +71,14 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
   }
   catch(const maidsafe_error& error) {
     LOG(kWarning) << error.what();
-    request_id = std::make_pair(data_message.message_id(),
-                                MaidName(Identity(data_message.source().node_id.string())));
-    reply = nfs::Reply(error, data_message.Serialise().data);
+    return_code = error;
   }
   catch(...) {
     LOG(kWarning) << "Unknown error.";
-    request_id = std::make_pair(data_message.message_id(),
-                                MaidName(Identity(data_message.source().node_id.string())));
-    reply = nfs::Reply(CommonErrors::unknown, data_message.Serialise().data);
+    return_code = MakeError(CommonErrors::unknown);
   }
   try {
-    accumulator_.SetHandled(request_id, reply);
-    reply_functor(reply.Serialise()->string());
+    SendReply(data_message, return_code, reply_functor);
   }
   catch(...) {
     LOG(kWarning) << "Exception while forming reply.";
@@ -109,11 +102,7 @@ void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
     LOG(kWarning) << "Unknown error.";
     // Always return success for Deletes
   }
-  nfs::Reply reply(CommonErrors::success, data_message.Serialise().data), reply_functor);
-  accumulator_.SetHandled(
-      std::make_pair(data_message.message_id(),
-                     MaidName(Identity(data_message.source().node_id.string()))), reply);
-  reply_functor(reply.Serialise()->string());
+  SendReply(data_message, MakeError(CommonErrors::success), reply_functor);
 }
 
 template<typename Data>

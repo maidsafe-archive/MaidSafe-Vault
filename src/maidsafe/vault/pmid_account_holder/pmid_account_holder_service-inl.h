@@ -29,24 +29,17 @@ namespace vault {
 template<typename Data>
 void PmidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
-  PmidName pmid_name(Identity(data_message.source().node_id.string()));
-  if (accumulator_.Find(data_message.message_id(), pmid_name))
-    return reply_functor(nfs::Reply(CommonErrors::success).Serialise()->string());
+  nfs::Reply reply(CommonErrors::success);
+  if (accumulator_.CheckHandled(data_message, reply))
+    return reply_functor(reply.Serialise()->string());
 
   if (data_message.data().action == nfs::DataMessage::Action::kPut) {
     HandlePut<Data>(data_message, reply_functor);
   } else if (data_message.data().action == nfs::DataMessage::Action::kDelete) {
     HandleDelete<Data>(data_message, reply_functor);
   } else {
-    auto reply = nfs::Reply(VaultErrors::operation_not_supported);
-    nfs::Accumulator::HandledMessage handled_message(data_message.message_id(),
-                                                     pmid_name,
-                                                     data_message.data().action,
-                                                     data_message.data().name,
-                                                     data_message.data().type,
-                                                     data_message.data().content.string().size(),
-                                                     reply_functor);
-    accumulator_.Add(handled_message);
+    reply = nfs::Reply(VaultErrors::operation_not_supported);
+    accumulator_.SetHandled(data_message, reply);
     reply_functor(reply.Serialise()->string());
   }
 }
@@ -82,9 +75,7 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     LOG(kError) << "Failure putting data to account: " << e.what();
     reply = nfs::Reply(CommonErrors::unknown);
   }
-  auto request_id(std::make_pair(data_message.message_id(),
-                                 PmidName(Identity(data_message.source().node_id.string()))));
-  accumulator_.SetHandled(request_id, reply);
+  accumulator_.SetHandled(data_message, reply);
   reply_functor(reply.Serialise()->string());
 }
 
@@ -100,10 +91,8 @@ void PmidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
     LOG(kError) << "Failure deleting data from account: " << error.what();
     // Always return succeess for Deletes
   }
-  auto request_id(std::make_pair(data_message.message_id(),
-                                 PmidName(Identity(data_message.source().node_id.string()))));
   nfs::Reply reply(CommonErrors::success);
-  accumulator_.SetHandled(request_id, reply);
+  accumulator_.SetHandled(data_message, reply);
   reply_functor(reply.Serialise()->string());
 }
 
