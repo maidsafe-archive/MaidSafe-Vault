@@ -20,12 +20,12 @@
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/accumulator.h"
 #include "maidsafe/nfs/data_message.h"
 #include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/public_key_getter.h"
 #include "maidsafe/nfs/reply.h"
 
+#include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_account_handler.h"
 #include "maidsafe/vault/types.h"
 
@@ -88,7 +88,7 @@ class PmidAccountHolderService {
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
-  nfs::Accumulator<PmidName> accumulator_;
+  Accumulator<PmidName> accumulator_;
   PmidAccountHandler pmid_account_handler_;
   PmidAccountHolderNfs nfs_;
 };

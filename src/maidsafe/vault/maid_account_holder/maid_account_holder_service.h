@@ -21,11 +21,11 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/accumulator.h"
 #include "maidsafe/nfs/data_message.h"
 #include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/public_key_getter.h"
 
+#include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/maid_account_holder/maid_account_handler.h"
 #include "maidsafe/vault/sync_pb.h"
 #include "maidsafe/vault/types.h"
@@ -71,8 +71,8 @@ class MaidAccountHolderService {
                     const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   typename Data::name_type GetDataName(const nfs::DataMessage& data_message) const;
-  void SendReply(const nfs::Accumulator<MaidName>::RequestIdentity& request_id,
-                 const nfs::Reply& reply,
+  void SendReply(const nfs::DataMessage& original_message,
+                 const maidsafe_error& return_code,
                  const routing::ReplyFunctor& reply_functor);
   void ValidateDataMessage(const nfs::DataMessage& data_message) const;
   template<typename Data>
@@ -127,7 +127,7 @@ class MaidAccountHolderService {
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
-  nfs::Accumulator<MaidName> accumulator_;
+  Accumulator<MaidName> accumulator_;
   MaidAccountHandler maid_account_handler_;
   MaidAccountHolderNfs nfs_;
   static const int kPutSuccessCountMin_;

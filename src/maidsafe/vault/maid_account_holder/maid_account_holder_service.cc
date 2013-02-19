@@ -26,13 +26,6 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace detail {
-
-void SendReply();
-
-}  // namespace detail
-
-
 const int MaidAccountHolderService::kPutSuccessCountMin_(3);
 
 MaidAccountHolderService::SharedResponse::SharedResponse()
@@ -57,11 +50,13 @@ void MaidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_
   }
 }
 
-void MaidAccountHolderService::SendReply(
-    const nfs::Accumulator<MaidName>::RequestIdentity& request_id,
-    const nfs::Reply& reply,
-    const routing::ReplyFunctor& reply_functor) {
-  accumulator_.SetHandled(request_id, reply);
+void MaidAccountHolderService::SendReply(const nfs::DataMessage& original_message,
+                                         const maidsafe_error& return_code,
+                                         const routing::ReplyFunctor& reply_functor) {
+  nfs::Reply reply(CommonErrors::success);
+  if (return_code.code() != CommonErrors::success)
+    reply = nfs::Reply(return_code, original_message.Serialise().data);
+  accumulator_.SetHandled(original_message, reply);
   reply_functor(reply.Serialise()->string());
 }
 
@@ -169,8 +164,8 @@ void MaidAccountHolderService::TriggerSync() {
 void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
   protobuf::SyncInfo sync_info;
   sync_info.set_maid_account(maid_account_handler_.GetSerialisedAccount(account_name)->string());
-  auto handled_requets(accumulator_.SerialiseHandledRequests(account_name));
-  sync_info.set_accumulator_entries(handled_requets->string());
+  auto handled_requests(accumulator_.Serialise(account_name));
+  sync_info.set_accumulator_entries(handled_requests->string());
   protobuf::Sync sync_pb_message;
   sync_pb_message.set_action(static_cast<int32_t>(Sync::Action::kSyncInfo));
   sync_pb_message.set_sync_message(sync_info.SerializeAsString());

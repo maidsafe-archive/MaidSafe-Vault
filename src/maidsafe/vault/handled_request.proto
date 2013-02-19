@@ -1,0 +1,16 @@
+package maidsafe.vault.protobuf;
+option optimize_for = LITE_RUNTIME;
+
+message HandledRequest {
+  required bytes message_id = 1;
+  required int32 action = 2;
+  required bytes data_name = 3;
+  required int32 data_type = 4;
+  required int32 size = 5;
+  required bytes reply = 6;
+}
+
+message HandledRequests {
+  required bytes name = 1;
+  repeated HandledRequest handled_requests = 2;
+}
