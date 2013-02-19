@@ -80,16 +80,17 @@ bool PmidAccountHolderService::AssessRange(const PmidName& account_name,
   }
 }
 
-void PmidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_message) const {
-  if (!data_message.HasDataHolder()) {
-    LOG(kError) << "No target ID, can't forward the message.";
+void PmidAccountHolderService::ValidateSender(const nfs::DataMessage& data_message) const {
+  if (!data_message.HasDataHolder())
     ThrowError(VaultErrors::permission_denied);
-  }
 
-  if (routing_.EstimateInGroup(data_message.source().node_id, NodeId(data_message.data().name))) {
-    LOG(kError) << "Message doesn't seem to come from the right group.";
+  if (routing_.EstimateInGroup(data_message.source().node_id,
+                               NodeId(data_message.data().name)))
     ThrowError(VaultErrors::permission_denied);
-  }
+
+  if (data_message.source().persona != nfs::Persona::kMetadataManager ||
+      data_message.destination_persona() != nfs::Persona::kPmidAccountHolder)
+    ThrowError(CommonErrors::invalid_parameter);
 }
 
 void PmidAccountHolderService::InformOfDataHolderDown(const PmidName& pmid_name) {

@@ -41,7 +41,7 @@ class Accumulator {
   struct PendingRequest {
     PendingRequest(const nfs::DataMessage& msg_in,
                    const routing::ReplyFunctor& reply_functor_in,
-                   const nfs::Reply& reply_in);
+                   const maidsafe_error& return_code_in);
     PendingRequest(const PendingRequest& other);
     PendingRequest& operator=(const PendingRequest& other);
     PendingRequest(PendingRequest&& other);
@@ -49,7 +49,7 @@ class Accumulator {
 
     nfs::DataMessage msg;
     routing::ReplyFunctor reply_functor;
-    nfs::Reply reply;
+    maidsafe_error return_code;
   };
 
   struct HandledRequest {
@@ -59,7 +59,7 @@ class Accumulator {
                    const Identity& data_name,
                    const DataTagValue& data_type,
                    const int32_t& size_in,
-                   const nfs::Reply& reply_in);
+                   const maidsafe_error& return_code_in);
     HandledRequest(const HandledRequest& other);
     HandledRequest& operator=(const HandledRequest& other);
     HandledRequest(HandledRequest&& other);
@@ -71,22 +71,23 @@ class Accumulator {
     Identity data_name;
     DataTagValue data_type;
     int32_t size;
-    nfs::Reply reply;
+    maidsafe_error return_code;
   };
 
   typedef TaggedValue<NonEmptyString, struct SerialisedRequestsTag> serialised_requests;
 
   Accumulator();
 
-  // Returns true and populates <reply_out> if the message has already been set as handled.
+  // Returns true and populates <reply_out> if the message has already been set as handled.  If the
+  // corresponding return_code != success, the data_message gets set in the reply.
   bool CheckHandled(const nfs::DataMessage& data_message, nfs::Reply& reply_out) const;
-  // Adds a request with its individual result pending the overall result of the operation.
-  std::vector<nfs::Reply> PushRequest(const nfs::DataMessage& data_message,
-                                      const routing::ReplyFunctor& reply_functor,
-                                      const nfs::Reply& reply);
+  // Adds a request with its individual result, pending the overall result of the operation.
+  std::vector<nfs::Reply> PushSingleResult(const nfs::DataMessage& data_message,
+                                           const routing::ReplyFunctor& reply_functor,
+                                           const maidsafe_error& return_code);
   // Marks the message as handled and returns all pending requests held with the same ID
   std::vector<PendingRequest> SetHandled(const nfs::DataMessage& data_message,
-                                         const nfs::Reply& reply);
+                                         const maidsafe_error& return_code);
   // Returns all handled requests for the given account name.
   std::vector<HandledRequest> Get(const Name& name) const;
   // Serialises all handled requests for the given account name.
@@ -105,6 +106,8 @@ class Accumulator {
   Accumulator& operator=(const Accumulator&);
   Accumulator(Accumulator&&);
   Accumulator& operator=(Accumulator&&);
+  typename std::deque<HandledRequest>::const_iterator FindHandled(
+      const nfs::DataMessage& data_message) const;
 
   std::deque<PendingRequest> pending_requests_;
   std::deque<HandledRequest> handled_requests_;

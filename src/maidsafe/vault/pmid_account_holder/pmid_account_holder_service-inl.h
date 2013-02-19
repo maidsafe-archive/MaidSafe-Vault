@@ -33,14 +33,13 @@ void PmidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_me
   if (accumulator_.CheckHandled(data_message, reply))
     return reply_functor(reply.Serialise()->string());
 
-
   if (data_message.data().action == nfs::DataMessage::Action::kPut) {
     HandlePut<Data>(data_message, reply_functor);
   } else if (data_message.data().action == nfs::DataMessage::Action::kDelete) {
     HandleDelete<Data>(data_message, reply_functor);
   } else {
     reply = nfs::Reply(VaultErrors::operation_not_supported);
-    accumulator_.SetHandled(data_message, reply);
+    accumulator_.SetHandled(data_message, reply.error());
     reply_functor(reply.Serialise()->string());
   }
 }
@@ -50,25 +49,23 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
                                          const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
   try {
-    ValidateDataMessage(data_message);
+    ValidateSender(data_message);
     typename Data::name_type data_name(data_message.data().name);
     Data data(data_name, typename Data::serialised_type(data_message.data().content));
     int32_t size(static_cast<int32_t>(data_message.data().content.string().size()));
+    PmidName account_name(data_message.data_holder());
     auto put_op(std::make_shared<nfs::PutOrDeleteOp>(
         1,
-        [this, size, data_name, reply_functor](nfs::Reply overall_result) {
-            HandlePutResult<Data>(overall_result, size, data_name, reply_functor);
+        [this, account_name, data_name, size, reply_functor](nfs::Reply overall_result) {
+            HandlePutResult<Data>(overall_result, account_name, data_name, size,
+                                  reply_functor);
         }));
     nfs_.Put(data_message.data_holder(),
              data,
              [put_op](std::string serialised_reply) {
                  nfs::HandlePutOrDeleteReply(put_op, serialised_reply);
              });
-//    return;
-    std::future<void> future(pmid_account_handler_.PutData<Data>(data_message.data_holder(),
-                                                                 data_name, size));
-    future.get();
-    SendDataMessage<Data>(data_message);
+    return;
   }
   catch(const maidsafe_error& error) {
     LOG(kError) << "Failure putting data to account: " << error.what();
@@ -78,7 +75,7 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     LOG(kError) << "Failure putting data to account: " << e.what();
     reply = nfs::Reply(CommonErrors::unknown);
   }
-  accumulator_.SetHandled(data_message, reply);
+  accumulator_.SetHandled(data_message, reply.error());
   reply_functor(reply.Serialise()->string());
 }
 
@@ -95,7 +92,7 @@ void PmidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
     // Always return succeess for Deletes
   }
   nfs::Reply reply(CommonErrors::success);
-  accumulator_.SetHandled(data_message, reply);
+  accumulator_.SetHandled(data_message, reply.error());
   reply_functor(reply.Serialise()->string());
 }
 
@@ -123,12 +120,13 @@ void PmidAccountHolderService::SendDataMessage(const nfs::DataMessage& data_mess
 
 template<typename Data>
 void PmidAccountHolderService::HandlePutResult(const nfs::Reply& data_holder_result,
-                                               int32_t /*size*/,
-                                               const typename Data::name_type& /*data_name*/,
+                                               const PmidName& account_name,
+                                               const typename Data::name_type& data_name,
+                                               int32_t size,
                                                routing::ReplyFunctor mm_reply_functor) {
   try {
     if (data_holder_result.IsSuccess()) {
-//      PutToAccount<Data>(data_name, size);
+      pmid_account_handler_.PutData<Data>(account_name, data_name, size);
       mm_reply_functor(nfs::Reply(CommonErrors::success).Serialise()->string());
     } else {
       mm_reply_functor(data_holder_result.Serialise()->string());

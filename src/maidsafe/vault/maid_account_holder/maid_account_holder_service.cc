@@ -43,10 +43,13 @@ MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
       maid_account_handler_(vault_root_dir),
       nfs_(routing, pmid) {}
 
-void MaidAccountHolderService::ValidateDataMessage(const nfs::DataMessage& data_message) const {
-  if (!routing_.IsConnectedClient(data_message.source().node_id) ||
-      data_message.source().persona != nfs::Persona::kClientMaid) {
+void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_message) const {
+  if (!routing_.IsConnectedClient(data_message.source().node_id))
     ThrowError(VaultErrors::permission_denied);
+
+  if (data_message.source().persona != nfs::Persona::kClientMaid ||
+      data_message.destination_persona() != nfs::Persona::kMaidAccountHolder) {
+    ThrowError(CommonErrors::invalid_parameter);
   }
 }
 
@@ -56,7 +59,7 @@ void MaidAccountHolderService::SendReply(const nfs::DataMessage& original_messag
   nfs::Reply reply(CommonErrors::success);
   if (return_code.code() != CommonErrors::success)
     reply = nfs::Reply(return_code, original_message.Serialise().data);
-  accumulator_.SetHandled(original_message, reply);
+  accumulator_.SetHandled(original_message, reply.error());
   reply_functor(reply.Serialise()->string());
 }
 

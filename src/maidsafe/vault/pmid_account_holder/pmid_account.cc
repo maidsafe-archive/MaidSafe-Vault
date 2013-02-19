@@ -23,13 +23,6 @@ namespace vault {
 
 namespace {
 
-size_t ExtractFileIndexFromFilename(const std::string& filename) {
-  auto it(std::find(filename.begin(), filename.end(), '.'));
-  if (it == filename.end())
-    ThrowError(CommonErrors::unexpected_filename_format);
-  return static_cast<size_t>(std::stoi(std::string(filename.begin(), it)));
-}
-
 PmidRecord ParsePmidRecord(const PmidAccount::serialised_type& serialised_pmid_account) {
   protobuf::PmidAccount pmid_account;
   if (!pmid_account.ParseFromString(serialised_pmid_account.data.string()))

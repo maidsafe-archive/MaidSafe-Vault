@@ -38,6 +38,18 @@ void MaidAccountHandler::DeleteData(const MaidName& account_name,
   (*itr)->DeleteData<Data>(data_name);
 }
 
+template<typename Data>
+void MaidAccountHandler::Adjust(const MaidName& account_name,
+                                const typename Data::name_type& data_name,
+                                int32_t new_cost) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(detail::FindAccount(maid_accounts_, account_name));
+  if (itr == maid_accounts_.end())
+    ThrowError(VaultErrors::no_such_account);
+  (*itr)->DeleteData<Data>(data_name);
+  (*itr)->PutData<Data>(data_name, new_cost);
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

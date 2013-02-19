@@ -12,6 +12,7 @@
 #include "maidsafe/vault/accumulator.h"
 
 #include <algorithm>
+#include <string>
 
 #include "maidsafe/vault/handled_request_pb.h"
 
@@ -35,7 +36,8 @@ Accumulator<passport::PublicMaid::name_type>::Serialise(
       handled_request->set_data_name(request.data_name.string());
       handled_request->set_data_type(static_cast<int32_t>(request.data_type));
       handled_request->set_size(request.size);
-      handled_request->set_reply(NonEmptyString(request.reply.Serialise()).string());
+      nfs::Reply reply(request.return_code);
+      handled_request->set_reply(reply.Serialise()->string());
     }
   }
   return serialised_requests(NonEmptyString(handled_requests.SerializeAsString()));
@@ -53,6 +55,8 @@ Accumulator<passport::PublicMaid::name_type>::Parse(
     ThrowError(CommonErrors::parsing_error);
   try {
     for (auto index(0); index < proto_handled_requests.handled_requests_size(); ++index) {
+      nfs::Reply reply(nfs::Reply::serialised_type(NonEmptyString(
+          proto_handled_requests.handled_requests(index).reply())));
       handled_requests.push_back(
           HandledRequest(
               nfs::MessageId(Identity(proto_handled_requests.handled_requests(index).message_id())),
@@ -62,8 +66,7 @@ Accumulator<passport::PublicMaid::name_type>::Parse(
               Identity(proto_handled_requests.handled_requests(index).data_name()),
               static_cast<DataTagValue>(proto_handled_requests.handled_requests(index).data_type()),
               proto_handled_requests.handled_requests(index).size(),
-              nfs::Reply(nfs::Reply::serialised_type(NonEmptyString(
-                  proto_handled_requests.handled_requests(index).reply())))));
+              reply.error()));
     }
   }
   catch(const std::exception&) {
@@ -71,57 +74,6 @@ Accumulator<passport::PublicMaid::name_type>::Parse(
   }
   return handled_requests;
 }
-
-// template<>
-// void Accumulator<passport::PublicMaid::name_type>::HandleSyncUpdates(
-//    const  NonEmptyString&  /*serialised_sync_updates*/)  {
-//    auto sync_updates(ParseHandledRequests(serialised_requests(serialised_sync_updates)));
-//  HandledRequests ready_to_update;
-//  for (auto& sync_update : sync_updates) {
-//    /* same update from same updater exist in pending_sync_updates_*/
-//    if (std::find_if(pending_sync_updates_.begin(), pending_sync_updates_.end(),
-//                     [&](const SyncData& sync) {
-//                       return ((sync.updater_name == sync_update.updater_name) &&
-//                               (sync.msg_id == sync_update.msg_id) &&
-//                               (sync.data_name == sync_update.data_name));
-//                     }) != pending_sync_updates_.end())
-//      continue;
-//    /* request is already handled and is in handled_requests_*/
-//    if (std::find_if(handled_requests_.begin(), handled_requests_.end(),
-//                     [&](const SyncData& sync) {
-//                       return ((sync.updater_name == sync_update.updater_name) &&
-//                               (sync.msg_id == sync_update.msg_id));
-//                     }) != handled_requests_.end())
-//      continue;
-//    /* request is in pending_requests_ */
-//    if (std::find_if(pending_requests_.begin(), pending_requests_.end(),
-//                     [&](const PendingRequest& request) {
-//                       return ((request.first.second == sync_update.source_name) &&
-//                               (request.first.first == sync_update.msg_id));
-//                     }) != pending_requests_.end())
-//      continue;
-//    /* no similar request exist add it to pending_sync_updates_*/
-//    if (std::find_if(pending_sync_updates_.begin(), pending_sync_updates_.end(),
-//                     [&](const SyncData& sync) {
-//                       return ((sync.updater_name == sync_update.updater_name) &&
-//                               (sync.msg_id == sync_update.msg_id));
-//                     }) == pending_sync_updates_.end())
-//      pending_sync_updates_.push_back(sync_update);
-//    /* similar request from different updater exists in pending_sync_updates_
-//     * if the number of similar requests is enough add the sync_update to ready_to_update list and
-//     * remove the similar requests from pending_sync_updates_ list  */
-//    auto iter(std::remove_if(pending_sync_updates_.begin(), pending_sync_updates_.end(),
-//                             [&](const SyncData& sync)->bool {
-//                               return ((sync.msg_id == sync_update.msg_id) &&
-//                                 (sync.source_name == sync_update.source_name) &&
-//                                 (sync.data_name == sync_update.data_name));
-//                             }));
-//    if (std::abs(std::distance(iter, pending_sync_updates_.end())) >= kMinResolutionCount_) {
-//      ready_to_update.push_back(sync_update);
-//      pending_sync_updates_.erase(iter, pending_sync_updates_.end());
-//    }
-//  }
-// }
 
 }  // namespace vault
 
