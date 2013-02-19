@@ -64,6 +64,10 @@ class MaidAccountHandler {
                int32_t cost);
   template<typename Data>
   void DeleteData(const MaidName& account_name, const typename Data::name_type& data_name);
+  template<typename Data>
+  void Adjust(const MaidName& account_name,
+              const typename Data::name_type& data_name,
+              int32_t new_cost);
   friend class test::MaidAccountHandlerTest;
 
  private:

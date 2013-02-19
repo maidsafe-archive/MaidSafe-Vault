@@ -39,7 +39,7 @@ void PmidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_me
     HandleDelete<Data>(data_message, reply_functor);
   } else {
     reply = nfs::Reply(VaultErrors::operation_not_supported);
-    accumulator_.SetHandled(data_message, reply);
+    accumulator_.SetHandled(data_message, reply.error());
     reply_functor(reply.Serialise()->string());
   }
 }
@@ -56,7 +56,7 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     PmidName account_name(data_message.data_holder());
     auto put_op(std::make_shared<nfs::PutOrDeleteOp>(
         1,
-        [this, data_name, size, reply_functor](nfs::Reply overall_result) {
+        [this, account_name, data_name, size, reply_functor](nfs::Reply overall_result) {
             HandlePutResult<Data>(overall_result, account_name, data_name, size,
                                   reply_functor);
         }));
@@ -75,7 +75,7 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     LOG(kError) << "Failure putting data to account: " << e.what();
     reply = nfs::Reply(CommonErrors::unknown);
   }
-  accumulator_.SetHandled(data_message, reply);
+  accumulator_.SetHandled(data_message, reply.error());
   reply_functor(reply.Serialise()->string());
 }
 
@@ -92,7 +92,7 @@ void PmidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
     // Always return succeess for Deletes
   }
   nfs::Reply reply(CommonErrors::success);
-  accumulator_.SetHandled(data_message, reply);
+  accumulator_.SetHandled(data_message, reply.error());
   reply_functor(reply.Serialise()->string());
 }
 

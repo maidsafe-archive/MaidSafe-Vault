@@ -59,7 +59,7 @@ void MaidAccountHolderService::SendReply(const nfs::DataMessage& original_messag
   nfs::Reply reply(CommonErrors::success);
   if (return_code.code() != CommonErrors::success)
     reply = nfs::Reply(return_code, original_message.Serialise().data);
-  accumulator_.SetHandled(original_message, reply);
+  accumulator_.SetHandled(original_message, reply.error());
   reply_functor(reply.Serialise()->string());
 }
 

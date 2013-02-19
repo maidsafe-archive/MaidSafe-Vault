@@ -72,6 +72,16 @@ class MaidAccountHolderService {
   template<typename Data>
   typename Data::name_type GetDataName(const nfs::DataMessage& data_message) const;
   void ValidateSender(const nfs::DataMessage& data_message) const;
+  // true_type represents is_unique_on_network<Data> - no-op
+  template<typename Data>
+  void SendEarlySuccessReply(const nfs::DataMessage& /*data_message*/,
+                             const routing::ReplyFunctor& /*reply_functor*/,
+                             std::true_type) {}
+  // false_type represents !is_unique_on_network<Data>
+  template<typename Data>
+  void SendEarlySuccessReply(const nfs::DataMessage& data_message,
+                             const routing::ReplyFunctor& reply_functor,
+                             std::false_type);
   void SendReply(const nfs::DataMessage& original_message,
                  const maidsafe_error& return_code,
                  const routing::ReplyFunctor& reply_functor);
@@ -95,12 +105,31 @@ class MaidAccountHolderService {
   void DeleteFromAccount(const MaidName& /*account_name*/,
                          const typename Data::name_type& /*data_name*/,
                          std::false_type) {}
-
+  template<typename Data>
+  void AdjustAccount(const MaidName& account_name,
+                     const typename Data::name_type& data_name,
+                     int32_t cost,
+                     std::true_type);
+  // no-op for non-payable data
+  template<typename Data>
+  void AdjustAccount(const MaidName& /*account_name*/,
+                     const typename Data::name_type& /*data_name*/,
+                     int32_t /*cost*/,
+                     std::false_type) {}
+  // true_type represents is_unique_on_network<Data>
   template<typename Data>
   void HandlePutResult(const nfs::Reply& overall_result,
                        const MaidName& account_name,
                        const typename Data::name_type& data_name,
-                       routing::ReplyFunctor client_reply_functor);
+                       routing::ReplyFunctor client_reply_functor,
+                       std::true_type);
+  // false_type represents !is_unique_on_network<Data>
+  template<typename Data>
+  void HandlePutResult(const nfs::Reply& overall_result,
+                       const MaidName& account_name,
+                       const typename Data::name_type& data_name,
+                       routing::ReplyFunctor client_reply_functor,
+                       std::false_type);
 
   void HandleSyncMessage(const nfs::GenericMessage& generic_message,
                          const routing::ReplyFunctor& reply_functor);

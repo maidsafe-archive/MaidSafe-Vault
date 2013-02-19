@@ -41,8 +41,8 @@ void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_me
   } else if (data_message.data().action == nfs::DataMessage::Action::kDelete) {
     HandleDelete<Data>(data_message, reply_functor);
   } else {
-    reply = nfs::Reply(VaultErrors::operation_not_supported);
-    accumulator_.SetHandled(data_message, reply);
+    reply = nfs::Reply(VaultErrors::operation_not_supported, data_message.Serialise().data);
+    accumulator_.SetHandled(data_message, reply.error());
     reply_functor(reply.Serialise()->string());
   }
 }
@@ -60,13 +60,29 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     auto put_op(std::make_shared<nfs::PutOrDeleteOp>(
         kPutSuccessCountMin_,
         [this, account_name, data_name, reply_functor](nfs::Reply overall_result) {
-            HandlePutResult<Data>(overall_result, account_name, data_name, reply_functor);
+            HandlePutResult<Data>(overall_result, account_name, data_name, reply_functor,
+                                  is_unique_on_network<Data>());
         }));
+    // TODO(Fraser#5#): 2013-02-13 - Have PutToAccount return percentage or amount remaining so
+    // if it falls below a threshold, we can trigger getting updated account info from the PAHs
+    // (not too frequently), & alert the client by returning an "error" via client_reply_functor.
+    PutToAccount<Data>(account_name, data_name, 4 * data_message.data().content.string().size(),
+                       is_payable<Data>());
+    on_scope_exit strong_guarantee([this, account_name, data_name] {
+        try {
+          DeleteFromAccount<Data>(account_name, data_name, is_payable<Data>());
+        }
+        catch(const std::exception& e) {
+          LOG(kError) << "Failed to delete from account: " << e.what();
+        }
+    });
     nfs_.Put(data,
              data_message.data_holder(),
              [put_op](std::string serialised_reply) {
                  nfs::HandlePutOrDeleteReply(put_op, serialised_reply);
              });
+    SendEarlySuccessReply<Data>(data_message, reply_functor, is_unique_on_network<Data>());
+    strong_guarantee.Release();
     return;
   }
   catch(const maidsafe_error& error) {
@@ -113,6 +129,15 @@ typename Data::name_type MaidAccountHolderService::GetDataName(
 }
 
 template<typename Data>
+void MaidAccountHolderService::SendEarlySuccessReply(const nfs::DataMessage& data_message,
+                                                     const routing::ReplyFunctor& reply_functor,
+                                                     std::false_type) {
+  nfs::Reply reply(CommonErrors::success);
+  accumulator_.SetHandled(data_message, reply.error());
+  reply_functor(reply.Serialise()->string());
+}
+
+template<typename Data>
 void MaidAccountHolderService::PutToAccount(const MaidName& account_name,
                                             const typename Data::name_type& data_name,
                                             int32_t cost,
@@ -127,31 +152,43 @@ void MaidAccountHolderService::DeleteFromAccount(const MaidName& account_name,
   maid_account_handler_.DeleteData<Data>(account_name, data_name);
 }
 
+template<typename Data>
+void MaidAccountHolderService::AdjustAccount(const MaidName& account_name,
+                                             const typename Data::name_type& data_name,
+                                             int32_t cost,
+                                             std::true_type) {
+  maid_account_handler_.Adjust<Data>(account_name, data_name, cost);
+}
+
+
+template<typename Data>
+void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
+                                               const MaidName& /*account_name*/,
+                                               const typename Data::name_type& /*data_name*/,
+                                               routing::ReplyFunctor client_reply_functor,
+                                               std::true_type) {
+  if (overall_result.IsSuccess()) {
+    client_reply_functor(nfs::Reply(CommonErrors::success).Serialise()->string());
+  } else {
+    client_reply_functor(overall_result.Serialise()->string());
+  }
+}
 
 template<typename Data>
 void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
                                                const MaidName& account_name,
                                                const typename Data::name_type& data_name,
-                                               routing::ReplyFunctor client_reply_functor) {
+                                               routing::ReplyFunctor /*client_reply_functor*/,
+                                               std::false_type) {
   try {
     if (overall_result.IsSuccess()) {
       protobuf::Cost cost;
       cost.ParseFromString(overall_result.data().string());
-      // TODO(Fraser#5#): 2013-02-13 - Have PutToAccount return percentage or amount remaining so
-      // if it falls below a threshold, we can trigger getting updated account info from the PAHs
-      // (not too frequently), & alert the client by returning an "error" via client_reply_functor.
-      PutToAccount<Data>(account_name, data_name, cost.value(), is_payable<Data>());
-      client_reply_functor(nfs::Reply(CommonErrors::success).Serialise()->string());
-    } else {
-      client_reply_functor(overall_result.Serialise()->string());
+      AdjustAccount<Data>(account_name, data_name, cost.value(), is_payable<Data>());
     }
-  }
-  catch(const maidsafe_error& me) {
-    client_reply_functor(nfs::Reply(me).Serialise()->string());
   }
   catch(const std::exception& e) {
     LOG(kError) << "Failed to Handle Put result: " << e.what();
-    client_reply_functor(nfs::Reply(CommonErrors::unknown).Serialise()->string());
   }
 }
 
