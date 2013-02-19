@@ -94,6 +94,8 @@ class VaultManagement {
         kPmid_(pmid) {}
 // Below two methods should be moved to utils and classified methods need to
 // be implemented per persona using common utility function
+
+ private:
   void PostManagementMessageGroup(const nfs::GenericMessage generic_message,
                                   const routing::ResponseFunctor& callback) {
     nfs::Message message(nfs::GenericMessage::message_type_identifier,

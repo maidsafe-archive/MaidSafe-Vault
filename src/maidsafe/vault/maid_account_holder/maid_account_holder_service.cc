@@ -275,7 +275,7 @@ void MaidAccountHolderService::HandleFileRequestCallback(
   CheckAndDeleteAccount(account_name, shared_response);
 }
 
-bool MaidAccountHolderService::HandleReceivedSyncData(
+bool MaidAccountHolderService::HandleReceivedSyncInfo(
     const NonEmptyString &/*serialised_account*/) {
 //  MaidAccount maid_account(serialised_account);
 //  return WriteFile(kRootDir_ / maid_account.maid_name().data.string(),
