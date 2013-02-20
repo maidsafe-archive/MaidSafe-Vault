@@ -46,19 +46,35 @@ class MetadataManagerService {
   void TriggerSync();
 
  private:
+  MetadataManagerService(const MetadataManagerService&);
+  MetadataManagerService& operator=(const MetadataManagerService&);
+  MetadataManagerService(MetadataManagerService&&);
+  MetadataManagerService& operator=(MetadataManagerService&&);
   template<typename Data>
   void HandleGet(nfs::DataMessage data_message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandlePut(const nfs::DataMessage& data_message, const routing::ReplyFunctor& reply_functor);
+  void HandlePut(const nfs::DataMessage& data_message,
+                 const routing::ReplyFunctor& reply_functor);
+  template<typename Data>
+  void StoreData(const nfs::DataMessage& data_message,
+                 const routing::ReplyFunctor& reply_functor);
+  void SendReply(const nfs::DataMessage& original_message,
+                 const maidsafe_error& return_code,
+                 const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void HandleDelete(const nfs::DataMessage& data_message,
                     const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void ValidateDataMessage(const nfs::DataMessage& data_message) const;
 
+  bool ValidateGetSender(const nfs::DataMessage& data_message) const;
+  bool ValidateMAHSender(const nfs::DataMessage& data_message) const;
+  bool ValidateSender(const nfs::GenericMessage& generic_message) const;
   void HandleNodeDown(const nfs::GenericMessage& generic_message);
   void HandleNodeUp(const nfs::GenericMessage& generic_message);
-
+  void AddResult(const nfs::DataMessage& data_message,
+                 const routing::ReplyFunctor& reply_functor,
+                 const maidsafe_error& return_code);
   // On error handler
   template<typename Data>
   void OnPutErrorHandler(nfs::DataMessage data_message);

@@ -18,7 +18,7 @@
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
-
+#include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/vault/utils.h"
 
 
@@ -27,90 +27,106 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void MetadataManagerService::HandleDataMessage(const nfs::DataMessage& /*data_message*/,
-                                        const routing::ReplyFunctor& /*reply_functor*/) {
+void MetadataManagerService::HandleDataMessage(const nfs::DataMessage& data_message,
+                                        const routing::ReplyFunctor& reply_functor) {
+  nfs::Reply reply(CommonErrors::success);
+  if (accumulator_.CheckHandled(data_message, reply))
+    return reply_functor(reply.Serialise()->string());
+
+  if (data_message.data().action == nfs::DataMessage::Action::kGet &&
+      ValidateGetSender(data_message)) {
+    HandleGet<Data>(data_message, reply_functor);
+  } else if (data_message.data().action == nfs::DataMessage::Action::kPut &&
+           ValidateMAHSender(data_message)) {
+    HandlePut<Data>(data_message, reply_functor);
+  } else if (data_message.data().action == nfs::DataMessage::Action::kDelete &&
+             ValidateMAHSender(data_message)) {
+    HandleDelete<Data>(data_message, reply_functor);
+  } else {
+    reply = nfs::Reply(VaultErrors::operation_not_supported, data_message.Serialise().data);
+    accumulator_.SetHandled(data_message, reply.error());
+    reply_functor(reply.Serialise()->string());
+  }
 }
+
 
 template<typename Data>
 void MetadataManagerService::HandlePut(const nfs::DataMessage& data_message,
                                        const routing::ReplyFunctor& reply_functor) {
-  if (routing::GroupRangeStatus::kOutwithRange ==
-      routing_.IsNodeIdInGroupRange(data_message.source().node_id)) {
-    reply_functor(nfs::Reply(RoutingErrors::not_in_range).Serialise()->string());
-    return;
+  try {
+    Data data(typename Data::name_type(data_message.data().name),
+              typename Data::serialised_type(data_message.data().content));
+    auto data_name(data.name());
+    on_scope_exit strong_guarantee([this, data] {
+                   try {
+                        metadata_handler_.template DecrementSubscribers<Data>(data.name());
+                   } catch(...) { }
+}
+                                   );
+    metadata_handler_.IncrementSubscribers<Data>(data.name(),
+                                           data_message.data().content.string().size());
+    AddResult(data_message, reply_functor, MakeError(CommonErrors::success));
+    strong_guarantee.Release();
   }
-
-  // if (request_queue_.Push(message.id(), message.name())) {
-  //   nfs::OnError on_error_callback = [this] (nfs::Message message) {
-  //                                      this->OnPutErrorHandler<Data>(message);
-  //                                    };
-  //   nfs_.Put<Data>(message, on_error_callback);
-  // }
-  reply_functor(nfs::Reply(0).Serialise()->string());
+  catch(const maidsafe_error& error) {
+  try {
+    AddResult(data_message, reply_functor, error);
+  } catch(...) {}
+  }
+  catch(...) {
+    try {
+       AddResult(data_message, reply_functor, MakeError(CommonErrors::unknown));
+     } catch(...) {}
+  }
 }
 
 template<typename Data>
-void MetadataManagerService::HandleGet(nfs::DataMessage /*data_message*/,
-                                       const routing::ReplyFunctor& /*reply_functor*/) {
-//  std::vector<Identity> online_dataholders(
-//      metadata_handler_.GetOnlinePmid(Identity(data_message.data().name)));
-//  std::vector<std::future<Data>> futures;
-//  for (auto& online_dataholder : online_dataholders)
-//    futures.emplace_back(nfs_.Get<Data>(data_message.data().name,
-//                                        nfs::MessageSource(nfs::Persona::kMetadataManager,
-//                                                           routing_.kNodeId()),
-//                                        online_dataholder));
+void MetadataManagerService::StoreData(const nfs::DataMessage& data_message,
+               const routing::ReplyFunctor& reply_functor) {
+  try {
 
-//  auto fetched_data = futures.begin();
-//  while (futures.size() > 0) {
-//    if (fetched_data->wait_for(0) == std::future_status::ready) {
-//      try {
-//        Data fetched_chunk = fetched_data->get();
-//        if (fetched_chunk.name().data.IsInitialised()) {
-//          reply_functor(fetched_chunk.data.string());
-//          return;
-//        }
-//      } catch(...) {
-//        // no op
-//      }
-//      fetched_data = futures.erase(fetched_data);
-//    } else {
-//      ++fetched_data;
-//    }
-//    Sleep(boost::posix_time::milliseconds(1));
-//    if (fetched_data == futures.end())
-//      fetched_data = futures.begin();
-//  }
+    if (routing_.ClosestToID(data_message.source().node_id)) {
+      nfs_.Put(data,
+               data_message.data_holder(),
+               nullptr);  // Do we care if this did not work
+      // or should we check we have more than 2 pmids and retry ?
+    } else {
+      nfs_.Put(data,
+               routing_.RandomConnectedNode(),
+               nullptr);
+    }
+  }
+  catch(const maidsafe_error& error) {
+    LOG(kWarning) << error.what();
+  }
+  catch(...) {
+    LOG(kWarning) << "Unknown error.";
+  }
+}
+
+template<typename Data>
+void MetadataManagerService::HandleGet(nfs::DataMessage data_message,
+                                       const routing::ReplyFunctor& reply_functor) {
+
+  nfs_.Get( metadata_handler_.GetOnlinePmid(Identity(data_message.data().name),
+                                            reply_functor));
+
 
 //  reply_functor(nfs::Reply(NfsErrors::failed_to_get_data).Serialise()->string());
 }
 
 template<typename Data>
-void MetadataManagerService::HandleDelete(const nfs::DataMessage& /*data_message*/,
-                                          const routing::ReplyFunctor& /*reply_functor*/) {
-//  Identity data_id(data_message.data().name);
-//  int64_t num_follower(metadata_handler_.DecreaseDataElement(data_id));
-//  if (num_follower == 0) {
-//    std::vector<Identity> online_dataholders(metadata_handler_.GetOnlinePmid(data_id));
-//    metadata_handler_.RemoveDataElement(data_id);
-
-//    for (auto& online_dataholder : online_dataholders) {
-//      nfs::DataMessage::OnError on_error_callback(
-//          [this](nfs::DataMessage data_msg) { this->OnDeleteErrorHandler<Data>(data_msg); });
-//      // TODO(Team) : double check whether signing key required
-//      nfs::DataMessage new_message(
-//          nfs::DataMessage::Action::kDelete,
-//          nfs::Persona::kPmidAccountHolder,
-//          nfs::MessageSource(nfs::Persona::kMetadataManager, routing_.kNodeId()),
-//          nfs::DataMessage::Data(Data::name_type::tag_type::kEnumValue,
-//                                 online_dataholder,
-//                                 data_id));
-//      nfs_.Delete<Data>(new_message, on_error_callback);
-//    }
-//  }
-//  reply_functor(nfs::Reply(num_follower).Serialise()->string());
+void MetadataManagerService::HandleDelete(const nfs::DataMessage& data_message,
+                                          const routing::ReplyFunctor& reply_functor) {
+  Data data(typename Data::name_type(data_message.data().name),
+            typename Data::serialised_type(data_message.data().content));
+  metadata_handler_.template DecrementSubscribers<Data>(data.name());
+  // Decrement should send delete to PMID's on event data is actually deleted
+  SendReply(data_message, MakeError(CommonErrors::success), reply_functor);
 }
 
+
+// These are probably not required any more !!!!!!!!!!!!!!!!!1
 // On error handler's
 template<typename Data>
 void MetadataManagerService::OnPutErrorHandler(nfs::DataMessage data_message) {

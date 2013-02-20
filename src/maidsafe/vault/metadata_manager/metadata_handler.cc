@@ -25,6 +25,16 @@ namespace maidsafe {
 
 namespace vault {
 
+
+//MetadataHandler::IncrementSubscribers() {
+//protobuf::Metadata metadata_proto;
+//metadata_proto.set_type(Data::type_enum_value());
+//metadata_proto.set_name(data.name()->string());
+//metadata_proto.set_size(data_message.data().content.string().size());
+//metadata_proto.set
+//metadata_handler_.Put(data.name);
+//}
+
 //namespace {
 //
 //bool RemovePmidFromOnlineList(const std::string& pmid, protobuf::Metadata& element) {

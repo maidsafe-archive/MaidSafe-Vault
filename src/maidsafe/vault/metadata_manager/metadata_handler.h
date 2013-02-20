@@ -36,7 +36,7 @@ class MetadataHandler {
   void IncrementSubscribers(const typename Data::name_type& data_name, int32_t element_size);
   // This decrements the subscribers count.  If it hits 0, the element is removed.
   template<typename Data>
-  void DecrementSubscribers(const typename Data::name_type& data_name, int32_t element_size);
+  void DecrementSubscribers(const typename Data::name_type& data_name);
 
   // This is used when synchronising with other MMs.  It simply adds or replaces any existing
   // element of the same type and name.
@@ -63,9 +63,10 @@ class MetadataHandler {
   template<typename Data>
   std::vector<PmidName> GetOnlineDataHolders(const typename Data::name_type& data_name) const;
 
- private:
   template<typename Data>
   void CheckMetadataExists(const typename Data::name_type& data_name) const;
+ private:
+
   template<typename Data>
   void ReadAndParseMetadata(const typename Data::name_type& data_name, protobuf::Metadata& element);
   void SerialiseAndSaveMetadata(const protobuf::Metadata& element);
