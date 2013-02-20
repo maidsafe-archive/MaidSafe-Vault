@@ -1,4 +1,4 @@
-/*******************************************************************************
+/******************************************************************************
 *  Copyright 2012 maidsafe.net limited                                        *
 *                                                                             *
 *  The following source code is property of maidsafe.net limited and is not   *
@@ -23,7 +23,7 @@ namespace vault {
 
 namespace test {
 
-/*
+
 class MaidAccountHandlerTest : public testing::Test {
  public:
   MaidAccountHandlerTest()
@@ -36,41 +36,38 @@ class MaidAccountHandlerTest : public testing::Test {
     return MaidName(Identity(RandomAlphaNumericString(64)));
   }
 
-  PmidRecord GeneratePmidRecord(int64_t stored_count,
+  PmidRecord GeneratePmidRecord(PmidName name,
+                                int64_t stored_count,
                                 int64_t stored_total_size,
                                 int64_t lost_count,
-                                int64_t lost_total_size) {
-    PmidName pmid_name(Identity(RandomAlphaNumericString(64)));
-    PmidRecord new_record(pmid_name);
+                                int64_t lost_total_size,
+                                int64_t claimed_available_size) {
+    PmidRecord new_record(name);
     new_record.stored_count = stored_count;
     new_record.stored_total_size = stored_total_size;
     new_record.lost_count = lost_count;
     new_record.lost_total_size = lost_total_size;
+    new_record.claimed_available_size = claimed_available_size;
     return new_record;
-  }
-
-  std::vector<MaidAccount> GetMaidAccounts() {
-    return maid_account_handler_.maid_accounts_;
   }
 
   std::vector<PmidTotals> GetPmids(const MaidName& account_name) {
     auto itr(detail::FindAccount(maid_account_handler_.maid_accounts_, account_name));
-    return itr->pmid_totals_;
+    return (*itr)->pmid_totals_;
   }
 
-  void AddAccount(const MaidAccount& account) {
-    std::vector<MaidName> accounts;
+  void AddAccount(std::unique_ptr<MaidAccount> account) {
     int total_accounts_pre_add = (maid_account_handler_.GetAccountNames()).size();
 
-    EXPECT_TRUE(maid_account_handler_.AddAccount(account));
-    accounts = maid_account_handler_.GetAccountNames();
-    EXPECT_EQ(total_accounts_pre_add + 1, accounts.size());
+    EXPECT_TRUE(maid_account_handler_.AddAccount(std::move(account)));
+    std::vector<MaidName> account_names(maid_account_handler_.GetAccountNames());
+    EXPECT_EQ(total_accounts_pre_add + 1, account_names.size());
   }
 
-  void SetTotalStored(MaidName account_name, int64_t total) {
+  void SetTotalAvailable(MaidName account_name, int64_t total) {
     auto itr(detail::FindAccount(maid_account_handler_.maid_accounts_, account_name));
     if (itr != maid_account_handler_.maid_accounts_.end())
-      (*itr).total_data_stored_by_pmids_ = total;
+      (*itr)->total_claimed_available_size_by_pmids_ = total;
   }
 
  protected:
@@ -82,13 +79,14 @@ class MaidAccountHandlerTest : public testing::Test {
 TEST_F(MaidAccountHandlerTest, BEH_AddAccount) {
   std::vector<MaidName> account_names;
   MaidName account_name(GenerateMaidName());
-  MaidAccount new_account(account_name, *vault_root_directory_);
+  std::unique_ptr<MaidAccount> new_account(new MaidAccount(account_name, *vault_root_directory_));
+  std::unique_ptr<MaidAccount> duplicate(new MaidAccount(account_name, *vault_root_directory_));
 
-  AddAccount(new_account);
+  AddAccount(std::move(new_account));
   account_names = maid_account_handler_.GetAccountNames();
   EXPECT_EQ(1, account_names.size());
 
-  EXPECT_FALSE(maid_account_handler_.AddAccount(new_account));
+  EXPECT_FALSE(maid_account_handler_.AddAccount(std::move(duplicate)));
   account_names = maid_account_handler_.GetAccountNames();
   EXPECT_EQ(1, account_names.size());
 }
@@ -96,11 +94,11 @@ TEST_F(MaidAccountHandlerTest, BEH_AddAccount) {
 TEST_F(MaidAccountHandlerTest, BEH_DeleteAccount) {
   std::vector<MaidName> account_names;
   MaidName account_name(GenerateMaidName());
-  MaidAccount new_account(account_name, *vault_root_directory_);
+  std::unique_ptr<MaidAccount> new_account(new MaidAccount(account_name, *vault_root_directory_));
 
   EXPECT_TRUE(maid_account_handler_.DeleteAccount(account_name));
 
-  AddAccount(new_account);
+  AddAccount(std::move(new_account));
 
   EXPECT_TRUE(maid_account_handler_.DeleteAccount(account_name));
   account_names = maid_account_handler_.GetAccountNames();
@@ -109,17 +107,21 @@ TEST_F(MaidAccountHandlerTest, BEH_DeleteAccount) {
 
 TEST_F(MaidAccountHandlerTest, BEH_RegisterPmid) {
   MaidName account_name(GenerateMaidName());
-  MaidAccount new_account(account_name, *vault_root_directory_);
+  std::unique_ptr<MaidAccount> new_account(new MaidAccount(account_name, *vault_root_directory_));
   passport::Anmaid anmaid;
   passport::Maid maid(anmaid);
   passport::Pmid pmid(maid);
   nfs::PmidRegistration registration(maid, pmid, false);
+  std::vector<PmidTotals> pmids;
 
   EXPECT_THROW(maid_account_handler_.RegisterPmid(account_name, registration), vault_error);
-  AddAccount(new_account);
+  AddAccount(std::move(new_account));
+  pmids = GetPmids(account_name);
+  EXPECT_EQ(0, pmids.size());
   EXPECT_NO_THROW(maid_account_handler_.RegisterPmid(account_name, registration));
 
-  std::vector<PmidTotals> pmids = GetPmids(account_name);
+  pmids = GetPmids(account_name);
+  EXPECT_EQ(1, pmids.size());
   EXPECT_NE(pmids.end(), std::find_if(pmids.begin(),
                                       pmids.end(),
                                       [&registration](const PmidTotals record) {
@@ -127,18 +129,21 @@ TEST_F(MaidAccountHandlerTest, BEH_RegisterPmid) {
                                             record.pmid_record.pmid_name;
                                       }));
 
-  // same pmid registered more than once
-  EXPECT_THROW(maid_account_handler_.RegisterPmid(account_name, registration), vault_error);
+  // same pmid attempted to be registered more than once
+  int total_pre_duplicate_register = pmids.size();
+  EXPECT_NO_THROW(maid_account_handler_.RegisterPmid(account_name, registration));
+  pmids = GetPmids(account_name);
+  EXPECT_EQ(total_pre_duplicate_register, pmids.size());
 }
 
 TEST_F(MaidAccountHandlerTest, BEH_UnregisterPmid) {
   MaidName account_name(GenerateMaidName());
-  MaidAccount account(account_name, *vault_root_directory_);
+  std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, *vault_root_directory_));
   PmidName pmid_name(Identity(RandomAlphaNumericString(64)));
 
   EXPECT_THROW(maid_account_handler_.UnregisterPmid(account_name, pmid_name), vault_error);
 
-  AddAccount(account);
+  AddAccount(std::move(account));
   EXPECT_NO_THROW(maid_account_handler_.UnregisterPmid(account_name, pmid_name));
 
   std::vector<PmidTotals> pmids = GetPmids(account_name);
@@ -151,7 +156,7 @@ TEST_F(MaidAccountHandlerTest, BEH_UnregisterPmid) {
 
 TEST_F(MaidAccountHandlerTest, BEH_UpdatePmidTotals) {
   MaidName account_name(GenerateMaidName());
-  MaidAccount account(account_name, *vault_root_directory_);
+  std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, *vault_root_directory_));
 
   passport::Anmaid anmaid;
   passport::Maid maid(anmaid);
@@ -159,11 +164,12 @@ TEST_F(MaidAccountHandlerTest, BEH_UpdatePmidTotals) {
   nfs::PmidRegistration registration(maid, pmid, false);
   nfs::PmidRegistration::serialised_type serialised_registration(registration.Serialise());
 
-  PmidRecord pmid_record(GeneratePmidRecord(2, 2000, 1, 1000));
+  PmidName pmid_name(pmid.name());
+  PmidRecord pmid_record(GeneratePmidRecord(pmid_name, 2, 2000, 1, 1000, 15000));
   PmidTotals pmid_totals(serialised_registration, pmid_record);
 
   EXPECT_THROW(maid_account_handler_.UpdatePmidTotals(account_name, pmid_totals), vault_error);
-  AddAccount(account);
+  AddAccount(std::move(account));
   EXPECT_THROW(maid_account_handler_.UpdatePmidTotals(account_name, pmid_totals), common_error);
   EXPECT_NO_THROW(maid_account_handler_.RegisterPmid(account_name, registration));
 
@@ -190,6 +196,21 @@ TEST_F(MaidAccountHandlerTest, BEH_UpdatePmidTotals) {
   }
 }
 
+TEST_F(MaidAccountHandlerTest, BEH_GetAccountNames) {
+}
+
+TEST_F(MaidAccountHandlerTest, BEH_GetSerialisedAccount) {
+}
+
+TEST_F(MaidAccountHandlerTest, BEH_GetArchiveFileNames) {
+}
+
+TEST_F(MaidAccountHandlerTest, BEH_GetArchiveFile) {
+}
+
+TEST_F(MaidAccountHandlerTest, BEH_PutArchiveFile) {
+}
+
 template <typename Data>
 class MaidAccountHandlerTypedTest : public MaidAccountHandlerTest {
  public:
@@ -199,24 +220,21 @@ class MaidAccountHandlerTypedTest : public MaidAccountHandlerTest {
  protected:
   void PutData(const MaidName& account_name,
                const typename Data::name_type& data_name,
-               int32_t size,
-               int32_t replication_count) {
+               int32_t cost) {
     this->maid_account_handler_.template PutData<Data>(account_name,
                                                        data_name,
-                                                       size,
-                                                       replication_count);
+                                                       cost);
   }
 
   void DeleteData(const MaidName& account_name, const typename Data::name_type& data_name) {
     this->maid_account_handler_.template DeleteData<Data>(account_name, data_name);
   }
 
-  void UpdateReplicationCount(const MaidName& account_name,
-                              const typename Data::name_type& data_name,
-                              int32_t new_replication_count) {
-    this->maid_account_handler_.template UpdateReplicationCount<Data>(account_name,
-                                                                      data_name,
-                                                                      new_replication_count);
+  void Adjust(const MaidName& account_name,
+              const typename Data::name_type& data_name,
+              int32_t new_cost)
+  {
+    this->maid_account_handler_.template Adjust<Data>(account_name, data_name, new_cost);
   }
 };
 
@@ -225,43 +243,37 @@ TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest);
 TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_PutData) {
   typename TypeParam::name_type data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
   MaidName account_name(this->GenerateMaidName());
-  int32_t size(1000), replication_count(4);
-  MaidAccount account(account_name, *(this->vault_root_directory_));
+  int32_t cost(1000);
+  std::unique_ptr<MaidAccount> account(
+      new MaidAccount(account_name, *(this->vault_root_directory_)));
 
-  EXPECT_THROW(this->PutData(account_name, data_name, size, replication_count), vault_error);
-  this->AddAccount(account);
-  EXPECT_NO_THROW(this->PutData(account_name, data_name, size, replication_count));
+  EXPECT_THROW(this->PutData(account_name, data_name, cost), vault_error);
+  this->AddAccount(std::move(account));
+  // not enough space available
+  EXPECT_THROW(this->PutData(account_name, data_name, cost), vault_error);
 
-  this->SetTotalStored(account_name, 0);
-  EXPECT_THROW(this->PutData(account_name, data_name, size, replication_count), vault_error);
+  this->SetTotalAvailable(account_name, cost * 2);
+  EXPECT_NO_THROW(this->PutData(account_name, data_name, cost));
 }
 
 TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_DeleteData) {
   typename TypeParam::name_type data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
   MaidName account_name(this->GenerateMaidName());
-  MaidAccount account(account_name, *(this->vault_root_directory_));
+  std::unique_ptr<MaidAccount> account(
+      new MaidAccount(account_name, *(this->vault_root_directory_)));
 
   EXPECT_THROW(this->DeleteData(account_name, data_name), vault_error);
-  this->AddAccount(account);
+  this->AddAccount(std::move(account));
   EXPECT_NO_THROW(this->DeleteData(account_name, data_name));
 }
 
-TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_UpdateReplicationCount) {
-  typename TypeParam::name_type data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
-  MaidName account_name(this->GenerateMaidName());
-  int32_t new_replication_count(3);
-  MaidAccount account(account_name, *(this->vault_root_directory_));
-
-  EXPECT_THROW(this->UpdateReplicationCount(account_name, data_name, new_replication_count),
-               vault_error);
-  this->AddAccount(account);
-  EXPECT_NO_THROW(this->UpdateReplicationCount(account_name, data_name, new_replication_count));
+TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_Adjust) {
 }
 
 REGISTER_TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest,
                            BEH_PutData,
                            BEH_DeleteData,
-                           BEH_UpdateReplicationCount);
+                           BEH_Adjust);
 
 typedef testing::Types<passport::PublicAnmid,
                        passport::PublicAnsmid,
@@ -280,7 +292,7 @@ typedef testing::Types<passport::PublicAnmid,
                        WorldDirectory> AllTypes;
 
 INSTANTIATE_TYPED_TEST_CASE_P(All, MaidAccountHandlerTypedTest, AllTypes);
-*/
+
 
 }  //  namespace test
 
