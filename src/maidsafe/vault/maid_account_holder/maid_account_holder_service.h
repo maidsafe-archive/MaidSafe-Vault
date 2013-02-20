@@ -160,6 +160,7 @@ class MaidAccountHolderService {
   MaidAccountHandler maid_account_handler_;
   MaidAccountHolderNfs nfs_;
   static const int kPutSuccessCountMin_;
+  static const int kDefaultPaymentFactor_;
 };
 
 }  // namespace vault
