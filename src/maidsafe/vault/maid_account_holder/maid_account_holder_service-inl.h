@@ -66,8 +66,9 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     // TODO(Fraser#5#): 2013-02-13 - Have PutToAccount return percentage or amount remaining so
     // if it falls below a threshold, we can trigger getting updated account info from the PAHs
     // (not too frequently), & alert the client by returning an "error" via client_reply_functor.
-    PutToAccount<Data>(account_name, data_name, 4 * data_message.data().content.string().size(),
-                       is_payable<Data>());
+    int32_t size =
+        static_cast<int32_t>(kDefaultPaymentFactor_ * data_message.data().content.string().size());
+    PutToAccount<Data>(account_name, data_name, size, is_payable<Data>());
     on_scope_exit strong_guarantee([this, account_name, data_name] {
         try {
           DeleteFromAccount<Data>(account_name, data_name, is_payable<Data>());

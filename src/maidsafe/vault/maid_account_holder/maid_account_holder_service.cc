@@ -27,6 +27,7 @@ namespace maidsafe {
 namespace vault {
 
 const int MaidAccountHolderService::kPutSuccessCountMin_(3);
+const int MaidAccountHolderService::kDefaultPaymentFactor_(4);
 
 MaidAccountHolderService::SharedResponse::SharedResponse()
     : mutex(),
