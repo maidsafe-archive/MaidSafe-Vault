@@ -146,17 +146,24 @@ fs::path GetPathFromProgramOption(const std::string &option_name,
 
 
 void DoOnPublicKeyRequested(const maidsafe::NodeId& node_id,
-                            const maidsafe::routing::GivePublicKeyFunctor& give_key) {
-  auto get_key_future([node_id, give_key] (std::future<maidsafe::passport::PublicPmid> key_future) {
-    try {
-      maidsafe::passport::PublicPmid key = key_future.get();
-      give_key(key.public_key());
-    }
-    catch(const std::exception& ex) {
-      LOG(kError) << "Failed to get key for " << DebugId(node_id) << " : " << ex.what();
-    }
-  });
-  // public_key_getter_.HandleGetKey(node_id, get_key_future);  // FIXME Brian
+                            const maidsafe::routing::GivePublicKeyFunctor& give_key,
+                            maidsafe::nfs::PublicKeyGetter& public_key_getter) {
+  public_key_getter.GetKey<maidsafe::passport::Pmid>(
+      typename maidsafe::passport::Pmid::name_type((maidsafe::Identity(node_id.string()))),
+      [give_key, node_id] (std::string response) {
+        maidsafe::nfs::Reply reply(
+            (maidsafe::nfs::Reply::serialised_type(maidsafe::NonEmptyString(response))));
+        if (reply.IsSuccess()) {
+          try {
+            maidsafe::asymm::PublicKey public_key(
+                maidsafe::asymm::DecodeKey(maidsafe::asymm::EncodedPublicKey(reply.data())));
+            give_key(public_key);
+          }
+          catch(const std::exception& ex) {
+            LOG(kError) << "Failed to get key for " << DebugId(node_id) << " : " << ex.what();
+          }
+        }
+      });
 }
 
 bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {
@@ -195,7 +202,7 @@ bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {
   functors1.request_public_key = functors2.request_public_key =
       [&public_key_getter] (maidsafe::NodeId node_id,
                             const maidsafe::routing::GivePublicKeyFunctor& give_key) {
-        DoOnPublicKeyRequested(node_id, give_key);
+        DoOnPublicKeyRequested(node_id, give_key, public_key_getter);
       };
 
   boost::asio::ip::udp::endpoint endpoint1(maidsafe::GetLocalIp(),
