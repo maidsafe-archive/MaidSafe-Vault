@@ -62,7 +62,7 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     MaidName account_name(detail::GetSourceMaidName(data_message));
     auto data_name(GetDataName<Data>(data_message));
     auto put_op(std::make_shared<nfs::PutOrDeleteOp>(
-        kPutSuccessCountMin_,
+        kPutRepliesSuccessesRequired_,
         [this, account_name, data_name, reply_functor](nfs::Reply overall_result) {
             HandlePutResult<Data>(overall_result, account_name, data_name, reply_functor,
                                   is_unique_on_network<Data>());

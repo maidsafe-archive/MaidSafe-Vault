@@ -12,6 +12,7 @@
 #ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_SERVICE_H_
 #define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_SERVICE_H_
 
+#include <mutex>
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
@@ -50,44 +51,52 @@ class MetadataManagerService {
   MetadataManagerService& operator=(const MetadataManagerService&);
   MetadataManagerService(MetadataManagerService&&);
   MetadataManagerService& operator=(MetadataManagerService&&);
-  template<typename Data>
-  void HandleGet(nfs::DataMessage data_message, const routing::ReplyFunctor& reply_functor);
+
   template<typename Data>
   void HandlePut(const nfs::DataMessage& data_message,
                  const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void StoreData(const nfs::DataMessage& data_message,
-                 const routing::ReplyFunctor& reply_functor);
-  void SendReply(const nfs::DataMessage& original_message,
-                 const maidsafe_error& return_code,
-                 const routing::ReplyFunctor& reply_functor);
+  void Put(const Data& data, const PmidName& target_data_holder);
+
+  template<typename Data>
+  void HandleGet(nfs::DataMessage data_message, const routing::ReplyFunctor& reply_functor);
+
   template<typename Data>
   void HandleDelete(const nfs::DataMessage& data_message,
                     const routing::ReplyFunctor& reply_functor);
-  template<typename Data>
-  void ValidateDataMessage(const nfs::DataMessage& data_message) const;
 
-  bool ValidateGetSender(const nfs::DataMessage& data_message) const;
-  bool ValidateMAHSender(const nfs::DataMessage& data_message) const;
-  bool ValidateSender(const nfs::GenericMessage& generic_message) const;
+  void ValidatePutSender(const nfs::DataMessage& data_message) const;
+  void ValidateGetSender(const nfs::DataMessage& data_message) const;
+  void ValidateDeleteSender(const nfs::DataMessage& data_message) const;
+  void ValidatePostSender(const nfs::GenericMessage& generic_message) const;
+
   void HandleNodeDown(const nfs::GenericMessage& generic_message);
   void HandleNodeUp(const nfs::GenericMessage& generic_message);
-  void AddResult(const nfs::DataMessage& data_message,
+
+  // Returns true if the required successful request count has been reached
+  bool AddResult(const nfs::DataMessage& data_message,
                  const routing::ReplyFunctor& reply_functor,
                  const maidsafe_error& return_code);
-  // On error handler
+
   template<typename Data>
-  void OnPutErrorHandler(nfs::DataMessage data_message);
+  void HandlePutResult(const nfs::Reply& overall_result);
   template<typename Data>
-  void OnDeleteErrorHandler(nfs::DataMessage data_message);
+  void HandleGetReply(std::string serialised_reply);
+
   template<typename Data>
   void OnGenericErrorHandler(nfs::GenericMessage message);
 
+  bool ThisVaultInGroupForData(const nfs::DataMessage& data_message) const;
+
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
+  std::mutex accumulator_mutex_;
   Accumulator<DataNameVariant> accumulator_;
   MetadataHandler metadata_handler_;
   MetadataManagerNfs nfs_;
+  static const int kPutRequestsRequired_;
+  static const int kPutRepliesSuccessesRequired_;
+  static const int kDeleteRequestsRequired_;
 };
 
 }  // namespace vault

@@ -14,10 +14,33 @@
 #include <string>
 #include <vector>
 
+#include "maidsafe/routing/parameters.h"
+#include "maidsafe/nfs/utils.h"
+
 
 namespace maidsafe {
 
 namespace vault {
+
+namespace {
+
+inline bool SenderInGroupForClientMaid(const nfs::DataMessage& data_message,
+                                       routing::Routing& routing) {
+  return routing.EstimateInGroup(data_message.source().node_id,
+                                 NodeId(data_message.client_validation().name.string()));
+}
+
+template<typename Message>
+inline bool ForThisPersona(const Message& message) {
+  return message.destination_persona() != nfs::Persona::kMetadataManager;
+}
+
+}  // unnamed namespace
+
+
+const int MetadataManagerService::kPutRequestsRequired_(3);
+const int MetadataManagerService::kPutRepliesSuccessesRequired_(3);
+const int MetadataManagerService::kDeleteRequestsRequired_(3);
 
 MetadataManagerService::MetadataManagerService(const passport::Pmid& pmid,
                                                routing::Routing& routing,
@@ -25,39 +48,54 @@ MetadataManagerService::MetadataManagerService(const passport::Pmid& pmid,
                                                const boost::filesystem::path& vault_root_dir)
     : routing_(routing),
       public_key_getter_(public_key_getter),
+      accumulator_mutex_(),
       accumulator_(),
       metadata_handler_(vault_root_dir),
       nfs_(routing, pmid) {}
 
-//MetadataManagerService::~MetadataManagerService() {}
-
 void MetadataManagerService::TriggerSync() {
 }
 
-bool MetadataManagerService::ValidateGetSender(const nfs::DataMessage& data_message) const {
-    return ((data_message.source().persona == nfs::Persona::kClientMaid ||
-             data_message.source().persona == nfs::Persona::kDataHolder ) &&
-      data_message.destination_persona() == nfs::Persona::kMetadataManager);
+void MetadataManagerService::ValidatePutSender(const nfs::DataMessage& data_message) const {
+  if (!SenderInGroupForClientMaid(data_message, routing_) ||
+      !ThisVaultInGroupForData(data_message)) {
+    ThrowError(VaultErrors::permission_denied);
+  }
+
+  if (!FromMaidAccountHolder(data_message) || !ForThisPersona(data_message))
+    ThrowError(CommonErrors::invalid_parameter);
 }
 
-bool MetadataManagerService::ValidateMAHSender(const nfs::DataMessage& data_message) const {
-    return (data_message.source().persona == nfs::Persona::kMaidAccountHolder &&
-      data_message.destination_persona() == nfs::Persona::kMetadataManager &&
-            routing_.EstimateInGroup(NodeId(data_message.client_validation().name.string()),
-                                     data_message.source().node_id));
+void MetadataManagerService::ValidateGetSender(const nfs::DataMessage& data_message) const {
+  if (!(FromClientMaid(data_message) ||
+          FromDataHolder(data_message) ||
+          FromDataGetter(data_message) ||
+          FromOwnerDirectoryManager(data_message) ||
+          FromGroupDirectoryManager(data_message) ||
+          FromWorldDirectoryManager(data_message)) ||
+      !ForThisPersona(data_message)) {
+    ThrowError(CommonErrors::invalid_parameter);
+  }
 }
 
-bool MetadataManagerService::ValidateSender(const nfs::GenericMessage& generic_message) const {
-    return ((generic_message.source().persona == nfs::Persona::kPmidAccountHolder ||
-              generic_message.source().persona == nfs::Persona::kMetadataManager) &&
-      generic_message.destination_persona() == nfs::Persona::kMetadataManager);
+void MetadataManagerService::ValidateDeleteSender(const nfs::DataMessage& data_message) const {
+  if (!SenderInGroupForClientMaid(data_message, routing_))
+    ThrowError(VaultErrors::permission_denied);
+
+  if (!FromMaidAccountHolder(data_message) || !ForThisPersona(data_message))
+    ThrowError(CommonErrors::invalid_parameter);
 }
 
+void MetadataManagerService::ValidatePostSender(const nfs::GenericMessage& generic_message) const {
+  if (!(FromMetadataManager(generic_message) || FromPmidAccountHolder(generic_message)) ||
+      !ForThisPersona(generic_message)) {
+    ThrowError(CommonErrors::invalid_parameter);
+  }
+}
 
 void MetadataManagerService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
                                                   const routing::ReplyFunctor& /*reply_functor*/) {
-  if (!ValidatePAHSender(generic_message))
-    return;  // silently drop
+  ValidatePostSender(generic_message);
 
   nfs::GenericMessage::Action action(generic_message.action());
   switch (action) {
@@ -98,7 +136,7 @@ void MetadataManagerService::HandleNodeDown(const nfs::GenericMessage& generic_m
 void MetadataManagerService::HandleNodeUp(const nfs::GenericMessage& generic_message) {
   try {
     metadata_handler_.MarkNodeUp(generic_message.name(),
-                                 PmidName(generic_message.name().string()));
+                                 PmidName(Identity(generic_message.name().string())));
   }
   catch(const std::exception &e) {
     LOG(kError) << "HandleNodeUp - Dropping process after exception: " << e.what();
@@ -106,26 +144,37 @@ void MetadataManagerService::HandleNodeUp(const nfs::GenericMessage& generic_mes
   }
 }
 
-void MetadataManagerService::SendReply(const nfs::DataMessage& original_message,
-                                       const maidsafe_error& return_code,
-                                       const routing::ReplyFunctor& reply_functor) {
-  nfs::Reply reply(CommonErrors::success);
-  if (return_code.code() != CommonErrors::success)
-    reply = nfs::Reply(return_code, original_message.Serialise().data);
-  accumulator_.SetHandled(original_message, reply.error());
-  reply_functor(reply.Serialise()->string());
+bool MetadataManagerService::AddResult(const nfs::DataMessage& data_message,
+                                       const routing::ReplyFunctor& reply_functor,
+                                       const maidsafe_error& return_code) {
+  std::vector<Accumulator<DataNameVariant>::PendingRequest> pending_requests;
+  maidsafe_error overall_return_code(CommonErrors::success);
+  {
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
+    auto pending_results(accumulator_.PushSingleResult(data_message, reply_functor, return_code));
+    if (static_cast<int>(pending_results.size()) < kPutRequestsRequired_)
+      return false;
+
+    auto result(nfs::GetSuccessOrMostFrequentReply(pending_results, kPutRequestsRequired_));
+    if (!result.second && pending_results.size() < routing::Parameters::node_group_size)
+      return false;
+
+    overall_return_code = (*result.first).error();
+    pending_requests = accumulator_.SetHandled(data_message, overall_return_code);
+  }
+
+  for (auto& pending_request : pending_requests)
+    detail::SendReply(pending_request.msg, overall_return_code, pending_request.reply_functor);
+
+  return true;
 }
 
-void MetadataManagerService::AddResult(const nfs::DataMessage& data_message,
-               const routing::ReplyFunctor& reply_functor,
-               const maidsafe_error& return_code) {
-  auto accumulate(accumulator_.PushSingleResult(data_message, reply_functor,return_code));
-  if (accumulate.size() >= 3) {
-    SendReply(data_message, return_code, reply_functor);
-    StoreData(data_message, reply_functor);
-    accumulator_.SetHandled(data_message, return_code);
-  }
+bool MetadataManagerService::ThisVaultInGroupForData(const nfs::DataMessage& data_message) const {
+  // TODO(Fraser#5#): 2013-02-21 - BEFORE_RELEASE - Confirm this is best routing method.
+  return routing::GroupRangeStatus::kInRange ==
+         routing_.IsNodeIdInGroupRange(NodeId(data_message.data().name.string()));
 }
+
 
 }  // namespace vault
 

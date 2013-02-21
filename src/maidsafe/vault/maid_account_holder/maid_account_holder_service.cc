@@ -26,7 +26,17 @@ namespace maidsafe {
 
 namespace vault {
 
-const int MaidAccountHolderService::kPutSuccessCountMin_(3);
+namespace {
+
+template<typename Message>
+inline bool ForThisPersona(const Message& message) {
+  return message.destination_persona() != nfs::Persona::kMaidAccountHolder;
+}
+
+}  // unnamed namespace
+
+
+const int MaidAccountHolderService::kPutRepliesSuccessesRequired_(3);
 const int MaidAccountHolderService::kDefaultPaymentFactor_(4);
 
 MaidAccountHolderService::SharedResponse::SharedResponse()
@@ -49,10 +59,8 @@ void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_messa
   if (!routing_.IsConnectedClient(data_message.source().node_id))
     ThrowError(VaultErrors::permission_denied);
 
-  if (data_message.source().persona != nfs::Persona::kClientMaid ||
-      data_message.destination_persona() != nfs::Persona::kMaidAccountHolder) {
+  if (!FromClientMaid(data_message) || !ForThisPersona(data_message))
     ThrowError(CommonErrors::invalid_parameter);
-  }
 }
 
 void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
