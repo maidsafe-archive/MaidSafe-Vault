@@ -61,7 +61,7 @@ void MetadataManagerService::HandlePut(const nfs::DataMessage& data_message,
               typename Data::serialised_type(data_message.data().content));
     auto data_name(data.name());
     auto data_size(static_cast<int32_t>(data_message.data().content.string().size()));
-    metadata_handler_.IncrementSubscribers<Data>(data_name, data_size);
+    metadata_handler_.template IncrementSubscribers<Data>(data_name, data_size);
     on_scope_exit strong_guarantee([this, data_name] {
        try {
          metadata_handler_.template DecrementSubscribers<Data>(data_name);

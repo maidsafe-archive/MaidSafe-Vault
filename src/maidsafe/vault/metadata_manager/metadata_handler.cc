@@ -21,12 +21,28 @@
 #include "maidsafe/vault/metadata_manager/metadata_pb.h"
 
 
+namespace fs = boost::filesystem;
+
 namespace maidsafe {
 
 namespace vault {
 
+MetadataHandler::MetadataHandler(const boost::filesystem::path& vault_root_dir)
+    : kMetadataRoot_(vault_root_dir / "metadata") {  //FIXME  BEFORE_RELEASE
+  if (fs::exists(kMetadataRoot_)) {
+    if (fs::is_directory(kMetadataRoot_))
+      TraverseAndVerifyFiles();
+    else
+      ThrowError(CommonErrors::not_a_directory);
+  } else {
+    fs::create_directory(kMetadataRoot_);
+  }
+}
 
-//MetadataHandler::IncrementSubscribers() {
+
+template<typename Data>
+void MetadataHandler::IncrementSubscribers(const typename Data::name_type& data_name,
+                                           int32_t element_size);
 //protobuf::Metadata metadata_proto;
 //metadata_proto.set_type(Data::type_enum_value());
 //metadata_proto.set_name(data.name()->string());
@@ -78,12 +94,6 @@ namespace vault {
 //}  // namespace
 
 //const boost::filesystem::path kVaultDirectory("meta_data_manager");
-
-MetadataHandler::MetadataHandler(const boost::filesystem::path& vault_root_dir)
-    : kMetadataRoot_(vault_root_dir) {  //FIXME  BEFORE_RELEASE
-  if (!boost::filesystem::exists(kMetadataRoot_))
-    boost::filesystem::create_directories(kMetadataRoot_);
-}
 
 //void MetadataHandler::AddDataElement(const Identity& data_name,
 //                                         int32_t element_size,
@@ -240,6 +250,11 @@ MetadataHandler::MetadataHandler(const boost::filesystem::path& vault_root_dir)
 //  }
 //}
 
+template<typename Data>
+fs::path MetadataHandler::GetPath(const typename Data::name_type& data_name) const {
+  return kMetadataRoot_ / EncodeToBase32(data_name.data).string() +
+                          std::to_string(static_cast<int>(Data::name_type::tag_type::kEnumValue));
+}
 
 }  // namespace vault
 

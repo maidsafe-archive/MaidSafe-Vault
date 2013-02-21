@@ -65,8 +65,10 @@ class MetadataHandler {
 
   template<typename Data>
   void CheckMetadataExists(const typename Data::name_type& data_name) const;
- private:
 
+ private:
+  template<typename Data>
+  fs::path GetPath(const typename Data::name_type& data_name) const;
   template<typename Data>
   void ReadAndParseMetadata(const typename Data::name_type& data_name, protobuf::Metadata& element);
   void SerialiseAndSaveMetadata(const protobuf::Metadata& element);
