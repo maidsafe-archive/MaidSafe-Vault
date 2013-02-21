@@ -64,7 +64,7 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     auto put_op(std::make_shared<nfs::PutOrDeleteOp>(
         kPutSuccessCountMin_,
         [this, account_name, data_name, reply_functor](nfs::Reply overall_result) {
-            HandlePutResult<Data>(overall_result, account_name, data_name, reply_functor,
+            this->HandlePutResult<Data>(overall_result, account_name, data_name, reply_functor,
                                   is_unique_on_network<Data>());
         }));
     // TODO(Fraser#5#): 2013-02-13 - Have PutToAccount return percentage or amount remaining so
@@ -75,7 +75,7 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     PutToAccount<Data>(account_name, data_name, size, is_payable<Data>());
     on_scope_exit strong_guarantee([this, account_name, data_name] {
         try {
-          DeleteFromAccount<Data>(account_name, data_name, is_payable<Data>());
+          this->DeleteFromAccount<Data>(account_name, data_name, is_payable<Data>());
         }
         catch(const std::exception& e) {
           LOG(kError) << "Failed to delete from account: " << e.what();
