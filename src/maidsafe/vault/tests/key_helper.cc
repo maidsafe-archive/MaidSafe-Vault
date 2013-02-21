@@ -25,7 +25,6 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/program_options.hpp"
 
-#include "maidsafe/common/asio_service.h"
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/rsa.h"
@@ -38,6 +37,7 @@
 
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/public_key_getter.h"
+#include "maidsafe/nfs/reply.h"
 
 #include "maidsafe/routing/node_info.h"
 #include "maidsafe/routing/parameters.h"
@@ -160,7 +160,7 @@ void DoOnPublicKeyRequested(const maidsafe::NodeId& node_id,
 }
 
 bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {
-  BOOST_ASSERT(all_pmids.size() >= 2);
+  assert(all_pmids.size() >= 2);
 
   struct BootstrapData {
     BootstrapData()
@@ -193,8 +193,8 @@ bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only) {
 
   maidsafe::routing::Functors functors1, functors2;
   functors1.request_public_key = functors2.request_public_key =
-      [&public_key_getter](maidsafe::NodeId node_id,
-                             const maidsafe::routing::GivePublicKeyFunctor& give_key) {
+      [&public_key_getter] (maidsafe::NodeId node_id,
+                            const maidsafe::routing::GivePublicKeyFunctor& give_key) {
         DoOnPublicKeyRequested(node_id, give_key);
       };
 
@@ -278,26 +278,43 @@ bool StoreKeys(const PmidVector& all_pmids,
   }
   LOG(kInfo) << "Bootstrapped anonymous node to store keys";
 
-  maidsafe::nfs::TemporaryClientMaidNfs client_nfs(client_routing, client_maid);
+  maidsafe::nfs::ClientMaidNfs client_nfs(client_routing, client_maid);
 
-  std::atomic<size_t> error_stored_keys(0);
-  // on_error call back
-  maidsafe::nfs::DataMessage::OnError cb(
-      [&error_stored_keys](maidsafe::nfs::DataMessage /*result*/) { ++error_stored_keys; });
-  auto store_keys = [&client_nfs, &cb](const maidsafe::passport::Pmid& pmid,
-                                       const maidsafe::passport::Pmid& /*owner*/) {
-    maidsafe::passport::PublicPmid p_pmid(pmid);
-    client_nfs.Put(p_pmid, cb);
-  };
-  maidsafe::AsioService asio_service(10);
-  asio_service.Start();
-  for (auto &pmid : all_pmids)  // store all PMIDs
-    asio_service.service().post([&store_keys, pmid, all_pmids]() { store_keys(pmid, all_pmids[0]); });  // NOLINT
+  auto get_callback = [] (std::promise<bool>& promise) -> maidsafe::routing::ResponseFunctor {
+                        return [&promise] (std::string response) {
+                                 try {
+                                   maidsafe::nfs::Reply reply(
+                                       (maidsafe::nfs::Reply::serialised_type(
+                                           maidsafe::NonEmptyString(response))));
+                                   promise.set_value(reply.IsSuccess());
+                                 }
+                                 catch(...) {
+                                   promise.set_exception(std::current_exception());
+                                 }
+                               };
+                      };
+  auto store_keys = [&client_nfs, client_pmid, &get_callback] (const maidsafe::passport::Pmid& pmid,
+                                                               std::promise<bool>& promise) {
+                      maidsafe::passport::PublicPmid p_pmid(pmid);
+                      client_nfs.Put(p_pmid, client_pmid.name(), get_callback(std::ref(promise)));
+                    };
 
-  // shall eventually use future
-  maidsafe::Sleep(boost::posix_time::millisec(10000));
+  std::vector<std::promise<bool> > bool_promises(all_pmids.size());
+  std::vector<std::future<bool> > bool_futures;
+  size_t promises_index(0);
+  for (auto &pmid : all_pmids) {  // store all PMIDs
+    std::async(std::launch::async,
+               [&store_keys, pmid, &bool_promises, &promises_index] () {
+                 store_keys(pmid, bool_promises.at(promises_index));
+               });
+    bool_futures.push_back(bool_promises.at(promises_index).get_future());
+  }
 
-  asio_service.Stop();
+  size_t error_stored_keys(0);
+  for (auto& future : bool_futures) {
+    if (future.has_exception() || !future.get())
+      ++error_stored_keys;
+  }
 
   if (error_stored_keys > 0) {
     std::cout << "StoreKeys - Could not store " << error_stored_keys << " out of "
@@ -707,22 +724,22 @@ int main(int argc, char* argv[]) {
     po::options_description config_file_options("Configuration options");
     config_file_options.add_options()
         ("peer",
-            po::value<std::string>(),
-            "Endpoint of bootstrap node, if attaching to running network.")
+         po::value<std::string>(),
+         "Endpoint of bootstrap node, if attaching to running network.")
         ("pmids_count,n",
-            po::value<size_t>(&pmids_count)->default_value(pmids_count),
-            "Number of keys to create")
+         po::value<size_t>(&pmids_count)->default_value(pmids_count),
+         "Number of keys to create")
         ("keys_path",
-            po::value<std::string>()->default_value(
-                fs::path(fs::temp_directory_path(error_code) / "key_directory.dat").string()),
-            "Path to keys file")
+         po::value<std::string>()->default_value(
+             fs::path(fs::temp_directory_path(error_code) / "key_directory.dat").string()),
+         "Path to keys file")
         ("chunk_path",
-            po::value<std::string>()->default_value(
-                fs::path(fs::temp_directory_path(error_code) / "keys_chunks").string()),
-            "Path to chunk directory")
+         po::value<std::string>()->default_value(
+             fs::path(fs::temp_directory_path(error_code) / "keys_chunks").string()),
+         "Path to chunk directory")
         ("chunk_set_count",
-            po::value<size_t>(&chunk_set_count)->default_value(chunk_set_count),
-            "Number of chunk sets to run extended test on");
+         po::value<size_t>(&chunk_set_count)->default_value(chunk_set_count),
+         "Number of chunk sets to run extended test on");
 
     po::options_description cmdline_options;
     cmdline_options.add(generic_options).add(config_file_options);
@@ -753,7 +770,7 @@ int main(int argc, char* argv[]) {
 
     PmidVector all_pmids;
     fs::path keys_path(GetPathFromProgramOption("keys_path", &variables_map, false, true));
-    fs::path chunk_path(GetPathFromProgramOption("chunk_path", &variables_map, true, true));
+//    fs::path chunk_path(GetPathFromProgramOption("chunk_path", &variables_map, true, true));
 
     // bootstrap endpoint
     std::vector<boost::asio::ip::udp::endpoint> peer_endpoints;
