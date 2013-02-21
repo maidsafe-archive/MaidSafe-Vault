@@ -46,6 +46,10 @@ bool IsDataElement(const typename Data::name_type& name,
   return name == type_and_name.second;
 }
 
+void SendReply(const nfs::DataMessage& original_message,
+               const maidsafe_error& return_code,
+               const routing::ReplyFunctor& reply_functor);
+
 // Ensure the mutex protecting accounts is locked throughout this call
 template<typename Account>
 typename std::vector<std::unique_ptr<Account>>::iterator FindAccount(

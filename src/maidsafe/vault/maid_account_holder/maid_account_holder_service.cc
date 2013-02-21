@@ -40,6 +40,7 @@ MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
                                                    const fs::path& vault_root_dir)
     : routing_(routing),
       public_key_getter_(public_key_getter),
+      accumulator_mutex_(),
       accumulator_(),
       maid_account_handler_(vault_root_dir),
       nfs_(routing, pmid) {}
@@ -52,16 +53,6 @@ void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_messa
       data_message.destination_persona() != nfs::Persona::kMaidAccountHolder) {
     ThrowError(CommonErrors::invalid_parameter);
   }
-}
-
-void MaidAccountHolderService::SendReply(const nfs::DataMessage& original_message,
-                                         const maidsafe_error& return_code,
-                                         const routing::ReplyFunctor& reply_functor) {
-  nfs::Reply reply(CommonErrors::success);
-  if (return_code.code() != CommonErrors::success)
-    reply = nfs::Reply(return_code, original_message.Serialise().data);
-  accumulator_.SetHandled(original_message, reply.error());
-  reply_functor(reply.Serialise()->string());
 }
 
 void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
@@ -168,8 +159,11 @@ void MaidAccountHolderService::TriggerSync() {
 void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
   protobuf::SyncInfo sync_info;
   sync_info.set_maid_account(maid_account_handler_.GetSerialisedAccount(account_name)->string());
-  auto handled_requests(accumulator_.Serialise(account_name));
-  sync_info.set_accumulator_entries(handled_requests->string());
+  {
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
+    auto handled_requests(accumulator_.Serialise(account_name));
+    sync_info.set_accumulator_entries(handled_requests->string());
+  }
   protobuf::Sync sync_pb_message;
   sync_pb_message.set_action(static_cast<int32_t>(Sync::Action::kSyncInfo));
   sync_pb_message.set_sync_message(sync_info.SerializeAsString());

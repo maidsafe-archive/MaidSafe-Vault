@@ -12,6 +12,7 @@
 #ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_SERVICE_H_
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_SERVICE_H_
 
+#include <mutex>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -82,9 +83,6 @@ class MaidAccountHolderService {
   void SendEarlySuccessReply(const nfs::DataMessage& data_message,
                              const routing::ReplyFunctor& reply_functor,
                              std::false_type);
-  void SendReply(const nfs::DataMessage& original_message,
-                 const maidsafe_error& return_code,
-                 const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void PutToAccount(const MaidName& account_name,
                     const typename Data::name_type& data_name,
@@ -156,6 +154,7 @@ class MaidAccountHolderService {
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
+  std::mutex accumulator_mutex_;
   Accumulator<MaidName> accumulator_;
   MaidAccountHandler maid_account_handler_;
   MaidAccountHolderNfs nfs_;

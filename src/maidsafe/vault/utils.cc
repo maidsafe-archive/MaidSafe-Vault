@@ -36,6 +36,16 @@ MaidName GetSourceMaidName(const nfs::DataMessage& data_message) {
   return MaidName(Identity(data_message.source().node_id.string()));
 }
 
+void SendReply(const nfs::DataMessage& original_message,
+               const maidsafe_error& return_code,
+               const routing::ReplyFunctor& reply_functor) {
+  nfs::Reply reply(CommonErrors::success);
+  if (return_code.code() != CommonErrors::success)
+    reply = nfs::Reply(return_code, original_message.Serialise().data);
+  reply_functor(reply.Serialise()->string());
+}
+
+
 }  // namespace detail
 
 }  // namespace vault

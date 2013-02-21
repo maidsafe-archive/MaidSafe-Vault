@@ -33,8 +33,11 @@ template<typename Data>
 void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
-  if (accumulator_.CheckHandled(data_message, reply))
-    return reply_functor(reply.Serialise()->string());
+  {
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
+    if (accumulator_.CheckHandled(data_message, reply))
+      return reply_functor(reply.Serialise()->string());
+  }
 
   if (data_message.data().action == nfs::DataMessage::Action::kPut) {
     HandlePut<Data>(data_message, reply_functor);
@@ -42,6 +45,7 @@ void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_me
     HandleDelete<Data>(data_message, reply_functor);
   } else {
     reply = nfs::Reply(VaultErrors::operation_not_supported, data_message.Serialise().data);
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
     accumulator_.SetHandled(data_message, reply.error());
     reply_functor(reply.Serialise()->string());
   }
@@ -95,7 +99,9 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     return_code = MakeError(CommonErrors::unknown);
   }
   try {
-    SendReply(data_message, return_code, reply_functor);
+    detail::SendReply(data_message, return_code, reply_functor);
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
+    accumulator_.SetHandled(data_message, return_code);
   }
   catch(...) {
     LOG(kWarning) << "Exception while forming reply.";
@@ -119,7 +125,10 @@ void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
     LOG(kWarning) << "Unknown error.";
     // Always return success for Deletes
   }
-  SendReply(data_message, MakeError(CommonErrors::success), reply_functor);
+  auto success_code(MakeError(CommonErrors::success));
+  detail::SendReply(data_message, success_code, reply_functor);
+  std::lock_guard<std::mutex> lock(accumulator_mutex_);
+  accumulator_.SetHandled(data_message, success_code);
 }
 
 template<typename Data>
@@ -134,8 +143,9 @@ void MaidAccountHolderService::SendEarlySuccessReply(const nfs::DataMessage& dat
                                                      const routing::ReplyFunctor& reply_functor,
                                                      std::false_type) {
   nfs::Reply reply(CommonErrors::success);
-  accumulator_.SetHandled(data_message, reply.error());
   reply_functor(reply.Serialise()->string());
+  std::lock_guard<std::mutex> lock(accumulator_mutex_);
+  accumulator_.SetHandled(data_message, reply.error());
 }
 
 template<typename Data>

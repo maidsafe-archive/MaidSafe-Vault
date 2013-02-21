@@ -158,9 +158,10 @@ bool Accumulator<Name>::CheckHandled(const nfs::DataMessage& data_message,
 }
 
 template<typename Name>
-std::vector<nfs::Reply> Accumulator<Name>::PushSingleResult(const nfs::DataMessage& data_message,
-                                                         const routing::ReplyFunctor& reply_functor,
-                                                         const maidsafe_error& return_code) {
+std::vector<nfs::Reply> Accumulator<Name>::PushSingleResult(
+    const nfs::DataMessage& data_message,
+    const routing::ReplyFunctor& reply_functor,
+    const maidsafe_error& return_code) {
   std::vector<nfs::Reply> replies;
   if (FindHandled(data_message) != std::end(handled_requests_))
     return replies;
@@ -169,8 +170,9 @@ std::vector<nfs::Reply> Accumulator<Name>::PushSingleResult(const nfs::DataMessa
   pending_requests_.push_back(pending_request);
   for (auto& request : pending_requests_) {
     if (request.msg.message_id() == data_message.message_id() &&
-        request.msg.source().node_id == data_message.source().node_id)
+        request.msg.source().node_id == data_message.source().node_id) {
       replies.push_back(request.return_code);
+    }
   }
   if (pending_requests_.size() > kMaxPendingRequestsCount_)
     pending_requests_.pop_front();
@@ -192,7 +194,6 @@ std::vector<typename Accumulator<Name>::PendingRequest> Accumulator<Name>::SetHa
       ++itr;
     }
   }
-  assert(!ret_requests.empty());
 
   handled_requests_.push_back(
       Accumulator::HandledRequest(data_message.message_id(),
