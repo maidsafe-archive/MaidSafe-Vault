@@ -27,15 +27,13 @@
 
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/metadata_manager/metadata_handler.h"
+#include "maidsafe/vault/metadata_manager/metadata_pb.h"
 #include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
 
 namespace vault {
-
-namespace protobuf { class DataOrProof; }
-
 
 class MetadataManagerService {
  public:
@@ -86,6 +84,7 @@ class MetadataManagerService {
   template<typename Data>
   void OnHandleGet(std::shared_ptr<GetHandler<Data>> get_handler,
                    const std::string& serialised_reply);
+  template<typename Data>
   void IntegrityCheck(std::shared_ptr<GetHandler<Data>> get_handler);
   template<typename Data>
   void HandleDelete(const nfs::DataMessage& data_message,

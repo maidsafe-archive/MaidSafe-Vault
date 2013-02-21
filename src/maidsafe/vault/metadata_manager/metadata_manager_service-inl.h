@@ -15,6 +15,7 @@
 #include <exception>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
@@ -90,9 +91,8 @@ template<typename Data>
 void MetadataManagerService::Put(const Data& data, const PmidName& target_data_holder) {
   auto put_op(std::make_shared<nfs::PutOrDeleteOp>(
       kPutRepliesSuccessesRequired_,
-      [this, account_name, data_name, reply_functor](nfs::Reply overall_result) {
-          HandlePutResult<Data>(overall_result, account_name, data_name, reply_functor,
-                                is_unique_on_network<Data>());
+      [this](nfs::Reply overall_result) {
+          HandlePutResult<Data>(overall_result);
       }));
   nfs_.Put(target_data_holder,
            data,
@@ -106,9 +106,10 @@ void MetadataManagerService::HandleGet(nfs::DataMessage data_message,
                                        const routing::ReplyFunctor& reply_functor) {
   try {
     ValidateGetSender(data_message);
-    Data::name_type data_name(Identity(data_message.data().name));
+    typename Data::name_type data_name(Identity(data_message.data().name));
     auto online_holders(metadata_handler_.GetOnlineDataHolders<Data>(data_name));
-    auto get_handler(std::make_shared(GetHandler<Data>(reply_functor, online_holders.size(),
+    auto get_handler(std::make_shared(GetHandler<Data>(reply_functor,
+                                                       online_holders.size(),
                                                        data_message.message_id())));
 
 
@@ -130,10 +131,11 @@ void MetadataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_h
   try {
     nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));
     if (reply.IsSuccess()) {
-      if (!data_or_proof.ParseFromString(reply.data()) || !data_or_proof.has_serialised_data())
+      if (!data_or_proof.ParseFromString(reply.data().string()) ||
+          !data_or_proof.has_serialised_data())
         ThrowError(CommonErrors::parsing_error);
       protobuf::DataOrProof::Data proto_data;
-      if (!proto_data.ParseFromString(data_or_proof.serialised data()))
+      if (!proto_data.ParseFromString(data_or_proof.serialised_data()))
         ThrowError(CommonErrors::parsing_error);
       if (proto_data.type() != static_cast<int>(Data::name_type::tag_type::kEnumValue))
         ThrowError(CommonErrors::parsing_error);
@@ -153,7 +155,8 @@ void MetadataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_h
       // TODO(Fraser) - Possibly check our own hash function here in case our binary is broken.
       strong_guarantee.Release();
     } else if (reply.error() == MakeError(VaultErrors::data_available_not_given).code()) {
-      if (!data_or_proof.ParseFromString(reply.data()) || !data_or_proof.has_serialised_data())
+      if (!data_or_proof.ParseFromString(reply.data().string()) ||
+          !data_or_proof.has_serialised_data())
         ThrowError(CommonErrors::parsing_error);
     }
   }
@@ -182,14 +185,15 @@ void MetadataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_h
     IntegrityCheck(get_handler);
 }
 
-void IntegrityCheck(std::shared_ptr<GetHandler<Data>> get_handler) {
-  std::lock_guard<std::mutex> lock(get_handler->mutex);
-  for (auto& result: get_handler->data_holder_results) {
+//template<typename Data>
+//void IntegrityCheck(std::shared_ptr<GetHandler<Data>> get_handler) {
+//  std::lock_guard<std::mutex> lock(get_handler->mutex);
+////  for (auto& result: get_handler->data_holder_results) {
 
-  }
+////  }
 
-  // TODO(David) - BEFORE_RELEASE - All machinery in place here for handling integrity checks.
-}
+//  // TODO(David) - BEFORE_RELEASE - All machinery in place here for handling integrity checks.
+//}
 
 template<typename Data>
 void MetadataManagerService::HandleDelete(const nfs::DataMessage& data_message,
@@ -199,11 +203,11 @@ void MetadataManagerService::HandleDelete(const nfs::DataMessage& data_message,
     // wait for 3 requests
 
     typename Data::name_type data_name(data_message.data().name);
-    metadata_handler_.template DecrementSubscribers<Data>(data.name());
+    metadata_handler_.template DecrementSubscribers<Data>(data_name);
     // Decrement should send delete to PMID's on event data is actually deleted
-    SendReply(data_message, MakeError(CommonErrors::success), reply_functor);
+    detail::SendReply(data_message, MakeError(CommonErrors::success), reply_functor);
   }
-
+  catch (...) {}
 
 }
 
@@ -231,13 +235,12 @@ void MetadataManagerService::HandlePutResult(const nfs::Reply& overall_result) {
 template<typename Data>
 void MetadataManagerService::HandleGetReply(std::string serialised_reply) {
   try {
-    nfs::Reply reply((Reply::serialised_type(NonEmptyString(serialised_reply))));
+    nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));
     // if failure - try another DH?
   }
-  //catch(const maidsafe_error& error) {
-  //  LOG(kWarning) << "nfs error: " << error.code() << " - " << error.what();
-  //  op->HandleReply(Reply(error));
-  //}
+  catch(const maidsafe_error& error) {
+    LOG(kWarning) << "nfs error: " << error.code() << " - " << error.what();
+  }
   //catch(const std::exception& e) {
   //  LOG(kWarning) << "nfs error: " << e.what();
   //  op->HandleReply(Reply(CommonErrors::unknown));
