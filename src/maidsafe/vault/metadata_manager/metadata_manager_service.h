@@ -86,7 +86,7 @@ class MetadataManagerService {
   template<typename Data>
   void OnHandleGet(std::shared_ptr<GetHandler<Data>> get_handler,
                    const std::string& serialised_reply);
-
+  void IntegrityCheck(std::shared_ptr<GetHandler<Data>> get_handler);
   template<typename Data>
   void HandleDelete(const nfs::DataMessage& data_message,
                     const routing::ReplyFunctor& reply_functor);

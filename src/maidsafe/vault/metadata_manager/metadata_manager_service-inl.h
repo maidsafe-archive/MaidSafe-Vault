@@ -126,11 +126,10 @@ void MetadataManagerService::HandleGet(nfs::DataMessage data_message,
 template<typename Data>
 void MetadataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_handler,
                                          const std::string& serialised_reply) {
-  nfs::Reply reply(CommonErrors::unknown);
+  protobuf::DataOrProof data_or_proof;
   try {
-    reply = nfs::Reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));
-    if (reply.IsSuccess() || other success) {
-      protobuf::DataOrProof data_or_proof;
+    nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));
+    if (reply.IsSuccess()) {
       if (!data_or_proof.ParseFromString(reply.data()) || !data_or_proof.has_serialised_data())
         ThrowError(CommonErrors::parsing_error);
       protobuf::DataOrProof::Data proto_data;
@@ -141,6 +140,7 @@ void MetadataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_h
       Data data(typename Data::name_type(Identity(proto_data.name())),
                 typename Data::serialised_type(NonEmptyString(proto_data.content())));
       std::lock_guard<std::mutex> lock(get_handler->mutex);
+      on_scope_exit strong_guarantee(on_scope_exit::RevertValue(get_handler->reply_functor));
       if (get_handler->reply_functor) {
         reply = nfs::Reply(CommonErrors::success, data.Serialise()->string());
         get_handler->reply_functor(reply.Serialise()->string());
@@ -151,20 +151,45 @@ void MetadataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_h
             crypto::Hash<crypto::SHA512>(proto_data.content() + get_handler->message_id->string());
       }
       // TODO(Fraser) - Possibly check our own hash function here in case our binary is broken.
-    } else {
-      std::lock_guard<std::mutex> lock(get_handler->mutex);
-      get_handler->data_holder_results.push_back(protobuf::DataOrProof());
+      strong_guarantee.Release();
+    } else if (reply.error() == MakeError(VaultErrors::data_available_not_given).code()) {
+      if (!data_or_proof.ParseFromString(reply.data()) || !data_or_proof.has_serialised_data())
+        ThrowError(CommonErrors::parsing_error);
     }
   }
-  catch(const maidsafe_error& error) {
-    reply = nfs::Reply(error);
-  }
   catch(...) {
+    --get_handler->holder_count;
+    data_or_proof.Clear();
   }
-
-  Assess
+  std::lock_guard<std::mutex> lock(get_handler->mutex);
+  get_handler->data_holder_results.push_back(data_or_proof);
+  if (get_handler->reply_functor &&
+      get_handler->data_holder_results.size() == get_handler->holder_count) {
+    // The overall operation has not returned the data.  Calculate whether any holders have it.
+    auto itr(std::find_if(std::begin(get_handler->data_holder_results),
+                          std::end(get_handler->data_holder_results),
+                          [](const protobuf::DataOrProof& data_or_proof){
+                            return data_or_proof.IsInitialized();
+                          }));
+    if (itr == std::end(get_handler->data_holder_results)) {
+      get_handler->reply_functor(nfs::Reply(CommonErrors::no_such_element).Serialise()->string());
+    } else {
+      get_handler->reply_functor(
+          nfs::Reply(VaultErrors::data_available_not_given).Serialise()->string());
+    }
+  }
+  if(get_handler->data_holder_results.size() == get_handler->holder_count)
+    IntegrityCheck(get_handler);
 }
 
+void IntegrityCheck(std::shared_ptr<GetHandler<Data>> get_handler) {
+  std::lock_guard<std::mutex> lock(get_handler->mutex);
+  for (auto& result: get_handler->data_holder_results) {
+
+  }
+
+  // TODO(David) - BEFORE_RELEASE - All machinery in place here for handling integrity checks.
+}
 
 template<typename Data>
 void MetadataManagerService::HandleDelete(const nfs::DataMessage& data_message,
