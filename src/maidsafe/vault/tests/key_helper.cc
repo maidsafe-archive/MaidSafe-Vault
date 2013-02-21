@@ -334,9 +334,6 @@ bool StoreKeys(const PmidVector& all_pmids,
 
 bool VerifyKeys(const PmidVector& all_pmids,
                 const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
-  maidsafe::passport::Anmaid client_anmaid;
-  maidsafe::passport::Maid client_maid(client_anmaid);
-  maidsafe::passport::Pmid client_pmid(client_maid);
   maidsafe::routing::Routing client_routing(nullptr);
   maidsafe::routing::Functors functors;
 
@@ -348,39 +345,46 @@ bool VerifyKeys(const PmidVector& all_pmids,
 
   maidsafe::nfs::KeyGetterNfs key_getter_nfs(client_routing);
 
-  std::atomic<size_t> verified_keys(0);
-  auto verify_keys = [&key_getter_nfs, &verified_keys](const maidsafe::passport::Pmid& pmid) {
-    maidsafe::passport::PublicPmid p_pmid(pmid);
-    auto fetched_data = key_getter_nfs.Get<maidsafe::passport::PublicPmid>(p_pmid.name());
-    try {
-      maidsafe::passport::PublicPmid fetched_key = fetched_data.get();
-      if (!fetched_key.name().data.IsInitialised()) {
-        LOG(kError) << "VerifyKeys - Failed to retrieve "
-                    << maidsafe::HexSubstr(pmid.name().data.string());
-        return;
-      }
-      if (!maidsafe::asymm::MatchingKeys(fetched_key.public_key(), pmid.public_key())) {
-        LOG(kError) << "VerifyKeys - fetched key mis-match "
-                    << maidsafe::HexSubstr(pmid.name().data.string());
-        return;
-      }
-    }
-    catch(...) {
-      LOG(kError) << "VerifyKeys - Failed to retrieve "
-                  << maidsafe::HexSubstr(pmid.name().data.string());
-      return;
-    }
-    LOG(kSuccess) << "VerifyKeys - Successfully verified "
-                  << maidsafe::HexSubstr(pmid.name().data.string());
-    ++verified_keys;
-  };
+  auto verify_keys = [&key_getter_nfs] (const maidsafe::passport::Pmid& pmid,
+                                        std::promise<bool>& promise) {
+                       maidsafe::passport::PublicPmid p_pmid(pmid);
+                       key_getter_nfs.Get<maidsafe::passport::PublicPmid>(
+                           p_pmid.name(),
+                           [&promise, &pmid] (std::string response) {
+                             maidsafe::NonEmptyString nes_response(response);
+                             maidsafe::nfs::Reply reply(
+                                 (maidsafe::nfs::Reply::serialised_type(nes_response)));
+                             if (reply.IsSuccess()) {
+                               try {
+                                 maidsafe::asymm::PublicKey public_key(
+                                     maidsafe::asymm::DecodeKey(
+                                         maidsafe::asymm::EncodedPublicKey(reply.data())));
+                                 promise.set_value(maidsafe::asymm::MatchingKeys(
+                                                       public_key,
+                                                       pmid.public_key()));
+                               }
+                               catch(...) {
+                                 LOG(kError) << "Failed to get key for " << DebugId(pmid.name());
+                                 promise.set_exception(std::current_exception());
+                               }
+                             }
+                           });
+                       };
 
-  std::vector<std::future<void>> futures;
-  for (auto &pmid : all_pmids) {
-    futures.push_back(std::async(verify_keys, pmid));
+  std::vector<std::future<bool> > futures;
+  std::vector<std::promise<bool> > promises(all_pmids.size());
+  size_t promises_index(0);
+  for (auto& pmid : all_pmids) {
+    std::async(std::launch::async, verify_keys, pmid, std::ref(promises.at(promises_index)));
+    futures.push_back(promises.at(promises_index).get_future());
+    ++promises_index;
   }
-  for (auto &future : futures)
-    future.get();
+
+  size_t verified_keys(0);
+  for (auto &future : futures) {
+    if (!future.has_exception() && future.get())
+      ++verified_keys;
+  }
 
   if (verified_keys < all_pmids.size()) {
     LOG(kError) << "VerifyKeys - Could only verify " << verified_keys << " out of "
@@ -393,7 +397,7 @@ bool VerifyKeys(const PmidVector& all_pmids,
 
 bool StoreChunks(const PmidVector& all_pmids,
                  const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
-  BOOST_ASSERT(all_pmids.size() >= 4);
+  assert(all_pmids.size() >= 4);
 
   maidsafe::passport::Anmaid client_anmaid_1, client_anmaid_2;
   maidsafe::passport::Maid client_maid_1(client_anmaid_1), client_maid_2(client_anmaid_2);
@@ -410,7 +414,7 @@ bool StoreChunks(const PmidVector& all_pmids,
     return false;
   }
   LOG(kInfo) << "Bootstrapped anonymous node to store and fetch chunks";
-  maidsafe::nfs::TemporaryClientMaidNfs client_nfs_1(client_routing_1, client_maid_1),
+  maidsafe::nfs::ClientMaidNfs client_nfs_1(client_routing_1, client_maid_1),
                                client_nfs_2(client_routing_2, client_maid_2);
 
   std::cout << "Going to store chunks, press Ctrl+C to stop." << std::endl;
@@ -496,7 +500,7 @@ bool StoreChunks(const PmidVector& all_pmids,
 //                   const FobPairVector& all_keys,
 //                   const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
 //   const size_t kNumClients(3);
-//   BOOST_ASSERT(all_keys.size() >= 2 + kNumClients);
+//   assert(all_keys.size() >= 2 + kNumClients);
 //   std::vector<std::unique_ptr<maidsafe::pd::Node>> clients;
 //   std::vector<maidsafe::test::TestPath> client_paths;
 //   std::vector<std::unique_ptr<pcs::RemoteChunkStore>> rcs;
