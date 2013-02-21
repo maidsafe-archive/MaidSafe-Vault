@@ -42,6 +42,17 @@ const int MetadataManagerService::kPutRequestsRequired_(3);
 const int MetadataManagerService::kPutRepliesSuccessesRequired_(3);
 const int MetadataManagerService::kDeleteRequestsRequired_(3);
 
+MetadataManagerService::GetHandler::GetHandler(const routing::ReplyFunctor& reply_functor_in,
+                                               size_t holder_count_in,
+                                               const nfs::MessageId& message_id_in)
+  : reply_functor(reply_functor_in),
+    holder_count(holder_count_in),
+    message_id(message_id_in),
+    mutex(),
+    validation_result(),
+    data_holder_results() {}
+
+
 MetadataManagerService::MetadataManagerService(const passport::Pmid& pmid,
                                                routing::Routing& routing,
                                                nfs::PublicKeyGetter& public_key_getter,
@@ -170,7 +181,6 @@ bool MetadataManagerService::AddResult(const nfs::DataMessage& data_message,
 }
 
 bool MetadataManagerService::ThisVaultInGroupForData(const nfs::DataMessage& data_message) const {
-  // TODO(Fraser#5#): 2013-02-21 - BEFORE_RELEASE - Confirm this is best routing method.
   return routing::GroupRangeStatus::kInRange ==
          routing_.IsNodeIdInGroupRange(NodeId(data_message.data().name.string()));
 }

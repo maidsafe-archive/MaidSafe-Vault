@@ -19,7 +19,9 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/on_scope_exit.h"
+
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/metadata_manager/metadata_pb.h"
 
 
 namespace maidsafe {
@@ -86,8 +88,6 @@ void MetadataManagerService::HandlePut(const nfs::DataMessage& data_message,
 
 template<typename Data>
 void MetadataManagerService::Put(const Data& data, const PmidName& target_data_holder) {
-                                                                        // Do we care if this did not work
-                                                                        // or should we check we have more than 2 pmids and retry ?
   auto put_op(std::make_shared<nfs::PutOrDeleteOp>(
       kPutRepliesSuccessesRequired_,
       [this, account_name, data_name, reply_functor](nfs::Reply overall_result) {
@@ -106,13 +106,65 @@ void MetadataManagerService::HandleGet(nfs::DataMessage data_message,
                                        const routing::ReplyFunctor& reply_functor) {
   try {
     ValidateGetSender(data_message);
-    nfs_.Get( metadata_handler_.GetOnlinePmid(Identity(data_message.data().name),
-                                              reply_functor));
+    Data::name_type data_name(Identity(data_message.data().name));
+    auto online_holders(metadata_handler_.GetOnlineDataHolders<Data>(data_name));
+    auto get_handler(std::make_shared(GetHandler<Data>(reply_functor, online_holders.size(),
+                                                       data_message.message_id())));
+
+
+    for (auto& online_holder : online_holders) {
+      nfs_.Get(online_holder, data_name, [this, get_handler](std::string serialised_reply) {
+                                             this->OnHandleGet(get_handler, serialised_reply);
+                                         });
+    }
+  }
+  catch(const std::exception& e) {
+    LOG(kWarning) << "Error during Get: " << e.what();
+  }
+}
+
+template<typename Data>
+void MetadataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_handler,
+                                         const std::string& serialised_reply) {
+  nfs::Reply reply(CommonErrors::unknown);
+  try {
+    reply = nfs::Reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));
+    if (reply.IsSuccess() || other success) {
+      protobuf::DataOrProof data_or_proof;
+      if (!data_or_proof.ParseFromString(reply.data()) || !data_or_proof.has_serialised_data())
+        ThrowError(CommonErrors::parsing_error);
+      protobuf::DataOrProof::Data proto_data;
+      if (!proto_data.ParseFromString(data_or_proof.serialised data()))
+        ThrowError(CommonErrors::parsing_error);
+      if (proto_data.type() != static_cast<int>(Data::name_type::tag_type::kEnumValue))
+        ThrowError(CommonErrors::parsing_error);
+      Data data(typename Data::name_type(Identity(proto_data.name())),
+                typename Data::serialised_type(NonEmptyString(proto_data.content())));
+      std::lock_guard<std::mutex> lock(get_handler->mutex);
+      if (get_handler->reply_functor) {
+        reply = nfs::Reply(CommonErrors::success, data.Serialise()->string());
+        get_handler->reply_functor(reply.Serialise()->string());
+        get_handler->reply_functor = nullptr;
+      }
+      if (!get_handler->validation_result.IsInitialised()) {
+        get_handler->validation_result =
+            crypto::Hash<crypto::SHA512>(proto_data.content() + get_handler->message_id->string());
+      }
+      // TODO(Fraser) - Possibly check our own hash function here in case our binary is broken.
+    } else {
+      std::lock_guard<std::mutex> lock(get_handler->mutex);
+      get_handler->data_holder_results.push_back(protobuf::DataOrProof());
+    }
+  }
+  catch(const maidsafe_error& error) {
+    reply = nfs::Reply(error);
+  }
+  catch(...) {
   }
 
-
-//  reply_functor(nfs::Reply(NfsErrors::failed_to_get_data).Serialise()->string());
+  Assess
 }
+
 
 template<typename Data>
 void MetadataManagerService::HandleDelete(const nfs::DataMessage& data_message,

@@ -12,6 +12,7 @@
 #ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_SERVICE_H_
 #define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_SERVICE_H_
 
+#include <memory>
 #include <mutex>
 #include <vector>
 
@@ -33,6 +34,9 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace protobuf { class DataOrProof; }
+
+
 class MetadataManagerService {
  public:
   MetadataManagerService(const passport::Pmid& pmid,
@@ -47,6 +51,25 @@ class MetadataManagerService {
   void TriggerSync();
 
  private:
+  template<typename Data>
+  struct GetHandler {
+    GetHandler(const routing::ReplyFunctor& reply_functor_in,
+               size_t holder_count_in,
+               const nfs::MessageId& message_id_in);
+    routing::ReplyFunctor reply_functor;
+    size_t holder_count;
+    nfs::MessageId message_id;
+    std::mutex mutex;
+    crypto::SHA512Hash validation_result;
+    std::vector<protobuf::DataOrProof> data_holder_results;
+
+   private:
+    GetHandler(const GetHandler&);
+    GetHandler& operator=(const GetHandler&);
+    GetHandler(GetHandler&&);
+    GetHandler& operator=(GetHandler&&);
+  };
+
   MetadataManagerService(const MetadataManagerService&);
   MetadataManagerService& operator=(const MetadataManagerService&);
   MetadataManagerService(MetadataManagerService&&);
@@ -60,6 +83,9 @@ class MetadataManagerService {
 
   template<typename Data>
   void HandleGet(nfs::DataMessage data_message, const routing::ReplyFunctor& reply_functor);
+  template<typename Data>
+  void OnHandleGet(std::shared_ptr<GetHandler<Data>> get_handler,
+                   const std::string& serialised_reply);
 
   template<typename Data>
   void HandleDelete(const nfs::DataMessage& data_message,

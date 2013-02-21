@@ -174,6 +174,8 @@ std::vector<nfs::Reply> Accumulator<Name>::PushSingleResult(
       replies.push_back(request.return_code);
     }
   }
+  // TODO(Profiling) - Consider holding requests in a map/set and each having a timestamp.
+  // Pruning could then be done periodically (event-based) and would allow sorted list of requests.
   if (pending_requests_.size() > kMaxPendingRequestsCount_)
     pending_requests_.pop_front();
   return replies;
