@@ -52,22 +52,24 @@ nfs::DataMessage MakeMessage() {
 }
 }  // unnamed namespace
 
-//TEST(AccumulatorTest, BEH_PushRequest) {
-//  nfs::DataMessage data_message = MakeMessage();
-//  nfs::Reply reply(CommonErrors::success);
-//  Accumulator<passport::PublicMaid::name_type> accumulator;
-//  accumulator.PushRequest(data_message, [](const std::string&) {}, reply);
-//  EXPECT_EQ(accumulator.pending_requests_.size(), 1);
-//  auto request_identity(accumulator.pending_requests_.at(0).first);
-//  EXPECT_FALSE(accumulator.CheckHandled(request_identity, reply));
-//  accumulator.SetHandled(request_identity, reply);
-//  EXPECT_EQ(accumulator.pending_requests_.size(), 0);
-//  EXPECT_TRUE(accumulator.CheckHandled(request_identity, reply));
-//  Accumulator<passport::PublicMaid::name_type>::serialised_requests serialised(
-//      accumulator.SerialiseHandledRequests(request_identity.second));
-//  auto parsed(accumulator.ParseHandledRequests(serialised));
-//  EXPECT_EQ(parsed.size(), 1);
-//}
+TEST(AccumulatorTest, BEH_PushRequest) {
+  nfs::DataMessage data_message = MakeMessage();
+  maidsafe_error reply_code(CommonErrors::success);
+  nfs::Reply reply(CommonErrors::success);
+  Accumulator<passport::PublicMaid::name_type> accumulator;
+  accumulator.PushSingleResult(data_message, [](const std::string&) {}, reply_code);
+  EXPECT_EQ(accumulator.pending_requests_.size(), 1);
+  // auto request_identity(accumulator.pending_requests_.at(0).first);
+  EXPECT_FALSE(accumulator.CheckHandled(data_message, reply));
+  accumulator.SetHandled(data_message, reply_code);
+  EXPECT_EQ(accumulator.pending_requests_.size(), 0);
+  EXPECT_TRUE(accumulator.CheckHandled(data_message, reply));
+  Accumulator<passport::PublicMaid::name_type>::serialised_requests serialised(
+      accumulator.Serialise(passport::PublicMaid::name_type(
+      Identity((data_message.source().node_id).string()))));
+  auto parsed(accumulator.Parse(serialised));
+  EXPECT_EQ(parsed.size(), 1);
+}
 
 //TEST(AccumulatorTest, BEH_PushRequestThreaded) {
 //  maidsafe::test::RunInParallel(10, [] {
