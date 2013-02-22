@@ -12,13 +12,6 @@
 #include "maidsafe/vault/metadata_manager/metadata_handler.h"
 
 #include <string>
-#include <vector>
-
-#include "boost/filesystem/operations.hpp"
-
-#include "maidsafe/common/utils.h"
-
-#include "maidsafe/vault/metadata_manager/metadata_pb.h"
 
 
 namespace fs = boost::filesystem;
@@ -27,29 +20,94 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace detail {
+
+boost::filesystem::path GetPath(const std::string& data_name,
+                                int32_t data_type_enum_value,
+                                const boost::filesystem::path& root) {
+  return root / (EncodeToBase32(data_name) + std::to_string(data_type_enum_value));
+}
+
+std::set<std::string> OnlinesToSet(const protobuf::Metadata& content) {
+  std::set<std::string> onlines;
+  for (int i(0); i != content.online_pmid_name_size(); ++i)
+    onlines.insert(content.online_pmid_name(i));
+  return onlines;
+}
+
+std::set<std::string> OfflinesToSet(const protobuf::Metadata& content) {
+  std::set<std::string> offlines;
+  for (int i(0); i != content.offline_pmid_name_size(); ++i)
+    offlines.insert(content.offline_pmid_name(i));
+  return offlines;
+}
+
+void OnlinesToProtobuf(const std::set<std::string>& onlines, protobuf::Metadata& content) {
+  content.clear_online_pmid_name();
+  for (auto& online : onlines)
+    content.add_online_pmid_name(online);
+}
+
+void OfflinesToProtobuf(const std::set<std::string>& offlines, protobuf::Metadata& content) {
+  content.clear_offline_pmid_name();
+  for (auto& offline : offlines)
+    content.add_offline_pmid_name(offline);
+}
+
+}  // namespace detail
+
+
+MetadataHandler::Metadata::Metadata(const protobuf::Metadata& proto_metadata,
+                                    const boost::filesystem::path& root)
+    : content(proto_metadata),
+      kPath(detail::GetPath(proto_metadata.name(), proto_metadata.type(), root)),
+      strong_guarantee(on_scope_exit::ExitAction()) {
+  if (!Identity(content.name()).IsInitialised() ||
+      content.size() < 1 ||
+      content.subscribers() < 1) {
+    LOG(kError) << "Copied an invalid metadata file " << kPath;
+    ThrowError(CommonErrors::invalid_parameter);
+  }
+  strong_guarantee.SetAction(on_scope_exit::RevertValue(content));
+}
+
+void MetadataHandler::Metadata::SaveChanges() {
+  if (content.subscribers() < 1) {
+    if (!fs::remove(kPath)) {
+      LOG(kError) << "Failed to remove metadata file " << kPath;
+      ThrowError(CommonErrors::filesystem_io_error);
+    }
+  } else {
+    std::string serialised_content(content.SerializeAsString());
+    if (serialised_content.empty()) {
+      LOG(kError) << "Failed to serialise metadata file " << kPath;
+      ThrowError(CommonErrors::serialisation_error);
+    }
+    if (!WriteFile(kPath, serialised_content)) {
+      LOG(kError) << "Failed to write metadata file " << kPath;
+      ThrowError(CommonErrors::filesystem_io_error);
+    }
+  }
+  strong_guarantee.Release();
+}
+
 MetadataHandler::MetadataHandler(const boost::filesystem::path& vault_root_dir)
     : kMetadataRoot_(vault_root_dir / "metadata") {  //FIXME  BEFORE_RELEASE
   if (fs::exists(kMetadataRoot_)) {
-    if (fs::is_directory(kMetadataRoot_))
-      TraverseAndVerifyFiles();
-    else
+    if (!fs::is_directory(kMetadataRoot_))
       ThrowError(CommonErrors::not_a_directory);
+    //else
+      //TraverseAndVerifyFiles();  //FIXME  BEFORE_RELEASE
   } else {
     fs::create_directory(kMetadataRoot_);
   }
 }
 
+void MetadataHandler::PutMetadata(const protobuf::Metadata& proto_metadata) {
+  Metadata metadata(proto_metadata, kMetadataRoot_);
+  metadata.SaveChanges();
+}
 
-template<typename Data>
-void MetadataHandler::IncrementSubscribers(const typename Data::name_type& data_name,
-                                           int32_t element_size);
-//protobuf::Metadata metadata_proto;
-//metadata_proto.set_type(Data::type_enum_value());
-//metadata_proto.set_name(data.name()->string());
-//metadata_proto.set_size(data_message.data().content.string().size());
-//metadata_proto.set
-//metadata_handler_.Put(data.name);
-//}
 
 //namespace {
 //
@@ -227,34 +285,6 @@ void MetadataHandler::IncrementSubscribers(const typename Data::name_type& data_
 //    ThrowError(CommonErrors::no_such_element);
 //  }
 //}
-
-//void MetadataHandler::ReadAndParseElement(const Identity& data_name,
-//                                              protobuf::Metadata& element) {
-//  NonEmptyString serialised_element(ReadFile(vault_metadata_dir_ / EncodeToBase64(data_name)));
-//  if (!element.ParseFromString(serialised_element.string())) {
-//    LOG(kError) << "Failed to parse data ID: " << Base64Substr(data_name);
-//    ThrowError(CommonErrors::parsing_error);
-//  }
-//}
-
-//void MetadataHandler::SerialiseAndSaveElement(const protobuf::Metadata& element) {
-//  std::string serialised_element(element.SerializeAsString());
-//  if (serialised_element.empty()) {
-//    LOG(kError) << "Failed to serialise data ID: " << Base64Substr(element.data_name());
-//    ThrowError(CommonErrors::serialisation_error);
-//  }
-
-//  if (!WriteFile(vault_metadata_dir_ / EncodeToBase64(element.data_name()), serialised_element)) {
-//    LOG(kError) << "Failed to write data ID: " << Base64Substr(element.data_name());
-//    ThrowError(CommonErrors::serialisation_error);
-//  }
-//}
-
-template<typename Data>
-fs::path MetadataHandler::GetPath(const typename Data::name_type& data_name) const {
-  return kMetadataRoot_ / EncodeToBase32(data_name.data).string() +
-                          std::to_string(static_cast<int>(Data::name_type::tag_type::kEnumValue));
-}
 
 }  // namespace vault
 
