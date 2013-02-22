@@ -16,7 +16,6 @@
 
 #include "maidsafe/common/test.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -303,9 +302,9 @@ TEST_F(MaidAccountHandlerTest, BEH_GetSerialisedAccount) {
 
   MaidAccount::serialised_type serialised_account(
       maid_account_handler_.GetSerialisedAccount(account_name));
-
   MaidAccount retrieved_account(serialised_account, *vault_root_directory_);
   std::vector<PmidTotals> retrieved_pmids(GetPmids(retrieved_account.name()));
+
   EXPECT_EQ(account_name, retrieved_account.name());
   EXPECT_EQ(total_space_used, GetTotalPutData(retrieved_account.name()));
   EXPECT_EQ(total_space_available, GetAvailableSize(retrieved_account.name()));
@@ -421,6 +420,25 @@ TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_DeleteData) {
 }
 
 TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_Adjust) {
+  typename TypeParam::name_type data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
+  int32_t old_cost(1000), new_cost_small(500), new_cost_large(20000);
+  MaidName account_name(this->GenerateMaidName());
+  std::unique_ptr<MaidAccount> account(
+        new MaidAccount(account_name, *(this->vault_root_directory_)));
+
+  EXPECT_THROW(this->Adjust(account_name, data_name, new_cost_small), vault_error);
+
+  this->AddAccount(std::move(account));
+  this->SetTotalAvailable(account_name, old_cost);
+  EXPECT_NO_THROW(this->PutData(account_name, data_name, old_cost));
+  EXPECT_EQ(old_cost, this->GetTotalPutData(account_name));
+
+  EXPECT_NO_THROW(this->Adjust(account_name, data_name, new_cost_small));
+  EXPECT_EQ(new_cost_small, this->GetTotalPutData(account_name));
+  EXPECT_THROW(this->Adjust(account_name, data_name, new_cost_large), vault_error);
+  EXPECT_EQ(new_cost_small, this->GetTotalPutData(account_name));
+  this->SetTotalAvailable(account_name, new_cost_large);
+  EXPECT_NO_THROW(this->Adjust(account_name, data_name, new_cost_large));
 }
 
 REGISTER_TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest,
