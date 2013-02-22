@@ -68,14 +68,13 @@ class MetadataHandler {
   void CheckMetadataExists(const typename Data::name_type& data_name) const;
 
  private:
+  template<typename Data>
   struct Metadata {
     // This constructor reads the existing element or creates a new one if it doesn't already exist.
-    template<typename Data>
     Metadata(const typename Data::name_type& data_name,
              const boost::filesystem::path& root,
              int32_t data_size);
     // This constructor reads the existing element or throws if it doesn't already exist.
-    template<typename Data>
     Metadata(const typename Data::name_type& data_name, const boost::filesystem::path& root);
     // This constructor will copy proto_metadata, and will throw if invalid.
     Metadata(const protobuf::Metadata& proto_metadata, const boost::filesystem::path& root);
@@ -87,7 +86,7 @@ class MetadataHandler {
     on_scope_exit strong_guarantee;
 
    private:
-    Metadata();
+    Metadata() = delete;
     Metadata(const Metadata&);
     Metadata& operator=(const Metadata&);
     Metadata(Metadata&&);

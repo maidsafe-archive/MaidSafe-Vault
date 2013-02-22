@@ -108,13 +108,11 @@ void MetadataManagerService::HandleGet(nfs::DataMessage data_message,
     ValidateGetSender(data_message);
     typename Data::name_type data_name(Identity(data_message.data().name));
     auto online_holders(metadata_handler_.GetOnlineDataHolders<Data>(data_name));
-    auto get_handler(std::make_shared(GetHandler<Data>(reply_functor,
-                                                       online_holders.size(),
-                                                       data_message.message_id())));
-
+    auto get_handler(std::make_shared<GetHandler<Data>>(
+        GetHandler<Data>(reply_functor, online_holders.size(), data_message.message_id())));
 
     for (auto& online_holder : online_holders) {
-      nfs_.Get(online_holder, data_name, [this, get_handler](std::string serialised_reply) {
+      nfs_.Get<Data>(online_holder, data_name, [this, get_handler](std::string serialised_reply) {
                                              this->OnHandleGet(get_handler, serialised_reply);
                                          });
     }
@@ -144,7 +142,7 @@ void MetadataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_h
       std::lock_guard<std::mutex> lock(get_handler->mutex);
       on_scope_exit strong_guarantee(on_scope_exit::RevertValue(get_handler->reply_functor));
       if (get_handler->reply_functor) {
-        reply = nfs::Reply(CommonErrors::success, data.Serialise()->string());
+        reply = nfs::Reply(CommonErrors::success, data.Serialise().data);
         get_handler->reply_functor(reply.Serialise()->string());
         get_handler->reply_functor = nullptr;
       }
@@ -154,13 +152,14 @@ void MetadataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_h
       }
       // TODO(Fraser) - Possibly check our own hash function here in case our binary is broken.
       strong_guarantee.Release();
-    } else if (reply.error() == MakeError(VaultErrors::data_available_not_given).code()) {
+    } else if (reply.error().code() == MakeError(VaultErrors::data_available_not_given).code()) {
       if (!data_or_proof.ParseFromString(reply.data().string()) ||
           !data_or_proof.has_serialised_data())
         ThrowError(CommonErrors::parsing_error);
     }
   }
   catch(...) {
+    std::lock_guard<std::mutex> lock(get_handler->mutex);
     --get_handler->holder_count;
     data_or_proof.Clear();
   }
@@ -225,7 +224,7 @@ void MetadataManagerService::HandlePutResult(const nfs::Reply& overall_result) {
 
     Data data(typename Data::name_type(original_message.data().name),
               typename Data::serialised_type(original_message.data().content));
-    Put(data, Identity(routing_.RandomConnectedNode().string()));
+    Put(data, PmidName(Identity(routing_.RandomConnectedNode().string())));
   }
   catch(const std::exception& e) {
     LOG(kError) << "Error retrying Put: " << e.what();

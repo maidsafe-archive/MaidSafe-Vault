@@ -124,14 +124,6 @@ DataHolder::~DataHolder() {}
 
 void DataHolder::CloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {}
 
-void DataHolder::ResumeSending() {
-  stop_sending_ = false;
-}
-
-void DataHolder::StopSending() {
-  stop_sending_ = true;
-}
-
 }  // namespace vault
 
 }  // namespace maidsafe

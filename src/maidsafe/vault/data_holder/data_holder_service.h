@@ -41,8 +41,9 @@ namespace test { template<class T> class DataHolderTest; }
 
 class DataHolder {
  public:
-  explicit DataHolder(const passport::Pmid& pmid, routing::Routing& routing,
-                      const boost::filesystem::path& vault_root_dir);
+  DataHolder(const passport::Pmid& pmid,
+             routing::Routing& routing,
+             const boost::filesystem::path& vault_root_dir);
   ~DataHolder();
 
   template<typename Data>
@@ -72,7 +73,13 @@ class DataHolder {
   template<typename Data>
   void HandleDeleteMessage(const nfs::DataMessage& data_message,
                            const routing::ReplyFunctor& reply_functor);
-//  template<typename Data>
+
+  void ValidatePutSender(const nfs::DataMessage& data_message) const;
+  void ValidateGetSender(const nfs::DataMessage& data_message) const;
+  void ValidateDeleteSender(const nfs::DataMessage& data_message) const;
+  void ValidatePostSender(const nfs::GenericMessage& generic_message) const;
+
+  //  template<typename Data>
 //  void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   // For short-term cacheable types
   template<typename Data>
@@ -98,7 +105,6 @@ class DataHolder {
   data_store::PermanentStore permanent_data_store_;
   data_store::DataStore<data_store::DataBuffer> cache_data_store_;
   data_store::DataStore<data_store::DataBuffer> mem_only_cache_;
-  std::atomic<bool> stop_sending_;
   DataHolderNfs nfs_;
   std::set<uint32_t> message_sequence_;
   std::set<data_store::PermanentStore::KeyType> elements_to_store_;
