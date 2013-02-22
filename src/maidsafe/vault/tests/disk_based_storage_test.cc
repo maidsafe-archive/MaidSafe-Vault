@@ -337,7 +337,7 @@ class DiskStorageTest : public testing::Test {
   }
 
   std::string GenerateFileContent(bool store_generated_elements = false) {
-    return GenerateFileContent(store_generated_elements ? &element_names_ : nullptr);
+    return test::GenerateFileContent(store_generated_elements ? &element_names_ : nullptr);
   }
 
   std::vector<boost::filesystem::path> VerifyFiles(uint32_t expected_file_num) {
