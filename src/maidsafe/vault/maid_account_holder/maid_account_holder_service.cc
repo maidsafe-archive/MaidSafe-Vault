@@ -89,15 +89,19 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
 //    reply_functor();  // FIXME  Is this needed ?
     return;
   }
-
-  Sync::Action sync_action = static_cast<Sync::Action>(sync_message.action());
-  switch (sync_action) {
-    case Sync::Action::kSyncInfo:
-      break;
-    case Sync::Action::kSyncArchiveFiles:
-      break;
-    default:
-      LOG(kError) << "Unhandled kSynchronise action type";
+  try {
+    Sync::Action sync_action = static_cast<Sync::Action>(sync_message.action());
+    switch (sync_action) {
+      case Sync::Action::kSyncInfo:
+        HandleReceivedSyncInfo(NonEmptyString(sync_message.sync_message()));
+        break;
+      case Sync::Action::kSyncArchiveFiles:
+        break;
+      default:
+        LOG(kError) << "Unhandled kSynchronise action type";
+    }
+  } catch (const std::exception& ex) {
+    LOG(kError) << "Caught exception on handling sync message: " << ex.what();
   }
 }
 
@@ -270,12 +274,12 @@ void MaidAccountHolderService::HandleFileRequestCallback(
   CheckAndDeleteAccount(account_name, shared_response);
 }
 
-bool MaidAccountHolderService::HandleReceivedSyncInfo(
+void MaidAccountHolderService::HandleReceivedSyncInfo(
     const NonEmptyString &/*serialised_account*/) {
 //  MaidAccount maid_account(serialised_account);
 //  return WriteFile(kRootDir_ / maid_account.maid_name().data.string(),
 //                   serialised_account.string());
-  return false;
+  return;
 }
 
 }  // namespace vault
