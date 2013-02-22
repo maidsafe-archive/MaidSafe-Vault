@@ -148,15 +148,16 @@ fs::path GetPathFromProgramOption(const std::string &option_name,
 void DoOnPublicKeyRequested(const maidsafe::NodeId& node_id,
                             const maidsafe::routing::GivePublicKeyFunctor& give_key,
                             maidsafe::nfs::PublicKeyGetter& public_key_getter) {
-  public_key_getter.GetKey<maidsafe::passport::Pmid>(
-      typename maidsafe::passport::Pmid::name_type((maidsafe::Identity(node_id.string()))),
+  public_key_getter.GetKey<maidsafe::passport::PublicPmid>(
+      maidsafe::passport::PublicPmid::name_type(maidsafe::Identity(node_id.string())),
       [give_key, node_id] (std::string response) {
         maidsafe::nfs::Reply reply(
             (maidsafe::nfs::Reply::serialised_type(maidsafe::NonEmptyString(response))));
         if (reply.IsSuccess()) {
           try {
             maidsafe::asymm::PublicKey public_key(
-                maidsafe::asymm::DecodeKey(maidsafe::asymm::EncodedPublicKey(reply.data())));
+                maidsafe::asymm::DecodeKey(
+                    maidsafe::asymm::EncodedPublicKey(reply.data().string())));
             give_key(public_key);
           }
           catch(const std::exception& ex) {
@@ -358,7 +359,7 @@ bool VerifyKeys(const PmidVector& all_pmids,
                                try {
                                  maidsafe::asymm::PublicKey public_key(
                                      maidsafe::asymm::DecodeKey(
-                                         maidsafe::asymm::EncodedPublicKey(reply.data())));
+                                         maidsafe::asymm::EncodedPublicKey(reply.data().string())));
                                  promise.set_value(maidsafe::asymm::MatchingKeys(
                                                        public_key,
                                                        pmid.public_key()));
@@ -401,7 +402,7 @@ bool StoreChunks(const PmidVector& all_pmids,
 
   maidsafe::passport::Anmaid client_anmaid_1, client_anmaid_2;
   maidsafe::passport::Maid client_maid_1(client_anmaid_1), client_maid_2(client_anmaid_2);
-  maidsafe::passport::Pmid client_pmid_1(client_maid_1), client_pmid_2(client_maid_2);
+  maidsafe::passport::Pmid client_pmid_1(client_maid_1);
   maidsafe::routing::Routing client_routing_1(nullptr), client_routing_2(nullptr);
   maidsafe::routing::Functors functors_1, functors_2;
 
@@ -420,78 +421,69 @@ bool StoreChunks(const PmidVector& all_pmids,
   std::cout << "Going to store chunks, press Ctrl+C to stop." << std::endl;
   signal(SIGINT, CtrlCHandler);
   size_t num_chunks(0), num_store(0), num_get(0);
-  std::vector<std::pair<maidsafe::ImmutableData::name_type, maidsafe::NonEmptyString>> chunks;
+//  std::vector<maidsafe::ImmutableData> chunks;
 
   std::unique_lock<std::mutex> lock(mutex_);
   while(!cond_var_.wait_for(lock, std::chrono::seconds(3), [] { return ctrlc_pressed; })) {  // NOLINT
-    maidsafe::NonEmptyString content(maidsafe::RandomString(1 << 18));  // 256 KB
-    maidsafe::ImmutableData::name_type name(
-        maidsafe::crypto::Hash<maidsafe::crypto::SHA512>(content));
-    bool success(true);
-    // on_error call back
-    maidsafe::nfs::DataMessage::OnError cb(
-        [&success](maidsafe::nfs::DataMessage /*result*/) { success = false; });
-    ++num_chunks;
+    maidsafe::ImmutableData::serialised_type content(maidsafe::NonEmptyString(maidsafe::RandomString(1 << 18)));  // 256 KB
+    maidsafe::ImmutableData::name_type name(maidsafe::Identity(maidsafe::crypto::Hash<maidsafe::crypto::SHA512>(content.data)));
+    maidsafe::ImmutableData chunk_data(name, content);
+    std::promise<bool> store_promise;
+    std::future<bool> store_future(store_promise.get_future());
+    maidsafe::routing::ResponseFunctor cb([&store_promise] (std::string response) {
+                                            try {
+                                              maidsafe::nfs::Reply reply(
+                                                  (maidsafe::nfs::Reply::serialised_type(
+                                                      maidsafe::NonEmptyString(response))));
+                                              store_promise.set_value(reply.IsSuccess());
+                                            }
+                                            catch(...) {
+                                              store_promise.set_exception(std::current_exception());
+                                            }
+                                          });
     std::cout << "Storing chunk " << maidsafe::HexSubstr(name.data.string())
               << " ..." << std::endl;
-    maidsafe::ImmutableData chunk_data(name, content);
-    client_nfs_1.Put(chunk_data, cb);
-    // shall eventually use future
-    maidsafe::Sleep(boost::posix_time::millisec(3000));
+    client_nfs_1.Put(chunk_data, client_pmid_1.name(), cb);
+    ++num_chunks;
 
-    if (success) {
+    if (store_future.get()) {
       std::cout << "Stored chunk " << maidsafe::HexSubstr(name.data.string()) << std::endl;
       ++num_store;
-      chunks.push_back(std::make_pair(name, content));
+    } else {
+      std::cout << "Failed to store chunk " << maidsafe::HexSubstr(name.data.string())
+                << std::endl;
+      continue;
+    }
+    // The current client is anonymous, which incurs a 10 mins faded out for stored data
+    std::cout << "Going to retrieve the stored chunk" << std::endl;
+    std::promise<bool> get_promise;
+    std::future<bool> get_future(get_promise.get_future());
+    auto equal_immutables = [] (const maidsafe::ImmutableData& lhs,
+                                const maidsafe::ImmutableData& rhs) {
+                              return lhs.name().data.string() == lhs.name().data.string() &&
+                                     lhs.data().string() == rhs.data().string();
+                            };
+
+    cb = [&chunk_data, &get_promise, &equal_immutables] (std::string response) {
+           try {
+             maidsafe::nfs::Reply reply((maidsafe::nfs::Reply::serialised_type(
+                                             maidsafe::NonEmptyString(response))));
+             maidsafe::ImmutableData data(reply.data());
+             get_promise.set_value(equal_immutables(chunk_data, data));
+           }
+           catch(...) {
+             get_promise.set_exception(std::current_exception());
+           }
+         };
+    client_nfs_2.Get<maidsafe::ImmutableData>(name, cb);
+    if (get_future.get()) {
+      std::cout << "Got chunk " << maidsafe::HexSubstr(name.data.string()) << std::endl;
+      ++num_get;
     } else {
       std::cout << "Failed to store chunk " << maidsafe::HexSubstr(name.data.string())
                 << std::endl;
     }
-    // The current client is anonymous, which incurs a 10 mins faded out for stored data
-    std::cout << "Going to retrieve the stored chunk" << std::endl;
-    auto fetched_data = client_nfs_2.Get<maidsafe::ImmutableData>(name);
-    maidsafe::ImmutableData fetched_chunk = fetched_data.get();
-    if (fetched_chunk.name().data.IsInitialised()) {
-      if ((fetched_chunk.name() == chunk_data.name()) &&
-          (fetched_chunk.data() == chunk_data.data())) {
-        ++num_get;
-        std::cout << "Stored chunk : " << maidsafe::HexSubstr(name.data.string())
-                  << " successfully retrieved." << std::endl;
-      } else {
-        std::cout << "Retrieved chunk mismatch with origin : "
-                  << maidsafe::HexSubstr(name.data.string()) << std::endl;
-      }
-    } else {
-      std::cout << "Failed to retrieve chunk : " << maidsafe::HexSubstr(name.data.string())
-                << std::endl;
-    }
   }
-  // TODO(team): following test code works only with named client
-//   std::cout << "Stored " << num_store << " out of " << num_chunks << " chunks." << std::endl;
-//
-//   ctrlc_pressed = false;  // reset
-//
-//   std::cout << "Going to retrieve " << chunks.size() << " chunks, press Ctrl+C to stop."
-//             << std::endl;
-//   size_t i = 0;
-//   while (!cond_var_.timed_wait(lock, boost::posix_time::millisec(100),
-//                                [&i, &chunks] { return i >= chunks.size() || ctrlc_pressed; })) {  // NOLINT
-//     std::cout << "Retrieving chunk " << maidsafe::pd::DebugChunkName(chunks[i].first) << " ..."
-//               << std::endl;
-//     // retrieve with second client
-//     std::string content(rcs2.Get(chunks[i].first, maidsafe::Fob()));
-//     if (content == chunks[i].second.string()) {
-//       std::cout << "Retrieved chunk " << maidsafe::pd::DebugChunkName(chunks[i].first)
-//                 << std::endl;
-//       ++num_get;
-//     } else {
-//       std::cout << "Failed to retrieve chunk " << maidsafe::pd::DebugChunkName(chunks[i].first)
-//                 << std::endl;
-//     }
-//     ++i;
-//   }
-//   std::cout << "Stored " << num_store << " and retrieved " << num_get << " out of " << num_chunks
-//             << " chunks." << std::endl;
 
   return num_get == num_chunks;
 }
