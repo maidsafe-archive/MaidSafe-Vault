@@ -38,17 +38,17 @@ typedef std::vector<passport::Pmid> PmidVector;
 const std::string kHelperVersion = "MaidSafe Vault KeysHelper " + kApplicationVersion;
 
 void CtrlCHandler(int signum);
-void PrintKeys(const PmidVector &all_pmids);
-bool CreateKeys(const size_t &pmids_count, PmidVector &all_pmids);
+void PrintKeys(const PmidVector& all_pmids);
+void CreateKeys(const size_t& pmids_count, PmidVector& all_pmids);
 boost::filesystem::path GetPathFromProgramOption(
-    const std::string &option_name,
-    boost::program_options::variables_map *variables_map,
+    const std::string& option_name,
+    boost::program_options::variables_map& variables_map,
     bool is_dir,
     bool create_new_if_absent);
 void DoOnPublicKeyRequested(const NodeId& node_id,
                             const routing::GivePublicKeyFunctor& give_key,
                             nfs::PublicKeyGetter& public_key_getter);
-bool SetupNetwork(const PmidVector &all_pmids, bool bootstrap_only);
+void SetupNetwork(const PmidVector& all_pmids, bool bootstrap_only);
 std::future<bool> RoutingJoin(routing::Routing& routing,
                               routing::Functors& functors,
                               const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);

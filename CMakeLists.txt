@@ -129,7 +129,13 @@ set(VaultTestsAllFiles ${VaultTestsSources} ${VaultTestsHeaders})
 set(StyleAllFiles ${StyleAllFiles} ${VaultTestsAllFiles})
 source_group("Tests Source Files" FILES ${VaultTestsSources})
 source_group("Tests Header Files" FILES ${VaultTestsHeaders})
-list(REMOVE_ITEM VaultTestsAllFiles ${VaultSourcesRootDir}/tests/key_helper.cc)
+
+file(GLOB VaultToolsSources ${VaultSourcesRootDir}/tools/*.cc)
+file(GLOB VaultToolsHeaders ${VaultSourcesRootDir}/tools/*.h)
+set(VaultToolsAllFiles ${VaultToolsSources} ${VaultToolsHeaders})
+set(StyleAllFiles ${StyleAllFiles} ${VaultToolsAllFiles})
+source_group("Tools Source Files" FILES ${VaultToolsSources})
+source_group("Tools Header Files" FILES ${VaultToolsHeaders})
 
 
 #==================================================================================================#
@@ -144,7 +150,7 @@ target_link_libraries(lifestuff_vault maidsafe_vault maidsafe_routing maidsafe_l
 if(MAIDSAFE_TESTING)
   ms_add_executable(TESTvault "Tests/Vault" ${VaultTestsAllFiles})
   target_link_libraries(TESTvault maidsafe_vault)
-  ms_add_executable(vault_key_helper Tools ${VaultSourcesRootDir}/tests/key_helper.cc)
+  ms_add_executable(vault_key_helper Tools ${VaultToolsAllFiles})
   target_link_libraries(vault_key_helper maidsafe_routing maidsafe_nfs maidsafe_private)
 endif()
 
