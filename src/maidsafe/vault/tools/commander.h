@@ -21,9 +21,6 @@
 
 #include "maidsafe/vault/tools/key_helper_operations.h"
 
-namespace fs = boost::filesystem;
-namespace po = boost::program_options;
-
 namespace maidsafe {
 
 namespace vault {
@@ -38,7 +35,7 @@ class Commander {
  private:
   size_t pmids_count_, chunk_set_count_;
   maidsafe::vault::tools::PmidVector all_pmids_;
-  fs::path keys_path_;
+  boost::filesystem::path keys_path_;
   std::vector<boost::asio::ip::udp::endpoint> peer_endpoints_;
 
   struct SelectedOperationsContainer {
@@ -58,11 +55,12 @@ class Commander {
   } selected_ops_;
 
   boost::asio::ip::udp::endpoint GetBootstrapEndpoint(const std::string& peer);
-  po::options_description AddGenericOptions(const std::string& title);
-  po::options_description AddConfigurationOptions(const std::string& title);
-  po::variables_map CheckOptionValidity(po::options_description& cmdline_options,
-                                        int argc,
-                                        char* argv[]);
+  boost::program_options::options_description AddGenericOptions(const std::string& title);
+  boost::program_options::options_description AddConfigurationOptions(const std::string& title);
+  boost::program_options::variables_map CheckOptionValidity(
+      boost::program_options::options_description& cmdline_options,
+      int argc,
+      char* argv[]);
   void HandleKeys();
   void HandleNetWork();
   bool HandleStore();

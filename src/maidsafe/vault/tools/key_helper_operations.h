@@ -56,8 +56,8 @@ bool StoreKeys(const PmidVector& all_pmids,
                const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
 bool VerifyKeys(const PmidVector& all_pmids,
                 const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
-bool StoreChunks(const PmidVector& all_pmids,
-                 const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+bool StoreChunks(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints,
+                 int32_t amount = -1);
 
 }  // namespace tools
 

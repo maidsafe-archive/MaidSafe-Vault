@@ -17,6 +17,9 @@ namespace vault {
 
 namespace tools {
 
+namespace fs = boost::filesystem;
+namespace po = boost::program_options;
+
 Commander::Commander(size_t pmids_count, size_t chunk_set_count)
     : pmids_count_(pmids_count),
       chunk_set_count_(chunk_set_count),
@@ -192,7 +195,7 @@ bool Commander::HandleVerify() {
 bool Commander::HandleDoTest() {
   if (selected_ops_.do_test) {
     assert(all_pmids_.size() >= 4);
-    if (maidsafe::vault::tools::StoreChunks(all_pmids_, peer_endpoints_)) {
+    if (maidsafe::vault::tools::StoreChunks(peer_endpoints_)) {
       return true;
     }
   }
