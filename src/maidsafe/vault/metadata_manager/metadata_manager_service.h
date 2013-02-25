@@ -98,11 +98,6 @@ class MetadataManagerService {
   void HandleNodeDown(const nfs::GenericMessage& generic_message);
   void HandleNodeUp(const nfs::GenericMessage& generic_message);
 
-  // Returns true if the required successful request count has been reached
-  bool AddResult(const nfs::DataMessage& data_message,
-                 const routing::ReplyFunctor& reply_functor,
-                 const maidsafe_error& return_code);
-
   template<typename Data>
   void HandlePutResult(const nfs::Reply& overall_result);
   template<typename Data>

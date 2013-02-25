@@ -27,14 +27,14 @@ namespace vault {
 class MaidAccountHolderService;
 class MetadataManagerService;
 class PmidAccountHolderService;
-class DataHolder;
+class DataHolderService;
 
 class Demultiplexer {
  public:
   Demultiplexer(MaidAccountHolderService& maid_account_holder_service,
                 MetadataManagerService& metadata_manager_service,
                 PmidAccountHolderService& pmid_account_holder_service,
-                DataHolder& data_holder);
+                DataHolderService& data_holder);
   void HandleMessage(const std::string& serialised_message,
                      const routing::ReplyFunctor& reply_functor);
   bool GetFromCache(std::string& serialised_message);
@@ -51,7 +51,7 @@ class Demultiplexer {
   MaidAccountHolderService& maid_account_holder_service_;
   MetadataManagerService& metadata_manager_service_;
   PmidAccountHolderService& pmid_account_holder_service_;
-  DataHolder& data_holder_;
+  DataHolderService& data_holder_;
 };
 
 }  // namespace vault

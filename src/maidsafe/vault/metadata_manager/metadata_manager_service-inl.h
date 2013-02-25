@@ -71,7 +71,8 @@ void MetadataManagerService::HandlePut(const nfs::DataMessage& data_message,
        }
        catch(...) {}
     });
-    if (AddResult(data_message, reply_functor, MakeError(CommonErrors::success))) {
+    if (detail::AddResult(data_message, reply_functor, MakeError(CommonErrors::success),
+                          accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
       PmidName target_data_holder(routing_.ClosestToID(data_message.source().node_id) ?
                                   data_message.data_holder() :
                                   Identity(routing_.RandomConnectedNode().string()));
@@ -80,10 +81,12 @@ void MetadataManagerService::HandlePut(const nfs::DataMessage& data_message,
     strong_guarantee.Release();
   }
   catch(const maidsafe_error& error) {
-    AddResult(data_message, reply_functor, error);
+    detail::AddResult(data_message, reply_functor, error, accumulator_, accumulator_mutex_,
+                      kPutRequestsRequired_);
   }
   catch(...) {
-    AddResult(data_message, reply_functor, MakeError(CommonErrors::unknown));
+    detail::AddResult(data_message, reply_functor, MakeError(CommonErrors::unknown),
+                      accumulator_, accumulator_mutex_, kPutRequestsRequired_);
   }
 }
 

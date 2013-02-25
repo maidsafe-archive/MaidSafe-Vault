@@ -36,11 +36,32 @@ MemoryUsage mem_only_cache_usage = MemoryUsage(mem_usage * 2 / 5);
 //  DiskUsage permanent_size = DiskUsage(disk_total * 0.8);
 //  DiskUsage cache_size = DiskUsage(disk_total * 0.1);
 
+inline bool SenderIsConnectedVault(const nfs::DataMessage& data_message,
+                                   routing::Routing& routing) {
+  return routing.IsConnectedVault(data_message.source().node_id) &&
+         routing.EstimateInGroup(data_message.source().node_id, routing.kNodeId());
+}
+
+inline bool SenderInGroupForMetadata(const nfs::DataMessage& data_message,
+                                     routing::Routing& routing) {
+  return routing.EstimateInGroup(data_message.source().node_id,
+                                 NodeId(data_message.data().name.string()));
+}
+
+template<typename Message>
+inline bool ForThisPersona(const Message& message) {
+  return message.destination_persona() != nfs::Persona::kDataHolder;
+}
+
 }  // unnamed namespace
 
-DataHolder::DataHolder(const passport::Pmid& pmid,
-                       routing::Routing& routing,
-                       const boost::filesystem::path& vault_root_dir)
+
+const int DataHolderService::kPutRequestsRequired_(3);
+const int DataHolderService::kDeleteRequestsRequired_(3);
+
+DataHolderService::DataHolderService(const passport::Pmid& pmid,
+                                     routing::Routing& routing,
+                                     const boost::filesystem::path& vault_root_dir)
     : space_info_(boost::filesystem::space(vault_root_dir)),
       disk_total_(space_info_.available),
       permanent_size_(disk_total_ * 4 / 5),
@@ -50,79 +71,36 @@ DataHolder::DataHolder(const passport::Pmid& pmid,
                         vault_root_dir / "data_holder" / "cache"),  // FIXME - DiskUsage  NOLINT
       mem_only_cache_(mem_only_cache_usage, DiskUsage(cache_size_ / 2), nullptr,
                       vault_root_dir / "data_holder" / "cache"),  // FIXME - DiskUsage should be 0  NOLINT
-      stop_sending_(false),
-      nfs_(routing, pmid),
-      message_sequence_(),
-      elements_to_store_() {
+      routing_(routing),
+      accumulator_mutex_(),
+      accumulator_(),
+      nfs_(routing_, pmid) {
 //  nfs_.GetElementList();  // TODO (Fraser) BEFORE_RELEASE Implementation needed
 }
 
-void DataHolder::HandleGenericMessage(const nfs::GenericMessage& /*generic_message*/,
-                                      const routing::ReplyFunctor& /*reply_functor*/) {
-  // verify the action type is GetElementList and is from PmidAccountHolder Persona
-//  nfs::GenericMessage::Action action(generic_message.action());
-//  std::vector<data_store::PermanentStore::KeyType> fetched_element_list;
-//  if ((action == nfs::GenericMessage::Action::kGetElementList) &&
-//      (generic_message.source().persona == nfs::Persona::kPmidAccountHolder)) {
-//    // Two optional field in GenericMessage will be created :
-//    //    message_index : current sequence num
-//    //    message_count : how many messages to be expected
-//    // expect multiple responses: once message_count reaches, any after-coming msg can be ignored
-//    //                            when receiving a duplicating message_index, just ignore the msg
-//    if (message_sequence_.size() < generic_message.message_count()) {
-//      auto itr = std::find(message_sequence_.begin(), message_sequence_.end(),
-//                           generic_message.message_index);
-//      if (itr == message_sequence_.end()) {
-//        protobuf::ArchivedPmidData archived_pmid_data;
-//        archived_pmid_data.ParseFromString(generic_message.content().string());
-//        for (auto& data : archived_pmid_data.data_stored())
-//          fetched_element_list.push_back(data_store::PermanentStore::KeyType(data.name()));
-//        // Will avoid the duplicates ?
-//        elements_to_store_.insert(fetched_element_list.begin(), fetched_element_list.end());
-//        message_sequence_.insert(generic_message.message_index);
+void DataHolderService::ValidatePutSender(const nfs::DataMessage& data_message) const {
+  if (!SenderIsConnectedVault(data_message, routing_))
+    ThrowError(VaultErrors::permission_denied);
 
-//        if (message_sequence_.size() == generic_message.message_count()) {
-//          // End of response
-//          std::async([this, elements_to_store_] {
-//              std::vector<data_store::PermanentStore::KeyType> element_to_fetch =
-//                  this->permanent_data_store_.ElementsToStore(elements_to_store);
-//              this->FetchElement(element_to_fetch);
-//              elements_to_store_.clear();
-//          });
-//        }
-//      }
-//    }
-//  }
+  if (!FromPmidAccountHolder(data_message) || !ForThisPersona(data_message))
+    ThrowError(CommonErrors::invalid_parameter);
 }
 
-//void DataHolder::FetchElement(const std::vector<data_store::PermanentStore::KeyType>& elements) {
-//  std::vector<std::future<void>> future_gets;
-//  for (auto& element : elements) {
-//    future_gets.push_back(std::async([this, element] {
-//          auto fetched_data = this->nfs_.Get(element);
-//          try {
-//            auto fetched_content = this->fetched_data.get();
-//            this->permanent_data_store_.Put(element, fetched_content);
-//          } catch(const std::exception& e) {
-//            // no op
-//          }
-//        }));
-//  }
+void DataHolderService::ValidateGetSender(const nfs::DataMessage& data_message) const {
+  if (!SenderInGroupForMetadata(data_message, routing_))
+    ThrowError(VaultErrors::permission_denied);
 
-//  for (auto& future_get : future_gets) {
-//    try {
-//      future_get.get();
-//    }
-//    catch(const std::exception& e) {
-//      std::string msg(e.what());
-//      LOG(kError) << msg;
-//    }
-//  }
-//}
+  if (!FromMetadataManager(data_message) || !ForThisPersona(data_message))
+    ThrowError(CommonErrors::invalid_parameter);
+}
 
-DataHolder::~DataHolder() {}
+void DataHolderService::ValidateDeleteSender(const nfs::DataMessage& data_message) const {
+  if (!SenderIsConnectedVault(data_message, routing_))
+    ThrowError(VaultErrors::permission_denied);
 
-void DataHolder::CloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {}
+  if (!FromPmidAccountHolder(data_message) || !ForThisPersona(data_message))
+    ThrowError(CommonErrors::invalid_parameter);
+}
 
 }  // namespace vault
 

@@ -20,7 +20,8 @@ namespace maidsafe {
 
 namespace vault {
 
-typedef std::vector<boost::filesystem::path> PathVector;
+const int PmidAccountHolderService::kPutRequestsRequired_(3);
+const int PmidAccountHolderService::kDeleteRequestsRequired_(3);
 
 PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
@@ -82,6 +83,9 @@ bool PmidAccountHolderService::AssessRange(const PmidName& account_name,
 
 void PmidAccountHolderService::ValidateSender(const nfs::DataMessage& data_message) const {
   if (!data_message.HasDataHolder())
+    ThrowError(VaultErrors::permission_denied);
+
+  if (!routing_.IsConnectedVault(NodeId(data_message.data_holder()->string())))
     ThrowError(VaultErrors::permission_denied);
 
   if (routing_.EstimateInGroup(data_message.source().node_id,

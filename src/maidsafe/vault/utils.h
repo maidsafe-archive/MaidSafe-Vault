@@ -21,8 +21,10 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/data_types/data_type_values.h"
+#include "maidsafe/routing/parameters.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/data_message.h"
+#include "maidsafe/nfs/utils.h"
 
 #include "maidsafe/vault/disk_based_storage_pb.h"
 #include "maidsafe/vault/types.h"
@@ -182,6 +184,38 @@ inline void RetryOnPutOrDeleteError(routing::Routing& routing,
     }
   }
 }
+
+// Returns true if the required successful request count has been reached
+template<typename Accumulator>
+bool AddResult(const nfs::DataMessage& data_message,
+               const routing::ReplyFunctor& reply_functor,
+               const maidsafe_error& return_code,
+               Accumulator& accumulator,
+               std::mutex& accumulator_mutex,
+               int requests_required) {
+  std::vector<typename Accumulator::PendingRequest> pending_requests;
+  maidsafe_error overall_return_code(CommonErrors::success);
+  const bool kDone(true);
+  {
+    std::lock_guard<std::mutex> lock(accumulator_mutex);
+    auto pending_results(accumulator.PushSingleResult(data_message, reply_functor, return_code));
+    if (static_cast<int>(pending_results.size()) < requests_required)
+      return !kDone;
+
+    auto result(nfs::GetSuccessOrMostFrequentReply(pending_results, requests_required));
+    if (!result.second && pending_results.size() < routing::Parameters::node_group_size)
+      return !kDone;
+
+    overall_return_code = (*result.first).error();
+    pending_requests = accumulator.SetHandled(data_message, overall_return_code);
+  }
+
+  for (auto& pending_request : pending_requests)
+    SendReply(pending_request.msg, overall_return_code, pending_request.reply_functor);
+
+  return kDone;
+}
+
 
 }  // namespace detail
 

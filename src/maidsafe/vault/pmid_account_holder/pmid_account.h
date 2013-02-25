@@ -85,9 +85,9 @@ class PmidAccount {
 
   // Throw if the data is a duplicate
   template<typename Data>
-  std::future<void> PutData(const typename Data::name_type& name, int32_t size);
+  void PutData(const typename Data::name_type& name, int32_t size);
   template<typename Data>
-  std::future<void> DeleteData(const typename Data::name_type& name);
+  void DeleteData(const typename Data::name_type& name);
 
   name_type name() const { return pmid_record_.pmid_name; }
   DataHolderStatus data_holder_status() const { return data_holder_status_; }

@@ -155,31 +155,6 @@ void MetadataManagerService::HandleNodeUp(const nfs::GenericMessage& generic_mes
   }
 }
 
-bool MetadataManagerService::AddResult(const nfs::DataMessage& data_message,
-                                       const routing::ReplyFunctor& reply_functor,
-                                       const maidsafe_error& return_code) {
-  std::vector<Accumulator<DataNameVariant>::PendingRequest> pending_requests;
-  maidsafe_error overall_return_code(CommonErrors::success);
-  {
-    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    auto pending_results(accumulator_.PushSingleResult(data_message, reply_functor, return_code));
-    if (static_cast<int>(pending_results.size()) < kPutRequestsRequired_)
-      return false;
-
-    auto result(nfs::GetSuccessOrMostFrequentReply(pending_results, kPutRequestsRequired_));
-    if (!result.second && pending_results.size() < routing::Parameters::node_group_size)
-      return false;
-
-    overall_return_code = (*result.first).error();
-    pending_requests = accumulator_.SetHandled(data_message, overall_return_code);
-  }
-
-  for (auto& pending_request : pending_requests)
-    detail::SendReply(pending_request.msg, overall_return_code, pending_request.reply_functor);
-
-  return true;
-}
-
 bool MetadataManagerService::ThisVaultInGroupForData(const nfs::DataMessage& data_message) const {
   return routing::GroupRangeStatus::kInRange ==
          routing_.IsNodeIdInGroupRange(NodeId(data_message.data().name.string()));

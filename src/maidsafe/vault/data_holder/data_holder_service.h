@@ -12,7 +12,7 @@
 #ifndef MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_SERVICE_H_
 #define MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_SERVICE_H_
 
-#include <atomic>
+#include <mutex>
 #include <type_traits>
 #include <set>
 #include <vector>
@@ -30,6 +30,7 @@
 #include "maidsafe/nfs/generic_message.h"
 
 
+#include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/types.h"
 
 
@@ -37,38 +38,37 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace test { template<class T> class DataHolderTest; }
+namespace test {
 
-class DataHolder {
+template<typename Data>
+class DataHolderTest;
+
+}  // namespace test
+
+
+class DataHolderService {
  public:
-  DataHolder(const passport::Pmid& pmid,
-             routing::Routing& routing,
-             const boost::filesystem::path& vault_root_dir);
-  ~DataHolder();
+  DataHolderService(const passport::Pmid& pmid,
+                    routing::Routing& routing,
+                    const boost::filesystem::path& vault_root_dir);
 
   template<typename Data>
   void HandleDataMessage(const nfs::DataMessage& data_message,
                          const routing::ReplyFunctor& reply_functor);
-  void HandleGenericMessage(const nfs::GenericMessage& generic_message,
-                            const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   NonEmptyString GetFromCache(const nfs::DataMessage& data_message);
   template<typename Data>
   void StoreInCache(const nfs::DataMessage& data_message);
 
-  void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
-
-  void StopSending();
-  void ResumeSending();
-
-  template<class T> friend class test::DataHolderTest;
+  template<typename Data>
+  friend class test::DataHolderTest;
 
  private:
   template<typename Data>
-  void HandleGetMessage(const nfs::DataMessage& data_message,
+  void HandlePutMessage(const nfs::DataMessage& data_message,
                         const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandlePutMessage(const nfs::DataMessage& data_message,
+  void HandleGetMessage(const nfs::DataMessage& data_message,
                         const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void HandleDeleteMessage(const nfs::DataMessage& data_message,
@@ -77,10 +77,7 @@ class DataHolder {
   void ValidatePutSender(const nfs::DataMessage& data_message) const;
   void ValidateGetSender(const nfs::DataMessage& data_message) const;
   void ValidateDeleteSender(const nfs::DataMessage& data_message) const;
-  void ValidatePostSender(const nfs::GenericMessage& generic_message) const;
 
-  //  template<typename Data>
-//  void HandlePostMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   // For short-term cacheable types
   template<typename Data>
   NonEmptyString CacheGet(const typename Data::name_type& name, std::false_type);
@@ -105,9 +102,12 @@ class DataHolder {
   data_store::PermanentStore permanent_data_store_;
   data_store::DataStore<data_store::DataBuffer> cache_data_store_;
   data_store::DataStore<data_store::DataBuffer> mem_only_cache_;
+  routing::Routing& routing_;
+  std::mutex accumulator_mutex_;
+  Accumulator<DataNameVariant> accumulator_;
   DataHolderNfs nfs_;
-  std::set<uint32_t> message_sequence_;
-  std::set<data_store::PermanentStore::KeyType> elements_to_store_;
+  static const int kPutRequestsRequired_;
+  static const int kDeleteRequestsRequired_;
 };
 
 }  // namespace vault

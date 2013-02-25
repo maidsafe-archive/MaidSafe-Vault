@@ -71,7 +71,7 @@ class Vault {
   MaidAccountHolderService maid_account_holder_service_;
   MetadataManagerService metadata_manager_service_;
   PmidAccountHolderService pmid_account_holder_service_;
-  DataHolder data_holder_;
+  DataHolderService data_holder_;
   Demultiplexer demux_;
   AsioService asio_service_;
 };
