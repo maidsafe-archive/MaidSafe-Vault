@@ -115,6 +115,13 @@ class MaidAccountHandlerTest : public testing::Test {
     return generated_pmid_totals;
   }
 
+  std::vector<boost::filesystem::path> GenerateArchiveEntries(const MaidName& /*account_name*/,
+                                                              int /*number_of_entries*/) {
+    std::vector<boost::filesystem::path> entries;
+    // implement
+    return entries;
+  }
+
   // Individual account attribute accessors
   std::vector<PmidTotals> GetPmids(const MaidName& account_name) {
     auto itr(detail::FindAccount(maid_account_handler_.maid_accounts_, account_name));
@@ -327,12 +334,39 @@ TEST_F(MaidAccountHandlerTest, BEH_GetSerialisedAccount) {
 }
 
 TEST_F(MaidAccountHandlerTest, BEH_GetArchiveFileNames) {
+  MaidName account_name(GenerateMaidName());
+  int num_entries(20);
+  std::vector<boost::filesystem::path> retrieved_archive_entries,
+      generated_archive_entries(GenerateArchiveEntries(account_name, num_entries));
+
+  EXPECT_THROW(maid_account_handler_.GetArchiveFileNames(account_name), VaultErrors);
+
+  std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, *vault_root_directory_));
+  AddAccount(std::move(account));
+
+  retrieved_archive_entries = maid_account_handler_.GetArchiveFileNames(account_name);
+  EXPECT_EQ(retrieved_archive_entries.size(), generated_archive_entries.size());
+  for (int i(0); i < num_entries; ++i) {
+    EXPECT_EQ(retrieved_archive_entries[i], generated_archive_entries[i]);
+  }
+
+  //  to finish.....
 }
 
 TEST_F(MaidAccountHandlerTest, BEH_GetArchiveFile) {
 }
 
 TEST_F(MaidAccountHandlerTest, BEH_PutArchiveFile) {
+  MaidName account_name(GenerateMaidName());
+  std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, *vault_root_directory_));
+  boost::filesystem::path filename;
+  NonEmptyString content;
+
+  EXPECT_THROW(maid_account_handler_.PutArchiveFile(account_name, filename, content), VaultErrors);
+  AddAccount(std::move(account));
+  EXPECT_NO_THROW(maid_account_handler_.PutArchiveFile(account_name, filename, content));
+
+  //  to finish.....
 }
 
 template <typename Data>
@@ -360,6 +394,21 @@ class MaidAccountHandlerTypedTest : public MaidAccountHandlerTest {
   {
     this->maid_account_handler_.template Adjust<Data>(account_name, data_name, new_cost);
   }
+
+  void CheckPutDetails(const MaidName& account_name,
+                       typename Data::name_type data_name,
+                       int32_t cost,
+                       int size) {
+    std::deque<MaidAccount::PutDataDetails> put_details(this->GetPutDataDetails(account_name));
+    EXPECT_EQ(size, put_details.size());
+
+    auto itr(std::find_if(put_details.begin(), put_details.end(),
+                          [&data_name] (const MaidAccount::PutDataDetails& record) {
+                            return DataNameVariant(data_name) == record.data_name_variant;
+                          }));
+    if (itr != put_details.end())
+      EXPECT_EQ(itr->cost, cost);
+  }
 };
 
 TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest);
@@ -380,14 +429,7 @@ TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_PutData) {
 
   EXPECT_NO_THROW(this->PutData(account_name, data_name, cost));
   EXPECT_EQ(cost, this->GetTotalPutData(account_name));
-  std::deque<MaidAccount::PutDataDetails> put_details(this->GetPutDataDetails(account_name));
-  EXPECT_EQ(1, put_details.size());
-
-  auto itr(std::find_if(put_details.begin(), put_details.end(),
-                        [&data_name] (const MaidAccount::PutDataDetails& record) {
-                          return DataNameVariant(data_name) == record.data_name_variant;
-                        }));
-  EXPECT_EQ(itr->cost, cost);
+  this->CheckPutDetails(account_name, data_name, cost, 1);
 }
 
 TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_DeleteData) {
@@ -404,18 +446,10 @@ TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_DeleteData) {
   this->SetTotalAvailable(account_name, cost * 2);
   EXPECT_NO_THROW(this->PutData(account_name, data_name, cost));
   EXPECT_EQ(cost, this->GetTotalPutData(account_name));
-  std::deque<MaidAccount::PutDataDetails> put_details(this->GetPutDataDetails(account_name));
-  EXPECT_EQ(1, put_details.size());
-
-  auto itr(std::find_if(put_details.begin(), put_details.end(),
-                        [&data_name] (const MaidAccount::PutDataDetails& record) {
-                          return DataNameVariant(data_name) == record.data_name_variant;
-                        }));
-  EXPECT_EQ(itr->cost, cost);
+  this->CheckPutDetails(account_name, data_name, cost, 1);
 
   EXPECT_NO_THROW(this->DeleteData(account_name, data_name));
-  put_details = this->GetPutDataDetails(account_name);
-  EXPECT_EQ(0, put_details.size());
+  this->CheckPutDetails(account_name, data_name, 0, 0);
   EXPECT_EQ(0, this->GetTotalPutData(account_name));
 }
 
