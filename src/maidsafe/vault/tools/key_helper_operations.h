@@ -20,6 +20,8 @@
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/utils.h"
 
+#include "maidsafe/data_types/immutable_data.h"
+
 #include "maidsafe/passport/types.h"
 
 #include "maidsafe/nfs/public_key_getter.h"
@@ -37,27 +39,62 @@ typedef std::vector<passport::Pmid> PmidVector;
 
 const std::string kHelperVersion = "MaidSafe Vault KeysHelper " + kApplicationVersion;
 
-void CtrlCHandler(int signum);
-void PrintKeys(const PmidVector& all_pmids);
-void CreateKeys(const size_t& pmids_count, PmidVector& all_pmids);
-boost::filesystem::path GetPathFromProgramOption(
-    const std::string& option_name,
-    boost::program_options::variables_map& variables_map,
-    bool is_dir,
-    bool create_new_if_absent);
-void DoOnPublicKeyRequested(const NodeId& node_id,
-                            const routing::GivePublicKeyFunctor& give_key,
-                            nfs::PublicKeyGetter& public_key_getter);
 void SetupNetwork(const PmidVector& all_pmids, bool bootstrap_only);
-std::future<bool> RoutingJoin(routing::Routing& routing,
-                              routing::Functors& functors,
-                              const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
-bool StoreKeys(const PmidVector& all_pmids,
-               const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
-bool VerifyKeys(const PmidVector& all_pmids,
-                const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
-bool StoreChunks(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints,
-                 int32_t amount = -1);
+
+class ClientTester {
+ public:
+  ClientTester(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+
+ protected:
+  // TODO(Dan): Remove the typedefs
+  // I've put these because the Qt Creator parser is still missing >> recognition except when
+  // it refers to the operator and that invalidates the parsing moving forward, which is annoying.
+  typedef std::promise<bool> BoolPromise;
+  typedef std::future<bool> BoolFuture;
+
+  passport::Anmaid client_anmaid_;
+  passport::Maid client_maid_;
+  passport::Pmid client_pmid_;
+  routing::Routing client_routing_;
+  routing::Functors functors_;
+  std::unique_ptr<nfs::ClientMaidNfs> client_nfs_;
+
+  ~ClientTester();
+};
+
+class KeyStorer : public ClientTester {
+ public:
+  KeyStorer(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+  void Store(const PmidVector& all_pmids);
+
+ private:
+  routing::ResponseFunctor callback(std::promise<bool>& promise);
+};
+
+class KeyVerifier : public ClientTester {
+ public:
+  KeyVerifier(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+  void Verify(const PmidVector& all_pmids);
+
+ private:
+  routing::ResponseFunctor callback(const passport::Pmid& pmid, std::promise<bool>& promise);
+};
+
+class DataChunkStorer : public ClientTester {
+ public:
+  DataChunkStorer(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+
+  void StopTest();
+  bool Test(int32_t quantity = -1);
+
+ private:
+  std::atomic_bool run_;
+
+  bool Done(int32_t quantity, int32_t rounds) const;
+  void OneChunkRun(size_t& num_chunks, size_t& num_store, size_t& num_get);
+  bool StoreOneChunk(const ImmutableData& chunk_data);
+  bool GetOneChunk(const ImmutableData& chunk_data);
+};
 
 }  // namespace tools
 

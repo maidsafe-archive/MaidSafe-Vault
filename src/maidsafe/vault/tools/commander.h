@@ -67,6 +67,10 @@ class Commander {
   bool HandleVerify();
   bool HandleDoTest();
   void HandleDeleteKeys();
+
+  void CreateKeys();
+  void GetPathFromProgramOption(const std::string& option_name,
+                                boost::program_options::variables_map& variables_map);
 };
 
 }  // namespace tools

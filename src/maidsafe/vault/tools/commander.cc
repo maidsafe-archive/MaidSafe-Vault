@@ -34,10 +34,8 @@ void Commander::AnalyseCommandLineOptions(int argc, char* argv[]) {
                  .add(AddConfigurationOptions("Configuration options"));
 
   po::variables_map variables_map(CheckOptionValidity(cmdline_options, argc, argv));
-  keys_path_ = maidsafe::vault::tools::GetPathFromProgramOption("keys_path",
-                                                                variables_map,
-                                                                false,
-                                                                true);
+  GetPathFromProgramOption("keys_path", variables_map);
+
   // bootstrap endpoint
   if (variables_map.count("peer"))
     peer_endpoints_.push_back(GetBootstrapEndpoint(variables_map.at("peer").as<std::string>()));
@@ -48,6 +46,18 @@ void Commander::AnalyseCommandLineOptions(int argc, char* argv[]) {
   HandleVerify();
   HandleDoTest();
   HandleDeleteKeys();
+}
+
+void Commander::GetPathFromProgramOption(const std::string& option_name,
+                                         po::variables_map& variables_map) {
+  if (variables_map.count(option_name))
+    keys_path_ = variables_map.at(option_name).as<std::string>();
+  if (keys_path_.empty() || !fs::exists(keys_path_)) {
+    LOG(kError) << "Incorrect information in parameter " << option_name;
+    throw std::exception();
+  }
+
+  LOG(kInfo) << "GetPathFromProgramOption - " << option_name << " is " << keys_path_;
 }
 
 boost::asio::ip::udp::endpoint Commander::GetBootstrapEndpoint(const std::string& peer) {
@@ -70,7 +80,7 @@ po::options_description Commander::AddGenericOptions(const std::string& title) {
       ("store,s", "Store keys on network.")
       ("verify,v", "Verify keys are available on network.")
       ("test,t", "Run simple test that stores and retrieves chunks.")
-      ("extended,x", "Run extended test that tries all operations on all chunk types.")
+//      ("extended,x", "Run extended test that tries all operations on all chunk types.")
       ("delete,d", "Delete keys file.")
       ("print,p", "Print the list of keys available.");
   return generic_options;
@@ -88,13 +98,11 @@ po::options_description Commander::AddConfigurationOptions(const std::string& ti
        "Number of keys to create")
       ("keys_path",
        po::value<std::string>()->default_value(
-           boost::filesystem::path(boost::filesystem::temp_directory_path(error_code) /
-                                   "key_directory.dat").string()),
+           fs::path(fs::temp_directory_path(error_code) / "key_directory.dat").string()),
        "Path to keys file")
       ("chunk_path",
        po::value<std::string>()->default_value(
-           boost::filesystem::path(boost::filesystem::temp_directory_path(error_code) /
-                                   "keys_chunks").string()),
+           fs::path(fs::temp_directory_path(error_code) / "keys_chunks").string()),
        "Path to chunk directory")
       ("chunk_set_count",
        po::value<size_t>(&chunk_set_count_)->default_value(chunk_set_count_),
@@ -132,49 +140,59 @@ po::variables_map Commander::CheckOptionValidity(po::options_description& cmdlin
                                                   !selected_ops_.do_print;
                                        };
   if (variables_map.count("help") || conflicting_options()) {
-    std::cout << cmdline_options << std::endl
-              << "Commands are executed in this order: [c|l] p [r|b] s v t x d" << std::endl;
+    std::cout << cmdline_options << ": Options order: [c|l|d] p [r|b] s v t" << std::endl;
     throw std::exception();
   }
   return variables_map;
 }
 
+void Commander::CreateKeys() {
+  all_pmids_.clear();
+  for (size_t i = 0; i < pmids_count_; ++i) {
+    passport::Anmaid anmaid;
+    passport::Maid maid(anmaid);
+    passport::Pmid pmid(maid);
+    all_pmids_.push_back(pmid);
+  }
+  LOG(kInfo) << "Created " << all_pmids_.size() << " pmids.";
+  if (maidsafe::passport::detail::WritePmidList(keys_path_, all_pmids_)) {
+    LOG(kInfo) << "Wrote keys to " << keys_path_;
+  } else {
+    LOG(kError) << "Could not write keys to " << keys_path_;
+    throw std::exception();
+  }
+}
+
 void Commander::HandleKeys() {
   if (selected_ops_.do_create) {
-    maidsafe::vault::tools::CreateKeys(pmids_count_, all_pmids_);
-    std::cout << "Created " << all_pmids_.size() << " pmids." << std::endl;
-    if (maidsafe::passport::detail::WritePmidList(keys_path_, all_pmids_))
-      std::cout << "Wrote keys to " << keys_path_ << std::endl;
-    else
-      std::cout << "Could not write keys to " << keys_path_ << std::endl;
+    CreateKeys();
   } else if (selected_ops_.do_load) {
     all_pmids_ = maidsafe::passport::detail::ReadPmidList(keys_path_);
-    std::cout << "Loaded " << all_pmids_.size() << " pmids from " << keys_path_ << std::endl;
+    LOG(kInfo) << "Loaded " << all_pmids_.size() << " pmids from " << keys_path_;
   }
-  if (selected_ops_.do_print)
-    maidsafe::vault::tools::PrintKeys(all_pmids_);
+
+  if (selected_ops_.do_print) {
+    for (size_t i(0); i < all_pmids_.size(); ++i)
+      LOG(kInfo) << '\t' << i << "\t PMID " << HexSubstr(all_pmids_.at(i).name().data)
+                 << (i < 2 ? " (bootstrap)" : "");
+  }
 }
 
 void Commander::HandleNetWork() {
-  assert(all_pmids_.size() >= 2);
-  if (selected_ops_.do_run || selected_ops_.do_bootstrap) {
-    maidsafe::vault::tools::SetupNetwork(all_pmids_, !selected_ops_.do_run &&
-                                                      selected_ops_.do_bootstrap);
-//        std::cout << "Could not setup network." << std::endl;
-////        result = -1;
-//      } else if (do_run) {
-//        std::cout << "Vaults are running." << std::endl;
-//      }
-  }
+  assert(all_pmids_.size() >= 4);
+  if (selected_ops_.do_run || selected_ops_.do_bootstrap)
+    SetupNetwork(all_pmids_, !selected_ops_.do_run && selected_ops_.do_bootstrap);
 }
 
 bool Commander::HandleStore() {
   if (selected_ops_.do_store) {
-    if (maidsafe::vault::tools::StoreKeys(all_pmids_, peer_endpoints_)) {
-      std::cout << "Stored keys on network." << std::endl;
+    try {
+      KeyStorer storer(peer_endpoints_);
+      storer.Store(all_pmids_);
       return true;
-    } else {
-      std::cout << "Could not store all keys on network." << std::endl;
+    }
+    catch(...) {
+      return false;
     }
   }
   return false;
@@ -182,11 +200,13 @@ bool Commander::HandleStore() {
 
 bool Commander::HandleVerify() {
   if (selected_ops_.do_verify) {
-    if (maidsafe::vault::tools::VerifyKeys(all_pmids_, peer_endpoints_)) {
-      std::cout << "Verified keys on network." << std::endl;
+    try {
+      KeyVerifier verifier(peer_endpoints_);
+      verifier.Verify(all_pmids_);
       return true;
-    } else {
-      std::cout << "Could not verify all keys on network." << std::endl;
+    }
+    catch(...) {
+      return false;
     }
   }
   return false;
@@ -195,20 +215,23 @@ bool Commander::HandleVerify() {
 bool Commander::HandleDoTest() {
   if (selected_ops_.do_test) {
     assert(all_pmids_.size() >= 4);
-    if (maidsafe::vault::tools::StoreChunks(peer_endpoints_)) {
-      return true;
+    try {
+      DataChunkStorer chunk_storer(peer_endpoints_);
+      return chunk_storer.Test();
+    }
+    catch(...) {
+      return false;
     }
   }
-  std::cout << "Could not store and retrieve test chunks." << std::endl;
   return false;
 }
 
 void Commander::HandleDeleteKeys() {
   if (selected_ops_.do_delete) {
     if (fs::remove(keys_path_))
-      std::cout << "Deleted " << keys_path_ << std::endl;
+      LOG(kInfo) << "Deleted " << keys_path_;
     else
-      std::cout << "Could not delete " << keys_path_ << std::endl;
+      LOG(kError) << "Could not delete " << keys_path_;
   }
 }
 

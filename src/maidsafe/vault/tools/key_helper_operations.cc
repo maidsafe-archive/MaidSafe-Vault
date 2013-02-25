@@ -15,8 +15,6 @@
 
 #include "maidsafe/common/test.h"
 
-#include "maidsafe/data_types/immutable_data.h"
-
 #include "maidsafe/routing/node_info.h"
 #include "maidsafe/routing/parameters.h"
 
@@ -41,79 +39,6 @@ void CtrlCHandler(int /*signum*/) {
   std::lock_guard<std::mutex> lock(mutex_);
   ctrlc_pressed = true;
   cond_var_.notify_one();
-}
-
-void PrintKeys(const PmidVector& all_pmids) {
-  for (size_t i = 0; i < all_pmids.size(); ++i)
-    std::cout << '\t' << i << "\t PMID " << HexSubstr(all_pmids[i].name().data.string())
-              << (i < 2 ? " (bootstrap)" : "") << std::endl;
-}
-
-void CreateKeys(const size_t& pmids_count, PmidVector& all_pmids) {
-  all_pmids.clear();
-  for (size_t i = 0; i < pmids_count; ++i) {
-    passport::Anmaid anmaid;
-    passport::Maid maid(anmaid);
-    passport::Pmid pmid(maid);
-    all_pmids.push_back(pmid);
-  }
-}
-
-fs::path GetPathFromProgramOption(const std::string& option_name,
-                                  po::variables_map& variables_map,
-                                  bool is_dir,
-                                  bool create_new_if_absent) {
-  fs::path option_path;
-  if (variables_map.count(option_name))
-    option_path = variables_map.at(option_name).as<std::string>();
-  if (option_path.empty())
-    return fs::path();
-
-  boost::system::error_code ec;
-  if (!fs::exists(option_path, ec) || ec) {
-    if (!create_new_if_absent) {
-      LOG(kError) << "GetPathFromProgramOption - Invalid " << option_name << ", " << option_path
-                  << " doesn't exist or can't be accessed (" << ec.message() << ")";
-      return fs::path();
-    }
-
-    if (is_dir) {  // Create new dir
-      fs::create_directories(option_path, ec);
-      if (ec) {
-        LOG(kError) << "GetPathFromProgramOption - Unable to create new dir " << option_path << " ("
-                    << ec.message() << ")";
-        return fs::path();
-      }
-    } else {  // Create new file
-      if (option_path.has_filename()) {
-        try {
-          std::ofstream ofs(option_path.c_str());
-        }
-        catch(const std::exception& e) {
-          LOG(kError) << "GetPathFromProgramOption - Exception while creating new file: "
-                      << e.what();
-          return fs::path();
-        }
-      }
-    }
-  }
-
-  if (is_dir) {
-    if (!fs::is_directory(option_path, ec) || ec) {
-      LOG(kError) << "GetPathFromProgramOption - Invalid " << option_name << ", " << option_path
-                  << " is not a directory (" << ec.message() << ")";
-      return fs::path();
-    }
-  } else {
-    if (!fs::is_regular_file(option_path, ec) || ec) {
-      LOG(kError) << "GetPathFromProgramOption - Invalid " << option_name << ", " << option_path
-                  << " is not a regular file (" << ec.message() << ")";
-      return fs::path();
-    }
-  }
-
-  LOG(kInfo) << "GetPathFromProgramOption - " << option_name << " is " << option_path;
-  return option_path;
 }
 
 nfs::Reply GetReply(const std::string& response) {
@@ -202,13 +127,12 @@ void SetupNetwork(const PmidVector& all_pmids, bool bootstrap_only) {
 
   if (bootstrap_only) {
     // just wait till process receives termination signal
-    std::cout << "Bootstrap nodes are running, press Ctrl+C to terminate." << std::endl
-              << "Endpoints: " << endpoint1 << " and "
-              << endpoint2 << std::endl;
+    LOG(kInfo) << "Bootstrap nodes are running, press Ctrl+C to terminate." << std::endl
+               << "Endpoints: " << endpoint1 << " and " << endpoint2;
     signal(SIGINT, CtrlCHandler);
     std::unique_lock<std::mutex> lock(mutex_);
     cond_var_.wait(lock, [] { return ctrlc_pressed; });  // NOLINT
-    std::cout << "Shutting down bootstrap nodes." << std::endl;
+    LOG(kInfo) << "Shutting down bootstrap nodes.";
   }
 }
 
@@ -227,292 +151,196 @@ std::future<bool> RoutingJoin(routing::Routing& routing,
   return std::move(join_promise.get_future());
 }
 
-class KeyStorer {
- public:
-  // TODO(Dan): Remove the typedefs
-  // I've put these because the Qt Creator parser is still missing >> recognition except when
-  // it refers to the operator and that invalidates the parsing moving forward, which is annoying.
-  typedef std::promise<bool> BoolPromise;
-  typedef std::future<bool> BoolFuture;
-  KeyStorer(const std::vector<UdpEndpoint>& peer_endpoints)
-      : client_anmaid_(),
-        client_maid_(client_anmaid_),
-        client_pmid_(client_maid_),
-        client_routing_(nullptr),
-        functors_(),
-        client_nfs_() {
-      if (!RoutingJoin(client_routing_, functors_, peer_endpoints).get()) {
-        std::cout << "Failed to bootstrap anonymous node for storing keys";
-        throw std::exception();
-      }
-      LOG(kInfo) << "Bootstrapped anonymous node to store keys";
-
-      client_nfs_.reset(new nfs::ClientMaidNfs(client_routing_, client_maid_));
-    }
-
-  void Store(const PmidVector& all_pmids) {
-    auto store_keys = [this] (const passport::Pmid& pmid, std::promise<bool>& promise) {
-                        passport::PublicPmid p_pmid(pmid);
-                        client_nfs_->Put(p_pmid, client_pmid_.name(), callback(std::ref(promise)));
-                      };
-
-    std::vector<BoolPromise> bool_promises(all_pmids.size());
-    std::vector<BoolFuture> bool_futures;
-    size_t promises_index(0), error_stored_keys(0);
-    for (auto& pmid : all_pmids) {  // store all PMIDs
-      std::async(std::launch::async, store_keys, pmid, std::ref(bool_promises.at(promises_index)));
-      bool_futures.push_back(bool_promises.at(promises_index).get_future());
-    }
-
-    for (auto& future : bool_futures) {
-      if (future.has_exception() || !future.get())
-        ++error_stored_keys;
-    }
-
-    if (error_stored_keys > 0) {
-      std::cout << "StoreKeys - Could not store " << error_stored_keys << " out of "
-                  << all_pmids.size() << " keys.";
-      throw std::exception();
-    }
-    LOG(kSuccess) << "StoreKeys - Stored all " << all_pmids.size() << " keys.";
+ClientTester::ClientTester(const std::vector<UdpEndpoint>& peer_endpoints)
+  : client_anmaid_(),
+    client_maid_(client_anmaid_),
+    client_pmid_(client_maid_),
+    client_routing_(nullptr),
+    functors_(),
+    client_nfs_() {
+  if (!RoutingJoin(client_routing_, functors_, peer_endpoints).get()) {
+    LOG(kError) << "Failed to bootstrap anonymous node for storing keys";
+    throw std::exception();
   }
+  LOG(kInfo) << "Bootstrapped anonymous node to store keys";
 
- private:
-  passport::Anmaid client_anmaid_;
-  passport::Maid client_maid_;
-  passport::Pmid client_pmid_;
-  routing::Routing client_routing_;
-  routing::Functors functors_;
-  std::unique_ptr<nfs::ClientMaidNfs> client_nfs_;
-
-  routing::ResponseFunctor callback(std::promise<bool>& promise) {
-    return [&promise] (std::string response) {
-             try {
-               nfs::Reply reply(GetReply(response));
-               promise.set_value(reply.IsSuccess());
-             }
-             catch(...) {
-               promise.set_exception(std::current_exception());
-             }
-           };
-  }
-};
-
-bool StoreKeys(const PmidVector& all_pmids, const std::vector<UdpEndpoint>& peer_endpoints) {
-  try {
-    KeyStorer storer(peer_endpoints);
-    storer.Store(all_pmids);
-    return true;
-  }
-  catch(...) {
-    return false;
-  }
+  client_nfs_.reset(new nfs::ClientMaidNfs(client_routing_, client_maid_));
 }
 
-class KeyVerifier {
-  // TODO(Dan): Remove the typedefs
-  // I've put these because the Qt Creator parser is still missing >> recognition except when
-  // it refers to the operator and that invalidates the parsing moving forward, which is annoying.
-  typedef std::promise<bool> BoolPromise;
-  typedef std::future<bool> BoolFuture;
- public:
-  KeyVerifier(const std::vector<UdpEndpoint>& peer_endpoints)
-      : client_anmaid_(),
-        client_maid_(client_anmaid_),
-        client_routing_(nullptr),
-        functors_(),
-        client_nfs_() {
-    if (!RoutingJoin(client_routing_, functors_, peer_endpoints).get()) {
-      std::cout << "Failed to bootstrap anonymous node for storing keys";
-      throw std::exception();
-    }
-    LOG(kInfo) << "Bootstrapped anonymous node to store keys";
+ClientTester::~ClientTester() {}
 
-    client_nfs_.reset(new nfs::ClientMaidNfs(client_routing_, client_maid_));
+KeyStorer::KeyStorer(const std::vector<UdpEndpoint>& peer_endpoints)
+    : ClientTester(peer_endpoints) {}
+
+void KeyStorer::Store(const PmidVector& all_pmids) {
+  auto store_keys = [this] (const passport::Pmid& pmid, std::promise<bool>& promise) {
+                      passport::PublicPmid p_pmid(pmid);
+                      client_nfs_->Put(p_pmid, client_pmid_.name(), callback(std::ref(promise)));
+                    };
+
+  std::vector<BoolPromise> bool_promises(all_pmids.size());
+  std::vector<BoolFuture> bool_futures;
+  size_t promises_index(0), error_stored_keys(0);
+  for (auto& pmid : all_pmids) {  // store all PMIDs
+    std::async(std::launch::async, store_keys, pmid, std::ref(bool_promises.at(promises_index)));
+    bool_futures.push_back(bool_promises.at(promises_index).get_future());
   }
 
-  void Verify(const PmidVector& all_pmids) {
-    auto verify_keys = [this] (const passport::Pmid& pmid, std::promise<bool>& promise) {
-                         passport::PublicPmid p_pmid(pmid);
-                         client_nfs_->Get<passport::PublicPmid>(p_pmid.name(),
-                                                                callback(pmid, std::ref(promise)));
-                       };
-
-    std::vector<BoolFuture> futures;
-    std::vector<BoolPromise> promises(all_pmids.size());
-    size_t promises_index(0), verified_keys(0);
-    for (auto& pmid : all_pmids) {
-      std::async(std::launch::async, verify_keys, pmid, std::ref(promises.at(promises_index)));
-      futures.push_back(promises.at(promises_index).get_future());
-      ++promises_index;
-    }
-
-    for (auto& future : futures) {
-      if (!future.has_exception() && future.get())
-        ++verified_keys;
-    }
-
-    if (verified_keys < all_pmids.size()) {
-      LOG(kError) << "VerifyKeys - Could only verify " << verified_keys << " out of "
-                  << all_pmids.size() << " keys.";
-      throw std::exception();
-    }
-    LOG(kSuccess) << "VerifyKeys - Verified all " << verified_keys << " keys.";
+  for (auto& future : bool_futures) {
+    if (future.has_exception() || !future.get())
+      ++error_stored_keys;
   }
 
- private:
-  passport::Anmaid client_anmaid_;
-  passport::Maid client_maid_;
-  routing::Routing client_routing_;
-  routing::Functors functors_;
-  std::unique_ptr<nfs::ClientMaidNfs> client_nfs_;
+  if (error_stored_keys > 0) {
+    LOG(kError) << "StoreKeys - Could not store " << error_stored_keys << " out of "
+                << all_pmids.size() << " keys.";
+    throw std::exception();
+  }
+  LOG(kSuccess) << "StoreKeys - Stored all " << all_pmids.size() << " keys.";
+}
 
-  routing::ResponseFunctor callback(const passport::Pmid& pmid,
-                                    std::promise<bool>& promise) {
-    return [&promise, &pmid] (std::string response) {
-              nfs::Reply reply(GetReply(response));
-              if (reply.IsSuccess()) {
-                try {
-                  asymm::PublicKey public_key(GetPublicKeyFromReply(reply));
-                  promise.set_value(asymm::MatchingKeys(public_key,
-                                                        pmid.public_key()));
-                }
-                catch(...) {
-                  LOG(kError) << "Failed to get key for " << DebugId(pmid.name());
-                  promise.set_exception(std::current_exception());
-                }
+routing::ResponseFunctor KeyStorer::callback(std::promise<bool>& promise) {
+  return [&promise] (std::string response) {
+           try {
+             nfs::Reply reply(GetReply(response));
+             promise.set_value(reply.IsSuccess());
+           }
+           catch(...) {
+             promise.set_exception(std::current_exception());
+           }
+         };
+}
+
+KeyVerifier::KeyVerifier(const std::vector<UdpEndpoint>& peer_endpoints)
+    : ClientTester(peer_endpoints) {}
+
+void KeyVerifier::Verify(const PmidVector& all_pmids) {
+  auto verify_keys = [this] (const passport::Pmid& pmid, std::promise<bool>& promise) {
+                       passport::PublicPmid p_pmid(pmid);
+                       client_nfs_->Get<passport::PublicPmid>(p_pmid.name(),
+                                                              callback(pmid, std::ref(promise)));
+                     };
+
+  std::vector<BoolFuture> futures;
+  std::vector<BoolPromise> promises(all_pmids.size());
+  size_t promises_index(0), verified_keys(0);
+  for (auto& pmid : all_pmids) {
+    std::async(std::launch::async, verify_keys, pmid, std::ref(promises.at(promises_index)));
+    futures.push_back(promises.at(promises_index).get_future());
+    ++promises_index;
+  }
+
+  for (auto& future : futures) {
+    if (!future.has_exception() && future.get())
+      ++verified_keys;
+  }
+
+  if (verified_keys < all_pmids.size()) {
+    LOG(kError) << "VerifyKeys - Could only verify " << verified_keys << " out of "
+                << all_pmids.size() << " keys.";
+    throw std::exception();
+  }
+  LOG(kSuccess) << "VerifyKeys - Verified all " << verified_keys << " keys.";
+}
+
+routing::ResponseFunctor KeyVerifier::callback(const passport::Pmid& pmid,
+                                               std::promise<bool>& promise) {
+  return [&promise, &pmid] (std::string response) {
+            nfs::Reply reply(GetReply(response));
+            if (reply.IsSuccess()) {
+              try {
+                asymm::PublicKey public_key(GetPublicKeyFromReply(reply));
+                promise.set_value(asymm::MatchingKeys(public_key,
+                                                      pmid.public_key()));
               }
-            };
-  }
-};
+              catch(...) {
+                LOG(kError) << "Failed to get key for " << DebugId(pmid.name());
+                promise.set_exception(std::current_exception());
+              }
+            }
+          };
+}
 
-bool VerifyKeys(const PmidVector& all_pmids, const std::vector<UdpEndpoint>& peer_endpoints) {
-  try {
-    KeyVerifier verifier(peer_endpoints);
-    verifier.Verify(all_pmids);
-    return true;
+DataChunkStorer::DataChunkStorer(const std::vector<UdpEndpoint>& peer_endpoints)
+    : ClientTester(peer_endpoints),
+      run_(false) {}
+
+void DataChunkStorer::StopTest() { run_ = false; }
+
+bool DataChunkStorer::Test(int32_t quantity) {
+  int32_t rounds(0);
+  size_t num_chunks(0), num_store(0), num_get(0);
+  while (!Done(quantity, rounds))
+    OneChunkRun(num_chunks, num_store, num_get);
+  return num_chunks == num_get;
+}
+
+bool DataChunkStorer::Done(int32_t quantity, int32_t rounds) const {
+  return quantity < 1 ? run_.load() : rounds < quantity;
+}
+
+void DataChunkStorer::OneChunkRun(size_t& num_chunks, size_t& num_store, size_t& num_get) {
+  ImmutableData::serialised_type content(NonEmptyString(RandomString(1 << 18)));  // 256 KB
+  ImmutableData::name_type name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
+  ImmutableData chunk_data(name, content);
+  ++num_chunks;
+
+  if (StoreOneChunk(chunk_data)) {
+    LOG(kInfo) << "Stored chunk " << HexSubstr(name.data) << std::endl;
+    ++num_store;
+  } else {
+    LOG(kError) << "Failed to store chunk " << HexSubstr(name.data);
+    return;
   }
-  catch(...) {
-    return false;
+
+  // The current client is anonymous, which incurs a 10 mins faded out for stored data
+  LOG(kInfo) << "Going to retrieve the stored chunk";
+  if (GetOneChunk(chunk_data)) {
+    LOG(kInfo) << "Got chunk " << HexSubstr(name.data);
+    ++num_get;
+  } else {
+    LOG(kError) << "Failed to store chunk " << HexSubstr(name.data);
   }
 }
 
-class DataChunkStorer {
- public:
-  DataChunkStorer(const std::vector<UdpEndpoint>& peer_endpoints)
-      : run_(false),
-        client_anmaid_(),
-        client_maid_(client_anmaid_),
-        client_pmid_(client_maid_),
-        client_routing_(nullptr),
-        functors_(),
-        client_nfs_() {
-      if (!RoutingJoin(client_routing_, functors_, peer_endpoints).get()) {
-        std::cout << "Failed to bootstrap anonymous node for storing keys";
-        throw std::exception();
-      }
-      LOG(kInfo) << "Bootstrapped anonymous node to store keys";
+bool DataChunkStorer::StoreOneChunk(const ImmutableData& chunk_data) {
+  std::promise<bool> store_promise;
+  std::future<bool> store_future(store_promise.get_future());
+  routing::ResponseFunctor cb([&store_promise] (std::string response) {
+                                          try {
+                                            nfs::Reply reply(GetReply(response));
+                                            store_promise.set_value(reply.IsSuccess());
+                                          }
+                                          catch(...) {
+                                            store_promise.set_exception(std::current_exception());
+                                          }
+                                        });
+  LOG(kInfo) << "Storing chunk " << HexSubstr(chunk_data.data()) << " ...";
+  client_nfs_->Put(chunk_data, client_pmid_.name(), cb);
+  return store_future.get();
+}
 
-      client_nfs_.reset(new nfs::ClientMaidNfs(client_routing_, client_maid_));
-    }
+bool DataChunkStorer::GetOneChunk(const ImmutableData& chunk_data) {
+  std::promise<bool> get_promise;
+  std::future<bool> get_future(get_promise.get_future());
+  auto equal_immutables = [] (const ImmutableData& lhs, const ImmutableData& rhs) {
+                            return lhs.name().data.string() == lhs.name().data.string() &&
+                                   lhs.data().string() == rhs.data().string();
+                          };
 
-  void StopTest() { run_ = false; }
-
-  bool Test(int32_t quantity) {
-    int32_t rounds(0);
-    size_t num_chunks(0), num_store(0), num_get(0);
-    while (!Done(quantity, rounds))
-      OneChunkRun(num_chunks, num_store, num_get);
-    return num_chunks == num_get;
-  }
-
- private:
-  std::atomic_bool run_;
-  passport::Anmaid client_anmaid_;
-  passport::Maid client_maid_;
-  passport::Pmid client_pmid_;
-  routing::Routing client_routing_;
-  routing::Functors functors_;
-  std::unique_ptr<nfs::ClientMaidNfs> client_nfs_;
-
-  bool Done(int32_t quantity, int32_t rounds) const {
-    return quantity < 1 ? run_.load() : rounds < quantity;
-  }
-
-  void OneChunkRun(size_t& num_chunks, size_t& num_store, size_t& num_get) {
-    ImmutableData::serialised_type content(NonEmptyString(RandomString(1 << 18)));  // 256 KB
-    ImmutableData::name_type name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
-    ImmutableData chunk_data(name, content);
-    ++num_chunks;
-
-    if (StoreOneChunk(chunk_data)) {
-      std::cout << "Stored chunk " << HexSubstr(name.data.string()) << std::endl;
-      ++num_store;
-    } else {
-      std::cout << "Failed to store chunk " << HexSubstr(name.data.string()) << std::endl;
-      return;
-    }
-
-    // The current client is anonymous, which incurs a 10 mins faded out for stored data
-    std::cout << "Going to retrieve the stored chunk" << std::endl;
-    if (GetOneChunk(chunk_data)) {
-      std::cout << "Got chunk " << HexSubstr(name.data.string()) << std::endl;
-      ++num_get;
-    } else {
-      std::cout << "Failed to store chunk " << HexSubstr(name.data.string()) << std::endl;
-    }
-  }
-
-  bool StoreOneChunk(const ImmutableData& chunk_data) {
-    std::promise<bool> store_promise;
-    std::future<bool> store_future(store_promise.get_future());
-    routing::ResponseFunctor cb([&store_promise] (std::string response) {
-                                            try {
-                                              nfs::Reply reply(GetReply(response));
-                                              store_promise.set_value(reply.IsSuccess());
-                                            }
-                                            catch(...) {
-                                              store_promise.set_exception(std::current_exception());
-                                            }
-                                          });
-    std::cout << "Storing chunk " << HexSubstr(chunk_data.data()) << " ..." << std::endl;
-    client_nfs_->Put(chunk_data, client_pmid_.name(), cb);
-    return store_future.get();
-  }
-
-  bool GetOneChunk(const ImmutableData& chunk_data) {
-    std::promise<bool> get_promise;
-    std::future<bool> get_future(get_promise.get_future());
-    auto equal_immutables = [] (const ImmutableData& lhs, const ImmutableData& rhs) {
-                              return lhs.name().data.string() == lhs.name().data.string() &&
-                                     lhs.data().string() == rhs.data().string();
-                            };
-
-    routing::ResponseFunctor cb([&chunk_data, &get_promise, &equal_immutables]
-                                (std::string response) {
-                                  try {
-                                    nfs::Reply reply(GetReply(response));
-                                    ImmutableData data(reply.data());
-                                    get_promise.set_value(equal_immutables(chunk_data, data));
-                                  }
-                                  catch(...) {
-                                    get_promise.set_exception(std::current_exception());
-                                  }
-                                });
-    client_nfs_->Get<ImmutableData>(chunk_data.name(), cb);
-    return get_future.get();
-  }
-};
-
-
-bool StoreChunks(const std::vector<UdpEndpoint>& peer_endpoints, int32_t amount) {
-  try {
-    DataChunkStorer chunk_storer(peer_endpoints);
-    return chunk_storer.Test(amount);
-  }
-  catch(...) {
-    return false;
-  }
+  routing::ResponseFunctor cb([&chunk_data, &get_promise, &equal_immutables]
+                              (std::string response) {
+                                try {
+                                  nfs::Reply reply(GetReply(response));
+                                  ImmutableData data(reply.data());
+                                  get_promise.set_value(equal_immutables(chunk_data, data));
+                                }
+                                catch(...) {
+                                  get_promise.set_exception(std::current_exception());
+                                }
+                              });
+  client_nfs_->Get<ImmutableData>(chunk_data.name(), cb);
+  return get_future.get();
 }
 
 // bool ExtendedTest(const size_t& chunk_set_count,
