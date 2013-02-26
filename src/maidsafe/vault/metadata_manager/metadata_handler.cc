@@ -57,21 +57,8 @@ void OfflinesToProtobuf(const std::set<std::string>& offlines, protobuf::Metadat
 }  // namespace detail
 
 
-MetadataHandler::Metadata::Metadata(const protobuf::Metadata& proto_metadata,
-                                    const boost::filesystem::path& root)
-    : content(proto_metadata),
-      kPath(detail::GetPath(proto_metadata.name(), proto_metadata.type(), root)),
-      strong_guarantee(on_scope_exit::ExitAction()) {
-  if (!Identity(content.name()).IsInitialised() ||
-      content.size() < 1 ||
-      content.subscribers() < 1) {
-    LOG(kError) << "Copied an invalid metadata file " << kPath;
-    ThrowError(CommonErrors::invalid_parameter);
-  }
-  strong_guarantee.SetAction(on_scope_exit::RevertValue(content));
-}
-
-void MetadataHandler::Metadata::SaveChanges() {
+template<typename Data>
+void MetadataHandler::Metadata<Data>::SaveChanges() {
   if (content.subscribers() < 1) {
     if (!fs::remove(kPath)) {
       LOG(kError) << "Failed to remove metadata file " << kPath;
@@ -104,8 +91,20 @@ MetadataHandler::MetadataHandler(const boost::filesystem::path& vault_root_dir)
 }
 
 void MetadataHandler::PutMetadata(const protobuf::Metadata& proto_metadata) {
-  Metadata metadata(proto_metadata, kMetadataRoot_);
-  metadata.SaveChanges();
+  if (!proto_metadata.IsInitialized() ||
+      !Identity(proto_metadata.name()).IsInitialised() ||
+      proto_metadata.size() < 1 ||
+      proto_metadata.subscribers() < 1) {
+    LOG(kError) << "Copied an invalid metadata file";
+    ThrowError(CommonErrors::invalid_parameter);
+  }
+  auto path(detail::GetPath(proto_metadata.name(), proto_metadata.type(), kMetadataRoot_));
+  std::string serialised_content(proto_metadata.SerializeAsString());
+  assert(!serialised_content.empty());
+  if (!WriteFile(path, serialised_content)) {
+    LOG(kError) << "Failed to write metadata file " << path;
+    ThrowError(CommonErrors::filesystem_io_error);
+  }
 }
 
 

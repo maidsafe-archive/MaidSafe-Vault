@@ -42,16 +42,6 @@ const int MetadataManagerService::kPutRequestsRequired_(3);
 const int MetadataManagerService::kPutRepliesSuccessesRequired_(3);
 const int MetadataManagerService::kDeleteRequestsRequired_(3);
 
-MetadataManagerService::GetHandler::GetHandler(const routing::ReplyFunctor& reply_functor_in,
-                                               size_t holder_count_in,
-                                               const nfs::MessageId& message_id_in)
-  : reply_functor(reply_functor_in),
-    holder_count(holder_count_in),
-    message_id(message_id_in),
-    mutex(),
-    validation_result(),
-    data_holder_results() {}
-
 
 MetadataManagerService::MetadataManagerService(const passport::Pmid& pmid,
                                                routing::Routing& routing,
@@ -125,7 +115,7 @@ void MetadataManagerService::HandleGenericMessage(const nfs::GenericMessage& gen
 
 //void MetadataManagerService::SendSyncData() {}
 
-void MetadataManagerService::HandleNodeDown(const nfs::GenericMessage& generic_message) {
+void MetadataManagerService::HandleNodeDown(const nfs::GenericMessage& /*generic_message*/) {
   try {
     int online_holders(-1);
 //    metadata_handler_.MarkNodeDown(generic_message.name(), PmidName(), online_holders);
@@ -144,15 +134,15 @@ void MetadataManagerService::HandleNodeDown(const nfs::GenericMessage& generic_m
   }
 }
 
-void MetadataManagerService::HandleNodeUp(const nfs::GenericMessage& generic_message) {
-  try {
-    metadata_handler_.MarkNodeUp(generic_message.name(),
-                                 PmidName(Identity(generic_message.name().string())));
-  }
-  catch(const std::exception &e) {
-    LOG(kError) << "HandleNodeUp - Dropping process after exception: " << e.what();
-    return;
-  }
+void MetadataManagerService::HandleNodeUp(const nfs::GenericMessage& /*generic_message*/) {
+  //try {
+  //  metadata_handler_.MarkNodeUp(generic_message.name(),
+  //                               PmidName(Identity(generic_message.name().string())));
+  //}
+  //catch(const std::exception &e) {
+  //  LOG(kError) << "HandleNodeUp - Dropping process after exception: " << e.what();
+  //  return;
+  //}
 }
 
 bool MetadataManagerService::ThisVaultInGroupForData(const nfs::DataMessage& data_message) const {

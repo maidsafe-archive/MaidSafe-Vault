@@ -76,8 +76,6 @@ class MetadataHandler {
              int32_t data_size);
     // This constructor reads the existing element or throws if it doesn't already exist.
     Metadata(const typename Data::name_type& data_name, const boost::filesystem::path& root);
-    // This constructor will copy proto_metadata, and will throw if invalid.
-    Metadata(const protobuf::Metadata& proto_metadata, const boost::filesystem::path& root);
     // Should only be called once.
     void SaveChanges();
 
@@ -86,7 +84,7 @@ class MetadataHandler {
     on_scope_exit strong_guarantee;
 
    private:
-    Metadata() = delete;
+    Metadata();
     Metadata(const Metadata&);
     Metadata& operator=(const Metadata&);
     Metadata(Metadata&&);

@@ -58,7 +58,7 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     if (detail::AddResult(data_message, reply_functor, MakeError(CommonErrors::success),
                           accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
       pmid_account_handler_.Put<Data>(data_message.data_holder(), data.name(),
-                                      data_message.data().content.string().size());
+          static_cast<int32_t>(data_message.data().content.string().size()));
       nfs_.Put(data_message.data_holder(), data, nullptr);
     }
   }
@@ -81,7 +81,7 @@ void PmidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
     if (detail::AddResult(data_message, reply_functor, MakeError(CommonErrors::success),
                           accumulator_, accumulator_mutex_, kDeleteRequestsRequired_)) {
       pmid_account_handler_.Delete<Data>(data_message.data_holder(), data_name);
-      nfs_.Delete(data_message.data_holder(), data_name, nullptr);
+      nfs_.Delete<Data>(data_message.data_holder(), data_name, nullptr);
     }
   }
   catch(const maidsafe_error& error) {

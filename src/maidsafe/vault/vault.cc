@@ -30,7 +30,7 @@ Vault::Vault(const passport::Pmid& pmid,
       public_key_getter_(*routing_, pmids_from_file),
       maid_account_holder_service_(pmid, *routing_, public_key_getter_, vault_root_dir),
       metadata_manager_service_(pmid, *routing_, public_key_getter_, vault_root_dir),
-      pmid_account_holder_service_(pmid, *routing_, public_key_getter_, vault_root_dir),
+      pmid_account_holder_service_(pmid, *routing_, vault_root_dir),
       data_holder_(pmid, *routing_, vault_root_dir),
       demux_(maid_account_holder_service_, metadata_manager_service_,
              pmid_account_holder_service_, data_holder_),
@@ -127,11 +127,10 @@ void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
 //  public_key_getter_.HandleGetKey<passport::PublicPmid>(name, get_key_future); // FIXME Brian
 }
 
-void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes) {
+void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
   asio_service_.service().post([=] { maid_account_holder_service_.TriggerSync(); });
   asio_service_.service().post([=] { metadata_manager_service_.TriggerSync(); });
   asio_service_.service().post([=] { pmid_account_holder_service_.TriggerSync(); });
-  asio_service_.service().post([=] { data_holder_.CloseNodeReplaced(new_close_nodes); });
 }
 
 bool Vault::OnGetFromCache(std::string& message) {  // Need to be on routing's thread

@@ -94,9 +94,7 @@ MaidName GetSourceMaidName(const nfs::DataMessage& data_message);
 template<typename Data>
 bool IsDataElement(const typename Data::name_type& name,
                    const DataNameVariant& data_name_variant) {
-  GetTagValueAndIdentityVisitor type_and_name_visitor;
-  auto type_and_name(boost::apply_visitor(type_and_name_visitor, data_name_variant));
-  return name == type_and_name.second;
+  return DataNameVariant(name) == data_name_variant;
 }
 
 void SendReply(const nfs::DataMessage& original_message,

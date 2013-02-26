@@ -20,6 +20,7 @@
 
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/api_config.h"
+#include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/nfs.h"

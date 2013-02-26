@@ -16,6 +16,8 @@
 #include "maidsafe/vault/pmid_account_holder/pmid_account_pb.h"
 
 
+namespace fs = boost::filesystem;
+
 namespace maidsafe {
 
 namespace vault {
@@ -25,13 +27,12 @@ const int PmidAccountHolderService::kDeleteRequestsRequired_(3);
 
 PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
-                                                   nfs::PublicKeyGetter& public_key_getter,
                                                    const boost::filesystem::path& vault_root_dir)
-  : routing_(routing),
-    public_key_getter_(public_key_getter),
-    accumulator_(),
-    pmid_account_handler_(vault_root_dir),
-    nfs_(routing, pmid) {}
+    : routing_(routing),
+      accumulator_mutex_(),
+      accumulator_(),
+      pmid_account_handler_(vault_root_dir),
+      nfs_(routing, pmid) {}
 
 
 void PmidAccountHolderService::TriggerSync(
@@ -112,7 +113,7 @@ void PmidAccountHolderService::InformOfDataHolderUp(const PmidName& pmid_name) {
 void PmidAccountHolderService::InformAboutDataHolder(const PmidName& pmid_name, bool node_up) {
   // TODO(Team): Decide on a better strategy instead of sleep
   Sleep(boost::posix_time::minutes(3));
-  PathVector names(pmid_account_handler_.GetArchiveFileNames(pmid_name));
+  auto names(pmid_account_handler_.GetArchiveFileNames(pmid_name));
   for (auto ritr(names.rbegin()); ritr != names.rend(); ++ritr) {
     if (StatusHasReverted(pmid_name, node_up)) {
       RevertMessages(pmid_name, names.rbegin(), ritr, !node_up);
@@ -148,8 +149,8 @@ bool PmidAccountHolderService::StatusHasReverted(const PmidName& pmid_name, bool
 }
 
 void PmidAccountHolderService::RevertMessages(const PmidName& pmid_name,
-                                              const PathVector::reverse_iterator& begin,
-                                              PathVector::reverse_iterator& current,
+                                              const std::vector<fs::path>::reverse_iterator& begin,
+                                              std::vector<fs::path>::reverse_iterator& current,
                                               bool node_up) {
   while (current != begin) {
     std::set<PmidName> metadata_manager_ids(GetDataNamesInFile(pmid_name, *current));

@@ -92,7 +92,6 @@ class PmidAccountHolderService {
                     bool node_up);
 
   routing::Routing& routing_;
-  nfs::PublicKeyGetter& public_key_getter_;
   std::mutex accumulator_mutex_;
   Accumulator<PmidName> accumulator_;
   PmidAccountHandler pmid_account_handler_;

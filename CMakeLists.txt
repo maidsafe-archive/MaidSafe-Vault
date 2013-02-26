@@ -162,7 +162,7 @@ ms_disable_warnings(${VaultProtoSources} ${DataHolderProtoSources} ${MaidAccount
 if(UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-effc++")
 elseif(MSVC AND MAIDSAFE_TESTING)
-  set_target_properties(TESTvault PROPERTIES COMPILE_FLAGS "/bigobj")
+  set_target_properties(maidsafe_vault TESTvault PROPERTIES COMPILE_FLAGS "/bigobj")
 endif()
 
 #==================================================================================================#

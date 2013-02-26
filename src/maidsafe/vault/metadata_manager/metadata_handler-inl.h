@@ -46,8 +46,8 @@ void OfflinesToProtobuf(const std::set<std::string>& offlines, protobuf::Metadat
 
 template<typename Data>
 MetadataHandler::Metadata<Data>::Metadata(const typename Data::name_type& data_name,
-                                    const boost::filesystem::path& root,
-                                    int32_t data_size)
+                                          const boost::filesystem::path& root,
+                                          int32_t data_size)
     : content(),
       kPath(detail::GetPath<Data>(data_name, root)),
       strong_guarantee(on_scope_exit::ExitAction()) {
@@ -71,7 +71,7 @@ MetadataHandler::Metadata<Data>::Metadata(const typename Data::name_type& data_n
 
 template<typename Data>
 MetadataHandler::Metadata<Data>::Metadata(const typename Data::name_type& data_name,
-                                    const boost::filesystem::path& root)
+                                          const boost::filesystem::path& root)
     : content(),
       kPath(detail::GetPath<Data>(data_name, root)),
       strong_guarantee(on_scope_exit::ExitAction()) {

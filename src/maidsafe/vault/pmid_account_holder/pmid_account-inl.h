@@ -26,11 +26,9 @@ void PmidAccount::PutData(const typename Data::name_type& name, int32_t size) {
       return;
   }
 
-  DataElement data_element(GetDataNameVariant(Data::name_type::tag_value,
-                                              Identity(name)),
-                           size);
+  DataElement data_element(GetDataNameVariant(Data::type_enum_value(), Identity(name)), size);
   recent_data_stored_.push_back(data_element);
-  pmid_record_.stored_count++;
+  ++pmid_record_.stored_count;
   pmid_record_.stored_total_size += size;
 }
 

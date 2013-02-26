@@ -34,6 +34,9 @@ namespace vault {
 
 class PmidAccount {
  public:
+  typedef PmidName name_type;
+  typedef TaggedValue<NonEmptyString, struct SerialisedPmidAccountTag> serialised_type;
+
   struct DataElement {
     DataElement();
     DataElement(const DataNameVariant& data_name_variant_in, int32_t size_in);
@@ -50,8 +53,6 @@ class PmidAccount {
     GetTagValueAndIdentityVisitor type_and_name_visitor;
   };
   enum class DataHolderStatus : int32_t { kDown, kGoingDown, kUp, kGoingUp };
-  typedef PmidName name_type;
-  typedef TaggedValue<NonEmptyString, struct SerialisedPmidAccountTag> serialised_type;
 
   PmidAccount(const PmidName& pmid_name, const boost::filesystem::path& root);
   PmidAccount(const serialised_type& serialised_pmid_account, const boost::filesystem::path& root);

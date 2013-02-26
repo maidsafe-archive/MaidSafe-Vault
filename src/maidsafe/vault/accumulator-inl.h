@@ -20,8 +20,10 @@
 #include <string>
 
 #include "maidsafe/nfs/reply.h"
+#include "maidsafe/data_types/data_name_variant.h"
 
 #include "maidsafe/vault/handled_request_pb.h"
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
@@ -220,6 +222,65 @@ std::vector<typename Accumulator<Name>::PendingRequest> Accumulator<Name>::SetHa
   handled_requests_.push_back(
       Accumulator::HandledRequest(data_message.message_id(),
                                   Name(Identity(data_message.source().node_id.string())),
+                                  data_message.data().action,
+                                  data_message.data().name,
+                                  data_message.data().type,
+                                  static_cast<int32_t>(data_message.data().content.string().size()),
+                                  return_code));
+  if (handled_requests_.size() > kMaxHandledRequestsCount_)
+    handled_requests_.pop_front();
+  return ret_requests;
+}
+
+template<>
+std::vector<typename Accumulator<DataNameVariant>::PendingRequest>
+    Accumulator<DataNameVariant>::SetHandled(
+        const nfs::DataMessage& data_message,
+        const maidsafe_error& return_code) {
+  std::vector<PendingRequest> ret_requests;
+  auto itr = pending_requests_.begin();
+  while (itr != pending_requests_.end()) {
+    if ((*itr).msg.message_id() == data_message.message_id() &&
+        (*itr).msg.source().node_id == data_message.source().node_id) {
+      ret_requests.push_back(*itr);
+      itr = pending_requests_.erase(itr);
+    } else {
+      ++itr;
+    }
+  }
+
+  handled_requests_.push_back(
+      Accumulator::HandledRequest(data_message.message_id(),
+                                  GetDataNameVariant(data_message.data().type, data_message.data().name),
+                                  data_message.data().action,
+                                  data_message.data().name,
+                                  data_message.data().type,
+                                  static_cast<int32_t>(data_message.data().content.string().size()),
+                                  return_code));
+  if (handled_requests_.size() > kMaxHandledRequestsCount_)
+    handled_requests_.pop_front();
+  return ret_requests;
+}
+
+template<>
+std::vector<typename Accumulator<PmidName>::PendingRequest> Accumulator<PmidName>::SetHandled(
+    const nfs::DataMessage& data_message,
+    const maidsafe_error& return_code) {
+  std::vector<PendingRequest> ret_requests;
+  auto itr = pending_requests_.begin();
+  while (itr != pending_requests_.end()) {
+    if ((*itr).msg.message_id() == data_message.message_id() &&
+        (*itr).msg.source().node_id == data_message.source().node_id) {
+      ret_requests.push_back(*itr);
+      itr = pending_requests_.erase(itr);
+    } else {
+      ++itr;
+    }
+  }
+
+  handled_requests_.push_back(
+      Accumulator::HandledRequest(data_message.message_id(),
+                                  data_message.data_holder(),
                                   data_message.data().action,
                                   data_message.data().name,
                                   data_message.data().type,

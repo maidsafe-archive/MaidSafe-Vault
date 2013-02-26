@@ -30,6 +30,18 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
+MetadataManagerService::GetHandler<Data>::GetHandler(const routing::ReplyFunctor& reply_functor_in,
+                                                     size_t holder_count_in,
+                                                     const nfs::MessageId& message_id_in)
+  : reply_functor(reply_functor_in),
+    holder_count(holder_count_in),
+    message_id(message_id_in),
+    mutex(),
+    validation_result(),
+    data_holder_results() {}
+
+
+template<typename Data>
 void MetadataManagerService::HandleDataMessage(const nfs::DataMessage& data_message,
                                         const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
@@ -73,7 +85,7 @@ void MetadataManagerService::HandlePut(const nfs::DataMessage& data_message,
     });
     if (detail::AddResult(data_message, reply_functor, MakeError(CommonErrors::success),
                           accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
-      PmidName target_data_holder(routing_.ClosestToID(data_message.source().node_id) ?
+      PmidName target_data_holder(routing_.ClosestToId(data_message.source().node_id) ?
                                   data_message.data_holder() :
                                   Identity(routing_.RandomConnectedNode().string()));
       Put(data, target_data_holder);
@@ -111,9 +123,9 @@ void MetadataManagerService::HandleGet(nfs::DataMessage data_message,
     ValidateGetSender(data_message);
     typename Data::name_type data_name(Identity(data_message.data().name));
     auto online_holders(metadata_handler_.GetOnlineDataHolders<Data>(data_name));
-    auto get_handler(std::make_shared<GetHandler<Data>>(
-        GetHandler<Data>(reply_functor, online_holders.size(), data_message.message_id())));
-
+    std::shared_ptr<GetHandler<Data>> get_handler(new GetHandler<Data>(reply_functor,
+                                                                       online_holders.size(),
+                                                                       data_message.message_id()));
     for (auto& online_holder : online_holders) {
       nfs_.Get<Data>(online_holder, data_name, [this, get_handler](std::string serialised_reply) {
                                              this->OnHandleGet(get_handler, serialised_reply);
