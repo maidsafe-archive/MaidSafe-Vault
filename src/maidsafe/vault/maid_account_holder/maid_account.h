@@ -82,7 +82,7 @@ class MaidAccount {
 
   friend class test::MaidAccountHandlerTest;
   template<typename Data>
-  friend class MaidAccountHandlerTypedTest;
+  friend class test::MaidAccountHandlerTypedTest;
 
  private:
   struct PutDataDetails {
