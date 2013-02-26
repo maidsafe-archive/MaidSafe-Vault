@@ -35,6 +35,10 @@ namespace vault {
 
 namespace test {
 class MaidAccountHandlerTest;
+
+template<typename Data>
+class MaidAccountHandlerTypedTest;
+
 }  // namespace test
 
 
@@ -77,6 +81,8 @@ class MaidAccount {
   name_type name() const { return kMaidName_; }
 
   friend class test::MaidAccountHandlerTest;
+  template<typename Data>
+  friend class test::MaidAccountHandlerTypedTest;
 
  private:
   struct PutDataDetails {
