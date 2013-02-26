@@ -51,7 +51,7 @@ void CtrlCHandler(int /*signum*/) {
 NetworkGenerator::NetworkGenerator() {}
 
 void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_pmids) {
-  LOG(kInfo) << "Creating zero state routing network...";
+  std::cout << "Creating zero state routing network..." << std::endl;
   BootstrapData bootstrap_data(all_pmids.at(0), all_pmids.at(1));
 
   std::vector<passport::PublicPmid> all_public_pmids;
@@ -88,8 +88,8 @@ void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_pmids) {
   }
 
   // just wait till process receives termination signal
-  LOG(kInfo) << "Bootstrap nodes are running, press Ctrl+C to terminate." << std::endl
-             << "Endpoints: " << endpoint1_ << " and " << endpoint2_;
+  std::cout << "Bootstrap nodes are running, press Ctrl+C to terminate." << std::endl
+            << "Endpoints: " << endpoint1_ << " and " << endpoint2_ << std::endl;
   signal(SIGINT, CtrlCHandler);
   std::unique_lock<std::mutex> lock(g_mutex);
   g_cond_var.wait(lock, [this] { return g_ctrlc_pressed; });  // NOLINT

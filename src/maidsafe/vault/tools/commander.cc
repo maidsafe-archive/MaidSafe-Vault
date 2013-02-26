@@ -114,37 +114,38 @@ void Commander::CheckOptionValidity(po::options_description& cmdline_options,
   selected_ops_.do_test = variables_map.count("test") != 0;
   selected_ops_.do_print = variables_map.count("print") != 0;
 
-  auto no_options_selected = [this] () {  return  !selected_ops_.do_create &&
-                                                  !selected_ops_.do_load &&
-                                                  !selected_ops_.do_bootstrap &&
-                                                  !selected_ops_.do_store &&
-                                                  !selected_ops_.do_verify &&
-                                                  !selected_ops_.do_test &&
-                                                  !selected_ops_.do_delete &&
-                                                  !selected_ops_.do_print;
+  auto no_options_selected = [this] () {  return  !(selected_ops_.do_create ||
+                                                    selected_ops_.do_load ||
+                                                    selected_ops_.do_bootstrap ||
+                                                    selected_ops_.do_store ||
+                                                    selected_ops_.do_verify ||
+                                                    selected_ops_.do_test ||
+                                                    selected_ops_.do_delete ||
+                                                    selected_ops_.do_print);
                                        };
   auto conflicted_options =
       [this] () -> bool {
         if (!selected_ops_.do_create && !selected_ops_.do_load && !selected_ops_.do_delete)
-          return false;
+          return true;
         if (selected_ops_.do_create && selected_ops_.do_load)
-          return false;
+          return true;
         if (selected_ops_.do_create && selected_ops_.do_delete)
-          return false;
+          return true;
         if (selected_ops_.do_load && selected_ops_.do_delete)
-          return false;
+          return true;
         if (selected_ops_.do_delete && selected_ops_.do_print)
-          return false;
+          return true;
         if (!(selected_ops_.do_create || selected_ops_.do_load) && selected_ops_.do_print)
-          return false;
+          return true;
         if (selected_ops_.do_bootstrap &&
             (selected_ops_.do_store || selected_ops_.do_verify || selected_ops_.do_test))
-          return false;
-        if (peer_endpoints_.empty() &&
-            !(selected_ops_.do_create || selected_ops_.do_load) &&
+          return true;
+        if (selected_ops_.do_bootstrap &&
             (selected_ops_.do_store || selected_ops_.do_verify || selected_ops_.do_test))
-          return false;
-        return true;
+          return true;
+        if (peer_endpoints_.empty() && !selected_ops_.do_create && !selected_ops_.do_load)
+          return true;
+        return false;
       };
 
   if (variables_map.count("help") || no_options_selected() || conflicted_options()) {
@@ -155,6 +156,8 @@ void Commander::CheckOptionValidity(po::options_description& cmdline_options,
 
 void Commander::ChooseOperations() {
   HandleKeys();
+  if (selected_ops_.do_bootstrap)
+    HandleSetupBootstraps();
   if (selected_ops_.do_store)
     HandleStore();
   if (selected_ops_.do_verify)

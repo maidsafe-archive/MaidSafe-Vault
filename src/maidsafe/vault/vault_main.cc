@@ -159,7 +159,7 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
   if (fs::exists(keys_path, error_code)) {
     auto all_pmids = maidsafe::passport::detail::ReadPmidList(keys_path);
     pmid = std::unique_ptr<maidsafe::passport::Pmid>(
-                  new maidsafe::passport::Pmid(all_pmids[identity_index]));
+               new maidsafe::passport::Pmid(all_pmids[identity_index]));
     LOG(kInfo) << "Added " << all_pmids.size() << " keys."
                << " Using identity #" << identity_index << " from keys file.";
     all_public_pmids.reserve(all_pmids.size());
@@ -172,7 +172,7 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
   if (!(*pmid).name().data.IsInitialised()) {
     if (!using_vault_controller ||
         (using_vault_controller &&
-          !vault_controller.GetIdentity(pmid, endpoints_from_lifestuff_manager))) {
+            !vault_controller.GetIdentity(pmid, endpoints_from_lifestuff_manager))) {
       std::cout << "No identity available, can't start vault." << std::endl;
       return 3;
     }
@@ -193,12 +193,12 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
   auto vault = std::make_shared<maidsafe::vault::Vault>(
       *pmid,
       chunk_path,
-      [&vault_controller](const boost::asio::ip::udp::endpoint &endpoint) {
-            std::pair<std::string, uint16_t> endpoint_pair;
-            endpoint_pair.first = endpoint.address().to_string();
-            endpoint_pair.second = endpoint.port();
-            vault_controller.SendEndpointToLifeStuffManager(endpoint_pair);
-          },
+      [&vault_controller] (const boost::asio::ip::udp::endpoint &endpoint) {
+        std::pair<std::string, uint16_t> endpoint_pair;
+        endpoint_pair.first = endpoint.address().to_string();
+        endpoint_pair.second = endpoint.port();
+        vault_controller.SendEndpointToLifeStuffManager(endpoint_pair);
+      },
       all_public_pmids,
       peer_endpoints);
 
@@ -232,10 +232,10 @@ int OptionMenu(int argc, char* argv[]) {
     po::options_description generic_options("General options");
     generic_options.add_options()
         ("help,h", "Print this help message")
-//         ("version,v", "Display version")
+//        ("version,v", "Display version")
 //        ("start", "Start vault")
 //        ("stop", "Stop vault")
-//         ("first_node,f", po::bool_switch(), "First node of the network.")
+//        ("first_node,f", po::bool_switch(), "First node of the network.")
         ("config", po::value(&config_file)->default_value(config_file), "Path to config file");
 
     // Options allowed both on command line and in config file
@@ -249,21 +249,22 @@ int OptionMenu(int argc, char* argv[]) {
         ("vmid", po::value<std::string>(), "ID to identify to vault manager")
         ("peer", po::value<std::string>(), "Endpoint of bootstrap node")
         ("keys_path",
-            po::value<std::string>()->default_value(
-                fs::path(fs::temp_directory_path(error_code) / "key_directory.dat").string()),
-            "Path to keys file for bootstrapping")
+         po::value<std::string>()->default_value(
+             fs::path(fs::temp_directory_path(error_code) / "key_directory.dat").string()),
+         "Path to keys file for bootstrapping")
         ("identity_index", po::value<int>(&identity_index)->default_value(-1),
             "Entry from keys file to use as ID")
         ("usr_id",
-            po::value<std::string>()->default_value("lifestuff"),
-            "user id if running under in non-win OS and from inside a process");
+         po::value<std::string>()->default_value("lifestuff"),
+         "user id if running under in non-win OS and from inside a process");
 
     po::options_description cmdline_options;
     cmdline_options.add(generic_options).add(config_file_options);
 
     po::variables_map variables_map;
     po::store(po::command_line_parser(argc, argv).options(cmdline_options).allow_unregistered().
-                                                  allow_unregistered().run(), variables_map);
+                                                  allow_unregistered().run(),
+              variables_map);
     po::notify(variables_map);
 
     if (variables_map.count("help")) {
