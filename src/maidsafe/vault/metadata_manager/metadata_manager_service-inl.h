@@ -33,12 +33,12 @@ template<typename Data>
 MetadataManagerService::GetHandler<Data>::GetHandler(const routing::ReplyFunctor& reply_functor_in,
                                                      size_t holder_count_in,
                                                      const nfs::MessageId& message_id_in)
-  : reply_functor(reply_functor_in),
-    holder_count(holder_count_in),
-    message_id(message_id_in),
-    mutex(),
-    validation_result(),
-    data_holder_results() {}
+    : reply_functor(reply_functor_in),
+      holder_count(holder_count_in),
+      message_id(message_id_in),
+      mutex(),
+      validation_result(),
+      data_holder_results() {}
 
 
 template<typename Data>
@@ -104,7 +104,7 @@ void MetadataManagerService::HandlePut(const nfs::DataMessage& data_message,
 
 template<typename Data>
 void MetadataManagerService::Put(const Data& data, const PmidName& target_data_holder) {
-  auto put_op(std::make_shared<nfs::PutOrDeleteOp>(
+  auto put_op(std::make_shared<nfs::OperationOp>(
       kPutRepliesSuccessesRequired_,
       [this](nfs::Reply overall_result) {
           HandlePutResult<Data>(overall_result);
@@ -112,7 +112,7 @@ void MetadataManagerService::Put(const Data& data, const PmidName& target_data_h
   nfs_.Put(target_data_holder,
            data,
            [put_op](std::string serialised_reply) {
-               nfs::HandlePutOrDeleteReply(put_op, serialised_reply);
+               nfs::HandleOperationReply(put_op, serialised_reply);
            });
 }
 
