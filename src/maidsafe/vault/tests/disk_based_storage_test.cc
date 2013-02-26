@@ -337,7 +337,7 @@ class DiskStorageTest : public testing::Test {
   }
 
   std::string GenerateFileContent(bool store_generated_elements = false) {
-    return GenerateFileContent(store_generated_elements ? &element_names_ : nullptr);
+    return test::GenerateFileContent(store_generated_elements ? &element_names_ : nullptr);
   }
 
   std::vector<boost::filesystem::path> VerifyFiles(uint32_t expected_file_num) {
@@ -423,9 +423,9 @@ TYPED_TEST_P(DiskStorageTest, BEH_ActionsWithCorruption) {
   std::vector<Ops> operations(this->GenerateOperations(num_ops));
 
   // Start operations
-  std::atomic_bool curruption_running(false);
+  std::atomic_bool curruption_running(false), failed(false);
   auto ops_future(std::async(std::launch::async,
-                             [this, &operations, &curruption_running] () {
+                             [this, &operations, &curruption_running, &failed] () {
                                while (!operations.empty()) {
                                  try {
                                    auto it(operations.begin());
@@ -435,9 +435,8 @@ TYPED_TEST_P(DiskStorageTest, BEH_ActionsWithCorruption) {
                                  catch(const std::exception& e) {
                                    LOG(kError) << e.what();
                                    if (!curruption_running)
-                                     FAIL() << "Failed while curruption not running.";
-                                   else
-                                     return;
+                                     failed = true;
+                                   return;
                                  }
                                }
                                LOG(kInfo) << "Finished executing operations.";
@@ -454,6 +453,7 @@ TYPED_TEST_P(DiskStorageTest, BEH_ActionsWithCorruption) {
 
   // Wait for operations
   ops_future.get();
+  EXPECT_FALSE(failed);
   corrupt_future.get();
 }
 

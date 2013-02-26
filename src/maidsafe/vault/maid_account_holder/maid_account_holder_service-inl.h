@@ -61,10 +61,10 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
               typename Data::serialised_type(data_message.data().content));
     MaidName account_name(detail::GetSourceMaidName(data_message));
     auto data_name(GetDataName<Data>(data_message));
-    auto put_op(std::make_shared<nfs::PutOrDeleteOp>(
+    auto put_op(std::make_shared<nfs::OperationOp>(
         kPutRepliesSuccessesRequired_,
         [this, account_name, data_name, reply_functor](nfs::Reply overall_result) {
-            HandlePutResult<Data>(overall_result, account_name, data_name, reply_functor,
+            this->HandlePutResult<Data>(overall_result, account_name, data_name, reply_functor,
                                   is_unique_on_network<Data>());
         }));
     // TODO(Fraser#5#): 2013-02-13 - Have PutToAccount return percentage or amount remaining so
@@ -75,7 +75,7 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     PutToAccount<Data>(account_name, data_name, size, is_payable<Data>());
     on_scope_exit strong_guarantee([this, account_name, data_name] {
         try {
-          DeleteFromAccount<Data>(account_name, data_name, is_payable<Data>());
+          this->DeleteFromAccount<Data>(account_name, data_name, is_payable<Data>());
         }
         catch(const std::exception& e) {
           LOG(kError) << "Failed to delete from account: " << e.what();
@@ -84,7 +84,7 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     nfs_.Put(data,
              data_message.data_holder(),
              [put_op](std::string serialised_reply) {
-                 nfs::HandlePutOrDeleteReply(put_op, serialised_reply);
+                 nfs::HandleOperationReply(put_op, serialised_reply);
              });
     SendEarlySuccessReply<Data>(data_message, reply_functor, is_unique_on_network<Data>());
     strong_guarantee.Release();

@@ -28,11 +28,12 @@ namespace maidsafe {
 namespace vault {
 
 namespace test {
-class AccumulatorTest_BEH_PushRequest_Test;
-class AccumulatorTest_BEH_PushRequestThreaded_Test;
+class AccumulatorTest_BEH_PushSingleResult_Test;
+class AccumulatorTest_BEH_PushSingleResultThreaded_Test;
 class AccumulatorTest_BEH_CheckPendingRequestsLimit_Test;
 class AccumulatorTest_BEH_CheckHandled_Test;
 class AccumulatorTest_BEH_SetHandled_Test;
+class AccumulatorTest_BEH_FindHandled_Test;
 }  // namespace test
 
 template<typename Name>
@@ -95,11 +96,12 @@ class Accumulator {
   // Parses the list of serialised handled requests.
   std::vector<HandledRequest> Parse(const serialised_requests& serialised_requests_in) const;
 
-  friend class test::AccumulatorTest_BEH_PushRequest_Test;
-  friend class test::AccumulatorTest_BEH_PushRequestThreaded_Test;
+  friend class test::AccumulatorTest_BEH_PushSingleResult_Test;
+  friend class test::AccumulatorTest_BEH_PushSingleResultThreaded_Test;
   friend class test::AccumulatorTest_BEH_CheckPendingRequestsLimit_Test;
   friend class test::AccumulatorTest_BEH_CheckHandled_Test;
   friend class test::AccumulatorTest_BEH_SetHandled_Test;
+  friend class test::AccumulatorTest_BEH_FindHandled_Test;
 
  private:
   Accumulator(const Accumulator&);
