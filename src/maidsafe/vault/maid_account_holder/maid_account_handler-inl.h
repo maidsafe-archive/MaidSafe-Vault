@@ -46,8 +46,7 @@ void MaidAccountHandler::Adjust(const MaidName& account_name,
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr)->DeleteData<Data>(data_name);
-  (*itr)->PutData<Data>(data_name, new_cost);
+  (*itr)->Adjust<Data>(data_name, new_cost);
 }
 
 }  // namespace vault

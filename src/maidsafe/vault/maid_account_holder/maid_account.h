@@ -78,6 +78,9 @@ class MaidAccount {
   template<typename Data>
   void DeleteData(const typename Data::name_type& name);
 
+  template<typename Data>
+  void Adjust(const typename Data::name_type& name, int32_t cost);
+
   name_type name() const { return kMaidName_; }
 
   friend class test::MaidAccountHandlerTest;
@@ -102,6 +105,9 @@ class MaidAccount {
   MaidAccount(MaidAccount&&);
   MaidAccount& operator=(MaidAccount&&);
   std::vector<PmidTotals>::iterator Find(const PmidName& pmid_name);
+
+  template<typename Data>
+  void DoPutData(const typename Data::name_type& name, int32_t cost);
 
   const name_type kMaidName_;
   GetTagValueAndIdentityVisitor type_and_name_visitor_;
