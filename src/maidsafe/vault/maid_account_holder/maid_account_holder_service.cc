@@ -283,8 +283,8 @@ void MaidAccountHolderService::HandleFileRequestCallback(
 }
 
 void MaidAccountHolderService::HandleReceivedSyncInfo(
-    const NonEmptyString &/*serialised_account*/) {
-//  MaidAccount maid_account(serialised_account);
+    const NonEmptyString &/*serialised_sync_info*/) {
+//  MaidAccount maid_account(serialised_sync_info);
 //  return WriteFile(kRootDir_ / maid_account.maid_name().data.string(),
 //                   serialised_account.string());
   return;

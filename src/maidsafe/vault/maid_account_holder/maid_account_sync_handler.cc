@@ -9,26 +9,29 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_SYNC_H_
-#define MAIDSAFE_VAULT_SYNC_H_
+#include "maidsafe/vault/maid_account_holder/maid_account_sync_handler.h"
 
-#include <cstdint>
-#include "maidsafe/common/types.h"
+#include "boost/filesystem/operations.hpp"
+
+#include "maidsafe/common/error.h"
+
+#include "maidsafe/vault/utils.h"
+
+
+namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
 namespace vault {
 
-class Sync {
- public:
-  enum class Action : int32_t {
-    kSyncInfo,
-    kSyncArchiveFiles
-  };
-};
+MaidAccountSyncHandler::MaidAccountSyncHandler(const boost::filesystem::path& vault_root_dir)
+    : kMaidAccountsSyncRoot_(vault_root_dir / "maids_sync"),
+      mutex_(),
+      maid_accounts_sync_() {
+  fs::exists(kMaidAccountsSyncRoot_) || fs::create_directory(kMaidAccountsSyncRoot_);
+}
+
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_SYNC_H_
