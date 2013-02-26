@@ -86,7 +86,7 @@ void HandleDataType(nfs::DataMessage& data_message,
 Demultiplexer::Demultiplexer(MaidAccountHolderService& maid_account_holder_service,
                              MetadataManagerService& metadata_manager_service,
                              PmidAccountHolderService& pmid_account_holder_service,
-                             DataHolder& data_holder)
+                             DataHolderService& data_holder)
     : maid_account_holder_service_(maid_account_holder_service),
       metadata_manager_service_(metadata_manager_service),
       pmid_account_holder_service_(pmid_account_holder_service),
@@ -127,7 +127,7 @@ void Demultiplexer::HandleDataMessagePersona(nfs::DataMessage& data_message,
       return HandleDataType<PmidAccountHolderService>(data_message, reply_functor,
                                                       pmid_account_holder_service_);
     case nfs::Persona::kDataHolder:
-      return HandleDataType<DataHolder>(data_message, reply_functor, data_holder_);
+      return HandleDataType<DataHolderService>(data_message, reply_functor, data_holder_);
     default:
       LOG(kError) << "Unhandled Persona";
   }

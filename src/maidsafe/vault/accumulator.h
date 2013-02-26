@@ -55,7 +55,7 @@ class Accumulator {
 
   struct HandledRequest {
     HandledRequest(const nfs::MessageId& msg_id_in,
-                   const Name& source_name_in,
+                   const Name& account_name_in,
                    const nfs::DataMessage::Action& action_type_in,
                    const Identity& data_name,
                    const DataTagValue& data_type,
@@ -67,7 +67,7 @@ class Accumulator {
     HandledRequest& operator=(HandledRequest&& other);
 
     nfs::MessageId msg_id;
-    Name source_name;
+    Name account_name;
     nfs::DataMessage::Action action;
     Identity data_name;
     DataTagValue data_type;

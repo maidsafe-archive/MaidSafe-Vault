@@ -9,3 +9,22 @@ message Metadata {
   repeated bytes online_pmid_name = 5;
   repeated bytes offline_pmid_name = 6;
 }
+
+message DataOrProof {
+  message Data {
+    required int32 type = 1;
+    required bytes name = 2;
+    required bytes content = 3;
+  }
+  message Proof {
+    required int32 type = 1;
+    required bytes name = 2;
+    required bytes value = 3;
+    required int32 size = 4;
+  }
+  required bytes node_id = 1;
+  optional bytes serialised_data = 2;
+  required bytes serialised_proof = 3;
+  required bytes signature = 4;
+}
+

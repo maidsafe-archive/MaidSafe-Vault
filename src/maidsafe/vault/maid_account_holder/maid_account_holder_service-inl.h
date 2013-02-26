@@ -61,8 +61,8 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
               typename Data::serialised_type(data_message.data().content));
     MaidName account_name(detail::GetSourceMaidName(data_message));
     auto data_name(GetDataName<Data>(data_message));
-    auto put_op(std::make_shared<nfs::PutOrDeleteOp>(
-        kPutSuccessCountMin_,
+    auto put_op(std::make_shared<nfs::OperationOp>(
+        kPutRepliesSuccessesRequired_,
         [this, account_name, data_name, reply_functor](nfs::Reply overall_result) {
             this->HandlePutResult<Data>(overall_result, account_name, data_name, reply_functor,
                                   is_unique_on_network<Data>());
@@ -84,7 +84,7 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     nfs_.Put(data,
              data_message.data_holder(),
              [put_op](std::string serialised_reply) {
-                 nfs::HandlePutOrDeleteReply(put_op, serialised_reply);
+                 nfs::HandleOperationReply(put_op, serialised_reply);
              });
     SendEarlySuccessReply<Data>(data_message, reply_functor, is_unique_on_network<Data>());
     strong_guarantee.Release();

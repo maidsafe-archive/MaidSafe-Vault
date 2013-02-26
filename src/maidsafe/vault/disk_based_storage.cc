@@ -166,8 +166,10 @@ protobuf::DiskStoredFile DiskBasedStorage::ParseFile(const FileIdentity& file_id
 void DiskBasedStorage::DeleteEntry(int index, protobuf::DiskStoredFile& file) const {
   protobuf::DiskStoredFile temp;
   for (int i(0); i != file.element_size(); ++i) {
-    if (i != index)
+    if (i != index) {
       temp.add_element()->CopyFrom(file.element(i));
+      break;
+    }
   }
   file = temp;
 }

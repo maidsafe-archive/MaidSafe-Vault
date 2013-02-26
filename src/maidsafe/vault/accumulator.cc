@@ -11,10 +11,6 @@
 
 #include "maidsafe/vault/accumulator.h"
 
-#include <algorithm>
-#include <string>
-
-#include "maidsafe/vault/handled_request_pb.h"
 
 
 namespace maidsafe {
@@ -22,57 +18,78 @@ namespace maidsafe {
 namespace vault {
 
 template<>
-typename Accumulator<passport::PublicMaid::name_type>::serialised_requests
-Accumulator<passport::PublicMaid::name_type>::Serialise(
-    const passport::PublicMaid::name_type& name) const {
-  protobuf::HandledRequests handled_requests;
-  protobuf::HandledRequest* handled_request;
-  handled_requests.set_name(name->string());
-  for (auto& request : handled_requests_) {
-    if (request.source_name == name) {
-      handled_request = handled_requests.add_handled_requests();
-      handled_request->set_message_id(request.msg_id->string());
-      handled_request->set_action(static_cast<int32_t>(request.action));
-      handled_request->set_data_name(request.data_name.string());
-      handled_request->set_data_type(static_cast<int32_t>(request.data_type));
-      handled_request->set_size(request.size);
-      nfs::Reply reply(request.return_code);
-      handled_request->set_reply(reply.Serialise()->string());
-    }
-  }
-  return serialised_requests(NonEmptyString(handled_requests.SerializeAsString()));
+typename std::deque<typename Accumulator<DataNameVariant>::HandledRequest>::const_iterator
+    Accumulator<DataNameVariant>::FindHandled(const nfs::DataMessage& data_message) const {
+  return std::find_if(std::begin(handled_requests_),
+                      std::end(handled_requests_),
+                      [&data_message](const HandledRequest& handled_request)->bool {
+                          auto req_name_and_type =
+                              boost::apply_visitor(GetTagValueAndIdentityVisitor(),
+                                                   handled_request.account_name);
+                          return (handled_request.msg_id == data_message.message_id()) &&
+                              (req_name_and_type.first == data_message.data().type) &&
+                              (req_name_and_type.second.string() ==
+                                   data_message.data().name.string());
+                      });
 }
 
 template<>
-std::vector<typename Accumulator<passport::PublicMaid::name_type>::HandledRequest>
-Accumulator<passport::PublicMaid::name_type>::Parse(
-    const typename Accumulator<passport::PublicMaid::name_type>::serialised_requests&
-        serialised_requests_in) const {
-  std::vector<typename Accumulator<passport::PublicMaid::name_type>::HandledRequest>
-      handled_requests;
-  protobuf::HandledRequests proto_handled_requests;
-  if (!proto_handled_requests.ParseFromString(serialised_requests_in->string()))
-    ThrowError(CommonErrors::parsing_error);
-  try {
-    for (auto index(0); index < proto_handled_requests.handled_requests_size(); ++index) {
-      nfs::Reply reply(nfs::Reply::serialised_type(NonEmptyString(
-          proto_handled_requests.handled_requests(index).reply())));
-      handled_requests.push_back(
-          HandledRequest(
-              nfs::MessageId(Identity(proto_handled_requests.handled_requests(index).message_id())),
-              passport::PublicMaid::name_type(Identity(proto_handled_requests.name())),
-              static_cast<nfs::DataMessage::Action>(
-                  proto_handled_requests.handled_requests(index).action()),
-              Identity(proto_handled_requests.handled_requests(index).data_name()),
-              static_cast<DataTagValue>(proto_handled_requests.handled_requests(index).data_type()),
-              proto_handled_requests.handled_requests(index).size(),
-              reply.error()));
+std::vector<typename Accumulator<DataNameVariant>::PendingRequest>
+    Accumulator<DataNameVariant>::SetHandled(
+        const nfs::DataMessage& data_message,
+        const maidsafe_error& return_code) {
+  std::vector<PendingRequest> ret_requests;
+  auto itr = pending_requests_.begin();
+  while (itr != pending_requests_.end()) {
+    if ((*itr).msg.message_id() == data_message.message_id() &&
+        (*itr).msg.source().node_id == data_message.source().node_id) {
+      ret_requests.push_back(*itr);
+      itr = pending_requests_.erase(itr);
+    } else {
+      ++itr;
     }
   }
-  catch(const std::exception&) {
-    ThrowError(CommonErrors::parsing_error);
+
+  handled_requests_.push_back(
+      Accumulator::HandledRequest(data_message.message_id(),
+                                  GetDataNameVariant(data_message.data().type, data_message.data().name),
+                                  data_message.data().action,
+                                  data_message.data().name,
+                                  data_message.data().type,
+                                  static_cast<int32_t>(data_message.data().content.string().size()),
+                                  return_code));
+  if (handled_requests_.size() > kMaxHandledRequestsCount_)
+    handled_requests_.pop_front();
+  return ret_requests;
+}
+
+template<>
+std::vector<typename Accumulator<PmidName>::PendingRequest> Accumulator<PmidName>::SetHandled(
+    const nfs::DataMessage& data_message,
+    const maidsafe_error& return_code) {
+  std::vector<PendingRequest> ret_requests;
+  auto itr = pending_requests_.begin();
+  while (itr != pending_requests_.end()) {
+    if ((*itr).msg.message_id() == data_message.message_id() &&
+        (*itr).msg.source().node_id == data_message.source().node_id) {
+      ret_requests.push_back(*itr);
+      itr = pending_requests_.erase(itr);
+    } else {
+      ++itr;
+    }
   }
-  return handled_requests;
+
+  handled_requests_.push_back(
+      Accumulator::HandledRequest(data_message.message_id(),
+                                  data_message.data_holder(),
+                                  data_message.data().action,
+                                  data_message.data().name,
+                                  data_message.data().type,
+                                  static_cast<int32_t>(data_message.data().content.string().size()),
+                                  return_code));
+  if (handled_requests_.size() > kMaxHandledRequestsCount_)
+    handled_requests_.pop_front();
+  return ret_requests;
 }
 
 }  // namespace vault

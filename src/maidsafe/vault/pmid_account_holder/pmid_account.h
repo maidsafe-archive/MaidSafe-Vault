@@ -34,6 +34,9 @@ namespace vault {
 
 class PmidAccount {
  public:
+  typedef PmidName name_type;
+  typedef TaggedValue<NonEmptyString, struct SerialisedPmidAccountTag> serialised_type;
+
   struct DataElement {
     DataElement();
     DataElement(const DataNameVariant& data_name_variant_in, int32_t size_in);
@@ -50,8 +53,6 @@ class PmidAccount {
     GetTagValueAndIdentityVisitor type_and_name_visitor;
   };
   enum class DataHolderStatus : int32_t { kDown, kGoingDown, kUp, kGoingUp };
-  typedef PmidName name_type;
-  typedef TaggedValue<NonEmptyString, struct SerialisedPmidAccountTag> serialised_type;
 
   PmidAccount(const PmidName& pmid_name, const boost::filesystem::path& root);
   PmidAccount(const serialised_type& serialised_pmid_account, const boost::filesystem::path& root);
@@ -85,9 +86,9 @@ class PmidAccount {
 
   // Throw if the data is a duplicate
   template<typename Data>
-  std::future<void> PutData(const typename Data::name_type& name, int32_t size);
+  void PutData(const typename Data::name_type& name, int32_t size);
   template<typename Data>
-  std::future<void> DeleteData(const typename Data::name_type& name);
+  void DeleteData(const typename Data::name_type& name);
 
   name_type name() const { return pmid_record_.pmid_name; }
   DataHolderStatus data_holder_status() const { return data_holder_status_; }

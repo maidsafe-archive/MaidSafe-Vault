@@ -20,31 +20,27 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-std::future<void> PmidAccount::PutData(const typename Data::name_type& name, int32_t size) {
-  for (auto& record : recent_data_stored_)
+void PmidAccount::PutData(const typename Data::name_type& name, int32_t size) {
+  for (auto& record : recent_data_stored_) {
     if (detail::IsDataElement<Data>(name, record.data_name_variant))
-      return std::future<void>();
+      return;
+  }
 
-  DataElement data_element(GetDataNameVariant(Data::name_type::tag_value,
-                                              Identity(name)),
-                           size);
+  DataElement data_element(GetDataNameVariant(Data::type_enum_value(), Identity(name)), size);
   recent_data_stored_.push_back(data_element);
-  pmid_record_.stored_count++;
+  ++pmid_record_.stored_count;
   pmid_record_.stored_total_size += size;
-  return std::future<void>();
 }
 
 template<typename Data>
-std::future<void> PmidAccount::DeleteData(const typename Data::name_type& name) {
+void PmidAccount::DeleteData(const typename Data::name_type& name) {
   for (auto itr(recent_data_stored_.begin()); itr != recent_data_stored_.end(); ++itr)
-    if (/*itr->*/detail::IsDataElement<Data>(name, itr->data_name_variant)) {
+    if (detail::IsDataElement<Data>(name, itr->data_name_variant)) {
       pmid_record_.stored_count--;
       pmid_record_.stored_total_size -= itr->size;
       recent_data_stored_.erase(itr);
-
-      return archive_.Delete<Data>(name);
+      archive_.Delete<Data>(name);
     }
-  return std::future<void>();
 }
 
 

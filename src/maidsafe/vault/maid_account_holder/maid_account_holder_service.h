@@ -158,7 +158,7 @@ class MaidAccountHolderService {
   Accumulator<MaidName> accumulator_;
   MaidAccountHandler maid_account_handler_;
   MaidAccountHolderNfs nfs_;
-  static const int kPutSuccessCountMin_;
+  static const int kPutRepliesSuccessesRequired_;
   static const int kDefaultPaymentFactor_;
 };
 

@@ -21,8 +21,10 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/data_types/data_type_values.h"
+#include "maidsafe/routing/parameters.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/data_message.h"
+#include "maidsafe/nfs/utils.h"
 
 #include "maidsafe/vault/disk_based_storage_pb.h"
 #include "maidsafe/vault/types.h"
@@ -31,6 +33,57 @@
 namespace maidsafe {
 
 namespace vault {
+
+template<typename Message>
+inline bool FromMaidAccountHolder(const Message& message) {
+  return message.source().persona != nfs::Persona::kMaidAccountHolder;
+}
+
+template<typename Message>
+inline bool FromMetadataManager(const Message& message) {
+  return message.source().persona != nfs::Persona::kMetadataManager;
+}
+
+template<typename Message>
+inline bool FromPmidAccountHolder(const Message& message) {
+  return message.source().persona != nfs::Persona::kPmidAccountHolder;
+}
+
+template<typename Message>
+inline bool FromDataHolder(const Message& message) {
+  return message.source().persona != nfs::Persona::kDataHolder;
+}
+
+template<typename Message>
+inline bool FromClientMaid(const Message& message) {
+  return message.source().persona != nfs::Persona::kClientMaid;
+}
+
+template<typename Message>
+inline bool FromClientMpid(const Message& message) {
+  return message.source().persona != nfs::Persona::kClientMpid;
+}
+
+template<typename Message>
+inline bool FromOwnerDirectoryManager(const Message& message) {
+  return message.source().persona != nfs::Persona::kOwnerDirectoryManager;
+}
+
+template<typename Message>
+inline bool FromGroupDirectoryManager(const Message& message) {
+  return message.source().persona != nfs::Persona::kGroupDirectoryManager;
+}
+
+template<typename Message>
+inline bool FromWorldDirectoryManager(const Message& message) {
+  return message.source().persona != nfs::Persona::kWorldDirectoryManager;
+}
+
+template<typename Message>
+inline bool FromDataGetter(const Message& message) {
+  return message.source().persona != nfs::Persona::kDataGetter;
+}
+
 
 namespace detail {
 
@@ -41,9 +94,7 @@ MaidName GetSourceMaidName(const nfs::DataMessage& data_message);
 template<typename Data>
 bool IsDataElement(const typename Data::name_type& name,
                    const DataNameVariant& data_name_variant) {
-  GetTagValueAndIdentityVisitor type_and_name_visitor;
-  auto type_and_name(boost::apply_visitor(type_and_name_visitor, data_name_variant));
-  return name == type_and_name.second;
+  return DataNameVariant(name) == data_name_variant;
 }
 
 void SendReply(const nfs::DataMessage& original_message,
@@ -131,6 +182,38 @@ inline void RetryOnPutOrDeleteError(routing::Routing& routing,
     }
   }
 }
+
+// Returns true if the required successful request count has been reached
+template<typename Accumulator>
+bool AddResult(const nfs::DataMessage& data_message,
+               const routing::ReplyFunctor& reply_functor,
+               const maidsafe_error& return_code,
+               Accumulator& accumulator,
+               std::mutex& accumulator_mutex,
+               int requests_required) {
+  std::vector<typename Accumulator::PendingRequest> pending_requests;
+  maidsafe_error overall_return_code(CommonErrors::success);
+  const bool kDone(true);
+  {
+    std::lock_guard<std::mutex> lock(accumulator_mutex);
+    auto pending_results(accumulator.PushSingleResult(data_message, reply_functor, return_code));
+    if (static_cast<int>(pending_results.size()) < requests_required)
+      return !kDone;
+
+    auto result(nfs::GetSuccessOrMostFrequentReply(pending_results, requests_required));
+    if (!result.second && pending_results.size() < routing::Parameters::node_group_size)
+      return !kDone;
+
+    overall_return_code = (*result.first).error();
+    pending_requests = accumulator.SetHandled(data_message, overall_return_code);
+  }
+
+  for (auto& pending_request : pending_requests)
+    SendReply(pending_request.msg, overall_return_code, pending_request.reply_functor);
+
+  return kDone;
+}
+
 
 }  // namespace detail
 

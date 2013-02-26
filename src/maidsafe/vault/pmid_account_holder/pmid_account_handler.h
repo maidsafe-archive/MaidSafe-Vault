@@ -59,12 +59,9 @@ class PmidAccountHandler {
 
   // Data operations
   template<typename Data>
-  std::future<void> PutData(const PmidName& account_name,
-                            const typename Data::name_type& data_name,
-                            int32_t size);
+  void Put(const PmidName& account_name, const typename Data::name_type& data_name, int32_t size);
   template<typename Data>
-  std::future<void> DeleteData(const PmidName& account_name,
-                               const typename Data::name_type& data_name);
+  void Delete(const PmidName& account_name, const typename Data::name_type& data_name);
 
  private:
   PmidAccountHandler(const PmidAccountHandler&);

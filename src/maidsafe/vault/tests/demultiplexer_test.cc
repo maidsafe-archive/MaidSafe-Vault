@@ -85,7 +85,7 @@ class MockPmidAccountHolder : public PmidAccountHolder {
   MockPmidAccountHolder(const MockPmidAccountHolder&);
 };
 
-class MockDataHolder : public DataHolder {
+class MockDataHolder : public DataHolderService {
  public:
   MockDataHolder();
   virtual ~MockDataHolder();

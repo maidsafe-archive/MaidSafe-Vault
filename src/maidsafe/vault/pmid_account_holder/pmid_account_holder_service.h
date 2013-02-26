@@ -12,6 +12,7 @@
 #ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HOLDER_SERVICE_H_
 #define MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HOLDER_SERVICE_H_
 
+#include <mutex>
 #include <set>
 #include <vector>
 
@@ -38,7 +39,6 @@ class PmidAccountHolderService {
  public:
   PmidAccountHolderService(const passport::Pmid& pmid,
                            routing::Routing& routing,
-                           nfs::PublicKeyGetter& public_key_getter,
                            const boost::filesystem::path& vault_root_dir);
   template<typename Data>
   void HandleDataMessage(const nfs::DataMessage& data_message,
@@ -92,10 +92,12 @@ class PmidAccountHolderService {
                     bool node_up);
 
   routing::Routing& routing_;
-  nfs::PublicKeyGetter& public_key_getter_;
+  std::mutex accumulator_mutex_;
   Accumulator<PmidName> accumulator_;
   PmidAccountHandler pmid_account_handler_;
   PmidAccountHolderNfs nfs_;
+  static const int kPutRequestsRequired_;
+  static const int kDeleteRequestsRequired_;
 };
 
 }  // namespace vault

@@ -70,7 +70,7 @@ void DiskBasedStorage::AddElement(const typename Data::name_type& name,
   on_scope_exit disk_stored_file_guarantee(on_scope_exit::RevertValue(file));
 
   auto proto_element(file.add_element());
-  proto_element->set_type(static_cast<int32_t>(Data::name_type::tag_type::kEnumValue));
+  proto_element->set_type(static_cast<int32_t>(Data::type_enum_value()));
   proto_element->set_name(name->string());
   proto_element->set_value(value);
   assert(file.element_size() <= detail::Parameters::max_file_element_count());
@@ -136,7 +136,7 @@ template<typename Data>
 int DiskBasedStorage::GetEntryIndex(const typename Data::name_type& name,
                                     const protobuf::DiskStoredFile& file) const {
   for (int i(0); i != file.element_size(); ++i) {
-    if (file.element(i).type() == static_cast<int32_t>(Data::name_type::tag_type::kEnumValue) &&
+    if (file.element(i).type() == static_cast<int32_t>(Data::type_enum_value()) &&
         file.element(i).name() == name->string()) {
       return i;
     }

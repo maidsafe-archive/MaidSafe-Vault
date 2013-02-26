@@ -61,7 +61,7 @@ class DataHolderTest : public testing::Test {
   }
 
   maidsafe::test::TestPath vault_root_directory_;
-  DataHolder data_holder_;
+  DataHolderService data_holder_;
 };
 
 TYPED_TEST_CASE_P(DataHolderTest);
