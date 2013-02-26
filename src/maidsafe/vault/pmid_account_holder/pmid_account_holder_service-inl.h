@@ -54,7 +54,7 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     Data data(data_name, typename Data::serialised_type(data_message.data().content));
     int32_t size(static_cast<int32_t>(data_message.data().content.string().size()));
     PmidName account_name(data_message.data_holder());
-    auto put_op(std::make_shared<nfs::PutOrDeleteOp>(
+    auto put_op(std::make_shared<nfs::OperationOp>(
         1,
         [this, account_name, data_name, size, reply_functor](nfs::Reply overall_result) {
             HandlePutResult<Data>(overall_result, account_name, data_name, size,
@@ -63,7 +63,7 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     nfs_.Put(data_message.data_holder(),
              data,
              [put_op](std::string serialised_reply) {
-                 nfs::HandlePutOrDeleteReply(put_op, serialised_reply);
+                 nfs::HandleOperationReply(put_op, serialised_reply);
              });
     return;
   }
