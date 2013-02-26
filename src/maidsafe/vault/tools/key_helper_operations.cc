@@ -15,7 +15,6 @@
 
 #include "maidsafe/common/test.h"
 
-#include "maidsafe/routing/node_info.h"
 #include "maidsafe/routing/parameters.h"
 
 
@@ -30,17 +29,6 @@ namespace po = boost::program_options;
 
 typedef boost::asio::ip::udp::endpoint UdpEndpoint;
 
-std::mutex mutex_;
-std::condition_variable cond_var_;
-bool ctrlc_pressed(false);
-
-void CtrlCHandler(int /*signum*/) {
-//   LOG(kInfo) << " Signal received: " << signum;
-  std::lock_guard<std::mutex> lock(mutex_);
-  ctrlc_pressed = true;
-  cond_var_.notify_one();
-}
-
 nfs::Reply GetReply(const std::string& response) {
   return nfs::Reply(nfs::Reply::serialised_type(NonEmptyString(response)));
 }
@@ -49,10 +37,74 @@ asymm::PublicKey GetPublicKeyFromReply(const nfs::Reply& reply) {
   return asymm::DecodeKey(asymm::EncodedPublicKey(reply.data().string()));
 }
 
+std::mutex g_mutex;
+std::condition_variable g_cond_var;
+bool g_ctrlc_pressed;
 
-void DoOnPublicKeyRequested(const NodeId& node_id,
-                            const routing::GivePublicKeyFunctor& give_key,
-                            nfs::PublicKeyGetter& public_key_getter) {
+void CtrlCHandler(int /*signum*/) {
+//   LOG(kInfo) << " Signal received: " << signum;
+  std::lock_guard<std::mutex> lock(g_mutex);
+  g_ctrlc_pressed = true;
+  g_cond_var.notify_one();
+}
+
+NetworkGenerator::NetworkGenerator() {}
+
+void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_pmids) {
+  LOG(kInfo) << "Creating zero state routing network...";
+  BootstrapData bootstrap_data(all_pmids.at(0), all_pmids.at(1));
+
+  std::vector<passport::PublicPmid> all_public_pmids;
+  all_public_pmids.reserve(all_pmids.size());
+  for (auto& pmid : all_pmids)
+    all_public_pmids.push_back(passport::PublicPmid(pmid));
+  nfs::PublicKeyGetter public_key_getter(*bootstrap_data.routing1, all_public_pmids);
+
+  routing::Functors functors1, functors2;
+  functors1.request_public_key = functors2.request_public_key =
+      [&public_key_getter, this] (NodeId node_id, const routing::GivePublicKeyFunctor& give_key) {
+        DoOnPublicKeyRequested(node_id, give_key, public_key_getter);
+      };
+
+  endpoint1_ = UdpEndpoint(GetLocalIp(), test::GetRandomPort());
+  endpoint2_ = UdpEndpoint(GetLocalIp(), test::GetRandomPort());
+  auto a1 = std::async(std::launch::async,
+                       [&, this] {
+                         return bootstrap_data.routing1->ZeroStateJoin(functors1,
+                                                                       endpoint1_,
+                                                                       endpoint2_,
+                                                                       bootstrap_data.info2);
+                       });
+  auto a2 = std::async(std::launch::async,
+                       [&, this] {
+                         return bootstrap_data.routing2->ZeroStateJoin(functors2,
+                                                                       endpoint2_,
+                                                                       endpoint1_,
+                                                                       bootstrap_data.info1);
+                       });
+  if (a1.get() != 0 || a2.get() != 0) {
+    LOG(kError) << "SetupNetwork - Could not start bootstrap nodes.";
+    throw std::exception();
+  }
+
+  // just wait till process receives termination signal
+  LOG(kInfo) << "Bootstrap nodes are running, press Ctrl+C to terminate." << std::endl
+             << "Endpoints: " << endpoint1_ << " and " << endpoint2_;
+  signal(SIGINT, CtrlCHandler);
+  std::unique_lock<std::mutex> lock(g_mutex);
+  g_cond_var.wait(lock, [this] { return g_ctrlc_pressed; });  // NOLINT
+  LOG(kInfo) << "Shutting down bootstrap nodes.";
+}
+
+std::vector<boost::asio::ip::udp::endpoint> NetworkGenerator::BootstrapEndpoints() const {
+  std::vector<boost::asio::ip::udp::endpoint> endpoints(1, endpoint1_);
+  endpoints.push_back(endpoint2_);
+  return std::move(endpoints);
+}
+
+void NetworkGenerator::DoOnPublicKeyRequested(const NodeId& node_id,
+                                              const routing::GivePublicKeyFunctor& give_key,
+                                              nfs::PublicKeyGetter& public_key_getter) {
   public_key_getter.GetKey<passport::PublicPmid>(
       passport::PublicPmid::name_type(Identity(node_id.string())),
       [give_key, node_id] (std::string response) {
@@ -69,96 +121,14 @@ void DoOnPublicKeyRequested(const NodeId& node_id,
       });
 }
 
-void SetupNetwork(const PmidVector& all_pmids, bool bootstrap_only) {
-  struct BootstrapData {
-    BootstrapData()
-        : routing1(),
-          routing2(),
-          info1(),
-          info2() {}
-    std::shared_ptr<routing::Routing> routing1, routing2;
-    routing::NodeInfo info1, info2;
-  } bootstrap_data;
-
-  auto make_node_info = [&] (const passport::Pmid& pmid)->routing::NodeInfo {
-    routing::NodeInfo node;
-    node.node_id = NodeId(pmid.name().data.string());
-    node.public_key = pmid.public_key();
-    return node;
-  };
-
-  LOG(kInfo) << "Creating zero state routing network...";
-  bootstrap_data.info1 = make_node_info(all_pmids[0]);
-  bootstrap_data.routing1.reset(new routing::Routing(&(all_pmids[0])));
-  bootstrap_data.info2 = make_node_info(all_pmids[1]);
-  bootstrap_data.routing2.reset(new routing::Routing(&(all_pmids[1])));
-
-  std::vector<passport::PublicPmid> all_public_pmids;
-  all_public_pmids.reserve(all_pmids.size());
-  for (auto& pmid : all_pmids)
-    all_public_pmids.push_back(passport::PublicPmid(pmid));
-  nfs::PublicKeyGetter public_key_getter(*bootstrap_data.routing1, all_public_pmids);
-
-  routing::Functors functors1, functors2;
-  functors1.request_public_key = functors2.request_public_key =
-      [&public_key_getter] (NodeId node_id,
-                            const routing::GivePublicKeyFunctor& give_key) {
-        DoOnPublicKeyRequested(node_id, give_key, public_key_getter);
-      };
-
-  UdpEndpoint endpoint1(GetLocalIp(), test::GetRandomPort());
-  UdpEndpoint endpoint2(GetLocalIp(), test::GetRandomPort());
-  auto a1 = std::async(std::launch::async, [&] {
-    return bootstrap_data.routing1->ZeroStateJoin(functors1,
-                                                  endpoint1,
-                                                  endpoint2,
-                                                  bootstrap_data.info2);
-  });
-  auto a2 = std::async(std::launch::async, [&] {
-    return bootstrap_data.routing2->ZeroStateJoin(functors2,
-                                                  endpoint2,
-                                                  endpoint1,
-                                                  bootstrap_data.info1);
-  });
-  if (a1.get() != 0 || a2.get() != 0) {
-    LOG(kError) << "SetupNetwork - Could not start bootstrap nodes.";
-    throw std::exception();
-  }
-
-  if (bootstrap_only) {
-    // just wait till process receives termination signal
-    LOG(kInfo) << "Bootstrap nodes are running, press Ctrl+C to terminate." << std::endl
-               << "Endpoints: " << endpoint1 << " and " << endpoint2;
-    signal(SIGINT, CtrlCHandler);
-    std::unique_lock<std::mutex> lock(mutex_);
-    cond_var_.wait(lock, [] { return ctrlc_pressed; });  // NOLINT
-    LOG(kInfo) << "Shutting down bootstrap nodes.";
-  }
-}
-
-std::future<bool> RoutingJoin(routing::Routing& routing,
-                              routing::Functors& functors,
-                              const std::vector<UdpEndpoint>& peer_endpoints) {
-  std::once_flag join_promise_set_flag;
-  std::promise<bool> join_promise;
-  functors.network_status = [&join_promise_set_flag, &join_promise] (int result) {
-                              std::call_once(join_promise_set_flag,
-                              [&join_promise, &result] { join_promise.set_value(result == 0); });  // NOLINT (Fraser)
-                            };
-  // To allow bootstrapping off vaults on local machine
-  routing::Parameters::append_local_live_port_endpoint = true;
-  routing.Join(functors, peer_endpoints);
-  return std::move(join_promise.get_future());
-}
-
 ClientTester::ClientTester(const std::vector<UdpEndpoint>& peer_endpoints)
-  : client_anmaid_(),
-    client_maid_(client_anmaid_),
-    client_pmid_(client_maid_),
-    client_routing_(nullptr),
-    functors_(),
-    client_nfs_() {
-  if (!RoutingJoin(client_routing_, functors_, peer_endpoints).get()) {
+    : client_anmaid_(),
+      client_maid_(client_anmaid_),
+      client_pmid_(client_maid_),
+      client_routing_(nullptr),
+      functors_(),
+      client_nfs_() {
+  if (!RoutingJoin(peer_endpoints).get()) {
     LOG(kError) << "Failed to bootstrap anonymous node for storing keys";
     throw std::exception();
   }
@@ -168,6 +138,21 @@ ClientTester::ClientTester(const std::vector<UdpEndpoint>& peer_endpoints)
 }
 
 ClientTester::~ClientTester() {}
+
+std::future<bool> ClientTester::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints) {
+  std::once_flag join_promise_set_flag;
+  std::promise<bool> join_promise;
+  functors_.network_status = [&join_promise_set_flag, &join_promise] (int result) {
+                              std::call_once(join_promise_set_flag,
+                                             [&join_promise, &result] {
+                                               join_promise.set_value(result == 0);
+                                             });
+                            };
+  // To allow bootstrapping off vaults on local machine
+  routing::Parameters::append_local_live_port_endpoint = true;
+  client_routing_.Join(functors_, peer_endpoints);
+  return std::move(join_promise.get_future());
+}
 
 KeyStorer::KeyStorer(const std::vector<UdpEndpoint>& peer_endpoints)
     : ClientTester(peer_endpoints) {}
@@ -267,12 +252,13 @@ DataChunkStorer::DataChunkStorer(const std::vector<UdpEndpoint>& peer_endpoints)
 
 void DataChunkStorer::StopTest() { run_ = false; }
 
-bool DataChunkStorer::Test(int32_t quantity) {
+void DataChunkStorer::Test(int32_t quantity) {
   int32_t rounds(0);
   size_t num_chunks(0), num_store(0), num_get(0);
   while (!Done(quantity, rounds))
     OneChunkRun(num_chunks, num_store, num_get);
-  return num_chunks == num_get;
+  if (num_chunks != num_get)
+    throw std::exception();
 }
 
 bool DataChunkStorer::Done(int32_t quantity, int32_t rounds) const {

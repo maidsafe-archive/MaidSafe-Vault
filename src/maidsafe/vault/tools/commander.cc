@@ -20,9 +20,8 @@ namespace tools {
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
-Commander::Commander(size_t pmids_count, size_t chunk_set_count)
+Commander::Commander(size_t pmids_count)
     : pmids_count_(pmids_count),
-      chunk_set_count_(chunk_set_count),
       all_pmids_(),
       keys_path_(),
       peer_endpoints_(),
@@ -32,27 +31,17 @@ void Commander::AnalyseCommandLineOptions(int argc, char* argv[]) {
   po::options_description cmdline_options;
   cmdline_options.add(AddGenericOptions("Commands"))
                  .add(AddConfigurationOptions("Configuration options"));
-
-  po::variables_map variables_map(CheckOptionValidity(cmdline_options, argc, argv));
-  GetPathFromProgramOption("keys_path", variables_map);
-
-  // bootstrap endpoint
-  if (variables_map.count("peer"))
-    peer_endpoints_.push_back(GetBootstrapEndpoint(variables_map.at("peer").as<std::string>()));
-
-  HandleKeys();
-  HandleNetWork();
-  HandleStore();
-  HandleVerify();
-  HandleDoTest();
-  HandleDeleteKeys();
+  CheckOptionValidity(cmdline_options, argc, argv);
+  ChooseOperations();
 }
 
 void Commander::GetPathFromProgramOption(const std::string& option_name,
                                          po::variables_map& variables_map) {
-  if (variables_map.count(option_name))
-    keys_path_ = variables_map.at(option_name).as<std::string>();
-  if (keys_path_.empty() || !fs::exists(keys_path_)) {
+  if (variables_map.count(option_name) == 0)
+    return;
+
+  keys_path_ = variables_map.at(option_name).as<std::string>();
+  if (keys_path_.empty()) {
     LOG(kError) << "Incorrect information in parameter " << option_name;
     throw std::exception();
   }
@@ -75,14 +64,12 @@ po::options_description Commander::AddGenericOptions(const std::string& title) {
       ("help,h", "Print this help message.")
       ("create,c", "Create keys and write to file.")
       ("load,l", "Load keys from file.")
-      ("run,r", "Run vaults with available keys.")
+      ("delete,d", "Delete keys file.")
+      ("print,p", "Print the list of keys available.")
       ("bootstrap,b", "Run boostrap nodes only, using first 2 keys.")
       ("store,s", "Store keys on network.")
       ("verify,v", "Verify keys are available on network.")
-      ("test,t", "Run simple test that stores and retrieves chunks.")
-//      ("extended,x", "Run extended test that tries all operations on all chunk types.")
-      ("delete,d", "Delete keys file.")
-      ("print,p", "Print the list of keys available.");
+      ("test,t", "Run simple test that stores and retrieves chunks.");
   return generic_options;
 }
 
@@ -103,47 +90,77 @@ po::options_description Commander::AddConfigurationOptions(const std::string& ti
       ("chunk_path",
        po::value<std::string>()->default_value(
            fs::path(fs::temp_directory_path(error_code) / "keys_chunks").string()),
-       "Path to chunk directory")
-      ("chunk_set_count",
-       po::value<size_t>(&chunk_set_count_)->default_value(chunk_set_count_),
-       "Number of chunk sets to run extended test on");
+       "Path to chunk directory");
   return config_file_options;
 }
 
-po::variables_map Commander::CheckOptionValidity(po::options_description& cmdline_options,
-                                                 int argc,
-                                                 char* argv[]) {
+void Commander::CheckOptionValidity(po::options_description& cmdline_options,
+                                    int argc,
+                                    char* argv[]) {
   po::command_line_parser parser(argc, argv);
   po::variables_map variables_map;
   po::store(parser.options(cmdline_options).allow_unregistered().run(), variables_map);
   po::notify(variables_map);
+  GetPathFromProgramOption("keys_path", variables_map);
+  if (variables_map.count("peer"))
+    peer_endpoints_.push_back(GetBootstrapEndpoint(variables_map.at("peer").as<std::string>()));
+
   selected_ops_.do_create = variables_map.count("create") != 0;
   selected_ops_.do_load = variables_map.count("load") != 0;
-  selected_ops_.do_run = variables_map.count("run") != 0;
+  selected_ops_.do_delete = variables_map.count("delete") != 0;
   selected_ops_.do_bootstrap = variables_map.count("bootstrap") != 0;
   selected_ops_.do_store = variables_map.count("store") != 0;
   selected_ops_.do_verify = variables_map.count("verify") != 0;
   selected_ops_.do_test = variables_map.count("test") != 0;
-  selected_ops_.do_extended = variables_map.count("extended") != 0;
-  selected_ops_.do_delete = variables_map.count("delete") != 0;
   selected_ops_.do_print = variables_map.count("print") != 0;
 
-  auto conflicting_options = [this] () {  return  !selected_ops_.do_create &&
+  auto no_options_selected = [this] () {  return  !selected_ops_.do_create &&
                                                   !selected_ops_.do_load &&
-                                                  !selected_ops_.do_run &&
                                                   !selected_ops_.do_bootstrap &&
                                                   !selected_ops_.do_store &&
                                                   !selected_ops_.do_verify &&
                                                   !selected_ops_.do_test &&
-                                                  !selected_ops_.do_extended &&
                                                   !selected_ops_.do_delete &&
                                                   !selected_ops_.do_print;
                                        };
-  if (variables_map.count("help") || conflicting_options()) {
-    std::cout << cmdline_options << ": Options order: [c|l|d] p [r|b] s v t" << std::endl;
+  auto conflicted_options =
+      [this] () -> bool {
+        if (!selected_ops_.do_create && !selected_ops_.do_load && !selected_ops_.do_delete)
+          return false;
+        if (selected_ops_.do_create && selected_ops_.do_load)
+          return false;
+        if (selected_ops_.do_create && selected_ops_.do_delete)
+          return false;
+        if (selected_ops_.do_load && selected_ops_.do_delete)
+          return false;
+        if (selected_ops_.do_delete && selected_ops_.do_print)
+          return false;
+        if (!(selected_ops_.do_create || selected_ops_.do_load) && selected_ops_.do_print)
+          return false;
+        if (selected_ops_.do_bootstrap &&
+            (selected_ops_.do_store || selected_ops_.do_verify || selected_ops_.do_test))
+          return false;
+        if (peer_endpoints_.empty() &&
+            !(selected_ops_.do_create || selected_ops_.do_load) &&
+            (selected_ops_.do_store || selected_ops_.do_verify || selected_ops_.do_test))
+          return false;
+        return true;
+      };
+
+  if (variables_map.count("help") || no_options_selected() || conflicted_options()) {
+    std::cout << cmdline_options << "Options order: [c|l|d] p [b|(s|v)|t]" << std::endl;
     throw std::exception();
   }
-  return variables_map;
+}
+
+void Commander::ChooseOperations() {
+  HandleKeys();
+  if (selected_ops_.do_store)
+    HandleStore();
+  if (selected_ops_.do_verify)
+    HandleVerify();
+  if (selected_ops_.do_test)
+    HandleDoTest();
 }
 
 void Commander::CreateKeys() {
@@ -169,6 +186,8 @@ void Commander::HandleKeys() {
   } else if (selected_ops_.do_load) {
     all_pmids_ = maidsafe::passport::detail::ReadPmidList(keys_path_);
     LOG(kInfo) << "Loaded " << all_pmids_.size() << " pmids from " << keys_path_;
+  } else if (selected_ops_.do_delete) {
+    HandleDeleteKeys();
   }
 
   if (selected_ops_.do_print) {
@@ -178,61 +197,32 @@ void Commander::HandleKeys() {
   }
 }
 
-void Commander::HandleNetWork() {
-  assert(all_pmids_.size() >= 4);
-  if (selected_ops_.do_run || selected_ops_.do_bootstrap)
-    SetupNetwork(all_pmids_, !selected_ops_.do_run && selected_ops_.do_bootstrap);
+void Commander::HandleSetupBootstraps() {
+  assert(all_pmids_.size() >= 2);
+  NetworkGenerator generator;
+  generator.SetupBootstrapNodes(all_pmids_);
 }
 
-bool Commander::HandleStore() {
-  if (selected_ops_.do_store) {
-    try {
-      KeyStorer storer(peer_endpoints_);
-      storer.Store(all_pmids_);
-      return true;
-    }
-    catch(...) {
-      return false;
-    }
-  }
-  return false;
+void Commander::HandleStore() {
+  KeyStorer storer(peer_endpoints_);
+  storer.Store(all_pmids_);
 }
 
-bool Commander::HandleVerify() {
-  if (selected_ops_.do_verify) {
-    try {
-      KeyVerifier verifier(peer_endpoints_);
-      verifier.Verify(all_pmids_);
-      return true;
-    }
-    catch(...) {
-      return false;
-    }
-  }
-  return false;
+void Commander::HandleVerify() {
+  KeyVerifier verifier(peer_endpoints_);
+  verifier.Verify(all_pmids_);
 }
 
-bool Commander::HandleDoTest() {
-  if (selected_ops_.do_test) {
-    assert(all_pmids_.size() >= 4);
-    try {
-      DataChunkStorer chunk_storer(peer_endpoints_);
-      return chunk_storer.Test();
-    }
-    catch(...) {
-      return false;
-    }
-  }
-  return false;
+void Commander::HandleDoTest() {
+  DataChunkStorer chunk_storer(peer_endpoints_);
+  chunk_storer.Test();
 }
 
 void Commander::HandleDeleteKeys() {
-  if (selected_ops_.do_delete) {
-    if (fs::remove(keys_path_))
-      LOG(kInfo) << "Deleted " << keys_path_;
-    else
-      LOG(kError) << "Could not delete " << keys_path_;
-  }
+  if (fs::remove(keys_path_))
+    LOG(kInfo) << "Deleted " << keys_path_;
+  else
+    LOG(kError) << "Could not delete " << keys_path_;
 }
 
 }  // namespace tools

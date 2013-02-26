@@ -17,22 +17,11 @@ int main(int argc, char* argv[]) {
   std::cout << maidsafe::vault::tools::kHelperVersion << std::endl;
 
   int result(0);
-
-  size_t pmids_count(12), chunk_set_count(3);
+  size_t pmids_count(12);
 
   try {
-    maidsafe::vault::tools::Commander commander(pmids_count, chunk_set_count);
+    maidsafe::vault::tools::Commander commander(pmids_count);
     commander.AnalyseCommandLineOptions(argc, argv);
-
-//     if (do_extended) {
-//       if (all_pmids.size() < 5) {
-//         std::cout << "Need to have at least 5 keys to run extended test." << std::endl;
-//         result = -1;
-//       } else if (!ExtendedTest(chunk_set_count, all_pmids, peer_endpoints)) {
-//         std::cout << "Extended test failed." << std::endl;
-//         result = -1;
-//       }
-//     }
   }
   catch(const std::exception& exception) {
     std::cout << "Error: " << exception.what() << std::endl;

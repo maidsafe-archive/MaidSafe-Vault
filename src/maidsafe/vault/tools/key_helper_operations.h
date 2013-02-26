@@ -27,7 +27,7 @@
 #include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/routing/api_config.h"
-
+#include "maidsafe/routing/node_info.h"
 
 namespace maidsafe {
 
@@ -39,7 +39,35 @@ typedef std::vector<passport::Pmid> PmidVector;
 
 const std::string kHelperVersion = "MaidSafe Vault KeysHelper " + kApplicationVersion;
 
-void SetupNetwork(const PmidVector& all_pmids, bool bootstrap_only);
+class NetworkGenerator {
+ public:
+  NetworkGenerator();
+  void SetupBootstrapNodes(const PmidVector& all_pmids);
+  std::vector<boost::asio::ip::udp::endpoint> BootstrapEndpoints() const;
+
+ private:
+  boost::asio::ip::udp::endpoint endpoint1_, endpoint2_;
+  struct BootstrapData {
+    BootstrapData(const passport::Pmid& pmid1, const passport::Pmid& pmid2)
+        : routing1(new routing::Routing(&pmid1)),
+          routing2(new routing::Routing(&pmid2)),
+          info1(MakeNodeInfo(pmid1)),
+          info2(MakeNodeInfo(pmid2)) {}
+    std::unique_ptr<routing::Routing> routing1, routing2;
+    routing::NodeInfo info1, info2;
+
+    routing::NodeInfo MakeNodeInfo(const passport::Pmid& pmid) {
+      routing::NodeInfo node;
+      node.node_id = NodeId(pmid.name().data.string());
+      node.public_key = pmid.public_key();
+      return node;
+    }
+  };
+
+  void DoOnPublicKeyRequested(const NodeId& node_id,
+                              const routing::GivePublicKeyFunctor& give_key,
+                              nfs::PublicKeyGetter& public_key_getter);
+};
 
 class ClientTester {
  public:
@@ -60,6 +88,7 @@ class ClientTester {
   std::unique_ptr<nfs::ClientMaidNfs> client_nfs_;
 
   ~ClientTester();
+  std::future<bool> RoutingJoin(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
 };
 
 class KeyStorer : public ClientTester {
@@ -85,7 +114,7 @@ class DataChunkStorer : public ClientTester {
   DataChunkStorer(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
 
   void StopTest();
-  bool Test(int32_t quantity = -1);
+  void Test(int32_t quantity = -1);
 
  private:
   std::atomic_bool run_;

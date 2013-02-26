@@ -29,11 +29,11 @@ namespace tools {
 
 class Commander {
  public:
-  Commander(size_t pmids_count, size_t chunk_set_count);
+  Commander(size_t pmids_count);
   void AnalyseCommandLineOptions(int argc, char* argv[]);
 
  private:
-  size_t pmids_count_, chunk_set_count_;
+  size_t pmids_count_;
   maidsafe::vault::tools::PmidVector all_pmids_;
   boost::filesystem::path keys_path_;
   std::vector<boost::asio::ip::udp::endpoint> peer_endpoints_;
@@ -42,30 +42,28 @@ class Commander {
     SelectedOperationsContainer()
         : do_create(false),
           do_load(false),
-          do_run(false),
           do_bootstrap(false),
           do_store(false),
           do_verify(false),
           do_test(false),
-          do_extended(false),
           do_delete(false),
           do_print(false) {}
-    bool do_create, do_load, do_run, do_bootstrap, do_store, do_verify, do_test, do_extended,
-         do_delete, do_print;
+    bool do_create, do_load, do_bootstrap, do_store, do_verify, do_test, do_delete, do_print;
   } selected_ops_;
 
   boost::asio::ip::udp::endpoint GetBootstrapEndpoint(const std::string& peer);
   boost::program_options::options_description AddGenericOptions(const std::string& title);
   boost::program_options::options_description AddConfigurationOptions(const std::string& title);
-  boost::program_options::variables_map CheckOptionValidity(
-      boost::program_options::options_description& cmdline_options,
-      int argc,
-      char* argv[]);
+  void CheckOptionValidity(boost::program_options::options_description& cmdline_options,
+                           int argc,
+                           char* argv[]);
+
+  void ChooseOperations();
   void HandleKeys();
-  void HandleNetWork();
-  bool HandleStore();
-  bool HandleVerify();
-  bool HandleDoTest();
+  void HandleSetupBootstraps();
+  void HandleStore();
+  void HandleVerify();
+  void HandleDoTest();
   void HandleDeleteKeys();
 
   void CreateKeys();
