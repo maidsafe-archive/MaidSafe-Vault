@@ -57,27 +57,6 @@ void OfflinesToProtobuf(const std::set<std::string>& offlines, protobuf::Metadat
 }  // namespace detail
 
 
-template<typename Data>
-void MetadataHandler::Metadata<Data>::SaveChanges() {
-  if (content.subscribers() < 1) {
-    if (!fs::remove(kPath)) {
-      LOG(kError) << "Failed to remove metadata file " << kPath;
-      ThrowError(CommonErrors::filesystem_io_error);
-    }
-  } else {
-    std::string serialised_content(content.SerializeAsString());
-    if (serialised_content.empty()) {
-      LOG(kError) << "Failed to serialise metadata file " << kPath;
-      ThrowError(CommonErrors::serialisation_error);
-    }
-    if (!WriteFile(kPath, serialised_content)) {
-      LOG(kError) << "Failed to write metadata file " << kPath;
-      ThrowError(CommonErrors::filesystem_io_error);
-    }
-  }
-  strong_guarantee.Release();
-}
-
 MetadataHandler::MetadataHandler(const boost::filesystem::path& vault_root_dir)
     : kMetadataRoot_(vault_root_dir / "metadata") {  //FIXME  BEFORE_RELEASE
   if (fs::exists(kMetadataRoot_)) {
@@ -108,182 +87,182 @@ void MetadataHandler::PutMetadata(const protobuf::Metadata& proto_metadata) {
 }
 
 
-//namespace {
-//
-//bool RemovePmidFromOnlineList(const std::string& pmid, protobuf::Metadata& element) {
-//  std::vector<std::string> pmid_names;
-//  bool found(false);
-//  for (int n(0); n < element.online_pmid_name_size(); ++n) {
-//    if (element.online_pmid_name(n) == pmid)
-//      found = true;
-//    else
-//      pmid_names.push_back(element.online_pmid_name(n));
+//  namespace {
+
+//  bool RemovePmidFromOnlineList(const std::string& pmid, protobuf::Metadata& element) {
+//    std::vector<std::string> pmid_names;
+//    bool found(false);
+//    for (int n(0); n < element.online_pmid_name_size(); ++n) {
+//      if (element.online_pmid_name(n) == pmid)
+//        found = true;
+//      else
+//        pmid_names.push_back(element.online_pmid_name(n));
+//    }
+
+//    if (found) {
+//      element.clear_online_pmid_name();
+//      for (auto& pmid_name : pmid_names)
+//        element.add_online_pmid_name(pmid_name);
+//    }
+
+//    return found;
 //  }
 
-//  if (found) {
-//    element.clear_online_pmid_name();
-//    for (auto& pmid_name : pmid_names)
-//      element.add_online_pmid_name(pmid_name);
+//  bool RemovePmidFromOfflineList(const std::string& pmid, protobuf::Metadata& element) {
+//    std::vector<std::string> pmid_names;
+//    bool found(false);
+//    for (int n(0); n < element.offline_pmid_name_size(); ++n) {
+//      if (element.offline_pmid_name(n) == pmid)
+//        found = true;
+//      else
+//        pmid_names.push_back(element.offline_pmid_name(n));
+//    }
+
+//    if (found) {
+//      element.clear_offline_pmid_name();
+//      for (auto& pmid_name : pmid_names)
+//        element.add_offline_pmid_name(pmid_name);
+//    }
+
+//    return found;
 //  }
 
-//  return found;
-//}
+//  }  // namespace
 
-//bool RemovePmidFromOfflineList(const std::string& pmid, protobuf::Metadata& element) {
-//  std::vector<std::string> pmid_names;
-//  bool found(false);
-//  for (int n(0); n < element.offline_pmid_name_size(); ++n) {
-//    if (element.offline_pmid_name(n) == pmid)
-//      found = true;
-//    else
-//      pmid_names.push_back(element.offline_pmid_name(n));
-//  }
+//  const boost::filesystem::path kVaultDirectory("meta_data_manager");
 
-//  if (found) {
-//    element.clear_offline_pmid_name();
-//    for (auto& pmid_name : pmid_names)
-//      element.add_offline_pmid_name(pmid_name);
-//  }
-
-//  return found;
-//}
-
-//}  // namespace
-
-//const boost::filesystem::path kVaultDirectory("meta_data_manager");
-
-//void MetadataHandler::AddDataElement(const Identity& data_name,
-//                                         int32_t element_size,
-//                                         const PmidName& online_pmid_name,
-//                                         const PmidName& offline_pmid_name) {
-//  protobuf::Metadata element;
-//  try {
-//    CheckDataElementExists(data_name);
-//    // Increase counter
-//    ReadAndParseElement(data_name, element);
-//    int64_t number_stored(element.number_stored());
-//    element.set_number_stored(number_stored + 1);
-//  }
-//  catch(...) {
-//    // Add new entry
-//    element.set_data_name(data_name.string());
-//    element.set_element_size(element_size);
-//    element.set_number_stored(1);
-//    element.add_online_pmid_name(online_pmid_name->string());
-//    element.add_offline_pmid_name(offline_pmid_name->string());
-//  }
-
-//  SerialiseAndSaveElement(element);
-//}
-
-//void MetadataHandler::RemoveDataElement(const Identity& data_name) {
-//  CheckDataElementExists(data_name);
-//  boost::filesystem::remove(vault_metadata_dir_ / EncodeToBase64(data_name));
-//}
-
-//int64_t MetadataHandler::DecreaseDataElement(const Identity& data_name) {
-//  int64_t number_stored(-1);
-//  try {
+//  void MetadataHandler::AddDataElement(const Identity& data_name,
+//                                           int32_t element_size,
+//                                           const PmidName& online_pmid_name,
+//                                           const PmidName& offline_pmid_name) {
 //    protobuf::Metadata element;
+//    try {
+//      CheckDataElementExists(data_name);
+//      // Increase counter
+//      ReadAndParseElement(data_name, element);
+//      int64_t number_stored(element.number_stored());
+//      element.set_number_stored(number_stored + 1);
+//    }
+//    catch(...) {
+//      // Add new entry
+//      element.set_data_name(data_name.string());
+//      element.set_element_size(element_size);
+//      element.set_number_stored(1);
+//      element.add_online_pmid_name(online_pmid_name->string());
+//      element.add_offline_pmid_name(offline_pmid_name->string());
+//    }
+
+//    SerialiseAndSaveElement(element);
+//  }
+
+//  void MetadataHandler::RemoveDataElement(const Identity& data_name) {
 //    CheckDataElementExists(data_name);
-//    // Decrease counter
+//    boost::filesystem::remove(vault_metadata_dir_ / EncodeToBase64(data_name));
+//  }
+
+//  int64_t MetadataHandler::DecreaseDataElement(const Identity& data_name) {
+//    int64_t number_stored(-1);
+//    try {
+//      protobuf::Metadata element;
+//      CheckDataElementExists(data_name);
+//      // Decrease counter
+//      ReadAndParseElement(data_name, element);
+//      number_stored = element.number_stored();
+//      // prevent over decreasing, return 0 to trigger a removal in that case
+//      if (number_stored > 0) {
+//        --number_stored;
+//        element.set_number_stored(number_stored);
+//        SerialiseAndSaveElement(element);
+//      } else {
+//        number_stored = 0;
+//      }
+//    }
+//    catch(...) {
+//      LOG(kError) << "Failed to find element of " << HexSubstr(data_name.string());
+//    }
+//    return number_stored;
+//  }
+
+//  void MetadataHandler::MoveNodeToOffline(const Identity& data_name,
+//                                              const PmidName& pmid_name,
+//                                              int64_t& holders) {
+//    CheckDataElementExists(data_name);
+//    protobuf::Metadata element;
 //    ReadAndParseElement(data_name, element);
-//    number_stored = element.number_stored();
-//    // prevent over decreasing, return 0 to trigger a removal in that case
-//    if (number_stored > 0) {
-//      --number_stored;
-//      element.set_number_stored(number_stored);
+//    bool found(RemovePmidFromOnlineList(pmid_name->string(), element));
+//    if (found) {
+//      holders = static_cast<int64_t>(element.online_pmid_name_size());
+//      element.add_offline_pmid_name(pmid_name->string());
 //      SerialiseAndSaveElement(element);
-//    } else {
-//      number_stored = 0;
 //    }
 //  }
-//  catch(...) {
-//    LOG(kError) << "Failed to find element of " << HexSubstr(data_name.string());
-//  }
-//  return number_stored;
-//}
 
-//void MetadataHandler::MoveNodeToOffline(const Identity& data_name,
-//                                            const PmidName& pmid_name,
-//                                            int64_t& holders) {
-//  CheckDataElementExists(data_name);
-//  protobuf::Metadata element;
-//  ReadAndParseElement(data_name, element);
-//  bool found(RemovePmidFromOnlineList(pmid_name->string(), element));
-//  if (found) {
-//    holders = static_cast<int64_t>(element.online_pmid_name_size());
-//    element.add_offline_pmid_name(pmid_name->string());
+//  void MetadataHandler::MoveNodeToOnline(const Identity& data_name, const PmidName& pmid_name) {
+//    CheckDataElementExists(data_name);
+//    protobuf::Metadata element;
+//    ReadAndParseElement(data_name, element);
+//    bool found(RemovePmidFromOfflineList(pmid_name->string(), element));
+//    if (found) {
+//      element.add_online_pmid_name(pmid_name->string());
+//      SerialiseAndSaveElement(element);
+//    }
+//  }
+
+//  void MetadataHandler::AddOnlinePmid(const Identity& data_name,
+//                                          const PmidName& online_pmid_name) {
+//    CheckDataElementExists(data_name);
+//    protobuf::Metadata element;
+//    ReadAndParseElement(data_name, element);
+//    element.add_online_pmid_name(online_pmid_name->string());
 //    SerialiseAndSaveElement(element);
 //  }
-//}
 
-//void MetadataHandler::MoveNodeToOnline(const Identity& data_name, const PmidName& pmid_name) {
-//  CheckDataElementExists(data_name);
-//  protobuf::Metadata element;
-//  ReadAndParseElement(data_name, element);
-//  bool found(RemovePmidFromOfflineList(pmid_name->string(), element));
-//  if (found) {
-//    element.add_online_pmid_name(pmid_name->string());
+//  void MetadataHandler::RemoveOnlinePmid(const Identity& data_name,
+//                                             const PmidName& online_pmid_name) {
+//    CheckDataElementExists(data_name);
+//    protobuf::Metadata element;
+//    ReadAndParseElement(data_name, element);
+//    bool found(RemovePmidFromOnlineList(online_pmid_name->string(), element));
+//    if (found)
+//      SerialiseAndSaveElement(element);
+//  }
+
+//  void MetadataHandler::AddOfflinePmid(const Identity& data_name,
+//                                           const PmidName& offline_pmid_name) {
+//    CheckDataElementExists(data_name);
+//    protobuf::Metadata element;
+//    ReadAndParseElement(data_name, element);
+//    element.add_offline_pmid_name(offline_pmid_name->string());
 //    SerialiseAndSaveElement(element);
 //  }
-//}
 
-//void MetadataHandler::AddOnlinePmid(const Identity& data_name,
-//                                        const PmidName& online_pmid_name) {
-//  CheckDataElementExists(data_name);
-//  protobuf::Metadata element;
-//  ReadAndParseElement(data_name, element);
-//  element.add_online_pmid_name(online_pmid_name->string());
-//  SerialiseAndSaveElement(element);
-//}
-
-//void MetadataHandler::RemoveOnlinePmid(const Identity& data_name,
-//                                           const PmidName& online_pmid_name) {
-//  CheckDataElementExists(data_name);
-//  protobuf::Metadata element;
-//  ReadAndParseElement(data_name, element);
-//  bool found(RemovePmidFromOnlineList(online_pmid_name->string(), element));
-//  if (found)
-//    SerialiseAndSaveElement(element);
-//}
-
-//void MetadataHandler::AddOfflinePmid(const Identity& data_name,
-//                                         const PmidName& offline_pmid_name) {
-//  CheckDataElementExists(data_name);
-//  protobuf::Metadata element;
-//  ReadAndParseElement(data_name, element);
-//  element.add_offline_pmid_name(offline_pmid_name->string());
-//  SerialiseAndSaveElement(element);
-//}
-
-//void MetadataHandler::RemoveOfflinePmid(const Identity& data_name,
-//                                            const PmidName& offline_pmid_name) {
-//  CheckDataElementExists(data_name);
-//  protobuf::Metadata element;
-//  ReadAndParseElement(data_name, element);
-//  bool found(RemovePmidFromOfflineList(offline_pmid_name->string(), element));
-//  if (found)
-//    SerialiseAndSaveElement(element);
-//}
-
-//std::vector<Identity> MetadataHandler::GetOnlinePmid(const Identity& data_id) {
-//  CheckDataElementExists(data_id);
-//  protobuf::Metadata element;
-//  ReadAndParseElement(data_id, element);
-//  std::vector<Identity> online_pmids;
-//  for (int n(0); n < element.online_pmid_name_size(); ++n) {
-//    online_pmids.push_back(Identity(element.online_pmid_name(n)));
+//  void MetadataHandler::RemoveOfflinePmid(const Identity& data_name,
+//                                              const PmidName& offline_pmid_name) {
+//    CheckDataElementExists(data_name);
+//    protobuf::Metadata element;
+//    ReadAndParseElement(data_name, element);
+//    bool found(RemovePmidFromOfflineList(offline_pmid_name->string(), element));
+//    if (found)
+//      SerialiseAndSaveElement(element);
 //  }
-//  return online_pmids;
-//}
 
-//void MetadataHandler::CheckDataElementExists(const Identity& data_name) {
-//  if (!boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name))) {
-//    LOG(kError) << "Failed to find data ID: " << Base64Substr(data_name);
-//    ThrowError(CommonErrors::no_such_element);
+//  std::vector<Identity> MetadataHandler::GetOnlinePmid(const Identity& data_id) {
+//    CheckDataElementExists(data_id);
+//    protobuf::Metadata element;
+//    ReadAndParseElement(data_id, element);
+//    std::vector<Identity> online_pmids;
+//    for (int n(0); n < element.online_pmid_name_size(); ++n) {
+//      online_pmids.push_back(Identity(element.online_pmid_name(n)));
+//    }
+//    return online_pmids;
 //  }
-//}
+
+//  void MetadataHandler::CheckDataElementExists(const Identity& data_name) {
+//    if (!boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name))) {
+//      LOG(kError) << "Failed to find data ID: " << Base64Substr(data_name);
+//      ThrowError(CommonErrors::no_such_element);
+//    }
+//  }
 
 }  // namespace vault
 

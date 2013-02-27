@@ -20,6 +20,7 @@
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/metadata_manager/metadata_pb.h"
+#include "maidsafe/vault/utils.h"
 
 
 namespace maidsafe {
@@ -28,172 +29,166 @@ namespace vault {
 
 namespace test {
 
-//// to match kVaultDirectory in metadata_handler.cc
-//const boost::filesystem::path kVaultDirectory("meta_data_manager");
+Identity GenerateIdentity() {
+  return Identity(RandomAlphaNumericString(64));
+}
 
-//Identity GenerateIdentity() {
-//  return Identity(RandomAlphaNumericString(64));
-//}
+class MetadataHandlerTest : public testing::Test {
+ public:
+  MetadataHandlerTest()
+    : vault_root_dir_(maidsafe::test::CreateTestPath(("MaidSafe_Test_MetadataHandler"))),
+      vault_metadata_dir_(*vault_root_dir_ / "metadata"),
+      metadata_handler_(*vault_root_dir_) {}
 
-//// TODO(Alison) - update to test GetOnlinePmid, when API has been finalised.
+ private:
+  bool CheckDataExistenceAndParsing(const Identity& data_name,
+                                    protobuf::Metadata& element) {
+    if (!boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name))) {
+      LOG(kError) << "Data was not found.";
+      return false;
+    }
+    NonEmptyString serialised_element(ReadFile(vault_metadata_dir_ / EncodeToBase64(data_name)));
+    if (!element.ParseFromString(serialised_element.string())) {
+      LOG(kError) << "Data did not parse.";
+      return false;
+    }
+    return true;
+  }
 
-//class MetadataHandlerTest : public testing::Test {
-// public:
-//  MetadataHandlerTest()
-//    : kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_MetadataHandler")),
-//      vault_root_dir_(*kTestRoot_ / RandomAlphaNumericString(8)),
-//      vault_metadata_dir_(vault_root_dir_ / kVaultDirectory),
-//      metadata_handler_(vault_root_dir_) {}
+  bool CheckPmidIds(protobuf::Metadata& element,
+                    const std::set<PmidName>& online_pmids,
+                    const std::set<PmidName>& offline_pmids) {
+    std::set<PmidName> element_online_pmid_names;
+    for (uint16_t i(0); i < element.online_pmid_name_size(); ++i) {
+      try {
+        PmidName online_pmid_name(Identity(element.online_pmid_name(i)));
+        element_online_pmid_names.insert(online_pmid_name);
+      } catch(const std::exception& ex) {
+        LOG(kError) << "Data has online pmid of wrong size.  " << ex.what();
+        return false;
+      }
+    }
 
-// private:
-//  bool CheckDataExistenceAndParsing(const Identity& data_name,
-//                                    protobuf::Metadata& element) {
-//    if (!boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name))) {
-//      LOG(kError) << "Data was not found.";
-//      return false;
-//    }
-//    NonEmptyString serialised_element(ReadFile(vault_metadata_dir_ / EncodeToBase64(data_name)));
-//    if (!element.ParseFromString(serialised_element.string())) {
-//      LOG(kError) << "Data did not parse.";
-//      return false;
-//    }
-//    return true;
-//  }
+    if (online_pmids != element_online_pmid_names) {
+      LOG(kError) << "Data's online pmid IDs don't match expectation.";
+      LOG(kVerbose) << "\n\nonline - expected:";
+      for (auto pmid : online_pmids)
+        LOG(kVerbose) << pmid->string();
+      LOG(kVerbose) << "\nonline - actual:";
+      for (auto pmid : element_online_pmid_names)
+        LOG(kVerbose) << pmid->string();
+      return false;
+    }
 
-//  bool CheckPmidIds(protobuf::Metadata& element,
-//                    const std::set<PmidName>& online_pmids,
-//                    const std::set<PmidName>& offline_pmids) {
-//    std::set<PmidName> element_online_pmid_names;
-//    for (uint16_t i(0); i < element.online_pmid_name_size(); ++i) {
-//      try {
-//        PmidName online_pmid_name(Identity(element.online_pmid_name(i)));
-//        element_online_pmid_names.insert(online_pmid_name);
-//      } catch(const std::exception& ex) {
-//        LOG(kError) << "Data has online pmid of wrong size.  " << ex.what();
-//        return false;
-//      }
-//    }
+    std::set<PmidName> element_offline_pmid_names;
+    for (uint16_t i(0); i < element.offline_pmid_name_size(); ++i) {
+      try {
+        PmidName offline_pmid_name(Identity(element.offline_pmid_name(i)));
+        element_offline_pmid_names.insert(offline_pmid_name);
+      } catch(const std::exception& ex) {
+        LOG(kError) << "Data has offline pmid of wrong size.  " << ex.what();
+        return false;
+      }
+    }
+    if (offline_pmids != element_offline_pmid_names) {
+      LOG(kError) << "Data's offline pmid IDs don't match expectation.";
+      LOG(kVerbose) << "\n\noffline - expected:";
+      for (auto pmid : offline_pmids)
+        LOG(kVerbose) << pmid->string();
+      LOG(kVerbose) << "\noffline - actual:";
+      for (auto pmid : element_offline_pmid_names)
+        LOG(kVerbose) << pmid->string();
+      return false;
+    }
 
-//    if (online_pmids != element_online_pmid_names) {
-//      LOG(kError) << "Data's online pmid IDs don't match expectation.";
-//      LOG(kVerbose) << "\n\nonline - expected:";
-//      for (auto pmid : online_pmids)
-//        LOG(kVerbose) << pmid->string();
-//      LOG(kVerbose) << "\nonline - actual:";
-//      for (auto pmid : element_online_pmid_names)
-//        LOG(kVerbose) << pmid->string();
-//      return false;
-//    }
+    return true;
+  }
 
-//    std::set<PmidName> element_offline_pmid_names;
-//    for (uint16_t i(0); i < element.offline_pmid_name_size(); ++i) {
-//      try {
-//        PmidName offline_pmid_name(Identity(element.offline_pmid_name(i)));
-//        element_offline_pmid_names.insert(offline_pmid_name);
-//      } catch(const std::exception& ex) {
-//        LOG(kError) << "Data has offline pmid of wrong size.  " << ex.what();
-//        return false;
-//      }
-//    }
-//    if (offline_pmids != element_offline_pmid_names) {
-//      LOG(kError) << "Data's offline pmid IDs don't match expectation.";
-//      LOG(kVerbose) << "\n\noffline - expected:";
-//      for (auto pmid : offline_pmids)
-//        LOG(kVerbose) << pmid->string();
-//      LOG(kVerbose) << "\noffline - actual:";
-//      for (auto pmid : element_offline_pmid_names)
-//        LOG(kVerbose) << pmid->string();
-//      return false;
-//    }
+  bool CheckPmidIds(protobuf::Metadata& element,
+                    const PmidName& online_pmid,
+                    const PmidName& offline_pmid) {
+    if (element.online_pmid_name_size() != 1) {
+      LOG(kError) << "Expected one online pmid, found " << element.online_pmid_name_size();
+      return false;
+    }
 
-//    return true;
-//  }
+    if (element.offline_pmid_name_size() != 1) {
+      LOG(kError) << "Expected one offline pmid, found " << element.offline_pmid_name_size();
+      return false;
+    }
 
-//  bool CheckPmidIds(protobuf::Metadata& element,
-//                    const PmidName& online_pmid,
-//                    const PmidName& offline_pmid) {
-//    if (element.online_pmid_name_size() != 1) {
-//      LOG(kError) << "Expected one online pmid, found " << element.online_pmid_name_size();
-//      return false;
-//    }
+    if (element.online_pmid_name(0) != online_pmid->string()) {
+      LOG(kError) << "Data's online pmid is wrong.";
+      return false;
+    }
 
-//    if (element.offline_pmid_name_size() != 1) {
-//      LOG(kError) << "Expected one offline pmid, found " << element.offline_pmid_name_size();
-//      return false;
-//    }
+    if (element.offline_pmid_name(0) != offline_pmid->string()) {
+      LOG(kError) << "Data's offline pmid is wrong.";
+      return false;
+    }
 
-//    if (element.online_pmid_name(0) != online_pmid->string()) {
-//      LOG(kError) << "Data's online pmid is wrong.";
-//      return false;
-//    }
+    return true;
+  }
 
-//    if (element.offline_pmid_name(0) != offline_pmid->string()) {
-//      LOG(kError) << "Data's offline pmid is wrong.";
-//      return false;
-//    }
+ public:
+  bool CheckDataExistenceAndIntegrity(const Identity& data_name,
+                                      const int32_t& size,
+                                      const int64_t& subscribers,
+                                      const std::set<PmidName>& online_pmids,
+                                      const std::set<PmidName>& offline_pmids) {
+    protobuf::Metadata element;
+    if (!CheckDataExistenceAndParsing(data_name, element))
+      return false;
 
-//    return true;
-//  }
+    if (element.size() != size) {
+      LOG(kError) << "Data has wrong size.";
+      return false;
+    }
 
-// public:
-//  bool CheckDataExistenceAndIntegrity(const Identity& data_name,
-//                                      const int32_t& size,
-//                                      const int64_t& subscribers,
-//                                      const std::set<PmidName>& online_pmids,
-//                                      const std::set<PmidName>& offline_pmids) {
-//    protobuf::Metadata element;
-//    if (!CheckDataExistenceAndParsing(data_name, element))
-//      return false;
+    if (element.subscribers() != subscribers) {
+      LOG(kError) << "Wrong number stored.";
+      return false;
+    }
 
-//    if (element.size() != size) {
-//      LOG(kError) << "Data has wrong size.";
-//      return false;
-//    }
+    if (online_pmids.empty() && (element.online_pmid_name_size() != 0)) {
+      LOG(kError) << "Data has too many online pmid IDs.";
+      return false;
+    }
+    if (offline_pmids.empty() && (element.offline_pmid_name_size() != 0)) {
+      LOG(kError) << "Data has too many offline pmid IDs.";
+      return false;
+    }
 
-//    if (element.subscribers() != subscribers) {
-//      LOG(kError) << "Wrong number stored.";
-//      return false;
-//    }
+    if (!CheckPmidIds(element, online_pmids, offline_pmids))
+      return false;
 
-//    if (online_pmids.empty() && (element.online_pmid_name_size() != 0)) {
-//      LOG(kError) << "Data has too many online pmid IDs.";
-//      return false;
-//    }
-//    if (offline_pmids.empty() && (element.offline_pmid_name_size() != 0)) {
-//      LOG(kError) << "Data has too many offline pmid IDs.";
-//      return false;
-//    }
+    return true;
+  }
 
-//    if (!CheckPmidIds(element, online_pmids, offline_pmids))
-//      return false;
+  bool CheckDataExistenceAndIntegrity(const Identity& data_name,
+                                      const int32_t &size,
+                                      const int64_t& subscribers,
+                                      const PmidName& online_pmid,
+                                      const PmidName& offline_pmid) {
+    protobuf::Metadata element;
+    if (!CheckDataExistenceAndParsing(data_name, element))
+      return false;
 
-//    return true;
-//  }
+    if (element.size() != size) {
+      LOG(kError) << "Data has wrong size.";
+      return false;
+    }
 
-//  bool CheckDataExistenceAndIntegrity(const Identity& data_name,
-//                                      const int32_t &size,
-//                                      const int64_t& subscribers,
-//                                      const PmidName& online_pmid,
-//                                      const PmidName& offline_pmid) {
-//    protobuf::Metadata element;
-//    if (!CheckDataExistenceAndParsing(data_name, element))
-//      return false;
+    if (element.subscribers() != subscribers) {
+      LOG(kError) << "Wrong number stored.";
+      return false;
+    }
 
-//    if (element.size() != size) {
-//      LOG(kError) << "Data has wrong size.";
-//      return false;
-//    }
+    if (!CheckPmidIds(element, online_pmid, offline_pmid))
+      return false;
 
-//    if (element.subscribers() != subscribers) {
-//      LOG(kError) << "Wrong number stored.";
-//      return false;
-//    }
-
-//    if (!CheckPmidIds(element, online_pmid, offline_pmid))
-//      return false;
-
-//    return true;
-//  }
+    return true;
+  }
 
 //  void AddPmidIds(const Identity& data_name,
 //                  const int32_t& size,
@@ -257,11 +252,135 @@ namespace test {
 //    }
 //  }
 
-//  const maidsafe::test::TestPath kTestRoot_;
-//  boost::filesystem::path vault_root_dir_;
-//  boost::filesystem::path vault_metadata_dir_;
-//  MetadataHandler metadata_handler_;
-//};
+  const maidsafe::test::TestPath vault_root_dir_;
+  boost::filesystem::path vault_metadata_dir_;
+  MetadataHandler metadata_handler_;
+};
+
+template <typename Data>
+class MetadataHandlerTypedTest : public MetadataHandlerTest {
+ public :
+  MetadataHandlerTypedTest() : MetadataHandlerTest() {}
+
+ protected :
+  void IncrementSubscribers(const typename Data::name_type& data_name, int32_t data_size) {
+    this->metadata_handler_.template IncrementSubscribers<Data>(data_name, data_size);
+  }
+
+  void DecrementSubscribers(const typename Data::name_type& data_name) {
+    this->metadata_handler_.template DecrementSubscribers<Data>(data_name);
+  }
+
+  void DeleteMetadata(const typename Data::name_type& data_name) {
+    this->metadata_handler_.template DeleteMetadata<Data>(data_name);
+  }
+
+  void MarkNodeDown(const typename Data::name_type& data_name,
+                    const PmidName& pmid_name,
+                    int& remaining_online_holders) {
+    this->metadata_handler_.template MarkNodeDown<Data>(data_name,
+                                                        pmid_name,
+                                                        remaining_online_holders);
+  }
+
+  void MarkNodeUp(const typename Data::name_type& data_name,
+                  const PmidName& pmid_name) {
+    this->metadata_handler_.template MarkNodeUp<Data>(data_name, pmid_name);
+  }
+
+  void AddDataHolder(const typename Data::name_type& data_name,
+                     const PmidName& online_pmid_name) {
+    this->metadata_handler_.template AddDataHolder<Data>(data_name, online_pmid_name);
+  }
+
+  void RemoveDataHolder(const typename Data::name_type& data_name,
+                        const PmidName& pmid_name) {
+    this->metadata_handler_.template RemoveDataHolder<Data>(data_name, pmid_name);
+  }
+
+  std::vector<PmidName> GetOnlineDataHolders(const typename Data::name_type& data_name) const {
+    return this->metadata_handler_.template GetOnlineDataHolders<Data>(data_name);
+  }
+
+  void CheckMetadataExists(const typename Data::name_type& data_name) const {
+    this->metadata_handler_.template CheckMetadataExists<Data>(data_name);
+  }
+
+  void CheckMetadataResults(const typename Data::name_type& data_name,
+                            int32_t data_size,
+                            int subscriber_count) {
+    MetadataHandler::Metadata<Data> metadata(data_name, vault_metadata_dir_);
+    EXPECT_EQ(metadata.content.name(), data_name->string());
+    EXPECT_EQ(metadata.content.size(), data_size);
+    EXPECT_EQ(metadata.content.subscribers(), subscriber_count);
+  }
+};
+
+TYPED_TEST_CASE_P(MetadataHandlerTypedTest);
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_IncrementSubscribers) {
+  typename TypeParam::name_type data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
+  int32_t data_size(10000);
+  this->IncrementSubscribers(data_name, data_size);
+  this->CheckMetadataResults(data_name, data_size, 1);
+
+  EXPECT_THROW(this->IncrementSubscribers(data_name, data_size + 1), common_error);
+  this->CheckMetadataResults(data_name, data_size, 1);
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_DecrementSubscribers) {
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_DeleteMetadata) {
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_MarkNodeDown) {
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_MarkNodeUp) {
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_AddDataHolder) {
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_RemoveDataHolder) {
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_GetOnlineDataHolders) {
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_CheckMetadataExists) {
+}
+
+
+REGISTER_TYPED_TEST_CASE_P(MetadataHandlerTypedTest,
+                           BEH_IncrementSubscribers,
+                           BEH_DecrementSubscribers,
+                           BEH_DeleteMetadata,
+                           BEH_MarkNodeDown,
+                           BEH_MarkNodeUp,
+                           BEH_AddDataHolder,
+                           BEH_RemoveDataHolder,
+                           BEH_GetOnlineDataHolders,
+                           BEH_CheckMetadataExists);
+
+typedef testing::Types<passport::PublicAnmid,
+                       passport::PublicAnsmid,
+                       passport::PublicAntmid,
+                       passport::PublicAnmaid,
+                       passport::PublicMaid,
+                       passport::PublicPmid,
+                       passport::Mid,
+                       passport::Smid,
+                       passport::Tmid,
+                       passport::PublicAnmpid,
+                       passport::PublicMpid,
+                       ImmutableData,
+                       OwnerDirectory,
+                       GroupDirectory,
+                       WorldDirectory> AllTypes;
+
+INSTANTIATE_TYPED_TEST_CASE_P(All, MetadataHandlerTypedTest, AllTypes);
 
 //class MetadataHandlerOneElementTest : public MetadataHandlerTest {
 // public:
