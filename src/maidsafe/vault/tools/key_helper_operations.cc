@@ -107,8 +107,7 @@ void NetworkGenerator::DoOnPublicKeyRequested(const NodeId& node_id,
                                               nfs::PublicKeyGetter& public_key_getter) {
   public_key_getter.GetKey<passport::PublicPmid>(
       passport::PublicPmid::name_type(Identity(node_id.string())),
-      [give_key, node_id] (std::string response) {
-        nfs::Reply reply(GetReply(response));
+      [give_key, node_id] (nfs::Reply reply) {
         if (reply.IsSuccess()) {
           try {
             asymm::PublicKey public_key(GetPublicKeyFromReply(reply));
