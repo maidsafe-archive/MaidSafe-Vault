@@ -14,6 +14,6 @@
 #include "maidsafe/vault/parameters.h"
 
 int main(int argc, char **argv) {
-  maidsafe::vault::detail::Parameters::set_file_element_count_limits(1000, 5000);
+//  maidsafe::vault::detail::Parameters::set_file_element_count_limits(1000, 5000);
   return maidsafe::test::ExecuteMain(argc, argv);
 }

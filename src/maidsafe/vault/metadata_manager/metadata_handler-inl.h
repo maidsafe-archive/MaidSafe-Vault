@@ -188,6 +188,27 @@ void MetadataHandler::CheckMetadataExists(const typename Data::name_type& data_n
   metadata.strong_guarantee.Release();
 }
 
+template<typename Data>
+void MetadataHandler::Metadata<Data>::SaveChanges() {
+  if (content.subscribers() < 1) {
+    if (!boost::filesystem::remove(kPath)) {
+      LOG(kError) << "Failed to remove metadata file " << kPath;
+      ThrowError(CommonErrors::filesystem_io_error);
+    }
+  } else {
+    std::string serialised_content(content.SerializeAsString());
+    if (serialised_content.empty()) {
+      LOG(kError) << "Failed to serialise metadata file " << kPath;
+      ThrowError(CommonErrors::serialisation_error);
+    }
+    if (!WriteFile(kPath, serialised_content)) {
+      LOG(kError) << "Failed to write metadata file " << kPath;
+      ThrowError(CommonErrors::filesystem_io_error);
+    }
+  }
+  strong_guarantee.Release();
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe
