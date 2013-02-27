@@ -20,6 +20,55 @@ namespace tools {
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
+bool SelectedOperationsContainer::InvalidOptions(
+    const po::variables_map& variables_map,
+    const std::vector<boost::asio::ip::udp::endpoint> &peer_endpoints) {
+  do_create = variables_map.count("create") != 0;
+  do_load = variables_map.count("load") != 0;
+  do_delete = variables_map.count("delete") != 0;
+  do_bootstrap = variables_map.count("bootstrap") != 0;
+  do_store = variables_map.count("store") != 0;
+  do_verify = variables_map.count("verify") != 0;
+  do_test = variables_map.count("test") != 0;
+  do_print = variables_map.count("print") != 0;
+
+  return NoOptionsSelected() || ConflictedOptions(peer_endpoints);
+}
+
+bool SelectedOperationsContainer::ConflictedOptions(
+    const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) const {
+  if (!do_create && !do_load && !do_delete)
+    return true;
+  if (do_create && do_load)
+    return true;
+  if (do_create && do_delete)
+    return true;
+  if (do_load && do_delete)
+    return true;
+  if (do_delete && do_print)
+    return true;
+  if (!(do_create || do_load) && do_print)
+    return true;
+  if (do_bootstrap && (do_store || do_verify || do_test))
+    return true;
+  if (do_bootstrap && (do_store || do_verify || do_test))
+    return true;
+  if (peer_endpoints.empty() && !do_create && !do_load)
+    return true;
+  return false;
+}
+
+bool SelectedOperationsContainer::NoOptionsSelected() const {
+  return !(do_create ||
+           do_load ||
+           do_bootstrap ||
+           do_store ||
+           do_verify ||
+           do_test ||
+           do_delete ||
+           do_print);
+}
+
 Commander::Commander(size_t pmids_count)
     : pmids_count_(pmids_count),
       all_pmids_(),
@@ -105,50 +154,7 @@ void Commander::CheckOptionValidity(po::options_description& cmdline_options,
   if (variables_map.count("peer"))
     peer_endpoints_.push_back(GetBootstrapEndpoint(variables_map.at("peer").as<std::string>()));
 
-  selected_ops_.do_create = variables_map.count("create") != 0;
-  selected_ops_.do_load = variables_map.count("load") != 0;
-  selected_ops_.do_delete = variables_map.count("delete") != 0;
-  selected_ops_.do_bootstrap = variables_map.count("bootstrap") != 0;
-  selected_ops_.do_store = variables_map.count("store") != 0;
-  selected_ops_.do_verify = variables_map.count("verify") != 0;
-  selected_ops_.do_test = variables_map.count("test") != 0;
-  selected_ops_.do_print = variables_map.count("print") != 0;
-
-  auto no_options_selected = [this] () {  return  !(selected_ops_.do_create ||
-                                                    selected_ops_.do_load ||
-                                                    selected_ops_.do_bootstrap ||
-                                                    selected_ops_.do_store ||
-                                                    selected_ops_.do_verify ||
-                                                    selected_ops_.do_test ||
-                                                    selected_ops_.do_delete ||
-                                                    selected_ops_.do_print);
-                                       };
-  auto conflicted_options =
-      [this] () -> bool {
-        if (!selected_ops_.do_create && !selected_ops_.do_load && !selected_ops_.do_delete)
-          return true;
-        if (selected_ops_.do_create && selected_ops_.do_load)
-          return true;
-        if (selected_ops_.do_create && selected_ops_.do_delete)
-          return true;
-        if (selected_ops_.do_load && selected_ops_.do_delete)
-          return true;
-        if (selected_ops_.do_delete && selected_ops_.do_print)
-          return true;
-        if (!(selected_ops_.do_create || selected_ops_.do_load) && selected_ops_.do_print)
-          return true;
-        if (selected_ops_.do_bootstrap &&
-            (selected_ops_.do_store || selected_ops_.do_verify || selected_ops_.do_test))
-          return true;
-        if (selected_ops_.do_bootstrap &&
-            (selected_ops_.do_store || selected_ops_.do_verify || selected_ops_.do_test))
-          return true;
-        if (peer_endpoints_.empty() && !selected_ops_.do_create && !selected_ops_.do_load)
-          return true;
-        return false;
-      };
-
-  if (variables_map.count("help") || no_options_selected() || conflicted_options()) {
+  if (variables_map.count("help") || selected_ops_.InvalidOptions(variables_map, peer_endpoints_)) {
     std::cout << cmdline_options << "Options order: [c|l|d] p [b|(s|v)|t]" << std::endl;
     throw std::exception();
   }
