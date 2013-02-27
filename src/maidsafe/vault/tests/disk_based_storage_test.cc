@@ -163,7 +163,7 @@ std::vector<Int32Future> DeleteDataNames(const std::vector<Identity>& data_names
 
 std::string GenerateFileContent(std::vector<std::string>* element_names = nullptr) {
   protobuf::DiskStoredFile disk_file;
-  for (int n(0); n < detail::Parameters::max_file_element_count(); ++n) {
+  for (int n(0); n < detail::Parameters::max_file_element_count; ++n) {
     protobuf::DiskStoredElement disk_element;
     disk_element.set_name(RandomString(kIdSize));
     disk_element.set_value(std::abs(RandomInt32()));
@@ -319,8 +319,8 @@ class DiskStorageTest : public testing::Test {
   }
 
   void RunStoreAndDeleteTest(const int kTestEntryCount) {
-    int min_files(500), max_files(1000);
-    detail::Parameters::set_file_element_count_limits(max_files, min_files);
+    int /*min_files(500),*/ max_files(1000);
+//    detail::Parameters::set_file_element_count_limits(max_files, min_files);
 
     // Store kTestEntryCount instances
     std::map<typename T::name_type, int32_t> names;

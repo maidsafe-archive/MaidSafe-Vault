@@ -199,15 +199,15 @@ void MetadataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_h
     IntegrityCheck(get_handler);
 }
 
-//template<typename Data>
-//void IntegrityCheck(std::shared_ptr<GetHandler<Data>> get_handler) {
+template<typename Data>
+void MetadataManagerService::IntegrityCheck(std::shared_ptr<GetHandler<Data>> /*get_handler*/) {
 //  std::lock_guard<std::mutex> lock(get_handler->mutex);
 ////  for (auto& result: get_handler->data_holder_results) {
 
 ////  }
 
 //  // TODO(David) - BEFORE_RELEASE - All machinery in place here for handling integrity checks.
-//}
+}
 
 template<typename Data>
 void MetadataManagerService::HandleDelete(const nfs::DataMessage& data_message,

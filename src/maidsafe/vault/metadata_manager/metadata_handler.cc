@@ -56,7 +56,6 @@ void OfflinesToProtobuf(const std::set<std::string>& offlines, protobuf::Metadat
 
 }  // namespace detail
 
-
 MetadataHandler::MetadataHandler(const boost::filesystem::path& vault_root_dir)
     : kMetadataRoot_(vault_root_dir / "metadata") {  //FIXME  BEFORE_RELEASE
   if (fs::exists(kMetadataRoot_)) {
