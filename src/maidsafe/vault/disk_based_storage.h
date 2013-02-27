@@ -71,10 +71,7 @@ class DiskBasedStorage {
   typedef std::map<int, crypto::SHA512Hash> FileIdentities;
   typedef FileIdentities::value_type FileIdentity;
 
-  void TraverseAndVerifyFiles();
-  FileIdentity GetAndVerifyFileNameParts(boost::filesystem::directory_iterator itr,
-                                         bool& most_recent_file_full,
-                                         int& oldest_non_full_file_index) const;
+  FileIdentity GetAndVerifyFileNameParts(boost::filesystem::directory_iterator itr) const;
 
   boost::filesystem::path GetFileName(const FileIdentity& file_id) const;
   protobuf::DiskStoredFile ParseFile(const FileIdentity& file_id) const;
@@ -88,9 +85,7 @@ class DiskBasedStorage {
                   protobuf::DiskStoredFile& file);
 
   template<typename Data>
-  void FindAndDeleteEntry(const typename Data::name_type& name,
-                          int32_t& value,
-                          bool& reorganise_files);
+  void FindAndDeleteEntry(const typename Data::name_type& name, int32_t& value);
   template<typename Data>
   int GetEntryIndex(const typename Data::name_type& name,
                     const protobuf::DiskStoredFile& file) const;
@@ -98,7 +93,6 @@ class DiskBasedStorage {
 
   void SaveChangedFile(const FileIdentity& file_id, const protobuf::DiskStoredFile& file);
 
-  void ReorganiseFiles();
   FileIdentities::iterator GetReorganiseStartPoint();
   void ReadIntoMemory(FileIdentities::iterator &read_itr,
                       std::vector<protobuf::DiskStoredElement>& elements);
@@ -113,7 +107,6 @@ class DiskBasedStorage {
   const boost::filesystem::path kRoot_;
   mutable Active active_;
   FileIdentities file_ids_;
-  int oldest_non_full_file_index_;
 };
 
 }  // namespace vault

@@ -13,6 +13,7 @@
 
 #include <iterator>
 #include <limits>
+#include <algorithm>
 
 #include "maidsafe/vault/types.h"
 
@@ -59,7 +60,7 @@ void SortElements(std::vector<protobuf::DiskStoredElement>& elements) {
 }
 
 void SortFile(protobuf::DiskStoredFile& file) {
-  assert(file.element_size() == detail::Parameters::max_file_element_count());
+  assert(file.element_size() == detail::Parameters::max_file_element_count);
   std::vector<protobuf::DiskStoredElement> elements;
   elements.reserve(file.element_size());
   for (int i(0); i != file.element_size(); ++i)
@@ -75,33 +76,24 @@ void SortFile(protobuf::DiskStoredFile& file) {
 DiskBasedStorage::DiskBasedStorage(const fs::path& root)
     : kRoot_(root),
       active_(),
-      file_ids_(),
-      oldest_non_full_file_index_(std::numeric_limits<int>::max()) {
-  if (fs::exists(root)) {
-    if (fs::is_directory(root))
-      TraverseAndVerifyFiles();
-    else
-      ThrowError(CommonErrors::not_a_directory);
-  } else {
+      file_ids_() {
+  if (!fs::exists(root)) {
     fs::create_directory(root);
+    return;
   }
-}
 
-void DiskBasedStorage::TraverseAndVerifyFiles() {
-  assert(file_ids_.empty());
+  if (!fs::is_directory(root))
+    ThrowError(CommonErrors::not_a_directory);
+
   fs::directory_iterator root_itr(kRoot_), end_itr;
-  bool most_recent_file_full(false);
-  int oldest_non_full_file_index(oldest_non_full_file_index_);
   for (; root_itr != end_itr; ++root_itr) {
     try {
-      auto file_name_parts(GetAndVerifyFileNameParts(root_itr, most_recent_file_full,
-                                                     oldest_non_full_file_index));
+      auto file_name_parts(GetAndVerifyFileNameParts(root_itr));
       if (!file_ids_.insert(file_name_parts).second) {
         // TODO(Fraser#5#): 2013-02-14 - Consider different error to indicate probable malicious
         //                               tampering with file contents.
         ThrowError(CommonErrors::parsing_error);
       }
-      oldest_non_full_file_index_ = oldest_non_full_file_index;
     }
     catch(const std::exception& e) {
       LOG(kWarning) << *root_itr << " is not a valid DiskStoredFile: " << e.what();
@@ -109,18 +101,10 @@ void DiskBasedStorage::TraverseAndVerifyFiles() {
       fs::remove(*root_itr, ec);
     }
   }
-
-  if (file_ids_.empty())
-    file_ids_.insert(std::make_pair(0, std::move(crypto::SHA512Hash())));
-  else if (most_recent_file_full)
-    file_ids_.insert(std::make_pair((*file_ids_.rbegin()).first + 1,
-                                    std::move(crypto::SHA512Hash())));
 }
 
 DiskBasedStorage::FileIdentity DiskBasedStorage::GetAndVerifyFileNameParts(
-    fs::directory_iterator itr,
-    bool& most_recent_file_full,
-    int& oldest_non_full_file_index) const {
+    fs::directory_iterator itr) const {
   auto hash(crypto::HashFile<crypto::SHA512>(*itr));
   std::string expected_extension("." + EncodeToBase32(hash));
   if ((*itr).path().extension().string() != expected_extension) {
@@ -128,24 +112,7 @@ DiskBasedStorage::FileIdentity DiskBasedStorage::GetAndVerifyFileNameParts(
     ThrowError(CommonErrors::hashing_error);
   }
 
-  FileIdentity file_id(std::make_pair(std::stoi((*itr).path().stem().string()), hash));
-  auto file(ParseFile(file_id));
-  if (file.element_size() > detail::Parameters::max_file_element_count() ||
-      file_id.first < 0) {
-    LOG(kWarning) << *itr << " has too many elements (" << file.element_size() << ") or index ("
-                  << file_id.first << ") < 0";
-    // TODO(Fraser#5#): 2013-02-14 - Consider different error to indicate probable malicious
-    //                               tampering with file contents.
-    ThrowError(CommonErrors::parsing_error);
-  }
-
-  bool full(file.element_size() == detail::Parameters::max_file_element_count());
-  if (file_id.first > (*file_ids_.rbegin()).first)
-    most_recent_file_full = full;
-  if (!full && file_id.first < oldest_non_full_file_index)
-    oldest_non_full_file_index = file_id.first;
-
-  return file_id;
+  return std::make_pair(std::stoi((*itr).path().stem().string()), hash);
 }
 
 fs::path DiskBasedStorage::GetFileName(const FileIdentity& file_id) const {
@@ -157,7 +124,15 @@ protobuf::DiskStoredFile DiskBasedStorage::ParseFile(const FileIdentity& file_id
   protobuf::DiskStoredFile file;
   std::string content(ReadFile(file_path).string());
   if (!file.ParseFromString(content)) {
-    LOG(kError) << "Failure to parse file content.";
+    LOG(kError) << "Failure to parse " << file_path << " content.";
+    ThrowError(CommonErrors::parsing_error);
+  }
+  if (file.element_size() > detail::Parameters::max_file_element_count ||
+      file_id.first < 0) {
+    LOG(kWarning) << file_path << " has too many elements (" << file.element_size()
+                  << ") or index (" << file_id.first << ") < 0";
+    // TODO(Fraser#5#): 2013-02-14 - Consider different error to indicate probable malicious
+    //                               tampering with file contents.
     ThrowError(CommonErrors::parsing_error);
   }
   return file;
@@ -188,7 +163,7 @@ void DiskBasedStorage::SaveChangedFile(const FileIdentity& file_id,
   if (!WriteFile(new_path, new_content.string()))
     ThrowError(CommonErrors::filesystem_io_error);
 
-  // If this is the first entry in a new file, the file_id hash will be empty.
+  // If this is not the first entry in a new file, the file_id hash will be initialised.
   if (file_id.second.IsInitialised()) {
     fs::path old_path(kRoot_ / GetFileName(file_id));
     boost::system::error_code ec;
@@ -203,37 +178,10 @@ void DiskBasedStorage::SaveChangedFile(const FileIdentity& file_id,
   (*itr).second = new_hash;
 }
 
-void DiskBasedStorage::ReorganiseFiles() {
-  auto read_itr(GetReorganiseStartPoint());
-  if (read_itr == file_ids_.end())
-    return;
-
-  auto write_itr(read_itr);
-  std::vector<protobuf::DiskStoredElement> elements;
-  elements.reserve(3 * detail::Parameters::max_file_element_count());
-  while (read_itr != file_ids_.end() && !elements.empty()) {
-    ReadIntoMemory(read_itr, elements);
-    WriteToDisk(write_itr, elements);
-  }
-
-  PruneFilesToEnd(write_itr);
-  oldest_non_full_file_index_ = std::numeric_limits<int>::max();
-}
-
-DiskBasedStorage::FileIdentities::iterator DiskBasedStorage::GetReorganiseStartPoint() {
-  // Find first non-full file in order to begin the reorganisation.  Don't consider the last file.
-  if (oldest_non_full_file_index_ >= (*file_ids_.rbegin()).first)
-    return file_ids_.end();
-
-  auto write_itr(file_ids_.begin());
-  std::advance(write_itr, oldest_non_full_file_index_);
-  return write_itr;
-}
-
 void DiskBasedStorage::ReadIntoMemory(FileIdentities::iterator &read_itr,
                                       std::vector<protobuf::DiskStoredElement>& elements) {
   while (read_itr != file_ids_.end() &&
-         static_cast<int>(elements.size()) < 2 * detail::Parameters::max_file_element_count()) {
+         static_cast<int>(elements.size()) < 2 * detail::Parameters::max_file_element_count) {
     auto read_file(ParseFile(*read_itr));
     for (int i(0); i != read_file.element_size(); ++i)
       elements.push_back(read_file.element(i));
@@ -246,7 +194,7 @@ void DiskBasedStorage::WriteToDisk(FileIdentities::iterator &write_itr,
   detail::SortElements(elements);
   protobuf::DiskStoredFile write_file;
   size_t count(std::min(elements.size(),
-                        static_cast<size_t>(detail::Parameters::max_file_element_count())));
+                        static_cast<size_t>(detail::Parameters::max_file_element_count)));
   for (size_t i(0); i != count; ++i)
     write_file.add_element()->CopyFrom(elements[i]);
 
@@ -328,15 +276,6 @@ void DiskBasedStorage::DoPutFile(const fs::path& filename,
   } else {
     // This is a replacement file.
     SaveChangedFile(*itr, file);
-  }
-
-  // If it's full & is the most recent file, add empty hash
-  if (file.element_size() == detail::Parameters::max_file_element_count()) {
-    if ((*itr).first == (*file_ids_.rbegin()).first)
-      file_ids_.insert(std::make_pair(file_id.first + 1, std::move(crypto::SHA512Hash())));
-  } else {  // If it's not full, check if it's the oldest non-full.
-    if ((*itr).first < oldest_non_full_file_index_)
-      oldest_non_full_file_index_ = (*itr).first;
   }
 }
 

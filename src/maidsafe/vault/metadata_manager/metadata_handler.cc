@@ -56,28 +56,6 @@ void OfflinesToProtobuf(const std::set<std::string>& offlines, protobuf::Metadat
 
 }  // namespace detail
 
-
-template<typename Data>
-void MetadataHandler::Metadata<Data>::SaveChanges() {
-  if (content.subscribers() < 1) {
-    if (!fs::remove(kPath)) {
-      LOG(kError) << "Failed to remove metadata file " << kPath;
-      ThrowError(CommonErrors::filesystem_io_error);
-    }
-  } else {
-    std::string serialised_content(content.SerializeAsString());
-    if (serialised_content.empty()) {
-      LOG(kError) << "Failed to serialise metadata file " << kPath;
-      ThrowError(CommonErrors::serialisation_error);
-    }
-    if (!WriteFile(kPath, serialised_content)) {
-      LOG(kError) << "Failed to write metadata file " << kPath;
-      ThrowError(CommonErrors::filesystem_io_error);
-    }
-  }
-  strong_guarantee.Release();
-}
-
 MetadataHandler::MetadataHandler(const boost::filesystem::path& vault_root_dir)
     : kMetadataRoot_(vault_root_dir / "metadata") {  //FIXME  BEFORE_RELEASE
   if (fs::exists(kMetadataRoot_)) {
