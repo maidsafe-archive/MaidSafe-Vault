@@ -166,13 +166,40 @@ MaidAccount::serialised_type MaidAccount::Serialise() const {
   return serialised_type(NonEmptyString(proto_maid_account.SerializeAsString()));
 }
 
-MaidAccount::serialised_info_type  MaidAccount::SerialiseAccountInfo() const {
-  return serialised_info_type();
+MaidAccount::serialised_info_type  MaidAccount::SerialiseAccountSyncInfo() const {
+  protobuf::MaidAccount proto_maid_account;
+  proto_maid_account.set_maid_name(kMaidName_->string());
+  for (auto& pmid_total : pmid_totals_) {
+    auto proto_pmid_totals(proto_maid_account.add_pmid_totals());
+    proto_pmid_totals->set_serialised_pmid_registration(
+        pmid_total.serialised_pmid_registration->string());
+    *(proto_pmid_totals->mutable_pmid_record()) = pmid_total.pmid_record.ToProtobuf();
+  }
+
+  for (auto& recent_put_data_item : recent_put_data_) {
+    auto proto_recent_put_data(proto_maid_account.add_recent_put_data());
+    auto type_and_name(boost::apply_visitor(type_and_name_visitor_,
+                                            recent_put_data_item.data_name_variant));
+    proto_recent_put_data->set_type(static_cast<int32_t>(type_and_name.first));
+    proto_recent_put_data->set_name(type_and_name.second.string());
+    proto_recent_put_data->set_cost(recent_put_data_item.cost);
+  }
+
+  proto_maid_account.set_total_claimed_available_size_by_pmids(
+      total_claimed_available_size_by_pmids_);
+  proto_maid_account.set_total_put_data(total_put_data_);
+
+  auto archive_file_names(GetArchiveFileNames());
+  for (auto& archive_file_name : archive_file_names)
+    proto_maid_account.add_archive_file_names(archive_file_name.string());
+
+  return serialised_info_type(NonEmptyString(proto_maid_account.SerializeAsString()));
 }
 
-MaidAccount::AccountInfo MaidAccount::ParseAccountInfo(
+std::pair<MaidAccount::AccountInfo,
+          std::vector<boost::filesystem::path>> MaidAccount::ParseAccountSyncInfo(
     const serialised_info_type& /*serialised_info*/) const {
-  return MaidAccount::AccountInfo();
+  return std::make_pair(MaidAccount::AccountInfo(), std::vector<boost::filesystem::path>());
 }
 
 std::vector<PmidTotals>::iterator MaidAccount::Find(const PmidName& pmid_name) {

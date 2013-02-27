@@ -78,6 +78,11 @@ MaidAccount::serialised_type MaidAccountHandler::GetSerialisedAccount(
   return detail::GetSerialisedAccount(mutex_, maid_accounts_, account_name);
 }
 
+MaidAccount::serialised_info_type MaidAccountHandler::GetSerialisedAccountSyncInfo(
+    const MaidName& account_name) const {
+  return detail::GetSerialisedAccountSyncInfo(mutex_, maid_accounts_, account_name);
+}
+
 std::vector<boost::filesystem::path> MaidAccountHandler::GetArchiveFileNames(
     const MaidName& account_name) const {
   std::lock_guard<std::mutex> lock(mutex_);

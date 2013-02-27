@@ -170,7 +170,8 @@ void MaidAccountHolderService::TriggerSync() {
 
 void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
   protobuf::SyncInfo sync_info;
-  sync_info.set_maid_account(maid_account_handler_.GetSerialisedAccount(account_name)->string());
+  sync_info.set_maid_account(
+      maid_account_handler_.GetSerialisedAccountSyncInfo(account_name)->string());
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     auto handled_requests(accumulator_.Serialise(account_name));

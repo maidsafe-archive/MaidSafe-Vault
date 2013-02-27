@@ -84,8 +84,9 @@ class MaidAccount {
   MaidAccount(const serialised_type& serialised_maid_account, const boost::filesystem::path& root);
   serialised_type Serialise() const;
 
-  serialised_info_type  SerialiseAccountInfo() const;
-  AccountInfo ParseAccountInfo(const serialised_info_type& serialised_info) const;
+  serialised_info_type SerialiseAccountSyncInfo() const;
+  std::pair<AccountInfo, std::vector<boost::filesystem::path>> ParseAccountSyncInfo(
+      const serialised_info_type& serialised_info) const;
 
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);

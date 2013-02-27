@@ -27,7 +27,12 @@ class MaidAccountSync {
     const MaidAccount::serialised_info_type& serialised_account_info,
     const Accumulator<passport::PublicMaid::name_type>::serialised_requests& serialised_handled_request);  // NOLINT
 
-  void AddDownloadedFile(const NonEmptyString& );
+  void AddDownloadedFile(boost::filesystem::path file_name, const NonEmptyString& file_contents);
+
+  std::vector<boost::filesystem::path> GetFileRequests(const NodeId& node_id);
+
+  bool MergeSyncResults(std::unique_ptr<MaidAccount>& account, Accumulator<MaidName>& accumulator);
+
  private:
   struct SyncInfoUpdate {
     NodeId node_id;
