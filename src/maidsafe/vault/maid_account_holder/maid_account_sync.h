@@ -9,26 +9,40 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_SYNC_H_
-#define MAIDSAFE_VAULT_SYNC_H_
+#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_SYNC_H_
+#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_SYNC_H_
 
-#include <cstdint>
-#include "maidsafe/common/types.h"
+#include "maidsafe/vault/accumulator.h"
+#include "maidsafe/vault/maid_account_holder/maid_account.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-class Sync {
+class MaidAccountSync {
  public:
-  enum class Action : int32_t {
-    kSyncInfo,
-    kSyncArchiveFiles
+
+  std::vector<boost::filesystem::path> AddSyncInfoUpdate(
+    const NodeId& node_id,
+    const MaidAccount::serialised_info_type& serialised_account_info,
+    const Accumulator<passport::PublicMaid::name_type>::serialised_requests& serialised_handled_request);  // NOLINT
+
+  void AddDownloadedFile(const NonEmptyString& );
+ private:
+  struct SyncInfoUpdate {
+    NodeId node_id;
+    MaidAccount::AccountInfo account_info;
+    std::vector<Accumulator<passport::PublicMaid::name_type>::HandledRequest> handled_requests;
+    std::vector<boost::filesystem::path> shared_file_names, requested_file_names;
   };
+
+  const MaidName kMaidName_;
+  std::vector<boost::filesystem::path> downloaded_files_;
+  std::vector<SyncInfoUpdate> sync_updates_;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_SYNC_H_
+#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_SYNC_H_

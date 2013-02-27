@@ -166,6 +166,15 @@ MaidAccount::serialised_type MaidAccount::Serialise() const {
   return serialised_type(NonEmptyString(proto_maid_account.SerializeAsString()));
 }
 
+MaidAccount::serialised_info_type  MaidAccount::SerialiseAccountInfo() const {
+  return serialised_info_type();
+}
+
+MaidAccount::AccountInfo MaidAccount::ParseAccountInfo(
+    const serialised_info_type& /*serialised_info*/) const {
+  return MaidAccount::AccountInfo();
+}
+
 std::vector<PmidTotals>::iterator MaidAccount::Find(const PmidName& pmid_name) {
   return std::find_if(pmid_totals_.begin(),
                       pmid_totals_.end(),
