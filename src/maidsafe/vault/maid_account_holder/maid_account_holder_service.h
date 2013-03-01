@@ -50,7 +50,7 @@ class MaidAccountHolderService {
   void HandleGenericMessage(const nfs::GenericMessage& generic_message,
                             const routing::ReplyFunctor& reply_functor);
   void TriggerSync();
-
+  static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
  private:
   MaidAccountHolderService(const MaidAccountHolderService&);
   MaidAccountHolderService& operator=(const MaidAccountHolderService&);
@@ -77,6 +77,7 @@ class MaidAccountHolderService {
   template<typename Data>
   void SendEarlySuccessReply(const nfs::DataMessage& /*data_message*/,
                              const routing::ReplyFunctor& /*reply_functor*/,
+                             bool low_space,
                              std::true_type) {}
   // false_type represents !is_unique_on_network<Data>
   template<typename Data>

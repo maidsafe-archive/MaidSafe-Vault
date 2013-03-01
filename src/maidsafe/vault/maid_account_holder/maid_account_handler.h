@@ -67,7 +67,7 @@ class MaidAccountHandler {
                int32_t cost,
                RequireAccount);
   template<typename Data>
-  MaidAccount::Status PutData(const MaidName& account_name,
+  void PutData(const MaidName& account_name,
                               const typename Data::name_type& data_name,
                               int32_t cost,
                               RequireNoAccount);

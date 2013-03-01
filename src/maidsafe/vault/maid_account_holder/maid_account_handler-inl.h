@@ -22,19 +22,19 @@ namespace vault {
 namespace detail {
 
 template<typename Data>
-struct AccountRequired : true_type {};
+struct AccountRequired : std::true_type {};
 
 template<>
-struct AccountRequired<passport::Anmaid> : false_type {};
+struct AccountRequired<passport::Anmaid> : std::false_type {};
 
 template<>
-struct AccountRequired<passport::Maid> : false_type {};
+struct AccountRequired<passport::Maid> : std::false_type {};
 
 }  // namespace detail
 
 
 template<typename Data>
-MaidAccount::Status MaidAccountHandler::PutData(const MaidName& account_name,
+void MaidAccountHandler::PutData(const MaidName& account_name,
                                                 const typename Data::name_type& data_name,
                                                 int32_t cost,
                                                 RequireAccount) {
@@ -42,14 +42,14 @@ MaidAccount::Status MaidAccountHandler::PutData(const MaidName& account_name,
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  return (*itr)->PutData<Data>(data_name, cost);
+  (*itr)->PutData<Data>(data_name, cost);
 }
 
 template<typename Data>
-MaidAccount::Status MaidAccountHandler::PutData(const MaidName& account_name,
-                                                const typename Data::name_type& data_name,
-                                                int32_t cost,
-                                                RequireNoAccount) {
+void MaidAccountHandler::PutData(const MaidName& account_name,
+                                 const typename Data::name_type& data_name,
+                                 int32_t cost,
+                                 RequireNoAccount) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr != maid_accounts_.end())
@@ -58,7 +58,7 @@ MaidAccount::Status MaidAccountHandler::PutData(const MaidName& account_name,
   bool success(AddAccount(std::move(account)));
   assert(success);
   static_cast<void>(success);
-  return (*itr)->PutData<Data>(data_name, cost);
+  (*itr)->PutData<Data>(data_name, cost);
 }
 
 template<typename Data>
