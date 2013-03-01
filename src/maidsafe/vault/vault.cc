@@ -52,10 +52,9 @@ void Vault::InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_
 
 routing::Functors Vault::InitialiseRoutingCallbacks() {
   routing::Functors functors;
-  functors.message_received = [this] (const std::string& message,
-                                      const NodeId& /*group_claim*/,  // to be removed
-                                      bool /*cache_lookup*/,
-                                      const routing::ReplyFunctor& reply_functor) {
+  functors.message_received = [this](const std::string& message,
+                                     bool /*cache_lookup*/,
+                                     const routing::ReplyFunctor& reply_functor) {
                                 OnMessageReceived(message, reply_functor);
                               };
   functors.network_status = [this] (const int& network_health) {

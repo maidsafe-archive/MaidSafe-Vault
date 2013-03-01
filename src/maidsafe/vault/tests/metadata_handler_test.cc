@@ -20,6 +20,7 @@
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/metadata_manager/metadata_pb.h"
+#include "maidsafe/vault/utils.h"
 
 
 namespace maidsafe {
@@ -28,24 +29,171 @@ namespace vault {
 
 namespace test {
 
-//// to match kVaultDirectory in metadata_handler.cc
-//const boost::filesystem::path kVaultDirectory("meta_data_manager");
+int kOnlinePmids(10);
+int kOfflinePmids(20);
 
-//Identity GenerateIdentity() {
-//  return Identity(RandomAlphaNumericString(64));
-//}
+Identity GenerateIdentity() {
+  return Identity(RandomAlphaNumericString(crypto::SHA512::DIGESTSIZE));
+}
 
-//// TODO(Alison) - update to test GetOnlinePmid, when API has been finalised.
+class MetadataHandlerTest : public testing::Test {
+ public:
+  MetadataHandlerTest()
+    : vault_root_dir_(maidsafe::test::CreateTestPath(("MaidSafe_Test_MetadataHandler"))),
+      vault_metadata_dir_(*vault_root_dir_ / "metadata"),
+      metadata_handler_(*vault_root_dir_),
+      online_pmids_(),
+      offline_pmids_() {}
 
-//class MetadataHandlerTest : public testing::Test {
-// public:
-//  MetadataHandlerTest()
-//    : kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_MetadataHandler")),
-//      vault_root_dir_(*kTestRoot_ / RandomAlphaNumericString(8)),
-//      vault_metadata_dir_(vault_root_dir_ / kVaultDirectory),
-//      metadata_handler_(vault_root_dir_) {}
+  void SetUp() {
+    online_pmids_ = GeneratePmids(kOnlinePmids);
+    offline_pmids_ = GeneratePmids(kOfflinePmids);
+  }
 
-// private:
+ protected:
+  std::vector<Identity> GeneratePmids(int total_pmids) {
+    std::vector<Identity> pmids;
+    for (int i(0); i < total_pmids; ++i) {
+      pmids.push_back(GenerateIdentity());
+    }
+    return pmids;
+  }
+
+  const maidsafe::test::TestPath vault_root_dir_;
+  fs::path vault_metadata_dir_;
+  MetadataHandler metadata_handler_;
+  std::vector<Identity> online_pmids_, offline_pmids_;
+};
+
+TEST_F(MetadataHandlerTest, BEH_Constructor) {
+  fs::path vault_root(*vault_root_dir_ / "constructor_test");
+  {
+    try {
+      MetadataHandler metadata_handler(vault_root);
+      FAIL() << "Object construction should throw with non-existent path";
+    }
+    catch(const std::exception&) {}
+    fs::create_directory(vault_root);
+    fs::path metadata_path(vault_root / "metadata");
+    ASSERT_TRUE(WriteFile(metadata_path, RandomString(64)));
+    try {
+      MetadataHandler metadata_handler(vault_root);
+      FAIL() << "Object construction should throw with metadata dir being present as file";
+    }
+    catch(const common_error& error) {
+      EXPECT_EQ(error.code(), CommonErrors::not_a_directory);
+    }
+  }
+  fs::path valid_root(vault_root / "valid");
+  fs::create_directory(valid_root);
+  EXPECT_NO_THROW(MetadataHandler metadata_handler(valid_root));
+  EXPECT_TRUE(fs::exists(valid_root / "metadata"));
+  EXPECT_TRUE(fs::is_directory(valid_root / "metadata"));
+}
+
+template <typename Data>
+class MetadataHandlerTypedTest : public MetadataHandlerTest {
+ public :
+  MetadataHandlerTypedTest() : MetadataHandlerTest() {}
+
+ protected :
+  void IncrementSubscribers(const typename Data::name_type& data_name, int32_t data_size) {
+    this->metadata_handler_.template IncrementSubscribers<Data>(data_name, data_size);
+  }
+
+  void DecrementSubscribers(const typename Data::name_type& data_name) {
+    this->metadata_handler_.template DecrementSubscribers<Data>(data_name);
+  }
+
+  void DeleteMetadata(const typename Data::name_type& data_name) {
+    this->metadata_handler_.template DeleteMetadata<Data>(data_name);
+  }
+
+  void MarkNodeDown(const typename Data::name_type& data_name,
+                    const PmidName& pmid_name,
+                    int& remaining_online_holders) {
+    this->metadata_handler_.template MarkNodeDown<Data>(data_name,
+                                                        pmid_name,
+                                                        remaining_online_holders);
+  }
+
+  void MarkNodeUp(const typename Data::name_type& data_name,
+                  const PmidName& pmid_name) {
+    this->metadata_handler_.template MarkNodeUp<Data>(data_name, pmid_name);
+  }
+
+  void AddDataHolder(const typename Data::name_type& data_name,
+                     const PmidName& online_pmid_name) {
+    this->metadata_handler_.template AddDataHolder<Data>(data_name, online_pmid_name);
+  }
+
+  void RemoveDataHolder(const typename Data::name_type& data_name,
+                        const PmidName& pmid_name) {
+    this->metadata_handler_.template RemoveDataHolder<Data>(data_name, pmid_name);
+  }
+
+  std::vector<PmidName> GetOnlineDataHolders(const typename Data::name_type& data_name) const {
+    return this->metadata_handler_.template GetOnlineDataHolders<Data>(data_name);
+  }
+
+  void CheckMetadataExists(const typename Data::name_type& data_name) const {
+    this->metadata_handler_.template CheckMetadataExists<Data>(data_name);
+  }
+
+  void CompareMetadata(const typename Data::name_type& data_name,
+                       int32_t data_size,
+                       int subscriber_count) {
+    MetadataHandler::Metadata<Data> metadata(data_name, vault_metadata_dir_);
+    EXPECT_EQ(metadata.content.name(), data_name->string());
+    EXPECT_EQ(metadata.content.size(), data_size);
+    EXPECT_EQ(metadata.content.subscribers(), subscriber_count);
+  }
+
+  void CompareMetadata(const typename Data::name_type& data_name,
+                       int32_t data_size,
+                       int subscriber_count,
+                       const std::vector<Identity>& online_pmids,
+                       const std::vector<Identity>& offline_pmids) {
+    MetadataHandler::Metadata<Data> metadata(data_name, vault_metadata_dir_);
+    EXPECT_EQ(metadata.content.type(), static_cast<int>(Data::type_enum_value()));
+    EXPECT_EQ(metadata.content.name(), data_name->string());
+    EXPECT_EQ(metadata.content.size(), data_size);
+    EXPECT_EQ(metadata.content.subscribers(), subscriber_count);
+    for (uint32_t i(0); i < online_pmids.size(); ++i)
+      EXPECT_EQ(metadata.content.online_pmid_name(i), online_pmids[i].string());
+    for (uint32_t i(0); i < offline_pmids.size(); ++i)
+      EXPECT_EQ(metadata.content.offline_pmid_name(i), offline_pmids[i].string());
+  }
+
+  void InsertMetadata(const typename Data::name_type& data_name,
+                      int32_t data_size,
+                      int subscriber_count,
+                      const std::vector<Identity>& online_pmids,
+                      const std::vector<Identity>& offline_pmids) {
+    MetadataHandler::Metadata<Data> metadata(data_name, vault_metadata_dir_, data_size);
+    metadata.content.set_subscribers(subscriber_count);
+    for (auto& pmid : online_pmids)
+      metadata.content.add_online_pmid_name(pmid.string());
+    for (auto& pmid : offline_pmids)
+      metadata.content.add_offline_pmid_name(pmid.string());
+    metadata.SaveChanges();
+  }
+
+  protobuf::Metadata CreateProtoMetadata(const typename Data::name_type& data_name,
+                                         const std::vector<Identity>& online_pmids,
+                                         const std::vector<Identity>& offline_pmids) {
+    protobuf::Metadata metadata;
+    metadata.set_type(static_cast<int>(Data::type_enum_value()));
+    metadata.set_name(data_name->string());
+    metadata.set_size(RandomUint32());
+    metadata.set_subscribers(RandomUint32() % 20);
+    for (auto& pmid : online_pmids)
+      metadata.add_online_pmid_name(pmid.string());
+    for (auto& pmid : offline_pmids)
+      metadata.add_offline_pmid_name(pmid.string());
+    return metadata;
+  }
+
 //  bool CheckDataExistenceAndParsing(const Identity& data_name,
 //                                    protobuf::Metadata& element) {
 //    if (!boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name))) {
@@ -135,7 +283,6 @@ namespace test {
 //    return true;
 //  }
 
-// public:
 //  bool CheckDataExistenceAndIntegrity(const Identity& data_name,
 //                                      const int32_t& size,
 //                                      const int64_t& subscribers,
@@ -195,7 +342,7 @@ namespace test {
 //    return true;
 //  }
 
-//  void AddPmidIds(const Identity& data_name,
+//  void AddPmidIds(const typename Data::name_type& data_name,
 //                  const int32_t& size,
 //                  const uint16_t& max_value,
 //                  const int64_t subscribers,
@@ -206,7 +353,7 @@ namespace test {
 //                  int64_t& expected_holders) {
 //    for (uint16_t i(0); i < max_value; ++i) {
 //      PmidName online_pmid_name(GenerateIdentity());
-//      metadata_handler_.AddDataHolder(data_name, online_pmid_name);
+//      this->metadata_handler_.AddDataHolder(data_name, online_pmid_name);
 //      online_pmid_names.insert(online_pmid_name);
 //      ++expected_holders;
 //      ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name,
@@ -218,7 +365,7 @@ namespace test {
 //        online_for_change.push_back(online_pmid_name);
 
 //      PmidName offline_pmid_name(GenerateIdentity());
-//      metadata_handler_.AddOfflinePmid(data_name, offline_pmid_name);
+//      this->metadata_handler_.AddOfflinePmid(data_name, offline_pmid_name);
 //      offline_pmid_names.insert(offline_pmid_name);
 //      ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name,
 //                                                 size,
@@ -230,7 +377,7 @@ namespace test {
 //    }
 //  }
 
-//  void AddPmidIds(const Identity& data_name,
+//  void AddPmidIds(const typename Data::name_type& data_name,
 //                  const int32_t& size,
 //                  const uint16_t& max_value,
 //                  const int64_t subscribers,
@@ -238,30 +385,153 @@ namespace test {
 //                  std::set<PmidName>& offline_pmid_names) {
 //    for (uint16_t i(0); i < max_value; ++i) {
 //      PmidName online_pmid_name(GenerateIdentity());
-//      metadata_handler_.AddDataHolder(data_name, online_pmid_name);
+//      this->metadata_handler_.AddDataHolder(data_name, online_pmid_name);
 //      online_pmid_names.insert(online_pmid_name);
-//      ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name,
+//      ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name->String(),
 //                                                 size,
 //                                                 subscribers,
 //                                                 online_pmid_names,
 //                                                 offline_pmid_names));
 
 //      PmidName offline_pmid_name(GenerateIdentity());
-//      metadata_handler_.AddOfflinePmid(data_name, offline_pmid_name);
+//      this->metadata_handler_.AddOfflinePmid(data_name, offline_pmid_name);
 //      offline_pmid_names.insert(offline_pmid_name);
-//      ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name,
+//      ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_name->String(),
 //                                                 size,
 //                                                 subscribers,
 //                                                 online_pmid_names,
 //                                                 offline_pmid_names));
 //    }
 //  }
+};
 
-//  const maidsafe::test::TestPath kTestRoot_;
-//  boost::filesystem::path vault_root_dir_;
-//  boost::filesystem::path vault_metadata_dir_;
-//  MetadataHandler metadata_handler_;
-//};
+TYPED_TEST_CASE_P(MetadataHandlerTypedTest);
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_IncrementSubscribers) {
+  typename TypeParam::name_type data_name(GenerateIdentity());
+  int32_t data_size(10000);
+  this->IncrementSubscribers(data_name, data_size);
+  this->CompareMetadata(data_name, data_size, 1);
+
+  EXPECT_THROW(this->IncrementSubscribers(data_name, data_size + 1), common_error);
+  this->CompareMetadata(data_name, data_size, 1);
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_DecrementSubscribers) {
+  typename TypeParam::name_type data_name(GenerateIdentity());
+  int32_t data_size(10000);
+
+  EXPECT_THROW(this->DecrementSubscribers(data_name), common_error);
+  this->InsertMetadata(data_name, data_size, 2, this->online_pmids_, this->offline_pmids_);
+  this->CompareMetadata(data_name, data_size, 2, this->online_pmids_, this->offline_pmids_);
+
+  this->DecrementSubscribers(data_name);
+  this->CompareMetadata(data_name, data_size, 1, this->online_pmids_, this->offline_pmids_);
+
+  this->DecrementSubscribers(data_name);
+  EXPECT_THROW(this->DecrementSubscribers(data_name), common_error);
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_PutMetadata) {
+  protobuf::Metadata metadata, replacement_metadata;
+  typename TypeParam::name_type data_name(GenerateIdentity());
+  EXPECT_THROW(this->metadata_handler_.PutMetadata(metadata), common_error);
+
+  metadata = this->CreateProtoMetadata(data_name, this->online_pmids_, this->offline_pmids_);
+
+  EXPECT_NO_THROW(this->metadata_handler_.PutMetadata(metadata));
+  this->CompareMetadata(data_name,
+                        metadata.size(),
+                        metadata.subscribers(),
+                        this->online_pmids_,
+                        this->offline_pmids_);
+
+  // create new proto::metadata and call Put - previous entry should be overwritten
+  replacement_metadata = this->CreateProtoMetadata(data_name,
+                                                   this->offline_pmids_,
+                                                   this->online_pmids_);
+  EXPECT_NO_THROW(this->metadata_handler_.PutMetadata(replacement_metadata));
+  this->CompareMetadata(data_name,
+                        replacement_metadata.size(),
+                        replacement_metadata.subscribers(),
+                        this->offline_pmids_,
+                        this->online_pmids_);
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_DeleteMetadata) {
+  typename TypeParam::name_type data_name(GenerateIdentity());
+  int32_t data_size(10000);
+
+  EXPECT_THROW(this->DeleteMetadata(data_name), common_error);
+  this->InsertMetadata(data_name, data_size, 10, this->online_pmids_, this->offline_pmids_);
+  this->CompareMetadata(data_name, data_size, 10, this->online_pmids_, this->offline_pmids_);
+
+  EXPECT_NO_THROW(this->DeleteMetadata(data_name));
+  // compare should throw as metadata removed when subscribers = 0, so should fail to parse
+  EXPECT_THROW(this->CompareMetadata(data_name,
+                                     data_size,
+                                     0,
+                                     this->online_pmids_,
+                                     this->offline_pmids_),
+               common_error);
+
+  // attempt to add new metadata under same name - should succeed
+  EXPECT_NO_THROW(this->InsertMetadata(data_name,
+                                       data_size + 1,
+                                       3,
+                                       this->offline_pmids_,
+                                       this->online_pmids_));
+  this->CompareMetadata(data_name, data_size+1, 3, this->offline_pmids_, this->online_pmids_);
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_MarkNodeDown) {
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_MarkNodeUp) {
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_AddDataHolder) {
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_RemoveDataHolder) {
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_GetOnlineDataHolders) {
+}
+
+TYPED_TEST_P(MetadataHandlerTypedTest, BEH_CheckMetadataExists) {
+}
+
+
+REGISTER_TYPED_TEST_CASE_P(MetadataHandlerTypedTest,
+                           BEH_IncrementSubscribers,
+                           BEH_DecrementSubscribers,
+                           BEH_PutMetadata,
+                           BEH_DeleteMetadata,
+                           BEH_MarkNodeDown,
+                           BEH_MarkNodeUp,
+                           BEH_AddDataHolder,
+                           BEH_RemoveDataHolder,
+                           BEH_GetOnlineDataHolders,
+                           BEH_CheckMetadataExists);
+
+typedef testing::Types<passport::PublicAnmid,
+                       passport::PublicAnsmid,
+                       passport::PublicAntmid,
+                       passport::PublicAnmaid,
+                       passport::PublicMaid,
+                       passport::PublicPmid,
+                       passport::Mid,
+                       passport::Smid,
+                       passport::Tmid,
+                       passport::PublicAnmpid,
+                       passport::PublicMpid,
+                       ImmutableData,
+                       OwnerDirectory,
+                       GroupDirectory,
+                       WorldDirectory> AllTypes;
+
+INSTANTIATE_TYPED_TEST_CASE_P(All, MetadataHandlerTypedTest, AllTypes);
 
 //class MetadataHandlerOneElementTest : public MetadataHandlerTest {
 // public:

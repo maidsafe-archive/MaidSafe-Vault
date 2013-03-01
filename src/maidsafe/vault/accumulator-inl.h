@@ -149,10 +149,6 @@ typename std::deque<typename Accumulator<Name>::HandledRequest>::const_iterator
                       });
 }
 
-template<>
-typename std::deque<typename Accumulator<DataNameVariant>::HandledRequest>::const_iterator
-    Accumulator<DataNameVariant>::FindHandled(const nfs::DataMessage& data_message) const;
-
 template<typename Name>
 bool Accumulator<Name>::CheckHandled(const nfs::DataMessage& data_message,
                                      nfs::Reply& reply_out) const {
@@ -220,6 +216,17 @@ std::vector<typename Accumulator<Name>::PendingRequest> Accumulator<Name>::SetHa
   return ret_requests;
 }
 
+// Workaround for gcc 4.6 bug related to warning "redundant redeclaration" for template
+// specialisation. refer // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=15867#c4
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wredundant-decls"
+#endif
+template<>
+typename std::deque<typename Accumulator<DataNameVariant>::HandledRequest>::const_iterator
+    Accumulator<DataNameVariant>::FindHandled(const nfs::DataMessage& data_message) const;
+
 template<>
 std::vector<typename Accumulator<DataNameVariant>::PendingRequest>
     Accumulator<DataNameVariant>::SetHandled(
@@ -230,6 +237,9 @@ template<>
 std::vector<typename Accumulator<PmidName>::PendingRequest> Accumulator<PmidName>::SetHandled(
     const nfs::DataMessage& data_message,
     const maidsafe_error& return_code);
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
 
 template<typename Name>
 typename Accumulator<Name>::serialised_requests Accumulator<Name>::Serialise(

@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/on_scope_exit.h"
@@ -52,14 +53,15 @@ std::future<void> DiskBasedStorage::Store(const typename Data::name_type& name, 
 
 template<typename Data>
 void DiskBasedStorage::AddToLatestFile(const typename Data::name_type& name, int32_t value) {
-  FileIdentity file_id(*file_ids_.rbegin());
-  if (file_id.second.IsInitialised()) {  // The file already exists: add to this file.
-    auto file(ParseFile(file_id));
-    AddElement<Data>(name, value, file_id, file);
-  } else {  // The file doesn't already exist - create a new file.
-    protobuf::DiskStoredFile file;
-    AddElement<Data>(name, value, file_id, file);
+  std::pair<int, crypto::SHA512Hash> file_id(*file_ids_.rbegin());
+  auto file(ParseFile(file_id));
+  if (file.element_size() == detail::Parameters::max_file_element_count) {
+    ++file_id.first;
+    file_id.second = std::move(crypto::SHA512Hash());
+    file_ids_.insert(file_id);
+    file.Clear();
   }
+  AddElement<Data>(name, value, file_id, file);
 }
 
 template<typename Data>
@@ -67,23 +69,12 @@ void DiskBasedStorage::AddElement(const typename Data::name_type& name,
                                   int32_t value,
                                   const FileIdentity& file_id,
                                   protobuf::DiskStoredFile& file) {
-  on_scope_exit disk_stored_file_guarantee(on_scope_exit::RevertValue(file));
-
   auto proto_element(file.add_element());
   proto_element->set_type(static_cast<int32_t>(Data::type_enum_value()));
   proto_element->set_name(name->string());
   proto_element->set_value(value);
-  assert(file.element_size() <= detail::Parameters::max_file_element_count());
-
-  if (file.element_size() == detail::Parameters::max_file_element_count()) {
-    // Insert a placeholder with a default-initialised (invalid) hash to indicate we need a new
-    // file at the next AddToLatestFile.
-    file_ids_.insert(std::make_pair(file_id.first + 1, std::move(crypto::SHA512Hash())));
-    detail::SortFile(file);
-  }
-
+  assert(file.element_size() <= detail::Parameters::max_file_element_count);
   SaveChangedFile(file_id, file);
-  disk_stored_file_guarantee.Release();
 }
 
 template<typename Data>
@@ -92,11 +83,8 @@ std::future<int32_t> DiskBasedStorage::Delete(const typename Data::name_type& na
   active_.Send([name, promise, this] {
                  try {
                    int32_t value(0);
-                   bool reorganise_files(false);
-                   this->FindAndDeleteEntry<Data>(name, value, reorganise_files);
+                   this->FindAndDeleteEntry<Data>(name, value);
                    promise->set_value(value);
-                   if (reorganise_files)
-                     this->ReorganiseFiles();
                  }
                  catch(const std::exception& e) {
                    LOG(kError) << "Execution of Delete threw: " << e.what();
@@ -107,9 +95,7 @@ std::future<int32_t> DiskBasedStorage::Delete(const typename Data::name_type& na
 }
 
 template<typename Data>
-void DiskBasedStorage::FindAndDeleteEntry(const typename Data::name_type& name,
-                                          int32_t& value,
-                                          bool& reorganise_files) {
+void DiskBasedStorage::FindAndDeleteEntry(const typename Data::name_type& name, int32_t& value) {
   auto ritr(file_ids_.rbegin());
   if (!(*ritr).second.IsInitialised())
     ++ritr;
@@ -121,10 +107,6 @@ void DiskBasedStorage::FindAndDeleteEntry(const typename Data::name_type& name,
       value = file.element(index).value();
       DeleteEntry(index, file);
       SaveChangedFile(*ritr, file);
-      if ((*ritr).first < oldest_non_full_file_index_)
-        oldest_non_full_file_index_ = (*ritr).first;
-      reorganise_files = (file.element_size() < detail::Parameters::min_file_element_count() &&
-                          ritr != file_ids_.rbegin());
       return;
     }
   }

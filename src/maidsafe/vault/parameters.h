@@ -27,10 +27,9 @@ struct Parameters {
   static const int kMinNetworkHealth;
   // Max number of recent entries in account classes.
   static size_t max_recent_data_list_size;
+  // Max count of elements allowed in each account file
+  static int max_file_element_count;
 
-  static void set_file_element_count_limits(int max_file_element_count, int min_file_element_count);
-  static int max_file_element_count();
-  static int min_file_element_count();
  private:
   Parameters();
   ~Parameters();
@@ -38,11 +37,6 @@ struct Parameters {
   Parameters& operator=(const Parameters&);
   Parameters(const Parameters&&);
   Parameters& operator=(Parameters&&);
-
-  // Max count of elements allowed in each account file
-  static int max_file_element_count_;
-  // Min count of elements allowed in each account file
-  static int min_file_element_count_;
 };
 
 }  // namespace detail
