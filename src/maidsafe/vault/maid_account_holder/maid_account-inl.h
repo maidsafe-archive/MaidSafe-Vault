@@ -22,13 +22,14 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void MaidAccount::PutData(const typename Data::name_type& name, int32_t cost) {
+MaidAccount::Status MaidAccount::PutData(const typename Data::name_type& name, int32_t cost) {
   if (total_claimed_available_size_by_pmids_ < total_put_data_ + cost)
     ThrowError(VaultErrors::not_enough_space);
 
   on_scope_exit strong_guarantee(on_scope_exit::RevertValue(recent_put_data_));
-  DoPutData<Data>(name, cost);
+  auto result(DoPutData<Data>(name, cost));
   strong_guarantee.Release();
+  return result;
 }
 
 template<typename Data>
@@ -63,7 +64,7 @@ void MaidAccount::Adjust(const typename Data::name_type& name, int32_t new_cost)
 }
 
 template<typename Data>
-void MaidAccount::DoPutData(const typename Data::name_type& name, int32_t cost) {
+MaidAccount::Status MaidAccount::DoPutData(const typename Data::name_type& name, int32_t cost) {
   recent_put_data_.emplace_back(name, cost);
   if (recent_put_data_.size() > detail::Parameters::max_recent_data_list_size) {
 // TODO(Fraser) BEFORE_RELEASE Uncomment below.
@@ -73,6 +74,10 @@ void MaidAccount::DoPutData(const typename Data::name_type& name, int32_t cost) 
     //archive_future.get();
   }
   total_put_data_ += cost;
+  if (total_put_data_ > (total_claimed_available_size_by_pmids_ / 10) * 9)
+    return Status::kLowSpace;
+  else
+    return Status::kOk;
 }
 
 }  // namespace vault
