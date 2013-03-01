@@ -48,7 +48,7 @@ class Vault {
   ~Vault();  // must issue StopSending() to all identity objects (MM etc.)
              // Then ensure routing is destroyed next then all others in any order at this time
  private:
-  int InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+  void InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
   routing::Functors InitialiseRoutingCallbacks();
   void OnMessageReceived(const std::string& message,  const routing::ReplyFunctor& reply_functor);
   void DoOnMessageReceived(const std::string& message, const routing::ReplyFunctor& reply_functor);

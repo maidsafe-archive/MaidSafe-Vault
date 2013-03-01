@@ -121,18 +121,18 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
   if (variables_map.count("usr_id"))
     usr_id = variables_map.at("usr_id").as<std::string>();
 
-  maidsafe::lifestuff_manager::VaultController vault_controller(usr_id);
-  bool using_vault_controller(false);
-  std::string vmid(usr_id);
-  if (variables_map.count("vmid"))
-    vmid = variables_map.at("vmid").as<std::string>();
+  //  maidsafe::lifestuff_manager::VaultController vault_controller(usr_id);
+  //  bool using_vault_controller(false);
+//  std::string vmid(usr_id);
+//  if (variables_map.count("vmid"))
+//    vmid = variables_map.at("vmid").as<std::string>();
 
-  if (!vault_controller.Start(vmid, []() { SigHandler(SIGTERM); })) {
-    LOG(kError) << "Could not start vault controller.";
-    using_vault_controller = false;
-  } else {
-    using_vault_controller = true;
-  }
+//  if (!vault_controller.Start(vmid, []() { SigHandler(SIGTERM); })) {
+//    LOG(kError) << "Could not start vault controller.";
+//    using_vault_controller = false;
+//  } else {
+//    using_vault_controller = true;
+//  }
 
   // bootstrap endpoint
   std::vector<boost::asio::ip::udp::endpoint> peer_endpoints;
@@ -166,17 +166,18 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
     for (auto& pmid : all_pmids)
       all_public_pmids.push_back(maidsafe::passport::PublicPmid(pmid));
   }
+  std::cout << "all_public_pmids: " << all_public_pmids.size() << std::endl;
 
-  std::vector<std::pair<std::string, uint16_t>> endpoints_from_lifestuff_manager;
-  // Set up identity via vault_controller, if not from file
-  if (!(*pmid).name().data.IsInitialised()) {
-    if (!using_vault_controller ||
-        (using_vault_controller &&
-            !vault_controller.GetIdentity(pmid, endpoints_from_lifestuff_manager))) {
-      std::cout << "No identity available, can't start vault." << std::endl;
-      return 3;
-    }
-  }
+//  std::vector<std::pair<std::string, uint16_t>> endpoints_from_lifestuff_manager;
+//  // Set up identity via vault_controller, if not from file
+//  if (!(*pmid).name().data.IsInitialised()) {
+//    if (!using_vault_controller ||
+//        (using_vault_controller &&
+//            !vault_controller.GetIdentity(pmid, endpoints_from_lifestuff_manager))) {
+//      std::cout << "No identity available, can't start vault." << std::endl;
+//      return 3;
+//    }
+//  }
 
 #ifndef MAIDSAFE_WIN32
   signal(SIGHUP, SigHandler);
@@ -193,18 +194,18 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
   auto vault = std::make_shared<maidsafe::vault::Vault>(
       *pmid,
       chunk_path,
-      [&vault_controller] (const boost::asio::ip::udp::endpoint &endpoint) {
-        std::pair<std::string, uint16_t> endpoint_pair;
-        endpoint_pair.first = endpoint.address().to_string();
-        endpoint_pair.second = endpoint.port();
-        vault_controller.SendEndpointToLifeStuffManager(endpoint_pair);
+      [/*&vault_controller*/] (const boost::asio::ip::udp::endpoint &/*endpoint*/) {
+//        std::pair<std::string, uint16_t> endpoint_pair;
+//        endpoint_pair.first = endpoint.address().to_string();
+//        endpoint_pair.second = endpoint.port();
+//        vault_controller.SendEndpointToLifeStuffManager(endpoint_pair);
       },
       all_public_pmids,
       peer_endpoints);
 
   int result(maidsafe::routing::ReturnCode::kSuccess);
-  if (using_vault_controller)
-    vault_controller.ConfirmJoin(result == maidsafe::routing::ReturnCode::kSuccess);
+//  if (using_vault_controller)
+//    vault_controller.ConfirmJoin(result == maidsafe::routing::ReturnCode::kSuccess);
   if (result != maidsafe::routing::ReturnCode::kSuccess) {
     std::cout << "Error during vault start-up. (" << result << ")" << std::endl;
     return 4;

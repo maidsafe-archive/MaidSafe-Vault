@@ -9,6 +9,9 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
+#ifndef MAIDSAFE_VAULT_TOOLS_KEY_HELPER_OPERATIONS_H_
+#define MAIDSAFE_VAULT_TOOLS_KEY_HELPER_OPERATIONS_H_
+
 #include <condition_variable>
 #include <mutex>
 #include <vector>
@@ -97,16 +100,13 @@ class KeyStorer : public ClientTester {
   void Store(const PmidVector& all_pmids);
 
  private:
-  routing::ResponseFunctor callback(std::promise<bool>& promise);
+  std::function<void(nfs::Reply)> callback(std::promise<bool>& promise);
 };
 
 class KeyVerifier : public ClientTester {
  public:
   KeyVerifier(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
   void Verify(const PmidVector& all_pmids);
-
- private:
-  routing::ResponseFunctor callback(const passport::Pmid& pmid, std::promise<bool>& promise);
 };
 
 class DataChunkStorer : public ClientTester {
@@ -130,3 +130,5 @@ class DataChunkStorer : public ClientTester {
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_TOOLS_KEY_HELPER_OPERATIONS_H_

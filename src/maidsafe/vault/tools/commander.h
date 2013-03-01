@@ -9,6 +9,9 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
+#ifndef MAIDSAFE_VAULT_TOOLS_COMMANDER_H_
+#define MAIDSAFE_VAULT_TOOLS_COMMANDER_H_
+
 #include <signal.h>
 
 #include <string>
@@ -84,3 +87,5 @@ class Commander {
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_TOOLS_COMMANDER_H_
