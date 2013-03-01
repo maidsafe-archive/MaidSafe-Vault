@@ -12,20 +12,53 @@
 #ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HANDLER_INL_H_
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HANDLER_INL_H_
 
+#include "maidsafe/passport/types.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
+namespace detail {
+
 template<typename Data>
-void MaidAccountHandler::PutData(const MaidName& account_name,
-                                 const typename Data::name_type& data_name,
-                                 int32_t cost) {
+struct AccountRequired : true_type {};
+
+template<>
+struct AccountRequired<passport::Anmaid> : false_type {};
+
+template<>
+struct AccountRequired<passport::Maid> : false_type {};
+
+}  // namespace detail
+
+
+template<typename Data>
+MaidAccount::Status MaidAccountHandler::PutData(const MaidName& account_name,
+                                                const typename Data::name_type& data_name,
+                                                int32_t cost,
+                                                RequireAccount) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr)->PutData<Data>(data_name, cost);
+  return (*itr)->PutData<Data>(data_name, cost);
+}
+
+template<typename Data>
+MaidAccount::Status MaidAccountHandler::PutData(const MaidName& account_name,
+                                                const typename Data::name_type& data_name,
+                                                int32_t cost,
+                                                RequireNoAccount) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(detail::FindAccount(maid_accounts_, account_name));
+  if (itr != maid_accounts_.end())
+    ThrowError(VaultErrors::operation_not_supported);
+  std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, kMaidAccountsRoot_));
+  bool success(AddAccount(std::move(account)));
+  assert(success);
+  static_cast<void>(success);
+  return (*itr)->PutData<Data>(data_name, cost);
 }
 
 template<typename Data>

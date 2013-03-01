@@ -57,11 +57,20 @@ class MaidAccountHandler {
                       const boost::filesystem::path& filename,
                       const NonEmptyString& content);
 
+  typedef std::true_type RequireAccount;
+  typedef std::false_type RequireNoAccount;
+
   // Data operations
   template<typename Data>
   void PutData(const MaidName& account_name,
                const typename Data::name_type& data_name,
-               int32_t cost);
+               int32_t cost,
+               RequireAccount);
+  template<typename Data>
+  MaidAccount::Status PutData(const MaidName& account_name,
+                              const typename Data::name_type& data_name,
+                              int32_t cost,
+                              RequireNoAccount);
   template<typename Data>
   void DeleteData(const MaidName& account_name, const typename Data::name_type& data_name);
   template<typename Data>

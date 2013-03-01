@@ -29,6 +29,31 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace detail {
+
+template<typename Data>
+int32_t CalculateCost(const Data& data) {
+  static_assert(!std::is_same<Data, passport::PublicAnmaid>::value, "Cost of Anmaid should be 0.");
+  static_assert(!std::is_same<Data, passport::PublicMaid>::value, "Cost of Maid should be 0.");
+  static_assert(!std::is_same<Data, passport::PublicPmid>::value, "Cost of Pmid should be 0.");
+  return static_cast<int32_t>(MaidAccountHolderService::kDefaultPaymentFactor_ *
+                              data.content.string().size());
+}
+
+int32_t CalculateCost(const passport::PublicAnmaid&) {
+  return 0;
+}
+
+int32_t CalculateCost(const passport::PublicMaid&) {
+  return 0;
+}
+
+int32_t CalculateCost(const passport::PublicPmid&) {
+  return 0;
+}
+
+}  // namespace detail
+
 template<typename Data>
 void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
@@ -70,8 +95,7 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     // TODO(Fraser#5#): 2013-02-13 - Have PutToAccount return percentage or amount remaining so
     // if it falls below a threshold, we can trigger getting updated account info from the PAHs
     // (not too frequently), & alert the client by returning an "error" via client_reply_functor.
-    int32_t size =
-        static_cast<int32_t>(kDefaultPaymentFactor_ * data_message.data().content.string().size());
+    auto size(CalculateCost(data_message.data()));
     PutToAccount<Data>(account_name, data_name, size, is_payable<Data>());
     on_scope_exit strong_guarantee([this, account_name, data_name] {
         try {
@@ -141,8 +165,9 @@ typename Data::name_type MaidAccountHolderService::GetDataName(
 template<typename Data>
 void MaidAccountHolderService::SendEarlySuccessReply(const nfs::DataMessage& data_message,
                                                      const routing::ReplyFunctor& reply_functor,
+                                                     bool low_space,
                                                      std::false_type) {
-  nfs::Reply reply(CommonErrors::success);
+  nfs::Reply reply(low_space ? CommonErrors::success : VaultErrors::low_space);
   reply_functor(reply.Serialise()->string());
   std::lock_guard<std::mutex> lock(accumulator_mutex_);
   accumulator_.SetHandled(data_message, reply.error());
@@ -153,7 +178,8 @@ void MaidAccountHolderService::PutToAccount(const MaidName& account_name,
                                             const typename Data::name_type& data_name,
                                             int32_t cost,
                                             std::true_type) {
-  maid_account_handler_.PutData<Data>(account_name, data_name, cost);
+  maid_account_handler_.PutData<Data>(account_name, data_name, cost,
+                                      detail::AccountRequired<Data>());
 }
 
 template<typename Data>
@@ -177,9 +203,11 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
                                                const MaidName& /*account_name*/,
                                                const typename Data::name_type& /*data_name*/,
                                                routing::ReplyFunctor client_reply_functor,
+                                               bool low_space,
                                                std::true_type) {
   if (overall_result.IsSuccess()) {
-    client_reply_functor(nfs::Reply(CommonErrors::success).Serialise()->string());
+    nfs::Reply reply(low_space ? CommonErrors::success : VaultErrors::low_space);
+    client_reply_functor(reply.Serialise()->string());
   } else {
     client_reply_functor(overall_result.Serialise()->string());
   }
@@ -190,12 +218,13 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
                                                const MaidName& account_name,
                                                const typename Data::name_type& data_name,
                                                routing::ReplyFunctor /*client_reply_functor*/,
+                                               bool /*low_space*/,
                                                std::false_type) {
   try {
     if (overall_result.IsSuccess()) {
       protobuf::Cost cost;
       cost.ParseFromString(overall_result.data().string());
-      AdjustAccount<Data>(account_name, data_name, cost.value(), is_payable<Data>());
+      auto status(AdjustAccount<Data>(account_name, data_name, cost.value(), is_payable<Data>()));
     }
   }
   catch(const std::exception& e) {

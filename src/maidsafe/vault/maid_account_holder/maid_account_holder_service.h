@@ -82,6 +82,7 @@ class MaidAccountHolderService {
   template<typename Data>
   void SendEarlySuccessReply(const nfs::DataMessage& data_message,
                              const routing::ReplyFunctor& reply_functor,
+                             bool low_space,
                              std::false_type);
   template<typename Data>
   void PutToAccount(const MaidName& account_name,
@@ -120,6 +121,7 @@ class MaidAccountHolderService {
                        const MaidName& account_name,
                        const typename Data::name_type& data_name,
                        routing::ReplyFunctor client_reply_functor,
+                       bool low_space,
                        std::true_type);
   // false_type represents !is_unique_on_network<Data>
   template<typename Data>
@@ -127,6 +129,7 @@ class MaidAccountHolderService {
                        const MaidName& account_name,
                        const typename Data::name_type& data_name,
                        routing::ReplyFunctor client_reply_functor,
+                       bool low_space,
                        std::false_type);
 
   void HandleSyncMessage(const nfs::GenericMessage& generic_message,
