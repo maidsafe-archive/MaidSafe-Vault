@@ -32,8 +32,10 @@ Vault::Vault(const passport::Pmid& pmid,
       metadata_manager_service_(pmid, *routing_, public_key_getter_, vault_root_dir),
       pmid_account_holder_service_(pmid, *routing_, vault_root_dir),
       data_holder_(pmid, *routing_, vault_root_dir),
-      demux_(maid_account_holder_service_, metadata_manager_service_,
-             pmid_account_holder_service_, data_holder_),
+      demux_(maid_account_holder_service_,
+             metadata_manager_service_,
+             pmid_account_holder_service_,
+             data_holder_),
       asio_service_(2) {
   asio_service_.Start();
   InitRouting(peer_endpoints);
@@ -43,10 +45,9 @@ Vault::~Vault() {
 // call stop on all component
 }
 
-int Vault::InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
+void Vault::InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
   routing::Functors functors(InitialiseRoutingCallbacks());
   routing_->Join(functors, peer_endpoints);
-  return 0;
 }
 
 routing::Functors Vault::InitialiseRoutingCallbacks() {
@@ -54,23 +55,23 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
   functors.message_received = [this](const std::string& message,
                                      bool /*cache_lookup*/,
                                      const routing::ReplyFunctor& reply_functor) {
-                                  OnMessageReceived(message, reply_functor);
+                                OnMessageReceived(message, reply_functor);
                               };
-  functors.network_status = [this](const int& network_health) {
-                                OnNetworkStatusChange(network_health);
+  functors.network_status = [this] (const int& network_health) {
+                              OnNetworkStatusChange(network_health);
                             };
-  functors.close_node_replaced = [this](const std::vector<routing::NodeInfo>& new_close_nodes) {
-                                     OnCloseNodeReplaced(new_close_nodes);
+  functors.close_node_replaced = [this] (const std::vector<routing::NodeInfo>& new_close_nodes) {
+                                   OnCloseNodeReplaced(new_close_nodes);
                                  };
-  functors.request_public_key = [this](const NodeId& node_id,
-                                       const routing::GivePublicKeyFunctor& give_key) {
-                                    OnPublicKeyRequested(node_id, give_key);
+  functors.request_public_key = [this] (const NodeId& node_id,
+                                        const routing::GivePublicKeyFunctor& give_key) {
+                                  OnPublicKeyRequested(node_id, give_key);
                                 };
-  functors.new_bootstrap_endpoint = [this](const boost::asio::ip::udp::endpoint& endpoint) {
-                                        OnNewBootstrapEndpoint(endpoint);
+  functors.new_bootstrap_endpoint = [this] (const boost::asio::ip::udp::endpoint& endpoint) {
+                                      OnNewBootstrapEndpoint(endpoint);
                                     };
-  functors.store_cache_data = [this](const std::string& message) { OnStoreInCache(message); };
-  functors.have_cache_data = [this](std::string& message) { return OnGetFromCache(message); };
+  functors.store_cache_data = [this] (const std::string& message) { OnStoreInCache(message); };
+  functors.have_cache_data = [this] (std::string& message) { return OnGetFromCache(message); };
   return functors;
 }
 
@@ -113,17 +114,20 @@ void Vault::OnPublicKeyRequested(const NodeId& node_id,
 
 void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
                                    const routing::GivePublicKeyFunctor& give_key) {
-  auto get_key_future([node_id, give_key] (std::future<passport::PublicPmid> key_future) {
-    try {
-      passport::PublicPmid key = key_future.get();
-      give_key(key.public_key());
-    }
-    catch(const std::exception& ex) {
-      LOG(kError) << "Failed to get key for " << DebugId(node_id) << " : " << ex.what();
-    }
-  });
-//  passport::PublicPmid::name_type name(Identity(node_id.string()));
-//  public_key_getter_.HandleGetKey<passport::PublicPmid>(name, get_key_future); // FIXME Brian
+  passport::PublicPmid::name_type name(Identity(node_id.string()));
+  public_key_getter_.GetKey<passport::PublicPmid>(
+      name,
+      [name, give_key] (nfs::Reply reply) {
+        try {
+          if (reply.IsSuccess()) {
+            passport::PublicPmid pmid(name, passport::PublicPmid::serialised_type(reply.data()));
+            give_key(pmid.public_key());
+          }
+        }
+        catch(const std::exception& ex) {
+          LOG(kError) << "Failed to get key for " << DebugId(name) << " : " << ex.what();
+        }
+      });
 }
 
 void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {

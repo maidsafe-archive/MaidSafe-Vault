@@ -17,6 +17,9 @@
 
 #include "maidsafe/routing/parameters.h"
 
+#include "maidsafe/nfs/client_utils.h"
+
+#include "maidsafe/vault/tools/tools_exception.h"
 
 namespace maidsafe {
 
@@ -24,17 +27,22 @@ namespace vault {
 
 namespace tools {
 
+namespace {
+
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
 typedef boost::asio::ip::udp::endpoint UdpEndpoint;
+typedef std::future<passport::PublicPmid> PublicPmidFuture;
 
 nfs::Reply GetReply(const std::string& response) {
   return nfs::Reply(nfs::Reply::serialised_type(NonEmptyString(response)));
 }
 
-asymm::PublicKey GetPublicKeyFromReply(const nfs::Reply& reply) {
-  return asymm::DecodeKey(asymm::EncodedPublicKey(reply.data().string()));
+asymm::PublicKey GetPublicKeyFromReply(const passport::PublicPmid::name_type& name,
+                                       const nfs::Reply& reply) {
+  passport::PublicPmid pmid(name, passport::PublicPmid::serialised_type(reply.data()));
+  return pmid.public_key();
 }
 
 std::mutex g_mutex;
@@ -47,6 +55,27 @@ void CtrlCHandler(int /*signum*/) {
   g_ctrlc_pressed = true;
   g_cond_var.notify_one();
 }
+
+void CheckAllFutures(const PmidVector& all_pmids,
+                     std::vector<PublicPmidFuture>& futures,
+                     size_t& verified_keys) {
+  auto equal_pmids = [] (const passport::PublicPmid& lhs, const passport::PublicPmid& rhs) {
+                       return lhs.name() == rhs.name() &&
+                              asymm::MatchingKeys(lhs.public_key(), rhs.public_key());
+                     };
+  for (size_t i(0); i != futures.size(); ++i) {
+    try {
+      if (equal_pmids(futures.at(i).get(), passport::PublicPmid(all_pmids.at(i))))
+        ++verified_keys;
+    }
+    catch(...) {
+      std::cout << "Failed getting key #" << i << std::endl;
+    }
+  }
+
+}
+
+}  // namespace
 
 NetworkGenerator::NetworkGenerator() {}
 
@@ -84,7 +113,7 @@ void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_pmids) {
                        });
   if (a1.get() != 0 || a2.get() != 0) {
     LOG(kError) << "SetupNetwork - Could not start bootstrap nodes.";
-    throw std::exception();
+    throw ToolsException("Failed to set up bootstrap nodes");
   }
 
   // just wait till process receives termination signal
@@ -105,16 +134,17 @@ std::vector<boost::asio::ip::udp::endpoint> NetworkGenerator::BootstrapEndpoints
 void NetworkGenerator::DoOnPublicKeyRequested(const NodeId& node_id,
                                               const routing::GivePublicKeyFunctor& give_key,
                                               nfs::PublicKeyGetter& public_key_getter) {
+  passport::PublicPmid::name_type name(Identity(node_id.string()));
   public_key_getter.GetKey<passport::PublicPmid>(
-      passport::PublicPmid::name_type(Identity(node_id.string())),
-      [give_key, node_id] (nfs::Reply reply) {
+      name,
+      [name, give_key] (nfs::Reply reply) {
         if (reply.IsSuccess()) {
           try {
-            asymm::PublicKey public_key(GetPublicKeyFromReply(reply));
+            asymm::PublicKey public_key(GetPublicKeyFromReply(name, reply));
             give_key(public_key);
           }
           catch(const std::exception& ex) {
-            LOG(kError) << "Failed to get key for " << DebugId(node_id) << " : " << ex.what();
+            LOG(kError) << "Failed to get key for " << DebugId(name) << " : " << ex.what();
           }
         }
       });
@@ -124,15 +154,14 @@ ClientTester::ClientTester(const std::vector<UdpEndpoint>& peer_endpoints)
     : client_anmaid_(),
       client_maid_(client_anmaid_),
       client_pmid_(client_maid_),
-      client_routing_(nullptr),
+      client_routing_(/*nullptr*/&client_maid_),
       functors_(),
       client_nfs_() {
-  if (!RoutingJoin(peer_endpoints).get()) {
-    LOG(kError) << "Failed to bootstrap anonymous node for storing keys";
-    throw std::exception();
-  }
+  auto future(RoutingJoin(peer_endpoints));
+  std::future_status status(future.wait_for(std::chrono::seconds(5)));
+  if (status == std::future_status::timeout || !future.get())
+    throw ToolsException("Failed to join client to network.");
   LOG(kInfo) << "Bootstrapped anonymous node to store keys";
-
   client_nfs_.reset(new nfs::ClientMaidNfs(client_routing_, client_maid_));
 }
 
@@ -140,34 +169,40 @@ ClientTester::~ClientTester() {}
 
 std::future<bool> ClientTester::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints) {
   std::once_flag join_promise_set_flag;
-  std::promise<bool> join_promise;
-  functors_.network_status = [&join_promise_set_flag, &join_promise] (int result) {
-                              std::call_once(join_promise_set_flag,
-                                             [&join_promise, &result] {
-                                               join_promise.set_value(result == 0);
-                                             });
-                            };
-  // To allow bootstrapping off vaults on local machine
-  routing::Parameters::append_local_live_port_endpoint = true;
+  std::shared_ptr<std::promise<bool> > join_promise(std::make_shared<std::promise<bool> >());
+  functors_.network_status = [&join_promise_set_flag, join_promise] (int result) {
+                               std::cout << "Network health: " << result  << std::endl;
+                               std::call_once(join_promise_set_flag,
+                                              [join_promise, &result] {
+                                                join_promise->set_value(result > -1);
+                                              });
+                             };
   client_routing_.Join(functors_, peer_endpoints);
-  return std::move(join_promise.get_future());
+  return std::move(join_promise->get_future());
 }
 
 KeyStorer::KeyStorer(const std::vector<UdpEndpoint>& peer_endpoints)
     : ClientTester(peer_endpoints) {}
 
 void KeyStorer::Store(const PmidVector& all_pmids) {
-  auto store_keys = [this] (const passport::Pmid& pmid, std::promise<bool>& promise) {
+  int stores(0);
+  auto store_keys = [this, &stores] (const passport::Pmid& pmid, std::promise<bool>& promise) {
+                      std::cout << "Storing #" << stores++ << std::endl;
                       passport::PublicPmid p_pmid(pmid);
-                      client_nfs_->Put(p_pmid, client_pmid_.name(), callback(std::ref(promise)));
+                      nfs::Put<passport::PublicPmid>(*client_nfs_,
+                                                     p_pmid,
+                                                     client_pmid_.name(),
+                                                     routing::Parameters::node_group_size,
+                                                     callback(std::ref(promise)));
                     };
 
   std::vector<BoolPromise> bool_promises(all_pmids.size());
   std::vector<BoolFuture> bool_futures;
   size_t promises_index(0), error_stored_keys(0);
   for (auto& pmid : all_pmids) {  // store all PMIDs
-    std::async(std::launch::async, store_keys, pmid, std::ref(bool_promises.at(promises_index)));
     bool_futures.push_back(bool_promises.at(promises_index).get_future());
+    std::async(std::launch::async, store_keys, pmid, std::ref(bool_promises.at(promises_index)));
+    ++promises_index;
   }
 
   for (auto& future : bool_futures) {
@@ -176,17 +211,15 @@ void KeyStorer::Store(const PmidVector& all_pmids) {
   }
 
   if (error_stored_keys > 0) {
-    LOG(kError) << "StoreKeys - Could not store " << error_stored_keys << " out of "
-                << all_pmids.size() << " keys.";
-    throw std::exception();
+    throw ToolsException(std::string("Could not store " + std::to_string(error_stored_keys) +
+                                     " out of " + std::to_string(all_pmids.size())));
   }
-  LOG(kSuccess) << "StoreKeys - Stored all " << all_pmids.size() << " keys.";
+  std::cout << "StoreKeys - Stored all " << all_pmids.size() << " keys." << std::endl;
 }
 
-routing::ResponseFunctor KeyStorer::callback(std::promise<bool>& promise) {
-  return [&promise] (std::string response) {
+std::function<void(nfs::Reply)> KeyStorer::callback(std::promise<bool>& promise) {
+  return [&promise] (nfs::Reply reply) {
            try {
-             nfs::Reply reply(GetReply(response));
              promise.set_value(reply.IsSuccess());
            }
            catch(...) {
@@ -199,50 +232,27 @@ KeyVerifier::KeyVerifier(const std::vector<UdpEndpoint>& peer_endpoints)
     : ClientTester(peer_endpoints) {}
 
 void KeyVerifier::Verify(const PmidVector& all_pmids) {
-  auto verify_keys = [this] (const passport::Pmid& pmid, std::promise<bool>& promise) {
+  int gets(0);
+  auto verify_keys = [this, &gets] (const passport::Pmid& pmid, PublicPmidFuture& future) {
+                       std::cout << "Getting #" << gets++ << std::endl;
                        passport::PublicPmid p_pmid(pmid);
-                       client_nfs_->Get<passport::PublicPmid>(p_pmid.name(),
-                                                              callback(pmid, std::ref(promise)));
+                       future = std::move(nfs::Get<passport::PublicPmid>(*client_nfs_,
+                                                                         p_pmid.name()));
                      };
-
-  std::vector<BoolFuture> futures;
-  std::vector<BoolPromise> promises(all_pmids.size());
-  size_t promises_index(0), verified_keys(0);
+  std::vector<PublicPmidFuture> futures(all_pmids.size());
+  size_t futures_index(0), verified_keys(0);
   for (auto& pmid : all_pmids) {
-    std::async(std::launch::async, verify_keys, pmid, std::ref(promises.at(promises_index)));
-    futures.push_back(promises.at(promises_index).get_future());
-    ++promises_index;
+    std::async(std::launch::async, verify_keys, pmid, std::ref(futures.at(futures_index)));
+    ++futures_index;
   }
-
-  for (auto& future : futures) {
-    if (!future.has_exception() && future.get())
-      ++verified_keys;
-  }
+  CheckAllFutures(all_pmids, futures, verified_keys);
 
   if (verified_keys < all_pmids.size()) {
-    LOG(kError) << "VerifyKeys - Could only verify " << verified_keys << " out of "
-                << all_pmids.size() << " keys.";
-    throw std::exception();
+    throw ToolsException(std::string("Not all keys were verified: " +
+                                     std::to_string(verified_keys) + " out of " +
+                                     std::to_string(all_pmids.size())));
   }
-  LOG(kSuccess) << "VerifyKeys - Verified all " << verified_keys << " keys.";
-}
-
-routing::ResponseFunctor KeyVerifier::callback(const passport::Pmid& pmid,
-                                               std::promise<bool>& promise) {
-  return [&promise, &pmid] (std::string response) {
-            nfs::Reply reply(GetReply(response));
-            if (reply.IsSuccess()) {
-              try {
-                asymm::PublicKey public_key(GetPublicKeyFromReply(reply));
-                promise.set_value(asymm::MatchingKeys(public_key,
-                                                      pmid.public_key()));
-              }
-              catch(...) {
-                LOG(kError) << "Failed to get key for " << DebugId(pmid.name());
-                promise.set_exception(std::current_exception());
-              }
-            }
-          };
+  std::cout << "VerifyKeys - Verified all " << verified_keys << " keys." << std::endl;
 }
 
 DataChunkStorer::DataChunkStorer(const std::vector<UdpEndpoint>& peer_endpoints)
@@ -257,7 +267,7 @@ void DataChunkStorer::Test(int32_t quantity) {
   while (!Done(quantity, rounds))
     OneChunkRun(num_chunks, num_store, num_get);
   if (num_chunks != num_get)
-    throw std::exception();
+    throw ToolsException("Failed to store and verify all data chunks.");
 }
 
 bool DataChunkStorer::Done(int32_t quantity, int32_t rounds) const {

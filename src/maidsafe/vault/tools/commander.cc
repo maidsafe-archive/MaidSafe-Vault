@@ -11,6 +11,8 @@
 
 #include "maidsafe/vault/tools/commander.h"
 
+#include "maidsafe/vault/tools/tools_exception.h"
+
 namespace maidsafe {
 
 namespace vault {
@@ -90,10 +92,8 @@ void Commander::GetPathFromProgramOption(const std::string& option_name,
     return;
 
   keys_path_ = variables_map.at(option_name).as<std::string>();
-  if (keys_path_.empty()) {
-    LOG(kError) << "Incorrect information in parameter " << option_name;
-    throw std::exception();
-  }
+  if (keys_path_.empty())
+    throw ToolsException("Incorrect information in parameter " + option_name);
 
   LOG(kInfo) << "GetPathFromProgramOption - " << option_name << " is " << keys_path_;
 }
@@ -156,7 +156,8 @@ void Commander::CheckOptionValidity(po::options_description& cmdline_options,
 
   if (variables_map.count("help") || selected_ops_.InvalidOptions(variables_map, peer_endpoints_)) {
     std::cout << cmdline_options << "Options order: [c|l|d] p [b|(s|v)|t]" << std::endl;
-    throw std::exception();
+    if (!variables_map.count("help"))
+      throw ToolsException("Invalid command line options.");
   }
 }
 
@@ -181,12 +182,10 @@ void Commander::CreateKeys() {
     all_pmids_.push_back(pmid);
   }
   LOG(kInfo) << "Created " << all_pmids_.size() << " pmids.";
-  if (maidsafe::passport::detail::WritePmidList(keys_path_, all_pmids_)) {
+  if (maidsafe::passport::detail::WritePmidList(keys_path_, all_pmids_))
     LOG(kInfo) << "Wrote keys to " << keys_path_;
-  } else {
-    LOG(kError) << "Could not write keys to " << keys_path_;
-    throw std::exception();
-  }
+  else
+    throw ToolsException("Could not write keys to " + keys_path_.string());
 }
 
 void Commander::HandleKeys() {
@@ -201,8 +200,8 @@ void Commander::HandleKeys() {
 
   if (selected_ops_.do_print) {
     for (size_t i(0); i < all_pmids_.size(); ++i)
-      LOG(kInfo) << '\t' << i << "\t PMID " << HexSubstr(all_pmids_.at(i).name().data)
-                 << (i < 2 ? " (bootstrap)" : "");
+      std::cout << '\t' << i << "\t PMID " << HexSubstr(all_pmids_.at(i).name().data)
+                << (i < 2 ? " (bootstrap)" : "") << std::endl;
   }
 }
 

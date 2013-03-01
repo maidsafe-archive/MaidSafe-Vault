@@ -13,12 +13,15 @@
 #define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_HANDLER_INL_H_
 
 #include <set>
+#include <string>
+#include <vector>
 
 #include "boost/filesystem/operations.hpp"
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/utils.h"
 
+namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
@@ -89,6 +92,27 @@ MetadataHandler::Metadata<Data>::Metadata(const typename Data::name_type& data_n
     ThrowError(CommonErrors::no_such_element);
   }
   strong_guarantee.SetAction(on_scope_exit::RevertValue(content));
+}
+
+template<typename Data>
+void MetadataHandler::Metadata<Data>::SaveChanges() {
+  if (content.subscribers() < 1) {
+    if (!fs::remove(kPath)) {
+      LOG(kError) << "Failed to remove metadata file " << kPath;
+      ThrowError(CommonErrors::filesystem_io_error);
+    }
+  } else {
+    std::string serialised_content(content.SerializeAsString());
+    if (serialised_content.empty()) {
+      LOG(kError) << "Failed to serialise metadata file " << kPath;
+      ThrowError(CommonErrors::serialisation_error);
+    }
+    if (!WriteFile(kPath, serialised_content)) {
+      LOG(kError) << "Failed to write metadata file " << kPath;
+      ThrowError(CommonErrors::filesystem_io_error);
+    }
+  }
+  strong_guarantee.Release();
 }
 
 template<typename Data>
@@ -186,27 +210,6 @@ template<typename Data>
 void MetadataHandler::CheckMetadataExists(const typename Data::name_type& data_name) const {
   Metadata<Data> metadata(data_name, kMetadataRoot_);
   metadata.strong_guarantee.Release();
-}
-
-template<typename Data>
-void MetadataHandler::Metadata<Data>::SaveChanges() {
-  if (content.subscribers() < 1) {
-    if (!boost::filesystem::remove(kPath)) {
-      LOG(kError) << "Failed to remove metadata file " << kPath;
-      ThrowError(CommonErrors::filesystem_io_error);
-    }
-  } else {
-    std::string serialised_content(content.SerializeAsString());
-    if (serialised_content.empty()) {
-      LOG(kError) << "Failed to serialise metadata file " << kPath;
-      ThrowError(CommonErrors::serialisation_error);
-    }
-    if (!WriteFile(kPath, serialised_content)) {
-      LOG(kError) << "Failed to write metadata file " << kPath;
-      ThrowError(CommonErrors::filesystem_io_error);
-    }
-  }
-  strong_guarantee.Release();
 }
 
 }  // namespace vault

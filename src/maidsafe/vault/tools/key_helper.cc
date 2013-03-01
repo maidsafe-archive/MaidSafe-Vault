@@ -9,28 +9,32 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
+#include "maidsafe/common/error.h"
+
 #include "maidsafe/vault/tools/commander.h"
+#include "maidsafe/vault/tools/tools_exception.h"
 
 int main(int argc, char* argv[]) {
   maidsafe::log::Logging::Instance().Initialise(argc, argv);
 
   std::cout << maidsafe::vault::tools::kHelperVersion << std::endl;
 
-  int result(0);
-  size_t pmids_count(12);
-
   try {
-    maidsafe::vault::tools::Commander commander(pmids_count);
+    maidsafe::vault::tools::Commander commander(12);
     commander.AnalyseCommandLineOptions(argc, argv);
   }
-  catch(const std::exception& exception) {
+  catch(const maidsafe::vault::tools::ToolsException& exception) {
+    std::cout << "Tools Exception: " << exception.what() << std::endl;
+    return -1;
+  }
+  catch(const maidsafe::maidsafe_error& exception) {
     std::cout << "Error: " << exception.what() << std::endl;
-    result = -1;
+    return -2;
   }
   catch(...) {
-    std::cout << "Unknown exception." << std::endl;
-    result = -2;
+    std::cout << "Unexpected exception." << std::endl;
+    return -3;
   }
 
-  return result;
+  return 0;
 }
