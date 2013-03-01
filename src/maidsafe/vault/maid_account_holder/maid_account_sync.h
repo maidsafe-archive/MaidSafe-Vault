@@ -25,12 +25,12 @@ class MaidAccountSync {
   std::vector<boost::filesystem::path> AddSyncInfoUpdate(
     const NodeId& node_id,
     const MaidAccount::serialised_info_type& serialised_account_info,
-    const Accumulator<passport::PublicMaid::name_type>::serialised_requests& serialised_handled_request);  // NOLINT
+    const Accumulator<passport::PublicMaid::name_type>::serialised_requests& serialised_request);
 
   void AddDownloadedFile(boost::filesystem::path file_name, const NonEmptyString& file_contents);
 
   std::vector<boost::filesystem::path> GetFileRequests(const NodeId& node_id);
-
+  bool is_ready_for_merge();
   bool MergeSyncResults(std::unique_ptr<MaidAccount>& account, Accumulator<MaidName>& accumulator);
 
  private:
@@ -41,9 +41,11 @@ class MaidAccountSync {
     std::vector<boost::filesystem::path> shared_file_names, requested_file_names;
   };
 
+  mutable std::mutex mutex_;
   const MaidName kMaidName_;
   std::vector<boost::filesystem::path> downloaded_files_;
   std::vector<SyncInfoUpdate> sync_updates_;
+  bool is_ready_for_merge_;
 };
 
 }  // namespace vault

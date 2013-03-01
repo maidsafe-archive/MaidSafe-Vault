@@ -101,7 +101,7 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
     Sync::Action sync_action = static_cast<Sync::Action>(sync_message.action());
     switch (sync_action) {
       case Sync::Action::kSyncInfo:
-        HandleReceivedSyncInfo(NonEmptyString(sync_message.sync_message()));
+        HandleReceivedSyncInfo(NonEmptyString(sync_message.sync_message()), reply_functor);
         break;
       case Sync::Action::kSyncArchiveFiles:
         break;
@@ -284,7 +284,8 @@ void MaidAccountHolderService::HandleFileRequestCallback(
 }
 
 void MaidAccountHolderService::HandleReceivedSyncInfo(
-    const NonEmptyString &/*serialised_sync_info*/) {
+    const NonEmptyString &/*serialised_sync_info*/,
+    const routing::ReplyFunctor &/*reply_functor*/) {
 //  MaidAccount maid_account(serialised_sync_info);
 //  return WriteFile(kRootDir_ / maid_account.maid_name().data.string(),
 //                   serialised_account.string());

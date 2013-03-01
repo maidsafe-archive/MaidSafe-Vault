@@ -26,11 +26,17 @@ namespace vault {
 
 MaidAccountSyncHandler::MaidAccountSyncHandler(const boost::filesystem::path& vault_root_dir)
     : kMaidAccountsSyncRoot_(vault_root_dir / "maids_sync"),
-      mutex_(),
       maid_accounts_sync_() {
   fs::exists(kMaidAccountsSyncRoot_) || fs::create_directory(kMaidAccountsSyncRoot_);
 }
 
+nfs::Reply MaidAccountSyncHandler::HandleReceivedSyncInfo(const NonEmptyString& /*serialised_account*/) {
+  return nfs::Reply(CommonErrors::success);
+}
+
+nfs::Reply MaidAccountSyncHandler::HandleSyncArchiveFiles(const NonEmptyString& /*archive_files*/) {
+  return nfs::Reply(CommonErrors::success);
+}
 
 }  // namespace vault
 
