@@ -160,13 +160,13 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
     auto all_pmids = maidsafe::passport::detail::ReadPmidList(keys_path);
     pmid = std::unique_ptr<maidsafe::passport::Pmid>(
                new maidsafe::passport::Pmid(all_pmids[identity_index]));
-    LOG(kInfo) << "Added " << all_pmids.size() << " keys."
-               << " Using identity #" << identity_index << " from keys file.";
+    LOG(kInfo) << "Added " << all_pmids.size() << " keys. Using identity #" << identity_index
+               << " from keys file.";
     all_public_pmids.reserve(all_pmids.size());
     for (auto& pmid : all_pmids)
       all_public_pmids.push_back(maidsafe::passport::PublicPmid(pmid));
   }
-  std::cout << "all_public_pmids: " << all_public_pmids.size() << std::endl;
+//  std::cout << "all_public_pmids: " << all_public_pmids.size() << std::endl;
 
 //  std::vector<std::pair<std::string, uint16_t>> endpoints_from_lifestuff_manager;
 //  // Set up identity via vault_controller, if not from file
@@ -191,7 +191,8 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
   // To allow bootstrapping off vaults on local machine
   maidsafe::routing::Parameters::append_local_live_port_endpoint = true;
 
-  auto vault = std::make_shared<maidsafe::vault::Vault>(
+  try {
+    auto vault = std::make_shared<maidsafe::vault::Vault>(
       *pmid,
       chunk_path,
       [/*&vault_controller*/] (const boost::asio::ip::udp::endpoint &/*endpoint*/) {
@@ -203,22 +204,36 @@ int ProcessOption(po::variables_map& variables_map, int identity_index) {
       all_public_pmids,
       peer_endpoints);
 
-  int result(maidsafe::routing::ReturnCode::kSuccess);
+//  int result(maidsafe::routing::ReturnCode::kSuccess);
 //  if (using_vault_controller)
 //    vault_controller.ConfirmJoin(result == maidsafe::routing::ReturnCode::kSuccess);
-  if (result != maidsafe::routing::ReturnCode::kSuccess) {
-    std::cout << "Error during vault start-up. (" << result << ")" << std::endl;
-    return 4;
+//  if (result != maidsafe::routing::ReturnCode::kSuccess) {
+//    std::cout << "Error during vault start-up. (" << result << ")" << std::endl;
+//    return 4;
+//  }
+
+    std::cout << "Vault running as "
+              << maidsafe::HexSubstr((*pmid).name().data.string()) << std::endl;
+    {
+      std::unique_lock<std::mutex> lock(g_mutex);
+      g_cond_var.wait(lock, [] { return g_ctrlc_pressed; });  // NOLINT
+    }
+
+    std::cout << "Stopping vault..." << std::endl;
+  }
+  catch(const maidsafe::maidsafe_error& e) {
+    LOG(kError) << "Maidsafe exception: " << e.what();
+    return -1;
+  }
+  catch(const std::exception& e) {
+    LOG(kError) << "Standard exception: " << e.what();
+    return -2;
+  }
+  catch(...) {
+    LOG(kError) << "Unknown exception";
+    return -3;
   }
 
-  std::cout << "Vault running as "
-            << maidsafe::HexSubstr((*pmid).name().data.string()) << std::endl;
-  {
-    std::unique_lock<std::mutex> lock(g_mutex);
-    g_cond_var.wait(lock, [] { return g_ctrlc_pressed; });  // NOLINT
-  }
-
-  std::cout << "Stopping vault..." << std::endl;
   return 0;
 }
 

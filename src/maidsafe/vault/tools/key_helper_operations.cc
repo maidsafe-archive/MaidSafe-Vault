@@ -154,11 +154,11 @@ ClientTester::ClientTester(const std::vector<UdpEndpoint>& peer_endpoints)
     : client_anmaid_(),
       client_maid_(client_anmaid_),
       client_pmid_(client_maid_),
-      client_routing_(/*nullptr*/&client_maid_),
+      client_routing_(nullptr/*&client_maid_*/),
       functors_(),
       client_nfs_() {
   auto future(RoutingJoin(peer_endpoints));
-  std::future_status status(future.wait_for(std::chrono::seconds(5)));
+  std::future_status status(future.wait_for(std::chrono::seconds(10)));
   if (status == std::future_status::timeout || !future.get())
     throw ToolsException("Failed to join client to network.");
   LOG(kInfo) << "Bootstrapped anonymous node to store keys";

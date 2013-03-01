@@ -79,7 +79,7 @@ void MetadataManagerService::HandlePut(const nfs::DataMessage& data_message,
     metadata_handler_.template IncrementSubscribers<Data>(data_name, data_size);
     on_scope_exit strong_guarantee([this, data_name] {
        try {
-         metadata_handler_.template DecrementSubscribers<Data>(data_name);
+         this->metadata_handler_.template DecrementSubscribers<Data>(data_name);
        }
        catch(...) {}
     });
@@ -106,13 +106,13 @@ template<typename Data>
 void MetadataManagerService::Put(const Data& data, const PmidName& target_data_holder) {
   auto put_op(std::make_shared<nfs::OperationOp>(
       kPutRepliesSuccessesRequired_,
-      [this](nfs::Reply overall_result) {
-          HandlePutResult<Data>(overall_result);
+      [this] (nfs::Reply overall_result) {
+        this->HandlePutResult<Data>(overall_result);
       }));
   nfs_.Put(target_data_holder,
            data,
            [put_op](std::string serialised_reply) {
-               nfs::HandleOperationReply(put_op, serialised_reply);
+             nfs::HandleOperationReply(put_op, serialised_reply);
            });
 }
 
@@ -127,9 +127,11 @@ void MetadataManagerService::HandleGet(nfs::DataMessage data_message,
                                                                        online_holders.size(),
                                                                        data_message.message_id()));
     for (auto& online_holder : online_holders) {
-      nfs_.Get<Data>(online_holder, data_name, [this, get_handler](std::string serialised_reply) {
-                                             this->OnHandleGet(get_handler, serialised_reply);
-                                         });
+      nfs_.Get<Data>(online_holder,
+                     data_name,
+                     [this, get_handler] (std::string serialised_reply) {
+                       this->OnHandleGet(get_handler, serialised_reply);
+                     });
     }
   }
   catch(const std::exception& e) {
@@ -185,7 +187,7 @@ void MetadataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_h
     // The overall operation has not returned the data.  Calculate whether any holders have it.
     auto itr(std::find_if(std::begin(get_handler->data_holder_results),
                           std::end(get_handler->data_holder_results),
-                          [](const protobuf::DataOrProof& data_or_proof){
+                          [] (const protobuf::DataOrProof& data_or_proof){
                             return data_or_proof.IsInitialized();
                           }));
     if (itr == std::end(get_handler->data_holder_results)) {

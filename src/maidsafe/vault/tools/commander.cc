@@ -55,7 +55,7 @@ bool SelectedOperationsContainer::ConflictedOptions(
     return true;
   if (do_bootstrap && (do_store || do_verify || do_test))
     return true;
-  if (peer_endpoints.empty() && !do_create && !do_load)
+  if (peer_endpoints.empty() && !do_create && !do_load && !do_delete)
     return true;
   return false;
 }
@@ -228,9 +228,7 @@ void Commander::HandleDoTest() {
 
 void Commander::HandleDeleteKeys() {
   if (fs::remove(keys_path_))
-    LOG(kInfo) << "Deleted " << keys_path_;
-  else
-    LOG(kError) << "Could not delete " << keys_path_;
+    std::cout << "Deleted " << keys_path_ << std::endl;
 }
 
 }  // namespace tools
