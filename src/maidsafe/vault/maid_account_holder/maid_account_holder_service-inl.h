@@ -40,17 +40,13 @@ int32_t CalculateCost(const Data& data) {
                               data.content.string().size());
 }
 
-int32_t CalculateCost(const passport::PublicAnmaid&) {
-  return 0;
-}
+// Dan moved the implementation of these to the .cc file to acoid multiple definition problems at
+// link time.
+int32_t CalculateCost(const passport::PublicAnmaid&);
 
-int32_t CalculateCost(const passport::PublicMaid&) {
-  return 0;
-}
+int32_t CalculateCost(const passport::PublicMaid&);
 
-int32_t CalculateCost(const passport::PublicPmid&) {
-  return 0;
-}
+int32_t CalculateCost(const passport::PublicPmid&);
 
 }  // namespace detail
 
