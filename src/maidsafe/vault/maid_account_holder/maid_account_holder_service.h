@@ -77,7 +77,7 @@ class MaidAccountHolderService {
   template<typename Data>
   void SendEarlySuccessReply(const nfs::DataMessage& /*data_message*/,
                              const routing::ReplyFunctor& /*reply_functor*/,
-                             bool low_space,
+                             bool /*low_space*/,
                              std::true_type) {}
   // false_type represents !is_unique_on_network<Data>
   template<typename Data>

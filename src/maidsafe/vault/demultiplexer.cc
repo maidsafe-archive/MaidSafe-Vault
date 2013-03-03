@@ -42,7 +42,8 @@ void HandleDataType(nfs::DataMessage& data_message,
   // static assert
   switch (data_message.data().type) {
     case DataTagValue::kAnmidValue:
-      return persona.template HandleDataMessage<passport::PublicAnmid>(data_message, reply_functor);
+      return persona.template HandleDataMessage<passport::PublicAnmid>(data_message,
+                                                                       reply_functor);
     case DataTagValue::kAnsmidValue:
       return persona.template HandleDataMessage<passport::PublicAnsmid>(data_message,
                                                                         reply_functor);
@@ -53,9 +54,11 @@ void HandleDataType(nfs::DataMessage& data_message,
       return persona.template HandleDataMessage<passport::PublicAnmaid>(data_message,
                                                                         reply_functor);
     case DataTagValue::kMaidValue:
-      return persona.template HandleDataMessage<passport::PublicMaid>(data_message, reply_functor);
+      return persona.template HandleDataMessage<passport::PublicMaid>(data_message,
+                                                                      reply_functor);
     case DataTagValue::kPmidValue:
-      return persona.template HandleDataMessage<passport::PublicPmid>(data_message, reply_functor);
+      return persona.template HandleDataMessage<passport::PublicPmid>(data_message,
+                                                                      reply_functor);
     case DataTagValue::kMidValue:
       return persona.template HandleDataMessage<passport::Mid>(data_message, reply_functor);
     case DataTagValue::kSmidValue:
@@ -66,7 +69,8 @@ void HandleDataType(nfs::DataMessage& data_message,
       return persona.template HandleDataMessage<passport::PublicAnmpid>(data_message,
                                                                         reply_functor);
     case DataTagValue::kMpidValue:
-      return persona.template HandleDataMessage<passport::PublicMpid>(data_message, reply_functor);
+      return persona.template HandleDataMessage<passport::PublicMpid>(data_message,
+                                                                      reply_functor);
     case DataTagValue::kImmutableDataValue:
       return persona.template HandleDataMessage<ImmutableData>(data_message, reply_functor);
     case DataTagValue::kOwnerDirectoryValue:
@@ -118,13 +122,16 @@ void Demultiplexer::HandleDataMessagePersona(nfs::DataMessage& data_message,
                                              const routing::ReplyFunctor& reply_functor) {
   switch (data_message.destination_persona()) {
     case nfs::Persona::kMaidAccountHolder:
-      return HandleDataType<MaidAccountHolderService>(data_message, reply_functor,
+      return HandleDataType<MaidAccountHolderService>(data_message,
+                                                      reply_functor,
                                                       maid_account_holder_service_);
     case nfs::Persona::kMetadataManager:
-      return HandleDataType<MetadataManagerService>(data_message, reply_functor,
+      return HandleDataType<MetadataManagerService>(data_message,
+                                                    reply_functor,
                                                     metadata_manager_service_);
     case nfs::Persona::kPmidAccountHolder:
-      return HandleDataType<PmidAccountHolderService>(data_message, reply_functor,
+      return HandleDataType<PmidAccountHolderService>(data_message,
+                                                      reply_functor,
                                                       pmid_account_holder_service_);
     case nfs::Persona::kDataHolder:
       return HandleDataType<DataHolderService>(data_message, reply_functor, data_holder_);

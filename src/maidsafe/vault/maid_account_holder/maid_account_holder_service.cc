@@ -35,6 +35,21 @@ inline bool ForThisPersona(const Message& message) {
 
 }  // unnamed namespace
 
+namespace detail {
+
+int32_t CalculateCost(const passport::PublicAnmaid&) {
+  return 0;
+}
+
+int32_t CalculateCost(const passport::PublicMaid&) {
+  return 0;
+}
+
+int32_t CalculateCost(const passport::PublicPmid&) {
+  return 0;
+}
+
+}  // namespace detail
 
 const int MaidAccountHolderService::kPutRepliesSuccessesRequired_(3);
 const int MaidAccountHolderService::kDefaultPaymentFactor_(4);
@@ -72,7 +87,7 @@ void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& g
       break;
     case nfs::GenericMessage::Action::kConnect:
       break;
-    case nfs::GenericMessage::Action::kGetPmidSize:
+    case nfs::GenericMessage::Action::kGetPmidHealth:
       break;
     case nfs::GenericMessage::Action::kNodeDown:
       break;

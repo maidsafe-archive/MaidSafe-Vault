@@ -14,6 +14,7 @@
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/routing/node_info.h"
 
+#include "maidsafe/vault/parameters.h"
 
 namespace maidsafe {
 
@@ -24,7 +25,9 @@ Vault::Vault(const passport::Pmid& pmid,
              std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint,
              const std::vector<passport::PublicPmid>& pmids_from_file,
              const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints)
-    : network_status_mutex_(),
+    : network_health_mutex_(),
+      network_health_condition_variable_(),
+      network_health_(-1),
       on_new_bootstrap_endpoint_(on_new_bootstrap_endpoint),
       routing_(new routing::Routing(&pmid)),
       public_key_getter_(*routing_, pmids_from_file),
@@ -48,6 +51,22 @@ Vault::~Vault() {
 void Vault::InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
   routing::Functors functors(InitialiseRoutingCallbacks());
   routing_->Join(functors, peer_endpoints);
+
+  std::unique_lock<std::mutex> lock(network_health_mutex_);
+#ifdef TESTING
+  if (!network_health_condition_variable_.wait_for(lock,
+                                                   std::chrono::minutes(1),
+                                                   [this] { return network_health_ >=
+                                                            detail::Parameters::kMinNetworkHealth;
+                                                   }))
+    ThrowError(VaultErrors::failed_to_join_network);
+#else
+  network_health_condition_variable_.wait(lock,
+                                          [this] {
+                                            return network_health_ >=
+                                                   detail::Parameters::kMinNetworkHealth;
+                                          });
+#endif
 }
 
 routing::Functors Vault::InitialiseRoutingCallbacks() {
@@ -77,12 +96,7 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
 
 void Vault::OnMessageReceived(const std::string& message,
                               const routing::ReplyFunctor& reply_functor) {
-  asio_service_.service().post([=] { DoOnMessageReceived(message, reply_functor); });
-}
-
-void Vault::DoOnMessageReceived(const std::string& message,
-                                const routing::ReplyFunctor& reply_functor) {
-  demux_.HandleMessage(message, reply_functor);
+  asio_service_.service().post([=] { demux_.HandleMessage(message, reply_functor); });
 }
 
 void Vault::OnNetworkStatusChange(const int& network_health) {
@@ -103,7 +117,12 @@ void Vault::DoOnNetworkStatusChange(const int& network_health) {
     LOG(kWarning) << "Init - " << DebugId(routing_->kNodeId())
                   << " - Network is down (" << network_health << ")";
   }
-  network_health_ = network_health;
+
+  {
+    std::lock_guard<std::mutex> lock(network_health_mutex_);
+    network_health_ = network_health;
+    network_health_condition_variable_.notify_one();
+  }
   // TODO(Team) : actions when network is down/up per persona
 }
 

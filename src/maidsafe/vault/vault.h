@@ -51,7 +51,6 @@ class Vault {
   void InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
   routing::Functors InitialiseRoutingCallbacks();
   void OnMessageReceived(const std::string& message,  const routing::ReplyFunctor& reply_functor);
-  void DoOnMessageReceived(const std::string& message, const routing::ReplyFunctor& reply_functor);
   void OnNetworkStatusChange(const int& network_health);
   void DoOnNetworkStatusChange(const int& network_health);
   void OnPublicKeyRequested(const NodeId &node_id, const routing::GivePublicKeyFunctor &give_key);
@@ -63,7 +62,8 @@ class Vault {
   void OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint);
   void DoOnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint);
 
-  std::mutex network_status_mutex_;
+  std::mutex network_health_mutex_;
+  std::condition_variable network_health_condition_variable_;
   int network_health_;
   std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint_;
   std::unique_ptr<routing::Routing> routing_;
