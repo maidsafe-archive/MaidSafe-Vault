@@ -15,10 +15,7 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/data_types/data_type_values.h"
-#include "maidsafe/data_types/immutable_data.h"
-#include "maidsafe/data_types/owner_directory.h"
-#include "maidsafe/data_types/group_directory.h"
-#include "maidsafe/data_types/world_directory.h"
+#include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/data_message.h"
 #include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/message.h"
@@ -36,49 +33,70 @@ namespace vault {
 namespace {
 
 template<typename Persona>
-void HandleDataType(nfs::DataMessage& data_message,
+void HandleDataType(const nfs::DataMessage& data_message,
                     const routing::ReplyFunctor& reply_functor,
                     Persona& persona) {
-  // static assert
   switch (data_message.data().type) {
-    case DataTagValue::kAnmidValue:
-      return persona.template HandleDataMessage<passport::PublicAnmid>(data_message,
-                                                                       reply_functor);
-    case DataTagValue::kAnsmidValue:
-      return persona.template HandleDataMessage<passport::PublicAnsmid>(data_message,
-                                                                        reply_functor);
-    case DataTagValue::kAntmidValue:
-      return persona.template HandleDataMessage<passport::PublicAntmid>(data_message,
-                                                                        reply_functor);
-    case DataTagValue::kAnmaidValue:
-      return persona.template HandleDataMessage<passport::PublicAnmaid>(data_message,
-                                                                        reply_functor);
-    case DataTagValue::kMaidValue:
-      return persona.template HandleDataMessage<passport::PublicMaid>(data_message,
-                                                                      reply_functor);
-    case DataTagValue::kPmidValue:
-      return persona.template HandleDataMessage<passport::PublicPmid>(data_message,
-                                                                      reply_functor);
-    case DataTagValue::kMidValue:
-      return persona.template HandleDataMessage<passport::Mid>(data_message, reply_functor);
-    case DataTagValue::kSmidValue:
-      return persona.template HandleDataMessage<passport::Smid>(data_message, reply_functor);
-    case DataTagValue::kTmidValue:
-      return persona.template HandleDataMessage<passport::Tmid>(data_message, reply_functor);
-    case DataTagValue::kAnmpidValue:
-      return persona.template HandleDataMessage<passport::PublicAnmpid>(data_message,
-                                                                        reply_functor);
-    case DataTagValue::kMpidValue:
-      return persona.template HandleDataMessage<passport::PublicMpid>(data_message,
-                                                                      reply_functor);
-    case DataTagValue::kImmutableDataValue:
-      return persona.template HandleDataMessage<ImmutableData>(data_message, reply_functor);
-    case DataTagValue::kOwnerDirectoryValue:
-      return persona.template HandleDataMessage<OwnerDirectory>(data_message, reply_functor);
-    case DataTagValue::kGroupDirectoryValue:
-      return persona.template HandleDataMessage<GroupDirectory>(data_message, reply_functor);
-    case DataTagValue::kWorldDirectoryValue:
-      return persona.template HandleDataMessage<WorldDirectory>(data_message, reply_functor);
+    case DataTagValue::kAnmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kAnmidValue>::data_type data_type;
+      return persona.template HandleDataMessage<data_type>(data_message, reply_functor);
+    }
+    case DataTagValue::kAnsmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kAnsmidValue>::data_type data_type;
+      return persona.template HandleDataMessage<data_type>(data_message, reply_functor);
+    }
+    case DataTagValue::kAntmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kAntmidValue>::data_type data_type;
+      return persona.template HandleDataMessage<data_type>(data_message, reply_functor);
+    }
+    case DataTagValue::kAnmaidValue: {
+      typedef is_maidsafe_data<DataTagValue::kAnmaidValue>::data_type data_type;
+      return persona.template HandleDataMessage<data_type>(data_message, reply_functor);
+    }
+    case DataTagValue::kMaidValue: {
+      typedef is_maidsafe_data<DataTagValue::kMaidValue>::data_type data_type;
+      return persona.template HandleDataMessage<data_type>(data_message, reply_functor);
+    }
+    case DataTagValue::kPmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kPmidValue>::data_type data_type;
+      return persona.template HandleDataMessage<data_type>(data_message, reply_functor);
+    }
+    case DataTagValue::kMidValue: {
+      typedef is_maidsafe_data<DataTagValue::kMidValue>::data_type data_type;
+      return persona.template HandleDataMessage<data_type>(data_message, reply_functor);
+    }
+    case DataTagValue::kSmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kSmidValue>::data_type data_type;
+      return persona.template HandleDataMessage<data_type>(data_message, reply_functor);
+    }
+    case DataTagValue::kTmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kTmidValue>::data_type data_type;
+      return persona.template HandleDataMessage<data_type>(data_message, reply_functor);
+    }
+    case DataTagValue::kAnmpidValue: {
+      typedef is_maidsafe_data<DataTagValue::kAnmpidValue>::data_type data_type;
+      return persona.template HandleDataMessage<data_type>(data_message, reply_functor);
+    }
+    case DataTagValue::kMpidValue: {
+      typedef is_maidsafe_data<DataTagValue::kMpidValue>::data_type data_type;
+      return persona.template HandleDataMessage<data_type>(data_message, reply_functor);
+    }
+    case DataTagValue::kImmutableDataValue: {
+      typedef is_maidsafe_data<DataTagValue::kImmutableDataValue>::data_type data_type;
+      return persona.template HandleDataMessage<data_type>(data_message, reply_functor);
+    }
+    case DataTagValue::kOwnerDirectoryValue: {
+      typedef is_maidsafe_data<DataTagValue::kOwnerDirectoryValue>::data_type data_type;
+      return persona.template HandleDataMessage<data_type>(data_message, reply_functor);
+    }
+    case DataTagValue::kGroupDirectoryValue: {
+      typedef is_maidsafe_data<DataTagValue::kGroupDirectoryValue>::data_type data_type;
+      return persona.template HandleDataMessage<data_type>(data_message, reply_functor);
+    }
+    case DataTagValue::kWorldDirectoryValue: {
+      typedef is_maidsafe_data<DataTagValue::kWorldDirectoryValue>::data_type data_type;
+      return persona.template HandleDataMessage<data_type>(data_message, reply_functor);
+    }
     default:
       LOG(kError) << "Unhandled data type";
   }
@@ -118,20 +136,17 @@ void Demultiplexer::HandleMessage(const std::string& serialised_message,
   }
 }
 
-void Demultiplexer::HandleDataMessagePersona(nfs::DataMessage& data_message,
+void Demultiplexer::HandleDataMessagePersona(const nfs::DataMessage& data_message,
                                              const routing::ReplyFunctor& reply_functor) {
   switch (data_message.destination_persona()) {
     case nfs::Persona::kMaidAccountHolder:
-      return HandleDataType<MaidAccountHolderService>(data_message,
-                                                      reply_functor,
+      return HandleDataType<MaidAccountHolderService>(data_message, reply_functor,
                                                       maid_account_holder_service_);
     case nfs::Persona::kMetadataManager:
-      return HandleDataType<MetadataManagerService>(data_message,
-                                                    reply_functor,
+      return HandleDataType<MetadataManagerService>(data_message, reply_functor,
                                                     metadata_manager_service_);
     case nfs::Persona::kPmidAccountHolder:
-      return HandleDataType<PmidAccountHolderService>(data_message,
-                                                      reply_functor,
+      return HandleDataType<PmidAccountHolderService>(data_message, reply_functor,
                                                       pmid_account_holder_service_);
     case nfs::Persona::kDataHolder:
       return HandleDataType<DataHolderService>(data_message, reply_functor, data_holder_);
@@ -140,7 +155,7 @@ void Demultiplexer::HandleDataMessagePersona(nfs::DataMessage& data_message,
   }
 }
 
-void Demultiplexer::HandleGenericMessagePersona(nfs::GenericMessage& /*generic_message*/,
+void Demultiplexer::HandleGenericMessagePersona(const nfs::GenericMessage& /*generic_message*/,
                                                 const routing::ReplyFunctor& /*reply_functor*/) {
 }
 
@@ -164,38 +179,75 @@ bool Demultiplexer::GetFromCache(std::string& serialised_message) {
       serialised_message = response_message.Serialise()->string();
       return true;
     }
-  } catch(const std::exception& ex) {
+  }
+  catch(const std::exception& ex) {
     LOG(kError) << "Caught exception on handling get from cache request: " << ex.what();
   }
   return false;
 }
 
-NonEmptyString Demultiplexer::HandleGetFromCache(nfs::DataMessage& data_message) {
+NonEmptyString Demultiplexer::HandleGetFromCache(const nfs::DataMessage& data_message) {
   switch (data_message.data().type) {
-    case DataTagValue::kAnmidValue:
-      return data_holder_.GetFromCache<passport::PublicAnmid>(data_message);
-    case DataTagValue::kAnsmidValue:
-      return data_holder_.GetFromCache<passport::PublicAnsmid>(data_message);
-    case DataTagValue::kAntmidValue:
-      return data_holder_.GetFromCache<passport::PublicAntmid>(data_message);
-    case DataTagValue::kAnmaidValue:
-      return data_holder_.GetFromCache<passport::PublicAnmaid>(data_message);
-    case DataTagValue::kMaidValue:
-      return data_holder_.GetFromCache<passport::PublicMaid>(data_message);
-    case DataTagValue::kPmidValue:
-      return data_holder_.GetFromCache<passport::PublicPmid>(data_message);
-    case DataTagValue::kAnmpidValue:
-      return data_holder_.GetFromCache<passport::PublicAnmpid>(data_message);
-    case DataTagValue::kMpidValue:
-      return data_holder_.GetFromCache<passport::PublicMpid>(data_message);
-    case DataTagValue::kImmutableDataValue:
-      return data_holder_.GetFromCache<ImmutableData>(data_message);
-    case DataTagValue::kOwnerDirectoryValue:
-      return data_holder_.GetFromCache<OwnerDirectory>(data_message);
-    case DataTagValue::kGroupDirectoryValue:
-      return data_holder_.GetFromCache<GroupDirectory>(data_message);
-    case DataTagValue::kWorldDirectoryValue:
-      return data_holder_.GetFromCache<WorldDirectory>(data_message);
+    case DataTagValue::kAnmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kAnmidValue>::data_type data_type;
+      return data_holder_.GetFromCache<data_type>(data_message);
+    }
+    case DataTagValue::kAnsmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kAnsmidValue>::data_type data_type;
+      return data_holder_.GetFromCache<data_type>(data_message);
+    }
+    case DataTagValue::kAntmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kAntmidValue>::data_type data_type;
+      return data_holder_.GetFromCache<data_type>(data_message);
+    }
+    case DataTagValue::kAnmaidValue: {
+      typedef is_maidsafe_data<DataTagValue::kAnmaidValue>::data_type data_type;
+      return data_holder_.GetFromCache<data_type>(data_message);
+    }
+    case DataTagValue::kMaidValue: {
+      typedef is_maidsafe_data<DataTagValue::kMaidValue>::data_type data_type;
+      return data_holder_.GetFromCache<data_type>(data_message);
+    }
+    case DataTagValue::kPmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kPmidValue>::data_type data_type;
+      return data_holder_.GetFromCache<data_type>(data_message);
+    }
+    case DataTagValue::kMidValue: {
+      typedef is_maidsafe_data<DataTagValue::kMidValue>::data_type data_type;
+      return data_holder_.GetFromCache<data_type>(data_message);
+    }
+    case DataTagValue::kSmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kSmidValue>::data_type data_type;
+      return data_holder_.GetFromCache<data_type>(data_message);
+    }
+    case DataTagValue::kTmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kTmidValue>::data_type data_type;
+      return data_holder_.GetFromCache<data_type>(data_message);
+    }
+    case DataTagValue::kAnmpidValue: {
+      typedef is_maidsafe_data<DataTagValue::kAnmpidValue>::data_type data_type;
+      return data_holder_.GetFromCache<data_type>(data_message);
+    }
+    case DataTagValue::kMpidValue: {
+      typedef is_maidsafe_data<DataTagValue::kMpidValue>::data_type data_type;
+      return data_holder_.GetFromCache<data_type>(data_message);
+    }
+    case DataTagValue::kImmutableDataValue: {
+      typedef is_maidsafe_data<DataTagValue::kImmutableDataValue>::data_type data_type;
+      return data_holder_.GetFromCache<data_type>(data_message);
+    }
+    case DataTagValue::kOwnerDirectoryValue: {
+      typedef is_maidsafe_data<DataTagValue::kOwnerDirectoryValue>::data_type data_type;
+      return data_holder_.GetFromCache<data_type>(data_message);
+    }
+    case DataTagValue::kGroupDirectoryValue: {
+      typedef is_maidsafe_data<DataTagValue::kGroupDirectoryValue>::data_type data_type;
+      return data_holder_.GetFromCache<data_type>(data_message);
+    }
+    case DataTagValue::kWorldDirectoryValue: {
+      typedef is_maidsafe_data<DataTagValue::kWorldDirectoryValue>::data_type data_type;
+      return data_holder_.GetFromCache<data_type>(data_message);
+    }
     default:
       LOG(kError) << "Unhandled data type";
   }
@@ -215,31 +267,67 @@ void Demultiplexer::StoreInCache(const std::string& serialised_message) {
 
 void Demultiplexer::HandleStoreInCache(const nfs::DataMessage& data_message) {
   switch (data_message.data().type) {
-    case DataTagValue::kAnmidValue:
-      return data_holder_.StoreInCache<passport::PublicAnmid>(data_message);
-    case DataTagValue::kAnsmidValue:
-      return data_holder_.StoreInCache<passport::PublicAnsmid>(data_message);
-    case DataTagValue::kAntmidValue:
-      return data_holder_.StoreInCache<passport::PublicAntmid>(data_message);
-    case DataTagValue::kAnmaidValue:
-      return data_holder_.StoreInCache<passport::PublicAnmaid>(data_message);
-    case DataTagValue::kMaidValue:
-      return data_holder_.StoreInCache<passport::PublicMaid>(data_message);
-    case DataTagValue::kPmidValue:
-      return data_holder_.StoreInCache<passport::PublicPmid>(data_message);
-    case DataTagValue::kAnmpidValue:
-      return data_holder_.StoreInCache<passport::PublicAnmpid>(data_message);
-    case DataTagValue::kMpidValue:
-      return data_holder_.StoreInCache<passport::PublicMpid>(data_message);
-    case DataTagValue::kImmutableDataValue:
-      return data_holder_.StoreInCache<ImmutableData>(data_message);
-    case DataTagValue::kOwnerDirectoryValue:
-      return data_holder_.StoreInCache<OwnerDirectory>(data_message);
-    case DataTagValue::kGroupDirectoryValue:
-      return data_holder_.StoreInCache<GroupDirectory>(data_message);
-    case DataTagValue::kWorldDirectoryValue:
-      return data_holder_.StoreInCache<WorldDirectory>(data_message);
-    default :
+    case DataTagValue::kAnmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kAnmidValue>::data_type data_type;
+      return data_holder_.StoreInCache<data_type>(data_message);
+    }
+    case DataTagValue::kAnsmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kAnsmidValue>::data_type data_type;
+      return data_holder_.StoreInCache<data_type>(data_message);
+    }
+    case DataTagValue::kAntmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kAntmidValue>::data_type data_type;
+      return data_holder_.StoreInCache<data_type>(data_message);
+    }
+    case DataTagValue::kAnmaidValue: {
+      typedef is_maidsafe_data<DataTagValue::kAnmaidValue>::data_type data_type;
+      return data_holder_.StoreInCache<data_type>(data_message);
+    }
+    case DataTagValue::kMaidValue: {
+      typedef is_maidsafe_data<DataTagValue::kMaidValue>::data_type data_type;
+      return data_holder_.StoreInCache<data_type>(data_message);
+    }
+    case DataTagValue::kPmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kPmidValue>::data_type data_type;
+      return data_holder_.StoreInCache<data_type>(data_message);
+    }
+    case DataTagValue::kMidValue: {
+      typedef is_maidsafe_data<DataTagValue::kMidValue>::data_type data_type;
+      return data_holder_.StoreInCache<data_type>(data_message);
+    }
+    case DataTagValue::kSmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kSmidValue>::data_type data_type;
+      return data_holder_.StoreInCache<data_type>(data_message);
+    }
+    case DataTagValue::kTmidValue: {
+      typedef is_maidsafe_data<DataTagValue::kTmidValue>::data_type data_type;
+      return data_holder_.StoreInCache<data_type>(data_message);
+    }
+    case DataTagValue::kAnmpidValue: {
+      typedef is_maidsafe_data<DataTagValue::kAnmpidValue>::data_type data_type;
+      return data_holder_.StoreInCache<data_type>(data_message);
+    }
+    case DataTagValue::kMpidValue: {
+      typedef is_maidsafe_data<DataTagValue::kMpidValue>::data_type data_type;
+      return data_holder_.StoreInCache<data_type>(data_message);
+    }
+    case DataTagValue::kImmutableDataValue: {
+      typedef is_maidsafe_data<DataTagValue::kImmutableDataValue>::data_type data_type;
+      return data_holder_.StoreInCache<data_type>(data_message);
+    }
+    case DataTagValue::kOwnerDirectoryValue: {
+      typedef is_maidsafe_data<DataTagValue::kOwnerDirectoryValue>::data_type data_type;
+      return data_holder_.StoreInCache<data_type>(data_message);
+    }
+    case DataTagValue::kGroupDirectoryValue: {
+      typedef is_maidsafe_data<DataTagValue::kGroupDirectoryValue>::data_type data_type;
+      return data_holder_.StoreInCache<data_type>(data_message);
+    }
+    case DataTagValue::kWorldDirectoryValue: {
+      typedef is_maidsafe_data<DataTagValue::kWorldDirectoryValue>::data_type data_type;
+      return data_holder_.StoreInCache<data_type>(data_message);
+    }
+    default:
       LOG(kError) << "Unhandled data type";
   }
 }

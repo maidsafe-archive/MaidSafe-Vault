@@ -64,6 +64,9 @@ class DataHolderService {
   friend class test::DataHolderTest;
 
  private:
+  typedef std::true_type IsCacheable, IsLongTermCacheable;
+  typedef std::false_type IsNotCacheable, IsShortTermCacheable;
+
   template<typename Data>
   void HandlePutMessage(const nfs::DataMessage& data_message,
                         const routing::ReplyFunctor& reply_functor);
@@ -78,22 +81,27 @@ class DataHolderService {
   void ValidateGetSender(const nfs::DataMessage& data_message) const;
   void ValidateDeleteSender(const nfs::DataMessage& data_message) const;
 
-  // For short-term cacheable types
   template<typename Data>
-  NonEmptyString CacheGet(const typename Data::name_type& name, std::false_type);
-  // For long-term cacheable types
+  NonEmptyString GetFromCache(const nfs::DataMessage& data_message, IsCacheable);
   template<typename Data>
-  NonEmptyString CacheGet(const typename Data::name_type& name, std::true_type);
-  // For short-term cacheable types
+  NonEmptyString GetFromCache(const nfs::DataMessage& data_message, IsNotCacheable);
+  template<typename Data>
+  NonEmptyString CacheGet(const typename Data::name_type& name, IsShortTermCacheable);
+  template<typename Data>
+  NonEmptyString CacheGet(const typename Data::name_type& name, IsLongTermCacheable);
+
+  template<typename Data>
+  void StoreInCache(const nfs::DataMessage& data_message, IsCacheable);
+  template<typename Data>
+  void StoreInCache(const nfs::DataMessage& data_message, IsNotCacheable);
   template<typename Data>
   void CacheStore(const typename Data::name_type& name,
                   const NonEmptyString& value,
-                  std::false_type);
-  // For long-term cacheable types
+                  IsShortTermCacheable);
   template<typename Data>
   void CacheStore(const typename Data::name_type& name,
                   const NonEmptyString& value,
-                  std::true_type);
+                  IsLongTermCacheable);
 
   boost::filesystem::space_info space_info_;
   DiskUsage disk_total_;
