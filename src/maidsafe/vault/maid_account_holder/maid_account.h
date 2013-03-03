@@ -60,9 +60,34 @@ class MaidAccount {
   enum class Status { kOk, kLowSpace };
   typedef MaidName name_type;
   typedef TaggedValue<NonEmptyString, struct SerialisedMaidAccountTag> serialised_type;
+  typedef TaggedValue<NonEmptyString, struct SerialisedMaidAccountInfoTag> serialised_info_type;
+
+  struct PutDataDetails {
+    PutDataDetails();
+    PutDataDetails(const DataNameVariant& data_name_variant_in, int32_t cost_in);
+    PutDataDetails(const PutDataDetails& other);
+    PutDataDetails& operator=(const PutDataDetails& other);
+    PutDataDetails(PutDataDetails&& other);
+    PutDataDetails& operator=(PutDataDetails&& other);
+
+    DataNameVariant data_name_variant;
+    int32_t cost;
+  };
+
+  struct AccountInfo {
+    GetTagValueAndIdentityVisitor type_and_name_visitor;
+    std::vector<PmidTotals> pmid_totals;
+    std::deque<PutDataDetails> recent_put_data;
+    int64_t total_claimed_available_size_by_pmids, total_put_data;
+  };
+
   MaidAccount(const MaidName& maid_name, const boost::filesystem::path& root);
   MaidAccount(const serialised_type& serialised_maid_account, const boost::filesystem::path& root);
   serialised_type Serialise() const;
+
+  serialised_info_type SerialiseAccountSyncInfo() const;
+  std::pair<AccountInfo, std::vector<boost::filesystem::path>> ParseAccountSyncInfo(
+      const serialised_info_type& serialised_info) const;
 
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);
@@ -89,17 +114,6 @@ class MaidAccount {
   friend class test::MaidAccountHandlerTypedTest;
 
  private:
-  struct PutDataDetails {
-    PutDataDetails();
-    PutDataDetails(const DataNameVariant& data_name_variant_in, int32_t cost_in);
-    PutDataDetails(const PutDataDetails& other);
-    PutDataDetails& operator=(const PutDataDetails& other);
-    PutDataDetails(PutDataDetails&& other);
-    PutDataDetails& operator=(PutDataDetails&& other);
-
-    DataNameVariant data_name_variant;
-    int32_t cost;
-  };
 
   MaidAccount(const MaidAccount&);
   MaidAccount& operator=(const MaidAccount&);

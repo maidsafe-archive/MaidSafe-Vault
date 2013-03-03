@@ -101,7 +101,7 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
     Sync::Action sync_action = static_cast<Sync::Action>(sync_message.action());
     switch (sync_action) {
       case Sync::Action::kSyncInfo:
-        HandleReceivedSyncInfo(NonEmptyString(sync_message.sync_message()));
+        HandleReceivedSyncInfo(NonEmptyString(sync_message.sync_message()), reply_functor);
         break;
       case Sync::Action::kSyncArchiveFiles:
         break;
@@ -170,7 +170,8 @@ void MaidAccountHolderService::TriggerSync() {
 
 void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
   protobuf::SyncInfo sync_info;
-  sync_info.set_maid_account(maid_account_handler_.GetSerialisedAccount(account_name)->string());
+  sync_info.set_maid_account(
+      maid_account_handler_.GetSerialisedAccountSyncInfo(account_name)->string());
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     auto handled_requests(accumulator_.Serialise(account_name));
@@ -283,8 +284,9 @@ void MaidAccountHolderService::HandleFileRequestCallback(
 }
 
 void MaidAccountHolderService::HandleReceivedSyncInfo(
-    const NonEmptyString &/*serialised_account*/) {
-//  MaidAccount maid_account(serialised_account);
+    const NonEmptyString &/*serialised_sync_info*/,
+    const routing::ReplyFunctor &/*reply_functor*/) {
+//  MaidAccount maid_account(serialised_sync_info);
 //  return WriteFile(kRootDir_ / maid_account.maid_name().data.string(),
 //                   serialised_account.string());
   return;
