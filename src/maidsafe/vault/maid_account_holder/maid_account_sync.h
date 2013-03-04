@@ -21,7 +21,7 @@ namespace vault {
 
 class MaidAccountSync {
  public:
-
+  explicit MaidAccountSync(const MaidName& account_name);
   std::vector<boost::filesystem::path> AddSyncInfoUpdate(
     const NodeId& node_id,
     const MaidAccount::serialised_info_type& serialised_account_info,

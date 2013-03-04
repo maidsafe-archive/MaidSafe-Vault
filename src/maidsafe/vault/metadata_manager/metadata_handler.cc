@@ -13,6 +13,9 @@
 
 #include <string>
 
+#include "maidsafe/vault/utils.h"
+
+
 
 namespace fs = boost::filesystem;
 
@@ -22,9 +25,9 @@ namespace vault {
 
 namespace detail {
 
-boost::filesystem::path GetPath(const std::string& data_name,
-                                int32_t data_type_enum_value,
-                                const boost::filesystem::path& root) {
+fs::path GetPath(const std::string& data_name,
+                 int32_t data_type_enum_value,
+                 const fs::path& root) {
   return root / (EncodeToBase32(data_name) + std::to_string(data_type_enum_value));
 }
 
@@ -56,16 +59,9 @@ void OfflinesToProtobuf(const std::set<std::string>& offlines, protobuf::Metadat
 
 }  // namespace detail
 
-MetadataHandler::MetadataHandler(const boost::filesystem::path& vault_root_dir)
-    : kMetadataRoot_(vault_root_dir / "metadata") {  //FIXME  BEFORE_RELEASE
-  if (fs::exists(kMetadataRoot_)) {
-    if (!fs::is_directory(kMetadataRoot_))
-      ThrowError(CommonErrors::not_a_directory);
-    //else
-      //TraverseAndVerifyFiles();  //FIXME  BEFORE_RELEASE
-  } else {
-    fs::create_directory(kMetadataRoot_);
-  }
+MetadataHandler::MetadataHandler(const fs::path& vault_root_dir)
+    : kMetadataRoot_(vault_root_dir / "metadata") {
+  detail::InitialiseDirectory(kMetadataRoot_);
 }
 
 void MetadataHandler::PutMetadata(const protobuf::Metadata& proto_metadata) {

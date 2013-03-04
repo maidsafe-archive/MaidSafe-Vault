@@ -9,25 +9,19 @@
  *  permission of the board of directors of MaidSafe.net.                                          *
  **************************************************************************************************/
 
-#include "maidsafe/vault/maid_account_holder/maid_account.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_sync.h"
 
-#include <string>
-
-#include "boost/variant/apply_visitor.hpp"
-
-#include "maidsafe/common/utils.h"
-
-#include "maidsafe/vault/demultiplexer.h"
-#include "maidsafe/vault/pmid_account_holder/pmid_account.h"
-#include "maidsafe/vault/maid_account_holder/maid_account_pb.h"
-
-
-namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
 namespace vault {
 
+MaidAccountSync::MaidAccountSync(const MaidName& account_name)
+    : mutex_(),
+      kMaidName_(account_name),
+      downloaded_files_(),
+      sync_updates_(),
+      is_ready_for_merge_(false) {}
 
 }  // namespace vault
 

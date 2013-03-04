@@ -16,6 +16,8 @@
 #include <mutex>
 #include <vector>
 
+#include "boost/filesystem/path.hpp"
+
 #include "maidsafe/common/error.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
@@ -60,6 +62,8 @@ inline bool FromDataGetter(const Message& message);
 
 
 namespace detail {
+
+void InitialiseDirectory(const boost::filesystem::path& directory);
 
 bool ShouldRetry(routing::Routing& routing, const nfs::DataMessage& data_message);
 
