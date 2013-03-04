@@ -17,8 +17,6 @@
 
 #include "maidsafe/routing/parameters.h"
 
-#include "maidsafe/nfs/client_utils.h"
-
 #include "maidsafe/vault/tools/tools_exception.h"
 
 namespace maidsafe {
@@ -56,36 +54,17 @@ void CtrlCHandler(int /*signum*/) {
   g_cond_var.notify_one();
 }
 
-void CheckAllFutures(const PmidVector& all_pmids,
-                     std::vector<PublicPmidFuture>& futures,
-                     size_t& verified_keys) {
-  auto equal_pmids = [] (const passport::PublicPmid& lhs, const passport::PublicPmid& rhs) {
-                       return lhs.name() == rhs.name() &&
-                              asymm::MatchingKeys(lhs.public_key(), rhs.public_key());
-                     };
-  for (size_t i(0); i != futures.size(); ++i) {
-    try {
-      if (equal_pmids(futures.at(i).get(), passport::PublicPmid(all_pmids.at(i))))
-        ++verified_keys;
-    }
-    catch(...) {
-      std::cout << "Failed getting key #" << i << std::endl;
-    }
-  }
-
-}
-
 }  // namespace
 
 NetworkGenerator::NetworkGenerator() {}
 
-void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_pmids) {
+void NetworkGenerator::SetupBootstrapNodes(const PmidVector &all_keys) {
   std::cout << "Creating zero state routing network..." << std::endl;
-  BootstrapData bootstrap_data(all_pmids.at(0), all_pmids.at(1));
+  BootstrapData bootstrap_data(all_keys.at(0), all_keys.at(1));
 
   std::vector<passport::PublicPmid> all_public_pmids;
-  all_public_pmids.reserve(all_pmids.size());
-  for (auto& pmid : all_pmids)
+  all_public_pmids.reserve(all_keys.size());
+  for (auto& pmid : all_keys)
     all_public_pmids.push_back(passport::PublicPmid(pmid));
   nfs::PublicKeyGetter public_key_getter(*bootstrap_data.routing1, all_public_pmids);
 
@@ -150,11 +129,10 @@ void NetworkGenerator::DoOnPublicKeyRequested(const NodeId& node_id,
       });
 }
 
-ClientTester::ClientTester(const std::vector<UdpEndpoint>& peer_endpoints)
-    : client_anmaid_(),
-      client_maid_(client_anmaid_),
-      client_pmid_(client_maid_),
-      client_routing_(nullptr/*&client_maid_*/),
+ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
+                           const std::vector<UdpEndpoint>& peer_endpoints)
+    : key_chain_(key_chain),
+      client_routing_(&key_chain.maid),
       functors_(),
       client_nfs_() {
   auto future(RoutingJoin(peer_endpoints));
@@ -162,7 +140,7 @@ ClientTester::ClientTester(const std::vector<UdpEndpoint>& peer_endpoints)
   if (status == std::future_status::timeout || !future.get())
     throw ToolsException("Failed to join client to network.");
   LOG(kInfo) << "Bootstrapped anonymous node to store keys";
-  client_nfs_.reset(new nfs::ClientMaidNfs(client_routing_, client_maid_));
+  client_nfs_.reset(new nfs::ClientMaidNfs(client_routing_, key_chain_.maid));
 }
 
 ClientTester::~ClientTester() {}
@@ -181,30 +159,23 @@ std::future<bool> ClientTester::RoutingJoin(const std::vector<UdpEndpoint>& peer
   return std::move(join_promise->get_future());
 }
 
-KeyStorer::KeyStorer(const std::vector<UdpEndpoint>& peer_endpoints)
-    : ClientTester(peer_endpoints) {}
+KeyStorer::KeyStorer(const passport::detail::AnmaidToPmid& key_chain,
+                     const std::vector<UdpEndpoint>& peer_endpoints)
+    : ClientTester(key_chain, peer_endpoints) {}
 
-void KeyStorer::Store(const PmidVector& all_pmids) {
-  int stores(0);
-  auto store_keys = [this, &stores] (const passport::Pmid& pmid, std::promise<bool>& promise) {
-                      std::cout << "Storing #" << stores++ << std::endl;
-                      passport::PublicPmid p_pmid(pmid);
-                      nfs::Put<passport::PublicPmid>(*client_nfs_,
-                                                     p_pmid,
-                                                     client_pmid_.name(),
-                                                     routing::Parameters::node_group_size,
-                                                     callback(std::ref(promise)));
-                    };
-
-  std::vector<BoolPromise> bool_promises(all_pmids.size());
+void KeyStorer::Store() {
+  std::vector<BoolPromise> bool_promises(key_chain_.chain_size);
   std::vector<BoolFuture> bool_futures;
-  size_t promises_index(0), error_stored_keys(0);
-  for (auto& pmid : all_pmids) {  // store all PMIDs
-    bool_futures.push_back(bool_promises.at(promises_index).get_future());
-    std::async(std::launch::async, store_keys, pmid, std::ref(bool_promises.at(promises_index)));
-    ++promises_index;
-  }
+  for (auto& promise : bool_promises)
+    bool_futures.push_back(promise.get_future());
+  StoreKey<passport::PublicAnmaid>(passport::PublicAnmaid(key_chain_.anmaid),
+                                   std::ref(bool_promises.at(0)));
+  StoreKey<passport::PublicMaid>(passport::PublicMaid(key_chain_.maid),
+                                 std::ref(bool_promises.at(1)));
+  StoreKey<passport::PublicPmid>(passport::PublicPmid(key_chain_.pmid),
+                                 std::ref(bool_promises.at(2)));
 
+  size_t error_stored_keys(0);
   for (auto& future : bool_futures) {
     if (future.has_exception() || !future.get())
       ++error_stored_keys;
@@ -212,9 +183,9 @@ void KeyStorer::Store(const PmidVector& all_pmids) {
 
   if (error_stored_keys > 0) {
     throw ToolsException(std::string("Could not store " + std::to_string(error_stored_keys) +
-                                     " out of " + std::to_string(all_pmids.size())));
+                                     " out of " + std::to_string(key_chain_.chain_size)));
   }
-  std::cout << "StoreKeys - Stored all " << all_pmids.size() << " keys." << std::endl;
+  std::cout << "StoreKeys - Stored all " << key_chain_.chain_size << " keys." << std::endl;
 }
 
 std::function<void(nfs::Reply)> KeyStorer::callback(std::promise<bool>& promise) {
@@ -228,35 +199,32 @@ std::function<void(nfs::Reply)> KeyStorer::callback(std::promise<bool>& promise)
          };
 }
 
-KeyVerifier::KeyVerifier(const std::vector<UdpEndpoint>& peer_endpoints)
-    : ClientTester(peer_endpoints) {}
+KeyVerifier::KeyVerifier(const passport::detail::AnmaidToPmid& key_chain,
+                         const std::vector<UdpEndpoint>& peer_endpoints)
+    : ClientTester(key_chain, peer_endpoints) {}
 
-void KeyVerifier::Verify(const PmidVector& all_pmids) {
-  int gets(0);
-  auto verify_keys = [this, &gets] (const passport::Pmid& pmid, PublicPmidFuture& future) {
-                       std::cout << "Getting #" << gets++ << std::endl;
-                       passport::PublicPmid p_pmid(pmid);
-                       future = std::move(nfs::Get<passport::PublicPmid>(*client_nfs_,
-                                                                         p_pmid.name()));
-                     };
-  std::vector<PublicPmidFuture> futures(all_pmids.size());
-  size_t futures_index(0), verified_keys(0);
-  for (auto& pmid : all_pmids) {
-    std::async(std::launch::async, verify_keys, pmid, std::ref(futures.at(futures_index)));
-    ++futures_index;
-  }
-  CheckAllFutures(all_pmids, futures, verified_keys);
+void KeyVerifier::Verify() {
+  std::future<passport::PublicAnmaid> anmaid_future(
+      std::move(nfs::Get<passport::PublicAnmaid>(*client_nfs_, key_chain_.anmaid.name())));
+  std::future<passport::PublicMaid> maid_future(
+      std::move(nfs::Get<passport::PublicMaid>(*client_nfs_, key_chain_.maid.name())));
+  std::future<passport::PublicPmid> pmid_future(
+      std::move(nfs::Get<passport::PublicPmid>(*client_nfs_, key_chain_.pmid.name())));
 
-  if (verified_keys < all_pmids.size()) {
-    throw ToolsException(std::string("Not all keys were verified: " +
-                                     std::to_string(verified_keys) + " out of " +
-                                     std::to_string(all_pmids.size())));
-  }
+  size_t verified_keys(0);
+  if (EqualKeys<passport::PublicAnmaid>(passport::PublicAnmaid(key_chain_.anmaid),
+                                        anmaid_future.get()))
+    ++verified_keys;
+  if (EqualKeys<passport::PublicMaid>(passport::PublicMaid(key_chain_.maid), maid_future.get()))
+    ++verified_keys;
+  if (EqualKeys<passport::PublicPmid>(passport::PublicPmid(key_chain_.pmid), pmid_future.get()))
+    ++verified_keys;
   std::cout << "VerifyKeys - Verified all " << verified_keys << " keys." << std::endl;
 }
 
-DataChunkStorer::DataChunkStorer(const std::vector<UdpEndpoint>& peer_endpoints)
-    : ClientTester(peer_endpoints),
+DataChunkStorer::DataChunkStorer(const passport::detail::AnmaidToPmid& key_chain,
+                                 const std::vector<UdpEndpoint>& peer_endpoints)
+    : ClientTester(key_chain, peer_endpoints),
       run_(false) {}
 
 void DataChunkStorer::StopTest() { run_ = false; }
@@ -301,41 +269,27 @@ void DataChunkStorer::OneChunkRun(size_t& num_chunks, size_t& num_store, size_t&
 bool DataChunkStorer::StoreOneChunk(const ImmutableData& chunk_data) {
   std::promise<bool> store_promise;
   std::future<bool> store_future(store_promise.get_future());
-  routing::ResponseFunctor cb([&store_promise] (std::string response) {
-                                          try {
-                                            nfs::Reply reply(GetReply(response));
-                                            store_promise.set_value(reply.IsSuccess());
-                                          }
-                                          catch(...) {
-                                            store_promise.set_exception(std::current_exception());
-                                          }
-                                        });
+  std::function<void(nfs::Reply)> cb([&store_promise] (nfs::Reply reply) {
+                                       try {
+                                         store_promise.set_value(reply.IsSuccess());
+                                       }
+                                       catch(...) {
+                                         store_promise.set_exception(std::current_exception());
+                                       }
+                                     });
   LOG(kInfo) << "Storing chunk " << HexSubstr(chunk_data.data()) << " ...";
-  client_nfs_->Put(chunk_data, client_pmid_.name(), cb);
+  nfs::Put<ImmutableData>(*client_nfs_, chunk_data, key_chain_.pmid.name(), 4, cb);
   return store_future.get();
 }
 
 bool DataChunkStorer::GetOneChunk(const ImmutableData& chunk_data) {
-  std::promise<bool> get_promise;
-  std::future<bool> get_future(get_promise.get_future());
   auto equal_immutables = [] (const ImmutableData& lhs, const ImmutableData& rhs) {
                             return lhs.name().data.string() == lhs.name().data.string() &&
                                    lhs.data().string() == rhs.data().string();
                           };
 
-  routing::ResponseFunctor cb([&chunk_data, &get_promise, &equal_immutables]
-                              (std::string response) {
-                                try {
-                                  nfs::Reply reply(GetReply(response));
-                                  ImmutableData data(reply.data());
-                                  get_promise.set_value(equal_immutables(chunk_data, data));
-                                }
-                                catch(...) {
-                                  get_promise.set_exception(std::current_exception());
-                                }
-                              });
-  client_nfs_->Get<ImmutableData>(chunk_data.name(), cb);
-  return get_future.get();
+  auto future = nfs::Get<ImmutableData>(*client_nfs_, chunk_data.name());
+  return equal_immutables(chunk_data, future.get());
 }
 
 // bool ExtendedTest(const size_t& chunk_set_count,

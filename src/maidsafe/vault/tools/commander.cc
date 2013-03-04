@@ -19,6 +19,17 @@ namespace vault {
 
 namespace tools {
 
+namespace {
+
+PmidVector GetJustPmids(const KeyChainVector& keychains) {
+  PmidVector pmids;
+  for (auto& keychain : keychains)
+    pmids.push_back(keychain.pmid);
+  return pmids;
+}
+
+}  // namespace
+
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
@@ -73,7 +84,7 @@ bool SelectedOperationsContainer::NoOptionsSelected() const {
 
 Commander::Commander(size_t pmids_count)
     : pmids_count_(pmids_count),
-      all_pmids_(),
+      all_keychains_(),
       keys_path_(),
       peer_endpoints_(),
       selected_ops_() {}
@@ -170,19 +181,19 @@ void Commander::ChooseOperations() {
   if (selected_ops_.do_verify)
     HandleVerify();
   if (selected_ops_.do_test)
-    HandleDoTest();
+    HandleDoTest(2);
 }
 
 void Commander::CreateKeys() {
-  all_pmids_.clear();
+  all_keychains_.clear();
   for (size_t i = 0; i < pmids_count_; ++i) {
     passport::Anmaid anmaid;
     passport::Maid maid(anmaid);
     passport::Pmid pmid(maid);
-    all_pmids_.push_back(pmid);
+    all_keychains_.push_back(passport::detail::AnmaidToPmid(anmaid, maid, pmid));
   }
-  LOG(kInfo) << "Created " << all_pmids_.size() << " pmids.";
-  if (maidsafe::passport::detail::WritePmidList(keys_path_, all_pmids_))
+  LOG(kInfo) << "Created " << all_keychains_.size() << " pmids.";
+  if (maidsafe::passport::detail::WriteKeyChainList(keys_path_, all_keychains_))
     LOG(kInfo) << "Wrote keys to " << keys_path_;
   else
     throw ToolsException("Could not write keys to " + keys_path_.string());
@@ -192,37 +203,67 @@ void Commander::HandleKeys() {
   if (selected_ops_.do_create) {
     CreateKeys();
   } else if (selected_ops_.do_load) {
-    all_pmids_ = maidsafe::passport::detail::ReadPmidList(keys_path_);
-    LOG(kInfo) << "Loaded " << all_pmids_.size() << " pmids from " << keys_path_;
+    all_keychains_ = maidsafe::passport::detail::ReadKeyChainList(keys_path_);
+    LOG(kInfo) << "Loaded " << all_keychains_.size() << " pmids from " << keys_path_;
   } else if (selected_ops_.do_delete) {
     HandleDeleteKeys();
   }
 
   if (selected_ops_.do_print) {
-    for (size_t i(0); i < all_pmids_.size(); ++i)
-      std::cout << '\t' << i << "\t PMID " << HexSubstr(all_pmids_.at(i).name().data)
+    for (size_t i(0); i < all_keychains_.size(); ++i)
+      std::cout << '\t' << i
+                << "\t ANMAID " << HexSubstr(all_keychains_.at(i).anmaid.name().data)
+                << "\t MAID " << HexSubstr(all_keychains_.at(i).maid.name().data)
+                << "\t PMID " << HexSubstr(all_keychains_.at(i).pmid.name().data)
                 << (i < 2 ? " (bootstrap)" : "") << std::endl;
   }
 }
 
 void Commander::HandleSetupBootstraps() {
-  assert(all_pmids_.size() >= 2);
+  assert(all_keychains_.size() >= 2);
   NetworkGenerator generator;
-  generator.SetupBootstrapNodes(all_pmids_);
+  generator.SetupBootstrapNodes(GetJustPmids(all_keychains_));
 }
 
 void Commander::HandleStore() {
-  KeyStorer storer(peer_endpoints_);
-  storer.Store(all_pmids_);
+  size_t failures(0);
+  for (auto& keychain : all_keychains_) {
+    try {
+      KeyStorer storer(keychain, peer_endpoints_);
+      storer.Store();
+    }
+    catch(const std::exception& e) {
+      std::cout << "Failed storing key chain with PMID " << HexSubstr(keychain.pmid.name().data)
+                << ": " << e.what() << std::endl;
+      ++failures;
+    }
+  }
+  if (failures > 0)
+    throw ToolsException(std::string("Could not store " + std::to_string(failures) + " out of " +
+                                     std::to_string(all_keychains_.size())));
 }
 
 void Commander::HandleVerify() {
-  KeyVerifier verifier(peer_endpoints_);
-  verifier.Verify(all_pmids_);
+  size_t failures(0);
+  for (auto& keychain : all_keychains_) {
+    try {
+      KeyVerifier verifier(keychain, peer_endpoints_);
+      verifier.Verify();
+    }
+    catch(const std::exception& e) {
+      std::cout << "Failed verifying key chain with PMID " << HexSubstr(keychain.pmid.name().data)
+                << ": " << e.what() << std::endl;
+      ++failures;
+    }
+  }
+  if (failures > 0)
+    throw ToolsException(std::string("Could not verify " + std::to_string(failures) + " out of " +
+                                     std::to_string(all_keychains_.size())));
 }
 
-void Commander::HandleDoTest() {
-  DataChunkStorer chunk_storer(peer_endpoints_);
+void Commander::HandleDoTest(size_t client_index) {
+  assert(client_index > 1);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_);
   chunk_storer.Test();
 }
 

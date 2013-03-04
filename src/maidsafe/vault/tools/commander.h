@@ -30,6 +30,8 @@ namespace vault {
 
 namespace tools {
 
+const std::string kHelperVersion = "MaidSafe Vault KeysHelper " + kApplicationVersion;
+
 class SelectedOperationsContainer {
  public:
   SelectedOperationsContainer()
@@ -57,7 +59,7 @@ class Commander {
 
  private:
   size_t pmids_count_;
-  maidsafe::vault::tools::PmidVector all_pmids_;
+  KeyChainVector all_keychains_;
   boost::filesystem::path keys_path_;
   std::vector<boost::asio::ip::udp::endpoint> peer_endpoints_;
   SelectedOperationsContainer selected_ops_;
@@ -74,7 +76,7 @@ class Commander {
   void HandleSetupBootstraps();
   void HandleStore();
   void HandleVerify();
-  void HandleDoTest();
+  void HandleDoTest(size_t client_index);
   void HandleDeleteKeys();
 
   void CreateKeys();
