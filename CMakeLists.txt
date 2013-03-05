@@ -147,7 +147,7 @@ ms_add_executable(lifestuff_vault Production ${VaultSourcesRootDir}/vault_main.c
 target_link_libraries(maidsafe_vault maidsafe_nfs maidsafe_routing maidsafe_common maidsafe_private)
 target_link_libraries(lifestuff_vault maidsafe_vault maidsafe_routing maidsafe_lifestuff_manager)
 
-if(MAIDSAFE_TESTING)
+if(${MAIDSAFE_TESTING} EQUAL 0)
   ms_add_executable(TESTvault "Tests/Vault" ${VaultTestsAllFiles})
   target_link_libraries(TESTvault maidsafe_vault)
   ms_add_executable(vault_key_helper Tools ${VaultToolsAllFiles})
@@ -167,14 +167,14 @@ ms_disable_warnings(${VaultProtoSources} ${DataHolderProtoSources} ${MaidAccount
 
 if(UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-effc++")
-elseif(MSVC AND MAIDSAFE_TESTING)
+elseif(MSVC AND ${MAIDSAFE_TESTING} EQUAL 0)
   set_target_properties(maidsafe_vault TESTvault PROPERTIES COMPILE_FLAGS "/bigobj")
 endif()
 
 #==================================================================================================#
 # Tests                                                                                            #
 #==================================================================================================#
-if(MAIDSAFE_TESTING)
+if(${MAIDSAFE_TESTING} EQUAL 0)
   add_style_test(${StyleAllFiles})
   add_gtests(TESTvault)
 #   label_as_critical_tests(IdentityPacketsTest.BEH_Full
