@@ -52,8 +52,8 @@ class NetworkGenerator {
   boost::asio::ip::udp::endpoint endpoint1_, endpoint2_;
   struct BootstrapData {
     BootstrapData(const passport::Pmid& pmid1, const passport::Pmid& pmid2)
-        : routing1(new routing::Routing(&pmid1)),
-          routing2(new routing::Routing(&pmid2)),
+        : routing1(new routing::Routing(pmid1)),
+          routing2(new routing::Routing(pmid2)),
           info1(MakeNodeInfo(pmid1)),
           info2(MakeNodeInfo(pmid2)) {}
     std::unique_ptr<routing::Routing> routing1, routing2;
