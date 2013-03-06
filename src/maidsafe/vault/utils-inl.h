@@ -139,6 +139,19 @@ typename Account::serialised_type GetSerialisedAccount(
   return (*itr)->Serialise();
 }
 
+template<typename Account>
+typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
+    std::mutex& mutex,
+    const std::vector<std::unique_ptr<Account>>& accounts,
+    const typename Account::name_type& account_name) {
+  std::lock_guard<std::mutex> lock(mutex);
+  auto itr(FindAccount(accounts, account_name));
+  if (itr == accounts.end())
+    ThrowError(VaultErrors::no_such_account);
+
+  return (*itr)->SerialiseAccountSyncInfo();
+}
+
 // Returns true if the required successful request count has been reached
 template<typename Accumulator>
 bool AddResult(const nfs::DataMessage& data_message,

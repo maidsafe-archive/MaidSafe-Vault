@@ -13,16 +13,29 @@
 
 #include <string>
 
+#include "boost/filesystem/operations.hpp"
+
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/vault/parameters.h"
 
+
+namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
 namespace vault {
 
 namespace detail {
+
+void InitialiseDirectory(const boost::filesystem::path& directory) {
+  if (fs::exists(directory)) {
+    if (!fs::is_directory(directory))
+      ThrowError(CommonErrors::not_a_directory);
+  } else {
+    fs::create_directory(directory);
+  }
+}
 
 bool ShouldRetry(routing::Routing& routing, const nfs::DataMessage& data_message) {
   return routing.network_status() >= Parameters::kMinNetworkHealth &&

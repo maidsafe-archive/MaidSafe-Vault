@@ -2,7 +2,7 @@ package maidsafe.vault.protobuf;
 option optimize_for = LITE_RUNTIME;
 
 // For MaidAccountHolder, "value" represents data "cost".
-// For PmidAccountHolder, value represents data "size"
+// For PmidAccountHolder, "value" represents data "size"
 message DiskStoredElement {
   required int32 type = 1;
   required bytes name = 2;

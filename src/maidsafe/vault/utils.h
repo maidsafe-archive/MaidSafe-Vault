@@ -16,6 +16,8 @@
 #include <mutex>
 #include <vector>
 
+#include "boost/filesystem/path.hpp"
+
 #include "maidsafe/common/error.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
@@ -61,6 +63,8 @@ inline bool FromDataGetter(const Message& message);
 
 namespace detail {
 
+void InitialiseDirectory(const boost::filesystem::path& directory);
+
 bool ShouldRetry(routing::Routing& routing, const nfs::DataMessage& data_message);
 
 MaidName GetSourceMaidName(const nfs::DataMessage& data_message);
@@ -97,6 +101,12 @@ bool DeleteAccount(std::mutex& mutex,
 
 template<typename Account>
 typename Account::serialised_type GetSerialisedAccount(
+    std::mutex& mutex,
+    const std::vector<std::unique_ptr<Account>>& accounts,
+    const typename Account::name_type& account_name);
+
+template<typename Account>
+typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
     std::mutex& mutex,
     const std::vector<std::unique_ptr<Account>>& accounts,
     const typename Account::name_type& account_name);
