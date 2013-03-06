@@ -16,6 +16,7 @@
 #include <algorithm>
 
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/utils.h"
 
 
 namespace fs = boost::filesystem;
@@ -77,13 +78,7 @@ DiskBasedStorage::DiskBasedStorage(const fs::path& root)
     : kRoot_(root),
       active_(),
       file_ids_() {
-  if (!fs::exists(root)) {
-    fs::create_directory(root);
-    return;
-  }
-
-  if (!fs::is_directory(root))
-    ThrowError(CommonErrors::not_a_directory);
+  detail::InitialiseDirectory(kRoot_);
 
   fs::directory_iterator root_itr(kRoot_), end_itr;
   for (; root_itr != end_itr; ++root_itr) {

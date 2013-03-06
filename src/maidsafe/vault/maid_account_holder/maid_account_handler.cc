@@ -28,7 +28,7 @@ MaidAccountHandler::MaidAccountHandler(const boost::filesystem::path& vault_root
     : kMaidAccountsRoot_(vault_root_dir / "maids"),
       mutex_(),
       maid_accounts_() {
-  fs::exists(kMaidAccountsRoot_) || fs::create_directory(kMaidAccountsRoot_);
+  detail::InitialiseDirectory(kMaidAccountsRoot_);
 }
 
 bool MaidAccountHandler::AddAccount(std::unique_ptr<MaidAccount>&& maid_account) {
@@ -76,6 +76,11 @@ std::vector<MaidName> MaidAccountHandler::GetAccountNames() const {
 MaidAccount::serialised_type MaidAccountHandler::GetSerialisedAccount(
     const MaidName& account_name) const {
   return detail::GetSerialisedAccount(mutex_, maid_accounts_, account_name);
+}
+
+MaidAccount::serialised_info_type MaidAccountHandler::GetSerialisedAccountSyncInfo(
+    const MaidName& account_name) const {
+  return detail::GetSerialisedAccountSyncInfo(mutex_, maid_accounts_, account_name);
 }
 
 std::vector<boost::filesystem::path> MaidAccountHandler::GetArchiveFileNames(

@@ -13,22 +13,21 @@
 
 #include "boost/filesystem/operations.hpp"
 
+#include "maidsafe/vault/utils.h"
+
+
+namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
 namespace vault {
 
-PmidAccountHandler::PmidAccountHandler(const boost::filesystem::path& vault_root_dir)
+PmidAccountHandler::PmidAccountHandler(const fs::path& vault_root_dir)
     : kPmidAccountsRoot_(vault_root_dir / "pmids"),
       mutex_(),
       pmid_accounts_(),
       archived_accounts_() {
-  if (boost::filesystem::exists(kPmidAccountsRoot_)) {
-    if (!boost::filesystem::is_directory(kPmidAccountsRoot_))
-      ThrowError(CommonErrors::not_a_directory);
-  } else {
-    boost::filesystem::create_directories(kPmidAccountsRoot_);
-  }
+  detail::InitialiseDirectory(kPmidAccountsRoot_);
 }
 
 bool PmidAccountHandler::AddAccount(std::unique_ptr<PmidAccount> pmid_account) {
@@ -101,7 +100,7 @@ PmidAccount::serialised_type PmidAccountHandler::GetSerialisedAccount(
   return detail::GetSerialisedAccount(mutex_, pmid_accounts_, account_name);
 }
 
-std::vector<boost::filesystem::path> PmidAccountHandler::GetArchiveFileNames(
+std::vector<fs::path> PmidAccountHandler::GetArchiveFileNames(
     const PmidName& account_name) const {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(pmid_accounts_, account_name));
@@ -111,7 +110,7 @@ std::vector<boost::filesystem::path> PmidAccountHandler::GetArchiveFileNames(
 }
 
 NonEmptyString PmidAccountHandler::GetArchiveFile(const PmidName& account_name,
-                                                  const boost::filesystem::path& path) const {
+                                                  const fs::path& path) const {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
@@ -120,7 +119,7 @@ NonEmptyString PmidAccountHandler::GetArchiveFile(const PmidName& account_name,
 }
 
 void PmidAccountHandler::PutArchiveFile(const PmidName& account_name,
-                                        const boost::filesystem::path& path,
+                                        const fs::path& path,
                                         const NonEmptyString& content) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(pmid_accounts_, account_name));

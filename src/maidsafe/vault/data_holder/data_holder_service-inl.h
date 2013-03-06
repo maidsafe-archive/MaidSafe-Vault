@@ -106,37 +106,57 @@ void DataHolderService::HandleDeleteMessage(const nfs::DataMessage& data_message
   }
 }
 
-// Cache Handling
 template<typename Data>
 NonEmptyString DataHolderService::GetFromCache(const nfs::DataMessage& data_message) {
+  return GetFromCache<Data>(data_message, is_cacheable<Data>());
+}
+
+template<typename Data>
+NonEmptyString DataHolderService::GetFromCache(const nfs::DataMessage& data_message, IsCacheable) {
   return CacheGet<Data>(typename Data::name_type(data_message.data().name),
                         is_long_term_cacheable<Data>());
 }
 
 template<typename Data>
-void DataHolderService::StoreInCache(const nfs::DataMessage& data_message) {
-  CacheStore<Data>(typename Data::name_type(data_message.data().name), data_message.data().content,
-                   is_long_term_cacheable<Data>());
+NonEmptyString DataHolderService::GetFromCache(const nfs::DataMessage& /*data_message*/,
+                                               IsNotCacheable) {
+  return NonEmptyString();
 }
 
 template<typename Data>
-NonEmptyString DataHolderService::CacheGet(const typename Data::name_type& name, std::false_type) {
+NonEmptyString DataHolderService::CacheGet(const typename Data::name_type& name,
+                                           IsShortTermCacheable) {
   static_assert(is_short_term_cacheable<Data>::value,
                 "This should only be called for short-term cacheable data types.");
   return mem_only_cache_.Get(name);
 }
 
 template<typename Data>
-NonEmptyString DataHolderService::CacheGet(const typename Data::name_type& name, std::true_type) {
+NonEmptyString DataHolderService::CacheGet(const typename Data::name_type& name,
+                                           IsLongTermCacheable) {
   static_assert(is_long_term_cacheable<Data>::value,
                 "This should only be called for long-term cacheable data types.");
   return cache_data_store_.Get(name);
 }
 
 template<typename Data>
+void DataHolderService::StoreInCache(const nfs::DataMessage& data_message) {
+  StoreInCache<Data>(data_message, is_cacheable<Data>());
+}
+
+template<typename Data>
+void DataHolderService::StoreInCache(const nfs::DataMessage& data_message, IsCacheable) {
+  CacheStore<Data>(typename Data::name_type(data_message.data().name), data_message.data().content,
+                   is_long_term_cacheable<Data>());
+}
+
+template<typename Data>
+void DataHolderService::StoreInCache(const nfs::DataMessage& /*data_message*/, IsNotCacheable) {}
+
+template<typename Data>
 void DataHolderService::CacheStore(const typename Data::name_type& name,
                             const NonEmptyString& value,
-                            std::false_type) {
+                            IsShortTermCacheable) {
   static_assert(is_short_term_cacheable<Data>::value,
                 "This should only be called for short-term cacheable data types.");
   return mem_only_cache_.Store(name, value);
@@ -145,7 +165,7 @@ void DataHolderService::CacheStore(const typename Data::name_type& name,
 template<typename Data>
 void DataHolderService::CacheStore(const typename Data::name_type& name,
                             const NonEmptyString& value,
-                            std::true_type) {
+                            IsLongTermCacheable) {
   static_assert(is_long_term_cacheable<Data>::value,
                 "This should only be called for long-term cacheable data types.");
   return cache_data_store_.Store(name, value);
