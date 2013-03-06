@@ -11,6 +11,8 @@
 
 #include "maidsafe/vault/tools/key_helper_operations.h"
 
+#include <csignal>
+
 #include "boost/filesystem/operations.hpp"
 
 #include "maidsafe/common/test.h"
@@ -154,7 +156,7 @@ ClientTester::ClientTester(const std::vector<UdpEndpoint>& peer_endpoints)
     : client_anmaid_(),
       client_maid_(client_anmaid_),
       client_pmid_(client_maid_),
-      client_routing_(nullptr/*&client_maid_*/),
+      client_routing_((NodeId(NodeId::kRandomId))),
       functors_(),
       client_nfs_() {
   auto future(RoutingJoin(peer_endpoints));
