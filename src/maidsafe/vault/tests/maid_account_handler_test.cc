@@ -483,10 +483,7 @@ namespace test {
 //  this->CheckPutDetails(account_name, data_name, new_cost_large, 1);
 //}
 
-//REGISTER_TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest,
-//                           BEH_PutData,
-//                           BEH_DeleteData,
-//                           BEH_Adjust);
+//REGISTER_TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest, BEH_PutData, BEH_DeleteData, BEH_Adjust);
 
 //typedef testing::Types<passport::PublicAnmid,
 //                       passport::PublicAnsmid,
