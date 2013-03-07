@@ -45,14 +45,11 @@ namespace po = boost::program_options;
 
 std::mutex g_mutex;
 std::condition_variable g_cond_var;
-bool g_ctrlc_pressed(false);
+std::atomic_bool g_ctrlc_pressed(false);
 
 void SigHandler(int signum) {
   LOG(kInfo) << " Signal received: " << signum;
-  {
-    std::lock_guard<std::mutex> lock(g_mutex);
-    g_ctrlc_pressed = true;
-  }
+  g_ctrlc_pressed.store(true);
   g_cond_var.notify_one();
 }
 
@@ -73,9 +70,9 @@ fs::path GetPathFromProgramOption(const std::string& option_name,
                                 " isn't a regular file.");
   }
 
-  if (is_dir) {  // Create new dir
+  if (is_dir && create_new_if_absent) {  // Create new dir
     fs::create_directories(option_path);
-  } else {  // Create new file
+  } else if (!is_dir && create_new_if_absent) {  // Create new file
     std::ofstream ofs(option_path.c_str());
     ofs.close();
   }
@@ -103,34 +100,43 @@ void GetIdentityAndEndpoints(po::variables_map& variables_map,
     peer_endpoints.push_back(GetEndpointFromString(variables_map.at("peer").as<std::string>()));
   }
 
-  if (variables_map.count("identity_index") == 0)
+  if (variables_map.count("identity_index") == 0) {
+    std::cout << "No identity selected" << std::endl;
     throw tools::ToolsException("No identity selected");
+  }
 
   fs::path keys_path(GetPathFromProgramOption("keys_path", variables_map, false, false));
   std::vector<passport::detail::AnmaidToPmid> key_chains(
       passport::detail::ReadKeyChainList(keys_path));
   size_t identity_index(variables_map.at("identity_index").as<int>());
-  if (identity_index >= key_chains.size())
+  if (identity_index >= key_chains.size()) {
+    std::cout << "Identity selected out of bounds" << std::endl;
     throw tools::ToolsException("Identity selected out of bounds");
+  }
   pmid.reset(new passport::Pmid(key_chains.at(identity_index).pmid));
   for (auto& key_chain : key_chains)
     pmids.push_back(passport::PublicPmid(key_chain.pmid));
 }
-#else
-
 #endif
 
 void RunVault(po::variables_map& variables_map) {
   fs::path chunk_path(GetPathFromProgramOption("chunk_path", variables_map, true, true));
   std::vector<boost::asio::ip::udp::endpoint> peer_endpoints;
   std::unique_ptr<passport::Pmid> pmid;
-#ifdef TESTING
   std::vector<passport::PublicPmid> pmids;
+#ifdef TESTING
   GetIdentityAndEndpoints(variables_map, pmid, peer_endpoints, pmids);
-#else
-  lifestuff_manager::VaultController vault_controller;
-  vault_controller.GetIdentity(pmid, peer_endpoints);
 #endif
+  std::string vmid(variables_map.count("vmid") == 0 ?
+                       "test" : variables_map.at("vmid").as<std::string>());
+  lifestuff_manager::VaultController vault_controller(vmid, [] {
+                                                              g_ctrlc_pressed.store(true);
+                                                              g_cond_var.notify_one();
+                                                            });
+  if (!vault_controller.GetIdentity(pmid, peer_endpoints)) {
+    std::cout << "Failed to get ID from VC" << std::endl;
+    ThrowError(CommonErrors::uninitialised);
+  }
 
 #ifndef MAIDSAFE_WIN32
   signal(SIGHUP, SigHandler);
@@ -140,26 +146,15 @@ void RunVault(po::variables_map& variables_map) {
 
   // Starting Vault
   std::cout << "Starting vault..." << std::endl;
-
-#ifdef TESTING
   Vault vault(*pmid,
               chunk_path,
               [] (const boost::asio::ip::udp::endpoint&) {},
               pmids,
               peer_endpoints);
-#else
-  Vault vault(*pmid,
-              chunk_path,
-              [&vault_controller] (const boost::asio::ip::udp::endpoint& endpoint) {
-                vault_controller.SendEndpointToLifeStuffManager(endpoint);
-              });
-  vault_controller.ConfirmJoin();
-#endif
-
   std::cout << "Vault running as " << maidsafe::HexSubstr(pmid->name().data) << std::endl;
   {
     std::unique_lock<std::mutex> lock(g_mutex);
-    g_cond_var.wait(lock, [] { return g_ctrlc_pressed; });  // NOLINT
+    g_cond_var.wait(lock, [] { return g_ctrlc_pressed.load(); });  // NOLINT
   }
 
   std::cout << "Stopping vault..." << std::endl;
@@ -192,7 +187,9 @@ bool InvalidOptions(po::variables_map& variables_map) {
   return false;
 }
 
-void ActOnOptions(int argc, char* argv[]) {
+po::options_description PopulateVariablesMap(int argc,
+                                             char* argv[],
+                                             po::variables_map& variables_map) {
   po::options_description generic_options("General options");
   generic_options.add_options()
       ("help,h", "Print this help message")
@@ -212,10 +209,16 @@ void ActOnOptions(int argc, char* argv[]) {
   po::options_description cmdline_options;
   cmdline_options.add(generic_options).add(config_file_options);
 
-  po::variables_map variables_map;
   po::store(po::command_line_parser(argc, argv).options(cmdline_options).allow_unregistered().run(),
             variables_map);
   po::notify(variables_map);
+
+  return cmdline_options;
+}
+
+void ActOnOptions(int argc, char* argv[]) {
+  po::variables_map variables_map;
+  po::options_description cmdline_options(PopulateVariablesMap(argc, argv, variables_map));
 
   if (variables_map.count("version") != 0) {
     std::cout << "Lifestuff Vault " + kApplicationVersion << std::endl;

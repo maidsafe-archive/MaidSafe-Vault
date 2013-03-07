@@ -194,7 +194,7 @@ void Commander::CreateKeys() {
   }
   LOG(kInfo) << "Created " << all_keychains_.size() << " pmids.";
   if (maidsafe::passport::detail::WriteKeyChainList(keys_path_, all_keychains_))
-    LOG(kInfo) << "Wrote keys to " << keys_path_;
+    std::cout << "Wrote keys to " << keys_path_ << std::endl;
   else
     throw ToolsException("Could not write keys to " + keys_path_.string());
 }
