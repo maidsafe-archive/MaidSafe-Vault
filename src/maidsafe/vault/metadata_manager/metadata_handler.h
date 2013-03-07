@@ -28,6 +28,13 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace test {
+
+template<typename Data>
+class MetadataHandlerTypedTest;
+
+}  // namespace test
+
 class MetadataHandler {
  public:
   explicit MetadataHandler(const boost::filesystem::path& vault_root_dir);
@@ -66,6 +73,9 @@ class MetadataHandler {
 
   template<typename Data>
   void CheckMetadataExists(const typename Data::name_type& data_name) const;
+
+  template<typename Data>
+  friend class MetadataHandlerTypedTest;
 
  private:
   template<typename Data>

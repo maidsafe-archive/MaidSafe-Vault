@@ -133,7 +133,7 @@ void RunVault(po::variables_map& variables_map) {
                                                               g_ctrlc_pressed.store(true);
                                                               g_cond_var.notify_one();
                                                             });
-  if (!vault_controller.GetIdentity(pmid, peer_endpoints)) {
+  if (vmid != "test" && !vault_controller.GetIdentity(pmid, peer_endpoints)) {
     std::cout << "Failed to get ID from VC" << std::endl;
     ThrowError(CommonErrors::uninitialised);
   }

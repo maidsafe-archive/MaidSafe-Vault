@@ -11,6 +11,8 @@
 
 #include "maidsafe/vault/tools/key_helper_operations.h"
 
+#include <csignal>
+
 #include "boost/filesystem/operations.hpp"
 
 #include "maidsafe/common/test.h"
@@ -129,10 +131,18 @@ void NetworkGenerator::DoOnPublicKeyRequested(const NodeId& node_id,
       });
 }
 
+<<<<<<< HEAD
 ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
                            const std::vector<UdpEndpoint>& peer_endpoints)
     : key_chain_(key_chain),
       client_routing_(key_chain.maid),
+=======
+ClientTester::ClientTester(const std::vector<UdpEndpoint>& peer_endpoints)
+    : client_anmaid_(),
+      client_maid_(client_anmaid_),
+      client_pmid_(client_maid_),
+      client_routing_((NodeId(NodeId::kRandomId))),
+>>>>>>> origin/vault
       functors_(),
       client_nfs_() {
   auto future(RoutingJoin(peer_endpoints));

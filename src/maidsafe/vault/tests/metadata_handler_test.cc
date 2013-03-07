@@ -142,7 +142,7 @@ class MetadataHandlerTypedTest : public MetadataHandlerTest {
 
   void CompareMetadata(const typename Data::name_type& data_name,
                        int32_t data_size,
-                       int subscriber_count) {
+                       int64_t subscriber_count) {
     MetadataHandler::Metadata<Data> metadata(data_name, vault_metadata_dir_);
     EXPECT_EQ(metadata.content.name(), data_name->string());
     EXPECT_EQ(metadata.content.size(), data_size);
@@ -151,7 +151,7 @@ class MetadataHandlerTypedTest : public MetadataHandlerTest {
 
   void CompareMetadata(const typename Data::name_type& data_name,
                        int32_t data_size,
-                       int subscriber_count,
+                       int64_t subscriber_count,
                        const std::vector<Identity>& online_pmids,
                        const std::vector<Identity>& offline_pmids) {
     MetadataHandler::Metadata<Data> metadata(data_name, vault_metadata_dir_);
