@@ -39,8 +39,8 @@ boost::filesystem::path GetPath(const typename Data::name_type& data_name,
   return GetPath(data_name->string(), static_cast<int>(Data::type_enum_value()), root);
 }
 
-std::set<std::string> OnlinesToSet(protobuf::Metadata& content);
-std::set<std::string> OfflinesToSet(protobuf::Metadata& content);
+std::set<std::string> OnlinesToSet(const protobuf::Metadata& content);
+std::set<std::string> OfflinesToSet(const protobuf::Metadata& content);
 void OnlinesToProtobuf(const std::set<std::string>& onlines, protobuf::Metadata& content);
 void OfflinesToProtobuf(const std::set<std::string>& offlines, protobuf::Metadata& content);
 
