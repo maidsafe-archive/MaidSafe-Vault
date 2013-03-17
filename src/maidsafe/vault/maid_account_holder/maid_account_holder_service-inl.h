@@ -22,7 +22,7 @@
 #include "maidsafe/nfs/reply.h"
 
 #include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/maid_account_holder/maid_account_pb.h"
+#include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
 
 
 namespace maidsafe {

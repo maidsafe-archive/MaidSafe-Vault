@@ -13,7 +13,7 @@
 
 #include "maidsafe/common/error.h"
 
-#include "maidsafe/vault/pmid_account_holder/pmid_account_pb.h"
+#include "maidsafe/vault/pmid_account_holder/pmid_account.pb.h"
 
 
 namespace fs = boost::filesystem;

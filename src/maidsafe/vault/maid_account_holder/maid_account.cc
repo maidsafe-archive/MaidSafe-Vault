@@ -19,7 +19,7 @@
 
 #include "maidsafe/vault/demultiplexer.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_account.h"
-#include "maidsafe/vault/maid_account_holder/maid_account_pb.h"
+#include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
 
 
 namespace fs = boost::filesystem;

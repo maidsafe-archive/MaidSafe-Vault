@@ -23,7 +23,7 @@
 #include "maidsafe/data_types/data_name_variant.h"
 
 #include "maidsafe/vault/disk_based_storage.h"
-#include "maidsafe/vault/pmid_account_holder/pmid_account_pb.h"
+#include "maidsafe/vault/pmid_account_holder/pmid_account.pb.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_record.h"
 #include "maidsafe/vault/types.h"
 

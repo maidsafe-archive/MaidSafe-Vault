@@ -15,9 +15,9 @@
 
 #include "boost/filesystem/operations.hpp"
 
-#include "maidsafe/vault/maid_account_holder/maid_account_pb.h"
+#include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
 #include "maidsafe/vault/sync.h"
-#include "maidsafe/vault/sync_pb.h"
+#include "maidsafe/vault/sync.pb.h"
 
 
 namespace fs = boost::filesystem;

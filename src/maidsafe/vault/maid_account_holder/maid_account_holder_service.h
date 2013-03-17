@@ -28,7 +28,7 @@
 
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/maid_account_holder/maid_account_handler.h"
-#include "maidsafe/vault/sync_pb.h"
+#include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
 
 

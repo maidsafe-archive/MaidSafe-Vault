@@ -22,7 +22,7 @@
 #include "maidsafe/common/on_scope_exit.h"
 
 #include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/metadata_manager/metadata_pb.h"
+#include "maidsafe/vault/metadata_manager/metadata.pb.h"
 
 
 namespace maidsafe {
