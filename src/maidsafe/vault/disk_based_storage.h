@@ -16,6 +16,7 @@
 #include <functional>
 #include <future>
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -23,9 +24,10 @@
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 
-#include "maidsafe/common/active.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/nfs/data_message.h"
 
 #include "maidsafe/vault/disk_based_storage.pb.h"
 
@@ -43,15 +45,22 @@ class DiskStorageTest;
 
 class DiskBasedStorage {
  public:
+  struct RecentOperation {
+    RecentOperation(const DataNameVariant& data_name_variant_in,
+                    int32_t size_in,
+                    nfs::DataMessage::Action action_in);
+    RecentOperation(const RecentOperation& other);
+    RecentOperation& operator=(const RecentOperation& other);
+    RecentOperation(RecentOperation&& other);
+    RecentOperation& operator=(RecentOperation&& other);
+    DataNameVariant data_name_variant;
+    // Could represent cost in context of MAH, or data_size in context of PAH.
+    int32_t size;
+    nfs::DataMessage::Action action;
+  };
+
   explicit DiskBasedStorage(const boost::filesystem::path& root);
-
-  // Element handling
-  template<typename Data>
-  std::future<void> Store(const typename Data::name_type& name, int32_t value);
-  // This returns the value which is being deleted, or throws if not found.
-  template<typename Data>
-  std::future<int32_t> Delete(const typename Data::name_type& name);
-
+  void ApplyRecentOperations(const std::vector<RecentOperation>& recent_ops);
   // Synchronisation helpers
   std::future<uint32_t> GetFileCount() const;
   // File names are: index number + "." + base 32 encoded hash of contents
@@ -68,13 +77,26 @@ class DiskBasedStorage {
   DiskBasedStorage(DiskBasedStorage&&);
   DiskBasedStorage& operator=(DiskBasedStorage&&);
 
-  typedef std::map<int, crypto::SHA512Hash> FileIdentities;
+  typedef std::multimap<DataNameVariant, int32_t> Elements;
+  typedef Elements::value_type Element;
+  typedef std::set<DataNameVariant> FileIdentities;
   typedef FileIdentities::value_type FileIdentity;
-
-  FileIdentity GetAndVerifyFileNameParts(boost::filesystem::directory_iterator itr) const;
 
   boost::filesystem::path GetFileName(const FileIdentity& file_id) const;
   protobuf::DiskStoredFile ParseFile(const FileIdentity& file_id) const;
+  protobuf::DiskStoredFile ParseFile(const boost::filesystem::path& file_path) const;
+
+  void SetCurrentOps(const std::vector<RecentOperation>& recent_ops);
+  FileIdentities::iterator GetReorganiseStartPoint();
+
+
+
+
+
+
+
+
+
 
   template<typename Data>
   void AddToLatestFile(const typename Data::name_type& name, int32_t value);
@@ -93,7 +115,6 @@ class DiskBasedStorage {
 
   void SaveChangedFile(const FileIdentity& file_id, const protobuf::DiskStoredFile& file);
 
-  FileIdentities::iterator GetReorganiseStartPoint();
   void ReadIntoMemory(FileIdentities::iterator &read_itr,
                       std::vector<protobuf::DiskStoredElement>& elements);
   void WriteToDisk(FileIdentities::iterator &write_itr,
@@ -105,7 +126,7 @@ class DiskBasedStorage {
                  const FileIdentity& file_id);
 
   const boost::filesystem::path kRoot_;
-  mutable Active active_;
+  Elements current_puts_, current_deletes_;
   FileIdentities file_ids_;
 };
 

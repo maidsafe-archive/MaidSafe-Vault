@@ -35,21 +35,6 @@ void SortFile(protobuf::DiskStoredFile& file);
 
 }  // namespace detail
 
-template<typename Data>
-std::future<void> DiskBasedStorage::Store(const typename Data::name_type& name, int32_t value) {
-  auto promise(std::make_shared<std::promise<void>>());
-  active_.Send([name, value, promise, this] {
-                 try {
-                   this->AddToLatestFile<Data>(name, value);
-                   promise->set_value();
-                 }
-                 catch(const std::exception& e) {
-                   LOG(kError) << "Execution of Store threw: " << e.what();
-                   promise->set_exception(std::current_exception());
-                 }
-               });
-  return promise->get_future();
-}
 
 template<typename Data>
 void DiskBasedStorage::AddToLatestFile(const typename Data::name_type& name, int32_t value) {
@@ -75,23 +60,6 @@ void DiskBasedStorage::AddElement(const typename Data::name_type& name,
   proto_element->set_value(value);
   assert(file.element_size() <= detail::Parameters::max_file_element_count);
   SaveChangedFile(file_id, file);
-}
-
-template<typename Data>
-std::future<int32_t> DiskBasedStorage::Delete(const typename Data::name_type& name) {
-  auto promise(std::make_shared<std::promise<int32_t>>());
-  active_.Send([name, promise, this] {
-                 try {
-                   int32_t value(0);
-                   this->FindAndDeleteEntry<Data>(name, value);
-                   promise->set_value(value);
-                 }
-                 catch(const std::exception& e) {
-                   LOG(kError) << "Execution of Delete threw: " << e.what();
-                   promise->set_exception(std::current_exception());
-                 }
-               });
-  return promise->get_future();
 }
 
 template<typename Data>

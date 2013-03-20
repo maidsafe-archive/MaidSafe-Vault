@@ -114,7 +114,6 @@ class MaidAccount {
   friend class test::MaidAccountHandlerTypedTest;
 
  private:
-
   MaidAccount(const MaidAccount&);
   MaidAccount& operator=(const MaidAccount&);
   MaidAccount(MaidAccount&&);

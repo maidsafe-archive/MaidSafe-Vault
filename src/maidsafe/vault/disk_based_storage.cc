@@ -11,9 +11,9 @@
 
 #include "maidsafe/vault/disk_based_storage.h"
 
+#include <algorithm>
 #include <iterator>
 #include <limits>
-#include <algorithm>
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/utils.h"
@@ -52,8 +52,8 @@ namespace detail {
 
 void SortElements(std::vector<protobuf::DiskStoredElement>& elements) {
   std::sort(
-      elements.begin(),
-      elements.end(),
+      std::begin(elements),
+      std::end(elements),
       [](const protobuf::DiskStoredElement& lhs, const protobuf::DiskStoredElement& rhs)->bool {
           return (lhs.name() < rhs.name()) ? true :
                  (lhs.name() > rhs.name()) ? false : (lhs.type() < rhs.type());
@@ -74,17 +74,55 @@ void SortFile(protobuf::DiskStoredFile& file) {
 }  // namespace detail
 
 
+DiskBasedStorage::RecentOperation::RecentOperation(const DataNameVariant& data_name_variant_in,
+                                                   int32_t size_in,
+                                                   nfs::DataMessage::Action action_in)
+    : data_name_variant(data_name_variant_in),
+      size(size_in),
+      action(action_in) {}
+
+DiskBasedStorage::RecentOperation::RecentOperation(const RecentOperation& other)
+    : data_name_variant(other.data_name_variant),
+      size(other.size),
+      action(other.action) {}
+
+DiskBasedStorage::RecentOperation& DiskBasedStorage::RecentOperation::operator=(
+    const RecentOperation& other) {
+  data_name_variant = other.data_name_variant;
+  size = other.size;
+  action = other.action;
+  return *this;
+}
+
+DiskBasedStorage::RecentOperation::RecentOperation(RecentOperation&& other)
+    : data_name_variant(std::move(other.data_name_variant)),
+      size(std::move(other.size)),
+      action(std::move(other.action)) {}
+
+DiskBasedStorage::RecentOperation& DiskBasedStorage::RecentOperation::operator=(
+    RecentOperation&& other) {
+  data_name_variant = std::move(other.data_name_variant);
+  size = std::move(other.size);
+  action = std::move(other.action);
+  return *this;
+}
+
+
+
 DiskBasedStorage::DiskBasedStorage(const fs::path& root)
     : kRoot_(root),
-      active_(),
+      current_puts_(),
+      current_deletes_(),
       file_ids_() {
   detail::InitialiseDirectory(kRoot_);
 
   fs::directory_iterator root_itr(kRoot_), end_itr;
   for (; root_itr != end_itr; ++root_itr) {
     try {
-      auto file_name_parts(GetAndVerifyFileNameParts(root_itr));
-      if (!file_ids_.insert(file_name_parts).second) {
+      auto file(ParseFile(fs::path(*root_itr)));
+      auto file_id(GetDataNameVariant(static_cast<DataTagValue>(file.element(0).type()),
+                                Identity(file.element(0).name())));
+      if (!file_ids_.insert(file_id).second) {
         // TODO(Fraser#5#): 2013-02-14 - Consider different error to indicate probable malicious
         //                               tampering with file contents.
         ThrowError(CommonErrors::parsing_error);
@@ -98,40 +136,104 @@ DiskBasedStorage::DiskBasedStorage(const fs::path& root)
   }
 }
 
-DiskBasedStorage::FileIdentity DiskBasedStorage::GetAndVerifyFileNameParts(
-    fs::directory_iterator itr) const {
-  auto hash(crypto::HashFile<crypto::SHA512>(*itr));
-  std::string expected_extension("." + EncodeToBase32(hash));
-  if ((*itr).path().extension().string() != expected_extension) {
-    LOG(kInfo) << "Contents don't hash to what file name contains.";
-    ThrowError(CommonErrors::hashing_error);
-  }
-
-  return std::make_pair(std::stoi((*itr).path().stem().string()), hash);
-}
-
 fs::path DiskBasedStorage::GetFileName(const FileIdentity& file_id) const {
-  return fs::path(std::to_string(file_id.first) + "." + EncodeToBase32(file_id.second));
+  GetTagValueAndIdentityVisitor type_and_name_visitor;
+  auto type_and_name(boost::apply_visitor(type_and_name_visitor, file_id));
+  return fs::path(EncodeToBase32(type_and_name.second) + "_" +
+                  std::to_string(static_cast<int32_t>(type_and_name.first)));
 }
 
 protobuf::DiskStoredFile DiskBasedStorage::ParseFile(const FileIdentity& file_id) const {
   fs::path file_path(kRoot_ / GetFileName(file_id));
+  return ParseFile(file_path);
+}
+
+protobuf::DiskStoredFile DiskBasedStorage::ParseFile(const fs::path& file_path) const {
   protobuf::DiskStoredFile file;
   std::string content(ReadFile(file_path).string());
   if (!file.ParseFromString(content)) {
     LOG(kError) << "Failure to parse " << file_path << " content.";
     ThrowError(CommonErrors::parsing_error);
   }
-  if (file.element_size() > detail::Parameters::max_file_element_count ||
-      file_id.first < 0) {
-    LOG(kWarning) << file_path << " has too many elements (" << file.element_size()
-                  << ") or index (" << file_id.first << ") < 0";
+  if (file.element_size() > detail::Parameters::max_file_element_count) {
+    LOG(kWarning) << file_path << " has too many elements (" << file.element_size() << ")";
+    // TODO(Fraser#5#): 2013-02-14 - Consider different error to indicate probable malicious
+    //                               tampering with file contents.
+    ThrowError(CommonErrors::parsing_error);
+  }
+  if (file.element_size() == 0) {
+    LOG(kWarning) << file_path << " has no elements.";
+    // TODO(Fraser#5#): 2013-02-14 - Consider different error to indicate probable malicious
+    //                               tampering with file contents.
+    ThrowError(CommonErrors::parsing_error);
+  }
+  auto file_id(GetDataNameVariant(static_cast<DataTagValue>(file.element(0).type()),
+                                  Identity(file.element(0).name())));
+  if (GetFileName(file_id) != file_path.filename()) {
+    LOG(kWarning) << file_path << " name doesn't match element 0's name.";
     // TODO(Fraser#5#): 2013-02-14 - Consider different error to indicate probable malicious
     //                               tampering with file contents.
     ThrowError(CommonErrors::parsing_error);
   }
   return file;
 }
+
+void DiskBasedStorage::ApplyRecentOperations(const std::vector<RecentOperation>& recent_ops) {
+  SetCurrentOps(recent_ops);
+  auto itr(GetReorganiseStartPoint());
+  if (!file_ids_.empty()) {
+    auto file0(ParseFile(*std::begin(file_ids_)));
+
+  }
+  //open file 0 (n == 0)
+  //iterate {
+  //  open file n+1
+  //  apply to put map
+  //  remove delete elements
+  //  write file n
+  //  if <1000 exit loop
+  //}
+  //write last file
+}
+
+void DiskBasedStorage::SetCurrentOps(const std::vector<RecentOperation>& recent_ops) {
+  auto delete_begin_itr(std::partition(std::begin(recent_ops),
+                                       std::end(recent_ops),
+                                       [](const RecentOperation& op)->bool {
+                                           assert(op.action == nfs::DataMessage::Action::kPut ||
+                                                  op.action == nfs::DataMessage::Action::kDelete);
+                                           return op.action == nfs::DataMessage::Action::kPut;
+                                       }));
+  current_puts_.clear();
+  current_deletes_.clear();
+  auto itr(std::begin(recent_ops));
+  for (; itr != delete_begin_itr; ++itr)
+    current_puts_.emplace((*itr).data_name_variant, (*itr).size);
+  for (; itr != std::end(recent_ops); ++itr)
+    current_deletes_.emplace((*itr).data_name_variant, (*itr).size);
+}
+
+DiskBasedStorage::FileIdentities::iterator DiskBasedStorage::GetReorganiseStartPoint() {
+  DataNameVariant min_element;
+  if (current_puts_.empty()) {
+    if (current_deletes_.empty())
+      return std::end(file_ids_);
+    else
+      min_element = (*std::begin(current_deletes_)).first;
+  } else if (current_deletes_.empty()) {
+    min_element = (*std::begin(current_puts_)).first;
+  } else {
+    min_element = std::min((*std::begin(current_puts_)).first,
+                           (*std::begin(current_deletes_)).first);
+  }
+
+
+}
+
+
+
+
+
 
 void DiskBasedStorage::DeleteEntry(int index, protobuf::DiskStoredFile& file) const {
   protobuf::DiskStoredFile temp;
@@ -147,7 +249,7 @@ void DiskBasedStorage::DeleteEntry(int index, protobuf::DiskStoredFile& file) co
 void DiskBasedStorage::SaveChangedFile(const FileIdentity& file_id,
                                        const protobuf::DiskStoredFile& file) {
   auto itr(file_ids_.find(file_id.first));
-  if (itr == file_ids_.end()) {
+  if (itr == std::end(file_ids_)) {
     LOG(kError) << "Failed to find file " << file_id.first << " in index.";
     ThrowError(CommonErrors::invalid_parameter);
   }
@@ -175,7 +277,7 @@ void DiskBasedStorage::SaveChangedFile(const FileIdentity& file_id,
 
 void DiskBasedStorage::ReadIntoMemory(FileIdentities::iterator &read_itr,
                                       std::vector<protobuf::DiskStoredElement>& elements) {
-  while (read_itr != file_ids_.end() &&
+  while (read_itr != std::end(file_ids_) &&
          static_cast<int>(elements.size()) < 2 * detail::Parameters::max_file_element_count) {
     auto read_file(ParseFile(*read_itr));
     for (int i(0); i != read_file.element_size(); ++i)
@@ -193,21 +295,21 @@ void DiskBasedStorage::WriteToDisk(FileIdentities::iterator &write_itr,
   for (size_t i(0); i != count; ++i)
     write_file.add_element()->CopyFrom(elements[i]);
 
-  elements.erase(elements.begin(), elements.begin() + count);
+  elements.erase(std::begin(elements), std::begin(elements) + count);
   SaveChangedFile(*write_itr, write_file);
   ++write_itr;
 }
 
 void DiskBasedStorage::PruneFilesToEnd(const FileIdentities::iterator& first_itr) {
   FileIdentities::iterator itr(first_itr);
-  while (itr != file_ids_.end()) {
+  while (itr != std::end(file_ids_)) {
     fs::path file_path(kRoot_ / GetFileName(*itr));
     boost::system::error_code ec;
     if (!fs::remove(file_path, ec))
       LOG(kWarning) << "Failed to remove " << file_path << " during prune: " << ec.message();
     ++itr;
   }
-  file_ids_.erase(first_itr, file_ids_.end());
+  file_ids_.erase(first_itr, std::end(file_ids_));
 }
 
 std::future<uint32_t> DiskBasedStorage::GetFileCount() const {
@@ -261,7 +363,7 @@ void DiskBasedStorage::DoPutFile(const fs::path& filename,
   protobuf::DiskStoredFile file(ParseAndVerifyMessagedFile(filename, content, file_id));
 
   auto itr(file_ids_.find(file_id.first));
-  if (itr == file_ids_.end()) {
+  if (itr == std::end(file_ids_)) {
     // This is a new file.
     if (!WriteFile(kRoot_ / filename, content.string()))
       ThrowError(CommonErrors::filesystem_io_error);
