@@ -16,7 +16,6 @@
 #include <functional>
 #include <future>
 #include <map>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -24,8 +23,8 @@
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 
+#include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/crypto.h"
-#include "maidsafe/common/types.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/data_message.h"
 
@@ -36,12 +35,7 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace test {
-
-template<typename T>
-class DiskStorageTest;
-
-}  // namespace test
+namespace test { class DiskStorageTest; }
 
 class DiskBasedStorage {
  public:
@@ -60,15 +54,16 @@ class DiskBasedStorage {
   };
 
   explicit DiskBasedStorage(const boost::filesystem::path& root);
-  void ApplyRecentOperations(const std::vector<RecentOperation>& recent_ops);
-  // Synchronisation helpers
-  std::future<uint32_t> GetFileCount() const;
-  // File names are: index number + "." + base 32 encoded hash of contents
-  std::future<std::vector<boost::filesystem::path>> GetFileNames() const;
-  std::future<NonEmptyString> GetFile(const boost::filesystem::path& filename) const;
-  void PutFile(const boost::filesystem::path& filename, const NonEmptyString& content);
 
-  template<typename T>
+  template<typename Data>
+  size_t GetElementCount(const typename Data::name_type& name) const;
+
+  // Synchronisation helpers
+  void ApplyRecentOperations(const std::vector<RecentOperation>& recent_ops);
+  void ApplyAccountTransfer(const boost::filesystem::path& transferred_files_dir);
+  std::vector<boost::filesystem::path> GetFilenames() const;
+  NonEmptyString GetFile(const boost::filesystem::path& filename) const;
+
   friend class test::DiskStorageTest;
 
  private:
@@ -77,17 +72,28 @@ class DiskBasedStorage {
   DiskBasedStorage(DiskBasedStorage&&);
   DiskBasedStorage& operator=(DiskBasedStorage&&);
 
+  struct FileDetails {
+    typedef TaggedValue<maidsafe::detail::BoundedString<5, 5>, struct MinTag> MinElement;
+    typedef TaggedValue<maidsafe::detail::BoundedString<5, 5>, struct MaxTag> MaxElement;
+    FileDetails();
+    FileDetails(const FileDetails& other);
+    FileDetails& operator=(const FileDetails& other);
+    FileDetails(FileDetails&& other);
+    FileDetails& operator=(FileDetails&& other);
+    MinElement min_element;
+    MaxElement max_element;
+    crypto::SHA1Hash hash;
+  };
   typedef std::multimap<DataNameVariant, int32_t> Elements;
   typedef Elements::value_type Element;
-  typedef std::set<DataNameVariant> FileIdentities;
-  typedef FileIdentities::value_type FileIdentity;
+  typedef std::map<int, FileDetails> FileGroup;
 
-  boost::filesystem::path GetFileName(const FileIdentity& file_id) const;
-  protobuf::DiskStoredFile ParseFile(const FileIdentity& file_id) const;
+  boost::filesystem::path GetFileName(const FileGroup::value_type& file_id) const;
+  protobuf::DiskStoredFile ParseFile(const FileGroup::value_type& file_id) const;
   protobuf::DiskStoredFile ParseFile(const boost::filesystem::path& file_path) const;
 
   void SetCurrentOps(const std::vector<RecentOperation>& recent_ops);
-  FileIdentities::iterator GetReorganiseStartPoint();
+  FileGroup::iterator GetReorganiseStartPoint();
 
 
 
@@ -129,6 +135,11 @@ class DiskBasedStorage {
   Elements current_puts_, current_deletes_;
   FileIdentities file_ids_;
 };
+
+inline bool operator<(const DiskBasedStorage::FileIdentity& lhs,
+                      const DiskBasedStorage::FileIdentity& rhs) {
+  return lhs.min < rhs.min;
+}
 
 }  // namespace vault
 

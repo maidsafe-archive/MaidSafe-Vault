@@ -109,6 +109,31 @@ DiskBasedStorage::RecentOperation& DiskBasedStorage::RecentOperation::operator=(
 
 
 
+DiskBasedStorage::FileIdentity::FileIdentity() : min(), max() {}
+
+DiskBasedStorage::FileIdentity::FileIdentity(const FileIdentity& other)
+    : min(other.min),
+      max(other.max) {}
+
+DiskBasedStorage::FileIdentity& DiskBasedStorage::FileIdentity::operator=(
+    const FileIdentity& other) {
+  min = other.min;
+  max = other.max;
+  return *this;
+}
+
+DiskBasedStorage::FileIdentity::FileIdentity(FileIdentity&& other)
+    : min(std::move(other.min)),
+      max(std::move(other.max)) {}
+
+DiskBasedStorage::FileIdentity& DiskBasedStorage::FileIdentity::operator=(FileIdentity&& other) {
+  min = std::move(other.min);
+  max = std::move(other.max);
+  return *this;
+}
+
+
+
 DiskBasedStorage::DiskBasedStorage(const fs::path& root)
     : kRoot_(root),
       current_puts_(),
@@ -134,6 +159,10 @@ DiskBasedStorage::DiskBasedStorage(const fs::path& root)
       fs::remove(*root_itr, ec);
     }
   }
+}
+
+DiskBasedStorage::FileIdentity GetFileIdentity(const protobuf::DiskStoredFile& file) {
+  return 
 }
 
 fs::path DiskBasedStorage::GetFileName(const FileIdentity& file_id) const {
