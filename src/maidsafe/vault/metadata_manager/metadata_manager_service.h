@@ -28,7 +28,7 @@
 
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/metadata_manager/metadata_handler.h"
-#include "maidsafe/vault/metadata_manager/metadata_pb.h"
+#include "maidsafe/vault/metadata_manager/metadata.pb.h"
 #include "maidsafe/vault/types.h"
 
 

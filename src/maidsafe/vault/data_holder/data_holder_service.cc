@@ -17,7 +17,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_store/data_buffer.h"
 
-#include "maidsafe/vault/pmid_account_holder/pmid_account_pb.h"
+#include "maidsafe/vault/pmid_account_holder/pmid_account.pb.h"
 
 
 namespace fs = boost::filesystem;

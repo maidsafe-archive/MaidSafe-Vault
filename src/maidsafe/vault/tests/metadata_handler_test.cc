@@ -19,7 +19,7 @@
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/metadata_manager/metadata_pb.h"
+#include "maidsafe/vault/metadata_manager/metadata.pb.h"
 #include "maidsafe/vault/utils.h"
 
 

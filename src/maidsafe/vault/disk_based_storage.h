@@ -27,7 +27,7 @@
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/types.h"
 
-#include "maidsafe/vault/disk_based_storage_pb.h"
+#include "maidsafe/vault/disk_based_storage.pb.h"
 
 
 namespace maidsafe {
