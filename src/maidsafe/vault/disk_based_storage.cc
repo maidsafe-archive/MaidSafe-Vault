@@ -27,22 +27,33 @@ namespace vault {
 
 namespace {
 
-protobuf::DiskStoredFile ParseAndVerifyMessagedFile(
-    const fs::path& filename,
-    const NonEmptyString& content,
-    const std::pair<int, crypto::SHA512Hash>& file_id) {
-  if (crypto::Hash<crypto::SHA512>(content) != file_id.second) {
-    LOG(kError) << "Received invalid file " << filename << ":  content doesn't hash to name.";
-    ThrowError(CommonErrors::hashing_error);
+//protobuf::DiskStoredFile ParseAndVerifyMessagedFile(
+//    const fs::path& filename,
+//    const NonEmptyString& content,
+//    const std::pair<int, crypto::SHA512Hash>& file_id) {
+//  if (crypto::Hash<crypto::SHA512>(content) != file_id.second) {
+//    LOG(kError) << "Received invalid file " << filename << ":  content doesn't hash to name.";
+//    ThrowError(CommonErrors::hashing_error);
+//  }
+//
+//  protobuf::DiskStoredFile file;
+//  if (!file.ParseFromString(content.string())) {
+//    LOG(kError) << "Received invalid file " << filename << ":  doesn't parse.";
+//    ThrowError(CommonErrors::parsing_error);
+//  }
+//
+//  return file;
+//}
+std::multimap<DataNameVariant, int32_t> ConvertFromProtobufElements(
+    const protobuf::DiskStoredFile& file) {
+  std::multimap<DataNameVariant, int32_t> elements;
+  auto itr(std::end(elements));
+  for (int i(0); i != file.element_size(); ++i) {
+    auto data_name_variant(GetDataNameVariant(static_cast<DataTagValue>(file.element(i).type()),
+                                              Identity(file.element(i).name())));
+    itr = elements.insert(itr, std::make_pair(data_name_variant, file.element(i).value()));
   }
-
-  protobuf::DiskStoredFile file;
-  if (!file.ParseFromString(content.string())) {
-    LOG(kError) << "Received invalid file " << filename << ":  doesn't parse.";
-    ThrowError(CommonErrors::parsing_error);
-  }
-
-  return file;
+  return elements;
 }
 
 }  // namespace
@@ -60,12 +71,25 @@ void SortElements(std::vector<protobuf::DiskStoredElement>& elements) {
       });
 }
 
-void SortFile(protobuf::DiskStoredFile& file) {
-  assert(file.element_size() == detail::Parameters::max_file_element_count);
+void SortFile(protobuf::DiskStoredFile& file, bool verify_elements) {
+  if (verify_elements && file.element_size() > detail::Parameters::max_file_element_count) {
+    LOG(kWarning) << "Invalid number of elements (" << file.element_size() << ")";
+    ThrowError(CommonErrors::parsing_error);
+  }
+
   std::vector<protobuf::DiskStoredElement> elements;
   elements.reserve(file.element_size());
-  for (int i(0); i != file.element_size(); ++i)
+  for (int i(0); i != file.element_size(); ++i) {
+    if (verify_elements) {
+      Identity name(file.element(i).name());
+      // This throws if the name is invalid
+      name.string();
+      // This throws if the type is invalid
+      GetDataNameVariant(static_cast<DataTagValue>(file.element(i).type()), name);
+    }
     elements.push_back(file.element(i));
+  }
+
   SortElements(elements);
   for (int i(0); i != file.element_size(); ++i)
     file.mutable_element(i)->CopyFrom(elements[i]);
@@ -109,26 +133,35 @@ DiskBasedStorage::RecentOperation& DiskBasedStorage::RecentOperation::operator=(
 
 
 
-DiskBasedStorage::FileIdentity::FileIdentity() : min(), max() {}
+DiskBasedStorage::FileDetails::FileDetails(const ElementNameSubstr& min_element_in,
+                                           const ElementNameSubstr& max_element_in,
+                                           const crypto::SHA1Hash& hash_in)
+    : min_element(min_element_in),
+      max_element(max_element_in),
+      hash(hash_in) {}
 
-DiskBasedStorage::FileIdentity::FileIdentity(const FileIdentity& other)
-    : min(other.min),
-      max(other.max) {}
+DiskBasedStorage::FileDetails::FileDetails(const FileDetails& other)
+    : min_element(other.min_element),
+      max_element(other.max_element),
+      hash(other.hash) {}
 
-DiskBasedStorage::FileIdentity& DiskBasedStorage::FileIdentity::operator=(
-    const FileIdentity& other) {
-  min = other.min;
-  max = other.max;
+DiskBasedStorage::FileDetails& DiskBasedStorage::FileDetails::operator=(
+    const FileDetails& other) {
+  min_element = other.min_element;
+  max_element = other.max_element;
+  hash = other.hash;
   return *this;
 }
 
-DiskBasedStorage::FileIdentity::FileIdentity(FileIdentity&& other)
-    : min(std::move(other.min)),
-      max(std::move(other.max)) {}
+DiskBasedStorage::FileDetails::FileDetails(FileDetails&& other)
+    : min_element(std::move(other.min_element)),
+      max_element(std::move(other.max_element)),
+      hash(std::move(other.hash)) {}
 
-DiskBasedStorage::FileIdentity& DiskBasedStorage::FileIdentity::operator=(FileIdentity&& other) {
-  min = std::move(other.min);
-  max = std::move(other.max);
+DiskBasedStorage::FileDetails& DiskBasedStorage::FileDetails::operator=(FileDetails&& other) {
+  min_element = std::move(other.min_element);
+  max_element = std::move(other.max_element);
+  hash = std::move(other.hash);
   return *this;
 }
 
@@ -144,9 +177,9 @@ DiskBasedStorage::DiskBasedStorage(const fs::path& root)
   fs::directory_iterator root_itr(kRoot_), end_itr;
   for (; root_itr != end_itr; ++root_itr) {
     try {
-      auto file(ParseFile(fs::path(*root_itr)));
-      auto file_id(GetDataNameVariant(static_cast<DataTagValue>(file.element(0).type()),
-                                Identity(file.element(0).name())));
+      auto file_and_details(ParseFile(fs::path(*root_itr), true));
+      auto file_id(std::make_pair(std::stoi((*root_itr).path().stem().string()),
+                                  file_and_details.second));
       if (!file_ids_.insert(file_id).second) {
         // TODO(Fraser#5#): 2013-02-14 - Consider different error to indicate probable malicious
         //                               tampering with file contents.
@@ -159,61 +192,90 @@ DiskBasedStorage::DiskBasedStorage(const fs::path& root)
       fs::remove(*root_itr, ec);
     }
   }
+
+  VerifyFileGroup();
 }
 
-DiskBasedStorage::FileIdentity GetFileIdentity(const protobuf::DiskStoredFile& file) {
-  return 
+fs::path DiskBasedStorage::GetFileName(const FileGroup::value_type& file_id) const {
+  return fs::path(std::to_string(file_id.first) + "." + EncodeToBase32(file_id.second.hash));
 }
 
-fs::path DiskBasedStorage::GetFileName(const FileIdentity& file_id) const {
-  GetTagValueAndIdentityVisitor type_and_name_visitor;
-  auto type_and_name(boost::apply_visitor(type_and_name_visitor, file_id));
-  return fs::path(EncodeToBase32(type_and_name.second) + "_" +
-                  std::to_string(static_cast<int32_t>(type_and_name.first)));
-}
-
-protobuf::DiskStoredFile DiskBasedStorage::ParseFile(const FileIdentity& file_id) const {
+std::pair<protobuf::DiskStoredFile, DiskBasedStorage::FileDetails> DiskBasedStorage::ParseFile(
+    const FileGroup::value_type& file_id,
+    bool verify) const {
   fs::path file_path(kRoot_ / GetFileName(file_id));
-  return ParseFile(file_path);
+  return ParseFile(file_path, verify);
 }
 
-protobuf::DiskStoredFile DiskBasedStorage::ParseFile(const fs::path& file_path) const {
+std::pair<protobuf::DiskStoredFile, DiskBasedStorage::FileDetails> DiskBasedStorage::ParseFile(
+    const fs::path& file_path,
+    bool verify) const {
   protobuf::DiskStoredFile file;
-  std::string content(ReadFile(file_path).string());
-  if (!file.ParseFromString(content)) {
+  std::string contents(ReadFile(file_path).string());
+  if (!file.ParseFromString(contents)) {
     LOG(kError) << "Failure to parse " << file_path << " content.";
     ThrowError(CommonErrors::parsing_error);
   }
-  if (file.element_size() > detail::Parameters::max_file_element_count) {
-    LOG(kWarning) << file_path << " has too many elements (" << file.element_size() << ")";
-    // TODO(Fraser#5#): 2013-02-14 - Consider different error to indicate probable malicious
-    //                               tampering with file contents.
-    ThrowError(CommonErrors::parsing_error);
-  }
+
   if (file.element_size() == 0) {
-    LOG(kWarning) << file_path << " has no elements.";
+    LOG(kWarning) << file_path << " has no elements (" << file.element_size() << ")";
     // TODO(Fraser#5#): 2013-02-14 - Consider different error to indicate probable malicious
     //                               tampering with file contents.
     ThrowError(CommonErrors::parsing_error);
   }
-  auto file_id(GetDataNameVariant(static_cast<DataTagValue>(file.element(0).type()),
-                                  Identity(file.element(0).name())));
-  if (GetFileName(file_id) != file_path.filename()) {
-    LOG(kWarning) << file_path << " name doesn't match element 0's name.";
-    // TODO(Fraser#5#): 2013-02-14 - Consider different error to indicate probable malicious
-    //                               tampering with file contents.
-    ThrowError(CommonErrors::parsing_error);
+
+  // If the filename doesn't contain a dot, extension() returns an empty path causing substr() to
+  // throw a std::out_of_range exception.
+  crypto::SHA1Hash hash(DecodeFromBase32(file_path.extension().string().substr(1)));
+  FileDetails file_details(
+      FileDetails::ElementNameSubstr(file.element(0).name().substr(0, FileDetails::kSubstrSize)),
+      FileDetails::ElementNameSubstr(
+          file.element(file.element_size() - 1).name().substr(0, FileDetails::kSubstrSize)),
+      hash);
+  auto file_and_details(std::make_pair(file, file_details));
+  if (verify)
+    VerifyFile(file_and_details);
+
+  return file_and_details;
+}
+
+void DiskBasedStorage::VerifyFile(
+    std::pair<protobuf::DiskStoredFile, FileDetails>& file_and_details) const {
+  // TODO(Fraser#5#): 2013-02-14 - Consider different errors here to indicate probable malicious
+  //                               tampering with file contents.
+  detail::SortFile(file_and_details.first, true);
+  std::string contents(file_and_details.first.SerializeAsString());
+  if (crypto::Hash<crypto::SHA1>(contents) != file_and_details.second.hash) {
+    LOG(kWarning) << "Contents don't hash to what file name contains.";
+    ThrowError(CommonErrors::hashing_error);
   }
-  return file;
+}
+
+void DiskBasedStorage::VerifyFileGroup() const {
+  if (file_ids_.empty())
+    return;
+  auto itr(std::begin(file_ids_)), next(std::begin(file_ids_));
+  while (itr != std::end(file_ids_)) {
+    if ((*itr).second.max_element < (*itr).second.min_element)
+      ThrowError(CommonErrors::parsing_error);
+    ++next;
+    if (next != std::end(file_ids_) && (*next).second.min_element < (*itr).second.max_element)
+      ThrowError(CommonErrors::parsing_error);
+    ++itr;
+  }
 }
 
 void DiskBasedStorage::ApplyRecentOperations(const std::vector<RecentOperation>& recent_ops) {
   SetCurrentOps(recent_ops);
   auto itr(GetReorganiseStartPoint());
-  if (!file_ids_.empty()) {
-    auto file0(ParseFile(*std::begin(file_ids_)));
+  Elements temp;
+  if (itr != std::end(file_ids_))
+    temp = ConvertFromProtobufElements(ParseFile(*itr, false).first);
 
+  while (itr != std::end(file_ids_)) {
+    ++itr;
   }
+
   //open file 0 (n == 0)
   //iterate {
   //  open file n+1
@@ -242,7 +304,7 @@ void DiskBasedStorage::SetCurrentOps(const std::vector<RecentOperation>& recent_
     current_deletes_.emplace((*itr).data_name_variant, (*itr).size);
 }
 
-DiskBasedStorage::FileIdentities::iterator DiskBasedStorage::GetReorganiseStartPoint() {
+DiskBasedStorage::FileGroup::iterator DiskBasedStorage::GetReorganiseStartPoint() {
   DataNameVariant min_element;
   if (current_puts_.empty()) {
     if (current_deletes_.empty())
@@ -256,9 +318,18 @@ DiskBasedStorage::FileIdentities::iterator DiskBasedStorage::GetReorganiseStartP
                            (*std::begin(current_deletes_)).first);
   }
 
-
+  GetIdentityVisitor get_identity;
+  FileDetails::ElementNameSubstr min_element_name(
+      min_element.apply_visitor(get_identity).string().substr(0, FileDetails::kSubstrSize));
+  auto lower(std::lower_bound(std::begin(file_ids_),
+                              std::end(file_ids_),
+                              min_element_name,
+                              [](const FileGroup::value_type& file_id,
+                                 const FileDetails::ElementNameSubstr& min_name) {
+                                return file_id.second.max_element < min_name;
+                              }));
+  return (lower == std::end(file_ids_) && !file_ids_.empty()) ? --lower : lower;
 }
-
 
 
 

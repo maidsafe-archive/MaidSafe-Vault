@@ -73,15 +73,17 @@ class DiskBasedStorage {
   DiskBasedStorage& operator=(DiskBasedStorage&&);
 
   struct FileDetails {
-    typedef TaggedValue<maidsafe::detail::BoundedString<5, 5>, struct MinTag> MinElement;
-    typedef TaggedValue<maidsafe::detail::BoundedString<5, 5>, struct MaxTag> MaxElement;
-    FileDetails();
+    enum { kSubstrSize = 5 };
+    typedef maidsafe::detail::BoundedString<kSubstrSize, kSubstrSize> ElementNameSubstr;
+    FileDetails(const ElementNameSubstr& min_element_in,
+                const ElementNameSubstr& max_element_in,
+                const crypto::SHA1Hash& hash_in);
     FileDetails(const FileDetails& other);
     FileDetails& operator=(const FileDetails& other);
     FileDetails(FileDetails&& other);
     FileDetails& operator=(FileDetails&& other);
-    MinElement min_element;
-    MaxElement max_element;
+    ElementNameSubstr min_element;
+    ElementNameSubstr max_element;
     crypto::SHA1Hash hash;
   };
   typedef std::multimap<DataNameVariant, int32_t> Elements;
@@ -89,8 +91,14 @@ class DiskBasedStorage {
   typedef std::map<int, FileDetails> FileGroup;
 
   boost::filesystem::path GetFileName(const FileGroup::value_type& file_id) const;
-  protobuf::DiskStoredFile ParseFile(const FileGroup::value_type& file_id) const;
-  protobuf::DiskStoredFile ParseFile(const boost::filesystem::path& file_path) const;
+  std::pair<protobuf::DiskStoredFile, FileDetails> ParseFile(
+      const FileGroup::value_type& file_id,
+      bool verify) const;
+  std::pair<protobuf::DiskStoredFile, FileDetails> ParseFile(
+      const boost::filesystem::path& file_path,
+      bool verify) const;
+  void VerifyFile(std::pair<protobuf::DiskStoredFile, FileDetails>& file_and_details) const;
+  void VerifyFileGroup() const;
 
   void SetCurrentOps(const std::vector<RecentOperation>& recent_ops);
   FileGroup::iterator GetReorganiseStartPoint();
@@ -109,7 +117,7 @@ class DiskBasedStorage {
   template<typename Data>
   void AddElement(const typename Data::name_type& name,
                   int32_t value,
-                  const FileIdentity& file_id,
+                  const FileGroup::value_type& file_id,
                   protobuf::DiskStoredFile& file);
 
   template<typename Data>
@@ -119,27 +127,22 @@ class DiskBasedStorage {
                     const protobuf::DiskStoredFile& file) const;
   void DeleteEntry(int index, protobuf::DiskStoredFile& file) const;
 
-  void SaveChangedFile(const FileIdentity& file_id, const protobuf::DiskStoredFile& file);
+  void SaveChangedFile(const FileGroup::value_type& file_id, const protobuf::DiskStoredFile& file);
 
-  void ReadIntoMemory(FileIdentities::iterator &read_itr,
+  void ReadIntoMemory(FileGroup::iterator &read_itr,
                       std::vector<protobuf::DiskStoredElement>& elements);
-  void WriteToDisk(FileIdentities::iterator &write_itr,
+  void WriteToDisk(FileGroup::iterator &write_itr,
                    std::vector<protobuf::DiskStoredElement>& elements);
-  void PruneFilesToEnd(const FileIdentities::iterator& first_itr);
+  void PruneFilesToEnd(const FileGroup::iterator& first_itr);
 
   void DoPutFile(const boost::filesystem::path& filename,
                  const NonEmptyString& content,
-                 const FileIdentity& file_id);
+                 const FileGroup::value_type& file_id);
 
   const boost::filesystem::path kRoot_;
   Elements current_puts_, current_deletes_;
-  FileIdentities file_ids_;
+  FileGroup file_ids_;
 };
-
-inline bool operator<(const DiskBasedStorage::FileIdentity& lhs,
-                      const DiskBasedStorage::FileIdentity& rhs) {
-  return lhs.min < rhs.min;
-}
 
 }  // namespace vault
 
