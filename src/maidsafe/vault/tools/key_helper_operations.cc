@@ -12,6 +12,7 @@
 #include "maidsafe/vault/tools/key_helper_operations.h"
 
 #include <csignal>
+#include <string>
 
 #include "boost/filesystem/operations.hpp"
 
@@ -191,14 +192,14 @@ void KeyStorer::Store() {
 }
 
 std::function<void(nfs::Reply)> KeyStorer::callback(std::promise<bool>& promise) {
-  return [&promise] (nfs::Reply reply) {
+  return ([&promise] (nfs::Reply reply) {
            try {
              promise.set_value(reply.IsSuccess());
            }
            catch(...) {
              promise.set_exception(std::current_exception());
            }
-         };
+         });
 }
 
 KeyVerifier::KeyVerifier(const passport::detail::AnmaidToPmid& key_chain,
@@ -251,7 +252,7 @@ void DataChunkStorer::OneChunkRun(size_t& num_chunks, size_t& num_store, size_t&
   ++num_chunks;
 
   if (StoreOneChunk(chunk_data)) {
-    LOG(kInfo) << "Stored chunk " << HexSubstr(name.data) << std::endl;
+    LOG(kInfo) << "Stored chunk " << HexSubstr(name.data);
     ++num_store;
   } else {
     LOG(kError) << "Failed to store chunk " << HexSubstr(name.data);
