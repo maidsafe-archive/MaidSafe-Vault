@@ -141,8 +141,10 @@ void RunVault(po::variables_map& variables_map) {
 #ifndef MAIDSAFE_WIN32
   signal(SIGHUP, SigHandler);
 #endif
-  signal(SIGINT, SigHandler);
   signal(SIGTERM, SigHandler);
+  bool disable_ctrl_c(variables_map.at("disable_ctrl_c").as<bool>());
+  if (!disable_ctrl_c)
+    signal(SIGINT, SigHandler);
 
   // Starting Vault
   std::cout << "Starting vault..." << std::endl;
@@ -168,7 +170,8 @@ void AddTestingOptions(po::options_description& config_file_options) {
        po::value<std::string>()->default_value(fs::path(fs::temp_directory_path() /
                                                         "key_directory.dat").string()),
        "Path to keys file for bootstrapping")
-      ("identity_index", po::value<int>(), "Entry from keys file to use as ID");
+      ("identity_index", po::value<int>(), "Entry from keys file to use as ID")
+      ("disable_ctrl_c", po::value<bool>()->default_value(false), "disable ctrl+c");
 }
 #endif
 
