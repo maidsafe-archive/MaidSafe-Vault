@@ -75,9 +75,7 @@ class DiskBasedStorage {
   struct FileDetails {
     enum { kSubstrSize = 5 };
     typedef maidsafe::detail::BoundedString<kSubstrSize, kSubstrSize> ElementNameSubstr;
-    FileDetails(const ElementNameSubstr& min_element_in,
-                const ElementNameSubstr& max_element_in,
-                const crypto::SHA1Hash& hash_in);
+    FileDetails(const protobuf::DiskStoredFile& file, const crypto::SHA1Hash& hash_in);
     FileDetails(const FileDetails& other);
     FileDetails& operator=(const FileDetails& other);
     FileDetails(FileDetails&& other);
@@ -100,44 +98,17 @@ class DiskBasedStorage {
   void VerifyFile(std::pair<protobuf::DiskStoredFile, FileDetails>& file_and_details) const;
   void VerifyFileGroup() const;
 
-  void SetCurrentOps(const std::vector<RecentOperation>& recent_ops);
+  void SetCurrentOps(std::vector<RecentOperation> recent_ops);
+  FileGroup::iterator GetFileIdsLowerBound(
+      const FileDetails::ElementNameSubstr& element_name_substr);
   FileGroup::iterator GetReorganiseStartPoint();
-
-
-
-
-
-
-
-
-
-
-  template<typename Data>
-  void AddToLatestFile(const typename Data::name_type& name, int32_t value);
-  template<typename Data>
-  void AddElement(const typename Data::name_type& name,
-                  int32_t value,
-                  const FileGroup::value_type& file_id,
-                  protobuf::DiskStoredFile& file);
-
-  template<typename Data>
-  void FindAndDeleteEntry(const typename Data::name_type& name, int32_t& value);
-  template<typename Data>
-  int GetEntryIndex(const typename Data::name_type& name,
-                    const protobuf::DiskStoredFile& file) const;
-  void DeleteEntry(int index, protobuf::DiskStoredFile& file) const;
-
-  void SaveChangedFile(const FileGroup::value_type& file_id, const protobuf::DiskStoredFile& file);
-
-  void ReadIntoMemory(FileGroup::iterator &read_itr,
-                      std::vector<protobuf::DiskStoredElement>& elements);
-  void WriteToDisk(FileGroup::iterator &write_itr,
-                   std::vector<protobuf::DiskStoredElement>& elements);
-  void PruneFilesToEnd(const FileGroup::iterator& first_itr);
-
-  void DoPutFile(const boost::filesystem::path& filename,
-                 const NonEmptyString& content,
-                 const FileGroup::value_type& file_id);
+  void SaveFile(FileGroup::iterator file_ids_itr);
+  protobuf::DiskStoredFile MoveCurrentPutsToFile();
+  FileGroup GetFilesToTransfer(const boost::filesystem::path& transferred_files_dir) const;
+  void TransferFile(const FileGroup::value_type& transfer_id,
+                    const boost::filesystem::path& transferred_files_dir,
+                    std::vector<boost::filesystem::path>& files_moved,
+                    std::vector<boost::filesystem::path>& files_to_be_removed);
 
   const boost::filesystem::path kRoot_;
   Elements current_puts_, current_deletes_;

@@ -15,6 +15,10 @@
 #include <iterator>
 #include <limits>
 
+#include "maidsafe/common/on_scope_exit.h"
+#include "maidsafe/common/utils.h"
+
+#include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/utils.h"
 
@@ -26,40 +30,6 @@ namespace maidsafe {
 namespace vault {
 
 namespace {
-
-//protobuf::DiskStoredFile ParseAndVerifyMessagedFile(
-//    const fs::path& filename,
-//    const NonEmptyString& content,
-//    const std::pair<int, crypto::SHA512Hash>& file_id) {
-//  if (crypto::Hash<crypto::SHA512>(content) != file_id.second) {
-//    LOG(kError) << "Received invalid file " << filename << ":  content doesn't hash to name.";
-//    ThrowError(CommonErrors::hashing_error);
-//  }
-//
-//  protobuf::DiskStoredFile file;
-//  if (!file.ParseFromString(content.string())) {
-//    LOG(kError) << "Received invalid file " << filename << ":  doesn't parse.";
-//    ThrowError(CommonErrors::parsing_error);
-//  }
-//
-//  return file;
-//}
-std::multimap<DataNameVariant, int32_t> ConvertFromProtobufElements(
-    const protobuf::DiskStoredFile& file) {
-  std::multimap<DataNameVariant, int32_t> elements;
-  auto itr(std::end(elements));
-  for (int i(0); i != file.element_size(); ++i) {
-    auto data_name_variant(GetDataNameVariant(static_cast<DataTagValue>(file.element(i).type()),
-                                              Identity(file.element(i).name())));
-    itr = elements.insert(itr, std::make_pair(data_name_variant, file.element(i).value()));
-  }
-  return elements;
-}
-
-}  // namespace
-
-
-namespace detail {
 
 void SortElements(std::vector<protobuf::DiskStoredElement>& elements) {
   std::sort(
@@ -95,7 +65,36 @@ void SortFile(protobuf::DiskStoredFile& file, bool verify_elements) {
     file.mutable_element(i)->CopyFrom(elements[i]);
 }
 
-}  // namespace detail
+void MergeFromProtobufElements(const protobuf::DiskStoredFile& file,
+                               std::multimap<DataNameVariant, int32_t>& elements) {
+  auto itr(std::end(elements));
+  for (int i(0); i != file.element_size(); ++i) {
+    auto data_name_variant(GetDataNameVariant(static_cast<DataTagValue>(file.element(i).type()),
+                                              Identity(file.element(i).name())));
+    itr = elements.insert(itr, std::make_pair(data_name_variant, file.element(i).value()));
+  }
+}
+
+void RemoveIntersection(std::multimap<DataNameVariant, int32_t>& lhs,
+                        std::multimap<DataNameVariant, int32_t>& rhs) {
+  auto lhs_itr(std::begin(lhs));
+  auto rhs_itr(std::begin(rhs));
+  while (lhs_itr != std::end(lhs) && rhs_itr != std::end(rhs)) {
+    if (*lhs_itr < *rhs_itr) {
+      ++lhs_itr;
+    } else {
+      if (!(*rhs_itr < *lhs_itr)) {
+        lhs_itr = lhs.erase(lhs_itr);
+        rhs_itr = rhs.erase(rhs_itr);
+      } else {
+        ++rhs_itr;
+      }
+    }
+  }
+}
+
+}  // namespace
+
 
 
 DiskBasedStorage::RecentOperation::RecentOperation(const DataNameVariant& data_name_variant_in,
@@ -133,11 +132,10 @@ DiskBasedStorage::RecentOperation& DiskBasedStorage::RecentOperation::operator=(
 
 
 
-DiskBasedStorage::FileDetails::FileDetails(const ElementNameSubstr& min_element_in,
-                                           const ElementNameSubstr& max_element_in,
+DiskBasedStorage::FileDetails::FileDetails(const protobuf::DiskStoredFile& file,
                                            const crypto::SHA1Hash& hash_in)
-    : min_element(min_element_in),
-      max_element(max_element_in),
+    : min_element(file.element(0).name().substr(0, FileDetails::kSubstrSize)),
+      max_element(file.element(file.element_size() - 1).name().substr(0, FileDetails::kSubstrSize)),
       hash(hash_in) {}
 
 DiskBasedStorage::FileDetails::FileDetails(const FileDetails& other)
@@ -227,11 +225,7 @@ std::pair<protobuf::DiskStoredFile, DiskBasedStorage::FileDetails> DiskBasedStor
   // If the filename doesn't contain a dot, extension() returns an empty path causing substr() to
   // throw a std::out_of_range exception.
   crypto::SHA1Hash hash(DecodeFromBase32(file_path.extension().string().substr(1)));
-  FileDetails file_details(
-      FileDetails::ElementNameSubstr(file.element(0).name().substr(0, FileDetails::kSubstrSize)),
-      FileDetails::ElementNameSubstr(
-          file.element(file.element_size() - 1).name().substr(0, FileDetails::kSubstrSize)),
-      hash);
+  FileDetails file_details(file, hash);
   auto file_and_details(std::make_pair(file, file_details));
   if (verify)
     VerifyFile(file_and_details);
@@ -243,7 +237,7 @@ void DiskBasedStorage::VerifyFile(
     std::pair<protobuf::DiskStoredFile, FileDetails>& file_and_details) const {
   // TODO(Fraser#5#): 2013-02-14 - Consider different errors here to indicate probable malicious
   //                               tampering with file contents.
-  detail::SortFile(file_and_details.first, true);
+  SortFile(file_and_details.first, true);
   std::string contents(file_and_details.first.SerializeAsString());
   if (crypto::Hash<crypto::SHA1>(contents) != file_and_details.second.hash) {
     LOG(kWarning) << "Contents don't hash to what file name contains.";
@@ -259,8 +253,12 @@ void DiskBasedStorage::VerifyFileGroup() const {
     if ((*itr).second.max_element < (*itr).second.min_element)
       ThrowError(CommonErrors::parsing_error);
     ++next;
-    if (next != std::end(file_ids_) && (*next).second.min_element < (*itr).second.max_element)
-      ThrowError(CommonErrors::parsing_error);
+    if (next != std::end(file_ids_)) {
+      if ((*next).second.min_element < (*itr).second.max_element ||
+          (*next).first != (*itr).first + 1) {
+        ThrowError(CommonErrors::parsing_error);
+      }
+    }
     ++itr;
   }
 }
@@ -268,26 +266,25 @@ void DiskBasedStorage::VerifyFileGroup() const {
 void DiskBasedStorage::ApplyRecentOperations(const std::vector<RecentOperation>& recent_ops) {
   SetCurrentOps(recent_ops);
   auto itr(GetReorganiseStartPoint());
-  Elements temp;
   if (itr != std::end(file_ids_))
-    temp = ConvertFromProtobufElements(ParseFile(*itr, false).first);
+    MergeFromProtobufElements(ParseFile(*itr, false).first, current_puts_);
 
   while (itr != std::end(file_ids_)) {
+    auto next(itr);
+    if (next != std::end(file_ids_))
+      MergeFromProtobufElements(ParseFile(*next, false).first, current_puts_);
+    RemoveIntersection(current_puts_, current_deletes_);
+    SaveFile(itr);
     ++itr;
   }
+  if (!current_puts_.empty())
+    SaveFile(itr);
 
-  //open file 0 (n == 0)
-  //iterate {
-  //  open file n+1
-  //  apply to put map
-  //  remove delete elements
-  //  write file n
-  //  if <1000 exit loop
-  //}
-  //write last file
+  assert(current_puts_.empty());
+  assert(current_deletes_.empty());
 }
 
-void DiskBasedStorage::SetCurrentOps(const std::vector<RecentOperation>& recent_ops) {
+void DiskBasedStorage::SetCurrentOps(std::vector<RecentOperation> recent_ops) {
   auto delete_begin_itr(std::partition(std::begin(recent_ops),
                                        std::end(recent_ops),
                                        [](const RecentOperation& op)->bool {
@@ -302,6 +299,17 @@ void DiskBasedStorage::SetCurrentOps(const std::vector<RecentOperation>& recent_
     current_puts_.emplace((*itr).data_name_variant, (*itr).size);
   for (; itr != std::end(recent_ops); ++itr)
     current_deletes_.emplace((*itr).data_name_variant, (*itr).size);
+}
+
+DiskBasedStorage::FileGroup::iterator DiskBasedStorage::GetFileIdsLowerBound(
+    const FileDetails::ElementNameSubstr& element_name_substr) {
+  return std::lower_bound(std::begin(file_ids_),
+                          std::end(file_ids_),
+                          element_name_substr,
+                          [](const FileGroup::value_type& file_id,
+                             const FileDetails::ElementNameSubstr& min_name) {
+                            return file_id.second.max_element < min_name;
+                          });
 }
 
 DiskBasedStorage::FileGroup::iterator DiskBasedStorage::GetReorganiseStartPoint() {
@@ -321,48 +329,23 @@ DiskBasedStorage::FileGroup::iterator DiskBasedStorage::GetReorganiseStartPoint(
   GetIdentityVisitor get_identity;
   FileDetails::ElementNameSubstr min_element_name(
       min_element.apply_visitor(get_identity).string().substr(0, FileDetails::kSubstrSize));
-  auto lower(std::lower_bound(std::begin(file_ids_),
-                              std::end(file_ids_),
-                              min_element_name,
-                              [](const FileGroup::value_type& file_id,
-                                 const FileDetails::ElementNameSubstr& min_name) {
-                                return file_id.second.max_element < min_name;
-                              }));
+  auto lower(GetFileIdsLowerBound(min_element_name));
   return (lower == std::end(file_ids_) && !file_ids_.empty()) ? --lower : lower;
 }
 
-
-
-
-
-void DiskBasedStorage::DeleteEntry(int index, protobuf::DiskStoredFile& file) const {
-  protobuf::DiskStoredFile temp;
-  for (int i(0); i != file.element_size(); ++i) {
-    if (i != index) {
-      temp.add_element()->CopyFrom(file.element(i));
-      break;
-    }
-  }
-  file = temp;
-}
-
-void DiskBasedStorage::SaveChangedFile(const FileIdentity& file_id,
-                                       const protobuf::DiskStoredFile& file) {
-  auto itr(file_ids_.find(file_id.first));
-  if (itr == std::end(file_ids_)) {
-    LOG(kError) << "Failed to find file " << file_id.first << " in index.";
-    ThrowError(CommonErrors::invalid_parameter);
-  }
-
+void DiskBasedStorage::SaveFile(FileGroup::iterator file_ids_itr) {
+  auto file(MoveCurrentPutsToFile());
   NonEmptyString new_content(file.SerializeAsString());
-  auto new_hash(crypto::Hash<crypto::SHA512>(new_content));
-  fs::path new_path(kRoot_ / GetFileName(std::make_pair(file_id.first, new_hash)));
+  FileDetails new_details(file, crypto::Hash<crypto::SHA1>(new_content));
+
+  bool is_replacement(file_ids_itr != std::end(file_ids_));
+  int index(is_replacement ? (*file_ids_.rbegin()).first + 1 : (*file_ids_itr).first);
+  fs::path new_path(kRoot_ / GetFileName(std::make_pair(index, new_details)));
   if (!WriteFile(new_path, new_content.string()))
     ThrowError(CommonErrors::filesystem_io_error);
 
-  // If this is not the first entry in a new file, the file_id hash will be initialised.
-  if (file_id.second.IsInitialised()) {
-    fs::path old_path(kRoot_ / GetFileName(file_id));
+  if (is_replacement) {
+    fs::path old_path(kRoot_ / GetFileName(*file_ids_itr));
     boost::system::error_code ec;
     if (!boost::filesystem::remove(old_path, ec)) {
       LOG(kError) << "Failed to remove " << old_path << ":  " << ec.message();
@@ -370,110 +353,111 @@ void DiskBasedStorage::SaveChangedFile(const FileIdentity& file_id,
       boost::filesystem::remove(new_path, ec);
       ThrowError(CommonErrors::filesystem_io_error);
     }
-  }
-
-  (*itr).second = new_hash;
-}
-
-void DiskBasedStorage::ReadIntoMemory(FileIdentities::iterator &read_itr,
-                                      std::vector<protobuf::DiskStoredElement>& elements) {
-  while (read_itr != std::end(file_ids_) &&
-         static_cast<int>(elements.size()) < 2 * detail::Parameters::max_file_element_count) {
-    auto read_file(ParseFile(*read_itr));
-    for (int i(0); i != read_file.element_size(); ++i)
-      elements.push_back(read_file.element(i));
-    ++read_itr;
+    (*file_ids_itr).second = new_details;
+  } else {
+    file_ids_.insert(std::end(file_ids_), std::make_pair(index, new_details));
   }
 }
 
-void DiskBasedStorage::WriteToDisk(FileIdentities::iterator &write_itr,
-                                   std::vector<protobuf::DiskStoredElement>& elements) {
-  detail::SortElements(elements);
-  protobuf::DiskStoredFile write_file;
-  size_t count(std::min(elements.size(),
-                        static_cast<size_t>(detail::Parameters::max_file_element_count)));
-  for (size_t i(0); i != count; ++i)
-    write_file.add_element()->CopyFrom(elements[i]);
-
-  elements.erase(std::begin(elements), std::begin(elements) + count);
-  SaveChangedFile(*write_itr, write_file);
-  ++write_itr;
-}
-
-void DiskBasedStorage::PruneFilesToEnd(const FileIdentities::iterator& first_itr) {
-  FileIdentities::iterator itr(first_itr);
-  while (itr != std::end(file_ids_)) {
-    fs::path file_path(kRoot_ / GetFileName(*itr));
-    boost::system::error_code ec;
-    if (!fs::remove(file_path, ec))
-      LOG(kWarning) << "Failed to remove " << file_path << " during prune: " << ec.message();
-    ++itr;
+protobuf::DiskStoredFile DiskBasedStorage::MoveCurrentPutsToFile() {
+  protobuf::DiskStoredFile file;
+  GetTagValueAndIdentityVisitor type_and_name_visitor;
+  int count(0);
+  auto current_puts_itr(std::begin(current_puts_));
+  while (count < detail::Parameters::max_file_element_count &&
+         current_puts_itr != std::end(current_puts_)) {
+    auto proto_element(file.add_element());
+    auto type_and_name(boost::apply_visitor(type_and_name_visitor, (*current_puts_itr).first));
+    proto_element->set_type(static_cast<int32_t>(type_and_name.first));
+    proto_element->set_name(type_and_name.second.string());
+    proto_element->set_value((*current_puts_itr).second);
+    current_puts_itr = current_puts_.erase(current_puts_itr);
   }
-  file_ids_.erase(first_itr, std::end(file_ids_));
+  return file;
 }
 
-std::future<uint32_t> DiskBasedStorage::GetFileCount() const {
-  auto promise(std::make_shared<std::promise<uint32_t>>());
-  active_.Send([promise, this] { promise->set_value(static_cast<uint32_t>(file_ids_.size())); });
-  return promise->get_future();
-}
+void DiskBasedStorage::ApplyAccountTransfer(const fs::path& transferred_files_dir) {
+  std::vector<fs::path> files_moved, files_to_be_removed;
+  on_scope_exit strong_guarantee([this, &files_moved] {
+      on_scope_exit::RevertValue(file_ids_)();
+      boost::system::error_code ec;
+      for (const auto& file : files_moved)
+        fs::remove(file, ec);
+  });
 
-std::future<std::vector<fs::path>> DiskBasedStorage::GetFileNames() const {
-  auto promise(std::make_shared<std::promise<std::vector<fs::path>>>());
-  active_.Send([promise, this] {
-                   std::vector<fs::path> file_names;
-                   file_names.reserve(file_ids_.size());
-                   for (auto& file_id : file_ids_)
-                     file_names.push_back(GetFileName(file_id));
-                   promise->set_value(file_names);
-               });
-  return promise->get_future();
-}
-
-std::future<NonEmptyString> DiskBasedStorage::GetFile(const fs::path& filename) const {
-  auto promise(std::make_shared<std::promise<NonEmptyString>>());
-  active_.Send([filename, promise, this] {
-                   NonEmptyString content(ReadFile(kRoot_ / filename));
-                   if (content.IsInitialised()) {
-                     promise->set_value(content);
-                   } else {
-                     promise->set_exception(
-                         std::make_exception_ptr(MakeError(CommonErrors::no_such_element)));
-                   }
-               });
-  return promise->get_future();
-}
-
-void DiskBasedStorage::PutFile(const fs::path& filename, const NonEmptyString& content) {
   try {
-    std::string extension(filename.extension().string().substr(1));
-    crypto::SHA512Hash hash(DecodeFromBase32(extension));
-    int index(std::stoi(filename.stem().string()));
-    FileIdentity file_id(std::make_pair(index, hash));
-    active_.Send([filename, content, file_id, this] { DoPutFile(filename, content, file_id); });
+    FileGroup transfer_ids(GetFilesToTransfer(transferred_files_dir));
+    for (const auto& transfer_id : transfer_ids)
+      TransferFile(transfer_id, transferred_files_dir, files_moved, files_to_be_removed);
+    VerifyFileGroup();
+    boost::system::error_code ec;
+    for (const auto& filepath : files_to_be_removed)
+      fs::remove(filepath, ec);
   }
   catch(const std::exception& e) {
-    LOG(kError) << "Received invalid file " << filename << ":  " << e.what();
+    LOG(kWarning) << "Failed to apply account transfer: " << e.what();
+  }
+
+  strong_guarantee.Release();
+}
+
+DiskBasedStorage::FileGroup DiskBasedStorage::GetFilesToTransfer(
+    const fs::path& transferred_files_dir) const {
+  FileGroup transfer_ids;
+  int current_max_index(file_ids_.empty() ? -1 : (*file_ids_.rbegin()).first);
+  fs::directory_iterator dir_itr(transferred_files_dir), end_itr;
+  std::vector<fs::path> exact_duplicates;
+  for (; dir_itr != end_itr; ++dir_itr) {
+    auto file_and_details(ParseFile(fs::path(*dir_itr), true));
+    auto file_id(std::make_pair(std::stoi((*dir_itr).path().stem().string()),
+                                file_and_details.second));
+    if (file_id.first <= current_max_index) {
+      auto itr(std::begin(file_ids_));
+      std::advance(itr, file_id.first);
+      assert((*itr).first == file_id.first);
+      if ((*itr).second.hash == file_id.second.hash) {
+        // Replacement file is identical to existing file - don't move the replacement over.
+        exact_duplicates.push_back(*dir_itr);
+        continue;
+      }
+    }
+    if (!transfer_ids.insert(file_id).second)
+      ThrowError(CommonErrors::parsing_error);
+  }
+
+  boost::system::error_code ec;
+  for (const auto& file : exact_duplicates)
+    fs::remove(file, ec);
+
+  return transfer_ids;
+}
+
+void DiskBasedStorage::TransferFile(const FileGroup::value_type& transfer_id,
+                                    const fs::path& transferred_files_dir,
+                                    std::vector<fs::path>& files_moved,
+                                    std::vector<fs::path>& files_to_be_removed) {
+  auto filename(GetFileName(transfer_id));
+  fs::rename(transferred_files_dir / filename, kRoot_ / filename);
+  files_moved.push_back(kRoot_ / filename);
+  auto existing_itr(file_ids_.find(transfer_id.first));
+  if (existing_itr == std::end(file_ids_)) {
+    file_ids_.insert(existing_itr, transfer_id);
+  } else {
+    files_to_be_removed.push_back(kRoot_ / GetFileName(*existing_itr));
+    (*existing_itr).second = transfer_id.second;
   }
 }
 
-void DiskBasedStorage::DoPutFile(const fs::path& filename,
-                                 const NonEmptyString& content,
-                                 const FileIdentity& file_id) {
-  protobuf::DiskStoredFile file(ParseAndVerifyMessagedFile(filename, content, file_id));
+std::vector<fs::path> DiskBasedStorage::GetFilenames() const {
+  std::vector<fs::path> filenames;
+  filenames.reserve(file_ids_.size());
+  for (const auto& file_id : file_ids_)
+    filenames.emplace_back(GetFileName(file_id));
+  return filenames;
+}
 
-  auto itr(file_ids_.find(file_id.first));
-  if (itr == std::end(file_ids_)) {
-    // This is a new file.
-    if (!WriteFile(kRoot_ / filename, content.string()))
-      ThrowError(CommonErrors::filesystem_io_error);
-    auto result(file_ids_.insert(file_id));
-    assert(result.second);
-    itr = result.first;
-  } else {
-    // This is a replacement file.
-    SaveChangedFile(*itr, file);
-  }
+NonEmptyString DiskBasedStorage::GetFile(const fs::path& filename) const {
+  return ReadFile(kRoot_ / filename);
 }
 
 }  // namespace vault
