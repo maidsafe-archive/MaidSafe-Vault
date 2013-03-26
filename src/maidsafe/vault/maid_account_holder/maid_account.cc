@@ -58,43 +58,12 @@ PmidTotals& PmidTotals::operator=(PmidTotals&& other) {
 
 
 
-MaidAccount::PutDataDetails::PutDataDetails() : data_name_variant(), cost(0) {}
-
-
-MaidAccount::PutDataDetails::PutDataDetails(const DataNameVariant& data_name_variant_in,
-                                            int32_t cost_in)
-    : data_name_variant(data_name_variant_in),
-      cost(cost_in) {}
-
-MaidAccount::PutDataDetails::PutDataDetails(const PutDataDetails& other)
-  : data_name_variant(other.data_name_variant),
-    cost(other.cost) {}
-
-MaidAccount::PutDataDetails& MaidAccount::PutDataDetails::operator=(const PutDataDetails& other) {
-  data_name_variant = other.data_name_variant;
-  cost = other.cost;
-  return *this;
-}
-
-MaidAccount::PutDataDetails::PutDataDetails(PutDataDetails&& other)
-  : data_name_variant(std::move(other.data_name_variant)),
-    cost(std::move(other.cost)) {}
-
-MaidAccount::PutDataDetails& MaidAccount::PutDataDetails::operator=(PutDataDetails&& other) {
-  data_name_variant = std::move(other.data_name_variant);
-  cost = std::move(other.cost);
-  return *this;
-}
-
-
-
 MaidAccount::MaidAccount(const MaidName& maid_name, const fs::path& root)
     : kMaidName_(maid_name),
-      type_and_name_visitor_(),
       pmid_totals_(),
-      recent_put_data_(),
       total_claimed_available_size_by_pmids_(0),
       total_put_data_(0),
+      recent_ops_(),
       archive_(root / EncodeToBase32(kMaidName_.data)) {}
 
 MaidAccount::MaidAccount(const serialised_type& serialised_maid_account, const fs::path& root)
@@ -103,11 +72,10 @@ MaidAccount::MaidAccount(const serialised_type& serialised_maid_account, const f
                      proto_maid_account.ParseFromString(serialised_maid_account->string());
                      return Identity(proto_maid_account.maid_name());
                  }()),
-      type_and_name_visitor_(),
       pmid_totals_(),
-      recent_put_data_(),
       total_claimed_available_size_by_pmids_(0),
       total_put_data_(0),
+      recent_ops_(),
       archive_(root / EncodeToBase32(kMaidName_.data)) {
   protobuf::MaidAccount proto_maid_account;
   if (!proto_maid_account.ParseFromString(serialised_maid_account->string())) {
@@ -122,17 +90,28 @@ MaidAccount::MaidAccount(const serialised_type& serialised_maid_account, const f
         PmidRecord(proto_maid_account.pmid_totals(i).pmid_record()));
   }
 
-  for (int i(0); i != proto_maid_account.recent_put_data_size(); ++i) {
-    auto& recent_put_data(proto_maid_account.recent_put_data(i));
-    recent_put_data_.emplace_back(
-        GetDataNameVariant(static_cast<DataTagValue>(recent_put_data.type()),
-                           Identity(recent_put_data.name())),
-        recent_put_data.cost());
-  }
-
   total_claimed_available_size_by_pmids_ =
       proto_maid_account.total_claimed_available_size_by_pmids();
   total_put_data_ = proto_maid_account.total_put_data();
+}
+
+MaidAccount::MaidAccount(MaidAccount&& other)
+    : kMaidName_(std::move(other.kMaidName_)),
+      pmid_totals_(std::move(other.pmid_totals_)),
+      total_claimed_available_size_by_pmids_(
+          std::move(other.total_claimed_available_size_by_pmids_)),
+      total_put_data_(std::move(other.total_put_data_)),
+      recent_ops_(std::move(other.recent_ops_)),
+      archive_(std::move(other.archive_)) {}
+
+MaidAccount& MaidAccount::operator=(MaidAccount&& other) {
+  const_cast<name_type&>(kMaidName_) = std::move(other.kMaidName_);
+  pmid_totals_ = std::move(other.pmid_totals_);
+  total_claimed_available_size_by_pmids_ = std::move(other.total_claimed_available_size_by_pmids_);
+  total_put_data_ = std::move(other.total_put_data_);
+  recent_ops_ = std::move(other.recent_ops_);
+  archive_ = std::move(other.archive_);
+  return *this;
 }
 
 MaidAccount::serialised_type MaidAccount::Serialise() const {
@@ -146,15 +125,6 @@ MaidAccount::serialised_type MaidAccount::Serialise() const {
     *(proto_pmid_totals->mutable_pmid_record()) = pmid_total.pmid_record.ToProtobuf();
   }
 
-  for (auto& recent_put_data_item : recent_put_data_) {
-    auto proto_recent_put_data(proto_maid_account.add_recent_put_data());
-    auto type_and_name(boost::apply_visitor(type_and_name_visitor_,
-                                            recent_put_data_item.data_name_variant));
-    proto_recent_put_data->set_type(static_cast<int32_t>(type_and_name.first));
-    proto_recent_put_data->set_name(type_and_name.second.string());
-    proto_recent_put_data->set_cost(recent_put_data_item.cost);
-  }
-
   proto_maid_account.set_total_claimed_available_size_by_pmids(
       total_claimed_available_size_by_pmids_);
   proto_maid_account.set_total_put_data(total_put_data_);
@@ -166,39 +136,9 @@ MaidAccount::serialised_type MaidAccount::Serialise() const {
   return serialised_type(NonEmptyString(proto_maid_account.SerializeAsString()));
 }
 
-MaidAccount::serialised_info_type  MaidAccount::SerialiseAccountSyncInfo() const {
-  protobuf::MaidAccount proto_maid_account;
-  proto_maid_account.set_maid_name(kMaidName_->string());
-  for (auto& pmid_total : pmid_totals_) {
-    auto proto_pmid_totals(proto_maid_account.add_pmid_totals());
-    proto_pmid_totals->set_serialised_pmid_registration(
-        pmid_total.serialised_pmid_registration->string());
-    *(proto_pmid_totals->mutable_pmid_record()) = pmid_total.pmid_record.ToProtobuf();
-  }
-
-  for (auto& recent_put_data_item : recent_put_data_) {
-    auto proto_recent_put_data(proto_maid_account.add_recent_put_data());
-    auto type_and_name(boost::apply_visitor(type_and_name_visitor_,
-                                            recent_put_data_item.data_name_variant));
-    proto_recent_put_data->set_type(static_cast<int32_t>(type_and_name.first));
-    proto_recent_put_data->set_name(type_and_name.second.string());
-    proto_recent_put_data->set_cost(recent_put_data_item.cost);
-  }
-
-  proto_maid_account.set_total_claimed_available_size_by_pmids(
-      total_claimed_available_size_by_pmids_);
-  proto_maid_account.set_total_put_data(total_put_data_);
-
-  auto archive_file_names(GetArchiveFileNames());
-  for (auto& archive_file_name : archive_file_names)
-    proto_maid_account.add_archive_file_names(archive_file_name.string());
-
-  return serialised_info_type(NonEmptyString(proto_maid_account.SerializeAsString()));
-}
-
 std::pair<MaidAccount::AccountInfo,
           std::vector<boost::filesystem::path>> MaidAccount::ParseAccountSyncInfo(
-    const serialised_info_type& /*serialised_info*/) const {
+    const serialised_type& /*serialised_info*/) const {
   return std::make_pair(MaidAccount::AccountInfo(), std::vector<boost::filesystem::path>());
 }
 
@@ -234,18 +174,16 @@ void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
   *itr = pmid_totals;
 }
 
+void MaidAccount::ApplyAccountTransfer(const fs::path& transferred_files_dir) {
+  archive_.ApplyAccountTransfer(transferred_files_dir);
+}
+
 std::vector<fs::path> MaidAccount::GetArchiveFileNames() const {
-  auto future(archive_.GetFileNames());
-  return future.get();
+  return archive_.GetFilenames();
 }
 
 NonEmptyString MaidAccount::GetArchiveFile(const fs::path& filename) const {
-  auto future(archive_.GetFile(filename));
-  return future.get();
-}
-
-void MaidAccount::PutArchiveFile(const fs::path& filename, const NonEmptyString& content) {
-  archive_.PutFile(filename, content);
+  return archive_.GetFile(filename);
 }
 
 }  // namespace vault

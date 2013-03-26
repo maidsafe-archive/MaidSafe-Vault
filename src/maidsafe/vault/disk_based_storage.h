@@ -54,6 +54,8 @@ class DiskBasedStorage {
   };
 
   explicit DiskBasedStorage(const boost::filesystem::path& root);
+  DiskBasedStorage(DiskBasedStorage&&);
+  DiskBasedStorage& operator=(DiskBasedStorage&&);
 
   template<typename Data>
   size_t GetElementCount(const typename Data::name_type& name) const;
@@ -69,8 +71,6 @@ class DiskBasedStorage {
  private:
   DiskBasedStorage(const DiskBasedStorage&);
   DiskBasedStorage& operator=(const DiskBasedStorage&);
-  DiskBasedStorage(DiskBasedStorage&&);
-  DiskBasedStorage& operator=(DiskBasedStorage&&);
 
   struct FileDetails {
     enum { kSubstrSize = 5 };

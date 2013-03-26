@@ -194,6 +194,20 @@ DiskBasedStorage::DiskBasedStorage(const fs::path& root)
   VerifyFileGroup();
 }
 
+DiskBasedStorage::DiskBasedStorage(DiskBasedStorage&& other)
+    : kRoot_(std::move(other.kRoot_)),
+      current_puts_(std::move(other.current_puts_)),
+      current_deletes_(std::move(other.current_deletes_)),
+      file_ids_(std::move(other.file_ids_)) {}
+
+DiskBasedStorage& DiskBasedStorage::operator=(DiskBasedStorage&& other) {
+  const_cast<fs::path&>(kRoot_) = std::move(other.kRoot_);
+  current_puts_ = std::move(other.current_puts_);
+  current_deletes_ = std::move(other.current_deletes_);
+  file_ids_ = std::move(other.file_ids_);
+  return *this;
+}
+
 fs::path DiskBasedStorage::GetFileName(const FileGroup::value_type& file_id) const {
   return fs::path(std::to_string(file_id.first) + "." + EncodeToBase32(file_id.second.hash));
 }

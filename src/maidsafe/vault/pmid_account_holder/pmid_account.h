@@ -65,7 +65,6 @@ class PmidAccount {
   //      2,  change status
   void SetDataHolderGoingDown();
   void SetDataHolderDown() { data_holder_status_ = DataHolderStatus::kDown; }
-  int32_t GetArchiveFileCount() const { return archive_.GetFileCount().get(); }
   std::vector<DataElement> ParseArchiveFile(int32_t index) const;
   // Used when Data Holder has gone down or goes to the proximal group of nodes,
   // but this vault is still responsible for the account.
