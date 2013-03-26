@@ -84,6 +84,8 @@ bool SelectedOperationsContainer::NoOptionsSelected() const {
 
 Commander::Commander(size_t pmids_count)
     : pmids_count_(pmids_count),
+      key_index_(pmids_count_ - 1),
+      chunk_set_count_(-1),
       all_keychains_(),
       keys_path_(),
       peer_endpoints_(),
@@ -150,7 +152,13 @@ po::options_description Commander::AddConfigurationOptions(const std::string& ti
       ("chunk_path",
        po::value<std::string>()->default_value(
            fs::path(fs::temp_directory_path(error_code) / "keys_chunks").string()),
-       "Path to chunk directory");
+       "Path to chunk directory")
+      ("key_index,k",
+       po::value<size_t>(&key_index_)->default_value(key_index_),
+       "The index of key to be used as client during chunk store test")
+      ("chunk_set_count",
+       po::value<int>(&chunk_set_count_)->default_value(chunk_set_count_),
+       "Num of rounds for chunk store test, default is infinite");
   return config_file_options;
 }
 
@@ -181,7 +189,7 @@ void Commander::ChooseOperations() {
   if (selected_ops_.do_verify)
     HandleVerify();
   if (selected_ops_.do_test)
-    HandleDoTest(2);
+    HandleDoTest(key_index_);
 }
 
 void Commander::CreateKeys() {
@@ -264,7 +272,7 @@ void Commander::HandleVerify() {
 void Commander::HandleDoTest(size_t client_index) {
   assert(client_index > 1);
   DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_);
-  chunk_storer.Test();
+  chunk_storer.Test(chunk_set_count_);
 }
 
 void Commander::HandleDeleteKeys() {

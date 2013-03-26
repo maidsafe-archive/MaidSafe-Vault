@@ -235,14 +235,16 @@ void DataChunkStorer::StopTest() { run_ = false; }
 void DataChunkStorer::Test(int32_t quantity) {
   int32_t rounds(0);
   size_t num_chunks(0), num_store(0), num_get(0);
-  while (!Done(quantity, rounds))
+  while (!Done(quantity, rounds)) {
     OneChunkRun(num_chunks, num_store, num_get);
+    ++rounds;
+  }
   if (num_chunks != num_get)
     throw ToolsException("Failed to store and verify all data chunks.");
 }
 
 bool DataChunkStorer::Done(int32_t quantity, int32_t rounds) const {
-  return quantity < 1 ? run_.load() : rounds < quantity;
+  return quantity < 1 ? run_.load() : rounds >= quantity;
 }
 
 void DataChunkStorer::OneChunkRun(size_t& num_chunks, size_t& num_store, size_t& num_get) {

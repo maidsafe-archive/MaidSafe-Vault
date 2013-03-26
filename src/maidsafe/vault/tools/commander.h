@@ -54,11 +54,13 @@ class SelectedOperationsContainer {
 
 class Commander {
  public:
-  Commander(size_t pmids_count);
+  explicit Commander(size_t pmids_count);
   void AnalyseCommandLineOptions(int argc, char* argv[]);
 
  private:
   size_t pmids_count_;
+  size_t key_index_;
+  int chunk_set_count_;
   KeyChainVector all_keychains_;
   boost::filesystem::path keys_path_;
   std::vector<boost::asio::ip::udp::endpoint> peer_endpoints_;
