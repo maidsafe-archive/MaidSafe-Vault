@@ -166,13 +166,13 @@ DiskBasedStorage::FileDetails& DiskBasedStorage::FileDetails::operator=(FileDeta
 
 
 DiskBasedStorage::DiskBasedStorage(const fs::path& root)
-    : kRoot_(root),
+    : root_(root),
       current_puts_(),
       current_deletes_(),
       file_ids_() {
-  detail::InitialiseDirectory(kRoot_);
+  detail::InitialiseDirectory(root_);
 
-  fs::directory_iterator root_itr(kRoot_), end_itr;
+  fs::directory_iterator root_itr(root_), end_itr;
   for (; root_itr != end_itr; ++root_itr) {
     try {
       auto file_and_details(ParseFile(fs::path(*root_itr), true));
@@ -195,13 +195,13 @@ DiskBasedStorage::DiskBasedStorage(const fs::path& root)
 }
 
 DiskBasedStorage::DiskBasedStorage(DiskBasedStorage&& other)
-    : kRoot_(std::move(other.kRoot_)),
+    : root_(std::move(other.root_)),
       current_puts_(std::move(other.current_puts_)),
       current_deletes_(std::move(other.current_deletes_)),
       file_ids_(std::move(other.file_ids_)) {}
 
 DiskBasedStorage& DiskBasedStorage::operator=(DiskBasedStorage&& other) {
-  const_cast<fs::path&>(kRoot_) = std::move(other.kRoot_);
+  root_ = std::move(other.root_);
   current_puts_ = std::move(other.current_puts_);
   current_deletes_ = std::move(other.current_deletes_);
   file_ids_ = std::move(other.file_ids_);
@@ -215,7 +215,7 @@ fs::path DiskBasedStorage::GetFileName(const FileGroup::value_type& file_id) con
 std::pair<protobuf::DiskStoredFile, DiskBasedStorage::FileDetails> DiskBasedStorage::ParseFile(
     const FileGroup::value_type& file_id,
     bool verify) const {
-  fs::path file_path(kRoot_ / GetFileName(file_id));
+  fs::path file_path(root_ / GetFileName(file_id));
   return ParseFile(file_path, verify);
 }
 
@@ -354,12 +354,12 @@ void DiskBasedStorage::SaveFile(FileGroup::iterator file_ids_itr) {
 
   bool is_replacement(file_ids_itr != std::end(file_ids_));
   int index(is_replacement ? (*file_ids_.rbegin()).first + 1 : (*file_ids_itr).first);
-  fs::path new_path(kRoot_ / GetFileName(std::make_pair(index, new_details)));
+  fs::path new_path(root_ / GetFileName(std::make_pair(index, new_details)));
   if (!WriteFile(new_path, new_content.string()))
     ThrowError(CommonErrors::filesystem_io_error);
 
   if (is_replacement) {
-    fs::path old_path(kRoot_ / GetFileName(*file_ids_itr));
+    fs::path old_path(root_ / GetFileName(*file_ids_itr));
     boost::system::error_code ec;
     if (!boost::filesystem::remove(old_path, ec)) {
       LOG(kError) << "Failed to remove " << old_path << ":  " << ec.message();
@@ -451,13 +451,13 @@ void DiskBasedStorage::TransferFile(const FileGroup::value_type& transfer_id,
                                     std::vector<fs::path>& files_moved,
                                     std::vector<fs::path>& files_to_be_removed) {
   auto filename(GetFileName(transfer_id));
-  fs::rename(transferred_files_dir / filename, kRoot_ / filename);
-  files_moved.push_back(kRoot_ / filename);
+  fs::rename(transferred_files_dir / filename, root_ / filename);
+  files_moved.push_back(root_ / filename);
   auto existing_itr(file_ids_.find(transfer_id.first));
   if (existing_itr == std::end(file_ids_)) {
     file_ids_.insert(existing_itr, transfer_id);
   } else {
-    files_to_be_removed.push_back(kRoot_ / GetFileName(*existing_itr));
+    files_to_be_removed.push_back(root_ / GetFileName(*existing_itr));
     (*existing_itr).second = transfer_id.second;
   }
 }
@@ -471,7 +471,7 @@ std::vector<fs::path> DiskBasedStorage::GetFilenames() const {
 }
 
 NonEmptyString DiskBasedStorage::GetFile(const fs::path& filename) const {
-  return ReadFile(kRoot_ / filename);
+  return ReadFile(root_ / filename);
 }
 
 }  // namespace vault

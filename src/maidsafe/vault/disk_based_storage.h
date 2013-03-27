@@ -60,6 +60,7 @@ class DiskBasedStorage {
   template<typename Data>
   size_t GetElementCount(const typename Data::name_type& name) const;
 
+
   // Synchronisation helpers
   void ApplyRecentOperations(const std::vector<RecentOperation>& recent_ops);
   void ApplyAccountTransfer(const boost::filesystem::path& transferred_files_dir);
@@ -110,7 +111,7 @@ class DiskBasedStorage {
                     std::vector<boost::filesystem::path>& files_moved,
                     std::vector<boost::filesystem::path>& files_to_be_removed);
 
-  const boost::filesystem::path kRoot_;
+  boost::filesystem::path root_;
   Elements current_puts_, current_deletes_;
   FileGroup file_ids_;
 };

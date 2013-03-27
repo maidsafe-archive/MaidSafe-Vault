@@ -59,15 +59,15 @@ PmidTotals& PmidTotals::operator=(PmidTotals&& other) {
 
 
 MaidAccount::MaidAccount(const MaidName& maid_name, const fs::path& root)
-    : kMaidName_(maid_name),
+    : maid_name_(maid_name),
       pmid_totals_(),
       total_claimed_available_size_by_pmids_(0),
       total_put_data_(0),
       recent_ops_(),
-      archive_(root / EncodeToBase32(kMaidName_.data)) {}
+      archive_(root / EncodeToBase32(maid_name_.data)) {}
 
 MaidAccount::MaidAccount(const serialised_type& serialised_maid_account, const fs::path& root)
-    : kMaidName_([&serialised_maid_account]()->Identity {
+    : maid_name_([&serialised_maid_account]()->Identity {
                      protobuf::MaidAccount proto_maid_account;
                      proto_maid_account.ParseFromString(serialised_maid_account->string());
                      return Identity(proto_maid_account.maid_name());
@@ -76,7 +76,7 @@ MaidAccount::MaidAccount(const serialised_type& serialised_maid_account, const f
       total_claimed_available_size_by_pmids_(0),
       total_put_data_(0),
       recent_ops_(),
-      archive_(root / EncodeToBase32(kMaidName_.data)) {
+      archive_(root / EncodeToBase32(maid_name_.data)) {
   protobuf::MaidAccount proto_maid_account;
   if (!proto_maid_account.ParseFromString(serialised_maid_account->string())) {
     LOG(kError) << "Failed to parse maid_account.";
@@ -96,7 +96,7 @@ MaidAccount::MaidAccount(const serialised_type& serialised_maid_account, const f
 }
 
 MaidAccount::MaidAccount(MaidAccount&& other)
-    : kMaidName_(std::move(other.kMaidName_)),
+    : maid_name_(std::move(other.maid_name_)),
       pmid_totals_(std::move(other.pmid_totals_)),
       total_claimed_available_size_by_pmids_(
           std::move(other.total_claimed_available_size_by_pmids_)),
@@ -105,7 +105,7 @@ MaidAccount::MaidAccount(MaidAccount&& other)
       archive_(std::move(other.archive_)) {}
 
 MaidAccount& MaidAccount::operator=(MaidAccount&& other) {
-  const_cast<name_type&>(kMaidName_) = std::move(other.kMaidName_);
+  maid_name_ = std::move(other.maid_name_);
   pmid_totals_ = std::move(other.pmid_totals_);
   total_claimed_available_size_by_pmids_ = std::move(other.total_claimed_available_size_by_pmids_);
   total_put_data_ = std::move(other.total_put_data_);
@@ -116,7 +116,7 @@ MaidAccount& MaidAccount::operator=(MaidAccount&& other) {
 
 MaidAccount::serialised_type MaidAccount::Serialise() const {
   protobuf::MaidAccount proto_maid_account;
-  proto_maid_account.set_maid_name(kMaidName_->string());
+  proto_maid_account.set_maid_name(maid_name_->string());
 
   for (auto& pmid_total : pmid_totals_) {
     auto proto_pmid_totals(proto_maid_account.add_pmid_totals());

@@ -9,10 +9,10 @@ message PmidTotals {
 
 message MaidAccount {
   required bytes maid_name = 1;
-  repeated PmidTotals pmid_totals = 2;
-  required int64 total_claimed_available_size_by_pmids = 3;
-  required int64 total_put_data = 4;
-  repeated bytes archive_file_names = 5;
+  required uint64 state_id_number = 2;
+  repeated PmidTotals pmid_totals = 3;
+  required int64 total_claimed_available_size_by_pmids = 4;
+  required int64 total_put_data = 5;
 }
 
 // Used as data field in MM's Reply to Put request.
