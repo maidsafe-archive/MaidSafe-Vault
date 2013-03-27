@@ -15,6 +15,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <vector>
+#include <string>
 
 #include "boost/asio/ip/udp.hpp"
 #include "boost/filesystem/path.hpp"
@@ -104,10 +105,9 @@ class KeyStorer : public ClientTester {
   void StoreKey(const Data& key, std::promise<bool>& promise) {
     nfs::Put<Data>(*client_nfs_,
                    key,
-                   key_chain_.pmid.name(),
+                   passport::PublicPmid::name_type(),
                    routing::Parameters::node_group_size,
                    callback(std::ref(promise)));
-
   }
 
   std::function<void(nfs::Reply)> callback(std::promise<bool>& promise);
@@ -133,14 +133,17 @@ class DataChunkStorer : public ClientTester {
 
   void StopTest();
   void Test(int32_t quantity = -1);
+  void TestWithDelete(int32_t quantity = -1);
 
  private:
   std::atomic_bool run_;
 
   bool Done(int32_t quantity, int32_t rounds) const;
   void OneChunkRun(size_t& num_chunks, size_t& num_store, size_t& num_get);
+  void OneChunkRunWithDelete(size_t& num_chunks, size_t& num_store, size_t& num_get);
   bool StoreOneChunk(const ImmutableData& chunk_data);
   bool GetOneChunk(const ImmutableData& chunk_data);
+  bool DeleteOneChunk(const ImmutableData& chunk_data);
 };
 
 }  // namespace tools

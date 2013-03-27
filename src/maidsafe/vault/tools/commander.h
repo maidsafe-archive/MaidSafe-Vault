@@ -41,9 +41,11 @@ class SelectedOperationsContainer {
         do_store(false),
         do_verify(false),
         do_test(false),
+        do_test_with_delete(false),
         do_delete(false),
         do_print(false) {}
-  bool do_create, do_load, do_bootstrap, do_store, do_verify, do_test, do_delete, do_print;
+  bool do_create, do_load, do_bootstrap, do_store, do_verify, do_test, do_test_with_delete,
+       do_delete, do_print;
   bool InvalidOptions(const boost::program_options::variables_map& variables_map,
                       const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
 
@@ -79,6 +81,7 @@ class Commander {
   void HandleStore();
   void HandleVerify();
   void HandleDoTest(size_t client_index);
+  void HandleDoTestWithDelete(size_t client_index);
   void HandleDeleteKeys();
 
   void CreateKeys();

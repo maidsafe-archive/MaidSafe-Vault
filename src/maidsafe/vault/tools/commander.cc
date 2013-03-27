@@ -43,6 +43,7 @@ bool SelectedOperationsContainer::InvalidOptions(
   do_store = variables_map.count("store") != 0;
   do_verify = variables_map.count("verify") != 0;
   do_test = variables_map.count("test") != 0;
+  do_test_with_delete = variables_map.count("test_with_delete") != 0;
   do_print = variables_map.count("print") != 0;
 
   return NoOptionsSelected() || ConflictedOptions(peer_endpoints);
@@ -62,9 +63,9 @@ bool SelectedOperationsContainer::ConflictedOptions(
     return true;
   if (!(do_create || do_load) && do_print)
     return true;
-  if (do_bootstrap && (do_store || do_verify || do_test))
+  if (do_bootstrap && (do_store || do_verify || do_test || do_test_with_delete))
     return true;
-  if (do_bootstrap && (do_store || do_verify || do_test))
+  if (do_bootstrap && (do_store || do_verify || do_test || do_test_with_delete))
     return true;
   if (peer_endpoints.empty() && !do_create && !do_load && !do_delete)
     return true;
@@ -79,6 +80,7 @@ bool SelectedOperationsContainer::NoOptionsSelected() const {
            do_verify ||
            do_test ||
            do_delete ||
+           do_test_with_delete ||
            do_print);
 }
 
@@ -131,7 +133,8 @@ po::options_description Commander::AddGenericOptions(const std::string& title) {
       ("bootstrap,b", "Run boostrap nodes only, using first 2 keys.")
       ("store,s", "Store keys on network.")
       ("verify,v", "Verify keys are available on network.")
-      ("test,t", "Run simple test that stores and retrieves chunks.");
+      ("test,t", "Run simple test that stores and retrieves chunks.")
+      ("test_with_delete,w", "Run simple test that stores and deletes chunks.");
   return generic_options;
 }
 
@@ -190,6 +193,8 @@ void Commander::ChooseOperations() {
     HandleVerify();
   if (selected_ops_.do_test)
     HandleDoTest(key_index_);
+  if (selected_ops_.do_test_with_delete)
+    HandleDoTestWithDelete(key_index_);
 }
 
 void Commander::CreateKeys() {
@@ -273,6 +278,12 @@ void Commander::HandleDoTest(size_t client_index) {
   assert(client_index > 1);
   DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_);
   chunk_storer.Test(chunk_set_count_);
+}
+
+void Commander::HandleDoTestWithDelete(size_t client_index) {
+  assert(client_index > 1);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_);
+  chunk_storer.TestWithDelete(chunk_set_count_);
 }
 
 void Commander::HandleDeleteKeys() {

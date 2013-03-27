@@ -243,6 +243,17 @@ void DataChunkStorer::Test(int32_t quantity) {
     throw ToolsException("Failed to store and verify all data chunks.");
 }
 
+void DataChunkStorer::TestWithDelete(int32_t quantity) {
+  int32_t rounds(0);
+  size_t num_chunks(0), num_store(0), num_get(0);
+  while (!Done(quantity, rounds)) {
+    OneChunkRunWithDelete(num_chunks, num_store, num_get);
+    ++rounds;
+  }
+  if (num_chunks != num_get)
+    throw ToolsException("Failed to store and verify all data chunks.");
+}
+
 bool DataChunkStorer::Done(int32_t quantity, int32_t rounds) const {
   return quantity < 1 ? run_.load() : rounds >= quantity;
 }
@@ -271,6 +282,46 @@ void DataChunkStorer::OneChunkRun(size_t& num_chunks, size_t& num_store, size_t&
   }
 }
 
+void DataChunkStorer::OneChunkRunWithDelete(size_t& num_chunks,
+                                            size_t& num_store,
+                                            size_t& num_get) {
+  ImmutableData::serialised_type content(NonEmptyString(RandomString(1 << 18)));  // 256 KB
+  ImmutableData::name_type name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
+  ImmutableData chunk_data(name, content);
+  ++num_chunks;
+
+  if (StoreOneChunk(chunk_data)) {
+    LOG(kInfo) << "Stored chunk " << HexSubstr(name.data);
+    ++num_store;
+  } else {
+    LOG(kError) << "Failed to store chunk " << HexSubstr(name.data);
+    return;
+  }
+
+  // The current client is anonymous, which incurs a 10 mins faded out for stored data
+  LOG(kInfo) << "Going to retrieve the stored chunk";
+  if (GetOneChunk(chunk_data)) {
+    LOG(kInfo) << "Got chunk " << HexSubstr(name.data);
+    ++num_get;
+  } else {
+    LOG(kError) << "Failed to get chunk " << HexSubstr(name.data);
+  }
+
+  LOG(kInfo) << "Going to delete the stored chunk";
+  if (DeleteOneChunk(chunk_data)) {
+    LOG(kInfo) << "Delete chunk " << HexSubstr(name.data);
+  } else {
+    LOG(kError) << "Failed to delete chunk " << HexSubstr(name.data);
+  }
+
+  LOG(kInfo) << "Going to retrieve the deleted chunk";
+  if (GetOneChunk(chunk_data)) {
+    LOG(kError) << "Chunk " << HexSubstr(name.data) << " still exists on network";
+  } else {
+    LOG(kInfo) << "chunk " << HexSubstr(name.data) << " get deleted, disappear on network";
+  }
+}
+
 bool DataChunkStorer::StoreOneChunk(const ImmutableData& chunk_data) {
   std::promise<bool> store_promise;
   std::future<bool> store_future(store_promise.get_future());
@@ -295,6 +346,22 @@ bool DataChunkStorer::GetOneChunk(const ImmutableData& chunk_data) {
 
   auto future = nfs::Get<ImmutableData>(*client_nfs_, chunk_data.name());
   return equal_immutables(chunk_data, future.get());
+}
+
+bool DataChunkStorer::DeleteOneChunk(const ImmutableData& chunk_data) {
+  std::promise<bool> delete_promise;
+  std::future<bool> delete_future(delete_promise.get_future());
+  std::function<void(nfs::Reply)> cb([&delete_promise] (nfs::Reply reply) {
+                                       try {
+                                         delete_promise.set_value(reply.IsSuccess());
+                                       }
+                                       catch(...) {
+                                         delete_promise.set_exception(std::current_exception());
+                                       }
+                                     });
+  LOG(kInfo) << "Deleting chunk " << HexSubstr(chunk_data.data()) << " ...";
+  nfs::Delete<ImmutableData>(*client_nfs_, chunk_data.name(), 4, cb);
+  return delete_future.get();
 }
 
 // bool ExtendedTest(const size_t& chunk_set_count,
