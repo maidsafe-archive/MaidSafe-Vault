@@ -60,7 +60,6 @@ class DiskBasedStorage {
   template<typename Data>
   size_t GetElementCount(const typename Data::name_type& name) const;
 
-
   // Synchronisation helpers
   void ApplyRecentOperations(const std::vector<RecentOperation>& recent_ops);
   void ApplyAccountTransfer(const boost::filesystem::path& transferred_files_dir);

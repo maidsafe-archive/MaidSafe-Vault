@@ -41,10 +41,9 @@ class Demultiplexer {
   void StoreInCache(const std::string& serialised_message);
 
  private:
-  void HandleDataMessagePersona(const nfs::DataMessage& data_message,
-                                const routing::ReplyFunctor& reply_functor);
-  void HandleGenericMessagePersona(const nfs::GenericMessage& generic_message,
-                                   const routing::ReplyFunctor& reply_functor);
+  template<typename MessageType>
+  void PersonaHandleMessage(const MessageType& message,
+                            const routing::ReplyFunctor& reply_functor);
   NonEmptyString HandleGetFromCache(const nfs::DataMessage& data_message);
   void HandleStoreInCache(const nfs::DataMessage& data_message);
 
@@ -53,6 +52,16 @@ class Demultiplexer {
   PmidAccountHolderService& pmid_account_holder_service_;
   DataHolderService& data_holder_;
 };
+
+template<>
+void Demultiplexer::PersonaHandleMessage<nfs::DataMessage>(
+    const nfs::DataMessage& message,
+    const routing::ReplyFunctor& reply_functor);
+
+template<>
+void Demultiplexer::PersonaHandleMessage<nfs::GenericMessage>(
+    const nfs::GenericMessage& message,
+    const routing::ReplyFunctor& reply_functor);
 
 }  // namespace vault
 

@@ -80,6 +80,17 @@ DataHolderService::DataHolderService(const passport::Pmid& pmid,
 //  nfs_.GetElementList();  // TODO (Fraser) BEFORE_RELEASE Implementation needed
 }
 
+void DataHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
+                                             const routing::ReplyFunctor& /*reply_functor*/) {
+  nfs::GenericMessage::Action action(generic_message.action());
+  switch (action) {
+    case nfs::GenericMessage::Action::kGetPmidHealth:
+      break;
+    default:
+      LOG(kError) << "Unhandled Post action type";
+  }
+}
+
 void DataHolderService::ValidatePutSender(const nfs::DataMessage& data_message) const {
   if (!SenderIsConnectedVault(data_message, routing_))
     ThrowError(VaultErrors::permission_denied);

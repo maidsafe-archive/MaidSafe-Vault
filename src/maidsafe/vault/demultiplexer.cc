@@ -121,11 +121,11 @@ void Demultiplexer::HandleMessage(const std::string& serialised_message,
     switch (message.inner_message_type()) {
       case nfs::MessageCategory::kData: {
         nfs::DataMessage data_message(message.serialised_inner_message<nfs::DataMessage>());
-        return HandleDataMessagePersona(data_message, reply_functor);
+        return PersonaHandleMessage(data_message, reply_functor);
       }
       case nfs::MessageCategory::kGeneric: {
         nfs::GenericMessage generic_msg(message.serialised_inner_message<nfs::GenericMessage>());
-        return HandleGenericMessagePersona(generic_msg, reply_functor);
+        return PersonaHandleMessage(generic_msg, reply_functor);
       }
       default:
         LOG(kError) << "Unhandled inner_message_type";
@@ -136,27 +136,43 @@ void Demultiplexer::HandleMessage(const std::string& serialised_message,
   }
 }
 
-void Demultiplexer::HandleDataMessagePersona(const nfs::DataMessage& data_message,
-                                             const routing::ReplyFunctor& reply_functor) {
-  switch (data_message.destination_persona()) {
+template<>
+void Demultiplexer::PersonaHandleMessage<nfs::DataMessage>(
+    const nfs::DataMessage& message,
+    const routing::ReplyFunctor& reply_functor) {
+  switch (message.destination_persona()) {
     case nfs::Persona::kMaidAccountHolder:
-      return HandleDataType<MaidAccountHolderService>(data_message, reply_functor,
+      return HandleDataType<MaidAccountHolderService>(message, reply_functor,
                                                       maid_account_holder_service_);
     case nfs::Persona::kMetadataManager:
-      return HandleDataType<MetadataManagerService>(data_message, reply_functor,
+      return HandleDataType<MetadataManagerService>(message, reply_functor,
                                                     metadata_manager_service_);
     case nfs::Persona::kPmidAccountHolder:
-      return HandleDataType<PmidAccountHolderService>(data_message, reply_functor,
+      return HandleDataType<PmidAccountHolderService>(message, reply_functor,
                                                       pmid_account_holder_service_);
     case nfs::Persona::kDataHolder:
-      return HandleDataType<DataHolderService>(data_message, reply_functor, data_holder_);
+      return HandleDataType<DataHolderService>(message, reply_functor, data_holder_);
     default:
       LOG(kError) << "Unhandled Persona";
   }
 }
 
-void Demultiplexer::HandleGenericMessagePersona(const nfs::GenericMessage& /*generic_message*/,
-                                                const routing::ReplyFunctor& /*reply_functor*/) {
+template<>
+void Demultiplexer::PersonaHandleMessage<nfs::GenericMessage>(
+    const nfs::GenericMessage& message,
+    const routing::ReplyFunctor& reply_functor) {
+  switch (message.destination_persona()) {
+    case nfs::Persona::kMaidAccountHolder:
+      return maid_account_holder_service_.HandleGenericMessage(message, reply_functor);
+    case nfs::Persona::kMetadataManager:
+      return metadata_manager_service_.HandleGenericMessage(message, reply_functor);
+    case nfs::Persona::kPmidAccountHolder:
+      return pmid_account_holder_service_.HandleGenericMessage(message, reply_functor);
+    case nfs::Persona::kDataHolder:
+      return data_holder_.HandleGenericMessage(message, reply_functor);
+    default:
+      LOG(kError) << "Unhandled Persona";
+  }
 }
 
 bool Demultiplexer::GetFromCache(std::string& serialised_message) {
