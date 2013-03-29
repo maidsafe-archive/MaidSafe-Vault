@@ -40,6 +40,7 @@ Vault::Vault(const passport::Pmid& pmid,
              pmid_account_holder_service_,
              data_holder_),
       asio_service_(2) {
+  // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
   asio_service_.Start();
   InitRouting(peer_endpoints);
 }

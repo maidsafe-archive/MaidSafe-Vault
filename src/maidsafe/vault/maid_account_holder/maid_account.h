@@ -59,8 +59,13 @@ class MaidAccount {
   enum class Status { kOk, kLowSpace };
   typedef MaidName name_type;
 
-  struct SyncInfo {
-    uint64_t state_id_number;
+  struct State {
+    State();
+    State(const State& other);
+    State(State&& other);
+    State& operator=(State other);
+
+    uint64_t id;
     std::vector<PmidTotals> pmid_totals;
     int64_t total_claimed_available_size_by_pmids, total_put_data;
   };
@@ -71,7 +76,7 @@ class MaidAccount {
   explicit MaidAccount(const boost::filesystem::path& root);
   // For creating new account via account transfer
   MaidAccount(const MaidName& maid_name,
-              const SyncInfo& sync_info,
+              const State& state,
               const boost::filesystem::path& root,
               const boost::filesystem::path& transferred_files_dir);
 
@@ -83,8 +88,8 @@ class MaidAccount {
   void UnregisterPmid(const PmidName& pmid_name);
   void UpdatePmidTotals(const PmidTotals& pmid_totals);
 
-  // Overwites existing info.  Used if this account is out of date (e.g was archived then restored)
-  void ApplySyncInfo(const SyncInfo& sync_info);
+  // Overwites existing state.  Used if this account is out of date (e.g was archived then restored)
+  void ApplySyncInfo(const State& state);
   // Replaces any existing files.  Used if this account is out of date (e.g was archived then
   // restored)
   void ApplyTransferredFiles(const boost::filesystem::path& transferred_files_dir);
@@ -109,8 +114,8 @@ class MaidAccount {
   void Adjust(const typename Data::name_type& name, int32_t cost);
 
   name_type name() const { return maid_name_; }
-  // Returns current details as sync info object
-  SyncInfo GetSyncInfo() const;
+  // Returns current confirmed state (excludes changes included in RecentOps list).
+  State GetConfirmedState() const;
 
   friend class test::MaidAccountHandlerTest;
   template<typename Data>
@@ -127,9 +132,7 @@ class MaidAccount {
   Status DoPutData(const typename Data::name_type& name, int32_t cost);
 
   name_type maid_name_;
-  uint64_t state_id_number_;
-  std::vector<PmidTotals> pmid_totals_;
-  int64_t total_claimed_available_size_by_pmids_, total_put_data_;
+  State confirmed_state_, current_state_;
   std::vector<DiskBasedStorage::RecentOperation> recent_ops_;
   DiskBasedStorage archive_;
 };

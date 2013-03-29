@@ -51,6 +51,7 @@ class DiskBasedStorage {
     // Could represent cost in context of MAH, or data_size in context of PAH.
     int32_t size;
     nfs::DataMessage::Action action;
+    int sync_attempts;
   };
 
   explicit DiskBasedStorage(const boost::filesystem::path& root);

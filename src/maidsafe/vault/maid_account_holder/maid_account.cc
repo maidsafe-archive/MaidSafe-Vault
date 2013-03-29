@@ -58,11 +58,39 @@ PmidTotals& PmidTotals::operator=(PmidTotals&& other) {
 
 
 
+MaidAccount::State::State()
+    : id(0),
+      pmid_totals(),
+      total_claimed_available_size_by_pmids(0),
+      total_put_data(0) {}
+
+MaidAccount::State::State(const State& other)
+    : id(other.id),
+      pmid_totals(other.pmid_totals),
+      total_claimed_available_size_by_pmids(other.total_claimed_available_size_by_pmids),
+      total_put_data(other.total_put_data) {}
+
+MaidAccount::State::State(State&& other)
+    : id(std::move(other.id)),
+      pmid_totals(std::move(other.pmid_totals)),
+      total_claimed_available_size_by_pmids(std::move(other.total_claimed_available_size_by_pmids)),
+      total_put_data(std::move(other.total_put_data)) {}
+
+MaidAccount::State& MaidAccount::State::operator=(State other) {
+  using std::swap;
+  swap(id, other.id);
+  swap(pmid_totals, other.pmid_totals);
+  swap(total_claimed_available_size_by_pmids, other.total_claimed_available_size_by_pmids);
+  swap(total_put_data, other.total_put_data);
+  return *this;
+}
+
+
+
 MaidAccount::MaidAccount(const MaidName& maid_name, const fs::path& root)
     : maid_name_(maid_name),
-      pmid_totals_(),
-      total_claimed_available_size_by_pmids_(0),
-      total_put_data_(0),
+      confirmed_state_(),
+      current_state_(),
       recent_ops_(),
       archive_(root / EncodeToBase32(maid_name_.data)) {}
 

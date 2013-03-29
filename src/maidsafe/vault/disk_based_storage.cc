@@ -102,31 +102,36 @@ DiskBasedStorage::RecentOperation::RecentOperation(const DataNameVariant& data_n
                                                    nfs::DataMessage::Action action_in)
     : data_name_variant(data_name_variant_in),
       size(size_in),
-      action(action_in) {}
+      action(action_in),
+      sync_attempts(0) {}
 
 DiskBasedStorage::RecentOperation::RecentOperation(const RecentOperation& other)
     : data_name_variant(other.data_name_variant),
       size(other.size),
-      action(other.action) {}
+      action(other.action),
+      sync_attempts(other.sync_attempts) {}
 
 DiskBasedStorage::RecentOperation& DiskBasedStorage::RecentOperation::operator=(
     const RecentOperation& other) {
   data_name_variant = other.data_name_variant;
   size = other.size;
   action = other.action;
+  sync_attempts = other.sync_attempts;
   return *this;
 }
 
 DiskBasedStorage::RecentOperation::RecentOperation(RecentOperation&& other)
     : data_name_variant(std::move(other.data_name_variant)),
       size(std::move(other.size)),
-      action(std::move(other.action)) {}
+      action(std::move(other.action)),
+      sync_attempts(std::move(other.sync_attempts)) {}
 
 DiskBasedStorage::RecentOperation& DiskBasedStorage::RecentOperation::operator=(
     RecentOperation&& other) {
   data_name_variant = std::move(other.data_name_variant);
   size = std::move(other.size);
   action = std::move(other.action);
+  sync_attempts = std::move(other.sync_attempts);
   return *this;
 }
 
