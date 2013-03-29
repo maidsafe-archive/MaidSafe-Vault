@@ -44,6 +44,7 @@ bool SelectedOperationsContainer::InvalidOptions(
   do_verify = variables_map.count("verify") != 0;
   do_test = variables_map.count("test") != 0;
   do_test_with_delete = variables_map.count("test_with_delete") != 0;
+  do_generate_chunks = variables_map.count("generate_chunks") != 0;
   do_print = variables_map.count("print") != 0;
 
   return NoOptionsSelected() || ConflictedOptions(peer_endpoints);
@@ -51,7 +52,7 @@ bool SelectedOperationsContainer::InvalidOptions(
 
 bool SelectedOperationsContainer::ConflictedOptions(
     const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) const {
-  if (!do_create && !do_load && !do_delete)
+  if (!do_create && !do_load && !do_delete && !do_generate_chunks)
     return true;
   if (do_create && do_load)
     return true;
@@ -67,7 +68,7 @@ bool SelectedOperationsContainer::ConflictedOptions(
     return true;
   if (do_bootstrap && (do_store || do_verify || do_test || do_test_with_delete))
     return true;
-  if (peer_endpoints.empty() && !do_create && !do_load && !do_delete)
+  if (peer_endpoints.empty() && !do_create && !do_load && !do_delete && !do_generate_chunks)
     return true;
   return false;
 }
@@ -81,6 +82,7 @@ bool SelectedOperationsContainer::NoOptionsSelected() const {
            do_test ||
            do_delete ||
            do_test_with_delete ||
+           do_generate_chunks ||
            do_print);
 }
 
@@ -134,7 +136,8 @@ po::options_description Commander::AddGenericOptions(const std::string& title) {
       ("store,s", "Store keys on network.")
       ("verify,v", "Verify keys are available on network.")
       ("test,t", "Run simple test that stores and retrieves chunks.")
-      ("test_with_delete,w", "Run simple test that stores and deletes chunks.");
+      ("test_with_delete,w", "Run simple test that stores and deletes chunks.")
+      ("generate_chunks,g", "Generate a set of chunks for later on tests");
   return generic_options;
 }
 
@@ -195,6 +198,8 @@ void Commander::ChooseOperations() {
     HandleDoTest(key_index_);
   if (selected_ops_.do_test_with_delete)
     HandleDoTestWithDelete(key_index_);
+  if (selected_ops_.do_generate_chunks)
+    HandleGenerateChunks();
 }
 
 void Commander::CreateKeys() {
@@ -284,6 +289,29 @@ void Commander::HandleDoTestWithDelete(size_t client_index) {
   assert(client_index > 1);
   DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_);
   chunk_storer.TestWithDelete(chunk_set_count_);
+}
+
+void Commander::HandleGenerateChunks() {
+  boost::filesystem::path  store_path(boost::filesystem::temp_directory_path() / "Chunks");
+  boost::system::error_code error_code;
+  if (!fs::exists(store_path, error_code)) {
+    if (!fs::create_directories(store_path, error_code)) {
+      LOG(kError) << "Can't create store path at " << store_path << ": " << error_code.message();
+      ThrowError(CommonErrors::uninitialised);
+      return;
+    }
+  }
+
+  assert(chunk_set_count_ > 0);
+  for (int i(0); i < chunk_set_count_; ++i) {
+    ImmutableData::serialised_type content(NonEmptyString(RandomString(1 << 18)));  // 256 KB
+    ImmutableData::name_type name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
+    ImmutableData chunk_data(name, content);
+
+    fs::path chunk_file(store_path / EncodeToBase32(chunk_data.name().data.string()));
+    if (!WriteFile(chunk_file, content.data.string()))
+      LOG(kError) << "Can't store chunk " << HexSubstr(chunk_data.name().data.string());
+  }
 }
 
 void Commander::HandleDeleteKeys() {
