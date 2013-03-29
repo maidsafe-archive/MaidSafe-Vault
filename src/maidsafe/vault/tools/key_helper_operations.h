@@ -137,6 +137,7 @@ class DataChunkStorer : public ClientTester {
 
  private:
   std::atomic_bool run_;
+  std::vector<ImmutableData> chunk_list_;
 
   bool Done(int32_t quantity, int32_t rounds) const;
   void OneChunkRun(size_t& num_chunks, size_t& num_store, size_t& num_get);
@@ -144,6 +145,7 @@ class DataChunkStorer : public ClientTester {
   bool StoreOneChunk(const ImmutableData& chunk_data);
   bool GetOneChunk(const ImmutableData& chunk_data);
   bool DeleteOneChunk(const ImmutableData& chunk_data);
+  void LoadChunksFromFiles();
 };
 
 }  // namespace tools

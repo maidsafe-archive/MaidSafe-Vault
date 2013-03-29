@@ -228,7 +228,10 @@ void KeyVerifier::Verify() {
 DataChunkStorer::DataChunkStorer(const passport::detail::AnmaidToPmid& key_chain,
                                  const std::vector<UdpEndpoint>& peer_endpoints)
     : ClientTester(key_chain, peer_endpoints),
-      run_(false) {}
+      run_(false),
+      chunk_list_() {
+  LoadChunksFromFiles();
+}
 
 void DataChunkStorer::StopTest() { run_ = false; }
 
@@ -362,6 +365,22 @@ bool DataChunkStorer::DeleteOneChunk(const ImmutableData& chunk_data) {
   LOG(kInfo) << "Deleting chunk " << HexSubstr(chunk_data.data()) << " ...";
   nfs::Delete<ImmutableData>(*client_nfs_, chunk_data.name(), 4, cb);
   return delete_future.get();
+}
+
+void DataChunkStorer::LoadChunksFromFiles() {
+  fs::path store_path(boost::filesystem::temp_directory_path() / "Chunks");
+  fs::directory_iterator end_itr;
+  for (fs::directory_iterator itr(store_path); itr != end_itr; ++itr) {
+    if (!fs::is_directory(itr->status())) {
+      std::string string_content;
+      ReadFile(itr->path(), &string_content);
+      NonEmptyString temp(string_content);
+      ImmutableData::serialised_type content(temp);
+      ImmutableData::name_type name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
+      ImmutableData chunk_data(name, content);
+      chunk_list_.push_back(chunk_data);
+    }
+  }
 }
 
 // bool ExtendedTest(const size_t& chunk_set_count,
