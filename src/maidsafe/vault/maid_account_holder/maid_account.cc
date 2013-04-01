@@ -40,19 +40,14 @@ PmidTotals::PmidTotals(const PmidTotals& other)
     : serialised_pmid_registration(other.serialised_pmid_registration),
       pmid_record(other.pmid_record) {}
 
-PmidTotals& PmidTotals::operator=(const PmidTotals& other) {
-  serialised_pmid_registration = other.serialised_pmid_registration;
-  pmid_record = other.pmid_record;
-  return *this;
-}
-
 PmidTotals::PmidTotals(PmidTotals&& other)
     : serialised_pmid_registration(std::move(other.serialised_pmid_registration)),
       pmid_record(std::move(other.pmid_record)) {}
 
-PmidTotals& PmidTotals::operator=(PmidTotals&& other) {
-  serialised_pmid_registration = std::move(other.serialised_pmid_registration);
-  pmid_record = std::move(other.pmid_record);
+PmidTotals& PmidTotals::operator=(PmidTotals other) {
+  using std::swap;
+  swap(serialised_pmid_registration, other.serialised_pmid_registration);
+  swap(pmid_record, other.pmid_record);
   return *this;
 }
 

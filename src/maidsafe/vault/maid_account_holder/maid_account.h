@@ -46,9 +46,8 @@ struct PmidTotals {
   PmidTotals(const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
              const PmidRecord& pmid_record_in);
   PmidTotals(const PmidTotals& other);
-  PmidTotals& operator=(const PmidTotals& other);
   PmidTotals(PmidTotals&& other);
-  PmidTotals& operator=(PmidTotals&& other);
+  PmidTotals& operator=(PmidTotals other);
 
   nfs::PmidRegistration::serialised_type serialised_pmid_registration;
   PmidRecord pmid_record;
@@ -96,7 +95,7 @@ class MaidAccount {
   std::vector<boost::filesystem::path> GetArchiveFileNames() const;
   NonEmptyString GetArchiveFile(const boost::filesystem::path& filename) const;
 
-  // Returns oldest 1000 recent ops from class vector
+  // Returns all recent ops from class vector
   std::vector<DiskBasedStorage::RecentOperation> GetRecentOps() const;
   void ReinstateUnmergedRecentOps(
       const std::vector<DiskBasedStorage::RecentOperation>& unmerged_recent_ops);

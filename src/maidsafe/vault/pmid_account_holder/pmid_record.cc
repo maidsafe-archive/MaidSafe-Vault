@@ -74,16 +74,6 @@ PmidRecord::PmidRecord(const PmidRecord& other)
       lost_total_size(other.lost_total_size),
       claimed_available_size(other.claimed_available_size) {}
 
-PmidRecord& PmidRecord::operator=(const PmidRecord& other) {
-  pmid_name = other.pmid_name;
-  stored_count = other.stored_count;
-  stored_total_size = other.stored_total_size;
-  lost_count = other.lost_count;
-  lost_total_size = other.lost_total_size;
-  claimed_available_size = other.claimed_available_size;
-  return *this;
-}
-
 PmidRecord::PmidRecord(PmidRecord&& other)
     : pmid_name(std::move(other.pmid_name)),
       stored_count(std::move(other.stored_count)),
@@ -92,13 +82,14 @@ PmidRecord::PmidRecord(PmidRecord&& other)
       lost_total_size(std::move(other.lost_total_size)),
       claimed_available_size(std::move(other.claimed_available_size)) {}
 
-PmidRecord& PmidRecord::operator=(PmidRecord&& other) {
-  pmid_name = std::move(other.pmid_name);
-  stored_count = std::move(other.stored_count);
-  stored_total_size = std::move(other.stored_total_size);
-  lost_count = std::move(other.lost_count);
-  lost_total_size = std::move(other.lost_total_size);
-  claimed_available_size = std::move(other.claimed_available_size);
+PmidRecord& PmidRecord::operator=(PmidRecord other) {
+  using std::swap;
+  swap(pmid_name, other.pmid_name);
+  swap(stored_count, other.stored_count);
+  swap(stored_total_size, other.stored_total_size);
+  swap(lost_count, other.lost_count);
+  swap(lost_total_size, other.lost_total_size);
+  swap(claimed_available_size, other.claimed_available_size);
   return *this;
 }
 

@@ -32,9 +32,8 @@ struct PmidRecord {
   explicit PmidRecord(const protobuf::PmidRecord& proto_pmid_record);
   protobuf::PmidRecord ToProtobuf() const;
   PmidRecord(const PmidRecord& other);
-  PmidRecord& operator=(const PmidRecord& other);
   PmidRecord(PmidRecord&& other);
-  PmidRecord& operator=(PmidRecord&& other);
+  PmidRecord& operator=(PmidRecord other);
 
   PmidName pmid_name;
   int64_t stored_count;
