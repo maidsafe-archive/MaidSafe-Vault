@@ -87,61 +87,67 @@ MaidAccount::MaidAccount(const MaidName& maid_name, const fs::path& root)
       confirmed_state_(),
       current_state_(),
       recent_ops_(),
-      archive_(root / EncodeToBase32(maid_name_.data)) {}
+      archive_(AccountDir(maid_name, root)) {}
 
-MaidAccount::MaidAccount(const serialised_type& serialised_maid_account, const fs::path& root)
-    : maid_name_([&serialised_maid_account]()->Identity {
-                     protobuf::MaidAccount proto_maid_account;
-                     proto_maid_account.ParseFromString(serialised_maid_account->string());
-                     return Identity(proto_maid_account.maid_name());
-                 }()),
-      pmid_totals_(),
-      total_claimed_available_size_by_pmids_(0),
-      total_put_data_(0),
+MaidAccount::MaidAccount(const fs::path& account_dir)
+    : maid_name_(Identity(DecodeFromBase32(account_dir.stem().string()))),
+      confirmed_state_(),
+      current_state_(),
       recent_ops_(),
-      archive_(root / EncodeToBase32(maid_name_.data)) {
+      archive_(account_dir) {
+  auto serialised_maid_account(ReadFile(account_dir / AccountFilename()));
   protobuf::MaidAccount proto_maid_account;
-  if (!proto_maid_account.ParseFromString(serialised_maid_account->string())) {
+  if (!proto_maid_account.ParseFromString(serialised_maid_account.string())) {
     LOG(kError) << "Failed to parse maid_account.";
     ThrowError(CommonErrors::parsing_error);
   }
 
+  confirmed_state_.id = proto_maid_account.state_id_number();
   for (int i(0); i != proto_maid_account.pmid_totals_size(); ++i) {
-    pmid_totals_.emplace_back(
+    confirmed_state_.pmid_totals.emplace_back(
         nfs::PmidRegistration::serialised_type(NonEmptyString(
             proto_maid_account.pmid_totals(i).serialised_pmid_registration())),
         PmidRecord(proto_maid_account.pmid_totals(i).pmid_record()));
   }
-
-  total_claimed_available_size_by_pmids_ =
+  confirmed_state_.total_claimed_available_size_by_pmids =
       proto_maid_account.total_claimed_available_size_by_pmids();
-  total_put_data_ = proto_maid_account.total_put_data();
+  confirmed_state_.total_put_data = proto_maid_account.total_put_data();
+}
+
+MaidAccount::MaidAccount(const MaidName& maid_name,
+                         const State& confirmed_state,
+                         const boost::filesystem::path& root,
+                         const boost::filesystem::path& transferred_files_dir)
+    : maid_name_(maid_name),
+      confirmed_state_(confirmed_state),
+      current_state_(),
+      recent_ops_(),
+      archive_(AccountDir(maid_name, root)) {
+  archive_.ApplyAccountTransfer(transferred_files_dir);
 }
 
 MaidAccount::MaidAccount(MaidAccount&& other)
     : maid_name_(std::move(other.maid_name_)),
-      pmid_totals_(std::move(other.pmid_totals_)),
-      total_claimed_available_size_by_pmids_(
-          std::move(other.total_claimed_available_size_by_pmids_)),
-      total_put_data_(std::move(other.total_put_data_)),
+      confirmed_state_(std::move(other.confirmed_state_)),
+      current_state_(std::move(other.current_state_)),
       recent_ops_(std::move(other.recent_ops_)),
       archive_(std::move(other.archive_)) {}
 
 MaidAccount& MaidAccount::operator=(MaidAccount&& other) {
   maid_name_ = std::move(other.maid_name_);
-  pmid_totals_ = std::move(other.pmid_totals_);
-  total_claimed_available_size_by_pmids_ = std::move(other.total_claimed_available_size_by_pmids_);
-  total_put_data_ = std::move(other.total_put_data_);
-  recent_ops_ = std::move(other.recent_ops_);
+  confirmed_state_ = std::move(other.confirmed_state_);
+  current_state_ = std::move(other.current_state_);
+  recent_ops_= std::move(other.recent_ops_);
   archive_ = std::move(other.archive_);
   return *this;
 }
 
-MaidAccount::serialised_type MaidAccount::Serialise() const {
+void MaidAccount::ArchiveToDisk() const {
   protobuf::MaidAccount proto_maid_account;
   proto_maid_account.set_maid_name(maid_name_->string());
 
-  for (auto& pmid_total : pmid_totals_) {
+  proto_maid_account.set_state_id_number(confirmed_state_.id);
+  for (auto& pmid_total : confirmed_state_.pmid_totals) {
     auto proto_pmid_totals(proto_maid_account.add_pmid_totals());
     proto_pmid_totals->set_serialised_pmid_registration(
         pmid_total.serialised_pmid_registration->string());
@@ -149,56 +155,50 @@ MaidAccount::serialised_type MaidAccount::Serialise() const {
   }
 
   proto_maid_account.set_total_claimed_available_size_by_pmids(
-      total_claimed_available_size_by_pmids_);
-  proto_maid_account.set_total_put_data(total_put_data_);
+      confirmed_state_.total_claimed_available_size_by_pmids);
+  proto_maid_account.set_total_put_data(confirmed_state_.total_put_data);
 
-  auto archive_file_names(GetArchiveFileNames());
-  for (auto& archive_file_name : archive_file_names)
-    proto_maid_account.add_archive_file_names(archive_file_name.string());
-
-  return serialised_type(NonEmptyString(proto_maid_account.SerializeAsString()));
+  if (!WriteFile(archive_.GetAccountDir() / AccountFilename(),
+                 proto_maid_account.SerializeAsString()))
+    ThrowError(CommonErrors::filesystem_io_error);
 }
 
-std::pair<MaidAccount::AccountInfo,
-          std::vector<boost::filesystem::path>> MaidAccount::ParseAccountSyncInfo(
-    const serialised_type& /*serialised_info*/) const {
-  return std::make_pair(MaidAccount::AccountInfo(), std::vector<boost::filesystem::path>());
-}
 
 std::vector<PmidTotals>::iterator MaidAccount::Find(const PmidName& pmid_name) {
-  return std::find_if(pmid_totals_.begin(),
-                      pmid_totals_.end(),
+  return std::find_if(std::begin(current_state_.pmid_totals),
+                      std::end(current_state_.pmid_totals),
                       [&pmid_name](const PmidTotals& pmid_totals) {
                         return pmid_name == pmid_totals.pmid_record.pmid_name;
                       });
 }
 
-void MaidAccount::RegisterPmid(
-    const nfs::PmidRegistration& pmid_registration) {
+void MaidAccount::RegisterPmid(const nfs::PmidRegistration& pmid_registration) {
   auto itr(Find(pmid_registration.pmid_name()));
-  if (itr == pmid_totals_.end()) {
+  if (itr == std::end(current_state_.pmid_totals)) {
     nfs::PmidRegistration::serialised_type serialised_pmid_registration(
         pmid_registration.Serialise());
-    pmid_totals_.emplace_back(serialised_pmid_registration,
-                              PmidRecord(pmid_registration.pmid_name()));
+    current_state_.pmid_totals.emplace_back(serialised_pmid_registration,
+                                            PmidRecord(pmid_registration.pmid_name()));
   }
 }
 
 void MaidAccount::UnregisterPmid(const PmidName& pmid_name) {
   auto itr(Find(pmid_name));
-  if (itr != pmid_totals_.end())
-    pmid_totals_.erase(itr);
+  if (itr != current_state_.pmid_totals.end())
+    current_state_.pmid_totals.erase(itr);
 }
 
 void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
   auto itr(Find(pmid_totals.pmid_record.pmid_name));
-  if (itr == pmid_totals_.end())
+  if (itr == current_state_.pmid_totals.end())
     ThrowError(CommonErrors::no_such_element);
   *itr = pmid_totals;
 }
 
-void MaidAccount::ApplyAccountTransfer(const fs::path& transferred_files_dir) {
-  archive_.ApplyAccountTransfer(transferred_files_dir);
+void MaidAccount::ApplySyncInfo(const State& state) {
+}
+
+void MaidAccount::ApplyTransferredFiles(const boost::filesystem::path& transferred_files_dir) {
 }
 
 std::vector<fs::path> MaidAccount::GetArchiveFileNames() const {
@@ -207,6 +207,21 @@ std::vector<fs::path> MaidAccount::GetArchiveFileNames() const {
 
 NonEmptyString MaidAccount::GetArchiveFile(const fs::path& filename) const {
   return archive_.GetFile(filename);
+}
+
+std::vector<DiskBasedStorage::RecentOperation> MaidAccount::GetRecentOps() const {
+}
+
+void MaidAccount::ReinstateUnmergedRecentOps(
+      const std::vector<DiskBasedStorage::RecentOperation>& unmerged_recent_ops) {
+}
+
+void ApplyRecentOps(const std::vector<DiskBasedStorage::RecentOperation>& confirmed_recent_ops) {
+}
+
+boost::filesystem::path MaidAccount::GetAccountDir(const MaidName& maid_name,
+                                                   const boost::filesystem::path& root) {
+  return root / EncodeToBase32(maid_name_.data);
 }
 
 }  // namespace vault

@@ -72,15 +72,15 @@ class MaidAccount {
   // For client adding new account
   MaidAccount(const MaidName& maid_name, const boost::filesystem::path& root);
   // For regenerating an archived account
-  explicit MaidAccount(const boost::filesystem::path& root);
+  explicit MaidAccount(const boost::filesystem::path& account_dir);
   // For creating new account via account transfer
   MaidAccount(const MaidName& maid_name,
-              const State& state,
+              const State& confirmed_state,
               const boost::filesystem::path& root,
               const boost::filesystem::path& transferred_files_dir);
 
-  MaidAccount(MaidAccount&&);
-  MaidAccount& operator=(MaidAccount&&);
+  MaidAccount(MaidAccount&& other);
+  MaidAccount& operator=(MaidAccount&& other);
   void ArchiveToDisk() const;
 
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
@@ -129,6 +129,11 @@ class MaidAccount {
 
   template<typename Data>
   Status DoPutData(const typename Data::name_type& name, int32_t cost);
+
+  static boost::filesystem::path AccountDir(const MaidName& maid_name,
+                                            const boost::filesystem::path& root);
+
+  static std::string AccountFilename() { return "a"; }
 
   name_type maid_name_;
   State confirmed_state_, current_state_;

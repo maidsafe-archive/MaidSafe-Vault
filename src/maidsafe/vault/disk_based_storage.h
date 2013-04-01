@@ -67,6 +67,8 @@ class DiskBasedStorage {
   std::vector<boost::filesystem::path> GetFilenames() const;
   NonEmptyString GetFile(const boost::filesystem::path& filename) const;
 
+  boost::filesystem::path GetAccountDir() const { return root_; }
+
   friend class test::DiskStorageTest;
 
  private:
