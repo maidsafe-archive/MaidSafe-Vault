@@ -67,40 +67,45 @@ class MaidAccount {
     uint64_t id;
     std::vector<PmidTotals> pmid_totals;
     int64_t total_claimed_available_size_by_pmids, total_put_data;
+    int32_t archive_file_count;
   };
 
   // For client adding new account
   MaidAccount(const MaidName& maid_name, const boost::filesystem::path& root);
   // For regenerating an archived account
-  explicit MaidAccount(const boost::filesystem::path& account_dir);
+//  explicit MaidAccount(const boost::filesystem::path& account_dir);
   // For creating new account via account transfer
   MaidAccount(const MaidName& maid_name,
-              const State& confirmed_state,
+              const State& state,
               const boost::filesystem::path& root,
               const boost::filesystem::path& transferred_files_dir);
 
   MaidAccount(MaidAccount&& other);
   MaidAccount& operator=(MaidAccount&& other);
-  void ArchiveToDisk() const;
+//  void ArchiveToDisk() const;
 
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);
   void UpdatePmidTotals(const PmidTotals& pmid_totals);
 
   // Overwites existing state.  Used if this account is out of date (e.g was archived then restored)
-  void ApplySyncInfo(const State& state);
+//  void ApplySyncInfo(const State& state);
   // Replaces any existing files.  Used if this account is out of date (e.g was archived then
   // restored)
-  void ApplyTransferredFiles(const boost::filesystem::path& transferred_files_dir);
-  std::vector<boost::filesystem::path> GetArchiveFileNames() const;
-  NonEmptyString GetArchiveFile(const boost::filesystem::path& filename) const;
+//  void ApplyTransferredFiles(const boost::filesystem::path& transferred_files_dir);
+//  NonEmptyString GetArchiveFile(const boost::filesystem::path& filename) const;
+
+  // Returns file contents and current state id.
+  std::pair<NonEmptyString, uint64_t> GetArchiveFile(int32_t index) const;
+
+  State GetState() const;
 
   // Returns all recent ops from class vector
-  std::vector<DiskBasedStorage::RecentOperation> GetRecentOps() const;
-  void ReinstateUnmergedRecentOps(
-      const std::vector<DiskBasedStorage::RecentOperation>& unmerged_recent_ops);
+//  std::vector<DiskBasedStorage::RecentOperation> GetRecentOps() const;
+//  void ReinstateUnmergedRecentOps(
+//      const std::vector<DiskBasedStorage::RecentOperation>& unmerged_recent_ops);
   // Applies this list and removes it from current ops.
-  void ApplyRecentOps(const std::vector<DiskBasedStorage::RecentOperation>& confirmed_recent_ops);
+//  void ApplyRecentOps(const std::vector<DiskBasedStorage::RecentOperation>& confirmed_recent_ops);
 
   // This offers the strong exception guarantee
   template<typename Data>
@@ -113,8 +118,6 @@ class MaidAccount {
   void Adjust(const typename Data::name_type& name, int32_t cost);
 
   name_type name() const { return maid_name_; }
-  // Returns current confirmed state (excludes changes included in RecentOps list).
-  State GetConfirmedState() const;
 
   friend class test::MaidAccountHandlerTest;
   template<typename Data>
@@ -130,10 +133,8 @@ class MaidAccount {
   template<typename Data>
   Status DoPutData(const typename Data::name_type& name, int32_t cost);
 
-  static boost::filesystem::path AccountDir(const MaidName& maid_name,
-                                            const boost::filesystem::path& root);
-
-  static std::string AccountFilename() { return "a"; }
+  boost::filesystem::path AccountDir(const boost::filesystem::path& root) const;
+  std::string AccountFilename() const { return "a"; }
 
   name_type maid_name_;
   State confirmed_state_, current_state_;
