@@ -134,6 +134,9 @@ class DataChunkStorer : public ClientTester {
   void StopTest();
   void Test(int32_t quantity = -1);
   void TestWithDelete(int32_t quantity = -1);
+  void TestStoreChunk(int chunk_index);
+  void TestFetchChunk(int chunk_index);
+  void TestDeleteChunk(int chunk_index);
 
  private:
   std::atomic_bool run_;

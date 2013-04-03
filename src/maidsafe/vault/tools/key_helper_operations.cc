@@ -257,6 +257,22 @@ void DataChunkStorer::TestWithDelete(int32_t quantity) {
     throw ToolsException("Failed to store and verify all data chunks.");
 }
 
+void DataChunkStorer::TestStoreChunk(int chunk_index) {
+  if (!StoreOneChunk(chunk_list_[chunk_index]))
+    throw ToolsException("Failed to store a generated chunk.");
+}
+
+void DataChunkStorer::TestFetchChunk(int chunk_index) {
+  if (!GetOneChunk(chunk_list_[chunk_index]))
+    throw ToolsException("Failed to retrieve a stored chunk.");
+}
+
+void DataChunkStorer::TestDeleteChunk(int chunk_index) {
+  if (!DeleteOneChunk(chunk_list_[chunk_index]))
+    throw ToolsException("Failed to delete a stored chunk.");
+}
+
+
 bool DataChunkStorer::Done(int32_t quantity, int32_t rounds) const {
   return quantity < 1 ? run_.load() : rounds >= quantity;
 }

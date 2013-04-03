@@ -45,6 +45,9 @@ bool SelectedOperationsContainer::InvalidOptions(
   do_test = variables_map.count("test") != 0;
   do_test_with_delete = variables_map.count("test_with_delete") != 0;
   do_generate_chunks = variables_map.count("generate_chunks") != 0;
+  do_test_store_chunk = variables_map.count("test_store_chunk") != 0;
+  do_test_fetch_chunk = variables_map.count("test_fetch_chunk") != 0;
+  do_test_delete_chunk = variables_map.count("test_delete_chunk") != 0;
   do_print = variables_map.count("print") != 0;
 
   return NoOptionsSelected() || ConflictedOptions(peer_endpoints);
@@ -83,6 +86,9 @@ bool SelectedOperationsContainer::NoOptionsSelected() const {
            do_delete ||
            do_test_with_delete ||
            do_generate_chunks ||
+           do_test_store_chunk ||
+           do_test_fetch_chunk ||
+           do_test_delete_chunk ||
            do_print);
 }
 
@@ -90,6 +96,7 @@ Commander::Commander(size_t pmids_count)
     : pmids_count_(pmids_count),
       key_index_(pmids_count_ - 1),
       chunk_set_count_(-1),
+      chunk_index_(0),
       all_keychains_(),
       keys_path_(),
       peer_endpoints_(),
@@ -137,7 +144,10 @@ po::options_description Commander::AddGenericOptions(const std::string& title) {
       ("verify,v", "Verify keys are available on network.")
       ("test,t", "Run simple test that stores and retrieves chunks.")
       ("test_with_delete,w", "Run simple test that stores and deletes chunks.")
-      ("generate_chunks,g", "Generate a set of chunks for later on tests");
+      ("generate_chunks,g", "Generate a set of chunks for later on tests")
+      ("test_store_chunk,1", "Run a simple test that stores a chunk from file")
+      ("test_fetch_chunk,2", "Run a simple test that retrieves a chunk(recorded in file)")
+      ("test_delete_chunk,3", "Run a simple test that removes a chunk(recorded in file)");
   return generic_options;
 }
 
@@ -164,7 +174,10 @@ po::options_description Commander::AddConfigurationOptions(const std::string& ti
        "The index of key to be used as client during chunk store test")
       ("chunk_set_count",
        po::value<int>(&chunk_set_count_)->default_value(chunk_set_count_),
-       "Num of rounds for chunk store test, default is infinite");
+       "Num of rounds for chunk store test, default is infinite")
+      ("chunk_index",
+       po::value<int>(&chunk_index_)->default_value(chunk_index_),
+       "Index of the chunk to be used during tests, default is 0");
   return config_file_options;
 }
 
@@ -200,6 +213,12 @@ void Commander::ChooseOperations() {
     HandleDoTestWithDelete(key_index_);
   if (selected_ops_.do_generate_chunks)
     HandleGenerateChunks();
+  if (selected_ops_.do_test_store_chunk)
+    HandleStoreChunk(key_index_);
+  if (selected_ops_.do_test_fetch_chunk)
+    HandleFetchChunk(key_index_);
+  if (selected_ops_.do_test_delete_chunk)
+    HandleDeleteChunk(key_index_);
 }
 
 void Commander::CreateKeys() {
@@ -289,6 +308,24 @@ void Commander::HandleDoTestWithDelete(size_t client_index) {
   assert(client_index > 1);
   DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_);
   chunk_storer.TestWithDelete(chunk_set_count_);
+}
+
+void Commander::HandleStoreChunk(size_t client_index) {
+  assert(client_index > 1);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_);
+  chunk_storer.TestStoreChunk(chunk_index_);
+}
+
+void Commander::HandleFetchChunk(size_t client_index) {
+  assert(client_index > 1);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_);
+  chunk_storer.TestFetchChunk(chunk_index_);
+}
+
+void Commander::HandleDeleteChunk(size_t client_index) {
+  assert(client_index > 1);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_);
+  chunk_storer.TestDeleteChunk(chunk_index_);
 }
 
 void Commander::HandleGenerateChunks() {
