@@ -13,6 +13,7 @@
 #define MAIDSAFE_VAULT_TOOLS_TOOLS_EXCEPTION_H_
 
 #include <exception>
+#include <string>
 
 namespace maidsafe {
 
@@ -22,8 +23,9 @@ namespace tools {
 
 class ToolsException: public std::exception {
  public:
-  ToolsException(const std::string& message) : message_(message) {}
+  explicit ToolsException(const std::string& message) : message_(message) {}
   virtual const char* what() const throw() { return message_.c_str(); }
+  virtual ~ToolsException() throw() {}
 
  private:
   std::string message_;
@@ -35,4 +37,4 @@ class ToolsException: public std::exception {
 
 }  // namespace maidsafe
 
-#endif // MAIDSAFE_VAULT_TOOLS_TOOLS_EXCEPTION_H_
+#endif  // MAIDSAFE_VAULT_TOOLS_TOOLS_EXCEPTION_H_

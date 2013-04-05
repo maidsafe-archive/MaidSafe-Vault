@@ -15,6 +15,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <vector>
+#include <string>
 
 #include "boost/asio/ip/udp.hpp"
 #include "boost/filesystem/path.hpp"
@@ -27,6 +28,7 @@
 
 #include "maidsafe/passport/types.h"
 
+#include "maidsafe/nfs/client_utils.h"
 #include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/routing/api_config.h"
@@ -38,14 +40,13 @@ namespace vault {
 
 namespace tools {
 
+typedef std::vector<passport::detail::AnmaidToPmid> KeyChainVector;
 typedef std::vector<passport::Pmid> PmidVector;
-
-const std::string kHelperVersion = "MaidSafe Vault KeysHelper " + kApplicationVersion;
 
 class NetworkGenerator {
  public:
   NetworkGenerator();
-  void SetupBootstrapNodes(const PmidVector& all_pmids);
+  void SetupBootstrapNodes(const PmidVector &all_keys);
   std::vector<boost::asio::ip::udp::endpoint> BootstrapEndpoints() const;
 
  private:
@@ -74,7 +75,8 @@ class NetworkGenerator {
 
 class ClientTester {
  public:
-  ClientTester(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+  ClientTester(const passport::detail::AnmaidToPmid& key_chain,
+               const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
 
  protected:
   // TODO(Dan): Remove the typedefs
@@ -83,9 +85,7 @@ class ClientTester {
   typedef std::promise<bool> BoolPromise;
   typedef std::future<bool> BoolFuture;
 
-  passport::Anmaid client_anmaid_;
-  passport::Maid client_maid_;
-  passport::Pmid client_pmid_;
+  passport::detail::AnmaidToPmid key_chain_;
   routing::Routing client_routing_;
   routing::Functors functors_;
   std::unique_ptr<nfs::ClientMaidNfs> client_nfs_;
@@ -96,33 +96,59 @@ class ClientTester {
 
 class KeyStorer : public ClientTester {
  public:
-  KeyStorer(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
-  void Store(const PmidVector& all_pmids);
+  KeyStorer(const passport::detail::AnmaidToPmid& key_chain,
+            const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+  void Store();
 
  private:
+  template<typename Data>
+  void StoreKey(const Data& key, std::promise<bool>& promise) {
+    nfs::Put<Data>(*client_nfs_,
+                   key,
+                   passport::PublicPmid::name_type(),
+                   routing::Parameters::node_group_size,
+                   callback(std::ref(promise)));
+  }
+
   std::function<void(nfs::Reply)> callback(std::promise<bool>& promise);
 };
 
 class KeyVerifier : public ClientTester {
  public:
-  KeyVerifier(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
-  void Verify(const PmidVector& all_pmids);
+  KeyVerifier(const passport::detail::AnmaidToPmid& key_chain,
+              const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+  void Verify();
+
+ private:
+  template<typename SigningData>
+  bool EqualKeys(const SigningData& lhs, const SigningData& rhs) {
+    return lhs.name() == rhs.name() && asymm::MatchingKeys(lhs.public_key(), rhs.public_key());
+  }
 };
 
 class DataChunkStorer : public ClientTester {
  public:
-  DataChunkStorer(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+  DataChunkStorer(const passport::detail::AnmaidToPmid& key_chain,
+                  const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
 
   void StopTest();
   void Test(int32_t quantity = -1);
+  void TestWithDelete(int32_t quantity = -1);
+  void TestStoreChunk(int chunk_index);
+  void TestFetchChunk(int chunk_index);
+  void TestDeleteChunk(int chunk_index);
 
  private:
   std::atomic_bool run_;
+  std::vector<ImmutableData> chunk_list_;
 
   bool Done(int32_t quantity, int32_t rounds) const;
   void OneChunkRun(size_t& num_chunks, size_t& num_store, size_t& num_get);
+  void OneChunkRunWithDelete(size_t& num_chunks, size_t& num_store, size_t& num_get);
   bool StoreOneChunk(const ImmutableData& chunk_data);
   bool GetOneChunk(const ImmutableData& chunk_data);
+  bool DeleteOneChunk(const ImmutableData& chunk_data);
+  void LoadChunksFromFiles();
 };
 
 }  // namespace tools

@@ -97,7 +97,7 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
 
 void Vault::OnMessageReceived(const std::string& message,
                               const routing::ReplyFunctor& reply_functor) {
-  asio_service_.service().post([=] { demux_.HandleMessage(message, reply_functor); });
+  asio_service_.service().post([=] { demux_.HandleMessage(message, reply_functor); });  // NOLINT (Dan)
 }
 
 void Vault::OnNetworkStatusChange(const int& network_health) {
