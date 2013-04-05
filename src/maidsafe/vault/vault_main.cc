@@ -84,7 +84,7 @@ fs::path GetPathFromProgramOption(const std::string& option_name,
 boost::asio::ip::udp::endpoint GetEndpointFromString(const std::string& string_ep) {
   size_t delim(string_ep.rfind(':'));
   boost::asio::ip::udp::endpoint ep;
-  ep.port(std::stoi(string_ep.substr(delim + 1).c_str()));
+  ep.port(static_cast<uint16_t>(std::stoi(string_ep.substr(delim + 1).c_str())));
   ep.address(boost::asio::ip::address::from_string(string_ep.substr(0, delim)));
   return ep;
 }
