@@ -9,12 +9,10 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_SYNC_H_
-#define MAIDSAFE_VAULT_SYNC_H_
+#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_MERGE_POLICY_H_
+#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_MERGE_POLICY_H_
 
-#include <cstdint>
 #include <map>
-#include <memory>
 #include <set>
 #include <tuple>
 #include <vector>
@@ -29,32 +27,24 @@ namespace maidsafe {
 
 namespace vault {
 
-template<typename MergePolicy>
-class Sync : public MergePolicy {
+class MaidAccountMergePolicy {
  public:
-  explicit Sync(DbWrapper* db_wrapper);
-  Sync(Sync&& other);
-  Sync& operator=(Sync&& other);
+  explicit MaidAccountMergePolicy(DbWrapper* db_wrapper);
+  MaidAccountMergePolicy(MaidAccountMergePolicy&& other);
+  MaidAccountMergePolicy& operator=(MaidAccountMergePolicy&& other);
 
-  void Put(const DataNameVariant& key, const NonEmptyString& value, const NodeId& node_id);
-  void Delete(const DataNameVariant& key, const NonEmptyString& value, const NodeId& node_id);
-  std::map<DataNameVariant, NonEmptyString> GetMessages() const;
-  void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
-
-  NonEmptyString GetAccountTransfer() const;
-  void ApplyAccountTransfer(const NonEmptyString& account);
-
- private:
+ protected:
   typedef std::tuple<DataNameVariant, NonEmptyString, std::set<NodeId>> UnresolvedEntry;
-  Sync(const Sync&);
-  Sync& operator=(const Sync&);
-  std::vector<UnresolvedEntry>::iterator FindUnresolved(const DataNameVariant& key);
+  MaidAccountMergePolicy(const MaidAccountMergePolicy&);
+  MaidAccountMergePolicy& operator=(const MaidAccountMergePolicy&);
+  void Merge(const DataNameVariant& key, const NonEmptyString& value);
+
+  std::vector<UnresolvedEntry> unresolved_data_;
+  DbWrapper* db_;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/sync-inl.h"
-
-#endif  // MAIDSAFE_VAULT_SYNC_H_
+#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_MERGE_POLICY_H_

@@ -9,19 +9,32 @@
  *  permission of the board of directors of MaidSafe.net.                                          *
  **************************************************************************************************/
 
-#include "maidsafe/vault/maid_account_holder/maid_account_sync.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_merge_policy.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-MaidAccountSync::MaidAccountSync(const MaidName& account_name)
-    : mutex_(),
-      kMaidName_(account_name),
-      downloaded_files_(),
-      sync_updates_(),
-      is_ready_for_merge_(false) {}
+MaidAccountMergePolicy::MaidAccountMergePolicy(DbWrapper* db_wrapper)
+    : unresolved_data_(),
+      db_(db_wrapper) {}
+
+MaidAccountMergePolicy::MaidAccountMergePolicy(MaidAccountMergePolicy&& other)
+    : unresolved_data_(std::move(other.unresolved_data_)),
+      db_(std::move(other.db_)) {}
+
+MaidAccountMergePolicy& MaidAccountMergePolicy::operator=(MaidAccountMergePolicy&& other) {
+  unresolved_data_ = std::move(other.unresolved_data_);
+  db_ = std::move(other.db_);
+  return *this;
+}
+
+void MaidAccountMergePolicy::MergePut(const DataNameVariant& key, const NonEmptyString& value) {
+}
+
+void MaidAccountMergePolicy::MergeDelete(const DataNameVariant& key, const NonEmptyString& value) {
+}
 
 }  // namespace vault
 
