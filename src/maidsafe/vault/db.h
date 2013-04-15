@@ -48,6 +48,7 @@ class Db {
   Db(Db&&);
   Db& operator=(Db&&);
 
+  static std::once_flag flag;
   static std::unique_ptr<leveldb::DB> leveldb_;
   static std::atomic<uint32_t> last_account_id_;
   uint32_t account_id_;
