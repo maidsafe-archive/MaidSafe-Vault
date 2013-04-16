@@ -16,7 +16,7 @@ namespace maidsafe {
 
 namespace vault {
 
-MaidAccountMergePolicy::MaidAccountMergePolicy(DbWrapper* db_wrapper)
+MaidAccountMergePolicy::MaidAccountMergePolicy(Db* db_wrapper)
     : unresolved_data_(),
       db_(db_wrapper) {}
 

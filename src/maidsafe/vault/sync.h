@@ -21,31 +21,39 @@
 
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/nfs/types.h"
 #include "maidsafe/data_types/data_name_variant.h"
-#include "maidsafe/vault/db_wrapper.h"
-
+#include "maidsafe/vault/db.h"
 
 namespace maidsafe {
 
 namespace vault {
+// Purpose of this object is to ensure enough nodes have agreed the message is valid
 
 template<typename MergePolicy>
 class Sync : public MergePolicy {
  public:
-  explicit Sync(DbWrapper* db_wrapper);
+  explicit Sync(Db* db_wrapper);
   Sync(Sync&& other);
   Sync& operator=(Sync&& other);
 
-  void Put(const DataNameVariant& key, const NonEmptyString& value, const NodeId& node_id);
-  void Delete(const DataNameVariant& key, const NonEmptyString& value, const NodeId& node_id);
+  void AddMessage(const DataNameVariant& key,
+                  const NonEmptyString& value,
+                  const NodeId& node_id,
+                  const nfs::MessageAction& message_type);
   std::map<DataNameVariant, NonEmptyString> GetMessages() const;
   void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
 
   NonEmptyString GetAccountTransfer() const;
   void ApplyAccountTransfer(const NonEmptyString& account);
-
+  void CopyToDataBase(const DataNameVariant& key,
+                      const std::string& value,
+                      const nfs::MessageAction message_type);
  private:
-  typedef std::tuple<DataNameVariant, NonEmptyString, std::set<NodeId>> UnresolvedEntry;
+  typedef std::tuple<DataNameVariant,
+                     NonEmptyString,
+                     std::set<NodeId>,
+                     nfs::MessageAction> UnresolvedEntry;
   Sync(const Sync&);
   Sync& operator=(const Sync&);
   std::vector<UnresolvedEntry>::iterator FindUnresolved(const DataNameVariant& key);
