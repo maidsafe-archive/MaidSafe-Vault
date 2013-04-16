@@ -35,9 +35,7 @@ class Db {
   ~Db(); // delete account here
 
   void Put(const DataNameVariant& key, const NonEmptyString& value);
-
   void Delete(const DataNameVariant& key);
-
   NonEmptyString Get(const DataNameVariant& key);
 
   std::vector<std::pair<std::string, std::string>> Get();
@@ -47,6 +45,8 @@ class Db {
   Db& operator=(const Db&);
   Db(Db&&);
   Db& operator=(Db&&);
+
+  template<uint32_t Width> std::string Pad(uint32_t number);
 
   static std::once_flag flag;
   static std::unique_ptr<leveldb::DB> leveldb_;

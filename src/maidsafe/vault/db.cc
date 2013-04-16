@@ -12,6 +12,9 @@
 
 #include "maidsafe/vault/db.h"
 
+#include <sstream>
+#include <iomanip>
+
 #include "boost/filesystem/operations.hpp"
 
 #include "maidsafe/common/log.h"
@@ -44,9 +47,9 @@ Db::Db(const boost::filesystem::path& path) {
 
 void Db::Put(const DataNameVariant& key, const NonEmptyString& value) {
   auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
-  std::string db_key(std::to_string(account_id_) +
-                     EncodeToBase32(result.second.string()) +
-                     std::to_string(static_cast<uint32_t>(result.first)));
+  std::string db_key(Pad<4>(account_id_) +
+                     result.second.string() +
+                     Pad<2>(static_cast<uint32_t>(result.first)));
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(), db_key, value.string()));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
@@ -54,9 +57,9 @@ void Db::Put(const DataNameVariant& key, const NonEmptyString& value) {
 
 void Db::Delete(const DataNameVariant& key) {
   auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
-  std::string db_key(std::to_string(account_id_) +
-                     EncodeToBase32(result.second.string()) +
-                     std::to_string(static_cast<uint32_t>(result.first)));
+  std::string db_key(Pad<4>(account_id_) +
+                     result.second.string() +
+                     Pad<2>(static_cast<uint32_t>(result.first)));
   leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), db_key));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
@@ -64,9 +67,9 @@ void Db::Delete(const DataNameVariant& key) {
 
 NonEmptyString Db::Get(const DataNameVariant& key) {
   auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
-  std::string db_key(std::to_string(account_id_) +
-                     EncodeToBase32(result.second.string()) +
-                     std::to_string(static_cast<uint32_t>(result.first)));
+  std::string db_key(Pad<4>(account_id_) +
+                     result.second.string() +
+                     Pad<2>(static_cast<uint32_t>(result.first)));
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
   std::string value;
@@ -75,6 +78,14 @@ NonEmptyString Db::Get(const DataNameVariant& key) {
     ThrowError(VaultErrors::failed_to_handle_request);
   assert(!value.empty());
   return NonEmptyString(value);
+}
+
+template<uint32_t Width>
+std::string Db::Pad(uint32_t number)
+{
+    std::ostringstream osstream;
+    osstream << std::setw(Width) << std::setfill('0') << std::hex << number;
+    return osstream.str();
 }
 
 }  // namespace vault
