@@ -23,15 +23,13 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_types/data_name_variant.h"
 
-
 namespace maidsafe {
-
 namespace vault {
 
 class Db {
  public:
   typedef std::pair<DataNameVariant, NonEmptyString> KVPair;
-  // throws on failure
+
   explicit Db(const boost::filesystem::path& path);
 
   ~Db();
@@ -61,7 +59,6 @@ class Db {
 };
 
 }  // namespace vault
-
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_DB_H_

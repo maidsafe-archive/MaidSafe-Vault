@@ -23,7 +23,6 @@
 #include "maidsafe/data_types/data_name_variant.h"
 
 namespace maidsafe {
-
 namespace vault {
 
 std::mutex Db::mutex_;
@@ -37,7 +36,8 @@ std::set<uint32_t> Db::account_ids_;
 Db::Db(const boost::filesystem::path& path)
   : db_path_(path),
     account_id_(0) {
-  std::call_once(flag_, [&path](){
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (!leveldb_) {
       if (boost::filesystem::exists(path))
         boost::filesystem::remove_all(path);
       leveldb::DB* db;
@@ -49,8 +49,7 @@ Db::Db(const boost::filesystem::path& path)
         ThrowError(VaultErrors::failed_to_handle_request); // FIXME need new exception
       leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
       assert(leveldb_);
-    });
-  std::lock_guard<std::mutex> lock(mutex_);
+  }
   if (account_ids_.size() == (1 << 16) - 1)
     ThrowError(VaultErrors::failed_to_handle_request);
   uint32_t account_id(RandomUint32() % (1 << 16));
@@ -156,5 +155,4 @@ std::string Db::Pad(uint32_t number)
 }
 
 }  // namespace vault
-
 }  // namespace maidsafe
