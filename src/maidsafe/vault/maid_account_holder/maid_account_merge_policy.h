@@ -14,8 +14,10 @@
 
 #include <map>
 #include <set>
+#include <utility>
 #include <vector>
 
+#include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 
@@ -37,13 +39,27 @@ class MaidAccountMergePolicy {
 
  protected:
   typedef MaidAndPmidUnresolvedAction UnresolvedAction;
-  MaidAccountMergePolicy(const MaidAccountMergePolicy&);
-  MaidAccountMergePolicy& operator=(const MaidAccountMergePolicy&);
   void Merge(const UnresolvedAction::Key& data_name_and_action, UnresolvedAction::Value cost);
 
   std::vector<UnresolvedAction> unresolved_data_;
   Db* db_;
+
+ private:
+  typedef TaggedValue<int32_t, struct AverageCostTag> AverageCost;
+  typedef TaggedValue<int32_t, struct CountTag> Count;
+  typedef std::pair<AverageCost, Count> DbValue;
+
+  MaidAccountMergePolicy(const MaidAccountMergePolicy&);
+  MaidAccountMergePolicy& operator=(const MaidAccountMergePolicy&);
+
+  NonEmptyString SerialiseDbValue(DbValue db_value) const;
+  DbValue ParseDbValue(NonEmptyString serialised_db_value) const;
 };
+
+template<typename Data>
+bool MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name) const {
+  todo
+}
 
 }  // namespace vault
 

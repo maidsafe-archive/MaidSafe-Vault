@@ -15,6 +15,11 @@ message MaidAccount {
   required int64 total_put_data = 5;
 }
 
+message MaidAccountDbValue {
+  required int32 average_cost = 1;
+  required int32 count = 2;
+}
+
 // Used as data field in MM's Reply to Put request.
 message Cost {
   required int32 value = 1;

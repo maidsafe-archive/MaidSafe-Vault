@@ -11,6 +11,8 @@
 
 #include "maidsafe/vault/maid_account_holder/maid_account_merge_policy.h"
 
+#include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
+
 
 namespace maidsafe {
 
@@ -30,9 +32,15 @@ MaidAccountMergePolicy& MaidAccountMergePolicy::operator=(MaidAccountMergePolicy
   return *this;
 }
 
-void MaidAccountMergePolicy::Merge(const DataNameVariant& key,
-                                   const NonEmptyString& value,
-                                   nfs::MessageAction message_action) {
+void MaidAccountMergePolicy::Merge(const UnresolvedAction::Key& data_name_and_action,
+                                   UnresolvedAction::Value cost) {
+}
+
+NonEmptyString MaidAccountMergePolicy::SerialiseDbValue(DbValue db_value) const {
+}
+
+MaidAccountMergePolicy::DbValue MaidAccountMergePolicy::ParseDbValue(
+    NonEmptyString serialised_db_value) const {
 }
 
 }  // namespace vault
