@@ -9,44 +9,40 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_MERGE_POLICY_H_
-#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_MERGE_POLICY_H_
+#ifndef MAIDSAFE_VAULT_UNRESOLVED_ACTION_H_
+#define MAIDSAFE_VAULT_UNRESOLVED_ACTION_H_
 
-#include <map>
+#include <cstdint>
 #include <set>
-#include <vector>
+#include <utility>
 
-#include "maidsafe/common/types.h"
+#include "maidsafe/common/node_id.h"
+#include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/types.h"
-
-#include "maidsafe/vault/db.h"
-#include "maidsafe/vault/unresolved_action.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-class MaidAccountMergePolicy {
- public:
-  explicit MaidAccountMergePolicy(Db* db);
-  MaidAccountMergePolicy(MaidAccountMergePolicy&& other);
-  MaidAccountMergePolicy& operator=(MaidAccountMergePolicy&& other);
-  template<typename Data>
-  bool AllowDelete(const typename Data::name_type& name) const;
+struct MaidAndPmidUnresolvedAction {
+  typedef std::pair<DataNameVariant, nfs::MessageAction> Key;
+  typedef int32_t Value;
+  MaidAndPmidUnresolvedAction();
+  MaidAndPmidUnresolvedAction(const MaidAndPmidUnresolvedAction& other);
+  MaidAndPmidUnresolvedAction(MaidAndPmidUnresolvedAction&& other);
+  MaidAndPmidUnresolvedAction& operator=(MaidAndPmidUnresolvedAction other);
+  MaidAndPmidUnresolvedAction(const Key& data_name_and_action, Value cost);
+  friend void swap(MaidAndPmidUnresolvedAction& lhs,
+                   MaidAndPmidUnresolvedAction& rhs) MAIDSAFE_NOEXCEPT;
 
- protected:
-  typedef MaidAndPmidUnresolvedAction UnresolvedAction;
-  MaidAccountMergePolicy(const MaidAccountMergePolicy&);
-  MaidAccountMergePolicy& operator=(const MaidAccountMergePolicy&);
-  void Merge(const UnresolvedAction::Key& data_name_and_action, UnresolvedAction::Value cost);
-
-  std::vector<UnresolvedAction> unresolved_data_;
-  Db* db_;
+  Key data_name_and_action;
+  Value cost;
+  std::set<NodeId> peers;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_MERGE_POLICY_H_
+#endif  // MAIDSAFE_VAULT_UNRESOLVED_ACTION_H_
