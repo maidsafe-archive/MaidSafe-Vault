@@ -16,7 +16,7 @@
 
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
-
+#include "boost/progress.hpp"
 
 #include "leveldb/db.h"
 #include "leveldb/options.h"
@@ -35,12 +35,64 @@ namespace vault {
 
 namespace test {
 
+const uint64_t kValueSize(36);
+
 class DbTest : public testing::Test {
  public:
   DbTest()
       : kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
         vault_root_directory_(*kTestRoot_ / RandomAlphaNumericString(8)) {
     boost::filesystem::create_directory(vault_root_directory_);
+  }
+
+  struct GenerateKeyValuePair : public boost::static_visitor<NonEmptyString>
+  {
+    GenerateKeyValuePair() : size_(kValueSize) {}
+    explicit GenerateKeyValuePair(uint32_t size) : size_(size) {}
+
+    template<typename T>
+    NonEmptyString operator()(T& key)
+    {
+      NonEmptyString value = NonEmptyString(RandomAlphaNumericString(size_));
+      key.data = Identity(crypto::Hash<crypto::SHA512>(value));
+      return value;
+    }
+
+    uint32_t size_;
+  };
+
+  NonEmptyString GenerateKeyValueData(DataNameVariant& key, uint32_t size) {
+    GenerateKeyValuePair generate_key_value_pair_(size);
+    return boost::apply_visitor(generate_key_value_pair_, key);
+  }
+
+
+  DataNameVariant GetRandomKey() {
+    // Currently 15 types are defined, but...
+    uint32_t number_of_types = boost::mpl::size<typename DataNameVariant::types>::type::value,
+             type_number;
+    type_number = RandomUint32() % number_of_types;
+    switch (type_number) {
+      case  0: return passport::Anmid::name_type();
+      case  1: return passport::Ansmid::name_type();
+      case  2: return passport::Antmid::name_type();
+      case  3: return passport::Anmaid::name_type();
+      case  4: return passport::Maid::name_type();
+      case  5: return passport::Pmid::name_type();
+      case  6: return passport::Mid::name_type();
+      case  7: return passport::Smid::name_type();
+      case  8: return passport::Tmid::name_type();
+      case  9: return passport::Anmpid::name_type();
+      case 10: return passport::Mpid::name_type();
+      case 11: return ImmutableData::name_type();
+      case 12: return OwnerDirectory::name_type();
+      case 13: return GroupDirectory::name_type();
+      case 14: return WorldDirectory::name_type();
+      // default:
+        // Throw something!
+      //  ;
+    }
+    return DataNameVariant();
   }
 
  protected:
@@ -116,6 +168,46 @@ TEST_F(DbTest, BEH_Poc) {
     }
     ASSERT_EQ(10000, count);
     delete iter;
+  }
+}
+
+TEST_F(DbTest, BEH_1Db) {
+  Db db(vault_root_directory_);
+  std::vector<Db::KVPair> nodes;
+  for (auto i(0U); i != 10000; ++i) {
+    DataNameVariant key(GetRandomKey());
+    NonEmptyString value(GenerateKeyValueData(key, kValueSize));
+    nodes.push_back(std::make_pair(key, value));
+  }
+
+  for (auto i(0U); i != 10000; ++i)
+    EXPECT_NO_THROW(db.Put(std::make_pair(nodes[i].first, nodes[i].second)));
+
+  for (auto i(0U); i != 10000; ++i)
+    EXPECT_EQ(nodes[i].second, db.Get(nodes[i].first));
+}
+
+TEST_F(DbTest, BEH_Db) {
+  Db db1(vault_root_directory_), db2(vault_root_directory_), db3(vault_root_directory_);
+  std::vector<Db::KVPair> nodes1, nodes2, nodes3;
+  for (auto i(0U); i != 10000; ++i) {
+    DataNameVariant key(GetRandomKey());
+    NonEmptyString value(GenerateKeyValueData(key, kValueSize));
+    nodes1.push_back(std::make_pair(key, value));
+    nodes2.push_back(std::make_pair(key, value));
+    nodes3.push_back(std::make_pair(key, value));
+  }
+
+  for (auto i(0U); i != 10000; ++i) {
+    EXPECT_NO_THROW(db1.Put(std::make_pair(nodes1[i].first, nodes1[i].second)));
+    EXPECT_NO_THROW(db2.Put(std::make_pair(nodes2[i].first, nodes2[i].second)));
+    EXPECT_NO_THROW(db3.Put(std::make_pair(nodes3[i].first, nodes3[i].second)));
+  }
+
+  for (auto i(0U); i != 10000; ++i) {
+    EXPECT_EQ(nodes1[i].second, db1.Get(nodes1[i].first));
+    EXPECT_EQ(nodes2[i].second, db2.Get(nodes2[i].first));
+    EXPECT_EQ(nodes3[i].second, db3.Get(nodes3[i].first));
   }
 }
 
