@@ -16,9 +16,9 @@ namespace maidsafe {
 
 namespace vault {
 
-MaidAccountMergePolicy::MaidAccountMergePolicy(Db* db_wrapper)
+MaidAccountMergePolicy::MaidAccountMergePolicy(Db* db)
     : unresolved_data_(),
-      db_(db_wrapper) {}
+      db_(db) {}
 
 MaidAccountMergePolicy::MaidAccountMergePolicy(MaidAccountMergePolicy&& other)
     : unresolved_data_(std::move(other.unresolved_data_)),
@@ -30,10 +30,9 @@ MaidAccountMergePolicy& MaidAccountMergePolicy::operator=(MaidAccountMergePolicy
   return *this;
 }
 
-void MaidAccountMergePolicy::MergePut(const DataNameVariant& key, const NonEmptyString& value) {
-}
-
-void MaidAccountMergePolicy::MergeDelete(const DataNameVariant& key, const NonEmptyString& value) {
+void MaidAccountMergePolicy::Merge(const DataNameVariant& key,
+                                   const NonEmptyString& value,
+                                   nfs::MessageAction message_action) {
 }
 
 }  // namespace vault

@@ -20,24 +20,24 @@ namespace maidsafe {
 
 namespace vault {
 
-//template<typename MergePolicy>
-//Sync<MergePolicy>::Sync<MergePolicy>(Db* db_wrapper) : MergePolicy(db_wrapper) {}
+template<typename MergePolicy>
+Sync<MergePolicy>::Sync(Db* db) : MergePolicy(db) {}
 
 template<typename MergePolicy>
 Sync<MergePolicy>::Sync(Sync&& other) : MergePolicy(std::forward<MergePolicy>(other)) {}
 
 template<typename MergePolicy>
-class Sync<MergePolicy>& Sync<MergePolicy>::operator=(Sync&& other) {
+Sync<MergePolicy>& Sync<MergePolicy>::operator=(Sync&& other) {
   // TODO(Fraser#5#): 2013-04-15 - Remove this once MSVC implements default move assignment.
   using std::swap;
-  Sync<MergePolicy> temp(std::move(other));
+  Sync temp(std::move(other));
   swap(*this, temp);
   return *this;
 }
 
 template<typename MergePolicy>
-std::vector<std::tuple<DataNameVariant, NonEmptyString, std::set<NodeId>>>::iterator
-Sync::FindUnresolved<MergePolicy>(const DataNameVariant& key_to_find) {
+typename std::vector<typename MergePolicy::UnresolvedEntry>::iterator
+Sync<MergePolicy>::FindUnresolved(const DataNameVariant& key_to_find) {
   return std::find_if(std::begin(unresolved_data_), std::end(unresolved_data_),
       [] (const std::vector<std::tuple<DataNameVariant, std::string, std::set<NodeId>>> &test) {
         if (std::get<0>(test) == key_to_find)
@@ -46,20 +46,20 @@ Sync::FindUnresolved<MergePolicy>(const DataNameVariant& key_to_find) {
 }
 
 template<typename MergePolicy>
-void Sync::AddMessage<MergePolicy>(const DataNameVariant& key,
+void Sync<MergePolicy>::AddMessage(const DataNameVariant& key,
                                    const NonEmptyString& value,
-                                   const NodeId& node_id,
-                                   const nfs::MessageType& message_type) {
-  auto found = FindUnresolved(key);  // TODO find all keys as we may have different message_types
+                                   nfs::MessageAction message_action,
+                                   const NodeId& node_id) {
+  auto found = FindUnresolved(key);  // TODO find all keys as we may have different message_actions
   if (found == std::end(unresolved_data_)) {
     std::set<NodeId> temp;
     temp.insert(node_id);
-    unresolved_data_.insert(std::make_tuple(key, value, temp, message_type));
+    unresolved_data_.insert(std::make_tuple(key, value, message_action, temp));
   } else {
-    std::get<2>(*found).insert(key);
-    if ((std::get<2>(*found).size >= (routing::Parameters::node_group_size + 1) / 2 ) &&
-        std::get<2>(*found) == message_type) {
-      CopyToDataBase(key, value, message_type);
+    std::get<3>(*found).insert(key);
+    if ((std::get<3>(*found).size >= (routing::Parameters::node_group_size + 1) / 2) &&
+        (std::get<3>(*found) == message_action)) {
+      CopyToDataBase(key, value, message_action);
       unresolved_data_.erase(found);
     }
   }
@@ -67,24 +67,27 @@ void Sync::AddMessage<MergePolicy>(const DataNameVariant& key,
 
 // iterate the unresolved data and insert new node key in every element
 // replacing the old node keys if found. This allows us to catch up on any gaps in the messages
-void Sync::ReplaceNode(NodeId old_node, NodeId new_node) {
+template<typename MergePolicy>
+void Sync<MergePolicy>::ReplaceNode(const NodeId& old_node, const NodeId& new_node) {
   for(const auto& element: unresolved_data_) {
-    auto found = std::find(std::begin(std::get<2>(element)), std::end(std::get<2>(element)), old_node);
-    if (found != std::end(std::get<2>(element))
-        std::get<2>(element).erase(found);
-    std::get<2>(element).insert(new_node);
-    if (std::get<2>(element).size >= (routing::Parameters::node_group_size + 1) / 2 ) {
-      CopyToDataBase(std::get<0>(element), std::get<1>(element));
-      unresolved_data_.erase(found);
+    auto found = std::find(std::begin(std::get<3>(element)), std::end(std::get<3>(element)),
+                           old_node);
+    if (found != std::end(std::get<3>(element)))
+      std::get<3>(element).erase(found);
+    std::get<3>(element).insert(new_node);
+    if (std::get<3>(element).size >= (routing::Parameters::node_group_size + 1) / 2) {
+      CopyToDataBase(std::get<0>(element), std::get<1>(element), std::get<2>(element));
+//this won't work - do after loop?      unresolved_data_.erase(found);
     }
 
   }
 }
 
 // TODO this will be the Merge method that each class template must provide.
-void Sync::CopyToDataBase(const DataNameVariant& key,
-                          const std::string& value.
-                          const nfs::MessageType message_type) {
+template<typename MergePolicy>
+void Sync<MergePolicy>::CopyToDataBase(const DataNameVariant& key,
+                                       const NonEmptyString& value,
+                                       nfs::MessageAction message_action) {
   leveldb::WriteOptions write_options;
   write_options.sync = false;  // fast but may lose some data on crash
   leveldb::Slice key = std::get<0>(*found).string();

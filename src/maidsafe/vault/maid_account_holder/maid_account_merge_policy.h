@@ -19,6 +19,7 @@
 
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/nfs/types.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/vault/db.h"
 
@@ -29,16 +30,20 @@ namespace vault {
 
 class MaidAccountMergePolicy {
  public:
-  explicit MaidAccountMergePolicy(Db* db_wrapper);
+  explicit MaidAccountMergePolicy(Db* db);
   MaidAccountMergePolicy(MaidAccountMergePolicy&& other);
   MaidAccountMergePolicy& operator=(MaidAccountMergePolicy&& other);
-  void MergePut(const DataNameVariant& key, const NonEmptyString& value);
-  void MergeDelete(const DataNameVariant& key, const NonEmptyString& value);
+
  protected:
-  typedef std::tuple<DataNameVariant, NonEmptyString, std::set<NodeId>> UnresolvedEntry;
+  typedef std::tuple<DataNameVariant,
+                     NonEmptyString,
+                     nfs::MessageAction,
+                     std::set<NodeId>> UnresolvedEntry;
   MaidAccountMergePolicy(const MaidAccountMergePolicy&);
   MaidAccountMergePolicy& operator=(const MaidAccountMergePolicy&);
-  void Merge(const DataNameVariant& key, const NonEmptyString& value);
+  void Merge(const DataNameVariant& key,
+             const NonEmptyString& value,
+             nfs::MessageAction message_action);
 
   std::vector<UnresolvedEntry> unresolved_data_;
   Db* db_;
