@@ -38,7 +38,7 @@ Sync<MergePolicy>& Sync<MergePolicy>::operator=(Sync&& other) {
 template<typename MergePolicy>
 typename std::vector<typename MergePolicy::UnresolvedEntry>::iterator
 Sync<MergePolicy>::FindUnresolved(const DataNameVariant& key_to_find) {
-  return std::find_if(std::begin(unresolved_data_), std::end(unresolved_data_),
+  return std::find_if(std::begin(MergePolicy::unresolved_data_), std::end(MergePolicy::unresolved_data_),
       [] (const std::vector<std::tuple<DataNameVariant, std::string, std::set<NodeId>>> &test) {
         if (std::get<0>(test) == key_to_find)
           return true;
@@ -59,7 +59,7 @@ void Sync<MergePolicy>::AddMessage(const DataNameVariant& key,
     std::get<3>(*found).insert(key);
     if ((std::get<3>(*found).size >= (routing::Parameters::node_group_size + 1) / 2) &&
         (std::get<3>(*found) == message_action)) {
-      CopyToDataBase(key, value, message_action);
+      MergePolicy::Merge(key, value, message_action);
       unresolved_data_.erase(found);
     }
   }
