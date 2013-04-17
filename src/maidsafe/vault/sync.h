@@ -33,7 +33,6 @@ class Sync : public MergePolicy {
   explicit Sync(Db* db);
   Sync(Sync&& other);
   Sync& operator=(Sync&& other);
-
   void AddMessage(const DataNameVariant& key,
                   const NonEmptyString& value,
                   nfs::MessageAction message_action,
@@ -43,9 +42,6 @@ class Sync : public MergePolicy {
 
   NonEmptyString GetAccountTransfer() const;
   void ApplyAccountTransfer(const NonEmptyString& account);
-  void CopyToDataBase(const DataNameVariant& key,
-                      const NonEmptyString& value,
-                      nfs::MessageAction message_action);
  private:
   Sync(const Sync&);
   Sync& operator=(const Sync&);

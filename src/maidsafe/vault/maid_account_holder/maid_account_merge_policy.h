@@ -35,9 +35,8 @@ class MaidAccountMergePolicy {
   MaidAccountMergePolicy& operator=(MaidAccountMergePolicy&& other);
 
  protected:
-  typedef std::tuple<DataNameVariant,
+  typedef std::tuple<std::pair<DataNameVariant, nfs::MessageAction>,
                      NonEmptyString,
-                     nfs::MessageAction,
                      std::set<NodeId>> UnresolvedEntry;
   MaidAccountMergePolicy(const MaidAccountMergePolicy&);
   MaidAccountMergePolicy& operator=(const MaidAccountMergePolicy&);
