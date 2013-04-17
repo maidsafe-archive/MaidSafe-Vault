@@ -171,10 +171,24 @@ TEST_F(DbTest, BEH_Poc) {
   }
 }
 
+TEST_F(DbTest, BEH_1Db) {
+  Db db(vault_root_directory_);
+  std::vector<Db::KVPair> nodes;
+  for (auto i(0U); i != 10000; ++i) {
+    DataNameVariant key(GetRandomKey());
+    NonEmptyString value(GenerateKeyValueData(key, kValueSize));
+    nodes.push_back(std::make_pair(key, value));
+  }
+
+  for (auto i(0U); i != 10000; ++i)
+    EXPECT_NO_THROW(db.Put(std::make_pair(nodes[i].first, nodes[i].second)));
+
+  for (auto i(0U); i != 10000; ++i)
+    EXPECT_EQ(nodes[i].second, db.Get(nodes[i].first));
+}
+
 TEST_F(DbTest, BEH_Db) {
-  Db db1(vault_root_directory_),
-     db2(vault_root_directory_),
-     db3(vault_root_directory_);
+  Db db1(vault_root_directory_), db2(vault_root_directory_), db3(vault_root_directory_);
   std::vector<Db::KVPair> nodes1, nodes2, nodes3;
   for (auto i(0U); i != 10000; ++i) {
     DataNameVariant key(GetRandomKey());
@@ -185,9 +199,9 @@ TEST_F(DbTest, BEH_Db) {
   }
 
   for (auto i(0U); i != 10000; ++i) {
-    EXPECT_NO_THROW(db1.Put(std::make_pair(nodes1.back().first, nodes1.back().second)));
-    EXPECT_NO_THROW(db2.Put(std::make_pair(nodes2.back().first, nodes2.back().second)));
-    EXPECT_NO_THROW(db3.Put(std::make_pair(nodes3.back().first, nodes3.back().second)));
+    EXPECT_NO_THROW(db1.Put(std::make_pair(nodes1[i].first, nodes1[i].second)));
+    EXPECT_NO_THROW(db2.Put(std::make_pair(nodes2[i].first, nodes2[i].second)));
+    EXPECT_NO_THROW(db3.Put(std::make_pair(nodes3[i].first, nodes3[i].second)));
   }
 
   for (auto i(0U); i != 10000; ++i) {

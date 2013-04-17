@@ -56,6 +56,7 @@ class Db {
   static std::atomic<uint32_t> last_account_id_; //FIXME
   static const uint32_t kPrefixWidth_, kSuffixWidth_;
   static std::set<uint32_t> account_ids_;
+  const boost::filesystem::path db_path_;
   uint32_t account_id_;
 };
 

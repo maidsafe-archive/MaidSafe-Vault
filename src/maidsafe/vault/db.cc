@@ -34,7 +34,9 @@ const uint32_t Db::kPrefixWidth_(4);
 const uint32_t Db::kSuffixWidth_(2);
 std::set<uint32_t> Db::account_ids_;
 
-Db::Db(const boost::filesystem::path& path) {
+Db::Db(const boost::filesystem::path& path)
+  : db_path_(path),
+    account_id_(0) {
   std::call_once(flag_, [&path](){
       if (boost::filesystem::exists(path))
         boost::filesystem::remove_all(path);
@@ -74,6 +76,12 @@ Db::~Db() {
       account_elements.push_back(iter->key().ToString());
   }
   delete iter;
+  account_ids_.erase(account_id_);
+  if (account_ids_.size() == 0) {
+    leveldb::DestroyDB(db_path_.string(), leveldb::Options());
+    leveldb_.reset();
+    return;
+  }
 
   for (auto i: account_elements) {
     leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), i));
