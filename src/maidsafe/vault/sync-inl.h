@@ -13,19 +13,18 @@
 #define MAIDSAFE_VAULT_SYNC_INL_H_
 
 #include <utility>
-
+#include "maidsafe/vault/db.h"
 #include "maidsafe/routing/parameters.h"
-
 
 namespace maidsafe {
 
 namespace vault {
 
-template<typename MergePolicy>
-class Sync<MergePolicy>::Sync(DbWrapper* db_wrapper) : MergePolicy(db_wrapper) {}
+//template<typename MergePolicy>
+//Sync<MergePolicy>::Sync<MergePolicy>(Db* db_wrapper) : MergePolicy(db_wrapper) {}
 
 template<typename MergePolicy>
-class Sync<MergePolicy>::Sync(Sync&& other) : MergePolicy(std::forward<MergePolicy>(other)) {}
+Sync<MergePolicy>::Sync(Sync&& other) : MergePolicy(std::forward<MergePolicy>(other)) {}
 
 template<typename MergePolicy>
 class Sync<MergePolicy>& Sync<MergePolicy>::operator=(Sync&& other) {
@@ -36,8 +35,9 @@ class Sync<MergePolicy>& Sync<MergePolicy>::operator=(Sync&& other) {
   return *this;
 }
 
-std::vector<std::tuple<DataNameVariant, std::string, std::set<NodeId>>>::iterator
-Sync::FindUnresolved(const DataNameVariant& key_to_find) {
+template<typename MergePolicy>
+std::vector<std::tuple<DataNameVariant, NonEmptyString, std::set<NodeId>>>::iterator
+Sync::FindUnresolved<MergePolicy>(const DataNameVariant& key_to_find) {
   return std::find_if(std::begin(unresolved_data_), std::end(unresolved_data_),
       [] (const std::vector<std::tuple<DataNameVariant, std::string, std::set<NodeId>>> &test) {
         if (std::get<0>(test) == key_to_find)
@@ -45,16 +45,21 @@ Sync::FindUnresolved(const DataNameVariant& key_to_find) {
    });
 }
 
-void Sync::AddMessage(DataNameVariant key, NodeId node_id, std::string value) {
-  auto found = FindUnresolved(key);
+template<typename MergePolicy>
+void Sync::AddMessage<MergePolicy>(const DataNameVariant& key,
+                                   const NonEmptyString& value,
+                                   const NodeId& node_id,
+                                   const nfs::MessageType& message_type) {
+  auto found = FindUnresolved(key);  // TODO find all keys as we may have different message_types
   if (found == std::end(unresolved_data_)) {
     std::set<NodeId> temp;
     temp.insert(node_id);
-    unresolved_data_.insert(std::make_tuple(key, value, temp));
+    unresolved_data_.insert(std::make_tuple(key, value, temp, message_type));
   } else {
     std::get<2>(*found).insert(key);
-    if (std::get<2>(*found).size >= (routing::Parameters::node_group_size + 1) / 2 ) {
-      CopyToDataBase(key, value);
+    if ((std::get<2>(*found).size >= (routing::Parameters::node_group_size + 1) / 2 ) &&
+        std::get<2>(*found) == message_type) {
+      CopyToDataBase(key, value, message_type);
       unresolved_data_.erase(found);
     }
   }
@@ -76,7 +81,10 @@ void Sync::ReplaceNode(NodeId old_node, NodeId new_node) {
   }
 }
 
-void Sync::CopyToDataBase(DataNameVariant key, std::string value) {
+// TODO this will be the Merge method that each class template must provide.
+void Sync::CopyToDataBase(const DataNameVariant& key,
+                          const std::string& value.
+                          const nfs::MessageType message_type) {
   leveldb::WriteOptions write_options;
   write_options.sync = false;  // fast but may lose some data on crash
   leveldb::Slice key = std::get<0>(*found).string();
