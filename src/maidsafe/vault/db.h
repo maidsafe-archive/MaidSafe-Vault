@@ -32,12 +32,10 @@ class Db {
   // throws on failure
   explicit Db(const boost::filesystem::path& path);
 
-  ~Db(); // delete account here
+  ~Db();
 
   void Put(const DataNameVariant& key, const NonEmptyString& value);
-
   void Delete(const DataNameVariant& key);
-
   NonEmptyString Get(const DataNameVariant& key);
 
   std::vector<std::pair<std::string, std::string>> Get();
@@ -48,8 +46,11 @@ class Db {
   Db(Db&&);
   Db& operator=(Db&&);
 
+  template<uint32_t Width> std::string Pad(uint32_t number);
+
+  static std::once_flag flag;
   static std::unique_ptr<leveldb::DB> leveldb_;
-  static std::atomic<uint32_t> last_account_id_;
+  static std::atomic<uint32_t> last_account_id_; //FIXME
   uint32_t account_id_;
 };
 
