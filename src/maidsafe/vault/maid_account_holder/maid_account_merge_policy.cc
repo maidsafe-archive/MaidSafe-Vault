@@ -34,21 +34,21 @@ MaidAccountMergePolicy& MaidAccountMergePolicy::operator=(MaidAccountMergePolicy
   return *this;
 }
 
-void MaidAccountMergePolicy::Merge(const UnresolvedAction& unresolved_action) {
-  auto serialised_db_value(GetFromDb(unresolved_action.data_name_and_action.first));
-  if (unresolved_action.data_name_and_action.second == nfs::MessageAction::kPut &&
-      !unresolved_action.dont_add_to_db) {
-    MergePut(unresolved_action.data_name_and_action.first, unresolved_action.cost,
+void MaidAccountMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
+  auto serialised_db_value(GetFromDb(unresolved_entry.data_name_and_action.first));
+  if (unresolved_entry.data_name_and_action.second == nfs::MessageAction::kPut &&
+      !unresolved_entry.dont_add_to_db) {
+    MergePut(unresolved_entry.data_name_and_action.first, unresolved_entry.cost,
              serialised_db_value);
-  } else if (unresolved_action.data_name_and_action.second == nfs::MessageAction::kDelete) {
-    MergeDelete(unresolved_action.data_name_and_action.first, serialised_db_value);
+  } else if (unresolved_entry.data_name_and_action.second == nfs::MessageAction::kDelete) {
+    MergeDelete(unresolved_entry.data_name_and_action.first, serialised_db_value);
   } else {
     ThrowError(CommonErrors::invalid_parameter);
   }
 }
 
 void MaidAccountMergePolicy::MergePut(const DataNameVariant& data_name,
-                                      UnresolvedAction::Value cost,
+                                      UnresolvedEntry::Value cost,
                                       const NonEmptyString& serialised_db_value) {
   if (serialised_db_value.IsInitialised()) {
     auto current_values(ParseDbValue(serialised_db_value));

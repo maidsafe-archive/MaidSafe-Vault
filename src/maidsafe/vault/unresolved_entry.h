@@ -26,20 +26,20 @@ namespace maidsafe {
 
 namespace vault {
 
-struct MaidAndPmidUnresolvedAction {
+struct MaidAndPmidUnresolvedEntry {
   typedef std::pair<DataNameVariant, nfs::MessageAction> Key;
   typedef int32_t Value;
   typedef TaggedValue<NonEmptyString,
-                      struct SerialisedMaidAndPmidUnresolvedActionTag> serialised_type;
+                      struct SerialisedMaidAndPmidUnresolvedEntryTag> serialised_type;
 
-  MaidAndPmidUnresolvedAction();
-  explicit MaidAndPmidUnresolvedAction(const serialised_type& serialised_copy);
-  MaidAndPmidUnresolvedAction(const MaidAndPmidUnresolvedAction& other);
-  MaidAndPmidUnresolvedAction(MaidAndPmidUnresolvedAction&& other);
-  MaidAndPmidUnresolvedAction& operator=(MaidAndPmidUnresolvedAction other);
-  MaidAndPmidUnresolvedAction(const Key& data_name_and_action, Value cost);
-  friend void swap(MaidAndPmidUnresolvedAction& lhs,
-                   MaidAndPmidUnresolvedAction& rhs) MAIDSAFE_NOEXCEPT;
+  MaidAndPmidUnresolvedEntry();
+  explicit MaidAndPmidUnresolvedEntry(const serialised_type& serialised_copy);
+  MaidAndPmidUnresolvedEntry(const MaidAndPmidUnresolvedEntry& other);
+  MaidAndPmidUnresolvedEntry(MaidAndPmidUnresolvedEntry&& other);
+  MaidAndPmidUnresolvedEntry& operator=(MaidAndPmidUnresolvedEntry other);
+  MaidAndPmidUnresolvedEntry(const Key& data_name_and_action, Value cost);
+  friend void swap(MaidAndPmidUnresolvedEntry& lhs,
+                   MaidAndPmidUnresolvedEntry& rhs) MAIDSAFE_NOEXCEPT;
   serialised_type Serialise() const;
 
   Key data_name_and_action;

@@ -10,31 +10,31 @@
  **************************************************************************************************/
 
 
-#include "maidsafe/vault/unresolved_action.h"
+#include "maidsafe/vault/unresolved_entry.h"
 
 #include "maidsafe/common/error.h"
 
-#include "maidsafe/vault/unresolved_action.pb.h"
+#include "maidsafe/vault/unresolved_entry.pb.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-MaidAndPmidUnresolvedAction::MaidAndPmidUnresolvedAction()
+MaidAndPmidUnresolvedEntry::MaidAndPmidUnresolvedEntry()
     : data_name_and_action(),
       cost(0),
       peers(),
       sync_counter(0),
       dont_add_to_db(false) {}
 
-MaidAndPmidUnresolvedAction::MaidAndPmidUnresolvedAction(const serialised_type& serialised_copy)
+MaidAndPmidUnresolvedEntry::MaidAndPmidUnresolvedEntry(const serialised_type& serialised_copy)
     : data_name_and_action(),
       cost(0),
       peers(),
       sync_counter(0),
       dont_add_to_db(false) {
-  protobuf::MaidAndPmidUnresolvedAction proto_copy;
+  protobuf::MaidAndPmidUnresolvedEntry proto_copy;
   if (!proto_copy.ParseFromString(serialised_copy->string()))
     ThrowError(CommonErrors::parsing_error);
 
@@ -56,27 +56,27 @@ MaidAndPmidUnresolvedAction::MaidAndPmidUnresolvedAction(const serialised_type& 
   dont_add_to_db = proto_copy.dont_add_to_db();
 }
 
-MaidAndPmidUnresolvedAction::MaidAndPmidUnresolvedAction(const MaidAndPmidUnresolvedAction& other)
+MaidAndPmidUnresolvedEntry::MaidAndPmidUnresolvedEntry(const MaidAndPmidUnresolvedEntry& other)
     : data_name_and_action(other.data_name_and_action),
       cost(other.cost),
       peers(other.peers),
       sync_counter(other.sync_counter),
       dont_add_to_db(other.dont_add_to_db) {}
 
-MaidAndPmidUnresolvedAction::MaidAndPmidUnresolvedAction(MaidAndPmidUnresolvedAction&& other)
+MaidAndPmidUnresolvedEntry::MaidAndPmidUnresolvedEntry(MaidAndPmidUnresolvedEntry&& other)
     : data_name_and_action(std::move(other.data_name_and_action)),
       cost(std::move(other.cost)),
       peers(std::move(other.peers)),
       sync_counter(std::move(other.sync_counter)),
       dont_add_to_db(std::move(other.dont_add_to_db)) {}
 
-MaidAndPmidUnresolvedAction& MaidAndPmidUnresolvedAction::operator=(
-    MaidAndPmidUnresolvedAction other) {
+MaidAndPmidUnresolvedEntry& MaidAndPmidUnresolvedEntry::operator=(
+    MaidAndPmidUnresolvedEntry other) {
   swap(*this, other);
   return *this;
 }
 
-MaidAndPmidUnresolvedAction::MaidAndPmidUnresolvedAction(const Key& data_name_and_action_in,
+MaidAndPmidUnresolvedEntry::MaidAndPmidUnresolvedEntry(const Key& data_name_and_action_in,
                                                          Value cost_in)
     : data_name_and_action(data_name_and_action_in),
       cost(cost_in),
@@ -84,7 +84,7 @@ MaidAndPmidUnresolvedAction::MaidAndPmidUnresolvedAction(const Key& data_name_an
       sync_counter(0),
       dont_add_to_db(false) {}
 
-void swap(MaidAndPmidUnresolvedAction& lhs, MaidAndPmidUnresolvedAction& rhs) MAIDSAFE_NOEXCEPT {
+void swap(MaidAndPmidUnresolvedEntry& lhs, MaidAndPmidUnresolvedEntry& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
   swap(lhs.data_name_and_action, rhs.data_name_and_action);
   swap(lhs.cost, rhs.cost);
@@ -93,8 +93,8 @@ void swap(MaidAndPmidUnresolvedAction& lhs, MaidAndPmidUnresolvedAction& rhs) MA
   swap(lhs.dont_add_to_db, rhs.dont_add_to_db);
 }
 
-MaidAndPmidUnresolvedAction::serialised_type MaidAndPmidUnresolvedAction::Serialise() const {
-  protobuf::MaidAndPmidUnresolvedAction proto_copy;
+MaidAndPmidUnresolvedEntry::serialised_type MaidAndPmidUnresolvedEntry::Serialise() const {
+  protobuf::MaidAndPmidUnresolvedEntry proto_copy;
   auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(),
                                              data_name_and_action.first));
 

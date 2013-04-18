@@ -22,7 +22,7 @@
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/db.h"
-#include "maidsafe/vault/unresolved_action.h"
+#include "maidsafe/vault/unresolved_entry.h"
 
 
 namespace maidsafe {
@@ -39,10 +39,10 @@ class MaidAccountMergePolicy {
   bool AllowDelete(const typename Data::name_type& name);
 
  protected:
-  typedef MaidAndPmidUnresolvedAction UnresolvedAction;
-  void Merge(const UnresolvedAction& unresolved_action);
+  typedef MaidAndPmidUnresolvedEntry UnresolvedEntry;
+  void Merge(const UnresolvedEntry& unresolved_entry);
 
-  std::vector<UnresolvedAction> unresolved_data_;
+  std::vector<UnresolvedEntry> unresolved_data_;
   Db* db_;
 
  private:
@@ -54,7 +54,7 @@ class MaidAccountMergePolicy {
   MaidAccountMergePolicy& operator=(const MaidAccountMergePolicy&);
 
   void MergePut(const DataNameVariant& data_name,
-                UnresolvedAction::Value cost,
+                UnresolvedEntry::Value cost,
                 const NonEmptyString& serialised_db_value);
   void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
   NonEmptyString SerialiseDbValue(DbValue db_value) const;
