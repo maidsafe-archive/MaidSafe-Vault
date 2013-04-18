@@ -58,7 +58,45 @@ void SendReply(const nfs::DataMessage& original_message,
   reply_functor(reply.Serialise()->string());
 }
 
-
+CheckHoldersResult CheckHolders(const routing::MatrixChange& matrix_change,
+                                const NodeId& this_id,
+                                const NodeId& target) {
+  CheckHoldersResult holders_result;
+  std::vector<NodeId> old_matrix(matrix_change.old_matrix),
+      new_matrix(matrix_change.new_matrix);
+  std::sort(old_matrix.begin(),
+            old_matrix.end(),
+            [target](const NodeId& lhs, const NodeId& rhs) {
+              return NodeId::CloserToTarget(lhs, rhs, target);
+            });
+  std::sort(new_matrix.begin(),
+            new_matrix.end(),
+            [target](const NodeId& lhs, const NodeId& rhs) {
+              return NodeId::CloserToTarget(lhs, rhs, target);
+            });
+  std::vector<NodeId> difference;
+  auto itr(std::set_difference(new_matrix.begin(),
+                               new_matrix.end(),
+                               old_matrix.begin(),
+                               old_matrix.end(),
+                               difference.begin()));
+  difference.resize(itr - difference.begin());
+  holders_result.new_holders.insert(holders_result.new_holders.begin(),
+                                    difference.begin(),
+                                    difference.end());
+  holders_result.this_node_status = routing::GroupRangeStatus::kOutwithRange;
+  if (new_matrix.size() <= routing::Parameters::node_group_size ||
+      !NodeId::CloserToTarget(new_matrix.at(routing::Parameters::node_group_size - 1),
+                              this_id,
+                              target))
+    holders_result.this_node_status = routing::GroupRangeStatus::kInRange;
+  else if (new_matrix.size() <= routing::Parameters::closest_nodes_size ||
+      !NodeId::CloserToTarget(new_matrix.at(routing::Parameters::closest_nodes_size - 1),
+                              this_id,
+                              target))
+   holders_result.this_node_status = routing::GroupRangeStatus::kInProximalRange;
+  return holders_result;
+}
 
 }  // namespace detail
 
