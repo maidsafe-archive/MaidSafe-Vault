@@ -30,6 +30,16 @@ namespace maidsafe {
 
 namespace vault {
 
+struct CheckHoldersResult {
+  std::vector<NodeId> new_holders;
+  std::vector<NodeId> old_holders;
+  routing::GroupRangeStatus proximity_status;
+};
+
+CheckHoldersResult CheckHolders(const routing::MatrixChange& matrix_change,
+                                const NodeId& this_id,
+                                const NodeId& target);
+
 template<typename Message>
 inline bool FromMaidAccountHolder(const Message& message);
 
