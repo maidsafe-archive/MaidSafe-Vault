@@ -27,34 +27,36 @@
 namespace maidsafe {
 namespace vault {
 
+class AccountDb;
+
 class Db {
  public:
   typedef std::pair<DataNameVariant, NonEmptyString> KVPair;
 
   explicit Db(const boost::filesystem::path& path);
-
   ~Db();
-
-  void Put(const KVPair& key_value_pair);
-  void Delete(const DataNameVariant& key);
-  NonEmptyString Get(const DataNameVariant& key);
-
-  std::vector<KVPair> Get();
-
+friend class AccountDb;
  private:
   Db(const Db&);
   Db& operator=(const Db&);
   Db(Db&&);
   Db& operator=(Db&&);
 
+  uint32_t RegisterAccount();
+  void UnRegisterAccount(const uint32_t& account_id);
+
+  void Put(const uint32_t& account_id, const KVPair& key_value_pair);
+  void Delete(const uint32_t& account_id, const DataNameVariant& key);
+  NonEmptyString Get(const uint32_t& account_id, const DataNameVariant& key);
+  std::vector<KVPair> Get(const uint32_t& account_id);
+
   template<uint32_t Width> std::string Pad(uint32_t number);
 
-  static std::mutex mutex_;
-  static std::unique_ptr<leveldb::DB> leveldb_;
   static const uint32_t kPrefixWidth_, kSuffixWidth_;
-  static std::set<uint32_t> account_ids_;
+  std::mutex mutex_;
+  std::unique_ptr<leveldb::DB> leveldb_;
+  std::set<uint32_t> account_ids_;
   const boost::filesystem::path db_path_;
-  uint32_t account_id_;
 };
 
 }  // namespace vault
