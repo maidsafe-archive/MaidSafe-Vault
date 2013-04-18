@@ -1,0 +1,327 @@
+/***************************************************************************************************
+ *  Copyright 2012 MaidSafe.net limited                                                            *
+ *                                                                                                 *
+ *  The following source code is property of MaidSafe.net limited and is not meant for external    *
+ *  use.  The use of this code is governed by the licence file licence.txt found in the root of    *
+ *  this directory and also on www.maidsafe.net.                                                   *
+ *                                                                                                 *
+ *  You are not free to copy, amend or otherwise use this source code without the explicit         *
+ *  written permission of the board of directors of MaidSafe.net.                                  *
+ **************************************************************************************************/
+
+#include "maidsafe/vault/db.h"
+
+#include <functional>
+#include <memory>
+
+#include "boost/filesystem/operations.hpp"
+#include "boost/filesystem/path.hpp"
+#include "boost/progress.hpp"
+
+#include "leveldb/db.h"
+#include "leveldb/options.h"
+
+#include "leveldb/status.h"
+
+#include "maidsafe/common/test.h"
+#include "maidsafe/common/utils.h"
+
+#include "maidsafe/passport/types.h"
+
+namespace maidsafe {
+namespace vault {
+namespace test {
+
+const uint64_t kValueSize(36);
+
+class DbTest : public testing::Test {
+ public:
+  DbTest()
+      : kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
+        vault_root_directory_(*kTestRoot_ / RandomAlphaNumericString(8)) {
+    boost::filesystem::create_directory(vault_root_directory_);
+  }
+
+  DataNameVariant GetRandomKey() {
+    // Currently 15 types are defined, but...
+    uint32_t number_of_types = boost::mpl::size<typename DataNameVariant::types>::type::value,
+             type_number;
+    type_number = RandomUint32() % number_of_types;
+    switch (type_number) {
+      case  0: return passport::Anmid::name_type();
+      case  1: return passport::Ansmid::name_type();
+      case  2: return passport::Antmid::name_type();
+      case  3: return passport::Anmaid::name_type();
+      case  4: return passport::Maid::name_type();
+      case  5: return passport::Pmid::name_type();
+      case  6: return passport::Mid::name_type();
+      case  7: return passport::Smid::name_type();
+      case  8: return passport::Tmid::name_type();
+      case  9: return passport::Anmpid::name_type();
+      case 10: return passport::Mpid::name_type();
+      case 11: return ImmutableData::name_type();
+      case 12: return OwnerDirectory::name_type();
+      case 13: return GroupDirectory::name_type();
+      case 14: return WorldDirectory::name_type();
+      // default:
+        // Throw something!
+      //  ;
+    }
+    return DataNameVariant();
+  }
+
+  struct GenerateKeyValuePair : public boost::static_visitor<NonEmptyString>
+  {
+    GenerateKeyValuePair() : size_(kValueSize) {}
+    explicit GenerateKeyValuePair(uint32_t size) : size_(size) {}
+
+    template<typename T>
+    NonEmptyString operator()(T& key)
+    {
+      NonEmptyString value = NonEmptyString(RandomAlphaNumericString(size_));
+      key.data = Identity(crypto::Hash<crypto::SHA512>(value));
+      return value;
+    }
+
+    uint32_t size_;
+  };
+
+  NonEmptyString GenerateKeyValueData(DataNameVariant& key, uint32_t size) {
+    GenerateKeyValuePair generate_key_value_pair_(size);
+    return boost::apply_visitor(generate_key_value_pair_, key);
+  }
+
+ protected:
+
+  const maidsafe::test::TestPath kTestRoot_;
+  boost::filesystem::path vault_root_directory_;
+};
+
+TEST_F(DbTest, BEH_Constructor) {
+  Db db(vault_root_directory_);
+}
+
+//TODO to be replaced by maidsafe api level test
+TEST_F(DbTest, BEH_Poc) {
+  leveldb::DB* db;
+  leveldb::Options options;
+  options.create_if_missing = true;
+  options.error_if_exists = true;
+  leveldb::Status status(leveldb::DB::Open(options, vault_root_directory_.string(), &db));
+  if (!status.ok())
+    ThrowError(VaultErrors::failed_to_handle_request);
+  std::unique_ptr<leveldb::DB> leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
+  assert(leveldb_);
+  std::vector<std::string> nodes1, nodes2, nodes3;
+  for (auto i(0U); i != 10000; ++i) {
+    nodes1.push_back("1" + NodeId(NodeId::kRandomId).string());
+    nodes2.push_back("2" + NodeId(NodeId::kRandomId).string());
+    nodes3.push_back("3" + NodeId(NodeId::kRandomId).string());
+
+    leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(), nodes1.back(), nodes1.back()));
+    if (!status.ok())
+      ThrowError(VaultErrors::failed_to_handle_request);
+    status = leveldb_->Put(leveldb::WriteOptions(), nodes2.back(), nodes2.back());
+    if (!status.ok())
+      ThrowError(VaultErrors::failed_to_handle_request);
+    status = leveldb_->Put(leveldb::WriteOptions(), nodes3.back(), nodes3.back());
+    if (!status.ok())
+      ThrowError(VaultErrors::failed_to_handle_request);
+  }
+
+  {
+    leveldb::Iterator* iter = leveldb_->NewIterator(leveldb::ReadOptions());
+    uint32_t count(0);
+    for (iter->Seek("1");
+         iter->Valid() && iter->key().ToString() < "2";
+         iter->Next()) {
+        ASSERT_NE(std::find(nodes1.begin(), nodes1.end(), iter->value().ToString()), nodes1.end());
+        ++count;
+    }
+    ASSERT_EQ(10000, count);
+    delete iter;
+  }
+  {
+    leveldb::Iterator* iter = leveldb_->NewIterator(leveldb::ReadOptions());
+    uint32_t count(0);
+    for (iter->Seek("2");
+         iter->Valid() && iter->key().ToString() < "3";
+         iter->Next()) {
+        ASSERT_NE(std::find(nodes2.begin(), nodes2.end(), iter->value().ToString()), nodes2.end());
+        ++count;
+    }
+    ASSERT_EQ(10000, count);
+    delete iter;
+  }
+  {
+    leveldb::Iterator* iter = leveldb_->NewIterator(leveldb::ReadOptions());
+    uint32_t count(0);
+    for (iter->Seek("3");
+         iter->Valid();
+         iter->Next()) {
+        ASSERT_NE(std::find(nodes3.begin(), nodes3.end(), iter->value().ToString()), nodes3.end());
+        ++count;
+    }
+    ASSERT_EQ(10000, count);
+    delete iter;
+  }
+}
+
+TEST_F(DbTest, BEH_GetSingleAccount) {
+  Db db(vault_root_directory_);
+  std::vector<Db::KVPair> nodes;
+  for (uint32_t i = 0; i != 10000; ++i) {
+    DataNameVariant key(GetRandomKey());
+    NonEmptyString value(GenerateKeyValueData(key, kValueSize));
+    nodes.push_back(std::make_pair(key, value));
+  }
+  for (uint32_t i = 0; i != 10000; ++i)
+    EXPECT_NO_THROW(db.Put(std::make_pair(nodes[i].first, nodes[i].second)));
+  for (uint32_t i = 0; i != 10000; ++i)
+    EXPECT_EQ(nodes[i].second, db.Get(nodes[i].first));
+}
+
+TEST_F(DbTest, BEH_DeleteSingleAccount) {
+  Db db(vault_root_directory_);
+  std::vector<Db::KVPair> nodes;
+  for (uint32_t i = 0; i != 10000; ++i) {
+    DataNameVariant key(GetRandomKey());
+    NonEmptyString value(GenerateKeyValueData(key, kValueSize));
+    nodes.push_back(std::make_pair(key, value));
+  }
+  for (uint32_t i = 0; i != 10000; ++i)
+    EXPECT_NO_THROW(db.Put(std::make_pair(nodes[i].first, nodes[i].second)));
+  for (uint32_t i = 0; i != 10000; ++i)
+    EXPECT_EQ(nodes[i].second, db.Get(nodes[i].first));
+  for (uint32_t i = 0; i != 10000; ++i)
+    EXPECT_NO_THROW(db.Delete(nodes[i].first));
+  for (uint32_t i = 0; i != 10000; ++i)
+    EXPECT_THROW(db.Get(nodes[i].first), vault_error);
+}
+
+TEST_F(DbTest, BEH_GetMultipleAccounts) {
+  uint32_t accounts(RandomUint32() % 10);
+  std::vector<std::vector<Db::KVPair>> account_vector(accounts);
+  std::vector<std::unique_ptr<Db>> db_vector(accounts);
+  for (uint32_t i = 0; i != accounts; ++i) {
+    db_vector[i].reset(new Db(vault_root_directory_));
+  }
+  for (uint32_t i = 0; i != accounts; ++i) {
+    uint32_t entries(RandomUint32() % 10000);
+    for (uint32_t j = 0; j != entries; ++j) {
+      DataNameVariant key(GetRandomKey());
+      NonEmptyString value(GenerateKeyValueData(key, kValueSize));
+      account_vector[i].push_back(std::make_pair(key, value));
+    }
+  }
+  for (uint32_t i = 0; i != accounts; ++i)
+    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
+      EXPECT_NO_THROW(db_vector[i]->Put(std::make_pair(account_vector[i][j].first,
+                                                       account_vector[i][j].second)));
+  for (uint32_t i = 0; i != accounts; ++i)
+    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
+      EXPECT_EQ(account_vector[i][j].second, db_vector[i]->Get(account_vector[i][j].first));
+}
+
+
+TEST_F(DbTest, BEH_DeleteMultipleAccounts) {
+  uint32_t accounts(RandomUint32() % 10);
+  std::vector<std::vector<Db::KVPair>> account_vector(accounts);
+  std::vector<std::unique_ptr<Db>> db_vector(accounts);
+  for (uint32_t i = 0; i != accounts; ++i) {
+    db_vector[i].reset(new Db(vault_root_directory_));
+  }
+  for (uint32_t i = 0; i != accounts; ++i) {
+    uint32_t entries(RandomUint32() % 10000);
+    for (uint32_t j = 0; j != entries; ++j) {
+      DataNameVariant key(GetRandomKey());
+      NonEmptyString value(GenerateKeyValueData(key, kValueSize));
+      account_vector[i].push_back(std::make_pair(key, value));
+    }
+  }
+  for (uint32_t i = 0; i != accounts; ++i)
+    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
+      EXPECT_NO_THROW(db_vector[i]->Put(std::make_pair(account_vector[i][j].first,
+                                                       account_vector[i][j].second)));
+  for (uint32_t i = 0; i != accounts; ++i)
+    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
+      EXPECT_EQ(account_vector[i][j].second, db_vector[i]->Get(account_vector[i][j].first));
+  for (uint32_t i = 0; i != accounts; ++i)
+    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
+      EXPECT_NO_THROW(db_vector[i]->Delete(account_vector[i][j].first));
+  for (uint32_t i = 0; i != accounts; ++i)
+    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
+      EXPECT_THROW(db_vector[i]->Get(account_vector[i][j].first), vault_error);
+}
+
+TEST_F(DbTest, BEH_AsyncGetPuts) {
+  std::mutex op_mutex, cond_mutex;
+  std::condition_variable cond_var;
+  std::vector<std::future<void> > async_ops;
+  uint32_t accounts(RandomUint32() % 10), expected_count(0), op_count(0);
+  std::vector<std::vector<Db::KVPair>> account_vector(accounts);
+  std::vector<std::unique_ptr<Db>> db_vector(accounts);
+  for (uint32_t i = 0; i != accounts; ++i) {
+    db_vector[i].reset(new Db(vault_root_directory_));
+  }
+  for (uint32_t i = 0; i != accounts; ++i) {
+    uint32_t entries(RandomUint32() % 100);
+    expected_count += entries;
+    for (uint32_t j = 0; j != entries; ++j) {
+      DataNameVariant key(GetRandomKey());
+      NonEmptyString value(GenerateKeyValueData(key, kValueSize));
+      account_vector[i].push_back(std::make_pair(key, value));
+      async_ops.push_back(std::async(
+          std::launch::async,
+          [this, &db_vector, &account_vector, &op_count, &op_mutex, i, j] {
+              EXPECT_NO_THROW(db_vector[i]->Put(std::make_pair(account_vector[i][j].first,
+                                                               account_vector[i][j].second)));
+              {
+                std::lock_guard<std::mutex> lock(op_mutex);
+                ++op_count;
+              }
+          }));
+    }
+  }
+  {
+    std::unique_lock<std::mutex> lock(cond_mutex);
+    bool result(cond_var.wait_for(lock, std::chrono::seconds(2),
+                                  [&]()->bool {
+                                    return op_count == expected_count;
+                                  }));
+    EXPECT_TRUE(result);
+    for (uint32_t i = 0; i != async_ops.size(); ++i)
+      EXPECT_NO_THROW(async_ops[i].get());
+    async_ops.clear();
+    op_count = 0;
+  }
+
+  for (uint32_t i = 0; i != accounts; ++i) {
+    for (uint32_t j = 0; j != account_vector[i].size(); ++j) {
+      async_ops.push_back(std::async(
+          std::launch::async,
+          [this, &db_vector, &account_vector, &op_count, &op_mutex, i, j] {
+              EXPECT_EQ(account_vector[i][j].second, db_vector[i]->Get(account_vector[i][j].first));
+              {
+                std::lock_guard<std::mutex> lock(op_mutex);
+                ++op_count;
+              }
+          }));
+    }
+  }
+  {
+    std::unique_lock<std::mutex> lock(cond_mutex);
+    bool result(cond_var.wait_for(lock, std::chrono::seconds(2),
+                                  [&]()->bool {
+                                    return op_count == expected_count;
+                                  }));
+    EXPECT_TRUE(result);
+    for (uint32_t i = 0; i != async_ops.size(); ++i)
+      EXPECT_NO_THROW(async_ops[i].get());
+    async_ops.clear();
+  }
+}
+
+}  // namespace test
+}  // namespace vault
+}  // namespace maidsafe

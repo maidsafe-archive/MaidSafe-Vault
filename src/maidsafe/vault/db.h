@@ -15,6 +15,8 @@
 #include <atomic>
 #include <string>
 
+#include <set>
+
 #include "boost/filesystem/path.hpp"
 #include "leveldb/db.h"
 #include "leveldb/status.h"
@@ -22,25 +24,22 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_types/data_name_variant.h"
 
-
 namespace maidsafe {
-
 namespace vault {
 
 class Db {
  public:
-  // throws on failure
+  typedef std::pair<DataNameVariant, NonEmptyString> KVPair;
+
   explicit Db(const boost::filesystem::path& path);
 
-  ~Db(); // delete account here
+  ~Db();
 
-  void Put(const DataNameVariant& key, const NonEmptyString& value);
-
+  void Put(const KVPair& key_value_pair);
   void Delete(const DataNameVariant& key);
-
   NonEmptyString Get(const DataNameVariant& key);
 
-  std::vector<std::pair<std::string, std::string>> Get();
+  std::vector<KVPair> Get();
 
  private:
   Db(const Db&);
@@ -48,13 +47,17 @@ class Db {
   Db(Db&&);
   Db& operator=(Db&&);
 
+  template<uint32_t Width> std::string Pad(uint32_t number);
+
+  static std::mutex mutex_;
   static std::unique_ptr<leveldb::DB> leveldb_;
-  static std::atomic<uint32_t> last_account_id_;
+  static const uint32_t kPrefixWidth_, kSuffixWidth_;
+  static std::set<uint32_t> account_ids_;
+  const boost::filesystem::path db_path_;
   uint32_t account_id_;
 };
 
 }  // namespace vault
-
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_DB_H_
