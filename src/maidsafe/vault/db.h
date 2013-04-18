@@ -49,9 +49,7 @@ class Db {
   template<uint32_t Width> std::string Pad(uint32_t number);
 
   static std::mutex mutex_;
-  static std::once_flag flag_;
   static std::unique_ptr<leveldb::DB> leveldb_;
-  static std::atomic<uint32_t> last_account_id_; //FIXME
   static const uint32_t kPrefixWidth_, kSuffixWidth_;
   static std::set<uint32_t> account_ids_;
   const boost::filesystem::path db_path_;
