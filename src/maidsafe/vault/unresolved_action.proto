@@ -1,0 +1,11 @@
+package maidsafe.vault.protobuf;
+option optimize_for = LITE_RUNTIME;
+
+message MaidAndPmidUnresolvedAction {
+  required int32 type = 1;
+  required bytes name = 2;
+  required int32 action = 3;
+  required int32 cost = 4;
+  repeated bytes peers = 5;
+  required bool dont_add_to_db = 6;
+}

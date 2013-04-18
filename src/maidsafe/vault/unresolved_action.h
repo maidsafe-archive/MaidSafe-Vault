@@ -12,6 +12,7 @@
 #ifndef MAIDSAFE_VAULT_UNRESOLVED_ACTION_H_
 #define MAIDSAFE_VAULT_UNRESOLVED_ACTION_H_
 
+#include <algorithm>
 #include <cstdint>
 #include <set>
 #include <utility>
@@ -28,17 +29,24 @@ namespace vault {
 struct MaidAndPmidUnresolvedAction {
   typedef std::pair<DataNameVariant, nfs::MessageAction> Key;
   typedef int32_t Value;
+  typedef TaggedValue<NonEmptyString,
+                      struct SerialisedMaidAndPmidUnresolvedActionTag> serialised_type;
+
   MaidAndPmidUnresolvedAction();
+  explicit MaidAndPmidUnresolvedAction(const serialised_type& serialised_copy);
   MaidAndPmidUnresolvedAction(const MaidAndPmidUnresolvedAction& other);
   MaidAndPmidUnresolvedAction(MaidAndPmidUnresolvedAction&& other);
   MaidAndPmidUnresolvedAction& operator=(MaidAndPmidUnresolvedAction other);
   MaidAndPmidUnresolvedAction(const Key& data_name_and_action, Value cost);
   friend void swap(MaidAndPmidUnresolvedAction& lhs,
                    MaidAndPmidUnresolvedAction& rhs) MAIDSAFE_NOEXCEPT;
+  serialised_type Serialise() const;
 
   Key data_name_and_action;
   Value cost;
   std::set<NodeId> peers;
+  int sync_counter;
+  bool dont_add_to_db;
 };
 
 }  // namespace vault
