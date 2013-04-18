@@ -16,13 +16,15 @@
 #include <iterator>
 #include "maidsafe/vault/db.h"
 #include "maidsafe/routing/parameters.h"
+#include "maidsafe/vault/unresolved_entry.h"
 
 namespace maidsafe {
 
 namespace vault {
 
 template<typename MergePolicy>
-Sync<MergePolicy>::Sync(Db* db) : MergePolicy(db) {}
+Sync<MergePolicy>::Sync(Db* db) : MergePolicy(db), sync_counter_(10) {}
+// TODO(dirvine) decide how to decide on this magic number
 
 template<typename MergePolicy>
 Sync<MergePolicy>::Sync(Sync&& other) : MergePolicy(std::forward<MergePolicy>(other)) {}
@@ -82,6 +84,28 @@ void Sync<MergePolicy>::ReplaceNode(const NodeId& old_node, const NodeId& new_no
            (*i).erase(i);
       }
   }
+}
+
+template<typename MergePolicy>
+std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresolvedData() {
+    // increment sync count in each record
+    for(auto i = std::begin(MergePolicy::unresolved_data_);
+        i == std::end(MergePolicy::unresolved_data_); ++i) {
+        ++(*i).sync_counter;
+    }
+    // remove all records that are too old
+    MergePolicy::unresolved_data_.erase(std::remove_if(std::begin(MergePolicy::unresolved_data_),
+                                                       std::end(MergePolicy::unresolved_data_),
+                                                       [this] (const typename MergePolicy::unresolved_data_& entry)
+    {
+        if (entry.sync_counter >= this->sync_counter_)
+            return true;
+    }));
+
+    std::vector<typename MergePolicy::UnresolvedEntry> return_vec;
+    std::copy(std::begin(MergePolicy::unresolved_data_),
+              std::end(MergePolicy::unresolved_data_), std::begin(return_vec));
+    return return_vec;
 }
 
 

@@ -19,6 +19,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/vault/unresolved_entry.h"
 #include "maidsafe/vault/db.h"
 
 
@@ -38,9 +39,9 @@ class Sync : public MergePolicy {
 
   void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
   // calling this WILL increment the sync counter and delete data that reaches the limit
-  std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData() const;
-  int32_t sync_counter() { return sync_counter_; }
-  void Setsync_counter(int32_t new_count) { sync_counter_ = new_count; }
+  std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData();
+  int32_t sync_counter() const { return sync_counter_; }
+  void set_sync_counter(int32_t new_count) { sync_counter_ = new_count; }
  private:
   Sync(const Sync&);
   Sync& operator=(const Sync&);
