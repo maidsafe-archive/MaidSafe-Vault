@@ -39,6 +39,8 @@ class MaidAccountMergePolicy {
 
  protected:
   typedef MaidAndPmidUnresolvedAction UnresolvedAction;
+  // If Deleting and the DB doesn't contain the element, throws 'CommonErrors::no_such_element'.
+  // Check in 'unresolved_data_' for a corresponding (out of sequence) Put request.
   void Merge(const UnresolvedAction::Key& data_name_and_action, UnresolvedAction::Value cost);
 
   std::vector<UnresolvedAction> unresolved_data_;
@@ -52,13 +54,39 @@ class MaidAccountMergePolicy {
   MaidAccountMergePolicy(const MaidAccountMergePolicy&);
   MaidAccountMergePolicy& operator=(const MaidAccountMergePolicy&);
 
+  void MergePut(const DataNameVariant& data_name,
+                UnresolvedAction::Value cost,
+                const NonEmptyString& serialised_db_value);
+  void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
   NonEmptyString SerialiseDbValue(DbValue db_value) const;
   DbValue ParseDbValue(NonEmptyString serialised_db_value) const;
 };
 
 template<typename Data>
 bool MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name) const {
-  todo
+                                                                     //todo - check if throws if not exists
+  auto serialised_db_value(db_->Get(name));
+  Count current_count(0);
+  if (serialised_db_value.IsInitialised()) {
+    auto current_values(ParseDbValue(serialised_db_value));
+    assert(current_values.second.data > 0);
+    current_count = current_values.second;
+  }
+
+  DataNameVariant name_as_variant(name);
+  for (const auto& unresolved_action : unresolved_data_) {
+    if (unresolved_action.data_name_and_action.first == name_as_variant) {
+                                                                     //todo - should this only be for our own NodeId?
+      if (unresolved_action.data_name_and_action.second == nfs::MessageAction::kPut) {
+        ++current_count.data;
+      } else {
+        assert(data_name_and_action.second == nfs::MessageAction::kDelete);
+        --current_count.data;
+      }
+    }
+  }
+
+  return current_count > 0;
 }
 
 }  // namespace vault
