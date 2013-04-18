@@ -12,6 +12,7 @@
 #ifndef MAIDSAFE_VAULT_UNRESOLVED_ACTION_H_
 #define MAIDSAFE_VAULT_UNRESOLVED_ACTION_H_
 
+#include <algorithm>
 #include <cstdint>
 #include <set>
 #include <utility>
@@ -25,20 +26,27 @@ namespace maidsafe {
 
 namespace vault {
 
-struct MaidAndPmidUnresolvedAction {
+struct MaidAndPmidUnresolvedEntry {
   typedef std::pair<DataNameVariant, nfs::MessageAction> Key;
   typedef int32_t Value;
-  MaidAndPmidUnresolvedAction();
-  MaidAndPmidUnresolvedAction(const MaidAndPmidUnresolvedAction& other);
-  MaidAndPmidUnresolvedAction(MaidAndPmidUnresolvedAction&& other);
-  MaidAndPmidUnresolvedAction& operator=(MaidAndPmidUnresolvedAction other);
-  MaidAndPmidUnresolvedAction(const Key& data_name_and_action, Value cost);
-  friend void swap(MaidAndPmidUnresolvedAction& lhs,
-                   MaidAndPmidUnresolvedAction& rhs) MAIDSAFE_NOEXCEPT;
+  typedef TaggedValue<NonEmptyString,
+                      struct SerialisedMaidAndPmidUnresolvedEntryTag> serialised_type;
+
+  MaidAndPmidUnresolvedEntry();
+  explicit MaidAndPmidUnresolvedEntry(const serialised_type& serialised_copy);
+  MaidAndPmidUnresolvedEntry(const MaidAndPmidUnresolvedEntry& other);
+  MaidAndPmidUnresolvedEntry(MaidAndPmidUnresolvedEntry&& other);
+  MaidAndPmidUnresolvedEntry& operator=(MaidAndPmidUnresolvedEntry other);
+  MaidAndPmidUnresolvedEntry(const Key& data_name_and_action, Value cost);
+  friend void swap(MaidAndPmidUnresolvedEntry& lhs,
+                   MaidAndPmidUnresolvedEntry& rhs) MAIDSAFE_NOEXCEPT;
+  serialised_type Serialise() const;
 
   Key data_name_and_action;
   Value cost;
   std::set<NodeId> peers;
+  int sync_counter;
+  bool dont_add_to_db;
 };
 
 }  // namespace vault

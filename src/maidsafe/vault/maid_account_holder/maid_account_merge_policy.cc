@@ -11,6 +11,8 @@
 
 #include "maidsafe/vault/maid_account_holder/maid_account_merge_policy.h"
 
+#include "maidsafe/common/error.h"
+
 #include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
 
 
@@ -32,16 +34,77 @@ MaidAccountMergePolicy& MaidAccountMergePolicy::operator=(MaidAccountMergePolicy
   return *this;
 }
 
-void MaidAccountMergePolicy::Merge(const UnresolvedAction::Key& data_name_and_action,
-                                   UnresolvedAction::Value cost) {
+void MaidAccountMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
+  auto serialised_db_value(GetFromDb(unresolved_entry.data_name_and_action.first));
+  if (unresolved_entry.data_name_and_action.second == nfs::MessageAction::kPut &&
+      !unresolved_entry.dont_add_to_db) {
+    MergePut(unresolved_entry.data_name_and_action.first, unresolved_entry.cost,
+             serialised_db_value);
+  } else if (unresolved_entry.data_name_and_action.second == nfs::MessageAction::kDelete) {
+    MergeDelete(unresolved_entry.data_name_and_action.first, serialised_db_value);
+  } else {
+    ThrowError(CommonErrors::invalid_parameter);
+  }
+}
+
+void MaidAccountMergePolicy::MergePut(const DataNameVariant& data_name,
+                                      UnresolvedEntry::Value cost,
+                                      const NonEmptyString& serialised_db_value) {
+  if (serialised_db_value.IsInitialised()) {
+    auto current_values(ParseDbValue(serialised_db_value));
+    uint64_t current_total_size(current_values.first.data * current_values.second.data);
+    ++current_values.second.data;
+    current_values.first.data = static_cast<int32_t>(
+                                    (current_total_size + cost) / current_values.second.data);
+    db_->Put(std::make_pair(data_name, SerialiseDbValue(current_values)));
+  } else {
+    DbValue db_value(std::make_pair(AverageCost(cost), Count(1)));
+    db_->Put(std::make_pair(data_name, SerialiseDbValue(db_value)));
+  }
+}
+
+void MaidAccountMergePolicy::MergeDelete(const DataNameVariant& data_name,
+                                         const NonEmptyString& serialised_db_value) {
+  if (!serialised_db_value.IsInitialised()) {
+    // No need to check in unresolved_data_, since the corresponding "Put" will already have been
+    // marked as "dont_add_to_db".
+    return;
+  }
+
+  auto current_values(ParseDbValue(serialised_db_value));
+  assert(current_values.second.data > 0);
+  if (current_values.second.data == 1) {
+    db_->Delete(data_name);
+  } else {
+    --current_values.second.data;
+    db_->Put(std::make_pair(data_name, SerialiseDbValue(current_values)));
+  }
 }
 
 NonEmptyString MaidAccountMergePolicy::SerialiseDbValue(DbValue db_value) const {
+  protobuf::MaidAccountDbValue proto_db_value;
+  proto_db_value.set_average_cost(db_value.first.data);
+  proto_db_value.set_count(db_value.second.data);
+  return NonEmptyString(proto_db_value.SerializeAsString());
 }
 
 MaidAccountMergePolicy::DbValue MaidAccountMergePolicy::ParseDbValue(
     NonEmptyString serialised_db_value) const {
+  protobuf::MaidAccountDbValue proto_db_value;
+  if (!proto_db_value.ParseFromString(serialised_db_value.string()))
+    ThrowError(CommonErrors::parsing_error);
+  return std::make_pair(AverageCost(proto_db_value.average_cost()), Count(proto_db_value.count()));
 }
+
+NonEmptyString MaidAccountMergePolicy::GetFromDb(const DataNameVariant& data_name) {
+  NonEmptyString serialised_db_value;
+  try {
+    serialised_db_value = db_->Get(data_name);
+  }
+  catch(const vault_error&) {}
+  return serialised_db_value;
+}
+
 
 }  // namespace vault
 

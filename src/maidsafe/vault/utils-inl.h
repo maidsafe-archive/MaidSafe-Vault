@@ -13,6 +13,7 @@
 #define MAIDSAFE_VAULT_UTILS_INL_H_
 
 #include <algorithm>
+#include <vector>
 
 #include "maidsafe/routing/parameters.h"
 

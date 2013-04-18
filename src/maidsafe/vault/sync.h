@@ -19,6 +19,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/vault/unresolved_entry.h"
 #include "maidsafe/vault/db.h"
 
 
@@ -33,20 +34,20 @@ class Sync : public MergePolicy {
   explicit Sync(Db* db);
   Sync(Sync&& other);
   Sync& operator=(Sync&& other);
-  void AddMessage(const DataNameVariant& key,
-                  const NonEmptyString& value,
-                  nfs::MessageAction message_action,
-                  const NodeId& node_id);
-  std::map<DataNameVariant, NonEmptyString> GetMessages() const;
-  void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
+  void AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry&,
+                          const NodeId& node_id);
 
-  NonEmptyString GetAccountTransfer() const;
-  void ApplyAccountTransfer(const NonEmptyString& account);
+  void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
+  // calling this WILL increment the sync counter and delete data that reaches the limit
+  std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData();
+  int32_t sync_counter() const { return sync_counter_; }
+  void set_sync_counter(int32_t new_count) { sync_counter_ = new_count; }
  private:
   Sync(const Sync&);
   Sync& operator=(const Sync&);
+  int32_t sync_counter_;
   typename std::vector<typename MergePolicy::UnresolvedEntry>::iterator FindUnresolved(
-      const DataNameVariant& key);
+      const typename MergePolicy::UnresolvedEntry::Key& key);
 };
 
 }  // namespace vault
