@@ -101,11 +101,12 @@ std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresol
         if (entry.sync_counter >= this->sync_counter_)
             return true;
     }));
-
-    std::vector<typename MergePolicy::UnresolvedEntry> return_vec;
-    std::copy(std::begin(MergePolicy::unresolved_data_),
-              std::end(MergePolicy::unresolved_data_), std::begin(return_vec));
-    return return_vec;
+// TODO(dirvine) please test !!
+//    std::vector<typename MergePolicy::UnresolvedEntry> return_vec;
+//    std::copy(std::begin(MergePolicy::unresolved_data_),
+//              std::end(MergePolicy::unresolved_data_), std::begin(return_vec));
+//    return return_vec;
+    return MergePolicy::unresolved_data_;
 }
 
 
