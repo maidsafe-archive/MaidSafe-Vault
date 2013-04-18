@@ -32,8 +32,13 @@ namespace vault {
 
 struct CheckHoldersResult {
   std::vector<NodeId> new_holders;
-  routing::GroupRangeStatus this_node_status;
+  std::vector<NodeId> old_holders;
+  routing::GroupRangeStatus proximity_status;
 };
+
+CheckHoldersResult CheckHolders(const routing::MatrixChange& matrix_change,
+                                const NodeId& this_id,
+                                const NodeId& target);
 
 template<typename Message>
 inline bool FromMaidAccountHolder(const Message& message);
@@ -124,10 +129,6 @@ bool AddResult(const nfs::DataMessage& data_message,
                Accumulator& accumulator,
                std::mutex& accumulator_mutex,
                int requests_required);
-
-CheckHoldersResult CheckHolders(const routing::MatrixChange& matrix_change,
-                                const NodeId& this_id,
-                                const NodeId& target);
 
 }  // namespace detail
 

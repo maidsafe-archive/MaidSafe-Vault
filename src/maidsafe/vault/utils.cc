@@ -26,6 +26,60 @@ namespace maidsafe {
 
 namespace vault {
 
+CheckHoldersResult CheckHolders(const routing::MatrixChange& matrix_change,
+                                const NodeId& this_id,
+                                const NodeId& target) {
+  CheckHoldersResult holders_result;
+  std::vector<NodeId> old_matrix(matrix_change.old_matrix),
+      new_matrix(matrix_change.new_matrix);
+  std::sort(old_matrix.begin(),
+            old_matrix.end(),
+            [target](const NodeId& lhs, const NodeId& rhs) {
+              return NodeId::CloserToTarget(lhs, rhs, target);
+            });
+  std::sort(new_matrix.begin(),
+            new_matrix.end(),
+            [target](const NodeId& lhs, const NodeId& rhs) {
+              return NodeId::CloserToTarget(lhs, rhs, target);
+            });
+  std::vector<NodeId> difference;
+  auto itr(std::set_difference(new_matrix.begin(),
+                               new_matrix.end(),
+                               old_matrix.begin(),
+                               old_matrix.end(),
+                               std::back_inserter(difference),
+                               [target](const NodeId& lhs, const NodeId& rhs) {
+                                 return NodeId::CloserToTarget(lhs, rhs, target);
+                               }));
+  holders_result.new_holders.insert(holders_result.new_holders.begin(),
+                                    difference.begin(),
+                                    difference.end());
+  difference.clear();
+  itr = std::set_difference(old_matrix.begin(),
+                            old_matrix.end(),
+                            new_matrix.begin(),
+                            new_matrix.end(),
+                            std::back_inserter(difference),
+                            [target](const NodeId& lhs, const NodeId& rhs) {
+                              return NodeId::CloserToTarget(lhs, rhs, target);
+                            });
+  holders_result.old_holders.insert(holders_result.old_holders.begin(),
+                                    difference.begin(),
+                                    difference.end());
+  holders_result.proximity_status = routing::GroupRangeStatus::kOutwithRange;
+  if (new_matrix.size() <= routing::Parameters::node_group_size ||
+      !NodeId::CloserToTarget(new_matrix.at(routing::Parameters::node_group_size - 1),
+                              this_id,
+                              target))
+    holders_result.proximity_status = routing::GroupRangeStatus::kInRange;
+  else if (new_matrix.size() <= routing::Parameters::closest_nodes_size ||
+      !NodeId::CloserToTarget(new_matrix.at(routing::Parameters::closest_nodes_size - 1),
+                              this_id,
+                              target))
+   holders_result.proximity_status = routing::GroupRangeStatus::kInProximalRange;
+  return holders_result;
+}
+
 namespace detail {
 
 void InitialiseDirectory(const boost::filesystem::path& directory) {
@@ -56,46 +110,6 @@ void SendReply(const nfs::DataMessage& original_message,
   if (return_code.code() != CommonErrors::success)
     reply = nfs::Reply(return_code, original_message.Serialise().data);
   reply_functor(reply.Serialise()->string());
-}
-
-CheckHoldersResult CheckHolders(const routing::MatrixChange& matrix_change,
-                                const NodeId& this_id,
-                                const NodeId& target) {
-  CheckHoldersResult holders_result;
-  std::vector<NodeId> old_matrix(matrix_change.old_matrix),
-      new_matrix(matrix_change.new_matrix);
-  std::sort(old_matrix.begin(),
-            old_matrix.end(),
-            [target](const NodeId& lhs, const NodeId& rhs) {
-              return NodeId::CloserToTarget(lhs, rhs, target);
-            });
-  std::sort(new_matrix.begin(),
-            new_matrix.end(),
-            [target](const NodeId& lhs, const NodeId& rhs) {
-              return NodeId::CloserToTarget(lhs, rhs, target);
-            });
-  std::vector<NodeId> difference;
-  auto itr(std::set_difference(new_matrix.begin(),
-                               new_matrix.end(),
-                               old_matrix.begin(),
-                               old_matrix.end(),
-                               difference.begin()));
-  difference.resize(itr - difference.begin());
-  holders_result.new_holders.insert(holders_result.new_holders.begin(),
-                                    difference.begin(),
-                                    difference.end());
-  holders_result.this_node_status = routing::GroupRangeStatus::kOutwithRange;
-  if (new_matrix.size() <= routing::Parameters::node_group_size ||
-      !NodeId::CloserToTarget(new_matrix.at(routing::Parameters::node_group_size - 1),
-                              this_id,
-                              target))
-    holders_result.this_node_status = routing::GroupRangeStatus::kInRange;
-  else if (new_matrix.size() <= routing::Parameters::closest_nodes_size ||
-      !NodeId::CloserToTarget(new_matrix.at(routing::Parameters::closest_nodes_size - 1),
-                              this_id,
-                              target))
-   holders_result.this_node_status = routing::GroupRangeStatus::kInProximalRange;
-  return holders_result;
 }
 
 }  // namespace detail
