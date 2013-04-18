@@ -23,15 +23,21 @@
 #include "maidsafe/data_types/data_name_variant.h"
 
 namespace maidsafe {
-
 namespace vault {
 
+std::mutex Db::mutex_;
 std::unique_ptr<leveldb::DB> Db::leveldb_ = nullptr;
 std::atomic<uint32_t> Db::last_account_id_(0);
-std::once_flag Db::flag;
+std::once_flag Db::flag_;
+const uint32_t Db::kPrefixWidth_(4);
+const uint32_t Db::kSuffixWidth_(2);
+std::set<uint32_t> Db::account_ids_;
 
-Db::Db(const boost::filesystem::path& path) {
-  std::call_once(flag, [&path](){
+Db::Db(const boost::filesystem::path& path)
+  : db_path_(path),
+    account_id_(0) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (!leveldb_) {
       if (boost::filesystem::exists(path))
         boost::filesystem::remove_all(path);
       leveldb::DB* db;
@@ -43,24 +49,38 @@ Db::Db(const boost::filesystem::path& path) {
         ThrowError(VaultErrors::failed_to_handle_request); // FIXME need new exception
       leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
       assert(leveldb_);
-    });
-  account_id_ = ++last_account_id_;
+  }
+  if (account_ids_.size() == (1 << 16) - 1)
+    ThrowError(VaultErrors::failed_to_handle_request);
+  uint32_t account_id(RandomUint32() % (1 << 16));
+  while (account_ids_.find((account_id)) != account_ids_.end())
+    account_id = RandomUint32() % (1 << 16);
+  account_ids_.insert(account_id);
+  account_id_ = account_id;
 }
 
-//FIXME need mutex here
 Db::~Db() {
   std::vector<std::string> account_elements;
+  std::lock_guard<std::mutex> lock(mutex_);
   leveldb::Iterator* iter = leveldb_->NewIterator(leveldb::ReadOptions());
-  if (account_id_ != last_account_id_) {
-    for (iter->Seek(Pad<4>(account_id_));
-         iter->Valid() && iter->key().ToString() < Pad<4>(account_id_ + 1);
+  auto it(account_ids_.find(account_id_));
+  assert(it != account_ids_.end());
+  if (++it != account_ids_.end()) {
+    for (iter->Seek(Pad<kPrefixWidth_>(account_id_));
+         iter->Valid() && iter->key().ToString() < Pad<kPrefixWidth_>(*it);
          iter->Next())
       account_elements.push_back(iter->key().ToString());
   } else {
-    for (iter->Seek(Pad<4>(account_id_)); iter->Valid(); iter->Next())
+    for (iter->Seek(Pad<kPrefixWidth_>(account_id_)); iter->Valid(); iter->Next())
       account_elements.push_back(iter->key().ToString());
   }
   delete iter;
+  account_ids_.erase(account_id_);
+  if (account_ids_.size() == 0) {
+    leveldb::DestroyDB(db_path_.string(), leveldb::Options());
+    leveldb_.reset();
+    return;
+  }
 
   for (auto i: account_elements) {
     leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), i));
@@ -69,21 +89,22 @@ Db::~Db() {
   }
 }
 
-void Db::Put(const DataNameVariant& key, const NonEmptyString& value) {
-  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
-  std::string db_key(Pad<4>(account_id_) +
+void Db::Put(const KVPair& key_value_pair) {
+  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key_value_pair.first));
+  std::string db_key(Pad<kPrefixWidth_>(account_id_) +
                      result.second.string() +
-                     Pad<2>(static_cast<uint32_t>(result.first)));
-  leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(), db_key, value.string()));
+                     Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)));
+  leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
+                                       db_key, key_value_pair.second.string()));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
 }
 
 void Db::Delete(const DataNameVariant& key) {
   auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
-  std::string db_key(Pad<4>(account_id_) +
+  std::string db_key(Pad<kPrefixWidth_>(account_id_) +
                      result.second.string() +
-                     Pad<2>(static_cast<uint32_t>(result.first)));
+                     Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)));
   leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), db_key));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
@@ -91,9 +112,9 @@ void Db::Delete(const DataNameVariant& key) {
 
 NonEmptyString Db::Get(const DataNameVariant& key) {
   auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
-  std::string db_key(Pad<4>(account_id_) +
+  std::string db_key(Pad<kPrefixWidth_>(account_id_) +
                      result.second.string() +
-                     Pad<2>(static_cast<uint32_t>(result.first)));
+                     Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)));
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
   std::string value;
@@ -104,25 +125,22 @@ NonEmptyString Db::Get(const DataNameVariant& key) {
   return NonEmptyString(value);
 }
 
-//FIXME need mutex here
-// Do we need to return key string or key string postfixed with type?
-std::vector<std::pair<std::string, std::string>> Db::Get() {
-  std::vector<std::pair<std::string, std::string>> return_vector;
+std::vector<Db::KVPair> Db::Get() {
+  std::vector<KVPair> return_vector;
+  std::lock_guard<std::mutex> lock(mutex_);
   leveldb::Iterator* iter = leveldb_->NewIterator(leveldb::ReadOptions());
-  if (account_id_ != last_account_id_) {
-    for (iter->Seek(Pad<4>(account_id_));
-         iter->Valid() && iter->key().ToString() < Pad<4>(account_id_ + 1);
-         iter->Next()) {
-      std::pair<std::string, std::string> kv_pair(iter->key().ToString().substr(4),
-                                                  iter->value().ToString());
-      return_vector.push_back(std::move(kv_pair));
-    }
-  } else {
-    for (iter->Seek(Pad<4>(account_id_)); iter->Valid(); iter->Next()) {
-      std::pair<std::string, std::string> kv_pair(iter->key().ToString().substr(4),
-                                                  iter->value().ToString());
-      return_vector.push_back(std::move(kv_pair));
-    }
+  auto it(account_ids_.find(account_id_));
+  assert(it != account_ids_.end());
+  for (iter->Seek(Pad<kPrefixWidth_>(account_id_));
+       iter->Valid() && ((++it == account_ids_.end()) ||
+                         (iter->key().ToString() < Pad<kPrefixWidth_>(*it)));
+       iter->Next()) {
+    std::string name(iter->key().ToString().substr(kPrefixWidth_, NodeId::kSize));
+    std::string type_string(iter->key().ToString().substr(kPrefixWidth_ + NodeId::kSize));
+    DataTagValue type = static_cast<DataTagValue>(std::stoul(type_string));
+    auto key = GetDataNameVariant(type, Identity(name));
+    KVPair kv_pair(key, NonEmptyString(iter->value().ToString()));
+    return_vector.push_back(std::move(kv_pair));
   }
   delete iter;
   return return_vector;
@@ -137,5 +155,4 @@ std::string Db::Pad(uint32_t number)
 }
 
 }  // namespace vault
-
 }  // namespace maidsafe
