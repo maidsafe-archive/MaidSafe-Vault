@@ -331,6 +331,25 @@ TEST_F(DbTest, BEH_AsyncGetPuts) {
   }
 }
 
+TEST_F(DbTest, BEH_ParallelAccountCreation) {
+  Db db(vault_root_directory_);
+  for (uint32_t i = 0; i != 100; ++i) {
+    std::async(std::launch::async, [this, &db]() {
+        AccountDb account_db(db);
+        std::vector<Db::KVPair> nodes;
+        for (uint32_t i = 0; i != 100; ++i) {
+          DataNameVariant key(GetRandomKey());
+          NonEmptyString value(GenerateKeyValueData(key, kValueSize));
+          nodes.push_back(std::make_pair(key, value));
+        }
+        for (uint32_t i = 0; i != 100; ++i)
+          EXPECT_NO_THROW(account_db.Put(std::make_pair(nodes[i].first, nodes[i].second)));
+        for (uint32_t i = 0; i != 100; ++i)
+          EXPECT_EQ(nodes[i].second, account_db.Get(nodes[i].first));
+    });
+  }
+}
+
 }  // namespace test
 }  // namespace vault
 }  // namespace maidsafe

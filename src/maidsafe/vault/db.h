@@ -13,9 +13,11 @@
 #define MAIDSAFE_VAULT_DB_H_
 
 #include <atomic>
-#include <string>
-
 #include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
 
 #include "boost/filesystem/path.hpp"
 #include "leveldb/db.h"
@@ -35,7 +37,7 @@ class Db {
 
   explicit Db(const boost::filesystem::path& path);
   ~Db();
-friend class AccountDb;
+  friend class AccountDb;
  private:
   Db(const Db&);
   Db& operator=(const Db&);
@@ -53,10 +55,10 @@ friend class AccountDb;
   template<uint32_t Width> std::string Pad(uint32_t number);
 
   static const uint32_t kPrefixWidth_, kSuffixWidth_;
+  const boost::filesystem::path kDbPath_;
   std::mutex mutex_;
   std::unique_ptr<leveldb::DB> leveldb_;
   std::set<uint32_t> account_ids_;
-  const boost::filesystem::path db_path_;
 };
 
 }  // namespace vault

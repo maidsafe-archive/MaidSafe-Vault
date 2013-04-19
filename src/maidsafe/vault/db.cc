@@ -29,18 +29,18 @@ const uint32_t Db::kPrefixWidth_(4);
 const uint32_t Db::kSuffixWidth_(2);
 
 Db::Db(const boost::filesystem::path& path)
-  : mutex_(),
+  : kDbPath_(path),
+    mutex_(),
     leveldb_(),
-    account_ids_(),
-    db_path_(path) {
+    account_ids_() {
   std::lock_guard<std::mutex> lock(mutex_);
-  if (boost::filesystem::exists(db_path_))
-    boost::filesystem::remove_all(db_path_);
+  if (boost::filesystem::exists(kDbPath_))
+    boost::filesystem::remove_all(kDbPath_);
   leveldb::DB* db;
   leveldb::Options options;
   options.create_if_missing = true;
   options.error_if_exists = true;
-  leveldb::Status status(leveldb::DB::Open(options, db_path_.string(), &db));
+  leveldb::Status status(leveldb::DB::Open(options, kDbPath_.string(), &db));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request); // FIXME need new exception
   leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
@@ -62,7 +62,7 @@ uint32_t Db::RegisterAccount() {
 void Db::UnRegisterAccount(const uint32_t& account_id) {
   std::vector<std::string> account_keys;
   std::lock_guard<std::mutex> lock(mutex_);
-  leveldb::Iterator* iter = leveldb_->NewIterator(leveldb::ReadOptions());
+  std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
   auto it(account_ids_.find(account_id));
   if (it == account_ids_.end())
     return;
@@ -77,7 +77,7 @@ void Db::UnRegisterAccount(const uint32_t& account_id) {
       account_keys.push_back(iter->key().ToString());
   }
 
-  delete iter;
+  iter.reset();
 
   for (auto i: account_keys) {
     leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), i));
@@ -89,7 +89,7 @@ void Db::UnRegisterAccount(const uint32_t& account_id) {
 }
 
 Db::~Db() {
-  leveldb::DestroyDB(db_path_.string(), leveldb::Options());
+  leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
 }
 
 void Db::Put(const uint32_t& account_id, const KVPair& key_value_pair) {
@@ -131,7 +131,7 @@ NonEmptyString Db::Get(const uint32_t& account_id, const DataNameVariant& key) {
 std::vector<Db::KVPair> Db::Get(const uint32_t& account_id) {
   std::vector<KVPair> return_vector;
   std::lock_guard<std::mutex> lock(mutex_);
-  leveldb::Iterator* iter = leveldb_->NewIterator(leveldb::ReadOptions());
+  std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
   auto it(account_ids_.find(account_id));
   assert(it != account_ids_.end());
   for (iter->Seek(Pad<kPrefixWidth_>(account_id));
@@ -145,7 +145,6 @@ std::vector<Db::KVPair> Db::Get(const uint32_t& account_id) {
     KVPair kv_pair(key, NonEmptyString(iter->value().ToString()));
     return_vector.push_back(std::move(kv_pair));
   }
-  delete iter;
   return return_vector;
 }
 
