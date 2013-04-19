@@ -16,6 +16,7 @@
 #include <iterator>
 #include "maidsafe/vault/db.h"
 #include "maidsafe/routing/parameters.h"
+#include "maidsafe/routing/routing_api.h"
 #include "maidsafe/vault/unresolved_entry.h"
 
 namespace maidsafe {
@@ -23,7 +24,8 @@ namespace maidsafe {
 namespace vault {
 
 template<typename MergePolicy>
-Sync<MergePolicy>::Sync(Db* db) : MergePolicy(db), sync_counter_(10) {}
+Sync<MergePolicy>::Sync(Db* db, const NodeId& this_node)
+  : MergePolicy(db), sync_counter_(10), this_node_(this_node) {}
 // TODO(dirvine) decide how to decide on this magic number
 
 template<typename MergePolicy>
@@ -101,10 +103,16 @@ std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresol
         if (entry.sync_counter >= this->sync_counter_)
             return true;
     }));
-
+// only supply data containing our node
     std::vector<typename MergePolicy::UnresolvedEntry> return_vec;
-    std::copy(std::begin(MergePolicy::unresolved_data_),
-              std::end(MergePolicy::unresolved_data_), std::begin(return_vec));
+    std::copy_if(std::begin(MergePolicy::unresolved_data_),
+              std::end(MergePolicy::unresolved_data_), std::begin(return_vec), [this]
+                 (const typename MergePolicy::unresolved_data_& entry )
+    {
+      auto i =  entry.peers.find(this->this_node);
+      if(i != std::end(entry.peers))
+        return true;
+    });
     return return_vec;
 }
 

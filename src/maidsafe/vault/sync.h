@@ -31,7 +31,7 @@ namespace vault {
 template<typename MergePolicy>
 class Sync : public MergePolicy {
  public:
-  explicit Sync(Db* db);
+  explicit Sync(Db* db, const NodeId& this_node);
   Sync(Sync&& other);
   Sync& operator=(Sync&& other);
   void AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry&,
@@ -46,6 +46,7 @@ class Sync : public MergePolicy {
   Sync(const Sync&);
   Sync& operator=(const Sync&);
   int32_t sync_counter_;
+  NodeId this_node_;
   typename std::vector<typename MergePolicy::UnresolvedEntry>::iterator FindUnresolved(
       const typename MergePolicy::UnresolvedEntry::Key& key);
 };
