@@ -9,8 +9,6 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#include "maidsafe/vault/db.h"
-
 #include <functional>
 #include <memory>
 
@@ -27,6 +25,9 @@
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/types.h"
+
+#include "maidsafe/vault/db.h"
+#include "maidsafe/vault/account_db.h"
 
 namespace maidsafe {
 namespace vault {
@@ -99,6 +100,7 @@ class DbTest : public testing::Test {
 
 TEST_F(DbTest, BEH_Constructor) {
   Db db(vault_root_directory_);
+  AccountDb account_db(db);
 }
 
 //TODO to be replaced by maidsafe api level test
@@ -169,6 +171,7 @@ TEST_F(DbTest, BEH_Poc) {
 
 TEST_F(DbTest, BEH_GetSingleAccount) {
   Db db(vault_root_directory_);
+  AccountDb account_db(db);
   std::vector<Db::KVPair> nodes;
   for (uint32_t i = 0; i != 10000; ++i) {
     DataNameVariant key(GetRandomKey());
@@ -176,13 +179,14 @@ TEST_F(DbTest, BEH_GetSingleAccount) {
     nodes.push_back(std::make_pair(key, value));
   }
   for (uint32_t i = 0; i != 10000; ++i)
-    EXPECT_NO_THROW(db.Put(std::make_pair(nodes[i].first, nodes[i].second)));
+    EXPECT_NO_THROW(account_db.Put(std::make_pair(nodes[i].first, nodes[i].second)));
   for (uint32_t i = 0; i != 10000; ++i)
-    EXPECT_EQ(nodes[i].second, db.Get(nodes[i].first));
+    EXPECT_EQ(nodes[i].second, account_db.Get(nodes[i].first));
 }
 
 TEST_F(DbTest, BEH_DeleteSingleAccount) {
   Db db(vault_root_directory_);
+  AccountDb account_db(db);
   std::vector<Db::KVPair> nodes;
   for (uint32_t i = 0; i != 10000; ++i) {
     DataNameVariant key(GetRandomKey());
@@ -190,137 +194,137 @@ TEST_F(DbTest, BEH_DeleteSingleAccount) {
     nodes.push_back(std::make_pair(key, value));
   }
   for (uint32_t i = 0; i != 10000; ++i)
-    EXPECT_NO_THROW(db.Put(std::make_pair(nodes[i].first, nodes[i].second)));
+    EXPECT_NO_THROW(account_db.Put(std::make_pair(nodes[i].first, nodes[i].second)));
   for (uint32_t i = 0; i != 10000; ++i)
-    EXPECT_EQ(nodes[i].second, db.Get(nodes[i].first));
+    EXPECT_EQ(nodes[i].second, account_db.Get(nodes[i].first));
   for (uint32_t i = 0; i != 10000; ++i)
-    EXPECT_NO_THROW(db.Delete(nodes[i].first));
+    EXPECT_NO_THROW(account_db.Delete(nodes[i].first));
   for (uint32_t i = 0; i != 10000; ++i)
-    EXPECT_THROW(db.Get(nodes[i].first), vault_error);
+    EXPECT_THROW(account_db.Get(nodes[i].first), vault_error);
 }
 
-TEST_F(DbTest, BEH_GetMultipleAccounts) {
-  uint32_t accounts(RandomUint32() % 10);
-  std::vector<std::vector<Db::KVPair>> account_vector(accounts);
-  std::vector<std::unique_ptr<Db>> db_vector(accounts);
-  for (uint32_t i = 0; i != accounts; ++i) {
-    db_vector[i].reset(new Db(vault_root_directory_));
-  }
-  for (uint32_t i = 0; i != accounts; ++i) {
-    uint32_t entries(RandomUint32() % 10000);
-    for (uint32_t j = 0; j != entries; ++j) {
-      DataNameVariant key(GetRandomKey());
-      NonEmptyString value(GenerateKeyValueData(key, kValueSize));
-      account_vector[i].push_back(std::make_pair(key, value));
-    }
-  }
-  for (uint32_t i = 0; i != accounts; ++i)
-    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
-      EXPECT_NO_THROW(db_vector[i]->Put(std::make_pair(account_vector[i][j].first,
-                                                       account_vector[i][j].second)));
-  for (uint32_t i = 0; i != accounts; ++i)
-    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
-      EXPECT_EQ(account_vector[i][j].second, db_vector[i]->Get(account_vector[i][j].first));
-}
+//TEST_F(DbTest, BEH_GetMultipleAccounts) {
+//  uint32_t accounts(RandomUint32() % 10);
+//  std::vector<std::vector<Db::KVPair>> account_vector(accounts);
+//  std::vector<std::unique_ptr<Db>> db_vector(accounts);
+//  for (uint32_t i = 0; i != accounts; ++i) {
+//    db_vector[i].reset(new Db(vault_root_directory_));
+//  }
+//  for (uint32_t i = 0; i != accounts; ++i) {
+//    uint32_t entries(RandomUint32() % 10000);
+//    for (uint32_t j = 0; j != entries; ++j) {
+//      DataNameVariant key(GetRandomKey());
+//      NonEmptyString value(GenerateKeyValueData(key, kValueSize));
+//      account_vector[i].push_back(std::make_pair(key, value));
+//    }
+//  }
+//  for (uint32_t i = 0; i != accounts; ++i)
+//    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
+//      EXPECT_NO_THROW(db_vector[i]->Put(std::make_pair(account_vector[i][j].first,
+//                                                       account_vector[i][j].second)));
+//  for (uint32_t i = 0; i != accounts; ++i)
+//    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
+//      EXPECT_EQ(account_vector[i][j].second, db_vector[i]->Get(account_vector[i][j].first));
+//}
 
 
-TEST_F(DbTest, BEH_DeleteMultipleAccounts) {
-  uint32_t accounts(RandomUint32() % 10);
-  std::vector<std::vector<Db::KVPair>> account_vector(accounts);
-  std::vector<std::unique_ptr<Db>> db_vector(accounts);
-  for (uint32_t i = 0; i != accounts; ++i) {
-    db_vector[i].reset(new Db(vault_root_directory_));
-  }
-  for (uint32_t i = 0; i != accounts; ++i) {
-    uint32_t entries(RandomUint32() % 10000);
-    for (uint32_t j = 0; j != entries; ++j) {
-      DataNameVariant key(GetRandomKey());
-      NonEmptyString value(GenerateKeyValueData(key, kValueSize));
-      account_vector[i].push_back(std::make_pair(key, value));
-    }
-  }
-  for (uint32_t i = 0; i != accounts; ++i)
-    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
-      EXPECT_NO_THROW(db_vector[i]->Put(std::make_pair(account_vector[i][j].first,
-                                                       account_vector[i][j].second)));
-  for (uint32_t i = 0; i != accounts; ++i)
-    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
-      EXPECT_EQ(account_vector[i][j].second, db_vector[i]->Get(account_vector[i][j].first));
-  for (uint32_t i = 0; i != accounts; ++i)
-    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
-      EXPECT_NO_THROW(db_vector[i]->Delete(account_vector[i][j].first));
-  for (uint32_t i = 0; i != accounts; ++i)
-    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
-      EXPECT_THROW(db_vector[i]->Get(account_vector[i][j].first), vault_error);
-}
+//TEST_F(DbTest, BEH_DeleteMultipleAccounts) {
+//  uint32_t accounts(RandomUint32() % 10);
+//  std::vector<std::vector<Db::KVPair>> account_vector(accounts);
+//  std::vector<std::unique_ptr<Db>> db_vector(accounts);
+//  for (uint32_t i = 0; i != accounts; ++i) {
+//    db_vector[i].reset(new Db(vault_root_directory_));
+//  }
+//  for (uint32_t i = 0; i != accounts; ++i) {
+//    uint32_t entries(RandomUint32() % 10000);
+//    for (uint32_t j = 0; j != entries; ++j) {
+//      DataNameVariant key(GetRandomKey());
+//      NonEmptyString value(GenerateKeyValueData(key, kValueSize));
+//      account_vector[i].push_back(std::make_pair(key, value));
+//    }
+//  }
+//  for (uint32_t i = 0; i != accounts; ++i)
+//    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
+//      EXPECT_NO_THROW(db_vector[i]->Put(std::make_pair(account_vector[i][j].first,
+//                                                       account_vector[i][j].second)));
+//  for (uint32_t i = 0; i != accounts; ++i)
+//    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
+//      EXPECT_EQ(account_vector[i][j].second, db_vector[i]->Get(account_vector[i][j].first));
+//  for (uint32_t i = 0; i != accounts; ++i)
+//    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
+//      EXPECT_NO_THROW(db_vector[i]->Delete(account_vector[i][j].first));
+//  for (uint32_t i = 0; i != accounts; ++i)
+//    for (uint32_t j = 0; j != account_vector[i].size(); ++j)
+//      EXPECT_THROW(db_vector[i]->Get(account_vector[i][j].first), vault_error);
+//}
 
-TEST_F(DbTest, BEH_AsyncGetPuts) {
-  std::mutex op_mutex, cond_mutex;
-  std::condition_variable cond_var;
-  std::vector<std::future<void> > async_ops;
-  uint32_t accounts(RandomUint32() % 10), expected_count(0), op_count(0);
-  std::vector<std::vector<Db::KVPair>> account_vector(accounts);
-  std::vector<std::unique_ptr<Db>> db_vector(accounts);
-  for (uint32_t i = 0; i != accounts; ++i) {
-    db_vector[i].reset(new Db(vault_root_directory_));
-  }
-  for (uint32_t i = 0; i != accounts; ++i) {
-    uint32_t entries(RandomUint32() % 100);
-    expected_count += entries;
-    for (uint32_t j = 0; j != entries; ++j) {
-      DataNameVariant key(GetRandomKey());
-      NonEmptyString value(GenerateKeyValueData(key, kValueSize));
-      account_vector[i].push_back(std::make_pair(key, value));
-      async_ops.push_back(std::async(
-          std::launch::async,
-          [this, &db_vector, &account_vector, &op_count, &op_mutex, i, j] {
-              EXPECT_NO_THROW(db_vector[i]->Put(std::make_pair(account_vector[i][j].first,
-                                                               account_vector[i][j].second)));
-              {
-                std::lock_guard<std::mutex> lock(op_mutex);
-                ++op_count;
-              }
-          }));
-    }
-  }
-  {
-    std::unique_lock<std::mutex> lock(cond_mutex);
-    bool result(cond_var.wait_for(lock, std::chrono::seconds(2),
-                                  [&]()->bool {
-                                    return op_count == expected_count;
-                                  }));
-    EXPECT_TRUE(result);
-    for (uint32_t i = 0; i != async_ops.size(); ++i)
-      EXPECT_NO_THROW(async_ops[i].get());
-    async_ops.clear();
-    op_count = 0;
-  }
+//TEST_F(DbTest, BEH_AsyncGetPuts) {
+//  std::mutex op_mutex, cond_mutex;
+//  std::condition_variable cond_var;
+//  std::vector<std::future<void> > async_ops;
+//  uint32_t accounts(RandomUint32() % 10), expected_count(0), op_count(0);
+//  std::vector<std::vector<Db::KVPair>> account_vector(accounts);
+//  std::vector<std::unique_ptr<Db>> db_vector(accounts);
+//  for (uint32_t i = 0; i != accounts; ++i) {
+//    db_vector[i].reset(new Db(vault_root_directory_));
+//  }
+//  for (uint32_t i = 0; i != accounts; ++i) {
+//    uint32_t entries(RandomUint32() % 100);
+//    expected_count += entries;
+//    for (uint32_t j = 0; j != entries; ++j) {
+//      DataNameVariant key(GetRandomKey());
+//      NonEmptyString value(GenerateKeyValueData(key, kValueSize));
+//      account_vector[i].push_back(std::make_pair(key, value));
+//      async_ops.push_back(std::async(
+//          std::launch::async,
+//          [this, &db_vector, &account_vector, &op_count, &op_mutex, i, j] {
+//              EXPECT_NO_THROW(db_vector[i]->Put(std::make_pair(account_vector[i][j].first,
+//                                                               account_vector[i][j].second)));
+//              {
+//                std::lock_guard<std::mutex> lock(op_mutex);
+//                ++op_count;
+//              }
+//          }));
+//    }
+//  }
+//  {
+//    std::unique_lock<std::mutex> lock(cond_mutex);
+//    bool result(cond_var.wait_for(lock, std::chrono::seconds(2),
+//                                  [&]()->bool {
+//                                    return op_count == expected_count;
+//                                  }));
+//    EXPECT_TRUE(result);
+//    for (uint32_t i = 0; i != async_ops.size(); ++i)
+//      EXPECT_NO_THROW(async_ops[i].get());
+//    async_ops.clear();
+//    op_count = 0;
+//  }
 
-  for (uint32_t i = 0; i != accounts; ++i) {
-    for (uint32_t j = 0; j != account_vector[i].size(); ++j) {
-      async_ops.push_back(std::async(
-          std::launch::async,
-          [this, &db_vector, &account_vector, &op_count, &op_mutex, i, j] {
-              EXPECT_EQ(account_vector[i][j].second, db_vector[i]->Get(account_vector[i][j].first));
-              {
-                std::lock_guard<std::mutex> lock(op_mutex);
-                ++op_count;
-              }
-          }));
-    }
-  }
-  {
-    std::unique_lock<std::mutex> lock(cond_mutex);
-    bool result(cond_var.wait_for(lock, std::chrono::seconds(2),
-                                  [&]()->bool {
-                                    return op_count == expected_count;
-                                  }));
-    EXPECT_TRUE(result);
-    for (uint32_t i = 0; i != async_ops.size(); ++i)
-      EXPECT_NO_THROW(async_ops[i].get());
-    async_ops.clear();
-  }
-}
+//  for (uint32_t i = 0; i != accounts; ++i) {
+//    for (uint32_t j = 0; j != account_vector[i].size(); ++j) {
+//      async_ops.push_back(std::async(
+//          std::launch::async,
+//          [this, &db_vector, &account_vector, &op_count, &op_mutex, i, j] {
+//              EXPECT_EQ(account_vector[i][j].second, db_vector[i]->Get(account_vector[i][j].first));
+//              {
+//                std::lock_guard<std::mutex> lock(op_mutex);
+//                ++op_count;
+//              }
+//          }));
+//    }
+//  }
+//  {
+//    std::unique_lock<std::mutex> lock(cond_mutex);
+//    bool result(cond_var.wait_for(lock, std::chrono::seconds(2),
+//                                  [&]()->bool {
+//                                    return op_count == expected_count;
+//                                  }));
+//    EXPECT_TRUE(result);
+//    for (uint32_t i = 0; i != async_ops.size(); ++i)
+//      EXPECT_NO_THROW(async_ops[i].get());
+//    async_ops.clear();
+//  }
+//}
 
 }  // namespace test
 }  // namespace vault
