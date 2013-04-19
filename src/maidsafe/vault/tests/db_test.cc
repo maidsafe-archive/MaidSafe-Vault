@@ -275,7 +275,8 @@ TEST_F(DbTest, BEH_AsyncGetPuts) {
       DataNameVariant key(GetRandomKey());
       NonEmptyString value(GenerateKeyValueData(key, kValueSize));
       account_vector[i].push_back(std::make_pair(key, value));
-      async_ops.push_back(std::async(
+      //async_ops.push_back(std::async(
+      std::async(
           std::launch::async,
           [this, &account_db_vector, &account_vector, &op_count, &op_mutex, i, j] {
               EXPECT_NO_THROW(account_db_vector[i]->Put(std::make_pair(account_vector[i][j].first,
@@ -284,12 +285,13 @@ TEST_F(DbTest, BEH_AsyncGetPuts) {
                 std::lock_guard<std::mutex> lock(op_mutex);
                 ++op_count;
               }
-          }));
+          });
+          // }));
     }
   }
   {
     std::unique_lock<std::mutex> lock(cond_mutex);
-    bool result(cond_var.wait_for(lock, std::chrono::seconds(2),
+    bool result(cond_var.wait_for(lock, std::chrono::seconds(5),
                                   [&]()->bool {
                                     return op_count == expected_count;
                                   }));
@@ -302,7 +304,8 @@ TEST_F(DbTest, BEH_AsyncGetPuts) {
 
   for (uint32_t i = 0; i != accounts; ++i) {
     for (uint32_t j = 0; j != account_vector[i].size(); ++j) {
-      async_ops.push_back(std::async(
+      //async_ops.push_back(std::async(
+      std::async(
           std::launch::async,
           [this, &account_db_vector, &account_vector, &op_count, &op_mutex, i, j] {
               EXPECT_EQ(account_vector[i][j].second,
@@ -311,12 +314,13 @@ TEST_F(DbTest, BEH_AsyncGetPuts) {
                 std::lock_guard<std::mutex> lock(op_mutex);
                 ++op_count;
               }
-          }));
+          });
+          //}));
     }
   }
   {
     std::unique_lock<std::mutex> lock(cond_mutex);
-    bool result(cond_var.wait_for(lock, std::chrono::seconds(2),
+    bool result(cond_var.wait_for(lock, std::chrono::seconds(5),
                                   [&]()->bool {
                                     return op_count == expected_count;
                                   }));
