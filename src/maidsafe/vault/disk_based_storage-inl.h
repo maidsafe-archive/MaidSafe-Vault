@@ -53,6 +53,12 @@ std::future<void> DiskBasedStorage::Store(const typename Data::name_type& name, 
 
 template<typename Data>
 void DiskBasedStorage::AddToLatestFile(const typename Data::name_type& name, int32_t value) {
+  if (file_ids_.size() == 0) {
+      std::pair<int, crypto::SHA512Hash> init_id;
+    init_id.first = 0;
+    init_id.second = std::move(crypto::SHA512Hash());
+    file_ids_.insert(init_id);
+  }
   std::pair<int, crypto::SHA512Hash> file_id(*file_ids_.rbegin());
   auto file(ParseFile(file_id));
   if (file.element_size() == detail::Parameters::max_file_element_count) {
