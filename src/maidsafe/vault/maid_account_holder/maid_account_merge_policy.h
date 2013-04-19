@@ -21,7 +21,6 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 
-#include "maidsafe/vault/db.h"
 #include "maidsafe/vault/unresolved_entry.h"
 
 
@@ -29,9 +28,11 @@ namespace maidsafe {
 
 namespace vault {
 
+class AccountDb;
+
 class MaidAccountMergePolicy {
  public:
-  explicit MaidAccountMergePolicy(Db* db);
+  explicit MaidAccountMergePolicy(AccountDb* account_db);
   MaidAccountMergePolicy(MaidAccountMergePolicy&& other);
   MaidAccountMergePolicy& operator=(MaidAccountMergePolicy&& other);
   // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
@@ -43,7 +44,7 @@ class MaidAccountMergePolicy {
   void Merge(const UnresolvedEntry& unresolved_entry);
 
   std::vector<UnresolvedEntry> unresolved_data_;
-  Db* db_;
+  AccountDb* account_db_;
 
  private:
   typedef TaggedValue<int32_t, struct AverageCostTag> AverageCost;
@@ -83,7 +84,7 @@ bool MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name) {
         if ((*itr).dont_add_to_db) {
           // A delete request must have been applied for this to be true, but it will (correctly)
           // silently fail when it comes to merging since this put request will not have been
-          // added to the db.
+          // added to the account_db.
           --pending_deletes;
         } else {
           ++pending_puts;

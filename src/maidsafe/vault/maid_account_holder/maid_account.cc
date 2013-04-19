@@ -17,6 +17,8 @@
 
 #include "maidsafe/common/utils.h"
 
+#include "maidsafe/vault/account_db.h"
+#include "maidsafe/vault/db.h"
 #include "maidsafe/vault/demultiplexer.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_account.h"
 #include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
@@ -82,63 +84,36 @@ MaidAccount::State& MaidAccount::State::operator=(State other) {
 
 
 
-MaidAccount::MaidAccount(const MaidName& maid_name, const fs::path& root)
+MaidAccount::MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_node_id)
     : maid_name_(maid_name),
-      confirmed_state_(),
-      current_state_(),
-      recent_ops_(),
-      archive_(AccountDir(maid_name, root)) {}
-
-MaidAccount::MaidAccount(const fs::path& account_dir)
-    : maid_name_(Identity(DecodeFromBase32(account_dir.stem().string()))),
-      confirmed_state_(),
-      current_state_(),
-      recent_ops_(),
-      archive_(account_dir) {
-  auto serialised_maid_account(ReadFile(account_dir / AccountFilename()));
-  protobuf::MaidAccount proto_maid_account;
-  if (!proto_maid_account.ParseFromString(serialised_maid_account.string())) {
-    LOG(kError) << "Failed to parse maid_account.";
-    ThrowError(CommonErrors::parsing_error);
-  }
-
-  confirmed_state_.id = proto_maid_account.state_id_number();
-  for (int i(0); i != proto_maid_account.pmid_totals_size(); ++i) {
-    confirmed_state_.pmid_totals.emplace_back(
-        nfs::PmidRegistration::serialised_type(NonEmptyString(
-            proto_maid_account.pmid_totals(i).serialised_pmid_registration())),
-        PmidRecord(proto_maid_account.pmid_totals(i).pmid_record()));
-  }
-  confirmed_state_.total_claimed_available_size_by_pmids =
-      proto_maid_account.total_claimed_available_size_by_pmids();
-  confirmed_state_.total_put_data = proto_maid_account.total_put_data();
-}
+      state_(),
+      account_db_(new AccountDb(db)),
+      sync_(account_db_.get(), this_node_id) {}
 
 MaidAccount::MaidAccount(const MaidName& maid_name,
-                         const State& confirmed_state,
-                         const boost::filesystem::path& root,
-                         const boost::filesystem::path& transferred_files_dir)
+                         const State& state,
+                         Db& db,
+                         const NodeId& this_node_id)
     : maid_name_(maid_name),
-      confirmed_state_(confirmed_state),
-      current_state_(),
-      recent_ops_(),
-      archive_(AccountDir(maid_name, root)) {
+      state_(state),
+      account_db_(new AccountDb(db)),
+      sync_(account_db_.get(), this_node_id) {
+  iterate through
+  sync_.AddUnresolvedEntry()
   archive_.ApplyAccountTransfer(transferred_files_dir);
 }
 
 MaidAccount::MaidAccount(MaidAccount&& other)
     : maid_name_(std::move(other.maid_name_)),
-      confirmed_state_(std::move(other.confirmed_state_)),
-      current_state_(std::move(other.current_state_)),
-      recent_ops_(std::move(other.recent_ops_)),
-      archive_(std::move(other.archive_)) {}
+      state_(std::move(other.state_)),
+      account_db_(std::move(other.account_db_)),
+      sync_(std::move(other.sync_)) {}
 
 MaidAccount& MaidAccount::operator=(MaidAccount&& other) {
   maid_name_ = std::move(other.maid_name_);
-  confirmed_state_ = std::move(other.confirmed_state_);
-  current_state_ = std::move(other.current_state_);
-  recent_ops_= std::move(other.recent_ops_);
-  archive_ = std::move(other.archive_);
+  state_ = std::move(other.state_);
+  account_db_= std::move(other.account_db_);
+  sync_ = std::move(other.sync_);
   return *this;
 }
 

@@ -12,24 +12,30 @@
 #ifndef MAIDSAFE_VAULT_SYNC_INL_H_
 #define MAIDSAFE_VAULT_SYNC_INL_H_
 
-#include <utility>
+#include <algorithm>
 #include <iterator>
-#include "maidsafe/vault/db.h"
+#include <utility>
+#include <vector>
+
 #include "maidsafe/routing/parameters.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/vault/unresolved_entry.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
 template<typename MergePolicy>
-Sync<MergePolicy>::Sync(Db* db, const NodeId& this_node)
-  : MergePolicy(db), sync_counter_(10), this_node_(this_node) {}
-// TODO(dirvine) decide how to decide on this magic number
+Sync<MergePolicy>::Sync(AccountDb* account_db, const NodeId& this_node_id)
+    : MergePolicy(account_db),
+      sync_counter_max_(10),  // TODO(dirvine) decide how to decide on this magic number
+      this_node_id_(this_node_id) {}
 
 template<typename MergePolicy>
-Sync<MergePolicy>::Sync(Sync&& other) : MergePolicy(std::forward<MergePolicy>(other)) {}
+Sync<MergePolicy>::Sync(Sync&& other)
+    : MergePolicy(std::forward<MergePolicy>(other)),
+      sync_counter_max_(std::move(other.sync_counter_max_)),
+      this_node_id_(std::move(other.this_node_id_)) {}
 
 template<typename MergePolicy>
 Sync<MergePolicy>& Sync<MergePolicy>::operator=(Sync&& other) {
@@ -43,11 +49,12 @@ Sync<MergePolicy>& Sync<MergePolicy>::operator=(Sync&& other) {
 template<typename MergePolicy>
 typename std::vector<typename MergePolicy::UnresolvedEntry>::iterator
 Sync<MergePolicy>::FindUnresolved(const typename MergePolicy::UnresolvedEntry::Key& key_to_find) {
-  return std::find_if(std::begin(MergePolicy::unresolved_data_), std::end(MergePolicy::unresolved_data_),
-      [&key_to_find] (const std::vector<typename MergePolicy::UnresolvedEntry> &test) {
-        if (test.Key == key_to_find)
-          return true;
-   });
+  return std::find_if(
+      std::begin(MergePolicy::unresolved_data_),
+      std::end(MergePolicy::unresolved_data_),
+      [&key_to_find](const std::vector<typename MergePolicy::UnresolvedEntry> &test) {
+          return test.Key == key_to_find;
+      });
 }
 
 template<typename MergePolicy>
@@ -72,50 +79,42 @@ void Sync<MergePolicy>::AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry
 // node size for any messages that are partially resolved
 template<typename MergePolicy>
 void Sync<MergePolicy>::ReplaceNode(const NodeId& old_node, const NodeId& new_node) {
-    for(auto i = std::begin(MergePolicy::unresolved_data_);
-        i == std::end(MergePolicy::unresolved_data_); ++i) {
-      auto found = std::find(std::begin((*i).peers), std::end((*i).peers),
-                             old_node);
-      if (found != std::end((*i).peers)) {
-          *found = new_node;
-      } else {
-          found.insert(new_node);
-      }
-      if ((*i).peers.size >= (routing::Parameters::node_group_size + 1) / 2) {
-           MergePolicy::Merge(*i);
-           (*i).erase(i);
-      }
+  for (auto itr = std::begin(MergePolicy::unresolved_data_);
+       itr != std::end(MergePolicy::unresolved_data_); ++itr) {
+    auto found = std::find(std::begin((*itr).peers), std::end((*itr).peers), old_node);
+    if (found == std::end((*itr).peers))
+      found.insert(new_node);
+    else
+      *found = new_node;
+
+    if ((*itr).peers.size >= (routing::Parameters::node_group_size + 1) / 2) {
+      MergePolicy::Merge(*itr);
+      MergePolicy::unresolved_data_.erase(itr);
+    }
   }
 }
 
 template<typename MergePolicy>
 std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresolvedData() {
-    // increment sync count in each record
-    for(auto i = std::begin(MergePolicy::unresolved_data_);
-        i == std::end(MergePolicy::unresolved_data_); ++i) {
-        ++(*i).sync_counter;
+  // increment sync count in each record or remove records if it's too old
+  auto itr = std::begin(MergePolicy::unresolved_data_);
+  while (itr != std::end(MergePolicy::unresolved_data_)) {
+    if (++(*itr).sync_counter > sync_counter_max_) {
+      itr = MergePolicy::unresolved_data_.erase(itr);
+    } else {
+      ++itr;
     }
-    // remove all records that are too old
-    MergePolicy::unresolved_data_.erase(std::remove_if(std::begin(MergePolicy::unresolved_data_),
-                                                       std::end(MergePolicy::unresolved_data_),
-                                                       [this] (const typename MergePolicy::unresolved_data_& entry)
-    {
-        if (entry.sync_counter >= this->sync_counter_)
-            return true;
-    }));
-// only supply data containing our node
-    std::vector<typename MergePolicy::UnresolvedEntry> return_vec;
-    std::copy_if(std::begin(MergePolicy::unresolved_data_),
-              std::end(MergePolicy::unresolved_data_), std::begin(return_vec), [this]
-                 (const typename MergePolicy::unresolved_data_& entry )
-    {
-      auto i =  entry.peers.find(this->this_node);
-      if(i != std::end(entry.peers))
-        return true;
-    });
-    return return_vec;
-}
+  }
 
+  // only supply data containing this node's ID
+  std::vector<typename MergePolicy::UnresolvedEntry> return_vec;
+  std::copy_if(std::begin(MergePolicy::unresolved_data_),
+               std::end(MergePolicy::unresolved_data_),
+               std::begin(return_vec), [this](const typename MergePolicy::UnresolvedEntry& entry) {
+                   return entry.peers.find(this->this_node_id_) != std::end(entry.peers));
+               });
+  return return_vec;
+}
 
 }  // namespace vault
 

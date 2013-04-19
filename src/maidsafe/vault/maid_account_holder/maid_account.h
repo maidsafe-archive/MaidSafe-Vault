@@ -14,25 +14,30 @@
 
 #include <cstdint>
 #include <deque>
+#include <memory>
 #include <vector>
-
-#include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/pmid_registration.h"
 
 #include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/vault/parameters.h"
-#include "maidsafe/vault/pmid_account_holder/pmid_record.h"
+#include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/pmid_account_holder/pmid_record.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_merge_policy.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
+class Db;
+class AccountDb;
+
 namespace test {
+
 class MaidAccountHandlerTest;
 
 template<typename Data>
@@ -67,18 +72,12 @@ class MaidAccount {
     uint64_t id;
     std::vector<PmidTotals> pmid_totals;
     int64_t total_claimed_available_size_by_pmids, total_put_data;
-    int32_t archive_file_count;
   };
 
   // For client adding new account
-  MaidAccount(const MaidName& maid_name, const boost::filesystem::path& root);
-  // For regenerating an archived account
-//  explicit MaidAccount(const boost::filesystem::path& account_dir);
+  MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_node_id);
   // For creating new account via account transfer
-  MaidAccount(const MaidName& maid_name,
-              const State& state,
-              const boost::filesystem::path& root,
-              const boost::filesystem::path& transferred_files_dir);
+  MaidAccount(const MaidName& maid_name, const State& state, Db& db, const NodeId& this_node_id);
 
   MaidAccount(MaidAccount&& other);
   MaidAccount& operator=(MaidAccount&& other);
@@ -133,13 +132,10 @@ class MaidAccount {
   template<typename Data>
   Status DoPutData(const typename Data::name_type& name, int32_t cost);
 
-  boost::filesystem::path AccountDir(const boost::filesystem::path& root) const;
-  std::string AccountFilename() const { return "a"; }
-
   name_type maid_name_;
-  State confirmed_state_, current_state_;
-  std::vector<DiskBasedStorage::RecentOperation> recent_ops_;
-  DiskBasedStorage archive_;
+  State state_;
+  std::unique_ptr<AccountDb> account_db_;
+  Sync<MaidAccountMergePolicy> sync_;
 };
 
 }  // namespace vault
