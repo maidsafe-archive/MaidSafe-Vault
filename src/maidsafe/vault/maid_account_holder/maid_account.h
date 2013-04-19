@@ -33,6 +33,10 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace protobuf {
+  class MaidAccount;
+}
+
 class Db;
 class AccountDb;
 
@@ -62,6 +66,7 @@ class MaidAccount {
  public:
   enum class Status { kOk, kLowSpace };
   typedef MaidName name_type;
+  typedef TaggedValue<NonEmptyString, struct SerialisedMaidAccountTag> serialised_type;
 
   struct State {
     State();
@@ -77,34 +82,32 @@ class MaidAccount {
   // For client adding new account
   MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_node_id);
   // For creating new account via account transfer
-  MaidAccount(const MaidName& maid_name, const State& state, Db& db, const NodeId& this_node_id);
+  MaidAccount(Db& db, const NodeId& this_node_id, const maidsafe::vault::protobuf::MaidAccount &proto_maid_account);
 
   MaidAccount(MaidAccount&& other);
   MaidAccount& operator=(MaidAccount&& other);
 //  void ArchiveToDisk() const;
 
+
+  serialised_type Serialise() const;
+
+  void ApplyAccountTransfer(const protobuf::MaidAccount& proto_maid_account);
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);
   void UpdatePmidTotals(const PmidTotals& pmid_totals);
 
   // Overwites existing state.  Used if this account is out of date (e.g was archived then restored)
 //  void ApplySyncInfo(const State& state);
-  // Replaces any existing files.  Used if this account is out of date (e.g was archived then
-  // restored)
-//  void ApplyTransferredFiles(const boost::filesystem::path& transferred_files_dir);
-//  NonEmptyString GetArchiveFile(const boost::filesystem::path& filename) const;
 
-  // Returns file contents and current state id.
-  std::pair<NonEmptyString, uint64_t> GetArchiveFile(int32_t index) const;
+  // headers and unresolved data
+  NonEmptyString GetSyncData();
+  void ApplySyncData();
+  void ReplaceNode(const NodeId& old_node, const NodeId& new_node) {
+    sync_.ReplaceNode(old_node, new_node);
+  }
 
-  State GetState() const;
+  //  State GetState() const;
 
-  // Returns all recent ops from class vector
-//  std::vector<DiskBasedStorage::RecentOperation> GetRecentOps() const;
-//  void ReinstateUnmergedRecentOps(
-//      const std::vector<DiskBasedStorage::RecentOperation>& unmerged_recent_ops);
-  // Applies this list and removes it from current ops.
-//  void ApplyRecentOps(const std::vector<DiskBasedStorage::RecentOperation>& confirmed_recent_ops);
 
   // This offers the strong exception guarantee
   template<typename Data>
@@ -113,9 +116,6 @@ class MaidAccount {
   template<typename Data>
   void DeleteData(const typename Data::name_type& name);
 
-  template<typename Data>
-  void Adjust(const typename Data::name_type& name, int32_t cost);
-
   name_type name() const { return maid_name_; }
 
   friend class test::MaidAccountHandlerTest;
@@ -123,14 +123,12 @@ class MaidAccount {
   friend class test::MaidAccountHandlerTypedTest;
 
  private:
-  typedef TaggedValue<NonEmptyString, struct SerialisedMaidAccountTag> serialised_type;
   MaidAccount(const MaidAccount&);
   MaidAccount& operator=(const MaidAccount&);
 
   std::vector<PmidTotals>::iterator Find(const PmidName& pmid_name);
 
-  template<typename Data>
-  Status DoPutData(const typename Data::name_type& name, int32_t cost);
+  Status DoPutData(int32_t cost);
 
   name_type maid_name_;
   State state_;

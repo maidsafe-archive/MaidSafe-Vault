@@ -111,7 +111,7 @@ std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresol
   std::copy_if(std::begin(MergePolicy::unresolved_data_),
                std::end(MergePolicy::unresolved_data_),
                std::begin(return_vec), [this](const typename MergePolicy::UnresolvedEntry& entry) {
-                   return entry.peers.find(this->this_node_id_) != std::end(entry.peers));
+                   return (entry.peers.find(this->this_node_id_) != std::end(entry.peers));
                });
   return return_vec;
 }
