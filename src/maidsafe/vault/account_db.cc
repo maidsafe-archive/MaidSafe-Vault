@@ -12,15 +12,13 @@
 
 #include "maidsafe/vault/account_db.h"
 
-#include <iomanip>
-#include <sstream>
-
-#include "boost/filesystem/operations.hpp"
+#include <vector>
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/data_types/data_type_values.h"
+#include "maidsafe/vault/db.h"
 
 namespace maidsafe {
 namespace vault {
