@@ -36,6 +36,12 @@ namespace maidsafe {
 
 namespace vault {
 
+//   TODO(dirvine / Fraser) where does this go man !!
+//    protobuf::MaidAccount proto_maid_account;
+//    if (!proto_maid_account.ParseFromString(serialised_account->string()))
+//      ThrowError(CommonErrors::parsing_error);
+
+
 namespace protobuf { class MaidAccountSyncResponse; }
 
 class MaidAccountHolderService {

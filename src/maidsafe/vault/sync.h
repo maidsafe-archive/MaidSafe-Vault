@@ -12,42 +12,39 @@
 #ifndef MAIDSAFE_VAULT_SYNC_H_
 #define MAIDSAFE_VAULT_SYNC_H_
 
-#include <map>
 #include <vector>
 
 #include "maidsafe/common/node_id.h"
-#include "maidsafe/common/types.h"
-#include "maidsafe/nfs/types.h"
-#include "maidsafe/data_types/data_name_variant.h"
-#include "maidsafe/vault/unresolved_entry.h"
-#include "maidsafe/vault/db.h"
 
 
 namespace maidsafe {
 
 namespace vault {
+
+class AccountDb;
 // Purpose of this object is to ensure enough nodes have agreed the message is valid
 
 template<typename MergePolicy>
 class Sync : public MergePolicy {
  public:
-  explicit Sync(Db* db);
+  Sync(AccountDb* account_db, const NodeId& this_node_id);
   Sync(Sync&& other);
   Sync& operator=(Sync&& other);
-  void AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry&,
-                          const NodeId& node_id);
-
+  void AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry& entry, const NodeId& node_id);
   void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
   // calling this WILL increment the sync counter and delete data that reaches the limit
   std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData();
-  int32_t sync_counter() const { return sync_counter_; }
-  void set_sync_counter(int32_t new_count) { sync_counter_ = new_count; }
+  // int32_t sync_counter_max() const { return sync_counter_max_; }
+  // void set_sync_counter_max(int32_t new_count) { sync_counter_max_ = new_count; }
+
  private:
   Sync(const Sync&);
   Sync& operator=(const Sync&);
-  int32_t sync_counter_;
   typename std::vector<typename MergePolicy::UnresolvedEntry>::iterator FindUnresolved(
-      const typename MergePolicy::UnresolvedEntry::Key& key);
+      const typename MergePolicy::UnresolvedEntry::Key& key_to_find);
+
+  int32_t sync_counter_max_;
+  NodeId this_node_id_;
 };
 
 }  // namespace vault

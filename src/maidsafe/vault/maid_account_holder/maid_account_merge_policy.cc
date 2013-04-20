@@ -13,6 +13,7 @@
 
 #include "maidsafe/common/error.h"
 
+#include "maidsafe/vault/account_db.h"
 #include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
 
 
@@ -20,17 +21,17 @@ namespace maidsafe {
 
 namespace vault {
 
-MaidAccountMergePolicy::MaidAccountMergePolicy(Db* db)
+MaidAccountMergePolicy::MaidAccountMergePolicy(AccountDb* account_db)
     : unresolved_data_(),
-      db_(db) {}
+      account_db_(account_db) {}
 
 MaidAccountMergePolicy::MaidAccountMergePolicy(MaidAccountMergePolicy&& other)
     : unresolved_data_(std::move(other.unresolved_data_)),
-      db_(std::move(other.db_)) {}
+      account_db_(std::move(other.account_db_)) {}
 
 MaidAccountMergePolicy& MaidAccountMergePolicy::operator=(MaidAccountMergePolicy&& other) {
   unresolved_data_ = std::move(other.unresolved_data_);
-  db_ = std::move(other.db_);
+  account_db_ = std::move(other.account_db_);
   return *this;
 }
 
@@ -56,10 +57,10 @@ void MaidAccountMergePolicy::MergePut(const DataNameVariant& data_name,
     ++current_values.second.data;
     current_values.first.data = static_cast<int32_t>(
                                     (current_total_size + cost) / current_values.second.data);
-    db_->Put(std::make_pair(data_name, SerialiseDbValue(current_values)));
+    account_db_->Put(std::make_pair(data_name, SerialiseDbValue(current_values)));
   } else {
     DbValue db_value(std::make_pair(AverageCost(cost), Count(1)));
-    db_->Put(std::make_pair(data_name, SerialiseDbValue(db_value)));
+    account_db_->Put(std::make_pair(data_name, SerialiseDbValue(db_value)));
   }
 }
 
@@ -74,10 +75,10 @@ void MaidAccountMergePolicy::MergeDelete(const DataNameVariant& data_name,
   auto current_values(ParseDbValue(serialised_db_value));
   assert(current_values.second.data > 0);
   if (current_values.second.data == 1) {
-    db_->Delete(data_name);
+    account_db_->Delete(data_name);
   } else {
     --current_values.second.data;
-    db_->Put(std::make_pair(data_name, SerialiseDbValue(current_values)));
+    account_db_->Put(std::make_pair(data_name, SerialiseDbValue(current_values)));
   }
 }
 
@@ -99,7 +100,7 @@ MaidAccountMergePolicy::DbValue MaidAccountMergePolicy::ParseDbValue(
 NonEmptyString MaidAccountMergePolicy::GetFromDb(const DataNameVariant& data_name) {
   NonEmptyString serialised_db_value;
   try {
-    serialised_db_value = db_->Get(data_name);
+    serialised_db_value = account_db_->Get(data_name);
   }
   catch(const vault_error&) {}
   return serialised_db_value;

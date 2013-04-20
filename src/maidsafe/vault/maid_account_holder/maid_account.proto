@@ -7,17 +7,24 @@ message PmidTotals {
   required PmidRecord pmid_record = 2;
 }
 
-message MaidAccount {
-  required bytes maid_name = 1;
-  required uint64 state_id_number = 2;
-  repeated PmidTotals pmid_totals = 3;
-  required int64 total_claimed_available_size_by_pmids = 4;
-  required int64 total_put_data = 5;
-}
-
 message MaidAccountDbValue {
   required int32 average_cost = 1;
   required int32 count = 2;
+}
+
+message MaidAccountDbEntry {
+  required int32 type = 1;
+  required bytes name = 2;
+  required MaidAccountDbValue value = 3;
+}
+
+message MaidAccount {
+  required bytes maid_name = 1;
+  repeated PmidTotals pmid_totals = 2;
+  required int64 total_claimed_available_size_by_pmids = 3;
+  required int64 total_put_data = 4;
+  repeated MaidAccountDbEntry db_entry = 5;
+  repeated bytes serialised_unresolved_entry = 6;
 }
 
 // Used as data field in MM's Reply to Put request.

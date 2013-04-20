@@ -21,7 +21,6 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 
-#include "maidsafe/vault/db.h"
 #include "maidsafe/vault/unresolved_entry.h"
 
 
@@ -29,21 +28,23 @@ namespace maidsafe {
 
 namespace vault {
 
+class AccountDb;
+
 class MaidAccountMergePolicy {
  public:
-  explicit MaidAccountMergePolicy(Db* db);
+  explicit MaidAccountMergePolicy(AccountDb* account_db);
   MaidAccountMergePolicy(MaidAccountMergePolicy&& other);
   MaidAccountMergePolicy& operator=(MaidAccountMergePolicy&& other);
   // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
   template<typename Data>
-  bool AllowDelete(const typename Data::name_type& name);
+  int32_t AllowDelete(const typename Data::name_type& name);
 
  protected:
   typedef MaidAndPmidUnresolvedEntry UnresolvedEntry;
   void Merge(const UnresolvedEntry& unresolved_entry);
 
   std::vector<UnresolvedEntry> unresolved_data_;
-  Db* db_;
+  AccountDb* account_db_;
 
  private:
   typedef TaggedValue<int32_t, struct AverageCostTag> AverageCost;
@@ -63,13 +64,15 @@ class MaidAccountMergePolicy {
 };
 
 template<typename Data>
-bool MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name) {
+int32_t MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name) {
   auto serialised_db_value(GetFromDb(name));
   Count current_count(0);
+  AverageCost size(0);
   if (serialised_db_value.IsInitialised()) {
     auto current_values(ParseDbValue(serialised_db_value));
     assert(current_values.second.data > 0);
     current_count = current_values.second;
+    size = current_values.first;
   }
 
   DataNameVariant name_as_variant(name);
@@ -83,11 +86,13 @@ bool MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name) {
         if ((*itr).dont_add_to_db) {
           // A delete request must have been applied for this to be true, but it will (correctly)
           // silently fail when it comes to merging since this put request will not have been
-          // added to the db.
+          // added to the account_db.
           --pending_deletes;
         } else {
           ++pending_puts;
           last_put_still_to_be_added_to_db = itr;
+          if (size != 0)
+            size = (*itr).cost;
         }
       } else {
         assert((*itr).data_name_and_action.second == nfs::MessageAction::kDelete);
@@ -99,10 +104,12 @@ bool MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name) {
 
   if (current_count <= pending_deletes &&
       last_put_still_to_be_added_to_db != std::end(unresolved_data_)) {
-    (last_put_still_to_be_added_to_db).dont_add_to_db = true;
+    (*last_put_still_to_be_added_to_db).dont_add_to_db = true;
   }
 
-  return current_count + pending_puts > pending_deletes;
+  if (current_count + pending_puts > pending_deletes)
+    size = 0;
+  return size;
 }
 
 }  // namespace vault
