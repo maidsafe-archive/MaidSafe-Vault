@@ -14,7 +14,6 @@
 
 #include <iomanip>
 #include <sstream>
-#include <vector>
 
 #include "boost/filesystem/operations.hpp"
 
@@ -43,9 +42,10 @@ Db::Db(const boost::filesystem::path& path)
   options.error_if_exists = true;
   leveldb::Status status(leveldb::DB::Open(options, kDbPath_.string(), &db));
   if (!status.ok())
-    ThrowError(VaultErrors::failed_to_handle_request);  // FIXME need new exception
+    ThrowError(VaultErrors::failed_to_handle_request); // FIXME need new exception
   leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
   assert(leveldb_);
+
 }
 
 uint32_t Db::RegisterAccount() {
