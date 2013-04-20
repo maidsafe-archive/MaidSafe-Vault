@@ -170,7 +170,7 @@ TEST_F(DbTest, BEH_Poc) {
 TEST_F(DbTest, BEH_GetSingleAccount) {
   Db db(vault_root_directory_);
   AccountDb account_db(db);
-  std::vector<Db::KVPair> nodes;
+  std::vector<Db::KvPair> nodes;
   for (uint32_t i = 0; i != 10000; ++i) {
     DataNameVariant key(GetRandomKey());
     NonEmptyString value(GenerateKeyValueData(key, kValueSize));
@@ -185,7 +185,7 @@ TEST_F(DbTest, BEH_GetSingleAccount) {
 TEST_F(DbTest, BEH_DeleteSingleAccount) {
   Db db(vault_root_directory_);
   AccountDb account_db(db);
-  std::vector<Db::KVPair> nodes;
+  std::vector<Db::KvPair> nodes;
   for (uint32_t i = 0; i != 10000; ++i) {
     DataNameVariant key(GetRandomKey());
     NonEmptyString value(GenerateKeyValueData(key, kValueSize));
@@ -203,7 +203,7 @@ TEST_F(DbTest, BEH_DeleteSingleAccount) {
 
 TEST_F(DbTest, BEH_GetMultipleAccounts) {
   uint32_t accounts(RandomUint32() % 10);
-  std::vector<std::vector<Db::KVPair>> account_vector(accounts);
+  std::vector<std::vector<Db::KvPair>> account_vector(accounts);
   Db db(vault_root_directory_);
   std::vector<std::unique_ptr<AccountDb>> account_db_vector(accounts);
   for (uint32_t i = 0; i != accounts; ++i) {
@@ -228,7 +228,7 @@ TEST_F(DbTest, BEH_GetMultipleAccounts) {
 
 TEST_F(DbTest, BEH_DeleteMultipleAccounts) {
   uint32_t accounts(RandomUint32() % 10);
-  std::vector<std::vector<Db::KVPair>> account_vector(accounts);
+  std::vector<std::vector<Db::KvPair>> account_vector(accounts);
   Db db(vault_root_directory_);
   std::vector<std::unique_ptr<AccountDb>> account_db_vector(accounts);
   for (uint32_t i = 0; i != accounts; ++i) {
@@ -263,7 +263,7 @@ TEST_F(DbTest, BEH_AsyncGetPuts) {
   std::vector<std::future<void> > async_ops;
   uint32_t accounts(RandomUint32() % 10), expected_count(0), op_count(0);
   Db db(vault_root_directory_);
-  std::vector<std::vector<Db::KVPair>> account_vector(accounts);
+  std::vector<std::vector<Db::KvPair>> account_vector(accounts);
   std::vector<std::unique_ptr<AccountDb>> account_db_vector(accounts);
   for (uint32_t i = 0; i != accounts; ++i) {
     account_db_vector[i].reset(new AccountDb(db));
@@ -332,7 +332,7 @@ TEST_F(DbTest, BEH_ParallelAccountCreation) {
   for (uint32_t i = 0; i != 100; ++i) {
     std::async(std::launch::async, [this, &db]() {
         AccountDb account_db(db);
-        std::vector<Db::KVPair> nodes;
+        std::vector<Db::KvPair> nodes;
         for (uint32_t i = 0; i != 100; ++i) {
           DataNameVariant key(GetRandomKey());
           NonEmptyString value(GenerateKeyValueData(key, kValueSize));

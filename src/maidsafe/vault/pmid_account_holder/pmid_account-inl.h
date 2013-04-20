@@ -39,7 +39,6 @@ void PmidAccount::DeleteData(const typename Data::name_type& name) {
       pmid_record_.stored_count--;
       pmid_record_.stored_total_size -= itr->size;
       recent_data_stored_.erase(itr);
-      archive_.Delete<Data>(name);
     }
 }
 

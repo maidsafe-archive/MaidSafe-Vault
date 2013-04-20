@@ -164,6 +164,7 @@ class MaidAccountHolderService {
                              std::shared_ptr<SharedResponse> shared_response);
 
   routing::Routing& routing_;
+  NodeId this_node_id_;
   nfs::PublicKeyGetter& public_key_getter_;
   std::mutex accumulator_mutex_;
   Accumulator<MaidName> accumulator_;

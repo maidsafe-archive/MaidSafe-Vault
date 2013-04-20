@@ -33,7 +33,7 @@ class AccountDb;
 
 class Db {
  public:
-  typedef std::pair<DataNameVariant, NonEmptyString> KVPair;
+  typedef std::pair<DataNameVariant, NonEmptyString> KvPair;
 
   explicit Db(const boost::filesystem::path& path);
   ~Db();
@@ -47,10 +47,10 @@ class Db {
   uint32_t RegisterAccount();
   void UnRegisterAccount(const uint32_t& account_id);
 
-  void Put(const uint32_t& account_id, const KVPair& key_value_pair);
+  void Put(const uint32_t& account_id, const KvPair& key_value_pair);
   void Delete(const uint32_t& account_id, const DataNameVariant& key);
   NonEmptyString Get(const uint32_t& account_id, const DataNameVariant& key);
-  std::vector<KVPair> Get(const uint32_t& account_id);
+  std::vector<KvPair> Get(const uint32_t& account_id);
 
   template<uint32_t Width> std::string Pad(uint32_t number);
 

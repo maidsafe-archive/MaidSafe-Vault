@@ -86,24 +86,30 @@ MaidAccount::State& MaidAccount::State::operator=(State other) {
 
 MaidAccount::MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_node_id)
     : maid_name_(maid_name),
+      this_node_id_(this_node_id),
       state_(),
-      account_db_(new AccountDb(db)),
-      sync_(account_db_.get(), this_node_id) {}
+      db_(db),
+      sync_(db_, this_node_id_) {}
 
 MaidAccount::MaidAccount(Db& db,
                          const NodeId& this_node_id,
                          const protobuf::MaidAccount& proto_maid_account)
     : maid_name_(Identity(proto_maid_account.maid_name())),
+      this_node_id_(this_node_id),
       state_(),
-      account_db_(new AccountDb(db)),
-      sync_(account_db_.get(), this_node_id) {
+      db_(db),
+      sync_(db_, this_node_id_) {
   ApplyAccountTransfer(proto_maid_account);
 }
 
+void MaidAccount::PutData(int32_t cost) {
+  if (state_.total_claimed_available_size_by_pmids < state_.total_put_data + cost)
+    ThrowError(VaultErrors::not_enough_space);
+}
 
-MaidAccount::ApplyAccountTransfer(const protobuf::MaidAccount& proto_maid_account) {
+void MaidAccount::ApplyAccountTransfer(const protobuf::MaidAccount& proto_maid_account) {
 
-    maid_name_ = proto_maid_account.maid_name();
+    maid_name_.data = proto_maid_account.maid_name();
     for (int i(0); i != proto_maid_account.pmid_totals_size(); ++i) {
       state_.pmid_totals.emplace_back(
           nfs::PmidRegistration::serialised_type(NonEmptyString(

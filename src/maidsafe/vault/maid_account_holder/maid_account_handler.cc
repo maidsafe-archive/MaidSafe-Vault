@@ -24,10 +24,11 @@ namespace maidsafe {
 
 namespace vault {
 
-MaidAccountHandler::MaidAccountHandler(const boost::filesystem::path& vault_root_dir)
-    : kMaidAccountsRoot_(vault_root_dir / "maids"),
+MaidAccountHandler::MaidAccountHandler(leveldb::Db &db, const NodeId& this_node_id)
+    : db_(db),
       mutex_(),
-      maid_accounts_() {
+      maid_accounts_(),
+      this_node_id_(this_node_id) {
   detail::InitialiseDirectory(kMaidAccountsRoot_);
 }
 

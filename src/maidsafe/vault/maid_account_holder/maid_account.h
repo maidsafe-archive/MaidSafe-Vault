@@ -25,6 +25,7 @@
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/db.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_record.h"
 #include "maidsafe/vault/maid_account_holder/maid_account_merge_policy.h"
 
@@ -36,9 +37,6 @@ namespace vault {
 namespace protobuf {
   class MaidAccount;
 }
-
-class Db;
-class AccountDb;
 
 namespace test {
 
@@ -109,9 +107,7 @@ class MaidAccount {
   //  State GetState() const;
 
 
-  // This offers the strong exception guarantee
-  template<typename Data>
-  Status PutData(const typename Data::name_type& name, int32_t cost);
+  void PutData(int32_t cost);
   // This offers the strong exception guarantee
   template<typename Data>
   void DeleteData(const typename Data::name_type& name);
@@ -131,8 +127,9 @@ class MaidAccount {
   Status DoPutData(int32_t cost);
 
   name_type maid_name_;
+  NodeId this_node_id_;
   State state_;
-  std::unique_ptr<AccountDb> account_db_;
+  leveldb::DB& db_;
   Sync<MaidAccountMergePolicy> sync_;
 };
 

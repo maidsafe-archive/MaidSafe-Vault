@@ -22,18 +22,9 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-MaidAccount::Status MaidAccount::PutData(const typename Data::name_type& name, int32_t cost) {
-  if (state_.total_claimed_available_size_by_pmids < state_.total_put_data + cost)
-    ThrowError(VaultErrors::not_enough_space);
-
-  return DoPutData(cost);
-}
-
-template<typename Data>
 void MaidAccount::DeleteData(const typename Data::name_type& name) {
   state_.total_put_data -= sync_.AllowDelete<Data>(name);
 }
-
 
 }  // namespace vault
 

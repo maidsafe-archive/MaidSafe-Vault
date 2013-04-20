@@ -72,7 +72,7 @@ int32_t MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name
     auto current_values(ParseDbValue(serialised_db_value));
     assert(current_values.second.data > 0);
     current_count = current_values.second;
-    size = current_values.first;
+    size.data = current_values.first;
   }
 
   DataNameVariant name_as_variant(name);
@@ -92,7 +92,7 @@ int32_t MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name
           ++pending_puts;
           last_put_still_to_be_added_to_db = itr;
           if (size != 0)
-            size = (*itr).cost;
+            size.data = (*itr).cost;
         }
       } else {
         assert((*itr).data_name_and_action.second == nfs::MessageAction::kDelete);
@@ -108,8 +108,8 @@ int32_t MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name
   }
 
   if (current_count + pending_puts > pending_deletes)
-    size = 0;
-  return size;
+    size.data = 0;
+  return size.data;
 }
 
 }  // namespace vault
