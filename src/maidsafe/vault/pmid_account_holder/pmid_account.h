@@ -51,8 +51,8 @@ class PmidAccount {
   };
   enum class DataHolderStatus : int32_t { kDown, kGoingDown, kUp, kGoingUp };
 
-  PmidAccount(const PmidName& pmid_name, const boost::filesystem::path& root);
-  PmidAccount(const serialised_type& serialised_pmid_account, const boost::filesystem::path& root);
+  PmidAccount(const PmidName& pmid_name, Db &db, const NodeId &this_node_id);
+  PmidAccount(const serialised_type& serialised_pmid_account,  Db& db, const NodeId& this_node_id);
   ~PmidAccount();
 
   void SetDataHolderUp() { data_holder_status_ = DataHolderStatus::kUp; }
@@ -67,8 +67,8 @@ class PmidAccount {
   void DeleteData(const typename Data::name_type& name){
     pmid_record_.stored_count--;
     pmid_record_.stored_total_size -= sync_.AllowDelete<Data>(name);
-}
-
+  }
+  serialised_type Serialise();
   name_type name() const { return pmid_name_; }
   DataHolderStatus data_holder_status() const { return data_holder_status_; }
   int64_t total_data_stored_by_pmids() const { return pmid_record_.stored_total_size; }

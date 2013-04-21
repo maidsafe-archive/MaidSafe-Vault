@@ -13,7 +13,7 @@
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HANDLER_INL_H_
 
 #include "maidsafe/passport/types.h"
-
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 

@@ -18,7 +18,7 @@ message DataElement {
 
 message PmidAccount {
   required PmidRecord pmid_record = 1;
-  repeated DataElement recent_data_stored = 2;
+  repeated bytes serialised_unresolved_entry = 2;
 }
 
 message PmidAccountDbValue {

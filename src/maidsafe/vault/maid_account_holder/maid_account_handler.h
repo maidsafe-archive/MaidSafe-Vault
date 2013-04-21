@@ -79,7 +79,7 @@ class MaidAccountHandler {
   MaidAccountHandler& operator=(const MaidAccountHandler&);
   MaidAccountHandler(MaidAccountHandler&&);
   MaidAccountHandler& operator=(MaidAccountHandler&&);
-  AccountDb& db_;
+  std::unique_ptr<AccountDb> db_;
   mutable std::mutex mutex_;
   std::vector<std::unique_ptr<MaidAccount>> maid_accounts_;
   NodeId this_node_id_;
