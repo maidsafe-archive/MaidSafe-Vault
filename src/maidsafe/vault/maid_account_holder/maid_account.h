@@ -25,7 +25,7 @@
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/db.h"
+#include "maidsafe/vault/account_db.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_record.h"
 #include "maidsafe/vault/maid_account_holder/maid_account_merge_policy.h"
 
@@ -78,7 +78,7 @@ class MaidAccount {
   };
 
   // For client adding new account
-  MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_node_id);
+  MaidAccount(const MaidName& maid_name, AccountDb& db, const NodeId& this_node_id);
   // For creating new account via account transfer
   MaidAccount(Db& db, const NodeId& this_node_id, const maidsafe::vault::protobuf::MaidAccount &proto_maid_account);
 
@@ -94,9 +94,6 @@ class MaidAccount {
   void UnregisterPmid(const PmidName& pmid_name);
   void UpdatePmidTotals(const PmidTotals& pmid_totals);
 
-  // Overwites existing state.  Used if this account is out of date (e.g was archived then restored)
-//  void ApplySyncInfo(const State& state);
-
   // headers and unresolved data
   NonEmptyString GetSyncData();
   void ApplySyncData();
@@ -110,8 +107,9 @@ class MaidAccount {
   void PutData(int32_t cost);
   // This offers the strong exception guarantee
   template<typename Data>
-  void DeleteData(const typename Data::name_type& name);
-
+  void DeleteData(const typename Data::name_type& name) {
+    state_.total_put_data -= sync_.AllowDelete<Data>(name);
+  }
   name_type name() const { return maid_name_; }
 
   friend class test::MaidAccountHandlerTest;
@@ -129,14 +127,12 @@ class MaidAccount {
   name_type maid_name_;
   NodeId this_node_id_;
   State state_;
-  leveldb::DB& db_;
+  AccountDb& db_;
   Sync<MaidAccountMergePolicy> sync_;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#include "maidsafe/vault/maid_account_holder/maid_account-inl.h"
 
 #endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_H_

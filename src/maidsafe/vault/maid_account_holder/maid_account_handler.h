@@ -21,7 +21,7 @@
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/pmid_registration.h"
-#include "maidsafe/vault/db.h"
+#include "maidsafe/vault/account_db.h"
 #include "maidsafe/vault/maid_account_holder/maid_account.h"
 #include "maidsafe/vault/types.h"
 
@@ -39,7 +39,7 @@ class MaidAccountHandlerTest;
 
 class MaidAccountHandler {
  public:
-  MaidAccountHandler(Db& db, const NodeId &this_node_id);
+  MaidAccountHandler(AccountDb& db, const NodeId &this_node_id);
   // Account operations
   bool AddAccount(std::unique_ptr<MaidAccount>&& maid_account);
   bool DeleteAccount(const MaidName& account_name);
@@ -79,7 +79,7 @@ class MaidAccountHandler {
   MaidAccountHandler& operator=(const MaidAccountHandler&);
   MaidAccountHandler(MaidAccountHandler&&);
   MaidAccountHandler& operator=(MaidAccountHandler&&);
-  Db& db_;
+  AccountDb& db_;
   mutable std::mutex mutex_;
   std::vector<std::unique_ptr<MaidAccount>> maid_accounts_;
   NodeId this_node_id_;

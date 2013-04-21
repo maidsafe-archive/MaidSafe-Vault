@@ -14,7 +14,7 @@
 #include "boost/filesystem/operations.hpp"
 
 #include "maidsafe/common/error.h"
-
+#include "maidsafe/vault/db.h"
 #include "maidsafe/vault/utils.h"
 
 
@@ -24,13 +24,11 @@ namespace maidsafe {
 
 namespace vault {
 
-MaidAccountHandler::MaidAccountHandler(leveldb::Db &db, const NodeId& this_node_id)
+MaidAccountHandler::MaidAccountHandler(Db &db, const NodeId& this_node_id)
     : db_(db),
       mutex_(),
       maid_accounts_(),
-      this_node_id_(this_node_id) {
-  detail::InitialiseDirectory(kMaidAccountsRoot_);
-}
+      this_node_id_(this_node_id) {}
 
 bool MaidAccountHandler::AddAccount(std::unique_ptr<MaidAccount>&& maid_account) {
   return detail::AddAccount(mutex_, maid_accounts_, std::move(maid_account));
@@ -79,38 +77,7 @@ MaidAccount::serialised_type MaidAccountHandler::GetSerialisedAccount(
   return detail::GetSerialisedAccount(mutex_, maid_accounts_, account_name);
 }
 
-MaidAccount::serialised_info_type MaidAccountHandler::GetSerialisedAccountSyncInfo(
-    const MaidName& account_name) const {
-  return detail::GetSerialisedAccountSyncInfo(mutex_, maid_accounts_, account_name);
-}
 
-std::vector<boost::filesystem::path> MaidAccountHandler::GetArchiveFileNames(
-    const MaidName& account_name) const {
-  std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount(maid_accounts_, account_name));
-  if (itr == maid_accounts_.end())
-    ThrowError(VaultErrors::no_such_account);
-  return (*itr)->GetArchiveFileNames();
-}
-
-NonEmptyString MaidAccountHandler::GetArchiveFile(const MaidName& account_name,
-                                                  const boost::filesystem::path& filename) const {
-  std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount(maid_accounts_, account_name));
-  if (itr == maid_accounts_.end())
-    ThrowError(VaultErrors::no_such_account);
-  return (*itr)->GetArchiveFile(filename);
-}
-
-void MaidAccountHandler::PutArchiveFile(const MaidName& account_name,
-                                        const boost::filesystem::path& filename,
-                                        const NonEmptyString& content) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount(maid_accounts_, account_name));
-  if (itr == maid_accounts_.end())
-    ThrowError(VaultErrors::no_such_account);
-  (*itr)->PutArchiveFile(filename, content);
-}
 
 }  // namespace vault
 

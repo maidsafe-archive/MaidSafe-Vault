@@ -19,15 +19,15 @@
 
 #include "maidsafe/routing/parameters.h"
 #include "maidsafe/routing/routing_api.h"
-
+#include "maidsafe/vault/db.h"
 
 namespace maidsafe {
 
 namespace vault {
 
 template<typename MergePolicy>
-Sync<MergePolicy>::Sync(AccountDb* account_db, const NodeId& this_node_id)
-    : MergePolicy(account_db),
+Sync<MergePolicy>::Sync(Db& db, const NodeId& this_node_id)
+    : MergePolicy(db),
       sync_counter_max_(10),  // TODO(dirvine) decide how to decide on this magic number
       this_node_id_(this_node_id) {}
 
@@ -81,13 +81,12 @@ template<typename MergePolicy>
 void Sync<MergePolicy>::ReplaceNode(const NodeId& old_node, const NodeId& new_node) {
   for (auto itr = std::begin(MergePolicy::unresolved_data_);
        itr != std::end(MergePolicy::unresolved_data_); ++itr) {
+    (*itr).peers.insert(new_node);
     auto found = std::find(std::begin((*itr).peers), std::end((*itr).peers), old_node);
-    if (found == std::end((*itr).peers))
-      found.insert(new_node);
-    else
-      *found = new_node;
+    if (found != std::end((*itr).peers))
+        (*itr).peers.erase(found);
 
-    if ((*itr).peers.size >= (routing::Parameters::node_group_size + 1) / 2) {
+    if ((*itr).peers.size() >= (routing::Parameters::node_group_size + 1) / 2) {
       MergePolicy::Merge(*itr);
       MergePolicy::unresolved_data_.erase(itr);
     }

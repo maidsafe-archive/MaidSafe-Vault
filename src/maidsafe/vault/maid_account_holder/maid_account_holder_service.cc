@@ -15,6 +15,7 @@
 
 #include "boost/filesystem/operations.hpp"
 
+#include "maidsafe/vault/account_db.h"
 #include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
@@ -62,13 +63,14 @@ MaidAccountHolderService::SharedResponse::SharedResponse()
 MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
                                                    nfs::PublicKeyGetter& public_key_getter,
-                                                   const fs::path& vault_root_dir)
-    : routing_(routing),,
-      this_node_id_(routing_.kNodeId),
+                                                   AccountDb& db)
+    : routing_(routing),
+      db_(db),
+      this_node_id_(routing_.kNodeId()),
       public_key_getter_(public_key_getter),
       accumulator_mutex_(),
       accumulator_(),
-      maid_account_handler_(vault_root_dir, this_node_id),
+      maid_account_handler_(db_, this_node_id_),
       nfs_(routing, pmid) {}
 
 void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_message) const {

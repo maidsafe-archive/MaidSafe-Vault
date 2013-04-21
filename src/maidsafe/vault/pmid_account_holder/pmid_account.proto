@@ -20,3 +20,7 @@ message PmidAccount {
   required PmidRecord pmid_record = 1;
   repeated DataElement recent_data_stored = 2;
 }
+
+message PmidAccountDbValue {
+  required int32 size = 1;
+}

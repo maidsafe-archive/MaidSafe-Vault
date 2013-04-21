@@ -140,13 +140,13 @@ void MaidAccount::ApplyAccountTransfer(const protobuf::MaidAccount& proto_maid_a
 MaidAccount::MaidAccount(MaidAccount&& other)
     : maid_name_(std::move(other.maid_name_)),
       state_(std::move(other.state_)),
-      account_db_(std::move(other.account_db_)),
+      db_(std::move(other.db_)),
       sync_(std::move(other.sync_)) {}
 
 MaidAccount& MaidAccount::operator=(MaidAccount&& other) {
   maid_name_ = std::move(other.maid_name_);
   state_ = std::move(other.state_);
-  account_db_= std::move(other.account_db_);
+  db_= std::move(other.db_);
   sync_ = std::move(other.sync_);
   return *this;
 }
@@ -248,31 +248,6 @@ void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
 void MaidAccount::ApplySyncInfo(const State& state) {
 }
 
-void MaidAccount::ApplyTransferredFiles(const boost::filesystem::path& transferred_files_dir) {
-}
-
-std::vector<fs::path> MaidAccount::GetArchiveFileNames() const {
-  return archive_.GetFilenames();
-}
-
-NonEmptyString MaidAccount::GetArchiveFile(const fs::path& filename) const {
-  return archive_.GetFile(filename);
-}
-
-std::vector<DiskBasedStorage::RecentOperation> MaidAccount::GetRecentOps() const {
-}
-
-void MaidAccount::ReinstateUnmergedRecentOps(
-      const std::vector<DiskBasedStorage::RecentOperation>& unmerged_recent_ops) {
-}
-
-void ApplyRecentOps(const std::vector<DiskBasedStorage::RecentOperation>& confirmed_recent_ops) {
-}
-
-boost::filesystem::path MaidAccount::GetAccountDir(const MaidName& maid_name,
-                                                   const boost::filesystem::path& root) {
-  return root / EncodeToBase32(maid_name_.data);
-}
 
 }  // namespace vault
 
