@@ -26,9 +26,11 @@ class AccountDb {
  public:
   explicit AccountDb(Db& db);
   ~AccountDb();
+
   void Put(const Db::KVPair& key_value_pair);
   void Delete(const DataNameVariant& key);
   NonEmptyString Get(const DataNameVariant& key);
+
   std::vector<Db::KVPair> Get();
 
  private:

@@ -48,6 +48,10 @@ Db::Db(const boost::filesystem::path& path)
 
 }
 
+Db::~Db() {
+  leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
+}
+
 uint32_t Db::RegisterAccount() {
   std::lock_guard<std::mutex> lock(mutex_);
   if (account_ids_.size() == (1 << 16) - 1)
@@ -86,10 +90,6 @@ void Db::UnRegisterAccount(const uint32_t& account_id) {
   }
   account_ids_.erase(account_id);
   leveldb_->CompactRange(nullptr, nullptr);
-}
-
-Db::~Db() {
-  leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
 }
 
 void Db::Put(const uint32_t& account_id, const KVPair& key_value_pair) {
