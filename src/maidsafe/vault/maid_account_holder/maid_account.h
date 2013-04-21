@@ -13,19 +13,16 @@
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_H_
 
 #include <cstdint>
-#include <deque>
 #include <memory>
 #include <vector>
 
+#include "maidsafe/common/node_id.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/pmid_registration.h"
 
-#include "maidsafe/vault/disk_based_storage.h"
-#include "maidsafe/vault/parameters.h"
+#include "maidsafe/vault/db.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/account_db.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_record.h"
 #include "maidsafe/vault/maid_account_holder/maid_account_merge_policy.h"
 
@@ -34,9 +31,10 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace protobuf {
-  class MaidAccount;
-}
+class Db;
+class AccountDb;
+
+namespace protobuf { class MaidAccount; }
 
 namespace test {
 
@@ -78,16 +76,16 @@ class MaidAccount {
   };
 
   // For client adding new account
-  MaidAccount(const MaidName& maid_name, AccountDb& db, const NodeId& this_node_id);
+  MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_node_id);
   // For creating new account via account transfer
-  MaidAccount(Db& db, const NodeId& this_node_id, const maidsafe::vault::protobuf::MaidAccount &proto_maid_account);
+  MaidAccount(Db& db,
+              const NodeId& this_node_id,
+              const protobuf::MaidAccount& proto_maid_account);
 
   MaidAccount(MaidAccount&& other);
   MaidAccount& operator=(MaidAccount&& other);
 //  void ArchiveToDisk() const;
-
-
-  serialised_type Serialise() const;
+  serialised_type Serialise();
 
   void ApplyAccountTransfer(const protobuf::MaidAccount& proto_maid_account);
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
@@ -100,9 +98,6 @@ class MaidAccount {
   void ReplaceNode(const NodeId& old_node, const NodeId& new_node) {
     sync_.ReplaceNode(old_node, new_node);
   }
-
-  //  State GetState() const;
-
 
   void PutData(int32_t cost);
   // This offers the strong exception guarantee
@@ -127,7 +122,7 @@ class MaidAccount {
   name_type maid_name_;
   NodeId this_node_id_;
   State state_;
-  AccountDb& db_;
+  std::unique_ptr<AccountDb> account_db_;
   Sync<MaidAccountMergePolicy> sync_;
 };
 

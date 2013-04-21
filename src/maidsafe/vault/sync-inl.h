@@ -19,15 +19,17 @@
 
 #include "maidsafe/routing/parameters.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/vault/db.h"
+
+#include "maidsafe/vault/account_db.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
 template<typename MergePolicy>
-Sync<MergePolicy>::Sync(Db& db, const NodeId& this_node_id)
-    : MergePolicy(db),
+Sync<MergePolicy>::Sync(AccountDb* account_db, const NodeId& this_node_id)
+    : MergePolicy(account_db),
       sync_counter_max_(10),  // TODO(dirvine) decide how to decide on this magic number
       this_node_id_(this_node_id) {}
 
@@ -52,21 +54,21 @@ Sync<MergePolicy>::FindUnresolved(const typename MergePolicy::UnresolvedEntry::K
   return std::find_if(
       std::begin(MergePolicy::unresolved_data_),
       std::end(MergePolicy::unresolved_data_),
-      [&key_to_find](const std::vector<typename MergePolicy::UnresolvedEntry> &test) {
-          return test.Key == key_to_find;
+      [&key_to_find](const typename MergePolicy::UnresolvedEntry &test) {
+          return test.key() == key_to_find;
       });
 }
 
 template<typename MergePolicy>
 void Sync<MergePolicy>::AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry& entry,
                                            const NodeId& node_id) {
-  auto found = FindUnresolved(entry.Key);
+  auto found = FindUnresolved(entry.key());
   if (found == std::end(MergePolicy::unresolved_data_)) {  // new entry
     entry.peers.insert(node_id);
-    MergePolicy::unresolved_data_.insert(entry);
+    MergePolicy::unresolved_data_.push_back(entry);
   } else {
     (*found).peers.insert(node_id);
-    if ((*found).peers.size >= (routing::Parameters::node_group_size + 1) / 2) {
+    if ((*found).peers.size() >= (routing::Parameters::node_group_size + 1) / 2) {
       entry.peers.clear();
       MergePolicy::Merge(entry);
       MergePolicy::unresolved_data_.erase(found);

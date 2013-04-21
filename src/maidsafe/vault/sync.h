@@ -12,10 +12,11 @@
 #ifndef MAIDSAFE_VAULT_SYNC_H_
 #define MAIDSAFE_VAULT_SYNC_H_
 
+#include <cstdint>
 #include <vector>
 
 #include "maidsafe/common/node_id.h"
-#include "maidsafe/vault/db.h"
+
 
 namespace maidsafe {
 
@@ -27,7 +28,7 @@ class AccountDb;
 template<typename MergePolicy>
 class Sync : public MergePolicy {
  public:
-  Sync(Db& db, const NodeId& this_node_id);
+  Sync(AccountDb* account_db, const NodeId& this_node_id);
   Sync(Sync&& other);
   Sync& operator=(Sync&& other);
   void AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry& entry, const NodeId& node_id);
@@ -42,7 +43,6 @@ class Sync : public MergePolicy {
   Sync& operator=(const Sync&);
   typename std::vector<typename MergePolicy::UnresolvedEntry>::iterator FindUnresolved(
       const typename MergePolicy::UnresolvedEntry::Key& key_to_find);
-  Db& db_;
   int32_t sync_counter_max_;
   NodeId this_node_id_;
 };

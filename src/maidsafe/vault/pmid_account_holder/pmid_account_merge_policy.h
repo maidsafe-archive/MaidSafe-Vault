@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_MERGE_POLICY_H_
-#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_MERGE_POLICY_H_
+#ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_MERGE_POLICY_H_
+#define MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_MERGE_POLICY_H_
 
 #include <map>
 #include <set>
@@ -30,7 +30,7 @@ namespace vault {
 
 class PmidAccountMergePolicy {
  public:
-  explicit PmidAccountMergePolicy(AccountDb& db);
+  explicit PmidAccountMergePolicy(AccountDb* account_db);
   PmidAccountMergePolicy(PmidAccountMergePolicy&& other);
   PmidAccountMergePolicy& operator=(PmidAccountMergePolicy&& other);
   // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
@@ -42,7 +42,7 @@ class PmidAccountMergePolicy {
   void Merge(const UnresolvedEntry& unresolved_entry);
 
   std::vector<UnresolvedEntry> unresolved_data_;
-  AccountDb& db_;
+  AccountDb* account_db_;
 
  private:
   typedef TaggedValue<int32_t, struct SizeTag> Size;
@@ -109,4 +109,4 @@ int32_t PmidAccountMergePolicy::AllowDelete(const typename Data::name_type& name
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_MERGE_POLICY_H_
+#endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_MERGE_POLICY_H_

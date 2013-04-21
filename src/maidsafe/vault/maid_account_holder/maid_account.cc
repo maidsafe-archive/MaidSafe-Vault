@@ -18,13 +18,8 @@
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/vault/account_db.h"
-#include "maidsafe/vault/db.h"
-#include "maidsafe/vault/demultiplexer.h"
-#include "maidsafe/vault/pmid_account_holder/pmid_account.h"
 #include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
 
-
-namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
@@ -88,8 +83,8 @@ MaidAccount::MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_n
     : maid_name_(maid_name),
       this_node_id_(this_node_id),
       state_(),
-      db_(db),
-      sync_(db_, this_node_id_) {}
+      account_db_(new AccountDb(db)),
+      sync_(account_db_.get(), this_node_id_) {}
 
 MaidAccount::MaidAccount(Db& db,
                          const NodeId& this_node_id,
@@ -97,8 +92,8 @@ MaidAccount::MaidAccount(Db& db,
     : maid_name_(Identity(proto_maid_account.maid_name())),
       this_node_id_(this_node_id),
       state_(),
-      db_(db),
-      sync_(db_, this_node_id_) {
+      account_db_(new AccountDb(db)),
+      sync_(account_db_.get(), this_node_id) {
   ApplyAccountTransfer(proto_maid_account);
 }
 
@@ -108,62 +103,65 @@ void MaidAccount::PutData(int32_t cost) {
 }
 
 void MaidAccount::ApplyAccountTransfer(const protobuf::MaidAccount& proto_maid_account) {
-
-    maid_name_.data = proto_maid_account.maid_name();
-    for (int i(0); i != proto_maid_account.pmid_totals_size(); ++i) {
-      state_.pmid_totals.emplace_back(
-          nfs::PmidRegistration::serialised_type(NonEmptyString(
-              proto_maid_account.pmid_totals(i).serialised_pmid_registration())),
-          PmidRecord(proto_maid_account.pmid_totals(i).pmid_record()));
-    }
-
-    state_.total_claimed_available_size_by_pmids =
-        proto_maid_account.total_claimed_available_size_by_pmids();
-    state_.total_put_data = proto_maid_account.total_put_data();
-
-    for (int i(0); i != proto_maid_account.db_entry_size(); ++i) {
-      auto data_name(GetDataNameVariant(
-          static_cast<DataTagValue>(proto_maid_account.db_entry(i).type())),
-          Identity(proto_maid_account.db_entry(i).name()));
-      int32_t average_cost(proto_maid_account.db_entry(i).value().average_cost());
-      int32_t count(proto_maid_account.db_entry(i).value().count());
-      MaidAndPmidUnresolvedEntry entry(std::make_pair(data_name, nfs::MessageAction::kPut),
-                                       average_cost);
-      for (int32_t i(0); i != count; ++i)
-        sync_.AddUnresolvedEntry();
-    }
-    iterate through
-    sync_.AddUnresolvedEntry()
-    archive_.ApplyAccountTransfer(transferred_files_dir);
+  maid_name_ = MaidName(Identity(proto_maid_account.maid_name()));
+  for (int i(0); i != proto_maid_account.pmid_totals_size(); ++i) {
+    state_.pmid_totals.emplace_back(
+        nfs::PmidRegistration::serialised_type(NonEmptyString(
+            proto_maid_account.pmid_totals(i).serialised_pmid_registration())),
+        PmidRecord(proto_maid_account.pmid_totals(i).pmid_record()));
   }
+
+  state_.total_claimed_available_size_by_pmids =
+      proto_maid_account.total_claimed_available_size_by_pmids();
+  state_.total_put_data = proto_maid_account.total_put_data();
+
+  for (int i(0); i != proto_maid_account.db_entry_size(); ++i) {
+    auto data_name(GetDataNameVariant(
+        static_cast<DataTagValue>(proto_maid_account.db_entry(i).type()),
+        Identity(proto_maid_account.db_entry(i).name())));
+    int32_t average_cost(proto_maid_account.db_entry(i).value().average_cost());
+    int32_t count(proto_maid_account.db_entry(i).value().count());
+    MaidAndPmidUnresolvedEntry entry(std::make_pair(data_name, nfs::MessageAction::kPut),
+                                      average_cost);
+    for (int32_t i(0); i != count; ++i)
+      sync_.AddUnresolvedEntry(entry, this_node_id_);
+  }
+
+  for (int i(0); i != proto_maid_account.serialised_unresolved_entry_size(); ++i) {
+    MaidAndPmidUnresolvedEntry entry(MaidAndPmidUnresolvedEntry::serialised_type(
+        NonEmptyString(proto_maid_account.serialised_unresolved_entry(i))));
+    sync_.AddUnresolvedEntry(entry, this_node_id_);
+  }
+}
 
 MaidAccount::MaidAccount(MaidAccount&& other)
     : maid_name_(std::move(other.maid_name_)),
       state_(std::move(other.state_)),
-      db_(std::move(other.db_)),
+      account_db_(std::move(other.account_db_)),
       sync_(std::move(other.sync_)) {}
 
 MaidAccount& MaidAccount::operator=(MaidAccount&& other) {
   maid_name_ = std::move(other.maid_name_);
   state_ = std::move(other.state_);
-  db_= std::move(other.db_);
+  account_db_ = std::move(other.account_db_);
   sync_ = std::move(other.sync_);
   return *this;
 }
 
-MaidAccount::serialised_type MaidAccount::Serialise() const {
+MaidAccount::serialised_type MaidAccount::Serialise() {
   protobuf::MaidAccount proto_maid_account;
   proto_maid_account.set_maid_name(maid_name_->string());
   for (const auto& pmid_total : state_.pmid_totals) {
     auto proto_pmid_total(proto_maid_account.add_pmid_totals());
-    proto_pmid_total->set_serialised_pmid_registration(pmid_total.serialised_pmid_registration);
+    proto_pmid_total->set_serialised_pmid_registration(
+        pmid_total.serialised_pmid_registration->string());
     proto_pmid_total->mutable_pmid_record()->CopyFrom(pmid_total.pmid_record.ToProtobuf());
   }
   proto_maid_account.set_total_claimed_available_size_by_pmids(
       state_.total_claimed_available_size_by_pmids);
   proto_maid_account.set_total_put_data(state_.total_put_data);
 
-  auto db_entries(account_db_.Get());
+  auto db_entries(account_db_->Get());
   GetTagValueAndIdentityVisitor type_and_name_visitor;
   for (const auto& db_entry : db_entries) {
     auto type_and_name(boost::apply_visitor(type_and_name_visitor, db_entry.first));
@@ -191,32 +189,9 @@ MaidAccount::Status MaidAccount::DoPutData(int32_t cost) {
     return Status::kOk;
 }
 
-
-void MaidAccount::ArchiveToDisk() const {
-  protobuf::MaidAccount proto_maid_account;
-  proto_maid_account.set_maid_name(maid_name_->string());
-
-  proto_maid_account.set_state_id_number(confirmed_state_.id);
-  for (auto& pmid_total : confirmed_state_.pmid_totals) {
-    auto proto_pmid_totals(proto_maid_account.add_pmid_totals());
-    proto_pmid_totals->set_serialised_pmid_registration(
-        pmid_total.serialised_pmid_registration->string());
-    *(proto_pmid_totals->mutable_pmid_record()) = pmid_total.pmid_record.ToProtobuf();
-  }
-
-  proto_maid_account.set_total_claimed_available_size_by_pmids(
-      confirmed_state_.total_claimed_available_size_by_pmids);
-  proto_maid_account.set_total_put_data(confirmed_state_.total_put_data);
-
-  if (!WriteFile(archive_.GetAccountDir() / AccountFilename(),
-                 proto_maid_account.SerializeAsString()))
-    ThrowError(CommonErrors::filesystem_io_error);
-}
-
-
 std::vector<PmidTotals>::iterator MaidAccount::Find(const PmidName& pmid_name) {
-  return std::find_if(std::begin(current_state_.pmid_totals),
-                      std::end(current_state_.pmid_totals),
+  return std::find_if(std::begin(state_.pmid_totals),
+                      std::end(state_.pmid_totals),
                       [&pmid_name](const PmidTotals& pmid_totals) {
                         return pmid_name == pmid_totals.pmid_record.pmid_name;
                       });
@@ -224,30 +199,26 @@ std::vector<PmidTotals>::iterator MaidAccount::Find(const PmidName& pmid_name) {
 
 void MaidAccount::RegisterPmid(const nfs::PmidRegistration& pmid_registration) {
   auto itr(Find(pmid_registration.pmid_name()));
-  if (itr == std::end(current_state_.pmid_totals)) {
+  if (itr == std::end(state_.pmid_totals)) {
     nfs::PmidRegistration::serialised_type serialised_pmid_registration(
         pmid_registration.Serialise());
-    current_state_.pmid_totals.emplace_back(serialised_pmid_registration,
-                                            PmidRecord(pmid_registration.pmid_name()));
+    state_.pmid_totals.emplace_back(serialised_pmid_registration,
+                                    PmidRecord(pmid_registration.pmid_name()));
   }
 }
 
 void MaidAccount::UnregisterPmid(const PmidName& pmid_name) {
   auto itr(Find(pmid_name));
-  if (itr != current_state_.pmid_totals.end())
-    current_state_.pmid_totals.erase(itr);
+  if (itr != state_.pmid_totals.end())
+    state_.pmid_totals.erase(itr);
 }
 
 void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
   auto itr(Find(pmid_totals.pmid_record.pmid_name));
-  if (itr == current_state_.pmid_totals.end())
+  if (itr == state_.pmid_totals.end())
     ThrowError(CommonErrors::no_such_element);
   *itr = pmid_totals;
 }
-
-void MaidAccount::ApplySyncInfo(const State& state) {
-}
-
 
 }  // namespace vault
 

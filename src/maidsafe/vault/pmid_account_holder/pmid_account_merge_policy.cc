@@ -21,13 +21,13 @@ namespace maidsafe {
 
 namespace vault {
 
-PmidAccountMergePolicy::PmidAccountMergePolicy(AccountDb& db)
+PmidAccountMergePolicy::PmidAccountMergePolicy(AccountDb* account_db)
     : unresolved_data_(),
-      db_(db) {}
+      account_db_(account_db) {}
 
 PmidAccountMergePolicy::PmidAccountMergePolicy(PmidAccountMergePolicy&& other)
     : unresolved_data_(std::move(other.unresolved_data_)),
-      db_(other.db_) {}
+      account_db_(other.account_db_) {}
 
 PmidAccountMergePolicy& PmidAccountMergePolicy::operator=(PmidAccountMergePolicy&& other) {
   unresolved_data_ = std::move(other.unresolved_data_);
@@ -51,9 +51,9 @@ void PmidAccountMergePolicy::MergePut(const DataNameVariant& data_name,
                                       UnresolvedEntry::Value size,
                                       const NonEmptyString& serialised_db_value) {
   if (serialised_db_value.IsInitialised()) {
-    db_.Put(std::make_pair(data_name, serialised_db_value));
+    account_db_->Put(std::make_pair(data_name, serialised_db_value));
   } else {
-    db_.Put(std::make_pair(data_name, SerialiseDbValue(Size(size))));
+    account_db_->Put(std::make_pair(data_name, SerialiseDbValue(Size(size))));
   }
 }
 
@@ -66,7 +66,7 @@ void PmidAccountMergePolicy::MergeDelete(const DataNameVariant& data_name,
   }
 
   auto size(ParseDbValue(serialised_db_value));
-    db_.Delete(data_name);
+    account_db_->Delete(data_name);
 }
 
 NonEmptyString PmidAccountMergePolicy::SerialiseDbValue(Size db_value) const {
@@ -86,7 +86,7 @@ PmidAccountMergePolicy::Size PmidAccountMergePolicy::ParseDbValue(
 NonEmptyString PmidAccountMergePolicy::GetFromDb(const DataNameVariant& data_name) {
   NonEmptyString serialised_db_value;
   try {
-    serialised_db_value = db_.Get(data_name);
+    serialised_db_value = account_db_->Get(data_name);
   }
   catch(const vault_error&) {}
   return serialised_db_value;

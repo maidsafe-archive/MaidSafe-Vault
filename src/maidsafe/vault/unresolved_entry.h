@@ -41,6 +41,7 @@ struct MaidAndPmidUnresolvedEntry {
   friend void swap(MaidAndPmidUnresolvedEntry& lhs,
                    MaidAndPmidUnresolvedEntry& rhs) MAIDSAFE_NOEXCEPT;
   serialised_type Serialise() const;
+  Key key() const { return data_name_and_action; }
 
   Key data_name_and_action;
   Value cost;
