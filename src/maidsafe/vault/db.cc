@@ -92,7 +92,7 @@ Db::~Db() {
   leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
 }
 
-void Db::Put(const uint32_t& account_id, const KVPair& key_value_pair) {
+void Db::Put(const uint32_t& account_id, const KvPair& key_value_pair) {
   auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key_value_pair.first));
   std::string db_key(Pad<kPrefixWidth_>(account_id) +
                      result.second.string() +
@@ -128,8 +128,8 @@ NonEmptyString Db::Get(const uint32_t& account_id, const DataNameVariant& key) {
   return NonEmptyString(value);
 }
 
-std::vector<Db::KVPair> Db::Get(const uint32_t& account_id) {
-  std::vector<KVPair> return_vector;
+std::vector<Db::KvPair> Db::Get(const uint32_t& account_id) {
+  std::vector<KvPair> return_vector;
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
   auto it(account_ids_.find(account_id));
@@ -142,7 +142,7 @@ std::vector<Db::KVPair> Db::Get(const uint32_t& account_id) {
     std::string type_string(iter->key().ToString().substr(kPrefixWidth_ + NodeId::kSize));
     DataTagValue type = static_cast<DataTagValue>(std::stoul(type_string));
     auto key = GetDataNameVariant(type, Identity(name));
-    KVPair kv_pair(key, NonEmptyString(iter->value().ToString()));
+    KvPair kv_pair(key, NonEmptyString(iter->value().ToString()));
     return_vector.push_back(std::move(kv_pair));
   }
   return return_vector;

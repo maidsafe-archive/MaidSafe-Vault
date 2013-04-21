@@ -32,7 +32,7 @@ AccountDb::~AccountDb() {
   db_.UnRegisterAccount(account_id_);
 }
 
-void AccountDb::Put(const Db::KVPair& key_value_pair) {
+void AccountDb::Put(const Db::KvPair& key_value_pair) {
   db_.Put(account_id_, key_value_pair);
 }
 
@@ -44,7 +44,7 @@ NonEmptyString AccountDb::Get(const DataNameVariant& key) {
   return db_.Get(account_id_, key);
 }
 
-std::vector<Db::KVPair> AccountDb::Get() {
+std::vector<Db::KvPair> AccountDb::Get() {
   return db_.Get(account_id_);
 }
 

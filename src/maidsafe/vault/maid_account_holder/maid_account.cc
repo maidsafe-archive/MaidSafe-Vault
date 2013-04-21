@@ -86,24 +86,30 @@ MaidAccount::State& MaidAccount::State::operator=(State other) {
 
 MaidAccount::MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_node_id)
     : maid_name_(maid_name),
+      this_node_id_(this_node_id),
       state_(),
-      account_db_(new AccountDb(db)),
-      sync_(account_db_.get(), this_node_id) {}
+      db_(db),
+      sync_(db_, this_node_id_) {}
 
 MaidAccount::MaidAccount(Db& db,
                          const NodeId& this_node_id,
                          const protobuf::MaidAccount& proto_maid_account)
     : maid_name_(Identity(proto_maid_account.maid_name())),
+      this_node_id_(this_node_id),
       state_(),
-      account_db_(new AccountDb(db)),
-      sync_(account_db_.get(), this_node_id) {
+      db_(db),
+      sync_(db_, this_node_id_) {
   ApplyAccountTransfer(proto_maid_account);
 }
 
+void MaidAccount::PutData(int32_t cost) {
+  if (state_.total_claimed_available_size_by_pmids < state_.total_put_data + cost)
+    ThrowError(VaultErrors::not_enough_space);
+}
 
-MaidAccount::ApplyAccountTransfer(const protobuf::MaidAccount& proto_maid_account) {
+void MaidAccount::ApplyAccountTransfer(const protobuf::MaidAccount& proto_maid_account) {
 
-    maid_name_ = proto_maid_account.maid_name();
+    maid_name_.data = proto_maid_account.maid_name();
     for (int i(0); i != proto_maid_account.pmid_totals_size(); ++i) {
       state_.pmid_totals.emplace_back(
           nfs::PmidRegistration::serialised_type(NonEmptyString(
@@ -134,13 +140,13 @@ MaidAccount::ApplyAccountTransfer(const protobuf::MaidAccount& proto_maid_accoun
 MaidAccount::MaidAccount(MaidAccount&& other)
     : maid_name_(std::move(other.maid_name_)),
       state_(std::move(other.state_)),
-      account_db_(std::move(other.account_db_)),
+      db_(std::move(other.db_)),
       sync_(std::move(other.sync_)) {}
 
 MaidAccount& MaidAccount::operator=(MaidAccount&& other) {
   maid_name_ = std::move(other.maid_name_);
   state_ = std::move(other.state_);
-  account_db_= std::move(other.account_db_);
+  db_= std::move(other.db_);
   sync_ = std::move(other.sync_);
   return *this;
 }
@@ -242,31 +248,6 @@ void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
 void MaidAccount::ApplySyncInfo(const State& state) {
 }
 
-void MaidAccount::ApplyTransferredFiles(const boost::filesystem::path& transferred_files_dir) {
-}
-
-std::vector<fs::path> MaidAccount::GetArchiveFileNames() const {
-  return archive_.GetFilenames();
-}
-
-NonEmptyString MaidAccount::GetArchiveFile(const fs::path& filename) const {
-  return archive_.GetFile(filename);
-}
-
-std::vector<DiskBasedStorage::RecentOperation> MaidAccount::GetRecentOps() const {
-}
-
-void MaidAccount::ReinstateUnmergedRecentOps(
-      const std::vector<DiskBasedStorage::RecentOperation>& unmerged_recent_ops) {
-}
-
-void ApplyRecentOps(const std::vector<DiskBasedStorage::RecentOperation>& confirmed_recent_ops) {
-}
-
-boost::filesystem::path MaidAccount::GetAccountDir(const MaidName& maid_name,
-                                                   const boost::filesystem::path& root) {
-  return root / EncodeToBase32(maid_name_.data);
-}
 
 }  // namespace vault
 

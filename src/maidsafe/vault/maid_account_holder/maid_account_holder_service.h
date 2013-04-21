@@ -28,6 +28,7 @@
 
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/maid_account_holder/maid_account_handler.h"
+#include "maidsafe/vault/account_db.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
 
@@ -49,7 +50,7 @@ class MaidAccountHolderService {
   MaidAccountHolderService(const passport::Pmid& pmid,
                            routing::Routing& routing,
                            nfs::PublicKeyGetter& public_key_getter,
-                           const boost::filesystem::path& vault_root_dir);
+                           AccountDb& db);
   template<typename Data>
   void HandleDataMessage(const nfs::DataMessage& data_message,
                          const routing::ReplyFunctor& reply_functor);
@@ -65,7 +66,6 @@ class MaidAccountHolderService {
 
   struct SharedResponse {
     SharedResponse();
-
     mutable std::mutex mutex;
     int count;
     bool this_node_in_group;
@@ -164,6 +164,8 @@ class MaidAccountHolderService {
                              std::shared_ptr<SharedResponse> shared_response);
 
   routing::Routing& routing_;
+  AccountDb& db_;
+  NodeId this_node_id_;
   nfs::PublicKeyGetter& public_key_getter_;
   std::mutex accumulator_mutex_;
   Accumulator<MaidName> accumulator_;

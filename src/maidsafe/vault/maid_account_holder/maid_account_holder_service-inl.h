@@ -18,6 +18,7 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
+#include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/nfs/utils.h"
 #include "maidsafe/nfs/reply.h"
 

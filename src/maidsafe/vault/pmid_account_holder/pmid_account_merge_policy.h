@@ -20,7 +20,7 @@
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
-
+#include "maidsafe/vault/account_db.h"
 #include "maidsafe/vault/unresolved_entry.h"
 
 
@@ -28,13 +28,11 @@ namespace maidsafe {
 
 namespace vault {
 
-class AccountDb;
-
-class MaidAccountMergePolicy {
+class PmidAccountMergePolicy {
  public:
-  explicit MaidAccountMergePolicy(AccountDb* account_db);
-  MaidAccountMergePolicy(MaidAccountMergePolicy&& other);
-  MaidAccountMergePolicy& operator=(MaidAccountMergePolicy&& other);
+  explicit PmidAccountMergePolicy(AccountDb& db);
+  PmidAccountMergePolicy(PmidAccountMergePolicy&& other);
+  PmidAccountMergePolicy& operator=(PmidAccountMergePolicy&& other);
   // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
   template<typename Data>
   int32_t AllowDelete(const typename Data::name_type& name);
@@ -44,36 +42,31 @@ class MaidAccountMergePolicy {
   void Merge(const UnresolvedEntry& unresolved_entry);
 
   std::vector<UnresolvedEntry> unresolved_data_;
-  AccountDb* account_db_;
+  AccountDb& db_;
 
  private:
-  typedef TaggedValue<int32_t, struct AverageCostTag> AverageCost;
+  typedef TaggedValue<int32_t, struct SizeTag> Size;
   typedef TaggedValue<int32_t, struct CountTag> Count;
-  typedef std::pair<AverageCost, Count> DbValue;
 
-  MaidAccountMergePolicy(const MaidAccountMergePolicy&);
-  MaidAccountMergePolicy& operator=(const MaidAccountMergePolicy&);
+  PmidAccountMergePolicy(const PmidAccountMergePolicy&);
+  PmidAccountMergePolicy& operator=(const PmidAccountMergePolicy&);
 
   void MergePut(const DataNameVariant& data_name,
-                UnresolvedEntry::Value cost,
+                UnresolvedEntry::Value size,
                 const NonEmptyString& serialised_db_value);
   void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
-  NonEmptyString SerialiseDbValue(DbValue db_value) const;
-  DbValue ParseDbValue(NonEmptyString serialised_db_value) const;
+  NonEmptyString SerialiseDbValue(Size size) const;
+  Size ParseDbValue(NonEmptyString serialised_db_value) const;
   NonEmptyString GetFromDb(const DataNameVariant& data_name);
 };
 
 template<typename Data>
-int32_t MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name) {
+int32_t PmidAccountMergePolicy::AllowDelete(const typename Data::name_type& name) {
   auto serialised_db_value(GetFromDb(name));
+  Size size(0);
   Count current_count(0);
-  AverageCost size(0);
-  if (serialised_db_value.IsInitialised()) {
-    auto current_values(ParseDbValue(serialised_db_value));
-    assert(current_values.second.data > 0);
-    current_count = current_values.second;
-    size.data = current_values.first;
-  }
+  if (serialised_db_value.IsInitialised())
+    return ParseDbValue(serialised_db_value);
 
   DataNameVariant name_as_variant(name);
   auto itr(std::begin(unresolved_data_));
