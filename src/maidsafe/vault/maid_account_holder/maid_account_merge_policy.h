@@ -107,7 +107,7 @@ int32_t MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name
     (*last_put_still_to_be_added_to_db).dont_add_to_db = true;
   }
 
-  if (current_count + pending_puts > pending_deletes)
+  if (current_count + pending_puts <= pending_deletes)
     size.data = 0;
   return size.data;
 }
