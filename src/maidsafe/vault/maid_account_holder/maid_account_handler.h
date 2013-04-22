@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <vector>
 
 #include "maidsafe/common/types.h"
@@ -77,7 +78,7 @@ class MaidAccountHandler {
   MaidAccountHandler& operator=(MaidAccountHandler&&);
 
   mutable std::mutex mutex_;
-  std::vector<std::unique_ptr<MaidAccount>> maid_accounts_;
+  std::set<std::unique_ptr<MaidAccount>> maid_accounts_;
 };
 
 }  // namespace vault

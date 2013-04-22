@@ -76,6 +76,11 @@ void Sync<MergePolicy>::AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry
   }
 }
 
+template<typename MergePolicy>
+void Sync<MergePolicy>::AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry& entry) {
+  AddUnresolvedEntry(entry, this_node_id_);
+}
+
 // iterate the unresolved data and insert new node key in every element
 // replacing the old node keys if found. This is to absolve us from altering the close
 // node size for any messages that are partially resolved

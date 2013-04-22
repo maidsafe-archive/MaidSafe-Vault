@@ -32,6 +32,7 @@ class Sync : public MergePolicy {
   Sync(Sync&& other);
   Sync& operator=(Sync&& other);
   void AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry& entry, const NodeId& node_id);
+  void AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry& entry);
   void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
   // calling this WILL increment the sync counter and delete data that reaches the limit
   std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData();

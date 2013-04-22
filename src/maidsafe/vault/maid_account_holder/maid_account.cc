@@ -81,16 +81,14 @@ MaidAccount::State& MaidAccount::State::operator=(State other) {
 
 MaidAccount::MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_node_id)
     : maid_name_(maid_name),
-      this_node_id_(this_node_id),
       state_(),
       account_db_(new AccountDb(db)),
-      sync_(account_db_.get(), this_node_id_) {}
+      sync_(account_db_.get(), this_node_id) {}
 
 MaidAccount::MaidAccount(Db& db,
                          const NodeId& this_node_id,
                          const protobuf::MaidAccount& proto_maid_account)
     : maid_name_(Identity(proto_maid_account.maid_name())),
-      this_node_id_(this_node_id),
       state_(),
       account_db_(new AccountDb(db)),
       sync_(account_db_.get(), this_node_id) {
@@ -179,13 +177,13 @@ void MaidAccount::ApplyAccountTransfer(const protobuf::MaidAccount& proto_maid_a
     MaidAndPmidUnresolvedEntry entry(std::make_pair(data_name, nfs::MessageAction::kPut),
                                       average_cost);
     for (int32_t i(0); i != count; ++i)
-      sync_.AddUnresolvedEntry(entry, this_node_id_);
+      sync_.AddUnresolvedEntry(entry);
   }
 
   for (int i(0); i != proto_maid_account.serialised_unresolved_entry_size(); ++i) {
     MaidAndPmidUnresolvedEntry entry(MaidAndPmidUnresolvedEntry::serialised_type(
         NonEmptyString(proto_maid_account.serialised_unresolved_entry(i))));
-    sync_.AddUnresolvedEntry(entry, this_node_id_);
+    sync_.AddUnresolvedEntry(entry);
   }
 }
 

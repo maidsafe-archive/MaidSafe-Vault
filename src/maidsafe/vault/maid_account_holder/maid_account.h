@@ -120,7 +120,6 @@ class MaidAccount {
   Status DoPutData(int32_t cost);
 
   name_type maid_name_;
-  NodeId this_node_id_;
   State state_;
   std::unique_ptr<AccountDb> account_db_;
   Sync<MaidAccountMergePolicy> sync_;

@@ -235,6 +235,31 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
   }
 }
 
+template<typename PublicFobType>
+void MaidAccountHolderService::ValidateRegisterPmid(
+    const nfs::Reply& reply,
+    typename PublicFobType::name_type public_fob_name,
+    std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
+  std::unique_ptr<PublicFobType> public_fob;
+  try {
+    public_fob.reset(new PublicFobType(public_fob_name,
+                                       PublicFobType::serialised_type(reply.data())));
+  }
+  catch(const std::exception& e) {
+    public_fob.reset();
+    LOG(kError) << e.what();
+  }
+  bool finalise(false);
+  {
+    std::lock_guard<std::mutex> lock(pmid_registration_op->mutex);
+    pmid_registration_op->SetPublicFob(std::move(public_fob));
+    finalise = (++count == 2);
+  }
+  if (finalise)
+    FinaliseRegisterPmid(pmid_registration_op);
+}
+
+
 }  // namespace vault
 
 }  // namespace maidsafe

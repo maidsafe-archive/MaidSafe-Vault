@@ -69,6 +69,33 @@ class MaidAccountHolderService {
     bool this_node_in_group;
   };
 
+  struct PmidRegistrationOp {
+    PmidRegistrationOp(const nfs::PmidRegistration& pmid_registration_in,
+                       const routing::ReplyFunctor& reply_functor_in)
+        : pmid_registration(pmid_registration_in),
+          reply_functor(reply_functor_in),
+          public_maid(),
+          public_pmid(),
+          count(0),
+          mutex() {}
+    template<typename PublicFobType>
+    void SetPublicFob(std::unique_ptr<PublicFobType>&&);
+    template<>
+    void SetPublicFob<passport::PublicMaid>(std::unique_ptr<passport::PublicMaid>&& pub_maid) {
+      public_maid = std::move(pub_maid);
+    }
+    template<>
+    void SetPublicFob<passport::PublicPmid>(std::unique_ptr<passport::PublicPmid>&& pub_pmid) {
+      public_pmid = std::move(pub_pmid);
+    }
+    nfs::PmidRegistration pmid_registration;
+    routing::ReplyFunctor reply_functor;
+    std::unique_ptr<passport::PublicMaid> public_maid;
+    std::unique_ptr<passport::PublicPmid> public_pmid;
+    int count;
+    std::mutex mutex;
+  };
+
   template<typename Data>
   void HandlePut(const nfs::DataMessage& data_message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
@@ -136,6 +163,15 @@ class MaidAccountHolderService {
                        routing::ReplyFunctor client_reply_functor,
                        bool low_space,
                        std::false_type);
+
+  void HandleRegisterPmid(const nfs::GenericMessage& generic_message,
+                          const routing::ReplyFunctor& reply_functor);
+  template<typename PublicFobType>
+  void ValidateRegisterPmid(const nfs::Reply& reply,
+                            typename PublicFobType::name_type public_fob_name,
+                            std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
+  void FinaliseRegisterPmid(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
+  bool DoRegisterPmid(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
 
   void HandleSyncMessage(const nfs::GenericMessage& generic_message,
                          const routing::ReplyFunctor& reply_functor);
