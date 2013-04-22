@@ -97,43 +97,6 @@ MaidAccount::MaidAccount(Db& db,
   ApplyAccountTransfer(proto_maid_account);
 }
 
-void MaidAccount::PutData(int32_t cost) {
-  if (state_.total_claimed_available_size_by_pmids < state_.total_put_data + cost)
-    ThrowError(VaultErrors::not_enough_space);
-}
-
-void MaidAccount::ApplyAccountTransfer(const protobuf::MaidAccount& proto_maid_account) {
-  maid_name_ = MaidName(Identity(proto_maid_account.maid_name()));
-  for (int i(0); i != proto_maid_account.pmid_totals_size(); ++i) {
-    state_.pmid_totals.emplace_back(
-        nfs::PmidRegistration::serialised_type(NonEmptyString(
-            proto_maid_account.pmid_totals(i).serialised_pmid_registration())),
-        PmidRecord(proto_maid_account.pmid_totals(i).pmid_record()));
-  }
-
-  state_.total_claimed_available_size_by_pmids =
-      proto_maid_account.total_claimed_available_size_by_pmids();
-  state_.total_put_data = proto_maid_account.total_put_data();
-
-  for (int i(0); i != proto_maid_account.db_entry_size(); ++i) {
-    auto data_name(GetDataNameVariant(
-        static_cast<DataTagValue>(proto_maid_account.db_entry(i).type()),
-        Identity(proto_maid_account.db_entry(i).name())));
-    int32_t average_cost(proto_maid_account.db_entry(i).value().average_cost());
-    int32_t count(proto_maid_account.db_entry(i).value().count());
-    MaidAndPmidUnresolvedEntry entry(std::make_pair(data_name, nfs::MessageAction::kPut),
-                                      average_cost);
-    for (int32_t i(0); i != count; ++i)
-      sync_.AddUnresolvedEntry(entry, this_node_id_);
-  }
-
-  for (int i(0); i != proto_maid_account.serialised_unresolved_entry_size(); ++i) {
-    MaidAndPmidUnresolvedEntry entry(MaidAndPmidUnresolvedEntry::serialised_type(
-        NonEmptyString(proto_maid_account.serialised_unresolved_entry(i))));
-    sync_.AddUnresolvedEntry(entry, this_node_id_);
-  }
-}
-
 MaidAccount::MaidAccount(MaidAccount&& other)
     : maid_name_(std::move(other.maid_name_)),
       state_(std::move(other.state_)),
@@ -181,12 +144,49 @@ MaidAccount::serialised_type MaidAccount::Serialise() {
   return serialised_type(NonEmptyString(proto_maid_account.SerializeAsString()));
 }
 
+void MaidAccount::PutData(int32_t cost) {
+  if (state_.total_claimed_available_size_by_pmids < state_.total_put_data + cost)
+    ThrowError(VaultErrors::not_enough_space);
+}
+
 MaidAccount::Status MaidAccount::DoPutData(int32_t cost) {
   state_.total_put_data += cost;
   if (state_.total_put_data > (state_.total_claimed_available_size_by_pmids / 10) * 9)
     return Status::kLowSpace;
   else
     return Status::kOk;
+}
+
+void MaidAccount::ApplyAccountTransfer(const protobuf::MaidAccount& proto_maid_account) {
+  maid_name_ = MaidName(Identity(proto_maid_account.maid_name()));
+  for (int i(0); i != proto_maid_account.pmid_totals_size(); ++i) {
+    state_.pmid_totals.emplace_back(
+        nfs::PmidRegistration::serialised_type(NonEmptyString(
+            proto_maid_account.pmid_totals(i).serialised_pmid_registration())),
+        PmidRecord(proto_maid_account.pmid_totals(i).pmid_record()));
+  }
+
+  state_.total_claimed_available_size_by_pmids =
+      proto_maid_account.total_claimed_available_size_by_pmids();
+  state_.total_put_data = proto_maid_account.total_put_data();
+
+  for (int i(0); i != proto_maid_account.db_entry_size(); ++i) {
+    auto data_name(GetDataNameVariant(
+        static_cast<DataTagValue>(proto_maid_account.db_entry(i).type()),
+        Identity(proto_maid_account.db_entry(i).name())));
+    int32_t average_cost(proto_maid_account.db_entry(i).value().average_cost());
+    int32_t count(proto_maid_account.db_entry(i).value().count());
+    MaidAndPmidUnresolvedEntry entry(std::make_pair(data_name, nfs::MessageAction::kPut),
+                                      average_cost);
+    for (int32_t i(0); i != count; ++i)
+      sync_.AddUnresolvedEntry(entry, this_node_id_);
+  }
+
+  for (int i(0); i != proto_maid_account.serialised_unresolved_entry_size(); ++i) {
+    MaidAndPmidUnresolvedEntry entry(MaidAndPmidUnresolvedEntry::serialised_type(
+        NonEmptyString(proto_maid_account.serialised_unresolved_entry(i))));
+    sync_.AddUnresolvedEntry(entry, this_node_id_);
+  }
 }
 
 std::vector<PmidTotals>::iterator MaidAccount::Find(const PmidName& pmid_name) {

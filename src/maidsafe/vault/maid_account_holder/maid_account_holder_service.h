@@ -17,8 +17,6 @@
 #include <type_traits>
 #include <vector>
 
-#include "boost/filesystem/path.hpp"
-
 #include "maidsafe/common/types.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
@@ -27,10 +25,10 @@
 #include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/vault/accumulator.h"
-#include "maidsafe/vault/maid_account_holder/maid_account_handler.h"
-#include "maidsafe/vault/account_db.h"
+#include "maidsafe/vault/db.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_handler.h"
 
 
 namespace maidsafe {
@@ -50,7 +48,7 @@ class MaidAccountHolderService {
   MaidAccountHolderService(const passport::Pmid& pmid,
                            routing::Routing& routing,
                            nfs::PublicKeyGetter& public_key_getter,
-                           AccountDb& db);
+                           Db& db);
   template<typename Data>
   void HandleDataMessage(const nfs::DataMessage& data_message,
                          const routing::ReplyFunctor& reply_functor);
@@ -164,9 +162,8 @@ class MaidAccountHolderService {
                              std::shared_ptr<SharedResponse> shared_response);
 
   routing::Routing& routing_;
-  AccountDb& db_;
-  NodeId this_node_id_;
   nfs::PublicKeyGetter& public_key_getter_;
+  Db& db_;
   std::mutex accumulator_mutex_;
   Accumulator<MaidName> accumulator_;
   MaidAccountHandler maid_account_handler_;
