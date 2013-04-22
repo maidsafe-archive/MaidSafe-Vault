@@ -122,7 +122,7 @@ class MaidAccount {
   name_type maid_name_;
   NodeId this_node_id_;
   State state_;
-  AccountDb& account_db_;
+  std::unique_ptr<AccountDb> account_db_;
   Sync<MaidAccountMergePolicy> sync_;
 };
 

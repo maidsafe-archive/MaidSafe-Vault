@@ -15,10 +15,8 @@
 
 #include "boost/filesystem/operations.hpp"
 
-#include "maidsafe/vault/account_db.h"
 #include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
 #include "maidsafe/vault/sync.h"
-#include "maidsafe/vault/sync.pb.h"
 
 
 namespace fs = boost::filesystem;
@@ -63,14 +61,13 @@ MaidAccountHolderService::SharedResponse::SharedResponse()
 MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
                                                    nfs::PublicKeyGetter& public_key_getter,
-                                                   AccountDb& db)
+                                                   Db& db)
     : routing_(routing),
-      db_(db),
-      this_node_id_(routing_.kNodeId()),
       public_key_getter_(public_key_getter),
+      db_(db),
       accumulator_mutex_(),
       accumulator_(),
-      maid_account_handler_(db_, this_node_id_),
+      maid_account_handler_(),
       nfs_(routing, pmid) {}
 
 void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_message) const {

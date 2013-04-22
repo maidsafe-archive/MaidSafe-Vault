@@ -24,11 +24,7 @@ namespace maidsafe {
 
 namespace vault {
 
-MaidAccountHandler::MaidAccountHandler(Db &db, const NodeId& this_node_id)
-    : db_(db),
-      mutex_(),
-      maid_accounts_(),
-      this_node_id_(this_node_id) {}
+MaidAccountHandler::MaidAccountHandler() : mutex_(), maid_accounts_() {}
 
 bool MaidAccountHandler::AddAccount(std::unique_ptr<MaidAccount>&& maid_account) {
   return detail::AddAccount(mutex_, maid_accounts_, std::move(maid_account));
