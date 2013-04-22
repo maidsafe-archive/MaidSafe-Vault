@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <set>
 
 #include "maidsafe/routing/parameters.h"
 
@@ -95,8 +96,8 @@ typename std::vector<std::unique_ptr<Account>>::iterator FindAccount(
 }
 
 template<typename Account>
-typename std::vector<std::unique_ptr<Account>>::const_iterator FindAccount(
-    const std::vector<std::unique_ptr<Account>>& accounts,
+typename std::set<std::unique_ptr<Account>>::const_iterator FindAccount(
+    const std::set<std::unique_ptr<Account>>& accounts,
     const typename Account::name_type& account_name) {
   return std::find_if(accounts.begin(),
                       accounts.end(),
@@ -107,18 +108,15 @@ typename std::vector<std::unique_ptr<Account>>::const_iterator FindAccount(
 
 template<typename Account>
 bool AddAccount(std::mutex& mutex,
-                std::vector<std::unique_ptr<Account>>& accounts,
+                std::set<std::unique_ptr<Account>>& accounts,
                 std::unique_ptr<Account>&& account) {
   std::lock_guard<std::mutex> lock(mutex);
-  if (FindAccount(accounts, account->name()) != accounts.end())
-    return false;
-  accounts.push_back(std::move(account));
-  return true;
+  return accounts.insert(std::move(account)).second;
 }
 
 template<typename Account>
 bool DeleteAccount(std::mutex& mutex,
-                   std::vector<std::unique_ptr<Account>>& accounts,
+                   std::set<std::unique_ptr<Account>>& accounts,
                    const typename Account::name_type& account_name) {
   std::lock_guard<std::mutex> lock(mutex);
   auto itr(FindAccount(accounts, account_name));
@@ -130,7 +128,7 @@ bool DeleteAccount(std::mutex& mutex,
 template<typename Account>
 typename Account::serialised_type GetSerialisedAccount(
     std::mutex& mutex,
-    const std::vector<std::unique_ptr<Account>>& accounts,
+    const std::set<std::unique_ptr<Account>>& accounts,
     const typename Account::name_type& account_name) {
   std::lock_guard<std::mutex> lock(mutex);
   auto itr(FindAccount(accounts, account_name));

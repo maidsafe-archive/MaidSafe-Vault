@@ -54,7 +54,7 @@ void MaidAccountHandler::PutData(const MaidName& account_name,
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr != maid_accounts_.end())
     ThrowError(VaultErrors::operation_not_supported);
-  std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, db_, this_node_id_));
+  std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, this_node_id_));
   bool success(AddAccount(std::move(account)));
   assert(success);
   static_cast<void>(success);

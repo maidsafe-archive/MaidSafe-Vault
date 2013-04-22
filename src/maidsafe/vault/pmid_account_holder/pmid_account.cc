@@ -32,7 +32,6 @@ PmidRecord ParsePmidRecord(const PmidAccount::serialised_type& serialised_pmid_a
 
 }  // namespace
 
-
 protobuf::DataElement PmidAccount::DataElement::ToProtobuf() const {
   GetTagValueAndIdentityVisitor type_and_name_visitor;
   auto type_and_name(boost::apply_visitor(type_and_name_visitor, data_name_variant));

@@ -64,17 +64,6 @@ class MaidAccount {
   typedef MaidName name_type;
   typedef TaggedValue<NonEmptyString, struct SerialisedMaidAccountTag> serialised_type;
 
-  struct State {
-    State();
-    State(const State& other);
-    State(State&& other);
-    State& operator=(State other);
-
-    uint64_t id;
-    std::vector<PmidTotals> pmid_totals;
-    int64_t total_claimed_available_size_by_pmids, total_put_data;
-  };
-
   // For client adding new account
   MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_node_id);
   // For creating new account via account transfer
@@ -103,7 +92,7 @@ class MaidAccount {
   // This offers the strong exception guarantee
   template<typename Data>
   void DeleteData(const typename Data::name_type& name) {
-    state_.total_put_data -= sync_.AllowDelete<Data>(name);
+    total_put_data_ -= sync_.AllowDelete<Data>(name);
   }
   name_type name() const { return maid_name_; }
 
@@ -120,7 +109,8 @@ class MaidAccount {
   Status DoPutData(int32_t cost);
 
   name_type maid_name_;
-  State state_;
+  std::vector<PmidTotals> pmid_totals_;
+  int64_t total_claimed_available_size_by_pmids_, total_put_data_;
   std::unique_ptr<AccountDb> account_db_;
   Sync<MaidAccountMergePolicy> sync_;
 };
