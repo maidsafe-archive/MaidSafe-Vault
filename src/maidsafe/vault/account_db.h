@@ -25,7 +25,6 @@ namespace vault {
 class AccountDb {
  public:
   explicit AccountDb(Db& db);
-  AccountDb() {}
   ~AccountDb();
   void Put(const Db::KvPair& key_value_pair);
   void Delete(const DataNameVariant& key);
