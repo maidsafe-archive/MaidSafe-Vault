@@ -45,7 +45,7 @@ class PmidAccountHolderService {
                          const routing::ReplyFunctor& reply_functor);
   void HandleGenericMessage(const nfs::GenericMessage& generic_message,
                             const routing::ReplyFunctor& reply_functor);
-  void TriggerSync();
+  void HandleChurnEvent(routing::MatrixChange matrix_change);
 
  private:
   PmidAccountHolderService(const PmidAccountHolderService&);

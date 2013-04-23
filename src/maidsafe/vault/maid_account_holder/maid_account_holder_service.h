@@ -49,7 +49,7 @@ class MaidAccountHolderService {
                          const routing::ReplyFunctor& reply_functor);
   void HandleGenericMessage(const nfs::GenericMessage& generic_message,
                             const routing::ReplyFunctor& reply_functor);
-  void TriggerSync();
+  void HandleChurnEvent(routing::MatrixChange matrix_change);
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
  private:
   MaidAccountHolderService(const MaidAccountHolderService&);

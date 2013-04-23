@@ -54,7 +54,7 @@ MetadataManagerService::MetadataManagerService(const passport::Pmid& pmid,
       metadata_handler_(vault_root_dir),
       nfs_(routing, pmid) {}
 
-void MetadataManagerService::TriggerSync() {
+void MetadataManagerService::HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {
 }
 
 void MetadataManagerService::ValidatePutSender(const nfs::DataMessage& data_message) const {

@@ -175,13 +175,17 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
 // }
 
 
-void MaidAccountHolderService::TriggerSync() {
-  // Lock Accumulator
-  auto account_names(maid_account_handler_.GetAccountNames());
-  for (auto& account_name : account_names) {
-    SendSyncData(account_name);
-  }
+void MaidAccountHolderService::HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {
+// TODO(Team): Use CheckHolders to work out replacement nodes for each account
 }
+
+//void MaidAccountHolderService::TriggerSync() {
+//  // Lock Accumulator
+//  auto account_names(maid_account_handler_.GetAccountNames());
+//  for (auto& account_name : account_names) {
+//    SendSyncData(account_name);
+//  }
+//}
 
 void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
   protobuf::SyncInfo sync_info;
