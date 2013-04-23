@@ -24,11 +24,17 @@ namespace maidsafe {
 
 namespace vault {
 
+const std::function<bool(const std::unique_ptr<MaidAccount>&,
+                         const std::unique_ptr<MaidAccount>&)> MaidAccountHandler::kCompare_ =
+    [](const std::unique_ptr<MaidAccount>& lhs, const std::unique_ptr<MaidAccount>& rhs) {
+        return lhs->name().data < rhs->name().data;
+    };
+
 MaidAccountHandler::MaidAccountHandler(Db& db, const NodeId& this_node_id)
     : db_(db),
       kThisNodeId_(this_node_id),
       mutex_(),
-      maid_accounts_() {}
+      maid_accounts_(kCompare_) {}
 
 bool MaidAccountHandler::AddAccount(const MaidName& account_name,
                                     const MaidAccount::serialised_type& serialised_account) {
@@ -37,14 +43,14 @@ bool MaidAccountHandler::AddAccount(const MaidName& account_name,
   return detail::AddAccount(mutex_, maid_accounts_, std::move(maid_account));
 }
 
-bool MaidAccountHandler::DeleteAccount(const MaidName& account_name) {
-  return detail::DeleteAccount(mutex_, maid_accounts_, account_name);
+void MaidAccountHandler::DeleteAccount(const MaidName& account_name) {
+  detail::DeleteAccount<MaidAccountSet, MaidAccount>(mutex_, maid_accounts_, account_name);
 }
 
 void MaidAccountHandler::RegisterPmid(const MaidName& account_name,
                                       const nfs::PmidRegistration& pmid_registration) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount(maid_accounts_, account_name));
+  auto itr(detail::FindAccount<MaidAccountSet, MaidAccount>(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
   (*itr)->RegisterPmid(pmid_registration);
@@ -52,7 +58,7 @@ void MaidAccountHandler::RegisterPmid(const MaidName& account_name,
 
 void MaidAccountHandler::UnregisterPmid(const MaidName& account_name, const PmidName& pmid_name) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount(maid_accounts_, account_name));
+  auto itr(detail::FindAccount<MaidAccountSet, MaidAccount>(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
   (*itr)->UnregisterPmid(pmid_name);
@@ -61,7 +67,7 @@ void MaidAccountHandler::UnregisterPmid(const MaidName& account_name, const Pmid
 void MaidAccountHandler::UpdatePmidTotals(const MaidName& account_name,
                                           const PmidTotals& pmid_totals) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount(maid_accounts_, account_name));
+  auto itr(detail::FindAccount<MaidAccountSet, MaidAccount>(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
   (*itr)->UpdatePmidTotals(pmid_totals);
@@ -77,7 +83,8 @@ std::vector<MaidName> MaidAccountHandler::GetAccountNames() const {
 
 MaidAccount::serialised_type MaidAccountHandler::GetSerialisedAccount(
     const MaidName& account_name) const {
-  return detail::GetSerialisedAccount(mutex_, maid_accounts_, account_name);
+  return detail::GetSerialisedAccount<MaidAccountSet, MaidAccount>(mutex_, maid_accounts_,
+                                                                   account_name);
 }
 
 

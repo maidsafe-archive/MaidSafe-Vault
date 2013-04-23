@@ -56,14 +56,13 @@ class MaidAccountHolderService {
                             const routing::ReplyFunctor& reply_functor);
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
   // Synchronisation
-  void CloseGroupChange(NodeId old_node, NodeId new_node) {
-      iterate accounts and clean up
-    for (account : accounts) {
-
-    }
-      account.sync_.ReplaceNode(old_node, new_node);
-    nfs::GenericMessage MaidAccount account;
-    send AccountTransfer to new node;
+  void HandleChurnEvent(NodeId old_node, NodeId new_node) {
+    //  iterate accounts and clean up
+    //for (account : accounts) {
+      //remove account if we're no longer responsible for it
+      //account.sync_.ReplaceNode(old_node, new_node);
+      //send AccountTransfer to new node;
+    //}
   }
 
  private:
