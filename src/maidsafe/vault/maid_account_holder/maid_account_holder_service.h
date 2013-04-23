@@ -56,14 +56,7 @@ class MaidAccountHolderService {
                             const routing::ReplyFunctor& reply_functor);
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
   // Synchronisation
-  void HandleChurnEvent(NodeId old_node, NodeId new_node) {
-    //  iterate accounts and clean up
-    //for (account : accounts) {
-      //remove account if we're no longer responsible for it
-      //account.sync_.ReplaceNode(old_node, new_node);
-      //send AccountTransfer to new node;
-    //}
-  }
+  void HandleChurnEvent(const NodeId& /*old_node*/, const NodeId& /*new_node*/);
 
  private:
   MaidAccountHolderService(const MaidAccountHolderService&);
@@ -151,19 +144,11 @@ class MaidAccountHolderService {
                                   std::shared_ptr<SharedResponse> shared_response);
   void HandleReceivedSyncInfo(const NonEmptyString& serialised_account,
                               const routing::ReplyFunctor& reply_functor);
-//   bool HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid);
-//   bool OnKeyFetched(const passport::/*PublicMaid*/PublicPmid& p_maid,
-//                     const passport::PublicPmid& p_pmid);
-//  bool HandleNewComer(const nfs::PmidRegistration& pmid_registration);
-//  void OnGenericErrorHandler(nfs::GenericMessage generic_message);
-  void HandleFileRequest(const NodeId& requester_node_id,
-                         const MaidName& account_name,
-                         const protobuf::GetArchiveFiles& requested_files,
-                         std::shared_ptr<SharedResponse> shared_response);
-  void HandleFileRequestCallback(const NodeId& requester_node_id,
-                                 const std::string& response,
-                                 const MaidName& account_name,
-                                 std::shared_ptr<SharedResponse> shared_response);
+
+  void HandleAccountTransfer(const nfs::GenericMessage& generic_message);
+
+
+
   void CheckAndDeleteAccount(const MaidName& account_name,
                              std::shared_ptr<SharedResponse> shared_response);
 

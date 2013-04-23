@@ -76,7 +76,7 @@ class MaidAccount {
 
   MaidAccount(MaidAccount&& other);
   MaidAccount& operator=(MaidAccount&& other);
-//  void ArchiveToDisk() const;
+
   serialised_type Serialise();
 
   void ApplyAccountTransfer(const serialised_type& serialised_maid_account_details);

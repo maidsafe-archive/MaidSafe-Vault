@@ -75,9 +75,25 @@ void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_messa
     ThrowError(CommonErrors::invalid_parameter);
 }
 
+void MaidAccountHolderService::HandleChurnEvent(const NodeId& old_node, const NodeId& new_node) {
+  auto maids(maid_account_handler_.GetAccountNames());
+  for (auto i = std::begin(maids); i != std::end(maids); ++i) {
+    // clean up accounts we are no longer responsible for
+    if (routing_.IsNodeIdInGroupRange(NodeId((*i))) !=
+        routing::GroupRangeStatus::kInRange)
+      DeleteAccount(MaidName((*i)));
+    // find accounts managed by old_node
+    if (routing_.IsNodeIdInGroupRange(NodeId((*i)), old_node) !=
+        routing::GroupRangeStatus::kInRange) {
+      (*i).ReplaceNode(old_node, new_node);
+    //send AccountTransfer to new node;
+    }
+  }
+}
+
+
 void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
                                                     const routing::ReplyFunctor& reply_functor) {
-// HandleNewComer(p_maid);
   nfs::GenericMessage::Action action(generic_message.action());
   switch (action) {
     case nfs::GenericMessage::Action::kRegisterPmid:
@@ -90,6 +106,8 @@ void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& g
       break;
     case nfs::GenericMessage::Action::kSynchronise:
       return HandleSyncMessage(generic_message, reply_functor);
+    case nfs::GenericMessage::Action::kAccountTransfer:
+      return HandleAccountTransfer(generic_message);
     default:
       LOG(kError) << "Unhandled Post action type";
   }
@@ -130,7 +148,7 @@ void MaidAccountHolderService::FinaliseRegisterPmid(
 
   auto send_reply([&](const maidsafe_error& error)->void {
       nfs::Reply reply(error);
-      pmid_registration_op->reply_functor(reply.Serialise()->string());  
+      pmid_registration_op->reply_functor(reply.Serialise()->string());
   });
 
   if (!pmid_registration_op->public_maid || !pmid_registration_op->public_pmid) {
@@ -293,68 +311,21 @@ void MaidAccountHolderService::HandleSendSyncDataCallback(
   }
 }
 
-void MaidAccountHolderService::CheckAndDeleteAccount(
-    const MaidName& account_name,
-    std::shared_ptr<SharedResponse> shared_response) {
-  std::lock_guard<std::mutex> lock(shared_response->mutex);
-  if ((shared_response->count == 4) && !shared_response->this_node_in_group) {
-    LOG(kInfo) << "Deleting account after forwarding sync info";
-    maid_account_handler_.DeleteAccount(account_name);  // FIXME this need archiving account ?
-  }
-}
-
-void MaidAccountHolderService::HandleFileRequest(const NodeId& requester_node_id,
-                                                 const MaidName& account_name,
-                                                 const protobuf::GetArchiveFiles& requested_files,
-                                                 std::shared_ptr<SharedResponse> shared_response) {
-  assert(requested_files.IsInitialized());
-  for (auto& file_name : requested_files.file_hash_requested()) {
-    try {
-      auto file_contents = maid_account_handler_.GetArchiveFile(account_name, fs::path(file_name));
-      protobuf::ArchiveFile maid_account_file;
-      maid_account_file.set_name(file_name);
-      maid_account_file.set_contents(file_contents.string());
-      assert(maid_account_file.IsInitialized() && "Uninitialised maid_account_file");
-      protobuf::Sync sync_message;
-      sync_message.set_action(static_cast<int32_t>(Sync::Action::kSyncArchiveFiles));
-      sync_message.set_sync_message(maid_account_file.SerializeAsString());
-      assert(sync_message.IsInitialized() && "Uninitialised sync message");
-      auto callback = [=](std::string response) {
-          this->HandleFileRequestCallback(requester_node_id, response, account_name,
-                                          shared_response);
-        };
-      nfs_.PostSyncDataDirect(requester_node_id, NonEmptyString(sync_message.SerializeAsString()),
-                              callback);
-    } catch(const std::exception& ex) {
-      LOG(kError) << "Failed to send requested file contents : " << ex.what();
-    }
-  }
-}
-
-void MaidAccountHolderService::HandleFileRequestCallback(
-    const NodeId& requester_node_id,
-    const std::string& response,
-    const MaidName& account_name,
-    std::shared_ptr<SharedResponse> shared_response) {
-  try {
-    nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(response))));
-    protobuf::SyncArchiveFilesResponse archive_file_response;
-    if (!reply.IsSuccess() || !archive_file_response.ParseFromString(reply.data().string())) {
-      LOG(kError) << "Failed to parse reply";
-      return;
-    }
-    if (!archive_file_response.has_file_hash_requests()) {
-      std::lock_guard<std::mutex> lock(shared_response->mutex);
-      ++shared_response->count;  //  Done with this node
-    } else {
-      HandleFileRequest(requester_node_id, account_name, archive_file_response.file_hash_requests(),
-                        shared_response);
-    }
-  } catch(const std::exception& ex) {
-    LOG(kError) << "Exception thrown while processing reply : " << ex.what();
-  }
-  CheckAndDeleteAccount(account_name, shared_response);
-}
+ void MaidAccountHolderService::DefaultPaymentFactor HandleAccountTransfer(const nfs::GenericMessage& generic_message) {
+   protobuf::MaidAccount maid_account;
+   maid_account.ParseFromStringParseFromString(generic_message.content());
+   MaidName account_name(maid_account.maid_name());
+   std::lock<std::mutex>(accumulator_mutex_);
+   auto acccount_iter(detail::FindAccount<MaidAccountSet, MaidAccount>
+                      (maid_account_handler_.maid_accounts_, account_name));
+   if (account_iter != std::end(maid_account_handler_.maid_accounts_))
+     // TODO FIXME from here - use AccountSet
+     maid_account_handler_.
+   else
+     maid_account_handler_.AddAccount(account_name,
+              MaidAccount::serialised_type(maid_account.serialised_account_details()));
+     // TODO applyAccountTransfer
+ }
 
 void MaidAccountHolderService::HandleReceivedSyncInfo(
     const NonEmptyString &/*serialised_sync_info*/,
