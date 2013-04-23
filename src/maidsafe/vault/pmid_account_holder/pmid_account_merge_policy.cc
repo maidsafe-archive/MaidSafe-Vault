@@ -50,11 +50,8 @@ void PmidAccountMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
 void PmidAccountMergePolicy::MergePut(const DataNameVariant& data_name,
                                       UnresolvedEntry::Value size,
                                       const NonEmptyString& serialised_db_value) {
-  if (serialised_db_value.IsInitialised()) {
-    account_db_->Put(std::make_pair(data_name, serialised_db_value));
-  } else {
+  if (!serialised_db_value.IsInitialised())
     account_db_->Put(std::make_pair(data_name, SerialiseDbValue(Size(size))));
-  }
 }
 
 void PmidAccountMergePolicy::MergeDelete(const DataNameVariant& data_name,
@@ -64,9 +61,7 @@ void PmidAccountMergePolicy::MergeDelete(const DataNameVariant& data_name,
     // marked as "dont_add_to_db".
     return;
   }
-
-  auto size(ParseDbValue(serialised_db_value));
-    account_db_->Delete(data_name);
+  account_db_->Delete(data_name);
 }
 
 NonEmptyString PmidAccountMergePolicy::SerialiseDbValue(Size db_value) const {
