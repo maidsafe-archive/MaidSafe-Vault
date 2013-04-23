@@ -62,10 +62,9 @@ MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
                                                    Db& db)
     : routing_(routing),
       public_key_getter_(public_key_getter),
-      db_(db),
       accumulator_mutex_(),
       accumulator_(),
-      maid_account_handler_(),
+      maid_account_handler_(db, routing.kNodeId()),
       nfs_(routing, pmid) {}
 
 void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_message) const {

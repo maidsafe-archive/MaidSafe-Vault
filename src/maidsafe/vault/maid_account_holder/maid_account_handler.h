@@ -35,10 +35,13 @@ namespace test { class MaidAccountHandlerTest; }
 
 class MaidAccountHandler {
  public:
-  MaidAccountHandler();
+  MaidAccountHandler(Db& db, const NodeId& this_node_id);
 
   // Account operations
-  bool AddAccount(std::unique_ptr<MaidAccount>&& maid_account);
+  // this is called only for account transfer
+  bool AddAccount(const MaidName& account_name,
+                  const MaidAccount::serialised_type& serialised_account);
+  // client request or going out of range
   bool DeleteAccount(const MaidName& account_name);
 
   void RegisterPmid(const MaidName& account_name, const nfs::PmidRegistration& pmid_registration);
@@ -58,17 +61,16 @@ class MaidAccountHandler {
                const typename Data::name_type& data_name,
                int32_t cost,
                RequireAccount);
+  // this will create an account on storing a MAID
   template<typename Data>
   void PutData(const MaidName& account_name,
                const typename Data::name_type& data_name,
                int32_t cost,
-               RequireNoAccount);
+               RequireNoAccount);  // only Maid and AnMaid
+
   template<typename Data>
   void DeleteData(const MaidName& account_name, const typename Data::name_type& data_name);
-  template<typename Data>
-  void Adjust(const MaidName& account_name,
-              const typename Data::name_type& data_name,
-              int32_t new_cost);
+
   friend class test::MaidAccountHandlerTest;
 
  private:
@@ -77,6 +79,8 @@ class MaidAccountHandler {
   MaidAccountHandler(MaidAccountHandler&&);
   MaidAccountHandler& operator=(MaidAccountHandler&&);
 
+  Db& db_;
+  const NodeId kThisNodeId_;
   mutable std::mutex mutex_;
   std::set<std::unique_ptr<MaidAccount>> maid_accounts_;
 };

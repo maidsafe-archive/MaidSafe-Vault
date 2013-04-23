@@ -48,6 +48,8 @@ class MaidAccountHandlerTypedTest;
 
 struct PmidTotals {
   PmidTotals();
+  explicit PmidTotals(
+      const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in);
   PmidTotals(const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
              const PmidRecord& pmid_record_in);
   PmidTotals(const PmidTotals& other);
@@ -67,16 +69,17 @@ class MaidAccount {
   // For client adding new account
   MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_node_id);
   // For creating new account via account transfer
-  MaidAccount(Db& db,
+  MaidAccount(const MaidName& maid_name,
+              Db& db,
               const NodeId& this_node_id,
-              const protobuf::MaidAccount& proto_maid_account);
+              const serialised_type& serialised_maid_account_details);
 
   MaidAccount(MaidAccount&& other);
   MaidAccount& operator=(MaidAccount&& other);
 //  void ArchiveToDisk() const;
   serialised_type Serialise();
 
-  void ApplyAccountTransfer(const protobuf::MaidAccount& proto_maid_account);
+  void ApplyAccountTransfer(const serialised_type& serialised_maid_account_details);
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);
   void UpdatePmidTotals(const PmidTotals& pmid_totals);

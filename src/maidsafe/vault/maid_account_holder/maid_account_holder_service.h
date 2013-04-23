@@ -54,8 +54,18 @@ class MaidAccountHolderService {
                          const routing::ReplyFunctor& reply_functor);
   void HandleGenericMessage(const nfs::GenericMessage& generic_message,
                             const routing::ReplyFunctor& reply_functor);
-  void TriggerSync();
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
+  // Synchronisation
+  void CloseGroupChange(NodeId old_node, NodeId new_node) {
+      iterate accounts and clean up
+    for (account : accounts) {
+
+    }
+      account.sync_.ReplaceNode(old_node, new_node);
+    nfs::GenericMessage MaidAccount account;
+    send AccountTransfer to new node;
+  }
+
  private:
   MaidAccountHolderService(const MaidAccountHolderService&);
   MaidAccountHolderService& operator=(const MaidAccountHolderService&);
@@ -80,14 +90,6 @@ class MaidAccountHolderService {
           mutex() {}
     template<typename PublicFobType>
     void SetPublicFob(std::unique_ptr<PublicFobType>&&);
-    template<>
-    void SetPublicFob<passport::PublicMaid>(std::unique_ptr<passport::PublicMaid>&& pub_maid) {
-      public_maid = std::move(pub_maid);
-    }
-    template<>
-    void SetPublicFob<passport::PublicPmid>(std::unique_ptr<passport::PublicPmid>&& pub_pmid) {
-      public_pmid = std::move(pub_pmid);
-    }
     nfs::PmidRegistration pmid_registration;
     routing::ReplyFunctor reply_functor;
     std::unique_ptr<passport::PublicMaid> public_maid;
@@ -104,65 +106,34 @@ class MaidAccountHolderService {
   template<typename Data>
   typename Data::name_type GetDataName(const nfs::DataMessage& data_message) const;
   void ValidateSender(const nfs::DataMessage& data_message) const;
-  // true_type represents is_unique_on_network<Data> - no-op
+  typedef std::true_type UniqueDataType;
   template<typename Data>
   void SendEarlySuccessReply(const nfs::DataMessage& /*data_message*/,
                              const routing::ReplyFunctor& /*reply_functor*/,
                              bool /*low_space*/,
-                             std::true_type) {}
-  // false_type represents !is_unique_on_network<Data>
+                             UniqueDataType) {}
+  typedef std::false_type NonUniqueDataType;
   template<typename Data>
   void SendEarlySuccessReply(const nfs::DataMessage& data_message,
                              const routing::ReplyFunctor& reply_functor,
                              bool low_space,
-                             std::false_type);
-  template<typename Data>
-  void PutToAccount(const MaidName& account_name,
-                    const typename Data::name_type& data_name,
-                    int32_t cost,
-                    std::true_type);
-  // no-op for non-payable data
-  template<typename Data>
-  void PutToAccount(const MaidName& /*account_name*/,
-                    const typename Data::name_type& /*data_name*/,
-                    int32_t /*cost*/,
-                    std::false_type) {}
-  template<typename Data>
-  void DeleteFromAccount(const MaidName& account_name,
-                         const typename Data::name_type& data_name,
-                         std::true_type);
-  // no-op for non-payable data
-  template<typename Data>
-  void DeleteFromAccount(const MaidName& /*account_name*/,
-                         const typename Data::name_type& /*data_name*/,
-                         std::false_type) {}
-  template<typename Data>
-  void AdjustAccount(const MaidName& account_name,
-                     const typename Data::name_type& data_name,
-                     int32_t cost,
-                     std::true_type);
-  // no-op for non-payable data
-  template<typename Data>
-  void AdjustAccount(const MaidName& /*account_name*/,
-                     const typename Data::name_type& /*data_name*/,
-                     int32_t /*cost*/,
-                     std::false_type) {}
-  // true_type represents is_unique_on_network<Data>
+                             NonUniqueDataType);
+
   template<typename Data>
   void HandlePutResult(const nfs::Reply& overall_result,
                        const MaidName& account_name,
                        const typename Data::name_type& data_name,
                        routing::ReplyFunctor client_reply_functor,
                        bool low_space,
-                       std::true_type);
-  // false_type represents !is_unique_on_network<Data>
+                       UniqueDataType);
+
   template<typename Data>
   void HandlePutResult(const nfs::Reply& overall_result,
                        const MaidName& account_name,
                        const typename Data::name_type& data_name,
                        routing::ReplyFunctor client_reply_functor,
                        bool low_space,
-                       std::false_type);
+                       NonUniqueDataType);
 
   void HandleRegisterPmid(const nfs::GenericMessage& generic_message,
                           const routing::ReplyFunctor& reply_functor);
@@ -199,7 +170,6 @@ class MaidAccountHolderService {
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
-  Db& db_;
   std::mutex accumulator_mutex_;
   Accumulator<MaidName> accumulator_;
   MaidAccountHandler maid_account_handler_;

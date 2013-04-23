@@ -24,9 +24,8 @@ namespace maidsafe {
 namespace vault {
 
 AccountDb::AccountDb(Db& db)
-  : db_(db),
-    account_id_(db.RegisterAccount()) {
-}
+    : db_(db),
+      account_id_(db.RegisterAccount()) {}
 
 AccountDb::~AccountDb() {
   db_.UnRegisterAccount(account_id_);
