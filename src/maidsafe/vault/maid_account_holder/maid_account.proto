@@ -2,10 +2,6 @@ package maidsafe.vault.protobuf;
 import "maidsafe/vault/pmid_account_holder/pmid_account.proto";
 option optimize_for = LITE_RUNTIME;
 
-message PmidTotals {
-  required bytes serialised_pmid_registration = 1;
-  required PmidRecord pmid_record = 2;
-}
 
 message MaidAccountDbValue {
   required int32 average_cost = 1;
@@ -13,19 +9,23 @@ message MaidAccountDbValue {
 }
 
 message MaidAccountDbEntry {
-  required int32 type = 1;
+  required int32 type = 1;  // name and type == db key
   required bytes name = 2;
   required MaidAccountDbValue value = 3;
 }
 
 message MaidAccount {
   required bytes maid_name = 1;
-  repeated PmidTotals pmid_totals = 2;
-  repeated MaidAccountDbEntry db_entry = 3;
-  repeated bytes serialised_unresolved_entry = 4;
+  required bytes serialised_account_details = 2;
+}
+
+message MaidAccountDetails {
+  repeated bytes serialised_pmid_registration = 1;
+  repeated MaidAccountDbEntry db_entry = 2;
+  repeated bytes serialised_unresolved_entry = 3;
 }
 
 // Used as data field in MM's Reply to Put request.
 message Cost {
-  required int32 value = 1;
+  required int32 cost = 1;
 }

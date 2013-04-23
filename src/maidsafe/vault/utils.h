@@ -88,37 +88,34 @@ void SendReply(const nfs::DataMessage& original_message,
                const routing::ReplyFunctor& reply_functor);
 
 // Ensure the mutex protecting accounts is locked throughout this call
-template<typename Account>
-typename std::vector<std::unique_ptr<Account>>::iterator FindAccount(
-    std::vector<std::unique_ptr<Account>>& accounts,
-    const typename Account::name_type& account_name);
+template<typename AccountSet, typename Account>
+typename AccountSet::iterator FindAccount(AccountSet& accounts,
+                                          const typename Account::name_type& account_name);
 
 // Ensure the mutex protecting accounts is locked throughout this call
-template<typename Account>
-typename std::vector<std::unique_ptr<Account>>::const_iterator FindAccount(
-    const std::vector<std::unique_ptr<Account>>& accounts,
+template<typename AccountSet, typename Account>
+typename AccountSet::const_iterator FindAccount(
+    const AccountSet& accounts,
     const typename Account::name_type& account_name);
 
-template<typename Account>
-bool AddAccount(std::mutex& mutex,
-                std::vector<std::unique_ptr<Account>>& accounts,
-                std::unique_ptr<Account>&& account);
+template<typename AccountSet, typename Account>
+bool AddAccount(std::mutex& mutex, AccountSet& accounts, std::unique_ptr<Account>&& account);
 
-template<typename Account>
-bool DeleteAccount(std::mutex& mutex,
-                   std::vector<std::unique_ptr<Account>>& accounts,
+template<typename AccountSet, typename Account>
+void DeleteAccount(std::mutex& mutex,
+                   AccountSet& accounts,
                    const typename Account::name_type& account_name);
 
-template<typename Account>
+template<typename AccountSet, typename Account>
 typename Account::serialised_type GetSerialisedAccount(
     std::mutex& mutex,
-    const std::vector<std::unique_ptr<Account>>& accounts,
+    const AccountSet& accounts,
     const typename Account::name_type& account_name);
 
-template<typename Account>
+template<typename AccountSet, typename Account>
 typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
     std::mutex& mutex,
-    const std::vector<std::unique_ptr<Account>>& accounts,
+    const AccountSet& accounts,
     const typename Account::name_type& account_name);
 
 // Returns true if the required successful request count has been reached

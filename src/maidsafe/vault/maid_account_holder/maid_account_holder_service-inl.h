@@ -51,6 +51,16 @@ int32_t CalculateCost(const passport::PublicPmid&);
 
 }  // namespace detail
 
+template<>
+void MaidAccountHolderService::SetPublicFob<passport::PublicMaid>(std::unique_ptr<passport::PublicMaid>&& pub_maid) {
+  public_maid = std::move(pub_maid);
+}
+
+template<>
+void MaidAccountHolderService::SetPublicFob<passport::PublicPmid>(std::unique_ptr<passport::PublicPmid>&& pub_pmid) {
+  public_pmid = std::move(pub_pmid);
+}
+
 template<typename Data>
 void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
@@ -165,7 +175,7 @@ template<typename Data>
 void MaidAccountHolderService::SendEarlySuccessReply(const nfs::DataMessage& data_message,
                                                      const routing::ReplyFunctor& reply_functor,
                                                      bool low_space,
-                                                     std::false_type) {
+                                                     NonUniqueDataType) {
   nfs::Reply reply(CommonErrors::success);
   if (low_space)
     reply = VaultErrors::low_space;
@@ -175,37 +185,12 @@ void MaidAccountHolderService::SendEarlySuccessReply(const nfs::DataMessage& dat
 }
 
 template<typename Data>
-void MaidAccountHolderService::PutToAccount(const MaidName& account_name,
-                                            const typename Data::name_type& data_name,
-                                            int32_t cost,
-                                            std::true_type) {
-  maid_account_handler_.PutData<Data>(account_name, data_name, cost,
-                                      detail::AccountRequired<Data>());
-}
-
-template<typename Data>
-void MaidAccountHolderService::DeleteFromAccount(const MaidName& account_name,
-                                                 const typename Data::name_type& data_name,
-                                                 std::true_type) {
-  maid_account_handler_.DeleteData<Data>(account_name, data_name);
-}
-
-template<typename Data>
-void MaidAccountHolderService::AdjustAccount(const MaidName& account_name,
-                                             const typename Data::name_type& data_name,
-                                             int32_t cost,
-                                             std::true_type) {
-  maid_account_handler_.Adjust<Data>(account_name, data_name, cost);
-}
-
-
-template<typename Data>
 void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
                                                const MaidName& /*account_name*/,
                                                const typename Data::name_type& /*data_name*/,
                                                routing::ReplyFunctor client_reply_functor,
                                                bool low_space,
-                                               std::true_type) {
+                                               UniqueDataType) {
   if (overall_result.IsSuccess()) {
     nfs::Reply reply(CommonErrors::success);
     if (low_space)
@@ -222,7 +207,7 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
                                                const typename Data::name_type& data_name,
                                                routing::ReplyFunctor /*client_reply_functor*/,
                                                bool /*low_space*/,
-                                               std::false_type) {
+                                               NonUniqueDataType) {
   try {
     if (overall_result.IsSuccess()) {
       protobuf::Cost cost;

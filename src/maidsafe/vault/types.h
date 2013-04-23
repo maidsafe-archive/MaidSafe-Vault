@@ -12,6 +12,10 @@
 #ifndef MAIDSAFE_VAULT_TYPES_H_
 #define MAIDSAFE_VAULT_TYPES_H_
 
+#include <functional>
+#include <memory>
+#include <set>
+
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/passport/types.h"
@@ -26,6 +30,9 @@
 namespace maidsafe {
 
 namespace vault {
+
+class MaidAccount;
+class PmidAccount;
 
 typedef nfs::NetworkFileSystem<
     nfs::MaidAccountHolderPutPolicy,
@@ -56,6 +63,13 @@ typedef nfs::NetworkFileSystem<
 typedef passport::PublicMaid::name_type MaidName;
 typedef passport::PublicPmid::name_type PmidName;
 typedef passport::PublicMpid::name_type MpidName;
+
+typedef std::set<std::unique_ptr<MaidAccount>,
+                 std::function<bool(const std::unique_ptr<MaidAccount>&,
+                                    const std::unique_ptr<MaidAccount>&)>> MaidAccountSet;
+typedef std::set<std::unique_ptr<PmidAccount>,
+                 std::function<bool(const std::unique_ptr<PmidAccount>&,
+                                    const std::unique_ptr<PmidAccount>&)>> PmidAccountSet;
 
 }  // namespace vault
 

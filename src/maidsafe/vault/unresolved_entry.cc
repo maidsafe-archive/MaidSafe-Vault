@@ -50,9 +50,6 @@ MaidAndPmidUnresolvedEntry::MaidAndPmidUnresolvedEntry(const serialised_type& se
   // TODO(Fraser#5#): 2013-04-18 - Replace magic number below
   if (proto_copy.peers_size() > 2)
     ThrowError(CommonErrors::parsing_error);
-//  for (int i(0); i != proto_copy.peers_size(); ++i)
-//    peers.insert(NodeId(proto_copy.peers(i)));
-
   dont_add_to_db = proto_copy.dont_add_to_db();
 }
 

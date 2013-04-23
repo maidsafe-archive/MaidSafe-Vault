@@ -84,67 +84,63 @@ bool IsDataElement(const typename Data::name_type& name,
   return DataNameVariant(name) == data_name_variant;
 }
 
-template<typename Account>
-typename std::vector<std::unique_ptr<Account>>::iterator FindAccount(
-    std::vector<std::unique_ptr<Account>>& accounts,
-    const typename Account::name_type& account_name) {
-  return std::find_if(accounts.begin(),
-                      accounts.end(),
+template<typename AccountSet, typename Account>
+typename AccountSet::iterator FindAccount(AccountSet& accounts,
+                                          const typename Account::name_type& account_name) {
+  return std::find_if(std::begin(accounts),
+                      std::end(accounts),
                       [&account_name](const std::unique_ptr<Account>& account) {
                         return account_name == account->name();
                       });
 }
 
-template<typename Account>
-typename std::set<std::unique_ptr<Account>>::const_iterator FindAccount(
-    const std::set<std::unique_ptr<Account>>& accounts,
+template<typename AccountSet, typename Account>
+typename AccountSet::const_iterator FindAccount(
+    const AccountSet& accounts,
     const typename Account::name_type& account_name) {
-  return std::find_if(accounts.begin(),
-                      accounts.end(),
+  return std::find_if(std::begin(accounts),
+                      std::end(accounts),
                       [&account_name](const std::unique_ptr<Account>& account) {
                         return account_name == account->name();
                       });
 }
 
-template<typename Account>
-bool AddAccount(std::mutex& mutex,
-                std::set<std::unique_ptr<Account>>& accounts,
-                std::unique_ptr<Account>&& account) {
+template<typename AccountSet, typename Account>
+bool AddAccount(std::mutex& mutex, AccountSet& accounts, std::unique_ptr<Account>&& account) {
   std::lock_guard<std::mutex> lock(mutex);
   return accounts.insert(std::move(account)).second;
 }
 
-template<typename Account>
-bool DeleteAccount(std::mutex& mutex,
-                   std::set<std::unique_ptr<Account>>& accounts,
+template<typename AccountSet, typename Account>
+void DeleteAccount(std::mutex& mutex,
+                   AccountSet& accounts,
                    const typename Account::name_type& account_name) {
   std::lock_guard<std::mutex> lock(mutex);
-  auto itr(FindAccount(accounts, account_name));
+  auto itr(FindAccount<AccountSet, Account>(accounts, account_name));
   if (itr != accounts.end())
     accounts.erase(itr);
-  return true;
 }
 
-template<typename Account>
+template<typename AccountSet, typename Account>
 typename Account::serialised_type GetSerialisedAccount(
     std::mutex& mutex,
-    const std::set<std::unique_ptr<Account>>& accounts,
+    const AccountSet& accounts,
     const typename Account::name_type& account_name) {
   std::lock_guard<std::mutex> lock(mutex);
-  auto itr(FindAccount(accounts, account_name));
+  auto itr(FindAccount<AccountSet, Account>(accounts, account_name));
   if (itr == accounts.end())
     ThrowError(VaultErrors::no_such_account);
 
   return (*itr)->Serialise();
 }
 
-template<typename Account>
+template<typename AccountSet, typename Account>
 typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
     std::mutex& mutex,
-    const std::vector<std::unique_ptr<Account>>& accounts,
+    const AccountSet& accounts,
     const typename Account::name_type& account_name) {
   std::lock_guard<std::mutex> lock(mutex);
-  auto itr(FindAccount(accounts, account_name));
+  auto itr(FindAccount<AccountSet, Account>(accounts, account_name));
   if (itr == accounts.end())
     ThrowError(VaultErrors::no_such_account);
 

@@ -13,6 +13,7 @@
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HANDLER_H_
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <set>
@@ -35,11 +36,14 @@ namespace test { class MaidAccountHandlerTest; }
 
 class MaidAccountHandler {
  public:
-  MaidAccountHandler();
+  MaidAccountHandler(Db& db, const NodeId& this_node_id);
 
   // Account operations
-  bool AddAccount(std::unique_ptr<MaidAccount>&& maid_account);
-  bool DeleteAccount(const MaidName& account_name);
+  // this is called only for account transfer
+  bool AddAccount(const MaidName& account_name,
+                  const MaidAccount::serialised_type& serialised_account);
+  // client request or going out of range
+  void DeleteAccount(const MaidName& account_name);
 
   void RegisterPmid(const MaidName& account_name, const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const MaidName& account_name, const PmidName& pmid_name);
@@ -58,17 +62,16 @@ class MaidAccountHandler {
                const typename Data::name_type& data_name,
                int32_t cost,
                RequireAccount);
+  // this will create an account on storing a MAID
   template<typename Data>
   void PutData(const MaidName& account_name,
                const typename Data::name_type& data_name,
                int32_t cost,
-               RequireNoAccount);
+               RequireNoAccount);  // only Maid and AnMaid
+
   template<typename Data>
   void DeleteData(const MaidName& account_name, const typename Data::name_type& data_name);
-  template<typename Data>
-  void Adjust(const MaidName& account_name,
-              const typename Data::name_type& data_name,
-              int32_t new_cost);
+
   friend class test::MaidAccountHandlerTest;
 
  private:
@@ -77,8 +80,12 @@ class MaidAccountHandler {
   MaidAccountHandler(MaidAccountHandler&&);
   MaidAccountHandler& operator=(MaidAccountHandler&&);
 
+  static const std::function<bool(const std::unique_ptr<MaidAccount>&,
+                                  const std::unique_ptr<MaidAccount>&)> kCompare_;
+  Db& db_;
+  const NodeId kThisNodeId_;
   mutable std::mutex mutex_;
-  std::set<std::unique_ptr<MaidAccount>> maid_accounts_;
+  MaidAccountSet maid_accounts_;
 };
 
 }  // namespace vault
