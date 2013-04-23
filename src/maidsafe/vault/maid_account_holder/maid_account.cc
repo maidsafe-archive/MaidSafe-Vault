@@ -51,8 +51,8 @@ PmidTotals& PmidTotals::operator=(PmidTotals other) {
 MaidAccount::MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_node_id)
     : maid_name_(maid_name),
       pmid_totals_(),
-      total_claimed_available_size_by_pmids_(),
-      total_put_data_(),
+      total_claimed_available_size_by_pmids_(0),
+      total_put_data_(0),
       account_db_(new AccountDb(db)),
       sync_(account_db_.get(), this_node_id) {}
 
@@ -61,8 +61,8 @@ MaidAccount::MaidAccount(Db& db,
                          const protobuf::MaidAccount& proto_maid_account)
     : maid_name_(Identity(proto_maid_account.maid_name())),
       pmid_totals_(),
-      total_claimed_available_size_by_pmids_(),
-      total_put_data_(),
+      total_claimed_available_size_by_pmids_(0),
+      total_put_data_(0),
       account_db_(new AccountDb(db)),
       sync_(account_db_.get(), this_node_id) {
   ApplyAccountTransfer(proto_maid_account);
@@ -72,16 +72,15 @@ MaidAccount::MaidAccount(MaidAccount&& other)
     : maid_name_(std::move(other.maid_name_)),
       pmid_totals_(std::move(other.pmid_totals_)),
       total_claimed_available_size_by_pmids_(std::move(
-                                                other.total_claimed_available_size_by_pmids_)),
-      total_put_data_((std::move(other.total_put_data_)),
+                                             other.total_claimed_available_size_by_pmids_)),
+      total_put_data_(std::move(other.total_put_data_)),
       account_db_(std::move(other.account_db_)),
       sync_(std::move(other.sync_)) {}
 
 MaidAccount& MaidAccount::operator=(MaidAccount&& other) {
   maid_name_ = std::move(other.maid_name_);
   pmid_totals_ = std::move(other.pmid_totals_);
-  total_claimed_available_size_by_pmids_ = std::move(
-                                         other.total_claimed_available_size_by_pmids_);
+  total_claimed_available_size_by_pmids_ = std::move(other.total_claimed_available_size_by_pmids_);
   total_put_data_ = std::move(other.total_put_data_);
   account_db_ = std::move(other.account_db_);
   sync_ = std::move(other.sync_);
@@ -176,19 +175,19 @@ void MaidAccount::RegisterPmid(const nfs::PmidRegistration& pmid_registration) {
     nfs::PmidRegistration::serialised_type serialised_pmid_registration(
         pmid_registration.Serialise());
     pmid_totals_.emplace_back(serialised_pmid_registration,
-                                    PmidRecord(pmid_registration.pmid_name()));
+                              PmidRecord(pmid_registration.pmid_name()));
   }
 }
 
 void MaidAccount::UnregisterPmid(const PmidName& pmid_name) {
   auto itr(Find(pmid_name));
-  if (itr != pmid_totals_.end())
+  if (itr != std::end(pmid_totals_))
     pmid_totals_.erase(itr);
 }
 
 void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
   auto itr(Find(pmid_totals.pmid_record.pmid_name));
-  if (itr == pmid_totals_.end())
+  if (itr == std::end(pmid_totals_))
     ThrowError(CommonErrors::no_such_element);
   *itr = pmid_totals;
 }
