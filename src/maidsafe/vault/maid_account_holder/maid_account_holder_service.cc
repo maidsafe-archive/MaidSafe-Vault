@@ -32,22 +32,6 @@ inline bool ForThisPersona(const Message& message) {
 
 }  // unnamed namespace
 
-namespace detail {
-
-int32_t CalculateCost(const passport::PublicAnmaid&) {
-  return 0;
-}
-
-int32_t CalculateCost(const passport::PublicMaid&) {
-  return 0;
-}
-
-int32_t CalculateCost(const passport::PublicPmid&) {
-  return 0;
-}
-
-}  // namespace detail
-
 const int MaidAccountHolderService::kPutRepliesSuccessesRequired_(3);
 const int MaidAccountHolderService::kDefaultPaymentFactor_(4);
 
@@ -76,21 +60,26 @@ void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_messa
 }
 
 void MaidAccountHolderService::HandleChurnEvent(const NodeId& old_node, const NodeId& new_node) {
-  auto maids(maid_account_handler_.GetAccountNames());
-  for (auto i = std::begin(maids); i != std::end(maids); ++i) {
-    // clean up accounts we are no longer responsible for
-    if (routing_.IsNodeIdInGroupRange(NodeId((*i))) !=
-        routing::GroupRangeStatus::kInRange)
-      DeleteAccount(MaidName((*i)));
-    // find accounts managed by old_node
-    if (routing_.IsNodeIdInGroupRange(NodeId((*i)), old_node) !=
+  auto account_names(maid_account_handler_.GetAccountNames());
+  auto itr(std::begin(account_names));
+  while (itr != std::end(account_names)) {
+    // delete accounts we are no longer responsible for
+    if (routing_.IsNodeIdInGroupRange(NodeId((*itr)->string())) !=
         routing::GroupRangeStatus::kInRange) {
-      (*i).ReplaceNode(old_node, new_node);
-    //send AccountTransfer to new node;
+      maid_account_handler_.DeleteAccount(*itr);
+      itr = account_names.erase(itr);
+      continue;
     }
+
+    // replace old_node in sync object and send AccountTransfer to new node.
+    if (routing_.IsNodeIdInGroupRange(NodeId((*itr)->string()), old_node) ==
+        routing::GroupRangeStatus::kInRange) {
+      maid_account_handler_.ReplaceNodeInSyncList(*itr, old_node, new_node);
+      TransferAccount(*itr, new_node);
+    }
+    ++itr;
   }
 }
-
 
 void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
                                                     const routing::ReplyFunctor& reply_functor) {
@@ -107,7 +96,7 @@ void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& g
     case nfs::GenericMessage::Action::kSynchronise:
       return HandleSyncMessage(generic_message, reply_functor);
     case nfs::GenericMessage::Action::kAccountTransfer:
-      return HandleAccountTransfer(generic_message);
+      return HandleAccountTransfer(generic_message, reply_functor);
     default:
       LOG(kError) << "Unhandled Post action type";
   }
@@ -185,7 +174,7 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
   if (!sync_message.ParseFromString(generic_message.content().string()) ||
           !sync_message.IsInitialized()) {
     LOG(kError) << "Error parsing kSynchronise message.";
-//    reply_functor();  // FIXME  Is this needed ?
+//    reply_functor();  // FIXME  Is this needed 
     return;
   }
   try {
@@ -250,15 +239,6 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
 //   return WriteFile(kRootDir_ / maid_id.string(), maid_account.Serialise().string());
 // }
 
-
-void MaidAccountHolderService::TriggerSync() {
-  // Lock Accumulator
-  auto account_names(maid_account_handler_.GetAccountNames());
-  for (auto& account_name : account_names) {
-    SendSyncData(account_name);
-  }
-}
-
 void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
   protobuf::SyncInfo sync_info;
   sync_info.set_maid_account(
@@ -311,21 +291,15 @@ void MaidAccountHolderService::HandleSendSyncDataCallback(
   }
 }
 
- void MaidAccountHolderService::DefaultPaymentFactor HandleAccountTransfer(const nfs::GenericMessage& generic_message) {
-   protobuf::MaidAccount maid_account;
-   maid_account.ParseFromStringParseFromString(generic_message.content());
-   MaidName account_name(maid_account.maid_name());
-   std::lock<std::mutex>(accumulator_mutex_);
-   auto acccount_iter(detail::FindAccount<MaidAccountSet, MaidAccount>
-                      (maid_account_handler_.maid_accounts_, account_name));
-   if (account_iter != std::end(maid_account_handler_.maid_accounts_))
-     // TODO FIXME from here - use AccountSet
-     maid_account_handler_.
-   else
-     maid_account_handler_.AddAccount(account_name,
-              MaidAccount::serialised_type(maid_account.serialised_account_details()));
-     // TODO applyAccountTransfer
- }
+void MaidAccountHolderService::HandleAccountTransfer(const nfs::GenericMessage& generic_message,
+                                                     const routing::ReplyFunctor& reply_functor) {
+  protobuf::MaidAccount maid_account;
+  if (maid_account.ParseFromString(generic_message.content().string())) {
+    MaidName account_name(Identity(maid_account.maid_name()));
+    maid_account_handler_.ApplyAccountTransfer(account_name,
+        MaidAccount::serialised_type(NonEmptyString(maid_account.serialised_account_details())));
+  }
+}
 
 void MaidAccountHolderService::HandleReceivedSyncInfo(
     const NonEmptyString &/*serialised_sync_info*/,

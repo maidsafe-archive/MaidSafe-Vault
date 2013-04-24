@@ -55,8 +55,7 @@ class MaidAccountHolderService {
   void HandleGenericMessage(const nfs::GenericMessage& generic_message,
                             const routing::ReplyFunctor& reply_functor);
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
-  // Synchronisation
-  void HandleChurnEvent(const NodeId& /*old_node*/, const NodeId& /*new_node*/);
+  void HandleChurnEvent(const NodeId& old_node, const NodeId& new_node);
 
  private:
   MaidAccountHolderService(const MaidAccountHolderService&);
@@ -127,6 +126,7 @@ class MaidAccountHolderService {
                        bool low_space,
                        NonUniqueDataType);
 
+  // ================ Pmid registration ================
   void HandleRegisterPmid(const nfs::GenericMessage& generic_message,
                           const routing::ReplyFunctor& reply_functor);
   template<typename PublicFobType>
@@ -136,21 +136,21 @@ class MaidAccountHolderService {
   void FinaliseRegisterPmid(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
   bool DoRegisterPmid(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
 
-  void HandleSyncMessage(const nfs::GenericMessage& generic_message,
-                         const routing::ReplyFunctor& reply_functor);
+  // ================ Periodic sync ================
   void SendSyncData(const MaidName& account_name);
   void HandleSendSyncDataCallback(const std::string& response,
                                   const MaidName& account_name,
                                   std::shared_ptr<SharedResponse> shared_response);
+
+  void HandleSyncMessage(const nfs::GenericMessage& generic_message,
+                         const routing::ReplyFunctor& reply_functor);
   void HandleReceivedSyncInfo(const NonEmptyString& serialised_account,
                               const routing::ReplyFunctor& reply_functor);
 
-  void HandleAccountTransfer(const nfs::GenericMessage& generic_message);
+  // ================ Account transfer ================
+  void HandleAccountTransfer(const nfs::GenericMessage& generic_message,
+                             const routing::ReplyFunctor& reply_functor);
 
-
-
-  void CheckAndDeleteAccount(const MaidName& account_name,
-                             std::shared_ptr<SharedResponse> shared_response);
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;

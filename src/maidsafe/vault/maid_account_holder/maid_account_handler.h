@@ -19,6 +19,7 @@
 #include <set>
 #include <vector>
 
+#include "maidsafe/common/node_id.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/pmid_registration.h"
 
@@ -39,9 +40,8 @@ class MaidAccountHandler {
   MaidAccountHandler(Db& db, const NodeId& this_node_id);
 
   // Account operations
-  // this is called only for account transfer
-  bool AddAccount(const MaidName& account_name,
-                  const MaidAccount::serialised_type& serialised_account);
+  void ApplyAccountTransfer(const MaidName& account_name,
+                            const MaidAccount::serialised_type& serialised_maid_account_details);
   // client request or going out of range
   void DeleteAccount(const MaidName& account_name);
 
@@ -52,6 +52,9 @@ class MaidAccountHandler {
   // Sync operations
   std::vector<MaidName> GetAccountNames() const;
   MaidAccount::serialised_type GetSerialisedAccount(const MaidName& account_name) const;
+  void ReplaceNodeInSyncList(const MaidName& account_name,
+                             const NodeId& old_node,
+                             const NodeId& new_node);
 
   typedef std::true_type RequireAccount;
   typedef std::false_type RequireNoAccount;

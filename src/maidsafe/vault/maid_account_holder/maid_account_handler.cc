@@ -36,11 +36,18 @@ MaidAccountHandler::MaidAccountHandler(Db& db, const NodeId& this_node_id)
       mutex_(),
       maid_accounts_(kCompare_) {}
 
-bool MaidAccountHandler::AddAccount(const MaidName& account_name,
-                                    const MaidAccount::serialised_type& serialised_account) {
-  std::unique_ptr<MaidAccount> maid_account(new MaidAccount(account_name, db_, kThisNodeId_,
-                                                            serialised_account));
-  return detail::AddAccount(mutex_, maid_accounts_, std::move(maid_account));
+void MaidAccountHandler::ApplyAccountTransfer(
+    const MaidName& account_name,
+    const MaidAccount::serialised_type& serialised_maid_account_details) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(detail::FindAccount<MaidAccountSet, MaidAccount>(maid_accounts_, account_name));
+  if (itr == maid_accounts_.end()) {
+    std::unique_ptr<MaidAccount> maid_account(new MaidAccount(account_name, db_, kThisNodeId_,
+                                                              serialised_maid_account_details));
+    detail::AddAccount(mutex_, maid_accounts_, std::move(maid_account));
+  } else {
+    (*itr)->ApplyAccountTransfer(serialised_maid_account_details);
+  }
 }
 
 void MaidAccountHandler::DeleteAccount(const MaidName& account_name) {
@@ -87,7 +94,15 @@ MaidAccount::serialised_type MaidAccountHandler::GetSerialisedAccount(
                                                                    account_name);
 }
 
-
+void MaidAccountHandler::ReplaceNodeInSyncList(const MaidName& account_name,
+                                               const NodeId& old_node,
+                                               const NodeId& new_node) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(detail::FindAccount<MaidAccountSet, MaidAccount>(maid_accounts_, account_name));
+  if (itr == maid_accounts_.end())
+    ThrowError(VaultErrors::no_such_account);
+  (*itr)->ReplaceNodeInSyncList(old_node, new_node);
+}
 
 }  // namespace vault
 

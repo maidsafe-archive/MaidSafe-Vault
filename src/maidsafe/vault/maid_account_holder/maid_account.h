@@ -87,7 +87,7 @@ class MaidAccount {
   // headers and unresolved data
   NonEmptyString GetSyncData();
   void ApplySyncData();
-  void ReplaceNode(const NodeId& old_node, const NodeId& new_node) {
+  void ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node) {
     sync_.ReplaceNode(old_node, new_node);
   }
 

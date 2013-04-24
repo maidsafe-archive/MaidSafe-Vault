@@ -41,23 +41,32 @@ int32_t CalculateCost(const Data& data) {
                               data.content.string().size());
 }
 
-// Dan moved the implementation of these to the .cc file to acoid multiple definition problems at
-// link time.
-int32_t CalculateCost(const passport::PublicAnmaid&);
+template<>
+int32_t CalculateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&) {
+  return 0;
+}
 
-int32_t CalculateCost(const passport::PublicMaid&);
+template<>
+int32_t CalculateCost<passport::PublicMaid>(const passport::PublicMaid&) {
+  return 0;
+}
 
-int32_t CalculateCost(const passport::PublicPmid&);
+template<>
+int32_t CalculateCost<passport::PublicPmid>(const passport::PublicPmid&) {
+  return 0;
+}
 
 }  // namespace detail
 
 template<>
-void MaidAccountHolderService::SetPublicFob<passport::PublicMaid>(std::unique_ptr<passport::PublicMaid>&& pub_maid) {
+void MaidAccountHolderService::PmidRegistrationOp::SetPublicFob<passport::PublicMaid>(
+    std::unique_ptr<passport::PublicMaid>&& pub_maid) {
   public_maid = std::move(pub_maid);
 }
 
 template<>
-void MaidAccountHolderService::SetPublicFob<passport::PublicPmid>(std::unique_ptr<passport::PublicPmid>&& pub_pmid) {
+void MaidAccountHolderService::PmidRegistrationOp::SetPublicFob<passport::PublicPmid>(
+    std::unique_ptr<passport::PublicPmid>&& pub_pmid) {
   public_pmid = std::move(pub_pmid);
 }
 
