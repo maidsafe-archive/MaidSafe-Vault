@@ -47,6 +47,19 @@ class SyncPolicy {
         kSource_(source_persona, routing_.kNodeId()),
         kPmid_(pmid) {}
 
+  void PostAccountTransfer(const NodeId& target_node_id,
+                           const NonEmptyString& serialised_account) {
+    nfs::GenericMessage generic_message(
+        nfs::GenericMessage::Action::kAccountTransfer,
+        source_persona,
+        kSource_,
+        Identity(target_node_id.string()),
+        serialised_account);
+    nfs::Message message(nfs::GenericMessage::message_type_identifier,
+                         generic_message.Serialise().data);
+    routing_.SendDirect(target_node_id, message.Serialise()->string(), false, nullptr);
+  }
+
   template <typename Name>
   void PostSyncDataGroup(const Name& name,
                          const NonEmptyString& serialised_sync_data,
@@ -75,7 +88,7 @@ class SyncPolicy {
         serialised_sync_data);
     nfs::Message message(nfs::GenericMessage::message_type_identifier,
                          generic_message.Serialise().data);
-    routing_.SendDirect(NodeId(generic_message.name().string()), message.Serialise()->string(),
+    routing_.SendDirect(target_node_id, message.Serialise()->string(),
                         false, callback);
   }
 

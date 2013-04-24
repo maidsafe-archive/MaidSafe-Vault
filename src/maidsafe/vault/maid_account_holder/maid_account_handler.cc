@@ -36,17 +36,18 @@ MaidAccountHandler::MaidAccountHandler(Db& db, const NodeId& this_node_id)
       mutex_(),
       maid_accounts_(kCompare_) {}
 
-void MaidAccountHandler::ApplyAccountTransfer(
-    const MaidName& account_name,
+bool MaidAccountHandler::ApplyAccountTransfer(const MaidName& account_name, const NodeId &source_id,
     const MaidAccount::serialised_type& serialised_maid_account_details) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount<MaidAccountSet, MaidAccount>(maid_accounts_, account_name));
   if (itr == maid_accounts_.end()) {
     std::unique_ptr<MaidAccount> maid_account(new MaidAccount(account_name, db_, kThisNodeId_,
+                                                              source_id,
                                                               serialised_maid_account_details));
     detail::AddAccount(mutex_, maid_accounts_, std::move(maid_account));
+    return false;
   } else {
-    (*itr)->ApplyAccountTransfer(serialised_maid_account_details);
+    return (*itr)->ApplyAccountTransfer(source_id, serialised_maid_account_details);
   }
 }
 

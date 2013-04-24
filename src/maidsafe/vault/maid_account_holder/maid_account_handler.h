@@ -40,7 +40,8 @@ class MaidAccountHandler {
   MaidAccountHandler(Db& db, const NodeId& this_node_id);
 
   // Account operations
-  void ApplyAccountTransfer(const MaidName& account_name,
+  // Returns true when final account transfer has been completed.
+  bool ApplyAccountTransfer(const MaidName& account_name, const NodeId& source_id,
                             const MaidAccount::serialised_type& serialised_maid_account_details);
   // client request or going out of range
   void DeleteAccount(const MaidName& account_name);

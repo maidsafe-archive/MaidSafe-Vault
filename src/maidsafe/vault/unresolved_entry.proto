@@ -9,3 +9,7 @@ message MaidAndPmidUnresolvedEntry {
   repeated bytes peers = 5;
   required bool dont_add_to_db = 6;
 }
+
+message UnresolvedEntries {
+  repeated bytes serialised_unresolved_entry = 1;
+}

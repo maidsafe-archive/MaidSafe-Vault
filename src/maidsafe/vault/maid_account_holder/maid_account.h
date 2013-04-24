@@ -72,6 +72,7 @@ class MaidAccount {
   MaidAccount(const MaidName& maid_name,
               Db& db,
               const NodeId& this_node_id,
+              const NodeId& source_id,
               const serialised_type& serialised_maid_account_details);
 
   MaidAccount(MaidAccount&& other);
@@ -79,19 +80,23 @@ class MaidAccount {
 
   serialised_type Serialise();
 
-  void ApplyAccountTransfer(const serialised_type& serialised_maid_account_details);
+  bool ApplyAccountTransfer(const NodeId& source_id,
+                            const serialised_type& serialised_maid_account_details);
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);
   void UpdatePmidTotals(const PmidTotals& pmid_totals);
 
   // headers and unresolved data
-  NonEmptyString GetSyncData();
-  void ApplySyncData();
+  NonEmptyString GetSyncData() const;
+  void ApplySyncData(const NodeId& source_id,
+                     const NonEmptyString& serialised_unresolved_entries);
   void ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node) {
+    if (account_transfer_nodes_ != 0)
+      --account_transfer_nodes_;
     sync_.ReplaceNode(old_node, new_node);
   }
 
-  void PutData(int32_t cost);
+  Status PutData(int32_t cost);
   // This offers the strong exception guarantee
   template<typename Data>
   void DeleteData(const typename Data::name_type& name) {
@@ -109,13 +114,12 @@ class MaidAccount {
 
   std::vector<PmidTotals>::iterator Find(const PmidName& pmid_name);
 
-  Status DoPutData(int32_t cost);
-
   name_type maid_name_;
   std::vector<PmidTotals> pmid_totals_;
   int64_t total_claimed_available_size_by_pmids_, total_put_data_;
   std::unique_ptr<AccountDb> account_db_;
   Sync<MaidAccountMergePolicy> sync_;
+  uint16_t account_transfer_nodes_;
 };
 
 }  // namespace vault

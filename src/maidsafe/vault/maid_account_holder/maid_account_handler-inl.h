@@ -35,9 +35,9 @@ struct AccountRequired<passport::Maid> : std::false_type {};
 
 template<typename Data>
 void MaidAccountHandler::PutData(const MaidName& account_name,
-                                                const typename Data::name_type& data_name,
-                                                int32_t cost,
-                                                RequireAccount) {
+                                 const typename Data::name_type& data_name,
+                                 int32_t cost,
+                                 RequireAccount) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())

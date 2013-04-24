@@ -60,7 +60,7 @@ Sync<MergePolicy>::FindUnresolved(const typename MergePolicy::UnresolvedEntry::K
 }
 
 template<typename MergePolicy>
-void Sync<MergePolicy>::AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry& entry,
+bool Sync<MergePolicy>::AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry& entry,
                                            const NodeId& node_id) {
   auto found = FindUnresolved(entry.key());
   if (found == std::end(MergePolicy::unresolved_data_)) {  // new entry
@@ -72,13 +72,31 @@ void Sync<MergePolicy>::AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry
       entry.peers.clear();
       MergePolicy::Merge(entry);
       MergePolicy::unresolved_data_.erase(found);
+      return true;
     }
   }
+  return false;
 }
 
 template<typename MergePolicy>
-void Sync<MergePolicy>::AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry& entry) {
-  AddUnresolvedEntry(entry, this_node_id_);
+bool Sync<MergePolicy>::AddAccountTransferRecord(typename MergePolicy::UnresolvedEntry& entry,
+                                                 const NodeId& node_id,
+                                                 bool all_account_transfers_received) {
+  auto found = FindUnresolved(entry.key());
+  if (found == std::end(MergePolicy::unresolved_data_)) {  // new entry
+    entry.peers.insert(node_id);
+    MergePolicy::unresolved_data_.push_back(entry);
+  } else {
+    if (all_account_transfers_received) {
+      entry.peers.clear();
+      MergePolicy::Merge(entry);
+      MergePolicy::unresolved_data_.erase(found);
+      return true;
+    } else {
+      (*found).peers.insert(node_id);
+    }
+  }
+  return false;
 }
 
 // iterate the unresolved data and insert new node key in every element

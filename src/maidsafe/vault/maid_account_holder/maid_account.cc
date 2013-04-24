@@ -59,19 +59,22 @@ MaidAccount::MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_n
       total_claimed_available_size_by_pmids_(0),
       total_put_data_(0),
       account_db_(new AccountDb(db)),
-      sync_(account_db_.get(), this_node_id) {}
+      sync_(account_db_.get(), this_node_id),
+      account_transfer_nodes_(0) {}
 
 MaidAccount::MaidAccount(const MaidName& maid_name,
                          Db& db,
                          const NodeId& this_node_id,
+                         const NodeId& source_id,
                          const serialised_type& serialised_maid_account_details)
     : maid_name_(maid_name),
       pmid_totals_(),
       total_claimed_available_size_by_pmids_(0),
       total_put_data_(0),
       account_db_(new AccountDb(db)),
-      sync_(account_db_.get(), this_node_id) {
-  ApplyAccountTransfer(serialised_maid_account_details);
+      sync_(account_db_.get(), this_node_id),
+      account_transfer_nodes_(routing::Parameters::node_group_size - 1) {
+  ApplyAccountTransfer(source_id, serialised_maid_account_details);
 }
 
 MaidAccount::MaidAccount(MaidAccount&& other)
@@ -81,7 +84,8 @@ MaidAccount::MaidAccount(MaidAccount&& other)
                                              other.total_claimed_available_size_by_pmids_)),
       total_put_data_(std::move(other.total_put_data_)),
       account_db_(std::move(other.account_db_)),
-      sync_(std::move(other.sync_)) {}
+      sync_(std::move(other.sync_)),
+      account_transfer_nodes_(std::move(other.account_transfer_nodes_) {}
 
 MaidAccount& MaidAccount::operator=(MaidAccount&& other) {
   maid_name_ = std::move(other.maid_name_);
@@ -89,7 +93,8 @@ MaidAccount& MaidAccount::operator=(MaidAccount&& other) {
   total_claimed_available_size_by_pmids_ = std::move(other.total_claimed_available_size_by_pmids_);
   total_put_data_ = std::move(other.total_put_data_);
   account_db_ = std::move(other.account_db_);
-  sync_ = std::move(other.sync_);
+  sync_ = std::move(other.sync_);,
+  account_transfer_nodes_ = std::move(other.account_transfer_nodes_);
   return *this;
 }
 
@@ -122,20 +127,13 @@ MaidAccount::serialised_type MaidAccount::Serialise() {
   return serialised_type(NonEmptyString(proto_maid_account_details.SerializeAsString()));
 }
 
-void MaidAccount::PutData(int32_t cost) {
-  if (total_claimed_available_size_by_pmids_ < total_put_data_ + cost)
-    ThrowError(VaultErrors::not_enough_space);
-}
+bool MaidAccount::ApplyAccountTransfer(const NodeId& source_id,
+                                       const serialised_type& serialised_maid_account_details) {
+  assert(account_transfer_nodes_);
+  if (account_transfer_nodes_ == 0)
+    return;
+  bool all_account_transfers_received(--account_transfer_nodes_ == 0);
 
-MaidAccount::Status MaidAccount::DoPutData(int32_t cost) {
-  total_put_data_ += cost;
-  if (total_put_data_ > (total_claimed_available_size_by_pmids_ / 10) * 9)
-    return Status::kLowSpace;
-  else
-    return Status::kOk;
-}
-
-void MaidAccount::ApplyAccountTransfer(const serialised_type& serialised_maid_account_details) {
   protobuf::MaidAccountDetails proto_maid_account_details;
   if (!proto_maid_account_details.ParseFromString(serialised_maid_account_details->string()))
     ThrowError(CommonErrors::parsing_error);
@@ -153,24 +151,21 @@ void MaidAccount::ApplyAccountTransfer(const serialised_type& serialised_maid_ac
     int32_t average_cost(proto_maid_account_details.db_entry(i).value().average_cost());
     int32_t count(proto_maid_account_details.db_entry(i).value().count());
     MaidAndPmidUnresolvedEntry entry(std::make_pair(data_name, nfs::MessageAction::kPut),
-                                      average_cost);
-    for (int32_t i(0); i != count; ++i)
-      sync_.AddUnresolvedEntry(entry);
+                                     average_cost);
+    for (int32_t i(0); i != count; ++i) {
+      if (sync_.AddAccountTransferRecord(entry, source_id, all_account_transfers_received))
+        total_put_data_ += average_cost;
+    }
   }
 
   for (int i(0); i != proto_maid_account_details.serialised_unresolved_entry_size(); ++i) {
     MaidAndPmidUnresolvedEntry entry(MaidAndPmidUnresolvedEntry::serialised_type(
         NonEmptyString(proto_maid_account_details.serialised_unresolved_entry(i))));
-    sync_.AddUnresolvedEntry(entry);
+    if (sync_.AddUnresolvedEntry(entry, source_id))
+      total_put_data_ += entry.cost;
   }
-}
 
-std::vector<PmidTotals>::iterator MaidAccount::Find(const PmidName& pmid_name) {
-  return std::find_if(std::begin(pmid_totals_),
-                      std::end(pmid_totals_),
-                      [&pmid_name](const PmidTotals& pmid_totals) {
-                        return pmid_name == pmid_totals.pmid_record.pmid_name;
-                      });
+  return all_account_transfers_received;
 }
 
 void MaidAccount::RegisterPmid(const nfs::PmidRegistration& pmid_registration) {
@@ -194,6 +189,45 @@ void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
   if (itr == std::end(pmid_totals_))
     ThrowError(CommonErrors::no_such_element);
   *itr = pmid_totals;
+}
+
+NonEmptyString MaidAccount::GetSyncData() const {
+  auto unresolved_entries(sync_.GetUnresolvedData());
+  protobuf::UnresolvedEntries proto_unresolved_entries;
+  for (const auto& unresolved_entry : unresolved_entries) {
+    proto_unresolved_entries.add_serialised_unresolved_entry(
+        unresolved_entry.Serialise()->string());
+  }
+  return NonEmptyString(proto_unresolved_entries.SerializeAsString());
+}
+
+void MaidAccount::ApplySyncData(const NodeId& source_id,
+                                const NonEmptyString& serialised_unresolved_entries) {
+
+  if (sync_.AddUnresolvedEntry(entry, source_id))
+    total_put_data_ += entry.cost;
+}
+
+void MaidAccount::ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node) {
+  if (account_transfer_nodes_ != 0)
+    --account_transfer_nodes_;
+  sync_.ReplaceNode(old_node, new_node);
+}
+
+MaidAccount::Status MaidAccount::PutData(int32_t cost) {
+  if (total_claimed_available_size_by_pmids_ < total_put_data_ + cost)
+    ThrowError(VaultErrors::not_enough_space);
+
+  return ((total_claimed_available_size_by_pmids_ / 10) * 9 < total_put_data_ + cost) ?
+         Status::kLowSpace : Status::kOk;
+}
+
+std::vector<PmidTotals>::iterator MaidAccount::Find(const PmidName& pmid_name) {
+  return std::find_if(std::begin(pmid_totals_),
+                      std::end(pmid_totals_),
+                      [&pmid_name](const PmidTotals& pmid_totals) {
+                        return pmid_name == pmid_totals.pmid_record.pmid_name;
+                      });
 }
 
 }  // namespace vault

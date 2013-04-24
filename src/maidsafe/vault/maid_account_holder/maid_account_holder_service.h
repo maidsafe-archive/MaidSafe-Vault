@@ -146,11 +146,15 @@ class MaidAccountHolderService {
                          const routing::ReplyFunctor& reply_functor);
   void HandleReceivedSyncInfo(const NonEmptyString& serialised_account,
                               const routing::ReplyFunctor& reply_functor);
+  void UpdatePmidTotals(const MaidName& account_name);
+  void UpdatePmidTotalsCallback(const std::string& response,
+                                const MaidName& account_name,
+                                std::shared_ptr<SharedResponse> shared_response);
 
   // ================ Account transfer ================
   void HandleAccountTransfer(const nfs::GenericMessage& generic_message,
                              const routing::ReplyFunctor& reply_functor);
-
+  void TransferAccount(const MaidName& account_name, const NodeId& new_node);
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;

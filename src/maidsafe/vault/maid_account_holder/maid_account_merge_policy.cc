@@ -59,6 +59,8 @@ void MaidAccountMergePolicy::MergePut(const DataNameVariant& data_name,
                                     (current_total_size + cost) / current_values.second.data);
     account_db_->Put(std::make_pair(data_name, SerialiseDbValue(current_values)));
   } else {
+      // TODO(david/fraser) this will require we send the same message *count* times
+      // this should be optimised to handle xmitting the *count*
     DbValue db_value(std::make_pair(AverageCost(cost), Count(1)));
     account_db_->Put(std::make_pair(data_name, SerialiseDbValue(db_value)));
   }

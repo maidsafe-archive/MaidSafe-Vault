@@ -294,11 +294,24 @@ void MaidAccountHolderService::HandleSendSyncDataCallback(
 void MaidAccountHolderService::HandleAccountTransfer(const nfs::GenericMessage& generic_message,
                                                      const routing::ReplyFunctor& reply_functor) {
   protobuf::MaidAccount maid_account;
-  if (maid_account.ParseFromString(generic_message.content().string())) {
-    MaidName account_name(Identity(maid_account.maid_name()));
-    maid_account_handler_.ApplyAccountTransfer(account_name,
-        MaidAccount::serialised_type(NonEmptyString(maid_account.serialised_account_details())));
-  }
+  NodeId source_id(generic_message.source().node_id);
+  if (!maid_account.ParseFromString(generic_message.content().string()))
+    return;
+
+  MaidName account_name(Identity(maid_account.maid_name()));
+  bool finished_all_transfers(
+      maid_account_handler_.ApplyAccountTransfer(account_name, source_id,
+          MaidAccount::serialised_type(NonEmptyString(maid_account.serialised_account_details()))));
+  if (finished_all_transfers)
+    UpdatePmidTotals(maid_account);
+}
+
+void MaidAccountHolderService::TransferAccount(const MaidName& account_name, const NodeId& new_node) {
+  protobuf::MaidAccount maid_account;
+  maid_account.set_maid_name(account_name->string());
+  maid_account.set_serialised_account_details(
+      maid_account_handler_.GetSerialisedAccount(account_name)->string());
+  nfs_.PostAccountTransfer(new_node, NonEmptyString(maid_account.SerializeAsString()));
 }
 
 void MaidAccountHolderService::HandleReceivedSyncInfo(
@@ -308,6 +321,15 @@ void MaidAccountHolderService::HandleReceivedSyncInfo(
 //  return WriteFile(kRootDir_ / maid_account.maid_name().data.string(),
 //                   serialised_account.string());
   return;
+}
+
+void MaidAccountHolderService::UpdatePmidTotals(const MaidName& account_name) {
+}
+
+void MaidAccountHolderService::UpdatePmidTotalsCallback(
+    const std::string& response,
+    const MaidName& account_name,
+    std::shared_ptr<SharedResponse> shared_response) {
 }
 
 }  // namespace vault
