@@ -39,10 +39,7 @@ void MaidAccountHandler::PutData(const MaidName& account_name,
                                  int32_t cost,
                                  RequireAccount) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount(maid_accounts_, account_name));
-  if (itr == maid_accounts_.end())
-    ThrowError(VaultErrors::no_such_account);
-  (*itr)->PutData(cost);
+  maid_accounts_.at(account_name)->PutData(cost);
 }
 
 template<typename Data>
@@ -51,24 +48,17 @@ void MaidAccountHandler::PutData(const MaidName& account_name,
                                  int32_t cost,
                                  RequireNoAccount) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount(maid_accounts_, account_name));
-  if (itr != maid_accounts_.end())
-    ThrowError(VaultErrors::operation_not_supported);
   std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, db_, kThisNodeId_));
-  bool success(AddAccount(std::move(account)));
-  assert(success);
-  static_cast<void>(success);
-  (*itr)->PutData(cost);
+  if (!maid_accounts_.insert(std::make_pair(account_name, std::move(account))).second)
+    ThrowError(VaultErrors::operation_not_supported);
+  maid_accounts_.at(account_name)->PutData(cost);
 }
 
 template<typename Data>
 void MaidAccountHandler::DeleteData(const MaidName& account_name,
                                     const typename Data::name_type& data_name) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount(maid_accounts_, account_name));
-  if (itr == maid_accounts_.end())
-    ThrowError(VaultErrors::no_such_account);
-  (*itr)->DeleteData<Data>(data_name);
+  maid_accounts_.at(account_name)->DeleteData<Data>(data_name);
 }
 
 }  // namespace vault

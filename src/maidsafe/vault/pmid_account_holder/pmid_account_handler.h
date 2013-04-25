@@ -71,8 +71,7 @@ class PmidAccountHandler {
 
   const boost::filesystem::path kPmidAccountsRoot_;
   mutable std::mutex mutex_;
-  std::vector<std::unique_ptr<PmidAccount>> pmid_accounts_;  // NOLINT
-  std::vector<PmidName> archived_accounts_;
+  std::map<typename PmidAccount::name_type , std::unique_ptr<PmidAccount>> pmid_accounts_;
 };
 
 }  // namespace vault

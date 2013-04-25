@@ -84,69 +84,6 @@ bool IsDataElement(const typename Data::name_type& name,
   return DataNameVariant(name) == data_name_variant;
 }
 
-template<typename AccountSet, typename Account>
-typename AccountSet::iterator FindAccount(AccountSet& accounts,
-                                          const typename Account::name_type& account_name) {
-  return std::find_if(std::begin(accounts),
-                      std::end(accounts),
-                      [&account_name](const std::unique_ptr<Account>& account) {
-                        return account_name == account->name();
-                      });
-}
-
-template<typename AccountSet, typename Account>
-typename AccountSet::const_iterator FindAccount(
-    const AccountSet& accounts,
-    const typename Account::name_type& account_name) {
-  return std::find_if(std::begin(accounts),
-                      std::end(accounts),
-                      [&account_name](const std::unique_ptr<Account>& account) {
-                        return account_name == account->name();
-                      });
-}
-
-template<typename AccountSet, typename Account>
-bool AddAccount(std::mutex& mutex, AccountSet& accounts, std::unique_ptr<Account>&& account) {
-  std::lock_guard<std::mutex> lock(mutex);
-  return accounts.insert(std::move(account)).second;
-}
-
-template<typename AccountSet, typename Account>
-void DeleteAccount(std::mutex& mutex,
-                   AccountSet& accounts,
-                   const typename Account::name_type& account_name) {
-  std::lock_guard<std::mutex> lock(mutex);
-  auto itr(FindAccount<AccountSet, Account>(accounts, account_name));
-  if (itr != accounts.end())
-    accounts.erase(itr);
-}
-
-template<typename AccountSet, typename Account>
-typename Account::serialised_type GetSerialisedAccount(
-    std::mutex& mutex,
-    const AccountSet& accounts,
-    const typename Account::name_type& account_name) {
-  std::lock_guard<std::mutex> lock(mutex);
-  auto itr(FindAccount<AccountSet, Account>(accounts, account_name));
-  if (itr == accounts.end())
-    ThrowError(VaultErrors::no_such_account);
-
-  return (*itr)->Serialise();
-}
-
-template<typename AccountSet, typename Account>
-typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
-    std::mutex& mutex,
-    const AccountSet& accounts,
-    const typename Account::name_type& account_name) {
-  std::lock_guard<std::mutex> lock(mutex);
-  auto itr(FindAccount<AccountSet, Account>(accounts, account_name));
-  if (itr == accounts.end())
-    ThrowError(VaultErrors::no_such_account);
-
-  return (*itr)->SerialiseAccountSyncInfo();
-}
-
 // Returns true if the required successful request count has been reached
 template<typename Accumulator>
 bool AddResult(const nfs::DataMessage& data_message,

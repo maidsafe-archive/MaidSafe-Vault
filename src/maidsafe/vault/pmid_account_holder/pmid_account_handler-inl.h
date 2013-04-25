@@ -19,24 +19,18 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void PmidAccountHandler::Put(const PmidName& /*account_name*/,
-                             const typename Data::name_type& /*data_name*/,
-                             int32_t /*size*/) {
-  //std::lock_guard<std::mutex> lock(mutex_);
-  //auto itr(detail::FindAccount(pmid_accounts_, account_name));
-  //if (itr == pmid_accounts_.end())
-  //  ThrowError(VaultErrors::no_such_account);
-  //(*itr)->PutData(size);
+void PmidAccountHandler::Put(const PmidName& account_name,
+                             const typename Data::name_type& data_name,
+                             int32_t size) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  pmid_accounts_.at(account_name)->PutData(size);
 }
 
 template<typename Data>
-void PmidAccountHandler::Delete(const PmidName& /*account_name*/,
-                                const typename Data::name_type& /*data_name*/) {
-  //std::lock_guard<std::mutex> lock(mutex_);
-  //auto itr(detail::FindAccount(pmid_accounts_, account_name));
-  //if (itr == pmid_accounts_.end())
-  //  ThrowError(VaultErrors::no_such_account);
-  //(*itr)->DeleteData<Data>(data_name);
+void PmidAccountHandler::Delete(const PmidName& account_name,
+                                const typename Data::name_type& data_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  pmid_accounts_.at(account_name)->DeleteData<Data>(data_name);
 }
 
 }  // namespace vault

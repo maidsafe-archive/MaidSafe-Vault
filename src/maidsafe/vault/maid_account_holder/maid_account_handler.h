@@ -89,7 +89,7 @@ class MaidAccountHandler {
   Db& db_;
   const NodeId kThisNodeId_;
   mutable std::mutex mutex_;
-  MaidAccountSet maid_accounts_;
+  std::map<typename MaidAccount::name_type, std::unique_ptr<MaidAccount>> maid_accounts_;
 };
 
 }  // namespace vault

@@ -24,85 +24,70 @@ namespace maidsafe {
 
 namespace vault {
 
-const std::function<bool(const std::unique_ptr<MaidAccount>&,
-                         const std::unique_ptr<MaidAccount>&)> MaidAccountHandler::kCompare_ =
-    [](const std::unique_ptr<MaidAccount>& lhs, const std::unique_ptr<MaidAccount>& rhs) {
-        return lhs->name().data < rhs->name().data;
-    };
+//const std::function<bool(const std::unique_ptr<MaidAccount>&,
+//                         const std::unique_ptr<MaidAccount>&)> MaidAccountHandler::kCompare_ =
+//    [](const std::unique_ptr<MaidAccount>& lhs, const std::unique_ptr<MaidAccount>& rhs) {
+//        return lhs->name().data < rhs->name().data;
+//    };
 
 MaidAccountHandler::MaidAccountHandler(Db& db, const NodeId& this_node_id)
     : db_(db),
       kThisNodeId_(this_node_id),
       mutex_(),
-      maid_accounts_(kCompare_) {}
+      maid_accounts_() {}
 
 bool MaidAccountHandler::ApplyAccountTransfer(const MaidName& account_name, const NodeId &source_id,
     const MaidAccount::serialised_type& serialised_maid_account_details) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount<MaidAccountSet, MaidAccount>(maid_accounts_, account_name));
-  if (itr == maid_accounts_.end()) {
-    std::unique_ptr<MaidAccount> maid_account(new MaidAccount(account_name, db_, kThisNodeId_,
-                                                              source_id,
-                                                              serialised_maid_account_details));
-    detail::AddAccount(mutex_, maid_accounts_, std::move(maid_account));
+  std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, db_, kThisNodeId_,
+                                                       source_id,
+                                                       serialised_maid_account_details));
+  if (!maid_accounts_.insert(std::make_pair(account_name, std::move(account))).second)
     return false;
-  } else {
-    return (*itr)->ApplyAccountTransfer(source_id, serialised_maid_account_details);
-  }
+  else
+    return maid_accounts_.at(account_name)->ApplyAccountTransfer(source_id,
+                                                                 serialised_maid_account_details);
 }
 
 void MaidAccountHandler::DeleteAccount(const MaidName& account_name) {
-  detail::DeleteAccount<MaidAccountSet, MaidAccount>(mutex_, maid_accounts_, account_name);
+  maid_accounts_.at(account_name).erase();
 }
 
 void MaidAccountHandler::RegisterPmid(const MaidName& account_name,
                                       const nfs::PmidRegistration& pmid_registration) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount<MaidAccountSet, MaidAccount>(maid_accounts_, account_name));
-  if (itr == maid_accounts_.end())
-    ThrowError(VaultErrors::no_such_account);
-  (*itr)->RegisterPmid(pmid_registration);
+  maid_accounts_.at(account_name)->RegisterPmid(pmid_registration);
 }
 
 void MaidAccountHandler::UnregisterPmid(const MaidName& account_name, const PmidName& pmid_name) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount<MaidAccountSet, MaidAccount>(maid_accounts_, account_name));
-  if (itr == maid_accounts_.end())
-    ThrowError(VaultErrors::no_such_account);
-  (*itr)->UnregisterPmid(pmid_name);
+  maid_accounts_.at(account_name)->UnregisterPmid(pmid_name);
 }
 
 void MaidAccountHandler::UpdatePmidTotals(const MaidName& account_name,
                                           const PmidTotals& pmid_totals) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount<MaidAccountSet, MaidAccount>(maid_accounts_, account_name));
-  if (itr == maid_accounts_.end())
-    ThrowError(VaultErrors::no_such_account);
-  (*itr)->UpdatePmidTotals(pmid_totals);
+  maid_accounts_.at(account_name)->UpdatePmidTotals(pmid_totals);
 }
 
 std::vector<MaidName> MaidAccountHandler::GetAccountNames() const {
   std::vector<MaidName> account_names;
   std::lock_guard<std::mutex> lock(mutex_);
   for (auto& maid_account : maid_accounts_)
-    account_names.push_back(maid_account->name());
+    account_names.push_back(maid_account.first);
   return account_names;
 }
 
 MaidAccount::serialised_type MaidAccountHandler::GetSerialisedAccount(
     const MaidName& account_name) const {
-  return detail::GetSerialisedAccount<MaidAccountSet, MaidAccount>(mutex_, maid_accounts_,
-                                                                   account_name);
+  return maid_accounts_.at(account_name)->Serialise();
 }
 
 void MaidAccountHandler::ReplaceNodeInSyncList(const MaidName& account_name,
                                                const NodeId& old_node,
                                                const NodeId& new_node) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount<MaidAccountSet, MaidAccount>(maid_accounts_, account_name));
-  if (itr == maid_accounts_.end())
-    ThrowError(VaultErrors::no_such_account);
-  (*itr)->ReplaceNodeInSyncList(old_node, new_node);
+  maid_accounts_.at(account_name)->ReplaceNodeInSyncList(old_node, new_node);
 }
 
 }  // namespace vault

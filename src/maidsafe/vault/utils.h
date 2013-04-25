@@ -87,25 +87,6 @@ void SendReply(const nfs::DataMessage& original_message,
                const maidsafe_error& return_code,
                const routing::ReplyFunctor& reply_functor);
 
-// Ensure the mutex protecting accounts is locked throughout this call
-template<typename AccountSet, typename Account>
-typename AccountSet::iterator FindAccount(AccountSet& accounts,
-                                          const typename Account::name_type& account_name);
-
-// Ensure the mutex protecting accounts is locked throughout this call
-template<typename AccountSet, typename Account>
-typename AccountSet::const_iterator FindAccount(
-    const AccountSet& accounts,
-    const typename Account::name_type& account_name);
-
-template<typename AccountSet, typename Account>
-bool AddAccount(std::mutex& mutex, AccountSet& accounts, std::unique_ptr<Account>&& account);
-
-template<typename AccountSet, typename Account>
-void DeleteAccount(std::mutex& mutex,
-                   AccountSet& accounts,
-                   const typename Account::name_type& account_name);
-
 template<typename AccountSet, typename Account>
 typename Account::serialised_type GetSerialisedAccount(
     std::mutex& mutex,
