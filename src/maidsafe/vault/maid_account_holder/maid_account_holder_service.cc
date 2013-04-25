@@ -239,6 +239,16 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
 //   return WriteFile(kRootDir_ / maid_id.string(), maid_account.Serialise().string());
 // }
 
+
+void MaidAccountHolderService::HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {
+// TODO(Team): Use CheckHolders to work out replacement nodes for each account
+//  // Lock Accumulator
+//  auto account_names(maid_account_handler_.GetAccountNames());
+//  for (auto& account_name : account_names) {
+//    SendSyncData(account_name);
+//  }
+//}
+
 void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
   protobuf::SyncInfo sync_info;
   sync_info.set_maid_account(

@@ -35,7 +35,11 @@ PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
       nfs_(routing, pmid) {}
 
 
-
+void PmidAccountHolderService::HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {
+//    /*const std::vector<routing::NodeInfo>& new_close_nodes*/) {
+//  // Operations to be done when we this call is received
+//  CheckAccounts();
+//}
 
 void PmidAccountHolderService::CheckAccounts() {
   // Non-archived

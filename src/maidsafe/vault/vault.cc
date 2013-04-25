@@ -83,6 +83,9 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
   functors.close_node_replaced = [this] (const std::vector<routing::NodeInfo>& new_close_nodes) {
                                    OnCloseNodeReplaced(new_close_nodes);
                                  };
+  functors.matrix_changed = [this] (const routing::MatrixChange& matrix_change) {
+                              OnMatrixChanged(matrix_change);
+                            };
   functors.request_public_key = [this] (const NodeId& node_id,
                                         const routing::GivePublicKeyFunctor& give_key) {
                                   OnPublicKeyRequested(node_id, give_key);
@@ -151,9 +154,18 @@ void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
 }
 
 void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
-  asio_service_.service().post([=] { maid_account_holder_service_.TriggerSync(); });
-  asio_service_.service().post([=] { metadata_manager_service_.TriggerSync(); });
-  asio_service_.service().post([=] { pmid_account_holder_service_.TriggerSync(); });
+}
+
+void Vault::OnMatrixChanged(const routing::MatrixChange& matrix_change) {
+  asio_service_.service().post([=] {
+      maid_account_holder_service_.HandleChurnEvent(matrix_change);
+  });
+  asio_service_.service().post([=] {
+      metadata_manager_service_.HandleChurnEvent(matrix_change);
+  });
+  asio_service_.service().post([=] {
+      pmid_account_holder_service_.HandleChurnEvent(matrix_change);
+  });
 }
 
 bool Vault::OnGetFromCache(std::string& message) {  // Need to be on routing's thread
