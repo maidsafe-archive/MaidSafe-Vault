@@ -20,7 +20,6 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/pmid_registration.h"
 
-#include "maidsafe/vault/db.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_record.h"

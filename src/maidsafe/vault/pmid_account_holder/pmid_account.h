@@ -32,6 +32,9 @@ namespace maidsafe {
 
 namespace vault {
 
+class Db;
+class AccountDb;
+
 class PmidAccount {
  public:
   typedef PmidName name_type;
@@ -52,7 +55,11 @@ class PmidAccount {
   enum class DataHolderStatus : int32_t { kDown, kGoingDown, kUp, kGoingUp };
 
   PmidAccount(const PmidName& pmid_name, Db &db, const NodeId &this_node_id);
-  PmidAccount(const serialised_type& serialised_pmid_account,  Db& db, const NodeId& this_node_id);
+  PmidAccount(const PmidName& pmid_name,
+              Db& db,
+              const NodeId& this_node_id,
+              const NodeId& source_id,
+              const serialised_type& serialised_pmid_account_details);
   ~PmidAccount();
 
   void SetDataHolderUp() { data_holder_status_ = DataHolderStatus::kUp; }
@@ -83,6 +90,7 @@ class PmidAccount {
   NodeId this_node_id_;
   PmidRecord pmid_record_;
   DataHolderStatus data_holder_status_;
+  std::unique_ptr<AccountDb> account_db_;
   Sync<PmidAccountMergePolicy> sync_;
 };
 

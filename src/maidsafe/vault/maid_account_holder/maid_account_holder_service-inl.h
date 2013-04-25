@@ -111,16 +111,16 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     // TODO(Fraser#5#): 2013-02-13 - Have PutToAccount return percentage or amount remaining so
     // if it falls below a threshold, we can trigger getting updated account info from the PAHs
     // (not too frequently), & alert the client by returning an "error" via client_reply_functor.
-    auto size(detail::CalculateCost(data_message.data()));
-    PutToAccount<Data>(account_name, data_name, size, is_payable<Data>());
-    on_scope_exit strong_guarantee([this, account_name, data_name] {
-        try {
-          this->DeleteFromAccount<Data>(account_name, data_name, is_payable<Data>());
-        }
-        catch(const std::exception& e) {
-          LOG(kError) << "Failed to delete from account: " << e.what();
-        }
-    });
+    //auto size(detail::CalculateCost(data_message.data()));
+    //PutToAccount<Data>(account_name, data_name, size, is_payable<Data>());
+    //on_scope_exit strong_guarantee([this, account_name, data_name] {
+    //    try {
+    //      this->DeleteFromAccount<Data>(account_name, data_name, is_payable<Data>());
+    //    }
+    //    catch(const std::exception& e) {
+    //      LOG(kError) << "Failed to delete from account: " << e.what();
+    //    }
+    //});
     nfs_.Put(data,
              data_message.data_holder(),
              [put_op](std::string serialised_reply) {
@@ -129,7 +129,7 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
     SendEarlySuccessReply<Data>(data_message, reply_functor,
                                 false, is_unique_on_network<Data>());
     // TODO(dirvine) check above false value is OK
-    strong_guarantee.Release();
+    //strong_guarantee.Release();
     return;
   }
   catch(const maidsafe_error& error) {
@@ -156,7 +156,7 @@ void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
   try {
     ValidateSender(data_message);
     auto data_name(GetDataName<Data>(data_message));
-    DeleteFromAccount<Data>(detail::GetSourceMaidName(data_message), data_name, is_payable<Data>());
+    //DeleteFromAccount<Data>(detail::GetSourceMaidName(data_message), data_name, is_payable<Data>());
     nfs_.Delete<Data>(data_name, [](std::string /*serialised_reply*/) {});
   }
   catch(const maidsafe_error& error) {

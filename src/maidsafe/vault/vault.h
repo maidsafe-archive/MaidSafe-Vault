@@ -28,6 +28,7 @@
 #include "maidsafe/vault/maid_account_holder/maid_account_holder_service.h"
 #include "maidsafe/vault/metadata_manager/metadata_manager_service.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_account_holder_service.h"
+#include "maidsafe/vault/db.h"
 #include "maidsafe/vault/demultiplexer.h"
 
 
@@ -67,6 +68,7 @@ class Vault {
   std::condition_variable network_health_condition_variable_;
   int network_health_;
   std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint_;
+  Db db_;
   std::unique_ptr<routing::Routing> routing_;
   nfs::PublicKeyGetter public_key_getter_;
   MaidAccountHolderService maid_account_holder_service_;

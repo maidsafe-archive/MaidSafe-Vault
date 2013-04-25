@@ -17,6 +17,7 @@
 
 #include "maidsafe/common/utils.h"
 
+#include "maidsafe/vault/db.h"
 #include "maidsafe/vault/account_db.h"
 #include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
 
@@ -85,7 +86,7 @@ MaidAccount::MaidAccount(MaidAccount&& other)
       total_put_data_(std::move(other.total_put_data_)),
       account_db_(std::move(other.account_db_)),
       sync_(std::move(other.sync_)),
-      account_transfer_nodes_(std::move(other.account_transfer_nodes_) {}
+      account_transfer_nodes_(std::move(other.account_transfer_nodes_)) {}
 
 MaidAccount& MaidAccount::operator=(MaidAccount&& other) {
   maid_name_ = std::move(other.maid_name_);
@@ -93,7 +94,7 @@ MaidAccount& MaidAccount::operator=(MaidAccount&& other) {
   total_claimed_available_size_by_pmids_ = std::move(other.total_claimed_available_size_by_pmids_);
   total_put_data_ = std::move(other.total_put_data_);
   account_db_ = std::move(other.account_db_);
-  sync_ = std::move(other.sync_);,
+  sync_ = std::move(other.sync_);
   account_transfer_nodes_ = std::move(other.account_transfer_nodes_);
   return *this;
 }
@@ -131,7 +132,7 @@ bool MaidAccount::ApplyAccountTransfer(const NodeId& source_id,
                                        const serialised_type& serialised_maid_account_details) {
   assert(account_transfer_nodes_);
   if (account_transfer_nodes_ == 0)
-    return;
+    return false;
   bool all_account_transfers_received(--account_transfer_nodes_ == 0);
 
   protobuf::MaidAccountDetails proto_maid_account_details;
@@ -141,7 +142,7 @@ bool MaidAccount::ApplyAccountTransfer(const NodeId& source_id,
   for (int i(0); i != proto_maid_account_details.serialised_pmid_registration_size(); ++i) {
     pmid_totals_.emplace_back(
         nfs::PmidRegistration::serialised_type(NonEmptyString(
-            proto_maid_account_details.pmid_totals(i).serialised_pmid_registration())));
+            proto_maid_account_details.serialised_pmid_registration(i))));
   }
 
   for (int i(0); i != proto_maid_account_details.db_entry_size(); ++i) {

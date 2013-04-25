@@ -59,26 +59,26 @@ void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_messa
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void MaidAccountHolderService::HandleChurnEvent(const NodeId& old_node, const NodeId& new_node) {
-  auto account_names(maid_account_handler_.GetAccountNames());
-  auto itr(std::begin(account_names));
-  while (itr != std::end(account_names)) {
-    // delete accounts we are no longer responsible for
-    if (routing_.IsNodeIdInGroupRange(NodeId((*itr)->string())) !=
-        routing::GroupRangeStatus::kInRange) {
-      maid_account_handler_.DeleteAccount(*itr);
-      itr = account_names.erase(itr);
-      continue;
-    }
+void MaidAccountHolderService::HandleChurnEvent(routing::MatrixChange matrix_change) {
+  //auto account_names(maid_account_handler_.GetAccountNames());
+  //auto itr(std::begin(account_names));
+  //while (itr != std::end(account_names)) {
+  //  // delete accounts we are no longer responsible for
+  //  if (routing_.IsNodeIdInGroupRange(NodeId((*itr)->string())) !=
+  //      routing::GroupRangeStatus::kInRange) {
+  //    maid_account_handler_.DeleteAccount(*itr);
+  //    itr = account_names.erase(itr);
+  //    continue;
+  //  }
 
-    // replace old_node in sync object and send AccountTransfer to new node.
-    if (routing_.IsNodeIdInGroupRange(NodeId((*itr)->string()), old_node) ==
-        routing::GroupRangeStatus::kInRange) {
-      maid_account_handler_.ReplaceNodeInSyncList(*itr, old_node, new_node);
-      TransferAccount(*itr, new_node);
-    }
-    ++itr;
-  }
+  //  // replace old_node in sync object and send AccountTransfer to new node.
+  //  if (routing_.IsNodeIdInGroupRange(NodeId((*itr)->string()), old_node) ==
+  //      routing::GroupRangeStatus::kInRange) {
+  //    maid_account_handler_.ReplaceNodeInSyncList(*itr, old_node, new_node);
+  //    TransferAccount(*itr, new_node);
+  //  }
+  //  ++itr;
+  //}
 }
 
 void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
@@ -178,16 +178,16 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
     return;
   }
   try {
-    Sync::Action sync_action = static_cast<Sync::Action>(sync_message.action());
-    switch (sync_action) {
-      case Sync::Action::kSyncInfo:
-        HandleReceivedSyncInfo(NonEmptyString(sync_message.sync_message()), reply_functor);
-        break;
-      case Sync::Action::kSyncArchiveFiles:
-        break;
-      default:
-        LOG(kError) << "Unhandled kSynchronise action type";
-    }
+    //Sync::Action sync_action = static_cast<Sync::Action>(sync_message.action());
+    //switch (sync_action) {
+    //  case Sync::Action::kSyncInfo:
+    //    HandleReceivedSyncInfo(NonEmptyString(sync_message.sync_message()), reply_functor);
+    //    break;
+    //  case Sync::Action::kSyncArchiveFiles:
+    //    break;
+    //  default:
+    //    LOG(kError) << "Unhandled kSynchronise action type";
+    //}
   } catch (const std::exception& ex) {
     LOG(kError) << "Caught exception on handling sync message: " << ex.what();
   }

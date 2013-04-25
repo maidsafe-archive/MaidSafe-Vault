@@ -13,8 +13,10 @@
 
 #include "maidsafe/data_types/data_name_variant.h"
 
-#include "maidsafe/vault/pmid_account_holder/pmid_account.h"
+#include "maidsafe/vault/account_db.h"
+#include "maidsafe/vault/db.h"
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/pmid_account_holder/pmid_account.h"
 
 
 namespace maidsafe {
@@ -43,30 +45,38 @@ protobuf::DataElement PmidAccount::DataElement::ToProtobuf() const {
 }
 
 PmidAccount::PmidAccount(const PmidName& pmid_name,  Db& db, const NodeId& this_node_id)
-    : pmid_record_(pmid_name),
-      data_holder_status_(DataHolderStatus::kUp) {}
-
-PmidAccount::PmidAccount(const protobuf::PmidAccount& proto_pmid_account,
-                         Db& db, const NodeId& this_node_id)
-    : pmid_name_(Identity(proto_pmid_account.pmid_name())),
+    : pmid_name_(pmid_name),
       this_node_id_(this_node_id),
-      pmid_record_(ParsePmidRecord(serialised_pmid_account)),
+      pmid_record_(pmid_name),
       data_holder_status_(DataHolderStatus::kUp),
-      sync_(account_db_.get(), this_node_id)   {
+      account_db_(new AccountDb(db)),
+      sync_(account_db_.get(), this_node_id) {}
+
+PmidAccount::PmidAccount(const PmidName& pmid_name,
+                         Db& db,
+                         const NodeId& this_node_id,
+                         const NodeId& /*source_id*/,
+                         const serialised_type& serialised_pmid_account_details)
+    : pmid_name_(pmid_name),
+      this_node_id_(this_node_id),
+      pmid_record_(ParsePmidRecord(serialised_pmid_account_details)),
+      data_holder_status_(DataHolderStatus::kUp),
+      account_db_(new AccountDb(db)),
+      sync_(account_db_.get(), this_node_id) {
   protobuf::PmidAccount pmid_account;
-  if (!pmid_account.ParseFromString(serialised_pmid_account->string())) {
+  if (!pmid_account.ParseFromString(serialised_pmid_account_details->string())) {
     LOG(kError) << "Failed to parse pmid_account.";
     ThrowError(CommonErrors::parsing_error);
   }
-  for (auto& recent_data : pmid_account.recent_data_stored()) {
-    DataElement data_element(GetDataNameVariant(static_cast<DataTagValue>(recent_data.type()),
-                                                Identity(recent_data.name())),
-                             recent_data.size());
-    recent_data_stored_.push_back(data_element);
-  }
+  //for (auto& recent_data : pmid_account.recent_data_stored()) {
+  //  DataElement data_element(GetDataNameVariant(static_cast<DataTagValue>(recent_data.type()),
+  //                                              Identity(recent_data.name())),
+  //                           recent_data.size());
+  //  recent_data_stored_.push_back(data_element);
+  //}
 }
 
-PmidAccount::serialised_type PmidAccount::Serialise() const {
+PmidAccount::serialised_type PmidAccount::Serialise() {
     protobuf::PmidAccount pmid_account;
   *(pmid_account.mutable_pmid_record()) = pmid_record_.ToProtobuf();
   auto unresolved_data(sync_.GetUnresolvedData());
