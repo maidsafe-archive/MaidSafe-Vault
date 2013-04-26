@@ -27,34 +27,6 @@ namespace maidsafe {
 
 namespace vault {
 
-PmidTotals::PmidTotals() : serialised_pmid_registration(), pmid_record() {}
-
-PmidTotals::PmidTotals(
-    const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in)
-        : serialised_pmid_registration(serialised_pmid_registration_in),
-          pmid_record() {}
-
-PmidTotals::PmidTotals(
-    const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
-    const PmidRecord& pmid_record_in)
-        : serialised_pmid_registration(serialised_pmid_registration_in),
-          pmid_record(pmid_record_in) {}
-
-PmidTotals::PmidTotals(const PmidTotals& other)
-    : serialised_pmid_registration(other.serialised_pmid_registration),
-      pmid_record(other.pmid_record) {}
-
-PmidTotals::PmidTotals(PmidTotals&& other)
-    : serialised_pmid_registration(std::move(other.serialised_pmid_registration)),
-      pmid_record(std::move(other.pmid_record)) {}
-
-PmidTotals& PmidTotals::operator=(PmidTotals other) {
-  using std::swap;
-  swap(serialised_pmid_registration, other.serialised_pmid_registration);
-  swap(pmid_record, other.pmid_record);
-  return *this;
-}
-
 MaidAccount::MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_node_id)
     : maid_name_(maid_name),
       pmid_totals_(),

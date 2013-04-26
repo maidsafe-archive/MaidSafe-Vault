@@ -52,13 +52,6 @@ int32_t CalculateCost<passport::PublicPmid>(const passport::PublicPmid&);
 
 }  // namespace detail
 
-template<>
-void MaidAccountHolderService::PmidRegistrationOp::SetPublicFob<passport::PublicMaid>(
-    std::unique_ptr<passport::PublicMaid>&& pub_maid);
-
-template<>
-void MaidAccountHolderService::PmidRegistrationOp::SetPublicFob<passport::PublicPmid>(
-    std::unique_ptr<passport::PublicPmid>&& pub_pmid);
 
 template<typename Data>
 void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,

@@ -60,7 +60,6 @@ class PmidAccount {
               const NodeId& this_node_id,
               const NodeId& source_id,
               const serialised_type& serialised_pmid_account_details);
-  ~PmidAccount();
 
   void SetDataHolderUp() { data_holder_status_ = DataHolderStatus::kUp; }
   void SetDataHolderDown() { data_holder_status_ = DataHolderStatus::kDown; }

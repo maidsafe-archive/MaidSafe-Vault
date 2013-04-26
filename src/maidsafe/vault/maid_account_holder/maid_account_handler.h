@@ -84,8 +84,6 @@ class MaidAccountHandler {
   MaidAccountHandler(MaidAccountHandler&&);
   MaidAccountHandler& operator=(MaidAccountHandler&&);
 
-  static const std::function<bool(const std::unique_ptr<MaidAccount>&,
-                                  const std::unique_ptr<MaidAccount>&)> kCompare_;
   Db& db_;
   const NodeId kThisNodeId_;
   mutable std::mutex mutex_;

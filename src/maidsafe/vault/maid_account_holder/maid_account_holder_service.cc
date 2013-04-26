@@ -15,6 +15,7 @@
 
 #include "maidsafe/nfs/pmid_registration.h"
 
+#include "maidsafe/vault/maid_account_holder/maid_account_helpers.h"
 #include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
 #include "maidsafe/vault/sync.h"
 
@@ -51,27 +52,10 @@ inline bool ForThisPersona(const Message& message) {
 
 }  // unnamed namespace
 
-template<>
-void MaidAccountHolderService::PmidRegistrationOp::SetPublicFob<passport::PublicMaid>(
-    std::unique_ptr<passport::PublicMaid>&& pub_maid) {
-  public_maid = std::move(pub_maid);
-}
-
-template<>
-void MaidAccountHolderService::PmidRegistrationOp::SetPublicFob<passport::PublicPmid>(
-    std::unique_ptr<passport::PublicPmid>&& pub_pmid) {
-  public_pmid = std::move(pub_pmid);
-}
-
 
 
 const int MaidAccountHolderService::kPutRepliesSuccessesRequired_(3);
 const int MaidAccountHolderService::kDefaultPaymentFactor_(4);
-
-MaidAccountHolderService::SharedResponse::SharedResponse()
-    : mutex(),
-      count(0),
-      this_node_in_group(false) {}
 
 MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
@@ -84,6 +68,24 @@ MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
       maid_account_handler_(db, routing.kNodeId()),
       nfs_(routing, pmid) {}
 
+void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
+                                                    const routing::ReplyFunctor& reply_functor) {
+  nfs::GenericMessage::Action action(generic_message.action());
+  switch (action) {
+    case nfs::GenericMessage::Action::kRegisterPmid:
+      return HandleRegisterPmid(generic_message, reply_functor);
+    case nfs::GenericMessage::Action::kSynchronise:
+      return HandlePeriodicSync(generic_message);
+    case nfs::GenericMessage::Action::kAccountTransfer:
+      return HandleAccountTransfer(generic_message);
+    default:
+      LOG(kError) << "Unhandled Post action type";
+  }
+}
+
+
+// =============== Put/Delete data =================================================================
+
 void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_message) const {
   if (!routing_.IsConnectedClient(data_message.source().node_id))
     ThrowError(VaultErrors::permission_denied);
@@ -92,55 +94,8 @@ void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_messa
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void MaidAccountHolderService::HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {
-// TODO(Team): Use CheckHolders to work out replacement nodes for each account
-//  // Lock Accumulator
-//  auto account_names(maid_account_handler_.GetAccountNames());
-//  for (auto& account_name : account_names) {
-//    SendSyncData(account_name);
-//  }
 
-  //auto account_names(maid_account_handler_.GetAccountNames());
-  //auto itr(std::begin(account_names));
-  //while (itr != std::end(account_names)) {
-  //  // delete accounts we are no longer responsible for
-  //  if (routing_.IsNodeIdInGroupRange(NodeId((*itr)->string())) !=
-  //      routing::GroupRangeStatus::kInRange) {
-  //    maid_account_handler_.DeleteAccount(*itr);
-  //    itr = account_names.erase(itr);
-  //    continue;
-  //  }
-
-  //  // replace old_node in sync object and send AccountTransfer to new node.
-  //  if (routing_.IsNodeIdInGroupRange(NodeId((*itr)->string()), old_node) ==
-  //      routing::GroupRangeStatus::kInRange) {
-  //    maid_account_handler_.ReplaceNodeInSyncList(*itr, old_node, new_node);
-  //    TransferAccount(*itr, new_node);
-  //  }
-  //  ++itr;
-  //}
-}
-
-void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
-                                                    const routing::ReplyFunctor& reply_functor) {
-  nfs::GenericMessage::Action action(generic_message.action());
-  switch (action) {
-    case nfs::GenericMessage::Action::kRegisterPmid:
-      return HandleRegisterPmid(generic_message, reply_functor);
-    case nfs::GenericMessage::Action::kConnect:
-      break;
-    case nfs::GenericMessage::Action::kGetPmidHealth:
-      break;
-    case nfs::GenericMessage::Action::kNodeDown:
-      break;
-    case nfs::GenericMessage::Action::kSynchronise:
-      return HandleSyncMessage(generic_message, reply_functor);
-    case nfs::GenericMessage::Action::kAccountTransfer:
-      return HandleAccountTransfer(generic_message, reply_functor);
-    default:
-      LOG(kError) << "Unhandled Post action type";
-  }
-}
+// =============== Pmid registration ===============================================================
 
 void MaidAccountHolderService::HandleRegisterPmid(const nfs::GenericMessage& generic_message,
                                                   const routing::ReplyFunctor& reply_functor) {
@@ -204,83 +159,10 @@ bool MaidAccountHolderService::DoRegisterPmid(
   return true;
 }
 
-void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& generic_message,
-                                                 const routing::ReplyFunctor& reply_functor) {
-  NodeId source_id(generic_message.source().node_id);
-  if (!routing_.IsConnectedVault(source_id))
-    return reply_functor(nfs::Reply(RoutingErrors::not_connected).Serialise()->string());
 
-  protobuf::Sync sync_message;
-  if (!sync_message.ParseFromString(generic_message.content().string()) ||
-          !sync_message.IsInitialized()) {
-    LOG(kError) << "Error parsing kSynchronise message.";
-//    reply_functor();  // FIXME  Is this needed 
-    return;
-  }
-  //try {
-  //  Sync::Action sync_action = static_cast<Sync::Action>(sync_message.action());
-  //  switch (sync_action) {
-  //    case Sync::Action::kSyncInfo:
-  //      HandleReceivedSyncInfo(NonEmptyString(sync_message.sync_message()), reply_functor);
-  //      break;
-  //    case Sync::Action::kSyncArchiveFiles:
-  //      break;
-  //    default:
-  //      LOG(kError) << "Unhandled kSynchronise action type";
-  //  }
-  //} catch (const std::exception& ex) {
-  //  LOG(kError) << "Caught exception on handling sync message: " << ex.what();
-  //}
-}
+// =============== Periodic sync ===================================================================
 
-// bool MaidAccountHolderService::HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid) {
-//   std::promise<bool> result_promise;
-//   std::future<bool> result_future = result_promise.get_future();
-//   auto get_key_future([this, p_maid, &result_promise] (
-//       std::future<maidsafe::passport::PublicPmid> key_future) {
-//     try {
-//       maidsafe::passport::PublicPmid p_pmid = key_future.get();
-//       result_promise.set_value(OnKeyFetched(p_maid, p_pmid));
-//     }
-//     catch(const std::exception& ex) {
-//       LOG(kError) << "Failed to get key for " << HexSubstr(p_maid.name().data.string())
-//                   << " : " << ex.what();
-//       result_promise.set_value(false);
-//     }
-//   });
-//   public_key_getter_.HandleGetKey<maidsafe::passport::PublicPmid>(p_maid.name(), get_key_future);
-//   return result_future.get();
-// }
-//
-// bool MaidAccountHolderService::OnKeyFetched(const passport::/*PublicMaid*/PublicPmid& p_maid,
-//                                      const passport::PublicPmid& p_pmid) {
-//   if (!asymm::CheckSignature(asymm::PlainText(asymm::EncodeKey(p_pmid.public_key())),
-//                              p_pmid.validation_token(), p_maid.public_key())) {
-//     LOG(kError) << "Fetched pmid for " << HexSubstr(p_maid.name().data.string())
-//                 << " contains invalid token";
-//     return false;
-//   }
-//
-//   maidsafe::nfs::MaidAccount maid_account(p_maid.name().data);
-//   maid_account.PushPmidTotal(nfs::PmidTotals(nfs::PmidRegistration(p_maid.name().data,
-//                                                                   p_pmid.name().data,
-//                                                                   false,
-//                                                                   p_maid.validation_token(),
-//                                                                   p_pmid.validation_token()),
-//                                             nfs::PmidSize(p_pmid.name().data)));
-//   return WriteFile(kRootDir_ / maid_account.maid_id().string(),
-//                    maid_account.Serialise().string());
-// }
-
-// bool MaidAccountHolderService::HandleNewComer(const nfs::PmidRegistration& pmid_registration) {
-//   Identity maid_id(pmid_registration.maid_id());
-//   MaidAccount maid_account(maid_id);
-//   maid_account.PushPmidTotal(PmidTotals(pmid_registration, PmidRecord(maid_id)));
-//   return WriteFile(kRootDir_ / maid_id.string(), maid_account.Serialise().string());
-// }
-
-
-void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
+void MaidAccountHolderService::PeriodicSync(const MaidName& account_name) {
   protobuf::SyncInfo sync_info;
   sync_info.set_maid_account(maid_account_handler_.GetSerialisedAccount(account_name)->string());
   {
@@ -294,14 +176,14 @@ void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
   assert(sync_pb_message.IsInitialized() && "Uninitialised sync message");
   std::shared_ptr<SharedResponse> shared_response(std::make_shared<SharedResponse>());
   auto callback = [=](std::string response) {
-      this->HandleSendSyncDataCallback(response, account_name, shared_response);
+      this->HandlePeriodicSyncCallback(response, account_name, shared_response);
     };
   nfs_.PostSyncDataGroup(account_name,
                          NonEmptyString(sync_pb_message.SerializeAsString()),
                          callback);
 }
 
-void MaidAccountHolderService::HandleSendSyncDataCallback(
+void MaidAccountHolderService::HandlePeriodicSyncCallback(
     const std::string &response,
     const MaidName& /*account_name*/,
     std::shared_ptr<SharedResponse> shared_response) {
@@ -331,8 +213,54 @@ void MaidAccountHolderService::HandleSendSyncDataCallback(
   }
 }
 
-void MaidAccountHolderService::HandleAccountTransfer(const nfs::GenericMessage& generic_message,
-                                                     const routing::ReplyFunctor& /*reply_functor*/) {
+void MaidAccountHolderService::HandlePeriodicSync(const nfs::GenericMessage& generic_message) {
+  NodeId source_id(generic_message.source().node_id);
+  if (!routing_.IsConnectedVault(source_id))
+    return;
+
+  protobuf::Sync sync_message;
+  if (!sync_message.ParseFromString(generic_message.content().string())) {
+    LOG(kError) << "Error parsing kSynchronise message.";
+    return;
+  }
+  //try {
+  //  Sync::Action sync_action = static_cast<Sync::Action>(sync_message.action());
+  //  switch (sync_action) {
+  //    case Sync::Action::kSyncInfo:
+  //      HandleReceivedSyncInfo(NonEmptyString(sync_message.sync_message()), reply_functor);
+  //      break;
+  //    case Sync::Action::kSyncArchiveFiles:
+  //      break;
+  //    default:
+  //      LOG(kError) << "Unhandled kSynchronise action type";
+  //  }
+  //} catch (const std::exception& ex) {
+  //  LOG(kError) << "Caught exception on handling sync message: " << ex.what();
+  //}
+}
+
+void MaidAccountHolderService::HandleReceivedSyncInfo(
+    const NonEmptyString &/*serialised_sync_info*/,
+    const routing::ReplyFunctor &/*reply_functor*/) {
+//  MaidAccount maid_account(serialised_sync_info);
+//  return WriteFile(kRootDir_ / maid_account.maid_name().data.string(),
+//                   serialised_account.string());
+  return;
+}
+
+
+// =============== Account transfer ================================================================
+
+void MaidAccountHolderService::TransferAccount(const MaidName& account_name,
+                                               const NodeId& new_node) {
+  protobuf::MaidAccount maid_account;
+  maid_account.set_maid_name(account_name->string());
+  maid_account.set_serialised_account_details(
+      maid_account_handler_.GetSerialisedAccount(account_name)->string());
+  nfs_.PostAccountTransfer(new_node, NonEmptyString(maid_account.SerializeAsString()));
+}
+
+void MaidAccountHolderService::HandleAccountTransfer(const nfs::GenericMessage& generic_message) {
   protobuf::MaidAccount maid_account;
   NodeId source_id(generic_message.source().node_id);
   if (!maid_account.ParseFromString(generic_message.content().string()))
@@ -346,22 +274,8 @@ void MaidAccountHolderService::HandleAccountTransfer(const nfs::GenericMessage& 
     UpdatePmidTotals(account_name);
 }
 
-void MaidAccountHolderService::TransferAccount(const MaidName& account_name, const NodeId& new_node) {
-  protobuf::MaidAccount maid_account;
-  maid_account.set_maid_name(account_name->string());
-  maid_account.set_serialised_account_details(
-      maid_account_handler_.GetSerialisedAccount(account_name)->string());
-  nfs_.PostAccountTransfer(new_node, NonEmptyString(maid_account.SerializeAsString()));
-}
 
-void MaidAccountHolderService::HandleReceivedSyncInfo(
-    const NonEmptyString &/*serialised_sync_info*/,
-    const routing::ReplyFunctor &/*reply_functor*/) {
-//  MaidAccount maid_account(serialised_sync_info);
-//  return WriteFile(kRootDir_ / maid_account.maid_name().data.string(),
-//                   serialised_account.string());
-  return;
-}
+// =============== PMID totals =====================================================================
 
 void MaidAccountHolderService::UpdatePmidTotals(const MaidName& /*account_name*/) {
 }
@@ -370,6 +284,31 @@ void MaidAccountHolderService::UpdatePmidTotalsCallback(
     const std::string& /*response*/,
     const MaidName& /*account_name*/,
     std::shared_ptr<SharedResponse> /*shared_response*/) {
+}
+
+void MaidAccountHolderService::HandleChurnEvent(routing::MatrixChange matrix_change) {
+  auto account_names(maid_account_handler_.GetAccountNames());
+  auto itr(std::begin(account_names));
+  while (itr != std::end(account_names)) {
+    auto check_holders_result(CheckHolders(matrix_change, routing_.kNodeId(),
+                                           NodeId((*itr)->string())));
+    // Delete accounts for which this node is no longer responsible.
+    if (check_holders_result.proximity_status != routing::GroupRangeStatus::kInRange) {
+      maid_account_handler_.DeleteAccount(*itr);
+      itr = account_names.erase(itr);
+      continue;
+    }
+
+    // Replace old_node(s) in sync object and send AccountTransfer to new node(s).
+    assert(check_holders_result.old_holders.size() == check_holders_result.new_holders.size());
+    for (int i(0); i != check_holders_result.old_holders.size(); ++i) {
+      maid_account_handler_.ReplaceNodeInSyncList(*itr, check_holders_result.old_holders[i],
+                                                  check_holders_result.new_holders[i]);
+      TransferAccount(*itr, check_holders_result.new_holders[i]);
+    }
+
+    ++itr;
+  }
 }
 
 }  // namespace vault

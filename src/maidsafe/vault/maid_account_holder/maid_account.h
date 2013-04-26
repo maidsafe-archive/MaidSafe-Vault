@@ -22,7 +22,7 @@
 
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/pmid_account_holder/pmid_record.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_helpers.h"
 #include "maidsafe/vault/maid_account_holder/maid_account_merge_policy.h"
 
 
@@ -44,20 +44,6 @@ class MaidAccountHandlerTypedTest;
 
 }  // namespace test
 
-
-struct PmidTotals {
-  PmidTotals();
-  explicit PmidTotals(
-      const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in);
-  PmidTotals(const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
-             const PmidRecord& pmid_record_in);
-  PmidTotals(const PmidTotals& other);
-  PmidTotals(PmidTotals&& other);
-  PmidTotals& operator=(PmidTotals other);
-
-  nfs::PmidRegistration::serialised_type serialised_pmid_registration;
-  PmidRecord pmid_record;
-};
 
 class MaidAccount {
  public:

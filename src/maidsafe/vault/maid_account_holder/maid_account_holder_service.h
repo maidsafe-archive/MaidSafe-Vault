@@ -39,7 +39,8 @@ namespace vault {
 //    protobuf::MaidAccount proto_maid_account;
 //    if (!proto_maid_account.ParseFromString(serialised_account->string()))
 //      ThrowError(CommonErrors::parsing_error);
-
+struct SharedResponse;
+struct PmidRegistrationOp;
 
 namespace protobuf { class MaidAccountSyncResponse; }
 
@@ -63,32 +64,7 @@ class MaidAccountHolderService {
   MaidAccountHolderService(MaidAccountHolderService&&);
   MaidAccountHolderService& operator=(MaidAccountHolderService&&);
 
-  struct SharedResponse {
-    SharedResponse();
-    mutable std::mutex mutex;
-    int count;
-    bool this_node_in_group;
-  };
-
-  struct PmidRegistrationOp {
-    PmidRegistrationOp(const nfs::PmidRegistration& pmid_registration_in,
-                       const routing::ReplyFunctor& reply_functor_in)
-        : pmid_registration(pmid_registration_in),
-          reply_functor(reply_functor_in),
-          public_maid(),
-          public_pmid(),
-          count(0),
-          mutex() {}
-    template<typename PublicFobType>
-    void SetPublicFob(std::unique_ptr<PublicFobType>&&);
-    nfs::PmidRegistration pmid_registration;
-    routing::ReplyFunctor reply_functor;
-    std::unique_ptr<passport::PublicMaid> public_maid;
-    std::unique_ptr<passport::PublicPmid> public_pmid;
-    int count;
-    std::mutex mutex;
-  };
-
+  // =============== Put/Delete data ===============================================================
   template<typename Data>
   void HandlePut(const nfs::DataMessage& data_message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
@@ -126,7 +102,7 @@ class MaidAccountHolderService {
                        bool low_space,
                        NonUniqueDataType);
 
-  // ================ Pmid registration ================
+  // =============== Pmid registration =============================================================
   void HandleRegisterPmid(const nfs::GenericMessage& generic_message,
                           const routing::ReplyFunctor& reply_functor);
   template<typename PublicFobType>
@@ -136,25 +112,25 @@ class MaidAccountHolderService {
   void FinaliseRegisterPmid(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
   bool DoRegisterPmid(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
 
-  // ================ Periodic sync ================
-  void SendSyncData(const MaidName& account_name);
-  void HandleSendSyncDataCallback(const std::string& response,
+  // =============== Periodic sync =================================================================
+  void PeriodicSync(const MaidName& account_name);
+  void HandlePeriodicSyncCallback(const std::string& response,
                                   const MaidName& account_name,
                                   std::shared_ptr<SharedResponse> shared_response);
 
-  void HandleSyncMessage(const nfs::GenericMessage& generic_message,
-                         const routing::ReplyFunctor& reply_functor);
+  void HandlePeriodicSync(const nfs::GenericMessage& generic_message);
   void HandleReceivedSyncInfo(const NonEmptyString& serialised_account,
                               const routing::ReplyFunctor& reply_functor);
+
+  // =============== Account transfer ==============================================================
+  void TransferAccount(const MaidName& account_name, const NodeId& new_node);
+  void HandleAccountTransfer(const nfs::GenericMessage& generic_message);
+
+  // =============== PMID totals ===================================================================
   void UpdatePmidTotals(const MaidName& account_name);
   void UpdatePmidTotalsCallback(const std::string& response,
                                 const MaidName& account_name,
                                 std::shared_ptr<SharedResponse> shared_response);
-
-  // ================ Account transfer ================
-  void HandleAccountTransfer(const nfs::GenericMessage& generic_message,
-                             const routing::ReplyFunctor& reply_functor);
-  void TransferAccount(const MaidName& account_name, const NodeId& new_node);
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;

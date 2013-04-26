@@ -76,8 +76,6 @@ PmidAccount::PmidAccount(const PmidName& pmid_name,
   //}
 }
 
-PmidAccount::~PmidAccount() {}
-
 PmidAccount::serialised_type PmidAccount::Serialise() {
     protobuf::PmidAccount pmid_account;
   *(pmid_account.mutable_pmid_record()) = pmid_record_.ToProtobuf();
