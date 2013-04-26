@@ -200,7 +200,7 @@ void MaidAccountHolderService::FinaliseRegisterPmid(
 }
 
 bool MaidAccountHolderService::DoRegisterPmid(
-    std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
+    std::shared_ptr<PmidRegistrationOp> /*pmid_registration_op*/) {
   return true;
 }
 

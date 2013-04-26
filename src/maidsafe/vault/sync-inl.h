@@ -68,7 +68,7 @@ bool Sync<MergePolicy>::AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry
     MergePolicy::unresolved_data_.push_back(entry);
   } else {
     (*found).peers.insert(node_id);
-    if ((*found).peers.size() >= (routing::Parameters::node_group_size + 1) / 2) {
+    if ((*found).peers.size() >= (routing::Parameters::node_group_size + 1U) / 2) {
       entry.peers.clear();
       MergePolicy::Merge(entry);
       MergePolicy::unresolved_data_.erase(found);

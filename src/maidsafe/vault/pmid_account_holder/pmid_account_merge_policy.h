@@ -36,9 +36,9 @@ class PmidAccountMergePolicy {
   // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
   template<typename Data>
   int32_t AllowDelete(const typename Data::name_type& name);
+  typedef MaidAndPmidUnresolvedEntry UnresolvedEntry;
 
  protected:
-  typedef MaidAndPmidUnresolvedEntry UnresolvedEntry;
   void Merge(const UnresolvedEntry& unresolved_entry);
 
   std::vector<UnresolvedEntry> unresolved_data_;

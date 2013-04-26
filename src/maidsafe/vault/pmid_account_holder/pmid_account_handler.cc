@@ -40,9 +40,15 @@ PmidAccount::DataHolderStatus PmidAccountHandler::AccountStatus(
   return pmid_accounts_.at(account_name)->data_holder_status();
 }
 
+void PmidAccountHandler::SetDataHolderGoingDown(const PmidName& /*account_name*/) {
+}
+
 void PmidAccountHandler::SetDataHolderDown(const PmidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   pmid_accounts_.at(account_name)->SetDataHolderDown();
+}
+
+void PmidAccountHandler::SetDataHolderGoingUp(const PmidName& /*account_name*/) {
 }
 
 void PmidAccountHandler::SetDataHolderUp(const PmidName& account_name) {

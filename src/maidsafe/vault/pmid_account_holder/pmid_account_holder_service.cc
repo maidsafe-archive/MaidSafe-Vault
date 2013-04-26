@@ -34,6 +34,11 @@ PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
       nfs_(routing, pmid) {}
 
 
+void PmidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& /*generic_message*/,
+                                                    const routing::ReplyFunctor& /*reply_functor*/) {
+
+}
+
 void PmidAccountHolderService::HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {
 //    /*const std::vector<routing::NodeInfo>& new_close_nodes*/) {
 //  // Operations to be done when we this call is received
@@ -137,6 +142,11 @@ void PmidAccountHolderService::RevertMessages(const PmidName& pmid_name,
 
   node_up ?  pmid_account_handler_.SetDataHolderUp(pmid_name) :
              pmid_account_handler_.SetDataHolderDown(pmid_name);
+}
+
+std::set<PmidName> PmidAccountHolderService::GetDataNamesInFile(
+    const PmidName& /*pmid_name*/, const boost::filesystem::path& /*path*/) const {
+  return std::set<PmidName>();
 }
 
 void PmidAccountHolderService::SendMessages(const PmidName& /*pmid_name*/,

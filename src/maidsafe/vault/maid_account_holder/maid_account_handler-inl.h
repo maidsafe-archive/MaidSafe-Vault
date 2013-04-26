@@ -49,7 +49,7 @@ void MaidAccountHandler::PutData(const MaidName& account_name,
                                  RequireNoAccount) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, db_, kThisNodeId_));
-  if (!maid_accounts_.insert(std::make_pair(account_name, std::move(account))).second)
+  if (!maid_accounts_.insert(std::move(std::make_pair(account_name, std::move(account)))).second)
     ThrowError(VaultErrors::operation_not_supported);
   maid_accounts_.at(account_name)->PutData(cost);
 }
