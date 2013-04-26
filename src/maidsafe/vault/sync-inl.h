@@ -111,7 +111,8 @@ void Sync<MergePolicy>::ReplaceNode(const NodeId& old_node, const NodeId& new_no
     if (found != std::end((*itr).peers))
         (*itr).peers.erase(found);
 
-    if ((*itr).peers.size() >= (routing::Parameters::node_group_size + 1) / 2) {
+    if ((*itr).peers.size() >=
+        static_cast<size_t>((routing::Parameters::node_group_size + 1) / 2)) {
       MergePolicy::Merge(*itr);
       MergePolicy::unresolved_data_.erase(itr);
     }

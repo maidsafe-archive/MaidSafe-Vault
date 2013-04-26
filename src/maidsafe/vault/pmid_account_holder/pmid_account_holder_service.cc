@@ -30,7 +30,7 @@ PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
     : routing_(routing),
       accumulator_mutex_(),
       accumulator_(),
-      pmid_account_handler_(vault_root_dir),
+      pmid_account_handler_(),
       nfs_(routing, pmid) {}
 
 
@@ -41,21 +41,21 @@ void PmidAccountHolderService::HandleChurnEvent(routing::MatrixChange /*matrix_c
 }
 
 void PmidAccountHolderService::CheckAccounts() {
-  // Non-archived
-  std::vector<PmidName> accounts_held(pmid_account_handler_.GetAccountNames());
-  for (auto it(accounts_held.begin()); it != accounts_held.end(); ++it) {
-    bool is_connected(routing_.IsConnectedVault(NodeId(*it)));
-    PmidAccount::DataHolderStatus account_status(pmid_account_handler_.AccountStatus(*it));
-    if (AssessRange(*it, account_status, is_connected))
-      it = accounts_held.erase(it);
-  }
+//  // Non-archived
+//  std::vector<PmidName> accounts_held(pmid_account_handler_.GetAccountNames());
+//  for (auto it(accounts_held.begin()); it != accounts_held.end(); ++it) {
+//    bool is_connected(routing_.IsConnectedVault(NodeId(*it)));
+//    PmidAccount::DataHolderStatus account_status(pmid_account_handler_.AccountStatus(*it));
+//    if (AssessRange(*it, account_status, is_connected))
+//      it = accounts_held.erase(it);
+//  }
 
-  // Archived
-  pmid_account_handler_.PruneArchivedAccounts(
-      [this] (const PmidName& pmid_name) {
-        return routing::GroupRangeStatus::kOutwithRange ==
-               routing_.IsNodeIdInGroupRange(NodeId(pmid_name));
-      });
+//  // Archived
+//  pmid_account_handler_.PruneArchivedAccounts(
+//      [this] (const PmidName& pmid_name) {
+//        return routing::GroupRangeStatus::kOutwithRange ==
+//               routing_.IsNodeIdInGroupRange(NodeId(pmid_name));
+//      });
 }
 
 bool PmidAccountHolderService::AssessRange(const PmidName& account_name,
@@ -65,7 +65,7 @@ bool PmidAccountHolderService::AssessRange(const PmidName& account_name,
   switch (temp_int/*routing_.IsNodeIdInGroupRange(NodeId(account_name))*/) {
     // TODO(Team): Change to check the range
     case 0 /*routing::kOutwithRange*/:
-        pmid_account_handler_.MoveAccountToArchive(account_name);
+//        pmid_account_handler_.MoveAccountToArchive(account_name);
         return true;
     case 1 /*routing::kInProximalRange*/:
         // serialise the memory deque and put to file
@@ -111,41 +111,19 @@ void PmidAccountHolderService::InformOfDataHolderUp(const PmidName& pmid_name) {
 
 void PmidAccountHolderService::InformAboutDataHolder(const PmidName& pmid_name, bool node_up) {
   // TODO(Team): Decide on a better strategy instead of sleep
-  Sleep(boost::posix_time::minutes(3));
-  auto names(pmid_account_handler_.GetArchiveFileNames(pmid_name));
-  for (auto ritr(names.rbegin()); ritr != names.rend(); ++ritr) {
-    if (StatusHasReverted(pmid_name, node_up)) {
-      RevertMessages(pmid_name, names.rbegin(), ritr, !node_up);
-      return;
-    }
+//  Sleep(boost::posix_time::minutes(3));
+//  auto names(pmid_account_handler_.GetArchiveFileNames(pmid_name));
+//  for (auto ritr(names.rbegin()); ritr != names.rend(); ++ritr) {
+//    if (StatusHasReverted(pmid_name, node_up)) {
+//      RevertMessages(pmid_name, names.rbegin(), ritr, !node_up);
+//      return;
+//    }
 
-    std::set<PmidName> metadata_manager_ids(GetDataNamesInFile(pmid_name, *ritr));
-    SendMessages(pmid_name, metadata_manager_ids, node_up);
-  }
+//    std::set<PmidName> metadata_manager_ids(GetDataNamesInFile(pmid_name, *ritr));
+//    SendMessages(pmid_name, metadata_manager_ids, node_up);
+//  }
 }
 
-std::set<PmidName> PmidAccountHolderService::GetDataNamesInFile(
-    const PmidName& pmid_name,
-    const boost::filesystem::path& path) const {
-  // pare file serialse as string sed to has pmidah to send to mm
-  NonEmptyString file_content(pmid_account_handler_.GetArchiveFile(pmid_name, path));
-  protobuf::PmidRecord pmid_data;
-  pmid_data.ParseFromString(file_content.string());
-  std::set<PmidName> metadata_manager_ids;
-  //for (int n(0); n != pmid_data.stored_total_size(); ++n)
-  //  metadata_manager_ids.insert(PmidName(Identity(pmid_data.data_stored(n).name())));
-  return metadata_manager_ids;
-}
-
-bool PmidAccountHolderService::StatusHasReverted(const PmidName& pmid_name, bool node_up) const {
-  PmidAccount::DataHolderStatus status(pmid_account_handler_.AccountStatus(pmid_name));
-  if (status == PmidAccount::DataHolderStatus::kGoingDown && node_up)
-    return true;
-  else if (status == PmidAccount::DataHolderStatus::kGoingUp && !node_up)
-    return true;
-  else
-    return false;
-}
 
 void PmidAccountHolderService::RevertMessages(const PmidName& pmid_name,
                                               const std::vector<fs::path>::reverse_iterator& begin,

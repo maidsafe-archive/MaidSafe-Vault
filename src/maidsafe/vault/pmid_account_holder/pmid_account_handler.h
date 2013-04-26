@@ -33,7 +33,7 @@ class PmidAccountHandler {
  public:
   explicit PmidAccountHandler();
   // Account operations
-  bool AddAccount(std::unique_ptr<PmidAccount> pmid_account);
+  void AddAccount(std::unique_ptr<PmidAccount> pmid_account);
   void DeleteAccount(const PmidName& account_name);
   PmidAccount::DataHolderStatus AccountStatus(const PmidName& account_name) const;
   void SetDataHolderGoingDown(const PmidName& account_name);
