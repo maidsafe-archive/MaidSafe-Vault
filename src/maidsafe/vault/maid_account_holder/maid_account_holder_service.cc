@@ -301,7 +301,7 @@ void MaidAccountHolderService::HandleChurnEvent(routing::MatrixChange matrix_cha
 
     // Replace old_node(s) in sync object and send AccountTransfer to new node(s).
     assert(check_holders_result.old_holders.size() == check_holders_result.new_holders.size());
-    for (int i(0); i != check_holders_result.old_holders.size(); ++i) {
+    for (auto i(0U); i != check_holders_result.old_holders.size(); ++i) {
       maid_account_handler_.ReplaceNodeInSyncList(*itr, check_holders_result.old_holders[i],
                                                   check_holders_result.new_holders[i]);
       TransferAccount(*itr, check_holders_result.new_holders[i]);
