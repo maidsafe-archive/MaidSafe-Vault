@@ -19,6 +19,7 @@
 
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/account_db.h"
+#include "maidsafe/vault/unresolved_entry.pb.h"
 #include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
 
 
@@ -192,7 +193,7 @@ void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
   *itr = pmid_totals;
 }
 
-NonEmptyString MaidAccount::GetSyncData() const {
+NonEmptyString MaidAccount::GetSyncData() {
   auto unresolved_entries(sync_.GetUnresolvedData());
   protobuf::UnresolvedEntries proto_unresolved_entries;
   for (const auto& unresolved_entry : unresolved_entries) {
@@ -204,9 +205,16 @@ NonEmptyString MaidAccount::GetSyncData() const {
 
 void MaidAccount::ApplySyncData(const NodeId& source_id,
                                 const NonEmptyString& serialised_unresolved_entries) {
+  protobuf::UnresolvedEntries proto_unresolved_entries;
+  if (!proto_unresolved_entries.ParseFromString(serialised_unresolved_entries.string()))
+    ThrowError(CommonErrors::parsing_error);
 
-  if (sync_.AddUnresolvedEntry(entry, source_id))
-    total_put_data_ += entry.cost;
+  for (int i(0); i != proto_unresolved_entries.serialised_unresolved_entry_size(); ++i) {
+    MaidAndPmidUnresolvedEntry entry(MaidAndPmidUnresolvedEntry::serialised_type(
+        NonEmptyString(proto_unresolved_entries.serialised_unresolved_entry(i))));
+    if (sync_.AddUnresolvedEntry(entry, source_id))
+      total_put_data_ += entry.cost;
+  }
 }
 
 void MaidAccount::ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node) {

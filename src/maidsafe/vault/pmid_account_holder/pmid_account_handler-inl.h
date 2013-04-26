@@ -20,7 +20,7 @@ namespace vault {
 
 template<typename Data>
 void PmidAccountHandler::Put(const PmidName& account_name,
-                             const typename Data::name_type& data_name,
+                             const typename Data::name_type& /*data_name*/,
                              int32_t size) {
   std::lock_guard<std::mutex> lock(mutex_);
   pmid_accounts_.at(account_name)->PutData(size);

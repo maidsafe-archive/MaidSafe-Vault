@@ -86,14 +86,10 @@ class MaidAccount {
   void UpdatePmidTotals(const PmidTotals& pmid_totals);
 
   // headers and unresolved data
-  NonEmptyString GetSyncData() const;
+  NonEmptyString GetSyncData();
   void ApplySyncData(const NodeId& source_id,
                      const NonEmptyString& serialised_unresolved_entries);
-  void ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node) {
-    if (account_transfer_nodes_ != 0)
-      --account_transfer_nodes_;
-    sync_.ReplaceNode(old_node, new_node);
-  }
+  void ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node);
 
   Status PutData(int32_t cost);
   // This offers the strong exception guarantee

@@ -50,7 +50,7 @@ bool MaidAccountHandler::ApplyAccountTransfer(const MaidName& account_name, cons
 }
 
 void MaidAccountHandler::DeleteAccount(const MaidName& account_name) {
-  maid_accounts_.erase(maid_accounts_.find(account_name));
+  maid_accounts_.erase(account_name);
 }
 
 void MaidAccountHandler::RegisterPmid(const MaidName& account_name,

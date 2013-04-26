@@ -42,33 +42,23 @@ int32_t CalculateCost(const Data& data) {
 }
 
 template<>
-int32_t CalculateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&) {
-  return 0;
-}
+int32_t CalculateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&);
 
 template<>
-int32_t CalculateCost<passport::PublicMaid>(const passport::PublicMaid&) {
-  return 0;
-}
+int32_t CalculateCost<passport::PublicMaid>(const passport::PublicMaid&);
 
 template<>
-int32_t CalculateCost<passport::PublicPmid>(const passport::PublicPmid&) {
-  return 0;
-}
+int32_t CalculateCost<passport::PublicPmid>(const passport::PublicPmid&);
 
 }  // namespace detail
 
 template<>
 void MaidAccountHolderService::PmidRegistrationOp::SetPublicFob<passport::PublicMaid>(
-    std::unique_ptr<passport::PublicMaid>&& pub_maid) {
-  public_maid = std::move(pub_maid);
-}
+    std::unique_ptr<passport::PublicMaid>&& pub_maid);
 
 template<>
 void MaidAccountHolderService::PmidRegistrationOp::SetPublicFob<passport::PublicPmid>(
-    std::unique_ptr<passport::PublicPmid>&& pub_pmid) {
-  public_pmid = std::move(pub_pmid);
-}
+    std::unique_ptr<passport::PublicPmid>&& pub_pmid);
 
 template<typename Data>
 void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
@@ -212,8 +202,8 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
 
 template<typename Data>
 void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
-                                               const MaidName& account_name,
-                                               const typename Data::name_type& data_name,
+                                               const MaidName& /*account_name*/,
+                                               const typename Data::name_type& /*data_name*/,
                                                routing::ReplyFunctor /*client_reply_functor*/,
                                                bool /*low_space*/,
                                                NonUniqueDataType) {
@@ -221,7 +211,7 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
     if (overall_result.IsSuccess()) {
       protobuf::Cost cost;
       cost.ParseFromString(overall_result.data().string());
-      AdjustAccount<Data>(account_name, data_name, cost.value(), is_payable<Data>());
+      //AdjustAccount<Data>(account_name, data_name, cost.value(), is_payable<Data>());
     }
   }
   catch(const std::exception& e) {
@@ -247,7 +237,7 @@ void MaidAccountHolderService::ValidateRegisterPmid(
   {
     std::lock_guard<std::mutex> lock(pmid_registration_op->mutex);
     pmid_registration_op->SetPublicFob(std::move(public_fob));
-    finalise = (++count == 2);
+    finalise = (++pmid_registration_op->count == 2);
   }
   if (finalise)
     FinaliseRegisterPmid(pmid_registration_op);

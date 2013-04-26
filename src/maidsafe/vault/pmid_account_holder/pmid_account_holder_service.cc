@@ -109,7 +109,7 @@ void PmidAccountHolderService::InformOfDataHolderUp(const PmidName& pmid_name) {
   pmid_account_handler_.SetDataHolderUp(pmid_name);
 }
 
-void PmidAccountHolderService::InformAboutDataHolder(const PmidName& pmid_name, bool node_up) {
+void PmidAccountHolderService::InformAboutDataHolder(const PmidName& /*pmid_name*/, bool /*node_up*/) {
   // TODO(Team): Decide on a better strategy instead of sleep
 //  Sleep(boost::posix_time::minutes(3));
 //  auto names(pmid_account_handler_.GetArchiveFileNames(pmid_name));

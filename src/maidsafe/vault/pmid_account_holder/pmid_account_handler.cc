@@ -27,12 +27,11 @@ PmidAccountHandler::PmidAccountHandler()
       pmid_accounts_() {}
 
 void PmidAccountHandler::AddAccount(std::unique_ptr<PmidAccount> account) {
-
-  pmid_accounts_.insert(std::make_pair(account->name, std::move(account))))
+  pmid_accounts_.insert(std::make_pair(account->name(), std::move(account)));
 }
 
 void PmidAccountHandler::DeleteAccount(const PmidName& account_name) {
-  pmid_accounts_.erase(pmid_accounts_.find(account_name));
+  pmid_accounts_.erase(account_name);
 }
 
 PmidAccount::DataHolderStatus PmidAccountHandler::AccountStatus(
