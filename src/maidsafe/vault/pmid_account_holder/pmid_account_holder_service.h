@@ -38,8 +38,7 @@ namespace vault {
 class PmidAccountHolderService {
  public:
   PmidAccountHolderService(const passport::Pmid& pmid,
-                           routing::Routing& routing,
-                           const boost::filesystem::path& vault_root_dir);
+                           routing::Routing& routing);
   template<typename Data>
   void HandleDataMessage(const nfs::DataMessage& data_message,
                          const routing::ReplyFunctor& reply_functor);

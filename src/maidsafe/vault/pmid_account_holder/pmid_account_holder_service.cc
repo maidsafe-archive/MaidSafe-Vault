@@ -26,8 +26,7 @@ const int PmidAccountHolderService::kPutRequestsRequired_(3);
 const int PmidAccountHolderService::kDeleteRequestsRequired_(3);
 
 PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
-                                                   routing::Routing& routing,
-                                                   const boost::filesystem::path& vault_root_dir)
+                                                   routing::Routing& routing)
     : routing_(routing),
       accumulator_mutex_(),
       accumulator_(),

@@ -22,64 +22,47 @@ namespace maidsafe {
 
 namespace vault {
 
-//PmidAccountHandler::PmidAccountHandler(const fs::path& vault_root_dir)
-//    : kPmidAccountsRoot_(vault_root_dir / "pmids"),
-//      mutex_(),
-//      pmid_accounts_(),
-//      archived_accounts_() {
-//  detail::InitialiseDirectory(kPmidAccountsRoot_);
-//}
-//
-//bool PmidAccountHandler::AddAccount(std::unique_ptr<PmidAccount> pmid_account) {
-//  return detail::AddAccount(mutex_, pmid_accounts_, std::move(pmid_account));
-//}
-//
-//bool PmidAccountHandler::DeleteAccount(const PmidName& account_name) {
-//  return detail::DeleteAccount(mutex_, pmid_accounts_, account_name);
-//}
-//
-//PmidAccount::DataHolderStatus PmidAccountHandler::AccountStatus(
-//    const PmidName& account_name) const {
-//  std::lock_guard<std::mutex> lock(mutex_);
-//  auto itr(detail::FindAccount(pmid_accounts_, account_name));
-//  if (itr == pmid_accounts_.end())
-//    ThrowError(VaultErrors::no_such_account);
-//  return (*itr)->data_holder_status();
-//}
-//
-//
-//void PmidAccountHandler::SetDataHolderDown(const PmidName& account_name) {
-//  std::lock_guard<std::mutex> lock(mutex_);
-//  auto itr(detail::FindAccount(pmid_accounts_, account_name));
-//  if (itr == pmid_accounts_.end())
-//    ThrowError(VaultErrors::no_such_account);
-//  (*itr)->SetDataHolderDown();
-//}
-//
-//
-//void PmidAccountHandler::SetDataHolderUp(const PmidName& account_name) {
-//  std::lock_guard<std::mutex> lock(mutex_);
-//  auto itr(detail::FindAccount(pmid_accounts_, account_name));
-//  if (itr == pmid_accounts_.end())
-//    ThrowError(VaultErrors::no_such_account);
-//  (*itr)->SetDataHolderUp();
-//}
-//
-//std::vector<PmidName> PmidAccountHandler::GetAccountNames() const {
-//  std::vector<PmidName> account_names;
-//  std::lock_guard<std::mutex> lock(mutex_);
-//  for (auto& pmid_account : pmid_accounts_)
-//    account_names.push_back(pmid_account->name());
-//  return account_names;
-//}
-//
-//
-//PmidAccount::serialised_type PmidAccountHandler::GetSerialisedAccount(
-//    const PmidName& account_name) const {
-//  return detail::GetSerialisedAccount(mutex_, pmid_accounts_, account_name);
-//}
+PmidAccountHandler::PmidAccountHandler()
+    : mutex_(),
+      pmid_accounts_() {}
 
+bool PmidAccountHandler::AddAccount(std::unique_ptr<PmidAccount> account) {
 
+  return pmid_accounts_.insert(std::make_pair(account->name(), std::move(account))).second)
+}
+
+void PmidAccountHandler::DeleteAccount(const PmidName& account_name) {
+  pmid_accounts_.erase(maid_accounts_.find(account_name));
+}
+
+PmidAccount::DataHolderStatus PmidAccountHandler::AccountStatus(
+    const PmidName& account_name) const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return pmid_accounts_.at(account_name)->data_holder_status();
+}
+
+void PmidAccountHandler::SetDataHolderDown(const PmidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  pmid_accounts_.at(account_name)->SetDataHolderDown();
+}
+
+void PmidAccountHandler::SetDataHolderUp(const PmidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  pmid_accounts_.at(account_name)->SetDataHolderUp();
+}
+
+std::vector<PmidName> PmidAccountHandler::GetAccountNames() const {
+  std::vector<PmidName> account_names;
+  std::lock_guard<std::mutex> lock(mutex_);
+  for (auto& pmid_account : pmid_accounts_)
+    account_names.push_back(pmid_account.first);
+  return account_names;
+}
+
+PmidAccount::serialised_type PmidAccountHandler::GetSerialisedAccount(
+    const PmidName& account_name) const {
+  return pmid_accounts_.at(account_name)->Serialise();
+}
 
 }  // namespace vault
 

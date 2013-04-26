@@ -237,7 +237,7 @@ void MaidAccountHolderService::ValidateRegisterPmid(
   std::unique_ptr<PublicFobType> public_fob;
   try {
     public_fob.reset(new PublicFobType(public_fob_name,
-                                       PublicFobType::serialised_type(reply.data())));
+                                       typename PublicFobType::serialised_type(reply.data())));
   }
   catch(const std::exception& e) {
     public_fob.reset();
