@@ -24,12 +24,6 @@ namespace maidsafe {
 
 namespace vault {
 
-//const std::function<bool(const std::unique_ptr<MaidAccount>&,
-//                         const std::unique_ptr<MaidAccount>&)> MaidAccountHandler::kCompare_ =
-//    [](const std::unique_ptr<MaidAccount>& lhs, const std::unique_ptr<MaidAccount>& rhs) {
-//        return lhs->name().data < rhs->name().data;
-//    };
-
 MaidAccountHandler::MaidAccountHandler(Db& db, const NodeId& this_node_id)
     : db_(db),
       kThisNodeId_(this_node_id),
@@ -62,6 +56,11 @@ void MaidAccountHandler::RegisterPmid(const MaidName& account_name,
 void MaidAccountHandler::UnregisterPmid(const MaidName& account_name, const PmidName& pmid_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   maid_accounts_.at(account_name)->UnregisterPmid(pmid_name);
+}
+
+std::vector<PmidName> MaidAccountHandler::GetPmidNames(const MaidName& account_name) const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return maid_accounts_.at(account_name)->GetPmidNames();
 }
 
 void MaidAccountHandler::UpdatePmidTotals(const MaidName& account_name,

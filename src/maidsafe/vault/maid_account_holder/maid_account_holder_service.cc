@@ -70,21 +70,19 @@ MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
 
 void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
                                                     const routing::ReplyFunctor& reply_functor) {
+  ValidateSender(generic_message);
   nfs::GenericMessage::Action action(generic_message.action());
   switch (action) {
     case nfs::GenericMessage::Action::kRegisterPmid:
-      return HandleRegisterPmid(generic_message, reply_functor);
+      return HandlePmidRegistration(generic_message, reply_functor);
     case nfs::GenericMessage::Action::kSynchronise:
-      return HandlePeriodicSync(generic_message);
+      return HandleSync(generic_message);
     case nfs::GenericMessage::Action::kAccountTransfer:
       return HandleAccountTransfer(generic_message);
     default:
       LOG(kError) << "Unhandled Post action type";
   }
 }
-
-
-// =============== Put/Delete data =================================================================
 
 void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_message) const {
   if (!routing_.IsConnectedClient(data_message.source().node_id))
@@ -94,42 +92,52 @@ void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_messa
     ThrowError(CommonErrors::invalid_parameter);
 }
 
+void MaidAccountHolderService::ValidateSender(const nfs::GenericMessage& generic_message) const {
+  if (!routing_.IsConnectedClient(generic_message.source().node_id))
+    ThrowError(VaultErrors::permission_denied);
+
+  if (generic_message.action() == nfs::GenericMessage::Action::kRegisterPmid) {
+    if (!FromClientMaid(generic_message) || !ForThisPersona(generic_message))
+      ThrowError(CommonErrors::invalid_parameter);
+  } else {
+    if (!FromMaidAccountHolder(generic_message) || !ForThisPersona(generic_message))
+      ThrowError(CommonErrors::invalid_parameter);
+  }
+}
+
 
 // =============== Pmid registration ===============================================================
 
-void MaidAccountHolderService::HandleRegisterPmid(const nfs::GenericMessage& generic_message,
-                                                  const routing::ReplyFunctor& reply_functor) {
+void MaidAccountHolderService::HandlePmidRegistration(const nfs::GenericMessage& generic_message,
+                                                      const routing::ReplyFunctor& reply_functor) {
   NodeId source_id(generic_message.source().node_id);
-  if (!routing_.IsConnectedClient(source_id))
-    return reply_functor(nfs::Reply(RoutingErrors::not_connected).Serialise()->string());
 
   // TODO(Fraser#5#): 2013-04-22 - Validate Message signature.  Currently the Message does not have
   //                  a signature applied, and the demuxer doesn't pass the signature down anyway.
   nfs::PmidRegistration pmid_registration(nfs::PmidRegistration::serialised_type(NonEmptyString(
       generic_message.content().string())));
   if (pmid_registration.maid_name()->string() != source_id.string())
-    ThrowError(VaultErrors::permission_denied);
+    return reply_functor(nfs::Reply(VaultErrors::permission_denied).Serialise()->string());
 
   auto pmid_registration_op(std::make_shared<PmidRegistrationOp>(pmid_registration, reply_functor));
 
   public_key_getter_.GetKey<passport::PublicMaid>(
       pmid_registration.maid_name(),
       [this, pmid_registration_op, &pmid_registration](const nfs::Reply& reply) {
-          ValidateRegisterPmid<passport::PublicMaid>(reply, pmid_registration.maid_name(),
-                                                     pmid_registration_op);
+          ValidatePmidRegistration<passport::PublicMaid>(reply, pmid_registration.maid_name(),
+                                                         pmid_registration_op);
       });
   public_key_getter_.GetKey<passport::PublicPmid>(
       pmid_registration.pmid_name(),
       [this, pmid_registration_op, &pmid_registration](const nfs::Reply& reply) {
-          ValidateRegisterPmid<passport::PublicPmid>(reply, pmid_registration.pmid_name(),
-                                                     pmid_registration_op);
+          ValidatePmidRegistration<passport::PublicPmid>(reply, pmid_registration.pmid_name(),
+                                                         pmid_registration_op);
       });
 }
 
-void MaidAccountHolderService::FinaliseRegisterPmid(
+void MaidAccountHolderService::FinalisePmidRegistration(
     std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
   assert(pmid_registration_op->count == 2);
-
   auto send_reply([&](const maidsafe_error& error)->void {
       nfs::Reply reply(error);
       pmid_registration_op->reply_functor(reply.Serialise()->string());
@@ -140,29 +148,37 @@ void MaidAccountHolderService::FinaliseRegisterPmid(
     return send_reply(maidsafe_error(VaultErrors::permission_denied));
   }
 
-  if (!pmid_registration_op->pmid_registration.Validate(*pmid_registration_op->public_maid,
-                                                        *pmid_registration_op->public_pmid)) {
-    LOG(kWarning) << "Failed to validate PmidRegistration";
-    return send_reply(maidsafe_error(VaultErrors::permission_denied));
-  }
+  try {
+    if (!pmid_registration_op->pmid_registration.Validate(*pmid_registration_op->public_maid,
+                                                          *pmid_registration_op->public_pmid)) {
+      LOG(kWarning) << "Failed to validate PmidRegistration";
+      return send_reply(maidsafe_error(VaultErrors::permission_denied));
+    }
 
-  if (!DoRegisterPmid(pmid_registration_op)) {
-    LOG(kWarning) << "Failed to register new PMID";
-    return send_reply(maidsafe_error(VaultErrors::failed_to_handle_request));
+    if (pmid_registration_op->pmid_registration.unregister()) {
+      maid_account_handler_.UnregisterPmid(pmid_registration_op->public_maid->name(),
+                                           pmid_registration_op->public_pmid->name());
+    } else {
+      maid_account_handler_.RegisterPmid(pmid_registration_op->public_maid->name(),
+                                         pmid_registration_op->pmid_registration);
+    }
+    send_reply(maidsafe_error(CommonErrors::success));
+    UpdatePmidTotals(pmid_registration_op->public_maid->name());
   }
-
-  send_reply(maidsafe_error(CommonErrors::success));
+  catch(const maidsafe_error& error) {
+    LOG(kWarning) << "Failed to register new PMID: " << error.what();
+    send_reply(error);
+  }
+  catch(const std::exception& ex) {
+    LOG(kWarning) << "Failed to register new PMID: " << ex.what();
+    send_reply(maidsafe_error(CommonErrors::unknown));
+  }
 }
 
-bool MaidAccountHolderService::DoRegisterPmid(
-    std::shared_ptr<PmidRegistrationOp> /*pmid_registration_op*/) {
-  return true;
-}
 
+// =============== Sync ============================================================================
 
-// =============== Periodic sync ===================================================================
-
-void MaidAccountHolderService::PeriodicSync(const MaidName& account_name) {
+void MaidAccountHolderService::Sync(const MaidName& account_name) {
   protobuf::SyncInfo sync_info;
   sync_info.set_maid_account(maid_account_handler_.GetSerialisedAccount(account_name)->string());
   {
@@ -176,17 +192,16 @@ void MaidAccountHolderService::PeriodicSync(const MaidName& account_name) {
   assert(sync_pb_message.IsInitialized() && "Uninitialised sync message");
   std::shared_ptr<SharedResponse> shared_response(std::make_shared<SharedResponse>());
   auto callback = [=](std::string response) {
-      this->HandlePeriodicSyncCallback(response, account_name, shared_response);
+      this->SyncCallback(response, account_name, shared_response);
     };
   nfs_.PostSyncDataGroup(account_name,
                          NonEmptyString(sync_pb_message.SerializeAsString()),
                          callback);
 }
 
-void MaidAccountHolderService::HandlePeriodicSyncCallback(
-    const std::string &response,
-    const MaidName& /*account_name*/,
-    std::shared_ptr<SharedResponse> shared_response) {
+void MaidAccountHolderService::SyncCallback(const std::string &response,
+                                            const MaidName& /*account_name*/,
+                                            std::shared_ptr<SharedResponse> shared_response) {
   try {
     protobuf::SyncInfoResponse sync_info_response;
     nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(response))));
@@ -213,7 +228,7 @@ void MaidAccountHolderService::HandlePeriodicSyncCallback(
   }
 }
 
-void MaidAccountHolderService::HandlePeriodicSync(const nfs::GenericMessage& generic_message) {
+void MaidAccountHolderService::HandleSync(const nfs::GenericMessage& generic_message) {
   NodeId source_id(generic_message.source().node_id);
   if (!routing_.IsConnectedVault(source_id))
     return;
@@ -278,6 +293,9 @@ void MaidAccountHolderService::HandleAccountTransfer(const nfs::GenericMessage& 
 // =============== PMID totals =====================================================================
 
 void MaidAccountHolderService::UpdatePmidTotals(const MaidName& /*account_name*/) {
+  //auto pmid_names(maid_account_handler_.GetPmidNames(account_name));
+  //for (const auto& pmid_name : pmid_names)
+  //  nfs_.
 }
 
 void MaidAccountHolderService::UpdatePmidTotalsCallback(

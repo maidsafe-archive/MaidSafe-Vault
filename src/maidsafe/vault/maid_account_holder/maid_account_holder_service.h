@@ -50,6 +50,7 @@ class MaidAccountHolderService {
                            routing::Routing& routing,
                            nfs::PublicKeyGetter& public_key_getter,
                            Db& db);
+  // Handling of received requests (sending of requests is done via nfs_ object).
   template<typename Data>
   void HandleDataMessage(const nfs::DataMessage& data_message,
                          const routing::ReplyFunctor& reply_functor);
@@ -64,6 +65,9 @@ class MaidAccountHolderService {
   MaidAccountHolderService(MaidAccountHolderService&&);
   MaidAccountHolderService& operator=(MaidAccountHolderService&&);
 
+  void ValidateSender(const nfs::DataMessage& data_message) const;
+  void ValidateSender(const nfs::GenericMessage& generic_message) const;
+
   // =============== Put/Delete data ===============================================================
   template<typename Data>
   void HandlePut(const nfs::DataMessage& data_message, const routing::ReplyFunctor& reply_functor);
@@ -72,7 +76,6 @@ class MaidAccountHolderService {
                     const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   typename Data::name_type GetDataName(const nfs::DataMessage& data_message) const;
-  void ValidateSender(const nfs::DataMessage& data_message) const;
   typedef std::true_type UniqueDataType;
   template<typename Data>
   void SendEarlySuccessReply(const nfs::DataMessage& /*data_message*/,
@@ -103,22 +106,21 @@ class MaidAccountHolderService {
                        NonUniqueDataType);
 
   // =============== Pmid registration =============================================================
-  void HandleRegisterPmid(const nfs::GenericMessage& generic_message,
-                          const routing::ReplyFunctor& reply_functor);
+  void HandlePmidRegistration(const nfs::GenericMessage& generic_message,
+                              const routing::ReplyFunctor& reply_functor);
   template<typename PublicFobType>
-  void ValidateRegisterPmid(const nfs::Reply& reply,
-                            typename PublicFobType::name_type public_fob_name,
-                            std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
-  void FinaliseRegisterPmid(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
-  bool DoRegisterPmid(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
+  void ValidatePmidRegistration(const nfs::Reply& reply,
+                                typename PublicFobType::name_type public_fob_name,
+                                std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
+  void FinalisePmidRegistration(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
 
-  // =============== Periodic sync =================================================================
-  void PeriodicSync(const MaidName& account_name);
-  void HandlePeriodicSyncCallback(const std::string& response,
-                                  const MaidName& account_name,
-                                  std::shared_ptr<SharedResponse> shared_response);
+  // =============== Sync ==========================================================================
+  void Sync(const MaidName& account_name);
+  void SyncCallback(const std::string& response,
+                          const MaidName& account_name,
+                          std::shared_ptr<SharedResponse> shared_response);
 
-  void HandlePeriodicSync(const nfs::GenericMessage& generic_message);
+  void HandleSync(const nfs::GenericMessage& generic_message);
   void HandleReceivedSyncInfo(const NonEmptyString& serialised_account,
                               const routing::ReplyFunctor& reply_functor);
 

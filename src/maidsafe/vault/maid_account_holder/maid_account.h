@@ -69,6 +69,7 @@ class MaidAccount {
                             const serialised_type& serialised_maid_account_details);
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);
+  std::vector<PmidName> GetPmidNames() const;
   void UpdatePmidTotals(const PmidTotals& pmid_totals);
 
   // headers and unresolved data

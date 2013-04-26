@@ -56,6 +56,7 @@ int32_t CalculateCost<passport::PublicPmid>(const passport::PublicPmid&);
 template<typename Data>
 void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
+  ValidateSender(data_message);
   nfs::Reply reply(CommonErrors::success);
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
@@ -80,7 +81,6 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
                                          const routing::ReplyFunctor& reply_functor) {
   maidsafe_error return_code(CommonErrors::success);
   try {
-    ValidateSender(data_message);
     Data data(typename Data::name_type(data_message.data().name),
               typename Data::serialised_type(data_message.data().content));
     MaidName account_name(detail::GetSourceMaidName(data_message));
@@ -137,7 +137,6 @@ template<typename Data>
 void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message,
                                             const routing::ReplyFunctor& reply_functor) {
   try {
-    ValidateSender(data_message);
     auto data_name(GetDataName<Data>(data_message));
     //DeleteFromAccount<Data>(detail::GetSourceMaidName(data_message), data_name, is_payable<Data>());
     nfs_.Delete<Data>(data_name, [](std::string /*serialised_reply*/) {});
@@ -213,7 +212,7 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
 }
 
 template<typename PublicFobType>
-void MaidAccountHolderService::ValidateRegisterPmid(
+void MaidAccountHolderService::ValidatePmidRegistration(
     const nfs::Reply& reply,
     typename PublicFobType::name_type public_fob_name,
     std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
@@ -233,7 +232,7 @@ void MaidAccountHolderService::ValidateRegisterPmid(
     finalise = (++pmid_registration_op->count == 2);
   }
   if (finalise)
-    FinaliseRegisterPmid(pmid_registration_op);
+    FinalisePmidRegistration(pmid_registration_op);
 }
 
 

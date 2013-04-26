@@ -19,6 +19,7 @@
 #include "maidsafe/nfs/data_message.h"
 #include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/reply.h"
 
 #include "maidsafe/vault/data_holder/data_holder_service.h"
 #include "maidsafe/vault/maid_account_holder/maid_account_holder_service.h"
@@ -131,8 +132,20 @@ void Demultiplexer::HandleMessage(const std::string& serialised_message,
         LOG(kError) << "Unhandled inner_message_type";
     }
   }
+  catch(const maidsafe_error& error) {
+    LOG(kError) << "Caught exception on handling new message: " << error.what();
+    if (reply_functor && !serialised_message.empty()) {
+      nfs::Reply reply(error, NonEmptyString(serialised_message));
+      reply_functor(reply.Serialise()->string());
+    }
+  }
   catch(const std::exception& ex) {
     LOG(kError) << "Caught exception on handling new message: " << ex.what();
+    if (reply_functor && !serialised_message.empty()) {
+      // TODO(Fraser#5#): 2013-04-26 - Consider sending actual std exception back.
+      nfs::Reply reply(CommonErrors::unknown, NonEmptyString(serialised_message));
+      reply_functor(reply.Serialise()->string());
+    }
   }
 }
 

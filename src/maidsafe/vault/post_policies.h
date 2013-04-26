@@ -31,7 +31,7 @@ namespace maidsafe {
 
 namespace vault {
 
-template <typename SyncPolicy, typename VaultManagement>
+template<typename SyncPolicy, typename VaultManagement>
 class VaultPostPolicy : public SyncPolicy, public VaultManagement {
  public:
   explicit VaultPostPolicy(routing::Routing& routing, const passport::Pmid& pmid)
@@ -39,7 +39,7 @@ class VaultPostPolicy : public SyncPolicy, public VaultManagement {
         VaultManagement(routing, pmid) {}
 };
 
-template <nfs::Persona source_persona>
+template<nfs::Persona source_persona>
 class SyncPolicy {
  public:
   SyncPolicy(routing::Routing& routing, const passport::Pmid& pmid)
@@ -60,7 +60,7 @@ class SyncPolicy {
     routing_.SendDirect(target_node_id, message.Serialise()->string(), false, nullptr);
   }
 
-  template <typename Name>
+  template<typename Name>
   void PostSyncDataGroup(const Name& name,
                          const NonEmptyString& serialised_sync_data,
                          const routing::ResponseFunctor& callback) {
@@ -98,7 +98,7 @@ class SyncPolicy {
   const passport::Pmid kPmid_;
 };
 
-template <nfs::Persona source_persona>
+template<nfs::Persona source_persona>
 class VaultManagement {
  public:
   VaultManagement(routing::Routing& routing, const passport::Pmid& pmid)

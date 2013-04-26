@@ -30,13 +30,13 @@ namespace vault {
 
 class PmidAccountMergePolicy {
  public:
+  typedef MaidAndPmidUnresolvedEntry UnresolvedEntry;
   explicit PmidAccountMergePolicy(AccountDb* account_db);
   PmidAccountMergePolicy(PmidAccountMergePolicy&& other);
   PmidAccountMergePolicy& operator=(PmidAccountMergePolicy&& other);
   // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
   template<typename Data>
   int32_t AllowDelete(const typename Data::name_type& name);
-  typedef MaidAndPmidUnresolvedEntry UnresolvedEntry;
 
  protected:
   void Merge(const UnresolvedEntry& unresolved_entry);

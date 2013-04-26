@@ -27,52 +27,52 @@ namespace vault {
 
 template<typename Message>
 inline bool FromMaidAccountHolder(const Message& message) {
-  return message.source().persona != nfs::Persona::kMaidAccountHolder;
+  return message.source().persona == nfs::Persona::kMaidAccountHolder;
 }
 
 template<typename Message>
 inline bool FromMetadataManager(const Message& message) {
-  return message.source().persona != nfs::Persona::kMetadataManager;
+  return message.source().persona == nfs::Persona::kMetadataManager;
 }
 
 template<typename Message>
 inline bool FromPmidAccountHolder(const Message& message) {
-  return message.source().persona != nfs::Persona::kPmidAccountHolder;
+  return message.source().persona == nfs::Persona::kPmidAccountHolder;
 }
 
 template<typename Message>
 inline bool FromDataHolder(const Message& message) {
-  return message.source().persona != nfs::Persona::kDataHolder;
+  return message.source().persona == nfs::Persona::kDataHolder;
 }
 
 template<typename Message>
 inline bool FromClientMaid(const Message& message) {
-  return message.source().persona != nfs::Persona::kClientMaid;
+  return message.source().persona == nfs::Persona::kClientMaid;
 }
 
 template<typename Message>
 inline bool FromClientMpid(const Message& message) {
-  return message.source().persona != nfs::Persona::kClientMpid;
+  return message.source().persona == nfs::Persona::kClientMpid;
 }
 
 template<typename Message>
 inline bool FromOwnerDirectoryManager(const Message& message) {
-  return message.source().persona != nfs::Persona::kOwnerDirectoryManager;
+  return message.source().persona == nfs::Persona::kOwnerDirectoryManager;
 }
 
 template<typename Message>
 inline bool FromGroupDirectoryManager(const Message& message) {
-  return message.source().persona != nfs::Persona::kGroupDirectoryManager;
+  return message.source().persona == nfs::Persona::kGroupDirectoryManager;
 }
 
 template<typename Message>
 inline bool FromWorldDirectoryManager(const Message& message) {
-  return message.source().persona != nfs::Persona::kWorldDirectoryManager;
+  return message.source().persona == nfs::Persona::kWorldDirectoryManager;
 }
 
 template<typename Message>
 inline bool FromDataGetter(const Message& message) {
-  return message.source().persona != nfs::Persona::kDataGetter;
+  return message.source().persona == nfs::Persona::kDataGetter;
 }
 
 

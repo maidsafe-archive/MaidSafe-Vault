@@ -158,6 +158,13 @@ void MaidAccount::UnregisterPmid(const PmidName& pmid_name) {
     pmid_totals_.erase(itr);
 }
 
+std::vector<PmidName> MaidAccount::GetPmidNames() const {
+  std::vector<PmidName> pmid_names;
+  for (const auto& pmid_totals : pmid_totals_)
+    pmid_names.push_back(pmid_totals.pmid_record.pmid_name);
+  return pmid_names;
+}
+
 void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
   auto itr(Find(pmid_totals.pmid_record.pmid_name));
   if (itr == std::end(pmid_totals_))
