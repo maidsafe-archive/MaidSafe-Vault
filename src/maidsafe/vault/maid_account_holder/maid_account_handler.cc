@@ -44,6 +44,7 @@ bool MaidAccountHandler::ApplyAccountTransfer(const MaidName& account_name, cons
 }
 
 void MaidAccountHandler::DeleteAccount(const MaidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
   maid_accounts_.erase(account_name);
 }
 
@@ -79,7 +80,20 @@ std::vector<MaidName> MaidAccountHandler::GetAccountNames() const {
 
 MaidAccount::serialised_type MaidAccountHandler::GetSerialisedAccount(
     const MaidName& account_name) const {
+  std::lock_guard<std::mutex> lock(mutex_);
   return maid_accounts_.at(account_name)->Serialise();
+}
+
+NonEmptyString MaidAccountHandler::GetSyncData(const MaidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return maid_accounts_.at(account_name)->GetSyncData();
+}
+
+void MaidAccountHandler::ApplySyncData(const MaidName& account_name,
+                                       const NodeId& source_id,
+                                       const NonEmptyString& serialised_unresolved_entries) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  maid_accounts_.at(account_name)->ApplySyncData(source_id, serialised_unresolved_entries);
 }
 
 void MaidAccountHandler::ReplaceNodeInSyncList(const MaidName& account_name,

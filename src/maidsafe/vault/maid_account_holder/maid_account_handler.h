@@ -54,6 +54,10 @@ class MaidAccountHandler {
   // Sync operations
   std::vector<MaidName> GetAccountNames() const;
   MaidAccount::serialised_type GetSerialisedAccount(const MaidName& account_name) const;
+  NonEmptyString GetSyncData(const MaidName& account_name);
+  void ApplySyncData(const MaidName& account_name,
+                     const NodeId& source_id,
+                     const NonEmptyString& serialised_unresolved_entries);
   void ReplaceNodeInSyncList(const MaidName& account_name,
                              const NodeId& old_node,
                              const NodeId& new_node);

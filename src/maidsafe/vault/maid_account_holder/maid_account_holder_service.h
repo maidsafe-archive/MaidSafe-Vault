@@ -116,13 +116,7 @@ class MaidAccountHolderService {
 
   // =============== Sync ==========================================================================
   void Sync(const MaidName& account_name);
-  void SyncCallback(const std::string& response,
-                          const MaidName& account_name,
-                          std::shared_ptr<SharedResponse> shared_response);
-
   void HandleSync(const nfs::GenericMessage& generic_message);
-  void HandleReceivedSyncInfo(const NonEmptyString& serialised_account,
-                              const routing::ReplyFunctor& reply_functor);
 
   // =============== Account transfer ==============================================================
   void TransferAccount(const MaidName& account_name, const NodeId& new_node);

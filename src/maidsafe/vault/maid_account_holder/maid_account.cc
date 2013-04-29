@@ -174,6 +174,9 @@ void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
 
 NonEmptyString MaidAccount::GetSyncData() {
   auto unresolved_entries(sync_.GetUnresolvedData());
+  if (unresolved_entries.empty())
+    return NonEmptyString();
+
   protobuf::UnresolvedEntries proto_unresolved_entries;
   for (const auto& unresolved_entry : unresolved_entries) {
     proto_unresolved_entries.add_serialised_unresolved_entry(

@@ -74,8 +74,7 @@ class MaidAccount {
 
   // headers and unresolved data
   NonEmptyString GetSyncData();
-  void ApplySyncData(const NodeId& source_id,
-                     const NonEmptyString& serialised_unresolved_entries);
+  void ApplySyncData(const NodeId& source_id, const NonEmptyString& serialised_unresolved_entries);
   void ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node);
 
   Status PutData(int32_t cost);
