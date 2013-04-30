@@ -32,7 +32,6 @@ class AccountDb;
 
 class MaidAccountMergePolicy {
  public:
-  typedef MaidAndPmidUnresolvedEntry UnresolvedEntry;
   explicit MaidAccountMergePolicy(AccountDb* account_db);
   MaidAccountMergePolicy(MaidAccountMergePolicy&& other);
   MaidAccountMergePolicy& operator=(MaidAccountMergePolicy&& other);
@@ -41,9 +40,9 @@ class MaidAccountMergePolicy {
   int32_t AllowDelete(const typename Data::name_type& name);
 
  protected:
-  void Merge(const UnresolvedEntry& unresolved_entry);
+  void Merge(const UnresolvedEntry<nfs::Persona::kMaidAccountHolder>& unresolved_entry);
 
-  std::vector<UnresolvedEntry> unresolved_data_;
+  std::vector<UnresolvedEntry<nfs::Persona::kMaidAccountHolder>> unresolved_data_;
   AccountDb* account_db_;
 
  private:
@@ -55,7 +54,7 @@ class MaidAccountMergePolicy {
   MaidAccountMergePolicy& operator=(const MaidAccountMergePolicy&);
 
   void MergePut(const DataNameVariant& data_name,
-                UnresolvedEntry::Value cost,
+                typedef UnresolvedEntry<nfs::Persona::kMaidAccountHolder>::Value cost,
                 const NonEmptyString& serialised_db_value);
   void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
   NonEmptyString SerialiseDbValue(DbValue db_value) const;
