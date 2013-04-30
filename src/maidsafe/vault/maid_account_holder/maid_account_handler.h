@@ -77,6 +77,7 @@ class MaidAccountHandler {
                const typename Data::name_type& data_name,
                int32_t cost,
                RequireNoAccount);  // only Maid and AnMaid
+  MaidAccount::Status AllowPut(const MaidName& account_name, int32_t cost) const;
 
   template<typename Data>
   void DeleteData(const MaidName& account_name, const typename Data::name_type& data_name);

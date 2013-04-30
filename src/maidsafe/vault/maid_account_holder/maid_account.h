@@ -47,7 +47,7 @@ class MaidAccountHandlerTypedTest;
 
 class MaidAccount {
  public:
-  enum class Status { kOk, kLowSpace };
+  enum class Status { kOk, kLowSpace, kNoSpace };
   typedef MaidName name_type;
   typedef TaggedValue<NonEmptyString, struct SerialisedMaidAccountTag> serialised_type;
 
@@ -77,7 +77,7 @@ class MaidAccount {
   void ApplySyncData(const NodeId& source_id, const NonEmptyString& serialised_unresolved_entries);
   void ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node);
 
-  Status PutData(int32_t cost);
+  Status AllowPut(int32_t cost) const;
   // This offers the strong exception guarantee
   template<typename Data>
   void DeleteData(const typename Data::name_type& name) {
@@ -101,6 +101,7 @@ class MaidAccount {
   std::unique_ptr<AccountDb> account_db_;
   Sync<MaidAccountMergePolicy> sync_;
   uint16_t account_transfer_nodes_;
+  static const int kSyncTriggerCount_;
 };
 
 }  // namespace vault

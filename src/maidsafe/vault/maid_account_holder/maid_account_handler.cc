@@ -103,6 +103,15 @@ void MaidAccountHandler::ReplaceNodeInSyncList(const MaidName& account_name,
   maid_accounts_.at(account_name)->ReplaceNodeInSyncList(old_node, new_node);
 }
 
+MaidAccount::Status MaidAccountHandler::AllowPut(const MaidName& account_name, int32_t cost) const {
+  if (cost > 0) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return maid_accounts_.at(account_name)->AllowPut(cost);
+  } else {
+    return MaidAccount::Status::kOk;
+  }
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

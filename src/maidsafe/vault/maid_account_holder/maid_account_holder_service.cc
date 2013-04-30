@@ -27,18 +27,22 @@ namespace vault {
 namespace detail {
 
 template<>
-int32_t CalculateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&) {
+int32_t EstimateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&) {
   return 0;
 }
 
 template<>
-int32_t CalculateCost<passport::PublicMaid>(const passport::PublicMaid&) {
+int32_t EstimateCost<passport::PublicMaid>(const passport::PublicMaid&) {
   return 0;
 }
 
 template<>
-int32_t CalculateCost<passport::PublicPmid>(const passport::PublicPmid&) {
+int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&) {
   return 0;
+}
+
+MaidName GetMaidAccountName(const nfs::DataMessage& data_message) {
+  return MaidName(Identity(data_message.source().node_id.string()));
 }
 
 }  // namespace detail
@@ -104,6 +108,18 @@ void MaidAccountHolderService::ValidateSender(const nfs::GenericMessage& generic
     if (!FromMaidAccountHolder(generic_message) || !ForThisPersona(generic_message))
       ThrowError(CommonErrors::invalid_parameter);
   }
+}
+
+
+// =============== Put/Delete data =================================================================
+
+void MaidAccountHolderService::SendReplyAndAddToAccumulator(
+    const nfs::DataMessage& data_message,
+    const routing::ReplyFunctor& reply_functor,
+    const nfs::Reply& reply) {
+  reply_functor(reply.Serialise()->string());
+  std::lock_guard<std::mutex> lock(accumulator_mutex_);
+  accumulator_.SetHandled(data_message, reply.error());
 }
 
 
@@ -233,9 +249,9 @@ void MaidAccountHolderService::HandleAccountTransfer(const nfs::GenericMessage& 
 // =============== PMID totals =====================================================================
 
 void MaidAccountHolderService::UpdatePmidTotals(const MaidName& /*account_name*/) {
-  //auto pmid_names(maid_account_handler_.GetPmidNames(account_name));
-  //for (const auto& pmid_name : pmid_names)
-  //  nfs_.
+  auto pmid_names(maid_account_handler_.GetPmidNames(account_name));
+  for (const auto& pmid_name : pmid_names)
+    nfs_.
 }
 
 void MaidAccountHolderService::UpdatePmidTotalsCallback(

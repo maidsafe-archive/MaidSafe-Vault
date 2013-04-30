@@ -27,6 +27,8 @@ namespace maidsafe {
 
 namespace vault {
 
+const int MaidAccount::kSyncTriggerCount_(1);
+
 MaidAccount::MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_node_id)
     : maid_name_(maid_name),
       pmid_totals_(),
@@ -173,6 +175,9 @@ void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
 }
 
 NonEmptyString MaidAccount::GetSyncData() {
+  if (sync_.GetUnresolvedCount() < kSyncTriggerCount_)
+    return NonEmptyString();
+
   auto unresolved_entries(sync_.GetUnresolvedData());
   if (unresolved_entries.empty())
     return NonEmptyString();
@@ -194,9 +199,14 @@ void MaidAccount::ApplySyncData(const NodeId& source_id,
   for (int i(0); i != proto_unresolved_entries.serialised_unresolved_entry_size(); ++i) {
     MaidAndPmidUnresolvedEntry entry(MaidAndPmidUnresolvedEntry::serialised_type(
         NonEmptyString(proto_unresolved_entries.serialised_unresolved_entry(i))));
-    if (sync_.AddUnresolvedEntry(entry, source_id))
-      total_put_data_ += entry.cost;
+    if (sync_.AddUnresolvedEntry(entry, source_id)) {
+      if (entry.data_name_and_action.second == nfs::MessageAction::kPut)
+        total_put_data_ += entry.cost;
+      else
+        total_put_data_ -= entry.cost;
+    }
   }
+  sync_++
 }
 
 void MaidAccount::ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node) {
@@ -205,11 +215,11 @@ void MaidAccount::ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& ne
   sync_.ReplaceNode(old_node, new_node);
 }
 
-MaidAccount::Status MaidAccount::PutData(int32_t cost) {
+MaidAccount::Status MaidAccount::AllowPut(int32_t cost) const {
   if (total_claimed_available_size_by_pmids_ < total_put_data_ + cost)
-    ThrowError(VaultErrors::not_enough_space);
+    return Status::kNoSpace;
 
-  return ((total_claimed_available_size_by_pmids_ / 10) * 9 < total_put_data_ + cost) ?
+  return ((total_claimed_available_size_by_pmids_ / 100) * 3 < total_put_data_ + cost) ?
          Status::kLowSpace : Status::kOk;
 }
 

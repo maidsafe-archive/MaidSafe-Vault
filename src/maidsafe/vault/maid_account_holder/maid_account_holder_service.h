@@ -42,8 +42,6 @@ namespace vault {
 struct SharedResponse;
 struct PmidRegistrationOp;
 
-namespace protobuf { class MaidAccountSyncResponse; }
-
 class MaidAccountHolderService {
  public:
   MaidAccountHolderService(const passport::Pmid& pmid,
@@ -74,8 +72,6 @@ class MaidAccountHolderService {
   template<typename Data>
   void HandleDelete(const nfs::DataMessage& data_message,
                     const routing::ReplyFunctor& reply_functor);
-  template<typename Data>
-  typename Data::name_type GetDataName(const nfs::DataMessage& data_message) const;
   typedef std::true_type UniqueDataType;
   template<typename Data>
   void SendEarlySuccessReply(const nfs::DataMessage& /*data_message*/,
@@ -88,19 +84,20 @@ class MaidAccountHolderService {
                              const routing::ReplyFunctor& reply_functor,
                              bool low_space,
                              NonUniqueDataType);
+  void SendReplyAndAddToAccumulator(const nfs::DataMessage& data_message,
+                                    const routing::ReplyFunctor& reply_functor,
+                                    const nfs::Reply& reply);
 
   template<typename Data>
   void HandlePutResult(const nfs::Reply& overall_result,
-                       const MaidName& account_name,
-                       const typename Data::name_type& data_name,
+                       const nfs::DataMessage& data_message,
                        routing::ReplyFunctor client_reply_functor,
                        bool low_space,
                        UniqueDataType);
 
   template<typename Data>
   void HandlePutResult(const nfs::Reply& overall_result,
-                       const MaidName& account_name,
-                       const typename Data::name_type& data_name,
+                       const nfs::DataMessage& data_message,
                        routing::ReplyFunctor client_reply_functor,
                        bool low_space,
                        NonUniqueDataType);

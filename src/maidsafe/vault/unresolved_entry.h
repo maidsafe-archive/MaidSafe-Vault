@@ -14,8 +14,10 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <set>
 #include <utility>
+#include <vector>
+
+#include "boost/optional/optional.hpp"
 
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/data_types/data_name_variant.h"
@@ -26,32 +28,67 @@ namespace maidsafe {
 
 namespace vault {
 
-struct MaidAndPmidUnresolvedEntry {
-  typedef std::pair<DataNameVariant, nfs::MessageAction> Key;
+template<nfs::Persona persona>
+struct UnresolvedEntry {};
+
+template<>
+struct UnresolvedEntry<nfs::Persona::kMaidAccountHolder> {
+  struct Key {
+    DataNameVariant data_name;
+    nfs::MessageAction action;
+    int32_t entry_id;
+  };
   typedef int32_t Value;
-  typedef TaggedValue<NonEmptyString,
-                      struct SerialisedMaidAndPmidUnresolvedEntryTag> serialised_type;
+  typedef TaggedValue<NonEmptyString, struct SerialisedMaidUnresolvedEntryTag> serialised_type;
 
-  MaidAndPmidUnresolvedEntry();
-  explicit MaidAndPmidUnresolvedEntry(const serialised_type& serialised_copy);
-  MaidAndPmidUnresolvedEntry(const MaidAndPmidUnresolvedEntry& other);
-  MaidAndPmidUnresolvedEntry(MaidAndPmidUnresolvedEntry&& other);
-  MaidAndPmidUnresolvedEntry& operator=(MaidAndPmidUnresolvedEntry other);
-  MaidAndPmidUnresolvedEntry(const Key& data_name_and_action, Value cost);
-  friend void swap(MaidAndPmidUnresolvedEntry& lhs,
-                   MaidAndPmidUnresolvedEntry& rhs) MAIDSAFE_NOEXCEPT;
+  UnresolvedEntry();
+  explicit UnresolvedEntry(const serialised_type& serialised_copy);
+  UnresolvedEntry(const UnresolvedEntry& other);
+  UnresolvedEntry(UnresolvedEntry&& other);
+  UnresolvedEntry& operator=(UnresolvedEntry other);
+  UnresolvedEntry(const DataNameVariant& data_name,
+                  nfs::MessageAction action,
+                  Value cost,
+                  const NodeId& sender_id);
+  friend void swap(UnresolvedEntry& lhs, UnresolvedEntry& rhs) MAIDSAFE_NOEXCEPT;
   serialised_type Serialise() const;
-  Key key() const { return data_name_and_action; }
 
-  Key data_name_and_action;
-  Value cost;
-  std::set<NodeId> peers;
+  Key key;
+  std::vector<std::pair<NodeId, boost::optional<Value>>> peers_and_values;
   int sync_counter;
   bool dont_add_to_db;
+};
+
+template<>
+struct UnresolvedEntry<nfs::Persona::kPmidAccountHolder> {
+  struct Key {
+    DataNameVariant data_name;
+    nfs::MessageAction action;
+  };
+  typedef int32_t Value;
+  typedef TaggedValue<NonEmptyString, struct SerialisedPmidUnresolvedEntryTag> serialised_type;
+
+  UnresolvedEntry();
+  explicit UnresolvedEntry(const serialised_type& serialised_copy);
+  UnresolvedEntry(const UnresolvedEntry& other);
+  UnresolvedEntry(UnresolvedEntry&& other);
+  UnresolvedEntry& operator=(UnresolvedEntry other);
+  UnresolvedEntry(const DataNameVariant& data_name,
+                  nfs::MessageAction action,
+                  Value cost,
+                  const NodeId& sender_id);
+  friend void swap(UnresolvedEntry& lhs, UnresolvedEntry& rhs) MAIDSAFE_NOEXCEPT;
+  serialised_type Serialise() const;
+
+  Key key;
+  std::vector<std::pair<NodeId, boost::optional<Value>>> peers_and_values;
+  int sync_counter;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#include "maidsafe/vault/unresolved_entry-inl.h"
 
 #endif  // MAIDSAFE_VAULT_UNRESOLVED_ACTION_H_

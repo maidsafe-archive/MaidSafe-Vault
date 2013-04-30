@@ -177,7 +177,7 @@ std::vector<nfs::Reply> Accumulator<Name>::PushSingleResult(
   for (auto& request : pending_requests_) {
     if (request.msg.message_id() == data_message.message_id() &&
         request.msg.source().node_id == data_message.source().node_id) {
-      replies.push_back(request.return_code);
+      replies.emplace_back(request.return_code);
     }
   }
   // TODO(Profiling) - Consider holding requests in a map/set and each having a timestamp.

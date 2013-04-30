@@ -31,17 +31,23 @@ class Sync : public MergePolicy {
   Sync(AccountDb* account_db, const NodeId& this_node_id);
   Sync(Sync&& other);
   Sync& operator=(Sync&& other);
-  // Returns true if the entry becomes resolved
+  // This is called when receiving a Sync message from a peer or this node.  Returns true if the
+  // entry becomes resolved.
   bool AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry& entry, const NodeId& node_id);
+  void AddLocalEntry(typename MergePolicy::UnresolvedEntry& entry);
   // Returns true if the entry becomes resolved
   bool AddAccountTransferRecord(typename MergePolicy::UnresolvedEntry& entry,
                                 const NodeId& node_id,
                                 bool all_account_transfers_received);
   void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
-  // calling this WILL increment the sync counter and delete data that reaches the limit
-  std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData();
+  std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData() const;
+  size_t GetUnresolvedCount() const { return MergePolicy::unresolved_data_.size(); }
   // int32_t sync_counter_max() const { return sync_counter_max_; }
   // void set_sync_counter_max(int32_t new_count) { sync_counter_max_ = new_count; }
+
+  // Calling this will increment the sync counter and delete entries that reach the
+  // 'sync_counter_max_' limit.
+  void IncrementSyncAttmepts();
 
  private:
   Sync(const Sync&);

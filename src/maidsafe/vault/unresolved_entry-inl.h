@@ -9,6 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
+#ifndef MAIDSAFE_VAULT_UNRESOLVED_ENTRY_INL_H_
+#define MAIDSAFE_VAULT_UNRESOLVED_ENTRY_INL_H_
 
 #include "maidsafe/vault/unresolved_entry.h"
 
@@ -22,48 +24,49 @@ namespace maidsafe {
 namespace vault {
 
 MaidAndPmidUnresolvedEntry::MaidAndPmidUnresolvedEntry()
-    : data_name_and_action(),
-      cost(0),
-      peers(),
+    : key(),
+      peers_and_values(),
       sync_counter(0),
       dont_add_to_db(false) {}
 
 MaidAndPmidUnresolvedEntry::MaidAndPmidUnresolvedEntry(const serialised_type& serialised_copy)
-    : data_name_and_action(),
-      cost(0),
-      peers(),
+    : key(),
+      peers_and_values(),
       sync_counter(0),
       dont_add_to_db(false) {
   protobuf::MaidAndPmidUnresolvedEntry proto_copy;
   if (!proto_copy.ParseFromString(serialised_copy->string()))
     ThrowError(CommonErrors::parsing_error);
 
-  data_name_and_action.first = GetDataNameVariant(static_cast<DataTagValue>(proto_copy.type()),
-                                                  Identity(proto_copy.name()));
-  data_name_and_action.second = static_cast<nfs::MessageAction>(proto_copy.action());
-  if (!(data_name_and_action.second == nfs::MessageAction::kPut ||
-        data_name_and_action.second == nfs::MessageAction::kDelete))
+  key.data_name = GetDataNameVariant(static_cast<DataTagValue>(proto_copy.type()),
+                                     Identity(proto_copy.name()));
+  key.action = static_cast<nfs::MessageAction>(proto_copy.action());
+  if (proto_copy.has_entry_id())
+    key.entry_id = proto_copy.entry_id();
+  if (!(key.action == nfs::MessageAction::kPut || key.action == nfs::MessageAction::kDelete))
     ThrowError(CommonErrors::parsing_error);
-
-  cost = proto_copy.cost();
 
   // TODO(Fraser#5#): 2013-04-18 - Replace magic number below
-  if (proto_copy.peers_size() > 2)
+  if (proto_copy.values_size() > 2)
     ThrowError(CommonErrors::parsing_error);
+
+  for (int i(0); i != proto_copy.values_size(); ++i) {
+    peers_and_values.emplace_back(std::make_pair(NodeId(proto_copy.values(i).peer()),
+                                                 proto_copy.values(i).cost()));
+  }
+
   dont_add_to_db = proto_copy.dont_add_to_db();
 }
 
 MaidAndPmidUnresolvedEntry::MaidAndPmidUnresolvedEntry(const MaidAndPmidUnresolvedEntry& other)
-    : data_name_and_action(other.data_name_and_action),
-      cost(other.cost),
-      peers(other.peers),
+    : key(other.key),
+      peers_and_values(other.peers_and_values),
       sync_counter(other.sync_counter),
       dont_add_to_db(other.dont_add_to_db) {}
 
 MaidAndPmidUnresolvedEntry::MaidAndPmidUnresolvedEntry(MaidAndPmidUnresolvedEntry&& other)
-    : data_name_and_action(std::move(other.data_name_and_action)),
-      cost(std::move(other.cost)),
-      peers(std::move(other.peers)),
+    : key(std::move(other.key)),
+      peers_and_values(std::move(other.peers_and_values)),
       sync_counter(std::move(other.sync_counter)),
       dont_add_to_db(std::move(other.dont_add_to_db)) {}
 
@@ -73,13 +76,15 @@ MaidAndPmidUnresolvedEntry& MaidAndPmidUnresolvedEntry::operator=(
   return *this;
 }
 
-MaidAndPmidUnresolvedEntry::MaidAndPmidUnresolvedEntry(const Key& data_name_and_action_in,
-                                                         Value cost_in)
-    : data_name_and_action(data_name_and_action_in),
-      cost(cost_in),
-      peers(),
+MaidAndPmidUnresolvedEntry::MaidAndPmidUnresolvedEntry(const Key& data_name_and_action,
+                                                       Value cost,
+                                                       const NodeId& sender_id)
+    : key(),
+      peers_and_values(),
       sync_counter(0),
-      dont_add_to_db(false) {}
+      dont_add_to_db(false) {
+  key.data_name = 
+}
 
 void swap(MaidAndPmidUnresolvedEntry& lhs, MaidAndPmidUnresolvedEntry& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
@@ -109,3 +114,5 @@ MaidAndPmidUnresolvedEntry::serialised_type MaidAndPmidUnresolvedEntry::Serialis
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_UNRESOLVED_ENTRY_INL_H_

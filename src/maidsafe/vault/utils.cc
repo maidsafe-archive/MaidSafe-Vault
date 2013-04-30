@@ -97,12 +97,6 @@ bool ShouldRetry(routing::Routing& routing, const nfs::DataMessage& data_message
                                  NodeId(data_message.data().name.string()));
 }
 
-MaidName GetSourceMaidName(const nfs::DataMessage& data_message) {
-  if (data_message.source().persona != nfs::Persona::kClientMaid)
-    ThrowError(VaultErrors::permission_denied);
-  return MaidName(Identity(data_message.source().node_id.string()));
-}
-
 void SendReply(const nfs::DataMessage& original_message,
                const maidsafe_error& return_code,
                const routing::ReplyFunctor& reply_functor) {

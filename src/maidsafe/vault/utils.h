@@ -77,8 +77,6 @@ void InitialiseDirectory(const boost::filesystem::path& directory);
 
 bool ShouldRetry(routing::Routing& routing, const nfs::DataMessage& data_message);
 
-MaidName GetSourceMaidName(const nfs::DataMessage& data_message);
-
 template<typename Data>
 bool IsDataElement(const typename Data::name_type& name,
                    const DataNameVariant& data_name_variant);

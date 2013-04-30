@@ -60,6 +60,11 @@ Sync<MergePolicy>::FindUnresolved(const typename MergePolicy::UnresolvedEntry::K
 }
 
 template<typename MergePolicy>
+void Sync<MergePolicy>::AddLocalEntry(typename MergePolicy::UnresolvedEntry& entry) {
+
+}
+
+template<typename MergePolicy>
 bool Sync<MergePolicy>::AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry& entry,
                                            const NodeId& node_id) {
   auto found = FindUnresolved(entry.key());
@@ -140,6 +145,9 @@ std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresol
                });
   return return_vec;
 }
+
+template<typename MergePolicy>
+
 
 }  // namespace vault
 
