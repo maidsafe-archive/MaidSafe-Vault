@@ -183,9 +183,8 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
         detail::CreateUnresolvedEntry<Data, nfs::MessageAction::kPut>(data_message, cost,
                                                                       routing_.kNodeId()));
 
-                                                                                        sync_.AddUnresolvedEntry(unresolved_entry);
-                                                                                        Sync(detail::GetMaidAccountName(data_message));
-
+    maid_account_handler_.AddLocalEntry(detail::GetMaidAccountName(data_message), unresolved_entry);
+    // TODO(dirvine) SEND SYNC !!!!
   } else {
     SendReplyAndAddToAccumulator(data_message, client_reply_functor, overall_result);
   }

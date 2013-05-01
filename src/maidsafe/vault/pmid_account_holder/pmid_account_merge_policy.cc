@@ -35,13 +35,14 @@ PmidAccountMergePolicy& PmidAccountMergePolicy::operator=(PmidAccountMergePolicy
 }
 
 void PmidAccountMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
-  auto serialised_db_value(GetFromDb(unresolved_entry.data_name_and_action.first));
-  if (unresolved_entry.data_name_and_action.second == nfs::MessageAction::kPut &&
-      !unresolved_entry.dont_add_to_db) {
-    MergePut(unresolved_entry.data_name_and_action.first, unresolved_entry.cost,
+  auto serialised_db_value(GetFromDb(unresolved_entry.key.first));
+  if (unresolved_entry.key.second == nfs::MessageAction::kPut &&
+      !unresolved_entry.dont_add_to_db &&
+      unresolved_entry.messages_contents.front().value) {
+    MergePut(unresolved_entry.key.first, *unresolved_entry.messages_contents.front().value,
              serialised_db_value);
-  } else if (unresolved_entry.data_name_and_action.second == nfs::MessageAction::kDelete) {
-    MergeDelete(unresolved_entry.data_name_and_action.first, serialised_db_value);
+  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
+    MergeDelete(unresolved_entry.key.first, serialised_db_value);
   } else {
     ThrowError(CommonErrors::invalid_parameter);
   }

@@ -86,6 +86,7 @@ struct UnresolvedData<nfs::Persona::kPmidAccountHolder> {
   Key key;
   std::vector<MessageContent> messages_contents;
   int sync_counter;
+  bool dont_add_to_db;
 };
 
 }  // namespace vault
