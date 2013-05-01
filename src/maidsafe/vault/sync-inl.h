@@ -125,7 +125,7 @@ void Sync<MergePolicy>::ReplaceNode(const NodeId& old_node, const NodeId& new_no
 }
 
 template<typename MergePolicy>
-std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresolvedData() {
+std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresolvedData() const {
   // increment sync count in each record or remove records if it's too old
   auto itr = std::begin(MergePolicy::unresolved_data_);
   while (itr != std::end(MergePolicy::unresolved_data_)) {
@@ -145,9 +145,6 @@ std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresol
                });
   return return_vec;
 }
-
-template<typename MergePolicy>
-
 
 }  // namespace vault
 

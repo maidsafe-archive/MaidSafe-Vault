@@ -19,24 +19,23 @@
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/passport/types.h"
+#include "maidsafe/routing/api_config.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/types.h"
-
-#include "maidsafe/vault/sync.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-template<typename SyncPolicy, typename VaultManagement>
-class VaultPostPolicy : public SyncPolicy, public VaultManagement {
+template<typename SyncPolicy, typename PersonaMiscellaneousPolicy>
+class VaultPostPolicy : public SyncPolicy, public PersonaMiscellaneousPolicy {
  public:
   VaultPostPolicy(routing::Routing& routing, const passport::Pmid& pmid)
       : SyncPolicy(routing, pmid),
-        VaultManagement(routing, pmid) {}
+        PersonaMiscellaneousPolicy(routing, pmid) {}
 };
 
 template<nfs::Persona source_persona>
@@ -80,14 +79,62 @@ class SyncPolicy {
   const passport::Pmid kPmid_;
 };
 
-class MaidAccountHolderManagement {
+class MaidAccountHolderMiscellaneousPolicy {
  public:
-  MaidAccountHolderManagement(routing::Routing& routing, const passport::Pmid& pmid)
+  MaidAccountHolderMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
       : routing_(routing),
         kSource_(nfs::Persona::kMaidAccountHolder, routing_.kNodeId()),
         kPmid_(pmid) {}
 
-  
+  void RequestPmidTotals(const passport::PublicPmid::name_type& pmid_name,
+                         const routing::ResponseFunctor& callback) {
+    nfs::GenericMessage generic_message(nfs::GenericMessage::Action::kGetPmidTotals,
+        nfs::Persona::kPmidAccountHolder, kSource_, pmid_name.data, NonEmptyString());
+    nfs::Message message(nfs::GenericMessage::message_type_identifier,
+                         generic_message.Serialise().data);
+    routing_.SendGroup(NodeId(generic_message.name().string()), message.Serialise()->string(),
+                       false, callback);
+  }
+
+ private:
+  routing::Routing& routing_;
+  const nfs::PersonaId kSource_;
+  const passport::Pmid kPmid_;
+};
+
+class MetadataManagerMiscellaneousPolicy {
+ public:
+  MetadataManagerMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
+      : routing_(routing),
+        kSource_(nfs::Persona::kMaidAccountHolder, routing_.kNodeId()),
+        kPmid_(pmid) {}
+
+ private:
+  routing::Routing& routing_;
+  const nfs::PersonaId kSource_;
+  const passport::Pmid kPmid_;
+};
+
+class PmidAccountHolderMiscellaneousPolicy {
+ public:
+  PmidAccountHolderMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
+      : routing_(routing),
+        kSource_(nfs::Persona::kMaidAccountHolder, routing_.kNodeId()),
+        kPmid_(pmid) {}
+
+ private:
+  routing::Routing& routing_;
+  const nfs::PersonaId kSource_;
+  const passport::Pmid kPmid_;
+};
+
+class DataHolderMiscellaneousPolicy {
+ public:
+  DataHolderMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
+      : routing_(routing),
+        kSource_(nfs::Persona::kMaidAccountHolder, routing_.kNodeId()),
+        kPmid_(pmid) {}
+
  private:
   routing::Routing& routing_;
   const nfs::PersonaId kSource_;
@@ -95,16 +142,16 @@ class MaidAccountHolderManagement {
 };
 
 typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMaidAccountHolder>,
-                        MaidAccountHolderManagement> MaidAccountHolderPostPolicy;
+                        MaidAccountHolderMiscellaneousPolicy> MaidAccountHolderPostPolicy;
 
 typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMetadataManager>,
-    VaultManagement<nfs::Persona::kMetadataManager>> MetadataManagerPostPolicy;
+                        MetadataManagerMiscellaneousPolicy> MetadataManagerPostPolicy;
 
 typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kPmidAccountHolder>,
-    VaultManagement<nfs::Persona::kPmidAccountHolder>> PmidAccountHolderPostPolicy;
+                        PmidAccountHolderMiscellaneousPolicy> PmidAccountHolderPostPolicy;
 
 typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kDataHolder>,
-    VaultManagement<nfs::Persona::kDataHolder>> DataHolderPostPolicy;
+                        DataHolderMiscellaneousPolicy> DataHolderPostPolicy;
 
 }  // namespace vault
 

@@ -2,16 +2,19 @@ package maidsafe.vault.protobuf;
 option optimize_for = LITE_RUNTIME;
 
 message MaidAndPmidUnresolvedEntry {
-  message Value {
-    required bytes peer = 1;
-    required int32 cost = 2;
+  message Key {
+    required int32 type = 1;
+    required bytes name = 2;
+    required int32 action = 3;
   }
-  required int32 type = 1;
-  required bytes name = 2;
-  required int32 action = 3;
-  optional int32 entry_id = 4;
-  repeated Value values = 5;
-  required bool dont_add_to_db = 6;
+  message MessageContent {
+    required bytes peer = 1;
+    optional int32 entry_id = 2;
+    optional int32 value = 3;
+  }
+  required Key key = 1;
+  repeated MessageContent messages_contents = 2;
+  optional bool dont_add_to_db = 3;
 }
 
 message UnresolvedEntries {

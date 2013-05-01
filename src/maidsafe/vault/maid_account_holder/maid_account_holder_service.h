@@ -35,12 +35,8 @@ namespace maidsafe {
 
 namespace vault {
 
-//   TODO(dirvine / Fraser) where does this go man !!
-//    protobuf::MaidAccount proto_maid_account;
-//    if (!proto_maid_account.ParseFromString(serialised_account->string()))
-//      ThrowError(CommonErrors::parsing_error);
-struct SharedResponse;
 struct PmidRegistrationOp;
+struct GetPmidTotalsOp;
 
 class MaidAccountHolderService {
  public:
@@ -121,9 +117,8 @@ class MaidAccountHolderService {
 
   // =============== PMID totals ===================================================================
   void UpdatePmidTotals(const MaidName& account_name);
-  void UpdatePmidTotalsCallback(const std::string& response,
-                                const MaidName& account_name,
-                                std::shared_ptr<SharedResponse> shared_response);
+  void UpdatePmidTotalsCallback(const std::string& serialised_reply,
+                                std::shared_ptr<GetPmidTotalsOp> op_data);
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;

@@ -248,16 +248,24 @@ void MaidAccountHolderService::HandleAccountTransfer(const nfs::GenericMessage& 
 
 // =============== PMID totals =====================================================================
 
-void MaidAccountHolderService::UpdatePmidTotals(const MaidName& /*account_name*/) {
+void MaidAccountHolderService::UpdatePmidTotals(const MaidName& account_name) {
   auto pmid_names(maid_account_handler_.GetPmidNames(account_name));
-  for (const auto& pmid_name : pmid_names)
-    nfs_.
+  for (const auto& pmid_name : pmid_names) {
+    auto op_data(std::make_shared<GetPmidTotalsOp>(account_name));
+    nfs_.RequestPmidTotals(pmid_name,
+                           [this, op_data](std::string serialised_reply) {
+                             UpdatePmidTotalsCallback(serialised_reply, op_data);
+                           });
+  }
 }
 
-void MaidAccountHolderService::UpdatePmidTotalsCallback(
-    const std::string& /*response*/,
-    const MaidName& /*account_name*/,
-    std::shared_ptr<SharedResponse> /*shared_response*/) {
+void MaidAccountHolderService::UpdatePmidTotalsCallback(const std::string& serialised_reply,
+                                                        std::shared_ptr<GetPmidTotalsOp> op_data) {
+  // 1] Parse reply - don't throw - need to add default-constructed PmidRecord if fails
+  // 2] Lock the mutex
+  // 3] add result to vector (assert <= 4)
+  // 4] if vector size < 4 return
+  // 5] else merge results and do maid_account_handler_.UpdatePmidTotals
 }
 
 void MaidAccountHolderService::HandleChurnEvent(routing::MatrixChange matrix_change) {

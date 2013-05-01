@@ -33,9 +33,10 @@ struct UnresolvedEntry {};
 
 template<>
 struct UnresolvedEntry<nfs::Persona::kMaidAccountHolder> {
+  typedef std::pair<DataNameVariant, nfs::MessageAction> Key;
   typedef int32_t Value;
   struct MessageContent {
-    NodeId node_id;
+    NodeId peer_id;
     boost::optional<int32_t> entry_id;
     boost::optional<Value> value;
   };
@@ -53,17 +54,18 @@ struct UnresolvedEntry<nfs::Persona::kMaidAccountHolder> {
   friend void swap(UnresolvedEntry& lhs, UnresolvedEntry& rhs) MAIDSAFE_NOEXCEPT;
   serialised_type Serialise() const;
 
-  std::pair<DataNameVariant, nfs::MessageAction> key;
-  std::vector<MessageContent> message_content;
+  Key key;
+  std::vector<MessageContent> messages_contents;
   int sync_counter;
   bool dont_add_to_db;
 };
 
 template<>
 struct UnresolvedEntry<nfs::Persona::kPmidAccountHolder> {
+  typedef std::pair<DataNameVariant, nfs::MessageAction> Key;
   typedef int32_t Value;
   struct MessageContent {
-    NodeId node_id;
+    NodeId peer_id;
     boost::optional<int32_t> entry_id;
     boost::optional<Value> value;
   };
@@ -80,8 +82,9 @@ struct UnresolvedEntry<nfs::Persona::kPmidAccountHolder> {
                   const NodeId& sender_id);
   friend void swap(UnresolvedEntry& lhs, UnresolvedEntry& rhs) MAIDSAFE_NOEXCEPT;
   serialised_type Serialise() const;
-  std::pair<DataNameVariant, nfs::MessageAction> key;
-  std::vector<MessageContent> message_content;
+
+  Key key;
+  std::vector<MessageContent> messages_contents;
   int sync_counter;
 };
 

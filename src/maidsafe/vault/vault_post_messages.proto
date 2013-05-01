@@ -1,11 +1,6 @@
 package maidsafe.vault.protobuf;
 option optimize_for = LITE_RUNTIME;
 
-// Question MAID Account Holder to PMID Account Holder (answer with PmidSize)
-message GetPmidSize {
-  required bytes pmid_name = 1;
-}
-
 // MPID Account Holder to Metadata Manager
 // MPID Account Holder to MPID ??
 message NodeDown {

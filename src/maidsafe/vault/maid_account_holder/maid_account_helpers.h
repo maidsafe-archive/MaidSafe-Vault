@@ -26,13 +26,6 @@ namespace maidsafe {
 
 namespace vault {
 
-struct SharedResponse {
-  SharedResponse() : mutex(), count(0), this_node_in_group(false) {}
-  std::mutex mutex;
-  int count;
-  bool this_node_in_group;
-};
-
 struct PmidRegistrationOp {
   PmidRegistrationOp(const nfs::PmidRegistration& pmid_registration_in,
                      const routing::ReplyFunctor& reply_functor_in)
@@ -59,6 +52,19 @@ void PmidRegistrationOp::SetPublicFob<passport::PublicMaid>(
 template<>
 void PmidRegistrationOp::SetPublicFob<passport::PublicPmid>(
     std::unique_ptr<passport::PublicPmid>&& pub_pmid);
+
+
+
+struct GetPmidTotalsOp {
+  explicit GetPmidTotalsOp(const MaidName& maid_account_name)
+      : kMaidAccountName(maid_account_name),
+        mutex(),
+        pmid_records_and_senders() {}
+  const MaidName kMaidAccountName;
+  std::mutex mutex;
+  std::vector<std::pair<PmidRecord, PmidName>> pmid_records_and_senders;
+};
+
 
 
 struct PmidTotals {

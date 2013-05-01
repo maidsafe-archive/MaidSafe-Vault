@@ -60,12 +60,12 @@ typename Data::name_type GetDataName(const nfs::DataMessage& data_message) {
 }
 
 template<typename Data, nfs::MessageAction action>
-MaidAndPmidUnresolvedEntry CreateUnresolvedEntry(const nfs::DataMessage& data_message,
-                                                 int32_t cost) {
+UnresolvedEntry<nfs::Persona::kMaidAccountHolder> CreateUnresolvedEntry(
+    const nfs::DataMessage& data_message, int32_t cost, const NodeId& this_id) {
   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
-  return MaidAndPmidUnresolvedEntry(
-      std::make_pair(DataNameVariant(GetDataName(data_message.data().name)), action), cost);
+  return UnresolvedEntry<nfs::Persona::kMaidAccountHolder>(
+      DataNameVariant(GetDataName(data_message.data().name)), action, cost, this_id);
 }
 
 }  // namespace detail
@@ -180,7 +180,8 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
     SendReplyAndAddToAccumulator(data_message, client_reply_functor, reply);
     auto cost(detail::EstimateCost(data_message.data()));
     auto unresolved_entry(
-        detail::CreateUnresolvedEntry<Data, nfs::MessageAction::kPut>(data_message, cost));
+        detail::CreateUnresolvedEntry<Data, nfs::MessageAction::kPut>(data_message, cost,
+                                                                      routing_.kNodeId()));
 
                                                                                         sync_.AddUnresolvedEntry(unresolved_entry);
                                                                                         Sync(detail::GetMaidAccountName(data_message));
@@ -202,7 +203,8 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
       proto_cost.ParseFromString(overall_result.data().string());
       int32_t cost(proto_cost.cost());
       auto unresolved_entry(
-          detail::CreateUnresolvedEntry<Data, nfs::MessageAction::kPut>(data_message, cost));
+          detail::CreateUnresolvedEntry<Data, nfs::MessageAction::kPut>(data_message, cost,
+                                                                        routing_.kNodeId()));
 
                                                                                 sync_.AddUnresolvedEntry(unresolved_entry, routing_.kNodeId());
                                                                                 Sync(detail::GetMaidAccountName(data_message));
