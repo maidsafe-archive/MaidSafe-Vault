@@ -30,7 +30,7 @@ namespace vault {
 
 class PmidAccountMergePolicy {
  public:
-  typedef MaidAndPmidUnresolvedEntry UnresolvedEntry;
+  typedef UnresolvedEntry<nfs::Persona::kPmidAccountHolder> UnresolvedEntry;
   explicit PmidAccountMergePolicy(AccountDb* account_db);
   PmidAccountMergePolicy(PmidAccountMergePolicy&& other);
   PmidAccountMergePolicy& operator=(PmidAccountMergePolicy&& other);

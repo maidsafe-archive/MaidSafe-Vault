@@ -11,6 +11,8 @@
 
 #include "maidsafe/vault/maid_account_holder/maid_account_merge_policy.h"
 
+#include <set>
+
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/account_db.h"
@@ -36,16 +38,56 @@ MaidAccountMergePolicy& MaidAccountMergePolicy::operator=(MaidAccountMergePolicy
 }
 
 void MaidAccountMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
-  auto serialised_db_value(GetFromDb(unresolved_entry.data_name_and_action.first));
-  if (unresolved_entry.data_name_and_action.second == nfs::MessageAction::kPut &&
+  auto serialised_db_value(GetFromDb(unresolved_entry.key.first));
+  if (unresolved_entry.key.second == nfs::MessageAction::kPut &&
       !unresolved_entry.dont_add_to_db) {
-    MergePut(unresolved_entry.data_name_and_action.first, unresolved_entry.cost,
-             serialised_db_value);
-  } else if (unresolved_entry.data_name_and_action.second == nfs::MessageAction::kDelete) {
-    MergeDelete(unresolved_entry.data_name_and_action.first, serialised_db_value);
+    MergePut(unresolved_entry.key.first, MergedCost(unresolved_entry), serialised_db_value);
+  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
+    MergeDelete(unresolved_entry.key.first, serialised_db_value);
   } else {
     ThrowError(CommonErrors::invalid_parameter);
   }
+}
+
+MaidAccountMergePolicy::UnresolvedEntry::Value MaidAccountMergePolicy::MergedCost(
+    const UnresolvedEntry& unresolved_entry) const {
+  assert(unresolved_entry.key.second == nfs::MessageAction::kPut &&
+         !unresolved_entry.dont_add_to_db);
+  std::map<UnresolvedEntry::Value, int> all_costs;
+  auto most_frequent_itr(std::end(unresolved_entry.messages_contents));
+  int most_frequent(0);
+  for (auto itr(std::begin(unresolved_entry.messages_contents));
+       itr != std::end(unresolved_entry.messages_contents); ++itr) {
+    if ((*itr).value) {
+      int this_value_count(++all_costs[*(*itr).value]);
+      if (this_value_count > most_frequent) {
+        most_frequent = this_value_count;
+        most_frequent_itr = itr;
+      }
+    }
+  }
+
+  if (all_costs.empty())
+    ThrowError(CommonErrors::unknown);
+  // This will always return here is all_costs.size() == 1, or if == 2 and both costs are the same.
+  if (most_frequent > all_costs.size() / 2)
+    return *(*most_frequent_itr).value;
+  // Strip the first and last costs if they only have a count of 1.
+  if (all_costs.size() > 2U) {
+    if ((*std::begin(all_costs)).second == 1)
+      all_costs.erase(std::begin(all_costs));
+    if ((*(--std::end(all_costs))).second == 1)
+      all_costs.erase(--std::end(all_costs));
+  }
+
+  UnresolvedEntry::Value total_cost(0);
+  int count(0);
+  for (const auto& cost : all_costs) {
+    total_cost += (cost.first * cost.second);
+    count += cost.second;
+  }
+
+  return total_cost / count;
 }
 
 void MaidAccountMergePolicy::MergePut(const DataNameVariant& data_name,
