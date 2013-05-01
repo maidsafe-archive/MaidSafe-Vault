@@ -32,7 +32,7 @@ class AccountDb;
 
 class MaidAccountMergePolicy {
  public:
-  typedef UnresolvedEntry<nfs::Persona::kMaidAccountHolder> UnresolvedEntry;
+  typedef UnresolvedData<nfs::Persona::kMaidAccountHolder> UnresolvedEntry;
   explicit MaidAccountMergePolicy(AccountDb* account_db);
   MaidAccountMergePolicy(MaidAccountMergePolicy&& other);
   MaidAccountMergePolicy& operator=(MaidAccountMergePolicy&& other);
@@ -82,8 +82,8 @@ int32_t MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name
   int32_t pending_puts(0), pending_deletes(0);
 
   while (itr != std::end(unresolved_data_)) {
-    if ((*itr).data_name_and_action.first == name_as_variant) {
-      if ((*itr).data_name_and_action.second == nfs::MessageAction::kPut) {
+    if ((*itr).key.first == name_as_variant) {
+      if ((*itr).key.second == nfs::MessageAction::kPut) {
         if ((*itr).dont_add_to_db) {
           // A delete request must have been applied for this to be true, but it will (correctly)
           // silently fail when it comes to merging since this put request will not have been
@@ -92,11 +92,14 @@ int32_t MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name
         } else {
           ++pending_puts;
           last_put_still_to_be_added_to_db = itr;
-          if (size != 0)
-            size.data = (*itr).cost;
+          if (size != 0 && (*itr).messages_contents.front().value) {
+              // TODO(dirvine) we should average these results rather than taking the first
+            size.data = *(*itr).messages_contents.front().value;
+          }
+
         }
       } else {
-        assert((*itr).data_name_and_action.second == nfs::MessageAction::kDelete);
+        assert((*itr).key.second == nfs::MessageAction::kDelete);
         ++pending_deletes;
       }
     }

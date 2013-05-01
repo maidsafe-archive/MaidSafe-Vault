@@ -29,10 +29,10 @@ namespace maidsafe {
 namespace vault {
 
 template<nfs::Persona persona>
-struct UnresolvedEntry {};
+struct UnresolvedData {};
 
 template<>
-struct UnresolvedEntry<nfs::Persona::kMaidAccountHolder> {
+struct UnresolvedData<nfs::Persona::kMaidAccountHolder> {
   typedef std::pair<DataNameVariant, nfs::MessageAction> Key;
   typedef int32_t Value;
   struct MessageContent {
@@ -42,16 +42,16 @@ struct UnresolvedEntry<nfs::Persona::kMaidAccountHolder> {
   };
   typedef TaggedValue<NonEmptyString, struct SerialisedMaidUnresolvedEntryTag> serialised_type;
 
-  UnresolvedEntry();
-  explicit UnresolvedEntry(const serialised_type& serialised_copy);
-  UnresolvedEntry(const UnresolvedEntry& other);
-  UnresolvedEntry(UnresolvedEntry&& other);
-  UnresolvedEntry& operator=(UnresolvedEntry other);
-  UnresolvedEntry(const DataNameVariant& data_name,
+  UnresolvedData();
+  explicit UnresolvedData(const serialised_type& serialised_copy);
+  UnresolvedData(const UnresolvedData& other);
+  UnresolvedData(UnresolvedData&& other);
+  UnresolvedData& operator=(UnresolvedData other);
+  UnresolvedData(const DataNameVariant& data_name,
                   nfs::MessageAction action,
                   Value cost,
                   const NodeId& sender_id);
-  friend void swap(UnresolvedEntry& lhs, UnresolvedEntry& rhs) MAIDSAFE_NOEXCEPT;
+  friend void swap(UnresolvedData& lhs, UnresolvedData& rhs) MAIDSAFE_NOEXCEPT;
   serialised_type Serialise() const;
 
   Key key;
@@ -61,7 +61,7 @@ struct UnresolvedEntry<nfs::Persona::kMaidAccountHolder> {
 };
 
 template<>
-struct UnresolvedEntry<nfs::Persona::kPmidAccountHolder> {
+struct UnresolvedData<nfs::Persona::kPmidAccountHolder> {
   typedef std::pair<DataNameVariant, nfs::MessageAction> Key;
   typedef int32_t Value;
   struct MessageContent {
@@ -71,16 +71,16 @@ struct UnresolvedEntry<nfs::Persona::kPmidAccountHolder> {
   };
   typedef TaggedValue<NonEmptyString, struct SerialisedPmidUnresolvedEntryTag> serialised_type;
 
-  UnresolvedEntry();
-  explicit UnresolvedEntry(const serialised_type& serialised_copy);
-  UnresolvedEntry(const UnresolvedEntry& other);
-  UnresolvedEntry(UnresolvedEntry&& other);
-  UnresolvedEntry& operator=(UnresolvedEntry other);
-  UnresolvedEntry(const DataNameVariant& data_name,
+  UnresolvedData();
+  explicit UnresolvedData(const serialised_type& serialised_copy);
+  UnresolvedData(const UnresolvedData& other);
+  UnresolvedData(UnresolvedData&& other);
+  UnresolvedData& operator=(UnresolvedData other);
+  UnresolvedData(const DataNameVariant& data_name,
                   nfs::MessageAction action,
                   Value cost,
                   const NodeId& sender_id);
-  friend void swap(UnresolvedEntry& lhs, UnresolvedEntry& rhs) MAIDSAFE_NOEXCEPT;
+  friend void swap(UnresolvedData& lhs, UnresolvedData& rhs) MAIDSAFE_NOEXCEPT;
   serialised_type Serialise() const;
 
   Key key;

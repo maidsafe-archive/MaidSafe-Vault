@@ -21,13 +21,13 @@ namespace maidsafe {
 
 namespace vault {
 
-UnresolvedEntry<nfs::Persona::kMaidAccountHolder>::UnresolvedEntry()
+UnresolvedData<nfs::Persona::kMaidAccountHolder>::UnresolvedData()
     : key(),
       messages_contents(),
       sync_counter(0),
       dont_add_to_db(false) {}
 
-UnresolvedEntry<nfs::Persona::kMaidAccountHolder>::UnresolvedEntry(
+UnresolvedData<nfs::Persona::kMaidAccountHolder>::UnresolvedData(
     const serialised_type& serialised_copy)
         : key(),
           messages_contents(),
@@ -62,25 +62,25 @@ UnresolvedEntry<nfs::Persona::kMaidAccountHolder>::UnresolvedEntry(
   dont_add_to_db = proto_copy.dont_add_to_db();
 }
 
-UnresolvedEntry<nfs::Persona::kMaidAccountHolder>::UnresolvedEntry(const UnresolvedEntry& other)
+UnresolvedData<nfs::Persona::kMaidAccountHolder>::UnresolvedData(const UnresolvedData& other)
     : key(other.key),
       messages_contents(other.messages_contents),
       sync_counter(other.sync_counter),
       dont_add_to_db(other.dont_add_to_db) {}
 
-UnresolvedEntry<nfs::Persona::kMaidAccountHolder>::UnresolvedEntry(UnresolvedEntry&& other)
+UnresolvedData<nfs::Persona::kMaidAccountHolder>::UnresolvedData(UnresolvedData&& other)
     : key(std::move(other.key)),
       messages_contents(std::move(other.messages_contents)),
       sync_counter(std::move(other.sync_counter)),
       dont_add_to_db(std::move(other.dont_add_to_db)) {}
 
-UnresolvedEntry<nfs::Persona::kMaidAccountHolder>&
-    UnresolvedEntry<nfs::Persona::kMaidAccountHolder>::operator=(UnresolvedEntry other) {
+UnresolvedData<nfs::Persona::kMaidAccountHolder>&
+    UnresolvedData<nfs::Persona::kMaidAccountHolder>::operator=(UnresolvedData other) {
   swap(*this, other);
   return *this;
 }
 
-UnresolvedEntry<nfs::Persona::kMaidAccountHolder>::UnresolvedEntry(
+UnresolvedData<nfs::Persona::kMaidAccountHolder>::UnresolvedData(
     const DataNameVariant& data_name,
     nfs::MessageAction action,
     Value cost,
@@ -95,8 +95,8 @@ UnresolvedEntry<nfs::Persona::kMaidAccountHolder>::UnresolvedEntry(
   messages_contents.push_back(message_content);
 }
 
-void swap(UnresolvedEntry<nfs::Persona::kMaidAccountHolder>& lhs,
-          UnresolvedEntry<nfs::Persona::kMaidAccountHolder>& rhs) MAIDSAFE_NOEXCEPT {
+void swap(UnresolvedData<nfs::Persona::kMaidAccountHolder>& lhs,
+          UnresolvedData<nfs::Persona::kMaidAccountHolder>& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
   swap(lhs.key, rhs.key);
   swap(lhs.messages_contents, rhs.messages_contents);
@@ -104,8 +104,8 @@ void swap(UnresolvedEntry<nfs::Persona::kMaidAccountHolder>& lhs,
   swap(lhs.dont_add_to_db, rhs.dont_add_to_db);
 }
 
-UnresolvedEntry<nfs::Persona::kMaidAccountHolder>::serialised_type
-    UnresolvedEntry<nfs::Persona::kMaidAccountHolder>::Serialise() const {
+UnresolvedData<nfs::Persona::kMaidAccountHolder>::serialised_type
+    UnresolvedData<nfs::Persona::kMaidAccountHolder>::Serialise() const {
   protobuf::MaidAndPmidUnresolvedEntry proto_copy;
   auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(),
                                              key.first));
@@ -131,12 +131,12 @@ UnresolvedEntry<nfs::Persona::kMaidAccountHolder>::serialised_type
 
 
 
-UnresolvedEntry<nfs::Persona::kPmidAccountHolder>::UnresolvedEntry()
+UnresolvedData<nfs::Persona::kPmidAccountHolder>::UnresolvedData()
     : key(),
       messages_contents(),
       sync_counter(0) {}
 
-UnresolvedEntry<nfs::Persona::kPmidAccountHolder>::UnresolvedEntry(
+UnresolvedData<nfs::Persona::kPmidAccountHolder>::UnresolvedData(
     const serialised_type& serialised_copy)
         : key(),
           messages_contents(),
@@ -169,23 +169,23 @@ UnresolvedEntry<nfs::Persona::kPmidAccountHolder>::UnresolvedEntry(
     ThrowError(CommonErrors::parsing_error);
 }
 
-UnresolvedEntry<nfs::Persona::kPmidAccountHolder>::UnresolvedEntry(const UnresolvedEntry& other)
+UnresolvedData<nfs::Persona::kPmidAccountHolder>::UnresolvedData(const UnresolvedData& other)
     : key(other.key),
       messages_contents(other.messages_contents),
       sync_counter(other.sync_counter) {}
 
-UnresolvedEntry<nfs::Persona::kPmidAccountHolder>::UnresolvedEntry(UnresolvedEntry&& other)
+UnresolvedData<nfs::Persona::kPmidAccountHolder>::UnresolvedData(UnresolvedData&& other)
     : key(std::move(other.key)),
       messages_contents(std::move(other.messages_contents)),
       sync_counter(std::move(other.sync_counter)) {}
 
-UnresolvedEntry<nfs::Persona::kPmidAccountHolder>&
-    UnresolvedEntry<nfs::Persona::kPmidAccountHolder>::operator=(UnresolvedEntry other) {
+UnresolvedData<nfs::Persona::kPmidAccountHolder>&
+    UnresolvedData<nfs::Persona::kPmidAccountHolder>::operator=(UnresolvedData other) {
   swap(*this, other);
   return *this;
 }
 
-UnresolvedEntry<nfs::Persona::kPmidAccountHolder>::UnresolvedEntry(
+UnresolvedData<nfs::Persona::kPmidAccountHolder>::UnresolvedData(
     const DataNameVariant& data_name,
     nfs::MessageAction action,
     Value cost,
@@ -199,16 +199,16 @@ UnresolvedEntry<nfs::Persona::kPmidAccountHolder>::UnresolvedEntry(
   messages_contents.push_back(message_content);
 }
 
-void swap(UnresolvedEntry<nfs::Persona::kPmidAccountHolder>& lhs,
-          UnresolvedEntry<nfs::Persona::kPmidAccountHolder>& rhs) MAIDSAFE_NOEXCEPT {
+void swap(UnresolvedData<nfs::Persona::kPmidAccountHolder>& lhs,
+          UnresolvedData<nfs::Persona::kPmidAccountHolder>& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
   swap(lhs.key, rhs.key);
   swap(lhs.messages_contents, rhs.messages_contents);
   swap(lhs.sync_counter, rhs.sync_counter);
 }
 
-UnresolvedEntry<nfs::Persona::kPmidAccountHolder>::serialised_type
-    UnresolvedEntry<nfs::Persona::kPmidAccountHolder>::Serialise() const {
+UnresolvedData<nfs::Persona::kPmidAccountHolder>::serialised_type
+    UnresolvedData<nfs::Persona::kPmidAccountHolder>::Serialise() const {
   protobuf::MaidAndPmidUnresolvedEntry proto_copy;
   auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(),
                                              key.first));

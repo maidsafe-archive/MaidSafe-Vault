@@ -101,7 +101,7 @@ class MaidAccount {
   std::unique_ptr<AccountDb> account_db_;
   Sync<MaidAccountMergePolicy> sync_;
   uint16_t account_transfer_nodes_;
-  static const int kSyncTriggerCount_;
+  static const size_t kSyncTriggerCount_;
 };
 
 }  // namespace vault

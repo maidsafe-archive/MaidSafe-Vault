@@ -53,13 +53,13 @@ MaidAccountMergePolicy::UnresolvedEntry::Value MaidAccountMergePolicy::MergedCos
     const UnresolvedEntry& unresolved_entry) const {
   assert(unresolved_entry.key.second == nfs::MessageAction::kPut &&
          !unresolved_entry.dont_add_to_db);
-  std::map<UnresolvedEntry::Value, int> all_costs;
+  std::map<UnresolvedEntry::Value, size_t> all_costs;
   auto most_frequent_itr(std::end(unresolved_entry.messages_contents));
-  int most_frequent(0);
+  size_t most_frequent(0);
   for (auto itr(std::begin(unresolved_entry.messages_contents));
        itr != std::end(unresolved_entry.messages_contents); ++itr) {
     if ((*itr).value) {
-      int this_value_count(++all_costs[*(*itr).value]);
+      size_t this_value_count(++all_costs[*(*itr).value]);
       if (this_value_count > most_frequent) {
         most_frequent = this_value_count;
         most_frequent_itr = itr;

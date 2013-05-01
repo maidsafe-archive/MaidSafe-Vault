@@ -60,12 +60,12 @@ typename Data::name_type GetDataName(const nfs::DataMessage& data_message) {
 }
 
 template<typename Data, nfs::MessageAction action>
-UnresolvedEntry<nfs::Persona::kMaidAccountHolder> CreateUnresolvedEntry(
+UnresolvedData<nfs::Persona::kMaidAccountHolder> CreateUnresolvedEntry(
     const nfs::DataMessage& data_message, int32_t cost, const NodeId& this_id) {
   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
-  return UnresolvedEntry<nfs::Persona::kMaidAccountHolder>(
-      DataNameVariant(GetDataName(data_message.data().name)), action, cost, this_id);
+  return UnresolvedData<nfs::Persona::kMaidAccountHolder>(
+      DataNameVariant(GetDataName<Data>(data_message.data().name)), action, cost, this_id);
 }
 
 }  // namespace detail
