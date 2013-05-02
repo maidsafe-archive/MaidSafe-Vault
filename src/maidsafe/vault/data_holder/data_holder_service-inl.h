@@ -54,7 +54,9 @@ template<typename Data>
 void DataHolderService::HandlePutMessage(const nfs::DataMessage& data_message,
                                   const routing::ReplyFunctor& reply_functor) {
   try {
+#ifndef TESTING
     ValidatePutSender(data_message);
+#endif
     Data data(typename Data::name_type(data_message.data().name),
               typename Data::serialised_type(data_message.data().content));
     if (detail::AddResult(data_message, reply_functor, MakeError(CommonErrors::success),
@@ -76,7 +78,9 @@ template<typename Data>
 void DataHolderService::HandleGetMessage(const nfs::DataMessage& data_message,
                                          const routing::ReplyFunctor& reply_functor) {
   try {
+#ifndef TESTING
     ValidateGetSender(data_message);
+#endif
     typename Data::name_type data_name(data_message.data().name);
     nfs::Reply reply(CommonErrors::success, permanent_data_store_.Get(data_name));
     reply_functor(reply.Serialise()->string());

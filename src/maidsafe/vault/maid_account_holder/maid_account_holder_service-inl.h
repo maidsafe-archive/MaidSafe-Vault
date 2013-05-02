@@ -170,7 +170,7 @@ void MaidAccountHolderService::SendEarlySuccessReply(const nfs::DataMessage& dat
                                                      NonUniqueDataType) {
   nfs::Reply reply(CommonErrors::success);
   if (low_space)
-    reply = VaultErrors::low_space;
+    reply = nfs::Reply(VaultErrors::low_space);
   reply_functor(reply.Serialise()->string());
   std::lock_guard<std::mutex> lock(accumulator_mutex_);
   accumulator_.SetHandled(data_message, reply.error());
@@ -186,7 +186,7 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
   if (overall_result.IsSuccess()) {
     nfs::Reply reply(CommonErrors::success);
     if (low_space)
-      reply = VaultErrors::low_space;
+      reply = nfs::Reply(VaultErrors::low_space);
     client_reply_functor(reply.Serialise()->string());
   } else {
     client_reply_functor(overall_result.Serialise()->string());
