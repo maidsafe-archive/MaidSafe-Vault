@@ -70,6 +70,11 @@ void MaidAccountHandler::UpdatePmidTotals(const MaidName& account_name,
   maid_accounts_.at(account_name)->UpdatePmidTotals(pmid_totals);
 }
 
+void MaidAccountHandler::AddLocalEntry(const MaidName& /*account_name*/,
+                                       const MaidAccountUnresolvedEntry& /*entry*/) {
+// FIXME Fraser
+}
+
 std::vector<MaidName> MaidAccountHandler::GetAccountNames() const {
   std::vector<MaidName> account_names;
   std::lock_guard<std::mutex> lock(mutex_);
