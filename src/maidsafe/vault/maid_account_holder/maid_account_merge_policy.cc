@@ -49,11 +49,11 @@ void MaidAccountMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
   }
 }
 
-MaidAccountMergePolicy::UnresolvedEntry::value_type MaidAccountMergePolicy::MergedCost(
+MaidAccountMergePolicy::UnresolvedEntry::Value MaidAccountMergePolicy::MergedCost(
     const UnresolvedEntry& unresolved_entry) const {
   assert(unresolved_entry.key.second == nfs::MessageAction::kPut &&
          !unresolved_entry.dont_add_to_db);
-  std::map<UnresolvedEntry::value_type, size_t> all_costs;
+  std::map<UnresolvedEntry::Value, size_t> all_costs;
   auto most_frequent_itr(std::end(unresolved_entry.messages_contents));
   size_t most_frequent(0);
   for (auto itr(std::begin(unresolved_entry.messages_contents));
@@ -80,7 +80,7 @@ MaidAccountMergePolicy::UnresolvedEntry::value_type MaidAccountMergePolicy::Merg
       all_costs.erase(--std::end(all_costs));
   }
 
-  UnresolvedEntry::value_type total_cost(0);
+  UnresolvedEntry::Value total_cost(0);
   int count(0);
   for (const auto& cost : all_costs) {
     total_cost += static_cast<int32_t>(cost.first * cost.second);
@@ -91,7 +91,7 @@ MaidAccountMergePolicy::UnresolvedEntry::value_type MaidAccountMergePolicy::Merg
 }
 
 void MaidAccountMergePolicy::MergePut(const DataNameVariant& data_name,
-                                      UnresolvedEntry::value_type cost,
+                                      UnresolvedEntry::Value cost,
                                       const NonEmptyString& serialised_db_value) {
   if (serialised_db_value.IsInitialised()) {
     auto current_values(ParseDbValue(serialised_db_value));

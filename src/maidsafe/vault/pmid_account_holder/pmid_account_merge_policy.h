@@ -52,7 +52,7 @@ class PmidAccountMergePolicy {
   PmidAccountMergePolicy& operator=(const PmidAccountMergePolicy&);
 
   void MergePut(const DataNameVariant& data_name,
-                UnresolvedEntry::value_type size,
+                UnresolvedEntry::Value size,
                 const NonEmptyString& serialised_db_value);
   void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
   NonEmptyString SerialiseDbValue(Size size) const;

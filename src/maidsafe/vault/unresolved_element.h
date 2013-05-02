@@ -28,22 +28,22 @@ namespace maidsafe {
 
 namespace vault {
 
-template<typename Key, typename Value>
+template<typename ValueType>
 struct UnresolvedElement {
-  typedef Key key_type;
-  typedef Value value_type;
+  typedef std::pair<DataNameVariant, nfs::MessageAction> Key;
+  typedef ValueType Value;
 
  private:
-  template<typename Key, typename Value>
+  template<typename Value>
   struct SerialisedUnresolvedEntryTag {};
 
  public:
-  typedef TaggedValue<NonEmptyString, SerialisedUnresolvedEntryTag<Key, Value>> serialised_type;
+  typedef TaggedValue<NonEmptyString, SerialisedUnresolvedEntryTag<Value>> serialised_type;
 
   struct MessageContent {
     NodeId peer_id;
     boost::optional<int32_t> entry_id;
-    boost::optional<value_type> value;
+    boost::optional<ValueType> value;
   };
 
   UnresolvedElement();
@@ -61,8 +61,7 @@ struct UnresolvedElement {
   bool dont_add_to_db;
 };
 
-typedef UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, int32_t>
-    MaidAccountUnresolvedEntry, PmidAccountUnresolvedEntry;
+typedef UnresolvedElement<int32_t> MaidAccountUnresolvedEntry, PmidAccountUnresolvedEntry;
 
 }  // namespace vault
 

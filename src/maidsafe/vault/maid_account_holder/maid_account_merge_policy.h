@@ -54,9 +54,9 @@ class MaidAccountMergePolicy {
   MaidAccountMergePolicy(const MaidAccountMergePolicy&);
   MaidAccountMergePolicy& operator=(const MaidAccountMergePolicy&);
 
-  UnresolvedEntry::value_type MergedCost(const UnresolvedEntry& unresolved_entry) const;
+  UnresolvedEntry::Value MergedCost(const UnresolvedEntry& unresolved_entry) const;
   void MergePut(const DataNameVariant& data_name,
-                UnresolvedEntry::value_type cost,
+                UnresolvedEntry::Value cost,
                 const NonEmptyString& serialised_db_value);
   void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
   NonEmptyString SerialiseDbValue(DbValue db_value) const;

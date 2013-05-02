@@ -25,14 +25,14 @@ namespace maidsafe {
 
 namespace vault {
 
-template<typename Key, typename Value>
-UnresolvedElement<Key, Value>::UnresolvedElement()
+template<typename ValueType>
+UnresolvedElement<ValueType>::UnresolvedElement()
     : key(),
       messages_contents(),
       sync_counter(0),
       dont_add_to_db(false) {}
 
-UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, int32_t>::UnresolvedElement(
+UnresolvedElement<int32_t>::UnresolvedElement(
     const serialised_type& serialised_copy)
         : key(),
           messages_contents(),
@@ -67,30 +67,30 @@ UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, int32_t>::Unre
   dont_add_to_db = proto_copy.dont_add_to_db();
 }
 
-template<typename Key, typename Value>
-UnresolvedElement<Key, Value>::UnresolvedElement(const UnresolvedElement& other)
+template<typename ValueType>
+UnresolvedElement<ValueType>::UnresolvedElement(const UnresolvedElement& other)
     : key(other.key),
       messages_contents(other.messages_contents),
       sync_counter(other.sync_counter),
       dont_add_to_db(other.dont_add_to_db) {}
 
-template<typename Key, typename Value>
-UnresolvedElement<Key, Value>::UnresolvedElement(UnresolvedElement&& other)
+template<typename ValueType>
+UnresolvedElement<ValueType>::UnresolvedElement(UnresolvedElement&& other)
     : key(std::move(other.key)),
       messages_contents(std::move(other.messages_contents)),
       sync_counter(std::move(other.sync_counter)),
       dont_add_to_db(std::move(other.dont_add_to_db)) {}
 
-template<typename Key, typename Value>
-UnresolvedElement<Key, Value>& UnresolvedElement<Key, Value>::operator=(UnresolvedElement other) {
+template<typename ValueType>
+UnresolvedElement<ValueType>& UnresolvedElement<ValueType>::operator=(UnresolvedElement other) {
   swap(*this, other);
   return *this;
 }
 
-template<typename Key, typename Value>
-UnresolvedElement<Key, Value>::UnresolvedElement(const Key& key,
-                                                 const Value& value,
-                                                 const NodeId& sender_id)
+template<typename ValueType>
+UnresolvedElement<ValueType>::UnresolvedElement(const Key& key,
+                                                const Value& value,
+                                                const NodeId& sender_id)
     : key(key),
       messages_contents(),
       sync_counter(0),
@@ -101,9 +101,8 @@ UnresolvedElement<Key, Value>::UnresolvedElement(const Key& key,
   messages_contents.push_back(message_content);
 }
 
-template<typename Key, typename Value>
-void swap(UnresolvedElement<Key, Value>& lhs,
-          UnresolvedElement<Key, Value>& rhs) MAIDSAFE_NOEXCEPT {
+template<typename ValueType>
+void swap(UnresolvedElement<ValueType>& lhs, UnresolvedElement<ValueType>& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
   swap(lhs.key, rhs.key);
   swap(lhs.messages_contents, rhs.messages_contents);
@@ -111,8 +110,7 @@ void swap(UnresolvedElement<Key, Value>& lhs,
   swap(lhs.dont_add_to_db, rhs.dont_add_to_db);
 }
 
-UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, int32_t>::serialised_type
-    UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, int32_t>::Serialise() const {
+UnresolvedElement<int32_t>::serialised_type UnresolvedElement<int32_t>::Serialise() const {
   protobuf::MaidAndPmidUnresolvedEntry proto_copy;
   auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
 
