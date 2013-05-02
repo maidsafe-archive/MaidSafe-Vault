@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <mutex>
+#include <atomic>
 
 #include "boost/filesystem/convenience.hpp"
 #include "boost/filesystem/path.hpp"
@@ -45,7 +46,7 @@ namespace po = boost::program_options;
 
 std::mutex g_mutex;
 std::condition_variable g_cond_var;
-std::atomic_bool g_ctrlc_pressed(false);
+std::atomic<bool> g_ctrlc_pressed(false);
 
 void SigHandler(int signum) {
   LOG(kInfo) << " Signal received: " << signum;
