@@ -259,8 +259,8 @@ void MaidAccountHolderService::UpdatePmidTotals(const MaidName& account_name) {
   }
 }
 
-void MaidAccountHolderService::UpdatePmidTotalsCallback(const std::string& serialised_reply,
-                                                        std::shared_ptr<GetPmidTotalsOp> op_data) {
+void MaidAccountHolderService::UpdatePmidTotalsCallback(const std::string& /*serialised_reply*/,
+                                                        std::shared_ptr<GetPmidTotalsOp> /*op_data*/) {
   // 1] Parse reply - don't throw - need to add default-constructed PmidRecord if fails
   // 2] Lock the mutex
   // 3] add result to vector (assert <= 4)

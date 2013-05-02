@@ -25,6 +25,7 @@
 #include "maidsafe/vault/pmid_account_holder/pmid_account_merge_policy.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_account.pb.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_record.h"
+#include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
 
 

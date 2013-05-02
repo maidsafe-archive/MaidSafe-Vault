@@ -200,14 +200,14 @@ void MaidAccount::ApplySyncData(const NodeId& source_id,
     UnresolvedData<nfs::Persona::kMaidAccountHolder>
             entry(UnresolvedData<nfs::Persona::kMaidAccountHolder>::serialised_type(
         NonEmptyString(proto_unresolved_entries.serialised_unresolved_entry(i))));
-    if (sync_.AddUnresolvedEntry(entry, source_id)) {
-      if (entry.data_name_and_action.second == nfs::MessageAction::kPut)
-        total_put_data_ += entry.cost;
+    if (sync_.AddUnresolvedEntry(entry, source_id) &&  entry.messages_contents.front().value) {
+      if (entry.key.second == nfs::MessageAction::kPut)
+        total_put_data_ += *entry.messages_contents.front().value;
       else
-        total_put_data_ -= entry.cost;
+        total_put_data_ -= *entry.messages_contents.front().value;
     }
   }
-  sync_++
+//  sync_++
 }
 
 void MaidAccount::ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node) {

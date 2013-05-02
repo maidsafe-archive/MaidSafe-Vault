@@ -33,14 +33,14 @@ class Sync : public MergePolicy {
   Sync& operator=(Sync&& other);
   // This is called when receiving a Sync message from a peer or this node.  Returns true if the
   // entry becomes resolved.
-  bool AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry& entry, const NodeId& node_id);
+  bool AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry& entry);
   void AddLocalEntry(typename MergePolicy::UnresolvedEntry& entry);
   // Returns true if the entry becomes resolved
   bool AddAccountTransferRecord(typename MergePolicy::UnresolvedEntry& entry,
                                 const NodeId& node_id,
                                 bool all_account_transfers_received);
   void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
-  std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData() const;
+  std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData();
   size_t GetUnresolvedCount() const { return MergePolicy::unresolved_data_.size(); }
   // int32_t sync_counter_max() const { return sync_counter_max_; }
   // void set_sync_counter_max(int32_t new_count) { sync_counter_max_ = new_count; }
@@ -52,7 +52,20 @@ class Sync : public MergePolicy {
  private:
   Sync(const Sync&);
   Sync& operator=(const Sync&);
+  bool PeerAndIdInEntry(const typename MergePolicy::UnresolvedEntry& entry,
+                        const NodeId& peer_id_to_find,
+                        const int32_t entry_id_to_find);
+  bool PeerInEntry(const typename MergePolicy::UnresolvedEntry& entry,
+                        const NodeId& peer_id_to_find);
+  bool EntryIsUnique(const typename MergePolicy::UnresolvedEntry& entry,
+                     const NodeId& peer_id_to_find,
+                     const int32_t entry_id_to_find);
+  bool EntryIsUnique(const typename MergePolicy::UnresolvedEntry& entry,
+                     const NodeId& peer_id_to_find);
+
   typename std::vector<typename MergePolicy::UnresolvedEntry>::iterator FindUnresolved(
+      typename std::vector<typename MergePolicy::UnresolvedEntry>::iterator begin,
+      typename std::vector<typename MergePolicy::UnresolvedEntry>::iterator end,
       const typename MergePolicy::UnresolvedEntry::Key& key_to_find);
   int32_t sync_counter_max_;
   NodeId this_node_id_;
