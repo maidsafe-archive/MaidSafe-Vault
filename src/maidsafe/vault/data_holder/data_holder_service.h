@@ -48,6 +48,9 @@ class DataHolderTest;
 
 class DataHolderService {
  public:
+
+  enum : uint32_t { kPutRequestsRequired = 3, kDeleteRequestsRequired = 3 };
+
   DataHolderService(const passport::Pmid& pmid,
                     routing::Routing& routing,
                     const boost::filesystem::path& vault_root_dir);
@@ -116,8 +119,6 @@ class DataHolderService {
   std::mutex accumulator_mutex_;
   Accumulator<DataNameVariant> accumulator_;
   DataHolderNfs nfs_;
-  static const int kPutRequestsRequired_;
-  static const int kDeleteRequestsRequired_;
 };
 
 }  // namespace vault

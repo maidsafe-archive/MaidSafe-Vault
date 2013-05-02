@@ -57,10 +57,6 @@ inline bool ForThisPersona(const Message& message) {
 
 }  // unnamed namespace
 
-
-const int DataHolderService::kPutRequestsRequired_(3);
-const int DataHolderService::kDeleteRequestsRequired_(3);
-
 DataHolderService::DataHolderService(const passport::Pmid& pmid,
                                      routing::Routing& routing,
                                      const fs::path& vault_root_dir)

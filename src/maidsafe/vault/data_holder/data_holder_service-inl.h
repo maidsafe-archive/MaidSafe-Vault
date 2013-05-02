@@ -60,17 +60,17 @@ void DataHolderService::HandlePutMessage(const nfs::DataMessage& data_message,
     Data data(typename Data::name_type(data_message.data().name),
               typename Data::serialised_type(data_message.data().content));
     if (detail::AddResult(data_message, reply_functor, MakeError(CommonErrors::success),
-                          accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
+                          accumulator_, accumulator_mutex_, kPutRequestsRequired)) {
       permanent_data_store_.Put(data.name(), data_message.data().content);
     }
   }
   catch(const maidsafe_error& error) {
     detail::AddResult(data_message, reply_functor, error, accumulator_, accumulator_mutex_,
-                      kPutRequestsRequired_);
+                      kPutRequestsRequired);
   }
   catch(...) {
     detail::AddResult(data_message, reply_functor, MakeError(CommonErrors::unknown),
-                      accumulator_, accumulator_mutex_, kPutRequestsRequired_);
+                      accumulator_, accumulator_mutex_, kPutRequestsRequired);
   }
 }
 
@@ -94,19 +94,21 @@ template<typename Data>
 void DataHolderService::HandleDeleteMessage(const nfs::DataMessage& data_message,
                                      const routing::ReplyFunctor& reply_functor) {
   try {
+#ifndef TESTING
     ValidateDeleteSender(data_message);
+#endif
     if (detail::AddResult(data_message, reply_functor, MakeError(CommonErrors::success),
-                          accumulator_, accumulator_mutex_, kDeleteRequestsRequired_)) {
+                          accumulator_, accumulator_mutex_, kDeleteRequestsRequired)) {
       permanent_data_store_.Delete(typename Data::name_type(data_message.data().name));
     }
   }
   catch(const maidsafe_error& error) {
     detail::AddResult(data_message, reply_functor, error, accumulator_, accumulator_mutex_,
-                      kDeleteRequestsRequired_);
+                      kDeleteRequestsRequired);
   }
   catch(...) {
     detail::AddResult(data_message, reply_functor, MakeError(CommonErrors::unknown),
-                      accumulator_, accumulator_mutex_, kDeleteRequestsRequired_);
+                      accumulator_, accumulator_mutex_, kDeleteRequestsRequired);
   }
 }
 
