@@ -32,6 +32,7 @@ UnresolvedElement<ValueType>::UnresolvedElement()
       sync_counter(0),
       dont_add_to_db(false) {}
 
+template<>
 UnresolvedElement<int32_t>::UnresolvedElement(
     const serialised_type& serialised_copy)
         : key(),
@@ -97,7 +98,7 @@ UnresolvedElement<ValueType>::UnresolvedElement(const Key& key,
       dont_add_to_db(false) {
   MessageContent message_content;
   message_content.peer_id = sender_id;
-  message_content.value = cost;
+  message_content.value = value;
   messages_contents.push_back(message_content);
 }
 
@@ -110,6 +111,7 @@ void swap(UnresolvedElement<ValueType>& lhs, UnresolvedElement<ValueType>& rhs) 
   swap(lhs.dont_add_to_db, rhs.dont_add_to_db);
 }
 
+template<>
 UnresolvedElement<int32_t>::serialised_type UnresolvedElement<int32_t>::Serialise() const {
   protobuf::MaidAndPmidUnresolvedEntry proto_copy;
   auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));

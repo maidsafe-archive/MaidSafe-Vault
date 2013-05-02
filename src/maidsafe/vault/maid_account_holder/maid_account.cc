@@ -129,7 +129,7 @@ bool MaidAccount::ApplyAccountTransfer(const NodeId& source_id,
     MaidAccountUnresolvedEntry entry(
         std::make_pair(data_name, nfs::MessageAction::kPut), average_cost, source_id);
     for (int32_t i(0); i != count; ++i) {
-      if (sync_.AddAccountTransferRecord(entry, source_id, all_account_transfers_received))
+      if (sync_.AddAccountTransferRecord(entry, all_account_transfers_received))
         total_put_data_ += average_cost;
     }
   }

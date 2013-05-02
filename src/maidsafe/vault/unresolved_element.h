@@ -52,7 +52,10 @@ struct UnresolvedElement {
   UnresolvedElement(UnresolvedElement&& other);
   UnresolvedElement& operator=(UnresolvedElement other);
   UnresolvedElement(const Key& key, const Value& value, const NodeId& sender_id);
+
+  template<typename T>
   friend void swap(UnresolvedElement& lhs, UnresolvedElement& rhs) MAIDSAFE_NOEXCEPT;
+
   serialised_type Serialise() const;
 
   Key key;
