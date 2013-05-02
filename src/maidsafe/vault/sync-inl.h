@@ -28,7 +28,8 @@
 namespace maidsafe {
 
 namespace vault {
-
+// TODO(dirvine) possibly alter logic here to check if existing_entry and new_entry can be used
+// and abstract away the fact that entry_id is optional (check internally for such a thing)
 template<typename MergePolicy>
 bool PeerAndIdInUnresolved(const typename MergePolicy::UnresolvedEntry& entry,
                       const NodeId& peer_id_to_find,
@@ -124,14 +125,15 @@ bool Sync<MergePolicy>::AddUnresolvedEntry(typename MergePolicy::UnresolvedEntry
   while (found != end) {
     if (!PeerAndIdInEntry((*found),
                           entry.messages_content.first().peer_id,
-                          *entry.messages_content.first().peer_id)
-    (*found).messages_content.insert(messages_content(node_id);
-    if ((*found).peers.size() >= (routing::Parameters::node_group_size + 1U) / 2) {
-      entry.peers.clear();
-      MergePolicy::Merge(entry);
-      MergePolicy::unresolved_data_.erase(found);
-      return true;
+                          *entry.messages_content.first().peer_id) {
+      (*found).messages_content.insert(messages_content(node_id));
+      if ((*found).peers.size() >= (routing::Parameters::node_group_size + 1U) / 2) {
+        entry.peers.clear();
+        MergePolicy::Merge(entry);
+        MergePolicy::unresolved_data_.erase(found);
+        return true;
      }
+   }
   }
   return false;
 }
