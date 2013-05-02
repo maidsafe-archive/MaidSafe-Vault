@@ -100,8 +100,8 @@ bool Sync<MergePolicy>::AddEntry(const typename MergePolicy::UnresolvedEntry& en
   auto begin = std::begin(MergePolicy::unresolved_data_);
   auto found = begin;
   for (;;) {
-    found = std::find(begin, end,
-                      [&entry](const typename MergePolicy::UnresolvedEntry &test)
+    found = std::find_if(begin, end,
+                         [&entry](const typename MergePolicy::UnresolvedEntry &test)
     {
       return test.key.first == entry.key.first && test.key.second == entry.key.second;
     });
@@ -148,7 +148,7 @@ template<typename MergePolicy>
 void Sync<MergePolicy>::ReplaceNode(const NodeId& old_node, const NodeId& new_node) {
   auto itr(std::begin(MergePolicy::unresolved_data_));
   while (itr != std::end(MergePolicy::unresolved_data_)) {
-    auto found(std::find(
+    auto found(std::find_if(
         std::begin((*itr).messages_contents),
         std::end((*itr).messages_contents),
         [&old_node](const typename MergePolicy::UnresolvedEntry::MessageContent& content) {
@@ -176,7 +176,7 @@ std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresol
   // only supply data containing this node's ID
   std::vector<typename MergePolicy::UnresolvedEntry> return_vec;
   for (const auto& entry : MergePolicy::unresolved_data_) {
-    auto found(std::find(
+    auto found(std::find_if(
         std::begin(entry.messages_contents),
         std::end(entry.messages_contents),
         [this](const typename MergePolicy::UnresolvedEntry::MessageContent& content) {
