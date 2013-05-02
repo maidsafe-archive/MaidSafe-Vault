@@ -205,6 +205,8 @@ void MaidAccountHolderService::Sync(const MaidName& account_name) {
   proto_sync.set_serialised_unresolved_entries(serialised_sync_data.string());
 
   nfs_.Sync(account_name, NonEmptyString(proto_sync.SerializeAsString()));
+  // TODO(Fraser#5#): 2013-05-03 - Check this is correct place to increment sync attempt counter.
+  maid_account_handler_.IncrementSyncAttempts(account_name);
 }
 
 void MaidAccountHolderService::HandleSync(const nfs::GenericMessage& generic_message) {

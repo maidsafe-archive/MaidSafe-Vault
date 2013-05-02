@@ -70,6 +70,13 @@ void MaidAccountHandler::UpdatePmidTotals(const MaidName& account_name,
   maid_accounts_.at(account_name)->UpdatePmidTotals(pmid_totals);
 }
 
+void MaidAccountHandler::AddLocalUnresolvedEntry(
+    const MaidName& account_name,
+    const MaidAccountUnresolvedEntry& unresolved_entry) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  maid_accounts_.at(account_name)->AddLocalUnresolvedEntry(unresolved_entry);
+}
+
 std::vector<MaidName> MaidAccountHandler::GetAccountNames() const {
   std::vector<MaidName> account_names;
   std::lock_guard<std::mutex> lock(mutex_);
@@ -100,6 +107,11 @@ void MaidAccountHandler::ReplaceNodeInSyncList(const MaidName& account_name,
                                                const NodeId& new_node) {
   std::lock_guard<std::mutex> lock(mutex_);
   maid_accounts_.at(account_name)->ReplaceNodeInSyncList(old_node, new_node);
+}
+
+void MaidAccountHandler::IncrementSyncAttempts(const MaidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  maid_accounts_.at(account_name)->IncrementSyncAttempts();
 }
 
 MaidAccount::Status MaidAccountHandler::AllowPut(const MaidName& account_name, int32_t cost) const {

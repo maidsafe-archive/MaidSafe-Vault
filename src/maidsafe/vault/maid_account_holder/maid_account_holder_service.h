@@ -98,6 +98,9 @@ class MaidAccountHolderService {
                        bool low_space,
                        NonUniqueDataType);
 
+  template<typename Data, nfs::MessageAction action>
+  void AddLocalUnresolvedEntryThenSync(const nfs::DataMessage& data_message, int32_t cost);
+
   // =============== Pmid registration =============================================================
   void HandlePmidRegistration(const nfs::GenericMessage& generic_message,
                               const routing::ReplyFunctor& reply_functor);

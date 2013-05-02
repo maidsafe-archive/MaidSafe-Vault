@@ -60,7 +60,8 @@ bool Recorded(const UnresolvedEntry& new_entry,
   }
 }
 
-}
+}  // namespace detail
+
 
 template<typename MergePolicy>
 Sync<MergePolicy>::Sync(AccountDb* account_db, const NodeId& this_node_id)
@@ -118,7 +119,7 @@ bool Sync<MergePolicy>::AddEntry(const typename MergePolicy::UnresolvedEntry& en
     if (!detail::Recorded((*found), entry)) {
       typename MergePolicy::UnresolvedEntry::MessageContent content;
       content.peer_id = entry.messages_contents.front().peer_id;
-      if(entry.messages_contents.front().value)
+      if (entry.messages_contents.front().value)
         content.value = *entry.messages_contents.front().value;
       if (entry.messages_contents.front().entry_id)
         content.entry_id = *entry.messages_contents.front().entry_id;
@@ -191,7 +192,7 @@ std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresol
 }
 
 template<typename MergePolicy>
-void Sync<MergePolicy>::IncrementSyncAttmepts() {
+void Sync<MergePolicy>::IncrementSyncAttempts() {
   auto itr = std::begin(MergePolicy::unresolved_data_);
   while (itr != std::end(MergePolicy::unresolved_data_)) {
     if (++(*itr).sync_counter > sync_counter_max_) {

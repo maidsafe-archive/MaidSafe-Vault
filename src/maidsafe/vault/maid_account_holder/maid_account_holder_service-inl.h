@@ -60,8 +60,9 @@ typename Data::name_type GetDataName(const nfs::DataMessage& data_message) {
 }
 
 template<typename Data, nfs::MessageAction action>
-MaidAccountUnresolvedEntry CreateUnresolvedEntry(
-    const nfs::DataMessage& data_message, int32_t cost, const NodeId& this_id) {
+MaidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::DataMessage& data_message,
+                                                 int32_t cost,
+                                                 const NodeId& this_id) {
   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
   return MaidAccountUnresolvedEntry(
@@ -178,13 +179,9 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
     if (low_space)
       reply = nfs::Reply(VaultErrors::low_space);
     SendReplyAndAddToAccumulator(data_message, client_reply_functor, reply);
-    auto cost(detail::EstimateCost(data_message.data()));
-    auto unresolved_entry(
-        detail::CreateUnresolvedEntry<Data, nfs::MessageAction::kPut>(data_message, cost,
-                                                                      routing_.kNodeId()));
-
-    maid_account_handler_.AddLocalEntry(detail::GetMaidAccountName(data_message), unresolved_entry);
-    // TODO(dirvine) SEND SYNC !!!!
+    AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(
+        data_message,
+        detail::EstimateCost(data_message.data()));
   } else {
     SendReplyAndAddToAccumulator(data_message, client_reply_functor, overall_result);
   }
@@ -200,18 +197,23 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
     if (overall_result.IsSuccess()) {
       protobuf::Cost proto_cost;
       proto_cost.ParseFromString(overall_result.data().string());
-      int32_t cost(proto_cost.cost());
-      auto unresolved_entry(
-          detail::CreateUnresolvedEntry<Data, nfs::MessageAction::kPut>(data_message, cost,
-                                                                        routing_.kNodeId()));
-      auto account_name(detail::GetMaidAccountName(data_message));
-      maid_account_handler_.AddLocalEntry(account_name, unresolved_entry);
-      Sync(account_name);
+      AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(data_message,
+                                                                      proto_cost.cost());
     }
   }
   catch(const std::exception& e) {
     LOG(kError) << "Failed to Handle Put result: " << e.what();
   }
+}
+
+template<typename Data, nfs::MessageAction action>
+void MaidAccountHolderService::AddLocalUnresolvedEntryThenSync(const nfs::DataMessage& data_message,
+                                                               int32_t cost) {
+  auto account_name(detail::GetMaidAccountName(data_message));
+  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(data_message, cost,
+                                                                    routing_.kNodeId()));
+  maid_account_handler_.AddLocalUnresolvedEntry(account_name, unresolved_entry);
+  Sync(account_name);
 }
 
 template<typename PublicFobType>

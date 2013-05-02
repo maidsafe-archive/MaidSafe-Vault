@@ -41,12 +41,9 @@ class Sync : public MergePolicy {
   void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
   std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData() const;
   size_t GetUnresolvedCount() const { return MergePolicy::unresolved_data_.size(); }
-  // int32_t sync_counter_max() const { return sync_counter_max_; }
-  // void set_sync_counter_max(int32_t new_count) { sync_counter_max_ = new_count; }
-
   // Calling this will increment the sync counter and delete entries that reach the
   // 'sync_counter_max_' limit.
-  void IncrementSyncAttmepts();
+  void IncrementSyncAttempts();
 
  private:
   Sync(const Sync&);

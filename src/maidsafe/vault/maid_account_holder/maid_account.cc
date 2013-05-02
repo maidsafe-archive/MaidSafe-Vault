@@ -173,6 +173,9 @@ void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
     ThrowError(CommonErrors::no_such_element);
   *itr = pmid_totals;
 }
+void MaidAccount::AddLocalUnresolvedEntry(const MaidAccountUnresolvedEntry& unresolved_entry) {
+  sync_.AddLocalEntry(unresolved_entry);
+}
 
 NonEmptyString MaidAccount::GetSyncData() {
   if (sync_.GetUnresolvedCount() < kSyncTriggerCount_)
@@ -212,6 +215,10 @@ void MaidAccount::ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& ne
   if (account_transfer_nodes_ != 0)
     --account_transfer_nodes_;
   sync_.ReplaceNode(old_node, new_node);
+}
+
+void MaidAccount::IncrementSyncAttempts() {
+  sync_.IncrementSyncAttempts();
 }
 
 MaidAccount::Status MaidAccount::AllowPut(int32_t cost) const {
