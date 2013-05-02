@@ -49,11 +49,11 @@ void MaidAccountMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
   }
 }
 
-MaidAccountMergePolicy::UnresolvedEntry::Value MaidAccountMergePolicy::MergedCost(
+MaidAccountMergePolicy::UnresolvedEntry::value_type MaidAccountMergePolicy::MergedCost(
     const UnresolvedEntry& unresolved_entry) const {
   assert(unresolved_entry.key.second == nfs::MessageAction::kPut &&
          !unresolved_entry.dont_add_to_db);
-  std::map<UnresolvedEntry::Value, size_t> all_costs;
+  std::map<UnresolvedEntry::value_type, size_t> all_costs;
   auto most_frequent_itr(std::end(unresolved_entry.messages_contents));
   size_t most_frequent(0);
   for (auto itr(std::begin(unresolved_entry.messages_contents));
@@ -80,25 +80,25 @@ MaidAccountMergePolicy::UnresolvedEntry::Value MaidAccountMergePolicy::MergedCos
       all_costs.erase(--std::end(all_costs));
   }
 
-  UnresolvedEntry::Value total_cost(0);
+  UnresolvedEntry::value_type total_cost(0);
   int count(0);
   for (const auto& cost : all_costs) {
-    total_cost += (cost.first * cost.second);
-    count += cost.second;
+    total_cost += static_cast<int32_t>(cost.first * cost.second);
+    count += static_cast<int32_t>(cost.second);
   }
 
   return total_cost / count;
 }
 
 void MaidAccountMergePolicy::MergePut(const DataNameVariant& data_name,
-                                      UnresolvedEntry::Value cost,
+                                      UnresolvedEntry::value_type cost,
                                       const NonEmptyString& serialised_db_value) {
   if (serialised_db_value.IsInitialised()) {
     auto current_values(ParseDbValue(serialised_db_value));
     uint64_t current_total_size(current_values.first.data * current_values.second.data);
     ++current_values.second.data;
-    current_values.first.data = static_cast<int32_t>(
-                                    (current_total_size + cost) / current_values.second.data);
+    current_values.first.data =
+        static_cast<int32_t>((current_total_size + cost) / current_values.second.data);
     account_db_->Put(std::make_pair(data_name, SerialiseDbValue(current_values)));
   } else {
       // TODO(david/fraser) this will require we send the same message *count* times

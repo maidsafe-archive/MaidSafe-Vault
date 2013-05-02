@@ -52,7 +52,8 @@ std::vector<typename Accumulator<DataNameVariant>::PendingRequest>
 
   handled_requests_.push_back(
       Accumulator::HandledRequest(data_message.message_id(),
-                                  GetDataNameVariant(data_message.data().type, data_message.data().name),
+                                  GetDataNameVariant(data_message.data().type,
+                                                     data_message.data().name),
                                   data_message.data().action,
                                   data_message.data().name,
                                   data_message.data().type,

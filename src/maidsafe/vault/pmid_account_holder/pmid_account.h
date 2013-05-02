@@ -71,7 +71,7 @@ class PmidAccount {
   }
 
   template<typename Data>
-  void DeleteData(const typename Data::name_type& name){
+  void DeleteData(const typename Data::name_type& name) {
     pmid_record_.stored_count--;
     pmid_record_.stored_total_size -= sync_.AllowDelete<Data>(name);
   }

@@ -45,7 +45,6 @@ Db::Db(const boost::filesystem::path& path)
     ThrowError(VaultErrors::failed_to_handle_request); // FIXME need new exception
   leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
   assert(leveldb_);
-
 }
 
 Db::~Db() {

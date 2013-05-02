@@ -49,7 +49,7 @@ void PmidAccountMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
 }
 
 void PmidAccountMergePolicy::MergePut(const DataNameVariant& data_name,
-                                      UnresolvedEntry::Value size,
+                                      UnresolvedEntry::value_type size,
                                       const NonEmptyString& serialised_db_value) {
   if (!serialised_db_value.IsInitialised())
     account_db_->Put(std::make_pair(data_name, SerialiseDbValue(Size(size))));

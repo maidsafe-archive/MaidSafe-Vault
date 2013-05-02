@@ -213,9 +213,7 @@ void MaidAccountHolderService::HandleSync(const nfs::GenericMessage& generic_mes
     LOG(kError) << "Error parsing kSynchronise message.";
     return;
   }
-
-  MaidName account_name(Identity(proto_sync.account_name()));
-  maid_account_handler_.ApplySyncData(account_name, generic_message.source().node_id,
+  maid_account_handler_.ApplySyncData(MaidName(Identity(proto_sync.account_name())),
                                       NonEmptyString(proto_sync.serialised_unresolved_entries()));
 }
 

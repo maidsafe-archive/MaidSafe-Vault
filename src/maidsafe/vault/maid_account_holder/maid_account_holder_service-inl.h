@@ -60,12 +60,12 @@ typename Data::name_type GetDataName(const nfs::DataMessage& data_message) {
 }
 
 template<typename Data, nfs::MessageAction action>
-UnresolvedData<nfs::Persona::kMaidAccountHolder> CreateUnresolvedEntry(
+MaidAccountUnresolvedEntry CreateUnresolvedEntry(
     const nfs::DataMessage& data_message, int32_t cost, const NodeId& this_id) {
   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
-  return UnresolvedData<nfs::Persona::kMaidAccountHolder>(
-      DataNameVariant(GetDataName<Data>(data_message)), action, cost, this_id);
+  return MaidAccountUnresolvedEntry(
+      std::make_pair(DataNameVariant(GetDataName<Data>(data_message)), action), cost, this_id);
 }
 
 }  // namespace detail
@@ -204,10 +204,9 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
       auto unresolved_entry(
           detail::CreateUnresolvedEntry<Data, nfs::MessageAction::kPut>(data_message, cost,
                                                                         routing_.kNodeId()));
-
-      maid_account_handler_.AddLocalEntry(detail::GetMaidAccountName(data_message),
-                                          unresolved_entry);
-      // TODO(dirvine) SEND SYNC !!!!
+      auto account_name(detail::GetMaidAccountName(data_message));
+      maid_account_handler_.AddLocalEntry(account_name, unresolved_entry);
+      Sync(account_name);
     }
   }
   catch(const std::exception& e) {

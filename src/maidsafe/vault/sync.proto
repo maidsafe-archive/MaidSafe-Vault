@@ -1,5 +1,4 @@
 package maidsafe.vault.protobuf;
-import "maidsafe/vault/unresolved_entry.proto";
 option optimize_for = LITE_RUNTIME;
 
 message Sync {

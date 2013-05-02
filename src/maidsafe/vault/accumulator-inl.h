@@ -13,11 +13,10 @@
 #define  MAIDSAFE_VAULT_ACCUMULATOR_INL_H_
 
 #include <algorithm>
+#include <deque>
 #include <iterator>
 #include <string>
 #include <vector>
-#include <deque>
-#include <string>
 
 #include "maidsafe/nfs/reply.h"
 #include "maidsafe/data_types/data_name_variant.h"

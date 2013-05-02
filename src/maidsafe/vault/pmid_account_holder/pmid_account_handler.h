@@ -14,6 +14,7 @@
 
 #include <cstdint>
 #include <future>
+#include <map>
 #include <mutex>
 #include <vector>
 

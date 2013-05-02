@@ -14,6 +14,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <set>
@@ -26,7 +27,6 @@
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/maid_account_holder/maid_account.h"
-
 
 
 namespace maidsafe {
@@ -51,14 +51,12 @@ class MaidAccountHandler {
   void UnregisterPmid(const MaidName& account_name, const PmidName& pmid_name);
   std::vector<PmidName> GetPmidNames(const MaidName& account_name) const;
   void UpdatePmidTotals(const MaidName& account_name, const PmidTotals& pmid_totals);
-  void AddLocalEntry(const MaidName& account_name,
-                     UnresolvedData<nfs::Persona::kMaidAccountHolder>& entry);
+  void AddLocalEntry(const MaidName& account_name, const MaidAccountUnresolvedEntry& entry);
   // Sync operations
   std::vector<MaidName> GetAccountNames() const;
   MaidAccount::serialised_type GetSerialisedAccount(const MaidName& account_name) const;
   NonEmptyString GetSyncData(const MaidName& account_name);
   void ApplySyncData(const MaidName& account_name,
-                     const NodeId& source_id,
                      const NonEmptyString& serialised_unresolved_entries);
   void ReplaceNodeInSyncList(const MaidName& account_name,
                              const NodeId& old_node,

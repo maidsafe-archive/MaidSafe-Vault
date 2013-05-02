@@ -12,8 +12,11 @@
 #ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HELPERS_H_
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HELPERS_H_
 
+#include <map>
 #include <memory>
 #include <mutex>
+#include <utility>
+#include <vector>
 
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/api_config.h"

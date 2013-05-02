@@ -21,7 +21,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/account_db.h"
-#include "maidsafe/vault/unresolved_entry.h"
+#include "maidsafe/vault/unresolved_element.h"
 
 
 namespace maidsafe {
@@ -30,7 +30,7 @@ namespace vault {
 
 class PmidAccountMergePolicy {
  public:
-  typedef UnresolvedData<nfs::Persona::kPmidAccountHolder> UnresolvedEntry;
+  typedef PmidAccountUnresolvedEntry UnresolvedEntry;
   explicit PmidAccountMergePolicy(AccountDb* account_db);
   PmidAccountMergePolicy(PmidAccountMergePolicy&& other);
   PmidAccountMergePolicy& operator=(PmidAccountMergePolicy&& other);
@@ -52,7 +52,7 @@ class PmidAccountMergePolicy {
   PmidAccountMergePolicy& operator=(const PmidAccountMergePolicy&);
 
   void MergePut(const DataNameVariant& data_name,
-                UnresolvedEntry::Value size,
+                UnresolvedEntry::value_type size,
                 const NonEmptyString& serialised_db_value);
   void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
   NonEmptyString SerialiseDbValue(Size size) const;

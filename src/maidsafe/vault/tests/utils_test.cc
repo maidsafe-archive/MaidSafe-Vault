@@ -9,7 +9,6 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#include "maidsafe/vault/vault.h"
 
 #include <functional>
 #include <memory>
@@ -19,9 +18,10 @@
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/vault/utils.h"
-
 #include "maidsafe/passport/types.h"
+
+#include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/vault.h"
 
 
 namespace maidsafe {
@@ -42,14 +42,13 @@ routing::GroupRangeStatus GetStatus(std::vector<NodeId> holders,
   proximity = routing::GroupRangeStatus::kOutwithRange;
   if (holders.size() <= routing::Parameters::node_group_size ||
       !NodeId::CloserToTarget(holders.at(routing::Parameters::node_group_size - 1),
-                              this_id,
-                              target_id))
+                              this_id, target_id)) {
     proximity = routing::GroupRangeStatus::kInRange;
-  else if (holders.size() <= routing::Parameters::closest_nodes_size ||
-      !NodeId::CloserToTarget(holders.at(routing::Parameters::closest_nodes_size - 1),
-                              this_id,
-                              target_id))
-   proximity = routing::GroupRangeStatus::kInProximalRange;
+  } else if (holders.size() <= routing::Parameters::closest_nodes_size ||
+             !NodeId::CloserToTarget(holders.at(routing::Parameters::closest_nodes_size - 1),
+                                     this_id, target_id)) {
+    proximity = routing::GroupRangeStatus::kInProximalRange;
+  }
   return proximity;
 }
 

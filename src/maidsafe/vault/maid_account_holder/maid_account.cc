@@ -19,7 +19,7 @@
 
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/account_db.h"
-#include "maidsafe/vault/unresolved_entry.pb.h"
+#include "maidsafe/vault/unresolved_element.pb.h"
 #include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
 
 
@@ -126,8 +126,8 @@ bool MaidAccount::ApplyAccountTransfer(const NodeId& source_id,
         Identity(proto_maid_account_details.db_entry(i).name())));
     int32_t average_cost(proto_maid_account_details.db_entry(i).value().average_cost());
     int32_t count(proto_maid_account_details.db_entry(i).value().count());
-    UnresolvedData<nfs::Persona::kMaidAccountHolder>
-            entry(std::make_pair(data_name, nfs::MessageAction::kPut), average_cost);
+    MaidAccountUnresolvedEntry entry(
+        std::make_pair(data_name, nfs::MessageAction::kPut), average_cost, source_id);
     for (int32_t i(0); i != count; ++i) {
       if (sync_.AddAccountTransferRecord(entry, source_id, all_account_transfers_received))
         total_put_data_ += average_cost;
@@ -135,9 +135,9 @@ bool MaidAccount::ApplyAccountTransfer(const NodeId& source_id,
   }
 
   for (int i(0); i != proto_maid_account_details.serialised_unresolved_entry_size(); ++i) {
-    UnresolvedData<nfs::Persona::kMaidAccountHolder> entry(UnresolvedData<nfs::Persona::kMaidAccountHolder>::serialised_type(
+    MaidAccountUnresolvedEntry entry(MaidAccountUnresolvedEntry::serialised_type(
         NonEmptyString(proto_maid_account_details.serialised_unresolved_entry(i))));
-    if (sync_.AddUnresolvedEntry(entry, source_id) &&  entry.messages_contents.front().value)
+    if (sync_.AddUnresolvedEntry(entry) && entry.messages_contents.front().value)
       total_put_data_ += *entry.messages_contents.front().value;
   }
 
@@ -190,17 +190,15 @@ NonEmptyString MaidAccount::GetSyncData() {
   return NonEmptyString(proto_unresolved_entries.SerializeAsString());
 }
 
-void MaidAccount::ApplySyncData(const NodeId& source_id,
-                                const NonEmptyString& serialised_unresolved_entries) {
+void MaidAccount::ApplySyncData(const NonEmptyString& serialised_unresolved_entries) {
   protobuf::UnresolvedEntries proto_unresolved_entries;
   if (!proto_unresolved_entries.ParseFromString(serialised_unresolved_entries.string()))
     ThrowError(CommonErrors::parsing_error);
 
   for (int i(0); i != proto_unresolved_entries.serialised_unresolved_entry_size(); ++i) {
-    UnresolvedData<nfs::Persona::kMaidAccountHolder>
-            entry(UnresolvedData<nfs::Persona::kMaidAccountHolder>::serialised_type(
+    MaidAccountUnresolvedEntry entry(MaidAccountUnresolvedEntry::serialised_type(
         NonEmptyString(proto_unresolved_entries.serialised_unresolved_entry(i))));
-    if (sync_.AddUnresolvedEntry(entry, source_id) &&  entry.messages_contents.front().value) {
+    if (sync_.AddUnresolvedEntry(entry) && entry.messages_contents.front().value) {
       if (entry.key.second == nfs::MessageAction::kPut)
         total_put_data_ += *entry.messages_contents.front().value;
       else

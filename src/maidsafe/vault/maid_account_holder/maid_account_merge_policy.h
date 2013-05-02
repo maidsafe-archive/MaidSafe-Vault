@@ -21,7 +21,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 
-#include "maidsafe/vault/unresolved_entry.h"
+#include "maidsafe/vault/unresolved_element.h"
 
 
 namespace maidsafe {
@@ -32,7 +32,7 @@ class AccountDb;
 
 class MaidAccountMergePolicy {
  public:
-  typedef UnresolvedData<nfs::Persona::kMaidAccountHolder> UnresolvedEntry;
+  typedef MaidAccountUnresolvedEntry UnresolvedEntry;
   explicit MaidAccountMergePolicy(AccountDb* account_db);
   MaidAccountMergePolicy(MaidAccountMergePolicy&& other);
   MaidAccountMergePolicy& operator=(MaidAccountMergePolicy&& other);
@@ -54,9 +54,9 @@ class MaidAccountMergePolicy {
   MaidAccountMergePolicy(const MaidAccountMergePolicy&);
   MaidAccountMergePolicy& operator=(const MaidAccountMergePolicy&);
 
-  UnresolvedEntry::Value MergedCost(const UnresolvedEntry& unresolved_entry) const;
+  UnresolvedEntry::value_type MergedCost(const UnresolvedEntry& unresolved_entry) const;
   void MergePut(const DataNameVariant& data_name,
-                UnresolvedEntry::Value cost,
+                UnresolvedEntry::value_type cost,
                 const NonEmptyString& serialised_db_value);
   void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
   NonEmptyString SerialiseDbValue(DbValue db_value) const;
@@ -96,7 +96,6 @@ int32_t MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name
               // TODO(dirvine) we should average these results rather than taking the first
             size.data = *(*itr).messages_contents.front().value;
           }
-
         }
       } else {
         assert((*itr).key.second == nfs::MessageAction::kDelete);

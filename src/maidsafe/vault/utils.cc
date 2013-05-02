@@ -70,13 +70,13 @@ CheckHoldersResult CheckHolders(const routing::MatrixChange& matrix_change,
   if (new_matrix.size() <= routing::Parameters::node_group_size ||
       !NodeId::CloserToTarget(new_matrix.at(routing::Parameters::node_group_size - 1),
                               this_id,
-                              target))
+                              target)) {
     holders_result.proximity_status = routing::GroupRangeStatus::kInRange;
-  else if (new_matrix.size() <= routing::Parameters::closest_nodes_size ||
-      !NodeId::CloserToTarget(new_matrix.at(routing::Parameters::closest_nodes_size - 1),
-                              this_id,
-                              target))
-   holders_result.proximity_status = routing::GroupRangeStatus::kInProximalRange;
+  } else if (new_matrix.size() <= routing::Parameters::closest_nodes_size ||
+             !NodeId::CloserToTarget(new_matrix.at(routing::Parameters::closest_nodes_size - 1),
+                                     this_id, target)) {
+    holders_result.proximity_status = routing::GroupRangeStatus::kInProximalRange;
+  }
   return holders_result;
 }
 

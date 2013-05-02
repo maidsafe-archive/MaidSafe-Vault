@@ -90,10 +90,9 @@ NonEmptyString MaidAccountHandler::GetSyncData(const MaidName& account_name) {
 }
 
 void MaidAccountHandler::ApplySyncData(const MaidName& account_name,
-                                       const NodeId& source_id,
                                        const NonEmptyString& serialised_unresolved_entries) {
   std::lock_guard<std::mutex> lock(mutex_);
-  maid_accounts_.at(account_name)->ApplySyncData(source_id, serialised_unresolved_entries);
+  maid_accounts_.at(account_name)->ApplySyncData(serialised_unresolved_entries);
 }
 
 void MaidAccountHandler::ReplaceNodeInSyncList(const MaidName& account_name,
