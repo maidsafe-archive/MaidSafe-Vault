@@ -22,9 +22,7 @@
 #include "maidsafe/nfs/data_policies.h"
 #include "maidsafe/nfs/nfs.h"
 
-#include "maidsafe/vault/put_policies.h"
 #include "maidsafe/vault/post_policies.h"
-#include "maidsafe/vault/delete_policies.h"
 
 
 namespace maidsafe {
