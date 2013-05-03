@@ -97,17 +97,14 @@ bool Sync<MergePolicy>::AddUnresolvedEntry(const typename MergePolicy::Unresolve
 
 template<typename MergePolicy>
 bool Sync<MergePolicy>::AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge) {
-  auto end = std::end(MergePolicy::unresolved_data_);
-  auto begin = std::begin(MergePolicy::unresolved_data_);
-  auto found = begin;
   for (;;) {
-    found = std::find_if(begin, end,
-                         [&entry](const typename MergePolicy::UnresolvedEntry &test)
-    {
-      return test.key.first == entry.key.first && test.key.second == entry.key.second;
-    });
+    auto found = std::find_if(std::begin(MergePolicy::unresolved_data_),
+                              std::end(MergePolicy::unresolved_data_),
+                              [&entry](const typename MergePolicy::UnresolvedEntry &test) {
+                                  return test.key == entry.key;
+                              });
 
-    if (found == end) {
+    if (found == std::end(MergePolicy::unresolved_data_)) {
       MergePolicy::unresolved_data_.push_back(entry);
       break;
     } else {
