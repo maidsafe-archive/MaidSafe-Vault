@@ -23,6 +23,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/data_store/data_store.h"
+#include "maidsafe/data_store/memory_buffer.h"
 #include "maidsafe/data_store/permanent_store.h"
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/message.h"
@@ -114,7 +115,7 @@ class DataHolderService {
   DiskUsage cache_size_;
   data_store::PermanentStore permanent_data_store_;
   data_store::DataStore<data_store::DataBuffer> cache_data_store_;
-  data_store::DataStore<data_store::DataBuffer> mem_only_cache_;
+  data_store::MemoryBuffer mem_only_cache_;
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
   Accumulator<DataNameVariant> accumulator_;

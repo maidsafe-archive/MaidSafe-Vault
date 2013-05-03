@@ -30,7 +30,7 @@
 #include "maidsafe/data_types/world_directory.h"
 
 #include "maidsafe/nfs/data_message.h"
-
+#include "maidsafe/nfs/reply.h"
 
 namespace maidsafe {
 namespace vault {
@@ -282,89 +282,135 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
   EXPECT_EQ(retrieved, nfs::Reply(CommonErrors::unknown, data_message.Serialise().data).Serialise()->string());
 }
 
-//TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
-//  uint32_t events(RandomUint32() % 100);
-//  std::vector<std::future<void>> future_puts, future_deletes, future_gets;
-//
-//  for (uint32_t i = 0; i != events; ++i) {
-//    nfs::MessageSource source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
-//    NonEmptyString content(RandomAlphaNumericString(256));
-//    nfs::DataMessage::Data data(DataTagValue::kAnmaidValue,
-//                                Identity(RandomString(NodeId::kSize)), content);
-//    nfs::DataMessage data_message(nfs::DataMessage::Action::kPut, nfs::Persona::kDataHolder,
-//                                  source, data);
-//
-//    uint32_t event(RandomUint32() % 3);
-//    switch (event) {
-//      case 0: {
-//        future_deletes.push_back(std::async([this, data_message] {
-//                                            this->HandleDeleteMessage(
-//                                                data_message,
-//                                                [&](const std::string& result) {
-//                                                  assert(!result.empty());
-//                                                });
-//                                 }));
-//        break;
-//      }
-//      case 1: {
-//        future_puts.push_back(std::async([this, data_message] {
-//                                         this->HandlePutMessage(
-//                                             data_message,
-//                                             [&](const std::string& result) {
-//                                               assert(!result.empty());
-//                                             });
-//                              }));
-//        break;
-//      }
-//      case 2: {
-//        future_gets.push_back(std::async([this, data_message] {
-//                                         this->HandleGetMessage(
-//                                             data_message,
-//                                             [&](const std::string& result) {
-//                                               assert(!result.empty());
-//                                             });
-//                              }));
-//        break;
-//      }
-//    }
-//  }
-//
-//  for (auto& future_put : future_puts) {
-//    try {
-//      future_put.get();
-//    }
-//    catch(const std::exception& e) {
-//      std::string msg(e.what());
-//      LOG(kError) << msg;
-//    }
-//  }
-//
-//  for (auto& future_delete : future_deletes) {
-//    try {
-//      future_delete.get();
-//    }
-//    catch(const std::exception& e) {
-//      std::string msg(e.what());
-//      LOG(kError) << msg;
-//    }
-//  }
-//
-//  for (auto& future_get : future_gets) {
-//    try {
-//      future_get.get();
-//    }
-//    catch(const std::exception& e) {
-//      std::string msg(e.what());
-//      LOG(kError) << msg;
-//    }
-//  }
-//}
+TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
+  typedef std::vector<std::pair<Identity, NonEmptyString>> NameContentContainer;
+  typedef typename NameContentContainer::value_type value_type;
+
+  uint32_t events(RandomUint32() % 100);
+  std::vector<std::future<void>> future_puts, future_deletes, future_gets;
+  NameContentContainer name_content_pairs;
+
+  for (uint32_t i = 0; i != events; ++i) {
+    nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+    std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
+    name_content_pairs.push_back(name_and_content);
+
+    uint32_t event(RandomUint32() % 3);
+    switch (event) {
+      case 0: {
+        if (!name_content_pairs.empty()) {
+          value_type name_content_pair(name_content_pairs[RandomUint32() % name_content_pairs.size()]);
+          nfs::DataMessage::Data data(TypeParam::name_type::tag_type::kEnumValue,
+                                      TypeParam::name_type(name_content_pair.first),
+                                      NonEmptyString("A"),
+                                      nfs::DataMessage::Action::kDelete);
+          nfs::DataMessage data_message(nfs::Persona::kDataHolder, source, data);
+          future_deletes.push_back(std::async([this, data_message] {
+              for (uint32_t i = 0; i != DataHolderService::kDeleteRequestsRequired; ++i)
+                  this->HandleDeleteMessage(data_message, [&](const std::string& result) {
+                                                              assert(!result.empty());
+                                                          });
+                                            }));
+        } else {
+          nfs::DataMessage::Data data(TypeParam::name_type::tag_type::kEnumValue,
+                                      TypeParam::name_type(name_and_content.first),
+                                      NonEmptyString("A"),
+                                      nfs::DataMessage::Action::kDelete);
+          nfs::DataMessage data_message(nfs::Persona::kDataHolder, source, data);
+          future_deletes.push_back(std::async([this, data_message] {
+              for (uint32_t i = 0; i != DataHolderService::kDeleteRequestsRequired; ++i)
+                  this->HandleDeleteMessage(data_message, [&](const std::string& result) {
+                                                              assert(!result.empty());
+                                                          });
+                                            }));
+        }
+        break;
+      }
+      case 1: {
+        nfs::DataMessage::Data data(TypeParam::name_type::tag_type::kEnumValue,
+                                    TypeParam::name_type(name_and_content.first),
+                                    name_and_content.second,
+                                    nfs::DataMessage::Action::kPut);
+        nfs::DataMessage data_message(nfs::Persona::kDataHolder, source, data);
+        future_puts.push_back(std::async([this, data_message] {
+            for (uint32_t i = 0; i != DataHolderService::kPutRequestsRequired; ++i)
+               this->HandlePutMessage(data_message, [&](const std::string& result) {
+                                                       assert(!result.empty());
+                                                    });
+                              }));
+        break;
+      }
+      case 2: {
+        if (!name_content_pairs.empty()) {
+          value_type name_content_pair(name_content_pairs[RandomUint32() % name_content_pairs.size()]);
+          nfs::DataMessage::Data data(TypeParam::name_type::tag_type::kEnumValue,
+                                      TypeParam::name_type(name_content_pair.first),
+                                      NonEmptyString("A"),
+                                      nfs::DataMessage::Action::kGet);
+          nfs::DataMessage data_message(nfs::Persona::kDataHolder, source, data);
+          future_gets.push_back(std::async([this, data_message, name_content_pair] {
+                this->HandleGetMessage(data_message,
+                                       [&](const std::string& result) {
+                                          assert(!result.empty());
+                                          NonEmptyString serialised_result(result);
+                                          nfs::Reply::serialised_type serialised_reply(serialised_result);
+                                          nfs::Reply reply(serialised_reply);
+                                          if (reply.IsSuccess())
+                                            ASSERT_EQ(name_content_pair.second, reply.data());
+                                        });
+            }));
+        } else {
+          nfs::DataMessage::Data data(TypeParam::name_type::tag_type::kEnumValue,
+                                      name_and_content.first,
+                                      NonEmptyString("A"),
+                                      nfs::DataMessage::Action::kGet);
+          nfs::DataMessage data_message(nfs::Persona::kDataHolder, source, data);
+          future_gets.push_back(std::async([this, data_message, name_and_content] {
+                this->HandleGetMessage(data_message,
+                                       [&](const std::string& result) {
+                                          assert(!result.empty());
+                                          NonEmptyString serialised_result(result);
+                                          nfs::Reply::serialised_type serialised_reply(serialised_result);
+                                          nfs::Reply reply(serialised_reply);
+                                          if (reply.IsSuccess())
+                                            ASSERT_EQ(name_and_content.second, reply.data());
+                                        });
+            }));
+        }
+        break;
+      }
+    }
+  }
+
+  for (auto& future_put : future_puts)
+    EXPECT_NO_THROW(future_put.get());
+
+  for (auto& future_delete : future_deletes) {
+    try {
+      future_delete.get();
+    }
+    catch(const std::exception& e) {
+      std::string msg(e.what());
+      LOG(kError) << msg;
+    }
+  }
+
+  for (auto& future_get : future_gets) {
+    try {
+      future_get.get();
+    }
+    catch(const std::exception& e) {
+      std::string msg(e.what());
+      LOG(kError) << msg;
+    }
+  }
+}
 
 REGISTER_TYPED_TEST_CASE_P(DataHolderTest,
                            BEH_HandlePutMessage,
                            BEH_HandleGetMessage,
-                           BEH_HandleDeleteMessage/*,
-                           BEH_RandomAsync*/);
+                           BEH_HandleDeleteMessage,
+                           BEH_RandomAsync);
 
 typedef testing::Types<passport::PublicAnmid,
                        passport::PublicAnsmid,
@@ -385,47 +431,51 @@ typedef testing::Types<passport::PublicAnmid,
 INSTANTIATE_TYPED_TEST_CASE_P(NoCache, DataHolderTest, AllTypes);
 
 
-//template<class T>
-//class DataHolderCacheableTest : public DataHolderTest<T> {
-// protected:
-//  NonEmptyString GetFromCache(nfs::DataMessage& data_message) {
-//    return this->data_holder_.template GetFromCache<T>(data_message);
-//  }
-//  void StoreInCache(const nfs::DataMessage& data_message) {
-//    this->data_holder_.template StoreInCache<T>(data_message);
-//  }
-//};
-//
-//TYPED_TEST_CASE_P(DataHolderCacheableTest);
-//
-//TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
-//  nfs::MessageSource source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
-//  NonEmptyString content(RandomAlphaNumericString(256));
-//  nfs::DataMessage::Data data(DataTagValue::kAnmaidValue,
-//                              Identity(RandomString(NodeId::kSize)), content);
-//  nfs::DataMessage data_message(nfs::DataMessage::Action::kPut, nfs::Persona::kDataHolder,
-//                                source, data);
-//  EXPECT_THROW(this->GetFromCache(data_message), maidsafe_error);
-//  this->StoreInCache(data_message);
-//  EXPECT_EQ(data_message.data().content, this->GetFromCache(data_message));
-//}
-//
-//REGISTER_TYPED_TEST_CASE_P(DataHolderCacheableTest, BEH_StoreInCache);
-//
-//typedef testing::Types<passport::PublicAnmid,
-//                       passport::PublicAnsmid,
-//                       passport::PublicAntmid,
-//                       passport::PublicAnmaid,
-//                       passport::PublicMaid,
-//                       passport::PublicPmid,
-//                       passport::PublicAnmpid,
-//                       passport::PublicMpid,
-//                       ImmutableData,
-//                       OwnerDirectory,
-//                       GroupDirectory,
-//                       WorldDirectory> CacheableTypes;
-//
-//INSTANTIATE_TYPED_TEST_CASE_P(Cache, DataHolderCacheableTest, CacheableTypes);
+template<class T>
+class DataHolderCacheableTest : public DataHolderTest<T> {
+ protected:
+
+  NonEmptyString GetFromCache(nfs::DataMessage& data_message) {
+    return this->data_holder_->GetFromCache<T>(data_message);
+  }
+
+  void StoreInCache(const nfs::DataMessage& data_message) {
+    this->data_holder_->StoreInCache<T>(data_message);
+  }
+
+};
+
+TYPED_TEST_CASE_P(DataHolderCacheableTest);
+
+TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
+  nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+  std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
+  nfs::DataMessage::Data data(TypeParam::name_type::tag_type::kEnumValue,
+                              TypeParam::name_type(name_and_content.first),
+                              name_and_content.second,
+                              nfs::DataMessage::Action::kPut);
+  nfs::DataMessage data_message(nfs::Persona::kDataHolder, source, data);
+  EXPECT_THROW(this->GetFromCache(data_message), maidsafe_error);
+  this->StoreInCache(data_message);
+  EXPECT_EQ(data_message.data().content, this->GetFromCache(data_message));
+}
+
+REGISTER_TYPED_TEST_CASE_P(DataHolderCacheableTest, BEH_StoreInCache);
+
+typedef testing::Types<passport::PublicAnmid,
+                       passport::PublicAnsmid,
+                       passport::PublicAntmid,
+                       passport::PublicAnmaid,
+                       passport::PublicMaid,
+                       passport::PublicPmid,
+                       passport::PublicAnmpid,
+                       passport::PublicMpid,
+                       ImmutableData,
+                       OwnerDirectory,
+                       GroupDirectory,
+                       WorldDirectory> CacheableTypes;
+
+INSTANTIATE_TYPED_TEST_CASE_P(Cache, DataHolderCacheableTest, CacheableTypes);
 
 
 }  // namespace test
