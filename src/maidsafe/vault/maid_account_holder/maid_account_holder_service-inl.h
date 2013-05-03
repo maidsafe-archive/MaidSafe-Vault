@@ -33,6 +33,15 @@ namespace vault {
 
 namespace detail {
 
+template<typename T>
+struct can_create_account : public std::false_type {};
+
+template<>
+struct can_create_account<passport::PublicAnmaid> : public std::true_type {};
+
+template<>
+struct can_create_account<passport::PublicMaid> : public std::true_type {};
+
 template<typename Data>
 int32_t EstimateCost(const Data& data) {
   static_assert(!std::is_same<Data, passport::PublicAnmaid>::value, "Cost of Anmaid should be 0.");
@@ -102,8 +111,9 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
               typename Data::serialised_type(data_message.data().content));
     auto account_name(detail::GetMaidAccountName(data_message));
     auto estimated_cost(detail::EstimateCost(data_message.data()));
-
+    maid_account_handler_.CreateAccount<Data>(account_name, detail::can_create_account<Data>());
     auto account_status(maid_account_handler_.AllowPut(account_name, estimated_cost));
+
     if (account_status == MaidAccount::Status::kNoSpace)
       ThrowError(VaultErrors::not_enough_space);
     bool low_space(account_status == MaidAccount::Status::kLowSpace);

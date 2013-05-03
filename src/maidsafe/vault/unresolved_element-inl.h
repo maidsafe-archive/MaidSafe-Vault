@@ -26,9 +26,6 @@ UnresolvedElement<ValueType>::UnresolvedElement()
       sync_counter(0),
       dont_add_to_db(false) {}
 
-// template<>
-// UnresolvedElement<int32_t>::UnresolvedElement(const serialised_type& serialised_copy);
-
 template<typename ValueType>
 UnresolvedElement<ValueType>::UnresolvedElement(const UnresolvedElement& other)
     : key(other.key),
@@ -71,9 +68,6 @@ void swap(UnresolvedElement<ValueType>& lhs, UnresolvedElement<ValueType>& rhs) 
   swap(lhs.sync_counter, rhs.sync_counter);
   swap(lhs.dont_add_to_db, rhs.dont_add_to_db);
 }
-
-// template<>
-// UnresolvedElement<int32_t>::serialised_type UnresolvedElement<int32_t>::Serialise() const;
 
 }  // namespace vault
 

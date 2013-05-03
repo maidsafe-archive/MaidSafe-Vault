@@ -64,22 +64,16 @@ class MaidAccountHandler {
                              const NodeId& new_node);
   void IncrementSyncAttempts(const MaidName& account_name);
 
-  typedef std::true_type RequireAccount;
-  typedef std::false_type RequireNoAccount;
-
   // Data operations
-  template<typename Data>
-  void PutData(const MaidName& account_name,
-               const typename Data::name_type& data_name,
-               int32_t cost,
-               RequireAccount);
-  // this will create an account on storing a MAID
-  template<typename Data>
-  void PutData(const MaidName& account_name,
-               const typename Data::name_type& data_name,
-               int32_t cost,
-               RequireNoAccount);  // only Maid and AnMaid
   MaidAccount::Status AllowPut(const MaidName& account_name, int32_t cost) const;
+
+  // Only Maid and Anmaid can create account; for all others this is a no-op.
+  typedef std::true_type AllowedAccountCreationType;
+  typedef std::false_type DisallowedAccountCreationType;
+  template<typename Data>
+  void CreateAccount(const MaidName& account_name, AllowedAccountCreationType);
+  template<typename Data>
+  void CreateAccount(const MaidName& /*account_name*/, DisallowedAccountCreationType) {}
 
   template<typename Data>
   void DeleteData(const MaidName& account_name, const typename Data::name_type& data_name);

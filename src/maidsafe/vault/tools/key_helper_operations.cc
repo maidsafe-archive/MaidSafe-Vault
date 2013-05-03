@@ -180,7 +180,7 @@ void KeyStorer::Store() {
 
   size_t error_stored_keys(0);
   for (auto& future : bool_futures) {
-    if (future.has_exception() || !future.get())
+    if (IsReady(future) || !future.get())
       ++error_stored_keys;
   }
 

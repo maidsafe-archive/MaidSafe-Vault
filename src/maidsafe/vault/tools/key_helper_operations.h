@@ -139,7 +139,7 @@ class DataChunkStorer : public ClientTester {
   void TestDeleteChunk(int chunk_index);
 
  private:
-  std::atomic_bool run_;
+  std::atomic<bool> run_;
   std::vector<ImmutableData> chunk_list_;
 
   bool Done(int32_t quantity, int32_t rounds) const;
