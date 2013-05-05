@@ -32,7 +32,7 @@ MemoryUsage mem_usage = MemoryUsage(524288000);  // 500Mb
 MemoryUsage perm_usage = MemoryUsage(mem_usage / 5);
 MemoryUsage cache_usage = MemoryUsage(mem_usage * 2 / 5);
 // MemoryUsage mem_only_cache_usage = MemoryUsage(mem_usage * 2 / 5);
-MemoryUsage mem_only_cache_usage = MemoryUsage(10000);  // size in elements
+MemoryUsage mem_only_cache_usage = MemoryUsage(100);  // size in elements
 //  fs::space_info space = fs::space("/tmp/vault_root_dir\\");  // FIXME  NOLINT
 
 //  DiskUsage disk_total = DiskUsage(space.available);
