@@ -25,16 +25,16 @@ namespace vault {
 
 const size_t PmidAccount::kSyncTriggerCount_(1);
 
-namespace {
-
-PmidRecord ParsePmidRecord(const PmidAccount::serialised_type& serialised_pmid_account) {
-  protobuf::PmidAccount pmid_account;
-  if (!pmid_account.ParseFromString(serialised_pmid_account.data.string()))
-    ThrowError(CommonErrors::parsing_error);
-  return PmidRecord(pmid_account.pmid_record());
-}
-
-}  // namespace
+//namespace {
+//
+//PmidRecord ParsePmidRecord(const PmidAccount::serialised_type& serialised_pmid_account) {
+//  protobuf::PmidAccount pmid_account;
+//  if (!pmid_account.ParseFromString(serialised_pmid_account.data.string()))
+//    ThrowError(CommonErrors::parsing_error);
+//  return PmidRecord(pmid_account.pmid_record());
+//}
+//
+//}  // namespace
 
 protobuf::DataElement PmidAccount::DataElement::ToProtobuf() const {
   GetTagValueAndIdentityVisitor type_and_name_visitor;
