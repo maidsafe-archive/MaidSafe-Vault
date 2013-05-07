@@ -45,8 +45,7 @@ class StructuredDataManagerService {
   template<typename Data>
   void HandleDataMessage(const nfs::DataMessage& data_message,
                          const routing::ReplyFunctor& reply_functor);
-  void HandleGenericMessage(const nfs::GenericMessage& generic_message,
-                            const routing::ReplyFunctor& reply_functor);
+  void HandleGenericMessage(const nfs::GenericMessage& generic_message);
   void HandleChurnEvent(routing::MatrixChange matrix_change);
 
  private:
@@ -64,7 +63,7 @@ class StructuredDataManagerService {
   template<typename Data>
   void HandleDelete(const nfs::DataMessage& data_message);
   template<typename Data>
-  void HandleGet(const nfs::DataMessage& data_message, reply_functor);
+  void HandleGet(const nfs::DataMessage& data_message, routing::ReplyFunctor reply_functor);
 
   template<typename Data, nfs::MessageAction action>
   void AddLocalUnresolvedEntryThenSync(const nfs::DataMessage& data_message, int32_t cost);
