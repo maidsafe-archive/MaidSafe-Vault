@@ -11,14 +11,12 @@
 
 #include "maidsafe/vault/maid_account_holder/maid_account_handler.h"
 
-#include "boost/filesystem/operations.hpp"
-
 #include "maidsafe/common/error.h"
+
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/pmid_account_holder/pmid_record.h"
 
-
-namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
@@ -65,9 +63,9 @@ std::vector<PmidName> MaidAccountHandler::GetPmidNames(const MaidName& account_n
 }
 
 void MaidAccountHandler::UpdatePmidTotals(const MaidName& account_name,
-                                          const PmidTotals& pmid_totals) {
+                                          const PmidRecord& pmid_record) {
   std::lock_guard<std::mutex> lock(mutex_);
-  maid_accounts_.at(account_name)->UpdatePmidTotals(pmid_totals);
+  maid_accounts_.at(account_name)->UpdatePmidTotals(pmid_record);
 }
 
 void MaidAccountHandler::AddLocalUnresolvedEntry(

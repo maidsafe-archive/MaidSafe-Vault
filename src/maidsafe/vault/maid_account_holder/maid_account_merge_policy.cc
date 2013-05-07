@@ -69,7 +69,7 @@ MaidAccountMergePolicy::UnresolvedEntry::Value MaidAccountMergePolicy::MergedCos
 
   if (all_costs.empty())
     ThrowError(CommonErrors::unknown);
-  // This will always return here is all_costs.size() == 1, or if == 2 and both costs are the same.
+  // This will always return here if all_costs.size() == 1, or if == 2 and both costs are the same.
   if (most_frequent > all_costs.size() / 2)
     return *(*most_frequent_itr).value;
   // Strip the first and last costs if they only have a count of 1.
