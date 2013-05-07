@@ -20,7 +20,6 @@
 
 #include "boost/filesystem/path.hpp"
 
-#include "maidsafe/common/types.h"
 
 #include "maidsafe/vault/pmid_account_holder/pmid_account.h"
 #include "maidsafe/vault/types.h"
@@ -32,8 +31,11 @@ namespace vault {
 
 class PmidAccountHandler {
  public:
-  explicit PmidAccountHandler();
+  explicit PmidAccountHandler(Db& db, const NodeId& this_node_id);
+
   // Account operations
+  bool ApplyAccountTransfer(const PmidName& account_name, const NodeId& source_id,
+                            const PmidAccount::serialised_type& serialised_pmid_account_details);
   void AddAccount(std::unique_ptr<PmidAccount> pmid_account);
   void DeleteAccount(const PmidName& account_name);
   PmidAccount::DataHolderStatus AccountStatus(const PmidName& account_name) const;
@@ -46,6 +48,10 @@ class PmidAccountHandler {
   std::vector<PmidName> GetAccountNames() const;
   std::vector<PmidName> GetArchivedAccountNames() const;
   PmidAccount::serialised_type GetSerialisedAccount(const PmidName& account_name) const;
+  NonEmptyString GetSyncData(const PmidName& account_name);
+  void ApplySyncData(const PmidName& account_name,
+                     const NonEmptyString& serialised_unresolved_entries);
+  void IncrementSyncAttempts(const PmidName& account_name);
 
   // Data operations
   template<typename Data>
@@ -60,8 +66,10 @@ class PmidAccountHandler {
   PmidAccountHandler& operator=(PmidAccountHandler&&);
 
   const boost::filesystem::path kPmidAccountsRoot_;
+  Db& db_;
+  const NodeId kThisNodeId_;
   mutable std::mutex mutex_;
-  std::map<typename PmidAccount::name_type , std::unique_ptr<PmidAccount>> pmid_accounts_;
+  std::map<typename PmidAccount::name_type, std::unique_ptr<PmidAccount>> pmid_accounts_;
 };
 
 }  // namespace vault

@@ -38,7 +38,8 @@ namespace vault {
 class PmidAccountHolderService {
  public:
   PmidAccountHolderService(const passport::Pmid& pmid,
-                           routing::Routing& routing);
+                           routing::Routing& routing,
+                           Db& db);
   template<typename Data>
   void HandleDataMessage(const nfs::DataMessage& data_message,
                          const routing::ReplyFunctor& reply_functor);
@@ -52,12 +53,18 @@ class PmidAccountHolderService {
   PmidAccountHolderService(PmidAccountHolderService&&);
   PmidAccountHolderService& operator=(PmidAccountHolderService&&);
 
+  void ValidateSender(const nfs::DataMessage& data_message) const;
+  void ValidateSender(const nfs::GenericMessage& generic_message) const;
+
+  void SendReplyAndAddToAccumulator(const nfs::DataMessage& data_message,
+                                    const routing::ReplyFunctor& reply_functor,
+                                    const nfs::Reply& reply);
+
   template<typename Data>
   void HandlePut(const nfs::DataMessage& data_message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void HandleDelete(const nfs::DataMessage& data_message,
                     const routing::ReplyFunctor& reply_functor);
-  void ValidateSender(const nfs::DataMessage& data_message) const;
   template<typename Data>
   void AdjustAccount(const nfs::DataMessage& data_message);
   template<typename Data>
@@ -69,6 +76,16 @@ class PmidAccountHolderService {
                        int32_t size,
                        routing::ReplyFunctor mm_reply_functor);
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
+
+
+  // =============== Sync ==========================================================================
+  void Sync(const PmidName& account_name);
+  void HandleSync(const nfs::GenericMessage& generic_message);
+
+  // =============== Account transfer ==============================================================
+  void TransferAccount(const MaidName& account_name, const NodeId& new_node);
+  void HandleAccountTransfer(const nfs::GenericMessage& generic_message);
+
 
   void CheckAccounts();
   bool AssessRange(const PmidName& account_name,

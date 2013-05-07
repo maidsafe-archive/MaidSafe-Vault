@@ -14,29 +14,46 @@
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/pmid_account_holder/pmid_account.pb.h"
-
+#include "maidsafe/vault/sync.pb.h"
 
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
-
 namespace vault {
 
 const int PmidAccountHolderService::kPutRequestsRequired_(3);
 const int PmidAccountHolderService::kDeleteRequestsRequired_(3);
 
+namespace {
+
+template<typename Message>
+inline bool ForThisPersona(const Message& message) {
+  return message.destination_persona() != nfs::Persona::kPmidAccountHolder;
+}
+
+}  // unnamed namespace
 PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
-                                                   routing::Routing& routing)
+                                                   routing::Routing& routing,
+                                                   Db& db)
     : routing_(routing),
       accumulator_mutex_(),
       accumulator_(),
-      pmid_account_handler_(),
+      pmid_account_handler_(db, routing.kNodeId()),
       nfs_(routing, pmid) {}
 
 
-void PmidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& /*generic_message*/,
+void PmidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
                                                     const routing::ReplyFunctor& /*reply_functor*/) {
-
+  ValidateSender(generic_message);
+  nfs::GenericMessage::Action action(generic_message.action());
+  switch (action) {
+    case nfs::GenericMessage::Action::kSynchronise:
+      return HandleSync(generic_message);
+    case nfs::GenericMessage::Action::kAccountTransfer:
+      return HandleAccountTransfer(generic_message);
+    default:
+      LOG(kError) << "Unhandled Post action type";
+  }
 }
 
 void PmidAccountHolderService::HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {
@@ -93,14 +110,62 @@ void PmidAccountHolderService::ValidateSender(const nfs::DataMessage& data_messa
   if (!routing_.IsConnectedVault(NodeId(data_message.data_holder()->string())))
     ThrowError(VaultErrors::permission_denied);
 
-  if (routing_.EstimateInGroup(data_message.source().node_id,
-                               NodeId(data_message.data().name)))
+  if (routing_.EstimateInGroup(data_message.source().node_id, NodeId(data_message.data().name)))
     ThrowError(VaultErrors::permission_denied);
 
-  if (data_message.source().persona != nfs::Persona::kMetadataManager ||
-      data_message.destination_persona() != nfs::Persona::kPmidAccountHolder)
+  if (!FromMetadataManager(data_message) || !ForThisPersona(data_message))
     ThrowError(CommonErrors::invalid_parameter);
 }
+
+void PmidAccountHolderService::ValidateSender(const nfs::GenericMessage& generic_message) const {
+  if (!routing_.IsConnectedVault(generic_message.source().node_id))
+    ThrowError(VaultErrors::permission_denied);
+
+  if (routing_.EstimateInGroup(generic_message.source().node_id, NodeId(generic_message.name())))
+    ThrowError(VaultErrors::permission_denied);
+
+  if (!FromMetadataManager(generic_message) || !ForThisPersona(generic_message))
+    ThrowError(CommonErrors::invalid_parameter);
+}
+
+// =============== Put/Delete data =================================================================
+
+void PmidAccountHolderService::SendReplyAndAddToAccumulator(
+    const nfs::DataMessage& data_message,
+    const routing::ReplyFunctor& reply_functor,
+    const nfs::Reply& reply) {
+  reply_functor(reply.Serialise()->string());
+  std::lock_guard<std::mutex> lock(accumulator_mutex_);
+  accumulator_.SetHandled(data_message, reply.error());
+}
+
+
+// =============== Sync ============================================================================
+
+void PmidAccountHolderService::Sync(const PmidName& account_name) {
+  auto serialised_sync_data(pmid_account_handler_.GetSyncData(account_name));
+  if (!serialised_sync_data.IsInitialised())  // Nothing to sync
+    return;
+
+  protobuf::Sync proto_sync;
+  proto_sync.set_account_name(account_name->string());
+  proto_sync.set_serialised_unresolved_entries(serialised_sync_data.string());
+
+  nfs_.Sync(account_name, NonEmptyString(proto_sync.SerializeAsString()));
+  // TODO(Team): 2013-05-07 - Check this is correct place to increment sync attempt counter.
+  pmid_account_handler_.IncrementSyncAttempts(account_name);
+}
+
+void PmidAccountHolderService::HandleSync(const nfs::GenericMessage& generic_message) {
+  protobuf::Sync proto_sync;
+  if (!proto_sync.ParseFromString(generic_message.content().string())) {
+    LOG(kError) << "Error parsing Synchronise message.";
+    return;
+  }
+  pmid_account_handler_.ApplySyncData(PmidName(Identity(proto_sync.account_name())),
+                                      NonEmptyString(proto_sync.serialised_unresolved_entries()));
+}
+
 
 void PmidAccountHolderService::InformOfDataHolderDown(const PmidName& pmid_name) {
   pmid_account_handler_.SetDataHolderGoingDown(pmid_name);
@@ -159,5 +224,4 @@ void PmidAccountHolderService::SendMessages(const PmidName& /*pmid_name*/,
 }
 
 }  // namespace vault
-
 }  // namespace maidsafe

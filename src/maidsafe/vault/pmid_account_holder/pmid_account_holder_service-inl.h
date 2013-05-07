@@ -29,6 +29,7 @@ namespace vault {
 template<typename Data>
 void PmidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
+  ValidateSender(data_message);
   nfs::Reply reply(CommonErrors::success);
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
@@ -42,9 +43,7 @@ void PmidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_me
     HandleDelete<Data>(data_message, reply_functor);
   } else {
     reply = nfs::Reply(VaultErrors::operation_not_supported, data_message.Serialise().data);
-    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    accumulator_.SetHandled(data_message, reply.error());
-    reply_functor(reply.Serialise()->string());
+    SendReplyAndAddToAccumulator(data_message, reply_functor, reply);
   }
 }
 

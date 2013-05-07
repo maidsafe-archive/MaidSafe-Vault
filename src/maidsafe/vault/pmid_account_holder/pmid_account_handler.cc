@@ -19,12 +19,26 @@
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
-
 namespace vault {
 
-PmidAccountHandler::PmidAccountHandler()
-    : mutex_(),
+PmidAccountHandler::PmidAccountHandler(Db& db, const NodeId& this_node_id)
+    : db_(db),
+      kThisNodeId_(this_node_id),
+      mutex_(),
       pmid_accounts_() {}
+
+bool PmidAccountHandler::ApplyAccountTransfer(const PmidName& account_name, const NodeId &source_id,
+    const PmidAccount::serialised_type& serialised_pmid_account_details) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  std::unique_ptr<PmidAccount> account(new PmidAccount(account_name, db_, kThisNodeId_,
+                                                       source_id,
+                                                       serialised_pmid_account_details));
+  if (!pmid_accounts_.insert(std::make_pair(account_name, std::move(account))).second)
+    return false;
+  else
+    return pmid_accounts_.at(account_name)->ApplyAccountTransfer(source_id,
+                                                                 serialised_pmid_account_details);
+}
 
 void PmidAccountHandler::AddAccount(std::unique_ptr<PmidAccount> account) {
   pmid_accounts_.insert(std::make_pair(account->name(), std::move(account)));
@@ -69,6 +83,21 @@ PmidAccount::serialised_type PmidAccountHandler::GetSerialisedAccount(
   return pmid_accounts_.at(account_name)->Serialise();
 }
 
-}  // namespace vault
+NonEmptyString PmidAccountHandler::GetSyncData(const PmidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return pmid_accounts_.at(account_name)->GetSyncData();
+}
 
+void PmidAccountHandler::ApplySyncData(const PmidName& account_name,
+                                       const NonEmptyString& serialised_unresolved_entries) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  pmid_accounts_.at(account_name)->ApplySyncData(serialised_unresolved_entries);
+}
+
+void PmidAccountHandler::IncrementSyncAttempts(const PmidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  pmid_accounts_.at(account_name)->IncrementSyncAttempts();
+}
+
+}  // namespace vault
 }  // namespace maidsafe

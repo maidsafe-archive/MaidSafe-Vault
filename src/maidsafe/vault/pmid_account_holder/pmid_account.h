@@ -62,9 +62,13 @@ class PmidAccount {
               const NodeId& source_id,
               const serialised_type& serialised_pmid_account_details);
 
+  PmidAccount(PmidAccount&& other);
+  PmidAccount& operator=(PmidAccount&& other);
+
+  serialised_type Serialise();
+
   void SetDataHolderUp() { data_holder_status_ = DataHolderStatus::kUp; }
   void SetDataHolderDown() { data_holder_status_ = DataHolderStatus::kDown; }
-
 
   void PutData(int32_t size) {
     pmid_record_.stored_total_size += size;
@@ -75,7 +79,14 @@ class PmidAccount {
     pmid_record_.stored_count--;
     pmid_record_.stored_total_size -= sync_.AllowDelete<Data>(name);
   }
-  serialised_type Serialise();
+
+  bool ApplyAccountTransfer(const NodeId& source_id,
+                            const serialised_type& serialised_pmid_account_details);
+
+  NonEmptyString GetSyncData();
+  void ApplySyncData(const NonEmptyString& serialised_unresolved_entries);
+  void IncrementSyncAttempts();
+
   name_type name() const { return pmid_name_; }
   DataHolderStatus data_holder_status() const { return data_holder_status_; }
   int64_t total_data_stored_by_pmids() const { return pmid_record_.stored_total_size; }
@@ -83,15 +94,14 @@ class PmidAccount {
  private:
   PmidAccount(const PmidAccount&);
   PmidAccount& operator=(const PmidAccount&);
-  PmidAccount(PmidAccount&&);
-  PmidAccount& operator=(PmidAccount&&);
 
   name_type pmid_name_;
-  NodeId this_node_id_;
   PmidRecord pmid_record_;
   DataHolderStatus data_holder_status_;
   std::unique_ptr<AccountDb> account_db_;
   Sync<PmidAccountMergePolicy> sync_;
+  uint16_t account_transfer_nodes_;
+  static const size_t kSyncTriggerCount_;
 };
 
 }  // namespace vault
