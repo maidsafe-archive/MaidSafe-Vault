@@ -96,12 +96,13 @@ void Sync<MergePolicy>::AddLocalEntry(const typename MergePolicy::UnresolvedEntr
 
 template<typename MergePolicy>
 bool Sync<MergePolicy>::AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge) {
+  auto found(std::begin(MergePolicy::unresolved_data_));
   for (;;) {
-    auto found = std::find_if(std::begin(MergePolicy::unresolved_data_),
-                              std::end(MergePolicy::unresolved_data_),
-                              [&entry](const typename MergePolicy::UnresolvedEntry &test) {
-                                  return test.key == entry.key;
-                              });
+    found = std::find_if(found,
+                         std::end(MergePolicy::unresolved_data_),
+                         [&entry](const typename MergePolicy::UnresolvedEntry &test) {
+                             return test.key == entry.key;
+                         });
 
     if (found == std::end(MergePolicy::unresolved_data_)) {
       MergePolicy::unresolved_data_.push_back(entry);
@@ -122,12 +123,13 @@ bool Sync<MergePolicy>::AddEntry(const typename MergePolicy::UnresolvedEntry& en
       (*found).messages_contents.push_back(content);
     }
 
-    if (merge &&
-        (*found).messages_contents.size() >= (routing::Parameters::node_group_size + 1U) / 2) {
+    if (merge && (*found).messages_contents.size() > routing::Parameters::node_group_size / 2) {
       MergePolicy::Merge(*found);
       MergePolicy::unresolved_data_.erase(found);
       return true;
     }
+
+    ++found;
   }
   return false;
 }

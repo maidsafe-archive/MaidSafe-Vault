@@ -144,7 +144,7 @@ NonEmptyString MaidAccountMergePolicy::GetFromDb(const DataNameVariant& data_nam
   try {
     serialised_db_value = account_db_->Get(data_name);
   }
-  catch(const vault_error&) {}
+  catch(const maidsafe_error&) {}
   return serialised_db_value;
 }
 
