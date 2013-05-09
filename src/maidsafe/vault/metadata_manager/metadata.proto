@@ -1,13 +1,11 @@
 package maidsafe.vault.protobuf;
 option optimize_for = LITE_RUNTIME;
 
-message Metadata {
-  required int32 type = 1;
-  required bytes name = 2;
-  required int32 size = 3;
-  required int64 subscribers = 4;
-  repeated bytes online_pmid_name = 5;
-  repeated bytes offline_pmid_name = 6;
+message MetadataValue {
+  required int32 size = 1;
+  required int64 subscribers = 2;
+  repeated bytes online_pmid_name = 3;
+  repeated bytes offline_pmid_name = 4;
 }
 
 message DataOrProof {

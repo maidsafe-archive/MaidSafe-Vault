@@ -37,6 +37,17 @@ class MetadataHandlerTypedTest;
 
 class MetadataHandler {
  public:
+  struct MetadataValue {
+    typedef TaggedValue<NonEmptyString, struct SerialisedMetadataValueTag> serialised_type;
+    explicit MetadataValue(const serialised_type& serialised_metadata_value);
+    explicit MetadataValue(int size_in);
+    serialised_type Serialise();
+
+    int size;
+    int64_t subscribers;
+    std::set<PmidName> online_pmid_name, offline_pmid_name;
+  };
+
   explicit MetadataHandler(const boost::filesystem::path& vault_root_dir);
 
   // This increments the subscribers count, or adds a new element if it doesn't exist.
@@ -48,7 +59,7 @@ class MetadataHandler {
 
   // This is used when synchronising with other MMs.  It simply adds or replaces any existing
   // element of the same type and name.
-  void PutMetadata(const protobuf::Metadata& proto_metadata);
+  //  void PutMetadata(const protobuf::Metadata& proto_metadata);
   // This is used when synchronising with other MMs.  If this node sends a sync (group message) for
   // this element, and doesn't receive its own request, it's no longer responsible for this element.
   template<typename Data>
@@ -89,8 +100,8 @@ class MetadataHandler {
     // Should only be called once.
     void SaveChanges();
 
-    protobuf::Metadata content;
     const boost::filesystem::path kPath;
+    MetadataValue value;
     on_scope_exit strong_guarantee;
 
    private:
