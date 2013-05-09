@@ -66,6 +66,26 @@ protobuf::PmidRecord PmidRecord::ToProtobuf() const {
   return proto_pmid_record;
 }
 
+PmidRecord::PmidRecord(const serialised_type& serialised_pmid_record)
+    : pmid_name(),
+      stored_count(0),
+      stored_total_size(0),
+      lost_count(0),
+      lost_total_size(0),
+      claimed_available_size(0) {
+  protobuf::PmidRecord proto_pmid_record;
+  if (!proto_pmid_record.ParseFromString(serialised_pmid_record->string())) {
+    LOG(kError) << "Failed to parse pmid_record.";
+    ThrowError(CommonErrors::parsing_error);
+  }
+  *this = PmidRecord(proto_pmid_record);
+}
+
+PmidRecord::serialised_type PmidRecord::Serialise() const {
+  auto proto_pmid_record(ToProtobuf());
+  return serialised_type(NonEmptyString(proto_pmid_record.SerializeAsString()));
+}
+
 PmidRecord::PmidRecord(const PmidRecord& other)
     : pmid_name(other.pmid_name),
       stored_count(other.stored_count),

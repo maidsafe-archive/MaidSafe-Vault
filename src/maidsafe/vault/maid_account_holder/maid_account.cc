@@ -167,12 +167,13 @@ std::vector<PmidName> MaidAccount::GetPmidNames() const {
   return pmid_names;
 }
 
-void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
-  auto itr(Find(pmid_totals.pmid_record.pmid_name));
+void MaidAccount::UpdatePmidTotals(const PmidRecord& pmid_record) {
+  auto itr(Find(pmid_record.pmid_name));
   if (itr == std::end(pmid_totals_))
     ThrowError(CommonErrors::no_such_element);
-  *itr = pmid_totals;
+  (*itr).pmid_record = pmid_record;
 }
+
 void MaidAccount::AddLocalUnresolvedEntry(const MaidAccountUnresolvedEntry& unresolved_entry) {
   sync_.AddLocalEntry(unresolved_entry);
 }
@@ -208,7 +209,6 @@ void MaidAccount::ApplySyncData(const NonEmptyString& serialised_unresolved_entr
         total_put_data_ -= *entry.messages_contents.front().value;
     }
   }
-//  sync_++
 }
 
 void MaidAccount::ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node) {

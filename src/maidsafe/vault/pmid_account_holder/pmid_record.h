@@ -14,6 +14,7 @@
 
 #include <cstdint>
 
+#include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/vault/types.h"
@@ -27,10 +28,14 @@ namespace protobuf { class PmidRecord; }
 
 struct PmidRecord {
  public:
+  typedef TaggedValue<NonEmptyString, struct SerialisedPmidRecordTag> serialised_type;
+
   PmidRecord();
   explicit PmidRecord(const PmidName& pmid_name_in);
   explicit PmidRecord(const protobuf::PmidRecord& proto_pmid_record);
   protobuf::PmidRecord ToProtobuf() const;
+  explicit PmidRecord(const serialised_type& serialised_pmid_record);
+  serialised_type Serialise() const;
   PmidRecord(const PmidRecord& other);
   PmidRecord(PmidRecord&& other);
   PmidRecord& operator=(PmidRecord other);

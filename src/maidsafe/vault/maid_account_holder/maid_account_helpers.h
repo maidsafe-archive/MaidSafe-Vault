@@ -15,7 +15,6 @@
 #include <map>
 #include <memory>
 #include <mutex>
-#include <utility>
 #include <vector>
 
 #include "maidsafe/passport/types.h"
@@ -59,13 +58,15 @@ void PmidRegistrationOp::SetPublicFob<passport::PublicPmid>(
 
 
 struct GetPmidTotalsOp {
-  explicit GetPmidTotalsOp(const MaidName& maid_account_name)
+  GetPmidTotalsOp(const MaidName& maid_account_name, const PmidName& pmid_account_name)
       : kMaidAccountName(maid_account_name),
+        kPmidAccountName(pmid_account_name),
         mutex(),
-        pmid_records_and_senders() {}
+        pmid_records() {}
   const MaidName kMaidAccountName;
+  const PmidName kPmidAccountName;
   std::mutex mutex;
-  std::vector<std::pair<PmidRecord, PmidName>> pmid_records_and_senders;
+  std::vector<PmidRecord> pmid_records;
 };
 
 

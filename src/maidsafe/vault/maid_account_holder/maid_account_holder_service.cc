@@ -54,6 +54,74 @@ inline bool ForThisPersona(const Message& message) {
   return message.destination_persona() != nfs::Persona::kMaidAccountHolder;
 }
 
+template<typename T>
+T Merge(std::vector<T> values) {
+  std::map<T, size_t> value_and_count;
+  auto most_frequent_itr(std::end(values));
+  size_t most_frequent(0);
+  for (auto itr(std::begin(values)); itr != std::end(values); ++itr) {
+    size_t this_value_count(++value_and_count[*itr]);
+    if (this_value_count > most_frequent) {
+      most_frequent = this_value_count;
+      most_frequent_itr = itr;
+    }
+  }
+
+  if (value_and_count.empty())
+    ThrowError(CommonErrors::unknown);
+
+  if (value_and_count.size() == 1U)
+    return *most_frequent_itr;
+
+  if (value_and_count.size() == 2U && most_frequent == 1U)
+    return (values[0] + values[1]) / 2;
+
+  // Strip the first and last values if they only have a count of 1.
+  if ((*std::begin(value_and_count)).second == 1U)
+    value_and_count.erase(std::begin(value_and_count));
+  if ((*(--std::end(value_and_count))).second == 1U)
+    value_and_count.erase(--std::end(value_and_count));
+
+  T total(0);
+  size_t count(0);
+  for (const auto& element : value_and_count) {
+    total += element.first * element.second;
+    count += element.second;
+  }
+
+  return total / count;
+}
+
+PmidRecord MergePmidTotals(std::shared_ptr<GetPmidTotalsOp> op_data) {
+  // Remove invalid results
+  op_data->pmid_records.erase(
+      std::remove_if(std::begin(op_data->pmid_records),
+                     std::end(op_data->pmid_records),
+                     [&op_data](const PmidRecord& pmid_record) {
+                         return pmid_record.pmid_name->IsInitialised() &&
+                                pmid_record.pmid_name == op_data->kPmidAccountName;
+                     }),
+      std::end(op_data->pmid_records));
+
+  std::vector<int64_t> all_stored_counts, all_stored_total_size, all_lost_count,
+                       all_lost_total_size, all_claimed_available_size;
+  for (const auto& pmid_record : op_data->pmid_records) {
+    all_stored_counts.push_back(pmid_record.stored_count);
+    all_stored_total_size.push_back(pmid_record.stored_total_size);
+    all_lost_count.push_back(pmid_record.lost_count);
+    all_lost_total_size.push_back(pmid_record.lost_total_size);
+    all_claimed_available_size.push_back(pmid_record.claimed_available_size);
+  }
+
+  PmidRecord merged(op_data->kPmidAccountName);
+  merged.stored_count = Merge(all_stored_counts);
+  merged.stored_total_size = Merge(all_stored_total_size);
+  merged.lost_count = Merge(all_lost_count);
+  merged.lost_total_size = Merge(all_lost_total_size);
+  merged.claimed_available_size = Merge(all_claimed_available_size);
+  return merged;
+}
+
 }  // unnamed namespace
 
 
@@ -251,7 +319,7 @@ void MaidAccountHolderService::HandleAccountTransfer(const nfs::Message& generic
 void MaidAccountHolderService::UpdatePmidTotals(const MaidName& account_name) {
   auto pmid_names(maid_account_handler_.GetPmidNames(account_name));
   for (const auto& pmid_name : pmid_names) {
-    auto op_data(std::make_shared<GetPmidTotalsOp>(account_name));
+    auto op_data(std::make_shared<GetPmidTotalsOp>(account_name, pmid_name));
     nfs_.RequestPmidTotals(pmid_name,
                            [this, op_data](std::string serialised_reply) {
                              UpdatePmidTotalsCallback(serialised_reply, op_data);
@@ -259,13 +327,31 @@ void MaidAccountHolderService::UpdatePmidTotals(const MaidName& account_name) {
   }
 }
 
-void MaidAccountHolderService::UpdatePmidTotalsCallback(const std::string& /*serialised_reply*/,
-                                                        std::shared_ptr<GetPmidTotalsOp> /*op_data*/) {
-  // 1] Parse reply - don't throw - need to add default-constructed PmidRecord if fails
-  // 2] Lock the mutex
-  // 3] add result to vector (assert <= 4)
-  // 4] if vector size < 4 return
-  // 5] else merge results and do maid_account_handler_.UpdatePmidTotals
+void MaidAccountHolderService::UpdatePmidTotalsCallback(const std::string& serialised_reply,
+                                                        std::shared_ptr<GetPmidTotalsOp> op_data) {
+  PmidRecord pmid_record;
+  try {
+    nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));
+    if (reply.IsSuccess())
+      pmid_record = PmidRecord(PmidRecord::serialised_type(reply.data()));
+  }
+  catch(const std::exception& e) {
+    LOG(kWarning) << "Error updating PMID totals: " << e.what();
+  }
+
+  std::lock_guard<std::mutex> lock(op_data->mutex);
+  op_data->pmid_records.push_back(pmid_record);
+  assert(op_data->pmid_records.size() <= routing::Parameters::node_group_size);
+  if (op_data->pmid_records.size() != routing::Parameters::node_group_size)
+    return;
+
+  try {
+    auto pmid_record(MergePmidTotals(op_data));
+    maid_account_handler_.UpdatePmidTotals(op_data->kMaidAccountName, pmid_record);
+  }
+  catch(const std::exception& e) {
+    LOG(kWarning) << "Error updating PMID totals: " << e.what();
+  }
 }
 
 void MaidAccountHolderService::HandleChurnEvent(routing::MatrixChange matrix_change) {
