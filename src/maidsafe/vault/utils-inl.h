@@ -86,7 +86,7 @@ bool IsDataElement(const typename Data::name_type& name,
 
 // Returns true if the required successful request count has been reached
 template<typename Accumulator>
-bool AddResult(const nfs::DataMessage& data_message,
+bool AddResult(const nfs::Message& data_message,
                const routing::ReplyFunctor& reply_functor,
                const maidsafe_error& return_code,
                Accumulator& accumulator,

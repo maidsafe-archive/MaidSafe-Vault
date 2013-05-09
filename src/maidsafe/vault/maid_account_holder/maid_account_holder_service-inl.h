@@ -60,16 +60,16 @@ int32_t EstimateCost<passport::PublicMaid>(const passport::PublicMaid&);
 template<>
 int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&);
 
-MaidName GetMaidAccountName(const nfs::DataMessage& data_message);
+MaidName GetMaidAccountName(const nfs::Message& data_message);
 
 template<typename Data>
-typename Data::name_type GetDataName(const nfs::DataMessage& data_message) {
+typename Data::name_type GetDataName(const nfs::Message& data_message) {
   // Hash the data name to obfuscate the list of chunks associated with the client.
   return typename Data::name_type(crypto::Hash<crypto::SHA512>(data_message.data().name));
 }
 
 template<typename Data, nfs::MessageAction action>
-MaidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::DataMessage& data_message,
+MaidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& data_message,
                                                  int32_t cost,
                                                  const NodeId& this_id) {
   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
@@ -82,7 +82,7 @@ MaidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::DataMessage& data_me
 
 
 template<typename Data>
-void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
+void MaidAccountHolderService::HandleDataMessage(const nfs::Message& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
   ValidateSender(data_message);
   nfs::Reply reply(CommonErrors::success);
@@ -92,9 +92,9 @@ void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_me
       return reply_functor(reply.Serialise()->string());
   }
 
-  if (data_message.data().action == nfs::DataMessage::Action::kPut) {
+  if (data_message.data().action == nfs::MessageAction::kPut) {
     HandlePut<Data>(data_message, reply_functor);
-  } else if (data_message.data().action == nfs::DataMessage::Action::kDelete) {
+  } else if (data_message.data().action == nfs::MessageAction::kDelete) {
     HandleDelete<Data>(data_message, reply_functor);
   } else {
     reply = nfs::Reply(VaultErrors::operation_not_supported, data_message.Serialise().data);
@@ -103,7 +103,7 @@ void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_me
 }
 
 template<typename Data>
-void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
+void MaidAccountHolderService::HandlePut(const nfs::Message& data_message,
                                          const routing::ReplyFunctor& reply_functor) {
   maidsafe_error return_code(CommonErrors::success);
   try {
@@ -149,7 +149,7 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
 }
 
 template<typename Data>
-void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message,
+void MaidAccountHolderService::HandleDelete(const nfs::Message& data_message,
                                             const routing::ReplyFunctor& reply_functor) {
   try {
     auto data_name(detail::GetDataName<Data>(data_message));
@@ -168,7 +168,7 @@ void MaidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message
 }
 
 template<typename Data>
-void MaidAccountHolderService::SendEarlySuccessReply(const nfs::DataMessage& data_message,
+void MaidAccountHolderService::SendEarlySuccessReply(const nfs::Message& data_message,
                                                      const routing::ReplyFunctor& reply_functor,
                                                      bool low_space,
                                                      NonUniqueDataType) {
@@ -180,7 +180,7 @@ void MaidAccountHolderService::SendEarlySuccessReply(const nfs::DataMessage& dat
 
 template<typename Data>
 void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
-                                               const nfs::DataMessage& data_message,
+                                               const nfs::Message& data_message,
                                                routing::ReplyFunctor client_reply_functor,
                                                bool low_space,
                                                UniqueDataType) {
@@ -199,7 +199,7 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
 
 template<typename Data>
 void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
-                                               const nfs::DataMessage& data_message,
+                                               const nfs::Message& data_message,
                                                routing::ReplyFunctor /*client_reply_functor*/,
                                                bool /*low_space*/,
                                                NonUniqueDataType) {
@@ -217,7 +217,7 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
 }
 
 template<typename Data, nfs::MessageAction action>
-void MaidAccountHolderService::AddLocalUnresolvedEntryThenSync(const nfs::DataMessage& data_message,
+void MaidAccountHolderService::AddLocalUnresolvedEntryThenSync(const nfs::Message& data_message,
                                                                int32_t cost) {
   auto account_name(detail::GetMaidAccountName(data_message));
   auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(data_message, cost,

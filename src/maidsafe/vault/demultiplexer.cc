@@ -16,8 +16,7 @@
 #include "maidsafe/passport/types.h"
 #include "maidsafe/data_types/data_type_values.h"
 #include "maidsafe/data_types/data_name_variant.h"
-#include "maidsafe/nfs/data_message.h"
-#include "maidsafe/nfs/generic_message.h"
+#include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/reply.h"
 
@@ -34,7 +33,7 @@ namespace vault {
 namespace {
 
 template<typename Persona>
-void HandleDataType(const nfs::DataMessage& data_message,
+void HandleDataType(const nfs::Message& data_message,
                     const routing::ReplyFunctor& reply_functor,
                     Persona& persona) {
   switch (data_message.data().type) {
@@ -118,15 +117,16 @@ Demultiplexer::Demultiplexer(MaidAccountHolderService& maid_account_holder_servi
 void Demultiplexer::HandleMessage(const std::string& serialised_message,
                                   const routing::ReplyFunctor& reply_functor) {
   try {
-    nfs::Message message((nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
-    switch (message.inner_message_type()) {
-      case nfs::MessageCategory::kData: {
-        nfs::DataMessage data_message(message.serialised_inner_message<nfs::DataMessage>());
-        return PersonaHandleMessage(data_message, reply_functor);
+    nfs::MessageWrapper message_wrapper(
+        (nfs::MessageWrapper::serialised_type((NonEmptyString(serialised_message)))));
+    switch (message_wrapper.inner_message_type()) {
+      case nfs::MessageCategory::kReply: {
+        nfs::Message data_message(message_wrapper.serialised_inner_message<nfs::Message>());
+        return PersonaHandleDataMessage(data_message, reply_functor);
       }
-      case nfs::MessageCategory::kGeneric: {
-        nfs::GenericMessage generic_msg(message.serialised_inner_message<nfs::GenericMessage>());
-        return PersonaHandleMessage(generic_msg, reply_functor);
+      case nfs::MessageCategory::kMessage: {
+        nfs::Message generic_msg(message_wrapper.serialised_inner_message<nfs::Message>());
+        return PersonaHandleGenericMessage(generic_msg, reply_functor);
       }
       default:
         LOG(kError) << "Unhandled inner_message_type";
@@ -150,8 +150,8 @@ void Demultiplexer::HandleMessage(const std::string& serialised_message,
 }
 
 template<>
-void Demultiplexer::PersonaHandleMessage<nfs::DataMessage>(
-    const nfs::DataMessage& message,
+void Demultiplexer::PersonaHandleDataMessage<nfs::Message>(
+    const nfs::Message& message,
     const routing::ReplyFunctor& reply_functor) {
   switch (message.destination_persona()) {
     case nfs::Persona::kMaidAccountHolder:
@@ -171,8 +171,8 @@ void Demultiplexer::PersonaHandleMessage<nfs::DataMessage>(
 }
 
 template<>
-void Demultiplexer::PersonaHandleMessage<nfs::GenericMessage>(
-    const nfs::GenericMessage& message,
+void Demultiplexer::PersonaHandleGenericMessage<nfs::Message>(
+    const nfs::Message& message,
     const routing::ReplyFunctor& reply_functor) {
   switch (message.destination_persona()) {
     case nfs::Persona::kMaidAccountHolder:
@@ -190,21 +190,21 @@ void Demultiplexer::PersonaHandleMessage<nfs::GenericMessage>(
 
 bool Demultiplexer::GetFromCache(std::string& serialised_message) {
   try {
-    nfs::Message request_message(
+    nfs::MessageWrapper request_message_wrapper(
         (nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
-    nfs::DataMessage request_data_message(
-        (request_message.serialised_inner_message<nfs::DataMessage>()));
+    nfs::Message request_data_message(
+        (request_message_wrapper.serialised_inner_message<nfs::Message>()));
     auto cached_content(HandleGetFromCache(request_data_message));
     if (cached_content.IsInitialised()) {
-      nfs::DataMessage response_data_message(
+      nfs::Message response_data_message(
           request_data_message.destination_persona(),
           request_data_message.source(),
-          nfs::DataMessage::Data(request_data_message.data().type,
-                                 request_data_message.data().name,
-                                 cached_content,
-                                 request_data_message.data().action));
-      nfs::Message response_message(nfs::DataMessage::message_type_identifier,
-                                    response_data_message.Serialise().data);
+          nfs::Message::Data(request_data_message.data().type,
+                             request_data_message.data().name,
+                             cached_content,
+                             request_data_message.data().action));
+      nfs::MessageWrapper response_message(nfs::Message::message_type_identifier,
+                                           response_data_message.Serialise().data);
       serialised_message = response_message.Serialise()->string();
       return true;
     }
@@ -215,7 +215,7 @@ bool Demultiplexer::GetFromCache(std::string& serialised_message) {
   return false;
 }
 
-NonEmptyString Demultiplexer::HandleGetFromCache(const nfs::DataMessage& data_message) {
+NonEmptyString Demultiplexer::HandleGetFromCache(const nfs::Message& data_message) {
   switch (data_message.data().type) {
     case DataTagValue::kAnmidValue: {
       typedef is_maidsafe_data<DataTagValue::kAnmidValue>::data_type data_type;
@@ -285,8 +285,9 @@ NonEmptyString Demultiplexer::HandleGetFromCache(const nfs::DataMessage& data_me
 
 void Demultiplexer::StoreInCache(const std::string& serialised_message) {
   try {
-    nfs::Message message((nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
-    nfs::DataMessage data_message((message.serialised_inner_message<nfs::DataMessage>()));
+    nfs::MessageWrapper message_wrapper(
+        (nfs::Message::serialised_type((NonEmptyString(serialised_message)))));
+    nfs::Message data_message((message_wrapper.serialised_inner_message<nfs::Message>()));
     HandleStoreInCache(data_message);
   }
   catch(const std::exception& ex) {
@@ -294,7 +295,7 @@ void Demultiplexer::StoreInCache(const std::string& serialised_message) {
   }
 }
 
-void Demultiplexer::HandleStoreInCache(const nfs::DataMessage& data_message) {
+void Demultiplexer::HandleStoreInCache(const nfs::Message& data_message) {
   switch (data_message.data().type) {
     case DataTagValue::kAnmidValue: {
       typedef is_maidsafe_data<DataTagValue::kAnmidValue>::data_type data_type;

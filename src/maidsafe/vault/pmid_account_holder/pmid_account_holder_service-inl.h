@@ -27,7 +27,7 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void PmidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
+void PmidAccountHolderService::HandleDataMessage(const nfs::Message& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
   {
@@ -36,9 +36,9 @@ void PmidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_me
       return reply_functor(reply.Serialise()->string());
   }
 
-  if (data_message.data().action == nfs::DataMessage::Action::kPut) {
+  if (data_message.data().action == nfs::MessageAction::kPut) {
     HandlePut<Data>(data_message, reply_functor);
-  } else if (data_message.data().action == nfs::DataMessage::Action::kDelete) {
+  } else if (data_message.data().action == nfs::MessageAction::kDelete) {
     HandleDelete<Data>(data_message, reply_functor);
   } else {
     reply = nfs::Reply(VaultErrors::operation_not_supported, data_message.Serialise().data);
@@ -49,7 +49,7 @@ void PmidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_me
 }
 
 template<typename Data>
-void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
+void PmidAccountHolderService::HandlePut(const nfs::Message& data_message,
                                          const routing::ReplyFunctor& reply_functor) {
   try {
     ValidateSender(data_message);
@@ -73,7 +73,7 @@ void PmidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
 }
 
 template<typename Data>
-void PmidAccountHolderService::HandleDelete(const nfs::DataMessage& data_message,
+void PmidAccountHolderService::HandleDelete(const nfs::Message& data_message,
                                             const routing::ReplyFunctor& reply_functor) {
   try {
     ValidateSender(data_message);

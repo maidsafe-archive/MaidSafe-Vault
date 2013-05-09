@@ -17,7 +17,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/nfs.h"
-#include "maidsafe/nfs/generic_message.h"
+#include "maidsafe/nfs/message.h"
 
 
 namespace maidsafe {
@@ -42,10 +42,13 @@ class Demultiplexer {
 
  private:
   template<typename MessageType>
-  void PersonaHandleMessage(const MessageType& message,
-                            const routing::ReplyFunctor& reply_functor);
-  NonEmptyString HandleGetFromCache(const nfs::DataMessage& data_message);
-  void HandleStoreInCache(const nfs::DataMessage& data_message);
+  void PersonaHandleDataMessage(const MessageType& message,
+                                const routing::ReplyFunctor& reply_functor);
+  template<typename MessageType>
+  void PersonaHandleGenericMessage(const MessageType& message,
+                                   const routing::ReplyFunctor& reply_functor);
+  NonEmptyString HandleGetFromCache(const nfs::Message& data_message);
+  void HandleStoreInCache(const nfs::Message& data_message);
 
   MaidAccountHolderService& maid_account_holder_service_;
   MetadataManagerService& metadata_manager_service_;
@@ -54,13 +57,13 @@ class Demultiplexer {
 };
 
 template<>
-void Demultiplexer::PersonaHandleMessage<nfs::DataMessage>(
-    const nfs::DataMessage& message,
+void Demultiplexer::PersonaHandleDataMessage<nfs::Message>(
+    const nfs::Message& message,
     const routing::ReplyFunctor& reply_functor);
 
 template<>
-void Demultiplexer::PersonaHandleMessage<nfs::GenericMessage>(
-    const nfs::GenericMessage& message,
+void Demultiplexer::PersonaHandleGenericMessage<nfs::Message>(
+    const nfs::Message& message,
     const routing::ReplyFunctor& reply_functor);
 
 }  // namespace vault

@@ -25,7 +25,7 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void DataHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
+void DataHolderService::HandleDataMessage(const nfs::Message& data_message,
                                    const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
   {
@@ -35,11 +35,11 @@ void DataHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
   }
 
   switch (data_message.data().action) {
-    case nfs::DataMessage::Action::kPut:
+    case nfs::MessageAction::kPut:
       return HandlePutMessage<Data>(data_message, reply_functor);
-    case nfs::DataMessage::Action::kGet:
+    case nfs::MessageAction::kGet:
       return HandleGetMessage<Data>(data_message, reply_functor);
-    case nfs::DataMessage::Action::kDelete:
+    case nfs::MessageAction::kDelete:
       return HandleDeleteMessage<Data>(data_message, reply_functor);
     default: {
       reply = nfs::Reply(VaultErrors::operation_not_supported, data_message.Serialise().data);
@@ -51,7 +51,7 @@ void DataHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
 }
 
 template<typename Data>
-void DataHolderService::HandlePutMessage(const nfs::DataMessage& data_message,
+void DataHolderService::HandlePutMessage(const nfs::Message& data_message,
                                   const routing::ReplyFunctor& reply_functor) {
   try {
     ValidatePutSender(data_message);
@@ -73,7 +73,7 @@ void DataHolderService::HandlePutMessage(const nfs::DataMessage& data_message,
 }
 
 template<typename Data>
-void DataHolderService::HandleGetMessage(const nfs::DataMessage& data_message,
+void DataHolderService::HandleGetMessage(const nfs::Message& data_message,
                                          const routing::ReplyFunctor& reply_functor) {
   try {
     ValidateGetSender(data_message);
@@ -87,7 +87,7 @@ void DataHolderService::HandleGetMessage(const nfs::DataMessage& data_message,
 }
 
 template<typename Data>
-void DataHolderService::HandleDeleteMessage(const nfs::DataMessage& data_message,
+void DataHolderService::HandleDeleteMessage(const nfs::Message& data_message,
                                      const routing::ReplyFunctor& reply_functor) {
   try {
     ValidateDeleteSender(data_message);
@@ -107,18 +107,18 @@ void DataHolderService::HandleDeleteMessage(const nfs::DataMessage& data_message
 }
 
 template<typename Data>
-NonEmptyString DataHolderService::GetFromCache(const nfs::DataMessage& data_message) {
+NonEmptyString DataHolderService::GetFromCache(const nfs::Message& data_message) {
   return GetFromCache<Data>(data_message, is_cacheable<Data>());
 }
 
 template<typename Data>
-NonEmptyString DataHolderService::GetFromCache(const nfs::DataMessage& data_message, IsCacheable) {
+NonEmptyString DataHolderService::GetFromCache(const nfs::Message& data_message, IsCacheable) {
   return CacheGet<Data>(typename Data::name_type(data_message.data().name),
                         is_long_term_cacheable<Data>());
 }
 
 template<typename Data>
-NonEmptyString DataHolderService::GetFromCache(const nfs::DataMessage& /*data_message*/,
+NonEmptyString DataHolderService::GetFromCache(const nfs::Message& /*data_message*/,
                                                IsNotCacheable) {
   return NonEmptyString();
 }
@@ -140,18 +140,18 @@ NonEmptyString DataHolderService::CacheGet(const typename Data::name_type& name,
 }
 
 template<typename Data>
-void DataHolderService::StoreInCache(const nfs::DataMessage& data_message) {
+void DataHolderService::StoreInCache(const nfs::Message& data_message) {
   StoreInCache<Data>(data_message, is_cacheable<Data>());
 }
 
 template<typename Data>
-void DataHolderService::StoreInCache(const nfs::DataMessage& data_message, IsCacheable) {
+void DataHolderService::StoreInCache(const nfs::Message& data_message, IsCacheable) {
   CacheStore<Data>(typename Data::name_type(data_message.data().name), data_message.data().content,
                    is_long_term_cacheable<Data>());
 }
 
 template<typename Data>
-void DataHolderService::StoreInCache(const nfs::DataMessage& /*data_message*/, IsNotCacheable) {}
+void DataHolderService::StoreInCache(const nfs::Message& /*data_message*/, IsNotCacheable) {}
 
 template<typename Data>
 void DataHolderService::CacheStore(const typename Data::name_type& name,

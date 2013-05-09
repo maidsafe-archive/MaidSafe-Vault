@@ -21,8 +21,7 @@
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/data_message.h"
-#include "maidsafe/nfs/generic_message.h"
+#include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/public_key_getter.h"
 #include "maidsafe/nfs/reply.h"
 
@@ -40,9 +39,9 @@ class PmidAccountHolderService {
   PmidAccountHolderService(const passport::Pmid& pmid,
                            routing::Routing& routing);
   template<typename Data>
-  void HandleDataMessage(const nfs::DataMessage& data_message,
+  void HandleDataMessage(const nfs::Message& data_message,
                          const routing::ReplyFunctor& reply_functor);
-  void HandleGenericMessage(const nfs::GenericMessage& generic_message,
+  void HandleGenericMessage(const nfs::Message& generic_message,
                             const routing::ReplyFunctor& reply_functor);
   void HandleChurnEvent(routing::MatrixChange matrix_change);
 
@@ -53,15 +52,15 @@ class PmidAccountHolderService {
   PmidAccountHolderService& operator=(PmidAccountHolderService&&);
 
   template<typename Data>
-  void HandlePut(const nfs::DataMessage& data_message, const routing::ReplyFunctor& reply_functor);
+  void HandlePut(const nfs::Message& data_message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandleDelete(const nfs::DataMessage& data_message,
+  void HandleDelete(const nfs::Message& data_message,
                     const routing::ReplyFunctor& reply_functor);
-  void ValidateSender(const nfs::DataMessage& data_message) const;
+  void ValidateSender(const nfs::Message& data_message) const;
   template<typename Data>
-  void AdjustAccount(const nfs::DataMessage& data_message);
+  void AdjustAccount(const nfs::Message& data_message);
   template<typename Data>
-  void SendDataMessage(const nfs::DataMessage& data_message);
+  void SendDataMessage(const nfs::Message& data_message);
   template<typename Data>
   void HandlePutResult(const nfs::Reply& data_holder_result,
                        const PmidName& account_name,
@@ -74,7 +73,7 @@ class PmidAccountHolderService {
   bool AssessRange(const PmidName& account_name,
                    PmidAccount::DataHolderStatus account_status,
                    bool is_connected);
-  void ValidateDataMessage(const nfs::DataMessage& data_message) const;
+  void ValidateDataMessage(const nfs::Message& data_message) const;
   void InformOfDataHolderDown(const PmidName& pmid_name);
   void InformOfDataHolderUp(const PmidName& pmid_name);
   void InformAboutDataHolder(const PmidName& pmid_name, bool node_up);

@@ -42,7 +42,7 @@ MetadataManagerService::GetHandler<Data>::GetHandler(const routing::ReplyFunctor
 
 
 template<typename Data>
-void MetadataManagerService::HandleDataMessage(const nfs::DataMessage& data_message,
+void MetadataManagerService::HandleDataMessage(const nfs::Message& data_message,
                                         const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
   {
@@ -52,11 +52,11 @@ void MetadataManagerService::HandleDataMessage(const nfs::DataMessage& data_mess
   }
 
   switch (data_message.data().action) {
-    case nfs::DataMessage::Action::kPut:
+    case nfs::MessageAction::kPut:
       return HandlePut<Data>(data_message, reply_functor);
-    case nfs::DataMessage::Action::kGet:
+    case nfs::MessageAction::kGet:
       return HandleGet<Data>(data_message, reply_functor);
-    case nfs::DataMessage::Action::kDelete:
+    case nfs::MessageAction::kDelete:
       return HandleDelete<Data>(data_message, reply_functor);
     default: {
       reply = nfs::Reply(VaultErrors::operation_not_supported, data_message.Serialise().data);
@@ -68,7 +68,7 @@ void MetadataManagerService::HandleDataMessage(const nfs::DataMessage& data_mess
 }
 
 template<typename Data>
-void MetadataManagerService::HandlePut(const nfs::DataMessage& data_message,
+void MetadataManagerService::HandlePut(const nfs::Message& data_message,
                                        const routing::ReplyFunctor& reply_functor) {
   try {
     ValidatePutSender(data_message);
@@ -117,7 +117,7 @@ void MetadataManagerService::Put(const Data& data, const PmidName& target_data_h
 }
 
 template<typename Data>
-void MetadataManagerService::HandleGet(nfs::DataMessage data_message,
+void MetadataManagerService::HandleGet(nfs::Message data_message,
                                        const routing::ReplyFunctor& reply_functor) {
   try {
     ValidateGetSender(data_message);
@@ -212,7 +212,7 @@ void MetadataManagerService::IntegrityCheck(std::shared_ptr<GetHandler<Data>> /*
 }
 
 template<typename Data>
-void MetadataManagerService::HandleDelete(const nfs::DataMessage& data_message,
+void MetadataManagerService::HandleDelete(const nfs::Message& data_message,
                                           const routing::ReplyFunctor& reply_functor) {
   try {
     ValidateDeleteSender(data_message);
@@ -233,7 +233,7 @@ void MetadataManagerService::HandlePutResult(const nfs::Reply& overall_result) {
     return;
 
   try {
-    nfs::DataMessage original_message(nfs::DataMessage::serialised_type(overall_result.data()));
+    nfs::Message original_message(nfs::Message::serialised_type(overall_result.data()));
     if (!ThisVaultInGroupForData(original_message)) {
       LOG(kInfo) << "Stopping retries for Put, since no longer responsible for this data.";
       return;
@@ -264,7 +264,7 @@ void MetadataManagerService::HandleGetReply(std::string serialised_reply) {
 }
 
 template<typename Data>
-void MetadataManagerService::OnGenericErrorHandler(nfs::GenericMessage /*generic_message*/) {}
+void MetadataManagerService::OnGenericErrorHandler(nfs::Message /*generic_message*/) {}
 
 }  // namespace vault
 

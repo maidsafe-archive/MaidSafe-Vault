@@ -18,11 +18,13 @@
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/data_types/data_type_values.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/api_config.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/generic_message.h"
+#include "maidsafe/nfs/message_wrapper.h"
+// #include "maidsafe/nfs/generic_message.h"
 #include "maidsafe/nfs/types.h"
 
 
@@ -47,29 +49,26 @@ class SyncPolicy {
         kPmid_(pmid) {}
 
   void TransferAccount(const NodeId& target_node_id, const NonEmptyString& serialised_account) {
-    nfs::GenericMessage generic_message(
-        nfs::GenericMessage::Action::kAccountTransfer,
-        source_persona,
-        kSource_,
-        Identity(target_node_id.string()),
-        serialised_account);
-    nfs::Message message(nfs::GenericMessage::message_type_identifier,
-                         generic_message.Serialise().data);
-    routing_.SendDirect(target_node_id, message.Serialise()->string(), false, nullptr);
+    nfs::Message message(nfs::MessageAction::kAccountTransfer,
+                         source_persona,
+                         kSource_,
+                         Identity(target_node_id.string()),
+                         serialised_account);
+    nfs::MessageWrapper message_wrapper(nfs::Message::message_type_identifier,
+                                        message.Serialise().data);
+    routing_.SendDirect(target_node_id, message_wrapper.Serialise()->string(), false, nullptr);
   }
 
   template<typename Name>
   void Sync(const Name& name, const NonEmptyString& serialised_sync_data) {
-    nfs::GenericMessage generic_message(
-        nfs::GenericMessage::Action::kSynchronise,
-        source_persona,
-        kSource_,
-        name.data,
-        serialised_sync_data);
-
-    nfs::Message message(nfs::GenericMessage::message_type_identifier,
-                         generic_message.Serialise().data);
-    routing_.SendGroup(NodeId(generic_message.name().string()), message.Serialise()->string(),
+    nfs::Message message(nfs::MessageAction::kSynchronise,
+                         source_persona,
+                         kSource_,
+                         name.data,
+                         serialised_sync_data);
+    nfs::MessageWrapper message_wrapper(nfs::Message::message_type_identifier,
+                                        message.Serialise().data);
+    routing_.SendGroup(NodeId(name), message_wrapper.Serialise()->string(),
                        false, nullptr);
   }
 
@@ -88,11 +87,13 @@ class MaidAccountHolderMiscellaneousPolicy {
 
   void RequestPmidTotals(const passport::PublicPmid::name_type& pmid_name,
                          const routing::ResponseFunctor& callback) {
-    nfs::GenericMessage generic_message(nfs::GenericMessage::Action::kGetPmidTotals,
-        nfs::Persona::kPmidAccountHolder, kSource_, pmid_name.data, NonEmptyString());
-    nfs::Message message(nfs::GenericMessage::message_type_identifier,
-                         generic_message.Serialise().data);
-    routing_.SendGroup(NodeId(generic_message.name().string()), message.Serialise()->string(),
+    nfs::Message::Data data(DataTagValue::kPmidValue, pmid_name.data, NonEmptyString(),
+                            nfs::MessageAction::kGetPmidTotals);
+    nfs::Message message(nfs::Persona::kPmidAccountHolder,
+                         kSource_, data, pmid_name);
+    nfs::MessageWrapper message_wrapper(nfs::Message::message_type_identifier,
+                                        message.Serialise().data);
+    routing_.SendGroup(NodeId(pmid_name), message_wrapper.Serialise()->string(),
                        false, callback);
   }
 

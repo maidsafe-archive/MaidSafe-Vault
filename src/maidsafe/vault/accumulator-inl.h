@@ -30,7 +30,7 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Name>
-Accumulator<Name>::PendingRequest::PendingRequest(const nfs::DataMessage& msg_in,
+Accumulator<Name>::PendingRequest::PendingRequest(const nfs::Message& msg_in,
                                                   const routing::ReplyFunctor& reply_functor_in,
                                                   const maidsafe_error& return_code_in)
     : msg(msg_in),
@@ -70,7 +70,7 @@ typename Accumulator<Name>::PendingRequest& Accumulator<Name>::PendingRequest::o
 template<typename Name>
 Accumulator<Name>::HandledRequest::HandledRequest(const nfs::MessageId& msg_id_in,
                                                   const Name& account_name_in,
-                                                  const nfs::DataMessage::Action& action_type_in,
+                                                  const nfs::MessageAction& action_type_in,
                                                   const Identity& data_name_in,
                                                   const DataTagValue& data_type_in,
                                                   const int32_t& size_in,
@@ -138,7 +138,7 @@ Accumulator<Name>::Accumulator()
 
 template<typename Name>
 typename std::deque<typename Accumulator<Name>::HandledRequest>::const_iterator
-    Accumulator<Name>::FindHandled(const nfs::DataMessage& data_message) const {
+    Accumulator<Name>::FindHandled(const nfs::Message& data_message) const {
   return std::find_if(std::begin(handled_requests_),
                       std::end(handled_requests_),
                       [&data_message](const HandledRequest& handled_request) {
@@ -149,7 +149,7 @@ typename std::deque<typename Accumulator<Name>::HandledRequest>::const_iterator
 }
 
 template<typename Name>
-bool Accumulator<Name>::CheckHandled(const nfs::DataMessage& data_message,
+bool Accumulator<Name>::CheckHandled(const nfs::Message& data_message,
                                      nfs::Reply& reply_out) const {
   const auto it(FindHandled(data_message));  // NOLINT (dirvine)
   if (it != std::end(handled_requests_)) {
@@ -164,7 +164,7 @@ bool Accumulator<Name>::CheckHandled(const nfs::DataMessage& data_message,
 
 template<typename Name>
 std::vector<nfs::Reply> Accumulator<Name>::PushSingleResult(
-    const nfs::DataMessage& data_message,
+    const nfs::Message& data_message,
     const routing::ReplyFunctor& reply_functor,
     const maidsafe_error& return_code) {
   std::vector<nfs::Reply> replies;
@@ -188,7 +188,7 @@ std::vector<nfs::Reply> Accumulator<Name>::PushSingleResult(
 
 template<typename Name>
 std::vector<typename Accumulator<Name>::PendingRequest> Accumulator<Name>::SetHandled(
-    const nfs::DataMessage& data_message,
+    const nfs::Message& data_message,
     const maidsafe_error& return_code) {
   std::vector<PendingRequest> ret_requests;
   auto itr = pending_requests_.begin();
@@ -224,17 +224,17 @@ std::vector<typename Accumulator<Name>::PendingRequest> Accumulator<Name>::SetHa
 #endif
 template<>
 typename std::deque<typename Accumulator<DataNameVariant>::HandledRequest>::const_iterator
-    Accumulator<DataNameVariant>::FindHandled(const nfs::DataMessage& data_message) const;
+    Accumulator<DataNameVariant>::FindHandled(const nfs::Message& data_message) const;
 
 template<>
 std::vector<typename Accumulator<DataNameVariant>::PendingRequest>
     Accumulator<DataNameVariant>::SetHandled(
-        const nfs::DataMessage& data_message,
+        const nfs::Message& data_message,
         const maidsafe_error& return_code);
 
 template<>
 std::vector<typename Accumulator<PmidName>::PendingRequest> Accumulator<PmidName>::SetHandled(
-    const nfs::DataMessage& data_message,
+    const nfs::Message& data_message,
     const maidsafe_error& return_code);
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop
@@ -276,7 +276,7 @@ std::vector<typename Accumulator<Name>::HandledRequest> Accumulator<Name>::Parse
           HandledRequest(
               nfs::MessageId(Identity(proto_handled_requests.handled_requests(index).message_id())),
               Name(Identity(proto_handled_requests.name())),
-              static_cast<nfs::DataMessage::Action>(
+              static_cast<nfs::MessageAction>(
                   proto_handled_requests.handled_requests(index).action()),
               Identity(proto_handled_requests.handled_requests(index).data_name()),
               static_cast<DataTagValue>(proto_handled_requests.handled_requests(index).data_type()),
