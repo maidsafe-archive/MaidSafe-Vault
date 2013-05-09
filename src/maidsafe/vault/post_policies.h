@@ -49,11 +49,9 @@ class SyncPolicy {
         kPmid_(pmid) {}
 
   void TransferAccount(const NodeId& target_node_id, const NonEmptyString& serialised_account) {
-    nfs::Message message(nfs::MessageAction::kAccountTransfer,
-                         source_persona,
-                         kSource_,
-                         Identity(target_node_id.string()),
-                         serialised_account);
+    nfs::Message::Data data(DataTagValue::kImmutableDataValue, Identity(target_node_id.string()),
+                            serialised_account, nfs::MessageAction::kAccountTransfer);
+    nfs::Message message(source_persona, kSource_, data);
     nfs::MessageWrapper message_wrapper(nfs::Message::message_type_identifier,
                                         message.Serialise().data);
     routing_.SendDirect(target_node_id, message_wrapper.Serialise()->string(), false, nullptr);
@@ -61,11 +59,9 @@ class SyncPolicy {
 
   template<typename Name>
   void Sync(const Name& name, const NonEmptyString& serialised_sync_data) {
-    nfs::Message message(nfs::MessageAction::kSynchronise,
-                         source_persona,
-                         kSource_,
-                         name.data,
-                         serialised_sync_data);
+    nfs::Message::Data data(DataTagValue::kImmutableDataValue, name.data, serialised_sync_data,
+                            nfs::MessageAction::kSynchronise);
+    nfs::Message message(source_persona, kSource_, data);
     nfs::MessageWrapper message_wrapper(nfs::Message::message_type_identifier,
                                         message.Serialise().data);
     routing_.SendGroup(NodeId(name), message_wrapper.Serialise()->string(),

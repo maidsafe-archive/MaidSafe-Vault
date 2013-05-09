@@ -19,7 +19,7 @@ namespace vault {
 
 template<>
 typename std::deque<typename Accumulator<DataNameVariant>::HandledRequest>::const_iterator
-    Accumulator<DataNameVariant>::FindHandled(const nfs::DataMessage& data_message) const {
+    Accumulator<DataNameVariant>::FindHandled(const nfs::Message& data_message) const {
   return std::find_if(std::begin(handled_requests_),
                       std::end(handled_requests_),
                       [&data_message](const HandledRequest& handled_request)->bool {
@@ -36,7 +36,7 @@ typename std::deque<typename Accumulator<DataNameVariant>::HandledRequest>::cons
 template<>
 std::vector<typename Accumulator<DataNameVariant>::PendingRequest>
     Accumulator<DataNameVariant>::SetHandled(
-        const nfs::DataMessage& data_message,
+        const nfs::Message& data_message,
         const maidsafe_error& return_code) {
   std::vector<PendingRequest> ret_requests;
   auto itr = pending_requests_.begin();
@@ -66,7 +66,7 @@ std::vector<typename Accumulator<DataNameVariant>::PendingRequest>
 
 template<>
 std::vector<typename Accumulator<PmidName>::PendingRequest> Accumulator<PmidName>::SetHandled(
-    const nfs::DataMessage& data_message,
+    const nfs::Message& data_message,
     const maidsafe_error& return_code) {
   std::vector<PendingRequest> ret_requests;
   auto itr = pending_requests_.begin();

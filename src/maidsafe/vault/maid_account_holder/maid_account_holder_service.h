@@ -58,8 +58,8 @@ class MaidAccountHolderService {
   MaidAccountHolderService(MaidAccountHolderService&&);
   MaidAccountHolderService& operator=(MaidAccountHolderService&&);
 
-  void ValidateSender(const nfs::Message& message) const;
-//   void ValidateSender(const nfs::Message& generic_message) const;
+  void ValidateDataSender(const nfs::Message& message) const;
+  void ValidateGenericSender(const nfs::Message& generic_message) const;
 
   // =============== Put/Delete data ===============================================================
   template<typename Data>

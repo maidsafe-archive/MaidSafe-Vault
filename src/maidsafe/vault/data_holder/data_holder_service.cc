@@ -38,13 +38,13 @@ MemoryUsage mem_only_cache_usage = MemoryUsage(mem_usage * 2 / 5);
 //  DiskUsage permanent_size = DiskUsage(disk_total * 0.8);
 //  DiskUsage cache_size = DiskUsage(disk_total * 0.1);
 
-inline bool SenderIsConnectedVault(const nfs::DataMessage& data_message,
+inline bool SenderIsConnectedVault(const nfs::Message& data_message,
                                    routing::Routing& routing) {
   return routing.IsConnectedVault(data_message.source().node_id) &&
          routing.EstimateInGroup(data_message.source().node_id, routing.kNodeId());
 }
 
-inline bool SenderInGroupForMetadata(const nfs::DataMessage& data_message,
+inline bool SenderInGroupForMetadata(const nfs::Message& data_message,
                                      routing::Routing& routing) {
   return routing.EstimateInGroup(data_message.source().node_id,
                                  NodeId(data_message.data().name.string()));
@@ -80,18 +80,18 @@ DataHolderService::DataHolderService(const passport::Pmid& pmid,
 //  nfs_.GetElementList();  // TODO (Fraser) BEFORE_RELEASE Implementation needed
 }
 
-void DataHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
+void DataHolderService::HandleGenericMessage(const nfs::Message& generic_message,
                                              const routing::ReplyFunctor& /*reply_functor*/) {
-  nfs::GenericMessage::Action action(generic_message.action());
+  nfs::MessageAction action(generic_message.data().action);
   switch (action) {
-    case nfs::GenericMessage::Action::kGetPmidHealth:
+    case nfs::MessageAction::kGetPmidHealth:
       break;
     default:
       LOG(kError) << "Unhandled Post action type";
   }
 }
 
-void DataHolderService::ValidatePutSender(const nfs::DataMessage& data_message) const {
+void DataHolderService::ValidatePutSender(const nfs::Message& data_message) const {
   if (!SenderIsConnectedVault(data_message, routing_))
     ThrowError(VaultErrors::permission_denied);
 
@@ -99,7 +99,7 @@ void DataHolderService::ValidatePutSender(const nfs::DataMessage& data_message) 
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void DataHolderService::ValidateGetSender(const nfs::DataMessage& data_message) const {
+void DataHolderService::ValidateGetSender(const nfs::Message& data_message) const {
   if (!SenderInGroupForMetadata(data_message, routing_))
     ThrowError(VaultErrors::permission_denied);
 
@@ -107,7 +107,7 @@ void DataHolderService::ValidateGetSender(const nfs::DataMessage& data_message) 
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void DataHolderService::ValidateDeleteSender(const nfs::DataMessage& data_message) const {
+void DataHolderService::ValidateDeleteSender(const nfs::Message& data_message) const {
   if (!SenderIsConnectedVault(data_message, routing_))
     ThrowError(VaultErrors::permission_denied);
 

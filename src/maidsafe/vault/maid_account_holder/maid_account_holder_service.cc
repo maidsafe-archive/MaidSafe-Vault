@@ -41,7 +41,7 @@ int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&) {
   return 0;
 }
 
-MaidName GetMaidAccountName(const nfs::DataMessage& data_message) {
+MaidName GetMaidAccountName(const nfs::Message& data_message) {
   return MaidName(Identity(data_message.source().node_id.string()));
 }
 
@@ -72,23 +72,23 @@ MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
       maid_account_handler_(db, routing.kNodeId()),
       nfs_(routing, pmid) {}
 
-void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
+void MaidAccountHolderService::HandleGenericMessage(const nfs::Message& generic_message,
                                                     const routing::ReplyFunctor& reply_functor) {
-  ValidateSender(generic_message);
-  nfs::GenericMessage::Action action(generic_message.action());
+  ValidateGenericSender(generic_message);
+  nfs::MessageAction action(generic_message.data().action);
   switch (action) {
-    case nfs::GenericMessage::Action::kRegisterPmid:
+    case nfs::MessageAction::kRegisterPmid:
       return HandlePmidRegistration(generic_message, reply_functor);
-    case nfs::GenericMessage::Action::kSynchronise:
+    case nfs::MessageAction::kSynchronise:
       return HandleSync(generic_message);
-    case nfs::GenericMessage::Action::kAccountTransfer:
+    case nfs::MessageAction::kAccountTransfer:
       return HandleAccountTransfer(generic_message);
     default:
       LOG(kError) << "Unhandled Post action type";
   }
 }
 
-void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_message) const {
+void MaidAccountHolderService::ValidateDataSender(const nfs::Message& data_message) const {
   if (!routing_.IsConnectedClient(data_message.source().node_id))
     ThrowError(VaultErrors::permission_denied);
 
@@ -96,8 +96,8 @@ void MaidAccountHolderService::ValidateSender(const nfs::DataMessage& data_messa
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void MaidAccountHolderService::ValidateSender(const nfs::GenericMessage& generic_message) const {
-  if (generic_message.action() == nfs::GenericMessage::Action::kRegisterPmid) {
+void MaidAccountHolderService::ValidateGenericSender(const nfs::Message& generic_message) const {
+  if (generic_message.data().action == nfs::MessageAction::kRegisterPmid) {
     if (!routing_.IsConnectedClient(generic_message.source().node_id))
       ThrowError(VaultErrors::permission_denied);
     if (!FromClientMaid(generic_message) || !ForThisPersona(generic_message))
@@ -114,7 +114,7 @@ void MaidAccountHolderService::ValidateSender(const nfs::GenericMessage& generic
 // =============== Put/Delete data =================================================================
 
 void MaidAccountHolderService::SendReplyAndAddToAccumulator(
-    const nfs::DataMessage& data_message,
+    const nfs::Message& data_message,
     const routing::ReplyFunctor& reply_functor,
     const nfs::Reply& reply) {
   reply_functor(reply.Serialise()->string());
@@ -125,14 +125,14 @@ void MaidAccountHolderService::SendReplyAndAddToAccumulator(
 
 // =============== Pmid registration ===============================================================
 
-void MaidAccountHolderService::HandlePmidRegistration(const nfs::GenericMessage& generic_message,
+void MaidAccountHolderService::HandlePmidRegistration(const nfs::Message& generic_message,
                                                       const routing::ReplyFunctor& reply_functor) {
   NodeId source_id(generic_message.source().node_id);
 
   // TODO(Fraser#5#): 2013-04-22 - Validate Message signature.  Currently the Message does not have
   //                  a signature applied, and the demuxer doesn't pass the signature down anyway.
   nfs::PmidRegistration pmid_registration(nfs::PmidRegistration::serialised_type(NonEmptyString(
-      generic_message.content().string())));
+      generic_message.data().content.string())));
   if (pmid_registration.maid_name()->string() != source_id.string())
     return reply_functor(nfs::Reply(VaultErrors::permission_denied).Serialise()->string());
 
@@ -209,9 +209,9 @@ void MaidAccountHolderService::Sync(const MaidName& account_name) {
   maid_account_handler_.IncrementSyncAttempts(account_name);
 }
 
-void MaidAccountHolderService::HandleSync(const nfs::GenericMessage& generic_message) {
+void MaidAccountHolderService::HandleSync(const nfs::Message& generic_message) {
   protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(generic_message.content().string())) {
+  if (!proto_sync.ParseFromString(generic_message.data().content.string())) {
     LOG(kError) << "Error parsing kSynchronise message.";
     return;
   }
@@ -231,10 +231,10 @@ void MaidAccountHolderService::TransferAccount(const MaidName& account_name,
   nfs_.TransferAccount(new_node, NonEmptyString(maid_account.SerializeAsString()));
 }
 
-void MaidAccountHolderService::HandleAccountTransfer(const nfs::GenericMessage& generic_message) {
+void MaidAccountHolderService::HandleAccountTransfer(const nfs::Message& generic_message) {
   protobuf::MaidAccount maid_account;
   NodeId source_id(generic_message.source().node_id);
-  if (!maid_account.ParseFromString(generic_message.content().string()))
+  if (!maid_account.ParseFromString(generic_message.data().content.string()))
     return;
 
   MaidName account_name(Identity(maid_account.maid_name()));

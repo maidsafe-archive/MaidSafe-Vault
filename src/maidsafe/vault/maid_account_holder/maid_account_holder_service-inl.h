@@ -84,7 +84,7 @@ MaidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& data_messag
 template<typename Data>
 void MaidAccountHolderService::HandleDataMessage(const nfs::Message& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
-  ValidateSender(data_message);
+  ValidateDataSender(data_message);
   nfs::Reply reply(CommonErrors::success);
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);

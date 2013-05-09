@@ -34,7 +34,7 @@ PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
       nfs_(routing, pmid) {}
 
 
-void PmidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& /*generic_message*/,
+void PmidAccountHolderService::HandleGenericMessage(const nfs::Message& /*generic_message*/,
                                                     const routing::ReplyFunctor& /*reply_functor*/) {
 
 }
@@ -86,7 +86,7 @@ bool PmidAccountHolderService::AssessRange(const PmidName& account_name,
   }
 }
 
-void PmidAccountHolderService::ValidateSender(const nfs::DataMessage& data_message) const {
+void PmidAccountHolderService::ValidateSender(const nfs::Message& data_message) const {
   if (!data_message.HasDataHolder())
     ThrowError(VaultErrors::permission_denied);
 

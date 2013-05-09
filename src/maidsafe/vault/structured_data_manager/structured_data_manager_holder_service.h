@@ -20,8 +20,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/data_message.h"
-#include "maidsafe/nfs/generic_message.h"
+#include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/vault/db.h"
@@ -43,9 +42,9 @@ class StructuredDataManagerService {
                                Db& db);
   // Handling of received requests (sending of requests is done via nfs_ object).
   template<typename Data>
-  void HandleDataMessage(const nfs::DataMessage& data_message,
+  void HandleDataMessage(const nfs::Message& data_message,
                          const routing::ReplyFunctor& reply_functor);
-  void HandleGenericMessage(const nfs::GenericMessage& generic_message);
+  void HandleGenericMessage(const nfs::Message& generic_message);
   void HandleChurnEvent(routing::MatrixChange matrix_change);
 
  private:
@@ -54,27 +53,27 @@ class StructuredDataManagerService {
   StructuredDataManagerService(StructuredDataManagerService&&);
   StructuredDataManagerService& operator=(StructuredDataManagerService&&);
 
-  void ValidateSender(const nfs::DataMessage& data_message) const;
-  void ValidateSender(const nfs::GenericMessage& generic_message) const;
+  void ValidateDataSender(const nfs::Message& data_message) const;
+  void ValidateGenericSender(const nfs::Message& generic_message) const;
 
   // =============== Put/Delete data ===============================================================
   template<typename Data>
-  void HandlePut(const nfs::DataMessage& data_message);
+  void HandlePut(const nfs::Message& data_message);
   template<typename Data>
-  void HandleDelete(const nfs::DataMessage& data_message);
+  void HandleDelete(const nfs::Message& data_message);
   template<typename Data>
-  void HandleGet(const nfs::DataMessage& data_message, routing::ReplyFunctor reply_functor);
+  void HandleGet(const nfs::Message& data_message, routing::ReplyFunctor reply_functor);
 
   template<typename Data, nfs::MessageAction action>
-  void AddLocalUnresolvedEntryThenSync(const nfs::DataMessage& data_message, int32_t cost);
+  void AddLocalUnresolvedEntryThenSync(const nfs::Message& data_message, int32_t cost);
 
   // =============== Sync ==========================================================================
   void Sync(const MaidName& account_name);
-  void HandleSync(const nfs::GenericMessage& generic_message);
+  void HandleSync(const nfs::Message& generic_message);
 
   // =============== Account transfer ==============================================================
   void TransferAccount(const MaidName& account_name, const NodeId& new_node);
-  void HandleAccountTransfer(const nfs::GenericMessage& generic_message);
+  void HandleAccountTransfer(const nfs::Message& generic_message);
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;

@@ -37,7 +37,7 @@ inline bool ForThisPersona(const Message& message) {
 
 const int StructuredDataManagerService::kPutRepliesSuccessesRequired_(3);
 
-StructuredDataManagerService::MaidAccountHolderService(const passport::Pmid& pmid,
+StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
                                                    nfs::PublicKeyGetter& public_key_getter,
                                                    Db& db)
