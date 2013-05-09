@@ -49,18 +49,20 @@ class Sync : public MergePolicy {
   // The new node's ID is also applied to any entries which didn't contain the old one, in the
   // expectation that the old node would have eventually supplied the message.
   void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
-  // This returns all entries containing this node's ID.  Each returned entry is provided with just
-  // this node's ID inserted, even if the master copy has several other peers' IDs.
-  std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData() const;
+  // This returns all unresoved entries containing this node's ID.  Each returned entry is provided
+  // with just this node's ID inserted, even if the master copy has several other peers' IDs.
+  std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData();
   size_t GetUnresolvedCount() const { return MergePolicy::unresolved_data_.size(); }
   // Calling this will increment the sync counter and delete entries that reach the
-  // 'sync_counter_max_' limit.
+  // 'sync_counter_max_' limit.  Entries which are resolved by all peers (i.e. have 4 messages) are
+  // also pruned here.
   void IncrementSyncAttempts();
 
  private:
   Sync(const Sync&);
   Sync& operator=(const Sync&);
   bool AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge);
+  bool CanBeErased(const typename MergePolicy::UnresolvedEntry& entry) const;
 
   int32_t sync_counter_max_;
   NodeId this_node_id_;

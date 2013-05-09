@@ -51,10 +51,10 @@ class StructuredDataAccount {
   StructuredDataAccount(const MaidName& maid_name, Db& db, const NodeId& this_node_id);
   // For creating new account via account transfer
   StructuredDataAccount(const MaidName& maid_name,
-              Db& db,
-              const NodeId& this_node_id,
-              const NodeId& source_id,
-              const serialised_type& serialised_maid_account_details);
+                        Db& db,
+                        const NodeId& this_node_id,
+                        const NodeId& source_id,
+                        const serialised_type& serialised_maid_account_details);
 
   StructuredDataAccount(StructuredDataAccount&& other);
   StructuredDataAccount& operator=(StructuredDataAccount&& other);
@@ -75,8 +75,8 @@ class StructuredDataAccount {
 
 
  private:
-  MaidAccount(const MaidAccount&);
-  MaidAccount& operator=(const MaidAccount&);
+  StructuredDataAccount(const StructuredDataAccount&);
+  StructuredDataAccount& operator=(const StructuredDataAccount&);
 
   std::vector<PmidTotals>::iterator Find(const PmidName& pmid_name);
 

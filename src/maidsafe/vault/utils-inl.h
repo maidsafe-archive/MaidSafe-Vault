@@ -94,16 +94,15 @@ bool AddResult(const nfs::Message& data_message,
                int requests_required) {
   std::vector<typename Accumulator::PendingRequest> pending_requests;
   maidsafe_error overall_return_code(CommonErrors::success);
-  const bool kDone(true);
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex);
     auto pending_results(accumulator.PushSingleResult(data_message, reply_functor, return_code));
     if (static_cast<int>(pending_results.size()) < requests_required)
-      return !kDone;
+      return false;
 
     auto result(nfs::GetSuccessOrMostFrequentReply(pending_results, requests_required));
     if (!result.second && pending_results.size() < routing::Parameters::node_group_size)
-      return !kDone;
+      return false;
 
     overall_return_code = (*result.first).error();
     pending_requests = accumulator.SetHandled(data_message, overall_return_code);
@@ -112,7 +111,7 @@ bool AddResult(const nfs::Message& data_message,
   for (auto& pending_request : pending_requests)
     SendReply(pending_request.msg, overall_return_code, pending_request.reply_functor);
 
-  return kDone;
+  return true;
 }
 
 
