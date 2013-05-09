@@ -151,8 +151,12 @@ void MaidAccountHolderService::HandlePut(const nfs::Message& data_message,
 template<typename Data>
 void MaidAccountHolderService::HandleDelete(const nfs::Message& data_message,
                                             const routing::ReplyFunctor& reply_functor) {
+  SendReplyAndAddToAccumulator(data_message, reply_functor, nfs::Reply(CommonErrors::success));
   try {
-    auto data_name(detail::GetDataName<Data>(data_message));
+    auto account_name(detail::GetMaidAccountName(data_message));
+    typename Data::name_type data_name(data_message.data().name);
+    maid_account_handler_.DeleteData<Data>(account_name, data_name);
+    AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kDelete>(data_message, 0);
     //DeleteFromAccount<Data>(detail::GetSourceMaidName(data_message), data_name, is_payable<Data>());
     nfs_.Delete<Data>(data_name, [](std::string /*serialised_reply*/) {});
   }
@@ -164,7 +168,6 @@ void MaidAccountHolderService::HandleDelete(const nfs::Message& data_message,
     LOG(kWarning) << "Unknown error.";
     // Always return success for Deletes
   }
-  SendReplyAndAddToAccumulator(data_message, reply_functor, nfs::Reply(CommonErrors::success));
 }
 
 template<typename Data>
@@ -188,10 +191,10 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
     nfs::Reply reply(CommonErrors::success);
     if (low_space)
       reply = nfs::Reply(VaultErrors::low_space);
-    SendReplyAndAddToAccumulator(data_message, client_reply_functor, reply);
     AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(
         data_message,
         detail::EstimateCost(data_message.data()));
+    SendReplyAndAddToAccumulator(data_message, client_reply_functor, reply);
   } else {
     SendReplyAndAddToAccumulator(data_message, client_reply_functor, overall_result);
   }
@@ -207,6 +210,7 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
     if (overall_result.IsSuccess()) {
       protobuf::Cost proto_cost;
       proto_cost.ParseFromString(overall_result.data().string());
+      // TODO(Fraser#5#): 2013-05-09 - The client's reply should only be sent *after* this call.
       AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(data_message,
                                                                       proto_cost.cost());
     }
