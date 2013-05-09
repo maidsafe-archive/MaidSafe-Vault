@@ -91,10 +91,9 @@ void InitialiseDirectory(const boost::filesystem::path& directory) {
   }
 }
 
-bool ShouldRetry(routing::Routing& routing, const nfs::Message& data_message) {
+bool ShouldRetry(routing::Routing& routing, const nfs::Message& message) {
   return routing.network_status() >= Parameters::kMinNetworkHealth &&
-         routing.EstimateInGroup(data_message.source().node_id,
-                                 NodeId(data_message.data().name.string()));
+         routing.EstimateInGroup(message.source().node_id, NodeId(message.data().name.string()));
 }
 
 void SendReply(const nfs::Message& original_message,

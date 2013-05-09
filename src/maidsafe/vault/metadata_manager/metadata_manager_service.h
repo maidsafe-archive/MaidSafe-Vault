@@ -42,10 +42,7 @@ class MetadataManagerService {
                          nfs::PublicKeyGetter& public_key_getter,
                          const boost::filesystem::path& vault_root_dir);
   template<typename Data>
-  void HandleDataMessage(const nfs::Message& data_message,
-                         const routing::ReplyFunctor& reply_functor);
-  void HandleGenericMessage(const nfs::Message& generic_message,
-                            const routing::ReplyFunctor& reply_functor);
+  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandleChurnEvent(routing::MatrixChange matrix_change);
 
  private:
@@ -74,29 +71,27 @@ class MetadataManagerService {
   MetadataManagerService& operator=(MetadataManagerService&&);
 
   template<typename Data>
-  void HandlePut(const nfs::Message& data_message,
-                 const routing::ReplyFunctor& reply_functor);
+  void HandlePut(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void Put(const Data& data, const PmidName& target_data_holder);
 
   template<typename Data>
-  void HandleGet(nfs::Message data_message, const routing::ReplyFunctor& reply_functor);
+  void HandleGet(nfs::Message message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void OnHandleGet(std::shared_ptr<GetHandler<Data>> get_handler,
                    const std::string& serialised_reply);
   template<typename Data>
   void IntegrityCheck(std::shared_ptr<GetHandler<Data>> get_handler);
   template<typename Data>
-  void HandleDelete(const nfs::Message& data_message,
-                    const routing::ReplyFunctor& reply_functor);
+  void HandleDelete(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
 
-  void ValidatePutSender(const nfs::Message& data_message) const;
-  void ValidateGetSender(const nfs::Message& data_message) const;
-  void ValidateDeleteSender(const nfs::Message& data_message) const;
-  void ValidatePostSender(const nfs::Message& generic_message) const;
+  void ValidatePutSender(const nfs::Message& message) const;
+  void ValidateGetSender(const nfs::Message& message) const;
+  void ValidateDeleteSender(const nfs::Message& message) const;
+  void ValidatePostSender(const nfs::Message& message) const;
 
-  void HandleNodeDown(const nfs::Message& generic_message);
-  void HandleNodeUp(const nfs::Message& generic_message);
+  void HandleNodeDown(const nfs::Message& message);
+  void HandleNodeUp(const nfs::Message& message);
 
   template<typename Data>
   void HandlePutResult(const nfs::Reply& overall_result);
@@ -106,7 +101,7 @@ class MetadataManagerService {
   template<typename Data>
   void OnGenericErrorHandler(nfs::Message message);
 
-  bool ThisVaultInGroupForData(const nfs::Message& data_message) const;
+  bool ThisVaultInGroupForData(const nfs::Message& message) const;
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;

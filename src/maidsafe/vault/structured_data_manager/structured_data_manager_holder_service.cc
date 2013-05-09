@@ -48,42 +48,41 @@ StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid&
       maid_account_handler_(db, routing.kNodeId()),
       nfs_(routing, pmid) {}
 
-void StructuredDataManagerService::HandleGenericMessage(
-    const nfs::GenericMessage& generic_message) {
-  ValidateSender(generic_message);
-  nfs::GenericMessage::Action action(generic_message.action());
-  switch (action) {
-    case nfs::GenericMessage::Action::kSynchronise:
-      return HandleSync(generic_message);
-    case nfs::GenericMessage::Action::kAccountTransfer:
-      return HandleAccountTransfer(generic_message);
-    default:
-      LOG(kError) << "Unhandled Post action type";
-  }
-}
+//void StructuredDataManagerService::HandleMessage(
+//    const nfs::Message& message) {
+//  ValidateSender(message);
+//  nfs::Message::Action action(message.action());
+//  switch (action) {
+//    case nfs::MessageAction::kSynchronise:
+//      return HandleSync(message);
+//    case nfs::MessageAction::kAccountTransfer:
+//      return HandleAccountTransfer(message);
+//    default:
+//      LOG(kError) << "Unhandled Post action type";
+//  }
+//}
 
-void StructuredDataManagerService::ValidateSender(const nfs::DataMessage& data_message) const {
-  if (!routing_.IsConnectedClient(data_message.source().node_id))
+void StructuredDataManagerService::ValidateSender(const nfs::Message& message) const {
+  if (!routing_.IsConnectedClient(message.source().node_id))
     ThrowError(VaultErrors::permission_denied);
 
-  if (!FromClientMaid(data_message) || !ForThisPersona(data_message))
+  if (!FromClientMaid(message) || !ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void StructuredDataManagerService::ValidateSender(const nfs::GenericMessage& generic_message) const {
-  if (!routing_.IsConnectedVault(generic_message.source().node_id))
+void StructuredDataManagerService::ValidateSender(const nfs::Message& message) const {
+  if (!routing_.IsConnectedVault(message.source().node_id))
     ThrowError(VaultErrors::permission_denied);
-  if (!FromStructuredDataManager(generic_message) || !ForThisPersona(generic_message))
+  if (!FromStructuredDataManager(message) || !ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 
 
 // =============== Put/Delete data =================================================================
 
-void StructuredDataManagerService::AddToAccumulator(
-    const nfs::DataMessage& data_message) {
+void StructuredDataManagerService::AddToAccumulator(const nfs::Message& message) {
   std::lock_guard<std::mutex> lock(accumulator_mutex_);
-  accumulator_.SetHandled(data_message);
+  accumulator_.SetHandled(message);
 }
 
 
@@ -103,9 +102,9 @@ void StructuredDataManagerService::Sync(const MaidName& account_name) {
   maid_account_handler_.IncrementSyncAttempts(account_name);
 }
 
-void StructuredDataManagerService::HandleSync(const nfs::GenericMessage& generic_message) {
+void StructuredDataManagerService::HandleSync(const nfs::Message& message) {
   protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(generic_message.content().string())) {
+  if (!proto_sync.ParseFromString(message.content().string())) {
     LOG(kError) << "Error parsing kSynchronise message.";
     return;
   }
@@ -125,10 +124,10 @@ void StructuredDataManagerService::TransferAccount(const MaidName& account_name,
   nfs_.TransferAccount(new_node, NonEmptyString(maid_account.SerializeAsString()));
 }
 
-void StructuredDataManagerService::HandleAccountTransfer(const nfs::GenericMessage& generic_message) {
+void StructuredDataManagerService::HandleAccountTransfer(const nfs::Message& message) {
   protobuf::MaidAccount maid_account;
-  NodeId source_id(generic_message.source().node_id);
-  if (!maid_account.ParseFromString(generic_message.content().string()))
+  NodeId source_id(message.source().node_id);
+  if (!maid_account.ParseFromString(message.content().string()))
     return;
 
   MaidName account_name(Identity(maid_account.maid_name()));

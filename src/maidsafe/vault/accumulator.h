@@ -80,14 +80,14 @@ class Accumulator {
   Accumulator();
 
   // Returns true and populates <reply_out> if the message has already been set as handled.  If the
-  // corresponding return_code != success, the data_message gets set in the reply.
-  bool CheckHandled(const nfs::Message& data_message, nfs::Reply& reply_out) const;
+  // corresponding return_code != success, the message gets set in the reply.
+  bool CheckHandled(const nfs::Message& message, nfs::Reply& reply_out) const;
   // Adds a request with its individual result, pending the overall result of the operation.
-  std::vector<nfs::Reply> PushSingleResult(const nfs::Message& data_message,
+  std::vector<nfs::Reply> PushSingleResult(const nfs::Message& message,
                                            const routing::ReplyFunctor& reply_functor,
                                            const maidsafe_error& return_code);
   // Marks the message as handled and returns all pending requests held with the same ID
-  std::vector<PendingRequest> SetHandled(const nfs::Message& data_message,
+  std::vector<PendingRequest> SetHandled(const nfs::Message& message,
                                          const maidsafe_error& return_code);
   // Returns all handled requests for the given account name.
   std::vector<HandledRequest> Get(const Name& name) const;
@@ -109,7 +109,7 @@ class Accumulator {
   Accumulator(Accumulator&&);
   Accumulator& operator=(Accumulator&&);
   typename std::deque<HandledRequest>::const_iterator FindHandled(
-      const nfs::Message& data_message) const;
+      const nfs::Message& message) const;
 
   std::deque<PendingRequest> pending_requests_;
   std::deque<HandledRequest> handled_requests_;

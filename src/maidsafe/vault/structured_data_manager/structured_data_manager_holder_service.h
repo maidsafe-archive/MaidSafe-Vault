@@ -42,9 +42,7 @@ class StructuredDataManagerService {
                                Db& db);
   // Handling of received requests (sending of requests is done via nfs_ object).
   template<typename Data>
-  void HandleDataMessage(const nfs::Message& data_message,
-                         const routing::ReplyFunctor& reply_functor);
-  void HandleGenericMessage(const nfs::Message& generic_message);
+  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandleChurnEvent(routing::MatrixChange matrix_change);
 
  private:
@@ -53,27 +51,27 @@ class StructuredDataManagerService {
   StructuredDataManagerService(StructuredDataManagerService&&);
   StructuredDataManagerService& operator=(StructuredDataManagerService&&);
 
-  void ValidateDataSender(const nfs::Message& data_message) const;
-  void ValidateGenericSender(const nfs::Message& generic_message) const;
+  void ValidateDataSender(const nfs::Message& message) const;
+  void ValidateGenericSender(const nfs::Message& message) const;
 
   // =============== Put/Delete data ===============================================================
   template<typename Data>
-  void HandlePut(const nfs::Message& data_message);
+  void HandlePut(const nfs::Message& message);
   template<typename Data>
-  void HandleDelete(const nfs::Message& data_message);
+  void HandleDelete(const nfs::Message& message);
   template<typename Data>
-  void HandleGet(const nfs::Message& data_message, routing::ReplyFunctor reply_functor);
+  void HandleGet(const nfs::Message& message, routing::ReplyFunctor reply_functor);
 
   template<typename Data, nfs::MessageAction action>
-  void AddLocalUnresolvedEntryThenSync(const nfs::Message& data_message, int32_t cost);
+  void AddLocalUnresolvedEntryThenSync(const nfs::Message& message, int32_t cost);
 
   // =============== Sync ==========================================================================
   void Sync(const MaidName& account_name);
-  void HandleSync(const nfs::Message& generic_message);
+  void HandleSync(const nfs::Message& message);
 
   // =============== Account transfer ==============================================================
   void TransferAccount(const MaidName& account_name, const NodeId& new_node);
-  void HandleAccountTransfer(const nfs::Message& generic_message);
+  void HandleAccountTransfer(const nfs::Message& message);
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;

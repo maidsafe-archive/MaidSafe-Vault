@@ -42,13 +42,10 @@ class Demultiplexer {
 
  private:
   template<typename MessageType>
-  void PersonaHandleDataMessage(const MessageType& message,
+  void PersonaHandleMessage(const MessageType& message,
                                 const routing::ReplyFunctor& reply_functor);
-  template<typename MessageType>
-  void PersonaHandleGenericMessage(const MessageType& message,
-                                   const routing::ReplyFunctor& reply_functor);
-  NonEmptyString HandleGetFromCache(const nfs::Message& data_message);
-  void HandleStoreInCache(const nfs::Message& data_message);
+  NonEmptyString HandleGetFromCache(const nfs::Message& message);
+  void HandleStoreInCache(const nfs::Message& message);
 
   MaidAccountHolderService& maid_account_holder_service_;
   MetadataManagerService& metadata_manager_service_;
@@ -57,12 +54,7 @@ class Demultiplexer {
 };
 
 template<>
-void Demultiplexer::PersonaHandleDataMessage<nfs::Message>(
-    const nfs::Message& message,
-    const routing::ReplyFunctor& reply_functor);
-
-template<>
-void Demultiplexer::PersonaHandleGenericMessage<nfs::Message>(
+void Demultiplexer::PersonaHandleMessage<nfs::Message>(
     const nfs::Message& message,
     const routing::ReplyFunctor& reply_functor);
 

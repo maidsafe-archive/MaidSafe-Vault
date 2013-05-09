@@ -25,100 +25,100 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void DataHolderService::HandleDataMessage(const nfs::Message& data_message,
-                                   const routing::ReplyFunctor& reply_functor) {
+void DataHolderService::HandleMessage(const nfs::Message& message,
+                                      const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    if (accumulator_.CheckHandled(data_message, reply))
+    if (accumulator_.CheckHandled(message, reply))
       return reply_functor(reply.Serialise()->string());
   }
 
-  switch (data_message.data().action) {
+  switch (message.data().action) {
     case nfs::MessageAction::kPut:
-      return HandlePutMessage<Data>(data_message, reply_functor);
+      return HandlePutMessage<Data>(message, reply_functor);
     case nfs::MessageAction::kGet:
-      return HandleGetMessage<Data>(data_message, reply_functor);
+      return HandleGetMessage<Data>(message, reply_functor);
     case nfs::MessageAction::kDelete:
-      return HandleDeleteMessage<Data>(data_message, reply_functor);
+      return HandleDeleteMessage<Data>(message, reply_functor);
     default: {
-      reply = nfs::Reply(VaultErrors::operation_not_supported, data_message.Serialise().data);
+      reply = nfs::Reply(VaultErrors::operation_not_supported, message.Serialise().data);
       std::lock_guard<std::mutex> lock(accumulator_mutex_);
-      accumulator_.SetHandled(data_message, reply.error());
+      accumulator_.SetHandled(message, reply.error());
       reply_functor(reply.Serialise()->string());
     }
   }
 }
 
 template<typename Data>
-void DataHolderService::HandlePutMessage(const nfs::Message& data_message,
-                                  const routing::ReplyFunctor& reply_functor) {
+void DataHolderService::HandlePutMessage(const nfs::Message& message,
+                                         const routing::ReplyFunctor& reply_functor) {
   try {
-    ValidatePutSender(data_message);
-    Data data(typename Data::name_type(data_message.data().name),
-              typename Data::serialised_type(data_message.data().content));
-    if (detail::AddResult(data_message, reply_functor, MakeError(CommonErrors::success),
+    ValidatePutSender(message);
+    Data data(typename Data::name_type(message.data().name),
+              typename Data::serialised_type(message.data().content));
+    if (detail::AddResult(message, reply_functor, MakeError(CommonErrors::success),
                           accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
-      permanent_data_store_.Put(data.name(), data_message.data().content);
+      permanent_data_store_.Put(data.name(), message.data().content);
     }
   }
   catch(const maidsafe_error& error) {
-    detail::AddResult(data_message, reply_functor, error, accumulator_, accumulator_mutex_,
+    detail::AddResult(message, reply_functor, error, accumulator_, accumulator_mutex_,
                       kPutRequestsRequired_);
   }
   catch(...) {
-    detail::AddResult(data_message, reply_functor, MakeError(CommonErrors::unknown),
+    detail::AddResult(message, reply_functor, MakeError(CommonErrors::unknown),
                       accumulator_, accumulator_mutex_, kPutRequestsRequired_);
   }
 }
 
 template<typename Data>
-void DataHolderService::HandleGetMessage(const nfs::Message& data_message,
+void DataHolderService::HandleGetMessage(const nfs::Message& message,
                                          const routing::ReplyFunctor& reply_functor) {
   try {
-    ValidateGetSender(data_message);
-    typename Data::name_type data_name(data_message.data().name);
+    ValidateGetSender(message);
+    typename Data::name_type data_name(message.data().name);
     nfs::Reply reply(CommonErrors::success, permanent_data_store_.Get(data_name));
     reply_functor(reply.Serialise()->string());
   } catch(const std::exception& /*ex*/) {
     reply_functor(nfs::Reply(CommonErrors::unknown,
-                             data_message.Serialise().data).Serialise()->string());
+                             message.Serialise().data).Serialise()->string());
   }
 }
 
 template<typename Data>
-void DataHolderService::HandleDeleteMessage(const nfs::Message& data_message,
-                                     const routing::ReplyFunctor& reply_functor) {
+void DataHolderService::HandleDeleteMessage(const nfs::Message& message,
+                                            const routing::ReplyFunctor& reply_functor) {
   try {
-    ValidateDeleteSender(data_message);
-    if (detail::AddResult(data_message, reply_functor, MakeError(CommonErrors::success),
+    ValidateDeleteSender(message);
+    if (detail::AddResult(message, reply_functor, MakeError(CommonErrors::success),
                           accumulator_, accumulator_mutex_, kDeleteRequestsRequired_)) {
-      permanent_data_store_.Delete(typename Data::name_type(data_message.data().name));
+      permanent_data_store_.Delete(typename Data::name_type(message.data().name));
     }
   }
   catch(const maidsafe_error& error) {
-    detail::AddResult(data_message, reply_functor, error, accumulator_, accumulator_mutex_,
+    detail::AddResult(message, reply_functor, error, accumulator_, accumulator_mutex_,
                       kDeleteRequestsRequired_);
   }
   catch(...) {
-    detail::AddResult(data_message, reply_functor, MakeError(CommonErrors::unknown),
+    detail::AddResult(message, reply_functor, MakeError(CommonErrors::unknown),
                       accumulator_, accumulator_mutex_, kDeleteRequestsRequired_);
   }
 }
 
 template<typename Data>
-NonEmptyString DataHolderService::GetFromCache(const nfs::Message& data_message) {
-  return GetFromCache<Data>(data_message, is_cacheable<Data>());
+NonEmptyString DataHolderService::GetFromCache(const nfs::Message& message) {
+  return GetFromCache<Data>(message, is_cacheable<Data>());
 }
 
 template<typename Data>
-NonEmptyString DataHolderService::GetFromCache(const nfs::Message& data_message, IsCacheable) {
-  return CacheGet<Data>(typename Data::name_type(data_message.data().name),
+NonEmptyString DataHolderService::GetFromCache(const nfs::Message& message, IsCacheable) {
+  return CacheGet<Data>(typename Data::name_type(message.data().name),
                         is_long_term_cacheable<Data>());
 }
 
 template<typename Data>
-NonEmptyString DataHolderService::GetFromCache(const nfs::Message& /*data_message*/,
+NonEmptyString DataHolderService::GetFromCache(const nfs::Message& /*message*/,
                                                IsNotCacheable) {
   return NonEmptyString();
 }
@@ -140,18 +140,18 @@ NonEmptyString DataHolderService::CacheGet(const typename Data::name_type& name,
 }
 
 template<typename Data>
-void DataHolderService::StoreInCache(const nfs::Message& data_message) {
-  StoreInCache<Data>(data_message, is_cacheable<Data>());
+void DataHolderService::StoreInCache(const nfs::Message& message) {
+  StoreInCache<Data>(message, is_cacheable<Data>());
 }
 
 template<typename Data>
-void DataHolderService::StoreInCache(const nfs::Message& data_message, IsCacheable) {
-  CacheStore<Data>(typename Data::name_type(data_message.data().name), data_message.data().content,
+void DataHolderService::StoreInCache(const nfs::Message& message, IsCacheable) {
+  CacheStore<Data>(typename Data::name_type(message.data().name), message.data().content,
                    is_long_term_cacheable<Data>());
 }
 
 template<typename Data>
-void DataHolderService::StoreInCache(const nfs::Message& /*data_message*/, IsNotCacheable) {}
+void DataHolderService::StoreInCache(const nfs::Message& /*message*/, IsNotCacheable) {}
 
 template<typename Data>
 void DataHolderService::CacheStore(const typename Data::name_type& name,

@@ -52,14 +52,11 @@ class DataHolderService {
                     const boost::filesystem::path& vault_root_dir);
 
   template<typename Data>
-  void HandleDataMessage(const nfs::Message& data_message,
-                         const routing::ReplyFunctor& reply_functor);
-  void HandleGenericMessage(const nfs::Message& generic_message,
-                            const routing::ReplyFunctor& reply_functor);
+  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  NonEmptyString GetFromCache(const nfs::Message& data_message);
+  NonEmptyString GetFromCache(const nfs::Message& message);
   template<typename Data>
-  void StoreInCache(const nfs::Message& data_message);
+  void StoreInCache(const nfs::Message& message);
 
   template<typename Data>
   friend class test::DataHolderTest;
@@ -69,32 +66,29 @@ class DataHolderService {
   typedef std::false_type IsNotCacheable, IsShortTermCacheable;
 
   template<typename Data>
-  void HandlePutMessage(const nfs::Message& data_message,
-                        const routing::ReplyFunctor& reply_functor);
+  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandleGetMessage(const nfs::Message& data_message,
-                        const routing::ReplyFunctor& reply_functor);
+  void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandleDeleteMessage(const nfs::Message& data_message,
-                           const routing::ReplyFunctor& reply_functor);
+  void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
 
-  void ValidatePutSender(const nfs::Message& data_message) const;
-  void ValidateGetSender(const nfs::Message& data_message) const;
-  void ValidateDeleteSender(const nfs::Message& data_message) const;
+  void ValidatePutSender(const nfs::Message& message) const;
+  void ValidateGetSender(const nfs::Message& message) const;
+  void ValidateDeleteSender(const nfs::Message& message) const;
 
   template<typename Data>
-  NonEmptyString GetFromCache(const nfs::Message& data_message, IsCacheable);
+  NonEmptyString GetFromCache(const nfs::Message& message, IsCacheable);
   template<typename Data>
-  NonEmptyString GetFromCache(const nfs::Message& data_message, IsNotCacheable);
+  NonEmptyString GetFromCache(const nfs::Message& message, IsNotCacheable);
   template<typename Data>
   NonEmptyString CacheGet(const typename Data::name_type& name, IsShortTermCacheable);
   template<typename Data>
   NonEmptyString CacheGet(const typename Data::name_type& name, IsLongTermCacheable);
 
   template<typename Data>
-  void StoreInCache(const nfs::Message& data_message, IsCacheable);
+  void StoreInCache(const nfs::Message& message, IsCacheable);
   template<typename Data>
-  void StoreInCache(const nfs::Message& data_message, IsNotCacheable);
+  void StoreInCache(const nfs::Message& message, IsNotCacheable);
   template<typename Data>
   void CacheStore(const typename Data::name_type& name,
                   const NonEmptyString& value,

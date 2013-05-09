@@ -60,57 +60,70 @@ int32_t EstimateCost<passport::PublicMaid>(const passport::PublicMaid&);
 template<>
 int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&);
 
-MaidName GetMaidAccountName(const nfs::Message& data_message);
+MaidName GetMaidAccountName(const nfs::Message& message);
 
 template<typename Data>
-typename Data::name_type GetDataName(const nfs::Message& data_message) {
+typename Data::name_type GetDataName(const nfs::Message& message) {
   // Hash the data name to obfuscate the list of chunks associated with the client.
-  return typename Data::name_type(crypto::Hash<crypto::SHA512>(data_message.data().name));
+  return typename Data::name_type(crypto::Hash<crypto::SHA512>(message.data().name));
 }
 
 template<typename Data, nfs::MessageAction action>
-MaidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& data_message,
+MaidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
                                                  int32_t cost,
                                                  const NodeId& this_id) {
   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
   return MaidAccountUnresolvedEntry(
-      std::make_pair(DataNameVariant(GetDataName<Data>(data_message)), action), cost, this_id);
+      std::make_pair(DataNameVariant(GetDataName<Data>(message)), action), cost, this_id);
 }
 
 }  // namespace detail
 
 
 template<typename Data>
-void MaidAccountHolderService::HandleDataMessage(const nfs::Message& data_message,
-                                                 const routing::ReplyFunctor& reply_functor) {
-  ValidateDataSender(data_message);
+void MaidAccountHolderService::HandleMessage(const nfs::Message& message,
+                                             const routing::ReplyFunctor& reply_functor) {
+  ValidateDataSender(message);
   nfs::Reply reply(CommonErrors::success);
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    if (accumulator_.CheckHandled(data_message, reply))
+    if (accumulator_.CheckHandled(message, reply))
       return reply_functor(reply.Serialise()->string());
   }
 
-  if (data_message.data().action == nfs::MessageAction::kPut) {
-    HandlePut<Data>(data_message, reply_functor);
-  } else if (data_message.data().action == nfs::MessageAction::kDelete) {
-    HandleDelete<Data>(data_message, reply_functor);
+  //ValidateGenericSender(message);
+  //nfs::MessageAction action(message.data().action);
+  //switch (action) {
+  //  case nfs::MessageAction::kRegisterPmid:
+  //    return HandlePmidRegistration(message, reply_functor);
+  //  case nfs::MessageAction::kSynchronise:
+  //    return HandleSync(message);
+  //  case nfs::MessageAction::kAccountTransfer:
+  //    return HandleAccountTransfer(message);
+  //  default:
+  //    LOG(kError) << "Unhandled Post action type";
+  //}
+
+  if (message.data().action == nfs::MessageAction::kPut) {
+    HandlePut<Data>(message, reply_functor);
+  } else if (message.data().action == nfs::MessageAction::kDelete) {
+    HandleDelete<Data>(message, reply_functor);
   } else {
-    reply = nfs::Reply(VaultErrors::operation_not_supported, data_message.Serialise().data);
-    SendReplyAndAddToAccumulator(data_message, reply_functor, reply);
+    reply = nfs::Reply(VaultErrors::operation_not_supported, message.Serialise().data);
+    SendReplyAndAddToAccumulator(message, reply_functor, reply);
   }
 }
 
 template<typename Data>
-void MaidAccountHolderService::HandlePut(const nfs::Message& data_message,
+void MaidAccountHolderService::HandlePut(const nfs::Message& message,
                                          const routing::ReplyFunctor& reply_functor) {
   maidsafe_error return_code(CommonErrors::success);
   try {
-    Data data(typename Data::name_type(data_message.data().name),
-              typename Data::serialised_type(data_message.data().content));
-    auto account_name(detail::GetMaidAccountName(data_message));
-    auto estimated_cost(detail::EstimateCost(data_message.data()));
+    Data data(typename Data::name_type(message.data().name),
+              typename Data::serialised_type(message.data().content));
+    auto account_name(detail::GetMaidAccountName(message));
+    auto estimated_cost(detail::EstimateCost(message.data()));
     maid_account_handler_.CreateAccount<Data>(account_name, detail::can_create_account<Data>());
     auto account_status(maid_account_handler_.AllowPut(account_name, estimated_cost));
 
@@ -120,20 +133,20 @@ void MaidAccountHolderService::HandlePut(const nfs::Message& data_message,
 
     auto put_op(std::make_shared<nfs::OperationOp>(
         kPutRepliesSuccessesRequired_,
-        [this, data_message, reply_functor, low_space](nfs::Reply overall_result) {
-            this->HandlePutResult<Data>(overall_result, data_message, reply_functor,
-                                        low_space, is_unique_on_network<Data>());
+        [this, message, reply_functor, low_space](nfs::Reply overall_result) {
+            this->HandlePutResult<Data>(overall_result, message, reply_functor, low_space,
+                                        is_unique_on_network<Data>());
         }));
 
     if (low_space)
       UpdatePmidTotals(account_name);
 
     nfs_.Put(data,
-             data_message.data_holder(),
+             message.data_holder(),
              [put_op](std::string serialised_reply) {
                  nfs::HandleOperationReply(put_op, serialised_reply);
              });
-    return SendEarlySuccessReply<Data>(data_message, reply_functor, low_space,
+    return SendEarlySuccessReply<Data>(message, reply_functor, low_space,
                                        is_unique_on_network<Data>());
   }
   catch(const maidsafe_error& error) {
@@ -144,20 +157,19 @@ void MaidAccountHolderService::HandlePut(const nfs::Message& data_message,
     LOG(kWarning) << "Unknown error.";
     return_code = MakeError(CommonErrors::unknown);
   }
-  nfs::Reply reply(return_code, data_message.Serialise().data);
-  SendReplyAndAddToAccumulator(data_message, reply_functor, reply);
+  nfs::Reply reply(return_code, message.Serialise().data);
+  SendReplyAndAddToAccumulator(message, reply_functor, reply);
 }
 
 template<typename Data>
-void MaidAccountHolderService::HandleDelete(const nfs::Message& data_message,
+void MaidAccountHolderService::HandleDelete(const nfs::Message& message,
                                             const routing::ReplyFunctor& reply_functor) {
-  SendReplyAndAddToAccumulator(data_message, reply_functor, nfs::Reply(CommonErrors::success));
+  SendReplyAndAddToAccumulator(message, reply_functor, nfs::Reply(CommonErrors::success));
   try {
-    auto account_name(detail::GetMaidAccountName(data_message));
-    typename Data::name_type data_name(data_message.data().name);
+    auto account_name(detail::GetMaidAccountName(message));
+    typename Data::name_type data_name(message.data().name);
     maid_account_handler_.DeleteData<Data>(account_name, data_name);
-    AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kDelete>(data_message, 0);
-    //DeleteFromAccount<Data>(detail::GetSourceMaidName(data_message), data_name, is_payable<Data>());
+    AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kDelete>(message, 0);
     nfs_.Delete<Data>(data_name, [](std::string /*serialised_reply*/) {});
   }
   catch(const maidsafe_error& error) {
@@ -171,19 +183,19 @@ void MaidAccountHolderService::HandleDelete(const nfs::Message& data_message,
 }
 
 template<typename Data>
-void MaidAccountHolderService::SendEarlySuccessReply(const nfs::Message& data_message,
+void MaidAccountHolderService::SendEarlySuccessReply(const nfs::Message& message,
                                                      const routing::ReplyFunctor& reply_functor,
                                                      bool low_space,
                                                      NonUniqueDataType) {
   nfs::Reply reply(CommonErrors::success);
   if (low_space)
     reply = nfs::Reply(VaultErrors::low_space);
-  SendReplyAndAddToAccumulator(data_message, reply_functor, reply);
+  SendReplyAndAddToAccumulator(message, reply_functor, reply);
 }
 
 template<typename Data>
 void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
-                                               const nfs::Message& data_message,
+                                               const nfs::Message& message,
                                                routing::ReplyFunctor client_reply_functor,
                                                bool low_space,
                                                UniqueDataType) {
@@ -192,17 +204,17 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
     if (low_space)
       reply = nfs::Reply(VaultErrors::low_space);
     AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(
-        data_message,
-        detail::EstimateCost(data_message.data()));
-    SendReplyAndAddToAccumulator(data_message, client_reply_functor, reply);
+        message,
+        detail::EstimateCost(message.data()));
+    SendReplyAndAddToAccumulator(message, client_reply_functor, reply);
   } else {
-    SendReplyAndAddToAccumulator(data_message, client_reply_functor, overall_result);
+    SendReplyAndAddToAccumulator(message, client_reply_functor, overall_result);
   }
 }
 
 template<typename Data>
 void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
-                                               const nfs::Message& data_message,
+                                               const nfs::Message& message,
                                                routing::ReplyFunctor /*client_reply_functor*/,
                                                bool /*low_space*/,
                                                NonUniqueDataType) {
@@ -211,8 +223,7 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
       protobuf::Cost proto_cost;
       proto_cost.ParseFromString(overall_result.data().string());
       // TODO(Fraser#5#): 2013-05-09 - The client's reply should only be sent *after* this call.
-      AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(data_message,
-                                                                      proto_cost.cost());
+      AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, proto_cost.cost());
     }
   }
   catch(const std::exception& e) {
@@ -221,10 +232,10 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
 }
 
 template<typename Data, nfs::MessageAction action>
-void MaidAccountHolderService::AddLocalUnresolvedEntryThenSync(const nfs::Message& data_message,
+void MaidAccountHolderService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message,
                                                                int32_t cost) {
-  auto account_name(detail::GetMaidAccountName(data_message));
-  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(data_message, cost,
+  auto account_name(detail::GetMaidAccountName(message));
+  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(message, cost,
                                                                     routing_.kNodeId()));
   maid_account_handler_.AddLocalUnresolvedEntry(account_name, unresolved_entry);
   Sync(account_name);

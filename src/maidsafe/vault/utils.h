@@ -75,7 +75,7 @@ namespace detail {
 
 void InitialiseDirectory(const boost::filesystem::path& directory);
 
-bool ShouldRetry(routing::Routing& routing, const nfs::Message& data_message);
+bool ShouldRetry(routing::Routing& routing, const nfs::Message& message);
 
 template<typename Data>
 bool IsDataElement(const typename Data::name_type& name,
@@ -99,7 +99,7 @@ typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
 
 // Returns true if the required successful request count has been reached
 template<typename Accumulator>
-bool AddResult(const nfs::Message& data_message,
+bool AddResult(const nfs::Message& message,
                const routing::ReplyFunctor& reply_functor,
                const maidsafe_error& return_code,
                Accumulator& accumulator,

@@ -34,11 +34,6 @@ PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
       nfs_(routing, pmid) {}
 
 
-void PmidAccountHolderService::HandleGenericMessage(const nfs::Message& /*generic_message*/,
-                                                    const routing::ReplyFunctor& /*reply_functor*/) {
-
-}
-
 void PmidAccountHolderService::HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {
 //    /*const std::vector<routing::NodeInfo>& new_close_nodes*/) {
 //  // Operations to be done when we this call is received
@@ -86,19 +81,18 @@ bool PmidAccountHolderService::AssessRange(const PmidName& account_name,
   }
 }
 
-void PmidAccountHolderService::ValidateSender(const nfs::Message& data_message) const {
-  if (!data_message.HasDataHolder())
+void PmidAccountHolderService::ValidateSender(const nfs::Message& message) const {
+  if (!message.HasDataHolder())
     ThrowError(VaultErrors::permission_denied);
 
-  if (!routing_.IsConnectedVault(NodeId(data_message.data_holder()->string())))
+  if (!routing_.IsConnectedVault(NodeId(message.data_holder()->string())))
     ThrowError(VaultErrors::permission_denied);
 
-  if (routing_.EstimateInGroup(data_message.source().node_id,
-                               NodeId(data_message.data().name)))
+  if (routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
     ThrowError(VaultErrors::permission_denied);
 
-  if (data_message.source().persona != nfs::Persona::kMetadataManager ||
-      data_message.destination_persona() != nfs::Persona::kPmidAccountHolder)
+  if (message.source().persona != nfs::Persona::kMetadataManager ||
+      message.destination_persona() != nfs::Persona::kPmidAccountHolder)
     ThrowError(CommonErrors::invalid_parameter);
 }
 

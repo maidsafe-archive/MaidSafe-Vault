@@ -86,7 +86,7 @@ bool IsDataElement(const typename Data::name_type& name,
 
 // Returns true if the required successful request count has been reached
 template<typename Accumulator>
-bool AddResult(const nfs::Message& data_message,
+bool AddResult(const nfs::Message& message,
                const routing::ReplyFunctor& reply_functor,
                const maidsafe_error& return_code,
                Accumulator& accumulator,
@@ -96,7 +96,7 @@ bool AddResult(const nfs::Message& data_message,
   maidsafe_error overall_return_code(CommonErrors::success);
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex);
-    auto pending_results(accumulator.PushSingleResult(data_message, reply_functor, return_code));
+    auto pending_results(accumulator.PushSingleResult(message, reply_functor, return_code));
     if (static_cast<int>(pending_results.size()) < requests_required)
       return false;
 
@@ -105,7 +105,7 @@ bool AddResult(const nfs::Message& data_message,
       return false;
 
     overall_return_code = (*result.first).error();
-    pending_requests = accumulator.SetHandled(data_message, overall_return_code);
+    pending_requests = accumulator.SetHandled(message, overall_return_code);
   }
 
   for (auto& pending_request : pending_requests)
