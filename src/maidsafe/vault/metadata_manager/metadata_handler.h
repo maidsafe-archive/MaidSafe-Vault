@@ -20,6 +20,7 @@
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
 
+#include "maidsafe/vault/metadata_manager/metadata_db.h"
 #include "maidsafe/vault/metadata_manager/metadata.pb.h"
 #include "maidsafe/vault/types.h"
 
@@ -113,6 +114,7 @@ class MetadataHandler {
   };
 
   const boost::filesystem::path kMetadataRoot_;
+  std::unique_ptr<MetadataDb> metadata_db_;
 };
 
 }  // namespace vault

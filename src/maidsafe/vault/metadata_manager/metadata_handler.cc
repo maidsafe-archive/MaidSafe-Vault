@@ -102,7 +102,12 @@ MetadataHandler::MetadataValue::serialised_type MetadataHandler::MetadataValue::
 }
 
 MetadataHandler::MetadataHandler(const fs::path& vault_root_dir)
-    : kMetadataRoot_(vault_root_dir / "metadata") {
+    : kMetadataRoot_([vault_root_dir]()->boost::filesystem::path {
+                       auto path(vault_root_dir / "metadata");
+                       detail::InitialiseDirectory(path);
+                       return path;
+                     } ()),
+      metadata_db_(new MetadataDb(kMetadataRoot_)) {
   detail::InitialiseDirectory(kMetadataRoot_);
 }
 

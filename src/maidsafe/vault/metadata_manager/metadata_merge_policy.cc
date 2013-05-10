@@ -38,16 +38,16 @@ MetadataMergePolicy& MetadataMergePolicy::operator=(MetadataMergePolicy&& other)
   return *this;
 }
 
-void MetadataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
-  auto serialised_db_value(GetFromDb(unresolved_entry.key.first));
-  if (unresolved_entry.key.second == nfs::MessageAction::kPut &&
-      !unresolved_entry.dont_add_to_db) {
-    MergePut(unresolved_entry.key.first, MergedCost(unresolved_entry), serialised_db_value);
-  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
-    MergeDelete(unresolved_entry.key.first, serialised_db_value);
-  } else {
-    ThrowError(CommonErrors::invalid_parameter);
-  }
+void MetadataMergePolicy::Merge(const UnresolvedEntry& /*unresolved_entry*/) {
+//  auto serialised_db_value(GetFromDb(unresolved_entry.key.first));
+//  if (unresolved_entry.key.second == nfs::MessageAction::kPut &&
+//      !unresolved_entry.dont_add_to_db) {
+//    MergePut(unresolved_entry.key.first, MergedCost(unresolved_entry), serialised_db_value);
+//  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
+//    MergeDelete(unresolved_entry.key.first, serialised_db_value);
+//  } else {
+//    ThrowError(CommonErrors::invalid_parameter);
+//  }
 }
 
 void MetadataMergePolicy::MergePut(const DataNameVariant& /*data_name*/,
