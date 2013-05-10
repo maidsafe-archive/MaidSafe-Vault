@@ -9,13 +9,12 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#include "maidsafe/vault/maid_account_holder/maid_account_holder_service.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_manager_service.h"
 
 #include <string>
 
 #include "maidsafe/nfs/pmid_registration.h"
 
-#include "maidsafe/vault/structured_data_manager/structured_data_manager_holder_service.h"
 #include "maidsafe/vault/sync.h"
 
 
