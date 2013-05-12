@@ -22,7 +22,7 @@ namespace maidsafe {
 
 namespace vault {
 
-
+  /*
 namespace {
 
 template<typename Message>
@@ -136,7 +136,7 @@ void StructuredDataManagerService::HandleAccountTransfer(const nfs::Message& mes
   if (finished_all_transfers)
     UpdatePmidTotals(account_name);
 }
-
+*/
 
 }  // namespace vault
 

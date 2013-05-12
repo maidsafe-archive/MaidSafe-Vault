@@ -51,8 +51,7 @@ class SyncPolicy {
     nfs::Message::Data data(DataTagValue::kImmutableDataValue, Identity(target_node_id.string()),
                             serialised_account, nfs::MessageAction::kAccountTransfer);
     nfs::Message message(source_persona, kSource_, data);
-    nfs::MessageWrapper message_wrapper(nfs::Message::message_type_identifier,
-                                        message.Serialise().data);
+    nfs::MessageWrapper message_wrapper(message.Serialise());
     routing_.SendDirect(target_node_id, message_wrapper.Serialise()->string(), false, nullptr);
   }
 
@@ -61,10 +60,8 @@ class SyncPolicy {
     nfs::Message::Data data(DataTagValue::kImmutableDataValue, name.data, serialised_sync_data,
                             nfs::MessageAction::kSynchronise);
     nfs::Message message(source_persona, kSource_, data);
-    nfs::MessageWrapper message_wrapper(nfs::Message::message_type_identifier,
-                                        message.Serialise().data);
-    routing_.SendGroup(NodeId(name), message_wrapper.Serialise()->string(),
-                       false, nullptr);
+    nfs::MessageWrapper message_wrapper(message.Serialise());
+    routing_.SendGroup(NodeId(name), message_wrapper.Serialise()->string(), false, nullptr);
   }
 
  private:
@@ -84,10 +81,8 @@ class MaidAccountHolderMiscellaneousPolicy {
                          const routing::ResponseFunctor& callback) {
     nfs::Message::Data data(DataTagValue::kPmidValue, pmid_name.data, NonEmptyString(),
                             nfs::MessageAction::kGetPmidTotals);
-    nfs::Message message(nfs::Persona::kPmidAccountHolder,
-                         kSource_, data, pmid_name);
-    nfs::MessageWrapper message_wrapper(nfs::Message::message_type_identifier,
-                                        message.Serialise().data);
+    nfs::Message message(nfs::Persona::kPmidAccountHolder, kSource_, data, pmid_name);
+    nfs::MessageWrapper message_wrapper(message.Serialise());
     routing_.SendGroup(NodeId(pmid_name), message_wrapper.Serialise()->string(),
                        false, callback);
   }

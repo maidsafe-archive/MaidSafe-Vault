@@ -16,14 +16,13 @@
 #include "maidsafe/passport/types.h"
 #include "maidsafe/data_types/data_type_values.h"
 #include "maidsafe/data_types/data_name_variant.h"
-#include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/reply.h"
 
 #include "maidsafe/vault/data_holder/data_holder_service.h"
 #include "maidsafe/vault/maid_account_holder/maid_account_holder_service.h"
 #include "maidsafe/vault/metadata_manager/metadata_manager_service.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_account_holder_service.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_manager_service.h"
 
 
 namespace maidsafe {
@@ -106,10 +105,12 @@ void HandleDataType(const nfs::Message& message,
 
 
 Demultiplexer::Demultiplexer(MaidAccountHolderService& maid_account_holder_service,
+                             StructuredDataManagerService& structured_data_manager_service,
                              MetadataManagerService& metadata_manager_service,
                              PmidAccountHolderService& pmid_account_holder_service,
                              DataHolderService& data_holder)
     : maid_account_holder_service_(maid_account_holder_service),
+      structured_data_manager_service_(structured_data_manager_service),
       metadata_manager_service_(metadata_manager_service),
       pmid_account_holder_service_(pmid_account_holder_service),
       data_holder_(data_holder) {}
@@ -119,19 +120,8 @@ void Demultiplexer::HandleMessage(const std::string& serialised_message,
   try {
     nfs::MessageWrapper message_wrapper(
         (nfs::MessageWrapper::serialised_type((NonEmptyString(serialised_message)))));
-    switch (message_wrapper.inner_message_type()) {
-      case nfs::MessageCategory::kReply: {
-        // TODO(Fraser#5#): 2013-05-09 - BEFORE_RELEASE - What's this for?
-        nfs::Message message(message_wrapper.serialised_inner_message<nfs::Message>());
-        return PersonaHandleMessage(message, reply_functor);
-      }
-      case nfs::MessageCategory::kMessage: {
-        nfs::Message message(message_wrapper.serialised_inner_message<nfs::Message>());
-        return PersonaHandleMessage(message, reply_functor);
-      }
-      default:
-        LOG(kError) << "Unhandled inner_message_type";
-    }
+    nfs::Message message(message_wrapper.serialised_inner_message<nfs::Message>());
+    return PersonaHandleMessage(message, reply_functor);
   }
   catch(const maidsafe_error& error) {
     LOG(kError) << "Caught exception on handling new message: " << error.what();
@@ -186,8 +176,7 @@ bool Demultiplexer::GetFromCache(std::string& serialised_message) {
                              request_message.data().name,
                              cached_content,
                              request_message.data().action));
-      nfs::MessageWrapper message_wrapper(nfs::Message::message_type_identifier,
-                                          response_message.Serialise().data);
+      nfs::MessageWrapper message_wrapper(response_message.Serialise());
       serialised_message = message_wrapper.Serialise()->string();
       return true;
     }

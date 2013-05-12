@@ -26,7 +26,6 @@
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_handler.h"
 
 
 namespace maidsafe {
@@ -51,39 +50,39 @@ class StructuredDataManagerService {
   StructuredDataManagerService(StructuredDataManagerService&&);
   StructuredDataManagerService& operator=(StructuredDataManagerService&&);
 
-  void ValidateDataSender(const nfs::Message& message) const;
-  void ValidateGenericSender(const nfs::Message& message) const;
+  //void ValidateDataSender(const nfs::Message& message) const;
+  //void ValidateGenericSender(const nfs::Message& message) const;
 
-  // =============== Put/Delete data ===============================================================
-  template<typename Data>
-  void HandlePut(const nfs::Message& message);
-  template<typename Data>
-  void HandleDelete(const nfs::Message& message);
-  template<typename Data>
-  void HandleGet(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+  //// =============== Put/Delete data ===============================================================
+  //template<typename Data>
+  //void HandlePut(const nfs::Message& message);
+  //template<typename Data>
+  //void HandleDelete(const nfs::Message& message);
+  //template<typename Data>
+  //void HandleGet(const nfs::Message& message, routing::ReplyFunctor reply_functor);
 
-  template<typename Data, nfs::MessageAction action>
-  void AddLocalUnresolvedEntryThenSync(const nfs::Message& message, int32_t cost);
+  //template<typename Data, nfs::MessageAction action>
+  //void AddLocalUnresolvedEntryThenSync(const nfs::Message& message, int32_t cost);
 
-  // =============== Sync ==========================================================================
-  void Sync(const MaidName& account_name);
-  void HandleSync(const nfs::Message& message);
+  //// =============== Sync ==========================================================================
+  //void Sync(const MaidName& account_name);
+  //void HandleSync(const nfs::Message& message);
 
-  // =============== Account transfer ==============================================================
-  void TransferAccount(const MaidName& account_name, const NodeId& new_node);
-  void HandleAccountTransfer(const nfs::Message& message);
+  //// =============== Account transfer ==============================================================
+  //void TransferAccount(const MaidName& account_name, const NodeId& new_node);
+  //void HandleAccountTransfer(const nfs::Message& message);
 
-  routing::Routing& routing_;
-  nfs::PublicKeyGetter& public_key_getter_;
-  std::mutex accumulator_mutex_;
-  AccountName account_name_;
-  Accumulator<AccountName> accumulator_;
+  //routing::Routing& routing_;
+  //nfs::PublicKeyGetter& public_key_getter_;
+  //std::mutex accumulator_mutex_;
+  //AccountName account_name_;
+  //Accumulator<AccountName> accumulator_;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/maid_account_holder/maid_account_holder_service-inl.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_manager_service-inl.h"
 
 #endif  // MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_MANAGER_SERVICE_H_

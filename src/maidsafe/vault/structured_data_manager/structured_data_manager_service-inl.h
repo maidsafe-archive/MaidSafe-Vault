@@ -29,7 +29,7 @@
 namespace maidsafe {
 
 namespace vault {
-
+/*
 namespace detail {
 
 AccountName GetAccountName(const nfs::Message& message);
@@ -119,7 +119,7 @@ void StructuredDataManagerService::AddLocalUnresolvedEntryThenSync(const nfs::Me
   maid_account_handler_.AddLocalUnresolvedEntry(account_name, unresolved_entry);
   Sync(account_name);
 }
-
+*/
 }  // namespace vault
 
 }  // namespace maidsafe
