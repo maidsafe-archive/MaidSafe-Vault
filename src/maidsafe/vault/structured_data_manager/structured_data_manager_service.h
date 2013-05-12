@@ -35,14 +35,14 @@ namespace vault {
 class StructuredDataManagerService {
  public:
   typedef std::pair<Identity, Identity> AccountName;
-  StructuredDataManagerService(const passport::Pmid& pmid,
-                               routing::Routing& routing,
-                               nfs::PublicKeyGetter& public_key_getter,
-                               Db& db);
+  StructuredDataManagerService(const passport::Pmid& /*pmid*/,
+                               routing::Routing& /*routing*/,
+                               nfs::PublicKeyGetter& /*public_key_getter*/,
+                               Db& /*db*/) {}
   // Handling of received requests (sending of requests is done via nfs_ object).
   template<typename Data>
-  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  void HandleChurnEvent(routing::MatrixChange matrix_change);
+  void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor& /*reply_functor*/) {}
+  void HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {}
 
  private:
   StructuredDataManagerService(const StructuredDataManagerService&);

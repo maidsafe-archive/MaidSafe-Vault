@@ -50,7 +50,7 @@ StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid&
 //void StructuredDataManagerService::HandleMessage(
 //    const nfs::Message& message) {
 //  ValidateSender(message);
-//  nfs::Message::Action action(message.action());
+//  nfs::MessageAction action(message.action());
 //  switch (action) {
 //    case nfs::MessageAction::kSynchronise:
 //      return HandleSync(message);
