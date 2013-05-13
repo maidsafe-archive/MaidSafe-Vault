@@ -29,26 +29,35 @@
 namespace maidsafe {
 
 namespace vault {
-/*
+
 namespace detail {
 
-AccountName GetAccountName(const nfs::Message& message);
+vault::StructuredDataManagerService::AccountName GetStructuredDataAccountName(
+    const nfs::Message& message);
 
 template<typename Data>
-typename Data::name_type GetDataName(const nfs::Message& message) {
+typename Data::name_type GetStructuredDataName(const nfs::Message& message) {
   // Hash the data name to obfuscate the list of chunks associated with the client.
-  return typename Data::name_type(message.data().name);
+  return typename Data::name_type(crypto::Hash<crypto::SHA512>(message.data().name));
 }
 
-template<typename Data, nfs::MessageAction action>
-StructuredDataManagerUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
-                                                           Identity value,
-                                                           const NodeId& this_id) {
-  static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
-                "Action must be either kPut of kDelete.");
-  return StructuredDataManagerUnresolvedEntry(
-      std::make_pair(DataNameVariant(GetDataName<Data>(message)), action), value, this_id);
-}
+// AccountName GetAccountName(const nfs::Message& message);
+//
+// template<typename Data>
+// typename Data::name_type GetDataName(const nfs::Message& message) {
+//   // Hash the data name to obfuscate the list of chunks associated with the client.
+//   return typename Data::name_type(message.data().name);
+// }
+//
+// template<typename Data, nfs::MessageAction action>
+// StructuredDataManagerUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
+//                                                            Identity value,
+//                                                            const NodeId& this_id) {
+//   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
+//                 "Action must be either kPut of kDelete.");
+//   return StructuredDataManagerUnresolvedEntry(
+//       std::make_pair(DataNameVariant(GetDataName<Data>(message)), action), value, this_id);
+// }
 
 }  // namespace detail
 
@@ -56,7 +65,7 @@ StructuredDataManagerUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& m
 template<typename Data>
 void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
                                                  const routing::ReplyFunctor& reply_functor) {
-  ValidateSender(message);
+//   ValidateSender(message);
   nfs::Reply reply(CommonErrors::success);
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
@@ -76,13 +85,12 @@ void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 template<typename Data>
-void StructuredDataManagerService::HandlePut(const nfs::Message& message,
-                                         const routing::ReplyFunctor& reply_functor) {
+void StructuredDataManagerService::HandlePut(const nfs::Message& message) {
   maidsafe_error return_code(CommonErrors::success);
   try {
     Data data(typename Data::name_type(message.data().name),
               typename Data::serialised_type(message.data().content));
-    auto account_name(detail::GetMaidAccountName(message));
+    auto account_name(detail::GetStructuredDataAccountName(message));
 
   }
   catch(const maidsafe_error& error) {
@@ -96,10 +104,9 @@ void StructuredDataManagerService::HandlePut(const nfs::Message& message,
 }
 
 template<typename Data>
-void StructuredDataManagerService::HandleDelete(const nfs::Message& message,
-                                                const routing::ReplyFunctor& reply_functor) {
+void StructuredDataManagerService::HandleDelete(const nfs::Message& message) {
   try {
-    auto data_name(detail::GetDataName<Data>(message));
+    auto data_name(detail::GetStructuredDataName<Data>(message));
     //DeleteFromAccount<Data>(detail::GetSourceMaidName(message), data_name, version);
   }
   catch(const maidsafe_error& error) {
@@ -110,16 +117,16 @@ void StructuredDataManagerService::HandleDelete(const nfs::Message& message,
    }
 }
 
-template<typename Data, nfs::MessageAction action>
-void StructuredDataManagerService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message,
-                                                                   int32_t cost) {
-  auto account_name(detail::GetMaidAccountName(message));
-  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(message, cost,
-                                                                    routing_.kNodeId()));
-  maid_account_handler_.AddLocalUnresolvedEntry(account_name, unresolved_entry);
-  Sync(account_name);
-}
-*/
+// template<typename Data, nfs::MessageAction action>
+// void StructuredDataManagerService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message,
+//                                                                    int32_t cost) {
+//   auto account_name(detail::GetMaidAccountName(message));
+//   auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(message, cost,
+//                                                                     routing_.kNodeId()));
+//   maid_account_handler_.AddLocalUnresolvedEntry(account_name, unresolved_entry);
+//   Sync(account_name);
+// }
+
 }  // namespace vault
 
 }  // namespace maidsafe

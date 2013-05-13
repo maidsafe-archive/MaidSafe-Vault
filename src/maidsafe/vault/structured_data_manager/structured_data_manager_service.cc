@@ -32,6 +32,17 @@ inline bool ForThisPersona(const Message& message) {
 
 }  // unnamed namespace
 
+namespace detail {
+
+vault::StructuredDataManagerService::AccountName GetStructuredDataAccountName(
+    const nfs::Message& message) {
+  return vault::StructuredDataManagerService::AccountName(
+      std::make_pair(Identity(message.source().node_id.string()),
+                     Identity(message.data_holder().data.string())));
+}
+
+}  // namespace detail
+
 
 
 // const int StructuredDataManagerService::kPutRepliesSuccessesRequired_(3);
@@ -42,24 +53,13 @@ StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid&
                                                    const boost::filesystem::path& path)
     : routing_(routing),
       public_key_getter_(public_key_getter),
-//       accumulator_mutex_(),
-//       accumulator_(),
+      accumulator_mutex_(),
+      account_name_(std::make_pair(Identity(routing_.kNodeId().string()),
+                                   Identity(pmid.name().data.string()))),
+      accumulator_(),
       structured_data_db_(path),
       nfs_(routing_, pmid) {}
 
-//void StructuredDataManagerService::HandleMessage(
-//    const nfs::Message& message) {
-//  ValidateSender(message);
-//  nfs::MessageAction action(message.action());
-//  switch (action) {
-//    case nfs::MessageAction::kSynchronise:
-//      return HandleSync(message);
-//    case nfs::MessageAction::kAccountTransfer:
-//      return HandleAccountTransfer(message);
-//    default:
-//      LOG(kError) << "Unhandled Post action type";
-//  }
-//}
 
 // void StructuredDataManagerService::ValidateSender(const nfs::Message& message) const {
 //   if (!routing_.IsConnectedClient(message.source().node_id))
@@ -75,16 +75,16 @@ StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid&
 //   if (!FromStructuredDataManager(message) || !ForThisPersona(message))
 //     ThrowError(CommonErrors::invalid_parameter);
 // }
-//
-//
-// // =============== Put/Delete data =================================================================
-//
-// void StructuredDataManagerService::AddToAccumulator(const nfs::Message& message) {
-//   std::lock_guard<std::mutex> lock(accumulator_mutex_);
-//   accumulator_.SetHandled(message);
-// }
-//
-//
+
+
+// =============== Put/Delete data =================================================================
+
+void StructuredDataManagerService::AddToAccumulator(const nfs::Message& message) {
+  std::lock_guard<std::mutex> lock(accumulator_mutex_);
+  accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
+}
+
+
 // // =============== Sync ============================================================================
 //
 // void StructuredDataManagerService::Sync(const MaidName& account_name) {

@@ -23,6 +23,7 @@
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/public_key_getter.h"
 
+#include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
@@ -37,13 +38,15 @@ namespace vault {
 class StructuredDataManagerService {
  public:
   typedef std::pair<Identity, Identity> AccountName;
+  typedef Identity StructuredDataAccountName;
   StructuredDataManagerService(const passport::Pmid& pmid,
                                routing::Routing& routing,
                                nfs::PublicKeyGetter& public_key_getter,
                                const boost::filesystem::path& path);
   // Handling of received requests (sending of requests is done via nfs_ object).
   template<typename Data>
-  void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor& /*reply_functor*/) {}
+  void HandleMessage(const nfs::Message& message,
+                     const routing::ReplyFunctor& reply_functor);
   void HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {}
 
  private:
@@ -56,15 +59,17 @@ class StructuredDataManagerService {
   //void ValidateGenericSender(const nfs::Message& message) const;
 
   //// =============== Put/Delete data ===============================================================
-  //template<typename Data>
-  //void HandlePut(const nfs::Message& message);
-  //template<typename Data>
-  //void HandleDelete(const nfs::Message& message);
-  //template<typename Data>
-  //void HandleGet(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+  template<typename Data>
+  void HandlePut(const nfs::Message& message);
+  template<typename Data>
+  void HandleDelete(const nfs::Message& message);
+  template<typename Data>
+  void HandleGet(const nfs::Message& message, routing::ReplyFunctor reply_functor);
 
-  //template<typename Data, nfs::MessageAction action>
-  //void AddLocalUnresolvedEntryThenSync(const nfs::Message& message, int32_t cost);
+  void AddToAccumulator(const nfs::Message& message);
+
+//   template<typename Data, nfs::MessageAction action>
+//   void AddLocalUnresolvedEntryThenSync(const nfs::Message& message, int32_t cost);
 
   //// =============== Sync ==========================================================================
   //void Sync(const MaidName& account_name);
@@ -76,9 +81,9 @@ class StructuredDataManagerService {
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
-  //std::mutex accumulator_mutex_;
-  //AccountName account_name_;
-  //Accumulator<AccountName> accumulator_;
+  std::mutex accumulator_mutex_;
+  AccountName account_name_;
+  Accumulator<StructuredDataAccountName> accumulator_;
   StructuredDataDb structured_data_db_;
   DataHolderNfs nfs_;
 };
