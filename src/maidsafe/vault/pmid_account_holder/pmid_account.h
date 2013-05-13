@@ -41,18 +41,6 @@ class PmidAccount {
   typedef PmidName name_type;
   typedef TaggedValue<NonEmptyString, struct SerialisedPmidAccountTag> serialised_type;
 
-  struct DataElement {
-    DataElement();
-    DataElement(const DataNameVariant& data_name_variant_in, int32_t size_in);
-    DataElement(const DataElement& other);
-    DataElement& operator=(const DataElement& other);
-    DataElement(DataElement&& other);
-    DataElement& operator=(DataElement&& other);
-    protobuf::DataElement ToProtobuf() const;
-
-    DataNameVariant data_name_variant;
-    int32_t size;
-  };
   enum class DataHolderStatus : int32_t { kDown, kGoingDown, kUp, kGoingUp };
 
   PmidAccount(const PmidName& pmid_name, Db &db, const NodeId &this_node_id);
@@ -85,6 +73,7 @@ class PmidAccount {
 
   NonEmptyString GetSyncData();
   void ApplySyncData(const NonEmptyString& serialised_unresolved_entries);
+  void ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node);
   void IncrementSyncAttempts();
 
   name_type name() const { return pmid_name_; }

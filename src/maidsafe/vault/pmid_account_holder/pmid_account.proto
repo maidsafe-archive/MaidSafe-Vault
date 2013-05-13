@@ -10,12 +10,6 @@ message PmidRecord {
   required int64 claimed_available_size = 6;
 }
 
-message DataElement {
-  required int32 type = 1;
-  required bytes name = 2;
-  required int32 size = 3;
-}
-
 message PmidAccountDbValue {
   required int32 size = 1;
 }
@@ -27,12 +21,11 @@ message PmidAccountDbEntry {
 }
 
 message PmidAccount {
-  required PmidRecord pmid_record = 1;
-  repeated bytes serialised_unresolved_entry = 2;
+  required bytes serialised_account_details = 1;
 }
 
 message PmidAccountDetails {
-  required bytes serialised_pmid_account = 1;
+  required bytes serialised_pmid_record = 1;
   repeated PmidAccountDbEntry db_entry = 2;
   repeated bytes serialised_unresolved_entry = 3;
 }

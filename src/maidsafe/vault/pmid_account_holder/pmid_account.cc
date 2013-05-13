@@ -25,27 +25,6 @@ namespace vault {
 
 const size_t PmidAccount::kSyncTriggerCount_(1);
 
-//namespace {
-//
-//PmidRecord ParsePmidRecord(const PmidAccount::serialised_type& serialised_pmid_account) {
-//  protobuf::PmidAccount pmid_account;
-//  if (!pmid_account.ParseFromString(serialised_pmid_account.data.string()))
-//    ThrowError(CommonErrors::parsing_error);
-//  return PmidRecord(pmid_account.pmid_record());
-//}
-//
-//}  // namespace
-
-protobuf::DataElement PmidAccount::DataElement::ToProtobuf() const {
-  GetTagValueAndIdentityVisitor type_and_name_visitor;
-  auto type_and_name(boost::apply_visitor(type_and_name_visitor, data_name_variant));
-  protobuf::DataElement data_element;
-  data_element.set_name(type_and_name.second.string());
-  data_element.set_type(static_cast<int32_t>(type_and_name.first));
-  data_element.set_size(size);
-  return data_element;
-}
-
 PmidAccount::PmidAccount(const PmidName& pmid_name,  Db& db, const NodeId& this_node_id)
     : pmid_name_(pmid_name),
       pmid_record_(pmid_name),
@@ -96,12 +75,38 @@ PmidAccount& PmidAccount::operator=(PmidAccount&& other) {
 }
 
 PmidAccount::serialised_type PmidAccount::Serialise() {
-  protobuf::PmidAccount pmid_account;
-  *(pmid_account.mutable_pmid_record()) = pmid_record_.ToProtobuf();
+  protobuf::PmidRecord proto_pmid_record;
+  proto_pmid_record.set_pmid_name(pmid_record_.pmid_name.data.string());
+  proto_pmid_record.set_stored_count(pmid_record_.stored_count);
+  proto_pmid_record.set_stored_total_size(pmid_record_.stored_total_size);
+  proto_pmid_record.set_lost_count(pmid_record_.lost_count);
+  proto_pmid_record.set_lost_total_size(pmid_record_.lost_total_size);
+  proto_pmid_record.set_claimed_available_size(pmid_record_.claimed_available_size);
+
+  protobuf::PmidAccountDetails proto_pmid_account_details;
+
+  proto_pmid_account_details.set_serialised_pmid_account(proto_pmid_record.SerializeAsString());
+
+  auto db_entries(account_db_->Get());
+  GetTagValueAndIdentityVisitor type_and_name_visitor;
+  for (const auto& db_entry : db_entries) {
+    auto type_and_name(boost::apply_visitor(type_and_name_visitor, db_entry.first));
+    auto proto_db_entry(proto_pmid_account_details.add_db_entry());
+    proto_db_entry->set_type(static_cast<int32_t>(type_and_name.first));
+    proto_db_entry->set_name(type_and_name.second.string());
+    protobuf::PmidAccountDbValue proto_db_value;
+    if (!proto_db_value.ParseFromString(db_entry.second.string()))
+      ThrowError(CommonErrors::parsing_error);
+    proto_db_entry->mutable_value()->CopyFrom(proto_db_value);
+  }
+
   auto unresolved_data(sync_.GetUnresolvedData());
-  for (const auto& unresolved_entry : unresolved_data)
-    pmid_account.add_serialised_unresolved_entry(unresolved_entry.Serialise()->string());
-  return serialised_type(NonEmptyString(pmid_account.SerializeAsString()));
+  for (const auto& unresolved_entry : unresolved_data) {
+    proto_pmid_account_details.add_serialised_unresolved_entry(
+        unresolved_entry.Serialise()->string());
+  }
+
+  return serialised_type(NonEmptyString(proto_pmid_account_details.SerializeAsString()));
 }
 
 bool PmidAccount::ApplyAccountTransfer(const NodeId& source_id,
@@ -173,6 +178,12 @@ void PmidAccount::ApplySyncData(const NonEmptyString& serialised_unresolved_entr
         pmid_record_.stored_total_size -= *entry.messages_contents.front().value;
     }
   }
+}
+
+void PmidAccount::ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node) {
+  if (account_transfer_nodes_ != 0)
+    --account_transfer_nodes_;
+  sync_.ReplaceNode(old_node, new_node);
 }
 
 void PmidAccount::IncrementSyncAttempts() {

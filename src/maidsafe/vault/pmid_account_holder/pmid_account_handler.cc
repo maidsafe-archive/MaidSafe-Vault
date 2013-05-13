@@ -94,6 +94,13 @@ void PmidAccountHandler::ApplySyncData(const PmidName& account_name,
   pmid_accounts_.at(account_name)->ApplySyncData(serialised_unresolved_entries);
 }
 
+void PmidAccountHandler::ReplaceNodeInSyncList(const PmidName& account_name,
+                                               const NodeId& old_node,
+                                               const NodeId& new_node) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  pmid_accounts_.at(account_name)->ReplaceNodeInSyncList(old_node, new_node);
+}
+
 void PmidAccountHandler::IncrementSyncAttempts(const PmidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   pmid_accounts_.at(account_name)->IncrementSyncAttempts();

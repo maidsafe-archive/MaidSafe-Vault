@@ -51,6 +51,9 @@ class PmidAccountHandler {
   NonEmptyString GetSyncData(const PmidName& account_name);
   void ApplySyncData(const PmidName& account_name,
                      const NonEmptyString& serialised_unresolved_entries);
+  void PmidAccountHandler::ReplaceNodeInSyncList(const PmidName& account_name,
+                                               const NodeId& old_node,
+                                               const NodeId& new_node);
   void IncrementSyncAttempts(const PmidName& account_name);
 
   // Data operations

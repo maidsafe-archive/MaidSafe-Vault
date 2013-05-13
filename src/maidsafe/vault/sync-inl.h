@@ -73,7 +73,7 @@ typename std::vector<typename MergePolicy::UnresolvedEntry::MessageContent>::ite
 
 template<typename MergePolicy>
 bool IsResolved(const typename MergePolicy::UnresolvedEntry& entry) {
-  return entry.messages_contents.size() > routing::Parameters::node_group_size / 2;
+  return entry.messages_contents.size() > static_cast<uint32_t>(routing::Parameters::node_group_size / 2);
 }
 
 template<typename MergePolicy>
