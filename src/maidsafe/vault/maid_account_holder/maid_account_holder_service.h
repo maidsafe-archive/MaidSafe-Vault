@@ -20,8 +20,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/data_message.h"
-#include "maidsafe/nfs/generic_message.h"
+#include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/vault/accumulator.h"
@@ -46,10 +45,8 @@ class MaidAccountHolderService {
                            Db& db);
   // Handling of received requests (sending of requests is done via nfs_ object).
   template<typename Data>
-  void HandleDataMessage(const nfs::DataMessage& data_message,
-                         const routing::ReplyFunctor& reply_functor);
-  void HandleGenericMessage(const nfs::GenericMessage& generic_message,
-                            const routing::ReplyFunctor& reply_functor);
+  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandleChurnEvent(routing::MatrixChange matrix_change);
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
 
@@ -59,50 +56,49 @@ class MaidAccountHolderService {
   MaidAccountHolderService(MaidAccountHolderService&&);
   MaidAccountHolderService& operator=(MaidAccountHolderService&&);
 
-  void ValidateSender(const nfs::DataMessage& data_message) const;
-  void ValidateSender(const nfs::GenericMessage& generic_message) const;
+  void ValidateDataSender(const nfs::Message& message) const;
+  void ValidateGenericSender(const nfs::Message& message) const;
 
   // =============== Put/Delete data ===============================================================
   template<typename Data>
-  void HandlePut(const nfs::DataMessage& data_message, const routing::ReplyFunctor& reply_functor);
+  void HandlePut(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandleDelete(const nfs::DataMessage& data_message,
-                    const routing::ReplyFunctor& reply_functor);
+  void HandleDelete(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   typedef std::true_type UniqueDataType;
   template<typename Data>
-  void SendEarlySuccessReply(const nfs::DataMessage& /*data_message*/,
+  void SendEarlySuccessReply(const nfs::Message& /*message*/,
                              const routing::ReplyFunctor& /*reply_functor*/,
                              bool /*low_space*/,
                              UniqueDataType) {}
   typedef std::false_type NonUniqueDataType;
   template<typename Data>
-  void SendEarlySuccessReply(const nfs::DataMessage& data_message,
+  void SendEarlySuccessReply(const nfs::Message& message,
                              const routing::ReplyFunctor& reply_functor,
                              bool low_space,
                              NonUniqueDataType);
-  void SendReplyAndAddToAccumulator(const nfs::DataMessage& data_message,
+  void SendReplyAndAddToAccumulator(const nfs::Message& message,
                                     const routing::ReplyFunctor& reply_functor,
                                     const nfs::Reply& reply);
 
   template<typename Data>
   void HandlePutResult(const nfs::Reply& overall_result,
-                       const nfs::DataMessage& data_message,
+                       const nfs::Message& message,
                        routing::ReplyFunctor client_reply_functor,
                        bool low_space,
                        UniqueDataType);
 
   template<typename Data>
   void HandlePutResult(const nfs::Reply& overall_result,
-                       const nfs::DataMessage& data_message,
+                       const nfs::Message& message,
                        routing::ReplyFunctor client_reply_functor,
                        bool low_space,
                        NonUniqueDataType);
 
   template<typename Data, nfs::MessageAction action>
-  void AddLocalUnresolvedEntryThenSync(const nfs::DataMessage& data_message, int32_t cost);
+  void AddLocalUnresolvedEntryThenSync(const nfs::Message& message, int32_t cost);
 
   // =============== Pmid registration =============================================================
-  void HandlePmidRegistration(const nfs::GenericMessage& generic_message,
+  void HandlePmidRegistration(const nfs::Message& message,
                               const routing::ReplyFunctor& reply_functor);
   template<typename PublicFobType>
   void ValidatePmidRegistration(const nfs::Reply& reply,
@@ -112,11 +108,11 @@ class MaidAccountHolderService {
 
   // =============== Sync ==========================================================================
   void Sync(const MaidName& account_name);
-  void HandleSync(const nfs::GenericMessage& generic_message);
+  void HandleSync(const nfs::Message& message);
 
   // =============== Account transfer ==============================================================
   void TransferAccount(const MaidName& account_name, const NodeId& new_node);
-  void HandleAccountTransfer(const nfs::GenericMessage& generic_message);
+  void HandleAccountTransfer(const nfs::Message& message);
 
   // =============== PMID totals ===================================================================
   void UpdatePmidTotals(const MaidName& account_name);

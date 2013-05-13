@@ -39,6 +39,7 @@ glob_dir(MaidAccountHolder ${VaultSourcesDir}/maid_account_holder "Maid Account 
 glob_dir(MetadataManager ${VaultSourcesDir}/metadata_manager "Metadata Manager\\\\")
 glob_dir(MpidAccountHolder ${VaultSourcesDir}/mpid_account_holder "Mpid Account Holder\\\\")
 glob_dir(PmidAccountHolder ${VaultSourcesDir}/pmid_account_holder "Pmid Account Holder\\\\")
+glob_dir(StructuredDataManager ${VaultSourcesDir}/structured_data_manager "Structured Data Manager\\\\")
 
 glob_dir(VaultTests ${VaultSourcesDir}/tests "Tests")
 glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
@@ -52,7 +53,8 @@ ms_add_static_library(vault ${VaultAllFiles}
                             ${MaidAccountHolderAllFiles}
                             ${MetadataManagerAllFiles}
                             ${MpidAccountHolderAllFiles}
-                            ${PmidAccountHolderAllFiles})
+                            ${PmidAccountHolderAllFiles}
+                            ${StructuredDataManagerAllFiles})
 ms_add_executable(lifestuff_vault Production ${VaultSourcesDir}/vault_main.cc)
 
 target_link_libraries(maidsafe_vault maidsafe_nfs maidsafe_routing maidsafe_common maidsafe_private leveldb)

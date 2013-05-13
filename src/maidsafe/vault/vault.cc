@@ -33,10 +33,12 @@ Vault::Vault(const passport::Pmid& pmid,
       routing_(new routing::Routing(pmid)),
       public_key_getter_(*routing_, pmids_from_file),
       maid_account_holder_service_(pmid, *routing_, public_key_getter_, db_),
+      structured_data_manager_service_(pmid, *routing_, public_key_getter_, db_),
       metadata_manager_service_(pmid, *routing_, public_key_getter_, vault_root_dir),
       pmid_account_holder_service_(pmid, *routing_),
       data_holder_(pmid, *routing_, vault_root_dir),
       demux_(maid_account_holder_service_,
+             structured_data_manager_service_,
              metadata_manager_service_,
              pmid_account_holder_service_,
              data_holder_),
@@ -160,6 +162,9 @@ void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_clos
 void Vault::OnMatrixChanged(const routing::MatrixChange& matrix_change) {
   asio_service_.service().post([=] {
       maid_account_holder_service_.HandleChurnEvent(matrix_change);
+  });
+  asio_service_.service().post([=] {
+      structured_data_manager_service_.HandleChurnEvent(matrix_change);
   });
   asio_service_.service().post([=] {
       metadata_manager_service_.HandleChurnEvent(matrix_change);

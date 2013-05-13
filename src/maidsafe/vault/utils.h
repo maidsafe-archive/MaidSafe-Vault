@@ -21,7 +21,7 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/data_message.h"
+#include "maidsafe/nfs/message.h"
 
 #include "maidsafe/vault/types.h"
 
@@ -75,13 +75,13 @@ namespace detail {
 
 void InitialiseDirectory(const boost::filesystem::path& directory);
 
-bool ShouldRetry(routing::Routing& routing, const nfs::DataMessage& data_message);
+bool ShouldRetry(routing::Routing& routing, const nfs::Message& message);
 
 template<typename Data>
 bool IsDataElement(const typename Data::name_type& name,
                    const DataNameVariant& data_name_variant);
 
-void SendReply(const nfs::DataMessage& original_message,
+void SendReply(const nfs::Message& original_message,
                const maidsafe_error& return_code,
                const routing::ReplyFunctor& reply_functor);
 
@@ -99,7 +99,7 @@ typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
 
 // Returns true if the required successful request count has been reached
 template<typename Accumulator>
-bool AddResult(const nfs::DataMessage& data_message,
+bool AddResult(const nfs::Message& message,
                const routing::ReplyFunctor& reply_functor,
                const maidsafe_error& return_code,
                Accumulator& accumulator,
