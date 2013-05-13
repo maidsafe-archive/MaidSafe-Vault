@@ -50,10 +50,10 @@ std::vector<typename Accumulator<DataNameVariant>::PendingRequest>
 
   handled_requests_.push_back(
       Accumulator::HandledRequest(message.message_id(),
-                                  GetDataNameVariant(message.data().type, message.data().name),
+                                  GetDataNameVariant(*message.data().type, message.data().name),
                                   message.data().action,
                                   message.data().name,
-                                  message.data().type,
+                                  *message.data().type,
                                   static_cast<int32_t>(message.data().content.string().size()),
                                   return_code));
   if (handled_requests_.size() > kMaxHandledRequestsCount_)
@@ -82,7 +82,7 @@ std::vector<typename Accumulator<PmidName>::PendingRequest> Accumulator<PmidName
                                   message.data_holder(),
                                   message.data().action,
                                   message.data().name,
-                                  message.data().type,
+                                  *message.data().type,
                                   static_cast<int32_t>(message.data().content.string().size()),
                                   return_code));
   if (handled_requests_.size() > kMaxHandledRequestsCount_)

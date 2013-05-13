@@ -164,6 +164,9 @@ void Vault::OnMatrixChanged(const routing::MatrixChange& matrix_change) {
       maid_account_holder_service_.HandleChurnEvent(matrix_change);
   });
   asio_service_.service().post([=] {
+      structured_data_manager_service_.HandleChurnEvent(matrix_change);
+  });
+  asio_service_.service().post([=] {
       metadata_manager_service_.HandleChurnEvent(matrix_change);
   });
   asio_service_.service().post([=] {

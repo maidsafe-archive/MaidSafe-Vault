@@ -206,7 +206,7 @@ std::vector<typename Accumulator<Name>::PendingRequest> Accumulator<Name>::SetHa
                                   Name(Identity(message.source().node_id.string())),
                                   message.data().action,
                                   message.data().name,
-                                  message.data().type,
+                                  *message.data().type,
                                   static_cast<int32_t>(message.data().content.string().size()),
                                   return_code));
   if (handled_requests_.size() > kMaxHandledRequestsCount_)

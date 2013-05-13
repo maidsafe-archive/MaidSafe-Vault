@@ -140,6 +140,33 @@ MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
       maid_account_handler_(db, routing.kNodeId()),
       nfs_(routing, pmid) {}
 
+void MaidAccountHolderService::HandleMessage(const nfs::Message& message,
+                                             const routing::ReplyFunctor& reply_functor) {
+  ValidateGenericSender(message);
+  nfs::Reply reply(CommonErrors::success);
+  //{
+  //  std::lock_guard<std::mutex> lock(accumulator_mutex_);
+  //  if (accumulator_.CheckHandled(message, reply))
+  //    return reply_functor(reply.Serialise()->string());
+  //}
+
+  nfs::MessageAction action(message.data().action);
+  switch (action) {
+    case nfs::MessageAction::kRegisterPmid:
+      return HandlePmidRegistration(message, reply_functor);
+    case nfs::MessageAction::kSynchronise:
+      return HandleSync(message);
+    case nfs::MessageAction::kAccountTransfer:
+      return HandleAccountTransfer(message);
+    default:
+      LOG(kError) << "Unhandled Post action type";
+  }
+
+  reply = nfs::Reply(VaultErrors::operation_not_supported, message.Serialise().data);
+  //SendReplyAndAddToAccumulator(message, reply_functor, reply);
+  reply_functor(reply.Serialise()->string());
+}
+
 void MaidAccountHolderService::ValidateDataSender(const nfs::Message& message) const {
   if (!routing_.IsConnectedClient(message.source().node_id))
     ThrowError(VaultErrors::permission_denied);
