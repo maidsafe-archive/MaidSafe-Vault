@@ -27,6 +27,8 @@
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
 
+#include "maidsafe/vault/structured_data_manager/structured_data_db.h"
+
 
 namespace maidsafe {
 
@@ -35,10 +37,10 @@ namespace vault {
 class StructuredDataManagerService {
  public:
   typedef std::pair<Identity, Identity> AccountName;
-  StructuredDataManagerService(const passport::Pmid& /*pmid*/,
-                               routing::Routing& /*routing*/,
-                               nfs::PublicKeyGetter& /*public_key_getter*/,
-                               Db& /*db*/) {}
+  StructuredDataManagerService(const passport::Pmid& pmid,
+                               routing::Routing& routing,
+                               nfs::PublicKeyGetter& public_key_getter,
+                               const boost::filesystem::path& path);
   // Handling of received requests (sending of requests is done via nfs_ object).
   template<typename Data>
   void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor& /*reply_functor*/) {}
@@ -72,11 +74,13 @@ class StructuredDataManagerService {
   //void TransferAccount(const MaidName& account_name, const NodeId& new_node);
   //void HandleAccountTransfer(const nfs::Message& message);
 
-  //routing::Routing& routing_;
-  //nfs::PublicKeyGetter& public_key_getter_;
+  routing::Routing& routing_;
+  nfs::PublicKeyGetter& public_key_getter_;
   //std::mutex accumulator_mutex_;
   //AccountName account_name_;
   //Accumulator<AccountName> accumulator_;
+  StructuredDataDb structured_data_db_;
+  DataHolderNfs nfs_;
 };
 
 }  // namespace vault

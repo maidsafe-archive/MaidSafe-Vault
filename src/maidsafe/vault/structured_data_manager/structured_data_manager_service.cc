@@ -22,7 +22,7 @@ namespace maidsafe {
 
 namespace vault {
 
-  /*
+
 namespace {
 
 template<typename Message>
@@ -34,18 +34,18 @@ inline bool ForThisPersona(const Message& message) {
 
 
 
-const int StructuredDataManagerService::kPutRepliesSuccessesRequired_(3);
+// const int StructuredDataManagerService::kPutRepliesSuccessesRequired_(3);
 
 StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
                                                    nfs::PublicKeyGetter& public_key_getter,
-                                                   Db& db)
+                                                   const boost::filesystem::path& path)
     : routing_(routing),
       public_key_getter_(public_key_getter),
-      accumulator_mutex_(),
-      accumulator_(),
-      maid_account_handler_(db, routing.kNodeId()),
-      nfs_(routing, pmid) {}
+//       accumulator_mutex_(),
+//       accumulator_(),
+      structured_data_db_(path),
+      nfs_(routing_, pmid) {}
 
 //void StructuredDataManagerService::HandleMessage(
 //    const nfs::Message& message) {
@@ -61,82 +61,82 @@ StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid&
 //  }
 //}
 
-void StructuredDataManagerService::ValidateSender(const nfs::Message& message) const {
-  if (!routing_.IsConnectedClient(message.source().node_id))
-    ThrowError(VaultErrors::permission_denied);
+// void StructuredDataManagerService::ValidateSender(const nfs::Message& message) const {
+//   if (!routing_.IsConnectedClient(message.source().node_id))
+//     ThrowError(VaultErrors::permission_denied);
+//
+//   if (!FromClientMaid(message) || !ForThisPersona(message))
+//     ThrowError(CommonErrors::invalid_parameter);
+// }
+//
+// void StructuredDataManagerService::ValidateSender(const nfs::Message& message) const {
+//   if (!routing_.IsConnectedVault(message.source().node_id))
+//     ThrowError(VaultErrors::permission_denied);
+//   if (!FromStructuredDataManager(message) || !ForThisPersona(message))
+//     ThrowError(CommonErrors::invalid_parameter);
+// }
+//
+//
+// // =============== Put/Delete data =================================================================
+//
+// void StructuredDataManagerService::AddToAccumulator(const nfs::Message& message) {
+//   std::lock_guard<std::mutex> lock(accumulator_mutex_);
+//   accumulator_.SetHandled(message);
+// }
+//
+//
+// // =============== Sync ============================================================================
+//
+// void StructuredDataManagerService::Sync(const MaidName& account_name) {
+//   auto serialised_sync_data(maid_account_handler_.GetSyncData(account_name));
+//   if (!serialised_sync_data.IsInitialised())  // Nothing to sync
+//     return;
+//
+//   protobuf::Sync proto_sync;
+//   proto_sync.set_account_name(account_name->string());
+//   proto_sync.set_serialised_unresolved_entries(serialised_sync_data.string());
+//
+//   nfs_.Sync(account_name, NonEmptyString(proto_sync.SerializeAsString()));
+//   // TODO(Fraser#5#): 2013-05-03 - Check this is correct place to increment sync attempt counter.
+//   maid_account_handler_.IncrementSyncAttempts(account_name);
+// }
+//
+// void StructuredDataManagerService::HandleSync(const nfs::Message& message) {
+//   protobuf::Sync proto_sync;
+//   if (!proto_sync.ParseFromString(message.content().string())) {
+//     LOG(kError) << "Error parsing kSynchronise message.";
+//     return;
+//   }
+//   maid_account_handler_.ApplySyncData(MaidName(Identity(proto_sync.account_name())),
+//                                       NonEmptyString(proto_sync.serialised_unresolved_entries()));
+// }
+//
+//
+// // =============== Account transfer ================================================================
+//
+// void StructuredDataManagerService::TransferAccount(const MaidName& account_name,
+//                                                const NodeId& new_node) {
+//   protobuf::MaidAccount maid_account;
+//   maid_account.set_maid_name(account_name->string());
+//   maid_account.set_serialised_account_details(
+//       maid_account_handler_.GetSerialisedAccount(account_name)->string());
+//   nfs_.TransferAccount(new_node, NonEmptyString(maid_account.SerializeAsString()));
+// }
+//
+// void StructuredDataManagerService::HandleAccountTransfer(const nfs::Message& message) {
+//   protobuf::MaidAccount maid_account;
+//   NodeId source_id(message.source().node_id);
+//   if (!maid_account.ParseFromString(message.content().string()))
+//     return;
+//
+//   MaidName account_name(Identity(maid_account.maid_name()));
+//   bool finished_all_transfers(
+//       maid_account_handler_.ApplyAccountTransfer(account_name, source_id,
+//           MaidAccount::serialised_type(NonEmptyString(maid_account.serialised_account_details()))));
+//   if (finished_all_transfers)
+//     UpdatePmidTotals(account_name);
+// }
 
-  if (!FromClientMaid(message) || !ForThisPersona(message))
-    ThrowError(CommonErrors::invalid_parameter);
-}
-
-void StructuredDataManagerService::ValidateSender(const nfs::Message& message) const {
-  if (!routing_.IsConnectedVault(message.source().node_id))
-    ThrowError(VaultErrors::permission_denied);
-  if (!FromStructuredDataManager(message) || !ForThisPersona(message))
-    ThrowError(CommonErrors::invalid_parameter);
-}
-
-
-// =============== Put/Delete data =================================================================
-
-void StructuredDataManagerService::AddToAccumulator(const nfs::Message& message) {
-  std::lock_guard<std::mutex> lock(accumulator_mutex_);
-  accumulator_.SetHandled(message);
-}
-
-
-// =============== Sync ============================================================================
-
-void StructuredDataManagerService::Sync(const MaidName& account_name) {
-  auto serialised_sync_data(maid_account_handler_.GetSyncData(account_name));
-  if (!serialised_sync_data.IsInitialised())  // Nothing to sync
-    return;
-
-  protobuf::Sync proto_sync;
-  proto_sync.set_account_name(account_name->string());
-  proto_sync.set_serialised_unresolved_entries(serialised_sync_data.string());
-
-  nfs_.Sync(account_name, NonEmptyString(proto_sync.SerializeAsString()));
-  // TODO(Fraser#5#): 2013-05-03 - Check this is correct place to increment sync attempt counter.
-  maid_account_handler_.IncrementSyncAttempts(account_name);
-}
-
-void StructuredDataManagerService::HandleSync(const nfs::Message& message) {
-  protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(message.content().string())) {
-    LOG(kError) << "Error parsing kSynchronise message.";
-    return;
-  }
-  maid_account_handler_.ApplySyncData(MaidName(Identity(proto_sync.account_name())),
-                                      NonEmptyString(proto_sync.serialised_unresolved_entries()));
-}
-
-
-// =============== Account transfer ================================================================
-
-void StructuredDataManagerService::TransferAccount(const MaidName& account_name,
-                                               const NodeId& new_node) {
-  protobuf::MaidAccount maid_account;
-  maid_account.set_maid_name(account_name->string());
-  maid_account.set_serialised_account_details(
-      maid_account_handler_.GetSerialisedAccount(account_name)->string());
-  nfs_.TransferAccount(new_node, NonEmptyString(maid_account.SerializeAsString()));
-}
-
-void StructuredDataManagerService::HandleAccountTransfer(const nfs::Message& message) {
-  protobuf::MaidAccount maid_account;
-  NodeId source_id(message.source().node_id);
-  if (!maid_account.ParseFromString(message.content().string()))
-    return;
-
-  MaidName account_name(Identity(maid_account.maid_name()));
-  bool finished_all_transfers(
-      maid_account_handler_.ApplyAccountTransfer(account_name, source_id,
-          MaidAccount::serialised_type(NonEmptyString(maid_account.serialised_account_details()))));
-  if (finished_all_transfers)
-    UpdatePmidTotals(account_name);
-}
-*/
 
 }  // namespace vault
 
