@@ -44,9 +44,15 @@ class MetadataHandler {
     explicit MetadataValue(int size_in);
     serialised_type Serialise();
 
-    int size;
+    int data_size;
     int64_t subscribers;
     std::set<PmidName> online_pmid_name, offline_pmid_name;
+  };
+
+  struct MetadataValueDelta {
+    int size;
+    boost::optional<PmidName> new_online;
+    boost::optional<PmidName> new_offline;
   };
 
   explicit MetadataHandler(const boost::filesystem::path& vault_root_dir);
@@ -94,14 +100,15 @@ class MetadataHandler {
   struct Metadata {
     // This constructor reads the existing element or creates a new one if it doesn't already exist.
     Metadata(const typename Data::name_type& data_name,
-             const boost::filesystem::path& root,
+             MetadataDb* metadata_db,
              int32_t data_size);
     // This constructor reads the existing element or throws if it doesn't already exist.
-    Metadata(const typename Data::name_type& data_name, const boost::filesystem::path& root);
+    Metadata(const typename Data::name_type& data_name,
+             MetadataDb* metadata_db);
     // Should only be called once.
-    void SaveChanges();
+    void SaveChanges(MetadataDb* metadata_db);
 
-    const boost::filesystem::path kPath;
+    typename Data::name_type data_name;
     MetadataValue value;
     on_scope_exit strong_guarantee;
 

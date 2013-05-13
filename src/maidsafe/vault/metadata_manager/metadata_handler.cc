@@ -31,36 +31,10 @@ fs::path GetPath(const std::string& data_name,
   return root / (EncodeToBase32(data_name) + std::to_string(data_type_enum_value));
 }
 
-//std::set<std::string> OnlinesToSet(const protobuf::Metadata& content) {
-//  std::set<std::string> onlines;
-//  for (int i(0); i != content.online_pmid_name_size(); ++i)
-//    onlines.insert(content.online_pmid_name(i));
-//  return onlines;
-//}
-
-//std::set<std::string> OfflinesToSet(const protobuf::Metadata& content) {
-//  std::set<std::string> offlines;
-//  for (int i(0); i != content.offline_pmid_name_size(); ++i)
-//    offlines.insert(content.offline_pmid_name(i));
-//  return offlines;
-//}
-
-//void OnlinesToProtobuf(const std::set<std::string>& onlines, protobuf::Metadata& content) {
-//  content.clear_online_pmid_name();
-//  for (auto& online : onlines)
-//    content.add_online_pmid_name(online);
-//}
-
-//void OfflinesToProtobuf(const std::set<std::string>& offlines, protobuf::Metadata& content) {
-//  content.clear_offline_pmid_name();
-//  for (auto& offline : offlines)
-//    content.add_offline_pmid_name(offline);
-//}
-
 }  // namespace detail
 
 MetadataHandler::MetadataValue::MetadataValue(const serialised_type& serialised_metadata_value)
-  : size(),
+  : data_size(),
     subscribers(),
     online_pmid_name(),
     offline_pmid_name() {
@@ -71,7 +45,7 @@ MetadataHandler::MetadataValue::MetadataValue(const serialised_type& serialised_
     LOG(kError) << "Failed to read or parse serialised metadata value";
     ThrowError(CommonErrors::parsing_error);
   } else {
-    size = metadata_value_proto.size();
+    data_size = metadata_value_proto.size();
     subscribers = metadata_value_proto.subscribers();
     for (auto& i : metadata_value_proto.online_pmid_name())
       online_pmid_name.insert(PmidName(Identity(i)));
@@ -80,18 +54,18 @@ MetadataHandler::MetadataValue::MetadataValue(const serialised_type& serialised_
   }
 }
 
-MetadataHandler::MetadataValue::MetadataValue(int size_in)
-    : size(size_in),
+MetadataHandler::MetadataValue::MetadataValue(int size)
+    : data_size(size),
       subscribers(0),
       online_pmid_name(),
       offline_pmid_name() {
-  if (size_in < 1)
+  if (size < 1)
     ThrowError(CommonErrors::invalid_parameter);
 }
 
 MetadataHandler::MetadataValue::serialised_type MetadataHandler::MetadataValue::Serialise() {
   protobuf::MetadataValue metadata_value_proto;
-  metadata_value_proto.set_size(size);
+  metadata_value_proto.set_size(data_size);
   metadata_value_proto.set_subscribers(subscribers);
   for (const auto& i: online_pmid_name)
     metadata_value_proto.add_online_pmid_name(i->string());

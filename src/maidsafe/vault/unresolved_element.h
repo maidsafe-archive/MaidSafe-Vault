@@ -67,7 +67,7 @@ struct UnresolvedElement {
 };
 
 typedef UnresolvedElement<int32_t> MaidAccountUnresolvedEntry, PmidAccountUnresolvedEntry;
-typedef UnresolvedElement<int> MetadataUnresolvedEntry;
+typedef UnresolvedElement<MetadataHandler::MetadataValueDelta> MetadataUnresolvedEntry;
 
 }  // namespace vault
 
