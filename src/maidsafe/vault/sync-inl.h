@@ -60,6 +60,31 @@ bool Recorded(const UnresolvedEntry& new_entry,
   }
 }
 
+template<typename MergePolicy>
+typename std::vector<typename MergePolicy::UnresolvedEntry::MessageContent>::iterator
+    FindInMessages(typename MergePolicy::UnresolvedEntry& entry, const NodeId& peer_id) {
+  return std::find_if(
+      std::begin(entry.messages_contents),
+      std::end(entry.messages_contents),
+      [&peer_id](const typename MergePolicy::UnresolvedEntry::MessageContent& content) {
+          return content.peer_id == peer_id;
+      });
+}
+
+template<typename MergePolicy>
+bool IsResolved(const typename MergePolicy::UnresolvedEntry& entry) {
+  return entry.messages_contents.size() > routing::Parameters::node_group_size / 2;
+}
+
+template<typename MergePolicy>
+bool IsResolvedOnAllPeers(const typename MergePolicy::UnresolvedEntry& entry,
+                          const NodeId& this_node_id) {
+  // If this node is the owner of the last message in the vector, it won't have been
+  // synchronised to the peers yet - it's just been added via AddLocalEntry.
+  return entry.messages_contents.size() == routing::Parameters::node_group_size &&
+         entry.messages_contents.back().peer_id != this_node_id;
+}
+
 }  // namespace detail
 
 
@@ -96,12 +121,13 @@ void Sync<MergePolicy>::AddLocalEntry(const typename MergePolicy::UnresolvedEntr
 
 template<typename MergePolicy>
 bool Sync<MergePolicy>::AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge) {
+  auto found(std::begin(MergePolicy::unresolved_data_));
   for (;;) {
-    auto found = std::find_if(std::begin(MergePolicy::unresolved_data_),
-                              std::end(MergePolicy::unresolved_data_),
-                              [&entry](const typename MergePolicy::UnresolvedEntry &test) {
-                                  return test.key == entry.key;
-                              });
+    found = std::find_if(found,
+                         std::end(MergePolicy::unresolved_data_),
+                         [&entry](const typename MergePolicy::UnresolvedEntry &test) {
+                             return test.key == entry.key;
+                         });
 
     if (found == std::end(MergePolicy::unresolved_data_)) {
       MergePolicy::unresolved_data_.push_back(entry);
@@ -122,12 +148,12 @@ bool Sync<MergePolicy>::AddEntry(const typename MergePolicy::UnresolvedEntry& en
       (*found).messages_contents.push_back(content);
     }
 
-    if (merge &&
-        (*found).messages_contents.size() >= (routing::Parameters::node_group_size + 1U) / 2) {
+    if (merge && detail::IsResolved<MergePolicy>(*found)) {
       MergePolicy::Merge(*found);
-      MergePolicy::unresolved_data_.erase(found);
       return true;
     }
+
+    ++found;
   }
   return false;
 }
@@ -142,12 +168,7 @@ template<typename MergePolicy>
 void Sync<MergePolicy>::ReplaceNode(const NodeId& old_node, const NodeId& new_node) {
   auto itr(std::begin(MergePolicy::unresolved_data_));
   while (itr != std::end(MergePolicy::unresolved_data_)) {
-    auto found(std::find_if(
-        std::begin((*itr).messages_contents),
-        std::end((*itr).messages_contents),
-        [&old_node](const typename MergePolicy::UnresolvedEntry::MessageContent& content) {
-            return content.peer_id == old_node;
-        }));
+    auto found(detail::FindInMessages<MergePolicy>(*itr, old_node));
     if (found == std::end((*itr).messages_contents)) {
       (*itr).messages_contents.emplace_back();
       (*itr).messages_contents.back().peer_id = new_node;
@@ -155,8 +176,7 @@ void Sync<MergePolicy>::ReplaceNode(const NodeId& old_node, const NodeId& new_no
       (*found).peer_id = new_node;
     }
 
-    if ((*itr).messages_contents.size() >=
-        static_cast<size_t>((routing::Parameters::node_group_size + 1) / 2)) {
+    if (detail::IsResolved<MergePolicy>(*itr)) {
       MergePolicy::Merge(*itr);
       itr = MergePolicy::unresolved_data_.erase(itr);
     } else {
@@ -166,32 +186,41 @@ void Sync<MergePolicy>::ReplaceNode(const NodeId& old_node, const NodeId& new_no
 }
 
 template<typename MergePolicy>
-std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresolvedData() const {
-  std::vector<typename MergePolicy::UnresolvedEntry> return_vec;
-  for (const auto& entry : MergePolicy::unresolved_data_) {
-    auto found(std::find_if(
-        std::begin(entry.messages_contents),
-        std::end(entry.messages_contents),
-        [this](const typename MergePolicy::UnresolvedEntry::MessageContent& content) {
-            return content.peer_id == this->this_node_id_;
-        }));
+std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresolvedData() {
+  std::vector<typename MergePolicy::UnresolvedEntry> result;
+  for (auto& entry : MergePolicy::unresolved_data_) {
+    if (detail::IsResolvedOnAllPeers<MergePolicy>(entry, this_node_id_))
+      continue;
+    auto found(detail::FindInMessages<MergePolicy>(entry, this_node_id_));
     if (found != std::end(entry.messages_contents)) {
-      return_vec.push_back(entry);
-      return_vec.back().messages_contents.assign(1, *found);
+      // Always move the found message (i.e. this node's message) to the front of the vector.  This
+      // serves as an indicator that the entry has not been synchronised by this node to the peers
+      // if its message is not the first in the vector.  (It's also slightly more efficient to find
+      // in future GetUnresolvedData attempts since we search from begin() to end()).
+      result.push_back(entry);
+      result.back().messages_contents.assign(1, *found);
+      std::iter_swap(found, std::begin(entry.messages_contents));
     }
   }
-  return return_vec;
+  return result;
+}
+
+template<typename MergePolicy>
+bool Sync<MergePolicy>::CanBeErased(const typename MergePolicy::UnresolvedEntry& entry) const {
+  return entry.sync_counter > sync_counter_max_ ||
+         detail::IsResolvedOnAllPeers<MergePolicy>(entry, this_node_id_);
 }
 
 template<typename MergePolicy>
 void Sync<MergePolicy>::IncrementSyncAttempts() {
   auto itr = std::begin(MergePolicy::unresolved_data_);
   while (itr != std::end(MergePolicy::unresolved_data_)) {
-    if (++(*itr).sync_counter > sync_counter_max_) {
+    assert((*itr).messages_contents.size() <= routing::Parameters::node_group_size);
+    ++(*itr).sync_counter;
+    if (CanBeErased(*itr))
       itr = MergePolicy::unresolved_data_.erase(itr);
-    } else {
+    else
       ++itr;
-    }
   }
 }
 

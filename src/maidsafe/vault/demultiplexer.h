@@ -16,8 +16,7 @@
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/nfs.h"
-#include "maidsafe/nfs/generic_message.h"
+#include "maidsafe/nfs/message.h"
 
 
 namespace maidsafe {
@@ -25,6 +24,7 @@ namespace maidsafe {
 namespace vault {
 
 class MaidAccountHolderService;
+class StructuredDataManagerService;
 class MetadataManagerService;
 class PmidAccountHolderService;
 class DataHolderService;
@@ -32,6 +32,7 @@ class DataHolderService;
 class Demultiplexer {
  public:
   Demultiplexer(MaidAccountHolderService& maid_account_holder_service,
+                StructuredDataManagerService& structured_data_manager_service,
                 MetadataManagerService& metadata_manager_service,
                 PmidAccountHolderService& pmid_account_holder_service,
                 DataHolderService& data_holder);
@@ -42,25 +43,20 @@ class Demultiplexer {
 
  private:
   template<typename MessageType>
-  void PersonaHandleMessage(const MessageType& message,
-                            const routing::ReplyFunctor& reply_functor);
-  NonEmptyString HandleGetFromCache(const nfs::DataMessage& data_message);
-  void HandleStoreInCache(const nfs::DataMessage& data_message);
+  void PersonaHandleMessage(const MessageType& message, const routing::ReplyFunctor& reply_functor);
+  NonEmptyString HandleGetFromCache(const nfs::Message& message);
+  void HandleStoreInCache(const nfs::Message& message);
 
   MaidAccountHolderService& maid_account_holder_service_;
+  StructuredDataManagerService& structured_data_manager_service_;
   MetadataManagerService& metadata_manager_service_;
   PmidAccountHolderService& pmid_account_holder_service_;
   DataHolderService& data_holder_;
 };
 
 template<>
-void Demultiplexer::PersonaHandleMessage<nfs::DataMessage>(
-    const nfs::DataMessage& message,
-    const routing::ReplyFunctor& reply_functor);
-
-template<>
-void Demultiplexer::PersonaHandleMessage<nfs::GenericMessage>(
-    const nfs::GenericMessage& message,
+void Demultiplexer::PersonaHandleMessage<nfs::Message>(
+    const nfs::Message& message,
     const routing::ReplyFunctor& reply_functor);
 
 }  // namespace vault

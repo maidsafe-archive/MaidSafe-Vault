@@ -23,11 +23,11 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/data_store/data_store.h"
+#include "maidsafe/data_store/memory_buffer.h"
 #include "maidsafe/data_store/permanent_store.h"
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/data_message.h"
-#include "maidsafe/nfs/generic_message.h"
+#include "maidsafe/nfs/message.h"
 
 
 #include "maidsafe/vault/accumulator.h"
@@ -48,19 +48,19 @@ class DataHolderTest;
 
 class DataHolderService {
  public:
+
+  enum : uint32_t { kPutRequestsRequired = 3, kDeleteRequestsRequired = 3 };
+
   DataHolderService(const passport::Pmid& pmid,
                     routing::Routing& routing,
                     const boost::filesystem::path& vault_root_dir);
 
   template<typename Data>
-  void HandleDataMessage(const nfs::DataMessage& data_message,
-                         const routing::ReplyFunctor& reply_functor);
-  void HandleGenericMessage(const nfs::GenericMessage& generic_message,
-                            const routing::ReplyFunctor& reply_functor);
+  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  NonEmptyString GetFromCache(const nfs::DataMessage& data_message);
+  NonEmptyString GetFromCache(const nfs::Message& message);
   template<typename Data>
-  void StoreInCache(const nfs::DataMessage& data_message);
+  void StoreInCache(const nfs::Message& message);
 
   template<typename Data>
   friend class test::DataHolderTest;
@@ -70,32 +70,29 @@ class DataHolderService {
   typedef std::false_type IsNotCacheable, IsShortTermCacheable;
 
   template<typename Data>
-  void HandlePutMessage(const nfs::DataMessage& data_message,
-                        const routing::ReplyFunctor& reply_functor);
+  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandleGetMessage(const nfs::DataMessage& data_message,
-                        const routing::ReplyFunctor& reply_functor);
+  void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandleDeleteMessage(const nfs::DataMessage& data_message,
-                           const routing::ReplyFunctor& reply_functor);
+  void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
 
-  void ValidatePutSender(const nfs::DataMessage& data_message) const;
-  void ValidateGetSender(const nfs::DataMessage& data_message) const;
-  void ValidateDeleteSender(const nfs::DataMessage& data_message) const;
+  void ValidatePutSender(const nfs::Message& message) const;
+  void ValidateGetSender(const nfs::Message& message) const;
+  void ValidateDeleteSender(const nfs::Message& message) const;
 
   template<typename Data>
-  NonEmptyString GetFromCache(const nfs::DataMessage& data_message, IsCacheable);
+  NonEmptyString GetFromCache(const nfs::Message& message, IsCacheable);
   template<typename Data>
-  NonEmptyString GetFromCache(const nfs::DataMessage& data_message, IsNotCacheable);
+  NonEmptyString GetFromCache(const nfs::Message& message, IsNotCacheable);
   template<typename Data>
   NonEmptyString CacheGet(const typename Data::name_type& name, IsShortTermCacheable);
   template<typename Data>
   NonEmptyString CacheGet(const typename Data::name_type& name, IsLongTermCacheable);
 
   template<typename Data>
-  void StoreInCache(const nfs::DataMessage& data_message, IsCacheable);
+  void StoreInCache(const nfs::Message& message, IsCacheable);
   template<typename Data>
-  void StoreInCache(const nfs::DataMessage& data_message, IsNotCacheable);
+  void StoreInCache(const nfs::Message& message, IsNotCacheable);
   template<typename Data>
   void CacheStore(const typename Data::name_type& name,
                   const NonEmptyString& value,
@@ -111,13 +108,11 @@ class DataHolderService {
   DiskUsage cache_size_;
   data_store::PermanentStore permanent_data_store_;
   data_store::DataStore<data_store::DataBuffer> cache_data_store_;
-  data_store::DataStore<data_store::DataBuffer> mem_only_cache_;
+  data_store::MemoryBuffer mem_only_cache_;
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
   Accumulator<DataNameVariant> accumulator_;
   DataHolderNfs nfs_;
-  static const int kPutRequestsRequired_;
-  static const int kDeleteRequestsRequired_;
 };
 
 }  // namespace vault

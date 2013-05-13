@@ -21,8 +21,7 @@
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/data_message.h"
-#include "maidsafe/nfs/generic_message.h"
+#include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/public_key_getter.h"
 #include "maidsafe/nfs/reply.h"
 
@@ -32,7 +31,6 @@
 
 
 namespace maidsafe {
-
 namespace vault {
 
 class PmidAccountHolderService {
@@ -41,10 +39,7 @@ class PmidAccountHolderService {
                            routing::Routing& routing,
                            Db& db);
   template<typename Data>
-  void HandleDataMessage(const nfs::DataMessage& data_message,
-                         const routing::ReplyFunctor& reply_functor);
-  void HandleGenericMessage(const nfs::GenericMessage& generic_message,
-                            const routing::ReplyFunctor& reply_functor);
+  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandleChurnEvent(routing::MatrixChange matrix_change);
 
  private:
@@ -53,22 +48,22 @@ class PmidAccountHolderService {
   PmidAccountHolderService(PmidAccountHolderService&&);
   PmidAccountHolderService& operator=(PmidAccountHolderService&&);
 
-  void ValidateSender(const nfs::DataMessage& data_message) const;
-  void ValidateSender(const nfs::GenericMessage& generic_message) const;
+  void ValidateDataSender(const nfs::Message& message) const;
+  void ValidateGenericSender(const nfs::Message& message) const;
 
-  void SendReplyAndAddToAccumulator(const nfs::DataMessage& data_message,
+  void SendReplyAndAddToAccumulator(const nfs::Message& message,
                                     const routing::ReplyFunctor& reply_functor,
                                     const nfs::Reply& reply);
 
   template<typename Data>
-  void HandlePut(const nfs::DataMessage& data_message, const routing::ReplyFunctor& reply_functor);
+  void HandlePut(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void HandleDelete(const nfs::DataMessage& data_message,
-                    const routing::ReplyFunctor& reply_functor);
+  void HandleDelete(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+
   template<typename Data>
-  void AdjustAccount(const nfs::DataMessage& data_message);
+  void AdjustAccount(const nfs::Message& message);
   template<typename Data>
-  void SendDataMessage(const nfs::DataMessage& data_message);
+  void SendMessages(const nfs::Message& message);
   template<typename Data>
   void HandlePutResult(const nfs::Reply& data_holder_result,
                        const PmidName& account_name,
@@ -80,18 +75,18 @@ class PmidAccountHolderService {
 
   // =============== Sync ==========================================================================
   void Sync(const PmidName& account_name);
-  void HandleSync(const nfs::GenericMessage& generic_message);
+  void HandleSync(const nfs::Message& message);
 
   // =============== Account transfer ==============================================================
-  void TransferAccount(const MaidName& account_name, const NodeId& new_node);
-  void HandleAccountTransfer(const nfs::GenericMessage& generic_message);
+  void TransferAccount(const PmidName& account_name, const NodeId& new_node);
+  void HandleAccountTransfer(const nfs::Message& message);
 
 
   void CheckAccounts();
   bool AssessRange(const PmidName& account_name,
                    PmidAccount::DataHolderStatus account_status,
                    bool is_connected);
-  void ValidateDataMessage(const nfs::DataMessage& data_message) const;
+  void ValidateMessage(const nfs::Message& message) const;
   void InformOfDataHolderDown(const PmidName& pmid_name);
   void InformOfDataHolderUp(const PmidName& pmid_name);
   void InformAboutDataHolder(const PmidName& pmid_name, bool node_up);
@@ -117,7 +112,6 @@ class PmidAccountHolderService {
 };
 
 }  // namespace vault
-
 }  // namespace maidsafe
 
 #include "maidsafe/vault/pmid_account_holder/pmid_account_holder_service-inl.h"

@@ -41,25 +41,30 @@ PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
       pmid_account_handler_(db, routing.kNodeId()),
       nfs_(routing, pmid) {}
 
-
-void PmidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
-                                                    const routing::ReplyFunctor& /*reply_functor*/) {
-  ValidateSender(generic_message);
-  nfs::GenericMessage::Action action(generic_message.action());
-  switch (action) {
-    case nfs::GenericMessage::Action::kSynchronise:
-      return HandleSync(generic_message);
-    case nfs::GenericMessage::Action::kAccountTransfer:
-      return HandleAccountTransfer(generic_message);
-    default:
-      LOG(kError) << "Unhandled Post action type";
-  }
-}
-
-void PmidAccountHolderService::HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {
-//    /*const std::vector<routing::NodeInfo>& new_close_nodes*/) {
-//  // Operations to be done when we this call is received
+void PmidAccountHolderService::HandleChurnEvent(routing::MatrixChange matrix_change) {
 //  CheckAccounts();
+  auto account_names(pmid_account_handler_.GetAccountNames());
+  auto itr(std::begin(account_names));
+  while (itr != std::end(account_names)) {
+    auto check_holders_result(CheckHolders(matrix_change, routing_.kNodeId(),
+                                           NodeId((*itr)->string())));
+    // Delete accounts for which this node is no longer responsible.
+    if (check_holders_result.proximity_status != routing::GroupRangeStatus::kInRange) {
+      pmid_account_handler_.DeleteAccount(*itr);
+      itr = account_names.erase(itr);
+      continue;
+    }
+
+    // Replace old_node(s) in sync object and send AccountTransfer to new node(s).
+    assert(check_holders_result.old_holders.size() == check_holders_result.new_holders.size());
+    for (auto i(0U); i != check_holders_result.old_holders.size(); ++i) {
+      pmid_account_handler_.ReplaceNodeInSyncList(*itr, check_holders_result.old_holders[i],
+                                                  check_holders_result.new_holders[i]);
+      TransferAccount(*itr, check_holders_result.new_holders[i]);
+    }
+
+    ++itr;
+  }
 }
 
 void PmidAccountHolderService::CheckAccounts() {
@@ -103,40 +108,40 @@ bool PmidAccountHolderService::AssessRange(const PmidName& account_name,
   }
 }
 
-void PmidAccountHolderService::ValidateSender(const nfs::DataMessage& data_message) const {
-  if (!data_message.HasDataHolder())
+void PmidAccountHolderService::ValidateDataSender(const nfs::Message& message) const {
+  if (!message.HasDataHolder())
     ThrowError(VaultErrors::permission_denied);
 
-  if (!routing_.IsConnectedVault(NodeId(data_message.data_holder()->string())))
+  if (!routing_.IsConnectedVault(NodeId(message.data_holder()->string())))
     ThrowError(VaultErrors::permission_denied);
 
-  if (routing_.EstimateInGroup(data_message.source().node_id, NodeId(data_message.data().name)))
+  if (routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
     ThrowError(VaultErrors::permission_denied);
 
-  if (!FromMetadataManager(data_message) || !ForThisPersona(data_message))
+  if (!FromMetadataManager(message) || !ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void PmidAccountHolderService::ValidateSender(const nfs::GenericMessage& generic_message) const {
-  if (!routing_.IsConnectedVault(generic_message.source().node_id))
+void PmidAccountHolderService::ValidateGenericSender(const nfs::Message& message) const {
+  if (!routing_.IsConnectedVault(message.source().node_id))
     ThrowError(VaultErrors::permission_denied);
 
-  if (routing_.EstimateInGroup(generic_message.source().node_id, NodeId(generic_message.name())))
+  if (routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
     ThrowError(VaultErrors::permission_denied);
 
-  if (!FromMetadataManager(generic_message) || !ForThisPersona(generic_message))
+  if (!FromMetadataManager(message) || !ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 
 // =============== Put/Delete data =================================================================
 
 void PmidAccountHolderService::SendReplyAndAddToAccumulator(
-    const nfs::DataMessage& data_message,
+    const nfs::Message& message,
     const routing::ReplyFunctor& reply_functor,
     const nfs::Reply& reply) {
   reply_functor(reply.Serialise()->string());
   std::lock_guard<std::mutex> lock(accumulator_mutex_);
-  accumulator_.SetHandled(data_message, reply.error());
+  accumulator_.SetHandled(message, reply.error());
 }
 
 
@@ -156,9 +161,9 @@ void PmidAccountHolderService::Sync(const PmidName& account_name) {
   pmid_account_handler_.IncrementSyncAttempts(account_name);
 }
 
-void PmidAccountHolderService::HandleSync(const nfs::GenericMessage& generic_message) {
+void PmidAccountHolderService::HandleSync(const nfs::Message& message) {
   protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(generic_message.content().string())) {
+  if (!proto_sync.ParseFromString(message.data().content.string())) {
     LOG(kError) << "Error parsing Synchronise message.";
     return;
   }
@@ -166,6 +171,30 @@ void PmidAccountHolderService::HandleSync(const nfs::GenericMessage& generic_mes
                                       NonEmptyString(proto_sync.serialised_unresolved_entries()));
 }
 
+// =============== Account transfer ================================================================
+
+void PmidAccountHolderService::TransferAccount(const PmidName& account_name,
+                                               const NodeId& new_node) {
+  protobuf::PmidAccount pmid_account;
+  PmidAccount::serialised_type
+    serialised_account_details(pmid_account_handler_.GetSerialisedAccount(account_name));
+  pmid_account.set_serialised_account_details(serialised_account_details.data.string());
+  nfs_.TransferAccount(new_node, NonEmptyString(pmid_account.SerializeAsString()));
+}
+
+void PmidAccountHolderService::HandleAccountTransfer(const nfs::Message& message) {
+  protobuf::PmidAccount pmid_account;
+  NodeId source_id(message.source().node_id);
+  if (!pmid_account.ParseFromString(message.data().content.string()))
+    return;
+
+  PmidName account_name(Identity(pmid_account.pmid_record().pmid_name()));
+  bool finished_all_transfers(
+      pmid_account_handler_.ApplyAccountTransfer(account_name, source_id,
+          PmidAccount::serialised_type(NonEmptyString(pmid_account.serialised_account_details()))));
+  if (finished_all_transfers)
+    ;
+}
 
 void PmidAccountHolderService::InformOfDataHolderDown(const PmidName& pmid_name) {
   pmid_account_handler_.SetDataHolderGoingDown(pmid_name);
@@ -193,7 +222,6 @@ void PmidAccountHolderService::InformAboutDataHolder(const PmidName& /*pmid_name
 //    SendMessages(pmid_name, metadata_manager_ids, node_up);
 //  }
 }
-
 
 void PmidAccountHolderService::RevertMessages(const PmidName& pmid_name,
                                               const std::vector<fs::path>::reverse_iterator& begin,

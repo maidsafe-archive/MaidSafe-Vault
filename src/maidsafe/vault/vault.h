@@ -28,6 +28,7 @@
 #include "maidsafe/vault/maid_account_holder/maid_account_holder_service.h"
 #include "maidsafe/vault/metadata_manager/metadata_manager_service.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_account_holder_service.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_manager_service.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/demultiplexer.h"
 
@@ -72,6 +73,7 @@ class Vault {
   std::unique_ptr<routing::Routing> routing_;
   nfs::PublicKeyGetter public_key_getter_;
   MaidAccountHolderService maid_account_holder_service_;
+  StructuredDataManagerService structured_data_manager_service_;
   MetadataManagerService metadata_manager_service_;
   PmidAccountHolderService pmid_account_holder_service_;
   DataHolderService data_holder_;
