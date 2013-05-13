@@ -25,7 +25,6 @@
 
 
 namespace maidsafe {
-
 namespace vault {
 
 class PmidAccountMergePolicy {
@@ -106,7 +105,6 @@ int32_t PmidAccountMergePolicy::AllowDelete(const typename Data::name_type& name
 }
 
 }  // namespace vault
-
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_MERGE_POLICY_H_

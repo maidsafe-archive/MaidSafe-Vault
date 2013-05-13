@@ -176,6 +176,7 @@ void PmidAccountHolderService::HandleSync(const nfs::Message& message) {
 void PmidAccountHolderService::TransferAccount(const PmidName& account_name,
                                                const NodeId& new_node) {
   protobuf::PmidAccount pmid_account;
+  pmid_account.set_pmid_name(account_name.data.string());
   PmidAccount::serialised_type
     serialised_account_details(pmid_account_handler_.GetSerialisedAccount(account_name));
   pmid_account.set_serialised_account_details(serialised_account_details.data.string());
@@ -188,12 +189,12 @@ void PmidAccountHolderService::HandleAccountTransfer(const nfs::Message& message
   if (!pmid_account.ParseFromString(message.data().content.string()))
     return;
 
-  PmidName account_name(Identity(pmid_account.pmid_record().pmid_name()));
+  PmidName account_name(Identity(pmid_account.pmid_name()));
   bool finished_all_transfers(
       pmid_account_handler_.ApplyAccountTransfer(account_name, source_id,
           PmidAccount::serialised_type(NonEmptyString(pmid_account.serialised_account_details()))));
   if (finished_all_transfers)
-    ;
+    return;    // TODO(Team) Implement whatever else is required here?
 }
 
 void PmidAccountHolderService::InformOfDataHolderDown(const PmidName& pmid_name) {

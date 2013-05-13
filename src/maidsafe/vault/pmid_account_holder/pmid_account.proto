@@ -21,7 +21,8 @@ message PmidAccountDbEntry {
 }
 
 message PmidAccount {
-  required bytes serialised_account_details = 1;
+  required bytes pmid_name = 1;
+  required bytes serialised_account_details = 2;
 }
 
 message PmidAccountDetails {

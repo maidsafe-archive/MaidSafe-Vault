@@ -85,7 +85,7 @@ PmidAccount::serialised_type PmidAccount::Serialise() {
 
   protobuf::PmidAccountDetails proto_pmid_account_details;
 
-  proto_pmid_account_details.set_serialised_pmid_account(proto_pmid_record.SerializeAsString());
+  proto_pmid_account_details.set_serialised_pmid_record(proto_pmid_record.SerializeAsString());
 
   auto db_entries(account_db_->Get());
   GetTagValueAndIdentityVisitor type_and_name_visitor;
@@ -120,10 +120,15 @@ bool PmidAccount::ApplyAccountTransfer(const NodeId& source_id,
   if (!proto_pmid_account_details.ParseFromString(serialised_pmid_account_details.data.string()))
     ThrowError(CommonErrors::parsing_error);
 
-  protobuf::PmidAccount proto_pmid_account;
-  if (!proto_pmid_account.ParseFromString(proto_pmid_account_details.serialised_pmid_account()))
+  protobuf::PmidRecord proto_pmid_record;
+  if (!proto_pmid_record.ParseFromString(proto_pmid_account_details.serialised_pmid_record()))
     ThrowError(CommonErrors::parsing_error);
-  pmid_record_ = PmidRecord(proto_pmid_account.pmid_record());
+  pmid_record_.pmid_name.data = Identity(proto_pmid_record.pmid_name());
+  pmid_record_.stored_count = proto_pmid_record.stored_count();
+  pmid_record_.stored_total_size = proto_pmid_record.stored_total_size();
+  pmid_record_.lost_count = proto_pmid_record.lost_count();
+  pmid_record_.lost_total_size = proto_pmid_record.lost_total_size();
+  pmid_record_.claimed_available_size = proto_pmid_record.claimed_available_size();
 
   for (int i(0); i != proto_pmid_account_details.db_entry_size(); ++i) {
     auto data_name(GetDataNameVariant(
@@ -138,7 +143,7 @@ bool PmidAccount::ApplyAccountTransfer(const NodeId& source_id,
   }
 
   for (int i(0); i != proto_pmid_account_details.serialised_unresolved_entry_size(); ++i) {
-    MaidAccountUnresolvedEntry entry(MaidAccountUnresolvedEntry::serialised_type(
+    PmidAccountUnresolvedEntry entry(PmidAccountUnresolvedEntry::serialised_type(
         NonEmptyString(proto_pmid_account_details.serialised_unresolved_entry(i))));
     if (sync_.AddUnresolvedEntry(entry) && entry.messages_contents.front().value)
       pmid_record_.stored_total_size += *entry.messages_contents.front().value;
