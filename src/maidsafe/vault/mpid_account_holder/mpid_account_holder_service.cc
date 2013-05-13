@@ -20,9 +20,6 @@ MpidAccountHolder::MpidAccountHolder(routing::Routing& /*routing*/,
                                      const boost::filesystem::path& /*vault_root_dir*/) {
 }
 
-void MpidAccountHolder::CloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {  //  NOLINT (fine when not commented)
-}
-
 }  // namespace vault
 
 }  // namespace maidsafe

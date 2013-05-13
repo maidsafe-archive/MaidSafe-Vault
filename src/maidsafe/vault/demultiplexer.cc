@@ -35,7 +35,10 @@ template<typename Persona>
 void HandleDataType(const nfs::Message& message,
                     const routing::ReplyFunctor& reply_functor,
                     Persona& persona) {
-  switch (message.data().type) {
+  if (!message.data().type)
+    return persona.HandleMessage(message, reply_functor);
+
+  switch (*message.data().type) {
     case DataTagValue::kAnmidValue: {
       typedef is_maidsafe_data<DataTagValue::kAnmidValue>::data_type data_type;
       return persona.template HandleMessage<data_type>(message, reply_functor);
@@ -172,7 +175,7 @@ bool Demultiplexer::GetFromCache(std::string& serialised_message) {
       nfs::Message response_message(
           request_message.destination_persona(),
           request_message.source(),
-          nfs::Message::Data(request_message.data().type,
+          nfs::Message::Data(*request_message.data().type,
                              request_message.data().name,
                              cached_content,
                              request_message.data().action));
@@ -188,7 +191,10 @@ bool Demultiplexer::GetFromCache(std::string& serialised_message) {
 }
 
 NonEmptyString Demultiplexer::HandleGetFromCache(const nfs::Message& message) {
-  switch (message.data().type) {
+  if (!message.data().type)
+    return NonEmptyString();
+
+  switch (*message.data().type) {
     case DataTagValue::kAnmidValue: {
       typedef is_maidsafe_data<DataTagValue::kAnmidValue>::data_type data_type;
       return data_holder_.GetFromCache<data_type>(message);
@@ -268,7 +274,10 @@ void Demultiplexer::StoreInCache(const std::string& serialised_message) {
 }
 
 void Demultiplexer::HandleStoreInCache(const nfs::Message& message) {
-  switch (message.data().type) {
+  if (!message.data().type)
+    return;
+
+  switch (*message.data().type) {
     case DataTagValue::kAnmidValue: {
       typedef is_maidsafe_data<DataTagValue::kAnmidValue>::data_type data_type;
       return data_holder_.StoreInCache<data_type>(message);
