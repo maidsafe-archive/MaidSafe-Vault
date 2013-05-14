@@ -31,7 +31,8 @@ class MpidAccountHolder {
   ~MpidAccountHolder();
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  void CloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
+  void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor& /*reply_functor*/) {}
+  void HandleChurnEvent(routing::MatrixChange matrix_change);
 
  private:
 //  void HandlePutMessage(const Message& message);

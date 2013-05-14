@@ -54,21 +54,23 @@ template<typename Data>
 void DataHolderService::HandlePutMessage(const nfs::Message& message,
                                          const routing::ReplyFunctor& reply_functor) {
   try {
+#ifndef TESTING
     ValidatePutSender(message);
+#endif
     Data data(typename Data::name_type(message.data().name),
               typename Data::serialised_type(message.data().content));
     if (detail::AddResult(message, reply_functor, MakeError(CommonErrors::success),
-                          accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
+                          accumulator_, accumulator_mutex_, kPutRequestsRequired)) {
       permanent_data_store_.Put(data.name(), message.data().content);
     }
   }
   catch(const maidsafe_error& error) {
     detail::AddResult(message, reply_functor, error, accumulator_, accumulator_mutex_,
-                      kPutRequestsRequired_);
+                      kPutRequestsRequired);
   }
   catch(...) {
     detail::AddResult(message, reply_functor, MakeError(CommonErrors::unknown),
-                      accumulator_, accumulator_mutex_, kPutRequestsRequired_);
+                      accumulator_, accumulator_mutex_, kPutRequestsRequired);
   }
 }
 
@@ -76,7 +78,9 @@ template<typename Data>
 void DataHolderService::HandleGetMessage(const nfs::Message& message,
                                          const routing::ReplyFunctor& reply_functor) {
   try {
+#ifndef TESTING
     ValidateGetSender(message);
+#endif
     typename Data::name_type data_name(message.data().name);
     nfs::Reply reply(CommonErrors::success, permanent_data_store_.Get(data_name));
     reply_functor(reply.Serialise()->string());
@@ -90,19 +94,21 @@ template<typename Data>
 void DataHolderService::HandleDeleteMessage(const nfs::Message& message,
                                             const routing::ReplyFunctor& reply_functor) {
   try {
+#ifndef TESTING
     ValidateDeleteSender(message);
+#endif
     if (detail::AddResult(message, reply_functor, MakeError(CommonErrors::success),
-                          accumulator_, accumulator_mutex_, kDeleteRequestsRequired_)) {
+                          accumulator_, accumulator_mutex_, kDeleteRequestsRequired)) {
       permanent_data_store_.Delete(typename Data::name_type(message.data().name));
     }
   }
   catch(const maidsafe_error& error) {
     detail::AddResult(message, reply_functor, error, accumulator_, accumulator_mutex_,
-                      kDeleteRequestsRequired_);
+                      kDeleteRequestsRequired);
   }
   catch(...) {
     detail::AddResult(message, reply_functor, MakeError(CommonErrors::unknown),
-                      accumulator_, accumulator_mutex_, kDeleteRequestsRequired_);
+                      accumulator_, accumulator_mutex_, kDeleteRequestsRequired);
   }
 }
 

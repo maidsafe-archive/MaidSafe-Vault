@@ -23,6 +23,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/data_store/data_store.h"
+#include "maidsafe/data_store/memory_buffer.h"
 #include "maidsafe/data_store/permanent_store.h"
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/message.h"
@@ -47,12 +48,16 @@ class DataHolderTest;
 
 class DataHolderService {
  public:
+
+  enum : uint32_t { kPutRequestsRequired = 3, kDeleteRequestsRequired = 3 };
+
   DataHolderService(const passport::Pmid& pmid,
                     routing::Routing& routing,
                     const boost::filesystem::path& vault_root_dir);
 
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor& /*reply_functor*/) {}
   template<typename Data>
   NonEmptyString GetFromCache(const nfs::Message& message);
   template<typename Data>
@@ -104,13 +109,11 @@ class DataHolderService {
   DiskUsage cache_size_;
   data_store::PermanentStore permanent_data_store_;
   data_store::DataStore<data_store::DataBuffer> cache_data_store_;
-  data_store::DataStore<data_store::DataBuffer> mem_only_cache_;
+  data_store::MemoryBuffer mem_only_cache_;
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
   Accumulator<DataNameVariant> accumulator_;
   DataHolderNfs nfs_;
-  static const int kPutRequestsRequired_;
-  static const int kDeleteRequestsRequired_;
 };
 
 }  // namespace vault

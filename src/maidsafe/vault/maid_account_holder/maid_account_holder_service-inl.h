@@ -91,20 +91,6 @@ void MaidAccountHolderService::HandleMessage(const nfs::Message& message,
     if (accumulator_.CheckHandled(message, reply))
       return reply_functor(reply.Serialise()->string());
   }
-
-  //ValidateGenericSender(message);
-  //nfs::MessageAction action(message.data().action);
-  //switch (action) {
-  //  case nfs::MessageAction::kRegisterPmid:
-  //    return HandlePmidRegistration(message, reply_functor);
-  //  case nfs::MessageAction::kSynchronise:
-  //    return HandleSync(message);
-  //  case nfs::MessageAction::kAccountTransfer:
-  //    return HandleAccountTransfer(message);
-  //  default:
-  //    LOG(kError) << "Unhandled Post action type";
-  //}
-
   if (message.data().action == nfs::MessageAction::kPut) {
     HandlePut<Data>(message, reply_functor);
   } else if (message.data().action == nfs::MessageAction::kDelete) {

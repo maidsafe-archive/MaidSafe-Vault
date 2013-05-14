@@ -43,6 +43,7 @@ class MetadataManagerService {
                          const boost::filesystem::path& vault_root_dir);
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor& /*reply_functor*/) {}
   void HandleChurnEvent(routing::MatrixChange matrix_change);
 
  private:
