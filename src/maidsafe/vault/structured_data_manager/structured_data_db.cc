@@ -51,7 +51,7 @@ void StructuredDataDb::Put(const KvPair& key_value_pair) {
   auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key_value_pair.first.first));
   std::string db_key(result.second.string() +
                      Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)) +
-                     key_value_pair.first.second.string() );
+                     key_value_pair.first.second.string());
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
                                        db_key, key_value_pair.second.string()));
   if (!status.ok())
