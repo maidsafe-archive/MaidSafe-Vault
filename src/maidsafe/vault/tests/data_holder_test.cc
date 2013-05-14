@@ -222,7 +222,7 @@ TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
   nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
   nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
-                          TypeParam::name_type(name_and_content.first),
+                          typename TypeParam::name_type(name_and_content.first),
                           name_and_content.second,
                           nfs::MessageAction::kPut);
   nfs::Message message(nfs::Persona::kDataHolder, source, data);
@@ -239,7 +239,7 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
   nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
   nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
-                          TypeParam::name_type(name_and_content.first),
+                          typename TypeParam::name_type(name_and_content.first),
                           name_and_content.second,
                           nfs::MessageAction::kGet);
   nfs::Message message(nfs::Persona::kDataHolder, source, data);
@@ -254,7 +254,7 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
   nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
   nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
-                          TypeParam::name_type(name_and_content.first),
+                          typename TypeParam::name_type(name_and_content.first),
                           name_and_content.second,
                           nfs::MessageAction::kPut);
   nfs::Message message(nfs::Persona::kDataHolder, source, data);
@@ -267,7 +267,7 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
   EXPECT_NE(retrieved.find(name_and_content.second.string()), -1);
 
   nfs::Message::Data delete_data(TypeParam::name_type::tag_type::kEnumValue,
-                                 TypeParam::name_type(name_and_content.first),
+                                 typename TypeParam::name_type(name_and_content.first),
                                  name_and_content.second,
                                  nfs::MessageAction::kDelete);
   nfs::Message delete_message(nfs::Persona::kDataHolder, source, delete_data);
@@ -301,7 +301,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
         if (!name_content_pairs.empty()) {
           value_type name_content_pair(name_content_pairs[RandomUint32() % name_content_pairs.size()]);
           nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
-                                  TypeParam::name_type(name_content_pair.first),
+                                  typename TypeParam::name_type(name_content_pair.first),
                                   NonEmptyString("A"),
                                   nfs::MessageAction::kDelete);
           nfs::Message message(nfs::Persona::kDataHolder, source, data);
@@ -313,7 +313,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
                                             }));
         } else {
           nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
-                                  TypeParam::name_type(name_and_content.first),
+                                  typename TypeParam::name_type(name_and_content.first),
                                   NonEmptyString("A"),
                                   nfs::MessageAction::kDelete);
           nfs::Message message(nfs::Persona::kDataHolder, source, data);
@@ -328,7 +328,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
       }
       case 1: {
         nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
-                                TypeParam::name_type(name_and_content.first),
+                                typename TypeParam::name_type(name_and_content.first),
                                 name_and_content.second,
                                 nfs::MessageAction::kPut);
         nfs::Message message(nfs::Persona::kDataHolder, source, data);
@@ -344,7 +344,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
         if (!name_content_pairs.empty()) {
           value_type name_content_pair(name_content_pairs[RandomUint32() % name_content_pairs.size()]);
           nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
-                                  TypeParam::name_type(name_content_pair.first),
+                                  typename TypeParam::name_type(name_content_pair.first),
                                   NonEmptyString("A"),
                                   nfs::MessageAction::kGet);
           nfs::Message message(nfs::Persona::kDataHolder, source, data);
@@ -434,12 +434,12 @@ INSTANTIATE_TYPED_TEST_CASE_P(NoCache, DataHolderTest, AllTypes);
 template<class T>
 class DataHolderCacheableTest : public DataHolderTest<T> {
  protected:
-  NonEmptyString GetFromCache(nfs::Message& message) {
-    return this->data_holder_->GetFromCache<T>(message);
+  NonEmptyString GetFromCache(nfs::Message& message) { 
+   return this->data_holder_->template GetFromCache<T>(message);
   }
 
   void StoreInCache(const nfs::Message& message) {
-    this->data_holder_->StoreInCache<T>(message);
+    this->data_holder_->template StoreInCache<T>(message);
   }
 
 };
@@ -450,7 +450,7 @@ TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
   nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
   nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
-                          TypeParam::name_type(name_and_content.first),
+                          typename TypeParam::name_type(name_and_content.first),
                           name_and_content.second,
                           nfs::MessageAction::kPut);
   nfs::Message message(nfs::Persona::kDataHolder, source, data);
