@@ -24,17 +24,17 @@ namespace maidsafe {
 
 namespace vault {
 
-MetadataMergePolicy::MetadataMergePolicy(const fs::path& root)
-    : metadata_root_(root / "metadata"),
-      unresolved_data_() {}
+MetadataMergePolicy::MetadataMergePolicy(MetadataDb * metadata_db)
+    : unresolved_data_(),
+      metadata_db_(metadata_db) {}
 
 MetadataMergePolicy::MetadataMergePolicy(MetadataMergePolicy&& other)
-    : metadata_root_(std::move(other.metadata_root_)),
-      unresolved_data_(std::move(other.unresolved_data_)) {}
+    : unresolved_data_(std::move(other.unresolved_data_)),
+      metadata_db_(std::move(other.metadata_db_)) {}
 
 MetadataMergePolicy& MetadataMergePolicy::operator=(MetadataMergePolicy&& other) {
-  metadata_root_ = std::move(other.metadata_root_);
   unresolved_data_ = std::move(other.unresolved_data_);
+  metadata_db_ = std::move(other.metadata_db_);
   return *this;
 }
 

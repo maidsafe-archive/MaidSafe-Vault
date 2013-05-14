@@ -23,7 +23,7 @@
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/types.h"
 
-#include "maidsafe/vault/metadata_manager/metadata_handler.h"
+#include "maidsafe/vault/metadata_manager/metadata_helpers.h"
 
 
 namespace maidsafe {
@@ -67,7 +67,7 @@ struct UnresolvedElement {
 };
 
 typedef UnresolvedElement<int32_t> MaidAccountUnresolvedEntry, PmidAccountUnresolvedEntry;
-typedef UnresolvedElement<MetadataHandler::MetadataValueDelta> MetadataUnresolvedEntry;
+typedef UnresolvedElement<MetadataValueDelta> MetadataUnresolvedEntry;
 
 }  // namespace vault
 

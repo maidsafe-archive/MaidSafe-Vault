@@ -98,9 +98,17 @@ template<typename Data>
 void MetadataHandler::IncrementSubscribers(const typename Data::name_type& data_name,
                                            int32_t data_size) {
   Metadata<Data> metadata(data_name, metadata_db_.get(), data_size);
-  ++metadata.value.subscribers;
-  metadata.SaveChanges(metadata_db_.get());
+  MetadataValueDelta metadata_value_delta;
+  metadata_value_delta.data_size = metadata.value.data_size;
+  // Add to sync here
 }
+//template<typename Data>
+//void MetadataHandler::IncrementSubscribers(const typename Data::name_type& data_name,
+//                                           int32_t data_size) {
+//  Metadata<Data> metadata(data_name, metadata_db_.get(), data_size);
+//  ++metadata.value.subscribers;
+//  metadata.SaveChanges(metadata_db_.get());
+//}
 
 template<typename Data>
 void MetadataHandler::DecrementSubscribers(const typename Data::name_type& data_name) {
@@ -164,9 +172,19 @@ std::vector<PmidName> MetadataHandler::GetOnlineDataHolders(
 }
 
 template<typename Data>
-void MetadataHandler::CheckMetadataExists(const typename Data::name_type& data_name) const {
-  Metadata<Data> metadata(data_name, kMetadataRoot_);
-  metadata.strong_guarantee.Release();
+bool MetadataHandler::CheckMetadataExists(const typename Data::name_type& data_name) const {
+  try {
+    Metadata<Data> metadata(data_name, metadata_db_.get());
+    metadata.strong_guarantee.Release();
+  } catch (const maidsafe_error& error) {
+    return false;
+  }
+  return true;
+}
+
+template<typename Data>
+int32_t MetadataHandler::CheckPut(const typename Data::name_type& /*data_name*/, int32_t /*data_size*/) {
+  return 0;
 }
 
 }  // namespace vault

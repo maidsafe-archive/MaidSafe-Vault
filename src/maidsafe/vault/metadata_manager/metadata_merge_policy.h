@@ -22,6 +22,7 @@
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/metadata_manager/metadata_db.h"
 
 
 namespace maidsafe {
@@ -31,7 +32,9 @@ namespace vault {
 class MetadataMergePolicy {
  public:
   typedef MetadataUnresolvedEntry UnresolvedEntry;
-  explicit MetadataMergePolicy(const boost::filesystem::path& root);
+  typedef MetadataDb Database;
+
+  explicit MetadataMergePolicy(MetadataDb* metadata_db);
   MetadataMergePolicy(MetadataMergePolicy&& other);
   MetadataMergePolicy& operator=(MetadataMergePolicy&& other);
   // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
@@ -41,8 +44,8 @@ class MetadataMergePolicy {
  protected:
   void Merge(const UnresolvedEntry& unresolved_entry);
 
-  boost::filesystem::path metadata_root_;
   std::vector<UnresolvedEntry> unresolved_data_;
+  MetadataDb* metadata_db_;
 
  private:
   MetadataMergePolicy(const MetadataMergePolicy&);

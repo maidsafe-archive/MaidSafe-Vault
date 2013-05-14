@@ -75,14 +75,29 @@ MetadataHandler::MetadataValue::serialised_type MetadataHandler::MetadataValue::
   return serialised_type(NonEmptyString(metadata_value_proto.SerializeAsString()));
 }
 
-MetadataHandler::MetadataHandler(const fs::path& vault_root_dir)
+MetadataHandler::MetadataHandler(const fs::path& vault_root_dir, const NodeId &this_node_id)
     : kMetadataRoot_([vault_root_dir]()->boost::filesystem::path {
                        auto path(vault_root_dir / "metadata");
                        detail::InitialiseDirectory(path);
                        return path;
                      } ()),
-      metadata_db_(new MetadataDb(kMetadataRoot_)) {
+      metadata_db_(new MetadataDb(kMetadataRoot_)),
+      kThisNodeId_(this_node_id),
+      mutex_(),
+      sync_map_() {
   detail::InitialiseDirectory(kMetadataRoot_);
+}
+
+void MetadataHandler::AddLocalUnresolvedEntry(const MetadataUnresolvedEntry& unresolved_entry) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr = sync_map_.find(unresolved_entry.key.first);
+  if (itr != std::end(sync_map_)) {
+    itr->second.AddLocalEntry(unresolved_entry);
+  } else {
+    Sync<MetadataMergePolicy> sync(metadata_db_.get(), kThisNodeId_);
+    sync.AddLocalEntry(unresolved_entry);
+    sync_map_[unresolved_entry.key.first] = sync;
+  }
 }
 
 //void MetadataHandler::PutMetadata(const protobuf::Metadata& /*proto_metadata*/) {

@@ -20,8 +20,11 @@
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
 
+#include "maidsafe/vault/metadata_manager/metadata_helpers.h"
 #include "maidsafe/vault/metadata_manager/metadata_db.h"
 #include "maidsafe/vault/metadata_manager/metadata.pb.h"
+#include "maidsafe/vault/metadata_manager/metadata_merge_policy.h"
+#include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
 
 
@@ -49,13 +52,8 @@ class MetadataHandler {
     std::set<PmidName> online_pmid_name, offline_pmid_name;
   };
 
-  struct MetadataValueDelta {
-    int size;
-    boost::optional<PmidName> new_online;
-    boost::optional<PmidName> new_offline;
-  };
 
-  explicit MetadataHandler(const boost::filesystem::path& vault_root_dir);
+  MetadataHandler(const boost::filesystem::path& vault_root_dir, const NodeId& this_node_id);
 
   // This increments the subscribers count, or adds a new element if it doesn't exist.
   template<typename Data>
@@ -90,7 +88,13 @@ class MetadataHandler {
   std::vector<PmidName> GetOnlineDataHolders(const typename Data::name_type& data_name) const;
 
   template<typename Data>
-  void CheckMetadataExists(const typename Data::name_type& data_name) const;
+  bool CheckMetadataExists(const typename Data::name_type& data_name) const;
+
+  // Returns cost, checks for duplication of unique data (throws)
+  template<typename Data>
+  int32_t CheckPut(const typename Data::name_type& data_name, int32_t data_size);
+
+  void AddLocalUnresolvedEntry(const MetadataUnresolvedEntry& unresolved_entry);
 
   template<typename Data>
   friend class MetadataHandlerTypedTest;
@@ -122,6 +126,9 @@ class MetadataHandler {
 
   const boost::filesystem::path kMetadataRoot_;
   std::unique_ptr<MetadataDb> metadata_db_;
+  const NodeId kThisNodeId_;
+  mutable std::mutex mutex_;
+  std::map<DataNameVariant, Sync<MetadataMergePolicy>> sync_map_;
 };
 
 }  // namespace vault
