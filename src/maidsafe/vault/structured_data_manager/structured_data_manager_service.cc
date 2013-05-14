@@ -27,9 +27,15 @@ namespace {
 
 template<typename Message>
 inline bool ForThisPersona(const Message& message) {
-  return message.destination_persona() != nfs::Persona::kStructuredDataManager;
+  return message.destination_persona() == nfs::Persona::kStructuredDataManager;
 }
 
+template<typename Message>
+inline bool FromStructuredDataManager(const Message& /*message*/) {
+  //return message.source() == nfs::Persona::kStructuredDataManager;
+  return true;
+  //TODO FIXME (dirvine) fix above line
+}
 }  // unnamed namespace
 
 namespace detail {
@@ -43,9 +49,6 @@ vault::StructuredDataManagerService::AccountName GetStructuredDataAccountName(
 
 }  // namespace detail
 
-
-
-// const int StructuredDataManagerService::kPutRepliesSuccessesRequired_(3);
 
 StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
@@ -61,26 +64,26 @@ StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid&
       nfs_(routing_, pmid) {}
 
 
-// void StructuredDataManagerService::ValidateSender(const nfs::Message& message) const {
-//   if (!routing_.IsConnectedClient(message.source().node_id))
-//     ThrowError(VaultErrors::permission_denied);
-//
-//   if (!FromClientMaid(message) || !ForThisPersona(message))
-//     ThrowError(CommonErrors::invalid_parameter);
-// }
-//
-// void StructuredDataManagerService::ValidateSender(const nfs::Message& message) const {
-//   if (!routing_.IsConnectedVault(message.source().node_id))
-//     ThrowError(VaultErrors::permission_denied);
-//   if (!FromStructuredDataManager(message) || !ForThisPersona(message))
-//     ThrowError(CommonErrors::invalid_parameter);
-// }
+ void StructuredDataManagerService::ValidateClientSender(const nfs::Message& message) const {
+   if (!routing_.IsConnectedClient(message.source().node_id))
+     ThrowError(VaultErrors::permission_denied);
+   if (!(FromClientMaid(message) || FromClientMpid(message)) || !ForThisPersona(message))
+     ThrowError(CommonErrors::invalid_parameter);
+ }
+
+ void StructuredDataManagerService::ValidateSyncSender(const nfs::Message& message) const {
+   if (!routing_.IsConnectedVault(message.source().node_id))
+     ThrowError(VaultErrors::permission_denied);
+   if (!FromStructuredDataManager(message) || !ForThisPersona(message))
+     ThrowError(CommonErrors::invalid_parameter);
+ }
 
 
 // =============== Put/Delete data =================================================================
 
 void StructuredDataManagerService::AddToAccumulator(const nfs::Message& message) {
   std::lock_guard<std::mutex> lock(accumulator_mutex_);
+// TODO FIXME (dirvine) this should check message and only set handled on close_group - 1
   accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
 }
 

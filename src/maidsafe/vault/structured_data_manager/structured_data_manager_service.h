@@ -55,9 +55,8 @@ class StructuredDataManagerService {
   StructuredDataManagerService(StructuredDataManagerService&&);
   StructuredDataManagerService& operator=(StructuredDataManagerService&&);
 
-  //void ValidateDataSender(const nfs::Message& message) const;
-  //void ValidateGenericSender(const nfs::Message& message) const;
-
+  void ValidateClientSender(const nfs::Message& message) const;
+  void ValidateSyncSender(const nfs::Message& message) const;
   //// =============== Put/Delete data ===============================================================
   template<typename Data>
   void HandlePut(const nfs::Message& message);
