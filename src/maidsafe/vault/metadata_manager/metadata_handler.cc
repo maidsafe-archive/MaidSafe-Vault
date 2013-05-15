@@ -33,48 +33,6 @@ fs::path GetPath(const std::string& data_name,
 
 }  // namespace detail
 
-MetadataHandler::MetadataValue::MetadataValue(const serialised_type& serialised_metadata_value)
-  : data_size(),
-    subscribers(),
-    online_pmid_name(),
-    offline_pmid_name() {
-  protobuf::MetadataValue metadata_value_proto;
-  if (!metadata_value_proto.ParseFromString(serialised_metadata_value->string()) ||
-      metadata_value_proto.size() != 0 ||
-      metadata_value_proto.subscribers() < 1) {
-    LOG(kError) << "Failed to read or parse serialised metadata value";
-    ThrowError(CommonErrors::parsing_error);
-  } else {
-    data_size = metadata_value_proto.size();
-    subscribers = metadata_value_proto.subscribers();
-    for (auto& i : metadata_value_proto.online_pmid_name())
-      online_pmid_name.insert(PmidName(Identity(i)));
-    for (auto& i : metadata_value_proto.offline_pmid_name())
-      offline_pmid_name.insert(PmidName(Identity(i)));
-  }
-}
-
-MetadataHandler::MetadataValue::MetadataValue(int size)
-    : data_size(size),
-      subscribers(0),
-      online_pmid_name(),
-      offline_pmid_name() {
-  if (size < 1)
-    ThrowError(CommonErrors::invalid_parameter);
-}
-
-MetadataHandler::MetadataValue::serialised_type MetadataHandler::MetadataValue::Serialise() {
-  protobuf::MetadataValue metadata_value_proto;
-  metadata_value_proto.set_size(data_size);
-  metadata_value_proto.set_subscribers(subscribers);
-  for (const auto& i: online_pmid_name)
-    metadata_value_proto.add_online_pmid_name(i->string());
-  for (const auto& i: offline_pmid_name)
-    metadata_value_proto.add_offline_pmid_name(i->string());
-  assert(metadata_value_proto.IsInitialized());
-  return serialised_type(NonEmptyString(metadata_value_proto.SerializeAsString()));
-}
-
 MetadataHandler::MetadataHandler(const fs::path& vault_root_dir, const NodeId &this_node_id)
     : kMetadataRoot_([vault_root_dir]()->boost::filesystem::path {
                        auto path(vault_root_dir / "metadata");
@@ -96,7 +54,7 @@ void MetadataHandler::AddLocalUnresolvedEntry(const MetadataUnresolvedEntry& unr
   } else {
     Sync<MetadataMergePolicy> sync(metadata_db_.get(), kThisNodeId_);
     sync.AddLocalEntry(unresolved_entry);
-    sync_map_[unresolved_entry.key.first] = sync;
+    sync_map_.insert(std::make_pair(unresolved_entry.key.first, std::move(sync)));
   }
 }
 

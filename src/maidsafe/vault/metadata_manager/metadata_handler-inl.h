@@ -46,54 +46,6 @@ boost::filesystem::path GetPath(const typename Data::name_type& data_name,
 
 }  // namespace detail
 
-
-template<typename Data>
-MetadataHandler::Metadata<Data>::Metadata(const typename Data::name_type& data_name,
-                                          MetadataDb* metadata_db,
-                                          int32_t data_size)
-    : data_name(data_name),
-      value([&metadata_db, data_name, data_size, this]()->MetadataValue {
-              assert(metadata_db);
-              auto metadata_value_string(metadata_db->Get(data_name));
-              if (metadata_value_string.string().empty()) {
-                return MetadataValue(data_size);
-              }
-              return MetadataValue(MetadataValue::serialised_type(metadata_value_string));
-              } ()),
-      strong_guarantee(on_scope_exit::ExitAction()) {
-  strong_guarantee.SetAction(on_scope_exit::RevertValue(value));
-}
-
-template<typename Data>
-MetadataHandler::Metadata<Data>::Metadata(const typename Data::name_type& data_name,
-                                          MetadataDb* metadata_db)
-  : data_name(data_name),
-    value([&metadata_db, data_name, this]()->MetadataValue {
-            assert(metadata_db);
-            auto metadata_value_string(metadata_db->Get(data_name));
-            if (metadata_value_string.string().empty()) {
-              LOG(kError) << "Failed to find metadata entry";
-              ThrowError(CommonErrors::no_such_element);
-            }
-            return MetadataValue(MetadataValue::serialised_type(metadata_value_string));
-          } ()),
-    strong_guarantee(on_scope_exit::ExitAction()) {
-  strong_guarantee.SetAction(on_scope_exit::RevertValue(value));
-}
-
-template<typename Data>
-void MetadataHandler::Metadata<Data>::SaveChanges(MetadataDb* metadata_db) {
-  assert(metadata_db);
-  //TODO(Prakash): Handle case of modifying unique data
-  if (value.subscribers < 1) {
-    metadata_db->Delete(data_name);
-  } else {
-    auto kv_pair(std::make_pair(data_name, value.Serialise()));
-    metadata_db->Put(kv_pair);
-  }
-  strong_guarantee.Release();
-}
-
 template<typename Data>
 void MetadataHandler::IncrementSubscribers(const typename Data::name_type& data_name,
                                            int32_t data_size) {

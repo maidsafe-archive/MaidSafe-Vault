@@ -20,6 +20,7 @@
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
 
+#include "maidsafe/vault/metadata_manager/metadata.h"
 #include "maidsafe/vault/metadata_manager/metadata_helpers.h"
 #include "maidsafe/vault/metadata_manager/metadata_db.h"
 #include "maidsafe/vault/metadata_manager/metadata.pb.h"
@@ -41,18 +42,6 @@ class MetadataHandlerTypedTest;
 
 class MetadataHandler {
  public:
-  struct MetadataValue {
-    typedef TaggedValue<NonEmptyString, struct SerialisedMetadataValueTag> serialised_type;
-    explicit MetadataValue(const serialised_type& serialised_metadata_value);
-    explicit MetadataValue(int size_in);
-    serialised_type Serialise();
-
-    int data_size;
-    int64_t subscribers;
-    std::set<PmidName> online_pmid_name, offline_pmid_name;
-  };
-
-
   MetadataHandler(const boost::filesystem::path& vault_root_dir, const NodeId& this_node_id);
 
   // This increments the subscribers count, or adds a new element if it doesn't exist.
@@ -100,30 +89,6 @@ class MetadataHandler {
   friend class MetadataHandlerTypedTest;
 
  private:
-  template<typename Data>
-  struct Metadata {
-    // This constructor reads the existing element or creates a new one if it doesn't already exist.
-    Metadata(const typename Data::name_type& data_name,
-             MetadataDb* metadata_db,
-             int32_t data_size);
-    // This constructor reads the existing element or throws if it doesn't already exist.
-    Metadata(const typename Data::name_type& data_name,
-             MetadataDb* metadata_db);
-    // Should only be called once.
-    void SaveChanges(MetadataDb* metadata_db);
-
-    typename Data::name_type data_name;
-    MetadataValue value;
-    on_scope_exit strong_guarantee;
-
-   private:
-    Metadata();
-    Metadata(const Metadata&);
-    Metadata& operator=(const Metadata&);
-    Metadata(Metadata&&);
-    Metadata& operator=(Metadata&&);
-  };
-
   const boost::filesystem::path kMetadataRoot_;
   std::unique_ptr<MetadataDb> metadata_db_;
   const NodeId kThisNodeId_;
