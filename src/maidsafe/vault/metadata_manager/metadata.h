@@ -52,9 +52,9 @@ class Metadata {
   // Should only be called once.
   void SaveChanges(MetadataDb* metadata_db);
 
-  typename Data::name_type data_name;
-  MetadataValue value;
-  on_scope_exit strong_guarantee;
+  typename Data::name_type data_name_;
+  MetadataValue value_;
+  on_scope_exit strong_guarantee_;
 
  private:
   Metadata();
