@@ -37,18 +37,9 @@ vault::StructuredDataManagerService::AccountName GetStructuredDataAccountName(
 
 template<typename Data>
 typename Data::name_type GetStructuredDataName(const nfs::Message& message) {
-  // Hash the data name to obfuscate the list of chunks associated with the client.
-  return typename Data::name_type(crypto::Hash<crypto::SHA512>(message.data().name));
+  return typename Data::name_type(message.data().name);
 }
 
-// AccountName GetAccountName(const nfs::Message& message);
-//
-// template<typename Data>
-// typename Data::name_type GetDataName(const nfs::Message& message) {
-//   // Hash the data name to obfuscate the list of chunks associated with the client.
-//   return typename Data::name_type(message.data().name);
-// }
-//
 // template<typename Data, nfs::MessageAction action>
 // StructuredDataManagerUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
 //                                                            Identity value,
@@ -70,17 +61,19 @@ void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     if (accumulator_.CheckHandled(message, reply))
-      return;
+      return reply_functor(reply.Serialise()->string());
   }
 
   if (message.data().action == nfs::MessageAction::kPut) {
     HandlePut<Data>(message);
-  } else if (message.data().action == nfs::MessageAction::kDelete) {
-    HandleDelete<Data>(message);
+  } else if (message.data().action == nfs::MessageAction::kDeleteBranchUntilFork) {
+    HandleDeleteBranchUntilFork<Data>(message);
   } else if (message.data().action == nfs::MessageAction::kGet) {
     HandleGet<Data>(message, reply_functor);
+  }else if (message.data().action == nfs::MessageAction::kGetBranch) {
+    HandleGetBranch<Data>(message, reply_functor);
   }
-  AddToAccumulator(message);
+;
 }
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -103,19 +96,19 @@ void StructuredDataManagerService::HandlePut(const nfs::Message& message) {
   }
 }
 
-template<typename Data>
-void StructuredDataManagerService::HandleDelete(const nfs::Message& message) {
-  try {
-    auto data_name(detail::GetStructuredDataName<Data>(message));
-    //DeleteFromAccount<Data>(detail::GetSourceMaidName(message), data_name, version);
-  }
-  catch(const maidsafe_error& error) {
-    LOG(kWarning) << error.what();
-  }
-  catch(...) {
-    LOG(kWarning) << "Unknown error.";
-   }
-}
+//template<typename Data>
+//void StructuredDataManagerService::HandleDelete(const nfs::Message& message) {
+//  try {
+//    auto data_name(detail::GetStructuredDataName<Data>(message));
+//    //DeleteFromAccount<Data>(detail::GetSourceMaidName(message), data_name, version);
+//  }
+//  catch(const maidsafe_error& error) {
+//    LOG(kWarning) << error.what();
+//  }
+//  catch(...) {
+//    LOG(kWarning) << "Unknown error.";
+//   }
+//}
 
 // template<typename Data, nfs::MessageAction action>
 // void StructuredDataManagerService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message,

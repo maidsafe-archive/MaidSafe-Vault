@@ -89,12 +89,6 @@ class Accumulator {
   // Marks the message as handled and returns all pending requests held with the same ID
   std::vector<PendingRequest> SetHandled(const nfs::Message& message,
                                          const maidsafe_error& return_code);
-  // Returns all handled requests for the given account name.
-  std::vector<HandledRequest> Get(const Name& name) const;
-  // Serialises all handled requests for the given account name.
-  serialised_requests Serialise(const Name& name) const;
-  // Parses the list of serialised handled requests.
-  std::vector<HandledRequest> Parse(const serialised_requests& serialised_requests_in) const;
 
   friend class test::AccumulatorTest_BEH_PushSingleResult_Test;
   friend class test::AccumulatorTest_BEH_PushSingleResultThreaded_Test;

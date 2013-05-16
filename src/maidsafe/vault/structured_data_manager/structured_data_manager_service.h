@@ -61,9 +61,11 @@ class StructuredDataManagerService {
   template<typename Data>
   void HandlePut(const nfs::Message& message);
   template<typename Data>
-  void HandleDelete(const nfs::Message& message);
+  void HandleDeleteBranchUntilFork(const nfs::Message& message);
   template<typename Data>
   void HandleGet(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+  template<typename Data>
+  void HandleGetBranch(const nfs::Message& message, routing::ReplyFunctor reply_functor);
 
   void AddToAccumulator(const nfs::Message& message);
 
