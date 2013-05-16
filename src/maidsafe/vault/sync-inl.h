@@ -116,8 +116,27 @@ bool Sync<MergePolicy>::AddUnresolvedEntry(const typename MergePolicy::Unresolve
 }
 
 template<typename MergePolicy>
+template<typename Data>
+bool Sync<MergePolicy>::AddUnresolvedEntry(const typename MergePolicy::UnresolvedEntry& entry) {
+  return AddEntry<Data>(entry, true);
+}
+
+template<typename MergePolicy>
 void Sync<MergePolicy>::AddLocalEntry(const typename MergePolicy::UnresolvedEntry& entry) {
   AddEntry(entry, false);
+}
+
+template<typename MergePolicy>
+template<typename Data>
+void Sync<MergePolicy>::AddLocalEntry(const typename MergePolicy::UnresolvedEntry& entry) {
+  AddEntry<Data>(entry, false);
+}
+
+template<typename MergePolicy>
+typename std::vector<typename MergePolicy::UnresolvedEntry>::iterator Sync<MergePolicy>::FindEntry(
+    const typename MergePolicy::UnresolvedEntry& entry, bool merge) {
+  auto found(std::begin(MergePolicy::unresolved_data_));
+  return found;
 }
 
 template<typename MergePolicy>
@@ -160,9 +179,56 @@ bool Sync<MergePolicy>::AddEntry(const typename MergePolicy::UnresolvedEntry& en
 }
 
 template<typename MergePolicy>
+template<typename Data>
+bool Sync<MergePolicy>::AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge) {
+  auto found(std::begin(MergePolicy::unresolved_data_));
+  for (;;) {
+    found = std::find_if(found,
+                         std::end(MergePolicy::unresolved_data_),
+                         [&entry](const typename MergePolicy::UnresolvedEntry &test) {
+                             return test.key == entry.key;
+                         });
+
+    if (found == std::end(MergePolicy::unresolved_data_)) {
+      MergePolicy::unresolved_data_.push_back(entry);
+      break;
+    } else {
+      // If merge is false and the entry is from this node, we're adding local entry, so this
+      // shouldn't already exist.
+      assert(!merge || entry.messages_contents.front().peer_id != this_node_id_);
+    }
+
+    if (!detail::Recorded((*found), entry)) {
+      typename MergePolicy::UnresolvedEntry::MessageContent content;
+      content.peer_id = entry.messages_contents.front().peer_id;
+      if (entry.messages_contents.front().value)
+        content.value = *entry.messages_contents.front().value;
+      if (entry.messages_contents.front().entry_id)
+        content.entry_id = *entry.messages_contents.front().entry_id;
+      (*found).messages_contents.push_back(content);
+    }
+
+    if (merge && detail::IsResolved<MergePolicy>(*found)) {
+      MergePolicy::template Merge<Data>(*found);
+      return true;
+    }
+
+    ++found;
+  }
+  return false;
+}
+
+template<typename MergePolicy>
 bool Sync<MergePolicy>::AddAccountTransferRecord(const typename MergePolicy::UnresolvedEntry& entry,
                                                  bool all_account_transfers_received) {
   return AddEntry(entry, all_account_transfers_received);
+}
+
+template<typename MergePolicy>
+template<typename Data>
+bool Sync<MergePolicy>::AddAccountTransferRecord(const typename MergePolicy::UnresolvedEntry& entry,
+                                                 bool all_account_transfers_received) {
+  return AddEntry<Data>(entry, all_account_transfers_received);
 }
 
 template<typename MergePolicy>
@@ -224,7 +290,6 @@ void Sync<MergePolicy>::IncrementSyncAttempts() {
       ++itr;
   }
 }
-
 
 }  // namespace vault
 

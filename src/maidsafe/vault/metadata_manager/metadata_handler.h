@@ -83,6 +83,7 @@ class MetadataHandler {
   template<typename Data>
   int32_t CheckPut(const typename Data::name_type& data_name, int32_t data_size);
 
+  template<typename Data>
   void AddLocalUnresolvedEntry(const MetadataUnresolvedEntry& unresolved_entry);
 
   template<typename Data>

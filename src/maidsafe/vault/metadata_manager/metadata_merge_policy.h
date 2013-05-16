@@ -39,6 +39,7 @@ class MetadataMergePolicy {
   MetadataMergePolicy& operator=(MetadataMergePolicy&& other);
 
  protected:
+  template <typename Data>
   void Merge(const UnresolvedEntry& unresolved_entry);
 
   std::vector<UnresolvedEntry> unresolved_data_;
@@ -48,6 +49,7 @@ class MetadataMergePolicy {
   MetadataMergePolicy(const MetadataMergePolicy&);
   MetadataMergePolicy& operator=(const MetadataMergePolicy&);
 
+  template <typename Data>
   void MergePut(const DataNameVariant& data_name, int data_size);
   void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
   int GetDataSize(const UnresolvedEntry& unresolved_entry) const;

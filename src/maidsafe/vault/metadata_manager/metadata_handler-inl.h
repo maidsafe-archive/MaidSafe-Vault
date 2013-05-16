@@ -52,8 +52,8 @@ void MetadataHandler::IncrementSubscribers(const typename Data::name_type& data_
   Metadata<Data> metadata(data_name, metadata_db_.get(), data_size);
   MetadataValueDelta metadata_value_delta;
   metadata_value_delta.data_size = metadata.value_.data_size;
-  // Add to sync here
 }
+
 //template<typename Data>
 //void MetadataHandler::IncrementSubscribers(const typename Data::name_type& data_name,
 //                                           int32_t data_size) {

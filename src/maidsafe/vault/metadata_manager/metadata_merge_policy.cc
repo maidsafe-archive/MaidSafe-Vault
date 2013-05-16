@@ -38,12 +38,13 @@ MetadataMergePolicy& MetadataMergePolicy::operator=(MetadataMergePolicy&& other)
   return *this;
 }
 
+template <typename Data>
 void MetadataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
   if (unresolved_entry.key.second == nfs::MessageAction::kPut &&
       !unresolved_entry.dont_add_to_db) {
     auto data_size(GetDataSize(unresolved_entry));
     if (!data_size)
-      MergePut(unresolved_entry.key.first, data_size);
+      MergePut<Data>(unresolved_entry.key.first, data_size);
   } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
 //    MergeDelete(unresolved_entry.key.first, serialised_db_value);
   } else {
@@ -82,15 +83,16 @@ int MetadataMergePolicy::GetDataSize(
   return 0;
 }
 
+template <typename Data>
 void MetadataMergePolicy::MergePut(const DataNameVariant& data_name,
                                    int data_size) {
-  Metadata metadata<data_name::name_type>(data_name, *metadata_db_, data_size);
+  Metadata<Data> metadata(data_name, metadata_db_, data_size);
   ++metadata.value.subscribers;
-  metadata.SaveChanges(metadata_db_.get());
+  metadata.SaveChanges(metadata_db_);
 }
 
 void MetadataMergePolicy::MergeDelete(const DataNameVariant& /*data_name*/,
-                                         const NonEmptyString& /*serialised_db_value*/) {
+                                      const NonEmptyString& /*serialised_db_value*/) {
 }
 
 }  // namespace vault
