@@ -53,9 +53,6 @@ class MetadataMergePolicy {
   void MergePut(const DataNameVariant& data_name, int data_size);
   void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
   int GetDataSize(const UnresolvedEntry& unresolved_entry) const;
-//  NonEmptyString SerialiseDbValue(DbValue db_value) const;
-//  DbValue ParseDbValue(NonEmptyString serialised_db_value) const;
-//  NonEmptyString GetFromDb(const DataNameVariant& data_name);
 };
 
 }  // namespace vault

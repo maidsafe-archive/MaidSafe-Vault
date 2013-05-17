@@ -42,21 +42,14 @@ MetadataHandler::MetadataHandler(const fs::path& vault_root_dir, const NodeId &t
       metadata_db_(new MetadataDb(kMetadataRoot_)),
       kThisNodeId_(this_node_id),
       mutex_(),
-      sync_map_() {
+      sync_(metadata_db_.get(), kThisNodeId_) {
   detail::InitialiseDirectory(kMetadataRoot_);
 }
 
 template<typename Data>
 void MetadataHandler::AddLocalUnresolvedEntry(const MetadataUnresolvedEntry& unresolved_entry) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto itr = sync_map_.find(unresolved_entry.key.first);
-  if (itr != std::end(sync_map_)) {
-    itr->second.template AddLocalEntry<Data>(unresolved_entry);
-  } else {
-    Sync<MetadataMergePolicy> sync(metadata_db_.get(), kThisNodeId_);
-    sync.template AddLocalEntry<Data>(unresolved_entry);
-    sync_map_.insert(std::make_pair(unresolved_entry.key.first, std::move(sync)));
-  }
+  sync.template AddLocalEntry<Data>(unresolved_entry);
 }
 
 //void MetadataHandler::PutMetadata(const protobuf::Metadata& /*proto_metadata*/) {

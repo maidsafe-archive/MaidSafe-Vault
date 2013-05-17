@@ -94,7 +94,7 @@ class MetadataHandler {
   std::unique_ptr<MetadataDb> metadata_db_;
   const NodeId kThisNodeId_;
   mutable std::mutex mutex_;
-  std::map<DataNameVariant, Sync<MetadataMergePolicy>> sync_map_;
+  Sync<MetadataMergePolicy> sync_;
 };
 
 }  // namespace vault

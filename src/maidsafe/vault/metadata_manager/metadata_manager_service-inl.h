@@ -289,8 +289,8 @@ void MetadataManagerService::AddLocalUnresolvedEntryThenSync(
     const MetadataValueDelta& delta) {
   auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(message, delta,
                                                                     routing_.kNodeId()));
-//  metadata_handler_.AddLocalUnresolvedEntry(unresolved_entry);
-//  Sync(account_name);
+  metadata_handler_.AddLocalUnresolvedEntry(unresolved_entry);
+  Sync(account_name);
 }
 
 }  // namespace vault
