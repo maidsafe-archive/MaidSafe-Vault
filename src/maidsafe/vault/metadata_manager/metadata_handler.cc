@@ -31,55 +31,102 @@ fs::path GetPath(const std::string& data_name,
   return root / (EncodeToBase32(data_name) + std::to_string(data_type_enum_value));
 }
 
-std::set<std::string> OnlinesToSet(const protobuf::Metadata& content) {
-  std::set<std::string> onlines;
-  for (int i(0); i != content.online_pmid_name_size(); ++i)
-    onlines.insert(content.online_pmid_name(i));
-  return onlines;
-}
+//std::set<std::string> OnlinesToSet(const protobuf::Metadata& content) {
+//  std::set<std::string> onlines;
+//  for (int i(0); i != content.online_pmid_name_size(); ++i)
+//    onlines.insert(content.online_pmid_name(i));
+//  return onlines;
+//}
 
-std::set<std::string> OfflinesToSet(const protobuf::Metadata& content) {
-  std::set<std::string> offlines;
-  for (int i(0); i != content.offline_pmid_name_size(); ++i)
-    offlines.insert(content.offline_pmid_name(i));
-  return offlines;
-}
+//std::set<std::string> OfflinesToSet(const protobuf::Metadata& content) {
+//  std::set<std::string> offlines;
+//  for (int i(0); i != content.offline_pmid_name_size(); ++i)
+//    offlines.insert(content.offline_pmid_name(i));
+//  return offlines;
+//}
 
-void OnlinesToProtobuf(const std::set<std::string>& onlines, protobuf::Metadata& content) {
-  content.clear_online_pmid_name();
-  for (auto& online : onlines)
-    content.add_online_pmid_name(online);
-}
+//void OnlinesToProtobuf(const std::set<std::string>& onlines, protobuf::Metadata& content) {
+//  content.clear_online_pmid_name();
+//  for (auto& online : onlines)
+//    content.add_online_pmid_name(online);
+//}
 
-void OfflinesToProtobuf(const std::set<std::string>& offlines, protobuf::Metadata& content) {
-  content.clear_offline_pmid_name();
-  for (auto& offline : offlines)
-    content.add_offline_pmid_name(offline);
-}
+//void OfflinesToProtobuf(const std::set<std::string>& offlines, protobuf::Metadata& content) {
+//  content.clear_offline_pmid_name();
+//  for (auto& offline : offlines)
+//    content.add_offline_pmid_name(offline);
+//}
 
 }  // namespace detail
 
+MetadataHandler::MetadataValue::MetadataValue(const serialised_type& serialised_metadata_value)
+  : size(),
+    subscribers(),
+    online_pmid_name(),
+    offline_pmid_name() {
+  protobuf::MetadataValue metadata_value_proto;
+  if (!metadata_value_proto.ParseFromString(serialised_metadata_value->string()) ||
+      metadata_value_proto.size() != 0 ||
+      metadata_value_proto.subscribers() < 1) {
+    LOG(kError) << "Failed to read or parse serialised metadata value";
+    ThrowError(CommonErrors::parsing_error);
+  } else {
+    size = metadata_value_proto.size();
+    subscribers = metadata_value_proto.subscribers();
+    for (auto& i : metadata_value_proto.online_pmid_name())
+      online_pmid_name.insert(PmidName(Identity(i)));
+    for (auto& i : metadata_value_proto.offline_pmid_name())
+      offline_pmid_name.insert(PmidName(Identity(i)));
+  }
+}
+
+MetadataHandler::MetadataValue::MetadataValue(int size_in)
+    : size(size_in),
+      subscribers(0),
+      online_pmid_name(),
+      offline_pmid_name() {
+  if (size_in < 1)
+    ThrowError(CommonErrors::invalid_parameter);
+}
+
+MetadataHandler::MetadataValue::serialised_type MetadataHandler::MetadataValue::Serialise() {
+  protobuf::MetadataValue metadata_value_proto;
+  metadata_value_proto.set_size(size);
+  metadata_value_proto.set_subscribers(subscribers);
+  for (const auto& i: online_pmid_name)
+    metadata_value_proto.add_online_pmid_name(i->string());
+  for (const auto& i: offline_pmid_name)
+    metadata_value_proto.add_offline_pmid_name(i->string());
+  assert(metadata_value_proto.IsInitialized());
+  return serialised_type(NonEmptyString(metadata_value_proto.SerializeAsString()));
+}
+
 MetadataHandler::MetadataHandler(const fs::path& vault_root_dir)
-    : kMetadataRoot_(vault_root_dir / "metadata") {
+    : kMetadataRoot_([vault_root_dir]()->boost::filesystem::path {
+                       auto path(vault_root_dir / "metadata");
+                       detail::InitialiseDirectory(path);
+                       return path;
+                     } ()),
+      metadata_db_(new MetadataDb(kMetadataRoot_)) {
   detail::InitialiseDirectory(kMetadataRoot_);
 }
 
-void MetadataHandler::PutMetadata(const protobuf::Metadata& proto_metadata) {
-  if (!proto_metadata.IsInitialized() ||
-      !Identity(proto_metadata.name()).IsInitialised() ||
-      proto_metadata.size() < 1 ||
-      proto_metadata.subscribers() < 1) {
-    LOG(kError) << "Copied an invalid metadata file";
-    ThrowError(CommonErrors::invalid_parameter);
-  }
-  auto path(detail::GetPath(proto_metadata.name(), proto_metadata.type(), kMetadataRoot_));
-  std::string serialised_content(proto_metadata.SerializeAsString());
-  assert(!serialised_content.empty());
-  if (!WriteFile(path, serialised_content)) {
-    LOG(kError) << "Failed to write metadata file " << path;
-    ThrowError(CommonErrors::filesystem_io_error);
-  }
-}
+//void MetadataHandler::PutMetadata(const protobuf::Metadata& /*proto_metadata*/) {
+//  if (!proto_metadata.IsInitialized() ||
+//      !Identity(proto_metadata.name()).IsInitialised() ||
+//      proto_metadata.size() < 1 ||
+//      proto_metadata.subscribers() < 1) {
+//    LOG(kError) << "Copied an invalid metadata file";
+//    ThrowError(CommonErrors::invalid_parameter);
+//  }
+//  auto path(detail::GetPath(proto_metadata.name(), proto_metadata.type(), kMetadataRoot_));
+//  std::string serialised_content(proto_metadata.SerializeAsString());
+//  assert(!serialised_content.empty());
+//  if (!WriteFile(path, serialised_content)) {
+//    LOG(kError) << "Failed to write metadata file " << path;
+//    ThrowError(CommonErrors::filesystem_io_error);
+//  }
+//}
 
 
 //  namespace {

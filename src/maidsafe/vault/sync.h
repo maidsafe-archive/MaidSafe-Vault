@@ -31,6 +31,7 @@ template<typename MergePolicy>
 class Sync : public MergePolicy {
  public:
   Sync(AccountDb* account_db, const NodeId& this_node_id);
+  Sync(const boost::filesystem::path& root, const NodeId& this_node_id);
   Sync(Sync&& other);
   Sync& operator=(Sync&& other);
   // This is called when receiving a Sync message from a peer or this node.  Returns true if the
