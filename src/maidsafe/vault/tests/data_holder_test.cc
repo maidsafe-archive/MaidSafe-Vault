@@ -238,6 +238,8 @@ TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
 TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
   nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
+  nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
+                          name_and_content.first,
                           name_and_content.second,
                           nfs::MessageAction::kGet);
   nfs::Message message(nfs::Persona::kDataHolder, source, data);
