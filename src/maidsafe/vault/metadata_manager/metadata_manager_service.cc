@@ -50,7 +50,7 @@ MetadataManagerService::MetadataManagerService(const passport::Pmid& pmid,
       public_key_getter_(public_key_getter),
       accumulator_mutex_(),
       accumulator_(),
-      metadata_handler_(vault_root_dir),
+      metadata_handler_(vault_root_dir, routing.kNodeId()),
       nfs_(routing, pmid) {}
 
 void MetadataManagerService::HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {
@@ -127,6 +127,11 @@ void MetadataManagerService::HandleNodeUp(const nfs::Message& /*message*/) {
 bool MetadataManagerService::ThisVaultInGroupForData(const nfs::Message& message) const {
   return routing::GroupRangeStatus::kInRange ==
          routing_.IsNodeIdInGroupRange(NodeId(message.data().name.string()));
+}
+
+// =============== Sync ============================================================================
+
+void MetadataManagerService::Sync(const DataNameVariant& /*account_name*/) {
 }
 
 

@@ -46,287 +46,97 @@ boost::filesystem::path GetPath(const typename Data::name_type& data_name,
 
 }  // namespace detail
 
-
-template<typename Data>
-MetadataHandler::Metadata<Data>::Metadata(const typename Data::name_type& data_name,
-                                          const boost::filesystem::path& root,
-                                          int32_t data_size)
-    : kPath(detail::GetPath<Data>(data_name, root)),
-      value([data_size, this]()->MetadataValue {
-                if (!boost::filesystem::exists(kPath))
-                  return MetadataValue(data_size);
-                auto serialised_value(ReadFile(kPath));
-                return MetadataValue(MetadataValue::serialised_type(serialised_value));
-            } ()),
-      strong_guarantee(on_scope_exit::ExitAction()) {
-  strong_guarantee.SetAction(on_scope_exit::RevertValue(value));
-}
-
-//template<typename Data>
-//MetadataHandler::Metadata<Data>::Metadata(const typename Data::name_type& data_name,
-//                                          const boost::filesystem::path& root,
-//                                          int32_t data_size)
-//    : content(),
-//      kPath(detail::GetPath<Data>(data_name, root)),
-//      strong_guarantee(on_scope_exit::ExitAction()) {
-//  if (boost::filesystem::exists(kPath)) {
-//    auto serialised_content(ReadFile(kPath));
-//    if (!content.ParseFromString(serialised_content.string()) ||
-//        content.type() != static_cast<int>(Data::type_enum_value()) ||
-//        content.name() != data_name->string() ||
-//        content.size() != data_size ||
-//        content.subscribers() < 1) {
-//      LOG(kError) << "Failed to read or parse metadata file " << kPath;
-//      ThrowError(CommonErrors::parsing_error);
-//    }
-//  } else {
-//    content.set_type(static_cast<int>(Data::type_enum_value()));
-//    content.set_name(data_name->string());
-//    content.set_size(data_size);
-//  }
-//  strong_guarantee.SetAction(on_scope_exit::RevertValue(content));
-//}
-
-template<typename Data>
-MetadataHandler::Metadata<Data>::Metadata(const typename Data::name_type& data_name,
-                                          const boost::filesystem::path& root)
-  : kPath(detail::GetPath<Data>(data_name, root)),
-    value([this]()->MetadataValue {
-              if (!boost::filesystem::exists(kPath)) {
-                LOG(kError) << "Failed to find metadata file " << kPath;
-                ThrowError(CommonErrors::no_such_element);
-              }
-              auto serialised_value(ReadFile(kPath));
-              return MetadataValue(MetadataValue::serialised_type(serialised_value));
-          } ()),
-    strong_guarantee(on_scope_exit::ExitAction()) {
-  strong_guarantee.SetAction(on_scope_exit::RevertValue(value));
-}
-
-
-//template<typename Data>
-//MetadataHandler::Metadata<Data>::Metadata(const typename Data::name_type& data_name,
-//                                          const boost::filesystem::path& root)
-//    : content(),
-//      kPath(detail::GetPath<Data>(data_name, root)),
-//      strong_guarantee(on_scope_exit::ExitAction()) {
-//  if (boost::filesystem::exists(kPath)) {
-//    auto serialised_content(ReadFile(kPath));
-//    if (!content.ParseFromString(serialised_content.string()) ||
-//        content.type() != static_cast<int>(Data::type_enum_value()) ||
-//        content.name() != data_name->string() ||
-//        content.subscribers() < 1) {
-//      LOG(kError) << "Failed to read or parse metadata file " << kPath;
-//      ThrowError(CommonErrors::parsing_error);
-//    }
-//  } else {
-//    LOG(kError) << "Failed to find metadata file " << kPath;
-//    ThrowError(CommonErrors::no_such_element);
-//  }
-//  strong_guarantee.SetAction(on_scope_exit::RevertValue(content));
-//}
-
-template<typename Data>
-void MetadataHandler::Metadata<Data>::SaveChanges() {
-  if (value.subscribers < 1) {
-    if (!fs::remove(kPath)) {
-      LOG(kError) << "Failed to remove metadata file " << kPath;
-      ThrowError(CommonErrors::filesystem_io_error);
-    }
-  } else {
-    if (!WriteFile(kPath, value.Serialise()->string())) {
-      LOG(kError) << "Failed to write metadata file " << kPath;
-      ThrowError(CommonErrors::filesystem_io_error);
-    }
-  }
-  strong_guarantee.Release();
-}
-
-//template<typename Data>
-//void MetadataHandler::Metadata<Data>::SaveChanges() {
-//  if (content.subscribers() < 1) {
-//    if (!fs::remove(kPath)) {
-//      LOG(kError) << "Failed to remove metadata file " << kPath;
-//      ThrowError(CommonErrors::filesystem_io_error);
-//    }
-//  } else {
-//    std::string serialised_content(content.SerializeAsString());
-//    if (serialised_content.empty()) {
-//      LOG(kError) << "Failed to serialise metadata file " << kPath;
-//      ThrowError(CommonErrors::serialisation_error);
-//    }
-//    if (!WriteFile(kPath, serialised_content)) {
-//      LOG(kError) << "Failed to write metadata file " << kPath;
-//      ThrowError(CommonErrors::filesystem_io_error);
-//    }
-//  }
-//  strong_guarantee.Release();
-//}
-
 template<typename Data>
 void MetadataHandler::IncrementSubscribers(const typename Data::name_type& data_name,
                                            int32_t data_size) {
-  Metadata<Data> metadata(data_name, kMetadataRoot_, data_size);
-  ++metadata.value.subscribers;
-  metadata.SaveChanges();
+  Metadata<Data> metadata(data_name, metadata_db_.get(), data_size);
+  MetadataValueDelta metadata_value_delta;
+  metadata_value_delta.data_size = metadata.value_.data_size;
 }
 
 //template<typename Data>
 //void MetadataHandler::IncrementSubscribers(const typename Data::name_type& data_name,
 //                                           int32_t data_size) {
-//  Metadata<Data> metadata(data_name, kMetadataRoot_, data_size);
-//  metadata.content.set_subscribers(metadata.content.subscribers() + 1);
-//  metadata.SaveChanges();
+//  Metadata<Data> metadata(data_name, metadata_db_.get(), data_size);
+//  ++metadata.value_.subscribers;
+//  metadata.SaveChanges(metadata_db_.get());
 //}
 
 template<typename Data>
 void MetadataHandler::DecrementSubscribers(const typename Data::name_type& data_name) {
-  Metadata<Data> metadata(data_name, kMetadataRoot_);
-  --metadata.value.subscribers;
-  metadata.SaveChanges();
+  Metadata<Data> metadata(data_name, metadata_db_.get());
+  --metadata.value_.subscribers;
+  metadata.SaveChanges(metadata_db_.get());
 }
-
-//template<typename Data>
-//void MetadataHandler::DecrementSubscribers(const typename Data::name_type& data_name) {
-//  Metadata<Data> metadata(data_name, kMetadataRoot_);
-//  metadata.content.set_subscribers(metadata.content.subscribers() - 1);
-//  metadata.SaveChanges();
-//}
 
 template<typename Data>
 void MetadataHandler::DeleteMetadata(const typename Data::name_type& data_name) {
   Metadata<Data> metadata(data_name, kMetadataRoot_);
-  metadata.value.subscribers = 0;
+  metadata.value_.subscribers = 0;
   metadata.SaveChanges();
 }
-
-//template<typename Data>
-//void MetadataHandler::DeleteMetadata(const typename Data::name_type& data_name) {
-//  Metadata<Data> metadata(data_name, kMetadataRoot_);
-//  metadata.content.set_subscribers(0);
-//  metadata.SaveChanges();
-//}
 
 template<typename Data>
 void MetadataHandler::MarkNodeDown(const typename Data::name_type& data_name,
                                    const PmidName& pmid_name,
                                    int& remaining_online_holders) {
   Metadata<Data> metadata(data_name, kMetadataRoot_);
-  metadata.value.online_pmid_name.erase(pmid_name);
-  metadata.value.offline_pmid_name.insert(pmid_name);
-  remaining_online_holders = metadata.value.online_pmid_name.size();
+  metadata.value_.online_pmid_name.erase(pmid_name);
+  metadata.value_.offline_pmid_name.insert(pmid_name);
+  remaining_online_holders = metadata.value_.online_pmid_name.size();
   metadata.SaveChanges();
 }
-
-//template<typename Data>
-//void MetadataHandler::MarkNodeDown(const typename Data::name_type& data_name,
-//                                   const PmidName& pmid_name,
-//                                   int& remaining_online_holders) {
-//  Metadata<Data> metadata(data_name, kMetadataRoot_);
-
-//  auto onlines(detail::OnlinesToSet(metadata.content));
-//  onlines.erase(pmid_name->string());
-//  detail::OnlinesToProtobuf(onlines, metadata.content);
-
-//  auto offlines(detail::OfflinesToSet(metadata.content));
-//  offlines.insert(pmid_name->string());
-//  detail::OfflinesToProtobuf(offlines, metadata.content);
-
-//  remaining_online_holders = metadata.content.online_pmid_name_size();
-//  metadata.SaveChanges();
-//}
 
 template<typename Data>
 void MetadataHandler::MarkNodeUp(const typename Data::name_type& data_name,
                                  const PmidName& pmid_name) {
   Metadata<Data> metadata(data_name, kMetadataRoot_);
-  metadata.value.online_pmid_name.insert(pmid_name);
-  metadata.value.offline_pmid_name.erase(pmid_name);
+  metadata.value_.online_pmid_name.insert(pmid_name);
+  metadata.value_.offline_pmid_name.erase(pmid_name);
   metadata.SaveChanges();
 }
-
-//template<typename Data>
-//void MetadataHandler::MarkNodeUp(const typename Data::name_type& data_name,
-//                                 const PmidName& pmid_name) {
-//  Metadata<Data> metadata(data_name, kMetadataRoot_);
-
-//  auto onlines(detail::OnlinesToSet(metadata.content));
-//  onlines.insert(pmid_name->string());
-//  detail::OnlinesToProtobuf(onlines, metadata.content);
-
-//  auto offlines(detail::OfflinesToSet(metadata.content));
-//  offlines.erase(pmid_name->string());
-//  detail::OfflinesToProtobuf(offlines, metadata.content);
-
-//  metadata.SaveChanges();
-//}
 
 template<typename Data>
 void MetadataHandler::AddDataHolder(const typename Data::name_type& data_name,
                                     const PmidName& online_pmid_name) {
   Metadata<Data> metadata(data_name, kMetadataRoot_);
-  metadata.value.online_pmid_name.insert(online_pmid_name);
+  metadata.value_.online_pmid_name.insert(online_pmid_name);
   metadata.SaveChanges();
 }
-
-//template<typename Data>
-//void MetadataHandler::AddDataHolder(const typename Data::name_type& data_name,
-//                                    const PmidName& online_pmid_name) {
-//  Metadata<Data> metadata(data_name, kMetadataRoot_);
-//  metadata.content.add_online_pmid_name(online_pmid_name->string());
-//  metadata.SaveChanges();
-//}
 
 template<typename Data>
 void MetadataHandler::RemoveDataHolder(const typename Data::name_type& data_name,
                                        const PmidName& pmid_name) {
   Metadata<Data> metadata(data_name, kMetadataRoot_);
-  metadata.value.online_pmid_name.erase(pmid_name);
-  metadata.value.offline_pmid_name.erase(pmid_name);
+  metadata.value_.online_pmid_name.erase(pmid_name);
+  metadata.value_.offline_pmid_name.erase(pmid_name);
   metadata.SaveChanges();
 }
-
-//template<typename Data>
-//void MetadataHandler::RemoveDataHolder(const typename Data::name_type& data_name,
-//                                       const PmidName& pmid_name) {
-//  Metadata<Data> metadata(data_name, kMetadataRoot_);
-
-//  auto onlines(detail::OnlinesToSet(metadata.content));
-//  onlines.erase(pmid_name->string());
-//  detail::OnlinesToProtobuf(onlines, metadata.content);
-
-//  auto offlines(detail::OfflinesToSet(metadata.content));
-//  offlines.erase(pmid_name->string());
-//  detail::OnlinesToProtobuf(onlines, metadata.content);
-
-//  metadata.SaveChanges();
-//}
 
 template<typename Data>
 std::vector<PmidName> MetadataHandler::GetOnlineDataHolders(
     const typename Data::name_type& data_name) const {
-  Metadata<Data> metadata(data_name, kMetadataRoot_);
-  std::vector<PmidName> onlines(metadata.value.online_pmid_name.begin(),
-                                metadata.value.online_pmid_name.end());
-  metadata.strong_guarantee.Release();
+  Metadata<Data> metadata(data_name, metadata_db_.get());
+  std::vector<PmidName> onlines(metadata.value_.online_pmid_name.begin(),
+                                metadata.value_.online_pmid_name.end());
+  metadata.strong_guarantee_.Release();
   return onlines;
 }
 
-//template<typename Data>
-//std::vector<PmidName> MetadataHandler::GetOnlineDataHolders(
-//    const typename Data::name_type& data_name) const {
-//  Metadata<Data> metadata(data_name, kMetadataRoot_);
-//  std::vector<PmidName> onlines;
-//  for (int i(0); i != metadata.content.online_pmid_name_size(); ++i)
-//    onlines.push_back(PmidName(Identity(metadata.content.online_pmid_name(i))));
-//  metadata.strong_guarantee.Release();
-//  return onlines;
-//}
+template<typename Data>
+bool MetadataHandler::CheckMetadataExists(const typename Data::name_type& data_name) const {
+  try {
+    Metadata<Data> metadata(data_name, metadata_db_.get());
+    metadata.strong_guarantee_.Release();
+  } catch (const maidsafe_error& error) {
+    return false;
+  }
+  return true;
+}
 
 template<typename Data>
-void MetadataHandler::CheckMetadataExists(const typename Data::name_type& data_name) const {
-  Metadata<Data> metadata(data_name, kMetadataRoot_);
-  metadata.strong_guarantee.Release();
+int32_t MetadataHandler::CheckPut(const typename Data::name_type& /*data_name*/, int32_t /*data_size*/) {
+  return 0;
 }
 
 }  // namespace vault

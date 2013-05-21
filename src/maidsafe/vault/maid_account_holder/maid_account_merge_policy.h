@@ -33,6 +33,7 @@ class AccountDb;
 class MaidAccountMergePolicy {
  public:
   typedef MaidAccountUnresolvedEntry UnresolvedEntry;
+  typedef AccountDb Database;
   explicit MaidAccountMergePolicy(AccountDb* account_db);
   MaidAccountMergePolicy(MaidAccountMergePolicy&& other);
   MaidAccountMergePolicy& operator=(MaidAccountMergePolicy&& other);

@@ -22,27 +22,31 @@ namespace maidsafe {
 
 namespace vault {
 
-class AccountDb;
-
 // The purpose of this class is to ensure enough peers have agreed a given request is valid before
 // recording the corresponding action to an AccountDb.  This should ensure that all peers hold
 // similar, if not identical databases.
 template<typename MergePolicy>
 class Sync : public MergePolicy {
  public:
-  Sync(AccountDb* account_db, const NodeId& this_node_id);
-  Sync(const boost::filesystem::path& root, const NodeId& this_node_id);
+  Sync(typename MergePolicy::Database* database, const NodeId& this_node_id);
   Sync(Sync&& other);
   Sync& operator=(Sync&& other);
   // This is called when receiving a Sync message from a peer or this node.  Returns true if the
   // entry becomes resolved.
+  bool AddUnresolvedEntry(const typename MergePolicy::UnresolvedEntry& entry);
+  template <typename Data>
   bool AddUnresolvedEntry(const typename MergePolicy::UnresolvedEntry& entry);
   // This is called directly once an action has been decided as valid in the MAHolder, but before
   // syncing the unresolved entry to the peers.  This won't resolve the entry (even if it's the last
   // one we're waiting for) so that 'GetUnresolvedData()' will return this one, allowing us to then
   // sync it to our peers.
   void AddLocalEntry(const typename MergePolicy::UnresolvedEntry& entry);
+  template <typename Data>
+  void AddLocalEntry(const typename MergePolicy::UnresolvedEntry& entry);
   // Returns true if the entry becomes resolved.
+  bool AddAccountTransferRecord(const typename MergePolicy::UnresolvedEntry& entry,
+                                bool all_account_transfers_received);
+  template <typename Data>
   bool AddAccountTransferRecord(const typename MergePolicy::UnresolvedEntry& entry,
                                 bool all_account_transfers_received);
   // This is called if, during an ongoing account transfer, another churn event occurs.  The
@@ -62,6 +66,10 @@ class Sync : public MergePolicy {
  private:
   Sync(const Sync&);
   Sync& operator=(const Sync&);
+  typename std::vector<typename MergePolicy::UnresolvedEntry>::iterator FindEntry(
+      const typename MergePolicy::UnresolvedEntry& entry, bool merge);
+  bool AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge);
+  template <typename Data>
   bool AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge);
   bool CanBeErased(const typename MergePolicy::UnresolvedEntry& entry) const;
 

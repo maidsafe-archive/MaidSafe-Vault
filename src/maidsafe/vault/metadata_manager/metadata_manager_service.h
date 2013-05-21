@@ -26,6 +26,7 @@
 #include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/vault/accumulator.h"
+#include "maidsafe/vault/metadata_manager/metadata_helpers.h"
 #include "maidsafe/vault/metadata_manager/metadata_handler.h"
 #include "maidsafe/vault/metadata_manager/metadata.pb.h"
 #include "maidsafe/vault/types.h"
@@ -103,6 +104,18 @@ class MetadataManagerService {
   void OnGenericErrorHandler(nfs::Message message);
 
   bool ThisVaultInGroupForData(const nfs::Message& message) const;
+
+  template<typename Data, nfs::MessageAction action>
+  void AddLocalUnresolvedEntryThenSync(const nfs::Message& message,
+                                       const MetadataValueDelta& delta);
+
+  // =============== Sync ==========================================================================
+  void Sync(const DataNameVariant& account_name);
+  void HandleSync(const nfs::Message& message);
+
+  // =============== Account transfer ==============================================================
+  void TransferAccount(const MaidName& account_name, const NodeId& new_node);
+  void HandleAccountTransfer(const nfs::Message& message);
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;

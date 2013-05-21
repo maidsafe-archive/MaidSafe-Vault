@@ -14,9 +14,9 @@
 #include <set>
 
 #include "maidsafe/common/error.h"
+#include "maidsafe/routing/parameters.h"
 
-#include "maidsafe/vault/account_db.h"
-#include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
+#include "maidsafe/vault/metadata_manager/metadata.h"
 
 namespace fs = boost::filesystem;
 
@@ -24,39 +24,75 @@ namespace maidsafe {
 
 namespace vault {
 
-MetadataMergePolicy::MetadataMergePolicy(const fs::path& root)
-    : metadata_root_(root / "metadata"),
-      unresolved_data_() {}
+MetadataMergePolicy::MetadataMergePolicy(MetadataDb * metadata_db)
+    : unresolved_data_(),
+      metadata_db_(metadata_db) {}
 
 MetadataMergePolicy::MetadataMergePolicy(MetadataMergePolicy&& other)
-    : metadata_root_(std::move(other.metadata_root_)),
-      unresolved_data_(std::move(other.unresolved_data_)) {}
+    : unresolved_data_(std::move(other.unresolved_data_)),
+      metadata_db_(std::move(other.metadata_db_)) {}
 
 MetadataMergePolicy& MetadataMergePolicy::operator=(MetadataMergePolicy&& other) {
-  metadata_root_ = std::move(other.metadata_root_);
   unresolved_data_ = std::move(other.unresolved_data_);
+  metadata_db_ = std::move(other.metadata_db_);
   return *this;
 }
 
-void MetadataMergePolicy::Merge(const UnresolvedEntry& /*unresolved_entry*/) {
-//  auto serialised_db_value(GetFromDb(unresolved_entry.key.first));
-//  if (unresolved_entry.key.second == nfs::MessageAction::kPut &&
-//      !unresolved_entry.dont_add_to_db) {
-//    MergePut(unresolved_entry.key.first, MergedCost(unresolved_entry), serialised_db_value);
-//  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
+template <typename Data>
+void MetadataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
+  if (unresolved_entry.key.second == nfs::MessageAction::kPut &&
+      !unresolved_entry.dont_add_to_db) {
+    auto data_size(GetDataSize(unresolved_entry));
+    if (!data_size)
+      MergePut<Data>(unresolved_entry.key.first, data_size);
+  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
 //    MergeDelete(unresolved_entry.key.first, serialised_db_value);
-//  } else {
-//    ThrowError(CommonErrors::invalid_parameter);
-//  }
+  } else {
+    ThrowError(CommonErrors::invalid_parameter);
+  }
 }
 
-void MetadataMergePolicy::MergePut(const DataNameVariant& /*data_name*/,
-                                      UnresolvedEntry::Value /*cost*/,
-                                      const NonEmptyString& /*serialised_db_value*/) {
+int MetadataMergePolicy::GetDataSize(
+    const UnresolvedEntry& unresolved_entry) const {
+  assert(unresolved_entry.key.second == nfs::MessageAction::kPut &&
+         !unresolved_entry.dont_add_to_db);
+  std::map<int, size_t> all_data_size;
+  auto most_frequent_itr(std::end(unresolved_entry.messages_contents));
+  size_t most_frequent(0);
+  for (auto itr(std::begin(unresolved_entry.messages_contents));
+       itr != std::end(unresolved_entry.messages_contents); ++itr) {
+    if ((*itr).value.get().data_size) {
+      size_t this_value_count(++all_data_size[itr->value.get().data_size]);
+      if (this_value_count > most_frequent) {
+        most_frequent = this_value_count;
+        most_frequent_itr = itr;
+      }
+    }
+  }
+
+  if (all_data_size.empty())
+    ThrowError(CommonErrors::unknown);
+  if (most_frequent > routing::Parameters::node_group_size / 2)
+    return most_frequent_itr->value.get().data_size;
+
+  if (unresolved_entry.messages_contents.size() == routing::Parameters::node_group_size) {
+    assert(false && "Invalid datasize from peers");
+    ThrowError(CommonErrors::unknown);
+  }
+
+  return 0;
+}
+
+template <typename Data>
+void MetadataMergePolicy::MergePut(const DataNameVariant& data_name,
+                                   int data_size) {
+  Metadata<Data> metadata(data_name, metadata_db_, data_size);
+  ++metadata.value.subscribers;
+  metadata.SaveChanges(metadata_db_);
 }
 
 void MetadataMergePolicy::MergeDelete(const DataNameVariant& /*data_name*/,
-                                         const NonEmptyString& /*serialised_db_value*/) {
+                                      const NonEmptyString& /*serialised_db_value*/) {
 }
 
 }  // namespace vault

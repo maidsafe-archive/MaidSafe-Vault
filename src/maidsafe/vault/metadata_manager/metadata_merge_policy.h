@@ -22,6 +22,7 @@
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/metadata_manager/metadata_db.h"
 
 
 namespace maidsafe {
@@ -31,30 +32,27 @@ namespace vault {
 class MetadataMergePolicy {
  public:
   typedef MetadataUnresolvedEntry UnresolvedEntry;
-  explicit MetadataMergePolicy(const boost::filesystem::path& root);
+  typedef MetadataDb Database;
+
+  explicit MetadataMergePolicy(MetadataDb* metadata_db);
   MetadataMergePolicy(MetadataMergePolicy&& other);
   MetadataMergePolicy& operator=(MetadataMergePolicy&& other);
-  // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
-  template<typename Data>
-  int32_t AllowDelete(const typename Data::name_type& name);
 
  protected:
+  template <typename Data>
   void Merge(const UnresolvedEntry& unresolved_entry);
 
-  boost::filesystem::path metadata_root_;
   std::vector<UnresolvedEntry> unresolved_data_;
+  MetadataDb* metadata_db_;
 
  private:
   MetadataMergePolicy(const MetadataMergePolicy&);
   MetadataMergePolicy& operator=(const MetadataMergePolicy&);
 
-  void MergePut(const DataNameVariant& data_name,
-                UnresolvedEntry::Value cost,
-                const NonEmptyString& serialised_db_value);
+  template <typename Data>
+  void MergePut(const DataNameVariant& data_name, int data_size);
   void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
-//  NonEmptyString SerialiseDbValue(DbValue db_value) const;
-//  DbValue ParseDbValue(NonEmptyString serialised_db_value) const;
-//  NonEmptyString GetFromDb(const DataNameVariant& data_name);
+  int GetDataSize(const UnresolvedEntry& unresolved_entry) const;
 };
 
 }  // namespace vault

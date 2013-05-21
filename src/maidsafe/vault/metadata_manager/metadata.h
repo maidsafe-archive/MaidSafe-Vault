@@ -1,0 +1,73 @@
+/***************************************************************************************************
+ *  Copyright 2012 MaidSafe.net limited                                                            *
+ *                                                                                                 *
+ *  The following source code is property of MaidSafe.net limited and is not meant for external    *
+ *  use.  The use of this code is governed by the licence file licence.txt found in the root of    *
+ *  this directory and also on www.maidsafe.net.                                                   *
+ *                                                                                                 *
+ *  You are not free to copy, amend or otherwise use this source code without the explicit         *
+ *  written permission of the board of directors of MaidSafe.net.                                  *
+ **************************************************************************************************/
+
+#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_H_
+#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_H_
+
+#include <cstdint>
+#include <vector>
+
+#include "maidsafe/common/on_scope_exit.h"
+#include "maidsafe/common/types.h"
+
+#include "maidsafe/vault/metadata_manager/metadata_db.h"
+#include "maidsafe/vault/metadata_manager/metadata.pb.h"
+
+#include "maidsafe/vault/types.h"
+
+
+namespace maidsafe {
+
+namespace vault {
+
+struct MetadataValue {
+  typedef TaggedValue<NonEmptyString, struct SerialisedMetadataValueTag> serialised_type;
+  explicit MetadataValue(const serialised_type& serialised_metadata_value);
+  explicit MetadataValue(int size_in);
+  serialised_type Serialise();
+
+  int data_size;
+  int64_t subscribers;
+  std::set<PmidName> online_pmid_name, offline_pmid_name;
+};
+
+template<typename Data>
+class Metadata {
+ public:
+  // This constructor reads the existing element or creates a new one if it doesn't already exist.
+  Metadata(const typename Data::name_type& data_name,
+           MetadataDb* metadata_db,
+           int32_t data_size);
+  // This constructor reads the existing element or throws if it doesn't already exist.
+  Metadata(const typename Data::name_type& data_name,
+           MetadataDb* metadata_db);
+  // Should only be called once.
+  void SaveChanges(MetadataDb* metadata_db);
+
+  typename Data::name_type data_name_;
+  MetadataValue value_;
+  on_scope_exit strong_guarantee_;
+
+ private:
+  Metadata();
+  Metadata(const Metadata&);
+  Metadata& operator=(const Metadata&);
+  Metadata(Metadata&&);
+  Metadata& operator=(Metadata&&);
+};
+
+}  // namespace vault
+
+}  // namespace maidsafe
+
+#include "maidsafe/vault/metadata_manager/metadata-inl.h"
+
+#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_H_
