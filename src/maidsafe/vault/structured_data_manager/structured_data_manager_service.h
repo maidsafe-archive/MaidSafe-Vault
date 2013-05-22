@@ -27,7 +27,8 @@
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
-
+#include "maidsafe/vault/structured_data_manager/structured_data_key.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_value.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_db.h"
 
 
@@ -60,7 +61,7 @@ class StructuredDataManagerService {
   void ValidateSyncSender(const nfs::Message& message) const;
   //// =============== Put/Delete data ===============================================================
   template<typename Data>
-  void HandlePut(const nfs::Message& message);
+  void HandlePut(const StructuredDataKey& key, const StructuredDataValue& value);
   template<typename Data>
   void HandleDeleteBranchUntilFork(const nfs::Message& message);
   template<typename Data>

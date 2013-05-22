@@ -76,24 +76,24 @@ void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
 }
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
-template<typename Data>
-void StructuredDataManagerService::HandlePut(const nfs::Message& message) {
-  maidsafe_error return_code(CommonErrors::success);
-  try {
-    Data data(typename Data::name_type(message.data().name),
-              typename Data::serialised_type(message.data().content));
-    auto account_name(detail::GetStructuredDataKey(message));
+//template<typename Data>
+//void StructuredDataManagerService::HandlePut(const nfs::Message& message) {
+//  maidsafe_error return_code(CommonErrors::success);
+//  try {
+//    Data data(typename Data::name_type(message.data().name),
+//              typename Data::serialised_type(message.data().content));
+//    auto account_name(detail::GetStructuredDataKey(message));
 
-  }
-  catch(const maidsafe_error& error) {
-    LOG(kWarning) << error.what();
-    return_code = error;
-  }
-  catch(...) {
-    LOG(kWarning) << "Unknown error.";
-    return_code = MakeError(CommonErrors::unknown);
-  }
-}
+//  }
+//  catch(const maidsafe_error& error) {
+//    LOG(kWarning) << error.what();
+//    return_code = error;
+//  }
+//  catch(...) {
+//    LOG(kWarning) << "Unknown error.";
+//    return_code = MakeError(CommonErrors::unknown);
+//  }
+//}
 
 //template<typename Data>
 //void StructuredDataManagerService::HandleDelete(const nfs::Message& message) {

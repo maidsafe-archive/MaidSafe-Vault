@@ -21,6 +21,9 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/data_types/structured_data_version.h"
+#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_key.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_value.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_db.h"
 #include "maidsafe/vault/unresolved_element.h"
 
@@ -31,89 +34,41 @@ namespace vault {
 
 class StructuredDataMergePolicy {
  public:
-  typedef UnresolvedElement<Identity, Identity> UnresolvedEntry;
-  typedef std::pair<UnresolvedEntry::Key, nfs::PersonaId> DbKey;
+  typedef UnresolvedElement<StructuredDataKey, StructuredDataValue> UnresolvedEntry;
+  typedef std::pair<DataNameVariant, nfs::PersonaId> DbKey;
+
   explicit StructuredDataMergePolicy(maidsafe::vault::StructuredDataDb* db);
   StructuredDataMergePolicy(StructuredDataMergePolicy&& other);
   StructuredDataMergePolicy& operator=(StructuredDataMergePolicy&& other);
-  // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
-  template<typename Data>
-  int32_t AllowDelete(const typename Data::name_type& name);
+  typedef TaggedValue<NonEmptyString, struct DatabaseKey> SerialisedKey;
+  typedef TaggedValue<NonEmptyString, struct DatabaseValue> SerialisedValue;
 
- protected:
+protected:
   void Merge(const UnresolvedEntry& unresolved_entry);
 
   std::vector<UnresolvedEntry> unresolved_data_;
   StructuredDataDb* db_;
 
  private:
-  typedef TaggedValue<int32_t, struct AverageCostTag> AverageCost;
-  typedef TaggedValue<int32_t, struct CountTag> Count;
-  typedef StructuredDataVersions DbValue;
 
   StructuredDataMergePolicy(const StructuredDataMergePolicy&);
   StructuredDataMergePolicy& operator=(const StructuredDataMergePolicy&);
 
-  UnresolvedEntry::Value MergedCost(const UnresolvedEntry& unresolved_entry) const;
-  void MergePut(const DataNameVariant& data_name,
-                UnresolvedEntry::Value cost,
-                const NonEmptyString& serialised_db_value);
-  void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
-  NonEmptyString SerialiseDbValue(DbValue db_value) const;
-  DbValue ParseDbValue(NonEmptyString serialised_db_value) const;
-  NonEmptyString GetFromDb(const DbKey& db_key);
+  void MergePut(const StructuredDataKey& key, const Identity& new_value, const Identity& old_value);
+
+  void MergeDeleteToFork(const StructuredDataKey& key, const Identity& tot);
+  void MergeDelete(const StructuredDataKey& key);
+
+  void MergeGet(const StructuredDataKey& key);
+  void MergeGetBranch(const StructuredDataKey& key, const Identity& tot);
+
+
+  SerialisedValue SerialiseDbValue(const StructuredDataValue& db_value) const;
+  SerialisedKey SerialiseDbKey(const StructuredDataKey& db_key) const;
+  StructuredDataValue ParseDbValue(const SerialisedValue& serialised_db_value) const;
+  SerialisedValue GetFromDb(const DbKey& db_key);
 };
 
-template<typename Data>
-int32_t StructuredDataMergePolicy::AllowDelete(const typename Data::name_type& name) {
-  auto serialised_db_value(GetFromDb(name));
-  Count current_count(0);
-  AverageCost size(0);
-  if (serialised_db_value.IsInitialised()) {
-    auto current_values(ParseDbValue(serialised_db_value));
-    assert(current_values.second.data > 0);
-    current_count = current_values.second;
-    size.data = current_values.first;
-  }
-
-  DataNameVariant name_as_variant(name);
-  auto itr(std::begin(unresolved_data_));
-  auto last_put_still_to_be_added_to_db(std::end(unresolved_data_));
-  int32_t pending_puts(0), pending_deletes(0);
-
-//  while (itr != std::end(unresolved_data_)) {
-//    if ((*itr).key.first == name_as_variant) {
-//      if ((*itr).key.second == nfs::MessageAction::kPut) {
-//        if ((*itr).dont_add_to_db) {
-//          // A delete request must have been applied for this to be true, but it will (correctly)
-//          // silently fail when it comes to merging since this put request will not have been
-//          // added to the account_db.
-//          --pending_deletes;
-//        } else {
-//          ++pending_puts;
-//          last_put_still_to_be_added_to_db = itr;
-//          if (size != 0 && (*itr).messages_contents.front().value) {
-//              // TODO(dirvine) we should average these results rather than taking the first
-//            size.data = *(*itr).messages_contents.front().value;
-//          }
-//        }
-//      } else {
-//        assert((*itr).key.second == nfs::MessageAction::kDelete);
-//        ++pending_deletes;
-//      }
-//    }
-//    ++itr;
-//  }
-
-//  if (current_count <= pending_deletes &&
-//      last_put_still_to_be_added_to_db != std::end(unresolved_data_)) {
-//    (*last_put_still_to_be_added_to_db).dont_add_to_db = true;
-//  }
-
-//  if (current_count + pending_puts <= pending_deletes)
-//    size.data = 0;
-//  return size.data;
-}
 
 }  // namespace vault
 
