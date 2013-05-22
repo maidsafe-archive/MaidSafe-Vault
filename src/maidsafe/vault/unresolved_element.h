@@ -24,6 +24,7 @@
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/structured_data_manager/structured_data_key.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_value.h"
 #include "maidsafe/vault/metadata_manager/metadata_helpers.h"
 
 
@@ -72,12 +73,7 @@ typedef UnresolvedElement<int32_t, std::pair<DataNameVariant, nfs::MessageAction
                                                                  PmidAccountUnresolvedEntry;
 typedef UnresolvedElement<MetadataValueDelta, std::pair<DataNameVariant, nfs::MessageAction>>
                                                                  MetadataUnresolvedEntry;
-typedef UnresolvedElement<StructuredDataKey, std::pair<DataNameVariant, nfs::MessageAction>>
-                                                                 StructuredDataUnresolvedEntry;
-
-
-
-
+typedef UnresolvedElement<StructuredDataKey, StructuredDataValue> StructuredDataUnresolvedEntry;
 
 }  // namespace vault
 

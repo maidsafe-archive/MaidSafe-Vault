@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_VALUE_H_
-#define MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_VALUE_H_
+#ifndef MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_KEY_H_
+#define MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_KEY_H_
 
 #include "boost/optional.hpp"
 #include "maidsafe/data_types/data_name_variant.h"
@@ -21,14 +21,15 @@ namespace maidsafe {
 
 namespace vault {
 
-struct StructuredDataKey {
-  nfs::PersonaId peer_type;
-  DataNameVariant data_name;
-  nfs::MessageAction action;
+struct StructuredDataValue {
+  boost::optional<Identity> old_value;
+  boost::optional<Identity> new_value;
+  boost::optional<Identity> value;
+  boost::optional<NonEmptyString> serialised_db_value;  // account xfer
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_VALUE_H_
+#endif  // MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_KEY_H_
