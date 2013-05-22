@@ -60,13 +60,10 @@ class StructuredDataManagerService {
   void ValidateClientSender(const nfs::Message& message) const;
   void ValidateSyncSender(const nfs::Message& message) const;
   //// =============== Put/Delete data ===============================================================
-  template<typename Data>
-  void HandlePut(const StructuredDataKey& key, const StructuredDataValue& value);
-  template<typename Data>
+
+  void HandlePut(const nfs::Message& message);
   void HandleDeleteBranchUntilFork(const nfs::Message& message);
-  template<typename Data>
   void HandleGet(const nfs::Message& message, routing::ReplyFunctor reply_functor);
-  template<typename Data>
   void HandleGetBranch(const nfs::Message& message, routing::ReplyFunctor reply_functor);
 
   void AddToAccumulator(const nfs::Message& message);
@@ -76,11 +73,11 @@ class StructuredDataManagerService {
 
   //// =============== Sync ==========================================================================
   //void Sync(const MaidName& account_name);
-  //void HandleSync(const nfs::Message& message);
+  void HandleSync(const nfs::Message& message);
 
   //// =============== Account transfer ==============================================================
   //void TransferAccount(const MaidName& account_name, const NodeId& new_node);
-  //void HandleAccountTransfer(const nfs::Message& message);
+  void HandleAccountTransfer(const nfs::Message& message);
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;

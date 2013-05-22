@@ -56,23 +56,37 @@ template<typename Data>
 void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
                                                  const routing::ReplyFunctor& reply_functor) {
 //   ValidateSender(message);
+  if (message.data().action == nfs::MessageAction::kSynchronise)
+    return HandleSync(message);
+  if (message.data().action == nfs::MessageAction::kSynchronise)
+    return HandleAccountTransfer(message);
+
+
   nfs::Reply reply(CommonErrors::success);
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     if (accumulator_.CheckHandled(message, reply))
       return reply_functor(reply.Serialise()->string());
   }
+  // TODO(dirvine) we need to check the error_code used here perhaps!
+  // if there is no reply then this is of no use.
+  if (accumulator_.GetPendingOrCompleteResults(message).first <
+      routing::Parameters::node_group_size -1)
+    return accumulator_.PushSingleResult(message,
+                                         reply_functor,
+                                         maidsafe_error(CommonErrors::success));
+  else
+    accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
 
   if (message.data().action == nfs::MessageAction::kPut) {
-    HandlePut<Data>(message);
+    HandlePut(message);
   } else if (message.data().action == nfs::MessageAction::kDeleteBranchUntilFork) {
-    HandleDeleteBranchUntilFork<Data>(message);
+    HandleDeleteBranchUntilFork(message);
   } else if (message.data().action == nfs::MessageAction::kGet) {
-    HandleGet<Data>(message, reply_functor);
+    HandleGet(message, reply_functor);
   }else if (message.data().action == nfs::MessageAction::kGetBranch) {
-    HandleGetBranch<Data>(message, reply_functor);
+    HandleGetBranch(message, reply_functor);
   }
-;
 }
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////

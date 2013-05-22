@@ -56,7 +56,7 @@ protected:
 
   void MergePut(const StructuredDataKey& key, const Identity& new_value, const Identity& old_value);
 
-  void MergeDeleteToFork(const StructuredDataKey& key, const Identity& tot);
+  void MergeDeleteBranchUntilFork(const StructuredDataKey& key, const Identity& tot);
   void MergeDelete(const StructuredDataKey& key);
 
   void MergeGet(const StructuredDataKey& key);
