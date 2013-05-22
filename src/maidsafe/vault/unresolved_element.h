@@ -31,9 +31,9 @@ namespace maidsafe {
 
 namespace vault {
 
-template<typename ValueType>
+template<typename ValueType, typename KeyType>
 struct UnresolvedElement {
-  typedef std::pair<DataNameVariant, nfs::MessageAction> Key;
+  typedef KeyType Key;
   typedef ValueType Value;
 
  private:
@@ -67,9 +67,17 @@ struct UnresolvedElement {
   bool dont_add_to_db;
 };
 
-typedef UnresolvedElement<int32_t> MaidAccountUnresolvedEntry, PmidAccountUnresolvedEntry;
-typedef UnresolvedElement<MetadataValueDelta> MetadataUnresolvedEntry;
-typedef UnresolvedElement<StructuredDataKey> StructuredDataUnresolvedEntry;
+typedef UnresolvedElement<int32_t, std::pair<DataNameVariant, nfs::MessageAction>>
+                                                                 MaidAccountUnresolvedEntry,
+                                                                 PmidAccountUnresolvedEntry;
+typedef UnresolvedElement<MetadataValueDelta, std::pair<DataNameVariant, nfs::MessageAction>>
+                                                                 MetadataUnresolvedEntry;
+typedef UnresolvedElement<StructuredDataKey, std::pair<DataNameVariant, nfs::MessageAction>>
+                                                                 StructuredDataUnresolvedEntry;
+
+
+
+
 
 }  // namespace vault
 

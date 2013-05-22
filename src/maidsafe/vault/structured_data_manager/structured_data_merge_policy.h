@@ -31,7 +31,7 @@ namespace vault {
 
 class StructuredDataMergePolicy {
  public:
-  typedef UnresolvedElement<Identity> UnresolvedEntry;
+  typedef UnresolvedElement<Identity, Identity> UnresolvedEntry;
   typedef std::pair<UnresolvedEntry::Key, nfs::PersonaId> DbKey;
   explicit StructuredDataMergePolicy(maidsafe::vault::StructuredDataDb* db);
   StructuredDataMergePolicy(StructuredDataMergePolicy&& other);
