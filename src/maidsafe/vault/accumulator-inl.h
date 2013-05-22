@@ -162,10 +162,9 @@ bool Accumulator<Name>::CheckHandled(const nfs::Message& message, nfs::Reply& re
 }
 
 template<typename Name>
-std::vector<nfs::Reply> Accumulator<Name>::PushSingleResult(
-    const nfs::Message& message,
-    const routing::ReplyFunctor& reply_functor,
-    const maidsafe_error& return_code) {
+std::vector<nfs::Reply> Accumulator<Name>::PushSingleResult(const nfs::Message& message,
+                                                        const routing::ReplyFunctor& reply_functor,
+                                                        const maidsafe_error& return_code) {
   std::vector<nfs::Reply> replies;
   if (FindHandled(message) != std::end(handled_requests_))
     return replies;
@@ -183,6 +182,20 @@ std::vector<nfs::Reply> Accumulator<Name>::PushSingleResult(
   if (pending_requests_.size() > kMaxPendingRequestsCount_)
     pending_requests_.pop_front();
   return replies;
+}
+
+template<typename Name>
+std::pair<int, int> Accumulator<Name>::GetPendingOrCompleteResults(const nfs::Message& message) {
+  if (FindHandled(message) != std::end(handled_requests_))
+    return std::make_pair(0,1);
+  int pending(0);
+  for (auto& request : pending_requests_) {
+    if (request.msg.message_id() == message.message_id() &&
+        request.msg.source().node_id == message.source().node_id) {
+      ++pending;
+    }
+  }
+  return std::make_pair(pending, 0);
 }
 
 template<typename Name>

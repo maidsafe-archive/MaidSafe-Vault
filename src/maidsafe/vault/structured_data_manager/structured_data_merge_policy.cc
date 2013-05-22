@@ -15,6 +15,7 @@
 
 #include "maidsafe/common/error.h"
 
+#include "maidsafe/data_types/structured_data_version.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_db.h"
 #include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
 
@@ -37,58 +38,21 @@ StructuredDataMergePolicy& StructuredDataMergePolicy::operator=(StructuredDataMe
   return *this;
 }
 
-void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
-  auto serialised_db_value(GetFromDb(unresolved_entry.key.first));
-  if (unresolved_entry.key.second == nfs::MessageAction::kPut &&
-      !unresolved_entry.dont_add_to_db) {
-    MergePut(unresolved_entry.key.first, MergedCost(unresolved_entry), serialised_db_value);
-  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
-    MergeDelete(unresolved_entry.key.first, serialised_db_value);
-  } else {
-    ThrowError(CommonErrors::invalid_parameter);
-  }
-}
+//void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
+//  auto serialised_db_value(GetFromDb(unresolved_entry.key.first));
+//  switch (nfs::MessageAction) {
+//    case(kGetBranch) :
 
-//StructuredDataMergePolicy::UnresolvedEntry::Value StructuredDataMergePolicy::MergedCost(
-//    const UnresolvedEntry& unresolved_entry) const {
-//  assert(unresolved_entry.key.second == nfs::MessageAction::kPut &&
-//         !unresolved_entry.dont_add_to_db);
-//  std::map<UnresolvedEntry::Value, size_t> all_costs;
-//  auto most_frequent_itr(std::end(unresolved_entry.messages_contents));
-//  size_t most_frequent(0);
-//  for (auto itr(std::begin(unresolved_entry.messages_contents));
-//       itr != std::end(unresolved_entry.messages_contents); ++itr) {
-//    if ((*itr).value) {
-//      size_t this_value_count(++all_costs[*(*itr).value]);
-//      if (this_value_count > most_frequent) {
-//        most_frequent = this_value_count;
-//        most_frequent_itr = itr;
-//      }
-//    }
 //  }
-
-//  if (all_costs.empty())
-//    ThrowError(CommonErrors::unknown);
-//  // This will always return here is all_costs.size() == 1, or if == 2 and both costs are the same.
-//  if (most_frequent > all_costs.size() / 2)
-//    return *(*most_frequent_itr).value;
-//  // Strip the first and last costs if they only have a count of 1.
-//  if (all_costs.size() > 2U) {
-//    if ((*std::begin(all_costs)).second == 1)
-//      all_costs.erase(std::begin(all_costs));
-//    if ((*(--std::end(all_costs))).second == 1)
-//      all_costs.erase(--std::end(all_costs));
+//  if (unresolved_entry.key.second == nfs::MessageAction::kGetBranch) {
+//    MergePut(unresolved_entry.key.first, MergedCost(unresolved_entry), serialised_db_value);
+//  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
+//    MergeDelete(unresolved_entry.key.first, serialised_db_value);
+//  } else {
+//    ThrowError(CommonErrors::invalid_parameter);
 //  }
-
-//  UnresolvedEntry::Value total_cost(0);
-//  int count(0);
-//  for (const auto& cost : all_costs) {
-//    total_cost += static_cast<int32_t>(cost.first * cost.second);
-//    count += static_cast<int32_t>(cost.second);
-//  }
-
-//  return total_cost / count;
 //}
+
 
 //void StructuredDataMergePolicy::MergePut(const DataNameVariant& data_name,
 //                                      UnresolvedEntry::Value cost,
@@ -135,16 +99,13 @@ void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
 
 //StructuredDataMergePolicy::DbValue StructuredDataMergePolicy::ParseDbValue(
 //    NonEmptyString serialised_db_value) const {
-//  protobuf::MaidAccountDbValue proto_db_value;
-//  if (!proto_db_value.ParseFromString(serialised_db_value.string()))
-//    ThrowError(CommonErrors::parsing_error);
-//  return std::make_pair(AverageCost(proto_db_value.average_cost()), Count(proto_db_value.count()));
+//  return StructuredDataVersions(serialised_db_value);
 //}
 
-//NonEmptyString StructuredDataMergePolicy::GetFromDb(const DataNameVariant& data_name) {
+//NonEmptyString StructuredDataMergePolicy::GetFromDb(const DbKey &db_key) {
 //  NonEmptyString serialised_db_value;
 //  try {
-//    serialised_db_value = db_->Get(data_name);
+//    serialised_db_value = db_->Get(db_key);
 //  }
 //  catch(const vault_error&) {}
 //  return serialised_db_value;

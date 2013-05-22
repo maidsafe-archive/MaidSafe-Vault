@@ -14,7 +14,7 @@
 #include <string>
 
 #include "maidsafe/nfs/pmid_registration.h"
-
+#include "maidsafe/nfs/persona_id.h"
 #include "maidsafe/vault/sync.h"
 
 
@@ -40,12 +40,12 @@ inline bool FromStructuredDataManager(const Message& /*message*/) {
 
 namespace detail {
 
-vault::StructuredDataManagerService::AccountName GetStructuredDataAccountName(
-    const nfs::Message& message) {
-  return vault::StructuredDataManagerService::AccountName(
-      std::make_pair(Identity(message.source().node_id.string()),
-                     Identity(message.data_holder().data.string())));
-}
+//vault::StructuredDataManagerService::SDMKey GetStructuredDataKey(const nfs::Message& message) {
+//  return vault::StructuredDataManagerService::SDMKey(
+//      std::make_pair(DataNameVariant(Identity(message.source().node_id.string()),
+//                                     message.data().type),
+//                     message.source()));
+//}
 
 }  // namespace detail
 

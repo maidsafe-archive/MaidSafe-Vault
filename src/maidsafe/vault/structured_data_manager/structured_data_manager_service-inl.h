@@ -32,8 +32,7 @@ namespace vault {
 
 namespace detail {
 
-vault::StructuredDataManagerService::AccountName GetStructuredDataAccountName(
-    const nfs::Message& message);
+vault::StructuredDataManagerService::SDMKey GetStructuredDataKey(const nfs::Message& message);
 
 template<typename Data>
 typename Data::name_type GetStructuredDataName(const nfs::Message& message) {
@@ -83,7 +82,7 @@ void StructuredDataManagerService::HandlePut(const nfs::Message& message) {
   try {
     Data data(typename Data::name_type(message.data().name),
               typename Data::serialised_type(message.data().content));
-    auto account_name(detail::GetStructuredDataAccountName(message));
+    auto account_name(detail::GetStructuredDataKey(message));
 
   }
   catch(const maidsafe_error& error) {

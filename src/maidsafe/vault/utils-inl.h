@@ -75,6 +75,12 @@ inline bool FromDataGetter(const Message& message) {
   return message.source().persona == nfs::Persona::kDataGetter;
 }
 
+template<typename Message>
+inline bool ValidateSyncSender(const nfs::Message& message) {
+  return message.source().persona == nfs::Persona::kStructuredDataManager;
+}
+
+
 
 namespace detail {
 

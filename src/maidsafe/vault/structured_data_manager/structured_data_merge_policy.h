@@ -20,7 +20,7 @@
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
-
+#include "maidsafe/data_types/structured_data_version.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_db.h"
 #include "maidsafe/vault/unresolved_element.h"
 
@@ -32,6 +32,7 @@ namespace vault {
 class StructuredDataMergePolicy {
  public:
   typedef UnresolvedElement<Identity> UnresolvedEntry;
+  typedef std::pair<UnresolvedEntry::Key, nfs::PersonaId> DbKey;
   explicit StructuredDataMergePolicy(maidsafe::vault::StructuredDataDb* db);
   StructuredDataMergePolicy(StructuredDataMergePolicy&& other);
   StructuredDataMergePolicy& operator=(StructuredDataMergePolicy&& other);
@@ -48,7 +49,7 @@ class StructuredDataMergePolicy {
  private:
   typedef TaggedValue<int32_t, struct AverageCostTag> AverageCost;
   typedef TaggedValue<int32_t, struct CountTag> Count;
-  typedef std::pair<AverageCost, Count> DbValue;
+  typedef StructuredDataVersions DbValue;
 
   StructuredDataMergePolicy(const StructuredDataMergePolicy&);
   StructuredDataMergePolicy& operator=(const StructuredDataMergePolicy&);
@@ -60,7 +61,7 @@ class StructuredDataMergePolicy {
   void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
   NonEmptyString SerialiseDbValue(DbValue db_value) const;
   DbValue ParseDbValue(NonEmptyString serialised_db_value) const;
-  NonEmptyString GetFromDb(const DataNameVariant& data_name);
+  NonEmptyString GetFromDb(const DbKey& db_key);
 };
 
 template<typename Data>

@@ -22,7 +22,7 @@
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/public_key_getter.h"
-
+#include "maidsafe/nfs/persona_id.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/sync.pb.h"
@@ -38,12 +38,13 @@ namespace vault {
 class StructuredDataManagerService {
  public:
   typedef std::pair<Identity, Identity> AccountName;
+  typedef std::pair<DataNameVariant, nfs::PersonaId> SDMKey;
   typedef Identity StructuredDataAccountName;
   StructuredDataManagerService(const passport::Pmid& pmid,
                                routing::Routing& routing,
                                nfs::PublicKeyGetter& public_key_getter,
                                const boost::filesystem::path& path);
-  // Handling of received requests (sending of requests is done via nfs_ object).
+
   template<typename Data>
   void HandleMessage(const nfs::Message& message,
                      const routing::ReplyFunctor& reply_functor);

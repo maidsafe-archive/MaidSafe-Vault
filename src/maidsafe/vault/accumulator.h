@@ -82,6 +82,7 @@ class Accumulator {
   // Returns true and populates <reply_out> if the message has already been set as handled.  If the
   // corresponding return_code != success, the message gets set in the reply.
   bool CheckHandled(const nfs::Message& message, nfs::Reply& reply_out) const;
+  std::pair<int, int> GetPendingOrCompleteResults(const nfs::Message& message);
   // Adds a request with its individual result, pending the overall result of the operation.
   std::vector<nfs::Reply> PushSingleResult(const nfs::Message& message,
                                            const routing::ReplyFunctor& reply_functor,
