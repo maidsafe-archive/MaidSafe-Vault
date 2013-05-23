@@ -55,8 +55,6 @@ template<>
 void PmidRegistrationOp::SetPublicFob<passport::PublicPmid>(
     std::unique_ptr<passport::PublicPmid>&& pub_pmid);
 
-
-
 struct GetPmidTotalsOp {
   GetPmidTotalsOp(const MaidName& maid_account_name, const PmidName& pmid_account_name)
       : kMaidAccountName(maid_account_name),
@@ -68,8 +66,6 @@ struct GetPmidTotalsOp {
   std::mutex mutex;
   std::vector<PmidRecord> pmid_records;
 };
-
-
 
 struct PmidTotals {
   PmidTotals();

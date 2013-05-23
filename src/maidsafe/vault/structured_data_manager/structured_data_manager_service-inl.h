@@ -58,7 +58,7 @@ void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
 //   ValidateSender(message);
   if (message.data().action == nfs::MessageAction::kSynchronise)
     return HandleSync(message);
-  if (message.data().action == nfs::MessageAction::kSynchronise)
+  if (message.data().action == nfs::MessageAction::kAccountTransfer)
     return HandleAccountTransfer(message);
 
 
@@ -90,7 +90,7 @@ void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
 }
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
-//template<typename Data>
+
 //void StructuredDataManagerService::HandlePut(const nfs::Message& message) {
 //  maidsafe_error return_code(CommonErrors::success);
 //  try {
@@ -109,7 +109,6 @@ void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
 //  }
 //}
 
-//template<typename Data>
 //void StructuredDataManagerService::HandleDelete(const nfs::Message& message) {
 //  try {
 //    auto data_name(detail::GetStructuredDataName<Data>(message));
