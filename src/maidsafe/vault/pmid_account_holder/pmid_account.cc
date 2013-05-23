@@ -152,6 +152,10 @@ bool PmidAccount::ApplyAccountTransfer(const NodeId& source_id,
   return all_account_transfers_received;
 }
 
+void PmidAccount::AddLocalUnresolvedEntry(const PmidAccountUnresolvedEntry& unresolved_entry) {
+  sync_.AddLocalEntry(unresolved_entry);
+}
+
 NonEmptyString PmidAccount::GetSyncData() {
   if (sync_.GetUnresolvedCount() < kSyncTriggerCount_)
     return NonEmptyString();
@@ -193,6 +197,10 @@ void PmidAccount::ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& ne
 
 void PmidAccount::IncrementSyncAttempts() {
   sync_.IncrementSyncAttempts();
+}
+
+PmidRecord PmidAccount::GetPmidRecord() {
+  return pmid_record_;
 }
 
 }  // namespace vault

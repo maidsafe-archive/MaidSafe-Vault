@@ -31,6 +31,8 @@ namespace vault {
 
 class PmidAccountHandler {
  public:
+  typedef std::map<typename PmidAccount::name_type, std::unique_ptr<PmidAccount>> AccountMap;
+
   explicit PmidAccountHandler(Db& db, const NodeId& this_node_id);
 
   // Account operations
@@ -43,6 +45,10 @@ class PmidAccountHandler {
   void SetDataHolderDown(const PmidName& account_name);
   void SetDataHolderGoingUp(const PmidName& account_name);
   void SetDataHolderUp(const PmidName& account_name);
+
+  void AddLocalUnresolvedEntry(const PmidName& account_name,
+                               const PmidAccountUnresolvedEntry& unresolved_entry);
+  PmidRecord GetPmidRecord(const PmidName& account_name);
 
   // Sync operations
   std::vector<PmidName> GetAccountNames() const;
@@ -72,7 +78,7 @@ class PmidAccountHandler {
   Db& db_;
   const NodeId kThisNodeId_;
   mutable std::mutex mutex_;
-  std::map<typename PmidAccount::name_type, std::unique_ptr<PmidAccount>> pmid_accounts_;
+  AccountMap pmid_accounts_;
 };
 
 }  // namespace vault

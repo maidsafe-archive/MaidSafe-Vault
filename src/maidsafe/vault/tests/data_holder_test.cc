@@ -298,7 +298,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
     uint32_t event(RandomUint32() % 3);
     switch (event) {
       case 0: {
-        if (!name_content_pairs.empty()) {
+        if (RandomUint32() % 2 == 0) {
           value_type name_content_pair(name_content_pairs[RandomUint32() % name_content_pairs.size()]);
           nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
                                   name_content_pair.first,
@@ -341,7 +341,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
         break;
       }
       case 2: {
-        if (!name_content_pairs.empty()) {
+        if (RandomUint32() % 2 != 0) {
           value_type name_content_pair(name_content_pairs[RandomUint32() % name_content_pairs.size()]);
           nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
                                   name_content_pair.first,

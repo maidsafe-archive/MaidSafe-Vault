@@ -21,7 +21,7 @@ namespace fs = boost::filesystem;
 namespace maidsafe {
 namespace vault {
 
-const int PmidAccountHolderService::kPutRequestsRequired_(3);
+const int PmidAccountHolderService::kPutRepliesSuccessesRequired_(1);
 const int PmidAccountHolderService::kDeleteRequestsRequired_(3);
 
 namespace {
@@ -40,6 +40,49 @@ PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
       accumulator_(),
       pmid_account_handler_(db, routing.kNodeId()),
       nfs_(routing, pmid) {}
+
+void PmidAccountHolderService::HandleMessage(const nfs::Message& message,
+                                             const routing::ReplyFunctor& reply_functor) {
+  ValidateGenericSender(message);
+  nfs::Reply reply(CommonErrors::success);
+  nfs::MessageAction action(message.data().action);
+  switch (action) {
+    case nfs::MessageAction::kSynchronise:
+      return HandleSync(message);
+    case nfs::MessageAction::kAccountTransfer:
+      return HandleAccountTransfer(message);
+    case nfs::MessageAction::kNodeDown:
+      return;
+    case nfs::MessageAction::kNodeUp:
+      return;
+    case nfs::MessageAction::kGetPmidTotals:
+      return HandleGetPmidTotals(message, reply_functor);
+    default:
+      LOG(kError) << "Unhandled Post action type";
+  }
+
+  reply = nfs::Reply(VaultErrors::operation_not_supported, message.Serialise().data);
+  reply_functor(reply.Serialise()->string());
+}
+
+void PmidAccountHolderService::HandleGetPmidTotals(const Message& message,
+                                                   const ReplyFunctor& reply_functor) {
+  try {
+    PmidRecord pmid_record(pmid_account_handler_.GetPmidRecord(PmidName(message.data().name)));
+    if (!pmid_record.pmid_name.data.string().empty())
+      Reply reply(CommonErrors::success, pmid_record.Serialise());
+      // send it...
+      // nfs_.
+  }
+  catch(const maidsafe_error& error) {
+    detail::AddResult(message, reply_functor, error, accumulator_, accumulator_mutex_,
+                      kDeleteRequestsRequired_);
+  }
+  catch(...) {
+    detail::AddResult(message, reply_functor, MakeError(CommonErrors::unknown),
+                      accumulator_, accumulator_mutex_, kDeleteRequestsRequired_);
+  }
+}
 
 void PmidAccountHolderService::HandleChurnEvent(routing::MatrixChange matrix_change) {
 //  CheckAccounts();
@@ -109,13 +152,9 @@ bool PmidAccountHolderService::AssessRange(const PmidName& account_name,
 }
 
 void PmidAccountHolderService::ValidateDataSender(const nfs::Message& message) const {
-  if (!message.HasDataHolder())
-    ThrowError(VaultErrors::permission_denied);
-
-  if (!routing_.IsConnectedVault(NodeId(message.data_holder()->string())))
-    ThrowError(VaultErrors::permission_denied);
-
-  if (routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
+  if (!message.HasDataHolder()
+      || !routing_.IsConnectedVault(NodeId(message.data_holder()->string()))
+      || routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
     ThrowError(VaultErrors::permission_denied);
 
   if (!FromMetadataManager(message) || !ForThisPersona(message))
@@ -123,17 +162,15 @@ void PmidAccountHolderService::ValidateDataSender(const nfs::Message& message) c
 }
 
 void PmidAccountHolderService::ValidateGenericSender(const nfs::Message& message) const {
-  if (!routing_.IsConnectedVault(message.source().node_id))
-    ThrowError(VaultErrors::permission_denied);
-
-  if (routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
+  if (!routing_.IsConnectedVault(message.source().node_id)
+      || routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
     ThrowError(VaultErrors::permission_denied);
 
   if (!FromMetadataManager(message) || !ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-// =============== Put/Delete data =================================================================
+// =============== Put/Delete data ================================================================
 
 void PmidAccountHolderService::SendReplyAndAddToAccumulator(
     const nfs::Message& message,
@@ -145,7 +182,7 @@ void PmidAccountHolderService::SendReplyAndAddToAccumulator(
 }
 
 
-// =============== Sync ============================================================================
+// =============== Sync ===========================================================================
 
 void PmidAccountHolderService::Sync(const PmidName& account_name) {
   auto serialised_sync_data(pmid_account_handler_.GetSyncData(account_name));
@@ -171,7 +208,7 @@ void PmidAccountHolderService::HandleSync(const nfs::Message& message) {
                                       NonEmptyString(proto_sync.serialised_unresolved_entries()));
 }
 
-// =============== Account transfer ================================================================
+// =============== Account transfer ===============================================================
 
 void PmidAccountHolderService::TransferAccount(const PmidName& account_name,
                                                const NodeId& new_node) {
@@ -192,10 +229,12 @@ void PmidAccountHolderService::HandleAccountTransfer(const nfs::Message& message
   PmidName account_name(Identity(pmid_account.pmid_name()));
   bool finished_all_transfers(
       pmid_account_handler_.ApplyAccountTransfer(account_name, source_id,
-          PmidAccount::serialised_type(NonEmptyString(pmid_account.serialised_account_details()))));
+         PmidAccount::serialised_type(NonEmptyString(pmid_account.serialised_account_details()))));
   if (finished_all_transfers)
     return;    // TODO(Team) Implement whatever else is required here?
 }
+
+// =============== DataHolder =====================================================================
 
 void PmidAccountHolderService::InformOfDataHolderDown(const PmidName& pmid_name) {
   pmid_account_handler_.SetDataHolderGoingDown(pmid_name);

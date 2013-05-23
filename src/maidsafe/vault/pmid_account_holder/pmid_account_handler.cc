@@ -70,6 +70,23 @@ void PmidAccountHandler::SetDataHolderUp(const PmidName& account_name) {
   pmid_accounts_.at(account_name)->SetDataHolderUp();
 }
 
+void PmidAccountHandler::AddLocalUnresolvedEntry(const PmidName& account_name,
+                                             const PmidAccountUnresolvedEntry& unresolved_entry) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  pmid_accounts_.at(account_name)->AddLocalUnresolvedEntry(unresolved_entry);
+}
+
+PmidRecord PmidAccountHandler::GetPmidRecord(const PmidName& account_name) {
+  auto it = std::find_if(std::begin(pmid_accounts_),
+                         std::end(pmid_accounts_),
+                         [&account_name](const PmidAccount& pmid_account) {
+                            return account_name == pmid_account.name();
+                         });
+  if (it != std::end(pmid_accounts_))
+    return it->GetPmidRecord();
+  return PmidRecord();
+}
+
 std::vector<PmidName> PmidAccountHandler::GetAccountNames() const {
   std::vector<PmidName> account_names;
   std::lock_guard<std::mutex> lock(mutex_);

@@ -71,10 +71,13 @@ class PmidAccount {
   bool ApplyAccountTransfer(const NodeId& source_id,
                             const serialised_type& serialised_pmid_account_details);
 
+  void AddLocalUnresolvedEntry(const PmidAccountUnresolvedEntry& unresolved_entry);
   NonEmptyString GetSyncData();
   void ApplySyncData(const NonEmptyString& serialised_unresolved_entries);
   void ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node);
   void IncrementSyncAttempts();
+
+  PmidRecord GetPmidRecord();
 
   name_type name() const { return pmid_name_; }
   DataHolderStatus data_holder_status() const { return data_holder_status_; }
