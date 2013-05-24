@@ -23,7 +23,7 @@ namespace maidsafe {
 namespace vault {
 
 template<>
-UnresolvedElement<int32_t>::UnresolvedElement(const serialised_type& serialised_copy)
+MaidAccountUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
     : key(),
       messages_contents(),
       sync_counter(0),
@@ -58,7 +58,7 @@ UnresolvedElement<int32_t>::UnresolvedElement(const serialised_type& serialised_
 }
 
 template<>
-UnresolvedElement<int32_t>::serialised_type UnresolvedElement<int32_t>::Serialise() const {
+MaidAccountUnresolvedEntry::serialised_type MaidAccountUnresolvedEntry::Serialise() const {
   protobuf::MaidAndPmidUnresolvedEntry proto_copy;
   auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
 
@@ -78,6 +78,12 @@ UnresolvedElement<int32_t>::serialised_type UnresolvedElement<int32_t>::Serialis
 
   proto_copy.set_dont_add_to_db(dont_add_to_db);
 
+  return serialised_type((NonEmptyString(proto_copy.SerializeAsString())));
+}
+
+template<>
+MetadataUnresolvedEntry::serialised_type MetadataUnresolvedEntry::Serialise() const {
+  protobuf::MetadataUnresolvedEntry proto_copy;
   return serialised_type((NonEmptyString(proto_copy.SerializeAsString())));
 }
 

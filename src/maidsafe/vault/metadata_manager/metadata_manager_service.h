@@ -110,11 +110,12 @@ class MetadataManagerService {
                                        const MetadataValueDelta& delta);
 
   // =============== Sync ==========================================================================
-  void Sync(const DataNameVariant& account_name);
+  void Sync(const DataNameVariant& record_name);
+
   void HandleSync(const nfs::Message& message);
 
   // =============== Account transfer ==============================================================
-  void TransferAccount(const MaidName& account_name, const NodeId& new_node);
+  void TransferAccount(const DataNameVariant& record_name, const NodeId& new_node);
   void HandleAccountTransfer(const nfs::Message& message);
 
   routing::Routing& routing_;

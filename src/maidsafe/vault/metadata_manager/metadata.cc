@@ -63,6 +63,48 @@ MetadataValue::serialised_type MetadataValue::Serialise() {
   return serialised_type(NonEmptyString(metadata_value_proto.SerializeAsString()));
 }
 
+Metadata::Metadata(const DataNameVariant& data_name, MetadataDb* metadata_db,
+                         int32_t data_size)
+    : data_name_(data_name),
+      value_([&metadata_db, data_name, data_size, this]()->MetadataValue {
+              assert(metadata_db);
+              auto metadata_value_string(metadata_db->Get(data_name));
+              if (metadata_value_string.string().empty()) {
+                return MetadataValue(data_size);
+              }
+              return MetadataValue(MetadataValue::serialised_type(metadata_value_string));
+              } ()),
+      strong_guarantee_(on_scope_exit::ExitAction()) {
+  strong_guarantee_.SetAction(on_scope_exit::RevertValue(value_));
+}
+
+Metadata::Metadata(const DataNameVariant& data_name, MetadataDb* metadata_db)
+  : data_name_(data_name),
+    value_([&metadata_db, data_name, this]()->MetadataValue {
+            assert(metadata_db);
+            auto metadata_value_string(metadata_db->Get(data_name));
+            if (metadata_value_string.string().empty()) {
+              LOG(kError) << "Failed to find metadata entry";
+              ThrowError(CommonErrors::no_such_element);
+            }
+            return MetadataValue(MetadataValue::serialised_type(metadata_value_string));
+          } ()),
+    strong_guarantee_(on_scope_exit::ExitAction()) {
+  strong_guarantee_.SetAction(on_scope_exit::RevertValue(value_));
+}
+
+void Metadata::SaveChanges(MetadataDb* metadata_db) {
+  assert(metadata_db);
+  //TODO(Prakash): Handle case of modifying unique data
+  if (value_.subscribers < 1) {
+    metadata_db->Delete(data_name_);
+  } else {
+    auto kv_pair(std::make_pair(data_name_, value_.Serialise()));
+    metadata_db->Put(kv_pair);
+  }
+  strong_guarantee_.Release();
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

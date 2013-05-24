@@ -47,11 +47,11 @@ boost::filesystem::path GetPath(const typename Data::name_type& data_name,
 }  // namespace detail
 
 template<typename Data>
-void MetadataHandler::IncrementSubscribers(const typename Data::name_type& data_name,
-                                           int32_t data_size) {
-  Metadata<Data> metadata(data_name, metadata_db_.get(), data_size);
-  MetadataValueDelta metadata_value_delta;
-  metadata_value_delta.data_size = metadata.value_.data_size;
+void MetadataHandler::IncrementSubscribers(const typename Data::name_type& /*data_name*/,
+                                           int32_t /*data_size*/) {
+//  Metadata<Data> metadata(data_name, metadata_db_.get(), data_size);
+//  MetadataValueDelta metadata_value_delta;
+//  metadata_value_delta.data_size = metadata.value_.data_size;
 }
 
 //template<typename Data>
@@ -63,74 +63,75 @@ void MetadataHandler::IncrementSubscribers(const typename Data::name_type& data_
 //}
 
 template<typename Data>
-void MetadataHandler::DecrementSubscribers(const typename Data::name_type& data_name) {
-  Metadata<Data> metadata(data_name, metadata_db_.get());
-  --metadata.value_.subscribers;
-  metadata.SaveChanges(metadata_db_.get());
+void MetadataHandler::DecrementSubscribers(const typename Data::name_type& /*data_name*/) {
+//  Metadata<Data> metadata(data_name, metadata_db_.get());
+//  --metadata.value_.subscribers;
+//  metadata.SaveChanges(metadata_db_.get());
 }
 
 template<typename Data>
-void MetadataHandler::DeleteMetadata(const typename Data::name_type& data_name) {
-  Metadata<Data> metadata(data_name, kMetadataRoot_);
-  metadata.value_.subscribers = 0;
-  metadata.SaveChanges();
+void MetadataHandler::DeleteMetadata(const typename Data::name_type& /*data_name*/) {
+//  Metadata<Data> metadata(data_name, kMetadataRoot_);
+//  metadata.value_.subscribers = 0;
+//  metadata.SaveChanges();
 }
 
 template<typename Data>
-void MetadataHandler::MarkNodeDown(const typename Data::name_type& data_name,
-                                   const PmidName& pmid_name,
-                                   int& remaining_online_holders) {
-  Metadata<Data> metadata(data_name, kMetadataRoot_);
-  metadata.value_.online_pmid_name.erase(pmid_name);
-  metadata.value_.offline_pmid_name.insert(pmid_name);
-  remaining_online_holders = metadata.value_.online_pmid_name.size();
-  metadata.SaveChanges();
+void MetadataHandler::MarkNodeDown(const typename Data::name_type& /*data_name*/,
+                                   const PmidName& /*pmid_name*/,
+                                   int& /*remaining_online_holders*/) {
+//  Metadata<Data> metadata(data_name, kMetadataRoot_);
+//  metadata.value_.online_pmid_name.erase(pmid_name);
+//  metadata.value_.offline_pmid_name.insert(pmid_name);
+//  remaining_online_holders = metadata.value_.online_pmid_name.size();
+//  metadata.SaveChanges();
 }
 
 template<typename Data>
-void MetadataHandler::MarkNodeUp(const typename Data::name_type& data_name,
-                                 const PmidName& pmid_name) {
-  Metadata<Data> metadata(data_name, kMetadataRoot_);
-  metadata.value_.online_pmid_name.insert(pmid_name);
-  metadata.value_.offline_pmid_name.erase(pmid_name);
-  metadata.SaveChanges();
+void MetadataHandler::MarkNodeUp(const typename Data::name_type& /*data_name*/,
+                                 const PmidName& /*pmid_name*/) {
+//  Metadata<Data> metadata(data_name, kMetadataRoot_);
+//  metadata.value_.online_pmid_name.insert(pmid_name);
+//  metadata.value_.offline_pmid_name.erase(pmid_name);
+//  metadata.SaveChanges();
 }
 
 template<typename Data>
-void MetadataHandler::AddDataHolder(const typename Data::name_type& data_name,
-                                    const PmidName& online_pmid_name) {
-  Metadata<Data> metadata(data_name, kMetadataRoot_);
-  metadata.value_.online_pmid_name.insert(online_pmid_name);
-  metadata.SaveChanges();
+void MetadataHandler::AddDataHolder(const typename Data::name_type& /*data_name*/,
+                                    const PmidName& /*online_pmid_name*/) {
+//  Metadata<Data> metadata(data_name, kMetadataRoot_);
+//  metadata.value_.online_pmid_name.insert(online_pmid_name);
+//  metadata.SaveChanges();
 }
 
 template<typename Data>
-void MetadataHandler::RemoveDataHolder(const typename Data::name_type& data_name,
-                                       const PmidName& pmid_name) {
-  Metadata<Data> metadata(data_name, kMetadataRoot_);
-  metadata.value_.online_pmid_name.erase(pmid_name);
-  metadata.value_.offline_pmid_name.erase(pmid_name);
-  metadata.SaveChanges();
+void MetadataHandler::RemoveDataHolder(const typename Data::name_type& /*data_name*/,
+                                       const PmidName& /*pmid_name*/) {
+//  Metadata<Data> metadata(data_name, kMetadataRoot_);
+//  metadata.value_.online_pmid_name.erase(pmid_name);
+//  metadata.value_.offline_pmid_name.erase(pmid_name);
+//  metadata.SaveChanges();
 }
 
 template<typename Data>
 std::vector<PmidName> MetadataHandler::GetOnlineDataHolders(
-    const typename Data::name_type& data_name) const {
-  Metadata<Data> metadata(data_name, metadata_db_.get());
-  std::vector<PmidName> onlines(metadata.value_.online_pmid_name.begin(),
-                                metadata.value_.online_pmid_name.end());
-  metadata.strong_guarantee_.Release();
-  return onlines;
+    const typename Data::name_type& /*data_name*/) const {
+//  Metadata<Data> metadata(data_name, metadata_db_.get());
+//  std::vector<PmidName> onlines(metadata.value_.online_pmid_name.begin(),
+//                                metadata.value_.online_pmid_name.end());
+//  metadata.strong_guarantee_.Release();
+//  return onlines;
+  return std::vector<PmidName>();
 }
 
 template<typename Data>
-bool MetadataHandler::CheckMetadataExists(const typename Data::name_type& data_name) const {
-  try {
-    Metadata<Data> metadata(data_name, metadata_db_.get());
-    metadata.strong_guarantee_.Release();
-  } catch (const maidsafe_error& error) {
-    return false;
-  }
+bool MetadataHandler::CheckMetadataExists(const typename Data::name_type& /*data_name*/) const {
+//  try {
+//    Metadata<Data> metadata(data_name, metadata_db_.get());
+//    metadata.strong_guarantee_.Release();
+//  } catch (const maidsafe_error& error) {
+//    return false;
+//  }
   return true;
 }
 

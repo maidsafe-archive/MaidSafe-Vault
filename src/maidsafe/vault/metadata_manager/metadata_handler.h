@@ -42,6 +42,8 @@ class MetadataHandlerTypedTest;
 
 class MetadataHandler {
  public:
+  typedef TaggedValue<NonEmptyString, struct SerialisedMetadataValueTag>
+    serialised_metadata_details_type;
   MetadataHandler(const boost::filesystem::path& vault_root_dir, const NodeId& this_node_id);
 
   // This increments the subscribers count, or adds a new element if it doesn't exist.
@@ -58,6 +60,8 @@ class MetadataHandler {
   // this element, and doesn't receive its own request, it's no longer responsible for this element.
   template<typename Data>
   void DeleteMetadata(const typename Data::name_type& data_name);
+
+  void DeleteRecord(const DataNameVariant& record_name);
 
   template<typename Data>
   void MarkNodeDown(const typename Data::name_type& data_name,
@@ -85,6 +89,18 @@ class MetadataHandler {
 
   template<typename Data>
   void AddLocalUnresolvedEntry(const MetadataUnresolvedEntry& unresolved_entry);
+
+  // Sync operations
+  std::vector<DataNameVariant> GetRecordNames() const;
+  serialised_metadata_details_type GetSerialisedRecord(const DataNameVariant& data_name) const;
+  NonEmptyString GetSyncData(const DataNameVariant& data_name) const;
+  void ApplySyncData(const DataNameVariant& data_name,
+                     const NonEmptyString& serialised_unresolved_entries);
+  void ReplaceNodeInSyncList(const DataNameVariant& record_name,
+                             const NodeId& old_node,
+                             const NodeId& new_node);
+  void IncrementSyncAttempts(const DataNameVariant& data_name);
+
 
   template<typename Data>
   friend class MetadataHandlerTypedTest;

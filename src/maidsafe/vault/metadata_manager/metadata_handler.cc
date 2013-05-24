@@ -46,10 +46,24 @@ MetadataHandler::MetadataHandler(const fs::path& vault_root_dir, const NodeId &t
   detail::InitialiseDirectory(kMetadataRoot_);
 }
 
+void MetadataHandler::DeleteRecord(const DataNameVariant& /*record_name*/) {
+
+}
+
 template<typename Data>
 void MetadataHandler::AddLocalUnresolvedEntry(const MetadataUnresolvedEntry& unresolved_entry) {
   std::lock_guard<std::mutex> lock(mutex_);
   sync.template AddLocalEntry<Data>(unresolved_entry);
+}
+
+std::vector<DataNameVariant> MetadataHandler::GetRecordNames() const {
+  return metadata_db_->GetKeys();
+}
+
+void MetadataHandler::ReplaceNodeInSyncList(const DataNameVariant& /*record_name*/,  //FIXME in Sync
+                                            const NodeId& old_node, const NodeId& new_node) {
+  // FIXME(Prakash) Need to pass record_name to sync
+  sync_.ReplaceNode(old_node, new_node);
 }
 
 //void MetadataHandler::PutMetadata(const protobuf::Metadata& /*proto_metadata*/) {

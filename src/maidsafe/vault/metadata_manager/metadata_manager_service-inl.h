@@ -39,8 +39,10 @@ MaidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
                                                  const NodeId& this_id) {
   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
+
   return MetadataUnresolvedEntry(
-      std::make_pair(DataNameVariant(message.data().name), action), delta, this_id);
+      std::make_pair(GetDataNameVariant(Data::name_type, message.data().name),
+                     action), delta, this_id);
 }
 
 }  // namespace detail
@@ -290,7 +292,8 @@ void MetadataManagerService::AddLocalUnresolvedEntryThenSync(
   auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(message, delta,
                                                                     routing_.kNodeId()));
   metadata_handler_.AddLocalUnresolvedEntry(unresolved_entry);
-  Sync(account_name);
+  DataNameVariant data_name(message.data().name);
+  Sync(data_name);
 }
 
 }  // namespace vault
