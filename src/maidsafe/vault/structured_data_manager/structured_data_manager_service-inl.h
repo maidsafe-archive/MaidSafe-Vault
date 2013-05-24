@@ -32,62 +32,62 @@ namespace vault {
 
 namespace detail {
 
-vault::StructuredDataManagerService::SDMKey GetStructuredDataKey(const nfs::Message& message);
+//vault::StructuredDataManagerService::SDMKey GetStructuredDataKey(const nfs::Message& message);
 
-template<typename Data>
-typename Data::name_type GetStructuredDataName(const nfs::Message& message) {
-  return typename Data::name_type(message.data().name);
-}
+//template<typename Data>
+//typename Data::name_type GetStructuredDataName(const nfs::Message& message) {
+//  return typename Data::name_type(message.data().name);
+//}
 
-// template<typename Data, nfs::MessageAction action>
-// StructuredDataManagerUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
-//                                                            Identity value,
-//                                                            const NodeId& this_id) {
-//   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
-//                 "Action must be either kPut of kDelete.");
-//   return StructuredDataManagerUnresolvedEntry(
-//       std::make_pair(DataNameVariant(GetDataName<Data>(message)), action), value, this_id);
-// }
+//// template<typename Data, nfs::MessageAction action>
+//// StructuredDataManagerUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
+////                                                            Identity value,
+////                                                            const NodeId& this_id) {
+////   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
+////                 "Action must be either kPut of kDelete.");
+////   return StructuredDataManagerUnresolvedEntry(
+////       std::make_pair(DataNameVariant(GetDataName<Data>(message)), action), value, this_id);
+//// }
 
-}  // namespace detail
-
-
-template<typename Data>
-void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
-                                                 const routing::ReplyFunctor& reply_functor) {
-//   ValidateSender(message);
-  if (message.data().action == nfs::MessageAction::kSynchronise)
-    return HandleSync(message);
-  if (message.data().action == nfs::MessageAction::kAccountTransfer)
-    return HandleAccountTransfer(message);
+//}  // namespace detail
 
 
-  nfs::Reply reply(CommonErrors::success);
-  {
-    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    if (accumulator_.CheckHandled(message, reply))
-      return reply_functor(reply.Serialise()->string());
-  }
-  // TODO(dirvine) we need to check the error_code used here perhaps!
-  // if there is no reply then this is of no use.
-  if (accumulator_.GetPendingOrCompleteResults(message).first <
-      routing::Parameters::node_group_size -1)
-    return accumulator_.PushSingleResult(message,
-                                         reply_functor,
-                                         maidsafe_error(CommonErrors::success));
-  else
-    accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
+//template<typename Data>
+//void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
+//                                                 const routing::ReplyFunctor& reply_functor) {
+////   ValidateSender(message);
+//  if (message.data().action == nfs::MessageAction::kSynchronise)
+//    return HandleSync(message);
+//  if (message.data().action == nfs::MessageAction::kAccountTransfer)
+//    return HandleAccountTransfer(message);
 
-  if (message.data().action == nfs::MessageAction::kPut) {
-    HandlePut(message);
-  } else if (message.data().action == nfs::MessageAction::kDeleteBranchUntilFork) {
-    HandleDeleteBranchUntilFork(message);
-  } else if (message.data().action == nfs::MessageAction::kGet) {
-    HandleGet(message, reply_functor);
-  }else if (message.data().action == nfs::MessageAction::kGetBranch) {
-    HandleGetBranch(message, reply_functor);
-  }
-}
+
+//  nfs::Reply reply(CommonErrors::success);
+//  {
+//    std::lock_guard<std::mutex> lock(accumulator_mutex_);
+//    if (accumulator_.CheckHandled(message, reply))
+//      return reply_functor(reply.Serialise()->string());
+//  }
+//  // TODO(dirvine) we need to check the error_code used here perhaps!
+//  // if there is no reply then this is of no use.
+//  if (accumulator_.GetPendingOrCompleteResults(message).first <
+//      routing::Parameters::node_group_size -1)
+//    return accumulator_.PushSingleResult(message,
+//                                         reply_functor,
+//                                         maidsafe_error(CommonErrors::success));
+//  else
+//    accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
+
+//  if (message.data().action == nfs::MessageAction::kPut) {
+//    HandlePut(message);
+//  } else if (message.data().action == nfs::MessageAction::kDeleteBranchUntilFork) {
+//    HandleDeleteBranchUntilFork(message);
+//  } else if (message.data().action == nfs::MessageAction::kGet) {
+//    HandleGet(message, reply_functor);
+//  }else if (message.data().action == nfs::MessageAction::kGetBranch) {
+//    HandleGetBranch(message, reply_functor);
+//  }
+//}
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 

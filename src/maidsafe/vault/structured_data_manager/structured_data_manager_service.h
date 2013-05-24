@@ -46,7 +46,6 @@ class StructuredDataManagerService {
                                nfs::PublicKeyGetter& public_key_getter,
                                const boost::filesystem::path& path);
 
-  template<typename Data>
   void HandleMessage(const nfs::Message& message,
                      const routing::ReplyFunctor& reply_functor);
   void HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {}
@@ -61,8 +60,9 @@ class StructuredDataManagerService {
   void ValidateSyncSender(const nfs::Message& message) const;
   //// =============== Put/Delete data ===============================================================
 
-  void HandlePut(const nfs::Message& message);
-  void HandleDeleteBranchUntilFork(const nfs::Message& message);
+  void HandlePut(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+  void HandleDeleteBranchUntilFork(const nfs::Message& message,
+                                   routing::ReplyFunctor reply_functor);
   void HandleGet(const nfs::Message& message, routing::ReplyFunctor reply_functor);
   void HandleGetBranch(const nfs::Message& message, routing::ReplyFunctor reply_functor);
 
@@ -72,7 +72,7 @@ class StructuredDataManagerService {
 //   void AddLocalUnresolvedEntryThenSync(const nfs::Message& message, int32_t cost);
 
   //// =============== Sync ==========================================================================
-  //void Sync(const MaidName& account_name);
+  void Sync(const nfs::Message&, const routing::ReplyFunctor&);
   void HandleSync(const nfs::Message& message);
 
   //// =============== Account transfer ==============================================================
@@ -92,6 +92,6 @@ class StructuredDataManagerService {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/structured_data_manager/structured_data_manager_service-inl.h"
+//#include "maidsafe/vault/structured_data_manager/structured_data_manager_service-inl.h"
 
 #endif  // MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_MANAGER_SERVICE_H_

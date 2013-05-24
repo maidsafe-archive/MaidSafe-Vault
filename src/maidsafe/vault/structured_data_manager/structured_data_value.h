@@ -14,6 +14,7 @@
 
 #include "boost/optional.hpp"
 #include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/data_types/structured_data_version.h"
 #include "maidsafe/nfs/persona_id.h"
 #include "maidsafe/vault/types.h"
 
@@ -22,10 +23,10 @@ namespace maidsafe {
 namespace vault {
 
 struct StructuredDataValue {
-  boost::optional<Identity> old_value;
-  boost::optional<Identity> new_value;
-  boost::optional<Identity> value;
-  boost::optional<NonEmptyString> serialised_db_value;  // account xfer
+  boost::optional<StructuredDataVersions::VersionName> version;
+  boost::optional<StructuredDataVersions::VersionName> new_version;
+  boost::optional<routing::ReplyFunctor> reply_functor;
+  boost::optional<StructuredDataVersions::serialised_type> serialised_db_value;  // account xfer
 };
 
 }  // namespace vault
