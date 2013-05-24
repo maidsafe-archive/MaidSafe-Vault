@@ -59,11 +59,9 @@ class PmidAccountHolderService {
   template<typename Data>
   void SendMessage(const nfs::Message& message);
   template<typename Data>
-  void HandlePutResult(const nfs::Reply& data_holder_result,
-                       const PmidName& account_name,
-                       const typename Data::name_type& data_name,
-                       int32_t size,
-                       routing::ReplyFunctor mm_reply_functor);
+  void HandlePutResult(const nfs::Reply& overall_result,
+                       const nfs::Message& message,
+                       routing::ReplyFunctor reply_functor);
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
 
   void CheckAccounts();
@@ -86,12 +84,16 @@ class PmidAccountHolderService {
                     const std::set<PmidName>& metadata_manager_ids,
                     bool node_up);
 
+  template<typename Data, nfs::MessageAction action>
+  void AddLocalUnresolvedEntryThenSync(const nfs::Message& message);
+
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
   Accumulator<PmidName> accumulator_;
   PmidAccountHandler pmid_account_handler_;
   PmidAccountHolderNfs nfs_;
   static const int kPutRequestsRequired_;
+  static const int kPutRepliesSuccessesRequired_;
   static const int kDeleteRequestsRequired_;
 };
 

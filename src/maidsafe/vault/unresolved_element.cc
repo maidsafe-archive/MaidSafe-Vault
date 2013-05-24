@@ -81,13 +81,12 @@ MaidAccountUnresolvedEntry::serialised_type MaidAccountUnresolvedEntry::Serialis
   return serialised_type((NonEmptyString(proto_copy.SerializeAsString())));
 }
 
-template<>
-MetadataUnresolvedEntry::serialised_type MetadataUnresolvedEntry::Serialise() const {
-  protobuf::MetadataUnresolvedEntry proto_copy;
-  return serialised_type((NonEmptyString(proto_copy.SerializeAsString())));
-}
+//template<>
+//MetadataUnresolvedEntry::serialised_type MetadataUnresolvedEntry::Serialise() const {
+//  protobuf::MetadataUnresolvedEntry proto_copy;
+//  return serialised_type((NonEmptyString(proto_copy.SerializeAsString())));
+//}
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
