@@ -20,11 +20,28 @@
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/vault/utils.h"
-
+#include "maidsafe/vault/unresolved_element.h"
 
 namespace maidsafe {
 
 namespace vault {
+
+namespace detail {
+
+template<typename Data, nfs::MessageAction action>
+PmidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
+                                                 const NodeId& this_id) {
+  static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
+                "Action must be either kPut of kDelete.");
+  return MaidAccountUnresolvedEntry(
+      std::make_pair(DataNameVariant(Data::name_type, message.data().name), action),
+      message.data().content.string().size(),
+      this_id);
+}
+
+PmidName GetPmidName(const nfs::Message& message);
+
+}  // namespace detail
 
 template<typename Data>
 void PmidAccountHolderService::HandleMessage(const nfs::Message& message,
@@ -59,7 +76,16 @@ void PmidAccountHolderService::HandlePut(const nfs::Message& message,
                           accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
       pmid_account_handler_.Put<Data>(message.data_holder(), data.name(),
           static_cast<int32_t>(message.data().content.string().size()));
-      nfs_.Put(message.data_holder(), data, nullptr);
+      auto put_op(std::make_shared<nfs::OperationOp>(
+           kPutRepliesSuccessesRequired_,
+           [this, message, reply_functor](nfs::Reply overall_result) {
+               this->template HandlePutResult<Data>(overall_result, message, reply_functor);
+           }));
+      nfs_.Put(message.data_holder(),
+               data,
+               [put_op](std::string serialised_reply) {
+                   nfs::HandleOperationReply(put_op, serialised_reply);
+               });
     }
   }
   catch(const maidsafe_error& error) {
@@ -69,6 +95,16 @@ void PmidAccountHolderService::HandlePut(const nfs::Message& message,
   catch(...) {
     detail::AddResult(message, reply_functor, MakeError(CommonErrors::unknown),
                       accumulator_, accumulator_mutex_, kPutRequestsRequired_);
+  }
+}
+
+template<typename Data>
+void PmidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
+                                               const nfs::Message& message,
+                                               routing::ReplyFunctor /*reply_functor*/) {
+  if (overall_result.IsSuccess()) {
+    nfs::Reply reply(CommonErrors::success);
+    AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message);
   }
 }
 
@@ -92,6 +128,15 @@ void PmidAccountHolderService::HandleDelete(const nfs::Message& message,
     detail::AddResult(message, reply_functor, MakeError(CommonErrors::unknown),
                       accumulator_, accumulator_mutex_, kDeleteRequestsRequired_);
   }
+}
+
+template<typename Data, nfs::MessageAction action>
+void PmidAccountHolderService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message) {
+  auto account_name(detail::GetPmidName(message));
+  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(
+          message, message.data().content.string().size(), routing_.kNodeId()));
+//  pmid_account_handler_.AddLocalUnresolvedEntry(account_name, unresolved_entry);
+//  Sync(account_name);
 }
 
 }  // namespace vault
