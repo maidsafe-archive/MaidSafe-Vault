@@ -12,7 +12,7 @@
 
 #include "boost/optional.hpp"
 #include "maidsafe/data_types/data_name_variant.h"
-#include "maidsafe/data_types/structured_data_version.h"
+#include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/nfs/persona_id.h"
 #include "maidsafe/vault/types.h"
 
@@ -69,7 +69,7 @@ bool operator<(const StructuredDataValue& lhs,
                const StructuredDataValue& rhs) {
   return lhs.version < rhs.version &&
   lhs.new_version < rhs.new_version &&
-  lhs.serialised_db_value < rhs.serialised_db_value;
+  lhs.serialised_db_value < rhs.serialised_db_value;  // TODO FIXME (dirvine) is this valid ??
   // TODO (dirvine) need to check that we dhould not parse and
   // compare serialised StructuredDataVersions
 }

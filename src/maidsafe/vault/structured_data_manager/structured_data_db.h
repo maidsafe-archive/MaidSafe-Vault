@@ -21,6 +21,8 @@
 #include "leveldb/status.h"
 
 #include "maidsafe/common/types.h"
+#include "maidsafe/nfs/persona_id.h"
+#include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/data_types/data_name_variant.h"
 
 namespace maidsafe {
@@ -28,8 +30,8 @@ namespace vault {
 
 class StructuredDataDb {
  public:
-  typedef std::pair<DataNameVariant, Identity> Key;
-  typedef Identity Value;
+  typedef std::pair<DataNameVariant, nfs::PersonaId> Key;
+  typedef NonEmptyString Value;
   typedef std::pair<Key, Value> KvPair;
   explicit StructuredDataDb(const boost::filesystem::path& path);
   ~StructuredDataDb();

@@ -20,7 +20,7 @@
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
-#include "maidsafe/data_types/structured_data_version.h"
+#include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_key.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_value.h"
@@ -59,7 +59,7 @@ protected:
   void MergeDeleteBranchUntilFork(const StructuredDataKey& key, const Identity& tot);
   void MergeDelete(const StructuredDataKey& key);
 
-  void MergeGet(const StructuredDataKey& key);
+  std::vector<Identity> MergeGet(const StructuredDataKey& key);
   void MergeGetBranch(const StructuredDataKey& key, const Identity& tot);
 
 

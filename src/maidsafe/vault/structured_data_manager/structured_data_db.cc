@@ -50,8 +50,9 @@ StructuredDataDb::~StructuredDataDb() {
 void StructuredDataDb::Put(const KvPair& key_value_pair) {
   auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key_value_pair.first.first));
   std::string db_key(result.second.string() +
-                     Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)) +
-                     key_value_pair.first.second.string());
+                   Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)) +
+                   key_value_pair.first.second.node_id.string() +
+                   Pad<kSuffixWidth_>(static_cast<uint32_t>(key_value_pair.first.second.persona)));
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
                                        db_key, key_value_pair.second.string()));
   if (!status.ok())
@@ -62,7 +63,8 @@ void StructuredDataDb::Delete(const Key &key) {
   auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
   std::string db_key(result.second.string() +
                      Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)) +
-                     key.second.string());
+                     key.second.node_id.string() +
+                     Pad<kSuffixWidth_>(static_cast<uint32_t>(key.second.persona)));
   leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), db_key));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
@@ -72,7 +74,8 @@ NonEmptyString StructuredDataDb::Get(const Key &key) {
   auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
   std::string db_key(result.second.string() +
                      Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)) +
-                     key.second.string());
+                     key.second.node_id.string() +
+                     Pad<kSuffixWidth_>(static_cast<uint32_t>(key.second.persona)));
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
   std::string value;

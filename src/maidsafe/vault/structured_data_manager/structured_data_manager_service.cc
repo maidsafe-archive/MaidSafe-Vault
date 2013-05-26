@@ -35,7 +35,6 @@ namespace maidsafe {
 
 namespace vault {
 
-
 namespace {
 
 template<typename Message>
@@ -44,15 +43,11 @@ inline bool ForThisPersona(const Message& message) {
 }
 
 template<typename Message>
-inline bool FromStructuredDataManager(const Message& /*message*/) {
-  //return message.source() == nfs::Persona::kStructuredDataManager;
-  return true;
-  //TODO FIXME (dirvine) fix above line
+inline bool FromStructuredDataManager(const Message& message) {
+  return message.destination_persona() == nfs::Persona::kStructuredDataManager;
 }
 
 }  // unnamed namespace
-
-
 
 StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
@@ -68,20 +63,27 @@ StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid&
       nfs_(routing_, pmid) {}
 
 
- void StructuredDataManagerService::ValidateClientSender(const nfs::Message& message) const {
-   if (!routing_.IsConnectedClient(message.source().node_id))
-     ThrowError(VaultErrors::permission_denied);
-   if (!(FromClientMaid(message) || FromClientMpid(message)) || !ForThisPersona(message))
-     ThrowError(CommonErrors::invalid_parameter);
- }
+void StructuredDataManagerService::ValidateClientSender(const nfs::Message& message) const {
+  if (!routing_.IsConnectedClient(message.source().node_id))
+    ThrowError(VaultErrors::permission_denied);
+  if (!(FromClientMaid(message) || FromClientMpid(message)) || !ForThisPersona(message))
+    ThrowError(CommonErrors::invalid_parameter);
+}
 
- void StructuredDataManagerService::ValidateSyncSender(const nfs::Message& message) const {
-   if (!routing_.IsConnectedVault(message.source().node_id))
-     ThrowError(VaultErrors::permission_denied);
-   if (!FromStructuredDataManager(message) || !ForThisPersona(message))
-     ThrowError(CommonErrors::invalid_parameter);
- }
+void StructuredDataManagerService::ValidateSyncSender(const nfs::Message& message) const {
+  if (!routing_.IsConnectedVault(message.source().node_id))
+    ThrowError(VaultErrors::permission_denied);
+  if (!FromStructuredDataManager(message) || !ForThisPersona(message))
+    ThrowError(CommonErrors::invalid_parameter);
+}
 
+StructuredDataDb::Key StructuredDataManagerService::GetKeyFromMessage(const nfs::Message& message)
+                                                                      const {
+   if (!message.data().type)
+     ThrowError(CommonErrors::parsing_error);
+   return std::make_pair(GetDataNameVariant(*message.data().type, message.data().name),
+                         message.source());
+}
 
 void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
                                                   const routing::ReplyFunctor& reply_functor) {
@@ -127,11 +129,20 @@ void StructuredDataManagerService::HandleGet(const nfs::Message& /*message*/,
 
 void StructuredDataManagerService::HandleGetBranch(const nfs::Message& /*message*/,
                                                    routing::ReplyFunctor /*reply_functor*/) {
+
+  try {
+    nfs::Reply reply(CommonErrors::success);
+//    StructuredDataVersions version(structured_data_db_.Get(GetKeyFromMessage(message)));
+    // Need protobuf for returning SD versions XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+//    reply_functor(version.GetBranch(
+  }
+  catch (std::exception& e) {
+    LOG(kError) << "Bad message";
+ }
 }
 
 void StructuredDataManagerService::AddToAccumulator(const nfs::Message& message) {
   std::lock_guard<std::mutex> lock(accumulator_mutex_);
-// TODO FIXME (dirvine) this should check message and only set handled on close_group - 1
   accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
 }
 
@@ -141,7 +152,7 @@ void StructuredDataManagerService::AddToAccumulator(const nfs::Message& message)
 void StructuredDataManagerService::HandleSync(const nfs::Message& /*message*/) {
 }
 
-// In this persona we sync all actions, on sucess/fail the reply_functor is fired
+// In this persona we sync all mutating actions, on sucess/fail the reply_functor is fired
 // The mergePloicy will supply the reply_functor with the appropriate 'error_code'
 void StructuredDataManagerService::Sync(const nfs::Message&/* message*/,
                                         const routing::ReplyFunctor& /*reply_functor*/) {

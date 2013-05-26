@@ -58,6 +58,7 @@ class StructuredDataManagerService {
 
   void ValidateClientSender(const nfs::Message& message) const;
   void ValidateSyncSender(const nfs::Message& message) const;
+  StructuredDataDb::Key GetKeyFromMessage(const nfs::Message& message) const;
   //// =============== Put/Delete data ===============================================================
 
   void HandlePut(const nfs::Message& message, routing::ReplyFunctor reply_functor);

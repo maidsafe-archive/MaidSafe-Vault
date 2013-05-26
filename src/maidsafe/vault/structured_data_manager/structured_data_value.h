@@ -14,7 +14,7 @@
 
 #include "boost/optional.hpp"
 #include "maidsafe/data_types/data_name_variant.h"
-#include "maidsafe/data_types/structured_data_version.h"
+#include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/nfs/persona_id.h"
 #include "maidsafe/vault/types.h"
 
