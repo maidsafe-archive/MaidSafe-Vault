@@ -27,6 +27,15 @@ struct StructuredDataKey {
   nfs::MessageAction action;
 };
 
+struct StructuredDataDbKey {
+  explicit StructuredDataDbKey(StructuredDataKey& structured_data_key) :
+    peer_type(structured_data_key.peer_type),
+    data_name(structured_data_key.data_name) {}
+  nfs::PersonaId peer_type;
+  DataNameVariant data_name;
+};
+
+
 }  // namespace vault
 
 }  // namespace maidsafe

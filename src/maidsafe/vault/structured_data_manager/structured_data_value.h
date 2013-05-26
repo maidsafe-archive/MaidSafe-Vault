@@ -23,11 +23,71 @@ namespace maidsafe {
 namespace vault {
 
 struct StructuredDataValue {
+  StructuredDataValue();
+  StructuredDataValue(const StructuredDataValue& other);
+  StructuredDataValue& operator=(StructuredDataValue other);
+  // TODO when we get std::optional we can have move ctr but boost prevents this just now
   boost::optional<StructuredDataVersions::VersionName> version;
   boost::optional<StructuredDataVersions::VersionName> new_version;
   boost::optional<routing::ReplyFunctor> reply_functor;
   boost::optional<StructuredDataVersions::serialised_type> serialised_db_value;  // account xfer
 };
+
+void swap(const StructuredDataValue& lhs,
+          const StructuredDataValue& rhs) MAIDSAFE_NOEXCEPT;
+
+bool operator==(const StructuredDataValue& lhs,
+                const StructuredDataValue& rhs);
+
+bool operator!=(const StructuredDataValue& lhs,
+                const StructuredDataValue& rhs);
+
+bool operator<(const StructuredDataValue& lhs,
+               const StructuredDataValue& rhs);
+
+bool operator>(const StructuredDataValue& lhs,
+               const StructuredDataValue& rhs);
+
+bool operator<=(const StructuredDataValue& lhs,
+                const StructuredDataValue& rhs);
+
+bool operator>=(const StructuredDataValue& lhs,
+                const StructuredDataValue& rhs);
+
+struct StructuredDataDbValue {
+  explicit StructuredDataDbValue(const StructuredDataValue& structured_data_db_value);
+  StructuredDataDbValue(const StructuredDataDbValue& other);
+  StructuredDataDbValue(StructuredDataDbValue&& other);
+  StructuredDataDbValue& operator=(StructuredDataDbValue other);
+  friend void swap(StructuredDataVersions& lhs, StructuredDataVersions& rhs) MAIDSAFE_NOEXCEPT;
+  boost::optional<StructuredDataVersions::VersionName> version;
+  boost::optional<StructuredDataVersions::VersionName> new_version;
+  boost::optional<StructuredDataVersions::serialised_type> serialised_db_value;  // account xfer
+};
+
+
+
+void swap(const StructuredDataDbValue& lhs,
+          const StructuredDataDbValue& rhs) MAIDSAFE_NOEXCEPT;
+
+bool operator==(const StructuredDataDbValue& lhs,
+                const StructuredDataDbValue& rhs);
+
+bool operator!=(const StructuredDataDbValue& lhs,
+                const StructuredDataDbValue& rhs);
+
+bool operator<(const StructuredDataDbValue& lhs,
+               const StructuredDataDbValue& rhs);
+
+bool operator>(const StructuredDataDbValue& lhs,
+               const StructuredDataDbValue& rhs);
+
+bool operator<=(const StructuredDataDbValue& lhs,
+                const StructuredDataDbValue& rhs);
+
+bool operator>=(const StructuredDataDbValue& lhs,
+                const StructuredDataDbValue& rhs);
+
 
 }  // namespace vault
 
