@@ -23,7 +23,7 @@ namespace maidsafe {
 namespace vault {
 
 template<>
-UnresolvedElement<int32_t, std::pair<DataNameVariant, nfs::MessageAction>>::UnresolvedElement(const serialised_type& serialised_copy)
+UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, int32_t>::UnresolvedElement(const serialised_type& serialised_copy)
     : key(),
       messages_contents(),
       sync_counter(0),
@@ -58,8 +58,8 @@ UnresolvedElement<int32_t, std::pair<DataNameVariant, nfs::MessageAction>>::Unre
 }
 
 template<>
-UnresolvedElement<int32_t, std::pair<DataNameVariant, nfs::MessageAction>>::serialised_type
-  UnresolvedElement<int32_t, std::pair<DataNameVariant, nfs::MessageAction>>::Serialise() const {
+UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, int32_t>::serialised_type
+  UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, int32_t>::Serialise() const {
   protobuf::MaidAndPmidUnresolvedEntry proto_copy;
   auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
 

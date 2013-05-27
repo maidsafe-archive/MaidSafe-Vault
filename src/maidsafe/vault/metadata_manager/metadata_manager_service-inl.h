@@ -34,13 +34,15 @@ namespace vault {
 namespace detail {
 
 template<typename Data, nfs::MessageAction action>
-MaidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
+MetadataUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
                                                  const MetadataValueDelta& delta,
                                                  const NodeId& this_id) {
   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
+  assert(message.data().type);
   return MetadataUnresolvedEntry(
-      std::make_pair(DataNameVariant(message.data().name), action), delta, this_id);
+      std::make_pair(GetDataNameVariant(*message.data().type, message.data().name),
+                     action), delta, this_id);
 }
 
 }  // namespace detail
