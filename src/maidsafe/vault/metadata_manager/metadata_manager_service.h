@@ -105,7 +105,7 @@ class MetadataManagerService {
 
   bool ThisVaultInGroupForData(const nfs::Message& message) const;
 
-  template<typename Data, nfs::MessageAction action>
+  template<typename Data, nfs::MessageAction Action>
   void AddLocalUnresolvedEntryThenSync(const nfs::Message& message,
                                        const MetadataValueDelta& delta);
 

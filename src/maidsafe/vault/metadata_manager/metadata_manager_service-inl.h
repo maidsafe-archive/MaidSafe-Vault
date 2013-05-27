@@ -33,16 +33,16 @@ namespace vault {
 
 namespace detail {
 
-template<typename Data, nfs::MessageAction action>
-MetadataUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
+template<typename Data, nfs::MessageAction Action>
+MaidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
                                                  const MetadataValueDelta& delta,
                                                  const NodeId& this_id) {
-  static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
+  static_assert(Action == nfs::MessageAction::kPut || Action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
   assert(message.data().type);
   return MetadataUnresolvedEntry(
       std::make_pair(GetDataNameVariant(*message.data().type, message.data().name),
-                     action), delta, this_id);
+                     Action), delta, this_id);
 }
 
 }  // namespace detail
@@ -101,7 +101,7 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
       if (metadata_handler_.template CheckMetadataExists<Data>(data_name)) {
         MetadataValueDelta delta;
         delta.data_size = data_size;
-//        AddLocalUnresolvedEntryThenSync(message, delta);
+//        AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, delta);
       } else {
         PmidName target_data_holder(routing_.ClosestToId(message.source().node_id) ?
                                     message.data_holder() :
@@ -123,16 +123,16 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
 // FIXME reply not needed
 template<typename Data>
 void MetadataManagerService::Put(const Data& data, const PmidName& target_data_holder) {
-  auto put_op(std::make_shared<nfs::OperationOp>(
-      kPutRepliesSuccessesRequired_,
-      [this] (nfs::Reply overall_result) {
-        this->HandlePutResult<Data>(overall_result);
-      }));
+//  auto put_op(std::make_shared<nfs::OperationOp>(
+//      kPutRepliesSuccessesRequired_,
+//      [this] (nfs::Reply overall_result) {
+//        this->HandlePutResult<Data>(overall_result);
+//      }));
   nfs_.Put(target_data_holder,
-           data,
-           [put_op](std::string serialised_reply) {
+           data, nullptr
+           /*[put_op](std::string serialised_reply) {
              nfs::HandleOperationReply(put_op, serialised_reply);
-           });
+           }*/);
 }
 
 template<typename Data>
@@ -246,6 +246,7 @@ void MetadataManagerService::HandleDelete(const nfs::Message& message,
 
 }
 
+//TODO(Prakash) Change this to service to handle data stored/ not stored message and then sync
 template<typename Data>
 void MetadataManagerService::HandlePutResult(const nfs::Reply& overall_result) {
   if (overall_result.IsSuccess())
@@ -285,13 +286,13 @@ void MetadataManagerService::HandleGetReply(std::string serialised_reply) {
 template<typename Data>
 void MetadataManagerService::OnGenericErrorHandler(nfs::Message /*message*/) {}
 
-template<typename Data, nfs::MessageAction action>
+template<typename Data, nfs::MessageAction Action>
 void MetadataManagerService::AddLocalUnresolvedEntryThenSync(
     const nfs::Message& message,
-    const MetadataValueDelta& delta) {
-  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(message, delta,
-                                                                    routing_.kNodeId()));
-  metadata_handler_.AddLocalUnresolvedEntry(unresolved_entry);
+    const MetadataValueDelta& /*delta*/) {
+//  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, Action>(message, delta,
+//                                                                    routing_.kNodeId()));
+//  metadata_handler_.AddLocalUnresolvedEntry(unresolved_entry);
   DataNameVariant data_name(message.data().name);
   Sync(data_name);
 }
