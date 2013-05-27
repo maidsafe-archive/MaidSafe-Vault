@@ -39,20 +39,21 @@ struct MetadataValue {
   std::set<PmidName> online_pmid_name, offline_pmid_name;
 };
 
-template<typename Data>
 class Metadata {
  public:
+//  typedef TaggedValue<NonEmptyString, struct SerialisedMetadataTag> serialised_type;
+
   // This constructor reads the existing element or creates a new one if it doesn't already exist.
-  Metadata(const typename Data::name_type& data_name,
+  Metadata(const DataNameVariant& data_name,
            MetadataDb* metadata_db,
            int32_t data_size);
   // This constructor reads the existing element or throws if it doesn't already exist.
-  Metadata(const typename Data::name_type& data_name,
+  Metadata(const DataNameVariant& data_name,
            MetadataDb* metadata_db);
   // Should only be called once.
   void SaveChanges(MetadataDb* metadata_db);
 
-  typename Data::name_type data_name_;
+  DataNameVariant data_name_;
   MetadataValue value_;
   on_scope_exit strong_guarantee_;
 
@@ -67,7 +68,5 @@ class Metadata {
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#include "maidsafe/vault/metadata_manager/metadata-inl.h"
 
 #endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_H_

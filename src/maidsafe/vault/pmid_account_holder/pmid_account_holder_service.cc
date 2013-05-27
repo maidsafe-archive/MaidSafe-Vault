@@ -22,8 +22,17 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace detail {
+
+PmidName GetPmidName(const nfs::Message& message) {
+  return PmidName(Identity(message.data().name));
+}
+
+}  // namespace detail
+
 const int PmidAccountHolderService::kPutRequestsRequired_(3);
 const int PmidAccountHolderService::kDeleteRequestsRequired_(3);
+const int PmidAccountHolderService::kPutRepliesSuccessesRequired_(1);
 
 PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
                                                    routing::Routing& routing)

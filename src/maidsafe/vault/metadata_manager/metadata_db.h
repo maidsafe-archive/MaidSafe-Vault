@@ -35,6 +35,7 @@ class MetadataDb {
   NonEmptyString Get(const DataNameVariant& key);
   void Put(const KvPair& key_value_pair);
   void Delete(const DataNameVariant& key);
+  std::vector<DataNameVariant> GetKeys();
 
  private:
   MetadataDb(const MetadataDb&);
@@ -46,6 +47,7 @@ class MetadataDb {
 
   static const uint32_t kSuffixWidth_;
   const boost::filesystem::path kDbPath_;
+  mutable std::mutex mutex_;
   std::unique_ptr<leveldb::DB> leveldb_;
 };
 

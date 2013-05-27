@@ -34,19 +34,12 @@ class Sync : public MergePolicy {
   // This is called when receiving a Sync message from a peer or this node.  Returns true if the
   // entry becomes resolved.
   bool AddUnresolvedEntry(const typename MergePolicy::UnresolvedEntry& entry);
-  template <typename Data>
-  bool AddUnresolvedEntry(const typename MergePolicy::UnresolvedEntry& entry);
   // This is called directly once an action has been decided as valid in the MAHolder, but before
   // syncing the unresolved entry to the peers.  This won't resolve the entry (even if it's the last
   // one we're waiting for) so that 'GetUnresolvedData()' will return this one, allowing us to then
   // sync it to our peers.
   void AddLocalEntry(const typename MergePolicy::UnresolvedEntry& entry);
-  template <typename Data>
-  void AddLocalEntry(const typename MergePolicy::UnresolvedEntry& entry);
   // Returns true if the entry becomes resolved.
-  bool AddAccountTransferRecord(const typename MergePolicy::UnresolvedEntry& entry,
-                                bool all_account_transfers_received);
-  template <typename Data>
   bool AddAccountTransferRecord(const typename MergePolicy::UnresolvedEntry& entry,
                                 bool all_account_transfers_received);
   // This is called if, during an ongoing account transfer, another churn event occurs.  The
@@ -66,8 +59,6 @@ class Sync : public MergePolicy {
  private:
   Sync(const Sync&);
   Sync& operator=(const Sync&);
-  typename std::vector<typename MergePolicy::UnresolvedEntry>::iterator FindEntry(
-      const typename MergePolicy::UnresolvedEntry& entry, bool merge);
   bool AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge);
   template <typename Data>
   bool AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge);

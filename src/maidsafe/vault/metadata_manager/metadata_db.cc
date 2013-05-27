@@ -29,6 +29,7 @@ const uint32_t MetadataDb::kSuffixWidth_(2);
 
 MetadataDb::MetadataDb(const boost::filesystem::path& path)
   : kDbPath_(path),
+    mutex_(),
     leveldb_() {
   if (boost::filesystem::exists(kDbPath_))
     boost::filesystem::remove_all(kDbPath_);
@@ -78,6 +79,22 @@ NonEmptyString MetadataDb::Get(const DataNameVariant& key) {
     ThrowError(VaultErrors::failed_to_handle_request);
   assert(!value.empty());
   return NonEmptyString(value);
+}
+
+
+// TODO(Team) This can be optimise by returning iterators.
+std::vector<DataNameVariant> MetadataDb::GetKeys() {
+  std::vector<DataNameVariant> return_vector;
+  std::lock_guard<std::mutex> lock(mutex_);
+  std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
+  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+    std::string name(iter->key().ToString().substr(0, NodeId::kSize));
+    std::string type_string(iter->key().ToString().substr(NodeId::kSize));
+    DataTagValue type = static_cast<DataTagValue>(std::stoul(type_string));
+    auto key = GetDataNameVariant(type, Identity(name));
+    return_vector.push_back(std::move(key));
+  }
+  return return_vector;
 }
 
 template<uint32_t Width>

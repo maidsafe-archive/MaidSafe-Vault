@@ -53,9 +53,6 @@ MetadataManagerService::MetadataManagerService(const passport::Pmid& pmid,
       metadata_handler_(vault_root_dir, routing.kNodeId()),
       nfs_(routing, pmid) {}
 
-void MetadataManagerService::HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {
-}
-
 void MetadataManagerService::ValidatePutSender(const nfs::Message& message) const {
   if (!SenderInGroupForClientMaid(message, routing_) || !ThisVaultInGroupForData(message)) {
     ThrowError(VaultErrors::permission_denied);
@@ -131,7 +128,47 @@ bool MetadataManagerService::ThisVaultInGroupForData(const nfs::Message& message
 
 // =============== Sync ============================================================================
 
-void MetadataManagerService::Sync(const DataNameVariant& /*account_name*/) {
+void MetadataManagerService::Sync(const DataNameVariant& /*record_name*/) {
+
+}
+
+// =============== Account transfer ================================================================
+void MetadataManagerService::TransferAccount(const DataNameVariant& /*record_name*/,
+                                             const NodeId& new_node) {
+  protobuf::MetadataRecord metadata_record;
+//  metadata_record.set_db_entry();
+  nfs_.TransferAccount(new_node, NonEmptyString(metadata_record.SerializeAsString()));
+}
+
+void MetadataManagerService::HandleAccountTransfer(const nfs::Message& /*message*/) {
+}
+
+// =============== Churn ===========================================================================
+void MetadataManagerService::HandleChurnEvent(routing::MatrixChange matrix_change) {
+  auto record_names(metadata_handler_.GetRecordNames());
+  auto itr(std::begin(record_names));
+  while (itr != std::end(record_names)) {
+    auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), *itr));
+    auto check_holders_result(CheckHolders(matrix_change, routing_.kNodeId(),
+                                           NodeId(result.second)));
+    // Delete accounts for which this node is no longer responsible.
+    if (check_holders_result.proximity_status != routing::GroupRangeStatus::kInRange) {
+      metadata_handler_.DeleteRecord(*itr);
+      itr = record_names.erase(itr);
+      continue;
+    }
+
+    // Replace old_node(s) in sync object and send AccountTransfer to new node(s).
+    assert(check_holders_result.old_holders.size() == check_holders_result.new_holders.size());
+    for (auto i(0U); i != check_holders_result.old_holders.size(); ++i) {
+      metadata_handler_.ReplaceNodeInSyncList(*itr, check_holders_result.old_holders[i],
+                                              check_holders_result.new_holders[i]);
+      TransferAccount(*itr, check_holders_result.new_holders[i]);
+    }
+    ++itr;
+  }
+  // TODO(Prakash):  modify ReplaceNodeInSyncList to be called once with vector of tuple/struct
+  // containing record name, old_holders, new_holders.
 }
 
 
