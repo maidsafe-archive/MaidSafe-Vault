@@ -58,15 +58,9 @@ class PmidAccount {
   void SetDataHolderUp() { data_holder_status_ = DataHolderStatus::kUp; }
   void SetDataHolderDown() { data_holder_status_ = DataHolderStatus::kDown; }
 
-  void PutData(int32_t size) {
-    pmid_record_.stored_total_size += size;
-  }
-
+  void PutData(int32_t size);
   template<typename Data>
-  void DeleteData(const typename Data::name_type& name) {
-    pmid_record_.stored_count--;
-    pmid_record_.stored_total_size -= sync_.AllowDelete<Data>(name);
-  }
+  void DeleteData(const typename Data::name_type& name);
 
   bool ApplyAccountTransfer(const NodeId& source_id,
                             const serialised_type& serialised_pmid_account_details);

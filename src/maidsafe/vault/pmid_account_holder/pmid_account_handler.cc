@@ -79,11 +79,11 @@ void PmidAccountHandler::AddLocalUnresolvedEntry(const PmidName& account_name,
 PmidRecord PmidAccountHandler::GetPmidRecord(const PmidName& account_name) {
   auto it = std::find_if(std::begin(pmid_accounts_),
                          std::end(pmid_accounts_),
-                         [&account_name](const PmidAccount& pmid_account) {
-                            return account_name == pmid_account.name();
+                         [&account_name](const AccountMap::value_type& pmid_account) {
+                            return account_name == pmid_account.second->name();
                          });
   if (it != std::end(pmid_accounts_))
-    return it->GetPmidRecord();
+    return it->second->GetPmidRecord();
   return PmidRecord();
 }
 
