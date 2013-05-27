@@ -57,8 +57,8 @@ class Accumulator {
     HandledRequest(const nfs::MessageId& msg_id_in,
                    const Name& account_name_in,
                    const nfs::MessageAction& action_type_in,
-                   const Identity& data_name,
-                   const DataTagValue& data_type,
+                   const Identity& data_name_in,
+                   const DataTagValue& data_type_in,
                    const int32_t& size_in,
                    const maidsafe_error& return_code_in);
     HandledRequest(const HandledRequest& other);

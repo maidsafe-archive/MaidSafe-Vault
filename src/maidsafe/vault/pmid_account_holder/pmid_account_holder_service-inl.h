@@ -134,7 +134,7 @@ template<typename Data, nfs::MessageAction action>
 void PmidAccountHolderService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message) {
   auto account_name(detail::GetPmidName(message));
   auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(
-          message, message.data().content.string().size(), routing_.kNodeId()));
+      message, static_cast<int32_t>(message.data().content.string().size()), routing_.kNodeId()));
 //  pmid_account_handler_.AddLocalUnresolvedEntry(account_name, unresolved_entry);
 //  Sync(account_name);
 }
