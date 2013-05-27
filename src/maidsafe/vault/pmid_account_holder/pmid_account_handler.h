@@ -36,6 +36,7 @@ class PmidAccountHandler {
   explicit PmidAccountHandler(Db& db, const NodeId& this_node_id);
 
   // Account operations
+  void CreateAccount(const PmidName& account_name);
   bool ApplyAccountTransfer(const PmidName& account_name, const NodeId& source_id,
                             const PmidAccount::serialised_type& serialised_pmid_account_details);
   void AddAccount(std::unique_ptr<PmidAccount> pmid_account);
@@ -57,9 +58,9 @@ class PmidAccountHandler {
   NonEmptyString GetSyncData(const PmidName& account_name);
   void ApplySyncData(const PmidName& account_name,
                      const NonEmptyString& serialised_unresolved_entries);
-  void PmidAccountHandler::ReplaceNodeInSyncList(const PmidName& account_name,
-                                               const NodeId& old_node,
-                                               const NodeId& new_node);
+  void ReplaceNodeInSyncList(const PmidName& account_name,
+                             const NodeId& old_node,
+                             const NodeId& new_node);
   void IncrementSyncAttempts(const PmidName& account_name);
 
   // Data operations

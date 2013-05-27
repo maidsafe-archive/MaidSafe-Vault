@@ -27,6 +27,12 @@ PmidAccountHandler::PmidAccountHandler(Db& db, const NodeId& this_node_id)
       mutex_(),
       pmid_accounts_() {}
 
+void PmidAccountHandler::CreateAccount(const PmidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  std::unique_ptr<PmidAccount> account(new PmidAccount(account_name, db_, kThisNodeId_));
+  pmid_accounts_.insert(std::move(std::make_pair(account_name, std::move(account))));
+}
+
 bool PmidAccountHandler::ApplyAccountTransfer(const PmidName& account_name, const NodeId &source_id,
     const PmidAccount::serialised_type& serialised_pmid_account_details) {
   std::lock_guard<std::mutex> lock(mutex_);

@@ -15,7 +15,6 @@
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
-
 namespace vault {
 
 template<typename Data>
@@ -34,7 +33,6 @@ void PmidAccountHandler::Delete(const PmidName& account_name,
 }
 
 }  // namespace vault
-
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HANDLER_INL_H_
