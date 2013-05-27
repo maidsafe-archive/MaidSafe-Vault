@@ -137,7 +137,7 @@ void StructuredDataManagerService::HandleGetBranch(const nfs::Message& /*message
 //    reply_functor(version.GetBranch(
   }
   catch (std::exception& e) {
-    LOG(kError) << "Bad message";
+    LOG(kError) << "Bad message: " << e.what();
  }
 }
 
