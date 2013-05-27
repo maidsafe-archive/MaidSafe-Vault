@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "maidsafe/common/node_id.h"
-#include "boost/optional.hpp"
+
 
 namespace maidsafe {
 

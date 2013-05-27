@@ -9,14 +9,14 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_KEY_H_
-#define MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_KEY_H_
+#ifndef MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_VALUE_H_
+#define MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_VALUE_H_
 
 #include "boost/optional.hpp"
-#include "maidsafe/data_types/data_name_variant.h"
+
+#include "maidsafe/routing/api_config.h"
 #include "maidsafe/data_types/structured_data_versions.h"
-#include "maidsafe/nfs/persona_id.h"
-#include "maidsafe/vault/types.h"
+
 
 namespace maidsafe {
 
@@ -26,71 +26,57 @@ struct StructuredDataValue {
   StructuredDataValue();
   StructuredDataValue(const StructuredDataValue& other);
   StructuredDataValue& operator=(StructuredDataValue other);
-  // TODO when we get std::optional we can have move ctr but boost prevents this just now
+  // TODO(Team) when we get std::optional we can have move ctr but boost prevents this just now
   boost::optional<StructuredDataVersions::VersionName> version;
   boost::optional<StructuredDataVersions::VersionName> new_version;
   boost::optional<routing::ReplyFunctor> reply_functor;
   boost::optional<StructuredDataVersions::serialised_type> serialised_db_value;  // account xfer
 };
 
-void swap(const StructuredDataValue& lhs,
-          const StructuredDataValue& rhs) MAIDSAFE_NOEXCEPT;
+// no move in boost::optional uncomment when std::optional is available
+// void swap(const StructuredDataValue& lhs, const StructuredDataValue& rhs) MAIDSAFE_NOEXCEPT;
 
-bool operator==(const StructuredDataValue& lhs,
-                const StructuredDataValue& rhs);
+bool operator==(const StructuredDataValue& lhs, const StructuredDataValue& rhs);
 
-bool operator!=(const StructuredDataValue& lhs,
-                const StructuredDataValue& rhs);
+bool operator!=(const StructuredDataValue& lhs, const StructuredDataValue& rhs);
 
-bool operator<(const StructuredDataValue& lhs,
-               const StructuredDataValue& rhs);
+bool operator<(const StructuredDataValue& lhs, const StructuredDataValue& rhs);
 
-bool operator>(const StructuredDataValue& lhs,
-               const StructuredDataValue& rhs);
+bool operator>(const StructuredDataValue& lhs, const StructuredDataValue& rhs);
 
-bool operator<=(const StructuredDataValue& lhs,
-                const StructuredDataValue& rhs);
+bool operator<=(const StructuredDataValue& lhs, const StructuredDataValue& rhs);
 
-bool operator>=(const StructuredDataValue& lhs,
-                const StructuredDataValue& rhs);
+bool operator>=(const StructuredDataValue& lhs, const StructuredDataValue& rhs);
+
+
 
 struct StructuredDataDbValue {
-  explicit StructuredDataDbValue(const StructuredDataValue& structured_data_db_value);
+  explicit StructuredDataDbValue(const StructuredDataValue& structured_data_value);
   StructuredDataDbValue(const StructuredDataDbValue& other);
   StructuredDataDbValue(StructuredDataDbValue&& other);
   StructuredDataDbValue& operator=(StructuredDataDbValue other);
-  friend void swap(StructuredDataVersions& lhs, StructuredDataVersions& rhs) MAIDSAFE_NOEXCEPT;
   boost::optional<StructuredDataVersions::VersionName> version;
   boost::optional<StructuredDataVersions::VersionName> new_version;
   boost::optional<StructuredDataVersions::serialised_type> serialised_db_value;  // account xfer
 };
 
+// no move in boost::optional uncomment when std::optional is available
+// void swap(const StructuredDataDbValue& lhs, const StructuredDataDbValue& rhs) MAIDSAFE_NOEXCEPT;
 
+bool operator==(const StructuredDataDbValue& lhs, const StructuredDataDbValue& rhs);
 
-void swap(const StructuredDataDbValue& lhs,
-          const StructuredDataDbValue& rhs) MAIDSAFE_NOEXCEPT;
+bool operator!=(const StructuredDataDbValue& lhs, const StructuredDataDbValue& rhs);
 
-bool operator==(const StructuredDataDbValue& lhs,
-                const StructuredDataDbValue& rhs);
+bool operator<(const StructuredDataDbValue& lhs, const StructuredDataDbValue& rhs);
 
-bool operator!=(const StructuredDataDbValue& lhs,
-                const StructuredDataDbValue& rhs);
+bool operator>(const StructuredDataDbValue& lhs, const StructuredDataDbValue& rhs);
 
-bool operator<(const StructuredDataDbValue& lhs,
-               const StructuredDataDbValue& rhs);
+bool operator<=(const StructuredDataDbValue& lhs, const StructuredDataDbValue& rhs);
 
-bool operator>(const StructuredDataDbValue& lhs,
-               const StructuredDataDbValue& rhs);
-
-bool operator<=(const StructuredDataDbValue& lhs,
-                const StructuredDataDbValue& rhs);
-
-bool operator>=(const StructuredDataDbValue& lhs,
-                const StructuredDataDbValue& rhs);
-
+bool operator>=(const StructuredDataDbValue& lhs, const StructuredDataDbValue& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_KEY_H_
+#endif  // MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_VALUE_H_

@@ -9,13 +9,13 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_VALUE_H_
-#define MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_VALUE_H_
+#ifndef MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_KEY_H_
+#define MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_KEY_H_
 
-#include "boost/optional.hpp"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/persona_id.h"
-#include "maidsafe/vault/types.h"
+#include "maidsafe/nfs/types.h"
+
 
 namespace maidsafe {
 
@@ -28,9 +28,9 @@ struct StructuredDataKey {
 };
 
 struct StructuredDataDbKey {
-  explicit StructuredDataDbKey(StructuredDataKey& structured_data_key) :
-    peer_type(structured_data_key.peer_type),
-    data_name(structured_data_key.data_name) {}
+  explicit StructuredDataDbKey(StructuredDataKey& structured_data_key)
+      : peer_type(structured_data_key.peer_type),
+        data_name(structured_data_key.data_name) {}
   nfs::PersonaId peer_type;
   DataNameVariant data_name;
 };
@@ -40,4 +40,4 @@ struct StructuredDataDbKey {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_VALUE_H_
+#endif  // MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_KEY_H_
