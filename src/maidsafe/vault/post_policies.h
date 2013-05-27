@@ -40,9 +40,9 @@ class VaultPostPolicy : public SyncPolicy, public PersonaMiscellaneousPolicy {
 };
 
 template<nfs::Persona source_persona>
-class SyncPolicy {
+class HoldersSyncPolicy {
  public:
-  SyncPolicy(routing::Routing& routing, const passport::Pmid& pmid)
+  HoldersSyncPolicy(routing::Routing& routing, const passport::Pmid& pmid)
       : routing_(routing),
         kSource_(source_persona, routing_.kNodeId()),
         kPmid_(pmid) {}
@@ -62,6 +62,40 @@ class SyncPolicy {
     nfs::Message message(source_persona, kSource_, data);
     nfs::MessageWrapper message_wrapper(message.Serialise());
     routing_.SendGroup(NodeId(name), message_wrapper.Serialise()->string(), false, nullptr);
+  }
+
+ private:
+  routing::Routing& routing_;
+  const nfs::PersonaId kSource_;
+  const passport::Pmid kPmid_;
+};
+
+template<nfs::Persona source_persona>
+class ManagersSyncPolicy {  // for Metadata manager & structured data manager
+ public:
+  ManagersSyncPolicy(routing::Routing& routing, const passport::Pmid& pmid)
+      : routing_(routing),
+        kSource_(source_persona, routing_.kNodeId()),
+        kPmid_(pmid) {}
+
+  // FIXME
+  void TransferAccount(const NodeId& target_node_id, const NonEmptyString& serialised_account) {
+    nfs::Message::Data data(DataTagValue::kImmutableDataValue,
+                            Identity(target_node_id.string()),
+                            serialised_account, nfs::MessageAction::kAccountTransfer);
+    nfs::Message message(source_persona, kSource_, data);
+    nfs::MessageWrapper message_wrapper(message.Serialise());
+    routing_.SendDirect(target_node_id, message_wrapper.Serialise()->string(), false, nullptr);
+  }
+
+  template<typename Data>
+  void Sync(const typename Data::name_type& data_name, const NonEmptyString& serialised_sync_data) {
+    nfs::Message::Data data(Data::name_type::tag_type::kEnumValue, data_name, serialised_sync_data,
+                            nfs::MessageAction::kSynchronise);
+    nfs::Message message(source_persona, kSource_, data);
+    nfs::MessageWrapper message_wrapper(message.Serialise());
+    routing_.SendGroup(NodeId(data_name->string()), message_wrapper.Serialise()->string(), false,
+                       nullptr);
   }
 
  private:
@@ -132,16 +166,16 @@ class DataHolderMiscellaneousPolicy {
   const passport::Pmid kPmid_;
 };
 
-typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMaidAccountHolder>,
+typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kMaidAccountHolder>,
                         MaidAccountHolderMiscellaneousPolicy> MaidAccountHolderPostPolicy;
 
-typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMetadataManager>,
+typedef VaultPostPolicy<ManagersSyncPolicy<nfs::Persona::kMetadataManager>,
                         MetadataManagerMiscellaneousPolicy> MetadataManagerPostPolicy;
 
-typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kPmidAccountHolder>,
+typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kPmidAccountHolder>,
                         PmidAccountHolderMiscellaneousPolicy> PmidAccountHolderPostPolicy;
-
-typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kDataHolder>,
+// FIXME
+typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kDataHolder>,
                         DataHolderMiscellaneousPolicy> DataHolderPostPolicy;
 
 }  // namespace vault

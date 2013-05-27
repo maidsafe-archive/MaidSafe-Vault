@@ -23,6 +23,7 @@
 
 #include "maidsafe/vault/metadata_manager/metadata_helpers.h"
 #include "maidsafe/vault/metadata_manager/metadata.pb.h"
+#include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/unresolved_element.h"
 #include "maidsafe/vault/utils.h"
 
@@ -34,15 +35,16 @@ namespace vault {
 namespace detail {
 
 template<typename Data, nfs::MessageAction Action>
-MaidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
+MetadataUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
                                                  const MetadataValueDelta& delta,
                                                  const NodeId& this_id) {
   static_assert(Action == nfs::MessageAction::kPut || Action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
   assert(message.data().type);
   return MetadataUnresolvedEntry(
-      std::make_pair(GetDataNameVariant(*message.data().type, message.data().name),
-                     Action), delta, this_id);
+      std::make_pair(GetDataNameVariant(DataTagValue(message.data().type.get()),
+                                        Identity(message.data().name)), Action),
+      delta, this_id);
 }
 
 }  // namespace detail
@@ -101,7 +103,7 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
       if (metadata_handler_.template CheckMetadataExists<Data>(data_name)) {
         MetadataValueDelta delta;
         delta.data_size = data_size;
-//        AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, delta);
+        AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, delta);
       } else {
         PmidName target_data_holder(routing_.ClosestToId(message.source().node_id) ?
                                     message.data_holder() :
@@ -289,12 +291,29 @@ void MetadataManagerService::OnGenericErrorHandler(nfs::Message /*message*/) {}
 template<typename Data, nfs::MessageAction Action>
 void MetadataManagerService::AddLocalUnresolvedEntryThenSync(
     const nfs::Message& message,
-    const MetadataValueDelta& /*delta*/) {
-//  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, Action>(message, delta,
-//                                                                    routing_.kNodeId()));
-//  metadata_handler_.AddLocalUnresolvedEntry(unresolved_entry);
-  DataNameVariant data_name(message.data().name);
-  Sync(data_name);
+    const MetadataValueDelta& delta) {
+  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, Action>(message, delta,
+                                                                    routing_.kNodeId()));
+  metadata_handler_.AddLocalUnresolvedEntry(unresolved_entry);
+  typename Data::name_type data_name(message.data().name);
+  Sync<Data>(data_name);
+}
+
+template<typename Data>
+void MetadataManagerService::Sync(const typename Data::name_type& data_name) {
+//  auto serialised_sync_data(metadata_handler_.GetSyncData(record_name));
+  NonEmptyString serialised_sync_data; // FIXME
+  if (!serialised_sync_data.IsInitialised())  // Nothing to sync
+    return;
+
+  protobuf::Sync proto_sync;
+  proto_sync.set_account_type(static_cast<int32_t>(Data::name_type::tag_type::kEnumValue));
+  proto_sync.set_account_name(data_name->string());
+  proto_sync.set_serialised_unresolved_entries(serialised_sync_data.string());
+
+  nfs_.Sync<Data>(data_name, NonEmptyString(proto_sync.SerializeAsString()));
+  // TODO(Fraser#5#): 2013-05-03 - Check this is correct place to increment sync attempt counter.
+//  metadata_handler_.IncrementSyncAttempts(record_name);
 }
 
 }  // namespace vault

@@ -110,7 +110,8 @@ class MetadataManagerService {
                                        const MetadataValueDelta& delta);
 
   // =============== Sync ==========================================================================
-  void Sync(const DataNameVariant& record_name);
+  template<typename Data>
+  void Sync(const typename Data::name_type& data_name);
 
   void HandleSync(const nfs::Message& message);
 
