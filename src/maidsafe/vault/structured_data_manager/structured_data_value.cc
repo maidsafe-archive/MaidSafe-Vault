@@ -54,10 +54,7 @@ bool operator==(const StructuredDataValue& lhs,
                 const StructuredDataValue& rhs) {
   return lhs.version == rhs.version &&
   lhs.new_version == rhs.new_version &&
-  //lhs.reply_functor == rhs.reply_functor &&
   lhs.serialised_db_value == rhs.serialised_db_value;
-  // TODO (dirvine) need to check that we dhould not parse and
-  // compare serialised StructuredDataVersions
 }
 
 bool operator!=(const StructuredDataValue& lhs,
@@ -67,11 +64,8 @@ bool operator!=(const StructuredDataValue& lhs,
 
 bool operator<(const StructuredDataValue& lhs,
                const StructuredDataValue& rhs) {
-  return lhs.version < rhs.version &&
-  lhs.new_version < rhs.new_version &&
-  lhs.serialised_db_value < rhs.serialised_db_value;  // TODO FIXME (dirvine) is this valid ??
-  // TODO (dirvine) need to check that we dhould not parse and
-  // compare serialised StructuredDataVersions
+  return std::tie(lhs.version, lhs.new_version, lhs.serialised_db_value) <
+         std::tie(rhs.version, rhs.new_version, rhs.serialised_db_value);
 }
 bool operator>(const StructuredDataValue& lhs,
                const StructuredDataValue& rhs) {
