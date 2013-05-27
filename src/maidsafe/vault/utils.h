@@ -70,6 +70,8 @@ inline bool FromWorldDirectoryManager(const Message& message);
 template<typename Message>
 inline bool FromDataGetter(const Message& message);
 
+template<typename Message>
+inline bool FromStructuredDataManager(const nfs::Message& message);
 
 namespace detail {
 

@@ -89,8 +89,9 @@ bool IsResolvedOnAllPeers(const typename MergePolicy::UnresolvedEntry& entry,
 
 
 template<typename MergePolicy>
-Sync<MergePolicy>::Sync(AccountDb* account_db, const NodeId& this_node_id)
-    : MergePolicy(account_db),
+Sync<MergePolicy>::Sync(typename MergePolicy::Database* database,
+                        const NodeId& this_node_id)
+    : MergePolicy(database),
       sync_counter_max_(10),  // TODO(dirvine) decide how to decide on this magic number
       this_node_id_(this_node_id) {}
 
@@ -223,7 +224,6 @@ void Sync<MergePolicy>::IncrementSyncAttempts() {
       ++itr;
   }
 }
-
 
 }  // namespace vault
 

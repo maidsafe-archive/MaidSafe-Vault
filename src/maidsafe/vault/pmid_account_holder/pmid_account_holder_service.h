@@ -75,8 +75,6 @@ class PmidAccountHolderService {
   void HandlePutResult(const Reply& overall_result,
                        const Message& message,
                        ReplyFunctor reply_functor);
-  template<typename Data, nfs::MessageAction action>
-  void AddLocalUnresolvedEntryThenSync(const nfs::Message& message);
 
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
 
@@ -88,7 +86,6 @@ class PmidAccountHolderService {
   // =============== Account transfer ==============================================================
   void TransferAccount(const PmidName& account_name, const NodeId& new_node);
   void HandleAccountTransfer(const nfs::Message& message);
-
 
   void CheckAccounts();
   bool AssessRange(const PmidName& account_name,
@@ -109,6 +106,9 @@ class PmidAccountHolderService {
   void SendMessages(const PmidName& pmid_name,
                     const std::set<PmidName>& metadata_manager_ids,
                     bool node_up);
+
+  template<typename Data, nfs::MessageAction action>
+  void AddLocalUnresolvedEntryThenSync(const nfs::Message& message);
 
   Routing& routing_;
   std::mutex accumulator_mutex_;

@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_DB_H_
-#define MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_DB_H_
+#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_DB_H_
+#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_DB_H_
 
 #include <string>
 #include <utility>
@@ -21,39 +21,37 @@
 #include "leveldb/status.h"
 
 #include "maidsafe/common/types.h"
-#include "maidsafe/nfs/persona_id.h"
-#include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/data_types/data_name_variant.h"
 
 namespace maidsafe {
 namespace vault {
 
-class StructuredDataDb {
+class MetadataDb {
  public:
-  typedef std::pair<DataNameVariant, nfs::PersonaId> Key;
-  typedef NonEmptyString Value;
-  typedef std::pair<Key, Value> KvPair;
-  explicit StructuredDataDb(const boost::filesystem::path& path);
-  ~StructuredDataDb();
+  typedef std::pair<DataNameVariant, NonEmptyString> KvPair;
+  explicit MetadataDb(const boost::filesystem::path& path);
+  ~MetadataDb();
 
-  NonEmptyString Get(const Key& key);
+  NonEmptyString Get(const DataNameVariant& key);
   void Put(const KvPair& key_value_pair);
-  void Delete(const Key& key);
+  void Delete(const DataNameVariant& key);
+  std::vector<DataNameVariant> GetKeys();
 
  private:
-  StructuredDataDb(const StructuredDataDb&);
-  StructuredDataDb& operator=(const StructuredDataDb&);
-  StructuredDataDb(StructuredDataDb&&);
-  StructuredDataDb& operator=(StructuredDataDb&&);
+  MetadataDb(const MetadataDb&);
+  MetadataDb& operator=(const MetadataDb&);
+  MetadataDb(MetadataDb&&);
+  MetadataDb& operator=(MetadataDb&&);
 
   template<uint32_t Width> std::string Pad(uint32_t number);
 
   static const uint32_t kSuffixWidth_;
   const boost::filesystem::path kDbPath_;
+  mutable std::mutex mutex_;
   std::unique_ptr<leveldb::DB> leveldb_;
 };
 
 }  // namespace vault
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_DB_H_
+#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_DB_H_

@@ -20,7 +20,12 @@
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
 
+#include "maidsafe/vault/metadata_manager/metadata.h"
+#include "maidsafe/vault/metadata_manager/metadata_helpers.h"
+#include "maidsafe/vault/metadata_manager/metadata_db.h"
 #include "maidsafe/vault/metadata_manager/metadata.pb.h"
+#include "maidsafe/vault/metadata_manager/metadata_merge_policy.h"
+#include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
 
 
@@ -37,7 +42,9 @@ class MetadataHandlerTypedTest;
 
 class MetadataHandler {
  public:
-  explicit MetadataHandler(const boost::filesystem::path& vault_root_dir);
+  typedef TaggedValue<NonEmptyString, struct SerialisedMetadataValueTag>
+    serialised_metadata_details_type;
+  MetadataHandler(const boost::filesystem::path& vault_root_dir, const NodeId& this_node_id);
 
   // This increments the subscribers count, or adds a new element if it doesn't exist.
   template<typename Data>
@@ -48,11 +55,13 @@ class MetadataHandler {
 
   // This is used when synchronising with other MMs.  It simply adds or replaces any existing
   // element of the same type and name.
-  void PutMetadata(const protobuf::Metadata& proto_metadata);
+  //  void PutMetadata(const protobuf::Metadata& proto_metadata);
   // This is used when synchronising with other MMs.  If this node sends a sync (group message) for
   // this element, and doesn't receive its own request, it's no longer responsible for this element.
   template<typename Data>
   void DeleteMetadata(const typename Data::name_type& data_name);
+
+  void DeleteRecord(const DataNameVariant& record_name);
 
   template<typename Data>
   void MarkNodeDown(const typename Data::name_type& data_name,
@@ -72,36 +81,35 @@ class MetadataHandler {
   std::vector<PmidName> GetOnlineDataHolders(const typename Data::name_type& data_name) const;
 
   template<typename Data>
-  void CheckMetadataExists(const typename Data::name_type& data_name) const;
+  bool CheckMetadataExists(const typename Data::name_type& data_name) const;
+
+  // Returns cost, checks for duplication of unique data (throws)
+  template<typename Data>
+  int32_t CheckPut(const typename Data::name_type& data_name, int32_t data_size);
+
+  void AddLocalUnresolvedEntry(const MetadataUnresolvedEntry& unresolved_entry);
+
+  // Sync operations
+  std::vector<DataNameVariant> GetRecordNames() const;
+  serialised_metadata_details_type GetSerialisedRecord(const DataNameVariant& data_name) const;
+  NonEmptyString GetSyncData(const DataNameVariant& data_name) const;
+  void ApplySyncData(const DataNameVariant& data_name,
+                     const NonEmptyString& serialised_unresolved_entries);
+  void ReplaceNodeInSyncList(const DataNameVariant& record_name,
+                             const NodeId& old_node,
+                             const NodeId& new_node);
+  void IncrementSyncAttempts(const DataNameVariant& data_name);
+
 
   template<typename Data>
   friend class MetadataHandlerTypedTest;
 
  private:
-  template<typename Data>
-  struct Metadata {
-    // This constructor reads the existing element or creates a new one if it doesn't already exist.
-    Metadata(const typename Data::name_type& data_name,
-             const boost::filesystem::path& root,
-             int32_t data_size);
-    // This constructor reads the existing element or throws if it doesn't already exist.
-    Metadata(const typename Data::name_type& data_name, const boost::filesystem::path& root);
-    // Should only be called once.
-    void SaveChanges();
-
-    protobuf::Metadata content;
-    const boost::filesystem::path kPath;
-    on_scope_exit strong_guarantee;
-
-   private:
-    Metadata();
-    Metadata(const Metadata&);
-    Metadata& operator=(const Metadata&);
-    Metadata(Metadata&&);
-    Metadata& operator=(Metadata&&);
-  };
-
   const boost::filesystem::path kMetadataRoot_;
+  std::unique_ptr<MetadataDb> metadata_db_;
+  const NodeId kThisNodeId_;
+  mutable std::mutex mutex_;
+  Sync<MetadataMergePolicy> sync_;
 };
 
 }  // namespace vault

@@ -23,14 +23,18 @@
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/types.h"
 
+#include "maidsafe/vault/structured_data_manager/structured_data_key.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_value.h"
+#include "maidsafe/vault/metadata_manager/metadata_helpers.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
-template<typename ValueType>
+template<typename KeyType, typename ValueType>
 struct UnresolvedElement {
-  typedef std::pair<DataNameVariant, nfs::MessageAction> Key;
+  typedef KeyType Key;
   typedef ValueType Value;
 
  private:
@@ -64,7 +68,12 @@ struct UnresolvedElement {
   bool dont_add_to_db;
 };
 
-typedef UnresolvedElement<int32_t> MaidAccountUnresolvedEntry, PmidAccountUnresolvedEntry;
+typedef UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, int32_t>
+                                                                 MaidAccountUnresolvedEntry,
+                                                                 PmidAccountUnresolvedEntry;
+typedef UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, MetadataValueDelta>
+                                                                 MetadataUnresolvedEntry;
+typedef UnresolvedElement<StructuredDataKey, StructuredDataValue> StructuredDataUnresolvedEntry;
 
 }  // namespace vault
 

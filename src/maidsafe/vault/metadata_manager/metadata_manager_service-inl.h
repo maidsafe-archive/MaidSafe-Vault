@@ -21,13 +21,31 @@
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/on_scope_exit.h"
 
-#include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/metadata_manager/metadata_helpers.h"
 #include "maidsafe/vault/metadata_manager/metadata.pb.h"
+#include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/utils.h"
 
 
 namespace maidsafe {
 
 namespace vault {
+
+namespace detail {
+
+template<typename Data, nfs::MessageAction action>
+MetadataUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
+                                                 const MetadataValueDelta& delta,
+                                                 const NodeId& this_id) {
+  static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
+                "Action must be either kPut of kDelete.");
+  assert(message.data().type);
+  return MetadataUnresolvedEntry(
+      std::make_pair(GetDataNameVariant(*message.data().type, message.data().name),
+                     action), delta, this_id);
+}
+
+}  // namespace detail
 
 template<typename Data>
 MetadataManagerService::GetHandler<Data>::GetHandler(const routing::ReplyFunctor& reply_functor_in,
@@ -76,21 +94,21 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
               typename Data::serialised_type(message.data().content));
     auto data_name(data.name());
     auto data_size(static_cast<int32_t>(message.data().content.string().size()));
-    metadata_handler_.template IncrementSubscribers<Data>(data_name, data_size);
-    on_scope_exit strong_guarantee([this, data_name] {
-       try {
-         this->metadata_handler_.template DecrementSubscribers<Data>(data_name);
-       }
-       catch(...) {}
-    });
+    //FIXME get cost
+    metadata_handler_.template CheckPut<Data>(data_name, data_size);
     if (detail::AddResult(message, reply_functor, MakeError(CommonErrors::success),
                           accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
-      PmidName target_data_holder(routing_.ClosestToId(message.source().node_id) ?
-                                  message.data_holder() :
-                                  Identity(routing_.RandomConnectedNode().string()));
-      Put(data, target_data_holder);
+      if (metadata_handler_.template CheckMetadataExists<Data>(data_name)) {
+        MetadataValueDelta delta;
+        delta.data_size = data_size;
+//        AddLocalUnresolvedEntryThenSync(message, delta);
+      } else {
+        PmidName target_data_holder(routing_.ClosestToId(message.source().node_id) ?
+                                    message.data_holder() :
+                                    Identity(routing_.RandomConnectedNode().string()));
+        Put(data, target_data_holder);
+      }
     }
-    strong_guarantee.Release();
   }
   catch(const maidsafe_error& error) {
     detail::AddResult(message, reply_functor, error, accumulator_, accumulator_mutex_,
@@ -102,6 +120,7 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
   }
 }
 
+// FIXME reply not needed
 template<typename Data>
 void MetadataManagerService::Put(const Data& data, const PmidName& target_data_holder) {
   auto put_op(std::make_shared<nfs::OperationOp>(
@@ -265,6 +284,17 @@ void MetadataManagerService::HandleGetReply(std::string serialised_reply) {
 
 template<typename Data>
 void MetadataManagerService::OnGenericErrorHandler(nfs::Message /*message*/) {}
+
+template<typename Data, nfs::MessageAction action>
+void MetadataManagerService::AddLocalUnresolvedEntryThenSync(
+    const nfs::Message& message,
+    const MetadataValueDelta& delta) {
+  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(message, delta,
+                                                                    routing_.kNodeId()));
+  metadata_handler_.AddLocalUnresolvedEntry(unresolved_entry);
+  DataNameVariant data_name(message.data().name);
+  Sync(data_name);
+}
 
 }  // namespace vault
 

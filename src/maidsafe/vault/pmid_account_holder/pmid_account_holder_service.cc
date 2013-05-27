@@ -21,17 +21,22 @@ namespace fs = boost::filesystem;
 namespace maidsafe {
 namespace vault {
 
-const int PmidAccountHolderService::kPutRepliesSuccessesRequired_(1);
 const int PmidAccountHolderService::kDeleteRequestsRequired_(3);
+const int PmidAccountHolderService::kPutRepliesSuccessesRequired_(1);
 
-namespace {
+namespace detail {
+
+PmidName GetPmidAccountName(const nfs::Message& message) {
+  return PmidName(Identity(message.data().name));
+}
 
 template<typename Message>
 inline bool ForThisPersona(const Message& message) {
   return message.destination_persona() != nfs::Persona::kPmidAccountHolder;
 }
 
-}  // unnamed namespace
+}  // namespace detail
+
 PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
                                                    Db& db)
@@ -157,7 +162,7 @@ void PmidAccountHolderService::ValidateDataSender(const nfs::Message& message) c
       || routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
     ThrowError(VaultErrors::permission_denied);
 
-  if (!FromMetadataManager(message) || !ForThisPersona(message))
+  if (!FromMetadataManager(message) || !detail::ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 
@@ -166,7 +171,7 @@ void PmidAccountHolderService::ValidateGenericSender(const nfs::Message& message
       || routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
     ThrowError(VaultErrors::permission_denied);
 
-  if (!FromMetadataManager(message) || !ForThisPersona(message))
+  if (!FromMetadataManager(message) || !detail::ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 

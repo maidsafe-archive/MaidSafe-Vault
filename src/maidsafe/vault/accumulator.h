@@ -57,8 +57,8 @@ class Accumulator {
     HandledRequest(const nfs::MessageId& msg_id_in,
                    const Name& account_name_in,
                    const nfs::MessageAction& action_type_in,
-                   const Identity& data_name,
-                   const DataTagValue& data_type,
+                   const Identity& data_name_in,
+                   const DataTagValue& data_type_in,
                    const int32_t& size_in,
                    const maidsafe_error& return_code_in);
     HandledRequest(const HandledRequest& other);
@@ -82,6 +82,7 @@ class Accumulator {
   // Returns true and populates <reply_out> if the message has already been set as handled.  If the
   // corresponding return_code != success, the message gets set in the reply.
   bool CheckHandled(const nfs::Message& message, nfs::Reply& reply_out) const;
+  std::pair<int, int> GetPendingOrCompleteResults(const nfs::Message& message);
   // Adds a request with its individual result, pending the overall result of the operation.
   std::vector<nfs::Reply> PushSingleResult(const nfs::Message& message,
                                            const routing::ReplyFunctor& reply_functor,
@@ -89,12 +90,6 @@ class Accumulator {
   // Marks the message as handled and returns all pending requests held with the same ID
   std::vector<PendingRequest> SetHandled(const nfs::Message& message,
                                          const maidsafe_error& return_code);
-  // Returns all handled requests for the given account name.
-  std::vector<HandledRequest> Get(const Name& name) const;
-  // Serialises all handled requests for the given account name.
-  serialised_requests Serialise(const Name& name) const;
-  // Parses the list of serialised handled requests.
-  std::vector<HandledRequest> Parse(const serialised_requests& serialised_requests_in) const;
 
   friend class test::AccumulatorTest_BEH_PushSingleResult_Test;
   friend class test::AccumulatorTest_BEH_PushSingleResultThreaded_Test;

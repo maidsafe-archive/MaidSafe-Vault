@@ -10,7 +10,7 @@
  **************************************************************************************************/
 
 
-#include "maidsafe/vault/structured_data_manager/structured_data_db.h"
+#include "maidsafe/vault/metadata_manager/metadata_db.h"
 
 #include <iomanip>
 #include <sstream>
@@ -25,10 +25,11 @@
 namespace maidsafe {
 namespace vault {
 
-const uint32_t StructuredDataDb::kSuffixWidth_(2);
+const uint32_t MetadataDb::kSuffixWidth_(2);
 
-StructuredDataDb::StructuredDataDb(const boost::filesystem::path& path)
+MetadataDb::MetadataDb(const boost::filesystem::path& path)
   : kDbPath_(path),
+    mutex_(),
     leveldb_() {
   if (boost::filesystem::exists(kDbPath_))
     boost::filesystem::remove_all(kDbPath_);
@@ -43,39 +44,33 @@ StructuredDataDb::StructuredDataDb(const boost::filesystem::path& path)
   assert(leveldb_);
 }
 
-StructuredDataDb::~StructuredDataDb() {
+MetadataDb::~MetadataDb() {
   leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
 }
 
-void StructuredDataDb::Put(const KvPair& key_value_pair) {
-  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key_value_pair.first.first));
+void MetadataDb::Put(const KvPair& key_value_pair) {
+  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key_value_pair.first));
   std::string db_key(result.second.string() +
-                   Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)) +
-                   key_value_pair.first.second.node_id.string() +
-                   Pad<kSuffixWidth_>(static_cast<uint32_t>(key_value_pair.first.second.persona)));
+                     Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)));
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
                                        db_key, key_value_pair.second.string()));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
 }
 
-void StructuredDataDb::Delete(const Key &key) {
-  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
+void MetadataDb::Delete(const DataNameVariant& key) {
+  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
   std::string db_key(result.second.string() +
-                     Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)) +
-                     key.second.node_id.string() +
-                     Pad<kSuffixWidth_>(static_cast<uint32_t>(key.second.persona)));
+                     Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)));
   leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), db_key));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
 }
 
-NonEmptyString StructuredDataDb::Get(const Key &key) {
-  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
+NonEmptyString MetadataDb::Get(const DataNameVariant& key) {
+  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
   std::string db_key(result.second.string() +
-                     Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)) +
-                     key.second.node_id.string() +
-                     Pad<kSuffixWidth_>(static_cast<uint32_t>(key.second.persona)));
+                     Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)));
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
   std::string value;
@@ -86,8 +81,24 @@ NonEmptyString StructuredDataDb::Get(const Key &key) {
   return NonEmptyString(value);
 }
 
+
+// TODO(Team) This can be optimise by returning iterators.
+std::vector<DataNameVariant> MetadataDb::GetKeys() {
+  std::vector<DataNameVariant> return_vector;
+  std::lock_guard<std::mutex> lock(mutex_);
+  std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
+  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+    std::string name(iter->key().ToString().substr(0, NodeId::kSize));
+    std::string type_string(iter->key().ToString().substr(NodeId::kSize));
+    DataTagValue type = static_cast<DataTagValue>(std::stoul(type_string));
+    auto key = GetDataNameVariant(type, Identity(name));
+    return_vector.push_back(std::move(key));
+  }
+  return return_vector;
+}
+
 template<uint32_t Width>
-std::string StructuredDataDb::Pad(uint32_t number) {
+std::string MetadataDb::Pad(uint32_t number) {
   std::ostringstream osstream;
   osstream << std::setw(Width) << std::setfill('0') << std::hex << number;
   return osstream.str();

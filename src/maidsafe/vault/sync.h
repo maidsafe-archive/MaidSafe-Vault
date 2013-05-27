@@ -22,15 +22,13 @@ namespace maidsafe {
 
 namespace vault {
 
-class AccountDb;
-
 // The purpose of this class is to ensure enough peers have agreed a given request is valid before
 // recording the corresponding action to an AccountDb.  This should ensure that all peers hold
 // similar, if not identical databases.
 template<typename MergePolicy>
 class Sync : public MergePolicy {
  public:
-  Sync(AccountDb* account_db, const NodeId& this_node_id);
+  Sync(typename MergePolicy::Database* database, const NodeId& this_node_id);
   Sync(Sync&& other);
   Sync& operator=(Sync&& other);
   // This is called when receiving a Sync message from a peer or this node.  Returns true if the
@@ -61,6 +59,8 @@ class Sync : public MergePolicy {
  private:
   Sync(const Sync&);
   Sync& operator=(const Sync&);
+  bool AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge);
+  template <typename Data>
   bool AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge);
   bool CanBeErased(const typename MergePolicy::UnresolvedEntry& entry) const;
 

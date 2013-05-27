@@ -61,11 +61,6 @@ TEST(AccumulatorTest, BEH_PushSingleResult) {
   accumulator.SetHandled(message, reply_code);
   EXPECT_EQ(accumulator.pending_requests_.size(), 0);
   EXPECT_TRUE(accumulator.CheckHandled(message, reply));
-  Accumulator<passport::PublicMaid::name_type>::serialised_requests serialised(
-      accumulator.Serialise(passport::PublicMaid::name_type(
-      Identity((message.source().node_id).string()))));
-  auto parsed(accumulator.Parse(serialised));
-  EXPECT_EQ(parsed.size(), 1);
 }
 
 TEST(AccumulatorTest, BEH_PushSingleResultThreaded) {
@@ -81,11 +76,6 @@ TEST(AccumulatorTest, BEH_PushSingleResultThreaded) {
       accumulator.SetHandled(message, reply_code);
       EXPECT_EQ(accumulator.pending_requests_.size(), 0);
       EXPECT_TRUE(accumulator.CheckHandled(message, reply));
-      Accumulator<passport::PublicMaid::name_type>::serialised_requests serialised(
-          accumulator.Serialise(passport::PublicMaid::name_type(
-          Identity((message.source().node_id).string()))));
-      auto parsed(accumulator.Parse(serialised));
-      EXPECT_EQ(parsed.size(), 1);
     });
 }
 

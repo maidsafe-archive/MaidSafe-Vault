@@ -20,24 +20,27 @@
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/vault/utils.h"
-
+#include "maidsafe/vault/unresolved_element.h"
 
 namespace maidsafe {
 namespace vault {
 
-namespace {
+namespace detail {
 
 template<typename Data, nfs::MessageAction action>
 PmidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
-                                                 int32_t size,
                                                  const NodeId& this_id) {
   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
   return PmidAccountUnresolvedEntry(
-      std::make_pair(DataNameVariant(GetDataName<Data>(message)), action), size, this_id);
+    std::make_pair(GetDataNameVariant(DataTagValue(message.data().type.get()), Identity(message.data().name)), action),
+      message.data().content.string().size(),
+      this_id);
 }
 
-}
+PmidName GetPmidAccountName(const nfs::Message& message);
+
+}  // namespace detail
 
 template<typename Data>
 void PmidAccountHolderService::HandleMessage(const Message& message,
@@ -63,22 +66,20 @@ void PmidAccountHolderService::HandleMessage(const Message& message,
 template<typename Data>
 void PmidAccountHolderService::HandlePut(const Message& message,
                                          const ReplyFunctor& reply_functor) {
+  maidsafe_error return_code(CommonErrors::success);
   try {
     Data data(typename Data::name_type(message.data().name),
               typename Data::serialised_type(message.data().content));
     auto account_name(detail::GetPmidAccountName(message));
-    auto size(message.data().content.string().size());
-    pmid_account_handler_.CreateAccount<Data>(account_name, detail::can_create_account<Data>());
 
     auto put_op(std::make_shared<nfs::OperationOp>(
         kPutRepliesSuccessesRequired_,
         [this, message, reply_functor](nfs::Reply overall_result) {
-            this->HandlePutResult<Data>(overall_result, message, reply_functor,
-                                        is_unique_on_network<Data>());
+            this->HandlePutResult<Data>(overall_result, message, reply_functor);
         }));
 
-    nfs_.Put(data,
-             message.data_holder(),
+    nfs_.Put(passport::PublicPmid::name_type(account_name),
+             data,
              [put_op](std::string serialised_reply) {
                  nfs::HandleOperationReply(put_op, serialised_reply);
              });
@@ -133,8 +134,7 @@ void PmidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
 template<typename Data, nfs::MessageAction action>
 void PmidAccountHolderService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message) {
   auto account_name(detail::GetPmidAccountName(message));
-  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(
-          message, message.data().content.size(), routing_.kNodeId()));
+  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(message, routing_.kNodeId()));
   pmid_account_handler_.AddLocalUnresolvedEntry(account_name, unresolved_entry);
   Sync(account_name);
 }
