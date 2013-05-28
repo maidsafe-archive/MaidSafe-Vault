@@ -26,6 +26,7 @@
 
 #include "maidsafe/nfs/pmid_registration.h"
 #include "maidsafe/nfs/persona_id.h"
+#include "maidsafe/nfs/structured_data.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_key.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_value.h"
@@ -123,21 +124,38 @@ void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
 }
 // =============== Get data =================================================================
 
-void StructuredDataManagerService::HandleGet(const nfs::Message& /*message*/,
-                                             routing::ReplyFunctor /*reply_functor*/) {
+void StructuredDataManagerService::HandleGet(const nfs::Message& message,
+                                             routing::ReplyFunctor reply_functor) {
+  try {
+    nfs::Reply reply(CommonErrors::success);
+    StructuredDataVersions version(structured_data_db_.Get(GetKeyFromMessage(message)));
+    reply_functor(nfs::StructuredData(version.Get()).Serialise()->string());
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
+    accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
+  }
+  catch (std::exception& e) {
+    LOG(kError) << "Bad message: " << e.what();
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
+    accumulator_.SetHandled(message, maidsafe_error(VaultErrors::failed_to_handle_request));
+ }
 }
 
-void StructuredDataManagerService::HandleGetBranch(const nfs::Message& /*message*/,
+void StructuredDataManagerService::HandleGetBranch(const nfs::Message& message,
                                                    routing::ReplyFunctor /*reply_functor*/) {
 
   try {
     nfs::Reply reply(CommonErrors::success);
-//    StructuredDataVersions version(structured_data_db_.Get(GetKeyFromMessage(message)));
-    // Need protobuf for returning SD versions XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-//    reply_functor(version.GetBranch(
+    StructuredDataVersions version(structured_data_db_.Get(GetKeyFromMessage(message)));
+// TODO FIXME(dirvine) not sure VersionName::index should be made public !!
+//    reply_functor(nfs::StructuredData(version.GetBranch
+//          (StructuredDataVersions::VersionName(message.data().content))).Serialise()->string());
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
+    accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
   }
   catch (std::exception& e) {
     LOG(kError) << "Bad message: " << e.what();
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
+    accumulator_.SetHandled(message, maidsafe_error(VaultErrors::failed_to_handle_request));
  }
 }
 

@@ -31,12 +31,12 @@ namespace vault {
 class StructuredDataDb {
  public:
   typedef std::pair<DataNameVariant, nfs::PersonaId> Key;
-  typedef NonEmptyString Value;
+  typedef StructuredDataVersions::serialised_type Value;
   typedef std::pair<Key, Value> KvPair;
   explicit StructuredDataDb(const boost::filesystem::path& path);
   ~StructuredDataDb();
 
-  NonEmptyString Get(const Key& key);
+  StructuredDataVersions::serialised_type Get(const Key& key);
   void Put(const KvPair& key_value_pair);
   void Delete(const Key& key);
 
