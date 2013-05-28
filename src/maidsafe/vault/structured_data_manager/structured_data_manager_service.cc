@@ -86,6 +86,13 @@ StructuredDataDb::Key StructuredDataManagerService::GetKeyFromMessage(const nfs:
                          message.source());
 }
 
+std::vector<StructuredDataVersions::VersionName>
+            StructuredDataManagerService::GetVersionsFromMessage(const nfs::Message& msg) const {
+
+   return nfs::StructuredData(nfs::StructuredData::serialised_type(msg.data().content)).Versions();
+}
+
+
 
 // =============== Get data =================================================================
 
@@ -108,14 +115,14 @@ void StructuredDataManagerService::HandleGet(const nfs::Message& message,
 }
 
 void StructuredDataManagerService::HandleGetBranch(const nfs::Message& message,
-                                                   routing::ReplyFunctor /*reply_functor*/) {
+                                                   routing::ReplyFunctor reply_functor) {
 
   try {
     nfs::Reply reply(CommonErrors::success);
     StructuredDataVersions version(structured_data_db_.Get(GetKeyFromMessage(message)));
-// TODO FIXME(dirvine) not sure VersionName::index should be made public !!
-//    reply_functor(nfs::StructuredData(version.GetBranch
-//          (StructuredDataVersions::VersionName(message.data().content))).Serialise()->string());
+    auto branch_to_get(GetVersionsFromMessage(message));
+    reply.data() = nfs::StructuredData(version.GetBranch(branch_to_get.front())).Serialise().data;
+    reply_functor(reply.Serialise()->string());
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
   }
