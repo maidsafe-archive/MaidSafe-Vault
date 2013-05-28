@@ -36,9 +36,10 @@ namespace po = boost::program_options;
 typedef boost::asio::ip::udp::endpoint UdpEndpoint;
 typedef std::future<passport::PublicPmid> PublicPmidFuture;
 
-nfs::Reply GetReply(const std::string& response) {
-  return nfs::Reply(nfs::Reply::serialised_type(NonEmptyString(response)));
-}
+// (dirvine) unused function
+//nfs::Reply GetReply(const std::string& response) {
+//  return nfs::Reply(nfs::Reply::serialised_type(NonEmptyString(response)));
+//}
 
 asymm::PublicKey GetPublicKeyFromReply(const passport::PublicPmid::name_type& name,
                                        const nfs::Reply& reply) {
