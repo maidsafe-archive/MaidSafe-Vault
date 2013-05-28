@@ -134,9 +134,6 @@ void MetadataManagerService::TransferRecord(const DataNameVariant& record_name,
   nfs_.TransferRecord(record_name, new_node, NonEmptyString(metadata_record.SerializeAsString()));
 }
 
-void MetadataManagerService::HandleRecordTransfer(const nfs::Message& /*message*/) {
-}
-
 // =============== Churn ===========================================================================
 void MetadataManagerService::HandleChurnEvent(routing::MatrixChange matrix_change) {
   auto record_names(metadata_handler_.GetRecordNames());

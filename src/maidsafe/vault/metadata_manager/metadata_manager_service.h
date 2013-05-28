@@ -118,6 +118,7 @@ class MetadataManagerService {
 
   // =============== Record transfer ===============================================================
   void TransferRecord(const DataNameVariant& record_name, const NodeId& new_node);
+  template<typename Data>
   void HandleRecordTransfer(const nfs::Message& message);
 
   routing::Routing& routing_;

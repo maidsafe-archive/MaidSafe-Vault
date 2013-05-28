@@ -78,6 +78,10 @@ void MetadataManagerService::HandleMessage(const nfs::Message& message,
       return HandleGet<Data>(message, reply_functor);
     case nfs::MessageAction::kDelete:
       return HandleDelete<Data>(message, reply_functor);
+    case nfs::MessageAction::kSynchronise:
+      return HandleSync<Data>(message);
+    case nfs::MessageAction::kAccountTransfer:
+      return HandleRecordTransfer<Data>(message);
     default: {
       reply = nfs::Reply(VaultErrors::operation_not_supported, message.Serialise().data);
       std::lock_guard<std::mutex> lock(accumulator_mutex_);
@@ -319,6 +323,11 @@ void MetadataManagerService::HandleSync(const nfs::Message& message) {
   }
   metadata_handler_.template ApplySyncData<Data>(data_name,
                                  NonEmptyString(proto_sync.serialised_unresolved_entries()));
+}
+
+// =============== Record transfer =================================================================
+template<typename Data>
+void MetadataManagerService::HandleRecordTransfer(const nfs::Message& /*message*/) {
 }
 
 }  // namespace vault
