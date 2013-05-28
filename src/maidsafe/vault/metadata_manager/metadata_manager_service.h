@@ -115,9 +115,9 @@ class MetadataManagerService {
 
   void HandleSync(const nfs::Message& message);
 
-  // =============== Account transfer ==============================================================
-  void TransferAccount(const DataNameVariant& record_name, const NodeId& new_node);
-  void HandleAccountTransfer(const nfs::Message& message);
+  // =============== Record transfer ===============================================================
+  void TransferRecord(const DataNameVariant& record_name, const NodeId& new_node);
+  void HandleRecordTransfer(const nfs::Message& message);
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;

@@ -18,6 +18,7 @@
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/data_types/data_type_values.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/api_config.h"
@@ -78,11 +79,12 @@ class ManagersSyncPolicy {  // for Metadata manager & structured data manager
         kSource_(source_persona, routing_.kNodeId()),
         kPmid_(pmid) {}
 
-  // FIXME
-  void TransferAccount(const NodeId& target_node_id, const NonEmptyString& serialised_account) {
-    nfs::Message::Data data(DataTagValue::kImmutableDataValue,
-                            Identity(target_node_id.string()),
-                            serialised_account, nfs::MessageAction::kAccountTransfer);
+  void TransferRecord(const DataNameVariant& record_name,
+                      const NodeId& target_node_id,
+                      const NonEmptyString& serialised_account) {
+    auto type_and_name(boost::apply_visitor(GetTagValueAndIdentityVisitor(), record_name));
+    nfs::Message::Data data(type_and_name.first, type_and_name.second, serialised_account,
+                            nfs::MessageAction::kAccountTransfer);
     nfs::Message message(source_persona, kSource_, data);
     nfs::MessageWrapper message_wrapper(message.Serialise());
     routing_.SendDirect(target_node_id, message_wrapper.Serialise()->string(), false, nullptr);
@@ -90,8 +92,8 @@ class ManagersSyncPolicy {  // for Metadata manager & structured data manager
 
   template<typename Data>
   void Sync(const typename Data::name_type& data_name, const NonEmptyString& serialised_sync_data) {
-    nfs::Message::Data data(Data::name_type::tag_type::kEnumValue, data_name, serialised_sync_data,
-                            nfs::MessageAction::kSynchronise);
+    nfs::Message::Data data(Data::name_type::tag_type::kEnumValue, data_name.data,
+                            serialised_sync_data, nfs::MessageAction::kSynchronise);
     nfs::Message message(source_persona, kSource_, data);
     nfs::MessageWrapper message_wrapper(message.Serialise());
     routing_.SendGroup(NodeId(data_name->string()), message_wrapper.Serialise()->string(), false,

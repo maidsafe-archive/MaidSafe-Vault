@@ -8,14 +8,8 @@ message MetadataValue {
   repeated bytes offline_pmid_name = 4;
 }
 
-message MetadataDbEntry {
-  required int32 type = 1;  // name and type == db key
-  required bytes name = 2;
-  required MetadataValue value = 3;
-}
-
 message MetadataRecord {
-  required MetadataDbEntry db_entry = 1;
+  required MetadataValue db_value = 1;
   repeated bytes serialised_unresolved_entry = 2;
 }
 
