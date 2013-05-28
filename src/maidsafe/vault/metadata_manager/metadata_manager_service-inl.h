@@ -96,7 +96,7 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
               typename Data::serialised_type(message.data().content));
     auto data_name(data.name());
     auto data_size(static_cast<int32_t>(message.data().content.string().size()));
-    //FIXME get cost
+    //FIXME(Prakash) get cost
     metadata_handler_.template CheckPut<Data>(data_name, data_size);
     if (detail::AddResult(message, reply_functor, MakeError(CommonErrors::success),
                           accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
@@ -109,6 +109,7 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
                                     message.data_holder() :
                                     Identity(routing_.RandomConnectedNode().string()));
         Put(data, target_data_holder);
+        // Do we need to sync here ?  Create account db entry ?
       }
     }
   }
@@ -122,19 +123,9 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
   }
 }
 
-// FIXME reply not needed
 template<typename Data>
 void MetadataManagerService::Put(const Data& data, const PmidName& target_data_holder) {
-//  auto put_op(std::make_shared<nfs::OperationOp>(
-//      kPutRepliesSuccessesRequired_,
-//      [this] (nfs::Reply overall_result) {
-//        this->HandlePutResult<Data>(overall_result);
-//      }));
-  nfs_.Put(target_data_holder,
-           data, nullptr
-           /*[put_op](std::string serialised_reply) {
-             nfs::HandleOperationReply(put_op, serialised_reply);
-           }*/);
+  nfs_.Put(target_data_holder, data, nullptr);
 }
 
 template<typename Data>
@@ -299,6 +290,8 @@ void MetadataManagerService::AddLocalUnresolvedEntryThenSync(
   Sync<Data>(data_name);
 }
 
+// =============== Sync ============================================================================
+
 template<typename Data>
 void MetadataManagerService::Sync(const typename Data::name_type& data_name) {
 //  auto serialised_sync_data(metadata_handler_.GetSyncData(record_name));
@@ -314,6 +307,18 @@ void MetadataManagerService::Sync(const typename Data::name_type& data_name) {
   nfs_.Sync<Data>(data_name, NonEmptyString(proto_sync.SerializeAsString()));
   // TODO(Fraser#5#): 2013-05-03 - Check this is correct place to increment sync attempt counter.
 //  metadata_handler_.IncrementSyncAttempts(record_name);
+}
+
+template<typename Data>
+void MetadataManagerService::HandleSync(const nfs::Message& message) {
+  typename Data::name_type data_name(Identity(message.data().name));
+  protobuf::Sync proto_sync;
+  if (!proto_sync.ParseFromString(message.data().content.string())) {
+    LOG(kError) << "Error parsing kSynchronise message.";
+    return;
+  }
+  metadata_handler_.template ApplySyncData<Data>(data_name,
+                                 NonEmptyString(proto_sync.serialised_unresolved_entries()));
 }
 
 }  // namespace vault
