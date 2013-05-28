@@ -185,17 +185,18 @@ std::vector<nfs::Reply> Accumulator<Name>::PushSingleResult(const nfs::Message& 
 }
 
 template<typename Name>
-std::pair<int, int> Accumulator<Name>::GetPendingOrCompleteResults(const nfs::Message& message) {
+std::vector<nfs::Reply> Accumulator<Name>::GetPendingResults(const nfs::Message& message) const {
+  std::vector<nfs::Reply> replies;
   if (FindHandled(message) != std::end(handled_requests_))
-    return std::make_pair(0,1);
-  int pending(0);
+    return replies;
+
   for (auto& request : pending_requests_) {
     if (request.msg.message_id() == message.message_id() &&
         request.msg.source().node_id == message.source().node_id) {
-      ++pending;
+      replies.emplace_back(request.return_code);
     }
   }
-  return std::make_pair(pending, 0);
+  return replies;
 }
 
 template<typename Name>

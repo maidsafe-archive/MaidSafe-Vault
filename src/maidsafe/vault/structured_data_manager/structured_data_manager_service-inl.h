@@ -30,107 +30,41 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace detail {
+template<typename Data>
+void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
+                                                  const routing::ReplyFunctor& reply_functor) {
+ //   ValidateSender(message);
 
-//vault::StructuredDataManagerService::SDMKey GetStructuredDataKey(const nfs::Message& message);
+  nfs::Reply reply(CommonErrors::pending_result);
+  {
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
+    if (accumulator_.CheckHandled(message, reply))
+      return reply_functor(reply.Serialise()->string());
+  }
 
-//template<typename Data>
-//typename Data::name_type GetStructuredDataName(const nfs::Message& message) {
-//  return typename Data::name_type(message.data().name);
-//}
+   if (message.data().action == nfs::MessageAction::kSynchronise)
+     return HandleSync(message);   // No accumulate
+   if (message.data().action == nfs::MessageAction::kAccountTransfer)
+     return HandleAccountTransfer(message);   // No accumulate
+   if (message.data().action == nfs::MessageAction::kGet)
+     return HandleGet(message, reply_functor);  //  Add to accumulator on action
+   if (message.data().action == nfs::MessageAction::kGetBranch)
+     return HandleGetBranch(message, reply_functor);  //  Add to accumulator on action
 
-//// template<typename Data, nfs::MessageAction action>
-//// StructuredDataManagerUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
-////                                                            Identity value,
-////                                                            const NodeId& this_id) {
-////   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
-////                 "Action must be either kPut of kDelete.");
-////   return StructuredDataManagerUnresolvedEntry(
-////       std::make_pair(DataNameVariant(GetDataName<Data>(message)), action), value, this_id);
-//// }
+   if (message.data().action != nfs::MessageAction::kPut &&
+       message.data().action != nfs::MessageAction::kDeleteBranchUntilFork &&
+       message.data().action != nfs::MessageAction::kDelete)
+     ThrowError(CommonErrors::invalid_parameter);
 
-//}  // namespace detail
-
-
-//template<typename Data>
-//void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
-//                                                 const routing::ReplyFunctor& reply_functor) {
-////   ValidateSender(message);
-//  if (message.data().action == nfs::MessageAction::kSynchronise)
-//    return HandleSync(message);
-//  if (message.data().action == nfs::MessageAction::kAccountTransfer)
-//    return HandleAccountTransfer(message);
-
-
-//  nfs::Reply reply(CommonErrors::success);
-//  {
-//    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-//    if (accumulator_.CheckHandled(message, reply))
-//      return reply_functor(reply.Serialise()->string());
-//  }
-//  // TODO(dirvine) we need to check the error_code used here perhaps!
-//  // if there is no reply then this is of no use.
-//  if (accumulator_.GetPendingOrCompleteResults(message).first <
-//      routing::Parameters::node_group_size -1)
-//    return accumulator_.PushSingleResult(message,
-//                                         reply_functor,
-//                                         maidsafe_error(CommonErrors::success));
-//  else
-//    accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
-
-//  if (message.data().action == nfs::MessageAction::kPut) {
-//    HandlePut(message);
-//  } else if (message.data().action == nfs::MessageAction::kDeleteBranchUntilFork) {
-//    HandleDeleteBranchUntilFork(message);
-//  } else if (message.data().action == nfs::MessageAction::kGet) {
-//    HandleGet(message, reply_functor);
-//  }else if (message.data().action == nfs::MessageAction::kGetBranch) {
-//    HandleGetBranch(message, reply_functor);
-//  }
-//}
-////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////
-
-//void StructuredDataManagerService::HandlePut(const nfs::Message& message) {
-//  maidsafe_error return_code(CommonErrors::success);
-//  try {
-//    Data data(typename Data::name_type(message.data().name),
-//              typename Data::serialised_type(message.data().content));
-//    auto account_name(detail::GetStructuredDataKey(message));
-
-//  }
-//  catch(const maidsafe_error& error) {
-//    LOG(kWarning) << error.what();
-//    return_code = error;
-//  }
-//  catch(...) {
-//    LOG(kWarning) << "Unknown error.";
-//    return_code = MakeError(CommonErrors::unknown);
-//  }
-//}
-
-//void StructuredDataManagerService::HandleDelete(const nfs::Message& message) {
-//  try {
-//    auto data_name(detail::GetStructuredDataName<Data>(message));
-//    //DeleteFromAccount<Data>(detail::GetSourceMaidName(message), data_name, version);
-//  }
-//  catch(const maidsafe_error& error) {
-//    LOG(kWarning) << error.what();
-//  }
-//  catch(...) {
-//    LOG(kWarning) << "Unknown error.";
-//   }
-//}
-
-// template<typename Data, nfs::MessageAction action>
-// void StructuredDataManagerService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message,
-//                                                                    int32_t cost) {
-//   auto account_name(detail::GetMaidAccountName(message));
-//   auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(message, cost,
-//                                                                     routing_.kNodeId()));
-//   maid_account_handler_.AddLocalUnresolvedEntry(account_name, unresolved_entry);
-//   Sync(account_name);
-// }
+   // accumulate then action, on completion then set reply
+   std::lock_guard<std::mutex> lock(accumulator_mutex_);
+   if (!accumulator_.PushSingleResult(message,
+                                     reply_functor,
+                                     maidsafe_error(CommonErrors::pending_result)).size() <
+                                     routing::Parameters::node_group_size -1) {
+     Sync<Data>(message);
+   }
+}
 
 }  // namespace vault
 

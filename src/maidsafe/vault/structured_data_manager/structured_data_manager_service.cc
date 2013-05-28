@@ -86,42 +86,7 @@ StructuredDataDb::Key StructuredDataManagerService::GetKeyFromMessage(const nfs:
                          message.source());
 }
 
-void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
-                                                  const routing::ReplyFunctor& reply_functor) {
- //   ValidateSender(message);
-   if (message.data().action == nfs::MessageAction::kSynchronise)
-     return HandleSync(message);
-   if (message.data().action == nfs::MessageAction::kAccountTransfer)
-     return HandleAccountTransfer(message);
 
-
-   nfs::Reply reply(CommonErrors::success);
-   {
-     std::lock_guard<std::mutex> lock(accumulator_mutex_);
-     if (accumulator_.CheckHandled(message, reply))
-       return reply_functor(reply.Serialise()->string());
-   }
-   // TODO(dirvine) we need to check the error_code used here perhaps!
-   // if there is no reply then this is of no use.
-   if (accumulator_.GetPendingOrCompleteResults(message).first <
-       routing::Parameters::node_group_size -1) {
-            accumulator_.PushSingleResult(message,
-                                          reply_functor,
-                                          maidsafe_error(CommonErrors::success));
-     return;
-   } else {
-     accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
-   }
-   if (message.data().action == nfs::MessageAction::kPut ||
-       message.data().action == nfs::MessageAction::kDeleteBranchUntilFork ||
-       message.data().action == nfs::MessageAction::kDelete) {
-     Sync(message, reply_functor);
-   } else if (message.data().action == nfs::MessageAction::kGet) {
-     HandleGet(message, reply_functor);
-   }else if (message.data().action == nfs::MessageAction::kGetBranch) {
-     HandleGetBranch(message, reply_functor);
-   }
-}
 // =============== Get data =================================================================
 
 void StructuredDataManagerService::HandleGet(const nfs::Message& message,
@@ -129,12 +94,14 @@ void StructuredDataManagerService::HandleGet(const nfs::Message& message,
   try {
     nfs::Reply reply(CommonErrors::success);
     StructuredDataVersions version(structured_data_db_.Get(GetKeyFromMessage(message)));
-    reply_functor(nfs::StructuredData(version.Get()).Serialise()->string());
+    reply.data() = nfs::StructuredData(version.Get()).Serialise().data;
+    reply_functor(reply.Serialise()->string());
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
   }
   catch (std::exception& e) {
     LOG(kError) << "Bad message: " << e.what();
+    nfs::Reply reply(VaultErrors::failed_to_handle_request);
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     accumulator_.SetHandled(message, maidsafe_error(VaultErrors::failed_to_handle_request));
  }
@@ -172,8 +139,8 @@ void StructuredDataManagerService::HandleSync(const nfs::Message& /*message*/) {
 
 // In this persona we sync all mutating actions, on sucess/fail the reply_functor is fired
 // The mergePloicy will supply the reply_functor with the appropriate 'error_code'
-void StructuredDataManagerService::Sync(const nfs::Message&/* message*/,
-                                        const routing::ReplyFunctor& /*reply_functor*/) {
+template<typename Data>
+void StructuredDataManagerService::Sync(const nfs::Message&/* message*/) {
 }
 // // =============== Account transfer ================================================================
 void StructuredDataManagerService::HandleAccountTransfer(const nfs::Message& /*message*/) {
