@@ -23,6 +23,8 @@ namespace maidsafe {
 
 namespace vault {
 
+const size_t MetadataHandler::kSyncTriggerCount_(1);
+
 namespace detail {
 
 fs::path GetPath(const std::string& data_name,

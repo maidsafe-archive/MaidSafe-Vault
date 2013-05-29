@@ -102,8 +102,10 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
     auto data_size(static_cast<int32_t>(message.data().content.string().size()));
     //FIXME(Prakash) get cost
     metadata_handler_.template CheckPut<Data>(data_name, data_size);
+    // FIXME (Prakash) Need to update accumulator to accomodate cost
     if (detail::AddResult(message, reply_functor, MakeError(CommonErrors::success),
                           accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
+//FIXME (Prakash)      if (cost ==  new_data_cost) {  // discuss
       if (metadata_handler_.template CheckMetadataExists<Data>(data_name)) {
         MetadataValueDelta delta;
         delta.data_size = data_size;
@@ -112,8 +114,8 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
         PmidName target_data_holder(routing_.ClosestToId(message.source().node_id) ?
                                     message.data_holder() :
                                     Identity(routing_.RandomConnectedNode().string()));
+        // Account will be created by PutResult message from PAH
         Put(data, target_data_holder);
-        // Do we need to sync here ?  Create account db entry ?
       }
     }
   }
