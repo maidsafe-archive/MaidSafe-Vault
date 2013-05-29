@@ -147,7 +147,9 @@ void StructuredDataManagerService::HandleSync(const nfs::Message& /*message*/) {
 // In this persona we sync all mutating actions, on sucess/fail the reply_functor is fired
 // The mergePloicy will supply the reply_functor with the appropriate 'error_code'
 template<typename Data>
-void StructuredDataManagerService::Sync(const nfs::Message&/* message*/) {
+void StructuredDataManagerService::Sync(const nfs::Message& message) {
+    auto key = GetKeyFromMessage(message);
+    auto versions = GetVersionsFromMessage(message);
 }
 // // =============== Account transfer ================================================================
 void StructuredDataManagerService::HandleAccountTransfer(const nfs::Message& /*message*/) {

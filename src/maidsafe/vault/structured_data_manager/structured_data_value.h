@@ -14,6 +14,7 @@
 
 #include "boost/optional.hpp"
 
+#include "maidsafe/nfs/message.h"
 #include "maidsafe/routing/api_config.h"
 #include "maidsafe/data_types/structured_data_versions.h"
 
@@ -27,6 +28,7 @@ struct StructuredDataValue {
   StructuredDataValue(const StructuredDataValue& other);
   StructuredDataValue& operator=(StructuredDataValue other);
   // TODO(Team) when we get std::optional we can have move ctr but boost prevents this just now
+  nfs::MessageId entry_id;
   boost::optional<StructuredDataVersions::VersionName> version;
   boost::optional<StructuredDataVersions::VersionName> new_version;
   boost::optional<routing::ReplyFunctor> reply_functor;

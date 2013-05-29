@@ -12,7 +12,7 @@
 #include "maidsafe/vault/unresolved_element.h"
 
 #include <string>
-
+#include <cstdio>
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/unresolved_element.pb.h"
@@ -81,6 +81,35 @@ UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, int32_t>::seri
 
   return serialised_type((NonEmptyString(proto_copy.SerializeAsString())));
 }
+
+
+
+
+template<>
+UnresolvedElement<StructuredDataKey, StructuredDataValue>::serialised_type
+  UnresolvedElement<StructuredDataKey, StructuredDataValue>::Serialise() const {
+  protobuf::StructuredDataUnresolvedEntry proto_copy;
+
+  auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.data_name));
+  auto proto_key(proto_copy.mutable_key());
+  proto_key->set_name_type(static_cast<int32_t>(tag_value_and_id.first));
+  proto_key->set_name(tag_value_and_id.second.string());
+  proto_key->set_peer_type(static_cast<int32_t>(key.peer_type.persona));
+  proto_key->set_peer(key.peer_type.node_id.string());
+  proto_key->set_action(static_cast<int32_t>(key.action));
+
+  auto proto_value(proto_copy.mutable_value());
+  proto_value->set_entry_id(static_cast<int32_t>(std::stoi(value.entry_id.data.string())));
+
+//  if (value.version)
+//      proto_value->version.id.push_back(*value.version);
+//  if (value.new_version)
+//      proto_value->set_new_version(*value.new_version);
+
+  return serialised_type((NonEmptyString(proto_copy.SerializeAsString())));
+}
+
+
 
 }  // namespace vault
 
