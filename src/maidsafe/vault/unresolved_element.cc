@@ -101,10 +101,17 @@ UnresolvedElement<StructuredDataKey, StructuredDataValue>::serialised_type
   auto proto_value(proto_copy.mutable_value());
   proto_value->set_entry_id(static_cast<int32_t>(std::stoi(value.entry_id.data.string())));
 
-//  if (value.version)
-//      proto_value->version.id.push_back(*value.version);
-//  if (value.new_version)
-//      proto_value->set_new_version(*value.new_version);
+  if (value.version) {
+     auto proto_version(proto_value->mutable_version());
+     proto_version->set_id(value.version->id->string());
+     proto_version->set_index(value.version->index);
+  }
+
+   if (value.new_version) {
+     auto proto_new_version(proto_value->mutable_new_version());
+     proto_new_version->set_id(value.new_version->id->string());
+     proto_new_version->set_index(value.new_version->index);
+   }
 
   return serialised_type((NonEmptyString(proto_copy.SerializeAsString())));
 }
