@@ -30,7 +30,7 @@ namespace vault {
 
 class StructuredDataDb {
  public:
-  typedef std::pair<DataNameVariant, nfs::PersonaId> Key;
+  typedef std::pair<DataNameVariant, Identity> Key;
   typedef StructuredDataVersions::serialised_type Value;
   typedef std::pair<Key, Value> KvPair;
   explicit StructuredDataDb(const boost::filesystem::path& path);

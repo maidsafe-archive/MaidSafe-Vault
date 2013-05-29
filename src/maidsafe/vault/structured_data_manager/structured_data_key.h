@@ -22,16 +22,16 @@ namespace maidsafe {
 namespace vault {
 
 struct StructuredDataKey {
-  nfs::PersonaId peer_type;
+  Identity originator;
   DataNameVariant data_name;
   nfs::MessageAction action;
 };
 
 struct StructuredDataDbKey {
   explicit StructuredDataDbKey(StructuredDataKey& structured_data_key)
-      : peer_type(structured_data_key.peer_type),
+      : originator(structured_data_key.originator),
         data_name(structured_data_key.data_name) {}
-  nfs::PersonaId peer_type;
+  Identity originator;
   DataNameVariant data_name;
 };
 

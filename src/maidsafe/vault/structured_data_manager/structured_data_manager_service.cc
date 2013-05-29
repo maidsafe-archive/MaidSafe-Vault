@@ -83,7 +83,7 @@ StructuredDataDb::Key StructuredDataManagerService::GetKeyFromMessage(const nfs:
    if (!message.data().type)
      ThrowError(CommonErrors::parsing_error);
    return std::make_pair(GetDataNameVariant(*message.data().type, message.data().name),
-                         message.source());
+                         message.data().originator);
 }
 
 std::vector<StructuredDataVersions::VersionName>

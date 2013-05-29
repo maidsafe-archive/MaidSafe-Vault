@@ -82,9 +82,6 @@ UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, int32_t>::seri
   return serialised_type((NonEmptyString(proto_copy.SerializeAsString())));
 }
 
-
-
-
 template<>
 UnresolvedElement<StructuredDataKey, StructuredDataValue>::serialised_type
   UnresolvedElement<StructuredDataKey, StructuredDataValue>::Serialise() const {
@@ -94,29 +91,35 @@ UnresolvedElement<StructuredDataKey, StructuredDataValue>::serialised_type
   auto proto_key(proto_copy.mutable_key());
   proto_key->set_name_type(static_cast<int32_t>(tag_value_and_id.first));
   proto_key->set_name(tag_value_and_id.second.string());
-  proto_key->set_peer_type(static_cast<int32_t>(key.peer_type.persona));
-  proto_key->set_peer(key.peer_type.node_id.string());
+  proto_key->set_originator(key.originator.string());
   proto_key->set_action(static_cast<int32_t>(key.action));
 
-  auto proto_value(proto_copy.mutable_value());
-  proto_value->set_entry_id(static_cast<int32_t>(std::stoi(value.entry_id.data.string())));
-
-  if (value.version) {
-     auto proto_version(proto_value->mutable_version());
-     proto_version->set_id(value.version->id->string());
-     proto_version->set_index(value.version->index);
+  for (const auto& message_content : messages_contents) {
+    auto proto_message_content(proto_copy.add_messages_contents());
+    proto_message_content->set_peer(message_content.peer_id.string());
+    if (message_content.entry_id)
+      proto_message_content->set_entry_id(*message_content.entry_id);
+    if (message_content.value) {
+        auto proto_value(proto_message_content->mutable_value());
+        if (message_content.value->version) {
+            auto proto_version(proto_value->mutable_version());
+            proto_version->set_id(message_content.value->version->id->string());
+            proto_version->set_index(message_content.value->version->index);
+        }
+        if (message_content.value->new_version) {
+            auto proto_new_version(proto_value->mutable_new_version());
+            proto_new_version->set_id(message_content.value->new_version->id->string());
+            proto_new_version->set_index(message_content.value->new_version->index);
+        }
+        if (message_content.value->serialised_db_value) {
+            auto proto_serialised_db_value(proto_value->mutable_new_version());
+            proto_serialised_db_value->set_id(message_content.value->new_version->id->string());
+            proto_serialised_db_value->set_index(message_content.value->new_version->index);
+        }
+    }
   }
-
-   if (value.new_version) {
-     auto proto_new_version(proto_value->mutable_new_version());
-     proto_new_version->set_id(value.new_version->id->string());
-     proto_new_version->set_index(value.new_version->index);
-   }
-
   return serialised_type((NonEmptyString(proto_copy.SerializeAsString())));
 }
-
-
 
 }  // namespace vault
 

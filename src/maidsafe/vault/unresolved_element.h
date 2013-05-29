@@ -63,7 +63,6 @@ struct UnresolvedElement {
   serialised_type Serialise() const;
 
   Key key;
-  Value value;
   std::vector<MessageContent> messages_contents;
   int sync_counter;
   bool dont_add_to_db;
