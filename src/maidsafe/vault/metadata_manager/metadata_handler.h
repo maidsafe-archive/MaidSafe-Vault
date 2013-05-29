@@ -93,7 +93,8 @@ class MetadataHandler {
   std::vector<DataNameVariant> GetRecordNames() const;
   serialised_metadata_details_type GetSerialisedRecord(const DataNameVariant& data_name) const;
   NonEmptyString GetSyncData(const DataNameVariant& data_name) const;
-  void ApplySyncData(const DataNameVariant& data_name,
+  template<typename Data>
+  void ApplySyncData(const typename Data::name_type& data_name,
                      const NonEmptyString& serialised_unresolved_entries);
   void ReplaceNodeInSyncList(const DataNameVariant& record_name,
                              const NodeId& old_node,

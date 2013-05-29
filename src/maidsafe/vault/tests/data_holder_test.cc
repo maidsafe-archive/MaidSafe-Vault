@@ -309,6 +309,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
               for (uint32_t i = 0; i != DataHolderService::kDeleteRequestsRequired; ++i)
                   this->HandleDeleteMessage(message, [&](const std::string& result) {
                                                         assert(!result.empty());
+                                                        static_cast<void>(result);
                                                       });
                                             }));
         } else {
@@ -321,6 +322,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
               for (uint32_t i = 0; i != DataHolderService::kDeleteRequestsRequired; ++i)
                   this->HandleDeleteMessage(message, [&](const std::string& result) {
                                                         assert(!result.empty());
+                                                        static_cast<void>(result);
                                                      });
                                             }));
         }
@@ -336,6 +338,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
             for (uint32_t i = 0; i != DataHolderService::kPutRequestsRequired; ++i)
                this->HandlePutMessage(message, [&](const std::string& result) {
                                                   assert(!result.empty());
+                                                  static_cast<void>(result);
                                                });
                               }));
         break;

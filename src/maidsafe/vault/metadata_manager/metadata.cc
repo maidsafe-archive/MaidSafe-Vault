@@ -64,7 +64,7 @@ MetadataValue::serialised_type MetadataValue::Serialise() {
 }
 
 Metadata::Metadata(const DataNameVariant& data_name, MetadataDb* metadata_db,
-                         int32_t data_size)
+                   int32_t data_size)
     : data_name_(data_name),
       value_([&metadata_db, data_name, data_size, this]()->MetadataValue {
               assert(metadata_db);

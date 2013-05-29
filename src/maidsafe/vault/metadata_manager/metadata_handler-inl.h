@@ -140,6 +140,13 @@ int32_t MetadataHandler::CheckPut(const typename Data::name_type& /*data_name*/,
   return 0;
 }
 
+
+template<typename Data>
+void MetadataHandler::ApplySyncData(const typename Data::name_type& /*data_name*/,
+                                    const NonEmptyString& /*serialised_unresolved_entries*/) {
+
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe
