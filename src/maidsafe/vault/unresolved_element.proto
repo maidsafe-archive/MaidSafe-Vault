@@ -29,9 +29,8 @@ message StructuredDataUnresolvedEntry {
     required int64 index = 2;
   }
   message Value {
-    optional int32 entry_id = 1;
-    optional Version version = 2;
-    optional Version new_version = 3;
+    optional Version version = 1;
+    optional Version new_version = 2;
   }
   message MessageContent {
     required bytes peer = 1;

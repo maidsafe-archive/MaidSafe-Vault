@@ -81,9 +81,58 @@ MaidAccountUnresolvedEntry::serialised_type MaidAccountUnresolvedEntry::Serialis
   return serialised_type((NonEmptyString(proto_copy.SerializeAsString())));
 }
 
+
 template<>
-UnresolvedElement<StructuredDataKey, StructuredDataValue>::serialised_type
-  UnresolvedElement<StructuredDataKey, StructuredDataValue>::Serialise() const {
+StructuredDataUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
+    : key(),
+      messages_contents(),
+      sync_counter(0),
+      dont_add_to_db(false) {
+  protobuf::StructuredDataUnresolvedEntry proto_copy;
+  if (!proto_copy.ParseFromString(serialised_copy->string()))
+    ThrowError(CommonErrors::parsing_error);
+
+  key.originator = Identity(proto_copy.key().originator());
+  key.data_name = GetDataNameVariant(static_cast<DataTagValue>(proto_copy.key().name_type()),
+                                                        Identity(proto_copy.key().name()));
+
+  key.action = static_cast<nfs::MessageAction>(proto_copy.key().action());
+
+  if (!(key.action == nfs::MessageAction::kDeleteBranchUntilFork ||
+        key.action == nfs::MessageAction::kDelete) ||
+        key.action == nfs::MessageAction::kPut ||
+        key.action == nfs::MessageAction::kAccountTransfer ||
+        key.action == nfs::MessageAction::kSynchronise)
+    ThrowError(CommonErrors::parsing_error);
+
+  for (int i(0); i != proto_copy.messages_contents_size(); ++i) {
+    MessageContent message_content;
+    message_content.peer_id = NodeId(proto_copy.messages_contents(i).peer());
+    if (proto_copy.messages_contents(i).has_entry_id())
+      message_content.entry_id = proto_copy.messages_contents(i).entry_id();
+    if (proto_copy.messages_contents(i).has_value()) {
+      if(proto_copy.messages_contents(i).has_value()) {
+        if(proto_copy.messages_contents(i).value().has_version()) {
+          message_content.value->version->id.data =
+                  Identity(proto_copy.messages_contents(i).value().version().id());
+          message_content.value->version->index =
+                  proto_copy.messages_contents(i).value().version().index();
+        }
+        if(proto_copy.messages_contents(i).value().has_new_version()) {
+          message_content.value->new_version->id.data =
+                  Identity(proto_copy.messages_contents(i).value().new_version().id());
+          message_content.value->new_version->index =
+                  proto_copy.messages_contents(i).value().new_version().index();
+        }
+      }
+    }
+    messages_contents.push_back(message_content);
+  }
+
+}
+
+template<>
+StructuredDataUnresolvedEntry::serialised_type StructuredDataUnresolvedEntry::Serialise() const {
   protobuf::StructuredDataUnresolvedEntry proto_copy;
 
   auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.data_name));
