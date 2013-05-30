@@ -35,7 +35,7 @@ namespace vault {
 class StructuredDataMergePolicy {
  public:
   typedef UnresolvedElement<StructuredDataKey, StructuredDataValue> UnresolvedEntry;
-  typedef std::pair<DataNameVariant, nfs::PersonaId> DbKey;
+  typedef std::pair<DataNameVariant, Identity> DbKey;
 
   explicit StructuredDataMergePolicy(maidsafe::vault::StructuredDataDb* db);
   StructuredDataMergePolicy(StructuredDataMergePolicy&& other);
@@ -54,17 +54,20 @@ protected:
   StructuredDataMergePolicy(const StructuredDataMergePolicy&);
   StructuredDataMergePolicy& operator=(const StructuredDataMergePolicy&);
 
-  void MergePut(const StructuredDataKey& key, const Identity& new_value, const Identity& old_value);
+  void MergePut(const DbKey& key,
+                const typename StructuredDataVersions::VersionName& new_value,
+                const typename StructuredDataVersions::VersionName& old_value);
 
-  void MergeDeleteBranchUntilFork(const StructuredDataKey& key, const Identity& tot);
-  void MergeDelete(const StructuredDataKey& key);
+  void MergeDeleteBranchUntilFork(const DbKey& key,
+                                  const typename StructuredDataVersions::VersionName& tot);
+  void MergeDelete(const DbKey& key);
 
-  std::vector<Identity> MergeGet(const StructuredDataKey& key);
-  void MergeGetBranch(const StructuredDataKey& key, const Identity& tot);
+  std::vector<Identity> MergeGet(const DbKey& key);
+  void MergeGetBranch(const DbKey& key, const typename StructuredDataVersions::VersionName& tot);
 
 
   SerialisedValue SerialiseDbValue(const StructuredDataValue& db_value) const;
-  SerialisedKey SerialiseDbKey(const StructuredDataKey& db_key) const;
+  SerialisedKey SerialiseDbKey(const DbKey& db_key) const;
   StructuredDataValue ParseDbValue(const SerialisedValue& serialised_db_value) const;
   SerialisedValue GetFromDb(const DbKey& db_key);
 };

@@ -38,78 +38,46 @@ StructuredDataMergePolicy& StructuredDataMergePolicy::operator=(StructuredDataMe
   return *this;
 }
 
-//void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
-//  auto serialised_db_value(GetFromDb(unresolved_entry.key.first));
-//  switch (nfs::MessageAction) {
-//    case(kGetBranch) :
+void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
+  auto db_key = std::make_pair(unresolved_entry.key.data_name, unresolved_entry.key.originator);
+  auto serialised_value(GetFromDb(db_key));
 
-//  }
-//  if (unresolved_entry.key.second == nfs::MessageAction::kGetBranch) {
-//    MergePut(unresolved_entry.key.first, MergedCost(unresolved_entry), serialised_db_value);
-//  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
-//    MergeDelete(unresolved_entry.key.first, serialised_db_value);
-//  } else {
-//    ThrowError(CommonErrors::invalid_parameter);
-//  }
-//}
+  if (unresolved_entry.key.action == nfs::MessageAction::kGetBranch) {
+    assert(unresolved_entry.messages_contents.at(0).value->version);
+    assert(unresolved_entry.messages_contents.at(0).value->new_version);
+    MergePut(db_key,
+             *unresolved_entry.messages_contents.at(0).value->version,
+             *unresolved_entry.messages_contents.at(0).value->new_version);
+  } else if (unresolved_entry.key.action == nfs::MessageAction::kDelete) {
+    MergeDelete(db_key);
+  } else if (unresolved_entry.key.action == nfs::MessageAction::kDeleteBranchUntilFork) {
+    assert(unresolved_entry.messages_contents.at(0).value);
+    MergeDeleteBranchUntilFork(db_key,
+                               *unresolved_entry.messages_contents.at(0).value->version);
+  } else {
+    ThrowError(CommonErrors::invalid_parameter);
+  }
+}
 
+void StructuredDataMergePolicy::MergePut(const DbKey& key,
+              const typename StructuredDataVersions::VersionName& new_value,
+              const typename StructuredDataVersions::VersionName& old_value) {
+  auto value(GetFromDb(key));
+//  auto serialised(StructuredDataVersions::serialised_type(value->string()));
+//  StructuredDataVersions versions(serialised);
+//  value.Put(old_value, new_value);
+}
 
-//void StructuredDataMergePolicy::MergePut(const DataNameVariant& data_name,
-//                                      UnresolvedEntry::Value cost,
-//                                      const NonEmptyString& serialised_db_value) {
-//  if (serialised_db_value.IsInitialised()) {
-//    auto current_values(ParseDbValue(serialised_db_value));
-//    uint64_t current_total_size(current_values.first.data * current_values.second.data);
-//    ++current_values.second.data;
-//    current_values.first.data =
-//        static_cast<int32_t>((current_total_size + cost) / current_values.second.data);
-//    db_->Put(std::make_pair(data_name, SerialiseDbValue(current_values)));
-//  } else {
-//      // TODO(david/fraser) this will require we send the same message *count* times
-//      // this should be optimised to handle xmitting the *count*
-//    DbValue db_value(std::make_pair(AverageCost(cost), Count(1)));
-//    db_->Put(std::make_pair(data_name, SerialiseDbValue(db_value)));
-//  }
-//}
+void StructuredDataMergePolicy::MergeDeleteBranchUntilFork(const DbKey& key,
+                                const typename StructuredDataVersions::VersionName& tot) {
+    auto versions(GetFromDb(key));
+  //  versions.DeleteBranchUntilFork(tot);
+}
 
-//void StructuredDataMergePolicy::MergeDelete(const DataNameVariant& data_name,
-//                                         const NonEmptyString& serialised_db_value) {
-//  if (!serialised_db_value.IsInitialised()) {
-//    // No need to check in unresolved_data_, since the corresponding "Put" will already have been
-//    // marked as "dont_add_to_db".
-//    return;
-//  }
+void StructuredDataMergePolicy::MergeDelete(const DbKey& key) {
+  db_->Delete(key);
+}
 
-//  auto current_values(ParseDbValue(serialised_db_value));
-//  assert(current_values.second.data > 0);
-//  if (current_values.second.data == 1) {
-//    db_->Delete(data_name);
-//  } else {
-//    --current_values.second.data;
-//    db_->Put(std::make_pair(data_name, SerialiseDbValue(current_values)));
-//  }
-//}
-
-//NonEmptyString StructuredDataMergePolicy::SerialiseDbValue(DbValue db_value) const {
-//  protobuf::MaidAccountDbValue proto_db_value;
-//  proto_db_value.set_average_cost(db_value.first.data);
-//  proto_db_value.set_count(db_value.second.data);
-//  return NonEmptyString(proto_db_value.SerializeAsString());
-//}
-
-//StructuredDataMergePolicy::DbValue StructuredDataMergePolicy::ParseDbValue(
-//    NonEmptyString serialised_db_value) const {
-//  return StructuredDataVersions(serialised_db_value);
-//}
-
-//NonEmptyString StructuredDataMergePolicy::GetFromDb(const DbKey &db_key) {
-//  NonEmptyString serialised_db_value;
-//  try {
-//    serialised_db_value = db_->Get(db_key);
-//  }
-//  catch(const vault_error&) {}
-//  return serialised_db_value;
-//}
 
 }  // namespace vault
 
