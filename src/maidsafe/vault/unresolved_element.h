@@ -75,6 +75,10 @@ typedef UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, Metada
                                                                  MetadataUnresolvedEntry;
 typedef UnresolvedElement<StructuredDataKey, StructuredDataValue> StructuredDataUnresolvedEntry;
 
+typedef PmidAccountUnresolvedEntry PmidAccountResolvedEntry;
+typedef MaidAccountUnresolvedEntry MaidAccountResolvedEntry;
+typedef MetadataUnresolvedEntry MetadataResolvedEntry;
+
 }  // namespace vault
 
 }  // namespace maidsafe
