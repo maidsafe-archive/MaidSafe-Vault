@@ -129,7 +129,7 @@ bool MaidAccount::ApplyAccountTransfer(const NodeId& source_id,
     MaidAccountUnresolvedEntry entry(
         std::make_pair(data_name, nfs::MessageAction::kPut), average_cost, source_id);
     for (int32_t i(0); i != count; ++i) {
-      if (sync_.AddAccountTransferRecord(entry, all_account_transfers_received))
+      if (sync_.AddAccountTransferRecord(entry, all_account_transfers_received).size() == 1U)
         total_put_data_ += average_cost;
     }
   }
@@ -137,7 +137,7 @@ bool MaidAccount::ApplyAccountTransfer(const NodeId& source_id,
   for (int i(0); i != proto_maid_account_details.serialised_unresolved_entry_size(); ++i) {
     MaidAccountUnresolvedEntry entry(MaidAccountUnresolvedEntry::serialised_type(
         NonEmptyString(proto_maid_account_details.serialised_unresolved_entry(i))));
-    if (sync_.AddUnresolvedEntry(entry) && entry.messages_contents.front().value)
+    if (!sync_.AddUnresolvedEntry(entry).empty() && entry.messages_contents.front().value)
       total_put_data_ += *entry.messages_contents.front().value;
   }
 
@@ -202,7 +202,7 @@ void MaidAccount::ApplySyncData(const NonEmptyString& serialised_unresolved_entr
   for (int i(0); i != proto_unresolved_entries.serialised_unresolved_entry_size(); ++i) {
     MaidAccountUnresolvedEntry entry(MaidAccountUnresolvedEntry::serialised_type(
         NonEmptyString(proto_unresolved_entries.serialised_unresolved_entry(i))));
-    if (sync_.AddUnresolvedEntry(entry) && entry.messages_contents.front().value) {
+    if (!sync_.AddUnresolvedEntry(entry).empty() && entry.messages_contents.front().value) {
       if (entry.key.second == nfs::MessageAction::kPut)
         total_put_data_ += *entry.messages_contents.front().value;
       else

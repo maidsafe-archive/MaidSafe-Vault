@@ -73,7 +73,7 @@ typename std::vector<typename MergePolicy::UnresolvedEntry::MessageContent>::ite
 
 template<typename MergePolicy>
 bool IsResolved(const typename MergePolicy::UnresolvedEntry& entry) {
-  return entry.messages_contents.size() > routing::Parameters::node_group_size / 2;
+  return entry.messages_contents.size() > static_cast<uint32_t>(routing::Parameters::node_group_size / 2);
 }
 
 template<typename MergePolicy>
@@ -111,7 +111,8 @@ Sync<MergePolicy>& Sync<MergePolicy>::operator=(Sync&& other) {
 }
 
 template<typename MergePolicy>
-bool Sync<MergePolicy>::AddUnresolvedEntry(const typename MergePolicy::UnresolvedEntry& entry) {
+std::vector<typename MergePolicy::ResolvedEntry>
+    Sync<MergePolicy>::AddUnresolvedEntry(const typename MergePolicy::UnresolvedEntry& entry) {
   return AddEntry(entry, true);
 }
 
@@ -121,7 +122,9 @@ void Sync<MergePolicy>::AddLocalEntry(const typename MergePolicy::UnresolvedEntr
 }
 
 template<typename MergePolicy>
-bool Sync<MergePolicy>::AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge) {
+std::vector<typename MergePolicy::ResolvedEntry>
+    Sync<MergePolicy>::AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge) {
+  std::vector<typename MergePolicy::ResolvedEntry> resolved_entries;
   auto found(std::begin(MergePolicy::unresolved_data_));
   for (;;) {
     found = std::find_if(found,
@@ -151,17 +154,18 @@ bool Sync<MergePolicy>::AddEntry(const typename MergePolicy::UnresolvedEntry& en
 
     if (merge && detail::IsResolved<MergePolicy>(*found)) {
       MergePolicy::Merge(*found);
-      return true;
+      resolved_entries.push_back(*found);
     }
 
     ++found;
   }
-  return false;
+  return resolved_entries;
 }
 
 template<typename MergePolicy>
-bool Sync<MergePolicy>::AddAccountTransferRecord(const typename MergePolicy::UnresolvedEntry& entry,
-                                                 bool all_account_transfers_received) {
+std::vector<typename MergePolicy::ResolvedEntry>
+    Sync<MergePolicy>::AddAccountTransferRecord(const typename MergePolicy::UnresolvedEntry& entry,
+                                                bool all_account_transfers_received) {
   return AddEntry(entry, all_account_transfers_received);
 }
 

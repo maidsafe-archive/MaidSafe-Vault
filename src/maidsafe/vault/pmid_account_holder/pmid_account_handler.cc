@@ -19,12 +19,32 @@
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
-
 namespace vault {
 
-PmidAccountHandler::PmidAccountHandler()
-    : mutex_(),
+PmidAccountHandler::PmidAccountHandler(Db& db, const NodeId& this_node_id)
+    : db_(db),
+      kThisNodeId_(this_node_id),
+      mutex_(),
       pmid_accounts_() {}
+
+void PmidAccountHandler::CreateAccount(const PmidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  std::unique_ptr<PmidAccount> account(new PmidAccount(account_name, db_, kThisNodeId_));
+  pmid_accounts_.insert(std::move(std::make_pair(account_name, std::move(account))));
+}
+
+bool PmidAccountHandler::ApplyAccountTransfer(const PmidName& account_name, const NodeId &source_id,
+    const PmidAccount::serialised_type& serialised_pmid_account_details) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  std::unique_ptr<PmidAccount> account(new PmidAccount(account_name, db_, kThisNodeId_,
+                                                       source_id,
+                                                       serialised_pmid_account_details));
+  if (!pmid_accounts_.insert(std::make_pair(account_name, std::move(account))).second)
+    return false;
+  else
+    return pmid_accounts_.at(account_name)->ApplyAccountTransfer(source_id,
+                                                                 serialised_pmid_account_details);
+}
 
 void PmidAccountHandler::AddAccount(std::unique_ptr<PmidAccount> account) {
   pmid_accounts_.insert(std::make_pair(account->name(), std::move(account)));
@@ -56,6 +76,23 @@ void PmidAccountHandler::SetDataHolderUp(const PmidName& account_name) {
   pmid_accounts_.at(account_name)->SetDataHolderUp();
 }
 
+void PmidAccountHandler::AddLocalUnresolvedEntry(const PmidName& account_name,
+                                                 const PmidAccountUnresolvedEntry& unresolved_entry) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  pmid_accounts_.at(account_name)->AddLocalUnresolvedEntry(unresolved_entry);
+}
+
+PmidRecord PmidAccountHandler::GetPmidRecord(const PmidName& account_name) {
+  auto it = std::find_if(std::begin(pmid_accounts_),
+                         std::end(pmid_accounts_),
+                         [&account_name](const AccountMap::value_type& pmid_account) {
+                            return account_name == pmid_account.second->name();
+                         });
+  if (it != std::end(pmid_accounts_))
+    return it->second->GetPmidRecord();
+  return PmidRecord();
+}
+
 std::vector<PmidName> PmidAccountHandler::GetAccountNames() const {
   std::vector<PmidName> account_names;
   std::lock_guard<std::mutex> lock(mutex_);
@@ -69,6 +106,28 @@ PmidAccount::serialised_type PmidAccountHandler::GetSerialisedAccount(
   return pmid_accounts_.at(account_name)->Serialise();
 }
 
-}  // namespace vault
+NonEmptyString PmidAccountHandler::GetSyncData(const PmidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return pmid_accounts_.at(account_name)->GetSyncData();
+}
 
+std::vector<PmidAccountResolvedEntry> PmidAccountHandler::ApplySyncData(const PmidName& account_name,
+                                       const NonEmptyString& serialised_unresolved_entries) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return pmid_accounts_.at(account_name)->ApplySyncData(serialised_unresolved_entries);
+}
+
+void PmidAccountHandler::ReplaceNodeInSyncList(const PmidName& account_name,
+                                               const NodeId& old_node,
+                                               const NodeId& new_node) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  pmid_accounts_.at(account_name)->ReplaceNodeInSyncList(old_node, new_node);
+}
+
+void PmidAccountHandler::IncrementSyncAttempts(const PmidName& account_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  pmid_accounts_.at(account_name)->IncrementSyncAttempts();
+}
+
+}  // namespace vault
 }  // namespace maidsafe
