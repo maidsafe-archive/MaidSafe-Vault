@@ -73,6 +73,14 @@ inline bool FromDataGetter(const Message& message);
 template<typename Message>
 inline bool FromStructuredDataManager(const nfs::Message& message);
 
+
+template<typename Persona>
+typename Persona::DbKey GetKeyFromMessage(const nfs::Message& message) {
+  if (!message.data().type)
+    ThrowError(CommonErrors::parsing_error);
+  return GetDataNameVariant(*message.data().type, message.data().name);
+}
+
 namespace detail {
 
 void InitialiseDirectory(const boost::filesystem::path& directory);

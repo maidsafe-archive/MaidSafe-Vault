@@ -80,6 +80,15 @@ CheckHoldersResult CheckHolders(const routing::MatrixChange& matrix_change,
   return holders_result;
 }
 
+template<>
+typename StructuredDataManager::DbKey
+         GetKeyFromMessage<StructuredDataManager>(const nfs::Message& message) {
+  if (!message.data().type)
+    ThrowError(CommonErrors::parsing_error);
+  return std::make_pair(GetDataNameVariant(*message.data().type, message.data().name),
+                        message.data().originator);
+}
+
 namespace detail {
 
 void InitialiseDirectory(const boost::filesystem::path& directory) {

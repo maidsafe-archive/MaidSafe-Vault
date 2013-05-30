@@ -11,8 +11,6 @@
 
 #include "maidsafe/vault/structured_data_manager/structured_data_merge_policy.h"
 
-#include <set>
-
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/data_types/structured_data_versions.h"
@@ -62,11 +60,16 @@ void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
 void StructuredDataMergePolicy::MergePut(const DbKey& key,
               const typename StructuredDataVersions::VersionName& new_value,
               const typename StructuredDataVersions::VersionName& old_value) {
-  auto value(GetFromDb(key));
-//  auto serialised(StructuredDataVersions::serialised_type(value->string()));
-//  StructuredDataVersions versions(serialised);
-//  value.Put(old_value, new_value);
-  // reply !!!!!!!!
+  try {
+    auto value(GetFromDb(key));
+    StructuredDataVersions structured_data_versions((typename
+                                                 StructuredDataVersions::serialised_type(value)));
+    structured_data_versions.Put(old_value, new_value);
+
+  }
+  catch (const std::exception& error) {
+
+  }
 }
 
 void StructuredDataMergePolicy::MergeDeleteBranchUntilFork(const DbKey& key,

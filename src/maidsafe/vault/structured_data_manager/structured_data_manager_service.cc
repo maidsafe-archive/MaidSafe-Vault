@@ -52,13 +52,9 @@ inline bool FromStructuredDataManager(const Message& message) {
 
 StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
-                                                   nfs::PublicKeyGetter& public_key_getter,
                                                    const boost::filesystem::path& path)
     : routing_(routing),
-      public_key_getter_(public_key_getter),
       accumulator_mutex_(),
-      account_name_(std::make_pair(Identity(routing_.kNodeId().string()),
-                                   Identity(pmid.name().data.string()))),
       accumulator_(),
       structured_data_db_(path),
       nfs_(routing_, pmid) {}
@@ -109,6 +105,7 @@ void StructuredDataManagerService::HandleGet(const nfs::Message& message,
   catch (std::exception& e) {
     LOG(kError) << "Bad message: " << e.what();
     nfs::Reply reply(VaultErrors::failed_to_handle_request);
+    reply_functor(reply.Serialise()->string());
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     accumulator_.SetHandled(message, maidsafe_error(VaultErrors::failed_to_handle_request));
  }
@@ -121,23 +118,19 @@ void StructuredDataManagerService::HandleGetBranch(const nfs::Message& message,
     nfs::Reply reply(CommonErrors::success);
     StructuredDataVersions version(structured_data_db_.Get(GetKeyFromMessage(message)));
     auto branch_to_get(GetVersionsFromMessage(message));
-    reply.data() = nfs::StructuredData(version.GetBranch(branch_to_get.front())).Serialise().data;
+    reply.data() = nfs::StructuredData(version.GetBranch(branch_to_get.at(0))).Serialise().data;
     reply_functor(reply.Serialise()->string());
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
   }
   catch (std::exception& e) {
     LOG(kError) << "Bad message: " << e.what();
+    nfs::Reply reply(VaultErrors::failed_to_handle_request);
+    reply_functor(reply.Serialise()->string());
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     accumulator_.SetHandled(message, maidsafe_error(VaultErrors::failed_to_handle_request));
  }
 }
-
-void StructuredDataManagerService::AddToAccumulator(const nfs::Message& message) {
-  std::lock_guard<std::mutex> lock(accumulator_mutex_);
-  accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
-}
-
 
 // // =============== Sync ============================================================================
 

@@ -21,6 +21,7 @@
 #include "maidsafe/passport/types.h"
 #include "maidsafe/nfs/data_policies.h"
 #include "maidsafe/nfs/nfs.h"
+#include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/post_policies.h"
 
@@ -68,6 +69,10 @@ typedef std::set<std::unique_ptr<MaidAccount>,
 typedef std::set<std::unique_ptr<PmidAccount>,
                  std::function<bool(const std::unique_ptr<PmidAccount>&,
                                     const std::unique_ptr<PmidAccount>&)>> PmidAccountSet;
+
+typedef nfs::PersonaTypes<nfs::Persona::kStructuredDataManager> StructuredDataManager;
+
+
 
 }  // namespace vault
 

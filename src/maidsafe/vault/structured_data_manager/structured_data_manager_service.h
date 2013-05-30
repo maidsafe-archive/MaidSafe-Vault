@@ -21,7 +21,7 @@
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/public_key_getter.h"
+#include "maidsafe/nfs/types.h"
 #include "maidsafe/nfs/persona_id.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/db.h"
@@ -43,7 +43,6 @@ class StructuredDataManagerService {
   typedef Identity StructuredDataAccountName;
   StructuredDataManagerService(const passport::Pmid& pmid,
                                routing::Routing& routing,
-                               nfs::PublicKeyGetter& public_key_getter,
                                const boost::filesystem::path& path);
   template<typename Data>
   void HandleMessage(const nfs::Message& message,
@@ -63,13 +62,11 @@ class StructuredDataManagerService {
                        GetVersionsFromMessage(const nfs::Message& msg) const;
   //// =============== Put/Delete data ===============================================================
 
-  void HandlePut(const nfs::Message& message, routing::ReplyFunctor reply_functor);
-  void HandleDeleteBranchUntilFork(const nfs::Message& message,
-                                   routing::ReplyFunctor reply_functor);
+//  void HandlePut(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+//  void HandleDeleteBranchUntilFork(const nfs::Message& message,
+//                                   routing::ReplyFunctor reply_functor);
   void HandleGet(const nfs::Message& message, routing::ReplyFunctor reply_functor);
   void HandleGetBranch(const nfs::Message& message, routing::ReplyFunctor reply_functor);
-
-  void AddToAccumulator(const nfs::Message& message);
 
 //   template<typename Data, nfs::MessageAction action>
 //   void AddLocalUnresolvedEntryThenSync(const nfs::Message& message, int32_t cost);
@@ -84,9 +81,7 @@ class StructuredDataManagerService {
   void HandleAccountTransfer(const nfs::Message& message);
 
   routing::Routing& routing_;
-  nfs::PublicKeyGetter& public_key_getter_;
   std::mutex accumulator_mutex_;
-  AccountName account_name_;
   Accumulator<StructuredDataAccountName> accumulator_;
   StructuredDataDb structured_data_db_;
   DataHolderNfs nfs_;

@@ -21,8 +21,8 @@ namespace vault {
 struct MetadataValueDelta {
   int data_size;
   boost::optional<int64_t> subscribers;
-  boost::optional<PmidName> new_online;
-  boost::optional<PmidName> new_offline;
+  std::vector<PmidName> new_online; // FIXME(Prakash) discuss
+  std::vector<PmidName> new_offline;  // FIXME(Prakash) discuss
 };
 
 }  // namespace vault

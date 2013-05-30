@@ -27,14 +27,6 @@ struct StructuredDataKey {
   nfs::MessageAction action;
 };
 
-struct StructuredDataDbKey {
-  explicit StructuredDataDbKey(StructuredDataKey& structured_data_key)
-      : originator(structured_data_key.originator),
-        data_name(structured_data_key.data_name) {}
-  Identity originator;
-  DataNameVariant data_name;
-};
-
 
 }  // namespace vault
 

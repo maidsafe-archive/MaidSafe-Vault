@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "maidsafe/common/node_id.h"
+#include "maidsafe/data_types/data_name_variant.h"
 
 
 namespace maidsafe {
@@ -50,7 +51,10 @@ class Sync : public MergePolicy {
   // This returns all unresoved entries containing this node's ID.  Each returned entry is provided
   // with just this node's ID inserted, even if the master copy has several other peers' IDs.
   std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData();
+  std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData(
+      const DataNameVariant& data_name);
   size_t GetUnresolvedCount() const { return MergePolicy::unresolved_data_.size(); }
+  size_t GetUnresolvedCount(const DataNameVariant& data_name) const;
   // Calling this will increment the sync counter and delete entries that reach the
   // 'sync_counter_max_' limit.  Entries which are resolved by all peers (i.e. have 4 messages) are
   // also pruned here.

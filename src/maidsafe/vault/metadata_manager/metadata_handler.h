@@ -92,7 +92,8 @@ class MetadataHandler {
   // Sync operations
   std::vector<DataNameVariant> GetRecordNames() const;
   serialised_metadata_details_type GetSerialisedRecord(const DataNameVariant& data_name) const;
-  NonEmptyString GetSyncData(const DataNameVariant& data_name) const;
+  template <typename Data>
+  NonEmptyString GetSyncData(const typename Data::name_type& data_name);
   template<typename Data>
   void ApplySyncData(const typename Data::name_type& data_name,
                      const NonEmptyString& serialised_unresolved_entries);
@@ -111,6 +112,7 @@ class MetadataHandler {
   const NodeId kThisNodeId_;
   mutable std::mutex mutex_;
   Sync<MetadataMergePolicy> sync_;
+  static const size_t kSyncTriggerCount_;
 };
 
 }  // namespace vault
