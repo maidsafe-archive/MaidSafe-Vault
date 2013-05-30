@@ -32,10 +32,10 @@ struct MetadataValue {
   typedef TaggedValue<NonEmptyString, struct SerialisedMetadataValueTag> serialised_type;
   explicit MetadataValue(const serialised_type& serialised_metadata_value);
   explicit MetadataValue(int size_in);
-  serialised_type Serialise();
+  serialised_type Serialise() const;
 
   int data_size;
-  int64_t subscribers;
+  boost::optional<int64_t> subscribers;
   std::set<PmidName> online_pmid_name, offline_pmid_name;
 };
 

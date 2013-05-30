@@ -36,15 +36,15 @@ namespace detail {
 
 template<typename Data, nfs::MessageAction Action>
 MetadataUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
-                                                 const MetadataValueDelta& delta,
-                                                 const NodeId& this_id) {
+                                              const MetadataValue& metadata_value,
+                                              const NodeId& this_id) {
   static_assert(Action == nfs::MessageAction::kPut || Action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
   assert(message.data().type);
   return MetadataUnresolvedEntry(
       std::make_pair(GetDataNameVariant(DataTagValue(message.data().type.get()),
                                         Identity(message.data().name)), Action),
-      delta, this_id);
+      metadata_value, this_id);
 }
 
 }  // namespace detail
@@ -107,9 +107,8 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
                           accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
 //FIXME (Prakash)      if (cost ==  new_data_cost) {  // discuss
       if (metadata_handler_.template CheckMetadataExists<Data>(data_name)) {
-        MetadataValueDelta delta;
-        delta.data_size = data_size;
-        AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, delta);
+        MetadataValue metadata_value(data_size);
+        AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, metadata_value);
       } else {
         PmidName target_data_holder(routing_.ClosestToId(message.source().node_id) ?
                                     message.data_holder() :
@@ -288,8 +287,8 @@ void MetadataManagerService::OnGenericErrorHandler(nfs::Message /*message*/) {}
 template<typename Data, nfs::MessageAction Action>
 void MetadataManagerService::AddLocalUnresolvedEntryThenSync(
     const nfs::Message& message,
-    const MetadataValueDelta& delta) {
-  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, Action>(message, delta,
+    const MetadataValue& metadata_value) {
+  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, Action>(message, metadata_value,
                                                                     routing_.kNodeId()));
   metadata_handler_.AddLocalUnresolvedEntry(unresolved_entry);
   typename Data::name_type data_name(message.data().name);

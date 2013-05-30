@@ -107,13 +107,9 @@ MetadataUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_cop
     if (proto_copy.messages_contents(i).has_entry_id())
       message_content.entry_id = proto_copy.messages_contents(i).entry_id();
     if (proto_copy.messages_contents(i).has_value()) {
-      message_content.value.get().data_size = proto_copy.messages_contents(i).value().data_size();
-      if (proto_copy.messages_contents(i).value().has_subscribers())
-        message_content.value->subscribers = proto_copy.messages_contents(i).value().subscribers();
-      for (auto& new_online : proto_copy.messages_contents(i).value().new_online())
-        message_content.value->new_online.push_back(PmidName(Identity(new_online)));
-      for (auto& new_offline : proto_copy.messages_contents(i).value().new_offline())
-        message_content.value->new_offline.push_back(PmidName(Identity(new_offline)));
+        MetadataValue value(MetadataValue::serialised_type(
+                              NonEmptyString(proto_copy.messages_contents(i).value())));
+        message_content.value = value;
     }
     messages_contents.push_back(message_content);
   }
@@ -139,14 +135,7 @@ MetadataUnresolvedEntry::serialised_type MetadataUnresolvedEntry::Serialise() co
     if (message_content.entry_id)
       proto_message_content->set_entry_id(*message_content.entry_id);
     if (message_content.value) {
-      auto proto_value(proto_message_content->mutable_value());
-      proto_value->set_data_size(message_content.value->data_size);
-      if (message_content.value->subscribers)
-        proto_value->set_subscribers(*(message_content.value->subscribers));
-      for (const auto& new_online : message_content.value->new_online)
-        proto_value->add_new_online(new_online.data.string());
-      for (const auto& new_offline : message_content.value->new_offline)
-        proto_value->add_new_offline(new_offline.data.string());
+        proto_message_content->set_value(message_content.value->Serialise()->string());
     }
   }
 

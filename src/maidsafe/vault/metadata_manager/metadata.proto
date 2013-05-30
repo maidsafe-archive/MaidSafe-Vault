@@ -9,7 +9,7 @@ message MetadataValue {
 }
 
 message MetadataRecord {
-  required MetadataValue db_value = 1;
+  required bytes serialised_metadata_value = 1;
   repeated bytes serialised_unresolved_entry = 2;
 }
 

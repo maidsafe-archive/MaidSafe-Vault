@@ -85,7 +85,7 @@ int MetadataMergePolicy::GetDataSize(
 void MetadataMergePolicy::MergePut(const DataNameVariant& data_name,
                                    int data_size) {
   Metadata metadata(data_name, metadata_db_, data_size);
-  ++metadata.value_.subscribers;
+  ++(*metadata.value_.subscribers);
   metadata.SaveChanges(metadata_db_);
 }
 

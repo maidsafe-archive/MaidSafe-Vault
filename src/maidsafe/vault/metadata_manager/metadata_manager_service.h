@@ -107,7 +107,7 @@ class MetadataManagerService {
 
   template<typename Data, nfs::MessageAction Action>
   void AddLocalUnresolvedEntryThenSync(const nfs::Message& message,
-                                       const MetadataValueDelta& delta);
+                                       const MetadataValue& metadata_value);
 
   // =============== Sync ==========================================================================
   template<typename Data>
