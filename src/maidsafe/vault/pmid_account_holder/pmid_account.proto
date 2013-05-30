@@ -30,5 +30,3 @@ message PmidAccountDetails {
   repeated PmidAccountDbEntry db_entry = 2;
   repeated bytes serialised_unresolved_entry = 3;
 }
-
-

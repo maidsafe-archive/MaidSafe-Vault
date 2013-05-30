@@ -33,15 +33,17 @@ class Sync : public MergePolicy {
   Sync& operator=(Sync&& other);
   // This is called when receiving a Sync message from a peer or this node.  Returns true if the
   // entry becomes resolved.
-  bool AddUnresolvedEntry(const typename MergePolicy::UnresolvedEntry& entry);
+  std::vector<typename MergePolicy::ResolvedEntry>
+      AddUnresolvedEntry(const typename MergePolicy::UnresolvedEntry& entry);
   // This is called directly once an action has been decided as valid in the MAHolder, but before
   // syncing the unresolved entry to the peers.  This won't resolve the entry (even if it's the last
   // one we're waiting for) so that 'GetUnresolvedData()' will return this one, allowing us to then
   // sync it to our peers.
   void AddLocalEntry(const typename MergePolicy::UnresolvedEntry& entry);
   // Returns true if the entry becomes resolved.
-  bool AddAccountTransferRecord(const typename MergePolicy::UnresolvedEntry& entry,
-                                bool all_account_transfers_received);
+  std::vector<typename MergePolicy::ResolvedEntry>
+      AddAccountTransferRecord(const typename MergePolicy::UnresolvedEntry& entry,
+                               bool all_account_transfers_received);
   // This is called if, during an ongoing account transfer, another churn event occurs.  The
   // old node's ID is replaced throughout the list of unresolved entries with the new node's ID.
   // The new node's ID is also applied to any entries which didn't contain the old one, in the
@@ -59,7 +61,8 @@ class Sync : public MergePolicy {
  private:
   Sync(const Sync&);
   Sync& operator=(const Sync&);
-  bool AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge);
+  std::vector<typename MergePolicy::ResolvedEntry>
+      AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge);
   template <typename Data>
   bool AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge);
   bool CanBeErased(const typename MergePolicy::UnresolvedEntry& entry) const;

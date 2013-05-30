@@ -35,15 +35,10 @@ namespace vault {
 
 class PmidAccountHolderService {
  public:
-  typedef nfs::Message Message;
-  typedef nfs::Reply Reply;
-  typedef routing::Routing Routing;
-  typedef routing::ReplyFunctor ReplyFunctor;
-  
   PmidAccountHolderService(const passport::Pmid& pmid, routing::Routing& routing, Db& db);
   template<typename Data>
-  void HandleMessage(const Message& message, const ReplyFunctor& reply_functor);
-  void HandleMessage(const Message& message, const ReplyFunctor& reply_functor);
+  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandleChurnEvent(routing::MatrixChange matrix_change);
 
  private:
@@ -52,29 +47,29 @@ class PmidAccountHolderService {
   PmidAccountHolderService(PmidAccountHolderService&&);
   PmidAccountHolderService& operator=(PmidAccountHolderService&&);
 
-  void ValidateDataSender(const Message& message) const;
-  void ValidateGenericSender(const Message& message) const;
+  void ValidateDataSender(const nfs::Message& message) const;
+  void ValidateGenericSender(const nfs::Message& message) const;
 
-  void SendReplyAndAddToAccumulator(const Message& message,
-                                    const ReplyFunctor& reply_functor,
-                                    const Reply& reply);
-
-  template<typename Data>
-  void HandlePut(const Message& message, const ReplyFunctor& reply_functor);
-  template<typename Data>
-  void HandleDelete(const Message& message, const ReplyFunctor& reply_functor);
-
-  void HandleGetPmidTotals(const Message& message, const ReplyFunctor& reply_functor);
+  void SendReplyAndAddToAccumulator(const nfs::Message& message,
+                                    const routing::ReplyFunctor& reply_functor,
+                                    const nfs::Reply& reply);
 
   template<typename Data>
-  void AdjustAccount(const Message& message);
+  void HandlePut(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
-  void SendMessages(const Message& message);
+  void HandleDelete(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+
+  void HandleGetPmidTotals(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
 
   template<typename Data>
-  void HandlePutResult(const Reply& overall_result,
-                       const Message& message,
-                       ReplyFunctor reply_functor);
+  void AdjustAccount(const nfs::Message& message);
+  template<typename Data>
+  void SendMessages(const nfs::Message& message);
+
+  template<typename Data>
+  void HandlePutResult(const nfs::Reply& overall_result,
+                       const nfs::Message& message,
+                       routing::ReplyFunctor reply_functor);
 
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
 
@@ -109,8 +104,11 @@ class PmidAccountHolderService {
 
   template<typename Data, nfs::MessageAction action>
   void AddLocalUnresolvedEntryThenSync(const nfs::Message& message);
+  template<typename Data, nfs::MessageAction action>
+  void ReplyToMetadataManagers(const std::vector<PmidAccountResolvedEntry>& resolved_entries,
+                               const PmidName& pmid_name);
 
-  Routing& routing_;
+  routing::Routing& routing_;
   std::mutex accumulator_mutex_;
   Accumulator<PmidName> accumulator_;
   PmidAccountHandler pmid_account_handler_;

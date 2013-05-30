@@ -70,12 +70,12 @@ void PmidAccountHolderService::HandleMessage(const nfs::Message& message,
   reply_functor(reply.Serialise()->string());
 }
 
-void PmidAccountHolderService::HandleGetPmidTotals(const Message& message,
-                                                   const ReplyFunctor& reply_functor) {
+void PmidAccountHolderService::HandleGetPmidTotals(const nfs::Message& message,
+                                                   const routing::ReplyFunctor& reply_functor) {
   try {
     PmidRecord pmid_record(pmid_account_handler_.GetPmidRecord(PmidName(message.data().name)));
     if (!pmid_record.pmid_name.data.string().empty())
-      Reply reply(CommonErrors::success, pmid_record.Serialise());
+      nfs::Reply reply(CommonErrors::success, pmid_record.Serialise());
       // send it...
       // nfs_.
   }
@@ -102,7 +102,6 @@ void PmidAccountHolderService::HandleChurnEvent(routing::MatrixChange matrix_cha
       itr = account_names.erase(itr);
       continue;
     }
-
     // Replace old_node(s) in sync object and send AccountTransfer to new node(s).
     assert(check_holders_result.old_holders.size() == check_holders_result.new_holders.size());
     for (auto i(0U); i != check_holders_result.old_holders.size(); ++i) {
@@ -204,13 +203,16 @@ void PmidAccountHolderService::Sync(const PmidName& account_name) {
 }
 
 void PmidAccountHolderService::HandleSync(const nfs::Message& message) {
+  std::vector<PmidAccountResolvedEntry> resolved_entries;
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.data().content.string())) {
     LOG(kError) << "Error parsing Synchronise message.";
     return;
   }
-  pmid_account_handler_.ApplySyncData(PmidName(Identity(proto_sync.account_name())),
+
+  resolved_entries = pmid_account_handler_.ApplySyncData(PmidName(Identity(proto_sync.account_name())),
                                       NonEmptyString(proto_sync.serialised_unresolved_entries()));
+  //ReplyToMetadataManagers(resolved_entries);
 }
 
 // =============== Account transfer ===============================================================

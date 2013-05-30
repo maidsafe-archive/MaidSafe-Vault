@@ -77,7 +77,7 @@ void PmidAccountHandler::SetDataHolderUp(const PmidName& account_name) {
 }
 
 void PmidAccountHandler::AddLocalUnresolvedEntry(const PmidName& account_name,
-                                             const PmidAccountUnresolvedEntry& unresolved_entry) {
+                                                 const PmidAccountUnresolvedEntry& unresolved_entry) {
   std::lock_guard<std::mutex> lock(mutex_);
   pmid_accounts_.at(account_name)->AddLocalUnresolvedEntry(unresolved_entry);
 }
@@ -111,10 +111,10 @@ NonEmptyString PmidAccountHandler::GetSyncData(const PmidName& account_name) {
   return pmid_accounts_.at(account_name)->GetSyncData();
 }
 
-void PmidAccountHandler::ApplySyncData(const PmidName& account_name,
+std::vector<PmidAccountResolvedEntry> PmidAccountHandler::ApplySyncData(const PmidName& account_name,
                                        const NonEmptyString& serialised_unresolved_entries) {
   std::lock_guard<std::mutex> lock(mutex_);
-  pmid_accounts_.at(account_name)->ApplySyncData(serialised_unresolved_entries);
+  return pmid_accounts_.at(account_name)->ApplySyncData(serialised_unresolved_entries);
 }
 
 void PmidAccountHandler::ReplaceNodeInSyncList(const PmidName& account_name,

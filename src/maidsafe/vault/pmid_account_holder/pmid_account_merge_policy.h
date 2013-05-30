@@ -30,6 +30,7 @@ namespace vault {
 class PmidAccountMergePolicy {
  public:
   typedef PmidAccountUnresolvedEntry UnresolvedEntry;
+  typedef PmidAccountResolvedEntry ResolvedEntry;
   typedef AccountDb Database;
   explicit PmidAccountMergePolicy(AccountDb* account_db);
   PmidAccountMergePolicy(PmidAccountMergePolicy&& other);

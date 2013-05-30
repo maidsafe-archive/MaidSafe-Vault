@@ -48,8 +48,8 @@ UnresolvedElement<ValueType, KeyType>& UnresolvedElement<ValueType, KeyType>::op
 
 template<typename ValueType, typename KeyType>
 UnresolvedElement<ValueType, KeyType>::UnresolvedElement(const Key& key,
-                                                const Value& value,
-                                                const NodeId& sender_id)
+                                                         const Value& value,
+                                                         const NodeId& sender_id)
     : key(key),
       messages_contents(),
       sync_counter(0),
