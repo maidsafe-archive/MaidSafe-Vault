@@ -66,16 +66,19 @@ void StructuredDataMergePolicy::MergePut(const DbKey& key,
 //  auto serialised(StructuredDataVersions::serialised_type(value->string()));
 //  StructuredDataVersions versions(serialised);
 //  value.Put(old_value, new_value);
+  // reply !!!!!!!!
 }
 
 void StructuredDataMergePolicy::MergeDeleteBranchUntilFork(const DbKey& key,
                                 const typename StructuredDataVersions::VersionName& tot) {
     auto versions(GetFromDb(key));
   //  versions.DeleteBranchUntilFork(tot);
+      // reply !!!!!!!!
 }
 
 void StructuredDataMergePolicy::MergeDelete(const DbKey& key) {
   db_->Delete(key);
+    // reply !!!!!!!!
 }
 
 
