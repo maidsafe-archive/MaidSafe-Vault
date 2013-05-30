@@ -126,12 +126,17 @@ bool MetadataManagerService::ThisVaultInGroupForData(const nfs::Message& message
          routing_.IsNodeIdInGroupRange(NodeId(message.data().name.string()));
 }
 
+// =============== Sync ==========================================================================
+
+void MetadataManagerService::HandleSync(const nfs::Message& message) {
+  metadata_handler_.ApplySyncData(NonEmptyString(message.data().content.string()));
+}
+
 // =============== Record transfer =================================================================
+
 void MetadataManagerService::TransferRecord(const DataNameVariant& record_name,
                                             const NodeId& new_node) {
-  protobuf::MetadataRecord metadata_record;
-//  metadata_record.set_db_entry();
-  nfs_.TransferRecord(record_name, new_node, NonEmptyString(metadata_record.SerializeAsString()));
+  nfs_.TransferRecord(record_name, new_node, metadata_handler_.GetSerialisedRecord(record_name));
 }
 
 // =============== Churn ===========================================================================

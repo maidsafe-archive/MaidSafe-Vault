@@ -3,7 +3,7 @@ option optimize_for = LITE_RUNTIME;
 
 message MetadataValue {
   required int32 size = 1;
-  required int64 subscribers = 2;
+  optional int64 subscribers = 2;
   repeated bytes online_pmid_name = 3;
   repeated bytes offline_pmid_name = 4;
 }

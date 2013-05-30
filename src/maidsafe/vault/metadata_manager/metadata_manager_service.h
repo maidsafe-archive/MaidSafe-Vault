@@ -113,7 +113,6 @@ class MetadataManagerService {
   template<typename Data>
   void Sync(const typename Data::name_type& data_name);
 
-  template<typename Data>
   void HandleSync(const nfs::Message& message);
 
   // =============== Record transfer ===============================================================

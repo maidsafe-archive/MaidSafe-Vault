@@ -191,7 +191,7 @@ size_t Sync<MergePolicy>::GetUnresolvedCount(const DataNameVariant& data_name) c
   return std::count_if(MergePolicy::unresolved_data_.begin(),
                        MergePolicy::unresolved_data_.end(),
                        [data_name] (const typename MergePolicy::UnresolvedEntry& unresolved_data) {
-                           return (unresolved_data.key == data_name);
+                           return (unresolved_data.key.first == data_name);
                        });
 }
 
@@ -220,7 +220,7 @@ std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresol
     const DataNameVariant& data_name) {
   std::vector<typename MergePolicy::UnresolvedEntry> result;
   for (auto& entry : MergePolicy::unresolved_data_) {
-    if (entry.key == data_name) {
+    if (entry.key.first == data_name) {
       if (detail::IsResolvedOnAllPeers<MergePolicy>(entry, this_node_id_))
         continue;
       auto found(detail::FindInMessages<MergePolicy>(entry, this_node_id_));
@@ -254,6 +254,21 @@ void Sync<MergePolicy>::IncrementSyncAttempts() {
       itr = MergePolicy::unresolved_data_.erase(itr);
     else
       ++itr;
+  }
+}
+
+template<typename MergePolicy>
+void Sync<MergePolicy>::IncrementSyncAttempts(const DataNameVariant& data_name) {
+  auto itr = std::begin(MergePolicy::unresolved_data_);
+  while (itr != std::end(MergePolicy::unresolved_data_)) {
+    if (data_name == itr->key.first) {
+      assert((*itr).messages_contents.size() <= routing::Parameters::node_group_size);
+      ++(*itr).sync_counter;
+      if (CanBeErased(*itr))
+        itr = MergePolicy::unresolved_data_.erase(itr);
+      else
+        ++itr;
+    }
   }
 }
 

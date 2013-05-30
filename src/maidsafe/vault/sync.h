@@ -59,6 +59,7 @@ class Sync : public MergePolicy {
   // 'sync_counter_max_' limit.  Entries which are resolved by all peers (i.e. have 4 messages) are
   // also pruned here.
   void IncrementSyncAttempts();
+  void IncrementSyncAttempts(const DataNameVariant& data_name);
 
  private:
   Sync(const Sync&);

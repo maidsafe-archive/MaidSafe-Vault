@@ -79,7 +79,7 @@ void MetadataManagerService::HandleMessage(const nfs::Message& message,
     case nfs::MessageAction::kDelete:
       return HandleDelete<Data>(message, reply_functor);
     case nfs::MessageAction::kSynchronise:
-      return HandleSync<Data>(message);
+      return HandleSync(message);
     case nfs::MessageAction::kAccountTransfer:
       return HandleRecordTransfer<Data>(message);
     default: {
@@ -300,31 +300,13 @@ void MetadataManagerService::AddLocalUnresolvedEntryThenSync(
 
 template<typename Data>
 void MetadataManagerService::Sync(const typename Data::name_type& data_name) {
-//  auto serialised_sync_data(metadata_handler_.GetSyncData(record_name));
-  NonEmptyString serialised_sync_data; // FIXME
+  auto serialised_sync_data(metadata_handler_.GetSyncData<Data>(data_name));
   if (!serialised_sync_data.IsInitialised())  // Nothing to sync
     return;
 
-  protobuf::Sync proto_sync;
-  proto_sync.set_account_type(static_cast<int32_t>(Data::name_type::tag_type::kEnumValue));
-  proto_sync.set_account_name(data_name->string());
-  proto_sync.set_serialised_unresolved_entries(serialised_sync_data.string());
-
-  nfs_.Sync<Data>(data_name, NonEmptyString(proto_sync.SerializeAsString()));
+  nfs_.Sync<Data>(data_name, serialised_sync_data);
   // TODO(Fraser#5#): 2013-05-03 - Check this is correct place to increment sync attempt counter.
-//  metadata_handler_.IncrementSyncAttempts(record_name);
-}
-
-template<typename Data>
-void MetadataManagerService::HandleSync(const nfs::Message& message) {
-  typename Data::name_type data_name(Identity(message.data().name));
-  protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(message.data().content.string())) {
-    LOG(kError) << "Error parsing kSynchronise message.";
-    return;
-  }
-  metadata_handler_.template ApplySyncData<Data>(data_name,
-                                 NonEmptyString(proto_sync.serialised_unresolved_entries()));
+  metadata_handler_.IncrementSyncAttempts<Data>(data_name);
 }
 
 // =============== Record transfer =================================================================

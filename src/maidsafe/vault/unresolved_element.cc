@@ -139,10 +139,14 @@ MetadataUnresolvedEntry::serialised_type MetadataUnresolvedEntry::Serialise() co
     if (message_content.entry_id)
       proto_message_content->set_entry_id(*message_content.entry_id);
     if (message_content.value) {
-      if (message_content.value->subscribers) {  // FIXME (Prakash)
-//      *(message_content.value->subscribers);
-//      proto_message_content->value().set_subscribers(*(message_content.value->subscribers));
-}
+      auto proto_value(proto_message_content->mutable_value());
+      proto_value->set_data_size(message_content.value->data_size);
+      if (message_content.value->subscribers)
+        proto_value->set_subscribers(*(message_content.value->subscribers));
+      for (const auto& new_online : message_content.value->new_online)
+        proto_value->add_new_online(new_online.data.string());
+      for (const auto& new_offline : message_content.value->new_offline)
+        proto_value->add_new_offline(new_offline.data.string());
     }
   }
 
