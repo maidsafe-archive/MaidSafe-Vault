@@ -36,15 +36,15 @@ namespace detail {
 
 template<typename Data, nfs::MessageAction Action>
 MetadataUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
-                                                 const MetadataValueDelta& delta,
-                                                 const NodeId& this_id) {
+                                              const MetadataValue& metadata_value,
+                                              const NodeId& this_id) {
   static_assert(Action == nfs::MessageAction::kPut || Action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
   assert(message.data().type);
   return MetadataUnresolvedEntry(
       std::make_pair(GetDataNameVariant(DataTagValue(message.data().type.get()),
                                         Identity(message.data().name)), Action),
-      delta, this_id);
+      metadata_value, this_id);
 }
 
 }  // namespace detail
@@ -79,7 +79,7 @@ void MetadataManagerService::HandleMessage(const nfs::Message& message,
     case nfs::MessageAction::kDelete:
       return HandleDelete<Data>(message, reply_functor);
     case nfs::MessageAction::kSynchronise:
-      return HandleSync<Data>(message);
+      return HandleSync(message);
     case nfs::MessageAction::kAccountTransfer:
       return HandleRecordTransfer<Data>(message);
     default: {
@@ -107,9 +107,8 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
                           accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
 //FIXME (Prakash)      if (cost ==  new_data_cost) {  // discuss
       if (metadata_handler_.template CheckMetadataExists<Data>(data_name)) {
-        MetadataValueDelta delta;
-        delta.data_size = data_size;
-        AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, delta);
+        MetadataValue metadata_value(data_size);
+        AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, metadata_value);
       } else {
         PmidName target_data_holder(routing_.ClosestToId(message.source().node_id) ?
                                     message.data_holder() :
@@ -288,8 +287,8 @@ void MetadataManagerService::OnGenericErrorHandler(nfs::Message /*message*/) {}
 template<typename Data, nfs::MessageAction Action>
 void MetadataManagerService::AddLocalUnresolvedEntryThenSync(
     const nfs::Message& message,
-    const MetadataValueDelta& delta) {
-  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, Action>(message, delta,
+    const MetadataValue& metadata_value) {
+  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, Action>(message, metadata_value,
                                                                     routing_.kNodeId()));
   metadata_handler_.AddLocalUnresolvedEntry(unresolved_entry);
   typename Data::name_type data_name(message.data().name);
@@ -300,31 +299,13 @@ void MetadataManagerService::AddLocalUnresolvedEntryThenSync(
 
 template<typename Data>
 void MetadataManagerService::Sync(const typename Data::name_type& data_name) {
-//  auto serialised_sync_data(metadata_handler_.GetSyncData(record_name));
-  NonEmptyString serialised_sync_data; // FIXME
+  auto serialised_sync_data(metadata_handler_.GetSyncData<Data>(data_name));
   if (!serialised_sync_data.IsInitialised())  // Nothing to sync
     return;
 
-  protobuf::Sync proto_sync;
-  proto_sync.set_account_type(static_cast<int32_t>(Data::name_type::tag_type::kEnumValue));
-  proto_sync.set_account_name(data_name->string());
-  proto_sync.set_serialised_unresolved_entries(serialised_sync_data.string());
-
-  nfs_.Sync<Data>(data_name, NonEmptyString(proto_sync.SerializeAsString()));
+  nfs_.Sync<Data>(data_name, serialised_sync_data);
   // TODO(Fraser#5#): 2013-05-03 - Check this is correct place to increment sync attempt counter.
-//  metadata_handler_.IncrementSyncAttempts(record_name);
-}
-
-template<typename Data>
-void MetadataManagerService::HandleSync(const nfs::Message& message) {
-  typename Data::name_type data_name(Identity(message.data().name));
-  protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(message.data().content.string())) {
-    LOG(kError) << "Error parsing kSynchronise message.";
-    return;
-  }
-  metadata_handler_.template ApplySyncData<Data>(data_name,
-                                 NonEmptyString(proto_sync.serialised_unresolved_entries()));
+  metadata_handler_.IncrementSyncAttempts<Data>(data_name);
 }
 
 // =============== Record transfer =================================================================

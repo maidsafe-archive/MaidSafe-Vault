@@ -43,7 +43,7 @@ class MetadataHandlerTypedTest;
 class MetadataHandler {
  public:
   typedef TaggedValue<NonEmptyString, struct SerialisedMetadataValueTag>
-    serialised_metadata_details_type;
+    serialised_record_type;
   MetadataHandler(const boost::filesystem::path& vault_root_dir, const NodeId& this_node_id);
 
   // This increments the subscribers count, or adds a new element if it doesn't exist.
@@ -91,16 +91,15 @@ class MetadataHandler {
 
   // Sync operations
   std::vector<DataNameVariant> GetRecordNames() const;
-  serialised_metadata_details_type GetSerialisedRecord(const DataNameVariant& data_name) const;
+  serialised_record_type GetSerialisedRecord(const DataNameVariant& data_name);
   template <typename Data>
   NonEmptyString GetSyncData(const typename Data::name_type& data_name);
-  template<typename Data>
-  void ApplySyncData(const typename Data::name_type& data_name,
-                     const NonEmptyString& serialised_unresolved_entries);
+  void ApplySyncData(const NonEmptyString& serialised_unresolved_entries);
   void ReplaceNodeInSyncList(const DataNameVariant& record_name,
                              const NodeId& old_node,
                              const NodeId& new_node);
-  void IncrementSyncAttempts(const DataNameVariant& data_name);
+  template<typename Data>
+  void IncrementSyncAttempts(const typename Data::name_type& data_name);
 
 
   template<typename Data>

@@ -107,13 +107,12 @@ class MetadataManagerService {
 
   template<typename Data, nfs::MessageAction Action>
   void AddLocalUnresolvedEntryThenSync(const nfs::Message& message,
-                                       const MetadataValueDelta& delta);
+                                       const MetadataValue& metadata_value);
 
   // =============== Sync ==========================================================================
   template<typename Data>
   void Sync(const typename Data::name_type& data_name);
 
-  template<typename Data>
   void HandleSync(const nfs::Message& message);
 
   // =============== Record transfer ===============================================================

@@ -18,7 +18,6 @@
 
 
 namespace maidsafe {
-
 namespace vault {
 
 PmidAccountMergePolicy::PmidAccountMergePolicy(AccountDb* account_db)
@@ -90,5 +89,4 @@ NonEmptyString PmidAccountMergePolicy::GetFromDb(const DataNameVariant& data_nam
 
 
 }  // namespace vault
-
 }  // namespace maidsafe

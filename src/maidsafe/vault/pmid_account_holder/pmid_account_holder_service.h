@@ -31,16 +31,14 @@
 
 
 namespace maidsafe {
-
 namespace vault {
 
 class PmidAccountHolderService {
  public:
-  PmidAccountHolderService(const passport::Pmid& pmid,
-                           routing::Routing& routing);
+  PmidAccountHolderService(const passport::Pmid& pmid, routing::Routing& routing, Db& db);
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor& /*reply_functor*/) {}
+  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandleChurnEvent(routing::MatrixChange matrix_change);
 
  private:
@@ -49,20 +47,40 @@ class PmidAccountHolderService {
   PmidAccountHolderService(PmidAccountHolderService&&);
   PmidAccountHolderService& operator=(PmidAccountHolderService&&);
 
+  void ValidateDataSender(const nfs::Message& message) const;
+  void ValidateGenericSender(const nfs::Message& message) const;
+
+  void SendReplyAndAddToAccumulator(const nfs::Message& message,
+                                    const routing::ReplyFunctor& reply_functor,
+                                    const nfs::Reply& reply);
+
   template<typename Data>
   void HandlePut(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void HandleDelete(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  void ValidateSender(const nfs::Message& message) const;
+
+  void HandleGetPmidTotals(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+
   template<typename Data>
   void AdjustAccount(const nfs::Message& message);
   template<typename Data>
-  void SendMessage(const nfs::Message& message);
+  void SendMessages(const nfs::Message& message);
+
   template<typename Data>
   void HandlePutResult(const nfs::Reply& overall_result,
                        const nfs::Message& message,
                        routing::ReplyFunctor reply_functor);
+
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
+
+
+  // =============== Sync ==========================================================================
+  void Sync(const PmidName& account_name);
+  void HandleSync(const nfs::Message& message);
+
+  // =============== Account transfer ==============================================================
+  void TransferAccount(const PmidName& account_name, const NodeId& new_node);
+  void HandleAccountTransfer(const nfs::Message& message);
 
   void CheckAccounts();
   bool AssessRange(const PmidName& account_name,
@@ -86,19 +104,20 @@ class PmidAccountHolderService {
 
   template<typename Data, nfs::MessageAction action>
   void AddLocalUnresolvedEntryThenSync(const nfs::Message& message);
+  template<typename Data, nfs::MessageAction action>
+  void ReplyToMetadataManagers(const std::vector<PmidAccountResolvedEntry>& resolved_entries,
+                               const PmidName& pmid_name);
 
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
   Accumulator<PmidName> accumulator_;
   PmidAccountHandler pmid_account_handler_;
   PmidAccountHolderNfs nfs_;
-  static const int kPutRequestsRequired_;
   static const int kPutRepliesSuccessesRequired_;
   static const int kDeleteRequestsRequired_;
 };
 
 }  // namespace vault
-
 }  // namespace maidsafe
 
 #include "maidsafe/vault/pmid_account_holder/pmid_account_holder_service-inl.h"

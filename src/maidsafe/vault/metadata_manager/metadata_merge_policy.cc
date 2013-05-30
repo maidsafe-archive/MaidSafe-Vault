@@ -71,7 +71,7 @@ int MetadataMergePolicy::GetDataSize(
 
   if (all_data_size.empty())
     ThrowError(CommonErrors::unknown);
-  if (most_frequent > routing::Parameters::node_group_size / 2)
+  if (most_frequent > static_cast<size_t>(routing::Parameters::node_group_size / 2))
     return most_frequent_itr->value.get().data_size;
 
   if (unresolved_entry.messages_contents.size() == routing::Parameters::node_group_size) {
@@ -85,7 +85,7 @@ int MetadataMergePolicy::GetDataSize(
 void MetadataMergePolicy::MergePut(const DataNameVariant& data_name,
                                    int data_size) {
   Metadata metadata(data_name, metadata_db_, data_size);
-  ++metadata.value_.subscribers;
+  ++(*metadata.value_.subscribers);
   metadata.SaveChanges(metadata_db_);
 }
 

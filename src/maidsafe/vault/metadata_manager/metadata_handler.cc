@@ -67,6 +67,30 @@ void MetadataHandler::ReplaceNodeInSyncList(const DataNameVariant& /*record_name
   sync_.ReplaceNode(old_node, new_node);
 }
 
+void MetadataHandler::ApplySyncData(const NonEmptyString& serialised_unresolved_entries) {
+  protobuf::UnresolvedEntries proto_unresolved_entries;
+  if (!proto_unresolved_entries.ParseFromString(serialised_unresolved_entries.string()))
+    ThrowError(CommonErrors::parsing_error);
+
+  for (int i(0); i != proto_unresolved_entries.serialised_unresolved_entry_size(); ++i) {
+    MetadataUnresolvedEntry entry(MetadataUnresolvedEntry::serialised_type(
+        NonEmptyString(proto_unresolved_entries.serialised_unresolved_entry(i))));
+    sync_.AddUnresolvedEntry(entry);
+  }
+}
+
+MetadataHandler::serialised_record_type MetadataHandler::GetSerialisedRecord(
+    const DataNameVariant& data_name) {
+  protobuf::MetadataRecord proto_record;
+  proto_record.set_serialised_metadata_value(metadata_db_->Get(data_name).string());
+  auto unresolved_data(sync_.GetUnresolvedData(data_name));
+  for (const auto& unresolved_entry : unresolved_data) {
+    proto_record.add_serialised_unresolved_entry(unresolved_entry.Serialise()->string());
+  }
+  assert(proto_record.IsInitialized());
+  return serialised_record_type(NonEmptyString(proto_record.SerializeAsString()));
+}
+
 //void MetadataHandler::PutMetadata(const protobuf::Metadata& /*proto_metadata*/) {
 //  if (!proto_metadata.IsInitialized() ||
 //      !Identity(proto_metadata.name()).IsInitialised() ||

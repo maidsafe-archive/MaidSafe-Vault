@@ -157,16 +157,17 @@ NonEmptyString MetadataHandler::GetSyncData(const typename Data::name_type& data
 
   protobuf::UnresolvedEntries proto_unresolved_entries;
   for (const auto& unresolved_entry : unresolved_entries) {
-//    proto_unresolved_entries.add_serialised_unresolved_entry(
-//        unresolved_entry.Serialise()->string());
+    proto_unresolved_entries.add_serialised_unresolved_entry(
+        unresolved_entry.Serialise()->string());
   }
   return NonEmptyString(proto_unresolved_entries.SerializeAsString());
 }
 
 template<typename Data>
-void MetadataHandler::ApplySyncData(const typename Data::name_type& /*data_name*/,
-                                    const NonEmptyString& /*serialised_unresolved_entries*/) {
-
+void MetadataHandler::IncrementSyncAttempts(const typename Data::name_type& data_name) {
+  DataNameVariant data_name_variant(GetDataNameVariant(Data::name_type::tag_type::kEnumValue,
+                                                       data_name));
+  sync_.IncrementSyncAttempts(data_name_variant);
 }
 
 }  // namespace vault
