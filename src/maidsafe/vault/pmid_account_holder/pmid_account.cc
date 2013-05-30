@@ -113,12 +113,6 @@ void PmidAccount::PutData(int32_t size) {
   pmid_record_.stored_total_size += size;
 }
 
-template<typename Data>
-void PmidAccount::DeleteData(const typename Data::name_type& name) {
-  pmid_record_.stored_count--;
-  pmid_record_.stored_total_size -= sync_.AllowDelete<Data>(name);
-}
-
 bool PmidAccount::ApplyAccountTransfer(const NodeId& source_id,
                                        const serialised_type& serialised_pmid_account_details) {
   assert(account_transfer_nodes_);
