@@ -33,7 +33,7 @@ StructuredDataMergePolicy::StructuredDataMergePolicy(StructuredDataMergePolicy&&
 StructuredDataMergePolicy& StructuredDataMergePolicy::operator=(StructuredDataMergePolicy&& other) {
   unresolved_data_ = std::move(other.unresolved_data_);
   db_ = std::move(other.db_);
-  return *this;
+ return *this;
 }
 
 void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
@@ -60,30 +60,21 @@ void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
 void StructuredDataMergePolicy::MergePut(const DbKey& key,
               const typename StructuredDataVersions::VersionName& new_value,
               const typename StructuredDataVersions::VersionName& old_value) {
-  try {
-    auto value(GetFromDb(key));
-    StructuredDataVersions structured_data_versions((typename
-                                                 StructuredDataVersions::serialised_type(value)));
-    structured_data_versions.Put(old_value, new_value);
-
-  }
-  catch (const std::exception& error) {
-
-  }
+  auto value(db_->Get(key));
+  value.Put(old_value, new_value);
+  db_->Put(std::make_pair(key, value);
 }
 
 void StructuredDataMergePolicy::MergeDeleteBranchUntilFork(const DbKey& key,
                                 const typename StructuredDataVersions::VersionName& tot) {
-    auto versions(GetFromDb(key));
-  //  versions.DeleteBranchUntilFork(tot);
-      // reply !!!!!!!!
+  auto value(db_->Get(key));
+  value.DeleteBranchUntilFork(tot);
+  db_->Put(std::make_pair(key, value);
 }
 
 void StructuredDataMergePolicy::MergeDelete(const DbKey& key) {
   db_->Delete(key);
-    // reply !!!!!!!!
 }
-
 
 }  // namespace vault
 
