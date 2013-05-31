@@ -16,7 +16,7 @@
 #include "boost/filesystem/operations.hpp"
 
 #include "maidsafe/common/types.h"
-
+#include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/parameters.h"
 
 

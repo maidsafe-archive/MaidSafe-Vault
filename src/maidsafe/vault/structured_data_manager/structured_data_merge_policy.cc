@@ -12,7 +12,7 @@
 #include "maidsafe/vault/structured_data_manager/structured_data_merge_policy.h"
 
 #include "maidsafe/common/error.h"
-
+#include "maidsafe/nfs/types.h"
 #include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/maid_account_holder/maid_account.pb.h"

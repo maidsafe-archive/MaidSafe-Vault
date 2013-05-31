@@ -42,7 +42,7 @@ void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
   }
 
    if (message.data().action == nfs::MessageAction::kSynchronise)
-     return HandleSync(message);   // No accumulate
+     return HandleSyncronise(message);   // No accumulate
    if (message.data().action == nfs::MessageAction::kAccountTransfer)
      return HandleAccountTransfer(message);   // No accumulate
    if (message.data().action == nfs::MessageAction::kGet)
@@ -61,7 +61,7 @@ void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
                                      reply_functor,
                                      maidsafe_error(CommonErrors::pending_result)).size() <
                                      routing::Parameters::node_group_size -1) {
-     Sync<Data>(message);
+     Syncronise<Data>(message);
    }
 }
 

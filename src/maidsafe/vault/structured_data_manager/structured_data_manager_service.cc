@@ -59,6 +59,8 @@ StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid&
       sync_mutex_(),
       accumulator_(),
       structured_data_db_(path),
+      kThisNodeId_(routing_.kNodeId()),
+      sync_(&structured_data_db_, kThisNodeId_),
       nfs_(routing_, pmid) {}
 
 
@@ -128,7 +130,7 @@ void StructuredDataManagerService::HandleGetBranch(const nfs::Message& message,
 
 // // =============== Sync ============================================================================
 
-void StructuredDataManagerService::HandleSync(const nfs::Message& message) {
+void StructuredDataManagerService::HandleSyncronise(const nfs::Message& message) {
   std::vector<StructuredDataMergePolicy::UnresolvedEntry> unresolved_entries;
   {
     std::lock_guard<std::mutex> lock(sync_mutex_);
