@@ -134,7 +134,7 @@ void StructuredDataManagerService::HandleSyncronise(const nfs::Message& message)
   std::vector<StructuredDataMergePolicy::UnresolvedEntry> unresolved_entries;
   {
     std::lock_guard<std::mutex> lock(sync_mutex_);
-    unresolved_entries = sync_.AddUnresolvedEntry
+//    unresolved_entries = sync_.AddUnresolvedEntry();
   }
 
   reply_functor(reply.Serialise()->string());

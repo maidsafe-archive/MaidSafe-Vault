@@ -105,18 +105,4 @@ void Metadata::SaveChanges(ManagerDb<MetadataManager>* metadata_db) {
 
 }  // namespace vault
 
-namespace nfs {
-
-template<>
-struct PersonaTypes<Persona::kMetadataManager> {
-  typedef DataNameVariant DbKey;
-  typedef vault::MetadataValue DbValue;
-  struct UnresolvedEntryKey {
-    DbKey db_key;
-    MessageAction action;
-  };
-  static const Persona persona = Persona::kMetadataManager;
-};
-
-}  // namespace nfs
 }  // namespace maidsafe

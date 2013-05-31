@@ -67,6 +67,19 @@ class Metadata {
 
 }  // namespace vault
 
+namespace nfs {
+
+template<>
+struct PersonaTypes<Persona::kMetadataManager> {
+  typedef DataNameVariant DbKey;
+  typedef vault::MetadataValue DbValue;
+  struct UnresolvedEntryKey {
+    DbKey db_key;
+    MessageAction action;
+  };
+  static const Persona persona = Persona::kMetadataManager;
+};
+}  // namespace nfs
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_H_
