@@ -28,6 +28,22 @@
 
 namespace maidsafe {
 
+namespace nfs {
+
+template<>
+struct PersonaTypes<Persona::kStructuredDataManager> {
+  typedef std::pair<DataNameVariant, Identity> DbKey;
+//  typedef NonEmptyString SerialisedDbKey;
+  typedef StructuredDataVersions DbValue;
+  struct UnresolvedEntryKey {
+    DbKey db_key;
+    MessageAction action;
+  };
+ static const Persona persona = Persona::kStructuredDataManager;
+};
+
+}  // namespace nfs
+
 namespace vault {
 
 struct CheckHoldersResult {

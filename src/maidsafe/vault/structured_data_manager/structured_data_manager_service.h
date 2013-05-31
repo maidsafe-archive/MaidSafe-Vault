@@ -25,6 +25,7 @@
 #include "maidsafe/nfs/persona_id.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/db.h"
+#include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_key.h"
@@ -75,9 +76,10 @@ class StructuredDataManagerService {
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
   std::mutex sync_mutex_;
-  Sync<StructuredDataMergePolicy> sync_;
   Accumulator<StructuredDataAccountName> accumulator_;
   ManagerDb<StructuredDataManager> structured_data_db_;
+  const NodeId kThisNodeId_;
+  Sync<StructuredDataMergePolicy> sync_;
   StructuredDataManagerNfs nfs_;
 };
 
