@@ -34,7 +34,7 @@ class ManagerDb {
   explicit ManagerDb(const boost::filesystem::path& path);
   ~ManagerDb();
 
-  NonEmptyString Get(const typename PersonaType::DbKey& key);
+  typename PersonaType::DbKey Get(const typename PersonaType::DbKey& key);
   void Put(const KvPair& key_value_pair);
   void Delete(const typename PersonaType::DbKey& key);
   std::vector<typename PersonaType::DbKey> GetKeys();

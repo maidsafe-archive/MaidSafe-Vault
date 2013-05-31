@@ -102,7 +102,7 @@ void Metadata::SaveChanges(ManagerDb<MetadataManager>* metadata_db) {
   if (*value_.subscribers < 1) {
     metadata_db->Delete(data_name_);
   } else {
-    auto kv_pair(std::make_pair(data_name_, value_.Serialise()));
+    auto kv_pair(std::make_pair(data_name_, NonEmptyString(value_.Serialise())));
     metadata_db->Put(kv_pair);
   }
   strong_guarantee_.Release();

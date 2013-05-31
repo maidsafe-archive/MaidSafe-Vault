@@ -28,6 +28,7 @@
 #include "maidsafe/nfs/persona_id.h"
 #include "maidsafe/nfs/structured_data.h"
 #include "maidsafe/vault/sync.h"
+#include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_key.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_value.h"
 #include "maidsafe/vault/manager_db.h"
@@ -108,7 +109,7 @@ void StructuredDataManagerService::HandleGetBranch(const nfs::Message& message,
   try {
     nfs::Reply reply(CommonErrors::success);
     StructuredDataVersions version(
-                structured_data_db_.Get<StructuredDataManager>(GetKeyFromMessage(message)));
+                structured_data_db_.Get(GetKeyFromMessage<StructuredDataManager>(message)));
     auto branch_to_get(GetVersionsFromMessage(message));
     reply.data() = nfs::StructuredData(version.GetBranch(branch_to_get.at(0))).Serialise().data;
     reply_functor(reply.Serialise()->string());

@@ -68,7 +68,7 @@ void ManagerDb<PersonaType>::Delete(const typename PersonaType::DbKey& key) {
 }
 
 template<typename PersonaType>
-NonEmptyString ManagerDb<PersonaType>::Get(const typename PersonaType::DbKey& key) {
+typename PersonaType::DbKey ManagerDb<PersonaType>::Get(const typename PersonaType::DbKey& key) {
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
   std::string value;
@@ -76,7 +76,7 @@ NonEmptyString ManagerDb<PersonaType>::Get(const typename PersonaType::DbKey& ke
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
   assert(!value.empty());
-  return NonEmptyString(value);
+  return typename PersonaType::DBKey(value);
 }
 
 
