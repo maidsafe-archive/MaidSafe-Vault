@@ -16,7 +16,7 @@
 #include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
-
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -62,14 +62,14 @@ void StructuredDataMergePolicy::MergePut(const DbKey& key,
               const typename StructuredDataVersions::VersionName& old_value) {
   auto value(db_->Get(key));
   value.Put(old_value, new_value);
-  db_->Put(std::make_pair(key, value);
+  db_->Put(std::make_pair(key, value));
 }
 
 void StructuredDataMergePolicy::MergeDeleteBranchUntilFork(const DbKey& key,
                                 const typename StructuredDataVersions::VersionName& tot) {
   auto value(db_->Get(key));
   value.DeleteBranchUntilFork(tot);
-  db_->Put(std::make_pair(key, value);
+  db_->Put(std::make_pair(key, value));
 }
 
 void StructuredDataMergePolicy::MergeDelete(const DbKey& key) {

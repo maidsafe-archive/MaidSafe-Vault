@@ -85,7 +85,7 @@ void MetadataHandler::ApplySyncData(const NonEmptyString& serialised_unresolved_
 MetadataHandler::serialised_record_type MetadataHandler::GetSerialisedRecord(
     const DataNameVariant& data_name) {
   protobuf::MetadataRecord proto_record;
-  proto_record.set_serialised_metadata_value(metadata_db_->Get(data_name).string());
+  proto_record.set_serialised_metadata_value(metadata_db_->Get(data_name).Serialise()->string());
   auto unresolved_data(sync_.GetUnresolvedData(data_name));
   for (const auto& unresolved_entry : unresolved_data) {
     proto_record.add_serialised_unresolved_entry(unresolved_entry.Serialise()->string());

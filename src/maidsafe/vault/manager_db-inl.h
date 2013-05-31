@@ -9,6 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
+#ifndef MAIDSAFE_VAULT_MANAGER_DB_INL_H_
+#define MAIDSAFE_VAULT_MANAGER_DB_INL_H_
 
 #include "maidsafe/vault/manager_db.h"
 
@@ -54,7 +56,7 @@ void ManagerDb<PersonaType>::Put(const KvPair& key_value_pair) {
 
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
                                        SerialiseDbKey<PersonaType>(key_value_pair.first),
-                                       key_value_pair.second.string()));
+                                       key_value_pair.second.Serialise()->string()));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
 }
@@ -68,7 +70,7 @@ void ManagerDb<PersonaType>::Delete(const typename PersonaType::DbKey& key) {
 }
 
 template<typename PersonaType>
-typename PersonaType::DbKey ManagerDb<PersonaType>::Get(const typename PersonaType::DbKey& key) {
+typename PersonaType::DbValue ManagerDb<PersonaType>::Get(const typename PersonaType::DbKey& key) {
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
   std::string value;
@@ -76,7 +78,8 @@ typename PersonaType::DbKey ManagerDb<PersonaType>::Get(const typename PersonaTy
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
   assert(!value.empty());
-  return typename PersonaType::DBKey(value);
+  return typename PersonaType::DbValue(typename PersonaType::DbValue::serialised_type(
+                                         NonEmptyString(value)));
 }
 
 
@@ -98,3 +101,5 @@ std::vector<typename PersonaType::DbKey> ManagerDb<PersonaType>::GetKeys() {
 
 }  // namespace vault
 }  // namespace maidsafe
+
+#endif // MAIDSAFE_VAULT_MANAGER_DB_INL_H_

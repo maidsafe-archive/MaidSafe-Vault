@@ -93,12 +93,12 @@ std::string Pad(uint32_t number) {
 }
 
 template<typename Persona>
-std::string SerialiseDbKey(typename Persona::DbKey& key) {
+std::string SerialiseDbKey(const typename Persona::DbKey& key) {
     auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
      std::string db_key(result.second.string() +
                         Pad<2>(static_cast<uint32_t>(result.first)));
+     return db_key;
 }
-
 
 namespace detail {
 

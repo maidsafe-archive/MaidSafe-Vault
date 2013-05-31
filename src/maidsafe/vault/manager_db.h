@@ -34,7 +34,7 @@ class ManagerDb {
   explicit ManagerDb(const boost::filesystem::path& path);
   ~ManagerDb();
 
-  typename PersonaType::DbKey Get(const typename PersonaType::DbKey& key);
+  typename PersonaType::DbValue Get(const typename PersonaType::DbKey& key);
   void Put(const KvPair& key_value_pair);
   void Delete(const typename PersonaType::DbKey& key);
   std::vector<typename PersonaType::DbKey> GetKeys();
@@ -55,5 +55,7 @@ class ManagerDb {
 
 }  // namespace vault
 }  // namespace maidsafe
+
+#include "maidsafe/vault/manager_db-inl.h"
 
 #endif  // MAIDSAFE_VAULT_MANAGER_DB_H_
