@@ -66,7 +66,7 @@ class StructuredDataManagerService {
   //// =============== Sync ========================================================================
   template<typename Data>
   void Syncronise(const nfs::Message&);
-  void HandleSyncronise(const nfs::Message& message);
+  void HandleSync(const nfs::Message& message);
 
   //// =============== Account transfer ============================================================
   void TransferAccounts(const NodeId& new_node);
