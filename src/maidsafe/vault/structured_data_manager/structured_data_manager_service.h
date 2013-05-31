@@ -29,6 +29,7 @@
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_key.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_value.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_merge_policy.h"
 #include "maidsafe/vault/manager_db.h"
 
 
@@ -64,8 +65,8 @@ class StructuredDataManagerService {
 
   //// =============== Sync ========================================================================
   template<typename Data>
-  void Sync(const nfs::Message&);
-  void HandleSync(const nfs::Message& message);
+  void Syncronise(const nfs::Message&);
+  void HandleSyncronise(const nfs::Message& message);
 
   //// =============== Account transfer ============================================================
   void TransferAccounts(const NodeId& new_node);
@@ -73,6 +74,8 @@ class StructuredDataManagerService {
 
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
+  std::mutex sync_mutex_;
+  Sync<StructuredDataMergePolicy> sync_;
   Accumulator<StructuredDataAccountName> accumulator_;
   ManagerDb<StructuredDataManager> structured_data_db_;
   StructuredDataManagerNfs nfs_;

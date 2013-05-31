@@ -56,6 +56,7 @@ StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid&
                                                    const boost::filesystem::path& path)
     : routing_(routing),
       accumulator_mutex_(),
+      sync_mutex_(),
       accumulator_(),
       structured_data_db_(path),
       nfs_(routing_, pmid) {}
@@ -127,7 +128,17 @@ void StructuredDataManagerService::HandleGetBranch(const nfs::Message& message,
 
 // // =============== Sync ============================================================================
 
-void StructuredDataManagerService::HandleSync(const nfs::Message& /*message*/) {
+void StructuredDataManagerService::HandleSync(const nfs::Message& message) {
+  std::vector<StructuredDataMergePolicy::UnresolvedEntry> unresolved_entries;
+  {
+    std::lock_guard<std::mutex> lock(sync_mutex_);
+    unresolved_entries = sync_.AddUnresolvedEntry
+  }
+
+  reply_functor(reply.Serialise()->string());
+  std::lock_guard<std::mutex> lock(accumulator_mutex_);
+  accumulator_.SetHandled(message, reply.error());
+
 }
 
 // In this persona we sync all mutating actions, on sucess/fail the reply_functor is fired
@@ -136,6 +147,10 @@ template<typename Data>
 void StructuredDataManagerService::Sync(const nfs::Message& message) {
     auto key = GetKeyFromMessage<StructuredDataManager>(message);
     auto versions = GetVersionsFromMessage(message);
+    // addlocalunresolved
+    // get unresolved
+    // send
+
 }
 // // =============== Account transfer ================================================================
 void StructuredDataManagerService::HandleAccountTransfer(const nfs::Message& /*message*/) {
