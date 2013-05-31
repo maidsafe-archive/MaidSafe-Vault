@@ -24,7 +24,7 @@
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_key.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_value.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_db.h"
+#include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/unresolved_element.h"
 
 
@@ -37,7 +37,7 @@ class StructuredDataMergePolicy {
   typedef UnresolvedElement<StructuredDataKey, StructuredDataValue> UnresolvedEntry;
   typedef std::pair<DataNameVariant, Identity> DbKey;
 
-  explicit StructuredDataMergePolicy(maidsafe::vault::StructuredDataDb* db);
+  explicit StructuredDataMergePolicy(ManagerDb<StructuredDataManager>* db);
   StructuredDataMergePolicy(StructuredDataMergePolicy&& other);
   StructuredDataMergePolicy& operator=(StructuredDataMergePolicy&& other);
   typedef TaggedValue<NonEmptyString, struct DatabaseKey> SerialisedKey;
@@ -47,7 +47,7 @@ protected:
   void Merge(const UnresolvedEntry& unresolved_entry);
 
   std::vector<UnresolvedEntry> unresolved_data_;
-  StructuredDataDb* db_;
+  ManagerDb<StructuredDataManager>* db_;
 
  private:
 

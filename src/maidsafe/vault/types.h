@@ -46,6 +46,18 @@ typedef nfs::NetworkFileSystem<
     MetadataManagerPostPolicy> MetadataManagerNfs;
 
 typedef nfs::NetworkFileSystem<
+    nfs::MetadataManagerPutPolicy,
+    nfs::MetadataManagerGetPolicy,
+    nfs::MetadataManagerDeletePolicy,
+    MetadataManagerPostPolicy> MetadataManagerNfs;
+
+typedef nfs::NetworkFileSystem<
+    nfs::MetadataManagerPutPolicy,
+    nfs::MetadataManagerGetPolicy,
+    nfs::MetadataManagerDeletePolicy,
+    MetadataManagerPostPolicy> StructuredDataManagerNfs;
+
+typedef nfs::NetworkFileSystem<
     nfs::PmidAccountHolderPutPolicy,
     nfs::PmidAccountHolderGetPolicy,
     nfs::PmidAccountHolderDeletePolicy,
@@ -71,7 +83,7 @@ typedef std::set<std::unique_ptr<PmidAccount>,
                                     const std::unique_ptr<PmidAccount>&)>> PmidAccountSet;
 
 typedef nfs::PersonaTypes<nfs::Persona::kStructuredDataManager> StructuredDataManager;
-
+typedef nfs::PersonaTypes<nfs::Persona::kMetadataManager> MetadataManager;
 
 
 }  // namespace vault

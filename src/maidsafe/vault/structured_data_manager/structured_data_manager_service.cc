@@ -30,7 +30,7 @@
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_key.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_value.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_db.h"
+#include "maidsafe/vault/manager_db.h"
 
 namespace maidsafe {
 
@@ -74,21 +74,11 @@ void StructuredDataManagerService::ValidateSyncSender(const nfs::Message& messag
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-StructuredDataDb::Key StructuredDataManagerService::GetKeyFromMessage(const nfs::Message& message)
-                                                                      const {
-   if (!message.data().type)
-     ThrowError(CommonErrors::parsing_error);
-   return std::make_pair(GetDataNameVariant(*message.data().type, message.data().name),
-                         message.data().originator);
-}
-
 std::vector<StructuredDataVersions::VersionName>
             StructuredDataManagerService::GetVersionsFromMessage(const nfs::Message& msg) const {
 
    return nfs::StructuredData(nfs::StructuredData::serialised_type(msg.data().content)).Versions();
 }
-
-
 
 // =============== Get data =================================================================
 
@@ -96,7 +86,8 @@ void StructuredDataManagerService::HandleGet(const nfs::Message& message,
                                              routing::ReplyFunctor reply_functor) {
   try {
     nfs::Reply reply(CommonErrors::success);
-    StructuredDataVersions version(structured_data_db_.Get(GetKeyFromMessage(message)));
+    StructuredDataVersions version(
+                structured_data_db_.Get(GetKeyFromMessage<StructuredDataManager>(message)));
     reply.data() = nfs::StructuredData(version.Get()).Serialise().data;
     reply_functor(reply.Serialise()->string());
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
@@ -116,7 +107,8 @@ void StructuredDataManagerService::HandleGetBranch(const nfs::Message& message,
 
   try {
     nfs::Reply reply(CommonErrors::success);
-    StructuredDataVersions version(structured_data_db_.Get(GetKeyFromMessage(message)));
+    StructuredDataVersions version(
+                structured_data_db_.Get<StructuredDataManager>(GetKeyFromMessage(message)));
     auto branch_to_get(GetVersionsFromMessage(message));
     reply.data() = nfs::StructuredData(version.GetBranch(branch_to_get.at(0))).Serialise().data;
     reply_functor(reply.Serialise()->string());
@@ -141,7 +133,7 @@ void StructuredDataManagerService::HandleSync(const nfs::Message& /*message*/) {
 // The mergePloicy will supply the reply_functor with the appropriate 'error_code'
 template<typename Data>
 void StructuredDataManagerService::Sync(const nfs::Message& message) {
-    auto key = GetKeyFromMessage(message);
+    auto key = GetKeyFromMessage<StructuredDataManager>(message);
     auto versions = GetVersionsFromMessage(message);
 }
 // // =============== Account transfer ================================================================

@@ -14,7 +14,7 @@
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/data_types/structured_data_versions.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_db.h"
+#include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
 
 
@@ -22,7 +22,7 @@ namespace maidsafe {
 
 namespace vault {
 
-StructuredDataMergePolicy::StructuredDataMergePolicy(StructuredDataDb* db)
+StructuredDataMergePolicy::StructuredDataMergePolicy(ManagerDb<StructuredDataManager> *db)
     : unresolved_data_(),
       db_(db) {}
 

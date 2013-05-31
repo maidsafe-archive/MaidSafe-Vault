@@ -10,7 +10,7 @@
  **************************************************************************************************/
 
 
-#include "maidsafe/vault/structured_data_manager/structured_data_db.h"
+#include "maidsafe/vault/manager_db.h"
 
 #include <iomanip>
 #include <sstream>
@@ -21,14 +21,15 @@
 #include "maidsafe/passport/types.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/data_types/data_type_values.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 namespace vault {
 
-const uint32_t StructuredDataDb::kSuffixWidth_(2);
-
-StructuredDataDb::StructuredDataDb(const boost::filesystem::path& path)
+template<typename PersonaType>
+ManagerDb<PersonaType>::ManagerDb(const boost::filesystem::path& path)
   : kDbPath_(path),
+    mutex_(),
     leveldb_() {
   if (boost::filesystem::exists(kDbPath_))
     boost::filesystem::remove_all(kDbPath_);
@@ -43,51 +44,56 @@ StructuredDataDb::StructuredDataDb(const boost::filesystem::path& path)
   assert(leveldb_);
 }
 
-StructuredDataDb::~StructuredDataDb() {
+template<typename PersonaType>
+ManagerDb<PersonaType>::~ManagerDb() {
   leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
 }
 
-void StructuredDataDb::Put(const KvPair& key_value_pair) {
-  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key_value_pair.first.first));
-  std::string db_key(result.second.string() +
-                   Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)) +
-                   key_value_pair.first.second.string());
+template<typename PersonaType>
+void ManagerDb<PersonaType>::Put(const KvPair& key_value_pair) {
+
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
-                                       db_key, NonEmptyString(key_value_pair.second).string()));
+                                       SerialiseDbKey<PersonaType>(key_value_pair.first),
+                                       key_value_pair.second.string()));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
 }
 
-void StructuredDataDb::Delete(const Key &key) {
-  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
-  std::string db_key(result.second.string() +
-                     Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)) +
-                     key.second.string());
-  leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), db_key));
+template<typename PersonaType>
+void ManagerDb<PersonaType>::Delete(const typename PersonaType::DbKey& key) {
+  leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(),
+                                          SerialiseDbKey<PersonaType>(key)));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
 }
 
-StructuredDataVersions::serialised_type StructuredDataDb::Get(const Key &key) {
-  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
-  std::string db_key(result.second.string() +
-                     Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)) +
-                     key.second.string());
+template<typename PersonaType>
+NonEmptyString ManagerDb<PersonaType>::Get(const typename PersonaType::DbKey& key) {
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
   std::string value;
-  leveldb::Status status(leveldb_->Get(read_options, db_key, &value));
+  leveldb::Status status(leveldb_->Get(read_options, SerialiseDbKey<PersonaType>(key), &value));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
   assert(!value.empty());
-  return StructuredDataVersions::serialised_type(NonEmptyString(value));
+  return NonEmptyString(value);
 }
 
-template<uint32_t Width>
-std::string StructuredDataDb::Pad(uint32_t number) {
-  std::ostringstream osstream;
-  osstream << std::setw(Width) << std::setfill('0') << std::hex << number;
-  return osstream.str();
+
+// TODO(Team) This can be optimise by returning iterators.
+template<typename PersonaType>
+std::vector<typename PersonaType::DbKey> ManagerDb<PersonaType>::GetKeys() {
+  std::vector<DataNameVariant> return_vector;
+  std::lock_guard<std::mutex> lock(mutex_);
+  std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
+  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+    std::string name(iter->key().ToString().substr(0, NodeId::kSize));
+    std::string type_string(iter->key().ToString().substr(NodeId::kSize));
+    DataTagValue type = static_cast<DataTagValue>(std::stoul(type_string));
+    auto key = GetDataNameVariant(type, Identity(name));
+    return_vector.push_back(std::move(key));
+  }
+  return return_vector;
 }
 
 }  // namespace vault

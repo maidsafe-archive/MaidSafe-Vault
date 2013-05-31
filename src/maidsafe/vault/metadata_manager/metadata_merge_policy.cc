@@ -24,7 +24,7 @@ namespace maidsafe {
 
 namespace vault {
 
-MetadataMergePolicy::MetadataMergePolicy(MetadataDb * metadata_db)
+MetadataMergePolicy::MetadataMergePolicy(ManagerDb<MetadataManager> *metadata_db)
     : unresolved_data_(),
       metadata_db_(metadata_db) {}
 

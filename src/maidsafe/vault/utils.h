@@ -81,6 +81,25 @@ typename Persona::DbKey GetKeyFromMessage(const nfs::Message& message) {
   return GetDataNameVariant(*message.data().type, message.data().name);
 }
 
+template<>
+typename StructuredDataManager::DbKey
+         GetKeyFromMessage<StructuredDataManager>(const nfs::Message& message);
+
+template<uint32_t Width>
+std::string Pad(uint32_t number) {
+  std::ostringstream osstream;
+  osstream << std::setw(Width) << std::setfill('0') << std::hex << number;
+  return osstream.str();
+}
+
+template<typename Persona>
+std::string SerialiseDbKey(typename Persona::DbKey& key) {
+    auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
+     std::string db_key(result.second.string() +
+                        Pad<2>(static_cast<uint32_t>(result.first)));
+}
+
+
 namespace detail {
 
 void InitialiseDirectory(const boost::filesystem::path& directory);

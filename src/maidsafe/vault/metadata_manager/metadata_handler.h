@@ -22,7 +22,7 @@
 
 #include "maidsafe/vault/metadata_manager/metadata.h"
 #include "maidsafe/vault/metadata_manager/metadata_helpers.h"
-#include "maidsafe/vault/metadata_manager/metadata_db.h"
+#include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/metadata_manager/metadata.pb.h"
 #include "maidsafe/vault/metadata_manager/metadata_merge_policy.h"
 #include "maidsafe/vault/sync.h"
@@ -107,7 +107,7 @@ class MetadataHandler {
 
  private:
   const boost::filesystem::path kMetadataRoot_;
-  std::unique_ptr<MetadataDb> metadata_db_;
+  std::unique_ptr<ManagerDb<MetadataManager>> metadata_db_;
   const NodeId kThisNodeId_;
   mutable std::mutex mutex_;
   Sync<MetadataMergePolicy> sync_;

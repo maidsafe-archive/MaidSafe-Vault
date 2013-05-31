@@ -18,7 +18,7 @@
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
 
-#include "maidsafe/vault/metadata_manager/metadata_db.h"
+#include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/metadata_manager/metadata.pb.h"
 
 #include "maidsafe/vault/types.h"
@@ -45,13 +45,13 @@ class Metadata {
 
   // This constructor reads the existing element or creates a new one if it doesn't already exist.
   Metadata(const DataNameVariant& data_name,
-           MetadataDb* metadata_db,
+           ManagerDb<MetadataManager>* metadata_db,
            int32_t data_size);
   // This constructor reads the existing element or throws if it doesn't already exist.
   Metadata(const DataNameVariant& data_name,
-           MetadataDb* metadata_db);
+           ManagerDb<MetadataManager>* metadata_db);
   // Should only be called once.
-  void SaveChanges(MetadataDb* metadata_db);
+  void SaveChanges(ManagerDb<MetadataManager>* metadata_db);
 
   DataNameVariant data_name_;
   MetadataValue value_;

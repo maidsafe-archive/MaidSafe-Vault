@@ -22,7 +22,7 @@
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/unresolved_element.h"
-#include "maidsafe/vault/metadata_manager/metadata_db.h"
+#include "maidsafe/vault/manager_db.h"
 
 
 namespace maidsafe {
@@ -33,9 +33,9 @@ class MetadataMergePolicy {
  public:
   typedef MetadataUnresolvedEntry UnresolvedEntry;
   typedef MetadataResolvedEntry ResolvedEntry;
-  typedef MetadataDb Database;
+  typedef ManagerDb<MetadataManager> Database;
 
-  explicit MetadataMergePolicy(MetadataDb* metadata_db);
+  explicit MetadataMergePolicy(ManagerDb<MetadataManager>* metadata_db);
   MetadataMergePolicy(MetadataMergePolicy&& other);
   MetadataMergePolicy& operator=(MetadataMergePolicy&& other);
 
@@ -43,7 +43,7 @@ class MetadataMergePolicy {
   void Merge(const UnresolvedEntry& unresolved_entry);
 
   std::vector<UnresolvedEntry> unresolved_data_;
-  MetadataDb* metadata_db_;
+  ManagerDb<MetadataManager>* metadata_db_;
 
  private:
   MetadataMergePolicy(const MetadataMergePolicy&);
