@@ -64,6 +64,9 @@ std::vector<DataNameVariant> MetadataHandler::GetRecordNames() const {
 void MetadataHandler::ReplaceNodeInSyncList(const DataNameVariant& /*record_name*/,  //FIXME in Sync
                                             const NodeId& old_node, const NodeId& new_node) {
   // FIXME(Prakash) Need to pass record_name to sync
+  // or have sync test whenther new node should be managing the 'account'
+    // we can use the routing IsResponsibleFor(account_name, node_name) test I think
+    // This is a bit of work but same test will be required for account transfer
   sync_.ReplaceNode(old_node, new_node);
 }
 
