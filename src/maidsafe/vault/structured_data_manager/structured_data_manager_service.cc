@@ -137,16 +137,16 @@ void StructuredDataManagerService::HandleSyncronise(const nfs::Message& message)
 //    unresolved_entries = sync_.AddUnresolvedEntry();
   }
 
-  reply_functor(reply.Serialise()->string());
-  std::lock_guard<std::mutex> lock(accumulator_mutex_);
-  accumulator_.SetHandled(message, reply.error());
+//  reply_functor(reply.Serialise()->string());
+//  std::lock_guard<std::mutex> lock(accumulator_mutex_);
+//  accumulator_.SetHandled(message, reply.error());
 
 }
 
 // In this persona we sync all mutating actions, on sucess/fail the reply_functor is fired
 // The mergePloicy will supply the reply_functor with the appropriate 'error_code'
 template<typename Data>
-void StructuredDataManagerService::Sync(const nfs::Message& message) {
+void StructuredDataManagerService::Syncronise(const nfs::Message& message) {
     auto key = GetKeyFromMessage<StructuredDataManager>(message);
     auto versions = GetVersionsFromMessage(message);
     // addlocalunresolved

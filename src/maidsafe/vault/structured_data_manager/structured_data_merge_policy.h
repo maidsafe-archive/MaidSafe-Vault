@@ -42,8 +42,6 @@ class StructuredDataMergePolicy {
   explicit StructuredDataMergePolicy(ManagerDb<StructuredDataManager>* db);
   StructuredDataMergePolicy(StructuredDataMergePolicy&& other);
   StructuredDataMergePolicy& operator=(StructuredDataMergePolicy&& other);
-  typedef TaggedValue<NonEmptyString, struct DatabaseKey> SerialisedKey;
-  typedef TaggedValue<NonEmptyString, struct DatabaseValue> SerialisedValue;
 
 protected:
   void Merge(const UnresolvedEntry& unresolved_entry);
@@ -68,10 +66,6 @@ protected:
   void MergeGetBranch(const DbKey& key, const typename StructuredDataVersions::VersionName& tot);
 
 
-  SerialisedValue SerialiseDbValue(const StructuredDataValue& db_value) const;
-  SerialisedKey SerialiseDbKey(const DbKey& db_key) const;
-  StructuredDataValue ParseDbValue(const SerialisedValue& serialised_db_value) const;
-  SerialisedValue GetFromDb(const DbKey& db_key);
 };
 
 

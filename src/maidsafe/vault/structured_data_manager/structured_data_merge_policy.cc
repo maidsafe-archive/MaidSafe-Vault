@@ -38,7 +38,6 @@ StructuredDataMergePolicy& StructuredDataMergePolicy::operator=(StructuredDataMe
 
 void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
   auto db_key = std::make_pair(unresolved_entry.key.data_name, unresolved_entry.key.originator);
-  auto serialised_value(GetFromDb(db_key));
 
   if (unresolved_entry.key.action == nfs::MessageAction::kGetBranch) {
     assert(unresolved_entry.messages_contents.at(0).value->version);
