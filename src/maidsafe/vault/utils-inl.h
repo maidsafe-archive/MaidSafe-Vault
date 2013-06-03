@@ -134,8 +134,19 @@ std::string Pad(uint32_t number) {
   return result;
 }
 
+// Workaround for gcc 4.6 bug related to warning "redundant redeclaration" for template
+// specialisation. refer // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=15867#c4
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wredundant-decls"
+#endif
+
 template<>
 std::string Pad<1>(uint32_t number);
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
 
 }  // namespace detail
 

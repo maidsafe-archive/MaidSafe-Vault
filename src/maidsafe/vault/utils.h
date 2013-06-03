@@ -44,7 +44,46 @@ struct PersonaTypes<Persona::kStructuredDataManager> {
 
 }  // namespace nfs
 
+
 namespace vault {
+
+namespace detail {
+
+void InitialiseDirectory(const boost::filesystem::path& directory);
+bool ShouldRetry(routing::Routing& routing, const nfs::Message& message);
+
+template<typename Data>
+bool IsDataElement(const typename Data::name_type& name,
+                   const DataNameVariant& data_name_variant);
+
+void SendReply(const nfs::Message& original_message,
+               const maidsafe_error& return_code,
+               const routing::ReplyFunctor& reply_functor);
+
+template<typename AccountSet, typename Account>
+typename Account::serialised_type GetSerialisedAccount(
+    std::mutex& mutex,
+    const AccountSet& accounts,
+    const typename Account::name_type& account_name);
+
+template<typename AccountSet, typename Account>
+typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
+    std::mutex& mutex,
+    const AccountSet& accounts,
+    const typename Account::name_type& account_name);
+// Returns true if the required successful request count has been reached
+template<typename Accumulator>
+bool AddResult(const nfs::Message& message,
+               const routing::ReplyFunctor& reply_functor,
+               const maidsafe_error& return_code,
+               Accumulator& accumulator,
+               std::mutex& accumulator_mutex,
+               int requests_required);
+
+template<int width>
+std::string Pad(uint32_t number);
+
+}  // namespace detail
 
 struct CheckHoldersResult {
   std::vector<NodeId> new_holders;
@@ -110,46 +149,6 @@ std::string SerialiseDbKey(const typename Persona::DbKey& key) {
 template<>
 std::string SerialiseDbKey<StructuredDataManager>(
     const typename StructuredDataManager::DbKey& key);
-
-namespace detail {
-
-void InitialiseDirectory(const boost::filesystem::path& directory);
-
-bool ShouldRetry(routing::Routing& routing, const nfs::Message& message);
-
-template<typename Data>
-bool IsDataElement(const typename Data::name_type& name,
-                   const DataNameVariant& data_name_variant);
-
-void SendReply(const nfs::Message& original_message,
-               const maidsafe_error& return_code,
-               const routing::ReplyFunctor& reply_functor);
-
-template<typename AccountSet, typename Account>
-typename Account::serialised_type GetSerialisedAccount(
-    std::mutex& mutex,
-    const AccountSet& accounts,
-    const typename Account::name_type& account_name);
-
-template<typename AccountSet, typename Account>
-typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
-    std::mutex& mutex,
-    const AccountSet& accounts,
-    const typename Account::name_type& account_name);
-
-// Returns true if the required successful request count has been reached
-template<typename Accumulator>
-bool AddResult(const nfs::Message& message,
-               const routing::ReplyFunctor& reply_functor,
-               const maidsafe_error& return_code,
-               Accumulator& accumulator,
-               std::mutex& accumulator_mutex,
-               int requests_required);
-
-template<int width>
-std::string Pad(uint32_t number);
-
-}  // namespace detail
 
 }  // namespace vault
 
