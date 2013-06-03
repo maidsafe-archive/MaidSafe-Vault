@@ -141,8 +141,8 @@ void PmidAccountHolderService::AddLocalUnresolvedEntryThenSync(const nfs::Messag
 
 template<typename Data, nfs::MessageAction Action>
 void PmidAccountHolderService::ReplyToMetadataManagers(
-      const std::vector<PmidAccountResolvedEntry>& resolved_entries,
-      const PmidName& pmid_name) {
+      const std::vector<PmidAccountResolvedEntry>& /*resolved_entries*/,
+      const PmidName& /*pmid_name*/) {
   GetTagValueAndIdentityVisitor type_and_name_visitor;
   //for (auto& resolved_entry : resolved_entries) {
   //  auto type_and_name(boost::apply_visitor(type_and_name_visitor, resolved_entry.key.first));

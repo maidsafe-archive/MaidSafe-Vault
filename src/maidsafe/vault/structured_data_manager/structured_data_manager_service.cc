@@ -170,8 +170,8 @@ void StructuredDataManagerService::HandleSyncronise(const nfs::Message& message)
 template<typename Data>
 void StructuredDataManagerService::Syncronise(const nfs::Message& message) {
   auto entry =  detail::UnresolvedEntryFromMessage(message);
-  //nfs_. Sync(DataNameVariant(message.data()->type, entry.Serialise());  // does not include
-                                                                        // original_message_id
+  nfs_.Sync<Data>(DataNameVariant(Data::name_type(message.data().name)), entry.Serialise().data);  // does not include
+                                                                            // original_message_id
   entry.original_message_id = message.message_id();
   entry.source_node_id = message.source().node_id; // with data().originator_id we can
                                                     // recover the accumulated requests in

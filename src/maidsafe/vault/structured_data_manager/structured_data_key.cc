@@ -25,13 +25,18 @@ StructuredDataKey::StructuredDataKey()
 
 StructuredDataKey::StructuredDataKey(const StructuredDataKey& other)
   :  originator(other.originator),
-    data_name(other.data_name),
-    action(other.action) {}
+     data_name(other.data_name),
+     action(other.action) {}
 
 StructuredDataKey& StructuredDataKey::operator=(StructuredDataKey other) {
   swap(*this, other);
   return *this;
 }
+
+StructuredDataKey::StructuredDataKey(StructuredDataKey&& other)
+  :  originator(std::move(other.originator)),
+     data_name(std::move(other.data_name)),
+     action(std::move(other.action)) {}
 
 void swap(StructuredDataKey& lhs, StructuredDataKey& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;

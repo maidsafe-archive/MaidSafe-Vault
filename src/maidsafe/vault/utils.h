@@ -118,13 +118,7 @@ std::string SerialiseDbKey(const typename Persona::DbKey& key) {
 
 template<>
 std::string SerialiseDbKey<StructuredDataManager>(
-    const typename StructuredDataManager::DbKey& key) {
-  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
-  std::string db_key(result.second.string() +
-                     Pad<2>(static_cast<uint32_t>(result.first)) +
-                     key.second.string());
-    return db_key;
-}
+    const typename StructuredDataManager::DbKey& key);
 
 namespace detail {
 
