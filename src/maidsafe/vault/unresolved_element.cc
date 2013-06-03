@@ -144,6 +144,15 @@ MetadataUnresolvedEntry::serialised_type MetadataUnresolvedEntry::Serialise() co
   return serialised_type((NonEmptyString(proto_copy.SerializeAsString())));
 }
 
+template<>
+StructuredDataUnresolvedEntry::UnresolvedElement(const serialised_type& /*serialised_copy*/)
+    : key(),
+      messages_contents(),
+      sync_counter(0),
+      dont_add_to_db(false) {
+// FIXME
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

@@ -154,7 +154,7 @@ void StructuredDataManagerService::HandleSyncronise(const nfs::Message& message)
     std::lock_guard<std::mutex> lock(sync_mutex_);
     unresolved_entries = sync_.AddUnresolvedEntry(detail::UnresolvedEntryFromMessage(message));
   }
-  if (unresolved_entries.size() >= routing::Parameters::node_group_size -1) {
+  if (unresolved_entries.size() >= routing::Parameters::node_group_size -1U) {
     for (const auto& entry : unresolved_entries) {
       // sethandled should reply success and set all handled !!!
       {
