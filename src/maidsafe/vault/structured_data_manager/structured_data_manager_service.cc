@@ -148,7 +148,7 @@ void StructuredDataManagerService::HandleGetBranch(const nfs::Message& message,
 
 // // =============== Sync ============================================================================
 
-void StructuredDataManagerService::HandleSyncronise(const nfs::Message& message) {
+void StructuredDataManagerService::HandleSynchronise(const nfs::Message& message) {
   std::vector<StructuredDataMergePolicy::UnresolvedEntry> unresolved_entries;
   {
     std::lock_guard<std::mutex> lock(sync_mutex_);
@@ -168,7 +168,7 @@ void StructuredDataManagerService::HandleSyncronise(const nfs::Message& message)
 // In this persona we sync all mutating actions, on sucess the reply_functor is fired (if available)
 
 template<typename Data>
-void StructuredDataManagerService::Syncronise(const nfs::Message& message) {
+void StructuredDataManagerService::Synchronise(const nfs::Message& message) {
   auto entry =  detail::UnresolvedEntryFromMessage(message);
   nfs_.Sync<Data>(DataNameVariant(Data::name_type(message.data().name)), entry.Serialise().data);  // does not include
                                                                             // original_message_id

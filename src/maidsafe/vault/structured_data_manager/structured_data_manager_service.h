@@ -66,8 +66,8 @@ class StructuredDataManagerService {
 
   //// =============== Sync ========================================================================
   template<typename Data>
-  void Syncronise(const nfs::Message& message);
-  void HandleSyncronise(const nfs::Message& message);
+  void Synchronise(const nfs::Message& message);
+  void HandleSynchronise(const nfs::Message& message);
 
   //// =============== Churn ============================================================
   void HandleChurnEvent(const NodeId& old_node, const NodeId& new_node);

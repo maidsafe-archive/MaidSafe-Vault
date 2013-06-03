@@ -52,9 +52,9 @@ class Db {
   NonEmptyString Get(const uint32_t& account_id, const DataNameVariant& key);
   std::vector<KvPair> Get(const uint32_t& account_id);
 
-  template<uint32_t Width> std::string Pad(uint32_t number);
+  std::string GetSerialisedKey(const uint32_t& account_id, const DataNameVariant& key) const;
 
-  static const uint32_t kPrefixWidth_, kSuffixWidth_;
+  static const int kPrefixWidth_, kSuffixWidth_;
   const boost::filesystem::path kDbPath_;
   std::mutex mutex_;
   std::unique_ptr<leveldb::DB> leveldb_;

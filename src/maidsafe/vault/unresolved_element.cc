@@ -15,6 +15,7 @@
 
 #include "maidsafe/common/error.h"
 
+#include "maidsafe/vault/types.h"
 #include "maidsafe/vault/unresolved_element.pb.h"
 
 
@@ -145,12 +146,76 @@ MetadataUnresolvedEntry::serialised_type MetadataUnresolvedEntry::Serialise() co
 }
 
 template<>
-StructuredDataUnresolvedEntry::UnresolvedElement(const serialised_type& /*serialised_copy*/)
+StructuredDataUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
     : key(),
       messages_contents(),
       sync_counter(0),
       dont_add_to_db(false) {
-// FIXME
+  protobuf::StructuredDataUnresolvedEntry proto_copy;
+  if (!proto_copy.ParseFromString(serialised_copy->string()))
+    ThrowError(CommonErrors::parsing_error);
+
+  StructuredDataManager::UnresolvedEntryKey unresolved_entry_key;
+  unresolved_entry_key.db_key =
+      std::make_pair(GetDataNameVariant(static_cast<DataTagValue>(proto_copy.key().name_type()),
+                                        Identity(proto_copy.key().name())),
+                     Identity(proto_copy.key().originator()));
+  unresolved_entry_key.action = static_cast<nfs::MessageAction>(proto_copy.key().action());
+  if (!(unresolved_entry_key.action == nfs::MessageAction::kAccountTransfer ||
+        unresolved_entry_key.action == nfs::MessageAction::kDelete ||
+        unresolved_entry_key.action == nfs::MessageAction::kDeleteBranchUntilFork ||
+        unresolved_entry_key.action == nfs::MessageAction::kPut ||
+        unresolved_entry_key.action == nfs::MessageAction::kGet ||
+        unresolved_entry_key.action == nfs::MessageAction::kGetBranch)) {
+    ThrowError(CommonErrors::parsing_error);
+  }
+
+  // TODO(Fraser#5#): 2013-04-18 - Replace magic number below
+  if (proto_copy.messages_contents_size() > 2)
+    ThrowError(CommonErrors::parsing_error);
+
+  //for (int i(0); i != proto_copy.messages_contents_size(); ++i) {
+  //  MessageContent message_content;
+  //  message_content.peer_id = NodeId(proto_copy.messages_contents(i).peer());
+  //  if (proto_copy.messages_contents(i).has_entry_id())
+  //    message_content.entry_id = proto_copy.messages_contents(i).entry_id();
+  //  if (proto_copy.messages_contents(i).has_value()) {
+  //      StructuredDataManager::DbValue::serialised_type serialised_db_value(
+  //                            NonEmptyString(proto_copy.messages_contents(i).value()));
+  //      message_content.value = StructuredDataValue();
+  //      message_content.value->serialised_db_value = serialised_db_value;
+  //  }
+  //  messages_contents.push_back(message_content);
+  //}
+
+  //if (!proto_copy.has_dont_add_to_db())
+  //  ThrowError(CommonErrors::parsing_error);
+  //dont_add_to_db = proto_copy.dont_add_to_db();
+}
+
+template<>
+StructuredDataUnresolvedEntry::serialised_type StructuredDataUnresolvedEntry::Serialise() const {
+  protobuf::StructuredDataUnresolvedEntry proto_copy;
+  //auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
+
+  //auto proto_key(proto_copy.mutable_key());
+  //proto_key->set_type(static_cast<int32_t>(tag_value_and_id.first));
+  //proto_key->set_name(tag_value_and_id.second.string());
+  //proto_key->set_action(static_cast<int32_t>(key.second));
+
+  //for (const auto& message_content : messages_contents) {
+  //  auto proto_message_content(proto_copy.add_messages_contents());
+  //  proto_message_content->set_peer(message_content.peer_id.string());
+  //  if (message_content.entry_id)
+  //    proto_message_content->set_entry_id(*message_content.entry_id);
+  //  if (message_content.value) {
+  //      proto_message_content->set_value(message_content.value->Serialise()->string());
+  //  }
+  //}
+
+  //proto_copy.set_dont_add_to_db(dont_add_to_db);
+
+  return serialised_type((NonEmptyString(proto_copy.SerializeAsString())));
 }
 
 }  // namespace vault

@@ -29,10 +29,13 @@ namespace maidsafe {
 namespace vault {
 
 template<typename PersonaType>
+const int ManagerDb<PersonaType>::kSuffixWidth_(1);
+
+template<typename PersonaType>
 ManagerDb<PersonaType>::ManagerDb(const boost::filesystem::path& path)
-  : kDbPath_(path),
-    mutex_(),
-    leveldb_() {
+    : kDbPath_(path),
+      mutex_(),
+      leveldb_() {
   if (boost::filesystem::exists(kDbPath_))
     boost::filesystem::remove_all(kDbPath_);
   leveldb::DB* db;
@@ -113,6 +116,15 @@ std::vector<StructuredDataManager::DbKey> ManagerDb<StructuredDataManager>::GetK
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop
 #endif
+
+template<typename PersonaType>
+std::string ManagerDb<PersonaType>::GetSerialisedKey(const typename PersonaType::DbKey& key) const {
+  static GetTagValueAndIdentityVisitor visitor;
+  auto result(boost::apply_visitor(visitor, key));
+  return std::string(result.second.string() +
+                     detail::Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)));
+}
+
 
 }  // namespace vault
 }  // namespace maidsafe

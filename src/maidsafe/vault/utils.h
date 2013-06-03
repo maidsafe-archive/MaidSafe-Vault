@@ -101,19 +101,10 @@ template<>
 typename StructuredDataManager::DbKey
          GetKeyFromMessage<StructuredDataManager>(const nfs::Message& message);
 
-template<uint32_t Width>
-std::string Pad(uint32_t number) {
-  std::ostringstream osstream;
-  osstream << std::setw(Width) << std::setfill('0') << std::hex << number;
-  return osstream.str();
-}
-
 template<typename Persona>
 std::string SerialiseDbKey(const typename Persona::DbKey& key) {
-    auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
-     std::string db_key(result.second.string() +
-                        Pad<2>(static_cast<uint32_t>(result.first)));
-     return db_key;
+  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
+  return std::string(result.second.string() + detail::Pad<1>(static_cast<uint32_t>(result.first)));
 }
 
 template<>
@@ -154,6 +145,9 @@ bool AddResult(const nfs::Message& message,
                Accumulator& accumulator,
                std::mutex& accumulator_mutex,
                int requests_required);
+
+template<int width>
+std::string Pad(uint32_t number);
 
 }  // namespace detail
 

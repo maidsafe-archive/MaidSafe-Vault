@@ -61,15 +61,16 @@ void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
 }
 
 void StructuredDataMergePolicy::MergePut(const DbKey& key,
-              const typename StructuredDataVersions::VersionName& new_value,
-              const typename StructuredDataVersions::VersionName& old_value) {
+                                         const StructuredDataVersions::VersionName& new_value,
+                                         const StructuredDataVersions::VersionName& old_value) {
   auto value(db_->Get(key));
   value.Put(old_value, new_value);
   db_->Put(std::make_pair(key, value));
 }
 
-void StructuredDataMergePolicy::MergeDeleteBranchUntilFork(const DbKey& key,
-                                const typename StructuredDataVersions::VersionName& tot) {
+void StructuredDataMergePolicy::MergeDeleteBranchUntilFork(
+    const DbKey& key,
+    const StructuredDataVersions::VersionName& tot) {
   auto value(db_->Get(key));
   value.DeleteBranchUntilFork(tot);
   db_->Put(std::make_pair(key, value));

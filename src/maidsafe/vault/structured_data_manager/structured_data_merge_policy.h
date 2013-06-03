@@ -50,23 +50,21 @@ protected:
   ManagerDb<StructuredDataManager>* db_;
 
  private:
-
   StructuredDataMergePolicy(const StructuredDataMergePolicy&);
   StructuredDataMergePolicy& operator=(const StructuredDataMergePolicy&);
 
   void MergePut(const DbKey& key,
-                const typename StructuredDataVersions::VersionName& new_value,
-                const typename StructuredDataVersions::VersionName& old_value);
+                const StructuredDataVersions::VersionName& new_value,
+                const StructuredDataVersions::VersionName& old_value);
 
   void MergeDeleteBranchUntilFork(const DbKey& key,
-                                  const typename StructuredDataVersions::VersionName& tot);
+                                  const StructuredDataVersions::VersionName& tot);
   void MergeDelete(const DbKey& key);
 
   std::vector<Identity> MergeGet(const DbKey& key);
-  void MergeGetBranch(const DbKey& key, const typename StructuredDataVersions::VersionName& tot);
+  void MergeGetBranch(const DbKey& key, const StructuredDataVersions::VersionName& tot);
 
   void MergeAccountTransfer(const DbKey& key, const StructuredDataVersions& data_version);
-
 };
 
 

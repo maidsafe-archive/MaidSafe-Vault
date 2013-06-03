@@ -35,7 +35,7 @@ PmidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
   return PmidAccountUnresolvedEntry(
       std::make_pair(GetDataNameVariant(DataTagValue(message.data().type.get()),
                                         Identity(message.data().name)), action),
-      message.data().content.string().size(),
+      static_cast<int32_t>(message.data().content.string().size()),
       this_id);
 }
 
