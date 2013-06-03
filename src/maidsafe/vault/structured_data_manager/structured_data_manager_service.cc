@@ -113,14 +113,14 @@ void StructuredDataManagerService::HandleGet(const nfs::Message& message,
     reply.data() = nfs::StructuredData(version.Get()).Serialise().data;
     reply_functor(reply.Serialise()->string());
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
+    accumulator_.SetHandled(message, nfs::Reply(CommonErrors::success));
   }
   catch (std::exception& e) {
     LOG(kError) << "Bad message: " << e.what();
     nfs::Reply reply(VaultErrors::failed_to_handle_request);
     reply_functor(reply.Serialise()->string());
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    accumulator_.SetHandled(message, maidsafe_error(VaultErrors::failed_to_handle_request));
+    accumulator_.SetHandled(message, nfs::Reply(VaultErrors::failed_to_handle_request));
  }
 }
 
@@ -135,14 +135,14 @@ void StructuredDataManagerService::HandleGetBranch(const nfs::Message& message,
     reply.data() = nfs::StructuredData(version.GetBranch(branch_to_get.at(0))).Serialise().data;
     reply_functor(reply.Serialise()->string());
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    accumulator_.SetHandled(message, maidsafe_error(CommonErrors::success));
+    accumulator_.SetHandled(message, nfs::Reply(CommonErrors::success));
   }
   catch (std::exception& e) {
     LOG(kError) << "Bad message: " << e.what();
     nfs::Reply reply(VaultErrors::failed_to_handle_request);
     reply_functor(reply.Serialise()->string());
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    accumulator_.SetHandled(message, maidsafe_error(VaultErrors::failed_to_handle_request));
+    accumulator_.SetHandled(message, nfs::Reply(VaultErrors::failed_to_handle_request));
  }
 }
 

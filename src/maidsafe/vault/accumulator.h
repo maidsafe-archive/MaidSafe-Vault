@@ -42,7 +42,7 @@ class Accumulator {
   struct PendingRequest {
     PendingRequest(const nfs::Message& msg_in,
                    const routing::ReplyFunctor& reply_functor_in,
-                   const maidsafe_error& return_code_in);
+                   const nfs::Reply& reply_in);
     PendingRequest(const PendingRequest& other);
     PendingRequest& operator=(const PendingRequest& other);
     PendingRequest(PendingRequest&& other);
@@ -50,7 +50,7 @@ class Accumulator {
 
     nfs::Message msg;
     routing::ReplyFunctor reply_functor;
-    maidsafe_error return_code;
+    nfs::Reply reply;
   };
 
   struct HandledRequest {
@@ -60,10 +60,10 @@ class Accumulator {
                    const Identity& data_name_in,
                    const DataTagValue& data_type_in,
                    const int32_t& size_in,
-                   const maidsafe_error& return_code_in);
+                   const nfs::Reply& reply_in);
     HandledRequest(const nfs::MessageId& msg_id_in,
                    const Name& account_name_in,
-                   const maidsafe_error& return_code_in);
+                   const nfs::Reply& reply_in);
     HandledRequest(const HandledRequest& other);
     HandledRequest& operator=(const HandledRequest& other);
     HandledRequest(HandledRequest&& other);
@@ -75,7 +75,7 @@ class Accumulator {
     Identity data_name;
     DataTagValue data_type;
     int32_t size;
-    maidsafe_error return_code;
+    nfs::Reply reply;
   };
 
   typedef TaggedValue<NonEmptyString, struct SerialisedRequestsTag> serialised_requests;
@@ -89,10 +89,10 @@ class Accumulator {
   // Adds a request with its individual result, pending the overall result of the operation.
   std::vector<nfs::Reply> PushSingleResult(const nfs::Message& message,
                                            const routing::ReplyFunctor& reply_functor,
-                                           const maidsafe_error& return_code);
+                                           const nfs::Reply& reply);
   // Marks the message as handled and returns all pending requests held with the same ID
   std::vector<PendingRequest> SetHandled(const nfs::Message& message,
-                                         const maidsafe_error& return_code);
+                                         const nfs::Reply& reply);
   // This will set handled and reply with success if a reply functor exists
   // safe to call many times
   void SetHandledAndReply(const nfs::MessageId message_id, const NodeId& source_node);

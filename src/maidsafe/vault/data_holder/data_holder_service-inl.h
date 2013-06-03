@@ -44,7 +44,7 @@ void DataHolderService::HandleMessage(const nfs::Message& message,
     default: {
       reply = nfs::Reply(VaultErrors::operation_not_supported, message.Serialise().data);
       std::lock_guard<std::mutex> lock(accumulator_mutex_);
-      accumulator_.SetHandled(message, reply.error());
+      accumulator_.SetHandled(message, reply);
       reply_functor(reply.Serialise()->string());
     }
   }

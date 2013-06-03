@@ -32,23 +32,23 @@ namespace vault {
 template<typename Name>
 Accumulator<Name>::PendingRequest::PendingRequest(const nfs::Message& msg_in,
                                                   const routing::ReplyFunctor& reply_functor_in,
-                                                  const maidsafe_error& return_code_in)
+                                                  const nfs::Reply& reply_in)
     : msg(msg_in),
       reply_functor(reply_functor_in),
-      return_code(return_code_in) {}
+      reply(reply_in) {}
 
 template<typename Name>
 Accumulator<Name>::PendingRequest::PendingRequest(const PendingRequest& other)
     : msg(other.msg),
       reply_functor(other.reply_functor),
-      return_code(other.return_code) {}
+      reply(other.reply) {}
 
 template<typename Name>
 typename Accumulator<Name>::PendingRequest& Accumulator<Name>::PendingRequest::operator=(
     const PendingRequest& other) {
   msg = other.msg;
   reply_functor = other.reply_functor;
-  return_code = other.return_code;
+  reply = other.reply;
   return *this;
 }
 
@@ -56,14 +56,14 @@ template<typename Name>
 Accumulator<Name>::PendingRequest::PendingRequest(PendingRequest&& other)
     : msg(std::move(other.msg)),
       reply_functor(std::move(other.reply_functor)),
-      return_code(std::move(other.return_code)) {}
+      reply(std::move(other.reply)) {}
 
 template<typename Name>
 typename Accumulator<Name>::PendingRequest& Accumulator<Name>::PendingRequest::operator=(
     PendingRequest&& other) {
   msg = std::move(other.msg);
   reply_functor = std::move(other.reply_functor);
-  return_code = std::move(other.return_code);
+  reply = std::move(other.reply);
   return *this;
 }
 
@@ -74,26 +74,26 @@ Accumulator<Name>::HandledRequest::HandledRequest(const nfs::MessageId& msg_id_i
                                                   const Identity& data_name_in,
                                                   const DataTagValue& data_type_in,
                                                   const int32_t& size_in,
-                                                  const maidsafe_error& return_code_in)
+                                                  const nfs::Reply& reply_in)
     : msg_id(msg_id_in),
       account_name(account_name_in),
       action(action_type_in),
       data_name(data_name_in),
       data_type(data_type_in),
       size(size_in),
-      return_code(return_code_in) {}
+      reply(reply_in) {}
 
 template<typename Name>
 Accumulator<Name>::HandledRequest::HandledRequest(const nfs::MessageId& msg_id_in,
                                                   const Name& account_name_in,
-                                                  const maidsafe_error& return_code_in)
+                                                  const nfs::Reply& reply_in)
     : msg_id(msg_id_in),
       account_name(account_name_in),
       action(),
       data_name(),
       data_type(),
       size(),
-      return_code(return_code_in) {}
+      reply(reply_in) {}
 
 template<typename Name>
 Accumulator<Name>::HandledRequest::HandledRequest(const HandledRequest& other)
@@ -103,7 +103,7 @@ Accumulator<Name>::HandledRequest::HandledRequest(const HandledRequest& other)
       data_name(other.data_name),
       data_type(other.data_type),
       size(other.size),
-      return_code(other.return_code) {}
+      reply(other.reply) {}
 
 template<typename Name>
 typename Accumulator<Name>::HandledRequest& Accumulator<Name>::HandledRequest::operator=(
@@ -114,7 +114,7 @@ typename Accumulator<Name>::HandledRequest& Accumulator<Name>::HandledRequest::o
   data_name = other.data_name,
   data_type = other.data_type,
   size = other.size;
-  return_code = other.return_code;
+  reply = other.reply;
   return *this;
 }
 
@@ -126,7 +126,7 @@ Accumulator<Name>::HandledRequest::HandledRequest(HandledRequest&& other)
       data_name(std::move(other.data_name)),
       data_type(std::move(other.data_type)),
       size(std::move(other.size)),
-      return_code(std::move(other.return_code)) {}
+      reply(std::move(other.reply)) {}
 
 template<typename Name>
 typename Accumulator<Name>::HandledRequest& Accumulator<Name>::HandledRequest::operator=(
@@ -137,7 +137,7 @@ typename Accumulator<Name>::HandledRequest& Accumulator<Name>::HandledRequest::o
   data_name = std::move(other.data_name),
   data_type = std::move(data_type);
   size = std::move(other.size);
-  return_code = std::move(other.return_code);
+  reply = std::move(other.reply);
   return *this;
 }
 
@@ -164,29 +164,30 @@ template<typename Name>
 bool Accumulator<Name>::CheckHandled(const nfs::Message& message, nfs::Reply& reply_out) const {
   const auto it(FindHandled(message));  // NOLINT (dirvine)
   if (it != std::end(handled_requests_)) {
-    if (it->return_code.code() == CommonErrors::success)
-      reply_out = nfs::Reply(it->return_code);
+    if (it->reply.error().code() == CommonErrors::success)
+      reply_out = it->reply;
     else
-      reply_out = nfs::Reply(it->return_code, message.Serialise().data);
+      reply_out = nfs::Reply(it->reply.error(), message.Serialise().data);
     return true;
   }
   return false;
 }
 
 template<typename Name>
-std::vector<nfs::Reply> Accumulator<Name>::PushSingleResult(const nfs::Message& message,
-                                                        const routing::ReplyFunctor& reply_functor,
-                                                        const maidsafe_error& return_code) {
+std::vector<nfs::Reply> Accumulator<Name>::PushSingleResult(
+    const nfs::Message& message,
+    const routing::ReplyFunctor& reply_functor,
+    const nfs::Reply& reply) {
   std::vector<nfs::Reply> replies;
   if (FindHandled(message) != std::end(handled_requests_))
     return replies;
 
-  PendingRequest pending_request(message, reply_functor, return_code);
+  PendingRequest pending_request(message, reply_functor, reply);
   pending_requests_.push_back(pending_request);
   for (auto& request : pending_requests_) {
     if (request.msg.message_id() == message.message_id() &&
         request.msg.source().node_id == message.source().node_id) {
-      replies.emplace_back(request.return_code);
+      replies.emplace_back(request.reply);
     }
   }
   // TODO(Profiling) - Consider holding requests in a map/set and each having a timestamp.
@@ -205,7 +206,7 @@ std::vector<nfs::Reply> Accumulator<Name>::GetPendingResults(const nfs::Message&
   for (auto& request : pending_requests_) {
     if (request.msg.message_id() == message.message_id() &&
         request.msg.source().node_id == message.source().node_id) {
-      replies.emplace_back(request.return_code);
+      replies.emplace_back(request.reply);
     }
   }
   return replies;
@@ -214,7 +215,7 @@ std::vector<nfs::Reply> Accumulator<Name>::GetPendingResults(const nfs::Message&
 template<typename Name>
 std::vector<typename Accumulator<Name>::PendingRequest> Accumulator<Name>::SetHandled(
     const nfs::Message& message,
-    const maidsafe_error& return_code) {
+    const nfs::Reply& reply) {
   std::vector<PendingRequest> ret_requests;
   auto itr = pending_requests_.begin();
   while (itr != pending_requests_.end()) {
@@ -234,7 +235,7 @@ std::vector<typename Accumulator<Name>::PendingRequest> Accumulator<Name>::SetHa
                                   message.data().name,
                                   *message.data().type,
                                   static_cast<int32_t>(message.data().content.string().size()),
-                                  return_code));
+                                  reply));
   if (handled_requests_.size() > kMaxHandledRequestsCount_)
     handled_requests_.pop_front();
   return ret_requests;
@@ -260,7 +261,7 @@ void Accumulator<Name>::SetHandledAndReply (const nfs::MessageId message_id,
   handled_requests_.push_back(
       Accumulator::HandledRequest(message_id,
                                   Name(Identity(source_node.string())),
-                                  MakeError(CommonErrors::success)));
+                                  nfs::Reply(CommonErrors::success)));
   if (handled_requests_.size() > kMaxHandledRequestsCount_)
     handled_requests_.pop_front();
   // send replies if required
@@ -287,12 +288,12 @@ template<>
 std::vector<typename Accumulator<DataNameVariant>::PendingRequest>
     Accumulator<DataNameVariant>::SetHandled(
         const nfs::Message& message,
-        const maidsafe_error& return_code);
+        const nfs::Reply& reply);
 
 template<>
 std::vector<typename Accumulator<PmidName>::PendingRequest> Accumulator<PmidName>::SetHandled(
     const nfs::Message& message,
-    const maidsafe_error& return_code);
+    const nfs::Reply& reply);
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop
 #endif

@@ -51,14 +51,13 @@ nfs::Message MakeMessage() {
 
 TEST(AccumulatorTest, BEH_PushSingleResult) {
   nfs::Message message = MakeMessage();
-  maidsafe_error reply_code(CommonErrors::success);
   nfs::Reply reply(CommonErrors::success);
   Accumulator<passport::PublicMaid::name_type> accumulator;
-  accumulator.PushSingleResult(message, [](const std::string&) {}, reply_code);
+  accumulator.PushSingleResult(message, [](const std::string&) {}, reply);
   EXPECT_EQ(accumulator.pending_requests_.size(), 1);
   // auto request_identity(accumulator.pending_requests_.at(0).first);
   EXPECT_FALSE(accumulator.CheckHandled(message, reply));
-  accumulator.SetHandled(message, reply_code);
+  accumulator.SetHandled(message, reply);
   EXPECT_EQ(accumulator.pending_requests_.size(), 0);
   EXPECT_TRUE(accumulator.CheckHandled(message, reply));
 }
@@ -66,14 +65,13 @@ TEST(AccumulatorTest, BEH_PushSingleResult) {
 TEST(AccumulatorTest, BEH_PushSingleResultThreaded) {
   maidsafe::test::RunInParallel(10, [] {
       nfs::Message message = MakeMessage();
-      maidsafe_error reply_code(CommonErrors::success);
       nfs::Reply reply(CommonErrors::success);
       Accumulator<passport::PublicMaid::name_type> accumulator;
-      accumulator.PushSingleResult(message, [](const std::string&) {}, reply_code);
+      accumulator.PushSingleResult(message, [](const std::string&) {}, reply);
       EXPECT_EQ(accumulator.pending_requests_.size(), 1);
       // auto request_identity(accumulator.pending_requests_.at(0).first);
       EXPECT_FALSE(accumulator.CheckHandled(message, reply));
-      accumulator.SetHandled(message, reply_code);
+      accumulator.SetHandled(message, reply);
       EXPECT_EQ(accumulator.pending_requests_.size(), 0);
       EXPECT_TRUE(accumulator.CheckHandled(message, reply));
     });
@@ -86,53 +84,50 @@ TEST(AccumulatorTest, BEH_CheckPendingRequestsLimit) {
   for (size_t index = 0; index < pending_request_max_limit; ++index) {
     nfs::Message message = MakeMessage();
     nfs::Reply reply(CommonErrors::success);
-    maidsafe_error reply_code(CommonErrors::success);
-    accumulator.PushSingleResult(message, [](const std::string&) {}, reply_code);
+    accumulator.PushSingleResult(message, [](const std::string&) {}, reply);
     EXPECT_EQ(accumulator.pending_requests_.size(), (index + 1));
   }
   // Try to add request beyond the limit and it should fail
   EXPECT_EQ(accumulator.pending_requests_.size(), pending_request_max_limit);
 
   nfs::Message message = MakeMessage();
-  maidsafe_error reply_code(CommonErrors::success);
-  accumulator.PushSingleResult(message, [](const std::string&) {}, reply_code);
+  nfs::Reply reply(CommonErrors::success);
+  accumulator.PushSingleResult(message, [](const std::string&) {}, reply);
   EXPECT_EQ(accumulator.pending_requests_.size(), pending_request_max_limit);
 }
 
 TEST(AccumulatorTest, BEH_CheckHandled) {
   nfs::Message message = MakeMessage();
-  maidsafe_error reply_code(CommonErrors::success);
   nfs::Reply reply(CommonErrors::success);
   Accumulator<passport::PublicMaid::name_type> accumulator;
   EXPECT_FALSE(accumulator.CheckHandled(message, reply));
-  accumulator.PushSingleResult(message, [](const std::string&) {}, reply_code);
-  accumulator.SetHandled(message, reply_code);
+  accumulator.PushSingleResult(message, [](const std::string&) {}, reply);
+  accumulator.SetHandled(message, reply);
   EXPECT_TRUE(accumulator.CheckHandled(message, reply));
 }
 
 TEST(AccumulatorTest, BEH_SetHandled) {
   nfs::Message message = MakeMessage();
   nfs::Reply reply(CommonErrors::success);
-  maidsafe_error reply_code(CommonErrors::success);
   Accumulator<passport::PublicPmid::name_type> accumulator;
   EXPECT_TRUE(accumulator.handled_requests_.empty());
-  accumulator.SetHandled(message, reply_code);
+  accumulator.SetHandled(message, reply);
   EXPECT_EQ(accumulator.handled_requests_.size(), 1);
-  accumulator.PushSingleResult(message, [](const std::string&) {}, reply_code);
+  accumulator.PushSingleResult(message, [](const std::string&) {}, reply);
   EXPECT_TRUE(accumulator.pending_requests_.empty());
-  accumulator.SetHandled(message, reply_code);
+  accumulator.SetHandled(message, reply);
   EXPECT_EQ(accumulator.handled_requests_.size(), 2);
   EXPECT_TRUE(accumulator.pending_requests_.empty());
 }
 
 TEST(AccumulatorTest, BEH_FindHandled) {
   nfs::Message message = MakeMessage();
-  maidsafe_error reply_code(CommonErrors::success);
+  nfs::Reply reply(CommonErrors::success);
   Accumulator<passport::PublicPmid::name_type> accumulator;
   EXPECT_TRUE(accumulator.handled_requests_.empty());
   auto itr_handle = accumulator.FindHandled(message);
   EXPECT_TRUE(itr_handle == accumulator.handled_requests_.end());
-  accumulator.SetHandled(message, reply_code);
+  accumulator.SetHandled(message, reply);
   EXPECT_EQ(accumulator.handled_requests_.size(), 1);
   itr_handle = accumulator.FindHandled(message);
   EXPECT_TRUE(itr_handle != accumulator.handled_requests_.end());

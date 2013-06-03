@@ -58,10 +58,11 @@ void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
 
    // accumulate then action, on completion then set reply
    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-   if (!accumulator_.PushSingleResult(message,
-                                     reply_functor,
-                                     maidsafe_error(CommonErrors::pending_result)).size() <
-                                     routing::Parameters::node_group_size -1) {
+   if (!accumulator_.PushSingleResult(
+         message,
+         reply_functor,
+         nfs::Reply(maidsafe_error(CommonErrors::pending_result))).size() <
+         routing::Parameters::node_group_size -1U) {
      Syncronise<Data>(message);
    }
 }

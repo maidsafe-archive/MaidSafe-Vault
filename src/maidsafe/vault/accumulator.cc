@@ -35,7 +35,7 @@ typename std::deque<typename Accumulator<DataNameVariant>::HandledRequest>::cons
 template<>
 std::vector<typename Accumulator<DataNameVariant>::PendingRequest>
     Accumulator<DataNameVariant>::SetHandled(const nfs::Message& message,
-                                             const maidsafe_error& return_code) {
+                                             const nfs::Reply& reply) {
   std::vector<PendingRequest> ret_requests;
   auto itr = pending_requests_.begin();
   while (itr != pending_requests_.end()) {
@@ -55,7 +55,7 @@ std::vector<typename Accumulator<DataNameVariant>::PendingRequest>
                                   message.data().name,
                                   *message.data().type,
                                   static_cast<int32_t>(message.data().content.string().size()),
-                                  return_code));
+                                  reply));
   if (handled_requests_.size() > kMaxHandledRequestsCount_)
     handled_requests_.pop_front();
   return ret_requests;
@@ -64,7 +64,7 @@ std::vector<typename Accumulator<DataNameVariant>::PendingRequest>
 template<>
 std::vector<typename Accumulator<PmidName>::PendingRequest> Accumulator<PmidName>::SetHandled(
     const nfs::Message& message,
-    const maidsafe_error& return_code) {
+    const nfs::Reply& reply) {
   std::vector<PendingRequest> ret_requests;
   auto itr = pending_requests_.begin();
   while (itr != pending_requests_.end()) {
@@ -84,7 +84,7 @@ std::vector<typename Accumulator<PmidName>::PendingRequest> Accumulator<PmidName
                                   message.data().name,
                                   *message.data().type,
                                   static_cast<int32_t>(message.data().content.string().size()),
-                                  return_code));
+                                  reply));
   if (handled_requests_.size() > kMaxHandledRequestsCount_)
     handled_requests_.pop_front();
   return ret_requests;

@@ -102,7 +102,8 @@ bool AddResult(const nfs::Message& message,
   maidsafe_error overall_return_code(CommonErrors::success);
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex);
-    auto pending_results(accumulator.PushSingleResult(message, reply_functor, return_code));
+    auto pending_results(accumulator.PushSingleResult(message, reply_functor,
+                                                      nfs::Reply(return_code)));
     if (static_cast<int>(pending_results.size()) < requests_required)
       return false;
 
@@ -111,7 +112,7 @@ bool AddResult(const nfs::Message& message,
       return false;
 
     overall_return_code = (*result.first).error();
-    pending_requests = accumulator.SetHandled(message, overall_return_code);
+    pending_requests = accumulator.SetHandled(message, nfs::Reply(overall_return_code));
   }
 
   for (auto& pending_request : pending_requests)

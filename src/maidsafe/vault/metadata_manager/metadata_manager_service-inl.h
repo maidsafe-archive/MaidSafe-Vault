@@ -21,6 +21,7 @@
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/on_scope_exit.h"
 
+#include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/metadata_manager/metadata_helpers.h"
 #include "maidsafe/vault/metadata_manager/metadata.pb.h"
 #include "maidsafe/vault/sync.pb.h"
@@ -45,6 +46,17 @@ MetadataUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
       std::make_pair(GetDataNameVariant(DataTagValue(message.data().type.get()),
                                         Identity(message.data().name)), Action),
       metadata_value, this_id);
+}
+
+template<typename Accumulator>
+bool AddMetadataPutResult(const nfs::Message& /*message*/,
+                          const routing::ReplyFunctor& /*reply_functor*/,
+                          const nfs::Reply& /*reply*/,
+                          Accumulator& /*accumulator*/,
+                          std::mutex& /*accumulator_mutex*/,
+                          int /*requests_required*/) {
+  //FIXME(Prakash): Implement merge cost here
+  return false;
 }
 
 }  // namespace detail
@@ -85,7 +97,7 @@ void MetadataManagerService::HandleMessage(const nfs::Message& message,
     default: {
       reply = nfs::Reply(VaultErrors::operation_not_supported, message.Serialise().data);
       std::lock_guard<std::mutex> lock(accumulator_mutex_);
-      accumulator_.SetHandled(message, reply.error());
+      accumulator_.SetHandled(message, reply);
       reply_functor(reply.Serialise()->string());
     }
   }
@@ -103,8 +115,8 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
     //FIXME(Prakash) get cost
     metadata_handler_.template CheckPut<Data>(data_name, data_size);
     // FIXME (Prakash) Need to update accumulator to accomodate cost
-    if (detail::AddResult(message, reply_functor, MakeError(CommonErrors::success),
-                          accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
+    if (detail::AddMetadataPutResult(message, reply_functor, nfs::Reply(CommonErrors::success),
+                                     accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
 //FIXME (Prakash)      if (cost ==  new_data_cost) {  // discuss
       if (metadata_handler_.template CheckMetadataExists<Data>(data_name)) {
         MetadataValue metadata_value(data_size);
@@ -119,12 +131,12 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
     }
   }
   catch(const maidsafe_error& error) {
-    detail::AddResult(message, reply_functor, error, accumulator_, accumulator_mutex_,
-                      kPutRequestsRequired_);
+    detail::AddMetadataPutResult(message, reply_functor, nfs::Reply(error), accumulator_,
+                                 accumulator_mutex_, kPutRequestsRequired_);
   }
   catch(...) {
-    detail::AddResult(message, reply_functor, MakeError(CommonErrors::unknown),
-                      accumulator_, accumulator_mutex_, kPutRequestsRequired_);
+    detail::AddMetadataPutResult(message, reply_functor, nfs::Reply(CommonErrors::unknown),
+                                 accumulator_, accumulator_mutex_, kPutRequestsRequired_);
   }
 }
 

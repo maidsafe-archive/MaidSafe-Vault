@@ -182,7 +182,7 @@ void PmidAccountHolderService::SendReplyAndAddToAccumulator(
     const nfs::Reply& reply) {
   reply_functor(reply.Serialise()->string());
   std::lock_guard<std::mutex> lock(accumulator_mutex_);
-  accumulator_.SetHandled(message, reply.error());
+  accumulator_.SetHandled(message, reply);
 }
 
 
