@@ -66,6 +66,8 @@ struct UnresolvedElement {
   std::vector<MessageContent> messages_contents;
   int sync_counter;
   bool dont_add_to_db;
+  nfs::MessageId original_message_id;
+  NodeId source_node_id;
 };
 
 typedef UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, int32_t>

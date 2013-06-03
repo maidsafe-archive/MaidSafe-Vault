@@ -84,6 +84,18 @@ Accumulator<Name>::HandledRequest::HandledRequest(const nfs::MessageId& msg_id_i
       return_code(return_code_in) {}
 
 template<typename Name>
+Accumulator<Name>::HandledRequest::HandledRequest(const nfs::MessageId& msg_id_in,
+                                                  const Name& account_name_in,
+                                                  const maidsafe_error& return_code_in)
+    : msg_id(msg_id_in),
+      account_name(account_name_in),
+      action(),
+      data_name(),
+      data_type(),
+      size(),
+      return_code(return_code_in) {}
+
+template<typename Name>
 Accumulator<Name>::HandledRequest::HandledRequest(const HandledRequest& other)
     : msg_id(other.msg_id),
       account_name(other.account_name),
@@ -227,6 +239,38 @@ std::vector<typename Accumulator<Name>::PendingRequest> Accumulator<Name>::SetHa
     handled_requests_.pop_front();
   return ret_requests;
 }
+
+template<typename Name>
+void Accumulator<Name>::SetHandledAndReply (const nfs::MessageId message_id,
+                                            const NodeId& source_node) {
+  auto return_code(CommonErrors::success);
+  nfs::Reply reply(return_code);
+  std::vector<PendingRequest> ret_requests;
+  auto itr = pending_requests_.begin();
+  while (itr != pending_requests_.end()) {
+    if ((*itr).msg.message_id() == message_id &&
+        (*itr).msg.source().node_id == source_node) {
+      ret_requests.push_back(*itr);
+      itr = pending_requests_.erase(itr);
+    } else {
+      ++itr;
+    }
+  }
+
+  handled_requests_.push_back(
+      Accumulator::HandledRequest(message_id,
+                                  Name(Identity(source_node.string())),
+                                  MakeError(CommonErrors::success)));
+  if (handled_requests_.size() > kMaxHandledRequestsCount_)
+    handled_requests_.pop_front();
+  // send replies if required
+  for (const auto& ret : ret_requests) {
+    if (ret.reply_functor)
+      ret.reply_functor(reply.Serialise()->string());
+  }
+}
+
+
 
 // Workaround for gcc 4.6 bug related to warning "redundant redeclaration" for template
 // specialisation. refer // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=15867#c4

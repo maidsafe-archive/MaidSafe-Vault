@@ -41,10 +41,10 @@ void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
       return reply_functor(reply.Serialise()->string());
   }
 
-   if (message.data().action == nfs::MessageAction::kSynchronise)
+   if (message.data().action == nfs::MessageAction::kSynchronise ||
+       message.data().action == nfs::MessageAction::kAccountTransfer)
      return HandleSyncronise(message);   // No accumulate
-   if (message.data().action == nfs::MessageAction::kAccountTransfer)
-     return HandleAccountTransfer(message);   // No accumulate
+
    if (message.data().action == nfs::MessageAction::kGet)
      return HandleGet(message, reply_functor);  //  Add to accumulator on action
    if (message.data().action == nfs::MessageAction::kGetBranch)
@@ -52,7 +52,8 @@ void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
 
    if (message.data().action != nfs::MessageAction::kPut &&
        message.data().action != nfs::MessageAction::kDeleteBranchUntilFork &&
-       message.data().action != nfs::MessageAction::kDelete)
+       message.data().action != nfs::MessageAction::kDelete &&
+       message.data().action != nfs::MessageAction::kAccountTransfer)
      ThrowError(CommonErrors::invalid_parameter);
 
    // accumulate then action, on completion then set reply

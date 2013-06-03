@@ -99,6 +99,24 @@ std::vector<typename PersonaType::DbKey> ManagerDb<PersonaType>::GetKeys() {
   return return_vector;
 }
 
+template<>
+std::vector<StructuredDataManager::DbKey> ManagerDb<StructuredDataManager>::GetKeys() {
+  std::vector<StructuredDataManager::DbKey> return_vector;
+  std::lock_guard<std::mutex> lock(mutex_);
+  std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
+  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+    std::string name(iter->key().ToString().substr(0, NodeId::kSize));
+    std::string type_string(iter->key().ToString().substr(NodeId::kSize + 2));
+    Identity identity(iter->key().ToString().substr(NodeId::kSize + 2 ,
+                                                    (NodeId::kSize * 2) + 2));
+    DataTagValue type = static_cast<DataTagValue>(std::stoul(type_string));
+    auto key = std::make_pair(GetDataNameVariant(type, Identity(name)), identity);
+    return_vector.push_back(std::move(key));
+  }
+  return return_vector;
+}
+
+
 }  // namespace vault
 }  // namespace maidsafe
 

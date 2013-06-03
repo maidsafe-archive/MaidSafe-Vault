@@ -22,11 +22,29 @@ namespace maidsafe {
 namespace vault {
 
 struct StructuredDataKey {
+  StructuredDataKey();
+  StructuredDataKey(const StructuredDataKey& other);
+  StructuredDataKey(StructuredDataKey&& other);
+  StructuredDataKey& operator=(StructuredDataKey other);
+
   Identity originator;
   DataNameVariant data_name;
   nfs::MessageAction action;
 };
 
+void swap(StructuredDataKey& lhs, StructuredDataKey& rhs) MAIDSAFE_NOEXCEPT;
+
+bool operator==(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
+
+bool operator!=(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
+
+bool operator<(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
+
+bool operator>(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
+
+bool operator<=(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
+
+bool operator>=(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
 
 }  // namespace vault
 

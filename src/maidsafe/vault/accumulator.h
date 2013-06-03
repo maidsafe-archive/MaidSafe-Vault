@@ -61,6 +61,9 @@ class Accumulator {
                    const DataTagValue& data_type_in,
                    const int32_t& size_in,
                    const maidsafe_error& return_code_in);
+    HandledRequest(const nfs::MessageId& msg_id_in,
+                   const Name& account_name_in,
+                   const maidsafe_error& return_code_in);
     HandledRequest(const HandledRequest& other);
     HandledRequest& operator=(const HandledRequest& other);
     HandledRequest(HandledRequest&& other);
@@ -90,7 +93,9 @@ class Accumulator {
   // Marks the message as handled and returns all pending requests held with the same ID
   std::vector<PendingRequest> SetHandled(const nfs::Message& message,
                                          const maidsafe_error& return_code);
-
+  // This will set handled and reply with success if a reply functor exists
+  // safe to call many times
+  void SetHandledAndReply(const nfs::MessageId message_id, const NodeId& source_node);
   friend class test::AccumulatorTest_BEH_PushSingleResult_Test;
   friend class test::AccumulatorTest_BEH_PushSingleResultThreaded_Test;
   friend class test::AccumulatorTest_BEH_CheckPendingRequestsLimit_Test;

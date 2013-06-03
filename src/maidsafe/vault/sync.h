@@ -32,8 +32,8 @@ class Sync : public MergePolicy {
   Sync(typename MergePolicy::Database* database, const NodeId& this_node_id);
   Sync(Sync&& other);
   Sync& operator=(Sync&& other);
-  // This is called when receiving a Sync message from a peer or this node.  Returns true if the
-  // entry becomes resolved.
+  // This is called when receiving a Sync message from a peer or this node. If the
+  // entry becomes resolved then size() >= routing::Parameters::node_group_size -1
   std::vector<typename MergePolicy::ResolvedEntry>
       AddUnresolvedEntry(const typename MergePolicy::UnresolvedEntry& entry);
   // This is called directly once an action has been decided as valid in the MAHolder, but before

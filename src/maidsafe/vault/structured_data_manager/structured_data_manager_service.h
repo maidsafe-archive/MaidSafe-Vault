@@ -66,11 +66,11 @@ class StructuredDataManagerService {
 
   //// =============== Sync ========================================================================
   template<typename Data>
-  void Syncronise(const nfs::Message&);
+  void Syncronise(const nfs::Message& message);
   void HandleSyncronise(const nfs::Message& message);
 
-  //// =============== Account transfer ============================================================
-  void TransferAccounts(const NodeId& new_node);
+  //// =============== Churn ============================================================
+  void HandleChurnEvent(const NodeId& old_node, const NodeId& new_node);
   void HandleAccountTransfer(const nfs::Message& message);
 
   routing::Routing& routing_;

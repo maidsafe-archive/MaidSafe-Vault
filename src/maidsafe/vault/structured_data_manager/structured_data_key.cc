@@ -11,10 +11,58 @@
 
 #include "maidsafe/vault/structured_data_manager/structured_data_key.h"
 
+#include <algorithm>
+#include <tuple>
+
 namespace maidsafe {
 
 namespace vault {
 
+StructuredDataKey::StructuredDataKey()
+  :  originator(),
+     data_name(),
+     action() {}
+
+StructuredDataKey::StructuredDataKey(const StructuredDataKey& other)
+  :  originator(other.originator),
+    data_name(other.data_name),
+    action(other.action) {}
+
+StructuredDataKey& StructuredDataKey::operator=(StructuredDataKey other) {
+  swap(*this, other);
+  return *this;
+}
+
+void swap(StructuredDataKey& lhs, StructuredDataKey& rhs) MAIDSAFE_NOEXCEPT {
+  using std::swap;
+  swap(lhs.originator, rhs.originator);
+  swap(lhs.data_name, rhs.data_name);
+  swap(lhs.action, rhs.action);
+}
+
+bool operator==(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
+  return std::tie(lhs.originator, lhs.data_name) == std::tie(rhs.originator, rhs.data_name);
+}
+
+bool operator!=(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
+  return !operator==(lhs, rhs);
+}
+
+bool operator<(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
+  return std::tie(lhs.originator, lhs.data_name) < std::tie(rhs.originator, rhs.data_name);
+}
+
+bool operator>(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
+  return operator<(rhs, lhs);
+}
+
+bool operator<=(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
+  return !operator>(lhs, rhs);
+}
+
+bool operator>=(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
+  return !operator<(lhs, rhs);
+}
 
 }  // namespace vault
 

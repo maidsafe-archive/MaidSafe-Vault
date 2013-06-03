@@ -31,6 +31,7 @@
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_key.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_value.h"
+#include "maidsafe/vault/unresolved_element.pb.h"
 #include "maidsafe/vault/manager_db.h"
 
 namespace maidsafe {
@@ -50,6 +51,23 @@ inline bool FromStructuredDataManager(const Message& message) {
 }
 
 }  // unnamed namespace
+
+namespace detail {
+
+StructuredDataUnresolvedEntry  UnresolvedEntryFromMessage(const nfs::Message& message) {
+ //  test message content is valid only
+  protobuf::StructuredDataUnresolvedEntry entry_proto;
+  if (!entry_proto.ParseFromString(message.data().content.string()))
+    ThrowError(CommonErrors::parsing_error);
+  // this is the only code line really required
+  return (StructuredDataUnresolvedEntry(
+                         StructuredDataUnresolvedEntry::serialised_type(message.data().content)));
+
+}
+
+
+
+}  // namespace detail
 
 StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
@@ -130,34 +148,57 @@ void StructuredDataManagerService::HandleGetBranch(const nfs::Message& message,
 
 // // =============== Sync ============================================================================
 
-void StructuredDataManagerService::HandleSyncronise(const nfs::Message& /*message*/) {
+void StructuredDataManagerService::HandleSyncronise(const nfs::Message& message) {
   std::vector<StructuredDataMergePolicy::UnresolvedEntry> unresolved_entries;
   {
     std::lock_guard<std::mutex> lock(sync_mutex_);
-//    unresolved_entries = sync_.AddUnresolvedEntry();
+    unresolved_entries = sync_.AddUnresolvedEntry(detail::UnresolvedEntryFromMessage(message));
   }
-
-//  reply_functor(reply.Serialise()->string());
-  std::lock_guard<std::mutex> lock(accumulator_mutex_);
-//  accumulator_.SetHandled(message, reply.error());
-
+  if (unresolved_entries.size() >= routing::Parameters::node_group_size -1) {
+    for (const auto& entry : unresolved_entries) {
+      // sethandled should reply success and set all handled !!!
+      {
+        std::lock_guard<std::mutex> lock(accumulator_mutex_);
+        accumulator_.SetHandledAndReply(entry.original_message_id, entry.source_node_id);
+      }
+    }
+  }
 }
 
-// In this persona we sync all mutating actions, on sucess/fail the reply_functor is fired
-// The mergePloicy will supply the reply_functor with the appropriate 'error_code'
+// In this persona we sync all mutating actions, on sucess the reply_functor is fired (if available)
+
 template<typename Data>
-void StructuredDataManagerService::Syncronise(const nfs::Message& /*message*/) {
-//    auto key = GetKeyFromMessage<StructuredDataManager>(message);
-//    auto versions = GetVersionsFromMessage(message);
-
-    // addlocalunresolved
-    // get unresolved
-    // send
-
+void StructuredDataManagerService::Syncronise(const nfs::Message& message) {
+  auto entry =  detail::UnresolvedEntryFromMessage(message);
+  //nfs_. Sync(DataNameVariant(message.data()->type, entry.Serialise());  // does not include
+                                                                        // original_message_id
+  entry.original_message_id = message.message_id();
+  entry.source_node_id = message.source().node_id; // with data().originator_id we can
+                                                    // recover the accumulated requests in
+                                                    // HandleSync
+  std::lock_guard<std::mutex> lock(sync_mutex_);
+  sync_.AddUnresolvedEntry(entry);
 }
-// // =============== Account transfer ================================================================
-void StructuredDataManagerService::HandleAccountTransfer(const nfs::Message& /*message*/) {
+
+void StructuredDataManagerService::HandleChurnEvent(const NodeId& old_node,
+                                                    const NodeId& new_node) {
+    // for each unresolved entry replace node (only)
+    {
+    std::lock_guard<std::mutex> lock(sync_mutex_);
+    sync_.ReplaceNode(old_node, new_node);
+    }
+    //  carry out account transfer for new node !
+    std::vector<StructuredDataManager::DbKey> db_keys;
+    db_keys = structured_data_db_.GetKeys();
+    for (const auto& key: db_keys) {
+      auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
+      if (routing_.IsNodeIdInGroupRange(NodeId(result.second.string()), new_node) ==
+          routing::GroupRangeStatus::kInRange) {  // TODO(dirvine) confirm routing method here !!!!!!!!
+        // for each db record the new node should have, send it to him (AccountNameFromKey)
+      }
+    }
 }
+
 
 }  // namespace vault
 

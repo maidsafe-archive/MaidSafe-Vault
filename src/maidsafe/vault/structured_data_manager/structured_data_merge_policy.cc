@@ -47,6 +47,10 @@ void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
              *unresolved_entry.messages_contents.at(0).value->new_version);
   } else if (unresolved_entry.key.action == nfs::MessageAction::kDelete) {
     MergeDelete(db_key);
+  }else if (unresolved_entry.key.action == nfs::MessageAction::kDelete) {
+      assert(unresolved_entry.messages_contents.at(0).value->serialised_db_value);
+      MergeAccountTransfer(db_key,
+      StructuredDataVersions(*unresolved_entry.messages_contents.at(0).value->serialised_db_value));
   } else if (unresolved_entry.key.action == nfs::MessageAction::kDeleteBranchUntilFork) {
     assert(unresolved_entry.messages_contents.at(0).value);
     MergeDeleteBranchUntilFork(db_key,
@@ -73,6 +77,11 @@ void StructuredDataMergePolicy::MergeDeleteBranchUntilFork(const DbKey& key,
 
 void StructuredDataMergePolicy::MergeDelete(const DbKey& key) {
   db_->Delete(key);
+}
+
+void StructuredDataMergePolicy::MergeAccountTransfer(const DbKey& key,
+                                                     const StructuredDataVersions& data_version) {
+  db_->Put(std::make_pair(key, data_version));
 }
 
 }  // namespace vault
