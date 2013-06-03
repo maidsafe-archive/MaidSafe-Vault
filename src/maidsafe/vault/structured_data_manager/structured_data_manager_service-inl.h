@@ -43,7 +43,7 @@ void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
 
    if (message.data().action == nfs::MessageAction::kSynchronise ||
        message.data().action == nfs::MessageAction::kAccountTransfer)
-     return HandleSyncronise(message);   // No accumulate
+     return HandleSynchronise(message);   // No accumulate
 
    if (message.data().action == nfs::MessageAction::kGet)
      return HandleGet(message, reply_functor);  //  Add to accumulator on action
@@ -63,7 +63,7 @@ void StructuredDataManagerService::HandleMessage(const nfs::Message& message,
          reply_functor,
          nfs::Reply(maidsafe_error(CommonErrors::pending_result))).size() <
          routing::Parameters::node_group_size -1U) {
-     Syncronise<Data>(message);
+     Synchronise<Data>(message);
    }
 }
 

@@ -95,7 +95,7 @@ std::string SerialiseDbKey<StructuredDataManager>(
     const typename StructuredDataManager::DbKey& key) {
   auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
   std::string db_key(result.second.string() +
-                     Pad<2>(static_cast<uint32_t>(result.first)) +
+                     detail::Pad<1>(static_cast<uint32_t>(result.first)) +
                      key.second.string());
     return db_key;
 }
@@ -124,6 +124,12 @@ void SendReply(const nfs::Message& original_message,
   if (return_code.code() != CommonErrors::success)
     reply = nfs::Reply(return_code, original_message.Serialise().data);
   reply_functor(reply.Serialise()->string());
+}
+
+template<>
+std::string Pad<1>(uint32_t number) {
+  assert(number < 256);
+  return std::string(1, static_cast<char>(number));
 }
 
 }  // namespace detail

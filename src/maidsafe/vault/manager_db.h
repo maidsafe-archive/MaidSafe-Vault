@@ -27,6 +27,7 @@
 
 namespace maidsafe {
 namespace vault {
+
 template<typename PersonaType>
 class ManagerDb {
  public:
@@ -45,9 +46,9 @@ class ManagerDb {
   ManagerDb(ManagerDb&&);
   ManagerDb& operator=(ManagerDb&&);
 
-  template<uint32_t Width> std::string Pad(uint32_t number);
+  std::string GetSerialisedKey(const typename PersonaType::DbKey& key) const;
 
-  static const uint32_t kSuffixWidth_;
+  static const int kSuffixWidth_;
   const boost::filesystem::path kDbPath_;
   mutable std::mutex mutex_;
   std::unique_ptr<leveldb::DB> leveldb_;

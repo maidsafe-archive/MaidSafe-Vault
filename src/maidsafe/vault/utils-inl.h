@@ -13,6 +13,7 @@
 #define MAIDSAFE_VAULT_UTILS_INL_H_
 
 #include <algorithm>
+#include <cmath>
 #include <vector>
 #include <set>
 
@@ -121,6 +122,20 @@ bool AddResult(const nfs::Message& message,
   return true;
 }
 
+template<int width>
+std::string Pad(uint32_t number) {
+  static_assert(width > 0 && width < 5, "width must be 1, 2, 3, or 4.");
+  assert(number < std::pow(256, width));
+  std::string result(width, 0);
+  for (int i(0); i != width; ++i) {
+    result[width - i - 1] = static_cast<char>(number);
+    number /= 256;
+  }
+  return result;
+}
+
+template<>
+std::string Pad<1>(uint32_t number);
 
 }  // namespace detail
 
