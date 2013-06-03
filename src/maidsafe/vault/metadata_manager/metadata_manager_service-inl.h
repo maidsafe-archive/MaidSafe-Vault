@@ -22,6 +22,7 @@
 #include "maidsafe/common/on_scope_exit.h"
 
 #include "maidsafe/vault/accumulator.h"
+#include "maidsafe/vault/maid_account_holder/maid_account.pb.h"
 #include "maidsafe/vault/metadata_manager/metadata_helpers.h"
 #include "maidsafe/vault/metadata_manager/metadata.pb.h"
 #include "maidsafe/vault/sync.pb.h"
@@ -112,13 +113,14 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
               typename Data::serialised_type(message.data().content));
     auto data_name(data.name());
     auto data_size(static_cast<int32_t>(message.data().content.string().size()));
-    //FIXME(Prakash) get cost
-    metadata_handler_.template CheckPut<Data>(data_name, data_size);
-    // FIXME (Prakash) Need to update accumulator to accomodate cost
-    if (detail::AddMetadataPutResult(message, reply_functor, nfs::Reply(CommonErrors::success),
-                                     accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
-//FIXME (Prakash)      if (cost ==  new_data_cost) {  // discuss
-      if (metadata_handler_.template CheckMetadataExists<Data>(data_name)) {
+    auto is_duplicate_and_cost(metadata_handler_.template CheckPut<Data>(data_name, data_size));
+    protobuf::Cost proto_cost;
+    proto_cost.set_cost(is_duplicate_and_cost.second);
+    assert(proto_cost.IsInitialized());
+    nfs::Reply reply(CommonErrors::success, NonEmptyString(proto_cost.SerializeAsString()));
+    if (detail::AddMetadataPutResult(message, reply_functor, reply, accumulator_,
+                                     accumulator_mutex_, kPutRequestsRequired_)) {
+      if (is_duplicate_and_cost.first) {  // No need to store data on DH
         MetadataValue metadata_value(data_size);
         AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, metadata_value);
       } else {

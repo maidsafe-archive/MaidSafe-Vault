@@ -140,8 +140,8 @@ bool MetadataHandler::CheckMetadataExists(const typename Data::name_type& /*data
 }
 
 template<typename Data>
-int32_t MetadataHandler::CheckPut(const typename Data::name_type& /*data_name*/, int32_t /*data_size*/) {
-  return 0;
+std::pair<bool, int32_t> MetadataHandler::CheckPut(const typename Data::name_type& /*data_name*/, int32_t /*data_size*/) {
+  return std::make_pair(false, 0);
 }
 
 template <typename Data>

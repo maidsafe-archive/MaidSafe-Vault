@@ -83,9 +83,10 @@ class MetadataHandler {
   template<typename Data>
   bool CheckMetadataExists(const typename Data::name_type& data_name) const;
 
-  // Returns cost, checks for duplication of unique data (throws)
+  // Returns a pair of - is duplicate data and its cost.
+  // Checks for duplication of unique data (throws)
   template<typename Data>
-  int32_t CheckPut(const typename Data::name_type& data_name, int32_t data_size);
+  std::pair<bool, int32_t> CheckPut(const typename Data::name_type& data_name, int32_t data_size);
 
   void AddLocalUnresolvedEntry(const MetadataUnresolvedEntry& unresolved_entry);
 
