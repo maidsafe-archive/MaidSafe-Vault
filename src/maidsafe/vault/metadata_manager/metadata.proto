@@ -1,5 +1,4 @@
 package maidsafe.vault.protobuf;
-option optimize_for = LITE_RUNTIME;
 
 message MetadataValue {
   required int32 size = 1;

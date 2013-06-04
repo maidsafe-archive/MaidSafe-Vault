@@ -1,5 +1,4 @@
 package maidsafe.vault.protobuf;
-option optimize_for = LITE_RUNTIME;
 
 message MaidAndPmidUnresolvedEntry {
   message Key {
@@ -62,7 +61,7 @@ message StructuredDataUnresolvedEntry {
   }
   message MessageContent {
     required bytes peer = 1;
-    optional int32 entry_id = 2;
+    required int32 entry_id = 2;
     optional Value value = 3;
   }
   required Key key = 1;

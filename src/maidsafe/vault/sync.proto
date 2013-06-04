@@ -1,5 +1,4 @@
 package maidsafe.vault.protobuf;
-option optimize_for = LITE_RUNTIME;
 
 message Sync {
   optional int32 account_type = 1;
