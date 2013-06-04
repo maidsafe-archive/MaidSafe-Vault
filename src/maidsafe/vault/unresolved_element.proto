@@ -58,6 +58,7 @@ message StructuredDataUnresolvedEntry {
   message Value {
     optional Version version = 1;
     optional Version new_version = 2;
+    optional bytes serialised_db_value = 3;
   }
   message MessageContent {
     required bytes peer = 1;

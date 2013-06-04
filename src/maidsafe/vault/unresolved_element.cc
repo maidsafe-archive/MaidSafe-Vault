@@ -164,9 +164,7 @@ StructuredDataUnresolvedEntry::UnresolvedElement(const serialised_type& serialis
   if (!(unresolved_entry_key.action == nfs::MessageAction::kAccountTransfer ||
         unresolved_entry_key.action == nfs::MessageAction::kDelete ||
         unresolved_entry_key.action == nfs::MessageAction::kDeleteBranchUntilFork ||
-        unresolved_entry_key.action == nfs::MessageAction::kPut ||
-        unresolved_entry_key.action == nfs::MessageAction::kGet ||
-        unresolved_entry_key.action == nfs::MessageAction::kGetBranch)) {
+        unresolved_entry_key.action == nfs::MessageAction::kPut)) {
     ThrowError(CommonErrors::parsing_error);
   }
 
@@ -174,19 +172,30 @@ StructuredDataUnresolvedEntry::UnresolvedElement(const serialised_type& serialis
   if (proto_copy.messages_contents_size() > 2)
     ThrowError(CommonErrors::parsing_error);
 
-  //for (int i(0); i != proto_copy.messages_contents_size(); ++i) {
-  //  MessageContent message_content;
-  //  message_content.peer_id = NodeId(proto_copy.messages_contents(i).peer());
-  //  if (proto_copy.messages_contents(i).has_entry_id())
-  //    message_content.entry_id = proto_copy.messages_contents(i).entry_id();
-  //  if (proto_copy.messages_contents(i).has_value()) {
-  //      StructuredDataManager::DbValue::serialised_type serialised_db_value(
-  //                            NonEmptyString(proto_copy.messages_contents(i).value()));
-  //      message_content.value = StructuredDataValue();
-  //      message_content.value->serialised_db_value = serialised_db_value;
-  //  }
-  //  messages_contents.push_back(message_content);
-  //}
+  for (int i(0); i != proto_copy.messages_contents_size(); ++i) {
+    MessageContent message_content;
+    message_content.peer_id = NodeId(proto_copy.messages_contents(i).peer());
+    if (proto_copy.messages_contents(i).has_entry_id())
+      message_content.entry_id = proto_copy.messages_contents(i).entry_id();
+    if (proto_copy.messages_contents(i).has_value()) {
+        if (proto_copy.messages_contents(i).value().has_new_version()) {
+          // this must be a put - must have version as well.
+        } else if (proto_copy.messages_contents(i).value().has_version()) {
+          // this must be a getbranch - or deletebranch / check action.
+        } else if (proto_copy.messages_contents(i).value().has_serialised_db_value()) {
+          // account transfer
+//          StructuredDataManager::DbValue::serialised_type serialised_db_value(
+//                                   proto_copy.messages_contents(i).value().serialised_db_value());
+//          message_content.value = StructuredDataValue();
+//          message_content.value->serialised_db_value = serialised_db_value;
+        } else {
+          LOG(kInfo) << "invalid message";
+        }
+
+
+    }
+    messages_contents.push_back(message_content);
+  }
 
   //if (!proto_copy.has_dont_add_to_db())
   //  ThrowError(CommonErrors::parsing_error);
