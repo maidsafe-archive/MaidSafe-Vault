@@ -52,22 +52,6 @@ inline bool FromStructuredDataManager(const Message& message) {
 
 }  // unnamed namespace
 
-namespace detail {
-
-StructuredDataUnresolvedEntry  UnresolvedEntryFromMessage(const nfs::Message& message) {
- //  test message content is valid only
-  protobuf::StructuredDataUnresolvedEntry entry_proto;
-  if (!entry_proto.ParseFromString(message.data().content.string()))
-    ThrowError(CommonErrors::parsing_error);
-  // this is the only code line really required
-  return (StructuredDataUnresolvedEntry(
-                         StructuredDataUnresolvedEntry::serialised_type(message.data().content)));
-
-}
-
-
-
-}  // namespace detail
 
 StructuredDataManagerService::StructuredDataManagerService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
@@ -150,35 +134,34 @@ void StructuredDataManagerService::HandleGetBranch(const nfs::Message& message,
 
 void StructuredDataManagerService::HandleSynchronise(const nfs::Message& message) {
   std::vector<StructuredDataMergePolicy::UnresolvedEntry> unresolved_entries;
-  {
-    std::lock_guard<std::mutex> lock(sync_mutex_);
-    unresolved_entries = sync_.AddUnresolvedEntry(detail::UnresolvedEntryFromMessage(message));
+  bool success(false);
+  try {
+    {
+      std::lock_guard<std::mutex> lock(sync_mutex_);
+      unresolved_entries = sync_.AddUnresolvedEntry(detail::UnresolvedEntryFromMessage(message));
+    }
+    success = true;
+  } catch (std::exception& e) {
+    LOG(kError) << "invalid request" << e.what();
+    success = false;
   }
   if (unresolved_entries.size() >= routing::Parameters::node_group_size -1U) {
     for (const auto& entry : unresolved_entries) {
-      // sethandled should reply success and set all handled !!!
       {
         std::lock_guard<std::mutex> lock(accumulator_mutex_);
-        accumulator_.SetHandledAndReply(entry.original_message_id, entry.source_node_id);
+        if (success)
+          accumulator_.SetHandledAndReply(entry.original_message_id,
+                                          entry.source_node_id,
+                                          nfs::Reply(CommonErrors::success));
+        else
+          accumulator_.SetHandledAndReply(entry.original_message_id,
+                                          entry.source_node_id,
+                                          nfs::Reply(VaultErrors::failed_to_handle_request));
       }
     }
   }
 }
 
-// In this persona we sync all mutating actions, on sucess the reply_functor is fired (if available)
-
-template<typename Data>
-void StructuredDataManagerService::Synchronise(const nfs::Message& message) {
-  auto entry =  detail::UnresolvedEntryFromMessage(message);
-  nfs_.Sync<Data>(DataNameVariant(Data::name_type(message.data().name)), entry.Serialise().data);  // does not include
-                                                                            // original_message_id
-  entry.original_message_id = message.message_id();
-  entry.source_node_id = message.source().node_id; // with data().originator_id we can
-                                                    // recover the accumulated requests in
-                                                    // HandleSync
-  std::lock_guard<std::mutex> lock(sync_mutex_);
-  sync_.AddUnresolvedEntry(entry);
-}
 
 void StructuredDataManagerService::HandleChurnEvent(const NodeId& old_node,
                                                     const NodeId& new_node) {

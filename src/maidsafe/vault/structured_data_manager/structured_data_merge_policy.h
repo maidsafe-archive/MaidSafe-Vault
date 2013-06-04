@@ -61,9 +61,6 @@ protected:
                                   const StructuredDataVersions::VersionName& tot);
   void MergeDelete(const DbKey& key);
 
-  std::vector<Identity> MergeGet(const DbKey& key);
-  void MergeGetBranch(const DbKey& key, const StructuredDataVersions::VersionName& tot);
-
   void MergeAccountTransfer(const DbKey& key, const StructuredDataVersions& data_version);
 };
 

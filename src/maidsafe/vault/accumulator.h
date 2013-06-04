@@ -95,7 +95,9 @@ class Accumulator {
                                          const nfs::Reply& reply);
   // This will set handled and reply with success if a reply functor exists
   // safe to call many times
-  void SetHandledAndReply(const nfs::MessageId message_id, const NodeId& source_node);
+  void SetHandledAndReply(const nfs::MessageId message_id,
+                          const NodeId& source_node,
+                          const nfs::Reply& reply_out);
   friend class test::AccumulatorTest_BEH_PushSingleResult_Test;
   friend class test::AccumulatorTest_BEH_PushSingleResultThreaded_Test;
   friend class test::AccumulatorTest_BEH_CheckPendingRequestsLimit_Test;
