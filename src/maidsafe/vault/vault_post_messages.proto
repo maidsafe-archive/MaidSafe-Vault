@@ -1,5 +1,4 @@
 package maidsafe.vault.protobuf;
-option optimize_for = LITE_RUNTIME;
 
 // MPID Account Holder to Metadata Manager
 // MPID Account Holder to MPID ??
