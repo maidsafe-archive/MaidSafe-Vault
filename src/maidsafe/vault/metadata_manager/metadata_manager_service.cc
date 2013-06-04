@@ -126,13 +126,11 @@ bool MetadataManagerService::ThisVaultInGroupForData(const nfs::Message& message
          routing_.IsNodeIdInGroupRange(NodeId(message.data().name.string()));
 }
 
-// =============== Sync ==========================================================================
+// =============== Sync and Record transfer =====================================================
 
 void MetadataManagerService::HandleSync(const nfs::Message& message) {
   metadata_handler_.ApplySyncData(NonEmptyString(message.data().content.string()));
 }
-
-// =============== Record transfer =================================================================
 
 void MetadataManagerService::TransferRecord(const DataNameVariant& record_name,
                                             const NodeId& new_node) {

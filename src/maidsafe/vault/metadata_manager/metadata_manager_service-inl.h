@@ -92,9 +92,8 @@ void MetadataManagerService::HandleMessage(const nfs::Message& message,
     case nfs::MessageAction::kDelete:
       return HandleDelete<Data>(message, reply_functor);
     case nfs::MessageAction::kSynchronise:
-      return HandleSync(message);
     case nfs::MessageAction::kAccountTransfer:
-      return HandleRecordTransfer<Data>(message);
+      return HandleSync(message);
     default: {
       reply = nfs::Reply(VaultErrors::operation_not_supported, message.Serialise().data);
       std::lock_guard<std::mutex> lock(accumulator_mutex_);
@@ -320,11 +319,6 @@ void MetadataManagerService::Sync(const typename Data::name_type& data_name) {
   nfs_.Sync<Data>(data_name, serialised_sync_data);
   // TODO(Fraser#5#): 2013-05-03 - Check this is correct place to increment sync attempt counter.
   metadata_handler_.IncrementSyncAttempts<Data>(data_name);
-}
-
-// =============== Record transfer =================================================================
-template<typename Data>
-void MetadataManagerService::HandleRecordTransfer(const nfs::Message& /*message*/) {
 }
 
 }  // namespace vault

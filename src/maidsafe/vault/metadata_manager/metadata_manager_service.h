@@ -109,16 +109,11 @@ class MetadataManagerService {
   void AddLocalUnresolvedEntryThenSync(const nfs::Message& message,
                                        const MetadataValue& metadata_value);
 
-  // =============== Sync ==========================================================================
+  // =============== Sync and Record transfer =====================================================
   template<typename Data>
   void Sync(const typename Data::name_type& data_name);
-
   void HandleSync(const nfs::Message& message);
-
-  // =============== Record transfer ===============================================================
   void TransferRecord(const DataNameVariant& record_name, const NodeId& new_node);
-  template<typename Data>
-  void HandleRecordTransfer(const nfs::Message& message);
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;

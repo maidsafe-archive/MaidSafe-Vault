@@ -84,14 +84,19 @@ void MetadataHandler::ApplySyncData(const NonEmptyString& serialised_unresolved_
 
 MetadataHandler::serialised_record_type MetadataHandler::GetSerialisedRecord(
     const DataNameVariant& data_name) {
-  protobuf::MetadataRecord proto_record;
-  proto_record.set_serialised_metadata_value(metadata_db_->Get(data_name).Serialise()->string());
+  protobuf::UnresolvedEntries proto_unresolved_entries;
+  auto metadata_value(metadata_db_->Get(data_name));
+  MetadataUnresolvedEntry unresolved_entry_db_value(
+      std::make_pair(data_name, nfs::MessageAction::kAccountTransfer), metadata_value,
+        kThisNodeId_);
   auto unresolved_data(sync_.GetUnresolvedData(data_name));
+  unresolved_data.push_back(unresolved_entry_db_value);
   for (const auto& unresolved_entry : unresolved_data) {
-    proto_record.add_serialised_unresolved_entry(unresolved_entry.Serialise()->string());
+    proto_unresolved_entries.add_serialised_unresolved_entry(
+        unresolved_entry.Serialise()->string());
   }
-  assert(proto_record.IsInitialized());
-  return serialised_record_type(NonEmptyString(proto_record.SerializeAsString()));
+  assert(proto_unresolved_entries.IsInitialized());
+  return serialised_record_type(NonEmptyString(proto_unresolved_entries.SerializeAsString()));
 }
 
 //void MetadataHandler::PutMetadata(const protobuf::Metadata& /*proto_metadata*/) {

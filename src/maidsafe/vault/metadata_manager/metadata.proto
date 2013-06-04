@@ -8,11 +8,6 @@ message MetadataValue {
   repeated bytes offline_pmid_name = 4;
 }
 
-message MetadataRecord {
-  required bytes serialised_metadata_value = 1;
-  repeated bytes serialised_unresolved_entry = 2;
-}
-
 message DataOrProof {
   message Data {
     required int32 type = 1;
