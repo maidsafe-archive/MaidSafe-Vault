@@ -62,6 +62,12 @@ void MetadataManagerService::ValidatePutSender(const nfs::Message& message) cons
     ThrowError(CommonErrors::invalid_parameter);
 }
 
+void MetadataManagerService::ValidatePutResultSender(const nfs::Message& message) const {
+  // FIXME(Prakash) Need to pass PmidName in message to validate
+  if (!FromPmidAccountHolder(message) || !ForThisPersona(message))
+    ThrowError(CommonErrors::invalid_parameter);
+}
+
 void MetadataManagerService::ValidateGetSender(const nfs::Message& message) const {
   if (!(FromClientMaid(message) ||
           FromDataHolder(message) ||
