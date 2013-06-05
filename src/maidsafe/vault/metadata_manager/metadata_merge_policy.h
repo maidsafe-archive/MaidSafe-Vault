@@ -23,6 +23,7 @@
 
 #include "maidsafe/vault/unresolved_element.h"
 #include "maidsafe/vault/manager_db.h"
+#include "maidsafe/vault/metadata_manager/metadata_manager.h"
 
 
 namespace maidsafe {

@@ -22,6 +22,7 @@
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/account_db.h"
 #include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/pmid_account_holder/pmid_account_holder.h"
 
 
 namespace maidsafe {

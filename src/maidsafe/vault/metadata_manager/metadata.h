@@ -41,15 +41,12 @@ struct MetadataValue {
 
 class Metadata {
  public:
-//  typedef TaggedValue<NonEmptyString, struct SerialisedMetadataTag> serialised_type;
-
   // This constructor reads the existing element or creates a new one if it doesn't already exist.
   Metadata(const DataNameVariant& data_name,
            ManagerDb<MetadataManager>* metadata_db,
            int32_t data_size);
   // This constructor reads the existing element or throws if it doesn't already exist.
-  Metadata(const DataNameVariant& data_name,
-           ManagerDb<MetadataManager>* metadata_db);
+  Metadata(const DataNameVariant& data_name, ManagerDb<MetadataManager>* metadata_db);
   // Should only be called once.
   void SaveChanges(ManagerDb<MetadataManager>* metadata_db);
 
@@ -67,16 +64,6 @@ class Metadata {
 
 }  // namespace vault
 
-namespace nfs {
-
-template<>
-struct PersonaTypes<Persona::kMetadataManager> {
-  typedef DataNameVariant DbKey;
-  typedef vault::MetadataValue DbValue;
-  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-  static const Persona persona = Persona::kMetadataManager;
-};
-}  // namespace nfs
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_H_

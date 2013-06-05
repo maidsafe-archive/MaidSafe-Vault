@@ -44,21 +44,22 @@ class Db {
   Db(Db&&);
   Db& operator=(Db&&);
 
-  uint32_t RegisterAccount();
-  void UnRegisterAccount(const uint32_t& account_id);
+  int32_t RegisterAccount();
+  void UnRegisterAccount(const int32_t& account_id);
 
-  void Put(const uint32_t& account_id, const KvPair& key_value_pair);
-  void Delete(const uint32_t& account_id, const DataNameVariant& key);
-  NonEmptyString Get(const uint32_t& account_id, const DataNameVariant& key);
-  std::vector<KvPair> Get(const uint32_t& account_id);
+  void Put(const int32_t& account_id, const KvPair& key_value_pair);
+  void Delete(const int32_t& account_id, const DataNameVariant& key);
+  NonEmptyString Get(const int32_t& account_id, const DataNameVariant& key);
+  std::vector<KvPair> Get(const int32_t& account_id);
 
-  std::string GetSerialisedKey(const uint32_t& account_id, const DataNameVariant& key) const;
+  std::string SerialiseKey(const int32_t& account_id, const DataNameVariant& key) const;
+  std::pair<int32_t, DataNameVariant> ParseKey(const std::string& serialised_key) const;
 
   static const int kPrefixWidth_, kSuffixWidth_;
   const boost::filesystem::path kDbPath_;
   std::mutex mutex_;
   std::unique_ptr<leveldb::DB> leveldb_;
-  std::set<uint32_t> account_ids_;
+  std::set<int32_t> account_ids_;
 };
 
 }  // namespace vault

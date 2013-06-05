@@ -18,15 +18,16 @@ namespace maidsafe {
 
 namespace vault {
 
-StructuredDataKey::StructuredDataKey()
-  :  originator(),
-     data_name(),
-     action() {}
+StructuredDataKey::StructuredDataKey(const DataNameVariant& data_name_in,
+                                     const Identity& originator_in)
+    : data_name(data_name_in),
+      originator(originator_in) {}
+
+StructuredDataKey::StructuredDataKey() : data_name(), originator() {}
 
 StructuredDataKey::StructuredDataKey(const StructuredDataKey& other)
-  :  originator(other.originator),
-     data_name(other.data_name),
-     action(other.action) {}
+    : data_name(other.data_name),
+      originator(other.originator) {}
 
 StructuredDataKey& StructuredDataKey::operator=(StructuredDataKey other) {
   swap(*this, other);
@@ -34,19 +35,17 @@ StructuredDataKey& StructuredDataKey::operator=(StructuredDataKey other) {
 }
 
 StructuredDataKey::StructuredDataKey(StructuredDataKey&& other)
-  :  originator(std::move(other.originator)),
-     data_name(std::move(other.data_name)),
-     action(std::move(other.action)) {}
+    : data_name(std::move(other.data_name)),
+      originator(std::move(other.originator)) {}
 
 void swap(StructuredDataKey& lhs, StructuredDataKey& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
-  swap(lhs.originator, rhs.originator);
   swap(lhs.data_name, rhs.data_name);
-  swap(lhs.action, rhs.action);
+  swap(lhs.originator, rhs.originator);
 }
 
 bool operator==(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
-  return std::tie(lhs.originator, lhs.data_name) == std::tie(rhs.originator, rhs.data_name);
+  return std::tie(lhs.data_name, lhs.originator) == std::tie(rhs.data_name, rhs.originator);
 }
 
 bool operator!=(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
@@ -54,7 +53,7 @@ bool operator!=(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
 }
 
 bool operator<(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
-  return std::tie(lhs.originator, lhs.data_name) < std::tie(rhs.originator, rhs.data_name);
+  return std::tie(lhs.data_name, lhs.originator) < std::tie(rhs.data_name, rhs.originator);
 }
 
 bool operator>(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {

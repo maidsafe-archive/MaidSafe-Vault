@@ -46,7 +46,8 @@ class ManagerDb {
   ManagerDb(ManagerDb&&);
   ManagerDb& operator=(ManagerDb&&);
 
-  std::string GetSerialisedKey(const typename PersonaType::DbKey& key) const;
+  std::string SerialiseKey(const typename PersonaType::DbKey& key) const;
+  typename PersonaType::DbKey ParseKey(const std::string& serialised_key) const;
 
   static const int kSuffixWidth_;
   const boost::filesystem::path kDbPath_;

@@ -23,10 +23,6 @@
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/types.h"
 
-#include "maidsafe/vault/structured_data_manager/structured_data_key.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_value.h"
-#include "maidsafe/vault/metadata_manager/metadata.h"
-
 
 namespace maidsafe {
 
@@ -35,7 +31,7 @@ namespace vault {
 template<typename PersonaTypes>
 struct UnresolvedElement {
   typedef typename PersonaTypes::UnresolvedEntryKey Key;
-  typedef typename PersonaTypes::DbValue Value;
+  typedef typename PersonaTypes::UnresolvedEntryValue Value;
 
  private:
   template<typename Value>

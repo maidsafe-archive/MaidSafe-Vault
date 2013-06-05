@@ -22,14 +22,14 @@ namespace maidsafe {
 namespace vault {
 
 struct StructuredDataKey {
+  StructuredDataKey(const DataNameVariant& data_name_in, const Identity& originator_in);
   StructuredDataKey();
   StructuredDataKey(const StructuredDataKey& other);
   StructuredDataKey(StructuredDataKey&& other);
   StructuredDataKey& operator=(StructuredDataKey other);
 
-  Identity originator;
   DataNameVariant data_name;
-  nfs::MessageAction action;
+  Identity originator;
 };
 
 void swap(StructuredDataKey& lhs, StructuredDataKey& rhs) MAIDSAFE_NOEXCEPT;

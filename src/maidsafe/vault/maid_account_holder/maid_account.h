@@ -29,22 +29,6 @@
 
 namespace maidsafe {
 
-
-
-namespace nfs {
-
-template<>
-struct PersonaTypes<Persona::kMaidAccountHolder> {
-  typedef DataNameVariant DbKey;
-  typedef int32_t DbValue;
-  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-  static const Persona persona = Persona::kMaidAccountHolder;
-};
-
-}  // namespace nfs
-
-
-
 namespace vault {
 
 class Db;
@@ -61,8 +45,6 @@ template<typename Data>
 class MaidAccountHandlerTypedTest;
 
 }  // namespace test
-
-typedef nfs::PersonaTypes<nfs::Persona::kMaidAccountHolder> MaidAccountHolder;
 
 
 class MaidAccount {

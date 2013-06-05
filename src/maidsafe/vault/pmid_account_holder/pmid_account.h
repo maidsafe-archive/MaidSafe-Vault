@@ -32,24 +32,10 @@
 
 namespace maidsafe {
 
-
-namespace nfs {
-
-template<>
-struct PersonaTypes<Persona::kPmidAccountHolder> {
-  typedef DataNameVariant DbKey;
-  typedef int32_t DbValue;
-  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-  static const Persona persona = Persona::kPmidAccountHolder;
-};
-
-
-
 namespace vault {
 
 class Db;
 class AccountDb;
-typedef nfs::PersonaTypes<nfs::Persona::kPmidAccountHolder> PmidAccountHolder;
 
 class PmidAccount {
  public:

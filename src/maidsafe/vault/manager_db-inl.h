@@ -26,10 +26,14 @@
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
+
 namespace vault {
 
 template<typename PersonaType>
 const int ManagerDb<PersonaType>::kSuffixWidth_(1);
+
+template<>
+const int ManagerDb<StructuredDataManager>::kSuffixWidth_(1);
 
 template<typename PersonaType>
 ManagerDb<PersonaType>::ManagerDb(const boost::filesystem::path& path)
@@ -66,8 +70,7 @@ void ManagerDb<PersonaType>::Put(const KvPair& key_value_pair) {
 
 template<typename PersonaType>
 void ManagerDb<PersonaType>::Delete(const typename PersonaType::DbKey& key) {
-  leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(),
-                                          SerialiseDbKey<PersonaType>(key)));
+  leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), SerialiseKey(key)));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
 }
@@ -77,7 +80,7 @@ typename PersonaType::DbValue ManagerDb<PersonaType>::Get(const typename Persona
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
   std::string value;
-  leveldb::Status status(leveldb_->Get(read_options, SerialiseDbKey<PersonaType>(key), &value));
+  leveldb::Status status(leveldb_->Get(read_options, SerialiseKey(key), &value));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
   assert(!value.empty());
@@ -89,44 +92,52 @@ typename PersonaType::DbValue ManagerDb<PersonaType>::Get(const typename Persona
 // TODO(Team) This can be optimise by returning iterators.
 template<typename PersonaType>
 std::vector<typename PersonaType::DbKey> ManagerDb<PersonaType>::GetKeys() {
-  std::vector<DataNameVariant> return_vector;
+  std::vector<StructuredDataManager::DbKey> return_vector;
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
-  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-    std::string name(iter->key().ToString().substr(0, NodeId::kSize));
-    std::string type_string(iter->key().ToString().substr(NodeId::kSize));
-    DataTagValue type = static_cast<DataTagValue>(std::stoul(type_string));
-    auto key = GetDataNameVariant(type, Identity(name));
-    return_vector.push_back(std::move(key));
-  }
+  for (iter->SeekToFirst(); iter->Valid(); iter->Next())
+    return_vector.push_back(ParseKey(iter->key().ToString()));
   return return_vector;
 }
 
-// Workaround for gcc 4.6 bug related to warning "redundant redeclaration" for template
-// specialisation. refer // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=15867#c4
-
-#ifdef __GNUC__
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wredundant-decls"
-#endif
-
-template<>
-std::vector<StructuredDataManager::DbKey> ManagerDb<StructuredDataManager>::GetKeys();
-
-#ifdef __GNUC__
-#  pragma GCC diagnostic pop
-#endif
-
 template<typename PersonaType>
-std::string ManagerDb<PersonaType>::GetSerialisedKey(const typename PersonaType::DbKey& key) const {
+std::string ManagerDb<PersonaType>::SerialiseKey(const typename PersonaType::DbKey& key) const {
   static GetTagValueAndIdentityVisitor visitor;
   auto result(boost::apply_visitor(visitor, key));
   return std::string(result.second.string() +
                      detail::Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)));
 }
 
+template<typename PersonaType>
+typename PersonaType::DbKey ManagerDb<PersonaType>::ParseKey(
+    const std::string& serialised_key) const {
+  std::string name(serialised_key.substr(0, NodeId::kSize));
+  std::string type_as_string(serialised_key.substr(NodeId::kSize, kSuffixWidth_));
+  auto type(static_cast<DataTagValue>(detail::FromFixedWidthString<kSuffixWidth_>(type_as_string)));
+  return GetDataNameVariant(type, Identity(name));
+}
+  
+// Workaround for gcc 4.6 bug related to warning "redundant redeclaration" for template
+// specialisation. refer // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=15867#c4
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wredundant-decls"
+#endif
+
+template<>
+std::string ManagerDb<StructuredDataManager>::SerialiseKey(
+    const typename StructuredDataManager::DbKey& key) const;
+
+template<>
+typename StructuredDataManager::DbKey ManagerDb<StructuredDataManager>::ParseKey(
+    const std::string& serialised_key) const;
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
 
 }  // namespace vault
+
 }  // namespace maidsafe
 
 #endif // MAIDSAFE_VAULT_MANAGER_DB_INL_H_

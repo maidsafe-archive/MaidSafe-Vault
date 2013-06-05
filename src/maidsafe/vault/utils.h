@@ -24,25 +24,11 @@
 #include "maidsafe/nfs/message.h"
 
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/metadata_manager/metadata_manager.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_manager.h"
 
 
 namespace maidsafe {
-
-namespace nfs {
-
-template<>
-struct PersonaTypes<Persona::kStructuredDataManager> {
-  typedef std::pair<DataNameVariant, Identity> DbKey;
-  typedef StructuredDataVersions DbValue;
-  struct UnresolvedEntryKey {
-    DbKey db_key;
-    MessageAction action;
-  };
-  static const Persona persona = Persona::kStructuredDataManager;
-};
-
-}  // namespace nfs
-
 
 namespace vault {
 
@@ -80,7 +66,10 @@ bool AddResult(const nfs::Message& message,
                int requests_required);
 
 template<int width>
-std::string Pad(uint32_t number);
+std::string ToFixedWidthString(int32_t number);
+
+template<int width>
+int32_t FromFixedWidthString(const std::string& number_as_string);
 
 }  // namespace detail
 
@@ -139,15 +128,16 @@ template<>
 typename StructuredDataManager::DbKey
          GetKeyFromMessage<StructuredDataManager>(const nfs::Message& message);
 
-template<typename Persona>
-std::string SerialiseDbKey(const typename Persona::DbKey& key) {
-  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
-  return std::string(result.second.string() + detail::Pad<1>(static_cast<uint32_t>(result.first)));
-}
+template<typename PersonaTypes>
+typename PersonaTypes::RecordName GetRecordName(const typename PersonaTypes::DbKey& db_key);
 
 template<>
-std::string SerialiseDbKey<StructuredDataManager>(
-    const typename StructuredDataManager::DbKey& key);
+typename MetadataManager::RecordName GetRecordName<MetadataManager>(
+    const typename MetadataManager::DbKey& db_key);
+
+template<>
+typename StructuredDataManager::RecordName GetRecordName<StructuredDataManager>(
+    const typename StructuredDataManager::DbKey& db_key);
 
 }  // namespace vault
 

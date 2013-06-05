@@ -28,8 +28,7 @@
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_key.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_value.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_manager.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_merge_policy.h"
 #include "maidsafe/vault/manager_db.h"
 

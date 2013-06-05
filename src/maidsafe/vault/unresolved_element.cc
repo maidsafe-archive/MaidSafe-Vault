@@ -17,6 +17,10 @@
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/unresolved_element.pb.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_merge_policy.h"
+#include "maidsafe/vault/metadata_manager/metadata_merge_policy.h"
+#include "maidsafe/vault/pmid_account_holder/pmid_account_merge_policy.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_merge_policy.h"
 
 
 namespace maidsafe {

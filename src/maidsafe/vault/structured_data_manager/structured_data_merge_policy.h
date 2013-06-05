@@ -22,10 +22,11 @@
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/data_types/data_name_variant.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_key.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_value.h"
 #include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_manager.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_key.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_unresolved_entry_value.h"
 
 
 namespace maidsafe {
@@ -33,12 +34,13 @@ namespace maidsafe {
 namespace vault {
 
 typedef UnresolvedElement<StructuredDataManager> StructuredDataUnresolvedEntry;
+typedef StructuredDataUnresolvedEntry StructuredDataResolvedEntry;
 
 class StructuredDataMergePolicy {
  public:
-  typedef UnresolvedElement<StructuredDataKey, StructuredDataValue> UnresolvedEntry;
-  typedef UnresolvedElement<StructuredDataKey, StructuredDataValue> ResolvedEntry;
-  typedef std::pair<DataNameVariant, Identity> DbKey;
+  typedef StructuredDataUnresolvedEntry UnresolvedEntry;
+  typedef StructuredDataResolvedEntry ResolvedEntry;
+  typedef StructuredDataManager::DbKey DbKey;
   typedef ManagerDb<StructuredDataManager> Database;
 
   explicit StructuredDataMergePolicy(ManagerDb<StructuredDataManager>* db);

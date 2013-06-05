@@ -19,24 +19,29 @@
 #include "maidsafe/vault/types.h"
 
 namespace maidsafe {
+
 namespace vault {
 
 template<>
-std::vector<StructuredDataManager::DbKey> ManagerDb<StructuredDataManager>::GetKeys() {
-  std::vector<StructuredDataManager::DbKey> return_vector;
-  std::lock_guard<std::mutex> lock(mutex_);
-  std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
-  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-    std::string name(iter->key().ToString().substr(0, NodeId::kSize));
-    std::string type_string(iter->key().ToString().substr(NodeId::kSize + 2));
-    Identity identity(iter->key().ToString().substr(NodeId::kSize + 2 ,
-                                                    (NodeId::kSize * 2) + 2));
-    DataTagValue type = static_cast<DataTagValue>(std::stoul(type_string));
-    auto key = std::make_pair(GetDataNameVariant(type, Identity(name)), identity);
-    return_vector.push_back(std::move(key));
-  }
-  return return_vector;
+std::string ManagerDb<StructuredDataManager>::SerialiseKey(
+    const typename StructuredDataManager::DbKey& key) const {
+  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.data_name));
+  return std::string(result.second.string() +
+                     detail::ToFixedWidthString<kSuffixWidth_>(static_cast<int32_t>(result.first)) +
+                     key.originator.string());
+}
+
+template<>
+typename StructuredDataManager::DbKey ManagerDb<StructuredDataManager>::ParseKey(
+    const std::string& serialised_key) const {
+  std::string name(serialised_key.substr(0, NodeId::kSize));
+  std::string type_as_string(serialised_key.substr(NodeId::kSize, kSuffixWidth_));
+  std::string originator(serialised_key.substr(NodeId::kSize + kSuffixWidth_));
+  auto type(static_cast<DataTagValue>(detail::FromFixedWidthString<kSuffixWidth_>(type_as_string)));
+  return StructuredDataManager::DbKey(GetDataNameVariant(type, Identity(name)),
+                                      Identity(originator));
 }
 
 }  // namespace vault
+
 }  // namespace maidsafe

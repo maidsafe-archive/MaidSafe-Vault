@@ -30,7 +30,7 @@
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_key.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_value.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_unresolved_entry_value.h"
 #include "maidsafe/vault/unresolved_element.pb.h"
 #include "maidsafe/vault/manager_db.h"
 
@@ -90,18 +90,18 @@ NonEmptyString StructuredDataManagerService::GetSerialisedRecord(
   protobuf::UnresolvedEntries proto_unresolved_entries;
   auto db_value(structured_data_db_.Get(db_key));
   StructuredDataKey structured_data_key;
-  structured_data_key.
-  StructuredDataUnresolvedEntry unresolved_entry_db_value(
-      std::make_pair(data_name, nfs::MessageAction::kAccountTransfer), metadata_value,
-        kThisNodeId_);
-  auto unresolved_data(sync_.GetUnresolvedData(data_name));
-  unresolved_data.push_back(unresolved_entry_db_value);
-  for (const auto& unresolved_entry : unresolved_data) {
-    proto_unresolved_entries.add_serialised_unresolved_entry(
-        unresolved_entry.Serialise()->string());
-  }
-  assert(proto_unresolved_entries.IsInitialized());
-  return serialised_record_type(NonEmptyString(proto_unresolved_entries.SerializeAsString()));
+  //structured_data_key.
+  //StructuredDataUnresolvedEntry unresolved_entry_db_value(
+  //    std::make_pair(data_name, nfs::MessageAction::kAccountTransfer), metadata_value,
+  //      kThisNodeId_);
+  //auto unresolved_data(sync_.GetUnresolvedData(data_name));
+  //unresolved_data.push_back(unresolved_entry_db_value);
+  //for (const auto& unresolved_entry : unresolved_data) {
+  //  proto_unresolved_entries.add_serialised_unresolved_entry(
+  //      unresolved_entry.Serialise()->string());
+  //}
+  //assert(proto_unresolved_entries.IsInitialized());
+  //return serialised_record_type(NonEmptyString(proto_unresolved_entries.SerializeAsString()));
 }
 
 
