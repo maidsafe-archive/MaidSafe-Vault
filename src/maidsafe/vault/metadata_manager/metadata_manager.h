@@ -17,7 +17,7 @@
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
-#include "maidsafe/vault/metadata_manager/metadata.h"
+#include "maidsafe/vault/metadata_manager/metadata_value.h"
 
 
 namespace maidsafe {
@@ -36,7 +36,11 @@ struct PersonaTypes<Persona::kMetadataManager> {
 
 }  // namespace nfs
 
+namespace vault {
 
+typedef nfs::PersonaTypes<nfs::Persona::kMetadataManager> MetadataManager;
+
+}  // namespace vault
 
 }  // namespace maidsafe
 

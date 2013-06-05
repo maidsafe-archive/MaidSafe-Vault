@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_H_
-#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_H_
+#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_VALUE_H_
+#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_VALUE_H_
 
 #include <cstdint>
 #include <vector>
@@ -27,8 +27,6 @@
 namespace maidsafe {
 
 namespace vault {
-
-typedef nfs::PersonaTypes<nfs::Persona::kMetadataManager> MetadataManager;
 
 struct MetadataValue {
   typedef TaggedValue<NonEmptyString, struct SerialisedMetadataValueTag> serialised_type;
@@ -68,4 +66,4 @@ class Metadata {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_H_
+#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_VALUE_H_

@@ -16,7 +16,7 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/routing/parameters.h"
 
-#include "maidsafe/vault/metadata_manager/metadata.h"
+#include "maidsafe/vault/metadata_manager/metadata_value.h"
 
 namespace fs = boost::filesystem;
 

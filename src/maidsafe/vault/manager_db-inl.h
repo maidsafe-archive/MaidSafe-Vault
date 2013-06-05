@@ -23,6 +23,8 @@
 #include "maidsafe/passport/types.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/data_types/data_type_values.h"
+#include "maidsafe/vault/metadata_manager/metadata_handler.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_manager.h"
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {

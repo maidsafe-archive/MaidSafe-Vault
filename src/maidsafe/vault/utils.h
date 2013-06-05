@@ -25,7 +25,7 @@
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/metadata_manager/metadata_manager.h"
-#include "maidsafe/vault/metadata_manager/metadata.h"
+#include "maidsafe/vault/metadata_manager/metadata_value.h"
 #include "maidsafe/vault/structured_data_manager/structured_data_manager.h"
 
 

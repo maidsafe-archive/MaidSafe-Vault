@@ -20,7 +20,9 @@
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
 
-#include "maidsafe/vault/metadata_manager/metadata.h"
+#include "maidsafe/vault/metadata_manager/metadata_value.h"
+#include "maidsafe/vault/metadata_manager/metadata_manager.h"
+#include "maidsafe/vault/metadata_manager/metadata_handler.h"
 #include "maidsafe/vault/metadata_manager/metadata_helpers.h"
 #include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/metadata_manager/metadata.pb.h"
