@@ -27,6 +27,9 @@
 namespace maidsafe {
 namespace vault {
 
+typedef UnresolvedElement<PmidAccountHolder> PmidAccountUnresolvedEntry;
+typedef PmidAccountUnresolvedEntry PmidAccountResolvedEntry;
+
 class PmidAccountMergePolicy {
  public:
   typedef PmidAccountUnresolvedEntry UnresolvedEntry;

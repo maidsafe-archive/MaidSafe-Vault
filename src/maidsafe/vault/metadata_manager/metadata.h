@@ -73,10 +73,7 @@ template<>
 struct PersonaTypes<Persona::kMetadataManager> {
   typedef DataNameVariant DbKey;
   typedef vault::MetadataValue DbValue;
-  struct UnresolvedEntryKey {
-    DbKey db_key;
-    MessageAction action;
-  };
+  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
   static const Persona persona = Persona::kMetadataManager;
 };
 }  // namespace nfs

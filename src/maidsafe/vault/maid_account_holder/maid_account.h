@@ -19,6 +19,7 @@
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/pmid_registration.h"
+#include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
@@ -27,6 +28,22 @@
 
 
 namespace maidsafe {
+
+
+
+namespace nfs {
+
+template<>
+struct PersonaTypes<Persona::kMaidAccountHolder> {
+  typedef DataNameVariant DbKey;
+  typedef int32_t DbValue;
+  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
+  static const Persona persona = Persona::kMaidAccountHolder;
+};
+
+}  // namespace nfs
+
+
 
 namespace vault {
 
@@ -44,6 +61,8 @@ template<typename Data>
 class MaidAccountHandlerTypedTest;
 
 }  // namespace test
+
+typedef nfs::PersonaTypes<nfs::Persona::kMaidAccountHolder> MaidAccountHolder;
 
 
 class MaidAccount {

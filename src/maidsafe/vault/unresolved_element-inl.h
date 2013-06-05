@@ -19,37 +19,38 @@ namespace maidsafe {
 
 namespace vault {
 
-template<typename ValueType, typename KeyType>
-UnresolvedElement<ValueType, KeyType>::UnresolvedElement()
+template<typename PersonaTypes>
+UnresolvedElement<PersonaTypes>::UnresolvedElement()
     : key(),
       messages_contents(),
       sync_counter(0),
       dont_add_to_db(false) {}
 
-template<typename ValueType, typename KeyType>
-UnresolvedElement<ValueType, KeyType>::UnresolvedElement(const UnresolvedElement& other)
+template<typename PersonaTypes>
+UnresolvedElement<PersonaTypes>::UnresolvedElement(const UnresolvedElement& other)
     : key(other.key),
       messages_contents(other.messages_contents),
       sync_counter(other.sync_counter),
       dont_add_to_db(other.dont_add_to_db) {}
 
-template<typename ValueType, typename KeyType>
-UnresolvedElement<ValueType, KeyType>::UnresolvedElement(UnresolvedElement&& other)
+template<typename PersonaTypes>
+UnresolvedElement<PersonaTypes>::UnresolvedElement(UnresolvedElement&& other)
     : key(std::move(other.key)),
       messages_contents(std::move(other.messages_contents)),
       sync_counter(std::move(other.sync_counter)),
       dont_add_to_db(std::move(other.dont_add_to_db)) {}
 
-template<typename ValueType, typename KeyType>
-UnresolvedElement<ValueType, KeyType>& UnresolvedElement<ValueType, KeyType>::operator=(UnresolvedElement other) {
+template<typename PersonaTypes>
+UnresolvedElement<PersonaTypes>& UnresolvedElement<PersonaTypes>::operator=(
+    UnresolvedElement other) {
   swap(*this, other);
   return *this;
 }
 
-template<typename ValueType, typename KeyType>
-UnresolvedElement<ValueType, KeyType>::UnresolvedElement(const Key& key,
-                                                         const Value& value,
-                                                         const NodeId& sender_id)
+template<typename PersonaTypes>
+UnresolvedElement<PersonaTypes>::UnresolvedElement(const Key& key,
+                                                   const Value& value,
+                                                   const NodeId& sender_id)
     : key(key),
       messages_contents(),
       sync_counter(0),
@@ -60,8 +61,9 @@ UnresolvedElement<ValueType, KeyType>::UnresolvedElement(const Key& key,
   messages_contents.push_back(message_content);
 }
 
-template<typename ValueType, typename KeyType>
-void swap(UnresolvedElement<ValueType, KeyType>& lhs, UnresolvedElement<ValueType, KeyType>& rhs) MAIDSAFE_NOEXCEPT {
+template<typename PersonaTypes>
+void swap(UnresolvedElement<PersonaTypes>& lhs,
+          UnresolvedElement<PersonaTypes>& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
   swap(lhs.key, rhs.key);
   swap(lhs.messages_contents, rhs.messages_contents);

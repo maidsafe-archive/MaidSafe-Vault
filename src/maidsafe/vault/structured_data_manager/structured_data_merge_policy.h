@@ -32,6 +32,8 @@ namespace maidsafe {
 
 namespace vault {
 
+typedef UnresolvedElement<StructuredDataManager> StructuredDataUnresolvedEntry;
+
 class StructuredDataMergePolicy {
  public:
   typedef UnresolvedElement<StructuredDataKey, StructuredDataValue> UnresolvedEntry;

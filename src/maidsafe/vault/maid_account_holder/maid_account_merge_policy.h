@@ -28,6 +28,9 @@ namespace maidsafe {
 
 namespace vault {
 
+typedef UnresolvedElement<MaidAccountHolder> MaidAccountUnresolvedEntry;
+typedef MaidAccountUnresolvedEntry MaidAccountResolvedEntry;
+
 class AccountDb;
 
 class MaidAccountMergePolicy {
