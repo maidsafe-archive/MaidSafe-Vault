@@ -62,7 +62,7 @@ template<typename PersonaType>
 void ManagerDb<PersonaType>::Put(const KvPair& key_value_pair) {
 
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
-                                       SerialiseDbKey<PersonaType>(key_value_pair.first),
+                                       SerialiseKey(key_value_pair.first),
                                        key_value_pair.second.Serialise()->string()));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
@@ -105,7 +105,7 @@ std::string ManagerDb<PersonaType>::SerialiseKey(const typename PersonaType::DbK
   static GetTagValueAndIdentityVisitor visitor;
   auto result(boost::apply_visitor(visitor, key));
   return std::string(result.second.string() +
-                     detail::Pad<kSuffixWidth_>(static_cast<uint32_t>(result.first)));
+                     detail::ToFixedWidthString<kSuffixWidth_>(static_cast<uint32_t>(result.first)));
 }
 
 template<typename PersonaType>
@@ -116,7 +116,7 @@ typename PersonaType::DbKey ManagerDb<PersonaType>::ParseKey(
   auto type(static_cast<DataTagValue>(detail::FromFixedWidthString<kSuffixWidth_>(type_as_string)));
   return GetDataNameVariant(type, Identity(name));
 }
-  
+
 // Workaround for gcc 4.6 bug related to warning "redundant redeclaration" for template
 // specialisation. refer // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=15867#c4
 #ifdef __GNUC__

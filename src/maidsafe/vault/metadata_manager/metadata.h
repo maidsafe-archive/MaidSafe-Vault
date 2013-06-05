@@ -20,13 +20,15 @@
 
 #include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/metadata_manager/metadata.pb.h"
-
+#include "maidsafe/vault/metadata_manager/metadata_manager.h"
 #include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
 
 namespace vault {
+
+typedef nfs::PersonaTypes<nfs::Persona::kMetadataManager> MetadataManager;
 
 struct MetadataValue {
   typedef TaggedValue<NonEmptyString, struct SerialisedMetadataValueTag> serialised_type;

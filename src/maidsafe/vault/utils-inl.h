@@ -143,7 +143,7 @@ int32_t FromFixedWidthString(const std::string& number_as_string) {
     result += (number_as_string[i] * factor);
     factor *= 256;
   }
-  assert(number < std::pow(256, width) && number >= 0);
+  assert(result < std::pow(256, width) && result >= 0);
   return result;
 }
 

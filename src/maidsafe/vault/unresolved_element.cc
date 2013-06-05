@@ -140,7 +140,7 @@ MetadataUnresolvedEntry::serialised_type MetadataUnresolvedEntry::Serialise() co
     if (message_content.entry_id)
       proto_message_content->set_entry_id(*message_content.entry_id);
     if (message_content.value) {
-        proto_message_content->set_value(message_content.value->Serialise()->string());
+        proto_message_content->set_value(*message_content.value->Serialise()->string());
     }
   }
 
@@ -160,8 +160,8 @@ StructuredDataUnresolvedEntry::UnresolvedElement(const serialised_type& serialis
     ThrowError(CommonErrors::parsing_error);
 
   StructuredDataManager::UnresolvedEntryKey unresolved_entry_key;
-  unresolved_entry_key.db_key =
-      std::make_pair(GetDataNameVariant(static_cast<DataTagValue>(proto_copy.key().name_type()),
+  unresolved_entry_key.db_key = StructuredDataKey(
+               GetDataNameVariant(static_cast<DataTagValue>(proto_copy.key().name_type()),
                                         Identity(proto_copy.key().name())),
                      Identity(proto_copy.key().originator()));
   unresolved_entry_key.action = static_cast<nfs::MessageAction>(proto_copy.key().action());
