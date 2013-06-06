@@ -20,14 +20,25 @@ namespace vault {
 
 StructuredDataKey::StructuredDataKey(const DataNameVariant& data_name_in,
                                      const Identity& originator_in)
-    : data_name(data_name_in),
-      originator(originator_in) {}
+    : data_(data_name_in),
+      originator_(originator_in) {}
 
-StructuredDataKey::StructuredDataKey() : data_name(), originator() {}
+StructuredDataKey::StructuredDataKey(const std::string& serialised_key) {
+  std::string name(serialised_key.substr(0, NodeId::kSize));
+  std::string type_as_string(serialised_key.substr(NodeId::kSize, kSuffixWidth_));
+  std::string originator(serialised_key.substr(NodeId::kSize + kSuffixWidth_));
+  auto type(static_cast<DataTagValue>(detail::FromFixedWidthString<kSuffixWidth_>(type_as_string)));
+  return StructuredDataManager::DbKey(GetDataNameVariant(type, Identity(name)),
+                                      Identity(originator));
+  name_ = GetDataNameVariant(type, Identity(name));
+  originator_ = originator;
+}
+
+StructuredDataKey::StructuredDataKey() : data_(), originator_() {}
 
 StructuredDataKey::StructuredDataKey(const StructuredDataKey& other)
-    : data_name(other.data_name),
-      originator(other.originator) {}
+    : data_(other.data_),
+      originator_(other.originator_) {}
 
 StructuredDataKey& StructuredDataKey::operator=(StructuredDataKey other) {
   swap(*this, other);
@@ -35,17 +46,25 @@ StructuredDataKey& StructuredDataKey::operator=(StructuredDataKey other) {
 }
 
 StructuredDataKey::StructuredDataKey(StructuredDataKey&& other)
-    : data_name(std::move(other.data_name)),
-      originator(std::move(other.originator)) {}
+    : data_(std::move(other.data_)),
+      originator_(std::move(other.originator_)) {}
 
 void swap(StructuredDataKey& lhs, StructuredDataKey& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
-  swap(lhs.data_name, rhs.data_name);
-  swap(lhs.originator, rhs.originator);
+  swap(lhs.data_, rhs.data_);
+  swap(lhs.originator_, rhs.originator_);
+}
+
+std::string StructuredDataKey::Serialise() const {
+  static GetTagValueAndIdentityVisitor visitor;
+  auto result(boost::apply_visitor(visitor, name_));
+  return std::string(result.second.string() +
+                    detail::ToFixedWidthString<kSuffixWidth_>(static_cast<uint32_t>(result.first)) +
+                    originator_.string());
 }
 
 bool operator==(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
-  return std::tie(lhs.data_name, lhs.originator) == std::tie(rhs.data_name, rhs.originator);
+  return std::tie(lhs.data_, lhs.originator_) == std::tie(rhs.data_, rhs.originator_);
 }
 
 bool operator!=(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
@@ -53,7 +72,7 @@ bool operator!=(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
 }
 
 bool operator<(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
-  return std::tie(lhs.data_name, lhs.originator) < std::tie(rhs.data_name, rhs.originator);
+  return std::tie(lhs.data_, lhs.originator_) < std::tie(rhs.data_, rhs.originator_);
 }
 
 bool operator>(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
