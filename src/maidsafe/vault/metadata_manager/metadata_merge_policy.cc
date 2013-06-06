@@ -43,7 +43,7 @@ void MetadataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
       !unresolved_entry.dont_add_to_db) {
     auto data_size(GetDataSize(unresolved_entry));
     if (!data_size)
-      MergePut(unresolved_entry.key.first, data_size);
+      MergePut(unresolved_entry.key.first.name(), data_size);
   } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
 //    MergeDelete(unresolved_entry.key.first, serialised_db_value);
   } else {
@@ -82,8 +82,7 @@ int MetadataMergePolicy::GetDataSize(
   return 0;
 }
 
-void MetadataMergePolicy::MergePut(const DataNameVariant& data_name,
-                                   int data_size) {
+void MetadataMergePolicy::MergePut(const DataNameVariant& data_name, int data_size) {
   Metadata metadata(data_name, metadata_db_, data_size);
   ++(*metadata.value_.subscribers);
   metadata.SaveChanges(metadata_db_);

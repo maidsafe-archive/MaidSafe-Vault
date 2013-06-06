@@ -17,7 +17,7 @@
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
-
+#include "maidsafe/vault/db_key.h"
 
 namespace maidsafe {
 
@@ -27,10 +27,10 @@ namespace nfs {
 
 template<>
 struct PersonaTypes<Persona::kMetadataManager> {
-  typedef DataNameVariant RecordName;
-  typedef RecordName DbKey;
+  typedef vault::DbKey RecordName;
+  typedef vault::DbKey DbKey;
   typedef vault::MetadataValue DbValue;
-  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
+  typedef std::pair<vault::DbKey, MessageAction> UnresolvedEntryKey;
   typedef DbValue UnresolvedEntryValue;
   static const Persona persona = Persona::kMetadataManager;
 };

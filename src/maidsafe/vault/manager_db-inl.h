@@ -52,7 +52,7 @@ ManagerDb<PersonaType>::~ManagerDb() {
 template<typename PersonaType>
 void ManagerDb<PersonaType>::Put(const KvPair& key_value_pair) {
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
-                                       SerialiseKey(key_value_pair.first),
+                                       key_value_pair.first.Serialise(),
                                        key_value_pair.second.Serialise()->string()));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
@@ -60,7 +60,7 @@ void ManagerDb<PersonaType>::Put(const KvPair& key_value_pair) {
 
 template<typename PersonaType>
 void ManagerDb<PersonaType>::Delete(const typename PersonaType::DbKey& key) {
-  leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), SerialiseKey(key)));
+  leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), key.Serialise()));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
 }
@@ -70,7 +70,7 @@ typename PersonaType::DbValue ManagerDb<PersonaType>::Get(const typename Persona
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
   std::string value;
-  leveldb::Status status(leveldb_->Get(read_options, SerialiseKey(key), &value));
+  leveldb::Status status(leveldb_->Get(read_options, key.Serialise(), &value));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
   assert(!value.empty());
@@ -85,7 +85,7 @@ std::vector<typename PersonaType::DbKey> ManagerDb<PersonaType>::GetKeys() {
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
   for (iter->SeekToFirst(); iter->Valid(); iter->Next())
-    return_vector.push_back(ParseKey(iter->key().ToString()));
+    return_vector.push_back(DbKey(iter->key().ToString()));
   return return_vector;
 }
 

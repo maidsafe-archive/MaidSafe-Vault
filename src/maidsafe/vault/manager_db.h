@@ -45,9 +45,6 @@ class ManagerDb {
   ManagerDb(ManagerDb&&);
   ManagerDb& operator=(ManagerDb&&);
 
-  std::string SerialiseKey(const typename PersonaType::DbKey& key) const;
-  typename PersonaType::DbKey ParseKey(const std::string& serialised_key) const;
-
   const boost::filesystem::path kDbPath_;
   mutable std::mutex mutex_;
   std::unique_ptr<leveldb::DB> leveldb_;

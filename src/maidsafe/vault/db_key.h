@@ -28,6 +28,7 @@ class ManagerDb;
 class DbKey {
  public:
   explicit DbKey(const DataNameVariant& name);
+  DbKey();
   DbKey(const DbKey& other);
   DbKey(DbKey&& other);
   DbKey& operator=(DbKey other);

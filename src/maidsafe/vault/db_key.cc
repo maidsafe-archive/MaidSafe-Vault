@@ -22,6 +22,8 @@ const int DbKey::kPaddedWidth_(1);
 
 DbKey::DbKey(const DataNameVariant& name) : name_(name) {}
 
+DbKey::DbKey() : name_() {}
+
 DbKey::DbKey(const std::string& serialised_key) : name_() {
   std::string name(serialised_key.substr(0, NodeId::kSize));
   std::string type_as_string(serialised_key.substr(NodeId::kSize, kPaddedWidth_));

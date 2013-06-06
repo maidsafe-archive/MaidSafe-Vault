@@ -57,7 +57,7 @@ void MetadataHandler::AddLocalUnresolvedEntry(const MetadataUnresolvedEntry& unr
   sync_.AddLocalEntry(unresolved_entry);
 }
 
-std::vector<DataNameVariant> MetadataHandler::GetRecordNames() const {
+std::vector<MetadataManager::RecordName> MetadataHandler::GetRecordNames() const {
   return metadata_db_->GetKeys();
 }
 
@@ -85,9 +85,9 @@ void MetadataHandler::ApplySyncData(const NonEmptyString& serialised_unresolved_
 MetadataHandler::serialised_record_type MetadataHandler::GetSerialisedRecord(
     const DataNameVariant& data_name) {
   protobuf::UnresolvedEntries proto_unresolved_entries;
-  auto metadata_value(metadata_db_->Get(data_name));
+  auto metadata_value(metadata_db_->Get(DbKey(data_name)));
   MetadataUnresolvedEntry unresolved_entry_db_value(
-      std::make_pair(data_name, nfs::MessageAction::kAccountTransfer), metadata_value,
+      std::make_pair(DbKey(data_name), nfs::MessageAction::kAccountTransfer), metadata_value,
         kThisNodeId_);
   auto unresolved_data(sync_.GetUnresolvedData(data_name));
   unresolved_data.push_back(unresolved_entry_db_value);

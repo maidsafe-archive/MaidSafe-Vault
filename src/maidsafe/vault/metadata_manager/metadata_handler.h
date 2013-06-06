@@ -92,7 +92,7 @@ class MetadataHandler {
   void AddLocalUnresolvedEntry(const MetadataUnresolvedEntry& unresolved_entry);
 
   // Sync operations
-  std::vector<DataNameVariant> GetRecordNames() const;
+  std::vector<MetadataManager::RecordName> GetRecordNames() const;
   serialised_record_type GetSerialisedRecord(const DataNameVariant& data_name);
   template <typename Data>
   NonEmptyString GetSyncData(const typename Data::name_type& data_name);
