@@ -46,6 +46,8 @@ bool ShouldRetry(routing::Routing& routing, const nfs::Message& message) {
 void SendReply(const nfs::Message& original_message,
                const maidsafe_error& return_code,
                const routing::ReplyFunctor& reply_functor) {
+  if (!reply_functor)
+    return;
   nfs::Reply reply(CommonErrors::success);
   if (return_code.code() != CommonErrors::success)
     reply = nfs::Reply(return_code, original_message.Serialise().data);

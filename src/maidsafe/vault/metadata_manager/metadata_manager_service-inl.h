@@ -50,7 +50,7 @@ MetadataUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
 }
 
 template<typename Accumulator>
-bool AddMetadataPutResult(const nfs::Message& /*message*/,
+bool AddMetadataPutResult(const nfs::Message& /*message*/,  // FIXME rename
                           const routing::ReplyFunctor& /*reply_functor*/,
                           const nfs::Reply& /*reply*/,
                           Accumulator& /*accumulator*/,
@@ -87,6 +87,8 @@ void MetadataManagerService::HandleMessage(const nfs::Message& message,
   switch (message.data().action) {
     case nfs::MessageAction::kPut:
       return HandlePut<Data>(message, reply_functor);
+    case nfs::MessageAction::kPutResult:
+      return HandlePutResult<Data>(message);
     case nfs::MessageAction::kGet:
       return HandleGet<Data>(message, reply_functor);
     case nfs::MessageAction::kDelete:
@@ -144,6 +146,36 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
 template<typename Data>
 void MetadataManagerService::Put(const Data& data, const PmidName& target_data_holder) {
   nfs_.Put(target_data_holder, data, nullptr);
+}
+
+template<typename Data>
+void MetadataManagerService::HandlePutResult(const nfs::Message& message) {
+  try {
+    ValidatePutResultSender(message);
+    // FIXME: Need to adjust accumulator to identify/accumulate message from PAHs of a given DH
+    if (detail::AddResult(message, nullptr, MakeError(CommonErrors::success),
+                          accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
+      protobuf::PutResult proto_put_result;
+      if (!proto_put_result.ParseFromString(message.data().content.string()))
+        ThrowError(CommonErrors::parsing_error);
+      if (proto_put_result.result()) {
+        // Create record
+        int32_t data_size(proto_put_result.data_size());
+        MetadataValue metadata_value(data_size);
+        AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, metadata_value);
+      } else {
+        // FIXME need a record failure nodes vector to workout when we need to retry on different data holder
+        Data data(typename Data::name_type(message.data().name),
+                  typename Data::serialised_type(
+                    NonEmptyString(proto_put_result.serialised_data())));
+        PmidName target_data_holder(Identity(routing_.RandomConnectedNode().string()));
+        Put(data, target_data_holder);
+      }
+    }
+  }
+  catch(const maidsafe_error& error) {
+    LOG(kWarning) << "Error during HandlePutResult: " << error.what();
+  }
 }
 
 template<typename Data>

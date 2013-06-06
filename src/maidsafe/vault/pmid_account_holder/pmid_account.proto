@@ -29,3 +29,10 @@ message PmidAccountDetails {
   repeated PmidAccountDbEntry db_entry = 2;
   repeated bytes serialised_unresolved_entry = 3;
 }
+
+message PutResult {
+  required bool result = 1;
+  required bytes pmid_name = 2;
+  optional int32 data_size = 3;
+  optional bytes serialised_data = 4;
+}

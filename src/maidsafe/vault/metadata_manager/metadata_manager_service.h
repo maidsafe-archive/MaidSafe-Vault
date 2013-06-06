@@ -77,7 +77,8 @@ class MetadataManagerService {
   void HandlePut(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void Put(const Data& data, const PmidName& target_data_holder);
-
+  template<typename Data>
+  void HandlePutResult(const nfs::Message& message);
   template<typename Data>
   void HandleGet(nfs::Message message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
@@ -92,7 +93,7 @@ class MetadataManagerService {
   void ValidateGetSender(const nfs::Message& message) const;
   void ValidateDeleteSender(const nfs::Message& message) const;
   void ValidatePostSender(const nfs::Message& message) const;
-
+  void ValidatePutResultSender(const nfs::Message& message) const;
   void HandleNodeDown(const nfs::Message& message);
   void HandleNodeUp(const nfs::Message& message);
 
