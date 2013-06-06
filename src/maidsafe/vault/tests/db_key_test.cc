@@ -9,10 +9,11 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_DB_KEY_H_
-#define MAIDSAFE_VAULT_DB_KEY_H_
+#include "maidsafe/vault/db_key.h"
 
-#include <string>
+#include "maidsafe/common/test.h"
+#include "maidsafe/common/utils.h"
+#include "maidsafe/data_types/immutable_data.h"
 
 #include "maidsafe/data_types/data_name_variant.h"
 
@@ -21,48 +22,38 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace test { class DbKeyTest_BEH_All_Test; }
+namespace test {
 
-class Db;
-template<typename PersonaType>
-class ManagerDb;
+TEST(DbKeyTest, BEH_All) {
+  DataNameVariant name(ImmutableData::name_type(Identity(
+      RandomString(crypto::SHA512::DIGESTSIZE))));
+  DbKey db_key;
+  db_key = DbKey(name);
+  EXPECT_TRUE(db_key.name() == name);
 
-class DbKey {
- public:
-  explicit DbKey(const DataNameVariant& name);
-  DbKey();
-  DbKey(const DbKey& other);
-  DbKey(DbKey&& other);
-  DbKey& operator=(DbKey other);
+  auto temp = name;
+  DbKey db_key_copy1(db_key);
+  EXPECT_TRUE(db_key == db_key_copy1);
+  EXPECT_FALSE(db_key != db_key_copy1);
+  EXPECT_FALSE(db_key < db_key_copy1);
+  EXPECT_FALSE(db_key > db_key_copy1);
+  EXPECT_TRUE(db_key <= db_key_copy1);
+  EXPECT_TRUE(db_key >= db_key_copy1);
 
-  DataNameVariant name() const { return name_; }
+  DbKey db_key_copy2(std::move(db_key_copy1));
+  EXPECT_EQ(db_key, db_key_copy2);
 
-  friend void swap(DbKey& lhs, DbKey& rhs) MAIDSAFE_NOEXCEPT;
-  friend bool operator==(const DbKey& lhs, const DbKey& rhs);
-  friend bool operator<(const DbKey& lhs, const DbKey& rhs);
-  friend class Db;
-  template<typename PersonaType>
-  friend class ManagerDb;
-  friend class test::DbKeyTest_BEH_All_Test;
+  DbKey db_key_copy3;
+  db_key_copy3 = std::move(db_key_copy2);
+  EXPECT_EQ(db_key, db_key_copy3);
 
- private:
-  explicit DbKey(const std::string& serialised_db_key);
-  std::string Serialise() const;
-  DataNameVariant name_;
-  static const int kPaddedWidth_;
-};
+  auto serialised_db_key(db_key.Serialise());
+  DbKey parsed_db_key(serialised_db_key);
+  EXPECT_EQ(db_key, parsed_db_key);
+}
 
-bool operator!=(const DbKey& lhs, const DbKey& rhs);
-
-bool operator>(const DbKey& lhs, const DbKey& rhs);
-
-bool operator<=(const DbKey& lhs, const DbKey& rhs);
-
-bool operator>=(const DbKey& lhs, const DbKey& rhs);
-
+}  // namespace test
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_DB_KEY_H_
