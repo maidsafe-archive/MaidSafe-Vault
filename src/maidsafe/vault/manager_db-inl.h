@@ -23,8 +23,8 @@
 #include "maidsafe/passport/types.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/data_types/data_type_values.h"
-#include "maidsafe/vault/metadata_manager/metadata_handler.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_manager.h"
+//#include "maidsafe/vault/metadata_manager/metadata_handler.h"
+//#include "maidsafe/vault/structured_data_manager/structured_data_manager.h"
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
@@ -94,7 +94,7 @@ typename PersonaType::DbValue ManagerDb<PersonaType>::Get(const typename Persona
 // TODO(Team) This can be optimise by returning iterators.
 template<typename PersonaType>
 std::vector<typename PersonaType::DbKey> ManagerDb<PersonaType>::GetKeys() {
-  std::vector<StructuredDataManager::DbKey> return_vector;
+  std::vector<typename PersonaType::DbKey> return_vector;
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
   for (iter->SeekToFirst(); iter->Valid(); iter->Next())
@@ -102,41 +102,6 @@ std::vector<typename PersonaType::DbKey> ManagerDb<PersonaType>::GetKeys() {
   return return_vector;
 }
 
-template<typename PersonaType>
-std::string ManagerDb<PersonaType>::SerialiseKey(const typename PersonaType::DbKey& key) const {
-  static GetTagValueAndIdentityVisitor visitor;
-  auto result(boost::apply_visitor(visitor, key));
-  return std::string(result.second.string() +
-                     detail::ToFixedWidthString<kSuffixWidth_>(static_cast<uint32_t>(result.first)));
-}
-
-template<typename PersonaType>
-typename PersonaType::DbKey ManagerDb<PersonaType>::ParseKey(
-    const std::string& serialised_key) const {
-  std::string name(serialised_key.substr(0, NodeId::kSize));
-  std::string type_as_string(serialised_key.substr(NodeId::kSize, kSuffixWidth_));
-  auto type(static_cast<DataTagValue>(detail::FromFixedWidthString<kSuffixWidth_>(type_as_string)));
-  return GetDataNameVariant(type, Identity(name));
-}
-
-// Workaround for gcc 4.6 bug related to warning "redundant redeclaration" for template
-// specialisation. refer // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=15867#c4
-#ifdef __GNUC__
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wredundant-decls"
-#endif
-
-template<>
-std::string ManagerDb<StructuredDataManager>::SerialiseKey(
-    const typename StructuredDataManager::DbKey& key) const;
-
-template<>
-typename StructuredDataManager::DbKey ManagerDb<StructuredDataManager>::ParseKey(
-    const std::string& serialised_key) const;
-
-#ifdef __GNUC__
-#  pragma GCC diagnostic pop
-#endif
 
 }  // namespace vault
 
