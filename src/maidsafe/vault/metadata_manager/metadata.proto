@@ -9,12 +9,12 @@ message MetadataValue {
 
 message DataOrProof {
   message Data {
-    required int32 type = 1;
+    required uint32 type = 1;
     required bytes name = 2;
     required bytes content = 3;
   }
   message Proof {
-    required int32 type = 1;
+    required uint32 type = 1;
     required bytes name = 2;
     required bytes value = 3;
     required int32 size = 4;

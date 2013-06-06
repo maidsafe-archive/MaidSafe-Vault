@@ -68,7 +68,7 @@ MaidAccountUnresolvedEntry::serialised_type MaidAccountUnresolvedEntry::Serialis
   auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
 
   auto proto_key(proto_copy.mutable_key());
-  proto_key->set_type(static_cast<int32_t>(tag_value_and_id.first));
+  proto_key->set_type(static_cast<uint32_t>(tag_value_and_id.first));
   proto_key->set_name(tag_value_and_id.second.string());
   proto_key->set_action(static_cast<int32_t>(key.second));
 
@@ -130,7 +130,7 @@ MetadataUnresolvedEntry::serialised_type MetadataUnresolvedEntry::Serialise() co
   auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
 
   auto proto_key(proto_copy.mutable_key());
-  proto_key->set_type(static_cast<int32_t>(tag_value_and_id.first));
+  proto_key->set_type(static_cast<uint32_t>(tag_value_and_id.first));
   proto_key->set_name(tag_value_and_id.second.string());
   proto_key->set_action(static_cast<int32_t>(key.second));
 
@@ -212,7 +212,7 @@ StructuredDataUnresolvedEntry::serialised_type StructuredDataUnresolvedEntry::Se
   //auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
 
   //auto proto_key(proto_copy.mutable_key());
-  //proto_key->set_type(static_cast<int32_t>(tag_value_and_id.first));
+  //proto_key->set_type(static_cast<uint32_t>(tag_value_and_id.first));
   //proto_key->set_name(tag_value_and_id.second.string());
   //proto_key->set_action(static_cast<int32_t>(key.second));
 

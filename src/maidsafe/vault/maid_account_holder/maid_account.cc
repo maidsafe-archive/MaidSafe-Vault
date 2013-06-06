@@ -86,7 +86,7 @@ MaidAccount::serialised_type MaidAccount::Serialise() {
   for (const auto& db_entry : db_entries) {
     auto type_and_name(boost::apply_visitor(type_and_name_visitor, db_entry.first));
     auto proto_db_entry(proto_maid_account_details.add_db_entry());
-    proto_db_entry->set_type(static_cast<int32_t>(type_and_name.first));
+    proto_db_entry->set_type(static_cast<uint32_t>(type_and_name.first));
     proto_db_entry->set_name(type_and_name.second.string());
     protobuf::MaidAccountDbValue proto_db_value;
     if (!proto_db_value.ParseFromString(db_entry.second.string()))

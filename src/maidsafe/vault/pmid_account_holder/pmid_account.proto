@@ -14,7 +14,7 @@ message PmidAccountDbValue {
 }
 
 message PmidAccountDbEntry {
-  required int32 type = 1;  // name and type == db key
+  required uint32 type = 1;  // name and type == db key
   required bytes name = 2;
   required PmidAccountDbValue value = 3;
 }

@@ -2,7 +2,7 @@ package maidsafe.vault.protobuf;
 
 message MaidAndPmidUnresolvedEntry {
   message Key {
-    required int32 type = 1;
+    required uint32 type = 1;
     required bytes name = 2;
     required int32 action = 3;
   }
@@ -25,7 +25,7 @@ message MetadataValueDelta {
 
 message MetadataUnresolvedEntry {
   message Key {
-    required int32 type = 1;
+    required uint32 type = 1;
     required bytes name = 2;
     required int32 action = 3;
   }
@@ -45,7 +45,7 @@ message UnresolvedEntries {
 
 message StructuredDataUnresolvedEntry {
   message Key {
-    required int32 name_type = 1;
+    required uint32 name_type = 1;
     required bytes name = 2;
     required bytes originator = 3;
     required int32 action = 4;
