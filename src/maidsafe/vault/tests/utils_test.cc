@@ -138,6 +138,43 @@ TEST(UtilsTest, BEH_CheckHolders) {
             result.proximity_status);
 }
 
+template<int width>
+testing::AssertionResult CheckToAndFromFixedWidthString() {
+  uint64_t max_value(1);
+  for (int pow(1); pow != width + 1; ++pow) {
+    max_value *= 256;
+    uint64_t reps(std::min(max_value * 2, static_cast<uint64_t>(10000)));
+    for (uint64_t i(0); i != reps; ++i) {
+      uint32_t input(RandomUint32() % max_value);
+      auto fixed_width_string(detail::ToFixedWidthString<width>(input));
+      if (static_cast<size_t>(width) != fixed_width_string.size())
+        return testing::AssertionFailure() << "Output string size (" << fixed_width_string.size()
+                                           << ") != width (" << width << ")";
+      uint32_t recovered(detail::FromFixedWidthString<width>(fixed_width_string));
+      if (input != recovered)
+        return testing::AssertionFailure() << "Recovered value (" << recovered
+                                           << ") != initial value (" << input << ")";
+    }
+  }
+  return testing::AssertionSuccess();
+}
+
+TEST(UtilsTest, BEH_FixedWidthStringSize1) {
+  CheckToAndFromFixedWidthString<1>();
+}
+
+TEST(UtilsTest, BEH_FixedWidthStringSize2) {
+  CheckToAndFromFixedWidthString<2>();
+}
+
+TEST(UtilsTest, BEH_FixedWidthStringSize3) {
+  CheckToAndFromFixedWidthString<3>();
+}
+
+TEST(UtilsTest, BEH_FixedWidthStringSize4) {
+  CheckToAndFromFixedWidthString<4>();
+}
+
 }  // namespace test
 
 }  // namespace vault
