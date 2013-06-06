@@ -31,16 +31,7 @@ namespace vault {
 
 namespace detail {
 
-StructuredDataUnresolvedEntry  UnresolvedEntryFromMessage(const nfs::Message& message) {
- //  test message content is valid only
-  protobuf::StructuredDataUnresolvedEntry entry_proto;
-  if (!entry_proto.ParseFromString(message.data().content.string()))
-    ThrowError(CommonErrors::parsing_error);
-  // this is the only code line really required
-  return (StructuredDataUnresolvedEntry(
-                         StructuredDataUnresolvedEntry::serialised_type(message.data().content)));
-
-}
+StructuredDataUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message);
 
 }  // namespace detail
 

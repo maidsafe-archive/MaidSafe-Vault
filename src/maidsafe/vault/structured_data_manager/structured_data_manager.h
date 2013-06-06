@@ -32,10 +32,7 @@ struct PersonaTypes<Persona::kStructuredDataManager> {
   typedef DataNameVariant RecordName;
   typedef vault::StructuredDataKey DbKey;
   typedef StructuredDataVersions DbValue;
-  struct UnresolvedEntryKey {
-    DbKey db_key;
-    MessageAction action;
-  };
+  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
   typedef vault::StructuredDataUnresolvedEntryValue UnresolvedEntryValue;
   static const Persona persona = Persona::kStructuredDataManager;
 };

@@ -37,21 +37,21 @@ StructuredDataMergePolicy& StructuredDataMergePolicy::operator=(StructuredDataMe
 }
 
 void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
-  if (unresolved_entry.key.action == nfs::MessageAction::kPut) {
+  if (unresolved_entry.key.second == nfs::MessageAction::kPut) {
     assert(unresolved_entry.messages_contents.at(0).value->version);
     assert(unresolved_entry.messages_contents.at(0).value->new_version);
-    MergePut(unresolved_entry.key.db_key,
+    MergePut(unresolved_entry.key.first,
              *unresolved_entry.messages_contents.at(0).value->version,
              *unresolved_entry.messages_contents.at(0).value->new_version);
-  } else if (unresolved_entry.key.action == nfs::MessageAction::kDelete) {
-    MergeDelete(unresolved_entry.key.db_key);
-  } else if (unresolved_entry.key.action == nfs::MessageAction::kDelete) {
+  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
+    MergeDelete(unresolved_entry.key.first);
+  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
       assert(unresolved_entry.messages_contents.at(0).value->serialised_db_value);
-      MergeAccountTransfer(unresolved_entry.key.db_key,
+      MergeAccountTransfer(unresolved_entry.key.first,
       StructuredDataVersions(*unresolved_entry.messages_contents.at(0).value->serialised_db_value));
-  } else if (unresolved_entry.key.action == nfs::MessageAction::kDeleteBranchUntilFork) {
+  } else if (unresolved_entry.key.second == nfs::MessageAction::kDeleteBranchUntilFork) {
     assert(unresolved_entry.messages_contents.at(0).value);
-    MergeDeleteBranchUntilFork(unresolved_entry.key.db_key,
+    MergeDeleteBranchUntilFork(unresolved_entry.key.first,
                                *unresolved_entry.messages_contents.at(0).value->version);
   } else {
     ThrowError(CommonErrors::invalid_parameter);

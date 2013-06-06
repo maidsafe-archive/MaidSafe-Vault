@@ -90,7 +90,8 @@ PmidAccount::serialised_type PmidAccount::Serialise() {
   auto db_entries(account_db_->Get());
   GetTagValueAndIdentityVisitor type_and_name_visitor;
   for (const auto& db_entry : db_entries) {
-    auto type_and_name(boost::apply_visitor(type_and_name_visitor, db_entry.first));
+    auto name(db_entry.first.name());
+    auto type_and_name(boost::apply_visitor(type_and_name_visitor, name));
     auto proto_db_entry(proto_pmid_account_details.add_db_entry());
     proto_db_entry->set_type(static_cast<uint32_t>(type_and_name.first));
     proto_db_entry->set_name(type_and_name.second.string());
