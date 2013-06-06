@@ -12,62 +12,42 @@
 
 #include "maidsafe/vault/db.h"
 
-#include <iomanip>
-#include <sstream>
-
-#include "boost/filesystem/operations.hpp"
-
-#include "maidsafe/common/log.h"
-#include "maidsafe/passport/types.h"
-#include "maidsafe/data_types/data_name_variant.h"
-#include "maidsafe/data_types/data_type_values.h"
+#include "leveldb/status.h"
 
 #include "maidsafe/vault/utils.h"
 
+
 namespace maidsafe {
+
 namespace vault {
 
 const int Db::kPrefixWidth_(2);
-const int Db::kSuffixWidth_(1);
 
 Db::Db(const boost::filesystem::path& path)
     : kDbPath_(path),
       mutex_(),
-      leveldb_(),
-      account_ids_() {
-  std::lock_guard<std::mutex> lock(mutex_);
-  if (boost::filesystem::exists(kDbPath_))
-    boost::filesystem::remove_all(kDbPath_);
-  leveldb::DB* db;
-  leveldb::Options options;
-  options.create_if_missing = true;
-  options.error_if_exists = true;
-  leveldb::Status status(leveldb::DB::Open(options, kDbPath_.string(), &db));
-  if (!status.ok())
-    ThrowError(VaultErrors::failed_to_handle_request); // FIXME need new exception
-  leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
-  assert(leveldb_);
-}
+      leveldb_(InitialiseLevelDb(path)),
+      account_ids_() {}
 
 Db::~Db() {
   leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
 }
 
-int32_t Db::RegisterAccount() {
+Db::AccountId Db::RegisterAccount() {
   std::lock_guard<std::mutex> lock(mutex_);
   static_assert(kPrefixWidth_ < 5,
                 "If kPrefixWidth_ > 4, uint32_t is not suitable as the return type.");
-  static const uint64_t kAccountsLimit(static_cast<uint32_t>(std::pow(256, kPrefixWidth_)));
+  static const uint64_t kAccountsLimit(static_cast<AccountId>(std::pow(256, kPrefixWidth_)));
   if (account_ids_.size() == kAccountsLimit - 1)
     ThrowError(VaultErrors::failed_to_handle_request);
-  int32_t account_id(RandomInt32() % kAccountsLimit);
+  AccountId account_id(RandomInt32() % kAccountsLimit);
   while (account_ids_.find(account_id) != account_ids_.end())
     account_id = RandomInt32() % kAccountsLimit;
   account_ids_.insert(account_id);
   return account_id;
 }
 
-void Db::UnRegisterAccount(const int32_t& account_id) {
+void Db::UnRegisterAccount(const AccountId& account_id) {
   std::vector<std::string> account_keys;
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
@@ -98,7 +78,7 @@ void Db::UnRegisterAccount(const int32_t& account_id) {
   leveldb_->CompactRange(nullptr, nullptr);
 }
 
-void Db::Put(const int32_t& account_id, const KvPair& key_value_pair) {
+void Db::Put(const AccountId& account_id, const KvPair& key_value_pair) {
   std::string db_key(SerialiseKey(account_id, key_value_pair.first));
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
                                        db_key, key_value_pair.second.string()));
@@ -106,14 +86,14 @@ void Db::Put(const int32_t& account_id, const KvPair& key_value_pair) {
     ThrowError(VaultErrors::failed_to_handle_request);
 }
 
-void Db::Delete(const int32_t& account_id, const DataNameVariant& key) {
+void Db::Delete(const AccountId& account_id, const KvPair::first_type& key) {
   std::string db_key(SerialiseKey(account_id, key));
   leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), db_key));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
 }
 
-NonEmptyString Db::Get(const int32_t& account_id, const DataNameVariant& key) {
+NonEmptyString Db::Get(const AccountId& account_id, const KvPair::first_type& key) {
   std::string db_key(SerialiseKey(account_id, key));
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
@@ -125,7 +105,7 @@ NonEmptyString Db::Get(const int32_t& account_id, const DataNameVariant& key) {
   return NonEmptyString(value);
 }
 
-std::vector<Db::KvPair> Db::Get(const int32_t& account_id) {
+std::vector<Db::KvPair> Db::Get(const AccountId& account_id) {
   std::vector<KvPair> return_vector;
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
@@ -142,23 +122,17 @@ std::vector<Db::KvPair> Db::Get(const int32_t& account_id) {
   return return_vector;
 }
 
-std::string Db::SerialiseKey(const int32_t& account_id, const DataNameVariant& key) const {
-  static GetTagValueAndIdentityVisitor visitor;
-  auto result(boost::apply_visitor(visitor, key));
-  return std::string(detail::ToFixedWidthString<kPrefixWidth_>(account_id) +
-                     result.second.string() +
-                     detail::ToFixedWidthString<kSuffixWidth_>(static_cast<int32_t>(result.first)));
+std::string Db::SerialiseKey(const AccountId& account_id, const KvPair::first_type& key) const {
+  return detail::ToFixedWidthString<kPrefixWidth_>(account_id) + key.Serialise();
 }
 
-std::pair<int32_t, DataNameVariant> Db::ParseKey(const std::string& serialised_key) const {
+std::pair<Db::AccountId, Db::KvPair::first_type> Db::ParseKey(
+    const std::string& serialised_key) const {
   std::string account_id_as_string(serialised_key.substr(0, kPrefixWidth_));
-  std::string name(serialised_key.substr(kPrefixWidth_, NodeId::kSize));
-  std::string type_as_string(serialised_key.substr(kPrefixWidth_ + NodeId::kSize));
-  auto type(static_cast<DataTagValue>(detail::FromFixedWidthString<kPrefixWidth_>(type_as_string)));
   return std::make_pair(detail::FromFixedWidthString<kPrefixWidth_>(account_id_as_string),
-                        GetDataNameVariant(type, Identity(name)));
+                        DbKey(serialised_key.substr(kPrefixWidth_)));
 }
-
 
 }  // namespace vault
+
 }  // namespace maidsafe

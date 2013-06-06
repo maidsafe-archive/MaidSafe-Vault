@@ -42,7 +42,8 @@ StructuredDataUnresolvedEntryValue& StructuredDataUnresolvedEntryValue::operator
 }
 
 // no move in boost::optional uncomment when std::optional is available
-// void swap(const StructuredDataUnresolvedEntryValue& lhs, const StructuredDataUnresolvedEntryValue& rhs) MAIDSAFE_NOEXCEPT {
+// void swap(const StructuredDataUnresolvedEntryValue& lhs,
+//           const StructuredDataUnresolvedEntryValue& rhs) MAIDSAFE_NOEXCEPT {
 //  using std::swap;
 //  swap(lhs.version, rhs.version);
 //  swap(lhs.new_version, rhs.new_version);

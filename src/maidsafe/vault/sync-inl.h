@@ -73,7 +73,8 @@ typename std::vector<typename MergePolicy::UnresolvedEntry::MessageContent>::ite
 
 template<typename MergePolicy>
 bool IsResolved(const typename MergePolicy::UnresolvedEntry& entry) {
-  return entry.messages_contents.size() > static_cast<uint32_t>(routing::Parameters::node_group_size / 2);
+  return entry.messages_contents.size() >
+         static_cast<uint32_t>(routing::Parameters::node_group_size / 2);
 }
 
 template<typename MergePolicy>
@@ -229,10 +230,10 @@ std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresol
         continue;
       auto found(detail::FindInMessages<MergePolicy>(entry, this_node_id_));
       if (found != std::end(entry.messages_contents)) {
-        // Always move the found message (i.e. this node's message) to the front of the vector.  This
-        // serves as an indicator that the entry has not been synchronised by this node to the peers
-        // if its message is not the first in the vector.  (It's also slightly more efficient to find
-        // in future GetUnresolvedData attempts since we search from begin() to end()).
+        // Always move the found message (i.e. this node's message) to the front of the vector.
+        // This serves as an indicator that the entry has not been synchronised by this node to the
+        // peers if its message is not the first in the vector.  (It's also slightly more efficient
+        // to find in future GetUnresolvedData attempts since we search from begin() to end()).
         result.push_back(entry);
         result.back().messages_contents.assign(1, *found);
         std::iter_swap(found, std::begin(entry.messages_contents));

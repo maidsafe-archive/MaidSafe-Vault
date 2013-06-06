@@ -242,10 +242,9 @@ std::vector<typename Accumulator<Name>::PendingRequest> Accumulator<Name>::SetHa
 }
 
 template<typename Name>
-void Accumulator<Name>::SetHandledAndReply (const nfs::MessageId message_id,
-                                            const NodeId& source_node,
-                                            const nfs::Reply& reply_out
-                                            ) {
+void Accumulator<Name>::SetHandledAndReply(const nfs::MessageId message_id,
+                                           const NodeId& source_node,
+                                           const nfs::Reply& reply_out) {
   auto return_code(CommonErrors::success);
   nfs::Reply reply(return_code);
   std::vector<PendingRequest> ret_requests;

@@ -1,5 +1,5 @@
 /***************************************************************************************************
- *  Copyright 2012 MaidSafe.net limited                                                            *
+ *  Copyright 2013 MaidSafe.net limited                                                            *
  *                                                                                                 *
  *  The following source code is property of MaidSafe.net limited and is not meant for external    *
  *  use.  The use of this code is governed by the licence file licence.txt found in the root of    *
@@ -11,40 +11,38 @@
 
 #include "maidsafe/vault/db_key.h"
 
-#include <iostream>
+#include "maidsafe/vault/utils.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
-DbKey::DbKey(const DataNameVariant& data_name_in)
-    : name_(data_name_in) {}
+const int DbKey::kPaddedWidth_(1);
 
-DbKey::DbKey(const std::string& serialised_key) {
+DbKey::DbKey(const DataNameVariant& name) : name_(name) {}
+
+DbKey::DbKey(const std::string& serialised_key) : name_() {
   std::string name(serialised_key.substr(0, NodeId::kSize));
-  std::string type_as_string(serialised_key.substr(NodeId::kSize, kSuffixWidth_));
-  auto type(static_cast<DataTagValue>(detail::FromFixedWidthString<kSuffixWidth_>(type_as_string)));
+  std::string type_as_string(serialised_key.substr(NodeId::kSize, kPaddedWidth_));
+  auto type(static_cast<DataTagValue>(detail::FromFixedWidthString<kPaddedWidth_>(type_as_string)));
   name_ = GetDataNameVariant(type, Identity(name));
 }
 
-DbKey::DbKey() : name_() {}
+DbKey::DbKey(const DbKey& other) : name_(other.name_)  {}
 
-DbKey::DbKey(const DbKey& other)
-    : name_(other.name_)  {}
+DbKey::DbKey(DbKey&& other) : name_(std::move(other.name_)) {}
 
 DbKey& DbKey::operator=(DbKey other) {
   swap(*this, other);
   return *this;
 }
 
-DbKey::DbKey(DbKey&& other)
-    : name_(std::move(other.name_)) {}
-
 std::string DbKey::Serialise() const {
   static GetTagValueAndIdentityVisitor visitor;
   auto result(boost::apply_visitor(visitor, name_));
   return std::string(result.second.string() +
-            detail::ToFixedWidthString<kSuffixWidth_>(static_cast<uint32_t>(result.first)));
+            detail::ToFixedWidthString<kPaddedWidth_>(static_cast<uint32_t>(result.first)));
 }
 
 

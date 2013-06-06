@@ -16,6 +16,7 @@
 #include <cmath>
 #include <vector>
 #include <set>
+#include <string>
 
 #include "maidsafe/routing/parameters.h"
 
@@ -123,7 +124,7 @@ bool AddResult(const nfs::Message& message,
 }
 
 template<int width>
-std::string ToFixedWidthString(int32_t number) {
+std::string ToFixedWidthString(uint32_t number) {
   static_assert(width > 0 && width < 5, "width must be 1, 2, 3, or 4.");
   assert(number < std::pow(256, width) && number >= 0);
   std::string result(width, 0);
@@ -135,12 +136,12 @@ std::string ToFixedWidthString(int32_t number) {
 }
 
 template<int width>
-int32_t FromFixedWidthString(const std::string& number_as_string) {
+uint32_t FromFixedWidthString(const std::string& number_as_string) {
   static_assert(width > 0 && width < 5, "width must be 1, 2, 3, or 4.");
   assert(static_cast<int>(number_as_string.size()) == width);
-  int32_t result(0), factor(1);
+  uint32_t result(0), factor(1);
   for (int i(0); i != width; ++i) {
-    result += (number_as_string[i] * factor);
+    result += (static_cast<unsigned char>(number_as_string[width - i - 1]) * factor);
     factor *= 256;
   }
   assert(result < std::pow(256, width) && result >= 0);
@@ -155,10 +156,10 @@ int32_t FromFixedWidthString(const std::string& number_as_string) {
 #endif
 
 template<>
-std::string ToFixedWidthString<1>(int32_t number);
+std::string ToFixedWidthString<1>(uint32_t number);
 
 template<>
-int32_t FromFixedWidthString<1>(const std::string& number_as_string);
+uint32_t FromFixedWidthString<1>(const std::string& number_as_string);
 
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop

@@ -73,7 +73,8 @@ Metadata::Metadata(const DataNameVariant& data_name, ManagerDb<MetadataManager>*
                 assert(metadata_db);
                 try {
                   return metadata_db->Get(data_name);
-                } catch (const std::exception& /*ex*/) {
+                }
+                catch(const std::exception& /*ex*/) {
                   return MetadataValue(data_size);
                 }
              } ()),

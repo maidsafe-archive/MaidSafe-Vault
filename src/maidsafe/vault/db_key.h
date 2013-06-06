@@ -1,5 +1,5 @@
 /***************************************************************************************************
- *  Copyright 2012 MaidSafe.net limited                                                            *
+ *  Copyright 2013 MaidSafe.net limited                                                            *
  *                                                                                                 *
  *  The following source code is property of MaidSafe.net limited and is not meant for external    *
  *  use.  The use of this code is governed by the licence file licence.txt found in the root of    *
@@ -12,38 +12,43 @@
 #ifndef MAIDSAFE_VAULT_DB_KEY_H_
 #define MAIDSAFE_VAULT_DB_KEY_H_
 
-#include "maidsafe/common/types.h"
+#include <string>
+
 #include "maidsafe/data_types/data_name_variant.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
 class Db;
+template<typename PersonaType>
 class ManagerDb;
 
 class DbKey {
+ public:
   explicit DbKey(const DataNameVariant& name);
   DbKey(const DbKey& other);
   DbKey(DbKey&& other);
   DbKey& operator=(DbKey other);
-  std::string Serialise() const;
- private:
-  friend class ManagerDb;
+
+  DataNameVariant name() const { return name_; }
+
+  friend void swap(DbKey& lhs, DbKey& rhs) MAIDSAFE_NOEXCEPT;
+  friend bool operator==(const DbKey& lhs, const DbKey& rhs);
+  friend bool operator<(const DbKey& lhs, const DbKey& rhs);
   friend class Db;
+  template<typename PersonaType>
+  friend class ManagerDb;
+
+ private:
   explicit DbKey(const std::string& serialised_db_key);
+  std::string Serialise() const;
   DataNameVariant name_;
-  static const int kPaddedWidth;
+  static const int kPaddedWidth_;
 };
 
-
-void swap(DbKey& lhs, DbKey& rhs) MAIDSAFE_NOEXCEPT;
-
-bool operator==(const DbKey& lhs, const DbKey& rhs);
-
 bool operator!=(const DbKey& lhs, const DbKey& rhs);
-
-bool operator<(const DbKey& lhs, const DbKey& rhs);
 
 bool operator>(const DbKey& lhs, const DbKey& rhs);
 

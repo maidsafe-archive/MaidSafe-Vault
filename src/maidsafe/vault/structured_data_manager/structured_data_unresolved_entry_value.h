@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_VALUE_H_
-#define MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_VALUE_H_
+#ifndef MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_UNRESOLVED_ENTRY_VALUE_H_
+#define MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_UNRESOLVED_ENTRY_VALUE_H_
 
 #include "boost/optional.hpp"
 
@@ -59,4 +59,4 @@ bool operator>=(const StructuredDataUnresolvedEntryValue& lhs,
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_VALUE_H_
+#endif  // MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_UNRESOLVED_ENTRY_VALUE_H_

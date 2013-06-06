@@ -33,7 +33,7 @@ StructuredDataMergePolicy::StructuredDataMergePolicy(StructuredDataMergePolicy&&
 StructuredDataMergePolicy& StructuredDataMergePolicy::operator=(StructuredDataMergePolicy&& other) {
   unresolved_data_ = std::move(other.unresolved_data_);
   db_ = std::move(other.db_);
- return *this;
+  return *this;
 }
 
 void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {

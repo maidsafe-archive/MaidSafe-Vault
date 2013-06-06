@@ -14,9 +14,11 @@
 
 #include <memory>
 #include <mutex>
+#include <string>
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
+#include "leveldb/db.h"
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/data_types/data_name_variant.h"
@@ -67,10 +69,10 @@ bool AddResult(const nfs::Message& message,
                int requests_required);
 
 template<int width>
-std::string ToFixedWidthString(int32_t number);
+std::string ToFixedWidthString(uint32_t number);
 
 template<int width>
-int32_t FromFixedWidthString(const std::string& number_as_string);
+uint32_t FromFixedWidthString(const std::string& number_as_string);
 
 }  // namespace detail
 
@@ -139,6 +141,8 @@ typename MetadataManager::RecordName GetRecordName<MetadataManager>(
 template<>
 typename StructuredDataManager::RecordName GetRecordName<StructuredDataManager>(
     const typename StructuredDataManager::DbKey& db_key);
+
+std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path);
 
 }  // namespace vault
 

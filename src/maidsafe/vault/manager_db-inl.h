@@ -14,28 +14,17 @@
 
 #include "maidsafe/vault/manager_db.h"
 
-#include <iomanip>
-#include <sstream>
+#include <string>
+#include <vector>
 
 #include "boost/filesystem/operations.hpp"
 
-#include "maidsafe/common/log.h"
-#include "maidsafe/passport/types.h"
-#include "maidsafe/data_types/data_name_variant.h"
-#include "maidsafe/data_types/data_type_values.h"
-//#include "maidsafe/vault/metadata_manager/metadata_handler.h"
-//#include "maidsafe/vault/structured_data_manager/structured_data_manager.h"
 #include "maidsafe/vault/utils.h"
+
 
 namespace maidsafe {
 
 namespace vault {
-
-template<typename PersonaType>
-const int ManagerDb<PersonaType>::kSuffixWidth_(1);
-
-template<>
-const int ManagerDb<StructuredDataManager>::kSuffixWidth_(1);
 
 template<typename PersonaType>
 ManagerDb<PersonaType>::ManagerDb(const boost::filesystem::path& path)
@@ -50,7 +39,7 @@ ManagerDb<PersonaType>::ManagerDb(const boost::filesystem::path& path)
   options.error_if_exists = true;
   leveldb::Status status(leveldb::DB::Open(options, kDbPath_.string(), &db));
   if (!status.ok())
-    ThrowError(VaultErrors::failed_to_handle_request); // FIXME need new exception
+    ThrowError(CommonErrors::filesystem_io_error);
   leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
   assert(leveldb_);
 }
@@ -62,7 +51,6 @@ ManagerDb<PersonaType>::~ManagerDb() {
 
 template<typename PersonaType>
 void ManagerDb<PersonaType>::Put(const KvPair& key_value_pair) {
-
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
                                        SerialiseKey(key_value_pair.first),
                                        key_value_pair.second.Serialise()->string()));
@@ -90,7 +78,6 @@ typename PersonaType::DbValue ManagerDb<PersonaType>::Get(const typename Persona
                                          NonEmptyString(value)));
 }
 
-
 // TODO(Team) This can be optimise by returning iterators.
 template<typename PersonaType>
 std::vector<typename PersonaType::DbKey> ManagerDb<PersonaType>::GetKeys() {
@@ -102,9 +89,8 @@ std::vector<typename PersonaType::DbKey> ManagerDb<PersonaType>::GetKeys() {
   return return_vector;
 }
 
-
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif // MAIDSAFE_VAULT_MANAGER_DB_INL_H_
+#endif  // MAIDSAFE_VAULT_MANAGER_DB_INL_H_

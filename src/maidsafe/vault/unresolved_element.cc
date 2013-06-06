@@ -140,7 +140,7 @@ MetadataUnresolvedEntry::serialised_type MetadataUnresolvedEntry::Serialise() co
     if (message_content.entry_id)
       proto_message_content->set_entry_id(*message_content.entry_id);
     if (message_content.value) {
-        proto_message_content->set_value(*message_content.value->Serialise()->string());
+        proto_message_content->set_value((*message_content.value).Serialise()->string());
     }
   }
 

@@ -13,6 +13,7 @@
 #define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_VALUE_H_
 
 #include <cstdint>
+#include <set>
 #include <vector>
 
 #include "maidsafe/common/on_scope_exit.h"

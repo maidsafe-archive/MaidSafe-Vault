@@ -15,11 +15,11 @@
 #include <vector>
 
 #include "maidsafe/common/types.h"
-#include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/vault/db.h"
 
 
 namespace maidsafe {
+
 namespace vault {
 
 class AccountDb {
@@ -27,16 +27,17 @@ class AccountDb {
   explicit AccountDb(Db& db);
   ~AccountDb();
   void Put(const Db::KvPair& key_value_pair);
-  void Delete(const DataNameVariant& key);
-  NonEmptyString Get(const DataNameVariant& key);
+  void Delete(const Db::KvPair::first_type& key);
+  NonEmptyString Get(const Db::KvPair::first_type& key);
   std::vector<Db::KvPair> Get();
 
  private:
   Db& db_;
-  uint32_t account_id_;
+  Db::AccountId account_id_;
 };
 
 }  // namespace vault
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_ACCOUNT_DB_H_

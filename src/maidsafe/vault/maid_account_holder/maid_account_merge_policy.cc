@@ -99,10 +99,10 @@ void MaidAccountMergePolicy::MergePut(const DataNameVariant& data_name,
     ++current_values.second.data;
     current_values.first.data =
         static_cast<int32_t>((current_total_size + cost) / current_values.second.data);
-    account_db_->Put(std::make_pair(data_name, SerialiseDbValue(current_values)));
+    account_db_->Put(std::make_pair(DbKey(data_name), SerialiseDbValue(current_values)));
   } else {
     DbValue db_value(std::make_pair(AverageCost(cost), Count(1)));
-    account_db_->Put(std::make_pair(data_name, SerialiseDbValue(db_value)));
+    account_db_->Put(std::make_pair(DbKey(data_name), SerialiseDbValue(db_value)));
   }
 }
 
@@ -117,10 +117,10 @@ void MaidAccountMergePolicy::MergeDelete(const DataNameVariant& data_name,
   auto current_values(ParseDbValue(serialised_db_value));
   assert(current_values.second.data > 0);
   if (current_values.second.data == 1) {
-    account_db_->Delete(data_name);
+    account_db_->Delete(DbKey(data_name));
   } else {
     --current_values.second.data;
-    account_db_->Put(std::make_pair(data_name, SerialiseDbValue(current_values)));
+    account_db_->Put(std::make_pair(DbKey(data_name), SerialiseDbValue(current_values)));
   }
 }
 
@@ -140,12 +140,11 @@ MaidAccountMergePolicy::DbValue MaidAccountMergePolicy::ParseDbValue(
 }
 
 NonEmptyString MaidAccountMergePolicy::GetFromDb(const DataNameVariant& data_name) {
-  NonEmptyString serialised_db_value;
   try {
-    serialised_db_value = account_db_->Get(data_name);
+    return account_db_->Get(DbKey(data_name));
   }
   catch(const maidsafe_error&) {}
-  return serialised_db_value;
+  return NonEmptyString();
 }
 
 

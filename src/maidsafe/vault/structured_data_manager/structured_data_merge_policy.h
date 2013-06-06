@@ -9,8 +9,8 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_MANAGER_MERGE_POLICY_H_
-#define MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_MANAGER_MERGE_POLICY_H_
+#ifndef MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_MERGE_POLICY_H_
+#define MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_MERGE_POLICY_H_
 
 #include <map>
 #include <set>
@@ -47,7 +47,7 @@ class StructuredDataMergePolicy {
   StructuredDataMergePolicy(StructuredDataMergePolicy&& other);
   StructuredDataMergePolicy& operator=(StructuredDataMergePolicy&& other);
 
-protected:
+ protected:
   void Merge(const UnresolvedEntry& unresolved_entry);
 
   std::vector<UnresolvedEntry> unresolved_data_;
@@ -73,4 +73,4 @@ protected:
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_MANAGER_MERGE_POLICY_H_
+#endif  // MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_MERGE_POLICY_H_

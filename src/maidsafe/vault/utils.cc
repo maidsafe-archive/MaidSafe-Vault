@@ -14,6 +14,7 @@
 #include <string>
 
 #include "boost/filesystem/operations.hpp"
+#include "leveldb/status.h"
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
@@ -52,15 +53,15 @@ void SendReply(const nfs::Message& original_message,
 }
 
 template<>
-std::string ToFixedWidthString<1>(int32_t number) {
+std::string ToFixedWidthString<1>(uint32_t number) {
   assert(number < 256);
   return std::string(1, static_cast<char>(number));
 }
 
 template<>
-int32_t FromFixedWidthString<1>(const std::string& number_as_string) {
+uint32_t FromFixedWidthString<1>(const std::string& number_as_string) {
   assert(number_as_string.size() == 1U);
-  return static_cast<int32_t>(number_as_string[0]);
+  return static_cast<uint32_t>(static_cast<unsigned char>(number_as_string[0]));
 }
 
 }  // namespace detail
@@ -123,7 +124,21 @@ typename MetadataManager::RecordName GetRecordName<MetadataManager>(
 template<>
 typename StructuredDataManager::RecordName GetRecordName<StructuredDataManager>(
     const typename StructuredDataManager::DbKey& db_key) {
-  return db_key.data_name;
+  return db_key.data_name();
+}
+
+std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path) {
+  if (boost::filesystem::exists(db_path))
+    boost::filesystem::remove_all(db_path);
+  leveldb::DB* db(nullptr);
+  leveldb::Options options;
+  options.create_if_missing = true;
+  options.error_if_exists = true;
+  leveldb::Status status(leveldb::DB::Open(options, db_path.string(), &db));
+  if (!status.ok())
+    ThrowError(CommonErrors::filesystem_io_error);
+  assert(db);
+  return std::move(std::unique_ptr<leveldb::DB>(db));
 }
 
 }  // namespace vault
