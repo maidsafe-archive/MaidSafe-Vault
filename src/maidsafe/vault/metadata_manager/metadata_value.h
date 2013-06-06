@@ -19,8 +19,8 @@
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/vault/manager_db.h"
-#include "maidsafe/vault/metadata_manager/metadata.pb.h"
 #include "maidsafe/vault/metadata_manager/metadata_manager.h"
+#include "maidsafe/vault/metadata_manager/metadata.pb.h"
 #include "maidsafe/vault/types.h"
 
 
