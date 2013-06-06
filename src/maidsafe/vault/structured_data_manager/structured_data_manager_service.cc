@@ -99,7 +99,7 @@ void StructuredDataManagerService::ValidateSyncSender(const nfs::Message& messag
 std::vector<StructuredDataVersions::VersionName>
             StructuredDataManagerService::GetVersionsFromMessage(const nfs::Message& msg) const {
 
-   return nfs::StructuredData(nfs::StructuredData::serialised_type(msg.data().content)).Versions();
+   return nfs::StructuredData(nfs::StructuredData::serialised_type(msg.data().content)).versions();
 }
 
 // =============== Get data =================================================================
