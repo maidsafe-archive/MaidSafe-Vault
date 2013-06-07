@@ -36,6 +36,19 @@ inline bool ForThisPersona(const Message& message) {
 
 }  // unnamed namespace
 
+namespace detail {
+void SendMetadataCost(const nfs::Message& original_message,
+                      const routing::ReplyFunctor& reply_functor,
+                      nfs::Reply& reply) {
+  if (!reply_functor)
+    return;
+  if (!reply.IsSuccess())
+    reply = nfs::Reply(reply.error(), original_message.Serialise().data);
+
+  reply_functor(reply.Serialise()->string());
+}
+
+}  // namspace detail
 
 const int MetadataManagerService::kPutRequestsRequired_(3);
 const int MetadataManagerService::kPutRepliesSuccessesRequired_(3);

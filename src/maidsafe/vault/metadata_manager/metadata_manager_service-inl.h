@@ -49,15 +49,44 @@ MetadataUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
       metadata_value, this_id);
 }
 
+void SendMetadataCost(const nfs::Message& original_message,
+                      const routing::ReplyFunctor& reply_functor,
+                      nfs::Reply& reply);
+
 template<typename Accumulator>
-bool AddMetadataPutResult(const nfs::Message& /*message*/,  // FIXME rename
-                          const routing::ReplyFunctor& /*reply_functor*/,
-                          const nfs::Reply& /*reply*/,
-                          Accumulator& /*accumulator*/,
-                          std::mutex& /*accumulator_mutex*/,
-                          int /*requests_required*/) {
+bool AccumulateMetadataPut(const nfs::Message& message,
+                           const routing::ReplyFunctor& reply_functor,
+                           const nfs::Reply& reply,
+                           Accumulator& accumulator,
+                           std::mutex& accumulator_mutex,
+                           int requests_required) {
+  std::vector<typename Accumulator::PendingRequest> pending_requests;
+  nfs::Reply overall_reply(CommonErrors::success);
+
   //FIXME(Prakash): Implement merge cost here
-  return false;
+  {
+    std::lock_guard<std::mutex> lock(accumulator_mutex);
+    auto pending_results(accumulator.PushSingleResult(message, reply_functor, reply));
+    if (static_cast<int>(pending_results.size()) < requests_required)
+      return false;
+
+    auto result(nfs::GetSuccessOrMostFrequentReply(pending_results, requests_required));
+    if (!result.second && pending_results.size() < routing::Parameters::node_group_size)
+      return false;
+    maidsafe_error overall_return_code((*result.first).error());
+    if (overall_return_code.code() == CommonErrors::success) {
+      NonEmptyString serialised_cost;
+      overall_reply = nfs::Reply(CommonErrors::success, serialised_cost);
+    } else {
+      overall_reply = nfs::Reply(overall_return_code); // original message to be appended in reply
+    }
+    pending_requests = accumulator.SetHandled(message, nfs::Reply(overall_return_code));
+  }
+
+  for (auto& pending_request : pending_requests)
+    SendMetadataCost(pending_request.msg, pending_request.reply_functor, overall_reply);
+
+  return true;
 }
 
 }  // namespace detail
@@ -78,6 +107,7 @@ template<typename Data>
 void MetadataManagerService::HandleMessage(const nfs::Message& message,
                                            const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
+  // FIXME Prakash validate sender
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     if (accumulator_.CheckHandled(message, reply))
@@ -119,8 +149,8 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
     proto_cost.set_cost(is_duplicate_and_cost.second);
     assert(proto_cost.IsInitialized());
     nfs::Reply reply(CommonErrors::success, NonEmptyString(proto_cost.SerializeAsString()));
-    if (detail::AddMetadataPutResult(message, reply_functor, reply, accumulator_,
-                                     accumulator_mutex_, kPutRequestsRequired_)) {
+    if (detail::AccumulateMetadataPut(message, reply_functor, reply, accumulator_,
+                                      accumulator_mutex_, kPutRequestsRequired_)) {
       if (is_duplicate_and_cost.first) {  // No need to store data on DH
         MetadataValue metadata_value(data_size);
         AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, metadata_value);
@@ -134,15 +164,17 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
     }
   }
   catch(const maidsafe_error& error) {
-    detail::AddMetadataPutResult(message, reply_functor, nfs::Reply(error), accumulator_,
-                                 accumulator_mutex_, kPutRequestsRequired_);
+    detail::AccumulateMetadataPut(message, reply_functor, nfs::Reply(error), accumulator_,
+                                  accumulator_mutex_, kPutRequestsRequired_);
   }
   catch(...) {
-    detail::AddMetadataPutResult(message, reply_functor, nfs::Reply(CommonErrors::unknown),
-                                 accumulator_, accumulator_mutex_, kPutRequestsRequired_);
+    detail::AccumulateMetadataPut(message, reply_functor, nfs::Reply(CommonErrors::unknown),
+                                  accumulator_, accumulator_mutex_, kPutRequestsRequired_);
   }
 }
 
+
+// FIXME Prakash remove function !!!
 template<typename Data>
 void MetadataManagerService::Put(const Data& data, const PmidName& target_data_holder) {
   nfs_.Put(target_data_holder, data, nullptr);
