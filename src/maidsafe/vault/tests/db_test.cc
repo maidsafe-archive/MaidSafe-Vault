@@ -28,6 +28,7 @@
 
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/account_db.h"
+#include "maidsafe/vault/manager_db.h"
 
 namespace maidsafe {
 namespace vault {

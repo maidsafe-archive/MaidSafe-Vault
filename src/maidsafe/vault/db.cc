@@ -9,6 +9,7 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
+#include <cmath>
 
 #include "maidsafe/vault/db.h"
 
