@@ -184,8 +184,11 @@ TEST_F(DbTest, BEH_GetSingleAccount) {
   }
   for (uint32_t i = 0; i != 10000; ++i)
     EXPECT_NO_THROW(account_db.Put(std::make_pair(nodes[i].first, nodes[i].second)));
-  for (uint32_t i = 0; i != 10000; ++i)
-    EXPECT_EQ(nodes[i].second, account_db.Get(nodes[i].first));
+  for (uint32_t i = 0; i != 10000; ++i) {
+    NonEmptyString value;
+    EXPECT_NO_THROW(value = account_db.Get(nodes[i].first));
+    EXPECT_EQ(nodes[i].second, value);
+  }
 }
 
 TEST_F(DbTest, BEH_DeleteSingleAccount) {
