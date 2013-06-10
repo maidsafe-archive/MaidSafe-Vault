@@ -9,7 +9,7 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#include "maidsafe/vault/metadata_manager/metadata.h"
+#include "maidsafe/vault/metadata_manager/metadata_value.h"
 
 #include <string>
 
@@ -72,8 +72,9 @@ Metadata::Metadata(const DataNameVariant& data_name, ManagerDb<MetadataManager>*
       value_([&metadata_db, data_name, data_size, this]()->MetadataValue {
                 assert(metadata_db);
                 try {
-                  return metadata_db->Get(data_name);
-                } catch (const std::exception& /*ex*/) {
+                  return metadata_db->Get(DbKey(data_name));
+                }
+                catch(const std::exception& /*ex*/) {
                   return MetadataValue(data_size);
                 }
              } ()),
@@ -85,7 +86,7 @@ Metadata::Metadata(const DataNameVariant& data_name, ManagerDb<MetadataManager>*
   : data_name_(data_name),
     value_([&metadata_db, data_name, this]()->MetadataValue {
             assert(metadata_db);
-            return metadata_db->Get(data_name);
+            return metadata_db->Get(DbKey(data_name));
           } ()),
     strong_guarantee_(on_scope_exit::ExitAction()) {
   strong_guarantee_.SetAction(on_scope_exit::RevertValue(value_));
@@ -95,9 +96,9 @@ void Metadata::SaveChanges(ManagerDb<MetadataManager>* metadata_db) {
   assert(metadata_db);
   //TODO(Prakash): Handle case of modifying unique data
   if (*value_.subscribers < 1) {
-    metadata_db->Delete(data_name_);
+    metadata_db->Delete(DbKey(data_name_));
   } else {
-    auto kv_pair(std::make_pair(data_name_, value_));
+    auto kv_pair(std::make_pair(DbKey(data_name_), value_));
     metadata_db->Put(kv_pair);
   }
   strong_guarantee_.Release();

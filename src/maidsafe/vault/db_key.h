@@ -9,60 +9,60 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_KEY_H_
-#define MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_KEY_H_
+#ifndef MAIDSAFE_VAULT_DB_KEY_H_
+#define MAIDSAFE_VAULT_DB_KEY_H_
 
 #include <string>
 
 #include "maidsafe/data_types/data_name_variant.h"
-#include "maidsafe/nfs/persona_id.h"
-#include "maidsafe/nfs/types.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
+namespace test { class DbKeyTest_BEH_All_Test; }
+
 class Db;
 template<typename PersonaType>
 class ManagerDb;
 
-class StructuredDataKey {
+class DbKey {
  public:
-  StructuredDataKey();
-  StructuredDataKey(const DataNameVariant& data_name, const Identity& originator);
-  StructuredDataKey(const StructuredDataKey& other);
-  StructuredDataKey(StructuredDataKey&& other);
-  StructuredDataKey& operator=(StructuredDataKey other);
+  explicit DbKey(const DataNameVariant& name);
+  DbKey();
+  DbKey(const DbKey& other);
+  DbKey(DbKey&& other);
+  DbKey& operator=(DbKey other);
 
-  DataNameVariant data_name() const { return data_name_; }
-  Identity originator() const { return originator_; }
+  DataNameVariant name() const { return name_; }
 
-  friend void swap(StructuredDataKey& lhs, StructuredDataKey& rhs) MAIDSAFE_NOEXCEPT;
-  friend bool operator==(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
-  friend bool operator<(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
+  friend void swap(DbKey& lhs, DbKey& rhs) MAIDSAFE_NOEXCEPT;
+  friend bool operator==(const DbKey& lhs, const DbKey& rhs);
+  friend bool operator<(const DbKey& lhs, const DbKey& rhs);
   friend class Db;
   template<typename PersonaType>
   friend class ManagerDb;
+  friend class test::DbKeyTest_BEH_All_Test;
 
  private:
-  explicit StructuredDataKey(const std::string& serialised_key);
+  explicit DbKey(const std::string& serialised_db_key);
   std::string Serialise() const;
-  DataNameVariant data_name_;
-  Identity originator_;
+  DataNameVariant name_;
   static const int kPaddedWidth_;
 };
 
-bool operator!=(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
+bool operator!=(const DbKey& lhs, const DbKey& rhs);
 
-bool operator>(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
+bool operator>(const DbKey& lhs, const DbKey& rhs);
 
-bool operator<=(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
+bool operator<=(const DbKey& lhs, const DbKey& rhs);
 
-bool operator>=(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
+bool operator>=(const DbKey& lhs, const DbKey& rhs);
+
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_STRUCTURED_DATA_MANAGER_STRUCTURED_DATA_KEY_H_
+#endif  // MAIDSAFE_VAULT_DB_KEY_H_

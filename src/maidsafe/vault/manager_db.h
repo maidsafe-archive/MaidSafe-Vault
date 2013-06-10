@@ -12,32 +12,31 @@
 #ifndef MAIDSAFE_VAULT_MANAGER_DB_H_
 #define MAIDSAFE_VAULT_MANAGER_DB_H_
 
+#include <memory>
+#include <mutex>
 #include <string>
 #include <utility>
-
+#include <vector>
 
 #include "boost/filesystem/path.hpp"
-#include "leveldb/db.h"
-#include "leveldb/status.h"
 
-#include "maidsafe/common/types.h"
-#include "maidsafe/data_types/data_name_variant.h"
-#include "maidsafe/nfs/types.h"
-#include "maidsafe/vault/types.h"
+#include "leveldb/db.h"
+
 
 namespace maidsafe {
+
 namespace vault {
 
 template<typename PersonaType>
 class ManagerDb {
  public:
-  typedef std::pair<typename PersonaType::DbKey ,typename PersonaType::DbValue> KvPair;
+  typedef std::pair<typename PersonaType::DbKey, typename PersonaType::DbValue> KvPair;
   explicit ManagerDb(const boost::filesystem::path& path);
   ~ManagerDb();
 
-  typename PersonaType::DbValue Get(const typename PersonaType::DbKey& key);
   void Put(const KvPair& key_value_pair);
   void Delete(const typename PersonaType::DbKey& key);
+  typename PersonaType::DbValue Get(const typename PersonaType::DbKey& key);
   std::vector<typename PersonaType::DbKey> GetKeys();
 
  private:
@@ -46,15 +45,13 @@ class ManagerDb {
   ManagerDb(ManagerDb&&);
   ManagerDb& operator=(ManagerDb&&);
 
-  std::string GetSerialisedKey(const typename PersonaType::DbKey& key) const;
-
-  static const int kSuffixWidth_;
   const boost::filesystem::path kDbPath_;
   mutable std::mutex mutex_;
   std::unique_ptr<leveldb::DB> leveldb_;
 };
 
 }  // namespace vault
+
 }  // namespace maidsafe
 
 #include "maidsafe/vault/manager_db-inl.h"

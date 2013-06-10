@@ -8,35 +8,38 @@
  *  You are not free to copy, amend or otherwise use this source code without the explicit         *
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
-#include "maidsafe/vault/manager_db.h"
+
+#ifndef MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HOLDER_H_
+#define MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HOLDER_H_
 
 #include <utility>
 
-
 #include "maidsafe/common/types.h"
-#include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/types.h"
-#include "maidsafe/vault/types.h"
+
 
 namespace maidsafe {
-namespace vault {
+
+namespace nfs {
 
 template<>
-std::vector<StructuredDataManager::DbKey> ManagerDb<StructuredDataManager>::GetKeys() {
-  std::vector<StructuredDataManager::DbKey> return_vector;
-  std::lock_guard<std::mutex> lock(mutex_);
-  std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
-  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-    std::string name(iter->key().ToString().substr(0, NodeId::kSize));
-    std::string type_string(iter->key().ToString().substr(NodeId::kSize + 2));
-    Identity identity(iter->key().ToString().substr(NodeId::kSize + 2 ,
-                                                    (NodeId::kSize * 2) + 2));
-    DataTagValue type = static_cast<DataTagValue>(std::stoul(type_string));
-    auto key = std::make_pair(GetDataNameVariant(type, Identity(name)), identity);
-    return_vector.push_back(std::move(key));
-  }
-  return return_vector;
-}
+struct PersonaTypes<Persona::kMpidAccountHolder> {
+  typedef DataNameVariant DbKey;
+  typedef NonEmptyString DbValue;
+  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
+  typedef DbValue UnresolvedEntryValue;
+  static const Persona persona = Persona::kMpidAccountHolder;
+};
+
+}  // namespace nfs
+
+
+namespace vault {
+
+typedef nfs::PersonaTypes<nfs::Persona::kMpidAccountHolder> MpidAccountHolder;
 
 }  // namespace vault
+
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HOLDER_H_

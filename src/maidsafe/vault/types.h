@@ -82,10 +82,6 @@ typedef std::set<std::unique_ptr<PmidAccount>,
                  std::function<bool(const std::unique_ptr<PmidAccount>&,
                                     const std::unique_ptr<PmidAccount>&)>> PmidAccountSet;
 
-typedef nfs::PersonaTypes<nfs::Persona::kStructuredDataManager> StructuredDataManager;
-typedef nfs::PersonaTypes<nfs::Persona::kMetadataManager> MetadataManager;
-
-
 }  // namespace vault
 
 }  // namespace maidsafe

@@ -33,27 +33,25 @@ StructuredDataMergePolicy::StructuredDataMergePolicy(StructuredDataMergePolicy&&
 StructuredDataMergePolicy& StructuredDataMergePolicy::operator=(StructuredDataMergePolicy&& other) {
   unresolved_data_ = std::move(other.unresolved_data_);
   db_ = std::move(other.db_);
- return *this;
+  return *this;
 }
 
 void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
-  auto db_key = std::make_pair(unresolved_entry.key.data_name, unresolved_entry.key.originator);
-
-  if (unresolved_entry.key.action == nfs::MessageAction::kGetBranch) {
+  if (unresolved_entry.key.second == nfs::MessageAction::kPut) {
     assert(unresolved_entry.messages_contents.at(0).value->version);
     assert(unresolved_entry.messages_contents.at(0).value->new_version);
-    MergePut(db_key,
+    MergePut(unresolved_entry.key.first,
              *unresolved_entry.messages_contents.at(0).value->version,
              *unresolved_entry.messages_contents.at(0).value->new_version);
-  } else if (unresolved_entry.key.action == nfs::MessageAction::kDelete) {
-    MergeDelete(db_key);
-  }else if (unresolved_entry.key.action == nfs::MessageAction::kDelete) {
+  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
+    MergeDelete(unresolved_entry.key.first);
+  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
       assert(unresolved_entry.messages_contents.at(0).value->serialised_db_value);
-      MergeAccountTransfer(db_key,
+      MergeAccountTransfer(unresolved_entry.key.first,
       StructuredDataVersions(*unresolved_entry.messages_contents.at(0).value->serialised_db_value));
-  } else if (unresolved_entry.key.action == nfs::MessageAction::kDeleteBranchUntilFork) {
+  } else if (unresolved_entry.key.second == nfs::MessageAction::kDeleteBranchUntilFork) {
     assert(unresolved_entry.messages_contents.at(0).value);
-    MergeDeleteBranchUntilFork(db_key,
+    MergeDeleteBranchUntilFork(unresolved_entry.key.first,
                                *unresolved_entry.messages_contents.at(0).value->version);
   } else {
     ThrowError(CommonErrors::invalid_parameter);

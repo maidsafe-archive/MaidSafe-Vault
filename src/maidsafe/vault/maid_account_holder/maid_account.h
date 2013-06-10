@@ -19,6 +19,7 @@
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/pmid_registration.h"
+#include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"

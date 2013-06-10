@@ -23,19 +23,15 @@
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/types.h"
 
-#include "maidsafe/vault/structured_data_manager/structured_data_key.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_value.h"
-#include "maidsafe/vault/metadata_manager/metadata.h"
-
 
 namespace maidsafe {
 
 namespace vault {
 
-template<typename KeyType, typename ValueType>
+template<typename PersonaTypes>
 struct UnresolvedElement {
-  typedef KeyType Key;
-  typedef ValueType Value;
+  typedef typename PersonaTypes::UnresolvedEntryKey Key;
+  typedef typename PersonaTypes::UnresolvedEntryValue Value;
 
  private:
   template<typename Value>
@@ -47,7 +43,7 @@ struct UnresolvedElement {
   struct MessageContent {
     NodeId peer_id;
     boost::optional<int32_t> entry_id;
-    boost::optional<ValueType> value;
+    boost::optional<Value> value;
   };
 
   UnresolvedElement();
@@ -69,17 +65,6 @@ struct UnresolvedElement {
   nfs::MessageId original_message_id;
   NodeId source_node_id;
 };
-
-typedef UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, int32_t>
-                                                                 MaidAccountUnresolvedEntry,
-                                                                 PmidAccountUnresolvedEntry;
-typedef UnresolvedElement<std::pair<DataNameVariant, nfs::MessageAction>, MetadataValue>
-                                                                 MetadataUnresolvedEntry;
-typedef UnresolvedElement<StructuredDataKey, StructuredDataValue> StructuredDataUnresolvedEntry;
-
-typedef PmidAccountUnresolvedEntry PmidAccountResolvedEntry;
-typedef MaidAccountUnresolvedEntry MaidAccountResolvedEntry;
-typedef MetadataUnresolvedEntry MetadataResolvedEntry;
 
 }  // namespace vault
 

@@ -12,20 +12,15 @@
 
 #include "maidsafe/vault/account_db.h"
 
-#include <vector>
-
 #include "maidsafe/common/log.h"
-#include "maidsafe/passport/types.h"
-#include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/data_types/data_type_values.h"
-#include "maidsafe/vault/db.h"
+
 
 namespace maidsafe {
+
 namespace vault {
 
-AccountDb::AccountDb(Db& db)
-    : db_(db),
-      account_id_(db.RegisterAccount()) {}
+AccountDb::AccountDb(Db& db) : db_(db), account_id_(db.RegisterAccount()) {}
 
 AccountDb::~AccountDb() {
   db_.UnRegisterAccount(account_id_);
@@ -35,11 +30,11 @@ void AccountDb::Put(const Db::KvPair& key_value_pair) {
   db_.Put(account_id_, key_value_pair);
 }
 
-void AccountDb::Delete(const DataNameVariant& key) {
+void AccountDb::Delete(const Db::KvPair::first_type& key) {
   db_.Delete(account_id_, key);
 }
 
-NonEmptyString AccountDb::Get(const DataNameVariant& key) {
+NonEmptyString AccountDb::Get(const Db::KvPair::first_type& key) {
   return db_.Get(account_id_, key);
 }
 

@@ -21,6 +21,7 @@
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/pmid_account_holder/pmid_account_merge_policy.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_account.pb.h"

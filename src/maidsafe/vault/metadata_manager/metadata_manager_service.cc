@@ -160,13 +160,14 @@ void MetadataManagerService::TransferRecord(const DataNameVariant& record_name,
 void MetadataManagerService::HandleChurnEvent(routing::MatrixChange matrix_change) {
   auto record_names(metadata_handler_.GetRecordNames());
   auto itr(std::begin(record_names));
+  auto name(itr->name());
   while (itr != std::end(record_names)) {
-    auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), *itr));
+    auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), name));
     auto check_holders_result(CheckHolders(matrix_change, routing_.kNodeId(),
                                            NodeId(result.second)));
     // Delete records for which this node is no longer responsible.
     if (check_holders_result.proximity_status != routing::GroupRangeStatus::kInRange) {
-      metadata_handler_.DeleteRecord(*itr);
+      metadata_handler_.DeleteRecord(itr->name());
       itr = record_names.erase(itr);
       continue;
     }
@@ -174,9 +175,9 @@ void MetadataManagerService::HandleChurnEvent(routing::MatrixChange matrix_chang
     // Replace old_node(s) in sync object and send TransferRecord to new node(s).
     assert(check_holders_result.old_holders.size() == check_holders_result.new_holders.size());
     for (auto i(0U); i != check_holders_result.old_holders.size(); ++i) {
-      metadata_handler_.ReplaceNodeInSyncList(*itr, check_holders_result.old_holders[i],
+      metadata_handler_.ReplaceNodeInSyncList(itr->name(), check_holders_result.old_holders[i],
                                               check_holders_result.new_holders[i]);
-      TransferRecord(*itr, check_holders_result.new_holders[i]);
+      TransferRecord(itr->name(), check_holders_result.new_holders[i]);
     }
     ++itr;
   }

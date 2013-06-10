@@ -44,8 +44,8 @@ MetadataUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
                 "Action must be either kPut of kDelete.");
   assert(message.data().type);
   return MetadataUnresolvedEntry(
-      std::make_pair(GetDataNameVariant(DataTagValue(message.data().type.get()),
-                                        Identity(message.data().name)), Action),
+      std::make_pair(DbKey(GetDataNameVariant(DataTagValue(message.data().type.get()),
+                                        Identity(message.data().name))), Action),
       metadata_value, this_id);
 }
 
@@ -246,7 +246,7 @@ void MetadataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_h
       protobuf::DataOrProof::Data proto_data;
       if (!proto_data.ParseFromString(data_or_proof.serialised_data()))
         ThrowError(CommonErrors::parsing_error);
-      if (proto_data.type() != static_cast<int>(Data::type_enum_value()))
+      if (proto_data.type() != static_cast<uint32_t>(Data::type_enum_value()))
         ThrowError(CommonErrors::parsing_error);
       Data data(typename Data::name_type(Identity(proto_data.name())),
                 typename Data::serialised_type(NonEmptyString(proto_data.content())));

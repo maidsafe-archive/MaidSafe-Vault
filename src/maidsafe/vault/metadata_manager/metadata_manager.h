@@ -1,5 +1,5 @@
 /***************************************************************************************************
- *  Copyright 2012 MaidSafe.net limited                                                            *
+ *  Copyright 2013 MaidSafe.net limited                                                            *
  *                                                                                                 *
  *  The following source code is property of MaidSafe.net limited and is not meant for external    *
  *  use.  The use of this code is governed by the licence file licence.txt found in the root of    *
@@ -9,35 +9,40 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_ACCOUNT_DB_H_
-#define MAIDSAFE_VAULT_ACCOUNT_DB_H_
+#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_H_
+#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_H_
 
-#include <vector>
+#include <cstdint>
+#include <utility>
 
 #include "maidsafe/common/types.h"
-#include "maidsafe/vault/db.h"
-
+#include "maidsafe/nfs/types.h"
+#include "maidsafe/vault/db_key.h"
 
 namespace maidsafe {
 
+namespace vault { struct MetadataValue; }
+
+namespace nfs {
+
+template<>
+struct PersonaTypes<Persona::kMetadataManager> {
+  typedef vault::DbKey RecordName;
+  typedef vault::DbKey DbKey;
+  typedef vault::MetadataValue DbValue;
+  typedef std::pair<vault::DbKey, MessageAction> UnresolvedEntryKey;
+  typedef DbValue UnresolvedEntryValue;
+  static const Persona persona = Persona::kMetadataManager;
+};
+
+}  // namespace nfs
+
 namespace vault {
 
-class AccountDb {
- public:
-  explicit AccountDb(Db& db);
-  ~AccountDb();
-  void Put(const Db::KvPair& key_value_pair);
-  void Delete(const Db::KvPair::first_type& key);
-  NonEmptyString Get(const Db::KvPair::first_type& key);
-  std::vector<Db::KvPair> Get();
-
- private:
-  Db& db_;
-  Db::AccountId account_id_;
-};
+typedef nfs::PersonaTypes<nfs::Persona::kMetadataManager> MetadataManager;
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_ACCOUNT_DB_H_
+#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_H_

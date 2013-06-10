@@ -17,7 +17,7 @@
 #include <iterator>
 #include <string>
 #include <vector>
-
+#include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/reply.h"
 #include "maidsafe/data_types/data_name_variant.h"
 
@@ -242,8 +242,9 @@ std::vector<typename Accumulator<Name>::PendingRequest> Accumulator<Name>::SetHa
 }
 
 template<typename Name>
-void Accumulator<Name>::SetHandledAndReply (const nfs::MessageId message_id,
-                                            const NodeId& source_node) {
+void Accumulator<Name>::SetHandledAndReply(const nfs::MessageId message_id,
+                                           const NodeId& source_node,
+                                           const nfs::Reply& reply_out) {
   auto return_code(CommonErrors::success);
   nfs::Reply reply(return_code);
   std::vector<PendingRequest> ret_requests;
@@ -261,13 +262,13 @@ void Accumulator<Name>::SetHandledAndReply (const nfs::MessageId message_id,
   handled_requests_.push_back(
       Accumulator::HandledRequest(message_id,
                                   Name(Identity(source_node.string())),
-                                  nfs::Reply(CommonErrors::success)));
+                                  reply_out));
   if (handled_requests_.size() > kMaxHandledRequestsCount_)
     handled_requests_.pop_front();
   // send replies if required
   for (const auto& ret : ret_requests) {
     if (ret.reply_functor)
-      ret.reply_functor(reply.Serialise()->string());
+      ret.reply_functor(reply_out.Serialise()->string());
   }
 }
 

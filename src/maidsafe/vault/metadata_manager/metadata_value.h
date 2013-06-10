@@ -9,18 +9,19 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_H_
-#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_H_
+#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_VALUE_H_
+#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_VALUE_H_
 
 #include <cstdint>
+#include <set>
 #include <vector>
 
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/vault/manager_db.h"
+#include "maidsafe/vault/metadata_manager/metadata_manager.h"
 #include "maidsafe/vault/metadata_manager/metadata.pb.h"
-
 #include "maidsafe/vault/types.h"
 
 
@@ -41,15 +42,12 @@ struct MetadataValue {
 
 class Metadata {
  public:
-//  typedef TaggedValue<NonEmptyString, struct SerialisedMetadataTag> serialised_type;
-
   // This constructor reads the existing element or creates a new one if it doesn't already exist.
   Metadata(const DataNameVariant& data_name,
            ManagerDb<MetadataManager>* metadata_db,
            int32_t data_size);
   // This constructor reads the existing element or throws if it doesn't already exist.
-  Metadata(const DataNameVariant& data_name,
-           ManagerDb<MetadataManager>* metadata_db);
+  Metadata(const DataNameVariant& data_name, ManagerDb<MetadataManager>* metadata_db);
   // Should only be called once.
   void SaveChanges(ManagerDb<MetadataManager>* metadata_db);
 
@@ -67,19 +65,6 @@ class Metadata {
 
 }  // namespace vault
 
-namespace nfs {
-
-template<>
-struct PersonaTypes<Persona::kMetadataManager> {
-  typedef DataNameVariant DbKey;
-  typedef vault::MetadataValue DbValue;
-  struct UnresolvedEntryKey {
-    DbKey db_key;
-    MessageAction action;
-  };
-  static const Persona persona = Persona::kMetadataManager;
-};
-}  // namespace nfs
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_H_
+#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_VALUE_H_

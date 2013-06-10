@@ -14,19 +14,35 @@
 #include <algorithm>
 #include <tuple>
 
+#include "maidsafe/vault/utils.h"
+
+
 namespace maidsafe {
 
 namespace vault {
 
-StructuredDataKey::StructuredDataKey()
-  :  originator(),
-     data_name(),
-     action() {}
+const int StructuredDataKey::kPaddedWidth_(1);
+
+StructuredDataKey::StructuredDataKey() : data_name_(), originator_() {}
+
+StructuredDataKey::StructuredDataKey(const DataNameVariant& data_name,
+                                     const Identity& originator)
+    : data_name_(data_name),
+      originator_(originator) {}
+
+StructuredDataKey::StructuredDataKey(const std::string& serialised_key)
+    : data_name_(),
+      originator_() {
+  std::string name(serialised_key.substr(0, NodeId::kSize));
+  std::string type_as_string(serialised_key.substr(NodeId::kSize, kPaddedWidth_));
+  auto type(static_cast<DataTagValue>(detail::FromFixedWidthString<kPaddedWidth_>(type_as_string)));
+  data_name_ = GetDataNameVariant(type, Identity(name));
+  originator_ = Identity(serialised_key.substr(NodeId::kSize + kPaddedWidth_));
+}
 
 StructuredDataKey::StructuredDataKey(const StructuredDataKey& other)
-  :  originator(other.originator),
-     data_name(other.data_name),
-     action(other.action) {}
+    : data_name_(other.data_name_),
+      originator_(other.originator_) {}
 
 StructuredDataKey& StructuredDataKey::operator=(StructuredDataKey other) {
   swap(*this, other);
@@ -34,19 +50,26 @@ StructuredDataKey& StructuredDataKey::operator=(StructuredDataKey other) {
 }
 
 StructuredDataKey::StructuredDataKey(StructuredDataKey&& other)
-  :  originator(std::move(other.originator)),
-     data_name(std::move(other.data_name)),
-     action(std::move(other.action)) {}
+    : data_name_(std::move(other.data_name_)),
+      originator_(std::move(other.originator_)) {}
 
 void swap(StructuredDataKey& lhs, StructuredDataKey& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
-  swap(lhs.originator, rhs.originator);
-  swap(lhs.data_name, rhs.data_name);
-  swap(lhs.action, rhs.action);
+  swap(lhs.data_name_, rhs.data_name_);
+  swap(lhs.originator_, rhs.originator_);
+}
+
+std::string StructuredDataKey::Serialise() const {
+  static GetTagValueAndIdentityVisitor visitor;
+  auto result(boost::apply_visitor(visitor, data_name_));
+  return std::string(
+      result.second.string() +
+      detail::ToFixedWidthString<kPaddedWidth_>(static_cast<uint32_t>(result.first)) +
+      originator_.string());
 }
 
 bool operator==(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
-  return std::tie(lhs.originator, lhs.data_name) == std::tie(rhs.originator, rhs.data_name);
+  return std::tie(lhs.data_name_, lhs.originator_) == std::tie(rhs.data_name_, rhs.originator_);
 }
 
 bool operator!=(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
@@ -54,7 +77,7 @@ bool operator!=(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
 }
 
 bool operator<(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
-  return std::tie(lhs.originator, lhs.data_name) < std::tie(rhs.originator, rhs.data_name);
+  return std::tie(lhs.data_name_, lhs.originator_) < std::tie(rhs.data_name_, rhs.originator_);
 }
 
 bool operator>(const StructuredDataKey& lhs, const StructuredDataKey& rhs) {
