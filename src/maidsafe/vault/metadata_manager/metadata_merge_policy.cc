@@ -139,9 +139,9 @@ std::vector<MetadataMergePolicy::UnresolvedEntry> MetadataMergePolicy::MergeReco
       metadata_value.offline_pmid_name.insert(i.first);
   // FIXME need to return unresolved pmid_names to Ping/Get data
   // Updating DB
-  Metadata metadata(unresolved_entry.key.first, metadata_db_, metadata_value.data_size);
+//  Metadata metadata(unresolved_entry.key.first, metadata_db_, metadata_value.data_size);
   // FIXME free function needed to merge db value with resolved db value
-  metadata.SaveChanges(metadata_db_);
+//  metadata.SaveChanges(metadata_db_);
   return extra_unresolved_data;
 }
 

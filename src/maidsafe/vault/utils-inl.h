@@ -126,7 +126,7 @@ bool AddResult(const nfs::Message& message,
 template<int width>
 std::string ToFixedWidthString(uint32_t number) {
   static_assert(width > 0 && width < 5, "width must be 1, 2, 3, or 4.");
-  assert(number < std::pow(256, width) && number >= 0);
+  assert(number < std::pow(256, width));
   std::string result(width, 0);
   for (int i(0); i != width; ++i) {
     result[width - i - 1] = static_cast<char>(number);
@@ -144,7 +144,7 @@ uint32_t FromFixedWidthString(const std::string& number_as_string) {
     result += (static_cast<unsigned char>(number_as_string[width - i - 1]) * factor);
     factor *= 256;
   }
-  assert(result < std::pow(256, width) && result >= 0);
+  assert(result < std::pow(256, width));
   return result;
 }
 
