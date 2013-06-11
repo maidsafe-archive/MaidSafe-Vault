@@ -117,27 +117,27 @@ void MetadataHandler::RemoveDataHolder(const typename Data::name_type& /*data_na
 
 template<typename Data>
 std::vector<PmidName> MetadataHandler::GetOnlineDataHolders(
-    const typename Data::name_type& /*data_name*/) const {
-//  Metadata<Data> metadata(data_name, metadata_db_.get());
-//  std::vector<PmidName> onlines(metadata.value_.online_pmid_name.begin(),
-//                                metadata.value_.online_pmid_name.end());
-//  metadata.strong_guarantee_.Release();
-//  return onlines;
-  return std::vector<PmidName>();
+    const typename Data::name_type& data_name) const {
+  DataNameVariant db_key(data_name);
+  Metadata metadata(db_key, metadata_db_.get());
+  std::vector<PmidName> onlines(metadata.value_.online_pmid_name.begin(),
+                                metadata.value_.online_pmid_name.end());
+  metadata.strong_guarantee_.Release();
+  return onlines;
 }
 
 
 // Do we need to check unresolved list as well ?
-template<typename Data>
-bool MetadataHandler::CheckMetadataExists(const typename Data::name_type& /*data_name*/) const {
+//template<typename Data>
+//bool MetadataHandler::CheckMetadataExists(const typename Data::name_type& /*data_name*/) const {
 //  try {
 //    Metadata<Data> metadata(data_name, metadata_db_.get());
 //    metadata.strong_guarantee_.Release();
 //  } catch (const maidsafe_error& error) {
 //    return false;
 //  }
-  return true;
-}
+//  return true;
+//}
 
 template<typename Data>
 std::pair<bool, int32_t> MetadataHandler::CheckPut(const typename Data::name_type& /*data_name*/, int32_t /*data_size*/) {
