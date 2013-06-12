@@ -81,10 +81,10 @@ class MetadataHandler {
   template<typename Data>
   std::vector<PmidName> GetOnlineDataHolders(const typename Data::name_type& data_name) const;
 
-//  template<typename Data>
-//  bool CheckMetadataExists(const typename Data::name_type& data_name) const;
+  template<typename Data>
+  bool CheckMetadataExists(const typename Data::name_type& data_name) const;
 
-  // Returns a pair of - is duplicate data and its cost.
+  // Returns a pair of - is already stored and its cost.
   // Checks for duplication of unique data (throws)
   template<typename Data>
   std::pair<bool, int32_t> CheckPut(const typename Data::name_type& data_name, int32_t data_size);

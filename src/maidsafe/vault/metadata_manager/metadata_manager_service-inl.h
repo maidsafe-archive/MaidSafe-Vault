@@ -127,7 +127,7 @@ void MetadataManagerService::HandleMessage(const nfs::Message& message,
     case nfs::MessageAction::kGet:
       return HandleGet<Data>(message, reply_functor);
     case nfs::MessageAction::kDelete:
-      return HandleDelete<Data>(message, reply_functor);
+      return HandleDelete<Data>(message);
     case nfs::MessageAction::kSynchronise:
     case nfs::MessageAction::kAccountTransfer:
       return HandleSync(message);
@@ -302,19 +302,20 @@ void MetadataManagerService::IntegrityCheck(std::shared_ptr<GetHandler<Data>> /*
 }
 
 template<typename Data>
-void MetadataManagerService::HandleDelete(const nfs::Message& message,
-                                          const routing::ReplyFunctor& reply_functor) {
+void MetadataManagerService::HandleDelete(const nfs::Message& message) {
   try {
     ValidateDeleteSender(message);
     // wait for 3 requests
-
-    typename Data::name_type data_name(message.data().name);
-    metadata_handler_.template DecrementSubscribers<Data>(data_name);
-    // Decrement should send delete to PMID's on event data is actually deleted
-    detail::SendReply(message, MakeError(CommonErrors::success), reply_functor);
+    if (detail::AddResult(message, nullptr, MakeError(CommonErrors::success),
+                          accumulator_, accumulator_mutex_, kDeleteRequestsRequired_)) {
+      MetadataValue metadata_value(-1); // TODO(Prakash) is data size useful for delete ops?
+      AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kDelete>(message, metadata_value);
+      // After merge, decrement should send delete to PMID's on event data is actually deleted
+    }
   }
-  catch (...) {}
-
+  catch (...) {
+    LOG(kWarning) << "Error during HandleDelete: ";
+  }
 }
 
 //TODO(Prakash) Change this to service to handle data stored/ not stored message and then sync
@@ -365,7 +366,7 @@ void MetadataManagerService::AddLocalUnresolvedEntryThenSync(
                                                                     routing_.kNodeId()));
   metadata_handler_.AddLocalUnresolvedEntry(unresolved_entry);
   typename Data::name_type data_name(message.data().name);
-  Sync<Data>(data_name);
+  Sync<Data>(data_name); // FIXME Prakash need to sync all
 }
 
 // =============== Sync ============================================================================

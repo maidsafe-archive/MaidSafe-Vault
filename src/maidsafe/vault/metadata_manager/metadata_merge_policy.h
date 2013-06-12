@@ -54,7 +54,7 @@ class MetadataMergePolicy {
   MetadataMergePolicy& operator=(const MetadataMergePolicy&);
 
   void MergePut(const DataNameVariant& data_name, int data_size);
-  void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
+  void MergeDelete(const DataNameVariant& data_name, int data_size);
   int GetDataSize(const UnresolvedEntry& unresolved_entry) const;
   std::vector<UnresolvedEntry> MergeRecordTransfer(const UnresolvedEntry& unresolved_entry);
 };

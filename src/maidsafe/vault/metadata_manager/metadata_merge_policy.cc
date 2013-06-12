@@ -43,7 +43,9 @@ void MetadataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
       !unresolved_entry.dont_add_to_db) {
     MergePut(unresolved_entry.key.first.name(), GetDataSize(unresolved_entry));
   } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
-//    MergeDelete(unresolved_entry.key.first, serialised_db_value);
+    MergeDelete(unresolved_entry.key.first.name(), GetDataSize(unresolved_entry));
+  } else if (unresolved_entry.key.second == nfs::MessageAction::kAccountTransfer) {
+    MergeRecordTransfer(unresolved_entry);
   } else {
     ThrowError(CommonErrors::invalid_parameter);
   }
@@ -88,8 +90,12 @@ void MetadataMergePolicy::MergePut(const DataNameVariant& data_name, int data_si
   }
 }
 
-void MetadataMergePolicy::MergeDelete(const DataNameVariant& /*data_name*/,
-                                      const NonEmptyString& /*serialised_db_value*/) {
+void MetadataMergePolicy::MergeDelete(const DataNameVariant& data_name, int data_size) {
+  if (data_size != 0) {
+    Metadata metadata(data_name, metadata_db_, data_size);
+    ++(*metadata.value_.subscribers);
+    metadata.SaveChanges(metadata_db_);
+  }
 }
 
 std::vector<MetadataMergePolicy::UnresolvedEntry> MetadataMergePolicy::MergeRecordTransfer(
@@ -138,9 +144,8 @@ std::vector<MetadataMergePolicy::UnresolvedEntry> MetadataMergePolicy::MergeReco
     if (i.second >= routing::Parameters::node_group_size - 1U)
       metadata_value.offline_pmid_name.insert(i.first);
   // FIXME need to return unresolved pmid_names to Ping/Get data
-  // Updating DB
   Metadata metadata(unresolved_entry.key.first.name(), metadata_db_, metadata_value.data_size);
-  // FIXME free function needed to merge db value with resolved db value
+  metadata.value_ = metadata_value;   // Overwriting DB here
   metadata.SaveChanges(metadata_db_);
   return extra_unresolved_data;
 }
