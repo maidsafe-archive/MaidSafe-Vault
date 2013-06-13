@@ -21,7 +21,10 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace test { class DbKeyTest_BEH_All_Test; }
+namespace test {
+  class DbKeyTest_BEH_Serialise_Test;
+  class DbKeyTest_BEH_All_Test;
+}
 
 class Db;
 template<typename PersonaType>
@@ -43,6 +46,7 @@ class DbKey {
   friend class Db;
   template<typename PersonaType>
   friend class ManagerDb;
+  friend class test::DbKeyTest_BEH_Serialise_Test;
   friend class test::DbKeyTest_BEH_All_Test;
 
  private:
