@@ -12,6 +12,7 @@
 #ifndef MAIDSAFE_VAULT_TOOLS_KEY_HELPER_OPERATIONS_H_
 #define MAIDSAFE_VAULT_TOOLS_KEY_HELPER_OPERATIONS_H_
 
+#include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <vector>

@@ -12,6 +12,8 @@
 #include "maidsafe/vault/tools/key_helper_operations.h"
 
 #include <csignal>
+#include <future>
+#include <memory>
 #include <string>
 
 #include "boost/filesystem/operations.hpp"
@@ -140,7 +142,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
       functors_(),
       client_nfs_() {
   auto future(RoutingJoin(peer_endpoints));
-  std::future_status status(future.wait_for(std::chrono::seconds(10)));
+  auto status(future.wait_for(std::chrono::seconds(10)));
   if (status == std::future_status::timeout || !future.get())
     throw ToolsException("Failed to join client to network.");
   LOG(kInfo) << "Bootstrapped anonymous node to store keys";
@@ -208,22 +210,19 @@ KeyVerifier::KeyVerifier(const passport::detail::AnmaidToPmid& key_chain,
     : ClientTester(key_chain, peer_endpoints) {}
 
 void KeyVerifier::Verify() {
-  std::future<passport::PublicAnmaid> anmaid_future(
-      std::move(nfs::Get<passport::PublicAnmaid>(*client_nfs_, key_chain_.anmaid.name())));
-  std::future<passport::PublicMaid> maid_future(
-      std::move(nfs::Get<passport::PublicMaid>(*client_nfs_, key_chain_.maid.name())));
-  std::future<passport::PublicPmid> pmid_future(
-      std::move(nfs::Get<passport::PublicPmid>(*client_nfs_, key_chain_.pmid.name())));
+  auto anmaid_future(nfs::Get<passport::PublicAnmaid>(*client_nfs_, key_chain_.anmaid.name()));
+  auto maid_future(nfs::Get<passport::PublicMaid>(*client_nfs_, key_chain_.maid.name()));
+  auto pmid_future(nfs::Get<passport::PublicPmid>(*client_nfs_, key_chain_.pmid.name()));
 
   size_t verified_keys(0);
   if (EqualKeys<passport::PublicAnmaid>(passport::PublicAnmaid(key_chain_.anmaid),
-                                        anmaid_future.get()))
+                                        *anmaid_future.get()))
     ++verified_keys;
-  if (EqualKeys<passport::PublicMaid>(passport::PublicMaid(key_chain_.maid), maid_future.get()))
+  if (EqualKeys<passport::PublicMaid>(passport::PublicMaid(key_chain_.maid), *maid_future.get()))
     ++verified_keys;
-  if (EqualKeys<passport::PublicPmid>(passport::PublicPmid(key_chain_.pmid), pmid_future.get()))
+  if (EqualKeys<passport::PublicPmid>(passport::PublicPmid(key_chain_.pmid), *pmid_future.get()))
     ++verified_keys;
-  std::cout << "VerifyKeys - Verified all " << verified_keys << " keys." << std::endl;
+  std::cout << "VerifyKeys - Verified all " << verified_keys << " keys.\n";
 }
 
 DataChunkStorer::DataChunkStorer(const passport::detail::AnmaidToPmid& key_chain,
@@ -365,7 +364,7 @@ bool DataChunkStorer::GetOneChunk(const ImmutableData& chunk_data) {
                           };
 
   auto future = nfs::Get<ImmutableData>(*client_nfs_, chunk_data.name());
-  return equal_immutables(chunk_data, future.get());
+  return equal_immutables(chunk_data, *future.get());
 }
 
 bool DataChunkStorer::DeleteOneChunk(const ImmutableData& chunk_data) {
