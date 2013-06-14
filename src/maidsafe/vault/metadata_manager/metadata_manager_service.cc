@@ -147,6 +147,13 @@ bool MetadataManagerService::ThisVaultInGroupForData(const nfs::Message& message
 
 // =============== Sync and Record transfer =====================================================
 
+void MetadataManagerService::Sync() {
+  auto unresolved_entries(metadata_handler_.GetSyncData());
+  for (const auto& unresolved_entry : unresolved_entries) {
+    nfs_.Sync(unresolved_entry.key.first.name(), unresolved_entry.Serialise());
+  }
+}
+
 void MetadataManagerService::HandleSync(const nfs::Message& message) {
   metadata_handler_.ApplySyncData(NonEmptyString(message.data().content.string()));
 }
@@ -154,6 +161,10 @@ void MetadataManagerService::HandleSync(const nfs::Message& message) {
 void MetadataManagerService::TransferRecord(const DataNameVariant& record_name,
                                             const NodeId& new_node) {
   nfs_.TransferRecord(record_name, new_node, metadata_handler_.GetSerialisedRecord(record_name));
+}
+
+void MetadataManagerService::HandleRecordTransfer(const nfs::Message& message) {
+  metadata_handler_.ApplyRecordTransfer(NonEmptyString(message.data().content.string()));
 }
 
 // =============== Churn ===========================================================================

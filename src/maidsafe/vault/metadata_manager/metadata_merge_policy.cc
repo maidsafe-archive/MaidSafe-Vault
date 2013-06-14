@@ -71,6 +71,7 @@ int MetadataMergePolicy::GetDataSize(
 
   if (all_data_size.empty())
     ThrowError(CommonErrors::unknown);
+  assert(all_data_size.size() == 1);
   if (most_frequent > static_cast<size_t>(routing::Parameters::node_group_size / 2))
     return most_frequent_itr->value.get().data_size;
 
@@ -90,10 +91,11 @@ void MetadataMergePolicy::MergePut(const DataNameVariant& data_name, int data_si
   }
 }
 
+// TODO need to send delete messasge to PAH
 void MetadataMergePolicy::MergeDelete(const DataNameVariant& data_name, int data_size) {
   if (data_size != 0) {
     Metadata metadata(data_name, metadata_db_, data_size);
-    ++(*metadata.value_.subscribers);
+    --(*metadata.value_.subscribers);
     metadata.SaveChanges(metadata_db_);
   }
 }

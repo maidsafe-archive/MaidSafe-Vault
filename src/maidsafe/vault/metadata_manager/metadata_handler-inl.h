@@ -145,32 +145,6 @@ std::pair<bool, int32_t> MetadataHandler::CheckPut(const typename Data::name_typ
   return std::make_pair(false, 0);
 }
 
-template <typename Data>
-NonEmptyString MetadataHandler::GetSyncData(const typename Data::name_type& data_name) {
-  DataNameVariant data_name_variant(GetDataNameVariant(Data::name_type::tag_type::kEnumValue,
-                                                       data_name));
-  if (sync_.GetUnresolvedCount(data_name_variant) < kSyncTriggerCount_)
-    return NonEmptyString();
-
-  auto unresolved_entries(sync_.GetUnresolvedData(data_name_variant));
-  if (unresolved_entries.empty())
-    return NonEmptyString();
-
-  protobuf::UnresolvedEntries proto_unresolved_entries;
-  for (const auto& unresolved_entry : unresolved_entries) {
-    proto_unresolved_entries.add_serialised_unresolved_entry(
-        unresolved_entry.Serialise()->string());
-  }
-  return NonEmptyString(proto_unresolved_entries.SerializeAsString());
-}
-
-template<typename Data>
-void MetadataHandler::IncrementSyncAttempts(const typename Data::name_type& data_name) {
-  DataNameVariant data_name_variant(GetDataNameVariant(Data::name_type::tag_type::kEnumValue,
-                                                       data_name));
-  sync_.IncrementSyncAttempts(data_name_variant);
-}
-
 }  // namespace vault
 
 }  // namespace maidsafe

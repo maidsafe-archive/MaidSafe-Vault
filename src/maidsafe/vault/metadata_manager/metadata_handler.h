@@ -96,7 +96,9 @@ class MetadataHandler {
   serialised_record_type GetSerialisedRecord(const DataNameVariant& data_name);
   template <typename Data>
   NonEmptyString GetSyncData(const typename Data::name_type& data_name);
-  void ApplySyncData(const NonEmptyString& serialised_unresolved_entries);
+  std::vector<MetadataUnresolvedEntry> GetSyncData();
+  void ApplySyncData(const NonEmptyString& serialised_unresolved_entry);
+  void ApplyRecordTransfer(const NonEmptyString& serialised_unresolved_entries);
   void ReplaceNodeInSyncList(const DataNameVariant& record_name,
                              const NodeId& old_node,
                              const NodeId& new_node);

@@ -112,11 +112,10 @@ class MetadataManagerService {
                                        const MetadataValue& metadata_value);
 
   // =============== Sync and Record transfer =====================================================
-  template<typename Data>
-  void Sync(const typename Data::name_type& data_name);
+  void Sync();
   void HandleSync(const nfs::Message& message);
   void TransferRecord(const DataNameVariant& record_name, const NodeId& new_node);
-
+  void HandleRecordTransfer(const nfs::Message& message);
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
   std::mutex accumulator_mutex_;

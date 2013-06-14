@@ -70,7 +70,20 @@ void MetadataHandler::ReplaceNodeInSyncList(const DataNameVariant& /*record_name
   sync_.ReplaceNode(old_node, new_node);
 }
 
-void MetadataHandler::ApplySyncData(const NonEmptyString& serialised_unresolved_entries) {
+std::vector<MetadataUnresolvedEntry> MetadataHandler::GetSyncData() {
+  if (sync_.GetUnresolvedCount() < kSyncTriggerCount_)
+    return std::vector<MetadataUnresolvedEntry>();
+
+  return sync_.GetUnresolvedData();
+}
+
+void MetadataHandler::ApplySyncData(const NonEmptyString& serialised_unresolved_entry) {
+  MetadataUnresolvedEntry entry((MetadataUnresolvedEntry::serialised_type(
+                                 serialised_unresolved_entry)));
+  sync_.AddUnresolvedEntry(entry);
+}
+
+void MetadataHandler::ApplyRecordTransfer(const NonEmptyString& serialised_unresolved_entries) {
   protobuf::UnresolvedEntries proto_unresolved_entries;
   if (!proto_unresolved_entries.ParseFromString(serialised_unresolved_entries.string()))
     ThrowError(CommonErrors::parsing_error);
@@ -89,7 +102,7 @@ MetadataHandler::serialised_record_type MetadataHandler::GetSerialisedRecord(
   MetadataUnresolvedEntry unresolved_entry_db_value(
       std::make_pair(DbKey(data_name), nfs::MessageAction::kAccountTransfer), metadata_value,
         kThisNodeId_);
-  auto unresolved_data(sync_.GetUnresolvedData(data_name));
+  auto unresolved_data(sync_.GetUnresolvedData());
   unresolved_data.push_back(unresolved_entry_db_value);
   for (const auto& unresolved_entry : unresolved_data) {
     proto_unresolved_entries.add_serialised_unresolved_entry(

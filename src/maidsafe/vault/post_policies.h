@@ -90,14 +90,14 @@ class ManagersSyncPolicy {  // for Metadata manager & structured data manager
     routing_.SendDirect(target_node_id, message_wrapper.Serialise()->string(), false, nullptr);
   }
 
-  template<typename Data>
-  void Sync(const typename Data::name_type& data_name, const NonEmptyString& serialised_sync_data) {
-    nfs::Message::Data data(Data::name_type::tag_type::kEnumValue, data_name.data,
-                            serialised_sync_data, nfs::MessageAction::kSynchronise);
+  void Sync(const DataNameVariant& record_name, const NonEmptyString& serialised_sync_data) {
+    auto type_and_name(boost::apply_visitor(GetTagValueAndIdentityVisitor(), record_name));
+    nfs::Message::Data data(type_and_name.first, type_and_name.second, serialised_sync_data,
+                            nfs::MessageAction::kSynchronise);
     nfs::Message message(source_persona, kSource_, data);
     nfs::MessageWrapper message_wrapper(message.Serialise());
-    routing_.SendGroup(NodeId(data_name->string()), message_wrapper.Serialise()->string(), false,
-                       nullptr);
+    routing_.SendGroup(NodeId(type_and_name.second), message_wrapper.Serialise()->string(),
+                       false, nullptr);
   }
 
  private:

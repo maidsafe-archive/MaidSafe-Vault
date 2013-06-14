@@ -129,8 +129,9 @@ void MetadataManagerService::HandleMessage(const nfs::Message& message,
     case nfs::MessageAction::kDelete:
       return HandleDelete<Data>(message);
     case nfs::MessageAction::kSynchronise:
-    case nfs::MessageAction::kAccountTransfer:
       return HandleSync(message);
+    case nfs::MessageAction::kAccountTransfer:
+      return HandleRecordTransfer(message);
     default: {
       reply = nfs::Reply(VaultErrors::operation_not_supported, message.Serialise().data);
       std::lock_guard<std::mutex> lock(accumulator_mutex_);
@@ -318,28 +319,6 @@ void MetadataManagerService::HandleDelete(const nfs::Message& message) {
   }
 }
 
-//TODO(Prakash) Change this to service to handle data stored/ not stored message and then sync
-//template<typename Data>
-//void MetadataManagerService::HandlePutResult(const nfs::Reply& overall_result) {
-//  if (overall_result.IsSuccess())
-//    return;
-
-//  try {
-//    nfs::Message original_message(nfs::Message::serialised_type(overall_result.data()));
-//    if (!ThisVaultInGroupForData(original_message)) {
-//      LOG(kInfo) << "Stopping retries for Put, since no longer responsible for this data.";
-//      return;
-//    }
-
-//    Data data(typename Data::name_type(original_message.data().name),
-//              typename Data::serialised_type(original_message.data().content));
-//    Put(data, PmidName(Identity(routing_.RandomConnectedNode().string())));
-//  }
-//  catch(const std::exception& e) {
-//    LOG(kError) << "Error retrying Put: " << e.what();
-//  }
-//}
-
 template<typename Data>
 void MetadataManagerService::HandleGetReply(std::string serialised_reply) {
   try {
@@ -366,20 +345,7 @@ void MetadataManagerService::AddLocalUnresolvedEntryThenSync(
                                                                     routing_.kNodeId()));
   metadata_handler_.AddLocalUnresolvedEntry(unresolved_entry);
   typename Data::name_type data_name(message.data().name);
-  Sync<Data>(data_name); // FIXME Prakash need to sync all
-}
-
-// =============== Sync ============================================================================
-
-template<typename Data>
-void MetadataManagerService::Sync(const typename Data::name_type& data_name) {
-  auto serialised_sync_data(metadata_handler_.GetSyncData<Data>(data_name));
-  if (!serialised_sync_data.IsInitialised())  // Nothing to sync
-    return;
-
-  nfs_.Sync<Data>(data_name, serialised_sync_data);
-  // TODO(Fraser#5#): 2013-05-03 - Check this is correct place to increment sync attempt counter.
-  metadata_handler_.IncrementSyncAttempts<Data>(data_name);
+  Sync();
 }
 
 }  // namespace vault
