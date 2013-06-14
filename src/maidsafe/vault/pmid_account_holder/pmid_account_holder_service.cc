@@ -56,10 +56,6 @@ void PmidAccountHolderService::HandleMessage(const nfs::Message& message,
       return HandleSync(message);
     case nfs::MessageAction::kAccountTransfer:
       return HandleAccountTransfer(message);
-    case nfs::MessageAction::kNodeDown:
-      return;
-    case nfs::MessageAction::kNodeUp:
-      return;
     case nfs::MessageAction::kGetPmidTotals:
       return HandleGetPmidTotals(message, reply_functor);
     default:
