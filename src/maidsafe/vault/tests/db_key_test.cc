@@ -13,9 +13,11 @@
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/data_types/immutable_data.h"
 
+#include "maidsafe/data_types/immutable_data.h"
 #include "maidsafe/data_types/data_name_variant.h"
+
+#include "maidsafe/vault/utils-inl.h"
 
 
 namespace maidsafe {
@@ -23,6 +25,21 @@ namespace maidsafe {
 namespace vault {
 
 namespace test {
+
+TEST(DbKeyTest, BEH_Serialise) {
+  DataNameVariant name(ImmutableData::name_type(Identity(
+      RandomString(crypto::SHA512::DIGESTSIZE))));
+  DbKey db_key(name);
+  EXPECT_TRUE(db_key.name() == name);
+
+  // Simulation a serialisation
+  static GetTagValueAndIdentityVisitor visitor;
+  auto result(boost::apply_visitor(visitor, name));
+  std::string simulated = std::string(result.second.string() +
+            maidsafe::vault::detail::ToFixedWidthString<1>(static_cast<uint32_t>(result.first)));
+
+  EXPECT_EQ(simulated, db_key.Serialise());
+}
 
 TEST(DbKeyTest, BEH_All) {
   DataNameVariant name(ImmutableData::name_type(Identity(
