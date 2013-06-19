@@ -118,7 +118,7 @@ void MetadataManagerService::HandleNodeDown(const nfs::Message& /*message*/) {
       // TODO(Team): Get content. There is no manager available yet.
 
       // Select new holder
-      NodeId new_holder(routing_.GetRandomExistingNode());
+      NodeId new_holder(routing_.RandomConnectedNode());
 
       // TODO(Team): Put content. There is no manager available yet.
     }
