@@ -75,9 +75,7 @@ rename_outdated_built_exes()
 #==================================================================================================#
 include(standard_flags)
 
-if(UNIX)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-effc++")
-elseif(MSVC AND MaidsafeTesting)
+if(MSVC AND MaidsafeTesting)
   set_target_properties(maidsafe_vault TESTvault PROPERTIES COMPILE_FLAGS "/bigobj")
 endif()
 

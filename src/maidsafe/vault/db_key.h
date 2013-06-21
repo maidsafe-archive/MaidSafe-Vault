@@ -22,9 +22,9 @@ namespace maidsafe {
 namespace vault {
 
 namespace test {
-  class DbKeyTest_BEH_Serialise_Test;
-  class DbKeyTest_BEH_All_Test;
-}
+class DbKeyTest_BEH_Serialise_Test;
+class DbKeyTest_BEH_All_Test;
+}  // namespace test
 
 class Db;
 template<typename PersonaType>
