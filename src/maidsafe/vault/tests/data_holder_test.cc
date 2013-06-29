@@ -222,7 +222,7 @@ class DataHolderTest : public testing::Test {
 TYPED_TEST_CASE_P(DataHolderTest);
 
 TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
-  nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
   nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
                           name_and_content.first,
@@ -239,7 +239,7 @@ TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
 }
 
 TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
-  nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
   nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
                           name_and_content.first,
@@ -254,7 +254,7 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
 }
 
 TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
-  nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
   nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
                           name_and_content.first,
@@ -294,7 +294,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
   NameContentContainer name_content_pairs;
 
   for (uint32_t i = 0; i != events; ++i) {
-    nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+    nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
     std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
     name_content_pairs.push_back(name_and_content);
 
@@ -452,7 +452,7 @@ class DataHolderCacheableTest : public DataHolderTest<T> {
 TYPED_TEST_CASE_P(DataHolderCacheableTest);
 
 TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
-  nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
   nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
                           name_and_content.first,

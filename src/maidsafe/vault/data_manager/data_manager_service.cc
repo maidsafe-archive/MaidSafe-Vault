@@ -13,7 +13,7 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/metadata_manager/metadata_manager_service.h"
+#include "maidsafe/vault/data_manager/data_manager_service.h"
 
 #include <string>
 #include <vector>
@@ -75,13 +75,13 @@ void DataManagerService::ValidatePutSender(const nfs::Message& message) const {
     ThrowError(VaultErrors::permission_denied);
   }
 
-  if (!FromMaidAccountHolder(message) || !ForThisPersona(message))
+  if (!FromMaidManager(message) || !ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 
 void DataManagerService::ValidatePutResultSender(const nfs::Message& message) const {
   // FIXME(Prakash) Need to pass PmidName in message to validate
-  if (!FromPmidAccountHolder(message) || !ForThisPersona(message))
+  if (!FromPmidManager(message) || !ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 
@@ -101,12 +101,12 @@ void DataManagerService::ValidateDeleteSender(const nfs::Message& message) const
   if (!SenderInGroupForClientMaid(message, routing_))
     ThrowError(VaultErrors::permission_denied);
 
-  if (!FromMaidAccountHolder(message) || !ForThisPersona(message))
+  if (!FromMaidManager(message) || !ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 
 void DataManagerService::ValidatePostSender(const nfs::Message& message) const {
-  if (!(FromDataManager(message) || FromPmidAccountHolder(message)) ||
+  if (!(FromDataManager(message) || FromPmidManager(message)) ||
       !ForThisPersona(message)) {
     ThrowError(CommonErrors::invalid_parameter);
   }

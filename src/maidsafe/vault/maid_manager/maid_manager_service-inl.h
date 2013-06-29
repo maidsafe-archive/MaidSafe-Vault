@@ -28,7 +28,7 @@ License.
 #include "maidsafe/nfs/reply.h"
 
 #include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/maid_manager/maid_account.pb.h"
+#include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 
 
 namespace maidsafe {
@@ -51,7 +51,7 @@ int32_t EstimateCost(const Data& data) {
   static_assert(!std::is_same<Data, passport::PublicAnmaid>::value, "Cost of Anmaid should be 0.");
   static_assert(!std::is_same<Data, passport::PublicMaid>::value, "Cost of Maid should be 0.");
   static_assert(!std::is_same<Data, passport::PublicPmid>::value, "Cost of Pmid should be 0.");
-  return static_cast<int32_t>(MaidAccountHolderService::DefaultPaymentFactor() *
+  return static_cast<int32_t>(MaidManagerService::DefaultPaymentFactor() *
                               data.content.string().size());
 }
 
@@ -64,7 +64,7 @@ int32_t EstimateCost<passport::PublicMaid>(const passport::PublicMaid&);
 template<>
 int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&);
 
-MaidName GetMaidAccountName(const nfs::Message& message);
+MaidName GetMaidManagerName(const nfs::Message& message);
 
 template<typename Data>
 typename Data::name_type GetDataName(const nfs::Message& message) {
@@ -73,12 +73,12 @@ typename Data::name_type GetDataName(const nfs::Message& message) {
 }
 
 template<typename Data, nfs::MessageAction action>
-MaidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
+MaidManagerUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
                                                  int32_t cost,
                                                  const NodeId& this_id) {
   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
-  return MaidAccountUnresolvedEntry(
+  return MaidManagerUnresolvedEntry(
       std::make_pair(DataNameVariant(GetDataName<Data>(message)), action), cost, this_id);
 }
 
@@ -86,7 +86,7 @@ MaidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
 
 
 template<typename Data>
-void MaidAccountHolderService::HandleMessage(const nfs::Message& message,
+void MaidManagerService::HandleMessage(const nfs::Message& message,
                                              const routing::ReplyFunctor& reply_functor) {
   ValidateDataSender(message);
   nfs::Reply reply(CommonErrors::success);
@@ -106,13 +106,13 @@ void MaidAccountHolderService::HandleMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-void MaidAccountHolderService::HandlePut(const nfs::Message& message,
+void MaidManagerService::HandlePut(const nfs::Message& message,
                                          const routing::ReplyFunctor& reply_functor) {
   maidsafe_error return_code(CommonErrors::success);
   try {
     Data data(typename Data::name_type(message.data().name),
               typename Data::serialised_type(message.data().content));
-    auto account_name(detail::GetMaidAccountName(message));
+    auto account_name(detail::GetMaidManagerName(message));
     auto estimated_cost(detail::EstimateCost(message.data()));
     maid_account_handler_.CreateAccount<Data>(account_name, detail::can_create_account<Data>());
     auto account_status(maid_account_handler_.AllowPut(account_name, estimated_cost));
@@ -152,11 +152,11 @@ void MaidAccountHolderService::HandlePut(const nfs::Message& message,
 }
 
 template<typename Data>
-void MaidAccountHolderService::HandleDelete(const nfs::Message& message,
+void MaidManagerService::HandleDelete(const nfs::Message& message,
                                             const routing::ReplyFunctor& reply_functor) {
   SendReplyAndAddToAccumulator(message, reply_functor, nfs::Reply(CommonErrors::success));
   try {
-    auto account_name(detail::GetMaidAccountName(message));
+    auto account_name(detail::GetMaidManagerName(message));
     typename Data::name_type data_name(message.data().name);
     maid_account_handler_.DeleteData<Data>(account_name, data_name);
     AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kDelete>(message, 0);
@@ -173,7 +173,7 @@ void MaidAccountHolderService::HandleDelete(const nfs::Message& message,
 }
 
 template<typename Data>
-void MaidAccountHolderService::SendEarlySuccessReply(const nfs::Message& message,
+void MaidManagerService::SendEarlySuccessReply(const nfs::Message& message,
                                                      const routing::ReplyFunctor& reply_functor,
                                                      bool low_space,
                                                      NonUniqueDataType) {
@@ -184,7 +184,7 @@ void MaidAccountHolderService::SendEarlySuccessReply(const nfs::Message& message
 }
 
 template<typename Data>
-void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
+void MaidManagerService::HandlePutResult(const nfs::Reply& overall_result,
                                                const nfs::Message& message,
                                                routing::ReplyFunctor client_reply_functor,
                                                bool low_space,
@@ -203,7 +203,7 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
 }
 
 template<typename Data>
-void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
+void MaidManagerService::HandlePutResult(const nfs::Reply& overall_result,
                                                const nfs::Message& message,
                                                routing::ReplyFunctor /*client_reply_functor*/,
                                                bool /*low_space*/,
@@ -222,9 +222,9 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
 }
 
 template<typename Data, nfs::MessageAction action>
-void MaidAccountHolderService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message,
+void MaidManagerService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message,
                                                                int32_t cost) {
-  auto account_name(detail::GetMaidAccountName(message));
+  auto account_name(detail::GetMaidManagerName(message));
   auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(message, cost,
                                                                     routing_.kNodeId()));
   maid_account_handler_.AddLocalUnresolvedEntry(account_name, unresolved_entry);
@@ -232,7 +232,7 @@ void MaidAccountHolderService::AddLocalUnresolvedEntryThenSync(const nfs::Messag
 }
 
 template<typename PublicFobType>
-void MaidAccountHolderService::ValidatePmidRegistration(
+void MaidManagerService::ValidatePmidRegistration(
     const nfs::Reply& reply,
     typename PublicFobType::name_type public_fob_name,
     std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {

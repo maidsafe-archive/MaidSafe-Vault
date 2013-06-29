@@ -38,12 +38,12 @@ Vault::Vault(const passport::Pmid& pmid,
       public_key_getter_(*routing_, pmids_from_file),
       maid_manager_service_(pmid, *routing_, public_key_getter_, db_),
       version_manager_service_(pmid, *routing_, vault_root_dir),
-      metadata_manager_service_(pmid, *routing_, public_key_getter_, vault_root_dir),
+      data_manager_service_(pmid, *routing_, public_key_getter_, vault_root_dir),
       pmid_manager_service_(pmid, *routing_, db_),
       pmid_node_(pmid, *routing_, vault_root_dir),
       demux_(maid_manager_service_,
              version_manager_service_,
-             metadata_manager_service_,
+             data_manager_service_,
              pmid_manager_service_,
              pmid_node_),
       asio_service_(2) {
@@ -171,7 +171,7 @@ void Vault::OnMatrixChanged(const routing::MatrixChange& matrix_change) {
       version_manager_service_.HandleChurnEvent(matrix_change);
   });
   asio_service_.service().post([=] {
-      metadata_manager_service_.HandleChurnEvent(matrix_change);
+      data_manager_service_.HandleChurnEvent(matrix_change);
   });
   asio_service_.service().post([=] {
       pmid_manager_service_.HandleChurnEvent(matrix_change);

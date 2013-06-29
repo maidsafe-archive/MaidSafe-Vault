@@ -27,8 +27,9 @@ License.
 
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/maid_manager/maid_account_helpers.h"
-#include "maidsafe/vault/maid_manager/maid_account_merge_policy.h"
+#include "maidsafe/vault/maid_manager/maid_manager.h"
+#include "maidsafe/vault/maid_manager/maid_manager_helpers.h"
+#include "maidsafe/vault/maid_manager/maid_manager_merge_policy.h"
 
 
 namespace maidsafe {
@@ -39,14 +40,14 @@ class Db;
 class AccountDb;
 struct PmidRecord;
 
-namespace protobuf { class MaidAccount; }
+//namespace protobuf { class MaidManager; }
 
 namespace test {
 
-class MaidAccountHandlerTest;
+class MaidManagerHandlerTest;
 
 template<typename Data>
-class MaidAccountHandlerTypedTest;
+class MaidManagerHandlerTypedTest;
 
 }  // namespace test
 
@@ -55,7 +56,7 @@ class MaidAccount {
  public:
   enum class Status { kOk, kLowSpace, kNoSpace };
   typedef MaidName name_type;
-  typedef TaggedValue<NonEmptyString, struct SerialisedMaidAccountTag> serialised_type;
+  typedef TaggedValue<NonEmptyString, struct SerialisedMaidManagerTag> serialised_type;
 
   // For client adding new account
   MaidAccount(const MaidName& maid_name, Db& db, const NodeId& this_node_id);
@@ -79,7 +80,7 @@ class MaidAccount {
   void UpdatePmidTotals(const PmidRecord& pmid_record);
 
   // headers and unresolved data
-  void AddLocalUnresolvedEntry(const MaidAccountUnresolvedEntry& unresolved_entry);
+  void AddLocalUnresolvedEntry(const MaidManagerUnresolvedEntry& unresolved_entry);
   NonEmptyString GetSyncData();
   void ApplySyncData(const NonEmptyString& serialised_unresolved_entries);
   void ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node);
@@ -93,9 +94,9 @@ class MaidAccount {
   }
   name_type name() const { return maid_name_; }
 
-  friend class test::MaidAccountHandlerTest;
+  friend class test::MaidManagerHandlerTest;
   template<typename Data>
-  friend class test::MaidAccountHandlerTypedTest;
+  friend class test::MaidManagerHandlerTypedTest;
 
  private:
   MaidAccount(const MaidAccount&);
@@ -107,7 +108,7 @@ class MaidAccount {
   std::vector<PmidTotals> pmid_totals_;
   int64_t total_claimed_available_size_by_pmids_, total_put_data_;
   std::unique_ptr<AccountDb> account_db_;
-  Sync<MaidAccountMergePolicy> sync_;
+  Sync<MaidManagerMergePolicy> sync_;
   uint16_t account_transfer_nodes_;
   static const size_t kSyncTriggerCount_;
 };

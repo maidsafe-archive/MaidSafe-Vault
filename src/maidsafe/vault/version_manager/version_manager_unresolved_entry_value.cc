@@ -13,7 +13,7 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/version_manager/structured_data_unresolved_entry_value.h"
+#include "maidsafe/vault/version_manager/version_manager_unresolved_entry_value.h"
 
 #include <tuple>
 
@@ -22,33 +22,33 @@ namespace maidsafe {
 
 namespace vault {
 
-StructuredDataUnresolvedEntryValue::StructuredDataUnresolvedEntryValue()
+VersionManagerUnresolvedEntryValue::VersionManagerUnresolvedEntryValue()
     : version(),
       new_version(),
       reply_functor(),
       serialised_db_value() {}
 
-StructuredDataUnresolvedEntryValue::StructuredDataUnresolvedEntryValue(
-    const StructuredDataUnresolvedEntryValue& other)
+VersionManagerUnresolvedEntryValue::VersionManagerUnresolvedEntryValue(
+    const VersionManagerUnresolvedEntryValue& other)
         : version(other.version),
           new_version(other.new_version),
           reply_functor(other.reply_functor),
           serialised_db_value(other.serialised_db_value) {}
 
-StructuredDataUnresolvedEntryValue& StructuredDataUnresolvedEntryValue::operator=(
-    StructuredDataUnresolvedEntryValue other) {
+VersionManagerUnresolvedEntryValue& VersionManagerUnresolvedEntryValue::operator=(
+    VersionManagerUnresolvedEntryValue other) {
   version = other.version;
   new_version = other.new_version;
   reply_functor = other.reply_functor;
   serialised_db_value = other.serialised_db_value;
   // TODO(dirvine) need to check that we should not parse and
-  // compare serialised StructuredDataVersions
+  // compare serialised VersionManagerVersions
   return *this;
 }
 
 // no move in boost::optional uncomment when std::optional is available
-// void swap(const StructuredDataUnresolvedEntryValue& lhs,
-//           const StructuredDataUnresolvedEntryValue& rhs) MAIDSAFE_NOEXCEPT {
+// void swap(const VersionManagerUnresolvedEntryValue& lhs,
+//           const VersionManagerUnresolvedEntryValue& rhs) MAIDSAFE_NOEXCEPT {
 //  using std::swap;
 //  swap(lhs.version, rhs.version);
 //  swap(lhs.new_version, rhs.new_version);
@@ -56,36 +56,36 @@ StructuredDataUnresolvedEntryValue& StructuredDataUnresolvedEntryValue::operator
 //  swap(lhs.serialised_db_value, rhs.serialised_db_value);
 // }
 
-bool operator==(const StructuredDataUnresolvedEntryValue& lhs,
-                const StructuredDataUnresolvedEntryValue& rhs) {
+bool operator==(const VersionManagerUnresolvedEntryValue& lhs,
+                const VersionManagerUnresolvedEntryValue& rhs) {
   return lhs.version == rhs.version &&
          lhs.new_version == rhs.new_version &&
          lhs.serialised_db_value == rhs.serialised_db_value;
 }
 
-bool operator!=(const StructuredDataUnresolvedEntryValue& lhs,
-                const StructuredDataUnresolvedEntryValue& rhs) {
+bool operator!=(const VersionManagerUnresolvedEntryValue& lhs,
+                const VersionManagerUnresolvedEntryValue& rhs) {
   return !operator==(lhs, rhs);
 }
 
-bool operator<(const StructuredDataUnresolvedEntryValue& lhs,
-               const StructuredDataUnresolvedEntryValue& rhs) {
+bool operator<(const VersionManagerUnresolvedEntryValue& lhs,
+               const VersionManagerUnresolvedEntryValue& rhs) {
   return std::tie(lhs.version, lhs.new_version, lhs.serialised_db_value) <
          std::tie(rhs.version, rhs.new_version, rhs.serialised_db_value);
 }
 
-bool operator>(const StructuredDataUnresolvedEntryValue& lhs,
-               const StructuredDataUnresolvedEntryValue& rhs) {
+bool operator>(const VersionManagerUnresolvedEntryValue& lhs,
+               const VersionManagerUnresolvedEntryValue& rhs) {
   return operator<(rhs, lhs);
 }
 
-bool operator<=(const StructuredDataUnresolvedEntryValue& lhs,
-                const StructuredDataUnresolvedEntryValue& rhs) {
+bool operator<=(const VersionManagerUnresolvedEntryValue& lhs,
+                const VersionManagerUnresolvedEntryValue& rhs) {
   return !operator>(lhs, rhs);
 }
 
-bool operator>=(const StructuredDataUnresolvedEntryValue& lhs,
-                const StructuredDataUnresolvedEntryValue& rhs) {
+bool operator>=(const VersionManagerUnresolvedEntryValue& lhs,
+                const VersionManagerUnresolvedEntryValue& rhs) {
   return !operator<(lhs, rhs);
 }
 

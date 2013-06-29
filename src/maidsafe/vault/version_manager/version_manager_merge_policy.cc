@@ -13,11 +13,11 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/version_manager/structured_data_merge_policy.h"
+#include "maidsafe/vault/version_manager/version_manager_merge_policy.h"
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/nfs/types.h"
-#include "maidsafe/data_types/structured_data_versions.h"
+#include "maidsafe/data_types/version_manager_versions.h"
 #include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/maid_manager/maid_account.pb.h"
 #include "maidsafe/vault/utils.h"
@@ -26,21 +26,21 @@ namespace maidsafe {
 
 namespace vault {
 
-StructuredDataMergePolicy::StructuredDataMergePolicy(ManagerDb<VersionManager> *db)
+VersionManagerMergePolicy::VersionManagerMergePolicy(ManagerDb<VersionManager> *db)
     : unresolved_data_(),
       db_(db) {}
 
-StructuredDataMergePolicy::StructuredDataMergePolicy(StructuredDataMergePolicy&& other)
+VersionManagerMergePolicy::VersionManagerMergePolicy(VersionManagerMergePolicy&& other)
     : unresolved_data_(std::move(other.unresolved_data_)),
       db_(std::move(other.db_)) {}
 
-StructuredDataMergePolicy& StructuredDataMergePolicy::operator=(StructuredDataMergePolicy&& other) {
+VersionManagerMergePolicy& VersionManagerMergePolicy::operator=(VersionManagerMergePolicy&& other) {
   unresolved_data_ = std::move(other.unresolved_data_);
   db_ = std::move(other.db_);
   return *this;
 }
 
-void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
+void VersionManagerMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
   if (unresolved_entry.key.second == nfs::MessageAction::kPut) {
     assert(unresolved_entry.messages_contents.at(0).value->version);
     assert(unresolved_entry.messages_contents.at(0).value->new_version);
@@ -52,7 +52,7 @@ void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
   } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
       assert(unresolved_entry.messages_contents.at(0).value->serialised_db_value);
       MergeAccountTransfer(unresolved_entry.key.first,
-      StructuredDataVersions(*unresolved_entry.messages_contents.at(0).value->serialised_db_value));
+      VersionManagerVersions(*unresolved_entry.messages_contents.at(0).value->serialised_db_value));
   } else if (unresolved_entry.key.second == nfs::MessageAction::kDeleteBranchUntilFork) {
     assert(unresolved_entry.messages_contents.at(0).value);
     MergeDeleteBranchUntilFork(unresolved_entry.key.first,
@@ -62,28 +62,28 @@ void StructuredDataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
   }
 }
 
-void StructuredDataMergePolicy::MergePut(const DbKey& key,
-                                         const StructuredDataVersions::VersionName& new_value,
-                                         const StructuredDataVersions::VersionName& old_value) {
+void VersionManagerMergePolicy::MergePut(const DbKey& key,
+                                         const VersionManagerVersions::VersionName& new_value,
+                                         const VersionManagerVersions::VersionName& old_value) {
   auto value(db_->Get(key));
   value.Put(old_value, new_value);
   db_->Put(std::make_pair(key, value));
 }
 
-void StructuredDataMergePolicy::MergeDeleteBranchUntilFork(
+void VersionManagerMergePolicy::MergeDeleteBranchUntilFork(
     const DbKey& key,
-    const StructuredDataVersions::VersionName& tot) {
+    const VersionManagerVersions::VersionName& tot) {
   auto value(db_->Get(key));
   value.DeleteBranchUntilFork(tot);
   db_->Put(std::make_pair(key, value));
 }
 
-void StructuredDataMergePolicy::MergeDelete(const DbKey& key) {
+void VersionManagerMergePolicy::MergeDelete(const DbKey& key) {
   db_->Delete(key);
 }
 
-void StructuredDataMergePolicy::MergeAccountTransfer(const DbKey& key,
-                                                     const StructuredDataVersions& data_version) {
+void VersionManagerMergePolicy::MergeAccountTransfer(const DbKey& key,
+                                                     const VersionManagerVersions& data_version) {
   db_->Put(std::make_pair(key, data_version));
 }
 

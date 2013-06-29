@@ -35,7 +35,7 @@ namespace vault {
 
 namespace detail {
 
-StructuredDataUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message);
+VersionManagerUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message);
 
 }  // namespace detail
 

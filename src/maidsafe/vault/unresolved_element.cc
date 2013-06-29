@@ -21,10 +21,10 @@ License.
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/unresolved_element.pb.h"
-#include "maidsafe/vault/maid_manager/maid_account_merge_policy.h"
-#include "maidsafe/vault/metadata_manager/metadata_merge_policy.h"
-#include "maidsafe/vault/pmid_manager/pmid_account_merge_policy.h"
-#include "maidsafe/vault/version_manager/structured_data_merge_policy.h"
+#include "maidsafe/vault/maid_manager/maid_manager_merge_policy.h"
+#include "maidsafe/vault/data_manager/data_manager_merge_policy.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager_merge_policy.h"
+#include "maidsafe/vault/version_manager/version_manager_merge_policy.h"
 
 
 namespace maidsafe {

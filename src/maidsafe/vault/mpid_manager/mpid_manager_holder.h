@@ -27,12 +27,12 @@ namespace maidsafe {
 namespace nfs {
 
 template<>
-struct PersonaTypes<Persona::kMpidAccountHolder> {
+struct PersonaTypes<Persona::kMpidManager> {
   typedef DataNameVariant DbKey;
   typedef NonEmptyString DbValue;
   typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
   typedef DbValue UnresolvedEntryValue;
-  static const Persona persona = Persona::kMpidAccountHolder;
+  static const Persona persona = Persona::kMpidManager;
 };
 
 }  // namespace nfs
@@ -40,7 +40,7 @@ struct PersonaTypes<Persona::kMpidAccountHolder> {
 
 namespace vault {
 
-typedef nfs::PersonaTypes<nfs::Persona::kMpidAccountHolder> MpidAccountHolder;
+typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidAccountHolder;
 
 }  // namespace vault
 

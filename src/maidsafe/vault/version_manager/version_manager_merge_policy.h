@@ -29,27 +29,27 @@ License.
 #include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/unresolved_element.h"
 #include "maidsafe/vault/version_manager/version_manager.h"
-#include "maidsafe/vault/version_manager/structured_data_key.h"
-#include "maidsafe/vault/version_manager/structured_data_unresolved_entry_value.h"
+#include "maidsafe/vault/version_manager/version_manager_key.h"
+#include "maidsafe/vault/version_manager/version_manager_unresolved_entry_value.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-typedef UnresolvedElement<VersionManager> StructuredDataUnresolvedEntry;
-typedef StructuredDataUnresolvedEntry StructuredDataResolvedEntry;
+typedef UnresolvedElement<VersionManager> VersionManagerUnresolvedEntry;
+typedef VersionManagerUnresolvedEntry VersionManagerResolvedEntry;
 
-class StructuredDataMergePolicy {
+class VersionManagerMergePolicy {
  public:
-  typedef StructuredDataUnresolvedEntry UnresolvedEntry;
-  typedef StructuredDataResolvedEntry ResolvedEntry;
+  typedef VersionManagerUnresolvedEntry UnresolvedEntry;
+  typedef VersionManagerResolvedEntry ResolvedEntry;
   typedef VersionManager::DbKey DbKey;
   typedef ManagerDb<VersionManager> Database;
 
-  explicit StructuredDataMergePolicy(ManagerDb<VersionManager>* db);
-  StructuredDataMergePolicy(StructuredDataMergePolicy&& other);
-  StructuredDataMergePolicy& operator=(StructuredDataMergePolicy&& other);
+  explicit VersionManagerMergePolicy(ManagerDb<VersionManager>* db);
+  VersionManagerMergePolicy(VersionManagerMergePolicy&& other);
+  VersionManagerMergePolicy& operator=(VersionManagerMergePolicy&& other);
 
  protected:
   void Merge(const UnresolvedEntry& unresolved_entry);
@@ -58,8 +58,8 @@ class StructuredDataMergePolicy {
   ManagerDb<VersionManager>* db_;
 
  private:
-  StructuredDataMergePolicy(const StructuredDataMergePolicy&);
-  StructuredDataMergePolicy& operator=(const StructuredDataMergePolicy&);
+  VersionManagerMergePolicy(const VersionManagerMergePolicy&);
+  VersionManagerMergePolicy& operator=(const VersionManagerMergePolicy&);
 
   void MergePut(const DbKey& key,
                 const StructuredDataVersions::VersionName& new_value,

@@ -41,10 +41,10 @@ set(VaultSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/vault)
 glob_dir(Vault ${VaultSourcesDir} Vault)
 list(REMOVE_ITEM VaultSources ${VaultSourcesDir}/vault_main.cc)
 glob_dir(DataHolder ${VaultSourcesDir}/pmid_node "Data Holder\\\\")
-glob_dir(MaidAccountHolder ${VaultSourcesDir}/maid_manager "Maid Account Holder\\\\")
+glob_dir(MaidManager ${VaultSourcesDir}/maid_manager "Maid Account Holder\\\\")
 glob_dir(MetadataManager ${VaultSourcesDir}/metadata_manager "Metadata Manager\\\\")
 glob_dir(MpidAccountHolder ${VaultSourcesDir}/mpid_account_holder "Mpid Account Holder\\\\")
-glob_dir(PmidAccountHolder ${VaultSourcesDir}/pmid_manager "Pmid Account Holder\\\\")
+glob_dir(PmidManager ${VaultSourcesDir}/pmid_manager "Pmid Account Holder\\\\")
 glob_dir(VersionManager ${VaultSourcesDir}/version_manager "Structured Data Manager\\\\")
 
 glob_dir(VaultTests ${VaultSourcesDir}/tests "Tests")
@@ -56,10 +56,10 @@ glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
 #==================================================================================================#
 ms_add_static_library(vault ${VaultAllFiles}
                             ${DataHolderAllFiles}
-                            ${MaidAccountHolderAllFiles}
+                            ${MaidManagerAllFiles}
                             ${MetadataManagerAllFiles}
                             ${MpidAccountHolderAllFiles}
-                            ${PmidAccountHolderAllFiles}
+                            ${PmidManagerAllFiles}
                             ${VersionManagerAllFiles})
 ms_add_executable(lifestuff_vault Production ${VaultSourcesDir}/vault_main.cc)
 

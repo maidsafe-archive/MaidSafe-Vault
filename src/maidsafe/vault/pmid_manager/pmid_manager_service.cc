@@ -25,8 +25,8 @@ namespace fs = boost::filesystem;
 namespace maidsafe {
 namespace vault {
 
-const int PmidAccountHolderService::kDeleteRequestsRequired_(3);
-const int PmidAccountHolderService::kPutRepliesSuccessesRequired_(1);
+const int PmidManagerService::kDeleteRequestsRequired_(3);
+const int PmidManagerService::kPutRepliesSuccessesRequired_(1);
 
 namespace detail {
 
@@ -36,12 +36,12 @@ PmidName GetPmidAccountName(const nfs::Message& message) {
 
 template<typename Message>
 inline bool ForThisPersona(const Message& message) {
-  return message.destination_persona() != nfs::Persona::kPmidAccountHolder;
+  return message.destination_persona() != nfs::Persona::kPmidManager;
 }
 
 }  // namespace detail
 
-PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
+PmidManagerService::PmidManagerService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
                                                    Db& db)
     : routing_(routing),
@@ -50,7 +50,7 @@ PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
       pmid_account_handler_(db, routing.kNodeId()),
       nfs_(routing, pmid) {}
 
-void PmidAccountHolderService::HandleMessage(const nfs::Message& message,
+void PmidManagerService::HandleMessage(const nfs::Message& message,
                                              const routing::ReplyFunctor& reply_functor) {
   ValidateGenericSender(message);
   nfs::Reply reply(CommonErrors::success);
@@ -70,7 +70,7 @@ void PmidAccountHolderService::HandleMessage(const nfs::Message& message,
   reply_functor(reply.Serialise()->string());
 }
 
-void PmidAccountHolderService::HandleGetPmidTotals(const nfs::Message& message,
+void PmidManagerService::HandleGetPmidTotals(const nfs::Message& message,
                                                    const routing::ReplyFunctor& reply_functor) {
   try {
     PmidRecord pmid_record(pmid_account_handler_.GetPmidRecord(PmidName(message.data().name)));
@@ -89,7 +89,7 @@ void PmidAccountHolderService::HandleGetPmidTotals(const nfs::Message& message,
   }
 }
 
-void PmidAccountHolderService::HandleChurnEvent(routing::MatrixChange matrix_change) {
+void PmidManagerService::HandleChurnEvent(routing::MatrixChange matrix_change) {
 //  CheckAccounts();
   auto account_names(pmid_account_handler_.GetAccountNames());
   auto itr(std::begin(account_names));
@@ -114,7 +114,7 @@ void PmidAccountHolderService::HandleChurnEvent(routing::MatrixChange matrix_cha
   }
 }
 
-void PmidAccountHolderService::CheckAccounts() {
+void PmidManagerService::CheckAccounts() {
 //  // Non-archived
 //  std::vector<PmidName> accounts_held(pmid_account_handler_.GetAccountNames());
 //  for (auto it(accounts_held.begin()); it != accounts_held.end(); ++it) {
@@ -132,7 +132,7 @@ void PmidAccountHolderService::CheckAccounts() {
 //      });
 }
 
-bool PmidAccountHolderService::AssessRange(const PmidName& account_name,
+bool PmidManagerService::AssessRange(const PmidName& account_name,
                                            PmidAccount::DataHolderStatus account_status,
                                            bool is_connected) {
   int temp_int(0);
@@ -155,7 +155,7 @@ bool PmidAccountHolderService::AssessRange(const PmidName& account_name,
   }
 }
 
-void PmidAccountHolderService::ValidateDataSender(const nfs::Message& message) const {
+void PmidManagerService::ValidateDataSender(const nfs::Message& message) const {
   if (!message.HasDataHolder()
       || !routing_.IsConnectedVault(NodeId(message.pmid_node()->string()))
       || routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
@@ -165,7 +165,7 @@ void PmidAccountHolderService::ValidateDataSender(const nfs::Message& message) c
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void PmidAccountHolderService::ValidateGenericSender(const nfs::Message& message) const {
+void PmidManagerService::ValidateGenericSender(const nfs::Message& message) const {
   if (!routing_.IsConnectedVault(message.source().node_id)
       || routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
     ThrowError(VaultErrors::permission_denied);
@@ -176,7 +176,7 @@ void PmidAccountHolderService::ValidateGenericSender(const nfs::Message& message
 
 // =============== Put/Delete data ================================================================
 
-void PmidAccountHolderService::SendReplyAndAddToAccumulator(
+void PmidManagerService::SendReplyAndAddToAccumulator(
     const nfs::Message& message,
     const routing::ReplyFunctor& reply_functor,
     const nfs::Reply& reply) {
@@ -188,7 +188,7 @@ void PmidAccountHolderService::SendReplyAndAddToAccumulator(
 
 // =============== Sync ===========================================================================
 
-void PmidAccountHolderService::Sync(const PmidName& account_name) {
+void PmidManagerService::Sync(const PmidName& account_name) {
   auto serialised_sync_data(pmid_account_handler_.GetSyncData(account_name));
   if (!serialised_sync_data.IsInitialised())  // Nothing to sync
     return;
@@ -202,7 +202,7 @@ void PmidAccountHolderService::Sync(const PmidName& account_name) {
   pmid_account_handler_.IncrementSyncAttempts(account_name);
 }
 
-void PmidAccountHolderService::HandleSync(const nfs::Message& message) {
+void PmidManagerService::HandleSync(const nfs::Message& message) {
   std::vector<PmidAccountResolvedEntry> resolved_entries;
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.data().content.string())) {
@@ -217,7 +217,7 @@ void PmidAccountHolderService::HandleSync(const nfs::Message& message) {
 
 // =============== Account transfer ===============================================================
 
-void PmidAccountHolderService::TransferAccount(const PmidName& account_name,
+void PmidManagerService::TransferAccount(const PmidName& account_name,
                                                const NodeId& new_node) {
   protobuf::PmidAccount pmid_account;
   pmid_account.set_pmid_name(account_name.data.string());
@@ -227,7 +227,7 @@ void PmidAccountHolderService::TransferAccount(const PmidName& account_name,
   nfs_.TransferAccount(new_node, NonEmptyString(pmid_account.SerializeAsString()));
 }
 
-void PmidAccountHolderService::HandleAccountTransfer(const nfs::Message& message) {
+void PmidManagerService::HandleAccountTransfer(const nfs::Message& message) {
   protobuf::PmidAccount pmid_account;
   NodeId source_id(message.source().node_id);
   if (!pmid_account.ParseFromString(message.data().content.string()))
@@ -243,19 +243,19 @@ void PmidAccountHolderService::HandleAccountTransfer(const nfs::Message& message
 
 // =============== DataHolder =====================================================================
 
-void PmidAccountHolderService::InformOfDataHolderDown(const PmidName& pmid_name) {
+void PmidManagerService::InformOfDataHolderDown(const PmidName& pmid_name) {
   pmid_account_handler_.SetDataHolderGoingDown(pmid_name);
   InformAboutDataHolder(pmid_name, false);
   pmid_account_handler_.SetDataHolderDown(pmid_name);
 }
 
-void PmidAccountHolderService::InformOfDataHolderUp(const PmidName& pmid_name) {
+void PmidManagerService::InformOfDataHolderUp(const PmidName& pmid_name) {
   pmid_account_handler_.SetDataHolderGoingUp(pmid_name);
   InformAboutDataHolder(pmid_name, true);
   pmid_account_handler_.SetDataHolderUp(pmid_name);
 }
 
-void PmidAccountHolderService::InformAboutDataHolder(const PmidName& /*pmid_name*/, bool /*node_up*/) {
+void PmidManagerService::InformAboutDataHolder(const PmidName& /*pmid_name*/, bool /*node_up*/) {
   // TODO(Team): Decide on a better strategy instead of sleep
 //  Sleep(boost::posix_time::minutes(3));
 //  auto names(pmid_account_handler_.GetArchiveFileNames(pmid_name));
@@ -265,18 +265,18 @@ void PmidAccountHolderService::InformAboutDataHolder(const PmidName& /*pmid_name
 //      return;
 //    }
 
-//    std::set<PmidName> metadata_manager_ids(GetDataNamesInFile(pmid_name, *ritr));
-//    SendMessages(pmid_name, metadata_manager_ids, node_up);
+//    std::set<PmidName> data_manager_ids(GetDataNamesInFile(pmid_name, *ritr));
+//    SendMessages(pmid_name, data_manager_ids, node_up);
 //  }
 }
 
-void PmidAccountHolderService::RevertMessages(const PmidName& pmid_name,
+void PmidManagerService::RevertMessages(const PmidName& pmid_name,
                                               const std::vector<fs::path>::reverse_iterator& begin,
                                               std::vector<fs::path>::reverse_iterator& current,
                                               bool node_up) {
   while (current != begin) {
-    std::set<PmidName> metadata_manager_ids(GetDataNamesInFile(pmid_name, *current));
-    SendMessages(pmid_name, metadata_manager_ids, node_up);
+    std::set<PmidName> data_manager_ids(GetDataNamesInFile(pmid_name, *current));
+    SendMessages(pmid_name, data_manager_ids, node_up);
     --current;
   }
 
@@ -284,17 +284,17 @@ void PmidAccountHolderService::RevertMessages(const PmidName& pmid_name,
              pmid_account_handler_.SetDataHolderDown(pmid_name);
 }
 
-std::set<PmidName> PmidAccountHolderService::GetDataNamesInFile(
+std::set<PmidName> PmidManagerService::GetDataNamesInFile(
     const PmidName& /*pmid_name*/, const boost::filesystem::path& /*path*/) const {
   return std::set<PmidName>();
 }
 
-void PmidAccountHolderService::SendMessages(const PmidName& /*pmid_name*/,
-                                            const std::set<PmidName>& /*metadata_manager_ids*/,
+void PmidManagerService::SendMessages(const PmidName& /*pmid_name*/,
+                                            const std::set<PmidName>& /*data_manager_ids*/,
                                             bool /*node_up*/) {
-//  for (const PmidName& metadata_manager_id : metadata_manager_ids) {
+//  for (const PmidName& data_manager_id : data_manager_ids) {
     //  TODO(dirvine) implement
-        //    nfs_.DataHolderStatusChanged(NodeId(metadata_manager_id), NodeId(pmid_name), node_up);
+        //    nfs_.DataHolderStatusChanged(NodeId(data_manager_id), NodeId(pmid_name), node_up);
 //  }
 }
 

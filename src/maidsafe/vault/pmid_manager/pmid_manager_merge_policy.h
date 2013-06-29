@@ -32,7 +32,7 @@ License.
 namespace maidsafe {
 namespace vault {
 
-typedef UnresolvedElement<PmidAccountHolder> PmidAccountUnresolvedEntry;
+typedef UnresolvedElement<PmidManager> PmidAccountUnresolvedEntry;
 typedef PmidAccountUnresolvedEntry PmidAccountResolvedEntry;
 
 class PmidAccountMergePolicy {

@@ -39,7 +39,7 @@ namespace vault {
 
 struct PmidRecord;
 
-namespace test { class MaidAccountHandlerTest; }
+namespace test { class MaidManagerHandlerTest; }
 
 
 class MaidAccountHandler {
@@ -58,7 +58,7 @@ class MaidAccountHandler {
   std::vector<PmidName> GetPmidNames(const MaidName& account_name) const;
   void UpdatePmidTotals(const MaidName& account_name, const PmidRecord& pmid_totals);
   void AddLocalUnresolvedEntry(const MaidName& account_name,
-                               const MaidAccountUnresolvedEntry& unresolved_entry);
+                               const MaidManagerUnresolvedEntry& unresolved_entry);
   // Sync operations
   std::vector<MaidName> GetAccountNames() const;
   MaidAccount::serialised_type GetSerialisedAccount(const MaidName& account_name) const;
@@ -84,7 +84,7 @@ class MaidAccountHandler {
   template<typename Data>
   void DeleteData(const MaidName& account_name, const typename Data::name_type& data_name);
 
-  friend class test::MaidAccountHandlerTest;
+  friend class test::MaidManagerHandlerTest;
 
  private:
   MaidAccountHandler(const MaidAccountHandler&);
@@ -102,6 +102,6 @@ class MaidAccountHandler {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/maid_manager/maid_account_handler-inl.h"
+#include "maidsafe/vault/maid_manager/maid_manager_handler-inl.h"
 
 #endif  // MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_HANDLER_H_

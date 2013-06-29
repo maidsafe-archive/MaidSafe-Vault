@@ -26,10 +26,10 @@ namespace maidsafe {
 
 namespace vault {
 
-struct StructuredDataUnresolvedEntryValue {
-  StructuredDataUnresolvedEntryValue();
-  StructuredDataUnresolvedEntryValue(const StructuredDataUnresolvedEntryValue& other);
-  StructuredDataUnresolvedEntryValue& operator=(StructuredDataUnresolvedEntryValue other);
+struct VersionManagerUnresolvedEntryValue {
+  VersionManagerUnresolvedEntryValue();
+  VersionManagerUnresolvedEntryValue(const VersionManagerUnresolvedEntryValue& other);
+  VersionManagerUnresolvedEntryValue& operator=(VersionManagerUnresolvedEntryValue other);
   // TODO(Team) when we get std::optional we can have move ctr but boost prevents this just now
   boost::optional<StructuredDataVersions::VersionName> version;
   boost::optional<StructuredDataVersions::VersionName> new_version;
@@ -38,26 +38,26 @@ struct StructuredDataUnresolvedEntryValue {
 };
 
 // no move in boost::optional uncomment when std::optional is available
-// void swap(const StructuredDataUnresolvedEntryValue& lhs,
-//           const StructuredDataUnresolvedEntryValue& rhs) MAIDSAFE_NOEXCEPT;
+// void swap(const VersionManagerUnresolvedEntryValue& lhs,
+//           const VersionManagerUnresolvedEntryValue& rhs) MAIDSAFE_NOEXCEPT;
 
-bool operator==(const StructuredDataUnresolvedEntryValue& lhs,
-                const StructuredDataUnresolvedEntryValue& rhs);
+bool operator==(const VersionManagerUnresolvedEntryValue& lhs,
+                const VersionManagerUnresolvedEntryValue& rhs);
 
-bool operator!=(const StructuredDataUnresolvedEntryValue& lhs,
-                const StructuredDataUnresolvedEntryValue& rhs);
+bool operator!=(const VersionManagerUnresolvedEntryValue& lhs,
+                const VersionManagerUnresolvedEntryValue& rhs);
 
-bool operator<(const StructuredDataUnresolvedEntryValue& lhs,
-               const StructuredDataUnresolvedEntryValue& rhs);
+bool operator<(const VersionManagerUnresolvedEntryValue& lhs,
+               const VersionManagerUnresolvedEntryValue& rhs);
 
-bool operator>(const StructuredDataUnresolvedEntryValue& lhs,
-               const StructuredDataUnresolvedEntryValue& rhs);
+bool operator>(const VersionManagerUnresolvedEntryValue& lhs,
+               const VersionManagerUnresolvedEntryValue& rhs);
 
-bool operator<=(const StructuredDataUnresolvedEntryValue& lhs,
-                const StructuredDataUnresolvedEntryValue& rhs);
+bool operator<=(const VersionManagerUnresolvedEntryValue& lhs,
+                const VersionManagerUnresolvedEntryValue& rhs);
 
-bool operator>=(const StructuredDataUnresolvedEntryValue& lhs,
-                const StructuredDataUnresolvedEntryValue& rhs);
+bool operator>=(const VersionManagerUnresolvedEntryValue& lhs,
+                const VersionManagerUnresolvedEntryValue& rhs);
 
 }  // namespace vault
 

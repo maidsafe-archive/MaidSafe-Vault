@@ -24,12 +24,12 @@ License.
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
 
-#include "maidsafe/vault/metadata_manager/metadata_value.h"
-#include "maidsafe/vault/metadata_manager/metadata_manager.h"
-#include "maidsafe/vault/metadata_manager/metadata_helpers.h"
+#include "maidsafe/vault/data_manager/data_manager_value.h"
+#include "maidsafe/vault/data_manager/data_manager.h"
+#include "maidsafe/vault/data_manager/data_manager_helpers.h"
 #include "maidsafe/vault/manager_db.h"
-#include "maidsafe/vault/metadata_manager/metadata.pb.h"
-#include "maidsafe/vault/metadata_manager/metadata_merge_policy.h"
+#include "maidsafe/vault/data_manager/data_manager.pb.h"
+#include "maidsafe/vault/data_manager/data_manager_merge_policy.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
 
@@ -126,6 +126,6 @@ class MetadataHandler {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/metadata_manager/metadata_handler-inl.h"
+#include "maidsafe/vault/data_manager/data_manager_handler-inl.h"
 
 #endif  // MAIDSAFE_VAULT_DATA_MANAGER_METADATA_HANDLER_H_

@@ -48,7 +48,7 @@ PmidName GetPmidAccountName(const nfs::Message& message);
 }  // namespace detail
 
 template<typename Data>
-void PmidAccountHolderService::HandleMessage(const nfs::Message& message,
+void PmidManagerService::HandleMessage(const nfs::Message& message,
                                              const routing::ReplyFunctor& reply_functor) {
   ValidateDataSender(message);
   nfs::Reply reply(CommonErrors::success);
@@ -69,7 +69,7 @@ void PmidAccountHolderService::HandleMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-void PmidAccountHolderService::HandlePut(const nfs::Message& message,
+void PmidManagerService::HandlePut(const nfs::Message& message,
                                          const routing::ReplyFunctor& reply_functor) {
   maidsafe_error return_code(CommonErrors::success);
   try {
@@ -102,7 +102,7 @@ void PmidAccountHolderService::HandlePut(const nfs::Message& message,
 }
 
 template<typename Data>
-void PmidAccountHolderService::HandleDelete(const nfs::Message& message,
+void PmidManagerService::HandleDelete(const nfs::Message& message,
                                             const routing::ReplyFunctor& reply_functor) {
   try {
     typename Data::name_type data_name(message.data().name);
@@ -123,7 +123,7 @@ void PmidAccountHolderService::HandleDelete(const nfs::Message& message,
 }
 
 template<typename Data>
-void PmidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
+void PmidManagerService::HandlePutResult(const nfs::Reply& overall_result,
                                                const nfs::Message& message,
                                                routing::ReplyFunctor reply_functor) {
   if (overall_result.IsSuccess()) {
@@ -136,7 +136,7 @@ void PmidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
 }
 
 template<typename Data, nfs::MessageAction Action>
-void PmidAccountHolderService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message) {
+void PmidManagerService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message) {
   auto account_name(detail::GetPmidAccountName(message));
   auto unresolved_entry(detail::CreateUnresolvedEntry<Data, Action>(message, routing_.kNodeId()));
   pmid_account_handler_.AddLocalUnresolvedEntry(account_name, unresolved_entry);
@@ -144,7 +144,7 @@ void PmidAccountHolderService::AddLocalUnresolvedEntryThenSync(const nfs::Messag
 }
 
 template<typename Data, nfs::MessageAction Action>
-void PmidAccountHolderService::ReplyToDataManagers(
+void PmidManagerService::ReplyToDataManagers(
       const std::vector<PmidAccountResolvedEntry>& /*resolved_entries*/,
       const PmidName& /*pmid_name*/) {
   GetTagValueAndIdentityVisitor type_and_name_visitor;
@@ -152,7 +152,7 @@ void PmidAccountHolderService::ReplyToDataManagers(
   //  auto type_and_name(boost::apply_visitor(type_and_name_visitor, resolved_entry.key.first));
   //  nfs::Message::Data data(type_and_name.first, type_and_name.second, NonEmptyString(), Action);
   //  nfs::Message meassage(nfs::Persona::kDataManager,
-  //                        nfs::PersonaId(nfs::Persona::kPmidAccountHolder, routing_.kNodeId()),
+  //                        nfs::PersonaId(nfs::Persona::kPmidManager, routing_.kNodeId()),
   //                        data,
   //                        pmid_name);
   //  message.

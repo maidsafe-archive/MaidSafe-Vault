@@ -31,9 +31,9 @@ License.
 #include "maidsafe/nfs/public_key_getter.h"
 
 #include "maidsafe/vault/accumulator.h"
-#include "maidsafe/vault/metadata_manager/metadata_helpers.h"
-#include "maidsafe/vault/metadata_manager/metadata_handler.h"
-#include "maidsafe/vault/metadata_manager/metadata.pb.h"
+#include "maidsafe/vault/data_manager/data_manager_helpers.h"
+#include "maidsafe/vault/data_manager/data_manager_handler.h"
+#include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/types.h"
 
 
@@ -135,6 +135,6 @@ class DataManagerService {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/metadata_manager/metadata_manager_service-inl.h"
+#include "maidsafe/vault/data_manager/data_manager_service-inl.h"
 
 #endif  // MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_SERVICE_H_

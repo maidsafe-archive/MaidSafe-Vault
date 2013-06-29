@@ -30,7 +30,7 @@ License.
 
 #include "maidsafe/vault/pmid_node/pmid_node_service.h"
 #include "maidsafe/vault/maid_manager/maid_manager_service.h"
-#include "maidsafe/vault/metadata_manager/metadata_manager_service.h"
+#include "maidsafe/vault/data_manager/data_manager_service.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager_service.h"
 #include "maidsafe/vault/version_manager/version_manager_service.h"
 #include "maidsafe/vault/db.h"
@@ -76,10 +76,10 @@ class Vault {
   Db db_;
   std::unique_ptr<routing::Routing> routing_;
   nfs::PublicKeyGetter public_key_getter_;
-  MaidAccountHolderService maid_manager_service_;
+  MaidManagerService maid_manager_service_;
   VersionManagerService version_manager_service_;
-  DataManagerService metadata_manager_service_;
-  PmidAccountHolderService pmid_manager_service_;
+  DataManagerService data_manager_service_;
+  PmidManagerService pmid_manager_service_;
   DataHolderService pmid_node_;
   Demultiplexer demux_;
   AsioService asio_service_;

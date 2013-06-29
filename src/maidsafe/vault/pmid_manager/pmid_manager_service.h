@@ -30,26 +30,26 @@ License.
 #include "maidsafe/nfs/reply.h"
 
 #include "maidsafe/vault/accumulator.h"
-#include "maidsafe/vault/pmid_manager/pmid_account_handler.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager_handler.h"
 #include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
 namespace vault {
 
-class PmidAccountHolderService {
+class PmidManagerService {
  public:
-  PmidAccountHolderService(const passport::Pmid& pmid, routing::Routing& routing, Db& db);
+  PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing, Db& db);
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandleChurnEvent(routing::MatrixChange matrix_change);
 
  private:
-  PmidAccountHolderService(const PmidAccountHolderService&);
-  PmidAccountHolderService& operator=(const PmidAccountHolderService&);
-  PmidAccountHolderService(PmidAccountHolderService&&);
-  PmidAccountHolderService& operator=(PmidAccountHolderService&&);
+  PmidManagerService(const PmidManagerService&);
+  PmidManagerService& operator=(const PmidManagerService&);
+  PmidManagerService(PmidManagerService&&);
+  PmidManagerService& operator=(PmidManagerService&&);
 
   void ValidateDataSender(const nfs::Message& message) const;
   void ValidateGenericSender(const nfs::Message& message) const;
@@ -103,7 +103,7 @@ class PmidAccountHolderService {
   std::set<PmidName> GetDataNamesInFile(const PmidName& pmid_name,
                                         const boost::filesystem::path& path) const;
   void SendMessages(const PmidName& pmid_name,
-                    const std::set<PmidName>& metadata_manager_ids,
+                    const std::set<PmidName>& data_manager_ids,
                     bool node_up);
 
   template<typename Data, nfs::MessageAction action>
@@ -116,7 +116,7 @@ class PmidAccountHolderService {
   std::mutex accumulator_mutex_;
   Accumulator<PmidName> accumulator_;
   PmidAccountHandler pmid_account_handler_;
-  PmidAccountHolderNfs nfs_;
+  PmidManagerNfs nfs_;
   static const int kPutRepliesSuccessesRequired_;
   static const int kDeleteRequestsRequired_;
 };

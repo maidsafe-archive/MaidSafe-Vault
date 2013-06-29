@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_HELPERS_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_HELPERS_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_HELPERS_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_HELPERS_H_
 
 #include <map>
 #include <memory>
@@ -61,11 +61,11 @@ void PmidRegistrationOp::SetPublicFob<passport::PublicPmid>(
 
 struct GetPmidTotalsOp {
   GetPmidTotalsOp(const MaidName& maid_account_name, const PmidName& pmid_account_name)
-      : kMaidAccountName(maid_account_name),
+      : kMaidManagerName(maid_account_name),
         kPmidAccountName(pmid_account_name),
         mutex(),
         pmid_records() {}
-  const MaidName kMaidAccountName;
+  const MaidName kMaidManagerName;
   const PmidName kPmidAccountName;
   std::mutex mutex;
   std::vector<PmidRecord> pmid_records;
@@ -89,4 +89,4 @@ struct PmidTotals {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_HELPERS_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_HELPERS_H_

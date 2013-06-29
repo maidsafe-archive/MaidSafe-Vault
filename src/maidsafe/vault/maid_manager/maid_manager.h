@@ -21,6 +21,7 @@ License.
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
+#include "maidsafe/vault/unresolved_element.h"
 
 
 namespace maidsafe {
@@ -28,12 +29,12 @@ namespace maidsafe {
 namespace nfs {
 
 template<>
-struct PersonaTypes<Persona::kMaidAccountHolder> {
+struct PersonaTypes<Persona::kMaidManager> {
   typedef DataNameVariant DbKey;
   typedef int32_t DbValue;
   typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
   typedef DbValue UnresolvedEntryValue;
-  static const Persona persona = Persona::kMaidAccountHolder;
+  static const Persona persona = Persona::kMaidManager;
 };
 
 }  // namespace nfs
@@ -41,7 +42,9 @@ struct PersonaTypes<Persona::kMaidAccountHolder> {
 
 namespace vault {
 
-typedef nfs::PersonaTypes<nfs::Persona::kMaidAccountHolder> MaidAccountHolder;
+typedef nfs::PersonaTypes<nfs::Persona::kMaidManager> MaidManager;
+typedef UnresolvedElement<MaidManager> MaidManagerUnresolvedEntry;
+typedef MaidManagerUnresolvedEntry MaidManagerResolvedEntry;
 
 }  // namespace vault
 

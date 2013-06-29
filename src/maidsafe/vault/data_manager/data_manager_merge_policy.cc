@@ -13,14 +13,14 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/metadata_manager/metadata_merge_policy.h"
+#include "maidsafe/vault/data_manager/metadata_merge_policy.h"
 
 #include <set>
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/routing/parameters.h"
 
-#include "maidsafe/vault/metadata_manager/metadata_value.h"
+#include "maidsafe/vault/data_manager/metadata_value.h"
 
 namespace fs = boost::filesystem;
 

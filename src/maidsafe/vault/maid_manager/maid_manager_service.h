@@ -41,9 +41,9 @@ namespace vault {
 struct PmidRegistrationOp;
 struct GetPmidTotalsOp;
 
-class MaidAccountHolderService {
+class MaidManagerService {
  public:
-  MaidAccountHolderService(const passport::Pmid& pmid,
+  MaidManagerService(const passport::Pmid& pmid,
                            routing::Routing& routing,
                            nfs::PublicKeyGetter& public_key_getter,
                            Db& db);
@@ -55,10 +55,10 @@ class MaidAccountHolderService {
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
 
  private:
-  MaidAccountHolderService(const MaidAccountHolderService&);
-  MaidAccountHolderService& operator=(const MaidAccountHolderService&);
-  MaidAccountHolderService(MaidAccountHolderService&&);
-  MaidAccountHolderService& operator=(MaidAccountHolderService&&);
+  MaidManagerService(const MaidManagerService&);
+  MaidManagerService& operator=(const MaidManagerService&);
+  MaidManagerService(MaidManagerService&&);
+  MaidManagerService& operator=(MaidManagerService&&);
 
   void ValidateDataSender(const nfs::Message& message) const;
   void ValidateGenericSender(const nfs::Message& message) const;
@@ -128,7 +128,7 @@ class MaidAccountHolderService {
   std::mutex accumulator_mutex_;
   Accumulator<MaidName> accumulator_;
   MaidAccountHandler maid_account_handler_;
-  MaidAccountHolderNfs nfs_;
+  MaidManagerNfs nfs_;
   static const int kPutRepliesSuccessesRequired_;
   static const int kDefaultPaymentFactor_;
 };

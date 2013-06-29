@@ -26,9 +26,9 @@ License.
 #include "maidsafe/common/on_scope_exit.h"
 
 #include "maidsafe/vault/accumulator.h"
-#include "maidsafe/vault/maid_manager/maid_account.pb.h"
-#include "maidsafe/vault/metadata_manager/metadata_helpers.h"
-#include "maidsafe/vault/metadata_manager/metadata.pb.h"
+#include "maidsafe/vault/maid_manager/maid_manager.pb.h"
+#include "maidsafe/vault/data_manager/data_manager_helpers.h"
+#include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/unresolved_element.h"
 #include "maidsafe/vault/utils.h"

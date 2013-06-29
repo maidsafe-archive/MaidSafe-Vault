@@ -14,27 +14,27 @@ License.
 */
 
 package maidsafe.vault.protobuf;
-import "maidsafe/vault/pmid_manager/pmid_account.proto";
+import "maidsafe/vault/pmid_manager/pmid_manager.proto";
 
-message MaidAccountDbValue {
+message MaidManagerDbValue {
   required int32 average_cost = 1;
   required int32 count = 2;
 }
 
-message MaidAccountDbEntry {
+message MaidManagerDbEntry {
   required uint32 type = 1;  // name and type == db key
   required bytes name = 2;
-  required MaidAccountDbValue value = 3;
+  required MaidManagerDbValue value = 3;
 }
 
-message MaidAccount {
+message MaidManager {
   required bytes maid_name = 1;
   required bytes serialised_account_details = 2;
 }
 
-message MaidAccountDetails {
+message MaidManagerDetails {
   repeated bytes serialised_pmid_registration = 1;
-  repeated MaidAccountDbEntry db_entry = 2;
+  repeated MaidManagerDbEntry db_entry = 2;
   repeated bytes serialised_unresolved_entry = 3;
 }
 

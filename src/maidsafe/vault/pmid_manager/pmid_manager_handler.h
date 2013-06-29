@@ -25,6 +25,7 @@ License.
 #include "boost/filesystem/path.hpp"
 
 
+#include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/pmid_manager/pmid_account.h"
 #include "maidsafe/vault/types.h"
 
@@ -50,7 +51,7 @@ class PmidAccountHandler {
   void SetDataHolderDown(const PmidName& account_name);
   void SetDataHolderGoingUp(const PmidName& account_name);
   void SetDataHolderUp(const PmidName& account_name);
-  
+
   void AddLocalUnresolvedEntry(const PmidName& account_name,
                                const PmidAccountUnresolvedEntry& unresolved_entry);
   PmidRecord GetPmidRecord(const PmidName& account_name);
@@ -90,6 +91,6 @@ class PmidAccountHandler {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/pmid_manager/pmid_account_handler-inl.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager_handler-inl.h"
 
 #endif  // MAIDSAFE_VAULT_PMID_MANAGER_PMID_ACCOUNT_HANDLER_H_

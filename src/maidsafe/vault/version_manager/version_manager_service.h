@@ -33,7 +33,7 @@ License.
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/version_manager/version_manager.h"
-#include "maidsafe/vault/version_manager/structured_data_merge_policy.h"
+#include "maidsafe/vault/version_manager/version_manager_merge_policy.h"
 #include "maidsafe/vault/manager_db.h"
 
 
@@ -43,7 +43,7 @@ namespace vault {
 
 class VersionManagerService {
  public:
-  typedef Identity StructuredDataAccountName;
+  typedef Identity VersionManagerAccountName;
   VersionManagerService(const passport::Pmid& pmid,
                                routing::Routing& routing,
                                const boost::filesystem::path& path);
@@ -78,10 +78,10 @@ class VersionManagerService {
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
   std::mutex sync_mutex_;
-  Accumulator<StructuredDataAccountName> accumulator_;
-  ManagerDb<VersionManager> structured_data_db_;
+  Accumulator<VersionManagerAccountName> accumulator_;
+  ManagerDb<VersionManager> version_manager_db_;
   const NodeId kThisNodeId_;
-  Sync<StructuredDataMergePolicy> sync_;
+  Sync<VersionManagerMergePolicy> sync_;
   VersionManagerNfs nfs_;
 };
 

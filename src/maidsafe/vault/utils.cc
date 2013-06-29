@@ -117,7 +117,7 @@ typename VersionManager::DbKey
     GetKeyFromMessage<VersionManager>(const nfs::Message& message) {
   if (!message.data().type)
     ThrowError(CommonErrors::parsing_error);
-  return StructuredDataKey(GetDataNameVariant(*message.data().type, message.data().name),
+  return VersionManagerKey(GetDataNameVariant(*message.data().type, message.data().name),
                            message.data().originator);
 }
 

@@ -38,10 +38,10 @@ class MaidAccount;
 class PmidAccount;
 
 typedef nfs::NetworkFileSystem<
-    nfs::MaidAccountHolderPutPolicy,
-    nfs::MaidAccountHolderGetPolicy,
-    nfs::MaidAccountHolderDeletePolicy,
-    MaidAccountHolderPostPolicy> MaidAccountHolderNfs;
+    nfs::MaidManagerPutPolicy,
+    nfs::MaidManagerGetPolicy,
+    nfs::MaidManagerDeletePolicy,
+    MaidManagerPostPolicy> MaidManagerNfs;
 
 typedef nfs::NetworkFileSystem<
     nfs::DataManagerPutPolicy,
@@ -56,18 +56,18 @@ typedef nfs::NetworkFileSystem<
     VersionManagerPostPolicy> VersionManagerNfs;
 
 typedef nfs::NetworkFileSystem<
-    nfs::PmidAccountHolderPutPolicy,
-    nfs::PmidAccountHolderGetPolicy,
-    nfs::PmidAccountHolderDeletePolicy,
-    PmidAccountHolderPostPolicy> PmidAccountHolderNfs;
+    nfs::PmidManagerPutPolicy,
+    nfs::PmidManagerGetPolicy,
+    nfs::PmidManagerDeletePolicy,
+    PmidManagerPostPolicy> PmidManagerNfs;
 
 // TODO(dirvine) BEFORE_RELEASE this is a hack to create a type for the dataholder, the proper
 // implmentation is required ,,,,,,,,,,,,,,,,,,,,,
 typedef nfs::NetworkFileSystem<
-    nfs::PmidAccountHolderPutPolicy,
-    nfs::PmidAccountHolderGetPolicy,
-    nfs::PmidAccountHolderDeletePolicy,
-    PmidAccountHolderPostPolicy> DataHolderNfs;
+    nfs::PmidManagerPutPolicy,
+    nfs::PmidManagerGetPolicy,
+    nfs::PmidManagerDeletePolicy,
+    PmidManagerPostPolicy> PmidNodeNfs;
 
 typedef passport::PublicMaid::name_type MaidName;
 typedef passport::PublicPmid::name_type PmidName;

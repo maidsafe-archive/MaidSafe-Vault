@@ -26,13 +26,13 @@ namespace maidsafe {
 
 namespace vault {
 
-MaidAccountHandler::MaidAccountHandler(Db& db, const NodeId& this_node_id)
+MaidManagerHandler::MaidManagerHandler(Db& db, const NodeId& this_node_id)
     : db_(db),
       kThisNodeId_(this_node_id),
       mutex_(),
       maid_accounts_() {}
 
-bool MaidAccountHandler::ApplyAccountTransfer(const MaidName& account_name, const NodeId &source_id,
+bool MaidManagerHandler::ApplyAccountTransfer(const MaidName& account_name, const NodeId &source_id,
     const MaidAccount::serialised_type& serialised_maid_account_details) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, db_, kThisNodeId_,
@@ -45,41 +45,41 @@ bool MaidAccountHandler::ApplyAccountTransfer(const MaidName& account_name, cons
                                                                  serialised_maid_account_details);
 }
 
-void MaidAccountHandler::DeleteAccount(const MaidName& account_name) {
+void MaidManagerHandler::DeleteAccount(const MaidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   maid_accounts_.erase(account_name);
 }
 
-void MaidAccountHandler::RegisterPmid(const MaidName& account_name,
+void MaidManagerHandler::RegisterPmid(const MaidName& account_name,
                                       const nfs::PmidRegistration& pmid_registration) {
   std::lock_guard<std::mutex> lock(mutex_);
   maid_accounts_.at(account_name)->RegisterPmid(pmid_registration);
 }
 
-void MaidAccountHandler::UnregisterPmid(const MaidName& account_name, const PmidName& pmid_name) {
+void MaidManagerHandler::UnregisterPmid(const MaidName& account_name, const PmidName& pmid_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   maid_accounts_.at(account_name)->UnregisterPmid(pmid_name);
 }
 
-std::vector<PmidName> MaidAccountHandler::GetPmidNames(const MaidName& account_name) const {
+std::vector<PmidName> MaidManagerHandler::GetPmidNames(const MaidName& account_name) const {
   std::lock_guard<std::mutex> lock(mutex_);
   return maid_accounts_.at(account_name)->GetPmidNames();
 }
 
-void MaidAccountHandler::UpdatePmidTotals(const MaidName& account_name,
+void MaidManagerHandler::UpdatePmidTotals(const MaidName& account_name,
                                           const PmidRecord& pmid_record) {
   std::lock_guard<std::mutex> lock(mutex_);
   maid_accounts_.at(account_name)->UpdatePmidTotals(pmid_record);
 }
 
-void MaidAccountHandler::AddLocalUnresolvedEntry(
+void MaidManagerHandler::AddLocalUnresolvedEntry(
     const MaidName& account_name,
-    const MaidAccountUnresolvedEntry& unresolved_entry) {
+    const MaidManagerUnresolvedEntry& unresolved_entry) {
   std::lock_guard<std::mutex> lock(mutex_);
   maid_accounts_.at(account_name)->AddLocalUnresolvedEntry(unresolved_entry);
 }
 
-std::vector<MaidName> MaidAccountHandler::GetAccountNames() const {
+std::vector<MaidName> MaidManagerHandler::GetAccountNames() const {
   std::vector<MaidName> account_names;
   std::lock_guard<std::mutex> lock(mutex_);
   for (auto& maid_account : maid_accounts_)
@@ -87,36 +87,36 @@ std::vector<MaidName> MaidAccountHandler::GetAccountNames() const {
   return account_names;
 }
 
-MaidAccount::serialised_type MaidAccountHandler::GetSerialisedAccount(
+MaidAccount::serialised_type MaidManagerHandler::GetSerialisedAccount(
     const MaidName& account_name) const {
   std::lock_guard<std::mutex> lock(mutex_);
   return maid_accounts_.at(account_name)->Serialise();
 }
 
-NonEmptyString MaidAccountHandler::GetSyncData(const MaidName& account_name) {
+NonEmptyString MaidManagerHandler::GetSyncData(const MaidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   return maid_accounts_.at(account_name)->GetSyncData();
 }
 
-void MaidAccountHandler::ApplySyncData(const MaidName& account_name,
+void MaidManagerHandler::ApplySyncData(const MaidName& account_name,
                                        const NonEmptyString& serialised_unresolved_entries) {
   std::lock_guard<std::mutex> lock(mutex_);
   maid_accounts_.at(account_name)->ApplySyncData(serialised_unresolved_entries);
 }
 
-void MaidAccountHandler::ReplaceNodeInSyncList(const MaidName& account_name,
+void MaidManagerHandler::ReplaceNodeInSyncList(const MaidName& account_name,
                                                const NodeId& old_node,
                                                const NodeId& new_node) {
   std::lock_guard<std::mutex> lock(mutex_);
   maid_accounts_.at(account_name)->ReplaceNodeInSyncList(old_node, new_node);
 }
 
-void MaidAccountHandler::IncrementSyncAttempts(const MaidName& account_name) {
+void MaidManagerHandler::IncrementSyncAttempts(const MaidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   maid_accounts_.at(account_name)->IncrementSyncAttempts();
 }
 
-MaidAccount::Status MaidAccountHandler::AllowPut(const MaidName& account_name, int32_t cost) const {
+MaidAccount::Status MaidManagerHandler::AllowPut(const MaidName& account_name, int32_t cost) const {
   if (cost > 0) {
     std::lock_guard<std::mutex> lock(mutex_);
     return maid_accounts_.at(account_name)->AllowPut(cost);

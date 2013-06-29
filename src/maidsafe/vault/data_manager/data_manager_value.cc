@@ -13,7 +13,7 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/metadata_manager/metadata_value.h"
+#include "maidsafe/vault/data_manager/metadata_value.h"
 
 #include <string>
 

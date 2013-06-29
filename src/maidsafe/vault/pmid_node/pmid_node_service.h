@@ -117,7 +117,7 @@ class DataHolderService {
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
   Accumulator<DataNameVariant> accumulator_;
-  DataHolderNfs nfs_;
+  PmidNodeNfs nfs_;
 };
 
 }  // namespace vault

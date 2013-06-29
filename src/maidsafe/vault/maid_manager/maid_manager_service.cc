@@ -45,7 +45,7 @@ int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&) {
   return 0;
 }
 
-MaidName GetMaidAccountName(const nfs::Message& message) {
+MaidName GetMaidManagerName(const nfs::Message& message) {
   return MaidName(Identity(message.source().node_id.string()));
 }
 
@@ -55,7 +55,7 @@ namespace {
 
 template<typename Message>
 inline bool ForThisPersona(const Message& message) {
-  return message.destination_persona() != nfs::Persona::kMaidAccountHolder;
+  return message.destination_persona() != nfs::Persona::kMaidManager;
 }
 
 template<typename T>
@@ -130,10 +130,10 @@ PmidRecord MergePmidTotals(std::shared_ptr<GetPmidTotalsOp> op_data) {
 
 
 
-const int MaidAccountHolderService::kPutRepliesSuccessesRequired_(3);
-const int MaidAccountHolderService::kDefaultPaymentFactor_(4);
+const int MaidManagerService::kPutRepliesSuccessesRequired_(3);
+const int MaidManagerService::kDefaultPaymentFactor_(4);
 
-MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
+MaidManagerService::MaidManagerService(const passport::Pmid& pmid,
                                                    routing::Routing& routing,
                                                    nfs::PublicKeyGetter& public_key_getter,
                                                    Db& db)
@@ -144,7 +144,7 @@ MaidAccountHolderService::MaidAccountHolderService(const passport::Pmid& pmid,
       maid_account_handler_(db, routing.kNodeId()),
       nfs_(routing, pmid) {}
 
-void MaidAccountHolderService::HandleMessage(const nfs::Message& message,
+void MaidManagerService::HandleMessage(const nfs::Message& message,
                                              const routing::ReplyFunctor& reply_functor) {
   ValidateGenericSender(message);
   nfs::Reply reply(CommonErrors::success);
@@ -171,7 +171,7 @@ void MaidAccountHolderService::HandleMessage(const nfs::Message& message,
   reply_functor(reply.Serialise()->string());
 }
 
-void MaidAccountHolderService::ValidateDataSender(const nfs::Message& message) const {
+void MaidManagerService::ValidateDataSender(const nfs::Message& message) const {
   if (!routing_.IsConnectedClient(message.source().node_id))
     ThrowError(VaultErrors::permission_denied);
 
@@ -179,7 +179,7 @@ void MaidAccountHolderService::ValidateDataSender(const nfs::Message& message) c
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void MaidAccountHolderService::ValidateGenericSender(const nfs::Message& message) const {
+void MaidManagerService::ValidateGenericSender(const nfs::Message& message) const {
   if (message.data().action == nfs::MessageAction::kRegisterPmid) {
     if (!routing_.IsConnectedClient(message.source().node_id))
       ThrowError(VaultErrors::permission_denied);
@@ -188,7 +188,7 @@ void MaidAccountHolderService::ValidateGenericSender(const nfs::Message& message
   } else {
     if (!routing_.IsConnectedVault(message.source().node_id))
       ThrowError(VaultErrors::permission_denied);
-    if (!FromMaidAccountHolder(message) || !ForThisPersona(message))
+    if (!FromMaidManager(message) || !ForThisPersona(message))
       ThrowError(CommonErrors::invalid_parameter);
   }
 }
@@ -196,7 +196,7 @@ void MaidAccountHolderService::ValidateGenericSender(const nfs::Message& message
 
 // =============== Put/Delete data =================================================================
 
-void MaidAccountHolderService::SendReplyAndAddToAccumulator(
+void MaidManagerService::SendReplyAndAddToAccumulator(
     const nfs::Message& message,
     const routing::ReplyFunctor& reply_functor,
     const nfs::Reply& reply) {
@@ -208,7 +208,7 @@ void MaidAccountHolderService::SendReplyAndAddToAccumulator(
 
 // =============== Pmid registration ===============================================================
 
-void MaidAccountHolderService::HandlePmidRegistration(const nfs::Message& message,
+void MaidManagerService::HandlePmidRegistration(const nfs::Message& message,
                                                       const routing::ReplyFunctor& reply_functor) {
   NodeId source_id(message.source().node_id);
 
@@ -235,7 +235,7 @@ void MaidAccountHolderService::HandlePmidRegistration(const nfs::Message& messag
       });
 }
 
-void MaidAccountHolderService::FinalisePmidRegistration(
+void MaidManagerService::FinalisePmidRegistration(
     std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
   assert(pmid_registration_op->count == 2);
   auto send_reply([&](const maidsafe_error& error)->void {
@@ -278,7 +278,7 @@ void MaidAccountHolderService::FinalisePmidRegistration(
 
 // =============== Sync ============================================================================
 
-void MaidAccountHolderService::Sync(const MaidName& account_name) {
+void MaidManagerService::Sync(const MaidName& account_name) {
   auto serialised_sync_data(maid_account_handler_.GetSyncData(account_name));
   if (!serialised_sync_data.IsInitialised())  // Nothing to sync
     return;
@@ -292,7 +292,7 @@ void MaidAccountHolderService::Sync(const MaidName& account_name) {
   maid_account_handler_.IncrementSyncAttempts(account_name);
 }
 
-void MaidAccountHolderService::HandleSync(const nfs::Message& message) {
+void MaidManagerService::HandleSync(const nfs::Message& message) {
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.data().content.string())) {
     LOG(kError) << "Error parsing kSynchronise message.";
@@ -305,17 +305,17 @@ void MaidAccountHolderService::HandleSync(const nfs::Message& message) {
 
 // =============== Account transfer ================================================================
 
-void MaidAccountHolderService::TransferAccount(const MaidName& account_name,
+void MaidManagerService::TransferAccount(const MaidName& account_name,
                                                const NodeId& new_node) {
-  protobuf::MaidAccount maid_account;
+  protobuf::MaidManager maid_account;
   maid_account.set_maid_name(account_name->string());
   maid_account.set_serialised_account_details(
       maid_account_handler_.GetSerialisedAccount(account_name)->string());
   nfs_.TransferAccount(new_node, NonEmptyString(maid_account.SerializeAsString()));
 }
 
-void MaidAccountHolderService::HandleAccountTransfer(const nfs::Message& message) {
-  protobuf::MaidAccount maid_account;
+void MaidManagerService::HandleAccountTransfer(const nfs::Message& message) {
+  protobuf::MaidManager maid_account;
   NodeId source_id(message.source().node_id);
   if (!maid_account.ParseFromString(message.data().content.string()))
     return;
@@ -331,7 +331,7 @@ void MaidAccountHolderService::HandleAccountTransfer(const nfs::Message& message
 
 // =============== PMID totals =====================================================================
 
-void MaidAccountHolderService::UpdatePmidTotals(const MaidName& account_name) {
+void MaidManagerService::UpdatePmidTotals(const MaidName& account_name) {
   auto pmid_names(maid_account_handler_.GetPmidNames(account_name));
   for (const auto& pmid_name : pmid_names) {
     auto op_data(std::make_shared<GetPmidTotalsOp>(account_name, pmid_name));
@@ -342,7 +342,7 @@ void MaidAccountHolderService::UpdatePmidTotals(const MaidName& account_name) {
   }
 }
 
-void MaidAccountHolderService::UpdatePmidTotalsCallback(const std::string& serialised_reply,
+void MaidManagerService::UpdatePmidTotalsCallback(const std::string& serialised_reply,
                                                         std::shared_ptr<GetPmidTotalsOp> op_data) {
   PmidRecord pmid_record;
   try {
@@ -362,14 +362,14 @@ void MaidAccountHolderService::UpdatePmidTotalsCallback(const std::string& seria
 
   try {
     auto pmid_record(MergePmidTotals(op_data));
-    maid_account_handler_.UpdatePmidTotals(op_data->kMaidAccountName, pmid_record);
+    maid_account_handler_.UpdatePmidTotals(op_data->kMaidManagerName, pmid_record);
   }
   catch(const std::exception& e) {
     LOG(kWarning) << "Error updating PMID totals: " << e.what();
   }
 }
 
-void MaidAccountHolderService::HandleChurnEvent(routing::MatrixChange matrix_change) {
+void MaidManagerService::HandleChurnEvent(routing::MatrixChange matrix_change) {
   auto account_names(maid_account_handler_.GetAccountNames());
   auto itr(std::begin(account_names));
   while (itr != std::end(account_names)) {

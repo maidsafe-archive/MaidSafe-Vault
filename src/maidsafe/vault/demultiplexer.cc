@@ -23,7 +23,7 @@ License.
 
 #include "maidsafe/vault/pmid_node/pmid_node_service.h"
 #include "maidsafe/vault/maid_manager/maid_manager_service.h"
-#include "maidsafe/vault/metadata_manager/metadata_manager_service.h"
+#include "maidsafe/vault/data_manager/data_manager_service.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager_service.h"
 #include "maidsafe/vault/version_manager/version_manager_service.h"
 
@@ -110,14 +110,14 @@ void HandleDataType(const nfs::Message& message,
 }  // unnamed namespace
 
 
-Demultiplexer::Demultiplexer(MaidAccountHolderService& maid_manager_service,
+Demultiplexer::Demultiplexer(MaidManagerService& maid_manager_service,
                              VersionManagerService& version_manager_service,
-                             DataManagerService& metadata_manager_service,
-                             PmidAccountHolderService& pmid_manager_service,
+                             DataManagerService& data_manager_service,
+                             PmidManagerService& pmid_manager_service,
                              DataHolderService& pmid_node)
     : maid_manager_service_(maid_manager_service),
       version_manager_service_(version_manager_service),
-      metadata_manager_service_(metadata_manager_service),
+      data_manager_service_(data_manager_service),
       pmid_manager_service_(pmid_manager_service),
       pmid_node_(pmid_node) {}
 
@@ -151,14 +151,14 @@ void Demultiplexer::PersonaHandleMessage<nfs::Message>(
     const nfs::Message& message,
     const routing::ReplyFunctor& reply_functor) {
   switch (message.destination_persona()) {
-    case nfs::Persona::kMaidAccountHolder:
-      return HandleDataType<MaidAccountHolderService>(message, reply_functor,
+    case nfs::Persona::kMaidManager:
+      return HandleDataType<MaidManagerService>(message, reply_functor,
                                                       maid_manager_service_);
     case nfs::Persona::kDataManager:
       return HandleDataType<DataManagerService>(message, reply_functor,
-                                                    metadata_manager_service_);
-    case nfs::Persona::kPmidAccountHolder:
-      return HandleDataType<PmidAccountHolderService>(message, reply_functor,
+                                                    data_manager_service_);
+    case nfs::Persona::kPmidManager:
+      return HandleDataType<PmidManagerService>(message, reply_functor,
                                                       pmid_manager_service_);
     case nfs::Persona::kDataHolder:
       return HandleDataType<DataHolderService>(message, reply_functor, pmid_node_);

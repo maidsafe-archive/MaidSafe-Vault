@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_MERGE_POLICY_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_MERGE_POLICY_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_MERGE_POLICY_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_MERGE_POLICY_H_
 
 #include <map>
 #include <set>
@@ -27,25 +27,23 @@ License.
 
 #include "maidsafe/vault/unresolved_element.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
+#include "maidsafe/vault/maid_manager/maid_account.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-typedef UnresolvedElement<MaidAccountHolder> MaidAccountUnresolvedEntry;
-typedef MaidAccountUnresolvedEntry MaidAccountResolvedEntry;
-
 class AccountDb;
 
-class MaidAccountMergePolicy {
+class MaidManagerMergePolicy {
  public:
-  typedef MaidAccountUnresolvedEntry UnresolvedEntry;
-  typedef MaidAccountResolvedEntry ResolvedEntry;
+  typedef MaidManagerUnresolvedEntry UnresolvedEntry;
+  typedef MaidManagerResolvedEntry ResolvedEntry;
   typedef AccountDb Database;
-  explicit MaidAccountMergePolicy(AccountDb* account_db);
-  MaidAccountMergePolicy(MaidAccountMergePolicy&& other);
-  MaidAccountMergePolicy& operator=(MaidAccountMergePolicy&& other);
+  explicit MaidManagerMergePolicy(AccountDb* account_db);
+  MaidManagerMergePolicy(MaidManagerMergePolicy&& other);
+  MaidManagerMergePolicy& operator=(MaidManagerMergePolicy&& other);
   // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
   template<typename Data>
   int32_t AllowDelete(const typename Data::name_type& name);
@@ -61,8 +59,8 @@ class MaidAccountMergePolicy {
   typedef TaggedValue<int32_t, struct CountTag> Count;
   typedef std::pair<AverageCost, Count> DbValue;
 
-  MaidAccountMergePolicy(const MaidAccountMergePolicy&);
-  MaidAccountMergePolicy& operator=(const MaidAccountMergePolicy&);
+  MaidManagerMergePolicy(const MaidManagerMergePolicy&);
+  MaidManagerMergePolicy& operator=(const MaidManagerMergePolicy&);
 
   UnresolvedEntry::Value MergedCost(const UnresolvedEntry& unresolved_entry) const;
   void MergePut(const DataNameVariant& data_name,
@@ -75,7 +73,7 @@ class MaidAccountMergePolicy {
 };
 
 template<typename Data>
-int32_t MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name) {
+int32_t MaidManagerMergePolicy::AllowDelete(const typename Data::name_type& name) {
   auto serialised_db_value(GetFromDb(name));
   Count current_count(0);
   AverageCost size(0);
@@ -129,4 +127,4 @@ int32_t MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_MERGE_POLICY_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_MERGE_POLICY_H_

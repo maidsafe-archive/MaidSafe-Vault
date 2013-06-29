@@ -83,7 +83,7 @@ void DataHolderService::ValidatePutSender(const nfs::Message& message) const {
   if (!SenderIsConnectedVault(message, routing_))
     ThrowError(VaultErrors::permission_denied);
 
-  if (!FromPmidAccountHolder(message) || !ForThisPersona(message))
+  if (!FromPmidManager(message) || !ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 
@@ -99,7 +99,7 @@ void DataHolderService::ValidateDeleteSender(const nfs::Message& message) const 
   if (!SenderIsConnectedVault(message, routing_))
     ThrowError(VaultErrors::permission_denied);
 
-  if (!FromPmidAccountHolder(message) || !ForThisPersona(message))
+  if (!FromPmidManager(message) || !ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 

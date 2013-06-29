@@ -31,39 +31,39 @@ class Db;
 template<typename PersonaType>
 class ManagerDb;
 
-class StructuredDataKey {
+class VersionManagerKey {
  public:
-  StructuredDataKey();
-  StructuredDataKey(const DataNameVariant& data_name, const Identity& originator);
-  StructuredDataKey(const StructuredDataKey& other);
-  StructuredDataKey(StructuredDataKey&& other);
-  StructuredDataKey& operator=(StructuredDataKey other);
+  VersionManagerKey();
+  VersionManagerKey(const DataNameVariant& data_name, const Identity& originator);
+  VersionManagerKey(const VersionManagerKey& other);
+  VersionManagerKey(VersionManagerKey&& other);
+  VersionManagerKey& operator=(VersionManagerKey other);
 
   DataNameVariant data_name() const { return data_name_; }
   Identity originator() const { return originator_; }
 
-  friend void swap(StructuredDataKey& lhs, StructuredDataKey& rhs) MAIDSAFE_NOEXCEPT;
-  friend bool operator==(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
-  friend bool operator<(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
+  friend void swap(VersionManagerKey& lhs, VersionManagerKey& rhs) MAIDSAFE_NOEXCEPT;
+  friend bool operator==(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
+  friend bool operator<(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
   friend class Db;
   template<typename PersonaType>
   friend class ManagerDb;
 
  private:
-  explicit StructuredDataKey(const std::string& serialised_key);
+  explicit VersionManagerKey(const std::string& serialised_key);
   std::string Serialise() const;
   DataNameVariant data_name_;
   Identity originator_;
   static const int kPaddedWidth_;
 };
 
-bool operator!=(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
+bool operator!=(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
 
-bool operator>(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
+bool operator>(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
 
-bool operator<=(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
+bool operator<=(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
 
-bool operator>=(const StructuredDataKey& lhs, const StructuredDataKey& rhs);
+bool operator>=(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
 
 }  // namespace vault
 

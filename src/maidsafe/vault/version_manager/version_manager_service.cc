@@ -30,11 +30,11 @@ License.
 
 #include "maidsafe/nfs/pmid_registration.h"
 #include "maidsafe/nfs/persona_id.h"
-#include "maidsafe/nfs/structured_data.h"
+#include "maidsafe/nfs/version_manager.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/version_manager/structured_data_key.h"
-#include "maidsafe/vault/version_manager/structured_data_unresolved_entry_value.h"
+#include "maidsafe/vault/version_manager/version_manager_key.h"
+#include "maidsafe/vault/version_manager/version_manager_unresolved_entry_value.h"
 #include "maidsafe/vault/unresolved_element.pb.h"
 #include "maidsafe/vault/manager_db.h"
 
@@ -60,14 +60,14 @@ inline bool FromVersionManager(const Message& message) {
 
 namespace detail {
 
-StructuredDataUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message) {
+VersionManagerUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message) {
   // test message content is valid only
-  protobuf::StructuredDataUnresolvedEntry entry_proto;
+  protobuf::VersionManagerUnresolvedEntry entry_proto;
   if (!entry_proto.ParseFromString(message.data().content.string()))
     ThrowError(CommonErrors::parsing_error);
   // this is the only code line really required
-  return StructuredDataUnresolvedEntry(
-                         StructuredDataUnresolvedEntry::serialised_type(message.data().content));
+  return VersionManagerUnresolvedEntry(
+                         VersionManagerUnresolvedEntry::serialised_type(message.data().content));
 
 }
 
@@ -82,9 +82,9 @@ VersionManagerService::VersionManagerService(const passport::Pmid& pmid,
       accumulator_mutex_(),
       sync_mutex_(),
       accumulator_(),
-      structured_data_db_(path),
+      version_manager_db_(path),
       kThisNodeId_(routing_.kNodeId()),
-      sync_(&structured_data_db_, kThisNodeId_),
+      sync_(&version_manager_db_, kThisNodeId_),
       nfs_(routing_, pmid) {}
 
 
@@ -102,18 +102,18 @@ void VersionManagerService::ValidateSyncSender(const nfs::Message& message) cons
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-std::vector<StructuredDataVersions::VersionName>
+std::vector<VersionManagerVersions::VersionName>
     VersionManagerService::GetVersionsFromMessage(const nfs::Message& msg) const {
-   return nfs::StructuredData(nfs::StructuredData::serialised_type(msg.data().content)).versions();
+   return nfs::VersionManager(nfs::VersionManager::serialised_type(msg.data().content)).versions();
 }
 
 NonEmptyString VersionManagerService::GetSerialisedRecord(
     const VersionManager::DbKey& db_key) {
   protobuf::UnresolvedEntries proto_unresolved_entries;
-  auto db_value(structured_data_db_.Get(db_key));
-  StructuredDataKey structured_data_key;
-  //structured_data_key.
-  //StructuredDataUnresolvedEntry unresolved_entry_db_value(
+  auto db_value(version_manager_db_.Get(db_key));
+  VersionManagerKey version_manager_key;
+  //version_manager_key.
+  //VersionManagerUnresolvedEntry unresolved_entry_db_value(
   //    std::make_pair(data_name, nfs::MessageAction::kAccountTransfer), metadata_value,
   //      kThisNodeId_);
   //auto unresolved_data(sync_.GetUnresolvedData(data_name));
@@ -133,9 +133,9 @@ void VersionManagerService::HandleGet(const nfs::Message& message,
                                              routing::ReplyFunctor reply_functor) {
   try {
     nfs::Reply reply(CommonErrors::success);
-    StructuredDataVersions version(
-                structured_data_db_.Get(GetKeyFromMessage<VersionManager>(message)));
-    reply.data() = nfs::StructuredData(version.Get()).Serialise().data;
+    VersionManagerVersions version(
+                version_manager_db_.Get(GetKeyFromMessage<VersionManager>(message)));
+    reply.data() = nfs::VersionManager(version.Get()).Serialise().data;
     reply_functor(reply.Serialise()->string());
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     accumulator_.SetHandled(message, nfs::Reply(CommonErrors::success));
@@ -154,10 +154,10 @@ void VersionManagerService::HandleGetBranch(const nfs::Message& message,
 
   try {
     nfs::Reply reply(CommonErrors::success);
-    StructuredDataVersions version(
-                structured_data_db_.Get(GetKeyFromMessage<VersionManager>(message)));
+    VersionManagerVersions version(
+                version_manager_db_.Get(GetKeyFromMessage<VersionManager>(message)));
     auto branch_to_get(GetVersionsFromMessage(message));
-    reply.data() = nfs::StructuredData(version.GetBranch(branch_to_get.at(0))).Serialise().data;
+    reply.data() = nfs::VersionManager(version.GetBranch(branch_to_get.at(0))).Serialise().data;
     reply_functor(reply.Serialise()->string());
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     accumulator_.SetHandled(message, nfs::Reply(CommonErrors::success));
@@ -174,7 +174,7 @@ void VersionManagerService::HandleGetBranch(const nfs::Message& message,
 // // =============== Sync ============================================================================
 
 void VersionManagerService::HandleSynchronise(const nfs::Message& message) {
-  std::vector<StructuredDataMergePolicy::UnresolvedEntry> unresolved_entries;
+  std::vector<VersionManagerMergePolicy::UnresolvedEntry> unresolved_entries;
   bool success(false);
   try {
     {
@@ -204,7 +204,7 @@ void VersionManagerService::HandleSynchronise(const nfs::Message& message) {
 }
 
 void VersionManagerService::HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {
-//  auto record_names(structured_data_db_.GetKeys());
+//  auto record_names(version_manager_db_.GetKeys());
 //  auto itr(std::begin(record_names));
 //  while (itr != std::end(record_names)) {
 //    auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), *itr));
@@ -212,7 +212,7 @@ void VersionManagerService::HandleChurnEvent(routing::MatrixChange /*matrix_chan
 //                                           NodeId(result.second)));
 //    // Delete records for which this node is no longer responsible.
 //    if (check_holders_result.proximity_status != routing::GroupRangeStatus::kInRange) {
-//      structured_data_db_.Delete(*itr);
+//      version_manager_db_.Delete(*itr);
 //      itr = record_names.erase(itr);
 //      continue;
 //    }
@@ -246,7 +246,7 @@ void VersionManagerService::HandleChurnEvent(routing::MatrixChange /*matrix_chan
 //    //}
 //    ////  carry out account transfer for new node !
 //    //std::vector<VersionManager::DbKey> db_keys;
-//    //db_keys = structured_data_db_.GetKeys();
+//    //db_keys = version_manager_db_.GetKeys();
 //    //for (const auto& key: db_keys) {
 //    //  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
 //    //  if (routing_.IsNodeIdInGroupRange(NodeId(result.second.string()), new_node) ==
