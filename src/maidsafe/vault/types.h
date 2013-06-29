@@ -50,10 +50,10 @@ typedef nfs::NetworkFileSystem<
     MetadataManagerPostPolicy> MetadataManagerNfs;
 
 typedef nfs::NetworkFileSystem<
-    nfs::StructuredDataManagerPutPolicy,
-    nfs::StructuredDataManagerGetPolicy,
-    nfs::StructuredDataManagerDeletePolicy,
-    StructuredDataManagerPostPolicy> StructuredDataManagerNfs;
+    nfs::VersionManagerPutPolicy,
+    nfs::VersionManagerGetPolicy,
+    nfs::VersionManagerDeletePolicy,
+    VersionManagerPostPolicy> VersionManagerNfs;
 
 typedef nfs::NetworkFileSystem<
     nfs::PmidAccountHolderPutPolicy,

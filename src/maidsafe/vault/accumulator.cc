@@ -82,7 +82,7 @@ std::vector<typename Accumulator<PmidName>::PendingRequest> Accumulator<PmidName
 
   handled_requests_.push_back(
       Accumulator::HandledRequest(message.message_id(),
-                                  message.data_holder(),
+                                  message.pmid_node(),
                                   message.data().action,
                                   message.data().name,
                                   *message.data().type,

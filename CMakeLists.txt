@@ -40,12 +40,12 @@ include_directories(${nfs_SOURCE_DIR}/include)
 set(VaultSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/vault)
 glob_dir(Vault ${VaultSourcesDir} Vault)
 list(REMOVE_ITEM VaultSources ${VaultSourcesDir}/vault_main.cc)
-glob_dir(DataHolder ${VaultSourcesDir}/data_holder "Data Holder\\\\")
-glob_dir(MaidAccountHolder ${VaultSourcesDir}/maid_account_holder "Maid Account Holder\\\\")
+glob_dir(DataHolder ${VaultSourcesDir}/pmid_node "Data Holder\\\\")
+glob_dir(MaidAccountHolder ${VaultSourcesDir}/maid_manager "Maid Account Holder\\\\")
 glob_dir(MetadataManager ${VaultSourcesDir}/metadata_manager "Metadata Manager\\\\")
 glob_dir(MpidAccountHolder ${VaultSourcesDir}/mpid_account_holder "Mpid Account Holder\\\\")
-glob_dir(PmidAccountHolder ${VaultSourcesDir}/pmid_account_holder "Pmid Account Holder\\\\")
-glob_dir(StructuredDataManager ${VaultSourcesDir}/structured_data_manager "Structured Data Manager\\\\")
+glob_dir(PmidAccountHolder ${VaultSourcesDir}/pmid_manager "Pmid Account Holder\\\\")
+glob_dir(VersionManager ${VaultSourcesDir}/version_manager "Structured Data Manager\\\\")
 
 glob_dir(VaultTests ${VaultSourcesDir}/tests "Tests")
 glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
@@ -60,7 +60,7 @@ ms_add_static_library(vault ${VaultAllFiles}
                             ${MetadataManagerAllFiles}
                             ${MpidAccountHolderAllFiles}
                             ${PmidAccountHolderAllFiles}
-                            ${StructuredDataManagerAllFiles})
+                            ${VersionManagerAllFiles})
 ms_add_executable(lifestuff_vault Production ${VaultSourcesDir}/vault_main.cc)
 
 target_link_libraries(maidsafe_vault maidsafe_nfs maidsafe_routing maidsafe_common maidsafe_private leveldb)

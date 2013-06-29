@@ -13,7 +13,7 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/maid_account_holder/maid_account_handler.h"
+#include "maidsafe/vault/maid_manager/maid_account_handler.h"
 
 #include <vector>
 

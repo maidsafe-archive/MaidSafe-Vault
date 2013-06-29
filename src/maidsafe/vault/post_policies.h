@@ -184,8 +184,8 @@ typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kPmidAccountHolder>,
 typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kDataHolder>,
                         DataHolderMiscellaneousPolicy> DataHolderPostPolicy;
 
-typedef VaultPostPolicy<ManagersSyncPolicy<nfs::Persona::kStructuredDataManager>,
-                        ManagerMiscellaneousPolicy> StructuredDataManagerPostPolicy;
+typedef VaultPostPolicy<ManagersSyncPolicy<nfs::Persona::kVersionManager>,
+                        ManagerMiscellaneousPolicy> VersionManagerPostPolicy;
 
 }  // namespace vault
 

@@ -21,10 +21,10 @@ License.
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/unresolved_element.pb.h"
-#include "maidsafe/vault/maid_account_holder/maid_account_merge_policy.h"
+#include "maidsafe/vault/maid_manager/maid_account_merge_policy.h"
 #include "maidsafe/vault/metadata_manager/metadata_merge_policy.h"
-#include "maidsafe/vault/pmid_account_holder/pmid_account_merge_policy.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_merge_policy.h"
+#include "maidsafe/vault/pmid_manager/pmid_account_merge_policy.h"
+#include "maidsafe/vault/version_manager/structured_data_merge_policy.h"
 
 
 namespace maidsafe {
@@ -223,7 +223,7 @@ StructuredDataUnresolvedEntry::UnresolvedElement(const serialised_type& serialis
   if (!proto_copy.ParseFromString(serialised_copy->string()))
     ThrowError(CommonErrors::parsing_error);
 
-  StructuredDataManager::UnresolvedEntryKey unresolved_entry_key;
+  VersionManager::UnresolvedEntryKey unresolved_entry_key;
   unresolved_entry_key.first = StructuredDataKey(
                GetDataNameVariant(static_cast<DataTagValue>(proto_copy.key().name_type()),
                                         Identity(proto_copy.key().name())),
@@ -252,7 +252,7 @@ StructuredDataUnresolvedEntry::UnresolvedElement(const serialised_type& serialis
           // this must be a getbranch - or deletebranch / check action.
         } else if (proto_copy.messages_contents(i).value().has_serialised_db_value()) {
           // account transfer
-//          StructuredDataManager::DbValue::serialised_type serialised_db_value(
+//          VersionManager::DbValue::serialised_type serialised_db_value(
 //                                   proto_copy.messages_contents(i).value().serialised_db_value());
 //          message_content.value = StructuredDataValue();
 //          message_content.value->serialised_db_value = serialised_db_value;

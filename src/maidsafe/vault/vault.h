@@ -28,11 +28,11 @@ License.
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/public_key_getter.h"
 
-#include "maidsafe/vault/data_holder/data_holder_service.h"
-#include "maidsafe/vault/maid_account_holder/maid_account_holder_service.h"
+#include "maidsafe/vault/pmid_node/pmid_node_service.h"
+#include "maidsafe/vault/maid_manager/maid_manager_service.h"
 #include "maidsafe/vault/metadata_manager/metadata_manager_service.h"
-#include "maidsafe/vault/pmid_account_holder/pmid_account_holder_service.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_manager_service.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager_service.h"
+#include "maidsafe/vault/version_manager/version_manager_service.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/demultiplexer.h"
 
@@ -76,11 +76,11 @@ class Vault {
   Db db_;
   std::unique_ptr<routing::Routing> routing_;
   nfs::PublicKeyGetter public_key_getter_;
-  MaidAccountHolderService maid_account_holder_service_;
-  StructuredDataManagerService structured_data_manager_service_;
+  MaidAccountHolderService maid_manager_service_;
+  VersionManagerService version_manager_service_;
   MetadataManagerService metadata_manager_service_;
-  PmidAccountHolderService pmid_account_holder_service_;
-  DataHolderService data_holder_;
+  PmidAccountHolderService pmid_manager_service_;
+  DataHolderService pmid_node_;
   Demultiplexer demux_;
   AsioService asio_service_;
 };

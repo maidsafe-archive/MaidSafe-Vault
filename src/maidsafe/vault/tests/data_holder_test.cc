@@ -13,7 +13,7 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/data_holder/data_holder_service.h"
+#include "maidsafe/vault/pmid_node/pmid_node_service.h"
 
 #include <memory>
 
@@ -187,36 +187,36 @@ class DataHolderTest : public testing::Test {
       : vault_root_directory_(maidsafe::test::CreateTestPath("MaidSafe_Test_DataHolder")),
         passport_(),
         routing_(),
-        data_holder_() {}
+        pmid_node_() {}
 
  protected:
   void SetUp() {
     passport_.CreateFobs();
     routing_.reset(new routing::Routing(passport_.Get<passport::Maid>(false)));
-    data_holder_.reset(new DataHolderService(passport_.Get<passport::Pmid>(false),
+    pmid_node_.reset(new DataHolderService(passport_.Get<passport::Pmid>(false),
                                              *routing_,
                                              *vault_root_directory_));
   }
 
   void HandlePutMessage(const nfs::Message& message,
                         const routing::ReplyFunctor& reply_functor) {
-    data_holder_->HandlePutMessage<T>(message, reply_functor);
+    pmid_node_->HandlePutMessage<T>(message, reply_functor);
   }
 
   void HandleGetMessage(const nfs::Message& message,
                         const routing::ReplyFunctor& reply_functor) {
-    data_holder_->HandleGetMessage<T>(message, reply_functor);
+    pmid_node_->HandleGetMessage<T>(message, reply_functor);
   }
 
   void HandleDeleteMessage(const nfs::Message& message,
                            const routing::ReplyFunctor& reply_functor) {
-    data_holder_->HandleDeleteMessage<T>(message, reply_functor);
+    pmid_node_->HandleDeleteMessage<T>(message, reply_functor);
   }
 
   maidsafe::test::TestPath vault_root_directory_;
   passport::Passport passport_;
   std::unique_ptr<routing::Routing> routing_;
-  std::unique_ptr<DataHolderService> data_holder_;
+  std::unique_ptr<DataHolderService> pmid_node_;
 };
 
 TYPED_TEST_CASE_P(DataHolderTest);
@@ -441,11 +441,11 @@ template<class T>
 class DataHolderCacheableTest : public DataHolderTest<T> {
  protected:
   NonEmptyString GetFromCache(nfs::Message& message) {
-    return this->data_holder_->template GetFromCache<T>(message);
+    return this->pmid_node_->template GetFromCache<T>(message);
   }
 
   void StoreInCache(const nfs::Message& message) {
-    this->data_holder_->template StoreInCache<T>(message);
+    this->pmid_node_->template StoreInCache<T>(message);
   }
 };
 
