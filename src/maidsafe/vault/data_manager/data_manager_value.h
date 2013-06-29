@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_VALUE_H_
-#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_VALUE_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_METADATA_VALUE_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_METADATA_VALUE_H_
 
 #include <cstdint>
 #include <set>
@@ -48,12 +48,12 @@ class Metadata {
  public:
   // This constructor reads the existing element or creates a new one if it doesn't already exist.
   Metadata(const DataNameVariant& data_name,
-           ManagerDb<MetadataManager>* metadata_db,
+           ManagerDb<DataManager>* metadata_db,
            int32_t data_size);
   // This constructor reads the existing element or throws if it doesn't already exist.
-  Metadata(const DataNameVariant& data_name, ManagerDb<MetadataManager>* metadata_db);
+  Metadata(const DataNameVariant& data_name, ManagerDb<DataManager>* metadata_db);
   // Should only be called once.
-  void SaveChanges(ManagerDb<MetadataManager>* metadata_db);
+  void SaveChanges(ManagerDb<DataManager>* metadata_db);
 
   DataNameVariant data_name_;
   MetadataValue value_;
@@ -71,4 +71,4 @@ class Metadata {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_VALUE_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_METADATA_VALUE_H_

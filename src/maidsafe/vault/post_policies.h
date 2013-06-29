@@ -175,8 +175,8 @@ class DataHolderMiscellaneousPolicy {
 typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kMaidAccountHolder>,
                         MaidAccountHolderMiscellaneousPolicy> MaidAccountHolderPostPolicy;
 
-typedef VaultPostPolicy<ManagersSyncPolicy<nfs::Persona::kMetadataManager>,
-                        ManagerMiscellaneousPolicy> MetadataManagerPostPolicy;
+typedef VaultPostPolicy<ManagersSyncPolicy<nfs::Persona::kDataManager>,
+                        ManagerMiscellaneousPolicy> DataManagerPostPolicy;
 
 typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kPmidAccountHolder>,
                         PmidAccountHolderMiscellaneousPolicy> PmidAccountHolderPostPolicy;

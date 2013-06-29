@@ -1,4 +1,4 @@
-/* Copyright 2012 MaidSafe.net limited
+/* Copyright 2013 MaidSafe.net limited
 
 This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
 and The General Public License (GPL), version 3. By contributing code to this project You agree to
@@ -13,37 +13,24 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HOLDER_H_
-#define MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HOLDER_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_METADATA_HELPERS_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_METADATA_HELPERS_H_
 
-#include <utility>
-
-#include "maidsafe/common/types.h"
-#include "maidsafe/nfs/types.h"
-
+#include "maidsafe/vault/types.h"
 
 namespace maidsafe {
 
-namespace nfs {
-
-template<>
-struct PersonaTypes<Persona::kMpidAccountHolder> {
-  typedef DataNameVariant DbKey;
-  typedef NonEmptyString DbValue;
-  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-  typedef DbValue UnresolvedEntryValue;
-  static const Persona persona = Persona::kMpidAccountHolder;
-};
-
-}  // namespace nfs
-
-
 namespace vault {
 
-typedef nfs::PersonaTypes<nfs::Persona::kMpidAccountHolder> MpidAccountHolder;
+struct MetadataValueDelta {
+  int data_size;
+  boost::optional<int64_t> subscribers;
+  std::vector<PmidName> new_online; // FIXME(Prakash) discuss
+  std::vector<PmidName> new_offline;  // FIXME(Prakash) discuss
+};
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HOLDER_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_METADATA_HELPERS_H_

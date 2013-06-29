@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_H_
-#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_H_
 
 #include <cstdint>
 #include <utility>
@@ -30,23 +30,23 @@ namespace vault { struct MetadataValue; }
 namespace nfs {
 
 template<>
-struct PersonaTypes<Persona::kMetadataManager> {
+struct PersonaTypes<Persona::kDataManager> {
   typedef vault::DbKey RecordName;
   typedef vault::DbKey DbKey;
   typedef vault::MetadataValue DbValue;
   typedef std::pair<vault::DbKey, MessageAction> UnresolvedEntryKey;
   typedef DbValue UnresolvedEntryValue;
-  static const Persona persona = Persona::kMetadataManager;
+  static const Persona persona = Persona::kDataManager;
 };
 
 }  // namespace nfs
 
 namespace vault {
 
-typedef nfs::PersonaTypes<nfs::Persona::kMetadataManager> MetadataManager;
+typedef nfs::PersonaTypes<nfs::Persona::kDataManager> DataManager;
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_H_

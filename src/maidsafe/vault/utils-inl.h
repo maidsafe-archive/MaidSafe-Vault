@@ -37,8 +37,8 @@ inline bool FromMaidAccountHolder(const Message& message) {
 }
 
 template<typename Message>
-inline bool FromMetadataManager(const Message& message) {
-  return message.source().persona == nfs::Persona::kMetadataManager;
+inline bool FromDataManager(const Message& message) {
+  return message.source().persona == nfs::Persona::kDataManager;
 }
 
 template<typename Message>

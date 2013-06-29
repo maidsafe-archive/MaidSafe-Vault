@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HOLDER_H_
-#define MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HOLDER_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_H_
 
 #include <cstdint>
 #include <utility>
@@ -47,4 +47,4 @@ typedef nfs::PersonaTypes<nfs::Persona::kPmidAccountHolder> PmidAccountHolder;
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HOLDER_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_H_

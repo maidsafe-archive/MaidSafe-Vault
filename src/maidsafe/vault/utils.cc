@@ -122,8 +122,8 @@ typename VersionManager::DbKey
 }
 
 template<>
-typename MetadataManager::RecordName GetRecordName<MetadataManager>(
-    const typename MetadataManager::DbKey& db_key) {
+typename DataManager::RecordName GetRecordName<DataManager>(
+    const typename DataManager::DbKey& db_key) {
   return db_key;
 }
 

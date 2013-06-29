@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_SERVICE_H_
-#define MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_SERVICE_H_
+#ifndef MAIDSAFE_VAULT_PMID_NODE_PMID_NODE_SERVICE_H_
+#define MAIDSAFE_VAULT_PMID_NODE_PMID_NODE_SERVICE_H_
 
 #include <mutex>
 #include <type_traits>
@@ -126,4 +126,4 @@ class DataHolderService {
 
 #include "maidsafe/vault/pmid_node/pmid_node_service-inl.h"
 
-#endif  // MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_SERVICE_H_
+#endif  // MAIDSAFE_VAULT_PMID_NODE_PMID_NODE_SERVICE_H_

@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_SERVICE_INL_H_
-#define MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_SERVICE_INL_H_
+#ifndef MAIDSAFE_VAULT_PMID_NODE_PMID_NODE_SERVICE_INL_H_
+#define MAIDSAFE_VAULT_PMID_NODE_PMID_NODE_SERVICE_INL_H_
 
 #include <exception>
 #include <string>
@@ -185,4 +185,4 @@ void DataHolderService::CacheStore(const typename Data::name_type& name,
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_HOLDER_DATA_HOLDER_SERVICE_INL_H_
+#endif  // MAIDSAFE_VAULT_PMID_NODE_PMID_NODE_SERVICE_INL_H_

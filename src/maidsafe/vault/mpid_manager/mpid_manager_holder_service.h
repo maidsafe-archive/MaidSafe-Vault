@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HOLDER_SERVICE_H_
-#define MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HOLDER_SERVICE_H_
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_SERVICE_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_SERVICE_H_
 
 #include <vector>
 
@@ -57,4 +57,4 @@ void MpidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
 }  // namespace maidsafe
 
 
-#endif  // MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HOLDER_SERVICE_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_SERVICE_H_

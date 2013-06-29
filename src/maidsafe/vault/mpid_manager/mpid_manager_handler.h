@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HANDLER_H_
-#define MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HANDLER_H_
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_ACCOUNT_HANDLER_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_MPID_ACCOUNT_HANDLER_H_
 
 #include <mutex>
 #include <string>
@@ -76,4 +76,4 @@ class AccountHandler : public ModifyPolicy {
 
 #include "maidsafe/vault/mpid_account_holder/mpid_account_handler-inl.h"
 
-#endif  // MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HANDLER_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_ACCOUNT_HANDLER_H_

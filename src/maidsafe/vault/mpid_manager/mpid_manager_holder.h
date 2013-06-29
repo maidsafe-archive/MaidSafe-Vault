@@ -1,4 +1,4 @@
-/* Copyright 2013 MaidSafe.net limited
+/* Copyright 2012 MaidSafe.net limited
 
 This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
 and The General Public License (GPL), version 3. By contributing code to this project You agree to
@@ -13,10 +13,9 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_H_
-#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_H_
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
 
-#include <cstdint>
 #include <utility>
 
 #include "maidsafe/common/types.h"
@@ -28,12 +27,12 @@ namespace maidsafe {
 namespace nfs {
 
 template<>
-struct PersonaTypes<Persona::kMaidAccountHolder> {
+struct PersonaTypes<Persona::kMpidAccountHolder> {
   typedef DataNameVariant DbKey;
-  typedef int32_t DbValue;
+  typedef NonEmptyString DbValue;
   typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
   typedef DbValue UnresolvedEntryValue;
-  static const Persona persona = Persona::kMaidAccountHolder;
+  static const Persona persona = Persona::kMpidAccountHolder;
 };
 
 }  // namespace nfs
@@ -41,10 +40,10 @@ struct PersonaTypes<Persona::kMaidAccountHolder> {
 
 namespace vault {
 
-typedef nfs::PersonaTypes<nfs::Persona::kMaidAccountHolder> MaidAccountHolder;
+typedef nfs::PersonaTypes<nfs::Persona::kMpidAccountHolder> MpidAccountHolder;
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_HOLDER_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_

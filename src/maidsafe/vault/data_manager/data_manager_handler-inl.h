@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_HANDLER_INL_H_
-#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_HANDLER_INL_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_METADATA_HANDLER_INL_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_METADATA_HANDLER_INL_H_
 
 #include <set>
 #include <string>
@@ -153,4 +153,4 @@ std::pair<bool, int32_t> MetadataHandler::CheckPut(const typename Data::name_typ
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_HANDLER_INL_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_METADATA_HANDLER_INL_H_

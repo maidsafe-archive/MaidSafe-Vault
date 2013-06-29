@@ -35,7 +35,7 @@ inline bool SenderInGroupForClientMaid(const nfs::Message& message, routing::Rou
 
 template<typename Message>
 inline bool ForThisPersona(const Message& message) {
-  return message.destination_persona() != nfs::Persona::kMetadataManager;
+  return message.destination_persona() != nfs::Persona::kDataManager;
 }
 
 }  // unnamed namespace
@@ -54,12 +54,12 @@ void SendMetadataCost(const nfs::Message& original_message,
 
 }  // namspace detail
 
-const int MetadataManagerService::kPutRequestsRequired_(3);
-const int MetadataManagerService::kPutRepliesSuccessesRequired_(3);
-const int MetadataManagerService::kDeleteRequestsRequired_(3);
+const int DataManagerService::kPutRequestsRequired_(3);
+const int DataManagerService::kPutRepliesSuccessesRequired_(3);
+const int DataManagerService::kDeleteRequestsRequired_(3);
 
 
-MetadataManagerService::MetadataManagerService(const passport::Pmid& pmid,
+DataManagerService::DataManagerService(const passport::Pmid& pmid,
                                                routing::Routing& routing,
                                                nfs::PublicKeyGetter& public_key_getter,
                                                const boost::filesystem::path& vault_root_dir)
@@ -70,7 +70,7 @@ MetadataManagerService::MetadataManagerService(const passport::Pmid& pmid,
       metadata_handler_(vault_root_dir, routing.kNodeId()),
       nfs_(routing, pmid) {}
 
-void MetadataManagerService::ValidatePutSender(const nfs::Message& message) const {
+void DataManagerService::ValidatePutSender(const nfs::Message& message) const {
   if (!SenderInGroupForClientMaid(message, routing_) || !ThisVaultInGroupForData(message)) {
     ThrowError(VaultErrors::permission_denied);
   }
@@ -79,13 +79,13 @@ void MetadataManagerService::ValidatePutSender(const nfs::Message& message) cons
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void MetadataManagerService::ValidatePutResultSender(const nfs::Message& message) const {
+void DataManagerService::ValidatePutResultSender(const nfs::Message& message) const {
   // FIXME(Prakash) Need to pass PmidName in message to validate
   if (!FromPmidAccountHolder(message) || !ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void MetadataManagerService::ValidateGetSender(const nfs::Message& message) const {
+void DataManagerService::ValidateGetSender(const nfs::Message& message) const {
   if (!(FromClientMaid(message) ||
           FromDataHolder(message) ||
           FromDataGetter(message) ||
@@ -97,7 +97,7 @@ void MetadataManagerService::ValidateGetSender(const nfs::Message& message) cons
   }
 }
 
-void MetadataManagerService::ValidateDeleteSender(const nfs::Message& message) const {
+void DataManagerService::ValidateDeleteSender(const nfs::Message& message) const {
   if (!SenderInGroupForClientMaid(message, routing_))
     ThrowError(VaultErrors::permission_denied);
 
@@ -105,16 +105,16 @@ void MetadataManagerService::ValidateDeleteSender(const nfs::Message& message) c
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void MetadataManagerService::ValidatePostSender(const nfs::Message& message) const {
-  if (!(FromMetadataManager(message) || FromPmidAccountHolder(message)) ||
+void DataManagerService::ValidatePostSender(const nfs::Message& message) const {
+  if (!(FromDataManager(message) || FromPmidAccountHolder(message)) ||
       !ForThisPersona(message)) {
     ThrowError(CommonErrors::invalid_parameter);
   }
 }
 
-//void MetadataManagerService::SendSyncData() {}
+//void DataManagerService::SendSyncData() {}
 
-void MetadataManagerService::HandleNodeDown(const nfs::Message& /*message*/) {
+void DataManagerService::HandleNodeDown(const nfs::Message& /*message*/) {
   try {
     int online_holders(-1);
 //    metadata_handler_.MarkNodeDown(message.name(), PmidName(), online_holders);
@@ -133,7 +133,7 @@ void MetadataManagerService::HandleNodeDown(const nfs::Message& /*message*/) {
   }
 }
 
-void MetadataManagerService::HandleNodeUp(const nfs::Message& /*message*/) {
+void DataManagerService::HandleNodeUp(const nfs::Message& /*message*/) {
   //try {
   //  metadata_handler_.MarkNodeUp(message.name(),
   //                               PmidName(Identity(message.name().string())));
@@ -144,35 +144,35 @@ void MetadataManagerService::HandleNodeUp(const nfs::Message& /*message*/) {
   //}
 }
 
-bool MetadataManagerService::ThisVaultInGroupForData(const nfs::Message& message) const {
+bool DataManagerService::ThisVaultInGroupForData(const nfs::Message& message) const {
   return routing::GroupRangeStatus::kInRange ==
          routing_.IsNodeIdInGroupRange(NodeId(message.data().name.string()));
 }
 
 // =============== Sync and Record transfer =====================================================
 
-void MetadataManagerService::Sync() {
+void DataManagerService::Sync() {
   auto unresolved_entries(metadata_handler_.GetSyncData());
   for (const auto& unresolved_entry : unresolved_entries) {
     nfs_.Sync(unresolved_entry.key.first.name(), unresolved_entry.Serialise());
   }
 }
 
-void MetadataManagerService::HandleSync(const nfs::Message& message) {
+void DataManagerService::HandleSync(const nfs::Message& message) {
   metadata_handler_.ApplySyncData(NonEmptyString(message.data().content.string()));
 }
 
-void MetadataManagerService::TransferRecord(const DataNameVariant& record_name,
+void DataManagerService::TransferRecord(const DataNameVariant& record_name,
                                             const NodeId& new_node) {
   nfs_.TransferRecord(record_name, new_node, metadata_handler_.GetSerialisedRecord(record_name));
 }
 
-void MetadataManagerService::HandleRecordTransfer(const nfs::Message& message) {
+void DataManagerService::HandleRecordTransfer(const nfs::Message& message) {
   metadata_handler_.ApplyRecordTransfer(NonEmptyString(message.data().content.string()));
 }
 
 // =============== Churn ===========================================================================
-void MetadataManagerService::HandleChurnEvent(routing::MatrixChange matrix_change) {
+void DataManagerService::HandleChurnEvent(routing::MatrixChange matrix_change) {
   auto record_names(metadata_handler_.GetRecordNames());
   auto itr(std::begin(record_names));
   auto name(itr->name());

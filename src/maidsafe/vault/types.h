@@ -44,10 +44,10 @@ typedef nfs::NetworkFileSystem<
     MaidAccountHolderPostPolicy> MaidAccountHolderNfs;
 
 typedef nfs::NetworkFileSystem<
-    nfs::MetadataManagerPutPolicy,
-    nfs::MetadataManagerGetPolicy,
-    nfs::MetadataManagerDeletePolicy,
-    MetadataManagerPostPolicy> MetadataManagerNfs;
+    nfs::DataManagerPutPolicy,
+    nfs::DataManagerGetPolicy,
+    nfs::DataManagerDeletePolicy,
+    DataManagerPostPolicy> DataManagerNfs;
 
 typedef nfs::NetworkFileSystem<
     nfs::VersionManagerPutPolicy,

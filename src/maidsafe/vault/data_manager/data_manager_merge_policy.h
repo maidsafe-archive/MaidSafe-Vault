@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MERGE_POLICY_H_
-#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MERGE_POLICY_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_METADATA_MERGE_POLICY_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_METADATA_MERGE_POLICY_H_
 
 #include <map>
 #include <set>
@@ -34,16 +34,16 @@ namespace maidsafe {
 
 namespace vault {
 
-typedef UnresolvedElement<MetadataManager> MetadataUnresolvedEntry;
+typedef UnresolvedElement<DataManager> MetadataUnresolvedEntry;
 typedef MetadataUnresolvedEntry MetadataResolvedEntry;
 
 class MetadataMergePolicy {
  public:
   typedef MetadataUnresolvedEntry UnresolvedEntry;
   typedef MetadataResolvedEntry ResolvedEntry;
-  typedef ManagerDb<MetadataManager> Database;
+  typedef ManagerDb<DataManager> Database;
 
-  explicit MetadataMergePolicy(ManagerDb<MetadataManager>* metadata_db);
+  explicit MetadataMergePolicy(ManagerDb<DataManager>* metadata_db);
   MetadataMergePolicy(MetadataMergePolicy&& other);
   MetadataMergePolicy& operator=(MetadataMergePolicy&& other);
 
@@ -51,7 +51,7 @@ class MetadataMergePolicy {
   void Merge(const UnresolvedEntry& unresolved_entry);
 
   std::vector<UnresolvedEntry> unresolved_data_;
-  ManagerDb<MetadataManager>* metadata_db_;
+  ManagerDb<DataManager>* metadata_db_;
 
  private:
   MetadataMergePolicy(const MetadataMergePolicy&);
@@ -67,4 +67,4 @@ class MetadataMergePolicy {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MERGE_POLICY_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_METADATA_MERGE_POLICY_H_

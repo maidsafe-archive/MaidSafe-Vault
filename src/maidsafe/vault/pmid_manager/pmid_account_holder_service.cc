@@ -161,7 +161,7 @@ void PmidAccountHolderService::ValidateDataSender(const nfs::Message& message) c
       || routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
     ThrowError(VaultErrors::permission_denied);
 
-  if (!FromMetadataManager(message) || !detail::ForThisPersona(message))
+  if (!FromDataManager(message) || !detail::ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 
@@ -170,7 +170,7 @@ void PmidAccountHolderService::ValidateGenericSender(const nfs::Message& message
       || routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
     ThrowError(VaultErrors::permission_denied);
 
-  if (!FromMetadataManager(message) || !detail::ForThisPersona(message))
+  if (!FromDataManager(message) || !detail::ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 
@@ -212,7 +212,7 @@ void PmidAccountHolderService::HandleSync(const nfs::Message& message) {
 
   resolved_entries = pmid_account_handler_.ApplySyncData(PmidName(Identity(proto_sync.account_name())),
                                       NonEmptyString(proto_sync.serialised_unresolved_entries()));
-  //ReplyToMetadataManagers(resolved_entries);
+  //ReplyToDataManagers(resolved_entries);
 }
 
 // =============== Account transfer ===============================================================

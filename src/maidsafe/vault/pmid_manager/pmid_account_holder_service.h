@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HOLDER_SERVICE_H_
-#define MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HOLDER_SERVICE_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_SERVICE_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_SERVICE_H_
 
 #include <mutex>
 #include <set>
@@ -109,7 +109,7 @@ class PmidAccountHolderService {
   template<typename Data, nfs::MessageAction action>
   void AddLocalUnresolvedEntryThenSync(const nfs::Message& message);
   template<typename Data, nfs::MessageAction action>
-  void ReplyToMetadataManagers(const std::vector<PmidAccountResolvedEntry>& resolved_entries,
+  void ReplyToDataManagers(const std::vector<PmidAccountResolvedEntry>& resolved_entries,
                                const PmidName& pmid_name);
 
   routing::Routing& routing_;
@@ -126,4 +126,4 @@ class PmidAccountHolderService {
 
 #include "maidsafe/vault/pmid_manager/pmid_manager_service-inl.h"
 
-#endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HOLDER_SERVICE_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_SERVICE_H_

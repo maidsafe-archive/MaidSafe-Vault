@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_SERVICE_H_
-#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_SERVICE_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_SERVICE_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_SERVICE_H_
 
 #include <memory>
 #include <mutex>
@@ -41,9 +41,9 @@ namespace maidsafe {
 
 namespace vault {
 
-class MetadataManagerService {
+class DataManagerService {
  public:
-  MetadataManagerService(const passport::Pmid& pmid,
+  DataManagerService(const passport::Pmid& pmid,
                          routing::Routing& routing,
                          nfs::PublicKeyGetter& public_key_getter,
                          const boost::filesystem::path& vault_root_dir);
@@ -72,10 +72,10 @@ class MetadataManagerService {
     GetHandler& operator=(GetHandler&&);
   };
 
-  MetadataManagerService(const MetadataManagerService&);
-  MetadataManagerService& operator=(const MetadataManagerService&);
-  MetadataManagerService(MetadataManagerService&&);
-  MetadataManagerService& operator=(MetadataManagerService&&);
+  DataManagerService(const DataManagerService&);
+  DataManagerService& operator=(const DataManagerService&);
+  DataManagerService(DataManagerService&&);
+  DataManagerService& operator=(DataManagerService&&);
 
   template<typename Data>
   void HandlePut(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
@@ -125,7 +125,7 @@ class MetadataManagerService {
   std::mutex accumulator_mutex_;
   Accumulator<DataNameVariant> accumulator_;
   MetadataHandler metadata_handler_;
-  MetadataManagerNfs nfs_;
+  DataManagerNfs nfs_;
   static const int kPutRequestsRequired_;
   static const int kPutRepliesSuccessesRequired_;
   static const int kDeleteRequestsRequired_;
@@ -137,4 +137,4 @@ class MetadataManagerService {
 
 #include "maidsafe/vault/metadata_manager/metadata_manager_service-inl.h"
 
-#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_SERVICE_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_SERVICE_H_

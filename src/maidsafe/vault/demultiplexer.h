@@ -29,7 +29,7 @@ namespace vault {
 
 class MaidAccountHolderService;
 class VersionManagerService;
-class MetadataManagerService;
+class DataManagerService;
 class PmidAccountHolderService;
 class DataHolderService;
 
@@ -37,7 +37,7 @@ class Demultiplexer {
  public:
   Demultiplexer(MaidAccountHolderService& maid_manager_service,
                 VersionManagerService& version_manager_service,
-                MetadataManagerService& metadata_manager_service,
+                DataManagerService& metadata_manager_service,
                 PmidAccountHolderService& pmid_manager_service,
                 DataHolderService& pmid_node);
   void HandleMessage(const std::string& serialised_message,
@@ -53,7 +53,7 @@ class Demultiplexer {
 
   MaidAccountHolderService& maid_manager_service_;
   VersionManagerService& version_manager_service_;
-  MetadataManagerService& metadata_manager_service_;
+  DataManagerService& metadata_manager_service_;
   PmidAccountHolderService& pmid_manager_service_;
   DataHolderService& pmid_node_;
 };

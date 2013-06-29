@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_SERVICE_INL_H_
-#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_SERVICE_INL_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_SERVICE_INL_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_SERVICE_INL_H_
 
 #include <exception>
 #include <string>
@@ -101,7 +101,7 @@ bool AccumulateMetadataPut(const nfs::Message& message,
 }  // namespace detail
 
 template<typename Data>
-MetadataManagerService::GetHandler<Data>::GetHandler(const routing::ReplyFunctor& reply_functor_in,
+DataManagerService::GetHandler<Data>::GetHandler(const routing::ReplyFunctor& reply_functor_in,
                                                      size_t holder_count_in,
                                                      const nfs::MessageId& message_id_in)
     : reply_functor(reply_functor_in),
@@ -113,7 +113,7 @@ MetadataManagerService::GetHandler<Data>::GetHandler(const routing::ReplyFunctor
 
 
 template<typename Data>
-void MetadataManagerService::HandleMessage(const nfs::Message& message,
+void DataManagerService::HandleMessage(const nfs::Message& message,
                                            const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
   // FIXME Prakash validate sender
@@ -146,7 +146,7 @@ void MetadataManagerService::HandleMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-void MetadataManagerService::HandlePut(const nfs::Message& message,
+void DataManagerService::HandlePut(const nfs::Message& message,
                                        const routing::ReplyFunctor& reply_functor) {
   try {
     ValidatePutSender(message);
@@ -182,7 +182,7 @@ void MetadataManagerService::HandlePut(const nfs::Message& message,
 
 
 template<typename Data>
-void MetadataManagerService::HandlePutResult(const nfs::Message& message) {
+void DataManagerService::HandlePutResult(const nfs::Message& message) {
   try {
     ValidatePutResultSender(message);
     // FIXME: Need to adjust accumulator to identify/accumulate message from PAHs of a given DH
@@ -212,7 +212,7 @@ void MetadataManagerService::HandlePutResult(const nfs::Message& message) {
 }
 
 template<typename Data>
-void MetadataManagerService::HandleGet(nfs::Message message,
+void DataManagerService::HandleGet(nfs::Message message,
                                        const routing::ReplyFunctor& reply_functor) {
   try {
     ValidateGetSender(message);
@@ -235,7 +235,7 @@ void MetadataManagerService::HandleGet(nfs::Message message,
 }
 
 template<typename Data>
-void MetadataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_handler,
+void DataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_handler,
                                          const std::string& serialised_reply) {
   protobuf::DataOrProof data_or_proof;
   try {
@@ -297,7 +297,7 @@ void MetadataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_h
 }
 
 template<typename Data>
-void MetadataManagerService::IntegrityCheck(std::shared_ptr<GetHandler<Data>> /*get_handler*/) {
+void DataManagerService::IntegrityCheck(std::shared_ptr<GetHandler<Data>> /*get_handler*/) {
 //  std::lock_guard<std::mutex> lock(get_handler->mutex);
 ////  for (auto& result: get_handler->pmid_node_results) {
 
@@ -307,7 +307,7 @@ void MetadataManagerService::IntegrityCheck(std::shared_ptr<GetHandler<Data>> /*
 }
 
 template<typename Data>
-void MetadataManagerService::HandleDelete(const nfs::Message& message) {
+void DataManagerService::HandleDelete(const nfs::Message& message) {
   try {
     ValidateDeleteSender(message);
     // wait for 3 requests
@@ -324,7 +324,7 @@ void MetadataManagerService::HandleDelete(const nfs::Message& message) {
 }
 
 template<typename Data>
-void MetadataManagerService::HandleGetReply(std::string serialised_reply) {
+void DataManagerService::HandleGetReply(std::string serialised_reply) {
   try {
     nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));
     // if failure - try another DH?
@@ -339,10 +339,10 @@ void MetadataManagerService::HandleGetReply(std::string serialised_reply) {
 }
 
 template<typename Data>
-void MetadataManagerService::OnGenericErrorHandler(nfs::Message /*message*/) {}
+void DataManagerService::OnGenericErrorHandler(nfs::Message /*message*/) {}
 
 template<typename Data, nfs::MessageAction Action>
-void MetadataManagerService::AddLocalUnresolvedEntryThenSync(
+void DataManagerService::AddLocalUnresolvedEntryThenSync(
     const nfs::Message& message,
     const MetadataValue& metadata_value) {
   auto unresolved_entry(detail::CreateUnresolvedEntry<Data, Action>(message, metadata_value,
@@ -356,4 +356,4 @@ void MetadataManagerService::AddLocalUnresolvedEntryThenSync(
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_MANAGER_SERVICE_INL_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_SERVICE_INL_H_

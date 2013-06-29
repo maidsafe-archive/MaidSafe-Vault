@@ -45,7 +45,7 @@ MetadataHandler::MetadataHandler(const fs::path& vault_root_dir, const NodeId &t
                        detail::InitialiseDirectory(path);
                        return path;
                      } ()),
-      metadata_db_(new ManagerDb<MetadataManager>(kMetadataRoot_)),
+      metadata_db_(new ManagerDb<DataManager>(kMetadataRoot_)),
       kThisNodeId_(this_node_id),
       mutex_(),
       sync_(metadata_db_.get(), kThisNodeId_) {
@@ -61,7 +61,7 @@ void MetadataHandler::AddLocalUnresolvedEntry(const MetadataUnresolvedEntry& unr
   sync_.AddLocalEntry(unresolved_entry);
 }
 
-std::vector<MetadataManager::RecordName> MetadataHandler::GetRecordNames() const {
+std::vector<DataManager::RecordName> MetadataHandler::GetRecordNames() const {
   return metadata_db_->GetKeys();
 }
 

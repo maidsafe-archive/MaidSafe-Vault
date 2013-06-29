@@ -13,24 +13,38 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_HELPERS_H_
-#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_HELPERS_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_H_
 
-#include "maidsafe/vault/types.h"
+#include <cstdint>
+#include <utility>
+
+#include "maidsafe/common/types.h"
+#include "maidsafe/nfs/types.h"
+
 
 namespace maidsafe {
 
+namespace nfs {
+
+template<>
+struct PersonaTypes<Persona::kMaidAccountHolder> {
+  typedef DataNameVariant DbKey;
+  typedef int32_t DbValue;
+  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
+  typedef DbValue UnresolvedEntryValue;
+  static const Persona persona = Persona::kMaidAccountHolder;
+};
+
+}  // namespace nfs
+
+
 namespace vault {
 
-struct MetadataValueDelta {
-  int data_size;
-  boost::optional<int64_t> subscribers;
-  std::vector<PmidName> new_online; // FIXME(Prakash) discuss
-  std::vector<PmidName> new_offline;  // FIXME(Prakash) discuss
-};
+typedef nfs::PersonaTypes<nfs::Persona::kMaidAccountHolder> MaidAccountHolder;
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_HELPERS_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_H_

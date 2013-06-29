@@ -94,7 +94,7 @@ template<typename Message>
 inline bool FromMaidAccountHolder(const Message& message);
 
 template<typename Message>
-inline bool FromMetadataManager(const Message& message);
+inline bool FromDataManager(const Message& message);
 
 template<typename Message>
 inline bool FromPmidAccountHolder(const Message& message);
@@ -139,8 +139,8 @@ template<typename PersonaTypes>
 typename PersonaTypes::RecordName GetRecordName(const typename PersonaTypes::DbKey& db_key);
 
 template<>
-typename MetadataManager::RecordName GetRecordName<MetadataManager>(
-    const typename MetadataManager::DbKey& db_key);
+typename DataManager::RecordName GetRecordName<DataManager>(
+    const typename DataManager::DbKey& db_key);
 
 template<>
 typename VersionManager::RecordName GetRecordName<VersionManager>(

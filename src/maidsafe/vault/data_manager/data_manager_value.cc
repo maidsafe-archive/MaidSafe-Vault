@@ -70,7 +70,7 @@ MetadataValue::serialised_type MetadataValue::Serialise() const {
   return serialised_type(NonEmptyString(metadata_value_proto.SerializeAsString()));
 }
 
-Metadata::Metadata(const DataNameVariant& data_name, ManagerDb<MetadataManager>* metadata_db,
+Metadata::Metadata(const DataNameVariant& data_name, ManagerDb<DataManager>* metadata_db,
                    int32_t data_size)
     : data_name_(data_name),
       value_([&metadata_db, data_name, data_size, this]()->MetadataValue {
@@ -86,7 +86,7 @@ Metadata::Metadata(const DataNameVariant& data_name, ManagerDb<MetadataManager>*
   strong_guarantee_.SetAction(on_scope_exit::RevertValue(value_));
 }
 
-Metadata::Metadata(const DataNameVariant& data_name, ManagerDb<MetadataManager>* metadata_db)
+Metadata::Metadata(const DataNameVariant& data_name, ManagerDb<DataManager>* metadata_db)
   : data_name_(data_name),
     value_([&metadata_db, data_name, this]()->MetadataValue {
             assert(metadata_db);
@@ -96,7 +96,7 @@ Metadata::Metadata(const DataNameVariant& data_name, ManagerDb<MetadataManager>*
   strong_guarantee_.SetAction(on_scope_exit::RevertValue(value_));
 }
 
-void Metadata::SaveChanges(ManagerDb<MetadataManager>* metadata_db) {
+void Metadata::SaveChanges(ManagerDb<DataManager>* metadata_db) {
   assert(metadata_db);
   //TODO(Prakash): Handle case of modifying unique data
   if (*value_.subscribers < 1) {

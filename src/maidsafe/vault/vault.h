@@ -78,7 +78,7 @@ class Vault {
   nfs::PublicKeyGetter public_key_getter_;
   MaidAccountHolderService maid_manager_service_;
   VersionManagerService version_manager_service_;
-  MetadataManagerService metadata_manager_service_;
+  DataManagerService metadata_manager_service_;
   PmidAccountHolderService pmid_manager_service_;
   DataHolderService pmid_node_;
   Demultiplexer demux_;

@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HOLDER_SERVICE_INL_H_
-#define MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HOLDER_SERVICE_INL_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_SERVICE_INL_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_SERVICE_INL_H_
 
 #include <exception>
 #include <string>
@@ -144,14 +144,14 @@ void PmidAccountHolderService::AddLocalUnresolvedEntryThenSync(const nfs::Messag
 }
 
 template<typename Data, nfs::MessageAction Action>
-void PmidAccountHolderService::ReplyToMetadataManagers(
+void PmidAccountHolderService::ReplyToDataManagers(
       const std::vector<PmidAccountResolvedEntry>& /*resolved_entries*/,
       const PmidName& /*pmid_name*/) {
   GetTagValueAndIdentityVisitor type_and_name_visitor;
   //for (auto& resolved_entry : resolved_entries) {
   //  auto type_and_name(boost::apply_visitor(type_and_name_visitor, resolved_entry.key.first));
   //  nfs::Message::Data data(type_and_name.first, type_and_name.second, NonEmptyString(), Action);
-  //  nfs::Message meassage(nfs::Persona::kMetadataManager,
+  //  nfs::Message meassage(nfs::Persona::kDataManager,
   //                        nfs::PersonaId(nfs::Persona::kPmidAccountHolder, routing_.kNodeId()),
   //                        data,
   //                        pmid_name);
@@ -162,4 +162,4 @@ void PmidAccountHolderService::ReplyToMetadataManagers(
 }  // namespace vault
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HOLDER_SERVICE_INL_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_SERVICE_INL_H_

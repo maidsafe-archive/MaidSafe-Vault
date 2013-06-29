@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_HANDLER_H_
-#define MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_HANDLER_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_METADATA_HANDLER_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_METADATA_HANDLER_H_
 
 #include <cstdint>
 #include <vector>
@@ -96,7 +96,7 @@ class MetadataHandler {
   void AddLocalUnresolvedEntry(const MetadataUnresolvedEntry& unresolved_entry);
 
   // Sync operations
-  std::vector<MetadataManager::RecordName> GetRecordNames() const;
+  std::vector<DataManager::RecordName> GetRecordNames() const;
   serialised_record_type GetSerialisedRecord(const DataNameVariant& data_name);
   template <typename Data>
   NonEmptyString GetSyncData(const typename Data::name_type& data_name);
@@ -115,7 +115,7 @@ class MetadataHandler {
 
  private:
   const boost::filesystem::path kMetadataRoot_;
-  std::unique_ptr<ManagerDb<MetadataManager>> metadata_db_;
+  std::unique_ptr<ManagerDb<DataManager>> metadata_db_;
   const NodeId kThisNodeId_;
   mutable std::mutex mutex_;
   Sync<MetadataMergePolicy> sync_;
@@ -128,4 +128,4 @@ class MetadataHandler {
 
 #include "maidsafe/vault/metadata_manager/metadata_handler-inl.h"
 
-#endif  // MAIDSAFE_VAULT_METADATA_MANAGER_METADATA_HANDLER_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_METADATA_HANDLER_H_

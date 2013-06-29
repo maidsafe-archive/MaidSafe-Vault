@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HANDLER_INL_H_
-#define MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HANDLER_INL_H_
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_ACCOUNT_HANDLER_INL_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_MPID_ACCOUNT_HANDLER_INL_H_
 
 
 namespace maidsafe {
@@ -117,4 +117,4 @@ namespace vault {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MPID_ACCOUNT_HOLDER_MPID_ACCOUNT_HANDLER_INL_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_ACCOUNT_HANDLER_INL_H_

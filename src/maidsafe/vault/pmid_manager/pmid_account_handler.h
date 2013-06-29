@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HANDLER_H_
-#define MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HANDLER_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_PMID_ACCOUNT_HANDLER_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_PMID_ACCOUNT_HANDLER_H_
 
 #include <cstdint>
 #include <future>
@@ -92,4 +92,4 @@ class PmidAccountHandler {
 
 #include "maidsafe/vault/pmid_manager/pmid_account_handler-inl.h"
 
-#endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_HANDLER_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_PMID_ACCOUNT_HANDLER_H_

@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_MERGE_POLICY_H_
-#define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_MERGE_POLICY_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_MERGE_POLICY_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_MERGE_POLICY_H_
 
 #include <map>
 #include <set>
@@ -129,4 +129,4 @@ int32_t MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_MERGE_POLICY_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_MERGE_POLICY_H_

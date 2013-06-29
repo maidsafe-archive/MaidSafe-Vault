@@ -91,7 +91,7 @@ void DataHolderService::ValidateGetSender(const nfs::Message& message) const {
   if (!SenderInGroupForMetadata(message, routing_))
     ThrowError(VaultErrors::permission_denied);
 
-  if (!FromMetadataManager(message) || !ForThisPersona(message))
+  if (!FromDataManager(message) || !ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 

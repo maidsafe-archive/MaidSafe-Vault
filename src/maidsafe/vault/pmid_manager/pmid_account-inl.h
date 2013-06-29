@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_INL_H_
-#define MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_INL_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_PMID_ACCOUNT_INL_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_PMID_ACCOUNT_INL_H_
 
 namespace maidsafe {
 
@@ -31,4 +31,4 @@ void PmidAccount::DeleteData(const typename Data::name_type& name) {
 }  // namespace maidsafe
 
 
-#endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_ACCOUNT_INL_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_PMID_ACCOUNT_INL_H_
