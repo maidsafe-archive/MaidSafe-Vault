@@ -30,8 +30,8 @@ License.
 #include "maidsafe/nfs/message.h"
 
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/metadata_manager/metadata_manager.h"
-#include "maidsafe/vault/metadata_manager/metadata_value.h"
+#include "maidsafe/vault/data_manager/metadata_manager.h"
+#include "maidsafe/vault/data_manager/metadata_value.h"
 #include "maidsafe/vault/version_manager/version_manager.h"
 
 
