@@ -31,7 +31,7 @@ class MaidManagerService;
 class VersionManagerService;
 class DataManagerService;
 class PmidManagerService;
-class DataHolderService;
+class PmidNodeService;
 
 class Demultiplexer {
  public:
@@ -39,7 +39,7 @@ class Demultiplexer {
                 VersionManagerService& version_manager_service,
                 DataManagerService& data_manager_service,
                 PmidManagerService& pmid_manager_service,
-                DataHolderService& pmid_node);
+                PmidNodeService& pmid_node);
   void HandleMessage(const std::string& serialised_message,
                      const routing::ReplyFunctor& reply_functor);
   bool GetFromCache(std::string& serialised_message);
@@ -55,7 +55,7 @@ class Demultiplexer {
   VersionManagerService& version_manager_service_;
   DataManagerService& data_manager_service_;
   PmidManagerService& pmid_manager_service_;
-  DataHolderService& pmid_node_;
+  PmidNodeService& pmid_node_;
 };
 
 template<>

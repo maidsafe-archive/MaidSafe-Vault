@@ -20,7 +20,7 @@ License.
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/account_db.h"
-#include "maidsafe/vault/maid_manager/account.pb.h"
+#include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 
 
 namespace maidsafe {
@@ -150,7 +150,6 @@ NonEmptyString MaidManagerMergePolicy::GetFromDb(const DataNameVariant& data_nam
   catch(const maidsafe_error&) {}
   return NonEmptyString();
 }
-
 
 }  // namespace vault
 

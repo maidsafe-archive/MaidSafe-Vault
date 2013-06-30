@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_SERVICE_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_SERVICE_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_SERVICE_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_SERVICE_H_
 
 #include <mutex>
 #include <string>
@@ -137,6 +137,6 @@ class MaidManagerService {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/maid_manager/maid_manager_service-inl.h"
+#include "maidsafe/vault/maid_manager/service-inl.h"
 
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_SERVICE_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_SERVICE_H_

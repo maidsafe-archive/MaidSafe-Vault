@@ -21,6 +21,7 @@ License.
 #include "maidsafe/routing/parameters.h"
 
 #include "maidsafe/vault/data_manager/value.h"
+#include "maidsafe/vault/data_manager/metadata.h"
 
 namespace fs = boost::filesystem;
 
@@ -109,7 +110,7 @@ std::vector<MetadataMergePolicy::UnresolvedEntry> MetadataMergePolicy::MergeReco
   std::vector<UnresolvedEntry> extra_unresolved_data;
   // Merge Size
   int size(GetDataSize(unresolved_entry));
-  MetadataValue metadata_value(size);
+  DataManagerValue metadata_value(size);
   // Merge subscribers
   auto min_subscriber(std::min_element(
       unresolved_entry.messages_contents.begin(),
@@ -123,7 +124,7 @@ std::vector<MetadataMergePolicy::UnresolvedEntry> MetadataMergePolicy::MergeReco
   for (const auto& message_content : unresolved_entry.messages_contents) {
     if (*message_content.value->subscribers > *metadata_value.subscribers) {
       auto extra_subscribers(*message_content.value->subscribers - *metadata_value.subscribers);
-      MetadataValue incremental_value(metadata_value.data_size);
+      DataManagerValue incremental_value(metadata_value.data_size);
       *incremental_value.subscribers = 1;
       for (auto i(0); i != extra_subscribers; ++i) {  // FIXME need different entry id ?
         UnresolvedEntry entry(std::make_pair(unresolved_entry.key.first, nfs::MessageAction::kPut),

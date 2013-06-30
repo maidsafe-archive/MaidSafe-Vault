@@ -13,7 +13,7 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/data_manager/metadata_handler.h"
+#include "maidsafe/vault/data_manager/handler.h"
 
 #include <string>
 
@@ -56,7 +56,7 @@ void MetadataHandler::DeleteRecord(const DataNameVariant& /*record_name*/) {
 
 }
 
-void MetadataHandler::AddLocalUnresolvedEntry(const MetadataUnresolvedEntry& unresolved_entry) {
+void MetadataHandler::AddLocalUnresolvedEntry(const DataManagerUnresolvedEntry& unresolved_entry) {
   std::lock_guard<std::mutex> lock(mutex_);
   sync_.AddLocalEntry(unresolved_entry);
 }
@@ -74,15 +74,15 @@ void MetadataHandler::ReplaceNodeInSyncList(const DataNameVariant& /*record_name
   sync_.ReplaceNode(old_node, new_node);
 }
 
-std::vector<MetadataUnresolvedEntry> MetadataHandler::GetSyncData() {
+std::vector<DataManagerUnresolvedEntry> MetadataHandler::GetSyncData() {
   if (sync_.GetUnresolvedCount() < kSyncTriggerCount_)
-    return std::vector<MetadataUnresolvedEntry>();
+    return std::vector<DataManagerUnresolvedEntry>();
 
   return sync_.GetUnresolvedData();
 }
 
 void MetadataHandler::ApplySyncData(const NonEmptyString& serialised_unresolved_entry) {
-  MetadataUnresolvedEntry entry((MetadataUnresolvedEntry::serialised_type(
+  DataManagerUnresolvedEntry entry((DataManagerUnresolvedEntry::serialised_type(
                                  serialised_unresolved_entry)));
   sync_.AddUnresolvedEntry(entry);
 }
@@ -93,7 +93,7 @@ void MetadataHandler::ApplyRecordTransfer(const NonEmptyString& serialised_unres
     ThrowError(CommonErrors::parsing_error);
 
   for (int i(0); i != proto_unresolved_entries.serialised_unresolved_entry_size(); ++i) {
-    MetadataUnresolvedEntry entry(MetadataUnresolvedEntry::serialised_type(
+    DataManagerUnresolvedEntry entry(DataManagerUnresolvedEntry::serialised_type(
         NonEmptyString(proto_unresolved_entries.serialised_unresolved_entry(i))));
     sync_.AddUnresolvedEntry(entry);
   }
@@ -103,7 +103,7 @@ MetadataHandler::serialised_record_type MetadataHandler::GetSerialisedRecord(
     const DataNameVariant& data_name) {
   protobuf::UnresolvedEntries proto_unresolved_entries;
   auto metadata_value(metadata_db_->Get(DbKey(data_name)));
-  MetadataUnresolvedEntry unresolved_entry_db_value(
+  DataManagerUnresolvedEntry unresolved_entry_db_value(
       std::make_pair(DbKey(data_name), nfs::MessageAction::kAccountTransfer), metadata_value,
         kThisNodeId_);
   auto unresolved_data(sync_.GetUnresolvedData());

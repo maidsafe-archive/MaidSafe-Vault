@@ -24,7 +24,7 @@ License.
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/account_db.h"
 #include "maidsafe/vault/unresolved_element.pb.h"
-#include "maidsafe/vault/maid_manager/maid_account.pb.h"
+#include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 
 
 namespace maidsafe {

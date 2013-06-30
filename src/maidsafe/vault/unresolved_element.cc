@@ -21,11 +21,10 @@ License.
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/unresolved_element.pb.h"
-#include "maidsafe/vault/maid_manager/maid_manager_merge_policy.h"
-#include "maidsafe/vault/data_manager/data_manager_merge_policy.h"
-#include "maidsafe/vault/pmid_manager/pmid_manager_merge_policy.h"
-#include "maidsafe/vault/version_manager/version_manager_merge_policy.h"
-
+#include "maidsafe/vault/maid_manager/merge_policy.h"
+#include "maidsafe/vault/data_manager/merge_policy.h"
+#include "maidsafe/vault/pmid_manager/merge_policy.h"
+#include "maidsafe/vault/version_manager/merge_policy.h"
 
 namespace maidsafe {
 
@@ -155,7 +154,7 @@ DataManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_
       messages_contents(),
       sync_counter(0),
       dont_add_to_db(false) {
-  protobuf::MetadataUnresolvedEntry proto_copy;
+  protobuf::DataManagerUnresolvedEntry proto_copy;
   if (!proto_copy.ParseFromString(serialised_copy->string()))
     ThrowError(CommonErrors::parsing_error);
 
@@ -188,7 +187,7 @@ DataManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_
 }
 
 template<>
-DataManagerUnresolvedEntry::serialised_type MetadataUnresolvedEntry::Serialise() const {
+DataManagerUnresolvedEntry::serialised_type DataManagerUnresolvedEntry::Serialise() const {
   protobuf::DataManagerUnresolvedEntry proto_copy;
   auto name(key.first.name());
   auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), name));
@@ -214,17 +213,17 @@ DataManagerUnresolvedEntry::serialised_type MetadataUnresolvedEntry::Serialise()
 }
 
 template<>
-StructuredDataUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
+VersionManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
     : key(),
       messages_contents(),
       sync_counter(0),
       dont_add_to_db(false) {
-  protobuf::StructuredDataUnresolvedEntry proto_copy;
+  protobuf::VersionManagerUnresolvedEntry proto_copy;
   if (!proto_copy.ParseFromString(serialised_copy->string()))
     ThrowError(CommonErrors::parsing_error);
 
   VersionManager::UnresolvedEntryKey unresolved_entry_key;
-  unresolved_entry_key.first = StructuredDataKey(
+  unresolved_entry_key.first = VersionManagerKey(
                GetDataNameVariant(static_cast<DataTagValue>(proto_copy.key().name_type()),
                                         Identity(proto_copy.key().name())),
                      Identity(proto_copy.key().originator()));
@@ -271,8 +270,8 @@ StructuredDataUnresolvedEntry::UnresolvedElement(const serialised_type& serialis
 }
 
 template<>
-StructuredDataUnresolvedEntry::serialised_type StructuredDataUnresolvedEntry::Serialise() const {
-  protobuf::StructuredDataUnresolvedEntry proto_copy;
+VersionManagerUnresolvedEntry::serialised_type VersionManagerUnresolvedEntry::Serialise() const {
+  protobuf::VersionManagerUnresolvedEntry proto_copy;
   //auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
 
   //auto proto_key(proto_copy.mutable_key());

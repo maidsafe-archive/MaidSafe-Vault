@@ -31,7 +31,6 @@ License.
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
-#include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/version_manager/version_manager.h"
 
 

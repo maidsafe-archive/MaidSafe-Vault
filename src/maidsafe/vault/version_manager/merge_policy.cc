@@ -19,7 +19,7 @@ License.
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/vault/manager_db.h"
-#include "maidsafe/vault/maid_manager/maid_account.pb.h"
+#include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
@@ -52,7 +52,7 @@ void VersionManagerMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
   } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
       assert(unresolved_entry.messages_contents.at(0).value->serialised_db_value);
       MergeAccountTransfer(unresolved_entry.key.first,
-      VersionManagerVersions(*unresolved_entry.messages_contents.at(0).value->serialised_db_value));
+      StructuredDataVersions(*unresolved_entry.messages_contents.at(0).value->serialised_db_value));
   } else if (unresolved_entry.key.second == nfs::MessageAction::kDeleteBranchUntilFork) {
     assert(unresolved_entry.messages_contents.at(0).value);
     MergeDeleteBranchUntilFork(unresolved_entry.key.first,
@@ -63,8 +63,8 @@ void VersionManagerMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
 }
 
 void VersionManagerMergePolicy::MergePut(const DbKey& key,
-                                         const VersionManagerVersions::VersionName& new_value,
-                                         const VersionManagerVersions::VersionName& old_value) {
+                                         const StructuredDataVersions::VersionName& new_value,
+                                         const StructuredDataVersions::VersionName& old_value) {
   auto value(db_->Get(key));
   value.Put(old_value, new_value);
   db_->Put(std::make_pair(key, value));
@@ -72,7 +72,7 @@ void VersionManagerMergePolicy::MergePut(const DbKey& key,
 
 void VersionManagerMergePolicy::MergeDeleteBranchUntilFork(
     const DbKey& key,
-    const VersionManagerVersions::VersionName& tot) {
+    const StructuredDataVersions::VersionName& tot) {
   auto value(db_->Get(key));
   value.DeleteBranchUntilFork(tot);
   db_->Put(std::make_pair(key, value));
@@ -83,7 +83,7 @@ void VersionManagerMergePolicy::MergeDelete(const DbKey& key) {
 }
 
 void VersionManagerMergePolicy::MergeAccountTransfer(const DbKey& key,
-                                                     const VersionManagerVersions& data_version) {
+                                                     const StructuredDataVersions& data_version) {
   db_->Put(std::make_pair(key, data_version));
 }
 

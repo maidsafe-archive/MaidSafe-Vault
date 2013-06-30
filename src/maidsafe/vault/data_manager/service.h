@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_SERVICE_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_SERVICE_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_SERVICE_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_SERVICE_H_
 
 #include <memory>
 #include <mutex>
@@ -33,6 +33,7 @@ License.
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/data_manager/helpers.h"
 #include "maidsafe/vault/data_manager/handler.h"
+#include "maidsafe/vault/data_manager/value.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/types.h"
 
@@ -113,7 +114,7 @@ class DataManagerService {
 
   template<typename Data, nfs::MessageAction Action>
   void AddLocalUnresolvedEntryThenSync(const nfs::Message& message,
-                                       const MetadataValue& metadata_value);
+                                       const DataManagerValue& metadata_value);
 
   // =============== Sync and Record transfer =====================================================
   void Sync();
@@ -135,6 +136,6 @@ class DataManagerService {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/data_manager/data_manager_service-inl.h"
+#include "maidsafe/vault/data_manager/service-inl.h"
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_SERVICE_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_SERVICE_H_

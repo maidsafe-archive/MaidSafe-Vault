@@ -26,7 +26,7 @@ License.
 
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
-#include "maidsafe/vault/pmid_manager/pmid_account.h"
+#include "maidsafe/vault/pmid_manager/account.h"
 #include "maidsafe/vault/types.h"
 
 

@@ -22,10 +22,10 @@ License.
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/nfs/types.h"
-
+#include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/db_key.h"
 #include "maidsafe/vault/version_manager/key.h"
 #include "maidsafe/vault/version_manager/unresolved_entry_value.h"
-
 
 namespace maidsafe {
 
@@ -34,19 +34,20 @@ namespace nfs {
 template<>
 struct PersonaTypes<Persona::kVersionManager> {
   typedef DataNameVariant RecordName;
-  typedef vault::VersionManagerKey DbKey;
+  typedef ::maidsafe::vault::VersionManagerKey DbKey;
   typedef StructuredDataVersions DbValue;
   typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-  typedef vault::VersionManagerUnresolvedEntryValue UnresolvedEntryValue;
+  typedef ::maidsafe::vault::VersionManagerUnresolvedEntryValue UnresolvedEntryValue;
   static const Persona persona = Persona::kVersionManager;
 };
 
 }  // namespace nfs
 
-
 namespace vault {
 
 typedef nfs::PersonaTypes<nfs::Persona::kVersionManager> VersionManager;
+typedef UnresolvedElement<VersionManager> VersionManagerUnresolvedEntry;
+typedef VersionManagerUnresolvedEntry VersionManagerResolvedEntry;
 
 }  // namespace vault
 

@@ -23,8 +23,8 @@ License.
 
 #include "boost/filesystem/operations.hpp"
 
-#include "maidsafe/vault/utils.h"
-
+//#include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/db_key.h"
 
 namespace maidsafe {
 

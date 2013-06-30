@@ -37,9 +37,6 @@ namespace maidsafe {
 
 namespace vault {
 
-typedef UnresolvedElement<VersionManager> VersionManagerUnresolvedEntry;
-typedef VersionManagerUnresolvedEntry VersionManagerResolvedEntry;
-
 class VersionManagerMergePolicy {
  public:
   typedef VersionManagerUnresolvedEntry UnresolvedEntry;

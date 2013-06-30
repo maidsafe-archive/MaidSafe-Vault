@@ -29,7 +29,7 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Data>
-void DataHolderService::HandleMessage(const nfs::Message& message,
+void PmidNodeService::HandleMessage(const nfs::Message& message,
                                       const routing::ReplyFunctor& reply_functor) {
   nfs::Reply reply(CommonErrors::success);
   {
@@ -55,7 +55,7 @@ void DataHolderService::HandleMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-void DataHolderService::HandlePutMessage(const nfs::Message& message,
+void PmidNodeService::HandlePutMessage(const nfs::Message& message,
                                          const routing::ReplyFunctor& reply_functor) {
   try {
 #ifndef TESTING
@@ -79,7 +79,7 @@ void DataHolderService::HandlePutMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-void DataHolderService::HandleGetMessage(const nfs::Message& message,
+void PmidNodeService::HandleGetMessage(const nfs::Message& message,
                                          const routing::ReplyFunctor& reply_functor) {
   try {
 #ifndef TESTING
@@ -95,7 +95,7 @@ void DataHolderService::HandleGetMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-void DataHolderService::HandleDeleteMessage(const nfs::Message& message,
+void PmidNodeService::HandleDeleteMessage(const nfs::Message& message,
                                             const routing::ReplyFunctor& reply_functor) {
   try {
 #ifndef TESTING
@@ -117,24 +117,24 @@ void DataHolderService::HandleDeleteMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-NonEmptyString DataHolderService::GetFromCache(const nfs::Message& message) {
+NonEmptyString PmidNodeService::GetFromCache(const nfs::Message& message) {
   return GetFromCache<Data>(message, is_cacheable<Data>());
 }
 
 template<typename Data>
-NonEmptyString DataHolderService::GetFromCache(const nfs::Message& message, IsCacheable) {
+NonEmptyString PmidNodeService::GetFromCache(const nfs::Message& message, IsCacheable) {
   return CacheGet<Data>(typename Data::name_type(message.data().name),
                         is_long_term_cacheable<Data>());
 }
 
 template<typename Data>
-NonEmptyString DataHolderService::GetFromCache(const nfs::Message& /*message*/,
+NonEmptyString PmidNodeService::GetFromCache(const nfs::Message& /*message*/,
                                                IsNotCacheable) {
   return NonEmptyString();
 }
 
 template<typename Data>
-NonEmptyString DataHolderService::CacheGet(const typename Data::name_type& name,
+NonEmptyString PmidNodeService::CacheGet(const typename Data::name_type& name,
                                            IsShortTermCacheable) {
   static_assert(is_short_term_cacheable<Data>::value,
                 "This should only be called for short-term cacheable data types.");
@@ -142,7 +142,7 @@ NonEmptyString DataHolderService::CacheGet(const typename Data::name_type& name,
 }
 
 template<typename Data>
-NonEmptyString DataHolderService::CacheGet(const typename Data::name_type& name,
+NonEmptyString PmidNodeService::CacheGet(const typename Data::name_type& name,
                                            IsLongTermCacheable) {
   static_assert(is_long_term_cacheable<Data>::value,
                 "This should only be called for long-term cacheable data types.");
@@ -150,21 +150,21 @@ NonEmptyString DataHolderService::CacheGet(const typename Data::name_type& name,
 }
 
 template<typename Data>
-void DataHolderService::StoreInCache(const nfs::Message& message) {
+void PmidNodeService::StoreInCache(const nfs::Message& message) {
   StoreInCache<Data>(message, is_cacheable<Data>());
 }
 
 template<typename Data>
-void DataHolderService::StoreInCache(const nfs::Message& message, IsCacheable) {
+void PmidNodeService::StoreInCache(const nfs::Message& message, IsCacheable) {
   CacheStore<Data>(typename Data::name_type(message.data().name), message.data().content,
                    is_long_term_cacheable<Data>());
 }
 
 template<typename Data>
-void DataHolderService::StoreInCache(const nfs::Message& /*message*/, IsNotCacheable) {}
+void PmidNodeService::StoreInCache(const nfs::Message& /*message*/, IsNotCacheable) {}
 
 template<typename Data>
-void DataHolderService::CacheStore(const typename Data::name_type& name,
+void PmidNodeService::CacheStore(const typename Data::name_type& name,
                             const NonEmptyString& value,
                             IsShortTermCacheable) {
   static_assert(is_short_term_cacheable<Data>::value,
@@ -173,7 +173,7 @@ void DataHolderService::CacheStore(const typename Data::name_type& name,
 }
 
 template<typename Data>
-void DataHolderService::CacheStore(const typename Data::name_type& name,
+void PmidNodeService::CacheStore(const typename Data::name_type& name,
                             const NonEmptyString& value,
                             IsLongTermCacheable) {
   static_assert(is_long_term_cacheable<Data>::value,

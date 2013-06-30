@@ -27,7 +27,7 @@ License.
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/types.h"
 
-#include "maidsafe/vault/pmid_manager/pmid_manager_merge_policy.h"
+#include "maidsafe/vault/pmid_manager/merge_policy.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 #include "maidsafe/vault/pmid_manager/pmid_record.h"
 #include "maidsafe/vault/sync.h"
@@ -99,6 +99,6 @@ class PmidAccount {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/pmid_manager/manager-inl.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager-inl.h"
 
 #endif  // MAIDSAFE_VAULT_PMID_MANAGER_ACCOUNT_H_

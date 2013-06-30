@@ -21,7 +21,7 @@ License.
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_store/data_buffer.h"
 
-#include "maidsafe/vault/pmid_manager/pmid_account.pb.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 
 
 namespace fs = boost::filesystem;
@@ -54,12 +54,12 @@ inline bool SenderInGroupForMetadata(const nfs::Message& message, routing::Routi
 
 template<typename Message>
 inline bool ForThisPersona(const Message& message) {
-  return message.destination_persona() != nfs::Persona::kDataHolder;
+  return message.destination_persona() != nfs::Persona::kPmidNode;
 }
 
 }  // unnamed namespace
 
-DataHolderService::DataHolderService(const passport::Pmid& pmid,
+PmidNodeService::PmidNodeService(const passport::Pmid& pmid,
                                      routing::Routing& routing,
                                      const fs::path& vault_root_dir)
     : space_info_(fs::space(vault_root_dir)),
@@ -79,7 +79,7 @@ DataHolderService::DataHolderService(const passport::Pmid& pmid,
 //  nfs_.GetElementList();  // TODO (Fraser) BEFORE_RELEASE Implementation needed
 }
 
-void DataHolderService::ValidatePutSender(const nfs::Message& message) const {
+void PmidNodeService::ValidatePutSender(const nfs::Message& message) const {
   if (!SenderIsConnectedVault(message, routing_))
     ThrowError(VaultErrors::permission_denied);
 
@@ -87,7 +87,7 @@ void DataHolderService::ValidatePutSender(const nfs::Message& message) const {
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void DataHolderService::ValidateGetSender(const nfs::Message& message) const {
+void PmidNodeService::ValidateGetSender(const nfs::Message& message) const {
   if (!SenderInGroupForMetadata(message, routing_))
     ThrowError(VaultErrors::permission_denied);
 
@@ -95,7 +95,7 @@ void DataHolderService::ValidateGetSender(const nfs::Message& message) const {
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void DataHolderService::ValidateDeleteSender(const nfs::Message& message) const {
+void PmidNodeService::ValidateDeleteSender(const nfs::Message& message) const {
   if (!SenderIsConnectedVault(message, routing_))
     ThrowError(VaultErrors::permission_denied);
 

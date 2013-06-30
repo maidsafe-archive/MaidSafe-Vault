@@ -160,7 +160,7 @@ void DataManagerService::HandlePut(const nfs::Message& message,
                                       is_duplicate_and_cost.second, accumulator_,
                                       accumulator_mutex_, kPutRequestsRequired_)) {
       if (is_duplicate_and_cost.first) {  // No need to store data on DH
-        MetadataValue metadata_value(data_size);
+        DataManagerValue metadata_value(data_size);
         AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, metadata_value);
       } else {
         PmidName target_pmid_node(routing_.ClosestToId(message.source().node_id) ?
@@ -195,7 +195,7 @@ void DataManagerService::HandlePutResult(const nfs::Message& message) {
       if (proto_put_result.result()) {
         // Create record
         int32_t data_size(proto_put_result.data_size());
-        MetadataValue metadata_value(data_size);
+        DataManagerValue metadata_value(data_size);
         AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, metadata_value);
       } else {
         // FIXME need a record failure nodes vector to workout when we need to retry on different data holder
@@ -314,7 +314,7 @@ void DataManagerService::HandleDelete(const nfs::Message& message) {
     // wait for 3 requests
     if (detail::AddResult(message, nullptr, MakeError(CommonErrors::success),
                           accumulator_, accumulator_mutex_, kDeleteRequestsRequired_)) {
-      MetadataValue metadata_value(-1); // TODO(Prakash) is data size useful for delete ops?
+      DataManagerValue metadata_value(-1); // TODO(Prakash) is data size useful for delete ops?
       AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kDelete>(message, metadata_value);
       // After merge, decrement should send delete to PMID's on event data is actually deleted
     }
@@ -345,7 +345,7 @@ void DataManagerService::OnGenericErrorHandler(nfs::Message /*message*/) {}
 template<typename Data, nfs::MessageAction Action>
 void DataManagerService::AddLocalUnresolvedEntryThenSync(
     const nfs::Message& message,
-    const MetadataValue& metadata_value) {
+    const DataManagerValue& metadata_value) {
   auto unresolved_entry(detail::CreateUnresolvedEntry<Data, Action>(message, metadata_value,
                                                                     routing_.kNodeId()));
   metadata_handler_.AddLocalUnresolvedEntry(unresolved_entry);

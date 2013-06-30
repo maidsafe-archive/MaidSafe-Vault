@@ -30,7 +30,7 @@ License.
 
 #include "maidsafe/nfs/pmid_registration.h"
 #include "maidsafe/nfs/persona_id.h"
-#include "maidsafe/nfs/version_manager.h"
+#include "maidsafe/nfs/structured_data.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/version_manager/key.h"
@@ -55,8 +55,6 @@ inline bool FromVersionManager(const Message& message) {
 }
 
 }  // unnamed namespace
-
-
 
 namespace detail {
 
@@ -102,9 +100,9 @@ void VersionManagerService::ValidateSyncSender(const nfs::Message& message) cons
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-std::vector<VersionManagerVersions::VersionName>
+std::vector<StructuredDataVersions::VersionName>
     VersionManagerService::GetVersionsFromMessage(const nfs::Message& msg) const {
-   return nfs::VersionManager(nfs::VersionManager::serialised_type(msg.data().content)).versions();
+   return nfs::StructuredData(nfs::StructuredData::serialised_type(msg.data().content)).versions();
 }
 
 NonEmptyString VersionManagerService::GetSerialisedRecord(
@@ -133,9 +131,9 @@ void VersionManagerService::HandleGet(const nfs::Message& message,
                                              routing::ReplyFunctor reply_functor) {
   try {
     nfs::Reply reply(CommonErrors::success);
-    VersionManagerVersions version(
+    StructuredDataVersions version(
                 version_manager_db_.Get(GetKeyFromMessage<VersionManager>(message)));
-    reply.data() = nfs::VersionManager(version.Get()).Serialise().data;
+    reply.data() = nfs::StructuredData(version.Get()).Serialise().data;
     reply_functor(reply.Serialise()->string());
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     accumulator_.SetHandled(message, nfs::Reply(CommonErrors::success));
@@ -154,10 +152,10 @@ void VersionManagerService::HandleGetBranch(const nfs::Message& message,
 
   try {
     nfs::Reply reply(CommonErrors::success);
-    VersionManagerVersions version(
+    StructuredDataVersions version(
                 version_manager_db_.Get(GetKeyFromMessage<VersionManager>(message)));
     auto branch_to_get(GetVersionsFromMessage(message));
-    reply.data() = nfs::VersionManager(version.GetBranch(branch_to_get.at(0))).Serialise().data;
+    reply.data() = nfs::StructuredData(version.GetBranch(branch_to_get.at(0))).Serialise().data;
     reply_functor(reply.Serialise()->string());
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     accumulator_.SetHandled(message, nfs::Reply(CommonErrors::success));

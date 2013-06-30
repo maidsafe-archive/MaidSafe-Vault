@@ -21,11 +21,11 @@ License.
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/reply.h"
 
-#include "maidsafe/vault/pmid_node/pmid_node_service.h"
-#include "maidsafe/vault/maid_manager/maid_manager_service.h"
-#include "maidsafe/vault/data_manager/data_manager_service.h"
-#include "maidsafe/vault/pmid_manager/pmid_manager_service.h"
-#include "maidsafe/vault/version_manager/version_manager_service.h"
+#include "maidsafe/vault/pmid_node/service.h"
+#include "maidsafe/vault/maid_manager/service.h"
+#include "maidsafe/vault/data_manager/service.h"
+#include "maidsafe/vault/pmid_manager/service.h"
+#include "maidsafe/vault/version_manager/service.h"
 
 
 namespace maidsafe {
@@ -114,7 +114,7 @@ Demultiplexer::Demultiplexer(MaidManagerService& maid_manager_service,
                              VersionManagerService& version_manager_service,
                              DataManagerService& data_manager_service,
                              PmidManagerService& pmid_manager_service,
-                             DataHolderService& pmid_node)
+                             PmidNodeService& pmid_node)
     : maid_manager_service_(maid_manager_service),
       version_manager_service_(version_manager_service),
       data_manager_service_(data_manager_service),
@@ -160,8 +160,8 @@ void Demultiplexer::PersonaHandleMessage<nfs::Message>(
     case nfs::Persona::kPmidManager:
       return HandleDataType<PmidManagerService>(message, reply_functor,
                                                       pmid_manager_service_);
-    case nfs::Persona::kDataHolder:
-      return HandleDataType<DataHolderService>(message, reply_functor, pmid_node_);
+    case nfs::Persona::kPmidNode:
+      return HandleDataType<PmidNodeService>(message, reply_functor, pmid_node_);
     default:
       LOG(kError) << "Unhandled Persona";
   }

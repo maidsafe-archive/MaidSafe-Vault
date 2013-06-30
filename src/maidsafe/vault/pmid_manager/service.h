@@ -30,7 +30,7 @@ License.
 #include "maidsafe/nfs/reply.h"
 
 #include "maidsafe/vault/accumulator.h"
-#include "maidsafe/vault/pmid_manager/pmid_manager_handler.h"
+#include "maidsafe/vault/pmid_manager/handler.h"
 #include "maidsafe/vault/types.h"
 
 

@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_HANDLER_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_HANDLER_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_HANDLER_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_HANDLER_H_
 
 #include <cstdint>
 #include <functional>
@@ -102,6 +102,6 @@ class MaidAccountHandler {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/maid_manager/maid_manager_handler-inl.h"
+#include "maidsafe/vault/maid_manager/handler-inl.h"
 
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_HANDLER_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_HANDLER_H_

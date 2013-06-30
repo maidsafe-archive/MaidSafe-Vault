@@ -50,12 +50,12 @@ class DataHolderTest;
 }  // namespace test
 
 
-class DataHolderService {
+class PmidNodeService {
  public:
 
   enum : uint32_t { kPutRequestsRequired = 3, kDeleteRequestsRequired = 3 };
 
-  DataHolderService(const passport::Pmid& pmid,
+  PmidNodeService(const passport::Pmid& pmid,
                     routing::Routing& routing,
                     const boost::filesystem::path& vault_root_dir);
 

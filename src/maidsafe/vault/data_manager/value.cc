@@ -19,8 +19,6 @@ License.
 
 #include "maidsafe/vault/utils.h"
 
-
-
 namespace maidsafe {
 
 namespace vault {
@@ -68,44 +66,6 @@ DataManagerValue::serialised_type DataManagerValue::Serialise() const {
     metadata_value_proto.add_offline_pmid_name(i->string());
   assert(metadata_value_proto.IsInitialized());
   return serialised_type(NonEmptyString(metadata_value_proto.SerializeAsString()));
-}
-
-Metadata::Metadata(const DataNameVariant& data_name, ManagerDb<DataManager>* metadata_db,
-                   int32_t data_size)
-    : data_name_(data_name),
-      value_([&metadata_db, data_name, data_size, this]()->DataManagerValue {
-                assert(metadata_db);
-                try {
-                  return metadata_db->Get(DbKey(data_name));
-                }
-                catch(const std::exception& /*ex*/) {
-                  return DataManagerValue(data_size);
-                }
-             } ()),
-      strong_guarantee_(on_scope_exit::ExitAction()) {
-  strong_guarantee_.SetAction(on_scope_exit::RevertValue(value_));
-}
-
-Metadata::Metadata(const DataNameVariant& data_name, ManagerDb<DataManager>* metadata_db)
-  : data_name_(data_name),
-    value_([&metadata_db, data_name, this]()->DataManagerValue {
-            assert(metadata_db);
-            return metadata_db->Get(DbKey(data_name));
-          } ()),
-    strong_guarantee_(on_scope_exit::ExitAction()) {
-  strong_guarantee_.SetAction(on_scope_exit::RevertValue(value_));
-}
-
-void Metadata::SaveChanges(ManagerDb<DataManager>* metadata_db) {
-  assert(metadata_db);
-  //TODO(Prakash): Handle case of modifying unique data
-  if (*value_.subscribers < 1) {
-    metadata_db->Delete(DbKey(data_name_));
-  } else {
-    auto kv_pair(std::make_pair(DbKey(data_name_), value_));
-    metadata_db->Put(kv_pair);
-  }
-  strong_guarantee_.Release();
 }
 
 }  // namespace vault

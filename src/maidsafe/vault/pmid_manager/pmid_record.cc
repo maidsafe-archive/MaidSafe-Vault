@@ -17,7 +17,7 @@ License.
 
 #include "maidsafe/common/log.h"
 
-#include "maidsafe/vault/pmid_manager/pmid_account.pb.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 
 
 namespace maidsafe {

@@ -13,35 +13,51 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_VALUE_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_VALUE_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_METADATA_VALUE_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_METADATA_VALUE_H_
 
 #include <cstdint>
 #include <set>
 #include <vector>
 
+#include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
+
 #include "maidsafe/vault/manager_db.h"
+#include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/types.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
-struct DataManagerValue {
-  typedef TaggedValue<NonEmptyString, struct SerialisedMetadataValueTag> serialised_type;
-  explicit DataManagerValue(const serialised_type& serialised_metadata_value);
-  explicit DataManagerValue(int size_in);
-  serialised_type Serialise() const;
+class Metadata {
+ public:
+  // This constructor reads the existing element or creates a new one if it doesn't already exist.
+  Metadata(const DataNameVariant& data_name,
+           ManagerDb<DataManager>* metadata_db,
+           int32_t data_size);
+  // This constructor reads the existing element or throws if it doesn't already exist.
+  Metadata(const DataNameVariant& data_name, ManagerDb<DataManager>* metadata_db);
+  // Should only be called once.
+  void SaveChanges(ManagerDb<DataManager>* metadata_db);
 
-  int data_size;
-  boost::optional<int64_t> subscribers;
-  std::set<PmidName> online_pmid_name, offline_pmid_name;
+  DataNameVariant data_name_;
+  DataManagerValue value_;
+  on_scope_exit strong_guarantee_;
+
+ private:
+  Metadata();
+  Metadata(const Metadata&);
+  Metadata& operator=(const Metadata&);
+  Metadata(Metadata&&);
+  Metadata& operator=(Metadata&&);
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_VALUE_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_METADATA_VALUE_H_

@@ -26,6 +26,7 @@ License.
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/vault/unresolved_element.pb.h"
+#include "maidsafe/vault/data_manager/metadata.h"
 
 namespace fs = boost::filesystem;
 

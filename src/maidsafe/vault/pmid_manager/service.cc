@@ -17,7 +17,7 @@ License.
 
 #include "maidsafe/common/error.h"
 
-#include "maidsafe/vault/pmid_manager/pmid_account.pb.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 #include "maidsafe/vault/sync.pb.h"
 
 namespace fs = boost::filesystem;
@@ -203,7 +203,7 @@ void PmidManagerService::Sync(const PmidName& account_name) {
 }
 
 void PmidManagerService::HandleSync(const nfs::Message& message) {
-  std::vector<PmidAccountResolvedEntry> resolved_entries;
+  std::vector<PmidManagerUnresolvedEntry> resolved_entries;
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.data().content.string())) {
     LOG(kError) << "Error parsing Synchronise message.";

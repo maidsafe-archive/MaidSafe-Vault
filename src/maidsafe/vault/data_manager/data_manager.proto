@@ -15,7 +15,7 @@ License.
 
 package maidsafe.vault.protobuf;
 
-message MetadataValue {
+message DataManagerValue {
   required int32 size = 1;
   optional int64 subscribers = 2;
   repeated bytes online_pmid_name = 3;

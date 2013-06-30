@@ -20,12 +20,12 @@ License.
 #include "maidsafe/common/test.h"
 #include "maidsafe/nfs/message.h"
 
-#include "maidsafe/vault/maid_manager/maid_manager_service.h"
-#include "maidsafe/vault/data_manager/data_manager_service.h"
-#include "maidsafe/vault/pmid_manager/pmid_manager_service.h"
-#include "maidsafe/vault/pmid_node/pmid_node_service.h"
+#include "maidsafe/vault/maid_manager/service.h"
+#include "maidsafe/vault/data_manager/service.h"
+#include "maidsafe/vault/pmid_manager/service.h"
+#include "maidsafe/vault/pmid_node/service.h"
 
-// TODO(Alison) - redesign tests to not use Mocks for personas
+// TODO(Qi) - redesign tests to not use Mocks for personas
 
 namespace maidsafe {
 
@@ -51,7 +51,7 @@ bool operator==(const nfs::Message& lhs, const nfs::Message& rhs) {
 namespace vault {
 
 /*
-// TODO(Alison) - move mocks to separate file?
+// TODO(Qi) - move mocks to separate file?
 class MockMaidManager : public MaidManager {
  public:
   MockMaidManager();

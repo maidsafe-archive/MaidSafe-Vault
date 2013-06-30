@@ -20,7 +20,7 @@ License.
 #include "maidsafe/nfs/pmid_registration.h"
 
 #include "maidsafe/vault/maid_manager/helpers.h"
-#include "maidsafe/vault/maid_manager/maid_account.pb.h"
+#include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 #include "maidsafe/vault/sync.h"
 
 

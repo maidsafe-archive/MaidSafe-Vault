@@ -144,7 +144,7 @@ bool PmidAccount::ApplyAccountTransfer(const NodeId& source_id,
         static_cast<DataTagValue>(proto_pmid_account_details.db_entry(i).type()),
         Identity(proto_pmid_account_details.db_entry(i).name())));
     int32_t size(proto_pmid_account_details.db_entry(i).value().size());
-    PmidAccountUnresolvedEntry entry(
+    PmidManagerUnresolvedEntry entry(
         std::make_pair(data_name, nfs::MessageAction::kPut), size, source_id);
     if (sync_.AddAccountTransferRecord(entry, all_account_transfers_received).size() == 1U) {
       pmid_record_.stored_total_size += size;
@@ -152,7 +152,7 @@ bool PmidAccount::ApplyAccountTransfer(const NodeId& source_id,
   }
 
   for (int i(0); i != proto_pmid_account_details.serialised_unresolved_entry_size(); ++i) {
-    PmidAccountUnresolvedEntry entry(PmidAccountUnresolvedEntry::serialised_type(
+    PmidManagerUnresolvedEntry entry(PmidManagerUnresolvedEntry::serialised_type(
         NonEmptyString(proto_pmid_account_details.serialised_unresolved_entry(i))));
     if (!sync_.AddUnresolvedEntry(entry).empty() && entry.messages_contents.front().value)
       pmid_record_.stored_total_size += *entry.messages_contents.front().value;
@@ -161,7 +161,7 @@ bool PmidAccount::ApplyAccountTransfer(const NodeId& source_id,
   return all_account_transfers_received;
 }
 
-void PmidAccount::AddLocalUnresolvedEntry(const PmidAccountUnresolvedEntry& unresolved_entry) {
+void PmidAccount::AddLocalUnresolvedEntry(const PmidManagerUnresolvedEntry& unresolved_entry) {
   sync_.AddLocalEntry(unresolved_entry);
 }
 
@@ -181,14 +181,14 @@ NonEmptyString PmidAccount::GetSyncData() {
   return NonEmptyString(proto_unresolved_entries.SerializeAsString());
 }
 
-std::vector<PmidAccountResolvedEntry> PmidAccount::ApplySyncData(const NonEmptyString& serialised_unresolved_entries) {
-  std::vector<PmidAccountResolvedEntry> resolved_entries;
+std::vector<PmidManagerUnresolvedEntry> PmidAccount::ApplySyncData(const NonEmptyString& serialised_unresolved_entries) {
+  std::vector<PmidManagerUnresolvedEntry> resolved_entries;
   protobuf::UnresolvedEntries proto_unresolved_entries;
   if (!proto_unresolved_entries.ParseFromString(serialised_unresolved_entries.string()))
     ThrowError(CommonErrors::parsing_error);
 
   for (int i(0); i != proto_unresolved_entries.serialised_unresolved_entry_size(); ++i) {
-    PmidAccountUnresolvedEntry entry(PmidAccountUnresolvedEntry::serialised_type(
+    PmidManagerUnresolvedEntry entry(PmidManagerUnresolvedEntry::serialised_type(
         NonEmptyString(proto_unresolved_entries.serialised_unresolved_entry(i))));
     resolved_entries = sync_.AddUnresolvedEntry(entry);
     if (!resolved_entries.empty() && entry.messages_contents.front().value) {

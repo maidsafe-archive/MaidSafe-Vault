@@ -18,26 +18,26 @@ License.
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/account_db.h"
-#include "maidsafe/vault/pmid_manager/pmid_account.pb.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 
 
 namespace maidsafe {
 namespace vault {
 
-PmidAccountMergePolicy::PmidAccountMergePolicy(AccountDb* account_db)
+PmidManagerMergePolicy::PmidManagerMergePolicy(AccountDb* account_db)
     : unresolved_data_(),
       account_db_(account_db) {}
 
-PmidAccountMergePolicy::PmidAccountMergePolicy(PmidAccountMergePolicy&& other)
+PmidManagerMergePolicy::PmidManagerMergePolicy(PmidManagerMergePolicy&& other)
     : unresolved_data_(std::move(other.unresolved_data_)),
       account_db_(other.account_db_) {}
 
-PmidAccountMergePolicy& PmidAccountMergePolicy::operator=(PmidAccountMergePolicy&& other) {
+PmidManagerMergePolicy& PmidManagerMergePolicy::operator=(PmidManagerMergePolicy&& other) {
   unresolved_data_ = std::move(other.unresolved_data_);
   return *this;
 }
 
-void PmidAccountMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
+void PmidManagerMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
   auto serialised_db_value(GetFromDb(unresolved_entry.key.first));
   if (unresolved_entry.key.second == nfs::MessageAction::kPut &&
       !unresolved_entry.dont_add_to_db &&
@@ -51,14 +51,14 @@ void PmidAccountMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
   }
 }
 
-void PmidAccountMergePolicy::MergePut(const DataNameVariant& data_name,
+void PmidManagerMergePolicy::MergePut(const DataNameVariant& data_name,
                                       UnresolvedEntry::Value size,
                                       const NonEmptyString& serialised_db_value) {
   if (!serialised_db_value.IsInitialised())
     account_db_->Put(std::make_pair(DbKey(data_name), SerialiseDbValue(Size(size))));
 }
 
-void PmidAccountMergePolicy::MergeDelete(const DataNameVariant& data_name,
+void PmidManagerMergePolicy::MergeDelete(const DataNameVariant& data_name,
                                          const NonEmptyString& serialised_db_value) {
   if (!serialised_db_value.IsInitialised()) {
     // No need to check in unresolved_data_, since the corresponding "Put" will already have been
@@ -68,13 +68,13 @@ void PmidAccountMergePolicy::MergeDelete(const DataNameVariant& data_name,
   account_db_->Delete(DbKey(data_name));
 }
 
-NonEmptyString PmidAccountMergePolicy::SerialiseDbValue(Size db_value) const {
+NonEmptyString PmidManagerMergePolicy::SerialiseDbValue(Size db_value) const {
   protobuf::PmidAccountDbValue proto_db_value;
   proto_db_value.set_size(db_value);
   return NonEmptyString(proto_db_value.SerializeAsString());
 }
 
-PmidAccountMergePolicy::Size PmidAccountMergePolicy::ParseDbValue(
+PmidManagerMergePolicy::Size PmidManagerMergePolicy::ParseDbValue(
     NonEmptyString serialised_db_value) const {
   protobuf::PmidAccountDbValue proto_db_value;
   if (!proto_db_value.ParseFromString(serialised_db_value.string()))
@@ -82,7 +82,7 @@ PmidAccountMergePolicy::Size PmidAccountMergePolicy::ParseDbValue(
   return Size(proto_db_value.size());
 }
 
-NonEmptyString PmidAccountMergePolicy::GetFromDb(const DataNameVariant& data_name) {
+NonEmptyString PmidManagerMergePolicy::GetFromDb(const DataNameVariant& data_name) {
   NonEmptyString serialised_db_value;
   try {
     serialised_db_value = account_db_->Get(DbKey(data_name));

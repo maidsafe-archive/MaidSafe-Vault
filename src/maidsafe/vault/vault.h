@@ -28,11 +28,11 @@ License.
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/public_key_getter.h"
 
-#include "maidsafe/vault/pmid_node/pmid_node_service.h"
-#include "maidsafe/vault/maid_manager/maid_manager_service.h"
-#include "maidsafe/vault/data_manager/data_manager_service.h"
-#include "maidsafe/vault/pmid_manager/pmid_manager_service.h"
-#include "maidsafe/vault/version_manager/version_manager_service.h"
+#include "maidsafe/vault/pmid_node/service.h"
+#include "maidsafe/vault/maid_manager/service.h"
+#include "maidsafe/vault/data_manager/service.h"
+#include "maidsafe/vault/pmid_manager/service.h"
+#include "maidsafe/vault/version_manager/service.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/demultiplexer.h"
 
@@ -80,7 +80,7 @@ class Vault {
   VersionManagerService version_manager_service_;
   DataManagerService data_manager_service_;
   PmidManagerService pmid_manager_service_;
-  DataHolderService pmid_node_;
+  PmidNodeService pmid_node_;
   Demultiplexer demux_;
   AsioService asio_service_;
 };

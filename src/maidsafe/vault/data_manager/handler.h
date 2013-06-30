@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_METADATA_HANDLER_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_METADATA_HANDLER_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_HANDLER_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_HANDLER_H_
 
 #include <cstdint>
 #include <vector>
@@ -24,7 +24,7 @@ License.
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
 
-#include "maidsafe/vault/data_manager/alue.h"
+#include "maidsafe/vault/data_manager/value.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/data_manager/helpers.h"
 #include "maidsafe/vault/manager_db.h"
@@ -126,6 +126,6 @@ class MetadataHandler {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/data_manager/data_manager_handler-inl.h"
+#include "maidsafe/vault/data_manager/handler-inl.h"
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_METADATA_HANDLER_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_HANDLER_H_
