@@ -13,40 +13,13 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_PMID_MANAGER_MANAGER_H_
-#define MAIDSAFE_VAULT_PMID_MANAGER_MANAGER_H_
-
-#include <cstdint>
-#include <utility>
-
-#include "maidsafe/common/types.h"
-#include "maidsafe/nfs/types.h"
-#include "maidsafe/vault/unresolved_element.h"
-
+#include "maidsafe/vault/data_manager/helpers.h"
 
 namespace maidsafe {
 
-namespace nfs {
-
-template<>
-struct PersonaTypes<Persona::kPmidManager> {
-  typedef DataNameVariant DbKey;
-  typedef int32_t DbValue;
-  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-  typedef DbValue UnresolvedEntryValue;
-  static const Persona persona = Persona::kPmidManager;
-};
-
-}  // namespace nfs
-
 namespace vault {
 
-typedef nfs::PersonaTypes<nfs::Persona::kPmidManager> PmidManager;
-typedef UnresolvedElement<PmidManager> PmidManagerUnresolvedEntry;
-typedef PmidManagerUnresolvedEntry PmidManagerResolvedEntry;
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_MANAGER_H_

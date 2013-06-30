@@ -13,22 +13,30 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_PMID_MANAGER_ACCOUNT_INL_H_
-#define MAIDSAFE_VAULT_PMID_MANAGER_ACCOUNT_INL_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_HANDLER_INL_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_HANDLER_INL_H_
+
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
-
 namespace vault {
 
 template<typename Data>
-void PmidAccount::DeleteData(const typename Data::name_type& name) {
-  pmid_record_.stored_count--;
-  pmid_record_.stored_total_size -= sync_.AllowDelete<Data>(name);
+void PmidAccountHandler::Put(const PmidName& account_name,
+                             const typename Data::name_type& /*data_name*/,
+                             int32_t size) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  pmid_accounts_.at(account_name)->PutData(size);
+}
+
+template<typename Data>
+void PmidAccountHandler::Delete(const PmidName& account_name,
+                                const typename Data::name_type& data_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  pmid_accounts_.at(account_name)->DeleteData<Data>(data_name);
 }
 
 }  // namespace vault
-
 }  // namespace maidsafe
 
-
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_ACCOUNT_INL_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_HANDLER_INL_H_

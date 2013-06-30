@@ -150,7 +150,7 @@ PmidManagerUnresolvedEntry::serialised_type PmidManagerUnresolvedEntry::Serialis
 }
 
 template<>
-MetadataUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
+DataManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
     : key(),
       messages_contents(),
       sync_counter(0),
@@ -175,7 +175,7 @@ MetadataUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_cop
     if (proto_copy.messages_contents(i).has_entry_id())
       message_content.entry_id = proto_copy.messages_contents(i).entry_id();
     if (proto_copy.messages_contents(i).has_value()) {
-        MetadataValue value(MetadataValue::serialised_type(
+        DataManagerValue value(DataManagerValue::serialised_type(
                               NonEmptyString(proto_copy.messages_contents(i).value())));
         message_content.value = value;
     }
@@ -188,8 +188,8 @@ MetadataUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_cop
 }
 
 template<>
-MetadataUnresolvedEntry::serialised_type MetadataUnresolvedEntry::Serialise() const {
-  protobuf::MetadataUnresolvedEntry proto_copy;
+DataManagerUnresolvedEntry::serialised_type MetadataUnresolvedEntry::Serialise() const {
+  protobuf::DataManagerUnresolvedEntry proto_copy;
   auto name(key.first.name());
   auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), name));
 

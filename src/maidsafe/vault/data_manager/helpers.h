@@ -13,40 +13,24 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_PMID_MANAGER_MANAGER_H_
-#define MAIDSAFE_VAULT_PMID_MANAGER_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_HELPERS_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_HELPERS_H_
 
-#include <cstdint>
-#include <utility>
-
-#include "maidsafe/common/types.h"
-#include "maidsafe/nfs/types.h"
-#include "maidsafe/vault/unresolved_element.h"
-
+#include "maidsafe/vault/types.h"
 
 namespace maidsafe {
 
-namespace nfs {
-
-template<>
-struct PersonaTypes<Persona::kPmidManager> {
-  typedef DataNameVariant DbKey;
-  typedef int32_t DbValue;
-  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-  typedef DbValue UnresolvedEntryValue;
-  static const Persona persona = Persona::kPmidManager;
-};
-
-}  // namespace nfs
-
 namespace vault {
 
-typedef nfs::PersonaTypes<nfs::Persona::kPmidManager> PmidManager;
-typedef UnresolvedElement<PmidManager> PmidManagerUnresolvedEntry;
-typedef PmidManagerUnresolvedEntry PmidManagerResolvedEntry;
+struct MetadataValueDelta {
+  int data_size;
+  boost::optional<int64_t> subscribers;
+  std::vector<PmidName> new_online; // FIXME(Prakash) discuss
+  std::vector<PmidName> new_offline;  // FIXME(Prakash) discuss
+};
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_MANAGER_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_HELPERS_H_

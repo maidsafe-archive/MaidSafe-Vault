@@ -23,8 +23,8 @@ License.
 #include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/nfs/types.h"
 
-#include "maidsafe/vault/version_manager/version_manager_key.h"
-#include "maidsafe/vault/version_manager/version_manager_unresolved_entry_value.h"
+#include "maidsafe/vault/version_manager/key.h"
+#include "maidsafe/vault/version_manager/unresolved_entry_value.h"
 
 
 namespace maidsafe {
