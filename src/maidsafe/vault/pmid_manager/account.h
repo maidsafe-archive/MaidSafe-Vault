@@ -95,10 +95,16 @@ class PmidAccount {
   static const size_t kSyncTriggerCount_;
 };
 
+
+template<typename Data>
+void PmidAccount::DeleteData(const typename Data::name_type& name) {
+  pmid_record_.stored_count--;
+  pmid_record_.stored_total_size -= sync_.AllowDelete<Data>(name);
+}
+
+
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#include "maidsafe/vault/pmid_manager/pmid_manager-inl.h"
 
 #endif  // MAIDSAFE_VAULT_PMID_MANAGER_ACCOUNT_H_
