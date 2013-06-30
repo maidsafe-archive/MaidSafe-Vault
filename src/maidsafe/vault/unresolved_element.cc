@@ -32,7 +32,7 @@ namespace maidsafe {
 namespace vault {
 
 template<>
-MaidAccountUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
+MaidManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
     : key(),
       messages_contents(),
       sync_counter(0),
@@ -67,7 +67,7 @@ MaidAccountUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_
 }
 
 template<>
-MaidAccountUnresolvedEntry::serialised_type MaidAccountUnresolvedEntry::Serialise() const {
+MaidManagerUnresolvedEntry::serialised_type MaidManagerUnresolvedEntry::Serialise() const {
   protobuf::MaidAndPmidUnresolvedEntry proto_copy;
   auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
 
@@ -91,7 +91,7 @@ MaidAccountUnresolvedEntry::serialised_type MaidAccountUnresolvedEntry::Serialis
 }
 
 template<>
-PmidAccountUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
+PmidManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
     : key(),
       messages_contents(),
       sync_counter(0),
@@ -126,7 +126,7 @@ PmidAccountUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_
 }
 
 template<>
-PmidAccountUnresolvedEntry::serialised_type PmidAccountUnresolvedEntry::Serialise() const {
+PmidManagerUnresolvedEntry::serialised_type PmidManagerUnresolvedEntry::Serialise() const {
   protobuf::MaidAndPmidUnresolvedEntry proto_copy;
 //  auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
 

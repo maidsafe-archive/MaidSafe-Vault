@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_PMID_MANAGER_PMID_ACCOUNT_MERGE_POLICY_H_
-#define MAIDSAFE_VAULT_PMID_MANAGER_PMID_ACCOUNT_MERGE_POLICY_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_MERGE_POLICY_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_MERGE_POLICY_H_
 
 #include <map>
 #include <set>
@@ -31,9 +31,6 @@ License.
 
 namespace maidsafe {
 namespace vault {
-
-typedef UnresolvedElement<PmidManager> PmidAccountUnresolvedEntry;
-typedef PmidAccountUnresolvedEntry PmidAccountResolvedEntry;
 
 class PmidAccountMergePolicy {
  public:
@@ -117,4 +114,4 @@ int32_t PmidAccountMergePolicy::AllowDelete(const typename Data::name_type& name
 }  // namespace vault
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_PMID_ACCOUNT_MERGE_POLICY_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_MERGE_POLICY_H_

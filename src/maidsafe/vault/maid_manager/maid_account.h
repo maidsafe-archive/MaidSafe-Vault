@@ -25,12 +25,11 @@ License.
 #include "maidsafe/nfs/pmid_registration.h"
 #include "maidsafe/nfs/types.h"
 
-#include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/maid_manager_helpers.h"
 #include "maidsafe/vault/maid_manager/maid_manager_merge_policy.h"
-
+#include "maidsafe/vault/sync.h"
 
 namespace maidsafe {
 

@@ -21,6 +21,7 @@ License.
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
+#include "maidsafe/vault/unresolved_element.h"
 
 
 namespace maidsafe {
@@ -38,10 +39,11 @@ struct PersonaTypes<Persona::kPmidManager> {
 
 }  // namespace nfs
 
-
 namespace vault {
 
 typedef nfs::PersonaTypes<nfs::Persona::kPmidManager> PmidManager;
+typedef UnresolvedElement<PmidManager> PmidAccountUnresolvedEntry;
+typedef PmidAccountUnresolvedEntry PmidAccountResolvedEntry;
 
 }  // namespace vault
 
