@@ -42,8 +42,8 @@ struct PersonaTypes<Persona::kPmidManager> {
 namespace vault {
 
 typedef nfs::PersonaTypes<nfs::Persona::kPmidManager> PmidManager;
-typedef UnresolvedElement<PmidManager> PmidAccountUnresolvedEntry;
-typedef PmidAccountUnresolvedEntry PmidAccountResolvedEntry;
+typedef UnresolvedElement<PmidManager> PmidManagerUnresolvedEntry;
+typedef PmidManagerUnresolvedEntry PmidManagerResolvedEntry;
 
 }  // namespace vault
 

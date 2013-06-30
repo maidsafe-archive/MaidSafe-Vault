@@ -22,10 +22,10 @@ License.
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/db_key.h"
-
+//#include "maidsafe/vault/data_manager/data_manager_value.h"
 namespace maidsafe {
 
-namespace vault { struct MetadataValue; }
+namespace vault { struct DataManagerValue; }
 
 namespace nfs {
 
@@ -33,7 +33,7 @@ template<>
 struct PersonaTypes<Persona::kDataManager> {
   typedef vault::DbKey RecordName;
   typedef vault::DbKey DbKey;
-  typedef vault::MetadataValue DbValue;
+  typedef vault::DataManagerValue DbValue;
   typedef std::pair<vault::DbKey, MessageAction> UnresolvedEntryKey;
   typedef DbValue UnresolvedEntryValue;
   static const Persona persona = Persona::kDataManager;

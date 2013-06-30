@@ -70,9 +70,9 @@ class PmidAccount {
   bool ApplyAccountTransfer(const NodeId& source_id,
                             const serialised_type& serialised_pmid_account_details);
 
-  void AddLocalUnresolvedEntry(const PmidAccountUnresolvedEntry& unresolved_entry);
+  void AddLocalUnresolvedEntry(const PmidManagerUnresolvedEntry& unresolved_entry);
   NonEmptyString GetSyncData();
-  std::vector<PmidAccountResolvedEntry> ApplySyncData(const NonEmptyString& serialised_unresolved_entries);
+  std::vector<PmidManagerResolvedEntry> ApplySyncData(const NonEmptyString& serialised_unresolved_entries);
   void ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node);
   void IncrementSyncAttempts();
 
@@ -90,7 +90,7 @@ class PmidAccount {
   PmidRecord pmid_record_;
   DataHolderStatus pmid_node_status_;
   std::unique_ptr<AccountDb> account_db_;
-  Sync<PmidAccountMergePolicy> sync_;
+  Sync<PmidManagerMergePolicy> sync_;
   uint16_t account_transfer_nodes_;
   static const size_t kSyncTriggerCount_;
 };

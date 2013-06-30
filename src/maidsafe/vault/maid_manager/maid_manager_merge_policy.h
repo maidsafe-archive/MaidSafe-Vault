@@ -27,8 +27,6 @@ License.
 
 #include "maidsafe/vault/unresolved_element.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
-#include "maidsafe/vault/maid_manager/maid_account.h"
-
 
 namespace maidsafe {
 

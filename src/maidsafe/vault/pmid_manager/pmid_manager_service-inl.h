@@ -32,11 +32,11 @@ namespace vault {
 namespace detail {
 
 template<typename Data, nfs::MessageAction action>
-PmidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
+PmidManagerUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
                                                  const NodeId& this_id) {
   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
-  return PmidAccountUnresolvedEntry(
+  return PmidManagerUnresolvedEntry(
       std::make_pair(GetDataNameVariant(DataTagValue(message.data().type.get()),
                                         Identity(message.data().name)), action),
       static_cast<int32_t>(message.data().content.string().size()),
@@ -75,7 +75,7 @@ void PmidManagerService::HandlePut(const nfs::Message& message,
   try {
     Data data(typename Data::name_type(message.data().name),
               typename Data::serialised_type(message.data().content));
-    
+
     auto put_op(std::make_shared<nfs::OperationOp>(
         kPutRepliesSuccessesRequired_,
         [this, message, reply_functor](nfs::Reply overall_result) {
@@ -145,7 +145,7 @@ void PmidManagerService::AddLocalUnresolvedEntryThenSync(const nfs::Message& mes
 
 template<typename Data, nfs::MessageAction Action>
 void PmidManagerService::ReplyToDataManagers(
-      const std::vector<PmidAccountResolvedEntry>& /*resolved_entries*/,
+      const std::vector<PmidManagerResolvedEntry>& /*resolved_entries*/,
       const PmidName& /*pmid_name*/) {
   GetTagValueAndIdentityVisitor type_and_name_visitor;
   //for (auto& resolved_entry : resolved_entries) {

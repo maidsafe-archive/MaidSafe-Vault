@@ -32,14 +32,14 @@ License.
 namespace maidsafe {
 namespace vault {
 
-class PmidAccountMergePolicy {
+class PmidManagerMergePolicy {
  public:
-  typedef PmidAccountUnresolvedEntry UnresolvedEntry;
-  typedef PmidAccountResolvedEntry ResolvedEntry;
+  typedef PmidManagerUnresolvedEntry UnresolvedEntry;
+  typedef PmidManagerResolvedEntry ResolvedEntry;
   typedef AccountDb Database;
-  explicit PmidAccountMergePolicy(AccountDb* account_db);
-  PmidAccountMergePolicy(PmidAccountMergePolicy&& other);
-  PmidAccountMergePolicy& operator=(PmidAccountMergePolicy&& other);
+  explicit PmidManagerMergePolicy(AccountDb* account_db);
+  PmidManagerMergePolicy(PmidManagerMergePolicy&& other);
+  PmidManagerMergePolicy& operator=(PmidManagerMergePolicy&& other);
   // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
   template<typename Data>
   int32_t AllowDelete(const typename Data::name_type& name);
@@ -54,8 +54,8 @@ class PmidAccountMergePolicy {
   typedef TaggedValue<int32_t, struct SizeTag> Size;
   typedef TaggedValue<int32_t, struct CountTag> Count;
 
-  PmidAccountMergePolicy(const PmidAccountMergePolicy&);
-  PmidAccountMergePolicy& operator=(const PmidAccountMergePolicy&);
+  PmidManagerMergePolicy(const PmidManagerMergePolicy&);
+  PmidManagerMergePolicy& operator=(const PmidManagerMergePolicy&);
 
   void MergePut(const DataNameVariant& data_name,
                 UnresolvedEntry::Value size,
@@ -67,7 +67,7 @@ class PmidAccountMergePolicy {
 };
 
 template<typename Data>
-int32_t PmidAccountMergePolicy::AllowDelete(const typename Data::name_type& name) {
+int32_t PmidManagerMergePolicy::AllowDelete(const typename Data::name_type& name) {
   auto serialised_db_value(GetFromDb(name));
   Size size(0);
   Count current_count(0);

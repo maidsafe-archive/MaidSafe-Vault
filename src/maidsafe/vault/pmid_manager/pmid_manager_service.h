@@ -109,7 +109,7 @@ class PmidManagerService {
   template<typename Data, nfs::MessageAction action>
   void AddLocalUnresolvedEntryThenSync(const nfs::Message& message);
   template<typename Data, nfs::MessageAction action>
-  void ReplyToDataManagers(const std::vector<PmidAccountResolvedEntry>& resolved_entries,
+  void ReplyToDataManagers(const std::vector<PmidManagerResolvedEntry>& resolved_entries,
                                const PmidName& pmid_name);
 
   routing::Routing& routing_;

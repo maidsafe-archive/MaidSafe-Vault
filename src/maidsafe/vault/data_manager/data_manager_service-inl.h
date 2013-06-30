@@ -41,13 +41,13 @@ namespace vault {
 namespace detail {
 
 template<typename Data, nfs::MessageAction Action>
-MetadataUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
+DataManagerUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
                                               const MetadataValue& metadata_value,
                                               const NodeId& this_id) {
   static_assert(Action == nfs::MessageAction::kPut || Action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
   assert(message.data().type);
-  return MetadataUnresolvedEntry(
+  return DataManagerUnresolvedEntry(
       std::make_pair(DbKey(GetDataNameVariant(DataTagValue(message.data().type.get()),
                                         Identity(message.data().name))), Action),
       metadata_value, this_id);
