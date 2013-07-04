@@ -51,3 +51,7 @@ message PutResult {
   optional int32 data_size = 3;
   optional bytes serialised_data = 4;
 }
+
+message StateChange {
+  required bytes pmid_name = 1;
+}
