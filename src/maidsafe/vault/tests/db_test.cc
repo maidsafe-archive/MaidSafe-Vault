@@ -94,7 +94,9 @@ class DbTest : public testing::Test {
   NonEmptyString GenerateKeyValueData(DbKey& key, uint32_t size) {
     GenerateKeyValuePair generate_key_value_pair_(size);
     DataNameVariant data_name_variant(key.name());
-    return boost::apply_visitor(generate_key_value_pair_, data_name_variant);
+    NonEmptyString result(boost::apply_visitor(generate_key_value_pair_, data_name_variant));
+    key = DbKey(data_name_variant);
+    return result;
   }
 
   NonEmptyString GenerateValue(uint32_t size = kValueSize) {
