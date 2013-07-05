@@ -1,19 +1,16 @@
-/* Copyright 2012 MaidSafe.net limited
+/******************************************************************************
+*  Copyright 2012 maidsafe.net limited                                        *
+*                                                                             *
+*  The following source code is property of maidsafe.net limited and is not   *
+*  meant for external use.  The use of this code is governed by the licence   *
+*  file licence.txt found in the root of this directory and also on           *
+*  www.maidsafe.net.                                                          *
+*                                                                             *
+*  You are not free to copy, amend or otherwise use this source code without  *
+*  the explicit written permission of the board of directors of maidsafe.net. *
+******************************************************************************/
 
-This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
-and The General Public License (GPL), version 3. By contributing code to this project You agree to
-the terms laid out in the MaidSafe Contributor Agreement, version 1.0, found in the root directory
-of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also available at:
-
-http://www.novinet.com/license
-
-Unless required by applicable law or agreed to in writing, software distributed under the License is
-distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-implied. See the License for the specific language governing permissions and limitations under the
-License.
-*/
-
-#include "maidsafe/vault/maid_manager/handler.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_handler.h"
 
 #include <vector>
 
@@ -26,55 +23,56 @@ namespace vault {
 namespace test {
 
 
-//class MaidAccountHandlerTest : public testing::Test {
-// public:
-//  MaidAccountHandlerTest()
-//      : vault_root_directory_(maidsafe::test::CreateTestPath("MaidSafe_Test_MaidAccountHandler")),
-//        maid_account_handler_(*vault_root_directory_) {}
+class MaidAccountHandlerTest : public testing::Test {
+ public:
+  MaidAccountHandlerTest()
+      : vault_root_directory_(maidsafe::test::CreateTestPath("MaidSafe_Test_MaidAccountHandler")),
+        db_(*vault_root_directory_),
+        maid_account_handler_(db_, NodeId(NodeId::kRandomId)) {}
 
-//  ~MaidAccountHandlerTest() {}
+  ~MaidAccountHandlerTest() {}
 
-//  MaidName GenerateMaidName() {
-//    return MaidName(Identity(RandomAlphaNumericString(64)));
-//  }
+  MaidName GenerateMaidName() {
+    return MaidName(Identity(RandomAlphaNumericString(64)));
+  }
 
-//  nfs::PmidRegistration GenerateRegistration(bool unregister) {
-//    passport::Anmaid anmaid;
-//    passport::Maid maid(anmaid);
-//    passport::Pmid pmid(maid);
-//    nfs::PmidRegistration registration(maid, pmid, unregister);
-//    return registration;
-//  }
+  nfs::PmidRegistration GenerateRegistration(bool unregister) {
+    passport::Anmaid anmaid;
+    passport::Maid maid(anmaid);
+    passport::Pmid pmid(maid);
+    nfs::PmidRegistration registration(maid, pmid, unregister);
+    return registration;
+  }
 
-//  PmidRecord GeneratePmidRecord(const PmidName& name,
-//                                int64_t stored_count,
-//                                int64_t stored_total_size,
-//                                int64_t lost_count,
-//                                int64_t lost_total_size,
-//                                int64_t claimed_available_size) {
-//    PmidRecord new_record(name);
-//    new_record.stored_count = stored_count;
-//    new_record.stored_total_size = stored_total_size;
-//    new_record.lost_count = lost_count;
-//    new_record.lost_total_size = lost_total_size;
-//    new_record.claimed_available_size = claimed_available_size;
-//    return new_record;
-//  }
+  PmidRecord GeneratePmidRecord(const PmidName& name,
+                                int64_t stored_count,
+                                int64_t stored_total_size,
+                                int64_t lost_count,
+                                int64_t lost_total_size,
+                                int64_t claimed_available_size) {
+    PmidRecord new_record(name);
+    new_record.stored_count = stored_count;
+    new_record.stored_total_size = stored_total_size;
+    new_record.lost_count = lost_count;
+    new_record.lost_total_size = lost_total_size;
+    new_record.claimed_available_size = claimed_available_size;
+    return new_record;
+  }
 
-//  PmidRecord GeneratePmidRecord(const PmidName& name) {
-//    PmidRecord new_record(name);
-//    new_record.stored_count = RandomUint32() % 100;
-//    new_record.stored_total_size = new_record.stored_count * (RandomUint32() % 10000);
-//    new_record.lost_count = RandomUint32() % 100;
-//    new_record.lost_total_size = new_record.lost_count * (RandomUint32() % 10000);
-//    new_record.claimed_available_size = RandomUint32() % 1000000;
-//    return new_record;
-//  }
+  PmidRecord GeneratePmidRecord(const PmidName& name) {
+    PmidRecord new_record(name);
+    new_record.stored_count = RandomUint32() % 100;
+    new_record.stored_total_size = new_record.stored_count * (RandomUint32() % 10000);
+    new_record.lost_count = RandomUint32() % 100;
+    new_record.lost_total_size = new_record.lost_count * (RandomUint32() % 10000);
+    new_record.claimed_available_size = RandomUint32() % 1000000;
+    return new_record;
+  }
 
-//  void AddAccount(std::unique_ptr<MaidAccount> account) {
+//  void AddAccount(std::unique_ptr<MaidName> account) {
 //    int total_accounts_pre_add = (maid_account_handler_.GetAccountNames()).size();
 
-//    EXPECT_TRUE(maid_account_handler_.AddAccount(std::move(account)));
+//    EXPECT_NO_THROW(maid_account_handler_.CreateAccount<>(std::move(account)));
 //    std::vector<MaidName> account_names(maid_account_handler_.GetAccountNames());
 //    EXPECT_EQ(total_accounts_pre_add + 1, account_names.size());
 //  }
@@ -91,14 +89,14 @@ namespace test {
 //      (*itr)->total_put_data_ = total;
 //  }
 
-//  //  sets up and registers account, returns pmid_totals for comparison purposes
+  //  sets up and registers account, returns pmid_totals for comparison purposes
 //  std::vector<PmidTotals> SetupAndRegisterAccount(const MaidName& account_name,
 //                                                  int num_pmid_totals) {
 //    std::vector<PmidTotals> generated_pmid_totals;
 //    int64_t total_available_size(0), total_put_data(0);
 
 //    std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, *vault_root_directory_));
-//    AddAccount(std::move(account));
+//    CreateAccount(std::move(account));
 
 //    for (int i(0); i < num_pmid_totals; ++i) {
 //      nfs::PmidRegistration registration(GenerateRegistration(false));
@@ -106,7 +104,7 @@ namespace test {
 //      PmidRecord pmid_record(GeneratePmidRecord(registration.pmid_name()));
 //      PmidTotals pmid_totals(serialised_registration, pmid_record);
 //      EXPECT_NO_THROW(maid_account_handler_.RegisterPmid(account_name, registration));
-//      EXPECT_NO_THROW(maid_account_handler_.UpdatePmidTotals(account_name, pmid_totals));
+//      EXPECT_NO_THROW(maid_account_handler_.UpdatePmidTotals(account_name, pmid_record));
 //      total_available_size += pmid_record.claimed_available_size;
 //      total_put_data += pmid_record.stored_total_size;
 //      generated_pmid_totals.push_back(pmid_totals);
@@ -118,12 +116,12 @@ namespace test {
 //    return generated_pmid_totals;
 //  }
 
-//  std::vector<boost::filesystem::path> GenerateArchiveEntries(const MaidName& /*account_name*/,
-//                                                              int /*number_of_entries*/) {
-//    std::vector<boost::filesystem::path> entries;
-//    // implement
-//    return entries;
-//  }
+  std::vector<boost::filesystem::path> GenerateArchiveEntries(const MaidName& /*account_name*/,
+                                                              int /*number_of_entries*/) {
+    std::vector<boost::filesystem::path> entries;
+    // implement
+    return entries;
+  }
 
 //  // Individual account attribute accessors
 //  std::vector<PmidTotals> GetPmids(const MaidName& account_name) {
@@ -146,10 +144,11 @@ namespace test {
 //    return (*itr)->total_claimed_available_size_by_pmids_;
 //  }
 
-// protected:
-//  maidsafe::test::TestPath vault_root_directory_;
-//  MaidAccountHandler maid_account_handler_;
-//};
+ protected:
+  maidsafe::test::TestPath vault_root_directory_;
+  Db db_;
+  MaidAccountHandler maid_account_handler_;
+};
 
 
 //TEST_F(MaidAccountHandlerTest, BEH_AddAccount) {

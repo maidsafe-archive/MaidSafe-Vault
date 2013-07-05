@@ -129,11 +129,11 @@ bool MaidAccount::ApplyAccountTransfer(const NodeId& source_id,
     auto data_name(GetDataNameVariant(
         static_cast<DataTagValue>(proto_maid_account_details.db_entry(i).type()),
         Identity(proto_maid_account_details.db_entry(i).name())));
-    int32_t average_cost(proto_maid_account_details.db_entry(i).value().average_cost());
-    int32_t count(proto_maid_account_details.db_entry(i).value().count());
+    MaidManager::Cost average_cost(proto_maid_account_details.db_entry(i).value().average_cost());
+    MaidManager::Cost count(proto_maid_account_details.db_entry(i).value().count());
     MaidManagerUnresolvedEntry entry(
         std::make_pair(data_name, nfs::MessageAction::kPut), average_cost, source_id);
-    for (int32_t i(0); i != count; ++i) {
+    for (int i(0); i != count; ++i) {
       if (sync_.AddAccountTransferRecord(entry, all_account_transfers_received).size() == 1U)
         total_put_data_ += average_cost;
     }
@@ -142,7 +142,7 @@ bool MaidAccount::ApplyAccountTransfer(const NodeId& source_id,
   for (int i(0); i != proto_maid_account_details.serialised_unresolved_entry_size(); ++i) {
     MaidManagerUnresolvedEntry entry(MaidManagerUnresolvedEntry::serialised_type(
         NonEmptyString(proto_maid_account_details.serialised_unresolved_entry(i))));
-    if (!sync_.AddUnresolvedEntry(entry).empty() && entry.messages_contents.front().value)
+    if (sync_.AddUnresolvedEntry(entry).empty() && entry.messages_contents.front().value)
       total_put_data_ += *entry.messages_contents.front().value;
   }
 
@@ -226,7 +226,7 @@ void MaidAccount::IncrementSyncAttempts() {
   sync_.IncrementSyncAttempts();
 }
 
-MaidAccount::Status MaidAccount::AllowPut(int32_t cost) const {
+MaidAccount::Status MaidAccount::AllowPut(MaidManager::Cost cost) const {
   if (total_claimed_available_size_by_pmids_ < total_put_data_ + cost)
     return Status::kNoSpace;
 

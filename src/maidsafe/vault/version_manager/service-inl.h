@@ -26,7 +26,7 @@ License.
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/utils.h"
 #include "maidsafe/nfs/reply.h"
-#include "maidsafe/vault/unresolved_element.pb.h"
+#include "maidsafe/vault/unresolved_entry_core_fields.pb.h"
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
@@ -62,17 +62,16 @@ void VersionManagerService::HandleMessage(const nfs::Message& message,
 
    if (message.data().action != nfs::MessageAction::kPut &&
        message.data().action != nfs::MessageAction::kDeleteBranchUntilFork &&
-       message.data().action != nfs::MessageAction::kDelete &&
-       message.data().action != nfs::MessageAction::kAccountTransfer)
+       message.data().action != nfs::MessageAction::kDelete)
      ThrowError(CommonErrors::invalid_parameter);
 
    // accumulate then action, on completion then set reply
    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-   if (!(accumulator_.PushSingleResult(
+   if (accumulator_.PushSingleResult(
          message,
          reply_functor,
-         nfs::Reply(maidsafe_error(CommonErrors::pending_result))).size() <
-         routing::Parameters::node_group_size -1U)) {
+         nfs::Reply(maidsafe_error(CommonErrors::pending_result))).size() >=
+             routing::Parameters::node_group_size -1U) {
      Synchronise<Data>(message);
    }
 }
@@ -80,16 +79,35 @@ void VersionManagerService::HandleMessage(const nfs::Message& message,
 // In this persona we sync all mutating actions, on sucess the reply_functor is fired (if available)
 
 template<typename Data>
-void VersionManagerService::Synchronise(const nfs::Message& message) {
+void VersionManagerService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message) {
   auto entry =  detail::UnresolvedEntryFromMessage(message);
-  nfs_.Sync(DataNameVariant(Data::name_type(message.data().name)), entry.Serialise().data);  // does not include
-                                                                            // original_message_id
   entry.original_message_id = message.message_id();
-  entry.source_node_id = message.source().node_id; // with data().originator_id we can
-                                                    // recover the accumulated requests in
-                                                    // HandleSync
-  std::lock_guard<std::mutex> lock(sync_mutex_);
-  sync_.AddUnresolvedEntry(entry);
+  entry.source_node_id = message.source().node_id;
+  std::lock_guard<std::mutex> lock(sync_mutex_);  
+  sync_.AddLocalEntry(entry);
+}
+
+void VersionManagerService::Sync() {
+  std::vector<StructuredDataUnresolvedEntry> unresolved_entries;
+  {
+    std::lock_guard<std::mutex> lock(sync_mutex_);
+    unresolved_entries = sync_.GetUnresolvedData();
+  }
+
+  for (const auto& unresolved_entry : unresolved_entries) {
+  }
+
+
+  protobuf::UnresolvedEntries proto_unresolved_entries;
+  for (const auto& unresolved_entry : unresolved_entries) {
+    proto_unresolved_entries.add_serialised_unresolved_entry(
+        unresolved_entry.Serialise()->string());
+  }
+  return NonEmptyString(proto_unresolved_entries.SerializeAsString());
+
+
+  nfs_.Sync<Data>(DataNameVariant(Data::name_type(message.data().name)), entry.Serialise().data);  // does not include
+                                                                            // original_message_id
 }
 
 

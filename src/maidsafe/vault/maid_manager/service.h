@@ -99,7 +99,7 @@ class MaidManagerService {
                        NonUniqueDataType);
 
   template<typename Data, nfs::MessageAction action>
-  void AddLocalUnresolvedEntryThenSync(const nfs::Message& message, int32_t cost);
+  void AddLocalUnresolvedEntryThenSync(const nfs::Message& message, MaidAccountHolder::Cost cost);
 
   // =============== Pmid registration =============================================================
   void HandlePmidRegistration(const nfs::Message& message,

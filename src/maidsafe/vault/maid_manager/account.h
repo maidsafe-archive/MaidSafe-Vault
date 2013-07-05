@@ -85,7 +85,7 @@ class MaidAccount {
   void ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node);
   void IncrementSyncAttempts();
 
-  Status AllowPut(int32_t cost) const;
+  Status AllowPut(MaidManager::Cost cost) const;
   // This offers the strong exception guarantee
   template<typename Data>
   void DeleteData(const typename Data::name_type& name) {

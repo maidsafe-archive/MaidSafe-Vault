@@ -25,7 +25,7 @@ License.
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/account_db.h"
-#include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/unresolved_entry_core_fields.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 
 
@@ -36,6 +36,7 @@ class PmidManagerMergePolicy {
  public:
   typedef PmidManagerUnresolvedEntry UnresolvedEntry;
   typedef PmidManagerResolvedEntry ResolvedEntry;
+  typedef PmidAccountHolder::DbKey DbKey;
   typedef AccountDb Database;
   explicit PmidManagerMergePolicy(AccountDb* account_db);
   PmidManagerMergePolicy(PmidManagerMergePolicy&& other);
@@ -45,9 +46,12 @@ class PmidManagerMergePolicy {
   int32_t AllowDelete(const typename Data::name_type& name);
 
  protected:
+  typedef std::vector<UnresolvedEntry> UnresolvedEntries;
+  typedef std::vector<UnresolvedEntry>::iterator UnresolvedEntriesItr;
+
   void Merge(const UnresolvedEntry& unresolved_entry);
 
-  std::vector<UnresolvedEntry> unresolved_data_;
+  UnresolvedEntries unresolved_data_;
   AccountDb* account_db_;
 
  private:

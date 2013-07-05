@@ -23,7 +23,6 @@ License.
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/db_key.h"
 #include "maidsafe/vault/data_manager/value.h"
-#include "maidsafe/vault/unresolved_element.h"
 
 namespace maidsafe {
 
@@ -44,8 +43,7 @@ struct PersonaTypes<Persona::kDataManager> {
 namespace vault {
 
 typedef nfs::PersonaTypes<nfs::Persona::kDataManager> DataManager;
-typedef UnresolvedElement<DataManager> DataManagerUnresolvedEntry;
-typedef DataManagerUnresolvedEntry DataManagerResolvedEntry;
+
 }  // namespace vault
 
 }  // namespace maidsafe

@@ -85,9 +85,9 @@ class ManagersSyncPolicy {  // for Metadata manager & structured data manager
 
   void TransferRecord(const DataNameVariant& record_name,
                       const NodeId& target_node_id,
-                      const NonEmptyString& serialised_account) {
+                      const NonEmptyString& serialised_record) {
     auto type_and_name(boost::apply_visitor(GetTagValueAndIdentityVisitor(), record_name));
-    nfs::Message::Data data(type_and_name.first, type_and_name.second, serialised_account,
+    nfs::Message::Data data(type_and_name.first, type_and_name.second, serialised_record,
                             nfs::MessageAction::kAccountTransfer);
     nfs::Message message(source_persona, kSource_, data);
     nfs::MessageWrapper message_wrapper(message.Serialise());

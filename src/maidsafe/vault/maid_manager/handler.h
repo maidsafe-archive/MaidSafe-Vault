@@ -48,7 +48,8 @@ class MaidAccountHandler {
 
   // Account operations
   // Returns true when final account transfer has been completed.
-  bool ApplyAccountTransfer(const MaidName& account_name, const NodeId& source_id,
+  bool ApplyAccountTransfer(const MaidName& account_name,
+                            const NodeId& source_id,
                             const MaidAccount::serialised_type& serialised_maid_account_details);
   // client request or going out of range
   void DeleteAccount(const MaidName& account_name);
@@ -71,7 +72,7 @@ class MaidAccountHandler {
   void IncrementSyncAttempts(const MaidName& account_name);
 
   // Data operations
-  MaidAccount::Status AllowPut(const MaidName& account_name, int32_t cost) const;
+  MaidAccount::Status AllowPut(const MaidName& account_name, MaidManager::Cost cost) const;
 
   // Only Maid and Anmaid can create account; for all others this is a no-op.
   typedef std::true_type AllowedAccountCreationType;

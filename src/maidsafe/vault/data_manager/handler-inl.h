@@ -25,7 +25,7 @@ License.
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/vault/unresolved_element.pb.h"
+#include "maidsafe/vault/unresolved_entry_core_fields.pb.h"
 #include "maidsafe/vault/data_manager/metadata.h"
 
 namespace fs = boost::filesystem;
@@ -37,7 +37,7 @@ namespace vault {
 namespace detail {
 
 boost::filesystem::path GetPath(const std::string& data_name,
-                                int32_t data_type_enum_value,
+                                uint32_t data_type_enum_value,
                                 const boost::filesystem::path& root);
 
 template<typename Data>

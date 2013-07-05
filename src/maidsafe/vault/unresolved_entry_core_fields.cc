@@ -1,17 +1,13 @@
-/* Copyright 2013 MaidSafe.net limited
-
-This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
-and The General Public License (GPL), version 3. By contributing code to this project You agree to
-the terms laid out in the MaidSafe Contributor Agreement, version 1.0, found in the root directory
-of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also available at:
-
-http://www.novinet.com/license
-
-Unless required by applicable law or agreed to in writing, software distributed under the License is
-distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-implied. See the License for the specific language governing permissions and limitations under the
-License.
-*/
+/***************************************************************************************************
+ *  Copyright 2013 MaidSafe.net limited                                                            *
+ *                                                                                                 *
+ *  The following source code is property of MaidSafe.net limited and is not meant for external    *
+ *  use.  The use of this code is governed by the licence file licence.txt found in the root of    *
+ *  this directory and also on www.maidsafe.net.                                                   *
+ *                                                                                                 *
+ *  You are not free to copy, amend or otherwise use this source code without the explicit         *
+ *  written permission of the board of directors of MaidSafe.net.                                  *
+ **************************************************************************************************/
 
 #include "maidsafe/vault/unresolved_element.h"
 
@@ -21,17 +17,18 @@ License.
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/unresolved_element.pb.h"
-#include "maidsafe/vault/maid_manager/merge_policy.h"
-#include "maidsafe/vault/data_manager/merge_policy.h"
-#include "maidsafe/vault/pmid_manager/merge_policy.h"
-#include "maidsafe/vault/version_manager/merge_policy.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_merge_policy.h"
+#include "maidsafe/vault/metadata_manager/metadata_merge_policy.h"
+#include "maidsafe/vault/pmid_account_holder/pmid_account_merge_policy.h"
+#include "maidsafe/vault/structured_data_manager/structured_data_merge_policy.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
 template<>
-MaidManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
+MaidAccountUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
     : key(),
       messages_contents(),
       sync_counter(0),
@@ -66,7 +63,7 @@ MaidManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_
 }
 
 template<>
-MaidManagerUnresolvedEntry::serialised_type MaidManagerUnresolvedEntry::Serialise() const {
+MaidAccountUnresolvedEntry::serialised_type MaidAccountUnresolvedEntry::Serialise() const {
   protobuf::MaidAndPmidUnresolvedEntry proto_copy;
   auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
 
@@ -90,7 +87,7 @@ MaidManagerUnresolvedEntry::serialised_type MaidManagerUnresolvedEntry::Serialis
 }
 
 template<>
-PmidManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
+PmidAccountUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
     : key(),
       messages_contents(),
       sync_counter(0),
@@ -125,7 +122,7 @@ PmidManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_
 }
 
 template<>
-PmidManagerUnresolvedEntry::serialised_type PmidManagerUnresolvedEntry::Serialise() const {
+PmidAccountUnresolvedEntry::serialised_type PmidAccountUnresolvedEntry::Serialise() const {
   protobuf::MaidAndPmidUnresolvedEntry proto_copy;
 //  auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
 
@@ -149,12 +146,12 @@ PmidManagerUnresolvedEntry::serialised_type PmidManagerUnresolvedEntry::Serialis
 }
 
 template<>
-DataManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
+MetadataUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
     : key(),
       messages_contents(),
       sync_counter(0),
       dont_add_to_db(false) {
-  protobuf::DataManagerUnresolvedEntry proto_copy;
+  protobuf::MetadataUnresolvedEntry proto_copy;
   if (!proto_copy.ParseFromString(serialised_copy->string()))
     ThrowError(CommonErrors::parsing_error);
 
@@ -174,7 +171,7 @@ DataManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_
     if (proto_copy.messages_contents(i).has_entry_id())
       message_content.entry_id = proto_copy.messages_contents(i).entry_id();
     if (proto_copy.messages_contents(i).has_value()) {
-        DataManagerValue value(DataManagerValue::serialised_type(
+        MetadataValue value(MetadataValue::serialised_type(
                               NonEmptyString(proto_copy.messages_contents(i).value())));
         message_content.value = value;
     }
@@ -187,8 +184,8 @@ DataManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_
 }
 
 template<>
-DataManagerUnresolvedEntry::serialised_type DataManagerUnresolvedEntry::Serialise() const {
-  protobuf::DataManagerUnresolvedEntry proto_copy;
+MetadataUnresolvedEntry::serialised_type MetadataUnresolvedEntry::Serialise() const {
+  protobuf::MetadataUnresolvedEntry proto_copy;
   auto name(key.first.name());
   auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), name));
 
@@ -213,17 +210,17 @@ DataManagerUnresolvedEntry::serialised_type DataManagerUnresolvedEntry::Serialis
 }
 
 template<>
-VersionManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
+StructuredDataUnresolvedEntry::UnresolvedElement(const serialised_type& serialised_copy)
     : key(),
       messages_contents(),
       sync_counter(0),
       dont_add_to_db(false) {
-  protobuf::VersionManagerUnresolvedEntry proto_copy;
+  protobuf::StructuredDataUnresolvedEntry proto_copy;
   if (!proto_copy.ParseFromString(serialised_copy->string()))
     ThrowError(CommonErrors::parsing_error);
 
-  VersionManager::UnresolvedEntryKey unresolved_entry_key;
-  unresolved_entry_key.first = VersionManagerKey(
+  StructuredDataManager::UnresolvedEntryKey unresolved_entry_key;
+  unresolved_entry_key.first = StructuredDataKey(
                GetDataNameVariant(static_cast<DataTagValue>(proto_copy.key().name_type()),
                                         Identity(proto_copy.key().name())),
                      Identity(proto_copy.key().originator()));
@@ -251,7 +248,7 @@ VersionManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialis
           // this must be a getbranch - or deletebranch / check action.
         } else if (proto_copy.messages_contents(i).value().has_serialised_db_value()) {
           // account transfer
-//          VersionManager::DbValue::serialised_type serialised_db_value(
+//          StructuredDataManager::DbValue::serialised_type serialised_db_value(
 //                                   proto_copy.messages_contents(i).value().serialised_db_value());
 //          message_content.value = StructuredDataValue();
 //          message_content.value->serialised_db_value = serialised_db_value;
@@ -270,8 +267,8 @@ VersionManagerUnresolvedEntry::UnresolvedElement(const serialised_type& serialis
 }
 
 template<>
-VersionManagerUnresolvedEntry::serialised_type VersionManagerUnresolvedEntry::Serialise() const {
-  protobuf::VersionManagerUnresolvedEntry proto_copy;
+StructuredDataUnresolvedEntry::serialised_type StructuredDataUnresolvedEntry::Serialise() const {
+  protobuf::StructuredDataUnresolvedEntry proto_copy;
   //auto tag_value_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
 
   //auto proto_key(proto_copy.mutable_key());

@@ -25,7 +25,7 @@ License.
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 
-#include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/unresolved_entry_core_fields.h"
 #include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
 
@@ -34,11 +34,14 @@ namespace maidsafe {
 
 namespace vault {
 
+typedef UnresolvedElement<MetadataManager> MetadataUnresolvedEntry;
+typedef void MetadataResolvedEntry;
 
 class MetadataMergePolicy {
  public:
   typedef DataManagerUnresolvedEntry UnresolvedEntry;
   typedef DataManagerResolvedEntry ResolvedEntry;
+  typedef MetadataManager::DbKey DbKey;
   typedef ManagerDb<DataManager> Database;
 
   explicit MetadataMergePolicy(ManagerDb<DataManager>* metadata_db);
@@ -46,9 +49,12 @@ class MetadataMergePolicy {
   MetadataMergePolicy& operator=(MetadataMergePolicy&& other);
 
  protected:
+  typedef std::vector<UnresolvedEntry> UnresolvedEntries;
+  typedef std::vector<UnresolvedEntry>::iterator UnresolvedEntriesItr;
+
   void Merge(const UnresolvedEntry& unresolved_entry);
 
-  std::vector<UnresolvedEntry> unresolved_data_;
+  UnresolvedEntries unresolved_data_;
   ManagerDb<DataManager>* metadata_db_;
 
  private:
@@ -58,7 +64,7 @@ class MetadataMergePolicy {
   void MergePut(const DataNameVariant& data_name, int data_size);
   void MergeDelete(const DataNameVariant& data_name, int data_size);
   int GetDataSize(const UnresolvedEntry& unresolved_entry) const;
-  std::vector<UnresolvedEntry> MergeRecordTransfer(const UnresolvedEntry& unresolved_entry);
+   UnresolvedEntries MergeRecordTransfer(const UnresolvedEntry& unresolved_entry);
 };
 
 }  // namespace vault
