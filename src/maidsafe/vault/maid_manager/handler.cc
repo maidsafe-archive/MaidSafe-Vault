@@ -116,7 +116,8 @@ void MaidAccountHandler::IncrementSyncAttempts(const MaidName& account_name) {
   maid_accounts_.at(account_name)->IncrementSyncAttempts();
 }
 
-MaidAccount::Status MaidAccountHandler::AllowPut(const MaidName& account_name, int32_t cost) const {
+MaidAccount::Status MaidAccountHandler::AllowPut(const MaidName& account_name,
+                                                 MaidManager::Cost cost) const {
   if (cost > 0) {
     std::lock_guard<std::mutex> lock(mutex_);
     return maid_accounts_.at(account_name)->AllowPut(cost);

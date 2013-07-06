@@ -49,7 +49,7 @@ void VersionManagerMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
              *unresolved_entry.messages_contents.at(0).value->new_version);
   } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
     MergeDelete(unresolved_entry.key.first);
-  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
+  }  else if (unresolved_entry.key.second == nfs::MessageAction::kAccountTransfer) {
       assert(unresolved_entry.messages_contents.at(0).value->serialised_db_value);
       MergeAccountTransfer(unresolved_entry.key.first,
       StructuredDataVersions(*unresolved_entry.messages_contents.at(0).value->serialised_db_value));
@@ -62,29 +62,30 @@ void VersionManagerMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
   }
 }
 
-void VersionManagerMergePolicy::MergePut(const DbKey& key,
+void VersionManagerMergePolicy::MergePut(const DbKey& db_key,
                                          const StructuredDataVersions::VersionName& new_value,
                                          const StructuredDataVersions::VersionName& old_value) {
-  auto value(db_->Get(key));
+  auto value(db_->Get(db_key));
   value.Put(old_value, new_value);
   db_->Put(std::make_pair(key, value));
 }
 
 void VersionManagerMergePolicy::MergeDeleteBranchUntilFork(
-    const DbKey& key,
-    const StructuredDataVersions::VersionName& tot) {
-  auto value(db_->Get(key));
-  value.DeleteBranchUntilFork(tot);
-  db_->Put(std::make_pair(key, value));
+    const DbKey& db_key,
+    const StructuredDataVersions::VersionName& tip_of_tree) {
+  auto value(db_->Get(db_key));
+  value.DeleteBranchUntilFork(tip_of_tree);
+  db_->Put(std::make_pair(db_key, value));
+  db_->Put(std::make_pair(db_key, value));
 }
 
 void VersionManagerMergePolicy::MergeDelete(const DbKey& key) {
   db_->Delete(key);
 }
 
-void VersionManagerMergePolicy::MergeAccountTransfer(const DbKey& key,
+void VersionManagerMergePolicy::MergeAccountTransfer(const DbKey& db_key,
                                                      const StructuredDataVersions& data_version) {
-  db_->Put(std::make_pair(key, data_version));
+  db_->Put(std::make_pair(db_key, data_version));
 }
 
 }  // namespace vault

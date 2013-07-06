@@ -24,7 +24,7 @@ License.
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/unresolved_entry_core_fields.h"
 
 namespace maidsafe {
 namespace vault {

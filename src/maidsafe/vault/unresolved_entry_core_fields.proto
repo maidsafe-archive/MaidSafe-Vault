@@ -15,30 +15,14 @@ License.
 
 package maidsafe.vault.protobuf;
 
-message MaidAndPmidUnresolvedEntry {
-  message Key {
-    required uint32 type = 1;
-    required bytes name = 2;
-    required int32 action = 3;
-  }
-  message MessageContent {
-    required bytes peer = 1;
-    optional int32 entry_id = 2;
-    optional int32 value = 3;
-  }
-  required Key key = 1;
-  repeated MessageContent messages_contents = 2;
-  optional bool dont_add_to_db = 3;
-}
-
-message DataManagerValueDelta {
+message MetadataValueDelta {
   required int32 data_size = 1;
   optional int64 subscribers = 2;
   repeated bytes new_online = 3;
   repeated bytes new_offline = 4;
 }
 
-message DataManagerUnresolvedEntry {
+message MetadataUnresolvedEntry {
   message Key {
     required uint32 type = 1;
     required bytes name = 2;
@@ -54,11 +38,7 @@ message DataManagerUnresolvedEntry {
   optional bool dont_add_to_db = 3;
 }
 
-message UnresolvedEntries {
-  repeated bytes serialised_unresolved_entry = 1;
-}
-
-message VersionManagerUnresolvedEntry {
+message StructuredDataUnresolvedEntry {
   message Key {
     required uint32 name_type = 1;
     required bytes name = 2;

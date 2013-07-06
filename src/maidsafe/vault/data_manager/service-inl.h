@@ -30,7 +30,7 @@ License.
 #include "maidsafe/vault/data_manager/helpers.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/sync.pb.h"
-#include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/unresolved_entry_core_fields.h"
 #include "maidsafe/vault/utils.h"
 
 

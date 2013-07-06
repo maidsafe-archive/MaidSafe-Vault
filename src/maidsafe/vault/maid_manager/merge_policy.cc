@@ -53,8 +53,8 @@ void MaidManagerMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
   }
 }
 
-MaidManagerMergePolicy::UnresolvedEntry::Value MaidManagerMergePolicy::MergedCost(
-    const UnresolvedEntry& unresolved_entry) const {
+MaidManager::Cost MaidManagerMergePolicy::MergedCost(
+    const MaidAccountUnresolvedEntry<nfs::MessageAction::kPut>& unresolved_put) const {
   assert(unresolved_entry.key.second == nfs::MessageAction::kPut &&
          !unresolved_entry.dont_add_to_db);
   std::map<UnresolvedEntry::Value, size_t> all_costs;
@@ -87,22 +87,22 @@ MaidManagerMergePolicy::UnresolvedEntry::Value MaidManagerMergePolicy::MergedCos
   UnresolvedEntry::Value total_cost(0);
   int count(0);
   for (const auto& cost : all_costs) {
-    total_cost += static_cast<int32_t>(cost.first * cost.second);
-    count += static_cast<int32_t>(cost.second);
+    total_cost += static_cast<MaidAccountHolder::Cost>(cost.first * cost.second);
+    count += static_cast<MaidAccountHolder::Cost>(cost.second);
   }
 
   return total_cost / count;
 }
 
 void MaidManagerMergePolicy::MergePut(const DataNameVariant& data_name,
-                                      UnresolvedEntry::Value cost,
+                                      MaidManager::Cost cost,
                                       const NonEmptyString& serialised_db_value) {
   if (serialised_db_value.IsInitialised()) {
     auto current_values(ParseDbValue(serialised_db_value));
     uint64_t current_total_size(current_values.first.data * current_values.second.data);
     ++current_values.second.data;
-    current_values.first.data =
-        static_cast<int32_t>((current_total_size + cost) / current_values.second.data);
+    current_values.first.data = static_cast<MaidAccountHolder::Cost>(
+        (current_total_size + cost) / current_values.second.data);
     account_db_->Put(std::make_pair(DbKey(data_name), SerialiseDbValue(current_values)));
   } else {
     DbValue db_value(std::make_pair(AverageCost(cost), Count(1)));

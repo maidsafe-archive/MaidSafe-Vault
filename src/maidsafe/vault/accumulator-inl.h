@@ -166,7 +166,7 @@ typename std::deque<typename Accumulator<Name>::HandledRequest>::const_iterator
 
 template<typename Name>
 bool Accumulator<Name>::CheckHandled(const nfs::Message& message, nfs::Reply& reply_out) const {
-  const auto it(FindHandled(message));  // NOLINT (dirvine)
+  const auto it(FindHandled(message));
   if (it != std::end(handled_requests_)) {
     if (it->reply.error().code() == CommonErrors::success)
       reply_out = it->reply;

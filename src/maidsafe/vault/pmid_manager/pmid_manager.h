@@ -21,7 +21,8 @@ License.
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
-#include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/unresolved_entry_core_fields.h"
+#include "maidsafe/vault/db_key.h"
 
 
 namespace maidsafe {
@@ -30,7 +31,7 @@ namespace nfs {
 
 template<>
 struct PersonaTypes<Persona::kPmidManager> {
-  typedef DataNameVariant DbKey;
+  typedef vault::DbKey DbKey;
   typedef int32_t DbValue;
   typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
   typedef DbValue UnresolvedEntryValue;

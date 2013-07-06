@@ -1,0 +1,17 @@
+package maidsafe.vault.protobuf;
+import "maidsafe/vault/unresolved_entry_core_fields.proto";
+
+message MaidAccountUnresolvedEntry {
+  message ActionAttributes {
+    required bytes peer_id = 1;
+    required int32 entry_id = 2;
+    optional int32 cost = 3;
+    optional bytes pmid_name = 4;
+  }
+  required uint32 type = 1;
+  required bytes name = 2;
+  required int32 action = 3;
+  required ActionAttributes action_attributes = 4;
+  optional bool dont_add_to_db = 5;
+}
+

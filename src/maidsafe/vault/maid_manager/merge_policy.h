@@ -25,7 +25,7 @@ License.
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 
-#include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/maid_manager/unresolved_entry.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 
 namespace maidsafe {
@@ -36,33 +36,38 @@ class AccountDb;
 
 class MaidManagerMergePolicy {
  public:
-  typedef MaidManagerUnresolvedEntry UnresolvedEntry;
-  typedef MaidManagerResolvedEntry ResolvedEntry;
+  typedef MaidManager::DbKey DbKey;
   typedef AccountDb Database;
+  typedef MaidAccountUnresolvedEntryVariant UnresolvedEntryVariant;
   explicit MaidManagerMergePolicy(AccountDb* account_db);
   MaidManagerMergePolicy(MaidManagerMergePolicy&& other);
   MaidManagerMergePolicy& operator=(MaidManagerMergePolicy&& other);
   // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
   template<typename Data>
-  int32_t AllowDelete(const typename Data::name_type& name);
+  MaidManager::Cost AllowDelete(const typename Data::name_type& name);
 
  protected:
-  void Merge(const UnresolvedEntry& unresolved_entry);
+  typedef std::vector<UnresolvedEntryVariant> UnresolvedEntries;
+  typedef std::vector<UnresolvedEntryVariant>::iterator UnresolvedEntriesItr;
 
-  std::vector<UnresolvedEntry> unresolved_data_;
+  template<nfs::MessageAction action>
+  void Merge(const MaidAccountUnresolvedEntry<action>& unresolved_entry);
+
+  UnresolvedEntries unresolved_data_;
   AccountDb* account_db_;
 
  private:
-  typedef TaggedValue<int32_t, struct AverageCostTag> AverageCost;
-  typedef TaggedValue<int32_t, struct CountTag> Count;
+  typedef TaggedValue<MaidManager::Cost, struct AverageCostTag> AverageCost;
+  typedef TaggedValue<MaidManager::Cost, struct CountTag> Count;
   typedef std::pair<AverageCost, Count> DbValue;
 
   MaidManagerMergePolicy(const MaidManagerMergePolicy&);
   MaidManagerMergePolicy& operator=(const MaidManagerMergePolicy&);
 
-  UnresolvedEntry::Value MergedCost(const UnresolvedEntry& unresolved_entry) const;
+  MaidManager::Cost MergedCost(
+      const MaidAccountUnresolvedEntry<nfs::MessageAction::kPut>& unresolved_put) const;
   void MergePut(const DataNameVariant& data_name,
-                UnresolvedEntry::Value cost,
+                MaidManager::Cost cost,
                 const NonEmptyString& serialised_db_value);
   void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
   NonEmptyString SerialiseDbValue(DbValue db_value) const;
@@ -71,7 +76,7 @@ class MaidManagerMergePolicy {
 };
 
 template<typename Data>
-int32_t MaidManagerMergePolicy::AllowDelete(const typename Data::name_type& name) {
+MaidManager::Cost MaidManagerMergePolicy::AllowDelete(const typename Data::name_type& name) {
   auto serialised_db_value(GetFromDb(name));
   Count current_count(0);
   AverageCost size(0);
@@ -85,7 +90,7 @@ int32_t MaidManagerMergePolicy::AllowDelete(const typename Data::name_type& name
   DataNameVariant name_as_variant(name);
   auto itr(std::begin(unresolved_data_));
   auto last_put_still_to_be_added_to_db(std::end(unresolved_data_));
-  int32_t pending_puts(0), pending_deletes(0);
+  MaidManager::Cost pending_puts(0), pending_deletes(0);
 
   while (itr != std::end(unresolved_data_)) {
     if ((*itr).key.first == name_as_variant) {

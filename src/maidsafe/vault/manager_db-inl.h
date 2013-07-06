@@ -89,7 +89,7 @@ std::vector<typename PersonaType::DbKey> ManagerDb<PersonaType>::GetKeys() {
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
   for (iter->SeekToFirst(); iter->Valid(); iter->Next())
-    return_vector.push_back(DbKey(iter->key().ToString()));
+    return_vector.push_back(PersonaType::DbKey(iter->key().ToString()));
   return return_vector;
 }
 

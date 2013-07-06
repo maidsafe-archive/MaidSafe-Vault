@@ -27,7 +27,7 @@ License.
 #include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/vault/manager_db.h"
-#include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/unresolved_entry_core_fields.h"
 #include "maidsafe/vault/version_manager/version_manager.h"
 #include "maidsafe/vault/version_manager/key.h"
 #include "maidsafe/vault/version_manager/unresolved_entry_value.h"
@@ -49,24 +49,27 @@ class VersionManagerMergePolicy {
   VersionManagerMergePolicy& operator=(VersionManagerMergePolicy&& other);
 
  protected:
+  typedef std::vector<UnresolvedEntry> UnresolvedEntries;
+  typedef std::vector<UnresolvedEntry>::iterator UnresolvedEntriesItr;
+
   void Merge(const UnresolvedEntry& unresolved_entry);
 
-  std::vector<UnresolvedEntry> unresolved_data_;
+  UnresolvedEntries unresolved_data_;
   ManagerDb<VersionManager>* db_;
 
  private:
   VersionManagerMergePolicy(const VersionManagerMergePolicy&);
   VersionManagerMergePolicy& operator=(const VersionManagerMergePolicy&);
 
-  void MergePut(const DbKey& key,
+  void MergePut(const DbKey& db_key,
                 const StructuredDataVersions::VersionName& new_value,
                 const StructuredDataVersions::VersionName& old_value);
 
-  void MergeDeleteBranchUntilFork(const DbKey& key,
-                                  const StructuredDataVersions::VersionName& tot);
+  void MergeDeleteBranchUntilFork(const DbKey& db_key,
+                                  const StructuredDataVersions::VersionName& tip_of_tree);
   void MergeDelete(const DbKey& key);
 
-  void MergeAccountTransfer(const DbKey& key, const StructuredDataVersions& data_version);
+  void MergeAccountTransfer(const DbKey& db_key, const StructuredDataVersions& data_version);
 };
 
 

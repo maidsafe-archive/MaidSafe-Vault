@@ -105,9 +105,9 @@ void MetadataMergePolicy::MergeDelete(const DataNameVariant& data_name, int data
   }
 }
 
-std::vector<MetadataMergePolicy::UnresolvedEntry> MetadataMergePolicy::MergeRecordTransfer(
+MetadataMergePolicy::UnresolvedEntries MetadataMergePolicy::MergeRecordTransfer(
     const UnresolvedEntry& unresolved_entry) {
-  std::vector<UnresolvedEntry> extra_unresolved_data;
+  UnresolvedEntries extra_unresolved_data;
   // Merge Size
   int size(GetDataSize(unresolved_entry));
   DataManagerValue metadata_value(size);
