@@ -94,11 +94,15 @@ class DataManagerService {
   template<typename Data>
   void HandleDelete(const nfs::Message& message);
 
+  template<typename Data>
+  void HandleStateChange(const nfs::Message& message);
+
   void ValidatePutSender(const nfs::Message& message) const;
   void ValidateGetSender(const nfs::Message& message) const;
   void ValidateDeleteSender(const nfs::Message& message) const;
   void ValidatePostSender(const nfs::Message& message) const;
   void ValidatePutResultSender(const nfs::Message& message) const;
+
   void HandleNodeDown(const nfs::Message& message);
   void HandleNodeUp(const nfs::Message& message);
 
@@ -128,7 +132,7 @@ class DataManagerService {
   MetadataHandler metadata_handler_;
   DataManagerNfs nfs_;
   static const int kPutRequestsRequired_;
-  static const int kPutRepliesSuccessesRequired_;
+  static const int kStateChangesRequired_;
   static const int kDeleteRequestsRequired_;
 };
 

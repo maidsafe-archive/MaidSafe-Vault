@@ -55,7 +55,7 @@ void SendMetadataCost(const nfs::Message& original_message,
 }  // namspace detail
 
 const int DataManagerService::kPutRequestsRequired_(3);
-const int DataManagerService::kPutRepliesSuccessesRequired_(3);
+const int DataManagerService::kStateChangesRequired_(3);
 const int DataManagerService::kDeleteRequestsRequired_(3);
 
 

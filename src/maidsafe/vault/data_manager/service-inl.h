@@ -133,6 +133,8 @@ void DataManagerService::HandleMessage(const nfs::Message& message,
       return HandleGet<Data>(message, reply_functor);
     case nfs::MessageAction::kDelete:
       return HandleDelete<Data>(message);
+    case nfs::MessageAction::kStateChange:
+      return HandleStateChange<Data>(message);
     case nfs::MessageAction::kSynchronise:
       return HandleSync(message);
     case nfs::MessageAction::kAccountTransfer:
@@ -337,6 +339,30 @@ void DataManagerService::HandleGetReply(std::string serialised_reply) {
   //  LOG(kWarning) << "nfs error: " << e.what();
   //  op->HandleReply(Reply(CommonErrors::unknown));
   //}
+}
+
+template<typename Data>
+void DataManagerService::HandleStateChange(const nfs::Message& message) {
+  try {
+    //  ValidateStateChangeSender(message);
+    //  Construct message id based on first half of Pmid name and second half of data name
+    if (detail::AddResult(message, nullptr, MakeError(CommonErrors::success), accumulator_,
+                          accumulator_mutex_, kStateChangesRequired_)) {
+      // AddLocalUnresolvedEntryThenSync<Data, nfs::kStateChange::kPut>(message, metadata_value);
+
+      // check db + unresolved to work out total online pmids
+      int online_holders(-1);
+
+      if (online_holders < 3) {
+        // TODO(Team): Get content.
+        PmidName target_data_holder(Identity(routing_.RandomConnectedNode().string()));
+        //  nfs_.Put(target_data_holder, data, nullptr);
+      }
+    }
+  }
+  catch(const maidsafe_error& error) {
+    LOG(kWarning) << "Error during HandleStateChange: " << error.what();
+  }
 }
 
 template<typename Data>
