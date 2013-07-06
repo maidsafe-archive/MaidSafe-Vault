@@ -9,18 +9,18 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/unresolved_entry_core_fields.h"
 
 #include <string>
 
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/unresolved_element.pb.h"
-#include "maidsafe/vault/maid_account_holder/maid_account_merge_policy.h"
-#include "maidsafe/vault/metadata_manager/metadata_merge_policy.h"
-#include "maidsafe/vault/pmid_account_holder/pmid_account_merge_policy.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_merge_policy.h"
+#include "maidsafe/vault/unresolved_entry_core_fields.pb.h"
+#include "maidsafe/vault/maid_manager/merge_policy.h"
+#include "maidsafe/vault/data_manager/merge_policy.h"
+#include "maidsafe/vault/pmid_manager/merge_policy.h"
+#include "maidsafe/vault/version_manager/version_manager.h"
 
 
 namespace maidsafe {

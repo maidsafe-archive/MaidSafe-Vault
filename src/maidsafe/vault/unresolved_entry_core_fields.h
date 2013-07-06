@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "maidsafe/common/config.h"
-
+#include "maidsafe/nfs/nfs.h"
 
 namespace maidsafe {
 
