@@ -53,6 +53,13 @@ DataManagerValue::DataManagerValue(int size)
     ThrowError(CommonErrors::invalid_parameter);
 }
 
+bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
+  return lhs.data_size == rhs.data_size &&
+         lhs.subscribers == rhs.subscribers &&
+         lhs.online_pmid_name == rhs.online_pmid_name &&
+         lhs.offline_pmid_name == rhs.offline_pmid_name;
+}
+
 DataManagerValue::serialised_type DataManagerValue::Serialise() const {
 //  if (!subscribers || ((*subscribers) == 0) || (online_pmid_name.empty()))
 //    ThrowError(CommonErrors::uninitialised);  // Cannot serialise if not a complete db value

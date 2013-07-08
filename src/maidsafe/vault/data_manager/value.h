@@ -38,7 +38,10 @@ struct DataManagerValue {
   int data_size;
   boost::optional<int64_t> subscribers;
   std::set<PmidName> online_pmid_name, offline_pmid_name;
+
 };
+
+bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
 
 }  // namespace vault
 
