@@ -1,13 +1,17 @@
-/***************************************************************************************************
- *  Copyright 2013 MaidSafe.net limited                                                            *
- *                                                                                                 *
- *  The following source code is property of MaidSafe.net limited and is not meant for external    *
- *  use.  The use of this code is governed by the licence file licence.txt found in the root of    *
- *  this directory and also on www.maidsafe.net.                                                   *
- *                                                                                                 *
- *  You are not free to copy, amend or otherwise use this source code without the explicit         *
- *  written permission of the board of directors of MaidSafe.net.                                  *
- **************************************************************************************************/
+/* Copyright 2013 MaidSafe.net limited
+
+This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
+and The General Public License (GPL), version 3. By contributing code to this project You agree to
+the terms laid out in the MaidSafe Contributor Agreement, version 1.0, found in the root directory
+of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also available at:
+
+http://www.novinet.com/license
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is
+distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the
+License.
+*/
 
 #ifndef MAIDSAFE_VAULT_SYNC_H_
 #define MAIDSAFE_VAULT_SYNC_H_
@@ -53,15 +57,11 @@ class Sync : public MergePolicy {
   // This returns all unresoved entries containing this node's ID.  Each returned entry is provided
   // with just this node's ID inserted, even if the master copy has several other peers' IDs.
   std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData();
-  std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData(
-      const DataNameVariant& data_name);
   size_t GetUnresolvedCount() const { return MergePolicy::unresolved_data_.size(); }
-  size_t GetUnresolvedCount(const DataNameVariant& data_name) const;
   // Calling this will increment the sync counter and delete entries that reach the
   // 'sync_counter_max_' limit.  Entries which are resolved by all peers (i.e. have 4 messages) are
   // also pruned here.
   void IncrementSyncAttempts();
-  void IncrementSyncAttempts(const DataNameVariant& data_name);
 
  private:
   Sync(const Sync&);

@@ -1,17 +1,23 @@
-/***************************************************************************************************
- *  Copyright 2012 MaidSafe.net limited                                                            *
- *                                                                                                 *
- *  The following source code is property of MaidSafe.net limited and is not meant for external    *
- *  use.  The use of this code is governed by the licence file licence.txt found in the root of    *
- *  this directory and also on www.maidsafe.net.                                                   *
- *                                                                                                 *
- *  You are not free to copy, amend or otherwise use this source code without the explicit         *
- *  written permission of the board of directors of MaidSafe.net.                                  *
- **************************************************************************************************/
+/* Copyright 2012 MaidSafe.net limited
+
+This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
+and The General Public License (GPL), version 3. By contributing code to this project You agree to
+the terms laid out in the MaidSafe Contributor Agreement, version 1.0, found in the root directory
+of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also available at:
+
+http://www.novinet.com/license
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is
+distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the
+License.
+*/
 
 #include "maidsafe/vault/tools/key_helper_operations.h"
 
 #include <csignal>
+#include <future>
+#include <memory>
 #include <string>
 
 #include "boost/filesystem/operations.hpp"
@@ -140,7 +146,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
       functors_(),
       client_nfs_() {
   auto future(RoutingJoin(peer_endpoints));
-  std::future_status status(future.wait_for(std::chrono::seconds(10)));
+  auto status(future.wait_for(std::chrono::seconds(10)));
   if (status == std::future_status::timeout || !future.get())
     throw ToolsException("Failed to join client to network.");
   LOG(kInfo) << "Bootstrapped anonymous node to store keys";
@@ -208,22 +214,19 @@ KeyVerifier::KeyVerifier(const passport::detail::AnmaidToPmid& key_chain,
     : ClientTester(key_chain, peer_endpoints) {}
 
 void KeyVerifier::Verify() {
-  std::future<passport::PublicAnmaid> anmaid_future(
-      std::move(nfs::Get<passport::PublicAnmaid>(*client_nfs_, key_chain_.anmaid.name())));
-  std::future<passport::PublicMaid> maid_future(
-      std::move(nfs::Get<passport::PublicMaid>(*client_nfs_, key_chain_.maid.name())));
-  std::future<passport::PublicPmid> pmid_future(
-      std::move(nfs::Get<passport::PublicPmid>(*client_nfs_, key_chain_.pmid.name())));
+  auto anmaid_future(nfs::Get<passport::PublicAnmaid>(*client_nfs_, key_chain_.anmaid.name()));
+  auto maid_future(nfs::Get<passport::PublicMaid>(*client_nfs_, key_chain_.maid.name()));
+  auto pmid_future(nfs::Get<passport::PublicPmid>(*client_nfs_, key_chain_.pmid.name()));
 
   size_t verified_keys(0);
   if (EqualKeys<passport::PublicAnmaid>(passport::PublicAnmaid(key_chain_.anmaid),
-                                        anmaid_future.get()))
+                                        *anmaid_future.get()))
     ++verified_keys;
-  if (EqualKeys<passport::PublicMaid>(passport::PublicMaid(key_chain_.maid), maid_future.get()))
+  if (EqualKeys<passport::PublicMaid>(passport::PublicMaid(key_chain_.maid), *maid_future.get()))
     ++verified_keys;
-  if (EqualKeys<passport::PublicPmid>(passport::PublicPmid(key_chain_.pmid), pmid_future.get()))
+  if (EqualKeys<passport::PublicPmid>(passport::PublicPmid(key_chain_.pmid), *pmid_future.get()))
     ++verified_keys;
-  std::cout << "VerifyKeys - Verified all " << verified_keys << " keys." << std::endl;
+  std::cout << "VerifyKeys - Verified all " << verified_keys << " keys.\n";
 }
 
 DataChunkStorer::DataChunkStorer(const passport::detail::AnmaidToPmid& key_chain,
@@ -365,7 +368,7 @@ bool DataChunkStorer::GetOneChunk(const ImmutableData& chunk_data) {
                           };
 
   auto future = nfs::Get<ImmutableData>(*client_nfs_, chunk_data.name());
-  return equal_immutables(chunk_data, future.get());
+  return equal_immutables(chunk_data, *future.get());
 }
 
 bool DataChunkStorer::DeleteOneChunk(const ImmutableData& chunk_data) {

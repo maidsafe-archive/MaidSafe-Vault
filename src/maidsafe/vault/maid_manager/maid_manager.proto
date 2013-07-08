@@ -1,0 +1,44 @@
+/* Copyright 2012 MaidSafe.net limited
+
+This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
+and The General Public License (GPL), version 3. By contributing code to this project You agree to
+the terms laid out in the MaidSafe Contributor Agreement, version 1.0, found in the root directory
+of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also available at:
+
+http://www.novinet.com/license
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is
+distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the
+License.
+*/
+
+package maidsafe.vault.protobuf;
+import "maidsafe/vault/pmid_manager/pmid_manager.proto";
+
+message MaidManagerDbValue {
+  required int32 average_cost = 1;
+  required int32 count = 2;
+}
+
+message MaidManagerDbEntry {
+  required uint32 type = 1;  // name and type == db key
+  required bytes name = 2;
+  required MaidManagerDbValue value = 3;
+}
+
+message MaidManager {
+  required bytes maid_name = 1;
+  required bytes serialised_account_details = 2;
+}
+
+message MaidManagerDetails {
+  repeated bytes serialised_pmid_registration = 1;
+  repeated MaidManagerDbEntry db_entry = 2;
+  repeated bytes serialised_unresolved_entry = 3;
+}
+
+// Used as data field in MM's Reply to Put request.
+message Cost {
+  required int32 cost = 1;
+}

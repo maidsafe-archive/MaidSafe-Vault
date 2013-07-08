@@ -1,13 +1,19 @@
 #==================================================================================================#
 #                                                                                                  #
-#  Copyright (c) 2012 MaidSafe.net limited                                                         #
+#  Copyright 2012 MaidSafe.net limited                                                             #
 #                                                                                                  #
-#  The following source code is property of MaidSafe.net limited and is not meant for external     #
-#  use.  The use of this code is governed by the license file licence.txt found in the root        #
-#  directory of this project and also on www.maidsafe.net.                                         #
+#  This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or    #
+#  later, and The General Public License (GPL), version 3. By contributing code to this project    #
+#  You agree to the terms laid out in the MaidSafe Contributor Agreement, version 1.0, found in    #
+#  the root directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also    #
+#  available at:                                                                                   #
 #                                                                                                  #
-#  You are not free to copy, amend or otherwise use this source code without the explicit written  #
-#  permission of the board of directors of MaidSafe.net.                                           #
+#    http://www.novinet.com/license                                                                #
+#                                                                                                  #
+#  Unless required by applicable law or agreed to in writing, software distributed under the       #
+#  License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,       #
+#  either express or implied. See the License for the specific language governing permissions      #
+#  and limitations under the License.                                                              #
 #                                                                                                  #
 #==================================================================================================#
 
@@ -34,12 +40,12 @@ include_directories(${nfs_SOURCE_DIR}/include)
 set(VaultSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/vault)
 glob_dir(Vault ${VaultSourcesDir} Vault)
 list(REMOVE_ITEM VaultSources ${VaultSourcesDir}/vault_main.cc)
-glob_dir(DataHolder ${VaultSourcesDir}/data_holder "Data Holder\\\\")
-glob_dir(MaidAccountHolder ${VaultSourcesDir}/maid_account_holder "Maid Account Holder\\\\")
-glob_dir(MetadataManager ${VaultSourcesDir}/metadata_manager "Metadata Manager\\\\")
-glob_dir(MpidAccountHolder ${VaultSourcesDir}/mpid_account_holder "Mpid Account Holder\\\\")
-glob_dir(PmidAccountHolder ${VaultSourcesDir}/pmid_account_holder "Pmid Account Holder\\\\")
-glob_dir(StructuredDataManager ${VaultSourcesDir}/structured_data_manager "Structured Data Manager\\\\")
+glob_dir(DataHolder ${VaultSourcesDir}/pmid_node "Pmid Node\\\\")
+glob_dir(MaidManager ${VaultSourcesDir}/maid_manager "Maid Node Manager\\\\")
+glob_dir(MetadataManager ${VaultSourcesDir}/data_manager "Data Manager\\\\")
+glob_dir(MpidAccountHolder ${VaultSourcesDir}/mpid_account_holder "Mpid Node\\\\")
+glob_dir(PmidManager ${VaultSourcesDir}/pmid_manager "Pmid Manager\\\\")
+glob_dir(VersionManager ${VaultSourcesDir}/version_manager "Version Manager\\\\")
 
 glob_dir(VaultTests ${VaultSourcesDir}/tests "Tests")
 glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
@@ -50,11 +56,11 @@ glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
 #==================================================================================================#
 ms_add_static_library(vault ${VaultAllFiles}
                             ${DataHolderAllFiles}
-                            ${MaidAccountHolderAllFiles}
+                            ${MaidManagerAllFiles}
                             ${MetadataManagerAllFiles}
                             ${MpidAccountHolderAllFiles}
-                            ${PmidAccountHolderAllFiles}
-                            ${StructuredDataManagerAllFiles})
+                            ${PmidManagerAllFiles}
+                            ${VersionManagerAllFiles})
 ms_add_executable(lifestuff_vault Production ${VaultSourcesDir}/vault_main.cc)
 
 target_link_libraries(maidsafe_vault maidsafe_nfs maidsafe_routing maidsafe_common maidsafe_private leveldb)
@@ -75,9 +81,7 @@ rename_outdated_built_exes()
 #==================================================================================================#
 include(standard_flags)
 
-if(UNIX)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-effc++")
-elseif(MSVC AND MaidsafeTesting)
+if(MSVC AND MaidsafeTesting)
   set_target_properties(maidsafe_vault TESTvault PROPERTIES COMPILE_FLAGS "/bigobj")
 endif()
 

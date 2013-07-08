@@ -1,13 +1,17 @@
-/***************************************************************************************************
- *  Copyright 2012 MaidSafe.net limited                                                            *
- *                                                                                                 *
- *  The following source code is property of MaidSafe.net limited and is not meant for external    *
- *  use.  The use of this code is governed by the licence file licence.txt found in the root of    *
- *  this directory and also on www.maidsafe.net.                                                   *
- *                                                                                                 *
- *  You are not free to copy, amend or otherwise use this source code without the explicit         *
- *  written permission of the board of directors of MaidSafe.net.                                  *
- **************************************************************************************************/
+/* Copyright 2012 MaidSafe.net limited
+
+This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
+and The General Public License (GPL), version 3. By contributing code to this project You agree to
+the terms laid out in the MaidSafe Contributor Agreement, version 1.0, found in the root directory
+of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also available at:
+
+http://www.novinet.com/license
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is
+distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the
+License.
+*/
 
 #ifndef MAIDSAFE_VAULT_DEMULTIPLEXER_H_
 #define MAIDSAFE_VAULT_DEMULTIPLEXER_H_
@@ -23,19 +27,19 @@ namespace maidsafe {
 
 namespace vault {
 
-class MaidAccountHolderService;
-class StructuredDataManagerService;
-class MetadataManagerService;
-class PmidAccountHolderService;
-class DataHolderService;
+class MaidManagerService;
+class VersionManagerService;
+class DataManagerService;
+class PmidManagerService;
+class PmidNodeService;
 
 class Demultiplexer {
  public:
-  Demultiplexer(MaidAccountHolderService& maid_account_holder_service,
-                StructuredDataManagerService& structured_data_manager_service,
-                MetadataManagerService& metadata_manager_service,
-                PmidAccountHolderService& pmid_account_holder_service,
-                DataHolderService& data_holder);
+  Demultiplexer(MaidManagerService& maid_manager_service,
+                VersionManagerService& version_manager_service,
+                DataManagerService& data_manager_service,
+                PmidManagerService& pmid_manager_service,
+                PmidNodeService& pmid_node);
   void HandleMessage(const std::string& serialised_message,
                      const routing::ReplyFunctor& reply_functor);
   bool GetFromCache(std::string& serialised_message);
@@ -47,11 +51,11 @@ class Demultiplexer {
   NonEmptyString HandleGetFromCache(const nfs::Message& message);
   void HandleStoreInCache(const nfs::Message& message);
 
-  MaidAccountHolderService& maid_account_holder_service_;
-  StructuredDataManagerService& structured_data_manager_service_;
-  MetadataManagerService& metadata_manager_service_;
-  PmidAccountHolderService& pmid_account_holder_service_;
-  DataHolderService& data_holder_;
+  MaidManagerService& maid_manager_service_;
+  VersionManagerService& version_manager_service_;
+  DataManagerService& data_manager_service_;
+  PmidManagerService& pmid_manager_service_;
+  PmidNodeService& pmid_node_;
 };
 
 template<>

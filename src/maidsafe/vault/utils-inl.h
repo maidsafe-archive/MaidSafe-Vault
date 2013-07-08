@@ -1,13 +1,17 @@
-/***************************************************************************************************
- *  Copyright 2012 MaidSafe.net limited                                                            *
- *                                                                                                 *
- *  The following source code is property of MaidSafe.net limited and is not meant for external    *
- *  use.  The use of this code is governed by the licence file licence.txt found in the root of    *
- *  this directory and also on www.maidsafe.net.                                                   *
- *                                                                                                 *
- *  You are not free to copy, amend or otherwise use this source code without the explicit         *
- *  written permission of the board of directors of MaidSafe.net.                                  *
- **************************************************************************************************/
+/* Copyright 2012 MaidSafe.net limited
+
+This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
+and The General Public License (GPL), version 3. By contributing code to this project You agree to
+the terms laid out in the MaidSafe Contributor Agreement, version 1.0, found in the root directory
+of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also available at:
+
+http://www.novinet.com/license
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is
+distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the
+License.
+*/
 
 #ifndef MAIDSAFE_VAULT_UTILS_INL_H_
 #define MAIDSAFE_VAULT_UTILS_INL_H_
@@ -28,33 +32,33 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Message>
-inline bool FromMaidAccountHolder(const Message& message) {
-  return message.source().persona == nfs::Persona::kMaidAccountHolder;
+inline bool FromMaidManager(const Message& message) {
+  return message.source().persona == nfs::Persona::kMaidManager;
 }
 
 template<typename Message>
-inline bool FromMetadataManager(const Message& message) {
-  return message.source().persona == nfs::Persona::kMetadataManager;
+inline bool FromDataManager(const Message& message) {
+  return message.source().persona == nfs::Persona::kDataManager;
 }
 
 template<typename Message>
-inline bool FromPmidAccountHolder(const Message& message) {
-  return message.source().persona == nfs::Persona::kPmidAccountHolder;
+inline bool FromPmidManager(const Message& message) {
+  return message.source().persona == nfs::Persona::kPmidManager;
 }
 
 template<typename Message>
 inline bool FromDataHolder(const Message& message) {
-  return message.source().persona == nfs::Persona::kDataHolder;
+  return message.source().persona == nfs::Persona::kPmidNode;
 }
 
 template<typename Message>
 inline bool FromClientMaid(const Message& message) {
-  return message.source().persona == nfs::Persona::kClientMaid;
+  return message.source().persona == nfs::Persona::kMaidNode;
 }
 
 template<typename Message>
 inline bool FromClientMpid(const Message& message) {
-  return message.source().persona == nfs::Persona::kClientMpid;
+  return message.source().persona == nfs::Persona::kMpidNode;
 }
 
 template<typename Message>
@@ -79,7 +83,7 @@ inline bool FromDataGetter(const Message& message) {
 
 template<typename Message>
 inline bool ValidateSyncSender(const nfs::Message& message) {
-  return message.source().persona == nfs::Persona::kStructuredDataManager;
+  return message.source().persona == nfs::Persona::kVersionManager;
 }
 
 
@@ -126,7 +130,7 @@ bool AddResult(const nfs::Message& message,
 template<int width>
 std::string ToFixedWidthString(uint32_t number) {
   static_assert(width > 0 && width < 5, "width must be 1, 2, 3, or 4.");
-  assert(number < std::pow(256, width) && number >= 0);
+  assert(number < std::pow(256, width));
   std::string result(width, 0);
   for (int i(0); i != width; ++i) {
     result[width - i - 1] = static_cast<char>(number);
@@ -144,7 +148,7 @@ uint32_t FromFixedWidthString(const std::string& number_as_string) {
     result += (static_cast<unsigned char>(number_as_string[width - i - 1]) * factor);
     factor *= 256;
   }
-  assert(result < std::pow(256, width) && result >= 0);
+  assert(result < std::pow(256, width));
   return result;
 }
 

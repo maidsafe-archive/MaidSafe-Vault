@@ -1,21 +1,27 @@
-/***************************************************************************************************
- *  Copyright 2013 MaidSafe.net limited                                                            *
- *                                                                                                 *
- *  The following source code is property of MaidSafe.net limited and is not meant for external    *
- *  use.  The use of this code is governed by the licence file licence.txt found in the root of    *
- *  this directory and also on www.maidsafe.net.                                                   *
- *                                                                                                 *
- *  You are not free to copy, amend or otherwise use this source code without the explicit         *
- *  written permission of the board of directors of MaidSafe.net.                                  *
- **************************************************************************************************/
+/* Copyright 2013 MaidSafe.net limited
+
+This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
+and The General Public License (GPL), version 3. By contributing code to this project You agree to
+the terms laid out in the MaidSafe Contributor Agreement, version 1.0, found in the root directory
+of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also available at:
+
+http://www.novinet.com/license
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is
+distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the
+License.
+*/
 
 #include "maidsafe/vault/db_key.h"
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/data_types/immutable_data.h"
 
+#include "maidsafe/data_types/immutable_data.h"
 #include "maidsafe/data_types/data_name_variant.h"
+
+#include "maidsafe/vault/utils-inl.h"
 
 
 namespace maidsafe {
@@ -23,6 +29,21 @@ namespace maidsafe {
 namespace vault {
 
 namespace test {
+
+TEST(DbKeyTest, BEH_Serialise) {
+  DataNameVariant name(ImmutableData::name_type(Identity(
+      RandomString(crypto::SHA512::DIGESTSIZE))));
+  DbKey db_key(name);
+  EXPECT_TRUE(db_key.name() == name);
+
+  // Simulation a serialisation
+  static GetTagValueAndIdentityVisitor visitor;
+  auto result(boost::apply_visitor(visitor, name));
+  std::string simulated = std::string(result.second.string() +
+            maidsafe::vault::detail::ToFixedWidthString<1>(static_cast<uint32_t>(result.first)));
+
+  EXPECT_EQ(simulated, db_key.Serialise());
+}
 
 TEST(DbKeyTest, BEH_All) {
   DataNameVariant name(ImmutableData::name_type(Identity(

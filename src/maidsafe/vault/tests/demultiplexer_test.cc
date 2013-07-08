@@ -1,14 +1,17 @@
- /*******************************************************************************
- *  Copyright 2012 maidsafe.net limited                                        *
- *                                                                             *
- *  The following source code is property of maidsafe.net limited and is not   *
- *  meant for external use.  The use of this code is governed by the licence   *
- *  file licence.txt found in the root of this directory and also on           *
- *  www.maidsafe.net.                                                          *
- *                                                                             *
- *  You are not free to copy, amend or otherwise use this source code without  *
- *  the explicit written permission of the board of directors of maidsafe.net. *
- ******************************************************************************/
+/* Copyright 2012 MaidSafe.net limited
+
+This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
+and The General Public License (GPL), version 3. By contributing code to this project You agree to
+the terms laid out in the MaidSafe Contributor Agreement, version 1.0, found in the root directory
+of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also available at:
+
+http://www.novinet.com/license
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is
+distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the
+License.
+*/
 
 #include "maidsafe/vault/demultiplexer.h"
 
@@ -17,12 +20,12 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/nfs/message.h"
 
-#include "maidsafe/vault/maid_account_holder/maid_account_holder_service.h"
-#include "maidsafe/vault/metadata_manager/metadata_manager_service.h"
-#include "maidsafe/vault/pmid_account_holder/pmid_account_holder_service.h"
-#include "maidsafe/vault/data_holder/data_holder_service.h"
+#include "maidsafe/vault/maid_manager/service.h"
+#include "maidsafe/vault/data_manager/service.h"
+#include "maidsafe/vault/pmid_manager/service.h"
+#include "maidsafe/vault/pmid_node/service.h"
 
-// TODO(Alison) - redesign tests to not use Mocks for personas
+// TODO(Qi) - redesign tests to not use Mocks for personas
 
 namespace maidsafe {
 
@@ -48,41 +51,41 @@ bool operator==(const nfs::Message& lhs, const nfs::Message& rhs) {
 namespace vault {
 
 /*
-// TODO(Alison) - move mocks to separate file?
-class MockMaidAccountHolder : public MaidAccountHolder {
+// TODO(Qi) - move mocks to separate file?
+class MockMaidManager : public MaidManager {
  public:
-  MockMaidAccountHolder();
-  virtual ~MockMaidAccountHolder();
+  MockMaidManager();
+  virtual ~MockMaidManager();
 
   MOCK_METHOD1(HandleMessage, void(nfs::Message message));
 
  private:
-  MockMaidAccountHolder &operator=(const MockMaidAccountHolder&);
-  MockMaidAccountHolder(const MockMaidAccountHolder&);
+  MockMaidManager &operator=(const MockMaidManager&);
+  MockMaidManager(const MockMaidManager&);
 };
 
-class MockMetadataManager : public MetadataManagerService {
+class MockDataManager : public DataManagerService {
  public:
-  MockMetadataManager();
-  virtual ~MockMetadataManager();
+  MockDataManager();
+  virtual ~MockDataManager();
 
   MOCK_METHOD1(HandleMessage, void(nfs::Message message));
 
  private:
-  MockMetadataManager &operator=(const MockMetadataManager&);
-  MockMetadataManager(const MockMetadataManager&);
+  MockDataManager &operator=(const MockDataManager&);
+  MockDataManager(const MockDataManager&);
 };
 
-class MockPmidAccountHolder : public PmidAccountHolder {
+class MockPmidManager : public PmidManager {
  public:
-  MockPmidAccountHolder();
-  virtual ~MockPmidAccountHolder();
+  MockPmidManager();
+  virtual ~MockPmidManager();
 
   MOCK_METHOD1(HandleMessage, void(nfs::Message message));
 
  private:
-  MockPmidAccountHolder &operator=(const MockPmidAccountHolder&);
-  MockPmidAccountHolder(const MockPmidAccountHolder&);
+  MockPmidManager &operator=(const MockPmidManager&);
+  MockPmidManager(const MockPmidManager&);
 };
 
 class MockDataHolder : public DataHolderService {
@@ -104,20 +107,20 @@ namespace test {
 class DemultiplexerTest : public testing::Test {
  public:
   DemultiplexerTest()
-      : maid_account_holder_(),
-        metadata_manager_service_(),
-        pmid_account_holder_(),
-        data_holder_(),
-        demultiplexer_(maid_account_holder_,
-                       metadata_manager_service_,
-                       pmid_account_holder_,
-                       data_holder_) {}
+      : maid_manager_(),
+        data_manager_service_(),
+        pmid_manager_(),
+        pmid_node_(),
+        demultiplexer_(maid_manager_,
+                       data_manager_service_,
+                       pmid_manager_,
+                       pmid_node_) {}
 
   bool VerifyAndClearAllExpectations() {
-    return testing::Mock::VerifyAndClearExpectations(&maid_account_holder_) &&
-           testing::Mock::VerifyAndClearExpectations(&metadata_manager_service_) &&
-           testing::Mock::VerifyAndClearExpectations(&pmid_account_holder_) &&
-           testing::Mock::VerifyAndClearExpectations(&data_holder_);
+    return testing::Mock::VerifyAndClearExpectations(&maid_manager_) &&
+           testing::Mock::VerifyAndClearExpectations(&data_manager_service_) &&
+           testing::Mock::VerifyAndClearExpectations(&pmid_manager_) &&
+           testing::Mock::VerifyAndClearExpectations(&pmid_node_);
   }
 
   nfs::Message GenerateValidMessage() {
@@ -155,13 +158,13 @@ class DemultiplexerTest : public testing::Test {
     // TODO(Alison) - % 4 to match Persona enum - improve?
     nfs::Persona dest_type(static_cast<nfs::Persona>(RandomUint32() % 4));
     switch (dest_type) {
-      case nfs::Persona::kMaidAccountHolder:
+      case nfs::Persona::kMaidManager:
         ++expect_mah;
         break;
-      case nfs::Persona::kMetadataManager:
+      case nfs::Persona::kDataManager:
         ++expect_mdm;
         break;
-      case nfs::Persona::kPmidAccountHolder:
+      case nfs::Persona::kPmidManager:
         ++expect_pah;
         break;
       case nfs::Persona::kDataHolder:
@@ -199,78 +202,78 @@ class DemultiplexerTest : public testing::Test {
   }
 
  public:
-  MockMaidAccountHolder maid_account_holder_;
-  MockMetadataManager metadata_manager_service_;
-  MockPmidAccountHolder pmid_account_holder_;
-  MockDataHolder data_holder_;
+  MockMaidManager maid_manager_;
+  MockDataManager data_manager_service_;
+  MockPmidManager pmid_manager_;
+  MockDataHolder pmid_node_;
   Demultiplexer demultiplexer_;
 };
 
-TEST_F(DemultiplexerTest, FUNC_MaidAccountHolder) {
-  nfs::Message message(GenerateValidMessage(nfs::Persona::kMaidAccountHolder));
+TEST_F(DemultiplexerTest, FUNC_MaidManager) {
+  nfs::Message message(GenerateValidMessage(nfs::Persona::kMaidManager));
 
-  EXPECT_CALL(maid_account_holder_, HandleMessage(message)).Times(1);
-  EXPECT_CALL(metadata_manager_service_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(maid_manager_, HandleMessage(message)).Times(1);
+  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
 
   demultiplexer_.HandleMessage(SerialiseAsString(message));
 }
 
-TEST_F(DemultiplexerTest, FUNC_MaidAccountHolderRepeat) {
-  EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(100);
-  EXPECT_CALL(metadata_manager_service_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
+TEST_F(DemultiplexerTest, FUNC_MaidManagerRepeat) {
+  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(100);
+  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
 
   for (uint16_t i(0); i < 100; ++i) {
-    nfs::Message message(GenerateValidMessage(nfs::Persona::kMaidAccountHolder));
+    nfs::Message message(GenerateValidMessage(nfs::Persona::kMaidManager));
     demultiplexer_.HandleMessage(SerialiseAsString(message));
   }
 }
 
-TEST_F(DemultiplexerTest, FUNC_MetadataManager) {
-  nfs::Message message(GenerateValidMessage(nfs::Persona::kMetadataManager));
+TEST_F(DemultiplexerTest, FUNC_DataManager) {
+  nfs::Message message(GenerateValidMessage(nfs::Persona::kDataManager));
 
-  EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(metadata_manager_service_, HandleMessage(message)).Times(1);
-  EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(data_manager_service_, HandleMessage(message)).Times(1);
+  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
 
   demultiplexer_.HandleMessage(SerialiseAsString(message));
 }
 
-TEST_F(DemultiplexerTest, FUNC_MetadataManagerRepeat) {
-  EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(metadata_manager_service_, HandleMessage(testing::_)).Times(100);
-  EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
+TEST_F(DemultiplexerTest, FUNC_DataManagerRepeat) {
+  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(100);
+  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
 
   for (uint16_t i(0); i < 100; ++i) {
-    nfs::Message message(GenerateValidMessage(nfs::Persona::kMetadataManager));
+    nfs::Message message(GenerateValidMessage(nfs::Persona::kDataManager));
     demultiplexer_.HandleMessage(SerialiseAsString(message));
   }
 }
 
-TEST_F(DemultiplexerTest, FUNC_PmidAccountHolder) {
-  nfs::Message message(GenerateValidMessage(nfs::Persona::kPmidAccountHolder));
+TEST_F(DemultiplexerTest, FUNC_PmidManager) {
+  nfs::Message message(GenerateValidMessage(nfs::Persona::kPmidManager));
 
-  EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(metadata_manager_service_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(pmid_account_holder_, HandleMessage(message)).Times(0);
-  EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(1);
+  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_manager_, HandleMessage(message)).Times(0);
+  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(1);
 
   demultiplexer_.HandleMessage(SerialiseAsString(message));
 }
 
-TEST_F(DemultiplexerTest, FUNC_PmidAccountHolderRepeat) {
-  EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(metadata_manager_service_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(100);
-  EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
+TEST_F(DemultiplexerTest, FUNC_PmidManagerRepeat) {
+  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(100);
+  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
 
   for (uint16_t i(0); i < 100; ++i) {
-    nfs::Message message(GenerateValidMessage(nfs::Persona::kPmidAccountHolder));
+    nfs::Message message(GenerateValidMessage(nfs::Persona::kPmidManager));
     demultiplexer_.HandleMessage(SerialiseAsString(message));
   }
 }
@@ -278,19 +281,19 @@ TEST_F(DemultiplexerTest, FUNC_PmidAccountHolderRepeat) {
 TEST_F(DemultiplexerTest, FUNC_DataHolder) {
   nfs::Message message(GenerateValidMessage(nfs::Persona::kDataHolder));
 
-  EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(metadata_manager_service_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(data_holder_, HandleMessage(message)).Times(1);
+  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_node_, HandleMessage(message)).Times(1);
 
   demultiplexer_.HandleMessage(SerialiseAsString(message));
 }
 
 TEST_F(DemultiplexerTest, FUNC_DataHolderRepeat) {
-  EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(metadata_manager_service_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(100);
+  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(100);
 
   for (uint16_t i(0); i < 100; ++i) {
     nfs::Message message(GenerateValidMessage(nfs::Persona::kDataHolder));
@@ -299,19 +302,19 @@ TEST_F(DemultiplexerTest, FUNC_DataHolderRepeat) {
 }
 
 TEST_F(DemultiplexerTest, FUNC_Scrambled) {
-  EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(metadata_manager_service_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
 
   demultiplexer_.HandleMessage(RandomAlphaNumericString(1 + (RandomUint32() % 100)));
 }
 
 TEST_F(DemultiplexerTest, FUNC_ScrambledRepeat) {
-  EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(metadata_manager_service_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
 
   for (uint16_t i(0); i < 100; ++i) {
     std::string scrambled_message(RandomAlphaNumericString(1 + (RandomUint32() % 100)));
@@ -320,10 +323,10 @@ TEST_F(DemultiplexerTest, FUNC_ScrambledRepeat) {
 }
 
 TEST_F(DemultiplexerTest, FUNC_EmptyMessage) {
-  EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(metadata_manager_service_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
-  EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
+  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
 
   std::string empty_message;
   demultiplexer_.HandleMessage(empty_message);
@@ -331,9 +334,9 @@ TEST_F(DemultiplexerTest, FUNC_EmptyMessage) {
 
 TEST_F(DemultiplexerTest, FUNC_ValidMessages) {
   std::vector<nfs::Message> messages;
-  messages.push_back(GenerateValidMessage(nfs::Persona::kMaidAccountHolder));
-  messages.push_back(GenerateValidMessage(nfs::Persona::kMetadataManager));
-  messages.push_back(GenerateValidMessage(nfs::Persona::kPmidAccountHolder));
+  messages.push_back(GenerateValidMessage(nfs::Persona::kMaidManager));
+  messages.push_back(GenerateValidMessage(nfs::Persona::kDataManager));
+  messages.push_back(GenerateValidMessage(nfs::Persona::kPmidManager));
   messages.push_back(GenerateValidMessage(nfs::Persona::kDataHolder));
 
   while (messages.size() > 0) {
@@ -341,25 +344,25 @@ TEST_F(DemultiplexerTest, FUNC_ValidMessages) {
     if (messages.size() > 1)
       index = RandomUint32() % messages.size();
 
-    if (messages.at(index).destination_persona() == nfs::Persona::kMaidAccountHolder)
-      EXPECT_CALL(maid_account_holder_, HandleMessage(messages.at(index))).Times(1);
+    if (messages.at(index).destination_persona() == nfs::Persona::kMaidManager)
+      EXPECT_CALL(maid_manager_, HandleMessage(messages.at(index))).Times(1);
     else
-      EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(0);
+      EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
 
-    if (messages.at(index).destination_persona() == nfs::Persona::kMetadataManager)
-      EXPECT_CALL(metadata_manager_service_, HandleMessage(messages.at(index))).Times(1);
+    if (messages.at(index).destination_persona() == nfs::Persona::kDataManager)
+      EXPECT_CALL(data_manager_service_, HandleMessage(messages.at(index))).Times(1);
     else
-      EXPECT_CALL(metadata_manager_service_, HandleMessage(testing::_)).Times(0);
+      EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
 
-    if (messages.at(index).destination_persona() == nfs::Persona::kPmidAccountHolder)
-      EXPECT_CALL(pmid_account_holder_, HandleMessage(messages.at(index))).Times(1);
+    if (messages.at(index).destination_persona() == nfs::Persona::kPmidManager)
+      EXPECT_CALL(pmid_manager_, HandleMessage(messages.at(index))).Times(1);
     else
-      EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(0);
+      EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
 
     if (messages.at(index).destination_persona() == nfs::Persona::kDataHolder)
-      EXPECT_CALL(data_holder_, HandleMessage(messages.at(index))).Times(1);
+      EXPECT_CALL(pmid_node_, HandleMessage(messages.at(index))).Times(1);
     else
-      EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(0);
+      EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
 
     demultiplexer_.HandleMessage(SerialiseAsString(messages.at(index)));
     EXPECT_TRUE(VerifyAndClearAllExpectations());
@@ -378,10 +381,10 @@ TEST_F(DemultiplexerTest, FUNC_ValidMessagesRepeat) {
                                                            expect_pah,
                                                            expect_dh));
 
-  EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(expect_mah);
-  EXPECT_CALL(metadata_manager_service_, HandleMessage(testing::_)).Times(expect_mdm);
-  EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(expect_pah);
-  EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(expect_dh);
+  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(expect_mah);
+  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(expect_mdm);
+  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(expect_pah);
+  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(expect_dh);
 
   for (auto message : messages)
     demultiplexer_.HandleMessage(SerialiseAsString(message));
@@ -400,10 +403,10 @@ TEST_F(DemultiplexerTest, FUNC_ValidMessagesParallel) {
                                                            expect_pah,
                                                            expect_dh));
 
-  EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(expect_mah);
-  EXPECT_CALL(metadata_manager_service_, HandleMessage(testing::_)).Times(expect_mdm);
-  EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(expect_pah);
-  EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(expect_dh);
+  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(expect_mah);
+  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(expect_mdm);
+  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(expect_pah);
+  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(expect_dh);
 
   std::vector<boost::thread> threads(num_messages);
   for (uint16_t i(0); i < num_messages; ++i) {
@@ -428,10 +431,10 @@ TEST_F(DemultiplexerTest, FUNC_MixedMessagesRepeat) {
                                                            expect_pah,
                                                            expect_dh));
 
-  EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(expect_mah);
-  EXPECT_CALL(metadata_manager_service_, HandleMessage(testing::_)).Times(expect_mdm);
-  EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(expect_pah);
-  EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(expect_dh);
+  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(expect_mah);
+  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(expect_mdm);
+  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(expect_pah);
+  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(expect_dh);
 
   for (uint16_t i(0); i < num_messages; ++i) {
     if (i % 13 == 0 || i % 19 == 0) {
@@ -455,10 +458,10 @@ TEST_F(DemultiplexerTest, FUNC_MixedMessagesParallel) {
                                                            expect_pah,
                                                            expect_dh));
 
-  EXPECT_CALL(maid_account_holder_, HandleMessage(testing::_)).Times(expect_mah);
-  EXPECT_CALL(metadata_manager_service_, HandleMessage(testing::_)).Times(expect_mdm);
-  EXPECT_CALL(pmid_account_holder_, HandleMessage(testing::_)).Times(expect_pah);
-  EXPECT_CALL(data_holder_, HandleMessage(testing::_)).Times(expect_dh);
+  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(expect_mah);
+  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(expect_mdm);
+  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(expect_pah);
+  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(expect_dh);
 
   std::vector<boost::thread> threads(num_messages);
   std::vector<boost::thread> bad_threads;

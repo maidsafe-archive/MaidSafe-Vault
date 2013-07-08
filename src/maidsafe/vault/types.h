@@ -1,13 +1,17 @@
-/***************************************************************************************************
- *  Copyright 2012 MaidSafe.net limited                                                            *
- *                                                                                                 *
- *  The following source code is property of MaidSafe.net limited and is not meant for external    *
- *  use.  The use of this code is governed by the licence file licence.txt found in the root of    *
- *  this directory and also on www.maidsafe.net.                                                   *
- *                                                                                                 *
- *  You are not free to copy, amend or otherwise use this source code without the explicit         *
- *  written permission of the board of directors of MaidSafe.net.                                  *
- **************************************************************************************************/
+/* Copyright 2012 MaidSafe.net limited
+
+This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
+and The General Public License (GPL), version 3. By contributing code to this project You agree to
+the terms laid out in the MaidSafe Contributor Agreement, version 1.0, found in the root directory
+of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also available at:
+
+http://www.novinet.com/license
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is
+distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the
+License.
+*/
 
 #ifndef MAIDSAFE_VAULT_TYPES_H_
 #define MAIDSAFE_VAULT_TYPES_H_
@@ -34,42 +38,36 @@ class MaidAccount;
 class PmidAccount;
 
 typedef nfs::NetworkFileSystem<
-    nfs::MaidAccountHolderPutPolicy,
-    nfs::MaidAccountHolderGetPolicy,
-    nfs::MaidAccountHolderDeletePolicy,
-    MaidAccountHolderPostPolicy> MaidAccountHolderNfs;
+    nfs::MaidManagerPutPolicy,
+    nfs::MaidManagerGetPolicy,
+    nfs::MaidManagerDeletePolicy,
+    MaidManagerPostPolicy> MaidManagerNfs;
 
 typedef nfs::NetworkFileSystem<
-    nfs::MetadataManagerPutPolicy,
-    nfs::MetadataManagerGetPolicy,
-    nfs::MetadataManagerDeletePolicy,
-    MetadataManagerPostPolicy> MetadataManagerNfs;
+    nfs::DataManagerPutPolicy,
+    nfs::DataManagerGetPolicy,
+    nfs::DataManagerDeletePolicy,
+    DataManagerPostPolicy> DataManagerNfs;
 
 typedef nfs::NetworkFileSystem<
-    nfs::MetadataManagerPutPolicy,
-    nfs::MetadataManagerGetPolicy,
-    nfs::MetadataManagerDeletePolicy,
-    MetadataManagerPostPolicy> MetadataManagerNfs;
+    nfs::VersionManagerPutPolicy,
+    nfs::VersionManagerGetPolicy,
+    nfs::VersionManagerDeletePolicy,
+    VersionManagerPostPolicy> VersionManagerNfs;
 
 typedef nfs::NetworkFileSystem<
-    nfs::StructuredDataManagerPutPolicy,
-    nfs::StructuredDataManagerGetPolicy,
-    nfs::StructuredDataManagerDeletePolicy,
-    StructuredDataManagerPostPolicy> StructuredDataManagerNfs;
-
-typedef nfs::NetworkFileSystem<
-    nfs::PmidAccountHolderPutPolicy,
-    nfs::PmidAccountHolderGetPolicy,
-    nfs::PmidAccountHolderDeletePolicy,
-    PmidAccountHolderPostPolicy> PmidAccountHolderNfs;
+    nfs::PmidManagerPutPolicy,
+    nfs::PmidManagerGetPolicy,
+    nfs::PmidManagerDeletePolicy,
+    PmidManagerPostPolicy> PmidManagerNfs;
 
 // TODO(dirvine) BEFORE_RELEASE this is a hack to create a type for the dataholder, the proper
 // implmentation is required ,,,,,,,,,,,,,,,,,,,,,
 typedef nfs::NetworkFileSystem<
-    nfs::PmidAccountHolderPutPolicy,
-    nfs::PmidAccountHolderGetPolicy,
-    nfs::PmidAccountHolderDeletePolicy,
-    PmidAccountHolderPostPolicy> DataHolderNfs;
+    nfs::PmidManagerPutPolicy,
+    nfs::PmidManagerGetPolicy,
+    nfs::PmidManagerDeletePolicy,
+    PmidManagerPostPolicy> PmidNodeNfs;
 
 typedef passport::PublicMaid::name_type MaidName;
 typedef passport::PublicPmid::name_type PmidName;

@@ -1,16 +1,19 @@
-/*******************************************************************************
-*  Copyright 2012 maidsafe.net limited                                        *
-*                                                                             *
-*  The following source code is property of maidsafe.net limited and is not   *
-*  meant for external use.  The use of this code is governed by the licence   *
-*  file licence.txt found in the root of this directory and also on           *
-*  www.maidsafe.net.                                                          *
-*                                                                             *
-*  You are not free to copy, amend or otherwise use this source code without  *
-*  the explicit written permission of the board of directors of maidsafe.net. *
-******************************************************************************/
+/* Copyright 2012 MaidSafe.net limited
 
-#include "maidsafe/vault/data_holder/data_holder_service.h"
+This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
+and The General Public License (GPL), version 3. By contributing code to this project You agree to
+the terms laid out in the MaidSafe Contributor Agreement, version 1.0, found in the root directory
+of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also available at:
+
+http://www.novinet.com/license
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is
+distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the
+License.
+*/
+
+#include "maidsafe/vault/pmid_node/service.h"
 
 #include <memory>
 
@@ -184,50 +187,50 @@ class DataHolderTest : public testing::Test {
       : vault_root_directory_(maidsafe::test::CreateTestPath("MaidSafe_Test_DataHolder")),
         passport_(),
         routing_(),
-        data_holder_() {}
+        pmid_node_() {}
 
  protected:
   void SetUp() {
     passport_.CreateFobs();
     routing_.reset(new routing::Routing(passport_.Get<passport::Maid>(false)));
-    data_holder_.reset(new DataHolderService(passport_.Get<passport::Pmid>(false),
+    pmid_node_.reset(new PmidNodeService(passport_.Get<passport::Pmid>(false),
                                              *routing_,
                                              *vault_root_directory_));
   }
 
   void HandlePutMessage(const nfs::Message& message,
                         const routing::ReplyFunctor& reply_functor) {
-    data_holder_->HandlePutMessage<T>(message, reply_functor);
+    pmid_node_->HandlePutMessage<T>(message, reply_functor);
   }
 
   void HandleGetMessage(const nfs::Message& message,
                         const routing::ReplyFunctor& reply_functor) {
-    data_holder_->HandleGetMessage<T>(message, reply_functor);
+    pmid_node_->HandleGetMessage<T>(message, reply_functor);
   }
 
   void HandleDeleteMessage(const nfs::Message& message,
                            const routing::ReplyFunctor& reply_functor) {
-    data_holder_->HandleDeleteMessage<T>(message, reply_functor);
+    pmid_node_->HandleDeleteMessage<T>(message, reply_functor);
   }
 
   maidsafe::test::TestPath vault_root_directory_;
   passport::Passport passport_;
   std::unique_ptr<routing::Routing> routing_;
-  std::unique_ptr<DataHolderService> data_holder_;
+  std::unique_ptr<PmidNodeService> pmid_node_;
 };
 
 TYPED_TEST_CASE_P(DataHolderTest);
 
 TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
-  nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
   nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
                           name_and_content.first,
                           name_and_content.second,
                           nfs::MessageAction::kPut);
-  nfs::Message message(nfs::Persona::kDataHolder, source, data);
+  nfs::Message message(nfs::Persona::kPmidNode, source, data);
   std::string retrieved;
-  for (uint32_t i = 0; i != DataHolderService::kPutRequestsRequired; ++i)
+  for (uint32_t i = 0; i != PmidNodeService::kPutRequestsRequired; ++i)
     this->HandlePutMessage(message, [&](const std::string&) {});
   this->HandleGetMessage(message, [&](const std::string& result) {
                                       retrieved = result;
@@ -236,13 +239,13 @@ TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
 }
 
 TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
-  nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
   nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
                           name_and_content.first,
                           name_and_content.second,
                           nfs::MessageAction::kGet);
-  nfs::Message message(nfs::Persona::kDataHolder, source, data);
+  nfs::Message message(nfs::Persona::kPmidNode, source, data);
   std::string retrieved;
   this->HandleGetMessage(message, [&](const std::string& result) {
                                       retrieved = result;
@@ -251,15 +254,15 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
 }
 
 TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
-  nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
   nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
                           name_and_content.first,
                           name_and_content.second,
                           nfs::MessageAction::kPut);
-  nfs::Message message(nfs::Persona::kDataHolder, source, data);
+  nfs::Message message(nfs::Persona::kPmidNode, source, data);
   std::string retrieved;
-  for (uint32_t i = 0; i != DataHolderService::kPutRequestsRequired; ++i)
+  for (uint32_t i = 0; i != PmidNodeService::kPutRequestsRequired; ++i)
     this->HandlePutMessage(message, [&](const std::string&) {});
   this->HandleGetMessage(message, [&](const std::string& result) {
                                       retrieved = result;
@@ -270,8 +273,8 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
                                  name_and_content.first,
                                  name_and_content.second,
                                  nfs::MessageAction::kDelete);
-  nfs::Message delete_message(nfs::Persona::kDataHolder, source, delete_data);
-  for (uint32_t i = 0; i != DataHolderService::kDeleteRequestsRequired; ++i)
+  nfs::Message delete_message(nfs::Persona::kPmidNode, source, delete_data);
+  for (uint32_t i = 0; i != PmidNodeService::kDeleteRequestsRequired; ++i)
     this->HandleDeleteMessage(delete_message, [&](const std::string& result) {
                                                   retrieved = result;
                                               });
@@ -291,7 +294,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
   NameContentContainer name_content_pairs;
 
   for (uint32_t i = 0; i != events; ++i) {
-    nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+    nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
     std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
     name_content_pairs.push_back(name_and_content);
 
@@ -304,9 +307,9 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
                                   name_content_pair.first,
                                   NonEmptyString("A"),
                                   nfs::MessageAction::kDelete);
-          nfs::Message message(nfs::Persona::kDataHolder, source, data);
+          nfs::Message message(nfs::Persona::kPmidNode, source, data);
           future_deletes.push_back(std::async([this, message] {
-              for (uint32_t i = 0; i != DataHolderService::kDeleteRequestsRequired; ++i)
+              for (uint32_t i = 0; i != PmidNodeService::kDeleteRequestsRequired; ++i)
                   this->HandleDeleteMessage(message, [&](const std::string& result) {
                                                         assert(!result.empty());
                                                         static_cast<void>(result);
@@ -317,9 +320,9 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
                                   name_and_content.first,
                                   NonEmptyString("A"),
                                   nfs::MessageAction::kDelete);
-          nfs::Message message(nfs::Persona::kDataHolder, source, data);
+          nfs::Message message(nfs::Persona::kPmidNode, source, data);
           future_deletes.push_back(std::async([this, message] {
-              for (uint32_t i = 0; i != DataHolderService::kDeleteRequestsRequired; ++i)
+              for (uint32_t i = 0; i != PmidNodeService::kDeleteRequestsRequired; ++i)
                   this->HandleDeleteMessage(message, [&](const std::string& result) {
                                                         assert(!result.empty());
                                                         static_cast<void>(result);
@@ -333,9 +336,9 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
                                 name_and_content.first,
                                 name_and_content.second,
                                 nfs::MessageAction::kPut);
-        nfs::Message message(nfs::Persona::kDataHolder, source, data);
+        nfs::Message message(nfs::Persona::kPmidNode, source, data);
         future_puts.push_back(std::async([this, message] {
-            for (uint32_t i = 0; i != DataHolderService::kPutRequestsRequired; ++i)
+            for (uint32_t i = 0; i != PmidNodeService::kPutRequestsRequired; ++i)
                this->HandlePutMessage(message, [&](const std::string& result) {
                                                   assert(!result.empty());
                                                   static_cast<void>(result);
@@ -350,7 +353,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
                                   name_content_pair.first,
                                   NonEmptyString("A"),
                                   nfs::MessageAction::kGet);
-          nfs::Message message(nfs::Persona::kDataHolder, source, data);
+          nfs::Message message(nfs::Persona::kPmidNode, source, data);
           future_gets.push_back(std::async([this, message, name_content_pair] {
                 this->HandleGetMessage(message,
                                        [&](const std::string& result)->void {
@@ -367,7 +370,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
                                   name_and_content.first,
                                   NonEmptyString("A"),
                                   nfs::MessageAction::kGet);
-          nfs::Message message(nfs::Persona::kDataHolder, source, data);
+          nfs::Message message(nfs::Persona::kPmidNode, source, data);
           future_gets.push_back(std::async([this, message, name_and_content] {
                 this->HandleGetMessage(message,
                                        [&](const std::string& result)->void {
@@ -438,24 +441,24 @@ template<class T>
 class DataHolderCacheableTest : public DataHolderTest<T> {
  protected:
   NonEmptyString GetFromCache(nfs::Message& message) {
-    return this->data_holder_->template GetFromCache<T>(message);
+    return this->pmid_node_->template GetFromCache<T>(message);
   }
 
   void StoreInCache(const nfs::Message& message) {
-    this->data_holder_->template StoreInCache<T>(message);
+    this->pmid_node_->template StoreInCache<T>(message);
   }
 };
 
 TYPED_TEST_CASE_P(DataHolderCacheableTest);
 
 TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
-  nfs::PersonaId source(nfs::Persona::kPmidAccountHolder, NodeId(NodeId::kRandomId));
+  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
   nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
                           name_and_content.first,
                           name_and_content.second,
                           nfs::MessageAction::kPut);
-  nfs::Message message(nfs::Persona::kDataHolder, source, data);
+  nfs::Message message(nfs::Persona::kPmidNode, source, data);
   EXPECT_THROW(this->GetFromCache(message), maidsafe_error);
   this->StoreInCache(message);
   EXPECT_EQ(message.data().content, this->GetFromCache(message));

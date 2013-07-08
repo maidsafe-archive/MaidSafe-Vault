@@ -1,13 +1,17 @@
-/***************************************************************************************************
- *  Copyright 2012 MaidSafe.net limited                                                            *
- *                                                                                                 *
- *  The following source code is property of MaidSafe.net limited and is not meant for external    *
- *  use.  The use of this code is governed by the licence file licence.txt found in the root of    *
- *  this directory and also on www.maidsafe.net.                                                   *
- *                                                                                                 *
- *  You are not free to copy, amend or otherwise use this source code without the explicit         *
- *  written permission of the board of directors of MaidSafe.net.                                  *
- **************************************************************************************************/
+/* Copyright 2012 MaidSafe.net limited
+
+This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
+and The General Public License (GPL), version 3. By contributing code to this project You agree to
+the terms laid out in the MaidSafe Contributor Agreement, version 1.0, found in the root directory
+of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also available at:
+
+http://www.novinet.com/license
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is
+distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the
+License.
+*/
 
 #ifndef MAIDSAFE_VAULT_UTILS_H_
 #define MAIDSAFE_VAULT_UTILS_H_
@@ -26,9 +30,8 @@
 #include "maidsafe/nfs/message.h"
 
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/metadata_manager/metadata_manager.h"
-#include "maidsafe/vault/metadata_manager/metadata_value.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_manager.h"
+#include "maidsafe/vault/data_manager/data_manager.h"
+#include "maidsafe/vault/version_manager/version_manager.h"
 
 
 namespace maidsafe {
@@ -87,13 +90,13 @@ CheckHoldersResult CheckHolders(const routing::MatrixChange& matrix_change,
                                 const NodeId& target);
 
 template<typename Message>
-inline bool FromMaidAccountHolder(const Message& message);
+inline bool FromMaidManager(const Message& message);
 
 template<typename Message>
-inline bool FromMetadataManager(const Message& message);
+inline bool FromDataManager(const Message& message);
 
 template<typename Message>
-inline bool FromPmidAccountHolder(const Message& message);
+inline bool FromPmidManager(const Message& message);
 
 template<typename Message>
 inline bool FromDataHolder(const Message& message);
@@ -117,7 +120,7 @@ template<typename Message>
 inline bool FromDataGetter(const Message& message);
 
 template<typename Message>
-inline bool FromStructuredDataManager(const nfs::Message& message);
+inline bool FromVersionManager(const nfs::Message& message);
 
 
 template<typename Persona>
@@ -128,19 +131,19 @@ typename Persona::DbKey GetKeyFromMessage(const nfs::Message& message) {
 }
 
 template<>
-typename StructuredDataManager::DbKey
-         GetKeyFromMessage<StructuredDataManager>(const nfs::Message& message);
+typename VersionManager::DbKey
+         GetKeyFromMessage<VersionManager>(const nfs::Message& message);
 
 template<typename PersonaTypes>
 typename PersonaTypes::RecordName GetRecordName(const typename PersonaTypes::DbKey& db_key);
 
 template<>
-typename MetadataManager::RecordName GetRecordName<MetadataManager>(
-    const typename MetadataManager::DbKey& db_key);
+typename DataManager::RecordName GetRecordName<DataManager>(
+    const typename DataManager::DbKey& db_key);
 
 template<>
-typename StructuredDataManager::RecordName GetRecordName<StructuredDataManager>(
-    const typename StructuredDataManager::DbKey& db_key);
+typename VersionManager::RecordName GetRecordName<VersionManager>(
+    const typename VersionManager::DbKey& db_key);
 
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path);
 
