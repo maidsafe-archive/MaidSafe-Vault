@@ -59,6 +59,7 @@ inline bool ForThisPersona(const Message& message) {
 
 }  // unnamed namespace
 
+
 PmidNodeService::PmidNodeService(const passport::Pmid& pmid,
                                      routing::Routing& routing,
                                      const fs::path& vault_root_dir)
@@ -77,6 +78,12 @@ PmidNodeService::PmidNodeService(const passport::Pmid& pmid,
       accumulator_(),
       nfs_(routing_, pmid) {
 //  nfs_.GetElementList();  // TODO (Fraser) BEFORE_RELEASE Implementation needed
+}
+
+void PmidNodeService::SendAccountRequest() {
+}
+
+void PmidNodeService::ApplyAccountTransfer() {
 }
 
 void PmidNodeService::ValidatePutSender(const nfs::Message& message) const {

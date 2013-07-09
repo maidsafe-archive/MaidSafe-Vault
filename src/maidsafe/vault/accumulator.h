@@ -40,6 +40,8 @@ class AccumulatorTest_BEH_SetHandled_Test;
 class AccumulatorTest_BEH_FindHandled_Test;
 }  // namespace test
 
+class PmidNodeService;
+
 template<typename Name>
 class Accumulator {
  public:
@@ -108,6 +110,7 @@ class Accumulator {
   friend class test::AccumulatorTest_BEH_CheckHandled_Test;
   friend class test::AccumulatorTest_BEH_SetHandled_Test;
   friend class test::AccumulatorTest_BEH_FindHandled_Test;
+  friend class PmidNodeService;
 
  private:
   Accumulator(const Accumulator&);

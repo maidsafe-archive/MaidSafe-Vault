@@ -80,6 +80,12 @@ class PmidNodeService {
   void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  template<typename Data>
+  void HandleAccountTransfer(const nfs::Message& message,
+                             const routing::ReplyFunctor& reply_functor);
+
+  void SendAccountRequest();
+  void ApplyAccountTransfer();
 
   void ValidatePutSender(const nfs::Message& message) const;
   void ValidateGetSender(const nfs::Message& message) const;

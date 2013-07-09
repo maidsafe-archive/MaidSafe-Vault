@@ -22,6 +22,7 @@ License.
 #include "maidsafe/common/log.h"
 
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 
 
 namespace maidsafe {
@@ -45,6 +46,8 @@ void PmidNodeService::HandleMessage(const nfs::Message& message,
       return HandleGetMessage<Data>(message, reply_functor);
     case nfs::MessageAction::kDelete:
       return HandleDeleteMessage<Data>(message, reply_functor);
+    case nfs::MessageAction::kAccountTransfer:
+      return HandleAccountTransfer<Data>(message, reply_functor);
     default: {
       reply = nfs::Reply(VaultErrors::operation_not_supported, message.Serialise().data);
       std::lock_guard<std::mutex> lock(accumulator_mutex_);
@@ -55,8 +58,60 @@ void PmidNodeService::HandleMessage(const nfs::Message& message,
 }
 
 template<typename Data>
+void PmidNodeService::HandleAccountTransfer(const nfs::Message& message,
+                                            const routing::ReplyFunctor& reply_functor) {
+  protobuf::PmidAccountResponse pmid_account_response;
+  pmid_account_response.ParseFromString(message.data().content.string());
+  {
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
+    size_t total(std::count_if(
+                     accumulator_.pending_requests_.begin(),
+                     accumulator_.pending_requests_.end(),
+                     [](const Accumulator<DataNameVariant>::PendingRequest& pending_request) {
+                       return pending_request.msg.data().action ==
+                                  nfs::MessageAction::kAccountTransfer;
+                     }));
+    assert((total < routing::Parameters::node_group_size) && "Invalid number of account transfer");
+    if (total < routing::Parameters::node_group_size / 2) {
+      Accumulator<DataNameVariant>::PendingRequest
+          pending_request(message,
+                          reply_functor,
+                          nfs::Reply(maidsafe_error(CommonErrors::success)));
+      accumulator_.pending_requests_.push_back(pending_request);
+      return;
+    } else {
+      size_t has_count(std::count_if(
+                         accumulator_.pending_requests_.begin(),
+                         accumulator_.pending_requests_.end(),
+                         [](const Accumulator<DataNameVariant>::PendingRequest& pending_request) {
+                           protobuf::PmidAccountResponse account_response;
+                           account_response.ParseFromString(pending_request.msg.data().content.string());
+                           return (pending_request.msg.data().action ==
+                                       nfs::MessageAction::kAccountTransfer) &&
+                                   (account_response.status() == static_cast<int>(CommonErrors::success));
+                       }));
+      total++;
+      if (pmid_account_response.status() == static_cast<int>(CommonErrors::success))
+        has_count++;
+      if ((static_cast<int>(total) >= (routing::Parameters::node_group_size / 2 + 1)) &&
+           has_count >= routing::Parameters::node_group_size) {
+        ApplyAccountTransfer();
+      } else if (total == routing::Parameters::node_group_size ) {
+        SendAccountRequest();
+      } else {
+        Accumulator<DataNameVariant>::PendingRequest
+            pending_request(message,
+                            reply_functor,
+                            nfs::Reply(maidsafe_error(CommonErrors::success)));
+        accumulator_.pending_requests_.push_back(pending_request);
+      }
+    }
+  }
+}
+
+template<typename Data>
 void PmidNodeService::HandlePutMessage(const nfs::Message& message,
-                                         const routing::ReplyFunctor& reply_functor) {
+                                       const routing::ReplyFunctor& reply_functor) {
   try {
 #ifndef TESTING
     ValidatePutSender(message);
