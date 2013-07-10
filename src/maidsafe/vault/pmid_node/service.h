@@ -85,7 +85,7 @@ class PmidNodeService {
                              const routing::ReplyFunctor& reply_functor);
 
   void SendAccountRequest();
-  void ApplyAccountTransfer();
+  void ApplyAccountTransfer(const size_t& total_pmidmgrs, const size_t& pmidmagsr_with_account);
 
   void ValidatePutSender(const nfs::Message& message) const;
   void ValidateGetSender(const nfs::Message& message) const;

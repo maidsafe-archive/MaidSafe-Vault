@@ -83,7 +83,30 @@ PmidNodeService::PmidNodeService(const passport::Pmid& pmid,
 void PmidNodeService::SendAccountRequest() {
 }
 
-void PmidNodeService::ApplyAccountTransfer() {
+void PmidNodeService::ApplyAccountTransfer(const size_t& /*total_pmidmgrs*/,
+                                           const size_t& /*pmidmagsr_with_account*/) {
+  struct ChunkInfo {
+    ChunkInfo(const Identity& hash_in, const Identity& size_in) :
+        hash(hash_in), size(size_in) {}
+    Identity hash;
+    uint64_t size;
+  };
+  std::map<Identity, std::vector<ChunkInfo>> pmid_account_responses;
+  protobuf::PmidAccountResponse pmid_account_response;
+  protobuf::PmidAccountDetails pmid_account_details;
+  protobuf::PmidAccountDbEntry pmid_account_entry;
+  for (auto pending_request : accumulator_.pending_requests_) {
+    if (static_cast<nfs::MessageAction>(pending_request.msg.data().action) == nfs::MessageAction::kAccountTransfer) {
+      pmid_account_response.ParseFromString(pending_request.msg.data().content.string());
+      pmid_account_details.ParseFromString(pmid_account_response.pmid_account().serialised_account_details());
+      for (int index(0); index < pmid_account_details.db_entry_size(); ++index) {
+        ChunkInfo chunk_info(pmid_account_details.db_entry(index).name(),
+                             pmid_account_details.db_entry(index).value().size());
+        pmid_account_responses[]
+      }
+      pmid_account_responses[pending_request.msg.data().originator] = pmid_account_response;
+    }
+  }
 }
 
 void PmidNodeService::ValidatePutSender(const nfs::Message& message) const {

@@ -60,6 +60,7 @@ void PmidNodeService::HandleMessage(const nfs::Message& message,
 template<typename Data>
 void PmidNodeService::HandleAccountTransfer(const nfs::Message& message,
                                             const routing::ReplyFunctor& reply_functor) {
+  bool send_account_transfer(false);
   protobuf::PmidAccountResponse pmid_account_response;
   pmid_account_response.ParseFromString(message.data().content.string());
   {
@@ -80,7 +81,7 @@ void PmidNodeService::HandleAccountTransfer(const nfs::Message& message,
       accumulator_.pending_requests_.push_back(pending_request);
       return;
     } else {
-      size_t has_count(std::count_if(
+      size_t has_account(std::count_if(
                          accumulator_.pending_requests_.begin(),
                          accumulator_.pending_requests_.end(),
                          [](const Accumulator<DataNameVariant>::PendingRequest& pending_request) {
@@ -92,12 +93,20 @@ void PmidNodeService::HandleAccountTransfer(const nfs::Message& message,
                        }));
       total++;
       if (pmid_account_response.status() == static_cast<int>(CommonErrors::success))
-        has_count++;
+        has_account++;
       if ((static_cast<int>(total) >= (routing::Parameters::node_group_size / 2 + 1)) &&
-           has_count >= routing::Parameters::node_group_size) {
-        ApplyAccountTransfer();
-      } else if (total == routing::Parameters::node_group_size ) {
-        SendAccountRequest();
+           has_account >= routing::Parameters::node_group_size) {
+        ApplyAccountTransfer(total, has_account);
+      } else if ((static_cast<uint16_t>(total) == routing::Parameters::node_group_size) ||
+                 (static_cast<uint16_t>(has_account) == routing::Parameters::node_group_size - 1)) {
+        send_account_transfer = true;
+        accumulator_.pending_requests_.erase(
+            std::remove_if(accumulator_.pending_requests_.begin(),
+                           accumulator_.pending_requests_.end(),
+                           [](const Accumulator<DataNameVariant>::PendingRequest& pending_request) {
+                             return pending_request.msg.data().action ==
+                                        nfs::MessageAction::kAccountTransfer;
+                           }), accumulator_.pending_requests_.end());
       } else {
         Accumulator<DataNameVariant>::PendingRequest
             pending_request(message,
@@ -107,6 +116,8 @@ void PmidNodeService::HandleAccountTransfer(const nfs::Message& message,
       }
     }
   }
+  if (send_account_transfer)
+    SendAccountRequest();
 }
 
 template<typename Data>
