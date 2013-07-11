@@ -61,6 +61,7 @@ template<typename Data>
 void PmidNodeService::HandleAccountTransfer(const nfs::Message& message,
                                             const routing::ReplyFunctor& reply_functor) {
   bool send_account_transfer(false);
+  std::map<Identity, u_int16_t> expected_chunks;
   protobuf::PmidAccountResponse pmid_account_response;
   pmid_account_response.ParseFromString(message.data().content.string());
   {
@@ -96,7 +97,7 @@ void PmidNodeService::HandleAccountTransfer(const nfs::Message& message,
         has_account++;
       if ((static_cast<int>(total) >= (routing::Parameters::node_group_size / 2 + 1)) &&
            has_account >= routing::Parameters::node_group_size) {
-        ApplyAccountTransfer(total, has_account);
+        ApplyAccountTransfer(total, has_account, expected_chunks);
       } else if ((static_cast<uint16_t>(total) == routing::Parameters::node_group_size) ||
                  (static_cast<uint16_t>(has_account) == routing::Parameters::node_group_size - 1)) {
         send_account_transfer = true;
@@ -118,6 +119,8 @@ void PmidNodeService::HandleAccountTransfer(const nfs::Message& message,
   }
   if (send_account_transfer)
     SendAccountRequest();
+  else
+    UpdateLocalStorage(expected_chunks);
 }
 
 template<typename Data>

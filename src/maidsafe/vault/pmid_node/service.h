@@ -85,7 +85,15 @@ class PmidNodeService {
                              const routing::ReplyFunctor& reply_functor);
 
   void SendAccountRequest();
-  void ApplyAccountTransfer(const size_t& total_pmidmgrs, const size_t& pmidmagsr_with_account);
+  void ApplyAccountTransfer(const size_t& total_pmidmgrs,
+                            const size_t& pmidmagsr_with_account,
+                            std::map<Identity, uint16_t>& chunks);
+  bool ChunkExists(const Identity& key);
+  void UpdateLocalStorage(const std::map<Identity, uint16_t>& expected_files);
+  void ApplyUpdateLocalStorage(const std::vector<Identity>& to_be_deleted,
+                               const std::vector<Identity>& to_be_retrieved);
+  std::vector<Identity> RetrieveAllFiles();
+  void RetrieveFileFromNetwork(const Identity& /*file_id*/);
 
   void ValidatePutSender(const nfs::Message& message) const;
   void ValidateGetSender(const nfs::Message& message) const;

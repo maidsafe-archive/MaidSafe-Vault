@@ -83,30 +83,94 @@ PmidNodeService::PmidNodeService(const passport::Pmid& pmid,
 void PmidNodeService::SendAccountRequest() {
 }
 
-void PmidNodeService::ApplyAccountTransfer(const size_t& /*total_pmidmgrs*/,
-                                           const size_t& /*pmidmagsr_with_account*/) {
+void PmidNodeService::ApplyAccountTransfer(const size_t& total_pmidmgrs,
+                                           const size_t& pmidmgrs_with_account,
+                                           std::map<Identity, uint16_t>& chunks) {
   struct ChunkInfo {
-    ChunkInfo(const Identity& hash_in, const Identity& size_in) :
+    ChunkInfo(const Identity& hash_in, const uint64_t& size_in) :
         hash(hash_in), size(size_in) {}
     Identity hash;
     uint64_t size;
   };
-  std::map<Identity, std::vector<ChunkInfo>> pmid_account_responses;
+
+  struct ChunkInfoComparison {
+    bool operator() (const ChunkInfo& lhs, const ChunkInfo& rhs) const {
+      return lhs.hash.string() < rhs.hash.string();
+    }
+  };
+
+  std::map<ChunkInfo, uint16_t, ChunkInfoComparison> expected_chunks;
   protobuf::PmidAccountResponse pmid_account_response;
   protobuf::PmidAccountDetails pmid_account_details;
-  protobuf::PmidAccountDbEntry pmid_account_entry;
+
   for (auto pending_request : accumulator_.pending_requests_) {
     if (static_cast<nfs::MessageAction>(pending_request.msg.data().action) == nfs::MessageAction::kAccountTransfer) {
+      protobuf::PmidAccountResponse account_response;
+      account_response.ParseFromString(pending_request.msg.data().content.string());
       pmid_account_response.ParseFromString(pending_request.msg.data().content.string());
       pmid_account_details.ParseFromString(pmid_account_response.pmid_account().serialised_account_details());
-      for (int index(0); index < pmid_account_details.db_entry_size(); ++index) {
-        ChunkInfo chunk_info(pmid_account_details.db_entry(index).name(),
-                             pmid_account_details.db_entry(index).value().size());
-        pmid_account_responses[]
+      if (account_response.status() == static_cast<int>(CommonErrors::success)) {
+        for (int index(0); index < pmid_account_details.db_entry_size(); ++index) {
+          ChunkInfo chunk_info(Identity(pmid_account_details.db_entry(index).name()),
+                               pmid_account_details.db_entry(index).value().size());
+          expected_chunks[chunk_info]++;
+        }
       }
-      pmid_account_responses[pending_request.msg.data().originator] = pmid_account_response;
     }
   }
+  for (auto iter(expected_chunks.begin()); iter != expected_chunks.end(); ++iter) {
+    if ((iter->second >= routing::Parameters::node_group_size / 2 + 1) ||
+        ((iter->second == routing::Parameters::node_group_size / 2)
+         && (total_pmidmgrs > pmidmgrs_with_account))) {
+      chunks[iter->first.hash] = iter->second;
+    }
+  }
+}
+
+bool PmidNodeService::ChunkExists(const Identity& /*key*/) {
+  return true;
+}
+
+void PmidNodeService::UpdateLocalStorage(const std::map<Identity, uint16_t>& expected_files) {
+  std::vector<Identity> existing_files(RetrieveAllFiles());
+  std::vector<Identity> to_be_deleted, to_be_retrieved;
+  for (auto hash : existing_files) {
+    if (std::find_if(expected_files.begin(),
+                     expected_files.end(),
+                     [&hash](const std::pair<Identity, bool>& expected) {
+                       return expected.first == hash;
+                     }) == expected_files.end()) {
+      to_be_deleted.push_back(hash);
+    }
+  }
+  for (auto iter(expected_files.begin()); iter != expected_files.end(); ++iter) {
+    if ((std::find_if(existing_files.begin(),
+                     existing_files.end(),
+                     [&](const Identity& existing) {
+                       return existing == iter->first;
+                     }) == existing_files.end()) &&
+        (iter->second >= routing::Parameters::node_group_size / 2 + 1)) {
+      to_be_retrieved.push_back(iter->first);
+    }
+  }
+  ApplyUpdateLocalStorage(to_be_deleted, to_be_retrieved);
+}
+
+void PmidNodeService::ApplyUpdateLocalStorage(const std::vector<Identity>& /*to_be_deleted*/,
+                                              const std::vector<Identity>& to_be_retrieved) {
+//  for (auto file : to_be_deleted) {
+//    // permanent_data_store_.Delete(file);
+//  }
+  for (auto file : to_be_retrieved) {
+    RetrieveFileFromNetwork(file);
+  }
+}
+
+void PmidNodeService::RetrieveFileFromNetwork(const Identity& /*file_id*/) {
+}
+
+std::vector<Identity> PmidNodeService::RetrieveAllFiles() {
+  return std::vector<Identity>();
 }
 
 void PmidNodeService::ValidatePutSender(const nfs::Message& message) const {
