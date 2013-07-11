@@ -33,6 +33,7 @@ namespace nfs {
 
 template<>
 struct PersonaTypes<Persona::kVersionManager> {
+  PersonaTypes<Persona::kVersionManager>();
   typedef DataNameVariant RecordName;
   typedef ::maidsafe::vault::VersionManagerKey DbKey;
   typedef StructuredDataVersions DbValue;

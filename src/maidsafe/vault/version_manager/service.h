@@ -24,6 +24,7 @@ License.
 #include "maidsafe/common/types.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
+#include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/nfs/persona_id.h"
@@ -84,7 +85,7 @@ class VersionManagerService {
   const NodeId kThisNodeId_;
   Sync<VersionManagerMergePolicy> sync_;
   VersionManagerNfs nfs_;
-  DataBaseMerge<VersionManagerKey, VersionManagerUnresolvedEntry, ManagerDb<VersionManager>>  database_merge_;
+  DataBaseMerge<VersionManagerKey, StructuredDataVersions, ManagerDb<VersionManager>>  database_merge_;
 };
 
 }  // namespace vault
