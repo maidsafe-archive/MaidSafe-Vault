@@ -32,6 +32,7 @@ License.
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/database_merge.h"
 #include "maidsafe/vault/version_manager/version_manager.h"
 #include "maidsafe/vault/version_manager/merge_policy.h"
 #include "maidsafe/vault/manager_db.h"
@@ -83,6 +84,7 @@ class VersionManagerService {
   const NodeId kThisNodeId_;
   Sync<VersionManagerMergePolicy> sync_;
   VersionManagerNfs nfs_;
+  DataBaseMerge<VersionManagerKey, VersionManagerUnresolvedEntry, ManagerDb<VersionManager>>  database_merge_;
 };
 
 }  // namespace vault

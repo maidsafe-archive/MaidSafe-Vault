@@ -83,7 +83,8 @@ VersionManagerService::VersionManagerService(const passport::Pmid& pmid,
       version_manager_db_(path),
       kThisNodeId_(routing_.kNodeId()),
       sync_(&version_manager_db_, kThisNodeId_),
-      nfs_(routing_, pmid) {}
+      nfs_(routing_, pmid),
+      database_merge_() {}
 
 
 void VersionManagerService::ValidateClientSender(const nfs::Message& message) const {
