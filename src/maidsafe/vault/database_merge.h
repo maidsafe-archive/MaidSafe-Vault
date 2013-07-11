@@ -40,7 +40,8 @@ namespace vault {
 // using the template key / value types to parse
 template <typename Key, typename Value, typename DatabasePolicy>
 class DataBaseMerge : public Key, public Value, public DatabasePolicy {
-  DataBaseMerge() :     
+ public:
+  DataBaseMerge() :
     active_(),
     kv_pair_(),
     unmerged_entry_(),
@@ -55,13 +56,20 @@ class DataBaseMerge : public Key, public Value, public DatabasePolicy {
   std::vector<std::tuple<std::tuple<Key, Value>, size_t>> unmerged_entries_;
 };
 
-#include "maidsafe/vault/database_merge.inl"
+//#include "maidsafe/vault/database_merge.inl"
 
 
 
 template <typename Key, typename Value, typename DatabasePolicy>
 void DataBaseMerge<Key, Value, DatabasePolicy>::insert(const nfs::Message& /* message */) {
- // nfs::
+ // here we 
+ // 1: get Key and value from message (construct from repeated message field)
+ // 2: if Key in Database (drop) 
+ // 3: Create kv_pair (unmerged_entry_) and check unmerged_entries_ for this
+ // if exists -> increment count unmerged_entries_ for this unmerged_entry_
+ //     if count >= group /2 then write to database and delete entry
+ // if !exists -> add to container
+ // This method should run in an active object I think.
 }
 
 
