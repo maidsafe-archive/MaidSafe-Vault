@@ -85,7 +85,7 @@ class VersionManagerService {
   const NodeId kThisNodeId_;
   Sync<VersionManagerMergePolicy> sync_;
   VersionManagerNfs nfs_;
-  DataBaseMerge<VersionManagerKey, StructuredDataVersions, ManagerDb<VersionManager>>  database_merge_;
+  StorageMerge<VersionManagerKey, StructuredDataVersions, ManagerDb<VersionManager>>  database_merge_;
 };
 
 }  // namespace vault

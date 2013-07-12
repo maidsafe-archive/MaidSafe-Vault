@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_DATABASE_MERGE_H_
-#define MAIDSAFE_VAULT_DATABASE_MERGE_H_
+#ifndef MAIDSAFE_VAULT_STORAGE_MERGE_H_
+#define MAIDSAFE_VAULT_STORAGE_MERGE_H_
 
 #include <memory>
 #include <mutex>
@@ -36,38 +36,40 @@ namespace maidsafe {
 
 namespace vault {
 // Account transfer messages passed here
-// this class will merge the records to the database supplied
+// this class will merge the records to the storageatabase supplied
 // using the template key / value types to parse
-template <typename Key, typename Value, typename DatabasePolicy>
-class DataBaseMerge : public Key, public Value, public DatabasePolicy {
+template <typename Key, typename Value, typename StoragePolicy>
+class StorageMerge : public Key, public Value, public StoragePolicy {
  public:
-  DataBaseMerge() :
+  StorageMerge() :
     active_(),
     kv_pair_(),
     unmerged_entry_(),
     unmerged_entries_() {}
   void insert(const nfs::Message& message);
  private:
-  DataBaseMerge(const DataBaseMerge&);
-  DataBaseMerge& operator=(const DataBaseMerge&);
+  StorageMerge(const StorageMerge&);
+  StorageMerge& operator=(const StorageMerge&);
   Active active_;
   std::tuple<Key, Value> kv_pair_;
   std::tuple<std::tuple<Key, Value>, size_t> unmerged_entry_;
-  std::vector<std::tuple<std::tuple<Key, Value>, size_t>> unmerged_entries_;
+  //                                Key  dbvalue                        sender
+  std::vector<std::tuple<std::tuple<Key, Value>>, std::vector<NodeId>> unmerged_entries_;
+
 };
 
-//#include "maidsafe/vault/database_merge.inl"
+//#include "maidsafe/vault/Storage_merge.inl"
 
 
 
-template <typename Key, typename Value, typename DatabasePolicy>
-void DataBaseMerge<Key, Value, DatabasePolicy>::insert(const nfs::Message& /* message */) {
+template <typename Key, typename Value, typename StoragePolicy>
+void StorageMerge<Key, Value, StoragePolicy>::insert(const nfs::Message& /* message */) {
  // here we 
  // 1: get Key and value from message (construct from repeated message field)
- // 2: if Key in Database (drop) 
+ // 2: if Key in Storage (drop)
  // 3: Create kv_pair (unmerged_entry_) and check unmerged_entries_ for this
  // if exists -> increment count unmerged_entries_ for this unmerged_entry_
- //     if count >= group /2 then write to database and delete entry
+ //     if count >= group /2 then write to Storage and delete entry
  // if !exists -> add to container
  // This method should run in an active object I think.
 }
@@ -78,4 +80,4 @@ void DataBaseMerge<Key, Value, DatabasePolicy>::insert(const nfs::Message& /* me
 }  // namespace maidsafe
 
 
-#endif  // MAIDSAFE_VAULT_DATABASE_MERGE_H_
+#endif  // MAIDSAFE_VAULT_STORAGE_MERGE_H_
