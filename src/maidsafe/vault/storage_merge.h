@@ -52,19 +52,16 @@ class StorageMerge : public Key, public Value, public StoragePolicy {
   StorageMerge& operator=(const StorageMerge&);
   Active active_;
   std::tuple<Key, Value> kv_pair_;
-  std::tuple<std::tuple<Key, Value>, size_t> unmerged_entry_;
+  std::tuple<std::tuple<Key, Value>, NodeId> unmerged_entry_;
   //                                Key  dbvalue                        sender
-  std::vector<std::tuple<std::tuple<Key, Value>>, std::vector<NodeId>> unmerged_entries_;
-
+  std::vector<std::tuple<std::tuple<Key, Value>, std::vector<NodeId>>> unmerged_entries_;
 };
 
 //#include "maidsafe/vault/Storage_merge.inl"
 
-
-
 template <typename Key, typename Value, typename StoragePolicy>
 void StorageMerge<Key, Value, StoragePolicy>::insert(const nfs::Message& /* message */) {
- // here we 
+ // here we
  // 1: get Key and value from message (construct from repeated message field)
  // 2: if Key in Storage (drop)
  // 3: Create kv_pair (unmerged_entry_) and check unmerged_entries_ for this

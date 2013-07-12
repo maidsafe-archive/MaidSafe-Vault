@@ -31,8 +31,8 @@ namespace maidsafe {
 namespace vault {
 
 template<typename PersonaType>
-ManagerDb<PersonaType>::ManagerDb(const boost::filesystem::path& path)
-    : kDbPath_(path),
+ManagerDb<PersonaType>::ManagerDb()
+    : kDbPath_(boost::filesystem::unique_path()),
       mutex_(),
       leveldb_() {
   if (boost::filesystem::exists(kDbPath_))

@@ -46,8 +46,7 @@ class DataManagerService {
  public:
   DataManagerService(const passport::Pmid& pmid,
                          routing::Routing& routing,
-                         nfs::PublicKeyGetter& public_key_getter,
-                         const boost::filesystem::path& vault_root_dir);
+                         nfs::PublicKeyGetter& public_key_getter);
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor& /*reply_functor*/) {}

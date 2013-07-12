@@ -31,26 +31,13 @@ const size_t MetadataHandler::kSyncTriggerCount_(1);
 
 namespace detail {
 
-fs::path GetPath(const std::string& data_name,
-                 int32_t data_type_enum_value,
-                 const fs::path& root) {
-  return root / (EncodeToBase32(data_name) + std::to_string(data_type_enum_value));
-}
-
 }  // namespace detail
 
-MetadataHandler::MetadataHandler(const fs::path& vault_root_dir, const NodeId &this_node_id)
-    : kMetadataRoot_([vault_root_dir]()->boost::filesystem::path {
-                       auto path(vault_root_dir / "metadata");
-                       detail::InitialiseDirectory(path);
-                       return path;
-                     } ()),
-      metadata_db_(new ManagerDb<DataManager>(kMetadataRoot_)),
+MetadataHandler::MetadataHandler(const NodeId &this_node_id)
+    : metadata_db_(new ManagerDb<DataManager>()),
       kThisNodeId_(this_node_id),
       mutex_(),
-      sync_(metadata_db_.get(), kThisNodeId_) {
-  detail::InitialiseDirectory(kMetadataRoot_);
-}
+      sync_(metadata_db_.get(), kThisNodeId_) {}
 
 void MetadataHandler::DeleteRecord(const DataNameVariant& /*record_name*/) {
 

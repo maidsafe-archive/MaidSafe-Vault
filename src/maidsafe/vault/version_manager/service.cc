@@ -74,13 +74,12 @@ VersionManagerUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& mes
 
 
 VersionManagerService::VersionManagerService(const passport::Pmid& pmid,
-                                                           routing::Routing& routing,
-                                                           const boost::filesystem::path& path)
+                                                           routing::Routing& routing)
     : routing_(routing),
       accumulator_mutex_(),
       sync_mutex_(),
       accumulator_(),
-      version_manager_db_(path),
+      version_manager_db_(),
       kThisNodeId_(routing_.kNodeId()),
       sync_(&version_manager_db_, kThisNodeId_),
       nfs_(routing_, pmid),

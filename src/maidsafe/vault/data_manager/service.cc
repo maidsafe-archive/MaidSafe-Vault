@@ -61,13 +61,12 @@ const int DataManagerService::kDeleteRequestsRequired_(3);
 
 DataManagerService::DataManagerService(const passport::Pmid& pmid,
                                                routing::Routing& routing,
-                                               nfs::PublicKeyGetter& public_key_getter,
-                                               const boost::filesystem::path& vault_root_dir)
+                                               nfs::PublicKeyGetter& public_key_getter)
     : routing_(routing),
       public_key_getter_(public_key_getter),
       accumulator_mutex_(),
       accumulator_(),
-      metadata_handler_(vault_root_dir, routing.kNodeId()),
+      metadata_handler_(routing.kNodeId()),
       nfs_(routing, pmid) {}
 
 void DataManagerService::ValidatePutSender(const nfs::Message& message) const {

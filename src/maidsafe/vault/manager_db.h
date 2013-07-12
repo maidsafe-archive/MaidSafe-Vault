@@ -35,7 +35,8 @@ template<typename PersonaType>
 class ManagerDb {
  public:
   typedef std::pair<typename PersonaType::DbKey, typename PersonaType::DbValue> KvPair;
-  explicit ManagerDb(const boost::filesystem::path& path);
+//  explicit ManagerDb(const boost::filesystem::path& path);
+  ManagerDb();
   ~ManagerDb();
 
   void Put(const KvPair& key_value_pair);

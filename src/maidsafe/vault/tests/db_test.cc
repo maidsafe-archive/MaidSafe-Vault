@@ -110,7 +110,7 @@ class DbTest : public testing::Test {
 };
 
 TEST_F(DbTest, BEH_Constructor) {
-  Db db(vault_root_directory_);
+  Db db;
   AccountDb account_db(db);
 }
 
@@ -180,7 +180,7 @@ TEST_F(DbTest, BEH_Poc) {
 }
 
 TEST_F(DbTest, BEH_GetSingleAccount) {
-  Db db(vault_root_directory_);
+  Db db;
   AccountDb account_db(db);
   std::vector<Db::KvPair> nodes;
   for (uint32_t i = 0; i != 10000; ++i) {
@@ -198,7 +198,7 @@ TEST_F(DbTest, BEH_GetSingleAccount) {
 }
 
 TEST_F(DbTest, BEH_DeleteSingleAccount) {
-  Db db(vault_root_directory_);
+  Db db;
   AccountDb account_db(db);
   std::vector<Db::KvPair> nodes;
   for (uint32_t i = 0; i != 10000; ++i) {
@@ -219,7 +219,7 @@ TEST_F(DbTest, BEH_DeleteSingleAccount) {
 TEST_F(DbTest, BEH_GetMultipleAccounts) {
   uint32_t accounts(RandomUint32() % 10);
   std::vector<std::vector<Db::KvPair>> account_vector(accounts);
-  Db db(vault_root_directory_);
+  Db db;
   std::vector<std::unique_ptr<AccountDb>> account_db_vector(accounts);
   for (uint32_t i = 0; i != accounts; ++i) {
     account_db_vector[i].reset(new AccountDb(db));
@@ -244,7 +244,7 @@ TEST_F(DbTest, BEH_GetMultipleAccounts) {
 TEST_F(DbTest, BEH_DeleteMultipleAccounts) {
   uint32_t accounts(RandomUint32() % 10);
   std::vector<std::vector<Db::KvPair>> account_vector(accounts);
-  Db db(vault_root_directory_);
+  Db db;
   std::vector<std::unique_ptr<AccountDb>> account_db_vector(accounts);
   for (uint32_t i = 0; i != accounts; ++i) {
     account_db_vector[i].reset(new AccountDb(db));
@@ -277,7 +277,7 @@ TEST_F(DbTest, BEH_AsyncGetPuts) {
   std::condition_variable cond_var;
   std::vector<std::future<void>> async_ops;
   uint32_t accounts(RandomUint32() % 10), expected_count(0), op_count(0);
-  Db db(vault_root_directory_);
+  Db db;
   std::vector<std::vector<Db::KvPair>> account_vector(accounts);
   std::vector<std::unique_ptr<AccountDb>> account_db_vector(accounts);
   for (uint32_t i = 0; i != accounts; ++i) {
@@ -347,7 +347,7 @@ TEST_F(DbTest, BEH_AsyncGetPuts) {
 }
 
 TEST_F(DbTest, BEH_ParallelAccountCreation) {
-  Db db(vault_root_directory_);
+  Db db;
   for (uint32_t i = 0; i != 100; ++i) {
     std::async(std::launch::async, [this, &db]() {
         AccountDb account_db(db);
@@ -366,7 +366,7 @@ TEST_F(DbTest, BEH_ParallelAccountCreation) {
 }
 
 TEST_F(DbTest, BEH_PutSameKeyDifferentValue) {
-  Db db(vault_root_directory_);
+  Db db;
   AccountDb account_db(db);
   DbKey key(GetRandomKey());
   NonEmptyString value(GenerateKeyValueData(key, kValueSize)), last_value;

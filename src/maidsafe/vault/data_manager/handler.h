@@ -49,7 +49,7 @@ class MetadataHandler {
  public:
   typedef TaggedValue<NonEmptyString, struct SerialisedMetadataValueTag>
     serialised_record_type;
-  MetadataHandler(const boost::filesystem::path& vault_root_dir, const NodeId& this_node_id);
+  MetadataHandler(const NodeId& this_node_id);
 
   // This increments the subscribers count, or adds a new element if it doesn't exist.
   template<typename Data>

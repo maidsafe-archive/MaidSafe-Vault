@@ -43,7 +43,8 @@ class Db {
   typedef std::pair<DbKey, NonEmptyString> KvPair;
   typedef uint32_t AccountId;
 
-  explicit Db(const boost::filesystem::path& path);
+//  explicit Db(const boost::filesystem::path& path);
+  Db();
   ~Db();
   friend class AccountDb;
 
