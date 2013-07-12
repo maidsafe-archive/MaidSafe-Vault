@@ -135,7 +135,9 @@ std::vector<typename MergePolicy::ResolvedEntry>
     found = std::find_if(found,
                          std::end(MergePolicy::unresolved_data_),
                          [&entry](const typename MergePolicy::UnresolvedEntry &test) {
-                             return test.key == entry.key;
+                             return test.key == entry.key &&
+                                    test.messages_contents.front().value ==
+                                    entry.messages_contents.front().value;
                          });
 
     if (found == std::end(MergePolicy::unresolved_data_)) {

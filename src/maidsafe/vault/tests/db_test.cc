@@ -32,6 +32,7 @@ License.
 
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/account_db.h"
+#include "maidsafe/vault/manager_db.h"
 
 namespace maidsafe {
 namespace vault {
@@ -94,7 +95,9 @@ class DbTest : public testing::Test {
   NonEmptyString GenerateKeyValueData(DbKey& key, uint32_t size) {
     GenerateKeyValuePair generate_key_value_pair_(size);
     DataNameVariant data_name_variant(key.name());
-    return boost::apply_visitor(generate_key_value_pair_, data_name_variant);
+    NonEmptyString result(boost::apply_visitor(generate_key_value_pair_, data_name_variant));
+    key = DbKey(data_name_variant);
+    return result;
   }
 
   NonEmptyString GenerateValue(uint32_t size = kValueSize) {
@@ -187,8 +190,11 @@ TEST_F(DbTest, BEH_GetSingleAccount) {
   }
   for (uint32_t i = 0; i != 10000; ++i)
     EXPECT_NO_THROW(account_db.Put(std::make_pair(nodes[i].first, nodes[i].second)));
-  for (uint32_t i = 0; i != 10000; ++i)
-    EXPECT_EQ(nodes[i].second, account_db.Get(nodes[i].first));
+  for (uint32_t i = 0; i != 10000; ++i) {
+    NonEmptyString value;
+    EXPECT_NO_THROW(value = account_db.Get(nodes[i].first));
+    EXPECT_EQ(nodes[i].second, value);
+  }
 }
 
 TEST_F(DbTest, BEH_DeleteSingleAccount) {

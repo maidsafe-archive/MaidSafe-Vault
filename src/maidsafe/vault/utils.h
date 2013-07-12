@@ -30,9 +30,8 @@ License.
 #include "maidsafe/nfs/message.h"
 
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/metadata_manager/metadata_manager.h"
-#include "maidsafe/vault/metadata_manager/metadata_value.h"
-#include "maidsafe/vault/structured_data_manager/structured_data_manager.h"
+#include "maidsafe/vault/data_manager/data_manager.h"
+#include "maidsafe/vault/version_manager/version_manager.h"
 
 
 namespace maidsafe {
@@ -91,13 +90,13 @@ CheckHoldersResult CheckHolders(const routing::MatrixChange& matrix_change,
                                 const NodeId& target);
 
 template<typename Message>
-inline bool FromMaidAccountHolder(const Message& message);
+inline bool FromMaidManager(const Message& message);
 
 template<typename Message>
-inline bool FromMetadataManager(const Message& message);
+inline bool FromDataManager(const Message& message);
 
 template<typename Message>
-inline bool FromPmidAccountHolder(const Message& message);
+inline bool FromPmidManager(const Message& message);
 
 template<typename Message>
 inline bool FromDataHolder(const Message& message);
@@ -121,7 +120,7 @@ template<typename Message>
 inline bool FromDataGetter(const Message& message);
 
 template<typename Message>
-inline bool FromStructuredDataManager(const nfs::Message& message);
+inline bool FromVersionManager(const nfs::Message& message);
 
 
 template<typename Persona>
@@ -132,19 +131,19 @@ typename Persona::DbKey GetKeyFromMessage(const nfs::Message& message) {
 }
 
 template<>
-typename StructuredDataManager::DbKey
-         GetKeyFromMessage<StructuredDataManager>(const nfs::Message& message);
+typename VersionManager::DbKey
+         GetKeyFromMessage<VersionManager>(const nfs::Message& message);
 
 template<typename PersonaTypes>
 typename PersonaTypes::RecordName GetRecordName(const typename PersonaTypes::DbKey& db_key);
 
 template<>
-typename MetadataManager::RecordName GetRecordName<MetadataManager>(
-    const typename MetadataManager::DbKey& db_key);
+typename DataManager::RecordName GetRecordName<DataManager>(
+    const typename DataManager::DbKey& db_key);
 
 template<>
-typename StructuredDataManager::RecordName GetRecordName<StructuredDataManager>(
-    const typename StructuredDataManager::DbKey& db_key);
+typename VersionManager::RecordName GetRecordName<VersionManager>(
+    const typename VersionManager::DbKey& db_key);
 
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path);
 

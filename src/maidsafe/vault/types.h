@@ -38,36 +38,36 @@ class MaidAccount;
 class PmidAccount;
 
 typedef nfs::NetworkFileSystem<
-    nfs::MaidAccountHolderPutPolicy,
-    nfs::MaidAccountHolderGetPolicy,
-    nfs::MaidAccountHolderDeletePolicy,
-    MaidAccountHolderPostPolicy> MaidAccountHolderNfs;
+    nfs::MaidManagerPutPolicy,
+    nfs::MaidManagerGetPolicy,
+    nfs::MaidManagerDeletePolicy,
+    MaidManagerPostPolicy> MaidManagerNfs;
 
 typedef nfs::NetworkFileSystem<
-    nfs::MetadataManagerPutPolicy,
-    nfs::MetadataManagerGetPolicy,
-    nfs::MetadataManagerDeletePolicy,
-    MetadataManagerPostPolicy> MetadataManagerNfs;
+    nfs::DataManagerPutPolicy,
+    nfs::DataManagerGetPolicy,
+    nfs::DataManagerDeletePolicy,
+    DataManagerPostPolicy> DataManagerNfs;
 
 typedef nfs::NetworkFileSystem<
-    nfs::StructuredDataManagerPutPolicy,
-    nfs::StructuredDataManagerGetPolicy,
-    nfs::StructuredDataManagerDeletePolicy,
-    StructuredDataManagerPostPolicy> StructuredDataManagerNfs;
+    nfs::VersionManagerPutPolicy,
+    nfs::VersionManagerGetPolicy,
+    nfs::VersionManagerDeletePolicy,
+    VersionManagerPostPolicy> VersionManagerNfs;
 
 typedef nfs::NetworkFileSystem<
-    nfs::PmidAccountHolderPutPolicy,
-    nfs::PmidAccountHolderGetPolicy,
-    nfs::PmidAccountHolderDeletePolicy,
-    PmidAccountHolderPostPolicy> PmidAccountHolderNfs;
+    nfs::PmidManagerPutPolicy,
+    nfs::PmidManagerGetPolicy,
+    nfs::PmidManagerDeletePolicy,
+    PmidManagerPostPolicy> PmidManagerNfs;
 
 // TODO(dirvine) BEFORE_RELEASE this is a hack to create a type for the dataholder, the proper
 // implmentation is required ,,,,,,,,,,,,,,,,,,,,,
 typedef nfs::NetworkFileSystem<
-    nfs::PmidAccountHolderPutPolicy,
-    nfs::PmidAccountHolderGetPolicy,
-    nfs::PmidAccountHolderDeletePolicy,
-    PmidAccountHolderPostPolicy> DataHolderNfs;
+    nfs::PmidManagerPutPolicy,
+    nfs::PmidManagerGetPolicy,
+    nfs::PmidManagerDeletePolicy,
+    PmidManagerPostPolicy> PmidNodeNfs;
 
 typedef passport::PublicMaid::name_type MaidName;
 typedef passport::PublicPmid::name_type PmidName;

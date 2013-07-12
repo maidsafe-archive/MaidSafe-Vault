@@ -31,14 +31,14 @@ message MaidAndPmidUnresolvedEntry {
   optional bool dont_add_to_db = 3;
 }
 
-message MetadataValueDelta {
+message DataManagerValueDelta {
   required int32 data_size = 1;
   optional int64 subscribers = 2;
   repeated bytes new_online = 3;
   repeated bytes new_offline = 4;
 }
 
-message MetadataUnresolvedEntry {
+message DataManagerUnresolvedEntry {
   message Key {
     required uint32 type = 1;
     required bytes name = 2;
@@ -58,7 +58,7 @@ message UnresolvedEntries {
   repeated bytes serialised_unresolved_entry = 1;
 }
 
-message StructuredDataUnresolvedEntry {
+message VersionManagerUnresolvedEntry {
   message Key {
     required uint32 name_type = 1;
     required bytes name = 2;

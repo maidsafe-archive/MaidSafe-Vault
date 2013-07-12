@@ -110,18 +110,18 @@ class ManagersSyncPolicy {  // for Metadata manager & structured data manager
   const passport::Pmid kPmid_;
 };
 
-class MaidAccountHolderMiscellaneousPolicy {
+class MaidManagerMiscellaneousPolicy {
  public:
-  MaidAccountHolderMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
+  MaidManagerMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
       : routing_(routing),
-        kSource_(nfs::Persona::kMaidAccountHolder, routing_.kNodeId()),
+        kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()),
         kPmid_(pmid) {}
 
   void RequestPmidTotals(const passport::PublicPmid::name_type& pmid_name,
                          const routing::ResponseFunctor& callback) {
     nfs::Message::Data data(DataTagValue::kPmidValue, pmid_name.data, NonEmptyString(),
                             nfs::MessageAction::kGetPmidTotals);
-    nfs::Message message(nfs::Persona::kPmidAccountHolder, kSource_, data, pmid_name);
+    nfs::Message message(nfs::Persona::kPmidManager, kSource_, data, pmid_name);
     nfs::MessageWrapper message_wrapper(message.Serialise());
     routing_.SendGroup(NodeId(pmid_name), message_wrapper.Serialise()->string(),
                        false, callback);
@@ -137,7 +137,7 @@ class ManagerMiscellaneousPolicy {
  public:
   ManagerMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
       : routing_(routing),
-        kSource_(nfs::Persona::kMaidAccountHolder, routing_.kNodeId()),
+        kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()),
         kPmid_(pmid) {}
 
  private:
@@ -146,11 +146,11 @@ class ManagerMiscellaneousPolicy {
   const passport::Pmid kPmid_;
 };
 
-class PmidAccountHolderMiscellaneousPolicy {
+class PmidManagerMiscellaneousPolicy {
  public:
-  PmidAccountHolderMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
+  PmidManagerMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
       : routing_(routing),
-        kSource_(nfs::Persona::kMaidAccountHolder, routing_.kNodeId()),
+        kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()),
         kPmid_(pmid) {}
 
  private:
@@ -163,7 +163,7 @@ class DataHolderMiscellaneousPolicy {
  public:
   DataHolderMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
       : routing_(routing),
-        kSource_(nfs::Persona::kMaidAccountHolder, routing_.kNodeId()),
+        kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()),
         kPmid_(pmid) {}
 
  private:
@@ -172,20 +172,20 @@ class DataHolderMiscellaneousPolicy {
   const passport::Pmid kPmid_;
 };
 
-typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kMaidAccountHolder>,
-                        MaidAccountHolderMiscellaneousPolicy> MaidAccountHolderPostPolicy;
+typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kMaidManager>,
+                        MaidManagerMiscellaneousPolicy> MaidManagerPostPolicy;
 
-typedef VaultPostPolicy<ManagersSyncPolicy<nfs::Persona::kMetadataManager>,
-                        ManagerMiscellaneousPolicy> MetadataManagerPostPolicy;
+typedef VaultPostPolicy<ManagersSyncPolicy<nfs::Persona::kDataManager>,
+                        ManagerMiscellaneousPolicy> DataManagerPostPolicy;
 
-typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kPmidAccountHolder>,
-                        PmidAccountHolderMiscellaneousPolicy> PmidAccountHolderPostPolicy;
+typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kPmidManager>,
+                        PmidManagerMiscellaneousPolicy> PmidManagerPostPolicy;
 // FIXME
-typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kDataHolder>,
+typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kPmidNode>,
                         DataHolderMiscellaneousPolicy> DataHolderPostPolicy;
 
-typedef VaultPostPolicy<ManagersSyncPolicy<nfs::Persona::kStructuredDataManager>,
-                        ManagerMiscellaneousPolicy> StructuredDataManagerPostPolicy;
+typedef VaultPostPolicy<ManagersSyncPolicy<nfs::Persona::kVersionManager>,
+                        ManagerMiscellaneousPolicy> VersionManagerPostPolicy;
 
 }  // namespace vault
 

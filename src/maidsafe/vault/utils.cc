@@ -113,23 +113,23 @@ CheckHoldersResult CheckHolders(const routing::MatrixChange& matrix_change,
 }
 
 template<>
-typename StructuredDataManager::DbKey
-    GetKeyFromMessage<StructuredDataManager>(const nfs::Message& message) {
+typename VersionManager::DbKey
+    GetKeyFromMessage<VersionManager>(const nfs::Message& message) {
   if (!message.data().type)
     ThrowError(CommonErrors::parsing_error);
-  return StructuredDataKey(GetDataNameVariant(*message.data().type, message.data().name),
+  return VersionManagerKey(GetDataNameVariant(*message.data().type, message.data().name),
                            message.data().originator);
 }
 
 template<>
-typename MetadataManager::RecordName GetRecordName<MetadataManager>(
-    const typename MetadataManager::DbKey& db_key) {
+typename DataManager::RecordName GetRecordName<DataManager>(
+    const typename DataManager::DbKey& db_key) {
   return db_key;
 }
 
 template<>
-typename StructuredDataManager::RecordName GetRecordName<StructuredDataManager>(
-    const typename StructuredDataManager::DbKey& db_key) {
+typename VersionManager::RecordName GetRecordName<VersionManager>(
+    const typename VersionManager::DbKey& db_key) {
   return db_key.data_name();
 }
 

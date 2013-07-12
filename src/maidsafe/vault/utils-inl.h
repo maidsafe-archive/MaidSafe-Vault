@@ -32,33 +32,33 @@ namespace maidsafe {
 namespace vault {
 
 template<typename Message>
-inline bool FromMaidAccountHolder(const Message& message) {
-  return message.source().persona == nfs::Persona::kMaidAccountHolder;
+inline bool FromMaidManager(const Message& message) {
+  return message.source().persona == nfs::Persona::kMaidManager;
 }
 
 template<typename Message>
-inline bool FromMetadataManager(const Message& message) {
-  return message.source().persona == nfs::Persona::kMetadataManager;
+inline bool FromDataManager(const Message& message) {
+  return message.source().persona == nfs::Persona::kDataManager;
 }
 
 template<typename Message>
-inline bool FromPmidAccountHolder(const Message& message) {
-  return message.source().persona == nfs::Persona::kPmidAccountHolder;
+inline bool FromPmidManager(const Message& message) {
+  return message.source().persona == nfs::Persona::kPmidManager;
 }
 
 template<typename Message>
 inline bool FromDataHolder(const Message& message) {
-  return message.source().persona == nfs::Persona::kDataHolder;
+  return message.source().persona == nfs::Persona::kPmidNode;
 }
 
 template<typename Message>
 inline bool FromClientMaid(const Message& message) {
-  return message.source().persona == nfs::Persona::kClientMaid;
+  return message.source().persona == nfs::Persona::kMaidNode;
 }
 
 template<typename Message>
 inline bool FromClientMpid(const Message& message) {
-  return message.source().persona == nfs::Persona::kClientMpid;
+  return message.source().persona == nfs::Persona::kMpidNode;
 }
 
 template<typename Message>
@@ -83,7 +83,7 @@ inline bool FromDataGetter(const Message& message) {
 
 template<typename Message>
 inline bool ValidateSyncSender(const nfs::Message& message) {
-  return message.source().persona == nfs::Persona::kStructuredDataManager;
+  return message.source().persona == nfs::Persona::kVersionManager;
 }
 
 
