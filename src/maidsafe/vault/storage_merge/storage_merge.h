@@ -29,6 +29,7 @@ License.
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/types.h"
 
 
@@ -50,6 +51,7 @@ class StorageMerge : public Key, public Value, public StoragePolicy {
  private:
   StorageMerge(const StorageMerge&);
   StorageMerge& operator=(const StorageMerge&);
+  bool KeyExist(const Key& key);
   Active active_;
   std::tuple<Key, Value> kv_pair_;
   std::tuple<std::tuple<Key, Value>, NodeId> unmerged_entry_;
@@ -60,7 +62,19 @@ class StorageMerge : public Key, public Value, public StoragePolicy {
 //#include "maidsafe/vault/Storage_merge.inl"
 
 template <typename Key, typename Value, typename StoragePolicy>
-void StorageMerge<Key, Value, StoragePolicy>::insert(const nfs::Message& /* message */) {
+void StorageMerge<Key, Value, StoragePolicy>::insert(const nfs::Message& message) {
+  if (static_cast<nfs::MessageAction>(message.data().action) !=
+      nfs::MessageAction::kAccountTransfer)
+    ThrowError(CommonErrors::invalid_parameter);
+  for (const auto& record: message.data().content) {
+    auto key(record.key());
+    if (KeyExist(key))
+      continue;
+    auto value(record.value());
+    auto record(std::make_pair(key, value));
+
+  }
+
  // here we
  // 1: get Key and value from message (construct from repeated message field)
  // 2: if Key in Storage (drop)
