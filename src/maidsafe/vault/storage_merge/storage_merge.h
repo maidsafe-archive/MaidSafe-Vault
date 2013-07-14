@@ -32,6 +32,7 @@ License.
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/storage_merge/storage_merge.pb.h"
 
 
 namespace maidsafe {
@@ -76,7 +77,9 @@ void StorageMerge<Key, Value, StoragePolicy>::insert(const nfs::Message& message
   if (static_cast<nfs::MessageAction>(message.data().action) !=
       nfs::MessageAction::kAccountTransfer)
     ThrowError(CommonErrors::invalid_parameter);
-  for (const auto& record: message.data().content) {
+  protobuf::StorageMerge storage_proto;
+  storage_proto.ParseFromString(record: message.data().content.string());
+  for (const auto& record: storeage_proto.records()) {
     auto key(record.key());
     if (KeyExist(key))
       continue;
