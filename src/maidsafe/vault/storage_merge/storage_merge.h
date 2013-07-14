@@ -28,6 +28,7 @@ License.
 #include "maidsafe/common/active.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
+#include "maidsafe/routing/parameters.h"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/types.h"
@@ -36,30 +37,39 @@ License.
 namespace maidsafe {
 
 namespace vault {
-// Account transfer messages passed here
-// this class will merge the records to the storageatabase supplied
-// using the template key / value types to parse
+
 template <typename Key, typename Value, typename StoragePolicy>
 class StorageMerge : public Key, public Value, public StoragePolicy {
  public:
   StorageMerge() :
     active_(),
-    kv_pair_(),
     unmerged_entry_(),
     unmerged_entries_() {}
   void insert(const nfs::Message& message);
+  typedef std::tuple<std::tuple<Key, Value>, NodeId> UnmergedEntry;
  private:
   StorageMerge(const StorageMerge&);
   StorageMerge& operator=(const StorageMerge&);
-  bool KeyExist(const Key& key);
   Active active_;
-  std::tuple<Key, Value> kv_pair_;
   std::tuple<std::tuple<Key, Value>, NodeId> unmerged_entry_;
-  //                                Key  dbvalue                        sender
-  std::vector<std::tuple<std::tuple<Key, Value>, std::vector<NodeId>>> unmerged_entries_;
+  //                                Key  dbvalue             sender
+  std::vector<std::tuple<std::tuple<Key, Value>, std::set<NodeId>>> unmerged_entries_;
+  bool KeyExist(const Key& key);
+  typename std::vector<std::tuple<std::tuple<Key, Value>, std::set<NodeId>>>::iterator
+             FindUnmergedEntry(const UnmergedEntry& unmerged_entry);
 };
 
-//#include "maidsafe/vault/Storage_merge.inl"
+
+template <typename Key, typename Value, typename StoragePolicy>
+typename std::vector<std::tuple<std::tuple<Key, Value>, std::set<NodeId>>>::iterator
+           StorageMerge<Key, Value, StoragePolicy>::FindUnmergedEntry(const UnmergedEntry&
+                                                                      unmerged_entry) {
+  return std::find(std::begin(unmerged_entries_), std::end(unmerged_entries_),
+         [unmerged_entry] (const std::tuple<std::tuple<Key, Value>, std::set<NodeId>>& entry)
+         {
+           return(std::get<0>(entry) == unmerged_entry);
+         });
+}
 
 template <typename Key, typename Value, typename StoragePolicy>
 void StorageMerge<Key, Value, StoragePolicy>::insert(const nfs::Message& message) {
@@ -71,18 +81,20 @@ void StorageMerge<Key, Value, StoragePolicy>::insert(const nfs::Message& message
     if (KeyExist(key))
       continue;
     auto value(record.value());
-    auto record(std::make_pair(key, value));
-
+    auto unmerged_entry(std::make_tuple(key, value));
+    auto found = FindUnmergedEntry(std::make_tuple(key, value));
+    if (found == std::end(unmerged_entries_)) {
+      unmerged_entries_.emplace_back(std::make_tuple(std::make_tuple(key, value),
+                                                   std::set<NodeId> { message.source().node_id }));
+    } else {
+      std::get<1>(found).insert(message.source());
+      if (std::get<1>(found).size() =>
+          static_cast<size_t>((routing::Parameters::node_group_size / 2))) {
+        StoragePolicy.Put(key, value);
+        std::get<1>(found).erase();
+      }
+    }
   }
-
- // here we
- // 1: get Key and value from message (construct from repeated message field)
- // 2: if Key in Storage (drop)
- // 3: Create kv_pair (unmerged_entry_) and check unmerged_entries_ for this
- // if exists -> increment count unmerged_entries_ for this unmerged_entry_
- //     if count >= group /2 then write to Storage and delete entry
- // if !exists -> add to container
- // This method should run in an active object I think.
 }
 
 

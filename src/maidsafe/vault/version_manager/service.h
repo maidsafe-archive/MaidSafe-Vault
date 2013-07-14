@@ -33,7 +33,7 @@ License.
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/storage_merge.h"
+#include "maidsafe/vault/storage_merge/storage_merge.h"
 #include "maidsafe/vault/version_manager/version_manager.h"
 #include "maidsafe/vault/version_manager/merge_policy.h"
 #include "maidsafe/vault/manager_db.h"
