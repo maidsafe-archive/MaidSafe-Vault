@@ -40,13 +40,13 @@ include_directories(${nfs_SOURCE_DIR}/include)
 set(VaultSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/vault)
 glob_dir(Vault ${VaultSourcesDir} Vault)
 list(REMOVE_ITEM VaultSources ${VaultSourcesDir}/vault_main.cc)
-glob_dir(DataHolder ${VaultSourcesDir}/pmid_node "Pmid Node\\\\")
-glob_dir(MaidManager ${VaultSourcesDir}/maid_manager "Maid Node Manager\\\\")
-glob_dir(MetadataManager ${VaultSourcesDir}/data_manager "Data Manager\\\\")
-glob_dir(MpidAccountHolder ${VaultSourcesDir}/mpid_account_holder "Mpid Node\\\\")
+glob_dir(DataManager ${VaultSourcesDir}/data_manager "Data Manager\\\\")
+glob_dir(MaidManager ${VaultSourcesDir}/maid_manager "Maid Manager\\\\")
+glob_dir(MpidManager ${VaultSourcesDir}/mpid_manager "Mpid Manager\\\\")
 glob_dir(PmidManager ${VaultSourcesDir}/pmid_manager "Pmid Manager\\\\")
+glob_dir(PmidNode ${VaultSourcesDir}/pmid_node "Pmid Node\\\\")
+glob_dir(StorageMerge ${VaultSourcesDir}/storage_merge "Storage Merge\\\\")
 glob_dir(VersionManager ${VaultSourcesDir}/version_manager "Version Manager\\\\")
-
 glob_dir(VaultTests ${VaultSourcesDir}/tests "Tests")
 glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
 
@@ -55,11 +55,12 @@ glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
 ms_add_static_library(vault ${VaultAllFiles}
-                            ${DataHolderAllFiles}
+                            ${DataManagerAllFiles}
                             ${MaidManagerAllFiles}
-                            ${MetadataManagerAllFiles}
-                            ${MpidAccountHolderAllFiles}
+                            ${MpidManagerAllFiles}
                             ${PmidManagerAllFiles}
+                            ${PmidNodeAllFiles}
+                            ${StorageMergeAllFiles}
                             ${VersionManagerAllFiles})
 ms_add_executable(lifestuff_vault Production ${VaultSourcesDir}/vault_main.cc)
 
