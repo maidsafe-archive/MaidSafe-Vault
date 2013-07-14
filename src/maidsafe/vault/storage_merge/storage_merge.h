@@ -34,7 +34,6 @@ License.
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/storage_merge/storage_merge.pb.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -109,7 +108,6 @@ void StorageMerge<Key, Value, StoragePolicy>::insert(const nfs::Message& message
     }
   }
 }
-
 
 }  // namespace vault
 

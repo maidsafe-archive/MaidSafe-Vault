@@ -74,6 +74,6 @@ class AccountHandler : public ModifyPolicy {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/mpid_account_holder/mpid_account_handler-inl.h"
+#include "maidsafe/vault/mpid_manager/mpid_manager_handler-inl.h"
 
 #endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_ACCOUNT_HANDLER_H_

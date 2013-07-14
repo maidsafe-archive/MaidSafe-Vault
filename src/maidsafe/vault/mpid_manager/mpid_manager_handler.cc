@@ -13,7 +13,7 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/mpid_account_holder/mpid_account_handler.h"
+#include "maidsafe/vault/mpid_manager/mpid_manager_handler.h"
 
 
 namespace maidsafe {
