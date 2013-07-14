@@ -60,6 +60,16 @@ class StorageMerge : public Key, public Value, public StoragePolicy {
              FindUnmergedEntry(const UnmergedEntry& unmerged_entry);
 };
 
+template <typename Key, typename Value, typename StoragePolicy>
+bool StorageMerge<Key, Value, StoragePolicy>::KeyExist(const Key& key) {
+  try {
+    StoragePolicy::Get(key);
+  }
+  catch (std::exception& ){
+    return false;
+  }
+  return true;
+}
 
 template <typename Key, typename Value, typename StoragePolicy>
 typename std::vector<std::tuple<std::tuple<Key, Value>, std::set<NodeId>>>::iterator
@@ -78,8 +88,8 @@ void StorageMerge<Key, Value, StoragePolicy>::insert(const nfs::Message& message
       nfs::MessageAction::kAccountTransfer)
     ThrowError(CommonErrors::invalid_parameter);
   protobuf::StorageMerge storage_proto;
-  storage_proto.ParseFromString(record: message.data().content.string());
-  for (const auto& record: storeage_proto.records()) {
+  storage_proto.ParseFromString(message.data().content.string());
+  for (const auto& record: storage_proto.records()) {
     auto key(record.key());
     if (KeyExist(key))
       continue;
@@ -91,9 +101,9 @@ void StorageMerge<Key, Value, StoragePolicy>::insert(const nfs::Message& message
                                                    std::set<NodeId> { message.source().node_id }));
     } else {
       std::get<1>(found).insert(message.source());
-      if (std::get<1>(found).size() =>
+      if (std::get<1>(found).size() >=
           static_cast<size_t>((routing::Parameters::node_group_size / 2))) {
-        StoragePolicy.Put(key, value);
+        StoragePolicy::Put(key, value);
         std::get<1>(found).erase();
       }
     }
