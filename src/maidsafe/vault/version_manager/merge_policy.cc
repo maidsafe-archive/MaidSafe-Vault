@@ -62,7 +62,7 @@ void VersionManagerMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
   }
 }
 
-void VersionManagerMergePolicy::MergePut(const DbKey& key,
+void VersionManagerMergePolicy::MergePut(const VersionManagerKey& key,
                                          const StructuredDataVersions::VersionName& new_value,
                                          const StructuredDataVersions::VersionName& old_value) {
   auto value(db_->Get(key));
@@ -70,19 +70,18 @@ void VersionManagerMergePolicy::MergePut(const DbKey& key,
   db_->Put(std::make_pair(key, value));
 }
 
-void VersionManagerMergePolicy::MergeDeleteBranchUntilFork(
-    const DbKey& key,
+void VersionManagerMergePolicy::MergeDeleteBranchUntilFork(const VersionManagerKey& key,
     const StructuredDataVersions::VersionName& tot) {
   auto value(db_->Get(key));
   value.DeleteBranchUntilFork(tot);
   db_->Put(std::make_pair(key, value));
 }
 
-void VersionManagerMergePolicy::MergeDelete(const DbKey& key) {
+void VersionManagerMergePolicy::MergeDelete(const VersionManagerKey& key) {
   db_->Delete(key);
 }
 
-void VersionManagerMergePolicy::MergeAccountTransfer(const DbKey& key,
+void VersionManagerMergePolicy::MergeAccountTransfer(const VersionManagerKey& key,
                                                      const StructuredDataVersions& data_version) {
   db_->Put(std::make_pair(key, data_version));
 }

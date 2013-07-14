@@ -19,7 +19,7 @@ License.
 #include <tuple>
 
 #include "maidsafe/vault/utils.h"
-
+#include "maidsafe/routing/routing_api.h"
 
 namespace maidsafe {
 
@@ -42,6 +42,8 @@ VersionManagerKey::VersionManagerKey(const std::string& serialised_key)
   auto type(static_cast<DataTagValue>(detail::FromFixedWidthString<kPaddedWidth_>(type_as_string)));
   data_name_ = GetDataNameVariant(type, Identity(name));
   originator_ = Identity(serialised_key.substr(NodeId::kSize + kPaddedWidth_));
+  if (routing_.IsNodeIdInGroupRange(NodeId(name)) != routing::GroupRangeStatus::kInRange)
+    ThrowError(RoutingErrors::not_in_range);
 }
 
 VersionManagerKey::VersionManagerKey(const VersionManagerKey& other)

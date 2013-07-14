@@ -29,8 +29,6 @@ License.
 
 #include "maidsafe/common/types.h"
 
-#include "maidsafe/vault/db_key.h"
-
 
 namespace maidsafe {
 
@@ -40,7 +38,7 @@ class AccountDb;
 
 class Db {
  public:
-  typedef std::pair<DbKey, NonEmptyString> KvPair;
+  typedef std::pair<NonEmptyString, NonEmptyString> KvPair;
   typedef uint32_t AccountId;
 
 //  explicit Db(const boost::filesystem::path& path);

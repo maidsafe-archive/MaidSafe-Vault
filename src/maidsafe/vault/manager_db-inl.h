@@ -23,20 +23,16 @@ License.
 
 #include "boost/filesystem/operations.hpp"
 
-//#include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/db_key.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-template<typename PersonaType>
-ManagerDb<PersonaType>::ManagerDb()
+template<typename Key, typename Value>
+ManagerDb<Key, Value>::ManagerDb()
     : kDbPath_(boost::filesystem::unique_path()),
       mutex_(),
       leveldb_() {
-  if (boost::filesystem::exists(kDbPath_))
-    boost::filesystem::remove_all(kDbPath_);
   leveldb::DB* db;
   leveldb::Options options;
   options.create_if_missing = true;
@@ -48,13 +44,13 @@ ManagerDb<PersonaType>::ManagerDb()
   assert(leveldb_);
 }
 
-template<typename PersonaType>
-ManagerDb<PersonaType>::~ManagerDb() {
+template<typename Key, typename Value>
+ManagerDb<Key, Value>::~ManagerDb() {
   leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
 }
 
-template<typename PersonaType>
-void ManagerDb<PersonaType>::Put(const KvPair& key_value_pair) {
+template<typename Key, typename Value>
+void ManagerDb<Key, Value>::Put(const KvPair& key_value_pair) {
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
                                        key_value_pair.first.Serialise(),
                                        key_value_pair.second.Serialise()->string()));
@@ -62,15 +58,15 @@ void ManagerDb<PersonaType>::Put(const KvPair& key_value_pair) {
     ThrowError(VaultErrors::failed_to_handle_request);
 }
 
-template<typename PersonaType>
-void ManagerDb<PersonaType>::Delete(const typename PersonaType::DbKey& key) {
+template<typename Key, typename Value>
+void ManagerDb<Key, Value>::Delete(const Key& key) {
   leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), key.Serialise()));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
 }
 
-template<typename PersonaType>
-typename PersonaType::DbValue ManagerDb<PersonaType>::Get(const typename PersonaType::DbKey& key) {
+template<typename Key, typename Value>
+Value ManagerDb<Key, Value>::Get(const Key& key) {
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
   std::string value;
@@ -78,18 +74,18 @@ typename PersonaType::DbValue ManagerDb<PersonaType>::Get(const typename Persona
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
   assert(!value.empty());
-  return typename PersonaType::DbValue(typename PersonaType::DbValue::serialised_type(
-                                         NonEmptyString(value)));
+  return Value(typename Value::serialised_type(NonEmptyString(value)));
 }
 
-// TODO(Team) This can be optimise by returning iterators.
-template<typename PersonaType>
-std::vector<typename PersonaType::DbKey> ManagerDb<PersonaType>::GetKeys() {
-  std::vector<typename PersonaType::DbKey> return_vector;
+// TODO(Team) This can be optimise by returning const_iterators.
+// getkeys close to XXX would be better
+template<typename Key, typename Value>
+auto ManagerDb<Key, Value>::GetKeys() ->decltype(std::vector<Key>()) {
+  std::vector<Key> return_vector;
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
   for (iter->SeekToFirst(); iter->Valid(); iter->Next())
-    return_vector.push_back(DbKey(iter->key().ToString()));
+    return_vector.emplace_back(Key(iter->key()));
   return return_vector;
 }
 

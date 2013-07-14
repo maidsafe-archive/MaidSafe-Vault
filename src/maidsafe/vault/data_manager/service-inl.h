@@ -48,7 +48,7 @@ DataManagerUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
                 "Action must be either kPut of kDelete.");
   assert(message.data().type);
   return DataManagerUnresolvedEntry(
-      std::make_pair(DbKey(GetDataNameVariant(DataTagValue(message.data().type.get()),
+      std::make_pair(DataManagerKey(GetDataNameVariant(DataTagValue(message.data().type.get()),
                                         Identity(message.data().name))), Action),
                                         metadata_value,
                     this_id);

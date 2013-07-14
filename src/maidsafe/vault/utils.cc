@@ -121,17 +121,6 @@ typename VersionManager::DbKey
                            message.data().originator);
 }
 
-template<>
-typename DataManager::RecordName GetRecordName<DataManager>(
-    const typename DataManager::DbKey& db_key) {
-  return db_key;
-}
-
-template<>
-typename VersionManager::RecordName GetRecordName<VersionManager>(
-    const typename VersionManager::DbKey& db_key) {
-  return db_key.data_name();
-}
 
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path) {
   if (boost::filesystem::exists(db_path))

@@ -39,9 +39,9 @@ class MetadataMergePolicy {
  public:
   typedef DataManagerUnresolvedEntry UnresolvedEntry;
   typedef DataManagerResolvedEntry ResolvedEntry;
-  typedef ManagerDb<DataManager> Database;
+  typedef ManagerDb<DataManagerKey, DataManagerValue> Database;
 
-  explicit MetadataMergePolicy(ManagerDb<DataManager>* metadata_db);
+  explicit MetadataMergePolicy(ManagerDb<DataManagerKey, DataManagerValue>* metadata_db);
   MetadataMergePolicy(MetadataMergePolicy&& other);
   MetadataMergePolicy& operator=(MetadataMergePolicy&& other);
 
@@ -49,7 +49,7 @@ class MetadataMergePolicy {
   void Merge(const UnresolvedEntry& unresolved_entry);
 
   std::vector<UnresolvedEntry> unresolved_data_;
-  ManagerDb<DataManager>* metadata_db_;
+  ManagerDb<DataManagerKey, DataManagerValue>* metadata_db_;
 
  private:
   MetadataMergePolicy(const MetadataMergePolicy&);

@@ -134,16 +134,6 @@ template<>
 typename VersionManager::DbKey
          GetKeyFromMessage<VersionManager>(const nfs::Message& message);
 
-template<typename PersonaTypes>
-typename PersonaTypes::RecordName GetRecordName(const typename PersonaTypes::DbKey& db_key);
-
-template<>
-typename DataManager::RecordName GetRecordName<DataManager>(
-    const typename DataManager::DbKey& db_key);
-
-template<>
-typename VersionManager::RecordName GetRecordName<VersionManager>(
-    const typename VersionManager::DbKey& db_key);
 
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path);
 

@@ -35,6 +35,7 @@ struct PersonaTypes<Persona::kPmidManager> {
   typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
   typedef DbValue UnresolvedEntryValue;
   static const Persona persona = Persona::kPmidManager;
+  static const int kPaddedWidth = 1;
 };
 
 }  // namespace nfs

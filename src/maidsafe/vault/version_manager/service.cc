@@ -202,7 +202,7 @@ void VersionManagerService::HandleSynchronise(const nfs::Message& message) {
 }
 
 void VersionManagerService::HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {
-//  auto record_names(version_manager_db_.GetKeys());
+  auto record_names(version_manager_db_.GetKeys());
 //  auto itr(std::begin(record_names));
 //  while (itr != std::end(record_names)) {
 //    auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), *itr));
@@ -214,24 +214,20 @@ void VersionManagerService::HandleChurnEvent(routing::MatrixChange /*matrix_chan
 //      itr = record_names.erase(itr);
 //      continue;
 //    }
-//
+
 //    // Replace old_node(s) in sync object and send TransferRecord to new node(s).
 //    assert(check_holders_result.old_holders.size() == check_holders_result.new_holders.size());
-//    for (auto i(0U); i != check_holders_result.old_holders.size(); ++i) {
-//      // FIXME(Prakash) Need to pass record_name to sync
-//      // or have sync test whenther new node should be managing the 'account'
-//      // we can use the routing IsResponsibleFor(account_name, node_name) test I think
-//      // This is a bit of work but same test will be required for account transfer
-//      sync_.ReplaceNode(/**itr, */check_holders_result.old_holders[i], check_holders_result.new_holders[i]);
-//      nfs_.TransferRecord(*itr, check_holders_result.new_holders[i],
-//                          metadata_handler_.GetSerialisedRecord(record_name));
-//
-//      TransferRecord(*itr, check_holders_result.new_holders[i]);
+//    for (auto i(0U); i < check_holders_result.old_holders.size(); ++i) {
+//      sync_.ReplaceNode(check_holders_result.old_holders[i], check_holders_result.new_holders[i]);
+////      nfs_.TransferRecord(*itr, check_holders_result.new_holders[i],
+////                          metadata_handler_.GetSerialisedRecord(record_names));
+
+////      TransferRecord(*itr, check_holders_result.new_holders[i]);
 //    }
 //    ++itr;
 //  }
-//  // TODO(Prakash):  modify ReplaceNodeInSyncList to be called once with vector of tuple/struct
-//  // containing record name, old_holders, new_holders.
+  // TODO(Prakash):  modify ReplaceNodeInSyncList to be called once with vector of tuple/struct
+  // containing record name, old_holders, new_holders.
 }
 
 

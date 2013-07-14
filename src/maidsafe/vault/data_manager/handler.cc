@@ -48,9 +48,9 @@ void MetadataHandler::AddLocalUnresolvedEntry(const DataManagerUnresolvedEntry& 
   sync_.AddLocalEntry(unresolved_entry);
 }
 
-std::vector<DataManager::RecordName> MetadataHandler::GetRecordNames() const {
-  return metadata_db_->GetKeys();
-}
+//std::vector<DataManager::RecordName> MetadataHandler::GetRecordNames() const {
+// // return metadata_db_->GetKeys();
+//}
 
 void MetadataHandler::ReplaceNodeInSyncList(const DataNameVariant& /*record_name*/,  //FIXME in Sync
                                             const NodeId& old_node, const NodeId& new_node) {

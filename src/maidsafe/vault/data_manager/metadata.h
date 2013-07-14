@@ -37,12 +37,14 @@ class Metadata {
  public:
   // This constructor reads the existing element or creates a new one if it doesn't already exist.
   Metadata(const DataNameVariant& data_name,
-           ManagerDb<DataManager>* metadata_db,
+           ManagerDb<DataManagerKey, DataManagerValue>* metadata_db,
            int32_t data_size);
   // This constructor reads the existing element or throws if it doesn't already exist.
-  Metadata(const DataNameVariant& data_name, ManagerDb<DataManager>* metadata_db);
+  Metadata(const DataNameVariant& data_name,
+           ManagerDb<DataManagerKey,
+           DataManagerValue>* metadata_db);
   // Should only be called once.
-  void SaveChanges(ManagerDb<DataManager>* metadata_db);
+  void SaveChanges(ManagerDb<DataManagerKey, DataManagerValue>* metadata_db);
 
   DataNameVariant data_name_;
   DataManagerValue value_;

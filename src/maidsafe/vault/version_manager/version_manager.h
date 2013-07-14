@@ -23,7 +23,6 @@ License.
 #include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/unresolved_element.h"
-#include "maidsafe/vault/db_key.h"
 #include "maidsafe/vault/version_manager/key.h"
 #include "maidsafe/vault/version_manager/unresolved_entry_value.h"
 
@@ -40,6 +39,7 @@ struct PersonaTypes<Persona::kVersionManager> {
   typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
   typedef ::maidsafe::vault::VersionManagerUnresolvedEntryValue UnresolvedEntryValue;
   static const Persona persona = Persona::kVersionManager;
+  static const int kPaddedWidth = 1;
 };
 
 }  // namespace nfs

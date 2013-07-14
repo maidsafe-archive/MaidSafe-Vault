@@ -31,18 +31,17 @@ namespace maidsafe {
 
 namespace vault {
 
-template<typename PersonaType>
+template<typename Key, typename Value>
 class ManagerDb {
  public:
-  typedef std::pair<typename PersonaType::DbKey, typename PersonaType::DbValue> KvPair;
-//  explicit ManagerDb(const boost::filesystem::path& path);
+  typedef std::pair<Key, Value> KvPair;
   ManagerDb();
   ~ManagerDb();
 
   void Put(const KvPair& key_value_pair);
-  void Delete(const typename PersonaType::DbKey& key);
-  typename PersonaType::DbValue Get(const typename PersonaType::DbKey& key);
-  std::vector<typename PersonaType::DbKey> GetKeys();
+  void Delete(const Key& key);
+  Value Get(const Key& key);
+  auto GetKeys()->decltype(std::vector<Key>());
 
  private:
   ManagerDb(const ManagerDb&);

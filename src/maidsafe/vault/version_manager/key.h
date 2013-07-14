@@ -28,7 +28,7 @@ namespace maidsafe {
 namespace vault {
 
 class Db;
-template<typename PersonaType>
+template<typename Key, typename Value>
 class ManagerDb;
 
 class VersionManagerKey {
@@ -46,7 +46,7 @@ class VersionManagerKey {
   friend bool operator==(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
   friend bool operator<(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
   friend class Db;
-  template<typename PersonaType>
+  template<typename Key, typename Value>
   friend class ManagerDb;
 
  private:

@@ -80,11 +80,14 @@ class VersionManagerService {
   std::mutex accumulator_mutex_;
   std::mutex sync_mutex_;
   Accumulator<VersionManagerAccountName> accumulator_;
-  ManagerDb<VersionManager> version_manager_db_;
+  ManagerDb<VersionManagerKey, StructuredDataVersions> version_manager_db_;
   const NodeId kThisNodeId_;
   Sync<VersionManagerMergePolicy> sync_;
   VersionManagerNfs nfs_;
-  StorageMerge<VersionManagerKey, StructuredDataVersions, ManagerDb<VersionManager>>  database_merge_;
+  StorageMerge<VersionManagerKey,
+               StructuredDataVersions,
+               ManagerDb<VersionManagerKey,
+                         StructuredDataVersions>>database_merge_;
 };
 
 }  // namespace vault

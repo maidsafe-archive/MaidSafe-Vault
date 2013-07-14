@@ -51,9 +51,11 @@ void VersionManagerService::HandleMessage(const nfs::Message& message,
       return reply_functor(reply.Serialise()->string());
   }
 
-   if (message.data().action == nfs::MessageAction::kSynchronise ||
-       message.data().action == nfs::MessageAction::kAccountTransfer)
-     return HandleSynchronise(message);   // No accumulate
+   if (message.data().action == nfs::MessageAction::kSynchronise)
+      return HandleSynchronise(message);   // No accumulate
+     database_merge_.insert(message);
+   if (message.data().action == nfs::MessageAction::kAccountTransfer)
+     database_merge_.insert(message);
 
    if (message.data().action == nfs::MessageAction::kGet)
      return HandleGet(message, reply_functor);  //  Add to accumulator on action

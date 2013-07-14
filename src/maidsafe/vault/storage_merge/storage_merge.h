@@ -21,12 +21,10 @@ License.
 #include <string>
 #include <vector>
 #include <tuple>
-
-#include "leveldb/db.h"
+#include <set>
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/active.h"
-#include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/routing/parameters.h"
 #include "maidsafe/nfs/message.h"
@@ -43,7 +41,6 @@ class StorageMerge : public Key, public Value, public StoragePolicy {
  public:
   StorageMerge() :
     active_(),
-    unmerged_entry_(),
     unmerged_entries_() {}
   void insert(const nfs::Message& message);
   typedef std::tuple<std::tuple<Key, Value>, NodeId> UnmergedEntry;
@@ -51,7 +48,6 @@ class StorageMerge : public Key, public Value, public StoragePolicy {
   StorageMerge(const StorageMerge&);
   StorageMerge& operator=(const StorageMerge&);
   Active active_;
-  std::tuple<std::tuple<Key, Value>, NodeId> unmerged_entry_;
   //                                Key  dbvalue             sender
   std::vector<std::tuple<std::tuple<Key, Value>, std::set<NodeId>>> unmerged_entries_;
   bool KeyExist(const Key& key);
