@@ -13,23 +13,10 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_KEY_H_
-#define MAIDSAFE_VAULT_VERSION_MANAGER_KEY_H_
-#include "maidsafe/vault/key.h"
-#include "maidsafe/vault/version_manager/version_manager.h"
+package maidsafe.vault.protobuf;
 
-namespace maidsafe {
-
-namespace vault {
-
-template <>
-Key<VersionManager>::Key(const std::string& serialised_key);
-
-template <>
-std::string Key<VersionManager>::Serialise() const;
-
-}  // namespace vault
-
-}  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_KEY_H_
+message VersionManagerKey {
+  required bytes name = 1;
+  required int32 type = 2;
+  required bytes originator = 3;
+}

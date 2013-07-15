@@ -67,10 +67,10 @@ Key::Key(const std::string& serialised_key) : name_() {
   key_proto.ParseFromString(serialised_key);
   name = GetDataNameVariant(static_cast<DataTagValue>(key_proto.type),
                             Identity(key_proto.name));
-
 }
+
 //template <typename Persona>
-//Key::Key(const std::string& serialised_key) : name_() {
+//Key::Key(const std::string& fixed_width_serialised_key) : name_() {
 //  std::string name(serialised_key.substr(0, NodeId::kSize));
 //  std::string type_as_string(serialised_key.substr(NodeId::kSize, kPaddedWidth_));
 //  auto type(static_cast<DataTagValue>(detail::FromFixedWidthString<kPaddedWidth_>(type_as_string)));
@@ -106,32 +106,38 @@ std::string Key::ToFixedWidthString() const {
             detail::ToFixedWidthString<Persona::kPaddedWidth>(static_cast<uint32_t>(result.first)));
 }
 
+template <typename Persona>
 void swap(Key& lhs, Key& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
   swap(lhs.name_, rhs.name_);
 }
 
-
+template <typename Persona>
 bool operator==(const Key& lhs, const Key& rhs) {
   return lhs.name_ == rhs.name_;
 }
 
+template <typename Persona>
 bool operator!=(const Key& lhs, const Key& rhs) {
   return !operator==(lhs, rhs);
 }
 
+template <typename Persona>
 bool operator<(const Key& lhs, const Key& rhs) {
   return lhs.name_ < rhs.name_;
 }
 
+template <typename Persona>
 bool operator>(const Key& lhs, const Key& rhs) {
   return operator<(rhs, lhs);
 }
 
+template <typename Persona>
 bool operator<=(const Key& lhs, const Key& rhs) {
   return !operator>(lhs, rhs);
 }
 
+template <typename Persona>
 bool operator>=(const Key& lhs, const Key& rhs) {
   return !operator<(lhs, rhs);
 }
