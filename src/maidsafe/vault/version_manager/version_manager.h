@@ -32,11 +32,10 @@ namespace nfs {
 
 template<>
 struct PersonaTypes<Persona::kVersionManager> {
-  PersonaTypes<Persona::kVersionManager>();
   typedef DataNameVariant RecordName;
-  typedef ::maidsafe::vault::VersionManagerKey DbKey;
+  //typedef ::maidsafe::vault::VersionManagerKey DbKey;
   typedef StructuredDataVersions DbValue;
-  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
+  //typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
   typedef ::maidsafe::vault::VersionManagerUnresolvedEntryValue UnresolvedEntryValue;
   static const Persona persona = Persona::kVersionManager;
   static const int kPaddedWidth = 1;

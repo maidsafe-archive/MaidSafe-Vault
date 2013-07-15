@@ -18,8 +18,10 @@ License.
 
 #include <string>
 
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/error.h"
+
 #include "maidsafe/vault/key.pb.h"
+
 
 namespace maidsafe {
 
@@ -34,42 +36,46 @@ class Db;
 template<typename PersonaType>
 class ManagerDb;
 
-template <typename Persona>
+template<typename Persona, typename Data>
 struct Key {
-  explicit Key(const DataNameVariant& name);
+  explicit Key(const typename Data::name_type& name_in);
   explicit Key(const std::string& serialised_key);
-  Key();
   Key(const Key& other);
   Key(Key&& other);
   Key& operator=(Key other);
-
-  DataNameVariant name() const { return name_; }
-
-  void swap(Key& lhs, Key& rhs) MAIDSAFE_NOEXCEPT;
-  bool operator==(const Key& lhs, const Key& rhs);
-  bool operator<(const Key& lhs, const Key& rhs);
-
-  std::string ToFixedWidthString();
   std::string Serialise() const;
-  DataNameVariant name;
+
+  typename Data::name_type name;
+
+  friend class Db;
+  template<typename PersonaType>
+  friend class ManagerDb;
+
+ private:
+  std::string ToFixedWidthString() const;
 };
 
 
-template <typename Persona>
-Key::Key(const DataNameVariant& name) : name_(name) {}
+template<typename Persona, typename Data>
+Key<Persona, Data>::Key(const typename Data::name_type& name_in) : name(name_in) {}
 
-template <typename Persona>
-Key::Key() : name_() {}
+template<typename Persona, typename Data>
+Key<Persona, Data>::Key(const std::string& serialised_key)
+    : name([&serialised_key]()->Identity {
+        protobuf::Key key_proto;
+        if (!key_proto.ParseFromString(serialised_key))
+          ThrowError(CommonErrors::parsing_error);
+        assert(static_cast<DataTagValue>(key_proto.type) == Data::name_type::tag_type::kEnumValue);
+        return Identity(key_proto.name);
+      }()) {}
 
-template <typename Persona>
-Key::Key(const std::string& serialised_key) : name_() {
-  protobuf::Key key_proto;
-  key_proto.ParseFromString(serialised_key);
-  name = GetDataNameVariant(static_cast<DataTagValue>(key_proto.type),
-                            Identity(key_proto.name));
+template<typename Persona, typename Data>
+void swap(Key<Persona, Data>& lhs, Key<Persona, Data>& rhs) MAIDSAFE_NOEXCEPT {
+  using std::swap;
+  swap(lhs.name, rhs.name);
 }
 
-//template <typename Persona>
+//template<typename Persona, typename Data>
 //Key::Key(const std::string& fixed_width_serialised_key) : name_() {
 //  std::string name(serialised_key.substr(0, NodeId::kSize));
 //  std::string type_as_string(serialised_key.substr(NodeId::kSize, kPaddedWidth_));
@@ -77,68 +83,59 @@ Key::Key(const std::string& serialised_key) : name_() {
 //  name_ = GetDataNameVariant(type, Identity(name));
 //}
 
-template <typename Persona>
-Key::Key(const Key& other) : name_(other.name_)  {}
+template<typename Persona, typename Data>
+Key<Persona, Data>::Key(const Key& other) : name(other.name) {}
 
-template <typename Persona>
-Key::Key(Key&& other) : name_(std::move(other.name_)) {}
+template<typename Persona, typename Data>
+Key<Persona, Data>::Key(Key&& other) : name(std::move(other.name)) {}
 
-template <typename Persona>
-Key& Key::operator=(Key other) {
+template<typename Persona, typename Data>
+Key<Persona, Data>& Key<Persona, Data>::operator=(Key other) {
   swap(*this, other);
   return *this;
 }
 
-template <typename Persona>
-std::string Key::Serialise() const {
+template<typename Persona, typename Data>
+std::string Key<Persona, Data>::Serialise() const {
   protobuf::Key key_proto;
-  static GetTagValueAndIdentityVisitor visitor;
-  auto result(boost::apply_visitor(visitor, name));
-  key_proto.set_name(result.second.string());
-  key_proto.set_type(static_cast<int32_t>(result.first));
+  key_proto.set_name(name->string());
+  key_proto.set_type(static_cast<int32_t>(Data::name_type::tag_type::kEnumValue));
+  return key_proto.SerializeAsString();
 }
 
-template <typename Persona>
-std::string Key::ToFixedWidthString() const {
-  static GetTagValueAndIdentityVisitor visitor;
-  auto result(boost::apply_visitor(visitor, name));
-  return std::string(result.second.string() +
-            detail::ToFixedWidthString<Persona::kPaddedWidth>(static_cast<uint32_t>(result.first)));
+template<typename Persona, typename Data>
+std::string Key<Persona, Data>::ToFixedWidthString() const {
+  return name->string() + detail::ToFixedWidthString<Persona::kPaddedWidth>(
+      static_cast<uint32_t>(Data::name_type::tag_type::kEnumValue));
 }
 
-template <typename Persona>
-void swap(Key& lhs, Key& rhs) MAIDSAFE_NOEXCEPT {
-  using std::swap;
-  swap(lhs.name_, rhs.name_);
+template<typename Persona, typename Data>
+bool operator==(const Key<Persona, Data>& lhs, const Key<Persona, Data>& rhs) {
+  return lhs.name == rhs.name;
 }
 
-template <typename Persona>
-bool operator==(const Key& lhs, const Key& rhs) {
-  return lhs.name_ == rhs.name_;
-}
-
-template <typename Persona>
-bool operator!=(const Key& lhs, const Key& rhs) {
+template<typename Persona, typename Data>
+bool operator!=(const Key<Persona, Data>& lhs, const Key<Persona, Data>& rhs) {
   return !operator==(lhs, rhs);
 }
 
-template <typename Persona>
-bool operator<(const Key& lhs, const Key& rhs) {
-  return lhs.name_ < rhs.name_;
+template<typename Persona, typename Data>
+bool operator<(const Key<Persona, Data>& lhs, const Key<Persona, Data>& rhs) {
+  return lhs.name < rhs.name;
 }
 
-template <typename Persona>
-bool operator>(const Key& lhs, const Key& rhs) {
+template<typename Persona, typename Data>
+bool operator>(const Key<Persona, Data>& lhs, const Key<Persona, Data>& rhs) {
   return operator<(rhs, lhs);
 }
 
-template <typename Persona>
-bool operator<=(const Key& lhs, const Key& rhs) {
+template<typename Persona, typename Data>
+bool operator<=(const Key<Persona, Data>& lhs, const Key<Persona, Data>& rhs) {
   return !operator>(lhs, rhs);
 }
 
-template <typename Persona>
-bool operator>=(const Key& lhs, const Key& rhs) {
+template<typename Persona, typename Data>
+bool operator>=(const Key<Persona, Data>& lhs, const Key<Persona, Data>& rhs) {
   return !operator<(lhs, rhs);
 }
 
