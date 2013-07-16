@@ -35,7 +35,7 @@ struct PutVersion : public StoragePolicy {
       : old_version(old_version_in),
         new_version(new_version_in) {}
 
-  bool operator()(const typename Persona::Key& key) {
+  bool operator()() {
     auto value = StoragePolicy::Get(key);
     value.PutVersion(old_version, new_version);
     StoragePolicy::Put(make_pair(key, value));
