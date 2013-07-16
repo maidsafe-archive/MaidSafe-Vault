@@ -21,7 +21,7 @@ License.
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
-#include "maidsafe/vault/data_manager/key.h"
+#include "maidsafe/vault/key.h"
 #include "maidsafe/vault/data_manager/value.h"
 #include "maidsafe/vault/unresolved_element.h"
 
@@ -31,8 +31,6 @@ namespace nfs {
 
 template<>
 struct PersonaTypes<Persona::kDataManager> {
-  typedef std::pair<vault::DataManagerKey, MessageAction> UnresolvedEntryKey;
-  typedef vault::DataManagerValue UnresolvedEntryValue;
   static const Persona persona = Persona::kDataManager;
   static const int kPaddedWidth = 1;
 };
@@ -41,7 +39,10 @@ struct PersonaTypes<Persona::kDataManager> {
 
 namespace vault {
 
+
 typedef nfs::PersonaTypes<nfs::Persona::kDataManager> DataManager;
+typedef std::pair<Key<DataManager>, nfs::MessageAction> UnresolvedEntryKey;
+typedef vault::DataManagerValue UnresolvedEntryValue;
 typedef UnresolvedElement<DataManager> DataManagerUnresolvedEntry;
 typedef DataManagerUnresolvedEntry DataManagerResolvedEntry;
 }  // namespace vault

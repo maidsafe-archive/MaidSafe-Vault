@@ -32,41 +32,36 @@ namespace maidsafe {
 
 namespace vault {
 
-template<typename PersonaTypes>
+template<typename Persona, typename Action>
 struct UnresolvedElement {
-  typedef typename PersonaTypes::UnresolvedEntryKey Key;
-  typedef typename PersonaTypes::UnresolvedEntryValue Value;
 
  private:
-  template<typename Value>
+  template<typename Persona, typename Action>
   struct SerialisedUnresolvedEntryTag {};
 
  public:
-  typedef TaggedValue<NonEmptyString, SerialisedUnresolvedEntryTag<Value>> serialised_type;
-
-  struct MessageContent {
-    NodeId peer_id;
-    boost::optional<int32_t> entry_id;
-    boost::optional<Value> value;
-  };
+  typedef TaggedValue<NonEmptyString, SerialisedUnresolvedEntryTag<Persona, Action>>
+                                                                               serialised_type;
 
   UnresolvedElement();
   explicit UnresolvedElement(const serialised_type& serialised_copy);
   UnresolvedElement(const UnresolvedElement& other);
   UnresolvedElement(UnresolvedElement&& other);
   UnresolvedElement& operator=(UnresolvedElement other);
-  UnresolvedElement(const Key& key, const Value& value, const NodeId& sender_id);
+  UnresolvedElement(typename const Persona::Key& key,
+                    const Action& action,
+                    const NodeId& sender_id);
 
   template<typename T>
   friend void swap(UnresolvedElement& lhs, UnresolvedElement& rhs) MAIDSAFE_NOEXCEPT;
 
   serialised_type Serialise() const;
 
-  Key key;
-  std::vector<MessageContent> messages_contents;
+  typename Persona::Key key;
+  std::set<NodeId> peer_id;
+  int32_t entry_id;
+  Action action;
   int sync_counter;
-  bool dont_add_to_db;
-  nfs::MessageId original_message_id;
   NodeId source_node_id;
 };
 

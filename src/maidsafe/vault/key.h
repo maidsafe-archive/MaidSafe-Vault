@@ -33,7 +33,7 @@ class KeyTest_BEH_All_Test;
 }  // namespace test
 
 class Db;
-template<typename PersonaType>
+template<typename Key, typename Value>
 class ManagerDb;
 
 template<typename Persona, typename Data>
@@ -59,21 +59,21 @@ struct Key {
 template<typename Persona, typename Data>
 Key<Persona, Data>::Key(const typename Data::name_type& name_in) : name(name_in) {}
 
-template<typename Persona, typename Data>
-Key<Persona, Data>::Key(const std::string& serialised_key)
-    : name([&serialised_key]()->Identity {
-        protobuf::Key key_proto;
-        if (!key_proto.ParseFromString(serialised_key))
-          ThrowError(CommonErrors::parsing_error);
-        assert(static_cast<DataTagValue>(key_proto.type) == Data::name_type::tag_type::kEnumValue);
-        return Identity(key_proto.name);
-      }()) {}
+//template<typename Persona, typename Data>
+//Key<Persona, Data>::Key(const std::string& serialised_key)
+//    : name([&serialised_key]()->Identity {
+//        protobuf::Key key_proto;
+//        if (!key_proto.ParseFromString(serialised_key))
+//          ThrowError(CommonErrors::parsing_error);
+//        assert(static_cast<DataTagValue>(key_proto.type) == Data::name_type::tag_type::kEnumValue);
+//        return Identity(key_proto.name);
+//      }()) {}
 
-template<typename Persona, typename Data>
-void swap(Key<Persona, Data>& lhs, Key<Persona, Data>& rhs) MAIDSAFE_NOEXCEPT {
-  using std::swap;
-  swap(lhs.name, rhs.name);
-}
+//template<typename Persona, typename Data>
+//void swap(Key<Persona, Data>& lhs, Key<Persona, Data>& rhs) MAIDSAFE_NOEXCEPT {
+//  using std::swap;
+//  swap(lhs.name, rhs.name);
+//}
 
 //template<typename Persona, typename Data>
 //Key::Key(const std::string& fixed_width_serialised_key) : name_() {
@@ -103,11 +103,11 @@ std::string Key<Persona, Data>::Serialise() const {
   return key_proto.SerializeAsString();
 }
 
-template<typename Persona, typename Data>
-std::string Key<Persona, Data>::ToFixedWidthString() const {
-  return name->string() + detail::ToFixedWidthString<Persona::kPaddedWidth>(
-      static_cast<uint32_t>(Data::name_type::tag_type::kEnumValue));
-}
+//template<typename Persona, typename Data>
+//std::string Key<Persona, Data>::ToFixedWidthString() const {
+//  return name->string() + detail::ToFixedWidthString<Persona::kPaddedWidth>(
+//      static_cast<uint32_t>(Data::name_type::tag_type::kEnumValue));
+//}
 
 template<typename Persona, typename Data>
 bool operator==(const Key<Persona, Data>& lhs, const Key<Persona, Data>& rhs) {
