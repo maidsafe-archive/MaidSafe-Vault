@@ -18,8 +18,8 @@ License.
 //#include <algorithm>
 //#include <tuple>
 //
-//#include "maidsafe/vault/utils.h"
-//#include "maidsafe/vault/version_manager/version_manager_key.pb.h"
+#include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/version_manager/version_manager_key.pb.h"
 
 namespace maidsafe {
 
