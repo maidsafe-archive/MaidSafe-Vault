@@ -22,9 +22,9 @@ License.
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/nfs/types.h"
-#include "maidsafe/vault/unresolved_element.h"
+//#include "maidsafe/vault/unresolved_element.h"
 #include "maidsafe/vault/version_manager/key.h"
-#include "maidsafe/vault/version_manager/unresolved_entry_value.h"
+//#include "maidsafe/vault/version_manager/unresolved_entry_value.h"
 
 namespace maidsafe {
 
@@ -32,13 +32,27 @@ namespace nfs {
 
 template<>
 struct PersonaTypes<Persona::kVersionManager> {
-  typedef DataNameVariant RecordName;
-  //typedef ::maidsafe::vault::VersionManagerKey DbKey;
-  typedef StructuredDataVersions DbValue;
+  template<typename Data>
+  struct Key {
+    typedef maidsafe::vault::VersionManagerKey<Data> type;
+  };
+
+  //typedef DataNameVariant RecordName;
+  //typedef vault::VersionManagerKey DbKey;
+  //typedef StructuredDataVersions DbValue;
   //typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-  typedef ::maidsafe::vault::VersionManagerUnresolvedEntryValue UnresolvedEntryValue;
+  //typedef vault::VersionManagerUnresolvedEntryValue UnresolvedEntryValue;
   static const Persona persona = Persona::kVersionManager;
   static const int kPaddedWidth = 1;
+
+  enum class Action : int32_t {
+    kPut,
+    kGet,
+    kGetBranch,
+    kDeleteBranchUntilFork,
+    kSync,
+    kAccountTransfer
+  };
 };
 
 }  // namespace nfs
@@ -46,8 +60,8 @@ struct PersonaTypes<Persona::kVersionManager> {
 namespace vault {
 
 typedef nfs::PersonaTypes<nfs::Persona::kVersionManager> VersionManager;
-typedef UnresolvedElement<VersionManager> VersionManagerUnresolvedEntry;
-typedef VersionManagerUnresolvedEntry VersionManagerResolvedEntry;
+//typedef UnresolvedElement<VersionManager> VersionManagerUnresolvedEntry;
+//typedef VersionManagerUnresolvedEntry VersionManagerResolvedEntry;
 
 }  // namespace vault
 

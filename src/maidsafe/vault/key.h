@@ -33,10 +33,10 @@ class KeyTest_BEH_All_Test;
 }  // namespace test
 
 class Db;
-template<typename Key, typename Value>
+template<typename Persona>
 class ManagerDb;
 
-template<typename Persona, typename Data>
+template<typename Data>
 struct Key {
   explicit Key(const typename Data::name_type& name_in);
   explicit Key(const std::string& serialised_key);
@@ -48,32 +48,33 @@ struct Key {
   typename Data::name_type name;
 
   friend class Db;
-  template<typename PersonaType>
+  template<typename Persona>
   friend class ManagerDb;
 
  private:
+  template<typename Persona>
   std::string ToFixedWidthString() const;
 };
 
 
-template<typename Persona, typename Data>
-Key<Persona, Data>::Key(const typename Data::name_type& name_in) : name(name_in) {}
+template<typename Data>
+Key<Data>::Key(const typename Data::name_type& name_in) : name(name_in) {}
 
-//template<typename Persona, typename Data>
-//Key<Persona, Data>::Key(const std::string& serialised_key)
-//    : name([&serialised_key]()->Identity {
-//        protobuf::Key key_proto;
-//        if (!key_proto.ParseFromString(serialised_key))
-//          ThrowError(CommonErrors::parsing_error);
-//        assert(static_cast<DataTagValue>(key_proto.type) == Data::name_type::tag_type::kEnumValue);
-//        return Identity(key_proto.name);
-//      }()) {}
+template<typename Data>
+Key<Data>::Key(const std::string& serialised_key)
+    : name([&serialised_key]()->Identity {
+        protobuf::Key key_proto;
+        if (!key_proto.ParseFromString(serialised_key))
+          ThrowError(CommonErrors::parsing_error);
+        assert(static_cast<DataTagValue>(key_proto.type) == Data::name_type::tag_type::kEnumValue);
+        return Identity(key_proto.name);
+      }()) {}
 
-//template<typename Persona, typename Data>
-//void swap(Key<Persona, Data>& lhs, Key<Persona, Data>& rhs) MAIDSAFE_NOEXCEPT {
-//  using std::swap;
-//  swap(lhs.name, rhs.name);
-//}
+template<typename Data>
+void swap(Key<Data>& lhs, Key<Data>& rhs) MAIDSAFE_NOEXCEPT {
+  using std::swap;
+  swap(lhs.name, rhs.name);
+}
 
 //template<typename Persona, typename Data>
 //Key::Key(const std::string& fixed_width_serialised_key) : name_() {
@@ -83,59 +84,60 @@ Key<Persona, Data>::Key(const typename Data::name_type& name_in) : name(name_in)
 //  name_ = GetDataNameVariant(type, Identity(name));
 //}
 
-template<typename Persona, typename Data>
-Key<Persona, Data>::Key(const Key& other) : name(other.name) {}
+template<typename Data>
+Key<Data>::Key(const Key& other) : name(other.name) {}
 
-template<typename Persona, typename Data>
-Key<Persona, Data>::Key(Key&& other) : name(std::move(other.name)) {}
+template<typename Data>
+Key<Data>::Key(Key&& other) : name(std::move(other.name)) {}
 
-template<typename Persona, typename Data>
-Key<Persona, Data>& Key<Persona, Data>::operator=(Key other) {
+template<typename Data>
+Key<Data>& Key<Data>::operator=(Key other) {
   swap(*this, other);
   return *this;
 }
 
-template<typename Persona, typename Data>
-std::string Key<Persona, Data>::Serialise() const {
+template<typename Data>
+std::string Key<Data>::Serialise() const {
   protobuf::Key key_proto;
   key_proto.set_name(name->string());
   key_proto.set_type(static_cast<int32_t>(Data::name_type::tag_type::kEnumValue));
   return key_proto.SerializeAsString();
 }
 
-//template<typename Persona, typename Data>
-//std::string Key<Persona, Data>::ToFixedWidthString() const {
-//  return name->string() + detail::ToFixedWidthString<Persona::kPaddedWidth>(
-//      static_cast<uint32_t>(Data::name_type::tag_type::kEnumValue));
-//}
+template<typename Data>
+template<typename Persona>
+std::string Key<Data>::ToFixedWidthString() const {
+  return name->string() + detail::ToFixedWidthString<Persona::kPaddedWidth>(
+      static_cast<uint32_t>(Data::name_type::tag_type::kEnumValue));
+}
 
-template<typename Persona, typename Data>
-bool operator==(const Key<Persona, Data>& lhs, const Key<Persona, Data>& rhs) {
+template<typename Data>
+bool operator==(const Key<Data>& lhs, const Key<Data>& rhs) {
   return lhs.name == rhs.name;
 }
 
-template<typename Persona, typename Data>
-bool operator!=(const Key<Persona, Data>& lhs, const Key<Persona, Data>& rhs) {
+template<typename Data>
+bool operator!=(const Key<Data>& lhs, const Key<Data>& rhs) {
   return !operator==(lhs, rhs);
 }
 
-template<typename Persona, typename Data>
-bool operator<(const Key<Persona, Data>& lhs, const Key<Persona, Data>& rhs) {
+template<typename Data>
+bool operator<(const Key<Data>& lhs, const Key<Data>& rhs) {
   return lhs.name < rhs.name;
 }
 
-template<typename Persona, typename Data>
-bool operator>(const Key<Persona, Data>& lhs, const Key<Persona, Data>& rhs) {
+template<typename Data>
+bool operator>(const Key<Data>& lhs, const Key<Data>& rhs) {
   return operator<(rhs, lhs);
 }
 
-template<typename Persona, typename Data>
-bool operator<=(const Key<Persona, Data>& lhs, const Key<Persona, Data>& rhs) {
+template<typename Data>
+bool operator<=(const Key<Data>& lhs, const Key<Data>& rhs) {
   return !operator>(lhs, rhs);
 }
 
-template<typename Persona, typename Data>
-bool operator>=(const Key<Persona, Data>& lhs, const Key<Persona, Data>& rhs) {
+template<typename Data>
+bool operator>=(const Key<Data>& lhs, const Key<Data>& rhs) {
   return !operator<(lhs, rhs);
 }
 

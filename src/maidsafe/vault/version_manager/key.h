@@ -27,23 +27,23 @@ namespace maidsafe {
 namespace vault {
 
 class Db;
-template<typename PersonaType>
+template<typename Persona>
 class ManagerDb;
 
 template<typename Data>
-struct Key<VersionManager, Data> {
-  Key(const typename Data::name_type& name_in, const Identity& originator_in);
-  explicit Key(const std::string& serialised_key);
-  Key(const Key& other);
-  Key(Key&& other);
-  Key& operator=(Key other);
+struct VersionManagerKey {
+  VersionManagerKey(const typename Data::name_type& name_in, const Identity& originator_in);
+  explicit VersionManagerKey(const std::string& serialised_key);
+  VersionManagerKey(const VersionManagerKey& other);
+  VersionManagerKey(VersionManagerKey&& other);
+  VersionManagerKey& operator=(VersionManagerKey other);
   std::string Serialise() const;
 
   typename Data::name_type name;
   Identity originator;
 
   friend class Db;
-  template<typename PersonaType>
+  template<typename Persona>
   friend class ManagerDb;
 
  private:
@@ -51,14 +51,15 @@ struct Key<VersionManager, Data> {
 };
 
 
+
 template<typename Data>
-Key<VersionManager, Data>::Key(const typename Data::name_type& name_in,
-                               const Identity& originator_in)
+VersionManagerKey<Data>::VersionManagerKey(const typename Data::name_type& name_in,
+                                           const Identity& originator_in)
     : name(name_in),
       originator(originator_in) {}
 
 template<typename Data>
-Key<VersionManager, Data>::Key(const std::string& serialised_key)
+VersionManagerKey<Data>::VersionManagerKey(const std::string& serialised_key)
     : name(),
       originator() {
   protobuf::VersionManagerKey key_proto;
@@ -70,14 +71,14 @@ Key<VersionManager, Data>::Key(const std::string& serialised_key)
 }
 
 template<typename Data>
-void swap(Key<VersionManager, Data>& lhs, Key<VersionManager, Data>& rhs) MAIDSAFE_NOEXCEPT {
+void swap(VersionManagerKey<Data>& lhs, VersionManagerKey<Data>& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
   swap(lhs.name, rhs.name);
   swap(lhs.originator, rhs.originator);
 }
 
-//template<typename VersionManager, typename Data>
-//Key::Key(const std::string& fixed_width_serialised_key) : name_() {
+//template<typename Data>
+//VersionManagerKey::VersionManagerKey(const std::string& fixed_width_serialised_key) : name_() {
 //  std::string name(serialised_key.substr(0, NodeId::kSize));
 //  std::string type_as_string(serialised_key.substr(NodeId::kSize, kPaddedWidth_));
 //  auto type(static_cast<DataTagValue>(detail::FromFixedWidthString<kPaddedWidth_>(type_as_string)));
@@ -85,22 +86,22 @@ void swap(Key<VersionManager, Data>& lhs, Key<VersionManager, Data>& rhs) MAIDSA
 //}
 
 template<typename Data>
-Key<VersionManager, Data>::Key(const Key& other) : name(other.name), originator(other.originator) {}
+VersionManagerKey<Data>::VersionManagerKey(const VersionManagerKey& other) : name(other.name), originator(other.originator) {}
 
 template<typename Data>
-Key<VersionManager, Data>::Key(Key&& other)
+VersionManagerKey<Data>::VersionManagerKey(VersionManagerKey&& other)
     : name(std::move(other.name)),
       originator(std::move(other.originator)) {}
 
 template<typename Data>
-Key<VersionManager, Data>& Key<VersionManager, Data>::operator=(Key other) {
+VersionManagerKey<Data>& VersionManagerKey<Data>::operator=(VersionManagerKey other) {
   swap(*this, other);
   return *this;
 }
 
 template<typename Data>
-std::string Key<VersionManager, Data>::Serialise() const {
-  protobuf::Key key_proto;
+std::string VersionManagerKey<Data>::Serialise() const {
+  protobuf::VersionManagerKey key_proto;
   key_proto.set_name(name->string());
   key_proto.set_type(static_cast<int32_t>(Data::name_type::tag_type::kEnumValue));
   key_proto.set_originator(originator.string());
@@ -108,39 +109,39 @@ std::string Key<VersionManager, Data>::Serialise() const {
 }
 
 template<typename Data>
-std::string Key<VersionManager, Data>::ToFixedWidthString() const {
+std::string VersionManagerKey<Data>::ToFixedWidthString() const {
   return name->string() + detail::ToFixedWidthString<VersionManager::kPaddedWidth>(
       static_cast<uint32_t>(Data::name_type::tag_type::kEnumValue)) +
       originator.string();
 }
 
 template<typename Data>
-bool operator==(const Key<VersionManager, Data>& lhs, const Key<VersionManager, Data>& rhs) {
+bool operator==(const VersionManagerKey<Data>& lhs, const VersionManagerKey<Data>& rhs) {
   return lhs.name == rhs.name && lhs.originator == rhs.originator;
 }
 
 template<typename Data>
-bool operator!=(const Key<VersionManager, Data>& lhs, const Key<VersionManager, Data>& rhs) {
+bool operator!=(const VersionManagerKey<Data>& lhs, const VersionManagerKey<Data>& rhs) {
   return !operator==(lhs, rhs);
 }
 
 template<typename Data>
-bool operator<(const Key<VersionManager, Data>& lhs, const Key<VersionManager, Data>& rhs) {
+bool operator<(const VersionManagerKey<Data>& lhs, const VersionManagerKey<Data>& rhs) {
   return std::tie(lhs.name, lhs.originator) < std::tie(rhs.name, rhs.originator);
 }
 
 template<typename Data>
-bool operator>(const Key<VersionManager, Data>& lhs, const Key<VersionManager, Data>& rhs) {
+bool operator>(const VersionManagerKey<Data>& lhs, const VersionManagerKey<Data>& rhs) {
   return operator<(rhs, lhs);
 }
 
 template<typename Data>
-bool operator<=(const Key<VersionManager, Data>& lhs, const Key<VersionManager, Data>& rhs) {
+bool operator<=(const VersionManagerKey<Data>& lhs, const VersionManagerKey<Data>& rhs) {
   return !operator>(lhs, rhs);
 }
 
 template<typename Data>
-bool operator>=(const Key<VersionManager, Data>& lhs, const Key<VersionManager, Data>& rhs) {
+bool operator>=(const VersionManagerKey<Data>& lhs, const VersionManagerKey<Data>& rhs) {
   return !operator<(lhs, rhs);
 }
 

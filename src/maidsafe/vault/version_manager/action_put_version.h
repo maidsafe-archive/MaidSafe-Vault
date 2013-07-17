@@ -16,43 +16,62 @@ License.
 #ifndef MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_VERSION_H_
 #define MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_VERSION_H_
 
+#include <string>
 
-#include <tuple>
+#include "maidsafe/common/error.h"
+#include "maidsafe/common/log.h"
+#include "maidsafe/data_types/structured_data_versions.h"
 
-#include "maidsafe/structured_data_versions.h"
+#include "maidsafe/vault/version_manager/version_manager.h"
+
 
 namespace maidsafe {
 
 namespace vault {
-template<typename StoragePolicy>
-struct PutVersion : public StoragePolicy {
-  PutVersion(const StructuredDataVersions& old_version_in,
-             const StructuredDataVersions& new_version_in,
-             const Key& key_in) 
-      : old_version(old_version_in),
-        new_version(new_version_in) {}
-  explicit PutVersion(const serialised_type& serialised_put_data)
-      : old_version(old_version_in),
-        new_version(new_version_in) {}
 
-  bool operator()() {
-    auto value = StoragePolicy::Get(key);
+struct ActionPutVersion {
+  ActionPutVersion(const StructuredDataVersions::VersionName& old_version_in,
+                   const StructuredDataVersions::VersionName& new_version_in)
+      : old_version(old_version_in),
+        new_version(new_version_in) {}
+  explicit ActionPutVersion(const std::string& serialised_action);
+  ActionPutVersion(const ActionPutVersion& other);
+  ActionPutVersion(ActionPutVersion&& other);
+
+  template<typename Storage, typename Key>
+  maidsafe_error operator()(Storage& storage, const Key& key) const;
+
+  std::string Serialise() const;
+
+  static const VersionManager::Action action_id;
+  const StructuredDataVersions::VersionName old_version, new_version;
+
+ private:
+  ActionPutVersion& operator=(ActionPutVersion other);
+};
+
+bool operator==(const ActionPutVersion& lhs, const ActionPutVersion& rhs);
+
+bool operator!=(const ActionPutVersion& lhs, const ActionPutVersion& rhs);
+
+
+
+template<typename Storage, typename Key>
+maidsafe_error ActionPutVersion::operator()(Storage& storage, const Key& key) const {
+  try {
+    auto value = storage.Get(key);
     value.PutVersion(old_version, new_version);
-    StoragePolicy::Put(make_pair(key, value));
+    storage.Put(key, value);
   }
-
-  bool operator==(const PutVersion& lhs, const PutVersion& rhs) {
-    return std::tie(lhs.old_version, lhs.new_version, lhs.key) == 
-           std::tie(rhs.old_version, rhs.new_version, rhs.key);
+  catch(const maidsafe_error& error) {
+    LOG(kError) << "Caught exception executing ActionPutVersion: " << error.what();
+    return error;
   }
-  bool operator!=(const PutVersion& lhs, const PutVersion& rhs) {
-    return !operator==(lhs, rhs);
+  catch(const std::exception& ex) {
+    LOG(kError) << "Caught exception executing ActionPutVersion: " << error.what();
+    return MakeError(CommonErrors::unknown);
   }
-  Serialise();
-  static const int action_id = []{ return 1; }
-  StructuredDataVersions old_version;
-  StructuredDataVersions new_version;
-  Key key;
+  return MakeError(CommonErrors::success);
 }
 
 }  // namespace vault
