@@ -30,25 +30,26 @@ namespace vault {
 
 namespace delete_me {  // DELETE ME
 
+// not thread safe
 class DataManagerValue {
   typedef TaggedValue<NonEmptyString, struct SerialisedDataManagerValueTag> serialised_type;
   explicit DataManagerValue(const serialised_type& serialised_metadata_value);
-  explicit DataManagerValue(const PmidName& pmid_name, int size_in);  // kPutResult
+  DataManagerValue(const PmidName& pmid_name, int size_in);  // kPutResult
   serialised_type Serialise() const;
 
   void AddPmid(const PmidName& pmid_name);  // kPutResult
   void RemovePmid(const PmidName& pmid_name); // DataManager service ??
   void Increamentsubscribers();  // kPut
   void Decreamentsubscribers();  // kDelete
-  void SetPmidOnline(const PmidName& online_pmid_name);  // kPmidOnline
-  void SetPmidOffline(const PmidName& offline_pmid_name);  // kPmidOffline
+  void SetPmidOnline(const PmidName& pmid_name);  // kPmidOnline
+  void SetPmidOffline(const PmidName& pmid_name);  // kPmidOffline
 
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
 
  private:
-  int data_size;
-  int64_t subscribers;
-  std::set<PmidName> online_pmid_name, offline_pmid_name;
+  int data_size_;
+  int64_t subscribers_;
+  std::set<PmidName> online_pmids_, offline_pmids_;
 };
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);

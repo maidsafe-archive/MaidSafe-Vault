@@ -26,10 +26,10 @@ namespace vault {
 namespace delete_me {
 
 DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_value)
-  : data_size(),
-    subscribers(),
-    online_pmid_name(),
-    offline_pmid_name() {
+  : data_size_(),
+    subscribers_(),
+    online_pmids_(),
+    offline_pmids_() {
   protobuf::DataManagerValue metadata_value_proto;
   if (!metadata_value_proto.ParseFromString(serialised_metadata_value->string()) ||
       metadata_value_proto.size() != 0 ||
@@ -37,52 +37,75 @@ DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_va
     LOG(kError) << "Failed to read or parse serialised metadata value";
     ThrowError(CommonErrors::parsing_error);
   } else {
-    data_size = metadata_value_proto.size();
-    subscribers = metadata_value_proto.subscribers();
+    data_size_ = metadata_value_proto.size();
+    subscribers_ = metadata_value_proto.subscribers();
     for (auto& i : metadata_value_proto.online_pmid_name())
-      online_pmid_name.insert(PmidName(Identity(i)));
+      online_pmids_.insert(PmidName(Identity(i)));
     for (auto& i : metadata_value_proto.offline_pmid_name())
-      offline_pmid_name.insert(PmidName(Identity(i)));
+      offline_pmids_.insert(PmidName(Identity(i)));
   }
 }
 
 DataManagerValue::DataManagerValue(const PmidName& pmid_name, int size)
-    : data_size(size),
-      subscribers(0),
-      online_pmid_name(),
-      offline_pmid_name() {
+    : data_size_(size),
+      subscribers_(1),
+      online_pmids_(),
+      offline_pmids_() {
   if (size < 1)
     ThrowError(CommonErrors::invalid_parameter);
-  online_pmid_name.insert(pmid_name);
+  online_pmids_.insert(pmid_name);
 }
 
-void DataManagerValue::AddPmid(const PmidName& /*pmid_name*/) {}
-void DataManagerValue::RemovePmid(const PmidName& /*pmid_name*/) {}
-void DataManagerValue::Increamentsubscribers() {}
-void DataManagerValue::Decreamentsubscribers() {}
-void DataManagerValue::SetPmidOnline(const PmidName& /*online_pmid_name*/) {}
-void DataManagerValue::SetPmidOffline(const PmidName& /*offline_pmid_name*/) {}
+void DataManagerValue::AddPmid(const PmidName& pmid_name) {
+  online_pmids_.insert(pmid_name);
+  offline_pmids_.erase(pmid_name);
+}
+
+void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
+  online_pmids_.erase(pmid_name);
+  offline_pmids_.erase(pmid_name);
+}
+
+void DataManagerValue::Increamentsubscribers() {
+  ++subscribers_;
+}
+
+void DataManagerValue::Decreamentsubscribers() {
+  --subscribers_;
+}
+
+void DataManagerValue::SetPmidOnline(const PmidName& pmid_name) {
+  auto deleted = offline_pmids_.erase(pmid_name);
+  if (deleted == 1)
+    online_pmids_.insert(pmid_name);
+}
+
+void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
+  auto deleted = online_pmids_.erase(pmid_name);
+  if (deleted == 1)
+    offline_pmids_.insert(pmid_name);
+}
 
 DataManagerValue::serialised_type DataManagerValue::Serialise() const {
-  if ((subscribers == 0) || online_pmid_name.empty())
+  if ((subscribers_ <= 0) || online_pmids_.empty())
     ThrowError(CommonErrors::uninitialised);  // Cannot serialise if not a complete db value
 
   protobuf::DataManagerValue metadata_value_proto;
-  metadata_value_proto.set_size(data_size);
-  metadata_value_proto.set_subscribers(subscribers);
-  for (const auto& i: online_pmid_name)
+  metadata_value_proto.set_size(data_size_);
+  metadata_value_proto.set_subscribers(subscribers_);
+  for (const auto& i: online_pmids_)
     metadata_value_proto.add_online_pmid_name(i->string());
-  for (const auto& i: offline_pmid_name)
+  for (const auto& i: offline_pmids_)
     metadata_value_proto.add_offline_pmid_name(i->string());
   assert(metadata_value_proto.IsInitialized());
   return serialised_type(NonEmptyString(metadata_value_proto.SerializeAsString()));
 }
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
-  return lhs.data_size == rhs.data_size &&
-         lhs.subscribers == rhs.subscribers &&
-         lhs.online_pmid_name == rhs.online_pmid_name &&
-         lhs.offline_pmid_name == rhs.offline_pmid_name;
+  return lhs.data_size_ == rhs.data_size_ &&
+         lhs.subscribers_ == rhs.subscribers_ &&
+         lhs.online_pmids_ == rhs.online_pmids_ &&
+         lhs.offline_pmids_ == rhs.offline_pmids_;
 }
 
 } // delete_me
