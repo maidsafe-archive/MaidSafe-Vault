@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_VALUE_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_VALUE_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
 
 #include <cstdint>
 #include <set>
@@ -28,36 +28,27 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace delete_me {  // DELETE ME
-
-// not thread safe
-class DataManagerValue {
-  typedef TaggedValue<NonEmptyString, struct SerialisedDataManagerValueTag> serialised_type;
-  explicit DataManagerValue(const serialised_type& serialised_metadata_value);
-  DataManagerValue(const PmidName& pmid_name, int size_in);  // kPutResult
+class MaidManagerValue {
+  typedef TaggedValue<NonEmptyString, struct SerialisedMaidManagerValueTag> serialised_type;
+  explicit MaidManagerValue(const serialised_type& serialised_metadata_value);
+  explicit MaidManagerValue();
   serialised_type Serialise() const;
 
-  void AddPmid(const PmidName& pmid_name);  // kPutResult
-  void RemovePmid(const PmidName& pmid_name); // DataManager service ??
-  void Increamentsubscribers();  // kPut
-  void Decreamentsubscribers();  // kDelete
-  void SetPmidOnline(const PmidName& pmid_name);  // kPmidOnline
-  void SetPmidOffline(const PmidName& pmid_name);  // kPmidOffline
+  void Put(const int32_t& cost);  // kPut
+  void Delete(const int32_t& cost);  // kDelete
 
-  friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
+  friend bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs);
 
  private:
-  int data_size_;
-  int64_t subscribers_;
-  std::set<PmidName> online_pmids_, offline_pmids_;
+  int32_t count_;
+  int32_t cost_;
 };
 
-bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
+bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-}
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_VALUE_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
