@@ -18,6 +18,9 @@ License.
 
 #include <tuple>
 
+#include "maidsafe/common/bounded_string.h"
+#include "maidsafe/common/node_id.h"
+
 #include "maidsafe/vault/key.h"
 #include "maidsafe/vault/version_manager/version_manager.h"
 
@@ -47,7 +50,12 @@ struct VersionManagerKey {
   friend class ManagerDb;
 
  private:
-  std::string ToFixedWidthString() const;
+  static const int kPaddedWidth = 1;
+  typedef detail::BoundedString<NodeId::kSize + kPaddedWidth,
+                                NodeId::kSize + kPaddedWidth> FixedWidthString;
+
+  explicit VersionManagerKey(const FixedWidthString& fixed_width_string);
+  FixedWidthString ToFixedWidthString() const;
 };
 
 
@@ -71,22 +79,28 @@ VersionManagerKey<Data>::VersionManagerKey(const std::string& serialised_key)
 }
 
 template<typename Data>
+VersionManagerKey<Data>::VersionManagerKey(const FixedWidthString& fixed_width_string)
+    : name([&fixed_width_string]()->Identity {
+        assert(static_cast<DataTagValue>(detail::FromFixedWidthString<kPaddedWidth>(
+            fixed_width_string.string().substr(NodeId::kSize, kPaddedWidth))) ==
+                Data::name_type::tag_type::kEnumValue);
+        return Identity(fixed_width_string.string().substr(0, NodeId::kSize));
+      }()),
+      originator([&fixed_width_string]()->std::string {
+        return fixed_width_string.string().substr(NodeId::kSize + kPaddedWidth);
+      }()) {}
+
+template<typename Data>
 void swap(VersionManagerKey<Data>& lhs, VersionManagerKey<Data>& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
   swap(lhs.name, rhs.name);
   swap(lhs.originator, rhs.originator);
 }
 
-//template<typename Data>
-//VersionManagerKey::VersionManagerKey(const std::string& fixed_width_serialised_key) : name_() {
-//  std::string name(serialised_key.substr(0, NodeId::kSize));
-//  std::string type_as_string(serialised_key.substr(NodeId::kSize, kPaddedWidth_));
-//  auto type(static_cast<DataTagValue>(detail::FromFixedWidthString<kPaddedWidth_>(type_as_string)));
-//  name_ = GetDataNameVariant(type, Identity(name));
-//}
-
 template<typename Data>
-VersionManagerKey<Data>::VersionManagerKey(const VersionManagerKey& other) : name(other.name), originator(other.originator) {}
+VersionManagerKey<Data>::VersionManagerKey(const VersionManagerKey& other)
+    : name(other.name),
+      originator(other.originator) {}
 
 template<typename Data>
 VersionManagerKey<Data>::VersionManagerKey(VersionManagerKey&& other)
@@ -109,10 +123,12 @@ std::string VersionManagerKey<Data>::Serialise() const {
 }
 
 template<typename Data>
-std::string VersionManagerKey<Data>::ToFixedWidthString() const {
-  return name->string() + detail::ToFixedWidthString<VersionManager::kPaddedWidth>(
-      static_cast<uint32_t>(Data::name_type::tag_type::kEnumValue)) +
-      originator.string();
+typename VersionManagerKey<Data>::FixedWidthString
+    VersionManagerKey<Data>::ToFixedWidthString() const {
+  return FixedWidthString(name->string() +
+                          detail::ToFixedWidthString<kPaddedWidth>(
+                              static_cast<uint32_t>(Data::name_type::tag_type::kEnumValue)) +
+                          originator.string());
 }
 
 template<typename Data>

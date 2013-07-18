@@ -43,7 +43,7 @@ struct PersonaTypes<Persona::kVersionManager> {
   //typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
   //typedef vault::VersionManagerUnresolvedEntryValue UnresolvedEntryValue;
   static const Persona persona = Persona::kVersionManager;
-  static const int kPaddedWidth = 1;
+  //static const int kPaddedWidth = 1;
 
   enum class Action : int32_t {
     kPut,
