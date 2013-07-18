@@ -24,6 +24,10 @@ message PmidRecord {
   required int64 claimed_available_size = 6;
 }
 
+message PmidValue {
+  required int32 size = 1;
+}
+
 message PmidAccountDbValue {
   required int32 size = 1;
 }
@@ -32,6 +36,11 @@ message PmidAccountDbEntry {
   required uint32 type = 1;  // name and type == db key
   required bytes name = 2;
   required PmidAccountDbValue value = 3;
+}
+
+message PmidAccountResponse {
+  required PmidAccount pmid_account = 1;
+  required bool status = 2;
 }
 
 message PmidAccount {
