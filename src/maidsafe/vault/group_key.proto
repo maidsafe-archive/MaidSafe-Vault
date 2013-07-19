@@ -1,4 +1,4 @@
-/* Copyright 2012 MaidSafe.net limited
+/* Copyright 2013 MaidSafe.net limited
 
 This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
 and The General Public License (GPL), version 3. By contributing code to this project You agree to
@@ -13,36 +13,10 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
+package maidsafe.vault.protobuf;
 
-#include <cstdint>
-#include <string>
-
-
-namespace maidsafe {
-
-namespace vault {
-
-class MaidManagerValue {
-  explicit MaidManagerValue(const std::string& serialised_maid_manager_value);
-  MaidManagerValue();
-  std::string Serialise() const;
-
-  void Put(int32_t cost);
-  void Delete(int32_t cost);
-  int32_t count() const { return count_; }
-  int32_t cost() const { return cost_; }
-
-  friend bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs);
-
- private:
-  int32_t count_, cost_;
-};
-
-}  // namespace vault
-
-}  // namespace maidsafe
-
-
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
+message GroupKey {
+  required bytes group_name = 1;
+  required bytes data_name = 2;
+  required int32 data_type = 3;
+}

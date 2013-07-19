@@ -1,3 +1,5 @@
+
+
 /* Copyright 2013 MaidSafe.net limited
 
 This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
@@ -17,33 +19,82 @@ License.
 #define MAIDSAFE_VAULT_VERSION_MANAGER_VERSION_MANAGER_H_
 
 #include <cstdint>
-#include <utility>
 
-#include "maidsafe/common/types.h"
+#include "boost/variant/variant.hpp"
+
 #include "maidsafe/data_types/structured_data_versions.h"
-#include "maidsafe/nfs/types.h"
-//#include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/data_types/owner_directory.h"
+#include "maidsafe/data_types/group_directory.h"
+#include "maidsafe/data_types/world_directory.h"
+
+#include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/version_manager/key.h"
-//#include "maidsafe/vault/version_manager/unresolved_entry_value.h"
+
 
 namespace maidsafe {
+
+namespace vault {
+
+struct ActionPutVersion;
+struct ActionGetVersion;
+struct ActionGetBranch;
+struct ActionDeleteBranchUntilFork;
+
+}  // namespace vault
+
 
 namespace nfs {
 
 template<>
 struct PersonaTypes<Persona::kVersionManager> {
+  static const Persona persona = Persona::kVersionManager;
+
   template<typename Data>
   struct Key {
     typedef maidsafe::vault::VersionManagerKey<Data> type;
   };
 
-  //typedef DataNameVariant RecordName;
-  //typedef vault::VersionManagerKey DbKey;
-  //typedef StructuredDataVersions DbValue;
-  //typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-  //typedef vault::VersionManagerUnresolvedEntryValue UnresolvedEntryValue;
-  static const Persona persona = Persona::kVersionManager;
-  //static const int kPaddedWidth = 1;
+  typedef StructuredDataVersions Value;
+
+  // PutVersion
+  template<typename Data>
+  struct UnresolvedPutVersion {
+    typedef maidsafe::vault::UnresolvedAction<typename Key<Data>::type,
+                                              maidsafe::vault::ActionPutVersion> type;
+  };
+  typedef boost::variant<UnresolvedPutVersion<OwnerDirectory>::type,
+                         UnresolvedPutVersion<GroupDirectory>::type,
+                         UnresolvedPutVersion<WorldDirectory>::type> PutVersionVariant;
+  // GetVersion
+  template<typename Data>
+  struct UnresolvedGetVersion {
+    typedef maidsafe::vault::UnresolvedAction<typename Key<Data>::type,
+                                              maidsafe::vault::ActionGetVersion> type;
+  };
+  typedef boost::variant<UnresolvedGetVersion<OwnerDirectory>::type,
+                         UnresolvedGetVersion<GroupDirectory>::type,
+                         UnresolvedGetVersion<WorldDirectory>::type> GetVersionVariant;
+
+  // GetBranch
+  template<typename Data>
+  struct UnresolvedGetBranch {
+    typedef maidsafe::vault::UnresolvedAction<typename Key<Data>::type,
+                                              maidsafe::vault::ActionGetBranch> type;
+  };
+  typedef boost::variant<UnresolvedGetBranch<OwnerDirectory>::type,
+                         UnresolvedGetBranch<GroupDirectory>::type,
+                         UnresolvedGetBranch<WorldDirectory>::type> GetBranchVariant;
+
+  // DeleteBranchUntilFork
+  template<typename Data>
+  struct UnresolvedDeleteBranchUntilFork {
+    typedef maidsafe::vault::UnresolvedAction<typename Key<Data>::type,
+                                              maidsafe::vault::ActionDeleteBranchUntilFork> type;
+  };
+  typedef boost::variant<UnresolvedDeleteBranchUntilFork<OwnerDirectory>::type,
+                         UnresolvedDeleteBranchUntilFork<GroupDirectory>::type,
+                         UnresolvedDeleteBranchUntilFork<WorldDirectory>::type>
+                             DeleteBranchUntilForkVariant;
 
   enum class Action : int32_t {
     kPut,
@@ -57,11 +108,10 @@ struct PersonaTypes<Persona::kVersionManager> {
 
 }  // namespace nfs
 
+
 namespace vault {
 
 typedef nfs::PersonaTypes<nfs::Persona::kVersionManager> VersionManager;
-//typedef UnresolvedElement<VersionManager> VersionManagerUnresolvedEntry;
-//typedef VersionManagerUnresolvedEntry VersionManagerResolvedEntry;
 
 }  // namespace vault
 

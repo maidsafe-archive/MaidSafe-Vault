@@ -21,17 +21,14 @@ License.
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/node_id.h"
 
-#include "maidsafe/vault/key.h"
+#include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/version_manager/key.pb.h"
 #include "maidsafe/vault/version_manager/version_manager.h"
 
 
 namespace maidsafe {
 
 namespace vault {
-
-class Db;
-template<typename Persona>
-class ManagerDb;
 
 template<typename Data>
 struct VersionManagerKey {
@@ -44,10 +41,6 @@ struct VersionManagerKey {
 
   typename Data::name_type name;
   Identity originator;
-
-  friend class Db;
-  template<typename Persona>
-  friend class ManagerDb;
 
  private:
   static const int kPaddedWidth = 1;
@@ -73,9 +66,9 @@ VersionManagerKey<Data>::VersionManagerKey(const std::string& serialised_key)
   protobuf::VersionManagerKey key_proto;
   if (!key_proto.ParseFromString(serialised_key))
     ThrowError(CommonErrors::parsing_error);
-  assert(static_cast<DataTagValue>(key_proto.type) == Data::name_type::tag_type::kEnumValue);
-  name = Data::name_type(Identity(key_proto.name));
-  originator = Identity(key_proto.originator);
+  assert(static_cast<DataTagValue>(key_proto.type()) == Data::name_type::tag_type::kEnumValue);
+  name = Data::name_type(Identity(key_proto.name()));
+  originator = Identity(key_proto.originator());
 }
 
 template<typename Data>

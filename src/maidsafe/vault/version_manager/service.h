@@ -46,11 +46,9 @@ namespace vault {
 class VersionManagerService {
  public:
   typedef Identity VersionManagerAccountName;
-  VersionManagerService(const passport::Pmid& pmid,
-                               routing::Routing& routing);
+  VersionManagerService(const passport::Pmid& pmid, routing::Routing& routing);
   template<typename Data>
-  void HandleMessage(const nfs::Message& message,
-                     const routing::ReplyFunctor& reply_functor);
+  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandleChurnEvent(routing::MatrixChange matrix_change);
 
  private:
@@ -61,8 +59,8 @@ class VersionManagerService {
 
   void ValidateClientSender(const nfs::Message& message) const;
   void ValidateSyncSender(const nfs::Message& message) const;
-  std::vector<StructuredDataVersions::VersionName>
-                       GetVersionsFromMessage(const nfs::Message& msg) const;
+  std::vector<StructuredDataVersions::VersionName> GetVersionsFromMessage(
+      const nfs::Message& message) const;
   NonEmptyString GetSerialisedRecord(const VersionManager::DbKey& db_key);
   //// =============== Get data ====================================================================
   void HandleGet(const nfs::Message& message, routing::ReplyFunctor reply_functor);
@@ -73,7 +71,7 @@ class VersionManagerService {
   void Synchronise(const nfs::Message& message);
   void HandleSynchronise(const nfs::Message& message);
 
-  //// =============== Churn ============================================================
+  //// =============== Churn =======================================================================
   void HandleAccountTransfer(const nfs::Message& message);
 
   routing::Routing& routing_;

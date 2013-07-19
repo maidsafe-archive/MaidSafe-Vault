@@ -21,6 +21,7 @@ License.
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/key.pb.h"
+#include "maidsafe/vault/utils.h"
 
 
 namespace maidsafe {
@@ -32,7 +33,6 @@ class KeyTest_BEH_Serialise_Test;
 class KeyTest_BEH_All_Test;
 }  // namespace test
 
-class Db;
 template<typename Persona>
 class ManagerDb;
 
@@ -47,7 +47,6 @@ struct Key {
 
   typename Data::name_type name;
 
-  friend class Db;
   template<typename Persona>
   friend class ManagerDb;
 
@@ -71,7 +70,7 @@ Key<Data, PaddedWidth>::Key(const std::string& serialised_key)
         if (!key_proto.ParseFromString(serialised_key))
           ThrowError(CommonErrors::parsing_error);
         assert(static_cast<DataTagValue>(key_proto.type) == Data::name_type::tag_type::kEnumValue);
-        return Identity(key_proto.name);
+        return Identity(key_proto.name());
       }()) {}
 
 template<typename Data, int PaddedWidth>
