@@ -21,6 +21,8 @@ License.
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/node_id.h"
 
+#include "maidsafe/data_types/data_type_values.h"
+
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/version_manager/key.pb.h"
 #include "maidsafe/vault/version_manager/version_manager.h"
@@ -30,129 +32,38 @@ namespace maidsafe {
 
 namespace vault {
 
-template<typename Data>
 struct VersionManagerKey {
-  VersionManagerKey(const typename Data::name_type& name_in, const Identity& originator_in);
+  template<typename Data>
+  VersionManagerKey(const typename Data::name_type& data_name_in, const Identity& originator_in)
+      : data_name(data_name_in.data),
+        data_type(Data::type_enum_value())
+        originator(originator_in) {}
   explicit VersionManagerKey(const std::string& serialised_key);
   VersionManagerKey(const VersionManagerKey& other);
   VersionManagerKey(VersionManagerKey&& other);
   VersionManagerKey& operator=(VersionManagerKey other);
   std::string Serialise() const;
 
-  typename Data::name_type name;
+  Identity data_name;
+  DataTagValue data_type;
   Identity originator;
 
  private:
   static const int kPaddedWidth = 1;
-  typedef detail::BoundedString<NodeId::kSize + kPaddedWidth,
-                                NodeId::kSize + kPaddedWidth> FixedWidthString;
+  typedef maidsafe::detail::BoundedString<NodeId::kSize + kPaddedWidth,
+                                          NodeId::kSize + kPaddedWidth> FixedWidthString;
 
   explicit VersionManagerKey(const FixedWidthString& fixed_width_string);
   FixedWidthString ToFixedWidthString() const;
 };
 
-
-
-template<typename Data>
-VersionManagerKey<Data>::VersionManagerKey(const typename Data::name_type& name_in,
-                                           const Identity& originator_in)
-    : name(name_in),
-      originator(originator_in) {}
-
-template<typename Data>
-VersionManagerKey<Data>::VersionManagerKey(const std::string& serialised_key)
-    : name(),
-      originator() {
-  protobuf::VersionManagerKey key_proto;
-  if (!key_proto.ParseFromString(serialised_key))
-    ThrowError(CommonErrors::parsing_error);
-  assert(static_cast<DataTagValue>(key_proto.type()) == Data::name_type::tag_type::kEnumValue);
-  name = Data::name_type(Identity(key_proto.name()));
-  originator = Identity(key_proto.originator());
-}
-
-template<typename Data>
-VersionManagerKey<Data>::VersionManagerKey(const FixedWidthString& fixed_width_string)
-    : name([&fixed_width_string]()->Identity {
-        assert(static_cast<DataTagValue>(detail::FromFixedWidthString<kPaddedWidth>(
-            fixed_width_string.string().substr(NodeId::kSize, kPaddedWidth))) ==
-                Data::name_type::tag_type::kEnumValue);
-        return Identity(fixed_width_string.string().substr(0, NodeId::kSize));
-      }()),
-      originator([&fixed_width_string]()->std::string {
-        return fixed_width_string.string().substr(NodeId::kSize + kPaddedWidth);
-      }()) {}
-
-template<typename Data>
-void swap(VersionManagerKey<Data>& lhs, VersionManagerKey<Data>& rhs) MAIDSAFE_NOEXCEPT {
-  using std::swap;
-  swap(lhs.name, rhs.name);
-  swap(lhs.originator, rhs.originator);
-}
-
-template<typename Data>
-VersionManagerKey<Data>::VersionManagerKey(const VersionManagerKey& other)
-    : name(other.name),
-      originator(other.originator) {}
-
-template<typename Data>
-VersionManagerKey<Data>::VersionManagerKey(VersionManagerKey&& other)
-    : name(std::move(other.name)),
-      originator(std::move(other.originator)) {}
-
-template<typename Data>
-VersionManagerKey<Data>& VersionManagerKey<Data>::operator=(VersionManagerKey other) {
-  swap(*this, other);
-  return *this;
-}
-
-template<typename Data>
-std::string VersionManagerKey<Data>::Serialise() const {
-  protobuf::VersionManagerKey key_proto;
-  key_proto.set_name(name->string());
-  key_proto.set_type(static_cast<int32_t>(Data::name_type::tag_type::kEnumValue));
-  key_proto.set_originator(originator.string());
-  return key_proto.SerializeAsString();
-}
-
-template<typename Data>
-typename VersionManagerKey<Data>::FixedWidthString
-    VersionManagerKey<Data>::ToFixedWidthString() const {
-  return FixedWidthString(name->string() +
-                          detail::ToFixedWidthString<kPaddedWidth>(
-                              static_cast<uint32_t>(Data::name_type::tag_type::kEnumValue)) +
-                          originator.string());
-}
-
-template<typename Data>
-bool operator==(const VersionManagerKey<Data>& lhs, const VersionManagerKey<Data>& rhs) {
-  return lhs.name == rhs.name && lhs.originator == rhs.originator;
-}
-
-template<typename Data>
-bool operator!=(const VersionManagerKey<Data>& lhs, const VersionManagerKey<Data>& rhs) {
-  return !operator==(lhs, rhs);
-}
-
-template<typename Data>
-bool operator<(const VersionManagerKey<Data>& lhs, const VersionManagerKey<Data>& rhs) {
-  return std::tie(lhs.name, lhs.originator) < std::tie(rhs.name, rhs.originator);
-}
-
-template<typename Data>
-bool operator>(const VersionManagerKey<Data>& lhs, const VersionManagerKey<Data>& rhs) {
-  return operator<(rhs, lhs);
-}
-
-template<typename Data>
-bool operator<=(const VersionManagerKey<Data>& lhs, const VersionManagerKey<Data>& rhs) {
-  return !operator>(lhs, rhs);
-}
-
-template<typename Data>
-bool operator>=(const VersionManagerKey<Data>& lhs, const VersionManagerKey<Data>& rhs) {
-  return !operator<(lhs, rhs);
-}
+void swap(VersionManagerKey& lhs, VersionManagerKey& rhs) MAIDSAFE_NOEXCEPT;
+bool operator==(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
+bool operator!=(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
+bool operator<(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
+bool operator>(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
+bool operator<=(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
+bool operator>=(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
 
 }  // namespace vault
 

@@ -38,8 +38,8 @@ struct ActionPutVersion {
   ActionPutVersion(const ActionPutVersion& other);
   ActionPutVersion(ActionPutVersion&& other);
 
-  template<typename Storage, typename Key>
-  maidsafe_error operator()(Storage& storage, const Key& key) const;
+  template<typename Storage>
+  maidsafe_error operator()(Storage& storage, const VersionManager::Key& key) const;
 
   std::string Serialise() const;
 
@@ -47,6 +47,7 @@ struct ActionPutVersion {
   const StructuredDataVersions::VersionName old_version, new_version;
 
  private:
+  ActionPutVersion();
   ActionPutVersion& operator=(ActionPutVersion other);
 };
 
@@ -56,8 +57,9 @@ bool operator!=(const ActionPutVersion& lhs, const ActionPutVersion& rhs);
 
 
 
-template<typename Storage, typename Key>
-maidsafe_error ActionPutVersion::operator()(Storage& storage, const Key& key) const {
+template<typename Storage>
+maidsafe_error ActionPutVersion::operator()(Storage& storage,
+                                            const VersionManager::Key& key) const {
   try {
     auto value = storage.Get(key);
     value.PutVersion(old_version, new_version);
