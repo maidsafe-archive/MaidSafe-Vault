@@ -62,6 +62,12 @@ PmidTotals& PmidTotals::operator=(PmidTotals other) {
   return *this;
 }
 
+
+bool operator==(const PmidTotals& lhs, const PmidTotals& rhs) {
+  return (lhs.pmid_record == rhs.pmid_record) &&
+          (lhs.serialised_pmid_registration == rhs.serialised_pmid_registration);
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

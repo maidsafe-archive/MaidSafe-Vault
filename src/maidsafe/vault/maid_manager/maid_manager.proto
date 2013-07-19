@@ -38,6 +38,15 @@ message MaidManagerDetails {
   repeated bytes serialised_unresolved_entry = 3;
 }
 
+message MaidManagerMetadata {
+  message PmidTotal {
+    required PmidRecord pmid_record = 1;
+    required bytes serialised_pmid_registration = 2;
+  }
+  repeated PmidTotal pmid_totals = 1;
+  required int32 total_put_data = 2;
+}
+
 // Used as data field in MM's Reply to Put request.
 message Cost {
   required int32 cost = 1;

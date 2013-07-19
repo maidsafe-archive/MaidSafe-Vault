@@ -85,6 +85,8 @@ struct PmidTotals {
   PmidRecord pmid_record;
 };
 
+bool operator==(const PmidTotals& lhs, const PmidTotals& rhs);
+
 }  // namespace vault
 
 }  // namespace maidsafe
