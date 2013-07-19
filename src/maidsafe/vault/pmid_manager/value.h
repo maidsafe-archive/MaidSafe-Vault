@@ -13,36 +13,33 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_
 
 #include <cstdint>
-#include <string>
+#include <set>
+#include <vector>
 
+#include "maidsafe/common/types.h"
+#include "maidsafe/vault/manager_db.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
+#include "maidsafe/vault/types.h"
 
 namespace maidsafe {
-
 namespace vault {
 
-class MaidManagerValue {
-  explicit MaidManagerValue(const std::string& serialised_maid_manager_value);
-  MaidManagerValue();
-  std::string Serialise() const;
+struct PmidManagerValue {
+  typedef TaggedValue<NonEmptyString, struct SerialisedValueTag> serialised_type;
+  explicit PmidManagerValue(const serialised_type& serialised_value);
+  explicit PmidManagerValue(int size);
+  serialised_type Serialise() const;
 
-  void Put(int32_t cost);
-  void Delete(int32_t cost);
-  int32_t count() const { return count_; }
-  int32_t cost() const { return cost_; }
-
-  friend bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs);
-
- private:
-  int32_t count_, cost_;
+  int size;
 };
 
-}  // namespace vault
+bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);
 
+}  // namespace vault
 }  // namespace maidsafe
 
-
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_

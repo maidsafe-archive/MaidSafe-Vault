@@ -15,6 +15,15 @@ License.
 
 package maidsafe.vault.protobuf;
 
+message UnresolvedAction {
+  required bytes serialised_key = 1;
+  required bytes serialised_action = 2;
+  required int32 entry_id = 3;
+}
+
+
+
+/*  TODO - Delete this commented block - temporarily left here for reference.
 message MaidAndPmidUnresolvedEntry {
   message Key {
     required uint32 type = 1;
@@ -82,3 +91,4 @@ message VersionManagerUnresolvedEntry {
   required Key key = 1;
   repeated MessageContent messages_contents = 2;
 }
+*/

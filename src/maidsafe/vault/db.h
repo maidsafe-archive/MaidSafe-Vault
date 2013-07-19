@@ -29,6 +29,8 @@ License.
 
 #include "maidsafe/common/types.h"
 
+#include "maidsafe/vault/group_key.h"
+
 
 namespace maidsafe {
 

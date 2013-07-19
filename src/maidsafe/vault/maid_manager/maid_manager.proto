@@ -16,7 +16,7 @@ License.
 package maidsafe.vault.protobuf;
 import "maidsafe/vault/pmid_manager/pmid_manager.proto";
 
-message MaidManagerDbValue {
+message MaidManagerValue {
   required int32 average_cost = 1;
   required int32 count = 2;
 }
@@ -24,7 +24,7 @@ message MaidManagerDbValue {
 message MaidManagerDbEntry {
   required uint32 type = 1;  // name and type == db key
   required bytes name = 2;
-  required MaidManagerDbValue value = 3;
+  required MaidManagerValue value = 3;
 }
 
 message MaidManager {

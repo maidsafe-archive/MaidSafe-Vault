@@ -13,36 +13,39 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
+#include "maidsafe/vault/pmid_manager/value.h"
 
-#include <cstdint>
 #include <string>
 
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
-
 namespace vault {
 
-class MaidManagerValue {
-  explicit MaidManagerValue(const std::string& serialised_maid_manager_value);
-  MaidManagerValue();
-  std::string Serialise() const;
+PmidManagerValue::PmidManagerValue(const serialised_type& serialised_value)
+  : value() {
+  protobuf::PmidManagerValue value_proto;
+  if (!value_proto.ParseFromString(serialised_value->string())) {
+    LOG(kError) << "Failed to read or parse serialised value";
+    ThrowError(CommonErrors::parsing_error);
+  } else {
+    size = value_proto.size();
+  }
+}
 
-  void Put(int32_t cost);
-  void Delete(int32_t cost);
-  int32_t count() const { return count_; }
-  int32_t cost() const { return cost_; }
+PmidManagerValue::PmidManagerValue(int size)
+  : size(size) {}
 
-  friend bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs);
+bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs) {
+  return lhs.size == rhs.size;
+}
 
- private:
-  int32_t count_, cost_;
-};
+PmidManagerValue::serialised_type PmidManagerValue::Serialise() const {
+  protobuf::PmidManagerValue value_proto;
+  value_proto.set_size(size);
+  assert(value_proto.IsInitialized());
+  return serialised_type(NonEmptyString(value_proto.SerializeAsString()));
+}
 
 }  // namespace vault
-
 }  // namespace maidsafe
-
-
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_

@@ -15,17 +15,24 @@ License.
 
 #include "maidsafe/vault/maid_manager/value.h"
 
-#include <string>
+#include <functional>
+
+#include "maidsafe/common/error.h"
+#include "maidsafe/common/log.h"
+#include "maidsafe/common/on_scope_exit.h"
 
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
-MaidManagerValue::MaidManagerValue(const serialised_type& serialised_metadata_value) {
-  protobuf::MaidManagerDbValue maid_manager_value_proto;
-  if (!maid_manager_value_proto.ParseFromString(serialised_metadata_value->string())) {
+MaidManagerValue::MaidManagerValue(const std::string& serialised_maid_manager_value)
+    : count_(0),
+      cost_(0) {
+  protobuf::MaidManagerValue maid_manager_value_proto;
+  if (!maid_manager_value_proto.ParseFromString(serialised_maid_manager_value)) {
     LOG(kError) << "Failed to read or parse serialised maid manager value";
     ThrowError(CommonErrors::parsing_error);
   } else {
@@ -34,30 +41,37 @@ MaidManagerValue::MaidManagerValue(const serialised_type& serialised_metadata_va
   }
 }
 
-MaidManagerValue::MaidManagerValue()
-    : count_(0),
-      cost_(0) {}
+MaidManagerValue::MaidManagerValue() : count_(0), cost_(0) {}
 
-void MaidManagerValue::Put(const int32_t& cost) {
-  count_++;
+std::string MaidManagerValue::Serialise() const {
+  if (count_ == 0 || cost_ == 0)
+    ThrowError(CommonErrors::uninitialised);
+
+  protobuf::MaidManagerValue maid_manager_value_proto;
+  maid_manager_value_proto.set_count(count_);
+  maid_manager_value_proto.set_average_cost(cost_);
+  return maid_manager_value_proto.SerializeAsString();
+}
+
+void MaidManagerValue::Put(int32_t cost) {
+  ++count_;
   cost_ += cost;
 }
 
-void MaidManagerValue::Delete(const int32_t& cost) {
-  if ((count_ == 0) || (cost_ - cost <= 0))
-    ThrowError(CommonErrors::unknown);  // Unabel to delete
-  count_--;
+void MaidManagerValue::Delete(int32_t cost) {
+  auto reset_values([this](int32_t original_count, int32_t original_cost) {
+      count_ = original_count;
+      cost_ = original_cost;
+  });
+  on_scope_exit strong_guarantee(std::bind(reset_values, count_, cost_));
+
+  --count_;
   cost_ -= cost;
-}
 
-MaidManagerValue::serialised_type MaidManagerValue::Serialise() const {
-  if ((count_ == 0) || (cost_ == 0))
-    ThrowError(CommonErrors::uninitialised);  // Cannot serialise if not a complete db value
+  if (count_ < 0 || cost_ < 0)
+    ThrowError(CommonErrors::invalid_parameter);
 
-  protobuf::MaidManagerDbValue maid_manager_value_proto;
-  maid_manager_value_proto.set_count(count_);
-  maid_manager_value_proto.set_average_cost(cost_);
-  return serialised_type(NonEmptyString(maid_manager_value_proto.SerializeAsString()));
+  strong_guarantee.Release();
 }
 
 bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs) {
