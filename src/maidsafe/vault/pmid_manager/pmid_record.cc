@@ -117,6 +117,16 @@ PmidRecord& PmidRecord::operator=(PmidRecord other) {
   return *this;
 }
 
+bool operator==(const PmidRecord& lhs, const PmidRecord& rhs) {
+  return lhs.pmid_name == rhs.pmid_name &&
+         lhs.stored_count == rhs.stored_count &&
+         lhs.stored_total_size == rhs.stored_total_size &&
+         lhs.lost_count == rhs.lost_count &&
+         lhs.lost_total_size == rhs.lost_total_size &&
+         lhs.claimed_available_size == rhs.claimed_available_size;
+}
+
+
 }  // namespace vault
 
 }  // namespace maidsafe

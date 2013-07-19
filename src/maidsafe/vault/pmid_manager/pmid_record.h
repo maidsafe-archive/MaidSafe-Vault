@@ -52,6 +52,8 @@ struct PmidRecord {
   int64_t claimed_available_size;
 };
 
+bool operator==(const PmidRecord& lhs, const PmidRecord& rhs);
+
 }  // namespace vault
 
 }  // namespace maidsafe

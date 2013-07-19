@@ -38,7 +38,7 @@ message MaidManagerDetails {
   repeated bytes serialised_unresolved_entry = 3;
 }
 
-message MaidManagerNonPersistentValue {
+message MaidManagerMetadata {
   message PmidTotal {
     required PmidRecord pmid_record = 1;
     required bytes serialised_pmid_registration = 2;
