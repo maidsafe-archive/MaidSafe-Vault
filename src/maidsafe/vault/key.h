@@ -18,10 +18,12 @@ License.
 
 #include <string>
 
-#include "maidsafe/common/error.h"
+#include "maidsafe/common/bounded_string.h"
+#include "maidsafe/common/node_id.h"
+#include "maidsafe/common/types.h"
+#include "maidsafe/data_types/data_type_values.h"
 
-#include "maidsafe/vault/key.pb.h"
-#include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/key_utils.h"
 
 
 namespace maidsafe {
@@ -36,115 +38,39 @@ class KeyTest_BEH_All_Test;
 template<typename Persona>
 class ManagerDb;
 
-template<typename Data, int PaddedWidth>
 struct Key {
-  explicit Key(const typename Data::name_type& name_in);
+  template<typename Data>
+  explicit Key(const typename Data::name_type& name_in)
+      : name(name_in.data),
+        type(Data::type_enum_value()) {}
   explicit Key(const std::string& serialised_key);
   Key(const Key& other);
   Key(Key&& other);
   Key& operator=(Key other);
   std::string Serialise() const;
 
-  typename Data::name_type name;
+  Identity name;
+  DataTagValue type;
 
   template<typename Persona>
   friend class ManagerDb;
 
  private:
-  typedef detail::BoundedString<NodeId::kSize + PaddedWidth,
-                                NodeId::kSize + PaddedWidth> FixedWidthString;
+  typedef maidsafe::detail::BoundedString<
+      NodeId::kSize + detail::PaddedWidth::value,
+      NodeId::kSize + detail::PaddedWidth::value> FixedWidthString;
 
   explicit Key(const FixedWidthString& fixed_width_string);
   FixedWidthString ToFixedWidthString() const;
 };
 
-
-
-template<typename Data, int PaddedWidth>
-Key<Data, PaddedWidth>::Key(const typename Data::name_type& name_in) : name(name_in) {}
-
-template<typename Data, int PaddedWidth>
-Key<Data, PaddedWidth>::Key(const std::string& serialised_key)
-    : name([&serialised_key]()->Identity {
-        protobuf::Key key_proto;
-        if (!key_proto.ParseFromString(serialised_key))
-          ThrowError(CommonErrors::parsing_error);
-        assert(static_cast<DataTagValue>(key_proto.type) == Data::name_type::tag_type::kEnumValue);
-        return Identity(key_proto.name());
-      }()) {}
-
-template<typename Data, int PaddedWidth>
-Key<Data, PaddedWidth>::Key(const FixedWidthString& fixed_width_string)
-    : name([&fixed_width_string]()->Identity {
-        assert(static_cast<DataTagValue>(detail::FromFixedWidthString<PaddedWidth>(
-            fixed_width_string.string().substr(NodeId::kSize))) ==
-                Data::name_type::tag_type::kEnumValue);
-        return Identity(fixed_width_string.string().substr(0, NodeId::kSize));
-      }()) {}
-
-template<typename Data, int PaddedWidth>
-void swap(Key<Data, PaddedWidth>& lhs, Key<Data, PaddedWidth>& rhs) MAIDSAFE_NOEXCEPT {
-  using std::swap;
-  swap(lhs.name, rhs.name);
-}
-
-template<typename Data, int PaddedWidth>
-Key<Data, PaddedWidth>::Key(const Key& other) : name(other.name) {}
-
-template<typename Data, int PaddedWidth>
-Key<Data, PaddedWidth>::Key(Key&& other) : name(std::move(other.name)) {}
-
-template<typename Data, int PaddedWidth>
-Key<Data, PaddedWidth>& Key<Data, PaddedWidth>::operator=(Key other) {
-  swap(*this, other);
-  return *this;
-}
-
-template<typename Data, int PaddedWidth>
-std::string Key<Data, PaddedWidth>::Serialise() const {
-  protobuf::Key key_proto;
-  key_proto.set_name(name->string());
-  key_proto.set_type(static_cast<int32_t>(Data::name_type::tag_type::kEnumValue));
-  return key_proto.SerializeAsString();
-}
-
-template<typename Data, int PaddedWidth>
-typename Key<Data, PaddedWidth>::FixedWidthString
-    Key<Data, PaddedWidth>::ToFixedWidthString() const {
-  return FixedWidthString(name->string() +
-                          detail::ToFixedWidthString<PaddedWidth>(
-                              static_cast<uint32_t>(Data::name_type::tag_type::kEnumValue)));
-}
-
-template<typename Data, int PaddedWidth>
-bool operator==(const Key<Data, PaddedWidth>& lhs, const Key<Data, PaddedWidth>& rhs) {
-  return lhs.name == rhs.name;
-}
-
-template<typename Data, int PaddedWidth>
-bool operator!=(const Key<Data, PaddedWidth>& lhs, const Key<Data, PaddedWidth>& rhs) {
-  return !operator==(lhs, rhs);
-}
-
-template<typename Data, int PaddedWidth>
-bool operator<(const Key<Data, PaddedWidth>& lhs, const Key<Data, PaddedWidth>& rhs) {
-  return lhs.name < rhs.name;
-}
-
-template<typename Data, int PaddedWidth>
-bool operator>(const Key<Data, PaddedWidth>& lhs, const Key<Data, PaddedWidth>& rhs) {
-  return operator<(rhs, lhs);
-}
-
-template<typename Data, int PaddedWidth>
-bool operator<=(const Key<Data, PaddedWidth>& lhs, const Key<Data, PaddedWidth>& rhs) {
-  return !operator>(lhs, rhs);
-}
-
-template<typename Data, int PaddedWidth>
-bool operator>=(const Key<Data, PaddedWidth>& lhs, const Key<Data, PaddedWidth>& rhs) {
-  return !operator<(lhs, rhs);
-}
+void swap(Key& lhs, Key& rhs) MAIDSAFE_NOEXCEPT;
+bool operator==(const Key& lhs, const Key& rhs);
+bool operator!=(const Key& lhs, const Key& rhs);
+bool operator<(const Key& lhs, const Key& rhs);
+bool operator>(const Key& lhs, const Key& rhs);
+bool operator<=(const Key& lhs, const Key& rhs);
+bool operator>=(const Key& lhs, const Key& rhs);
 
 }  // namespace vault
 

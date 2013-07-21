@@ -127,48 +127,6 @@ bool AddResult(const nfs::Message& message,
   return true;
 }
 
-template<int width>
-std::string ToFixedWidthString(uint32_t number) {
-  static_assert(width > 0 && width < 5, "width must be 1, 2, 3, or 4.");
-  assert(number < std::pow(256, width));
-  std::string result(width, 0);
-  for (int i(0); i != width; ++i) {
-    result[width - i - 1] = static_cast<char>(number);
-    number /= 256;
-  }
-  return result;
-}
-
-template<int width>
-uint32_t FromFixedWidthString(const std::string& number_as_string) {
-  static_assert(width > 0 && width < 5, "width must be 1, 2, 3, or 4.");
-  assert(static_cast<int>(number_as_string.size()) == width);
-  uint32_t result(0), factor(1);
-  for (int i(0); i != width; ++i) {
-    result += (static_cast<unsigned char>(number_as_string[width - i - 1]) * factor);
-    factor *= 256;
-  }
-  assert(result < std::pow(256, width));
-  return result;
-}
-
-// Workaround for gcc 4.6 bug related to warning "redundant redeclaration" for template
-// specialisation. refer // http://gcc.gnu.org/bugzilla/show_bug.cgi?id=15867#c4
-#ifdef __GNUC__
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wredundant-decls"
-#endif
-
-template<>
-std::string ToFixedWidthString<1>(uint32_t number);
-
-template<>
-uint32_t FromFixedWidthString<1>(const std::string& number_as_string);
-
-#ifdef __GNUC__
-#  pragma GCC diagnostic pop
-#endif
-
 }  // namespace detail
 
 }  // namespace vault

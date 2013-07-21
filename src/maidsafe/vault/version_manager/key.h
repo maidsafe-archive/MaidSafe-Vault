@@ -16,16 +16,14 @@ License.
 #ifndef MAIDSAFE_VAULT_VERSION_MANAGER_KEY_H_
 #define MAIDSAFE_VAULT_VERSION_MANAGER_KEY_H_
 
-#include <tuple>
+#include <string>
 
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/node_id.h"
-
+#include "maidsafe/common/types.h"
 #include "maidsafe/data_types/data_type_values.h"
 
-#include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/version_manager/key.pb.h"
-#include "maidsafe/vault/version_manager/version_manager.h"
+#include "maidsafe/vault/key_utils.h"
 
 
 namespace maidsafe {
@@ -34,9 +32,9 @@ namespace vault {
 
 struct VersionManagerKey {
   template<typename Data>
-  VersionManagerKey(const typename Data::name_type& data_name_in, const Identity& originator_in)
-      : data_name(data_name_in.data),
-        data_type(Data::type_enum_value())
+  VersionManagerKey(const typename Data::name_type& name_in, const Identity& originator_in)
+      : name(name_in.data),
+        type(Data::type_enum_value())
         originator(originator_in) {}
   explicit VersionManagerKey(const std::string& serialised_key);
   VersionManagerKey(const VersionManagerKey& other);
@@ -44,14 +42,14 @@ struct VersionManagerKey {
   VersionManagerKey& operator=(VersionManagerKey other);
   std::string Serialise() const;
 
-  Identity data_name;
-  DataTagValue data_type;
+  Identity name;
+  DataTagValue type;
   Identity originator;
 
  private:
-  static const int kPaddedWidth = 1;
-  typedef maidsafe::detail::BoundedString<NodeId::kSize + kPaddedWidth,
-                                          NodeId::kSize + kPaddedWidth> FixedWidthString;
+  typedef maidsafe::detail::BoundedString<
+      NodeId::kSize + detail::PaddedWidth::value,
+      NodeId::kSize + detail::PaddedWidth::value> FixedWidthString;
 
   explicit VersionManagerKey(const FixedWidthString& fixed_width_string);
   FixedWidthString ToFixedWidthString() const;

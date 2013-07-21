@@ -71,12 +71,6 @@ bool AddResult(const nfs::Message& message,
                std::mutex& accumulator_mutex,
                int requests_required);
 
-template<int width>
-std::string ToFixedWidthString(uint32_t number);
-
-template<int width>
-uint32_t FromFixedWidthString(const std::string& number_as_string);
-
 }  // namespace detail
 
 struct CheckHoldersResult {

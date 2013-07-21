@@ -58,18 +58,6 @@ void SendReply(const nfs::Message& original_message,
   reply_functor(reply.Serialise()->string());
 }
 
-template<>
-std::string ToFixedWidthString<1>(uint32_t number) {
-  assert(number < 256);
-  return std::string(1, static_cast<char>(number));
-}
-
-template<>
-uint32_t FromFixedWidthString<1>(const std::string& number_as_string) {
-  assert(number_as_string.size() == 1U);
-  return static_cast<uint32_t>(static_cast<unsigned char>(number_as_string[0]));
-}
-
 }  // namespace detail
 
 
