@@ -50,7 +50,7 @@ class DataManagerService {
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor& /*reply_functor*/) {}
-  void HandleChurnEvent(routing::MatrixChange matrix_change);
+  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
  private:
   template<typename Data>

@@ -201,7 +201,7 @@ void VersionManagerService::HandleSynchronise(const nfs::Message& message) {
   }
 }
 
-void VersionManagerService::HandleChurnEvent(routing::MatrixChange /*matrix_change*/) {
+void VersionManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {
   auto record_names(version_manager_db_.GetKeys());
 //  auto itr(std::begin(record_names));
 //  while (itr != std::end(record_names)) {

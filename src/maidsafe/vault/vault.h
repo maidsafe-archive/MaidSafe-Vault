@@ -62,7 +62,7 @@ class Vault {
   void OnPublicKeyRequested(const NodeId &node_id, const routing::GivePublicKeyFunctor &give_key);
   void DoOnPublicKeyRequested(const NodeId &node_id, const routing::GivePublicKeyFunctor &give_key);
   void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
-  void OnMatrixChanged(const routing::MatrixChange& matrix_change);
+  void OnMatrixChanged(std::shared_ptr<routing::MatrixChange> matrix_change);
   bool OnGetFromCache(std::string& message);
   void OnStoreInCache(const std::string& message);
   void DoOnStoreInCache(const std::string& message);

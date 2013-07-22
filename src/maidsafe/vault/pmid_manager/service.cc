@@ -89,13 +89,12 @@ void PmidManagerService::HandleGetPmidTotals(const nfs::Message& message,
   }
 }
 
-void PmidManagerService::HandleChurnEvent(routing::MatrixChange matrix_change) {
+void PmidManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
 //  CheckAccounts();
   auto account_names(pmid_account_handler_.GetAccountNames());
   auto itr(std::begin(account_names));
   while (itr != std::end(account_names)) {
-    auto check_holders_result(CheckHolders(matrix_change, routing_.kNodeId(),
-                                           NodeId((*itr)->string())));
+    auto check_holders_result(matrix_change->CheckHolders(NodeId((*itr)->string())));
     // Delete accounts for which this node is no longer responsible.
     if (check_holders_result.proximity_status != routing::GroupRangeStatus::kInRange) {
       pmid_account_handler_.DeleteAccount(*itr);

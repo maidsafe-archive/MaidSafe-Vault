@@ -61,45 +61,6 @@ void SendReply(const nfs::Message& original_message,
 }  // namespace detail
 
 
-
-CheckHoldersResult CheckHolders(const routing::MatrixChange& matrix_change,
-                                const NodeId& this_id,
-                                const NodeId& target) {
-  CheckHoldersResult holders_result;
-  std::vector<NodeId> old_matrix(matrix_change.old_matrix),
-                      new_matrix(matrix_change.new_matrix);
-  const auto comparator([&target](const NodeId& lhs, const NodeId& rhs) {
-                            return NodeId::CloserToTarget(lhs, rhs, target);
-                        });
-  std::sort(old_matrix.begin(), old_matrix.end(), comparator);
-  std::sort(new_matrix.begin(), new_matrix.end(), comparator);
-  std::set_difference(new_matrix.begin(),
-                      new_matrix.end(),
-                      old_matrix.begin(),
-                      old_matrix.end(),
-                      std::back_inserter(holders_result.new_holders),
-                      comparator);
-  std::set_difference(old_matrix.begin(),
-                      old_matrix.end(),
-                      new_matrix.begin(),
-                      new_matrix.end(),
-                      std::back_inserter(holders_result.old_holders),
-                      comparator);
-
-  holders_result.proximity_status = routing::GroupRangeStatus::kOutwithRange;
-  if (new_matrix.size() <= routing::Parameters::node_group_size ||
-      !NodeId::CloserToTarget(new_matrix.at(routing::Parameters::node_group_size - 1),
-                              this_id,
-                              target)) {
-    holders_result.proximity_status = routing::GroupRangeStatus::kInRange;
-  } else if (new_matrix.size() <= routing::Parameters::closest_nodes_size ||
-             !NodeId::CloserToTarget(new_matrix.at(routing::Parameters::closest_nodes_size - 1),
-                                     this_id, target)) {
-    holders_result.proximity_status = routing::GroupRangeStatus::kInProximalRange;
-  }
-  return holders_result;
-}
-
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path) {
   if (boost::filesystem::exists(db_path))
     boost::filesystem::remove_all(db_path);
