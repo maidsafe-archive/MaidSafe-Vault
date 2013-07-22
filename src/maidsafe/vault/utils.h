@@ -116,18 +116,12 @@ inline bool FromDataGetter(const Message& message);
 template<typename Message>
 inline bool FromVersionManager(const nfs::Message& message);
 
-
 template<typename Persona>
 typename Persona::DbKey GetKeyFromMessage(const nfs::Message& message) {
   if (!message.data().type)
     ThrowError(CommonErrors::parsing_error);
   return GetDataNameVariant(*message.data().type, message.data().name);
 }
-
-template<>
-typename VersionManager::DbKey
-         GetKeyFromMessage<VersionManager>(const nfs::Message& message);
-
 
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path);
 

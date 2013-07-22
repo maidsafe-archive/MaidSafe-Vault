@@ -100,16 +100,6 @@ CheckHoldersResult CheckHolders(const routing::MatrixChange& matrix_change,
   return holders_result;
 }
 
-template<>
-typename VersionManager::DbKey
-    GetKeyFromMessage<VersionManager>(const nfs::Message& message) {
-  if (!message.data().type)
-    ThrowError(CommonErrors::parsing_error);
-  return VersionManagerKey(GetDataNameVariant(*message.data().type, message.data().name),
-                           message.data().originator);
-}
-
-
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path) {
   if (boost::filesystem::exists(db_path))
     boost::filesystem::remove_all(db_path);

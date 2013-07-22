@@ -15,37 +15,39 @@ License.
 
 #include "maidsafe/vault/pmid_manager/value.h"
 
-#include <string>
+#include "maidsafe/common/error.h"
+#include "maidsafe/common/log.h"
 
-#include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
+
 
 namespace maidsafe {
+
 namespace vault {
 
-PmidManagerValue::PmidManagerValue(const serialised_type& serialised_value)
-  : value() {
-  protobuf::PmidManagerValue value_proto;
-  if (!value_proto.ParseFromString(serialised_value->string())) {
-    LOG(kError) << "Failed to read or parse serialised value";
+PmidManagerValue::PmidManagerValue(const std::string& serialised_pmid_manager_value)
+    : size_(0) {
+  protobuf::PmidManagerValue pmid_manager_value_proto;
+  if (!pmid_manager_value_proto.ParseFromString(serialised_pmid_manager_value)) {
+    LOG(kError) << "Failed to read or parse serialised pmid manager value.";
     ThrowError(CommonErrors::parsing_error);
   } else {
-    size = value_proto.size();
+    size_ = pmid_manager_value_proto.size();
   }
 }
 
-PmidManagerValue::PmidManagerValue(int size)
-  : size(size) {}
+PmidManagerValue::PmidManagerValue(int32_t size) : size_(size) {}
 
-bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs) {
-  return lhs.size == rhs.size;
+std::string PmidManagerValue::Serialise() const {
+  protobuf::PmidManagerValue pmid_manager_value_proto;
+  pmid_manager_value_proto.set_size(size_);
+  return pmid_manager_value_proto.SerializeAsString();
 }
 
-PmidManagerValue::serialised_type PmidManagerValue::Serialise() const {
-  protobuf::PmidManagerValue value_proto;
-  value_proto.set_size(size);
-  assert(value_proto.IsInitialized());
-  return serialised_type(NonEmptyString(value_proto.SerializeAsString()));
+bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs) {
+  return lhs.size() == rhs.size();
 }
 
 }  // namespace vault
+
 }  // namespace maidsafe

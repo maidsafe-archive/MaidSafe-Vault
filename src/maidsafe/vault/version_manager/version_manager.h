@@ -20,12 +20,8 @@ License.
 
 #include <cstdint>
 
-#include "boost/variant/variant.hpp"
-
 #include "maidsafe/data_types/structured_data_versions.h"
-#include "maidsafe/data_types/owner_directory.h"
-#include "maidsafe/data_types/group_directory.h"
-#include "maidsafe/data_types/world_directory.h"
+#include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/version_manager/key.h"
@@ -48,53 +44,13 @@ namespace nfs {
 template<>
 struct PersonaTypes<Persona::kVersionManager> {
   static const Persona persona = Persona::kVersionManager;
-
-  template<typename Data>
-  struct Key {
-    typedef maidsafe::vault::VersionManagerKey<Data> type;
-  };
-
+  typedef vault::VersionManagerKey Key;
   typedef StructuredDataVersions Value;
-
-  // PutVersion
-  template<typename Data>
-  struct UnresolvedPutVersion {
-    typedef maidsafe::vault::UnresolvedAction<typename Key<Data>::type,
-                                              maidsafe::vault::ActionPutVersion> type;
-  };
-  typedef boost::variant<UnresolvedPutVersion<OwnerDirectory>::type,
-                         UnresolvedPutVersion<GroupDirectory>::type,
-                         UnresolvedPutVersion<WorldDirectory>::type> PutVersionVariant;
-  // GetVersion
-  template<typename Data>
-  struct UnresolvedGetVersion {
-    typedef maidsafe::vault::UnresolvedAction<typename Key<Data>::type,
-                                              maidsafe::vault::ActionGetVersion> type;
-  };
-  typedef boost::variant<UnresolvedGetVersion<OwnerDirectory>::type,
-                         UnresolvedGetVersion<GroupDirectory>::type,
-                         UnresolvedGetVersion<WorldDirectory>::type> GetVersionVariant;
-
-  // GetBranch
-  template<typename Data>
-  struct UnresolvedGetBranch {
-    typedef maidsafe::vault::UnresolvedAction<typename Key<Data>::type,
-                                              maidsafe::vault::ActionGetBranch> type;
-  };
-  typedef boost::variant<UnresolvedGetBranch<OwnerDirectory>::type,
-                         UnresolvedGetBranch<GroupDirectory>::type,
-                         UnresolvedGetBranch<WorldDirectory>::type> GetBranchVariant;
-
-  // DeleteBranchUntilFork
-  template<typename Data>
-  struct UnresolvedDeleteBranchUntilFork {
-    typedef maidsafe::vault::UnresolvedAction<typename Key<Data>::type,
-                                              maidsafe::vault::ActionDeleteBranchUntilFork> type;
-  };
-  typedef boost::variant<UnresolvedDeleteBranchUntilFork<OwnerDirectory>::type,
-                         UnresolvedDeleteBranchUntilFork<GroupDirectory>::type,
-                         UnresolvedDeleteBranchUntilFork<WorldDirectory>::type>
-                             DeleteBranchUntilForkVariant;
+  typedef vault::UnresolvedAction<Key, vault::ActionPutVersion> UnresolvedPutVersion;
+  typedef vault::UnresolvedAction<Key, vault::ActionGetVersion> UnresolvedGetVersion;
+  typedef vault::UnresolvedAction<Key, vault::ActionGetBranch> UnresolvedGetBranch;
+  typedef vault::UnresolvedAction<Key, vault::ActionDeleteBranchUntilFork>
+      UnresolvedDeleteBranchUntilFork;
 
   enum class Action : int32_t {
     kPut,

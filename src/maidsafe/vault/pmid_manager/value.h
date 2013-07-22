@@ -17,29 +17,29 @@ License.
 #define MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_
 
 #include <cstdint>
-#include <set>
-#include <vector>
+#include <string>
 
-#include "maidsafe/common/types.h"
-#include "maidsafe/vault/manager_db.h"
-#include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
-#include "maidsafe/vault/types.h"
 
 namespace maidsafe {
+
 namespace vault {
 
-struct PmidManagerValue {
-  typedef TaggedValue<NonEmptyString, struct SerialisedValueTag> serialised_type;
-  explicit PmidManagerValue(const serialised_type& serialised_value);
-  explicit PmidManagerValue(int size);
-  serialised_type Serialise() const;
+class PmidManagerValue {
+ public:
+  explicit PmidManagerValue(const std::string& serialised_pmid_manager_value);
+  explicit PmidManagerValue(int32_t size);
+  std::string Serialise() const;
 
-  int size;
+  int32_t size() const { return size_; }
+
+ private:
+  int32_t size_;
 };
 
 bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);
 
 }  // namespace vault
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_

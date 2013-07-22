@@ -25,6 +25,7 @@ namespace maidsafe {
 namespace vault {
 
 class MaidManagerValue {
+ public:
   explicit MaidManagerValue(const std::string& serialised_maid_manager_value);
   MaidManagerValue();
   std::string Serialise() const;
@@ -34,11 +35,11 @@ class MaidManagerValue {
   int32_t count() const { return count_; }
   int32_t cost() const { return cost_; }
 
-  friend bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs);
-
  private:
   int32_t count_, cost_;
 };
+
+bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs);
 
 }  // namespace vault
 

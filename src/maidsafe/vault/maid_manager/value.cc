@@ -33,7 +33,7 @@ MaidManagerValue::MaidManagerValue(const std::string& serialised_maid_manager_va
       cost_(0) {
   protobuf::MaidManagerValue maid_manager_value_proto;
   if (!maid_manager_value_proto.ParseFromString(serialised_maid_manager_value)) {
-    LOG(kError) << "Failed to read or parse serialised maid manager value";
+    LOG(kError) << "Failed to read or parse serialised maid manager value.";
     ThrowError(CommonErrors::parsing_error);
   } else {
     count_ = maid_manager_value_proto.count();
@@ -75,7 +75,7 @@ void MaidManagerValue::Delete(int32_t cost) {
 }
 
 bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs) {
-  return lhs.count_ == rhs.count_ && lhs.cost_ == rhs.cost_;
+  return lhs.count() == rhs.count() && lhs.cost() == rhs.cost();
 }
 
 }  // namespace vault

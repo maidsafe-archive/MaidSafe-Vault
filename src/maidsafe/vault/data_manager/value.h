@@ -18,27 +18,29 @@ License.
 
 #include <cstdint>
 #include <set>
-#include <vector>
+#include <string>
 
-#include "maidsafe/common/types.h"
-#include "maidsafe/vault/manager_db.h"
-#include "maidsafe/vault/data_manager/data_manager.pb.h"
-#include "maidsafe/vault/types.h"
+#include "boost/optional/optional.hpp"
+
+#include "maidsafe/passport/types.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
-struct DataManagerValue {
-  typedef TaggedValue<NonEmptyString, struct SerialisedMetadataValueTag> serialised_type;
-  explicit DataManagerValue(const serialised_type& serialised_metadata_value);
-  explicit DataManagerValue(int size_in);
-  serialised_type Serialise() const;
+class DataManagerValue {
+ public:
+  explicit DataManagerValue(const std::string& serialised_data_manager_value);
+  explicit DataManagerValue(int32_t data_size);
+  std::string Serialise() const;
 
-  int data_size;
+  int32_t data_size() const { return data_size_; }
+
+ private:
+  int32_t data_size_;
   boost::optional<int64_t> subscribers;
-  std::set<PmidName> online_pmid_name, offline_pmid_name;
-
+  std::set<passport::PublicPmid::name_type> online_pmid_name, offline_pmid_name;
 };
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);

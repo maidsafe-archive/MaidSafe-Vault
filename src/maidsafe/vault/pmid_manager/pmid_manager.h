@@ -13,41 +13,49 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_PMID_MANAGER_MANAGER_H_
-#define MAIDSAFE_VAULT_PMID_MANAGER_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_H_
 
-#include <cstdint>
-#include <utility>
-
-#include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
-#include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/passport/types.h"
+
+#include "maidsafe/vault/group_key.h"
+#include "maidsafe/vault/unresolved_action.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 
 
 namespace maidsafe {
+
+namespace vault {
+
+struct ActionPmidManagerPut;
+struct ActionPmidManagerDelete;
+struct ActionGetPmidTotals;
+
+}  // namespace vault
+
 
 namespace nfs {
 
 template<>
 struct PersonaTypes<Persona::kPmidManager> {
-  typedef DataNameVariant DbKey;
-  typedef int32_t DbValue;
-  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-  typedef DbValue UnresolvedEntryValue;
   static const Persona persona = Persona::kPmidManager;
-  static const int kPaddedWidth = 1;
+  typedef vault::GroupKey<passport::PublicPmid::name_type> Key;
+  typedef vault::PmidManagerValue Value;
+  typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerPut> UnresolvedPut;
+  typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerDelete> UnresolvedDelete;
+  typedef vault::UnresolvedAction<Key, vault::ActionGetPmidTotals> UnresolvedGetPmidTotals;
 };
 
 }  // namespace nfs
 
+
 namespace vault {
 
 typedef nfs::PersonaTypes<nfs::Persona::kPmidManager> PmidManager;
-typedef UnresolvedElement<PmidManager> PmidManagerUnresolvedEntry;
-typedef PmidManagerUnresolvedEntry PmidManagerResolvedEntry;
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_MANAGER_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_H_

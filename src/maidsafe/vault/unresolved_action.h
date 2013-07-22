@@ -13,13 +13,13 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_UNRESOLVED_ELEMENT_H_
-#define MAIDSAFE_VAULT_UNRESOLVED_ELEMENT_H_
+#ifndef MAIDSAFE_VAULT_UNRESOLVED_ACTION_H_
+#define MAIDSAFE_VAULT_UNRESOLVED_ACTION_H_
 
 #include <cstdint>
-#include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/error.h"
@@ -43,12 +43,12 @@ struct UnresolvedAction {
                    const NodeId& this_node_id,
                    int32_t this_entry_id);
   std::string Serialise() const;
-  bool HasThisNode() const;
+  bool IsReadyForSync() const;
 
   Key key;
   Action action;
   std::pair<NodeId, int32_t> this_node_and_entry_id;
-  std::set<std::pair<NodeId, int32_t>> peer_and_entry_ids;
+  std::vector<std::pair<NodeId, int32_t>> peer_and_entry_ids;
   int sync_counter;
 
  private:
@@ -77,7 +77,7 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const std::string& serialised_co
   if (sender_id == this_node_id)
     this_node_and_entry_id = std::make_pair(this_node_id, proto_unresolved_action.entry_id());
   else
-    peer_and_entry_ids.insert(std::make_pair(sender_id, proto_unresolved_action.entry_id()));
+    peer_and_entry_ids.push_back(std::make_pair(sender_id, proto_unresolved_action.entry_id()));
 }
 
 template<typename Key, typename Action>
@@ -117,12 +117,13 @@ std::string UnresolvedAction<Key, Action>::Serialise() const {
 }
 
 template<typename Key, typename Action>
-bool UnresolvedAction<Key, Action>::HasThisNode() const {
-  return !this_node_and_entry_id.first.IsZero();
+bool UnresolvedAction<Key, Action>::IsReadyForSync() const {
+  // TODO(Fraser#5#): 2013-07-22 - Confirm sync_counter limit and remove magic number
+  return !this_node_and_entry_id.first.IsZero() && sync_counter < 10;
 }
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_UNRESOLVED_ELEMENT_H_
+#endif  // MAIDSAFE_VAULT_UNRESOLVED_ACTION_H_

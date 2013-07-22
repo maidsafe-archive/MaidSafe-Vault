@@ -24,7 +24,7 @@ message PmidRecord {
   required int64 claimed_available_size = 6;
 }
 
-message PmidValue {
+message PmidManagerValue {
   required int32 size = 1;
 }
 
