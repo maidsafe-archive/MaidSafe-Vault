@@ -17,7 +17,7 @@ package maidsafe.vault.protobuf;
 import "maidsafe/vault/pmid_manager/pmid_manager.proto";
 
 message MaidManagerValue {
-  required int32 average_cost = 1;
+  required int64 total_cost = 1;
   required int32 count = 2;
 }
 

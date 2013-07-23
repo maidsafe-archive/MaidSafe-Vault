@@ -30,8 +30,10 @@ namespace vault {
 
 struct ActionMaidManagerPut;
 struct ActionMaidManagerDelete;
-struct ActionRegisterPmid;
-struct ActionUnregisterPmid;
+template<bool Unregister>
+struct ActionRegisterUnregisterPmid;
+typedef ActionRegisterUnregisterPmid<false> ActionRegisterPmid;
+typedef ActionRegisterUnregisterPmid<true> ActionUnregisterPmid;
 
 }  // namespace vault
 

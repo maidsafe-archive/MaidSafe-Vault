@@ -16,6 +16,7 @@ License.
 #ifndef MAIDSAFE_VAULT_MAID_MANAGER_SERVICE_H_
 #define MAIDSAFE_VAULT_MAID_MANAGER_SERVICE_H_
 
+#include <memory>
 #include <mutex>
 #include <string>
 #include <type_traits>
@@ -29,9 +30,7 @@ License.
 
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/db.h"
-#include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/maid_manager/handler.h"
 
 
 namespace maidsafe {
@@ -40,13 +39,14 @@ namespace vault {
 
 struct PmidRegistrationOp;
 struct GetPmidTotalsOp;
+class MaidManagerMetadata;
 
 class MaidManagerService {
  public:
   MaidManagerService(const passport::Pmid& pmid,
-                           routing::Routing& routing,
-                           nfs::PublicKeyGetter& public_key_getter,
-                           Db& db);
+                     routing::Routing& routing,
+                     nfs::PublicKeyGetter& public_key_getter,
+                     Db& db);
   // Handling of received requests (sending of requests is done via nfs_ object).
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
@@ -125,9 +125,9 @@ class MaidManagerService {
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
-  std::mutex accumulator_mutex_;
+  std::mutex accumulator_mutex_, metadata_mutex_;
   Accumulator<MaidName> accumulator_;
-  MaidAccountHandler maid_account_handler_;
+  std::vector<MaidManagerMetadata> accounts_;
   MaidManagerNfs nfs_;
   static const int kPutRepliesSuccessesRequired_;
   static const int kDefaultPaymentFactor_;

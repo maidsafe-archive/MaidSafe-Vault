@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_HELPERS_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_HELPERS_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_HELPERS_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_HELPERS_H_
 
 #include <map>
 #include <memory>
@@ -91,4 +91,4 @@ bool operator==(const PmidTotals& lhs, const PmidTotals& rhs);
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_HELPERS_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_HELPERS_H_

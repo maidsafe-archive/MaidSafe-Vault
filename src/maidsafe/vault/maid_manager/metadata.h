@@ -16,28 +16,34 @@ License.
 #ifndef MAIDSAFE_VAULT_MAID_MANAGER_METADATA_H_
 #define MAIDSAFE_VAULT_MAID_MANAGER_METADATA_H_
 
+#include <cstdint>
+#include <string>
 #include <vector>
 
 #include "maidsafe/vault/maid_manager/helpers.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
 class MaidManagerMetadata {
+ public:
   explicit MaidManagerMetadata(const std::string& serialised_metadata_value);
-  MaidManagerMetadata(const int64_t& total_put_data, const std::vector<PmidTotals>& pmid_totals);
+  MaidManagerMetadata(int64_t total_put_data, const std::vector<PmidTotals>& pmid_totals);
+  MaidManagerMetadata(const MaidManagerMetadata& other);
+  MaidManagerMetadata(MaidManagerMetadata&& other);
+  MaidManagerMetadata& operator=(MaidManagerMetadata other);
 
   std::string Serialise() const;
-  protobuf::MaidManagerMetadata ToProto() const;
 
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
-  void UnregisterPmid(const PmidName& pmid_name);
+  void UnregisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UpdatePmidTotals(const PmidRecord& pmid_record);
 
- friend bool operator==(const MaidManagerMetadata& lhs,
-                        const MaidManagerMetadata& rhs);
+  friend void swap(MaidManagerMetadata& lhs, MaidManagerMetadata& rhs);
+  friend bool operator==(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs);
 
  private:
   std::vector<PmidTotals>::iterator Find(const PmidName& pmid_name);
@@ -45,8 +51,6 @@ class MaidManagerMetadata {
   int64_t total_put_data_;
   std::vector<PmidTotals> pmid_totals_;
 };
-
-bool operator==(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs);
 
 }  // namespace vault
 

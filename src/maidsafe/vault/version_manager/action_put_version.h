@@ -81,4 +81,3 @@ maidsafe_error ActionPutVersion::operator()(Storage& storage,
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_VERSION_H_
-

@@ -19,7 +19,6 @@ License.
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
-#include "maidsafe/common/on_scope_exit.h"
 
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 
@@ -30,52 +29,44 @@ namespace vault {
 
 MaidManagerValue::MaidManagerValue(const std::string& serialised_maid_manager_value)
     : count_(0),
-      cost_(0) {
+      total_cost_(0) {
   protobuf::MaidManagerValue maid_manager_value_proto;
   if (!maid_manager_value_proto.ParseFromString(serialised_maid_manager_value)) {
     LOG(kError) << "Failed to read or parse serialised maid manager value.";
     ThrowError(CommonErrors::parsing_error);
   } else {
     count_ = maid_manager_value_proto.count();
-    cost_ = maid_manager_value_proto.average_cost();
+    total_cost_ = maid_manager_value_proto.total_cost();
   }
 }
 
-MaidManagerValue::MaidManagerValue() : count_(0), cost_(0) {}
+MaidManagerValue::MaidManagerValue() : count_(0), total_cost_(0) {}
 
 std::string MaidManagerValue::Serialise() const {
-  if (count_ == 0 || cost_ == 0)
+  if (count_ == 0 || total_cost_ == 0)
     ThrowError(CommonErrors::uninitialised);
 
   protobuf::MaidManagerValue maid_manager_value_proto;
   maid_manager_value_proto.set_count(count_);
-  maid_manager_value_proto.set_average_cost(cost_);
+  maid_manager_value_proto.set_total_cost(total_cost_);
   return maid_manager_value_proto.SerializeAsString();
 }
 
 void MaidManagerValue::Put(int32_t cost) {
   ++count_;
-  cost_ += cost;
+  total_cost_ += cost;
 }
 
-void MaidManagerValue::Delete(int32_t cost) {
-  auto reset_values([this](int32_t original_count, int32_t original_cost) {
-      count_ = original_count;
-      cost_ = original_cost;
-  });
-  on_scope_exit strong_guarantee(std::bind(reset_values, count_, cost_));
-
+void MaidManagerValue::Delete() {
+  if (count_ <= 0 || total_cost_ < 0)
+    ThrowError(CommonErrors::unknown);
+  auto average_cost(total_cost_ / count_);
   --count_;
-  cost_ -= cost;
-
-  if (count_ < 0 || cost_ < 0)
-    ThrowError(CommonErrors::invalid_parameter);
-
-  strong_guarantee.Release();
+  total_cost_ -= average_cost;
 }
 
 bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs) {
-  return lhs.count() == rhs.count() && lhs.cost() == rhs.cost();
+  return lhs.count() == rhs.count() && lhs.total_cost() == rhs.total_cost();
 }
 
 }  // namespace vault

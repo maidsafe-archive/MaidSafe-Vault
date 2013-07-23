@@ -1,4 +1,4 @@
-/* Copyright 2012 MaidSafe.net limited
+/* Copyright 2013 MaidSafe.net limited
 
 This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
 and The General Public License (GPL), version 3. By contributing code to this project You agree to
@@ -13,38 +13,31 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_ACTION_DELETE_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_ACTION_DELETE_H_
 
 #include <cstdint>
 #include <string>
+
+#include "boost/optional/optional.hpp"
+
+#include "maidsafe/nfs/types.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-class MaidManagerValue {
- public:
-  explicit MaidManagerValue(const std::string& serialised_maid_manager_value);
-  MaidManagerValue();
-  std::string Serialise() const;
+class MaidManagerValue;
 
-  void Put(int32_t cost);
-  void Delete();
-  int32_t count() const { return count_; }
-  int64_t total_cost() const { return total_cost_; }
-
- private:
-  int32_t count_;
-  int64_t total_cost_;
+struct ActionMaidManagerDelete {
+  ActionMaidManagerDelete() {}
+  void operator()(boost::optional<MaidManagerValue>& value) const;
+  static const nfs::MessageAction kActionId;
 };
-
-bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_ACTION_DELETE_H_

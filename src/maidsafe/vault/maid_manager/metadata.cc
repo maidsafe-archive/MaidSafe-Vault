@@ -15,6 +15,9 @@ License.
 
 #include "maidsafe/vault/maid_manager/metadata.h"
 
+#include <utility>
+
+
 namespace maidsafe {
 
 namespace vault {
@@ -50,8 +53,8 @@ void MaidManagerMetadata::RegisterPmid(const nfs::PmidRegistration& pmid_registr
   }
 }
 
-void MaidManagerMetadata::UnregisterPmid(const PmidName& pmid_name) {
-  auto itr(Find(pmid_name));
+void MaidManagerMetadata::UnregisterPmid(const nfs::PmidRegistration& pmid_registration) {
+  auto itr(Find(pmid_registration.pmid_name()));
   if (itr != std::end(pmid_totals_))
     pmid_totals_.erase(itr);
 }
@@ -91,6 +94,12 @@ std::vector<PmidTotals>::iterator MaidManagerMetadata::Find(const PmidName& pmid
 bool operator==(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs) {
   return lhs.total_put_data_ == rhs.total_put_data_ &&
          lhs.pmid_totals_ == rhs.pmid_totals_;
+}
+
+void swap(MaidManagerMetadata& lhs, MaidManagerMetadata& rhs) {
+  using std::swap;
+  swap(lhs.total_put_data_, rhs.total_put_data_);
+  swap(lhs.pmid_totals_, rhs.pmid_totals_);
 }
 
 }  // namespace vault
