@@ -51,15 +51,6 @@ struct PersonaTypes<Persona::kVersionManager> {
   typedef vault::UnresolvedAction<Key, vault::ActionGetBranch> UnresolvedGetBranch;
   typedef vault::UnresolvedAction<Key, vault::ActionDeleteBranchUntilFork>
       UnresolvedDeleteBranchUntilFork;
-
-  enum class Action : int32_t {
-    kPut,
-    kGet,
-    kGetBranch,
-    kDeleteBranchUntilFork,
-    kSync,
-    kAccountTransfer
-  };
 };
 
 }  // namespace nfs

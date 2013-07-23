@@ -34,6 +34,12 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace detail {
+
+enum class DataType : int32_t { kMetadata };
+
+}  // namespace detail
+
 class MaidAccount;
 class PmidAccount;
 
@@ -72,13 +78,6 @@ typedef nfs::NetworkFileSystem<
 typedef passport::PublicMaid::name_type MaidName;
 typedef passport::PublicPmid::name_type PmidName;
 typedef passport::PublicMpid::name_type MpidName;
-
-typedef std::set<std::unique_ptr<MaidAccount>,
-                 std::function<bool(const std::unique_ptr<MaidAccount>&,
-                                    const std::unique_ptr<MaidAccount>&)>> MaidAccountSet;
-typedef std::set<std::unique_ptr<PmidAccount>,
-                 std::function<bool(const std::unique_ptr<PmidAccount>&,
-                                    const std::unique_ptr<PmidAccount>&)>> PmidAccountSet;
 
 }  // namespace vault
 

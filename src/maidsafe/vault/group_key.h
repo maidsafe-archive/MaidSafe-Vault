@@ -37,6 +37,7 @@ class Db;
 
 template<typename GroupName>
 struct GroupKey {
+  typedef GroupName GroupNameType;
   template<typename Data>
   GroupKey(const typename GroupName& group_name_in, const typename Data::name_type& data_name_in);
   explicit GroupKey(const std::string& serialised_group_key);
