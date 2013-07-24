@@ -29,7 +29,7 @@ struct Parameters {
  public:
   // Min % returned by routing.network_status() to consider this node still online.
   static const int kMinNetworkHealth;
-  // Max number of recent entries in account classes.
+  // Max number of recent actions in account classes.
   static size_t max_recent_data_list_size;
   // Max count of elements allowed in each account file
   static int max_file_element_count;

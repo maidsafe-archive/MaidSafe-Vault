@@ -41,27 +41,27 @@ MaidManagerMergePolicy& MaidManagerMergePolicy::operator=(MaidManagerMergePolicy
   return *this;
 }
 
-void MaidManagerMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
-  auto serialised_db_value(GetFromDb(unresolved_entry.key.first));
-  if (unresolved_entry.key.second == nfs::MessageAction::kPut &&
-      !unresolved_entry.dont_add_to_db) {
-    MergePut(unresolved_entry.key.first, MergedCost(unresolved_entry), serialised_db_value);
-  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
-    MergeDelete(unresolved_entry.key.first, serialised_db_value);
+void MaidManagerMergePolicy::Merge(const UnresolvedAction& unresolved_action) {
+  auto serialised_db_value(GetFromDb(unresolved_action.key.first));
+  if (unresolved_action.key.second == nfs::MessageAction::kPut &&
+      !unresolved_action.dont_add_to_db) {
+    MergePut(unresolved_action.key.first, MergedCost(unresolved_action), serialised_db_value);
+  } else if (unresolved_action.key.second == nfs::MessageAction::kDelete) {
+    MergeDelete(unresolved_action.key.first, serialised_db_value);
   } else {
     ThrowError(CommonErrors::invalid_parameter);
   }
 }
 
-MaidManagerMergePolicy::UnresolvedEntry::Value MaidManagerMergePolicy::MergedCost(
-    const UnresolvedEntry& unresolved_entry) const {
-  assert(unresolved_entry.key.second == nfs::MessageAction::kPut &&
-         !unresolved_entry.dont_add_to_db);
-  std::map<UnresolvedEntry::Value, size_t> all_costs;
-  auto most_frequent_itr(std::end(unresolved_entry.messages_contents));
+MaidManagerMergePolicy::UnresolvedAction::Value MaidManagerMergePolicy::MergedCost(
+    const UnresolvedAction& unresolved_action) const {
+  assert(unresolved_action.key.second == nfs::MessageAction::kPut &&
+         !unresolved_action.dont_add_to_db);
+  std::map<UnresolvedAction::Value, size_t> all_costs;
+  auto most_frequent_itr(std::end(unresolved_action.messages_contents));
   size_t most_frequent(0);
-  for (auto itr(std::begin(unresolved_entry.messages_contents));
-       itr != std::end(unresolved_entry.messages_contents); ++itr) {
+  for (auto itr(std::begin(unresolved_action.messages_contents));
+       itr != std::end(unresolved_action.messages_contents); ++itr) {
     if ((*itr).value) {
       size_t this_value_count(++all_costs[*(*itr).value]);
       if (this_value_count > most_frequent) {
@@ -84,7 +84,7 @@ MaidManagerMergePolicy::UnresolvedEntry::Value MaidManagerMergePolicy::MergedCos
       all_costs.erase(--std::end(all_costs));
   }
 
-  UnresolvedEntry::Value total_cost(0);
+  UnresolvedAction::Value total_cost(0);
   int count(0);
   for (const auto& cost : all_costs) {
     total_cost += static_cast<int32_t>(cost.first * cost.second);
@@ -95,7 +95,7 @@ MaidManagerMergePolicy::UnresolvedEntry::Value MaidManagerMergePolicy::MergedCos
 }
 
 void MaidManagerMergePolicy::MergePut(const DataNameVariant& data_name,
-                                      UnresolvedEntry::Value cost,
+                                      UnresolvedAction::Value cost,
                                       const NonEmptyString& serialised_db_value) {
   if (serialised_db_value.IsInitialised()) {
     auto current_values(ParseDbValue(serialised_db_value));

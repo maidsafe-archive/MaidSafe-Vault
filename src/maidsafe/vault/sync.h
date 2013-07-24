@@ -37,40 +37,40 @@ class Sync : public MergePolicy {
   Sync(Sync&& other);
   Sync& operator=(Sync&& other);
   // This is called when receiving a Sync message from a peer or this node. If the
-  // entry becomes resolved then size() >= routing::Parameters::node_group_size -1
-  std::vector<typename MergePolicy::ResolvedEntry>
-      AddUnresolvedEntry(const typename MergePolicy::UnresolvedEntry& entry);
+  // action becomes resolved then size() >= routing::Parameters::node_group_size -1
+  std::vector<typename MergePolicy::ResolvedAction>
+      AddUnresolvedAction(const typename MergePolicy::UnresolvedAction& action);
   // This is called directly once an action has been decided as valid in the MAHolder, but before
-  // syncing the unresolved entry to the peers.  This won't resolve the entry (even if it's the last
-  // one we're waiting for) so that 'GetUnresolvedData()' will return this one, allowing us to then
+  // syncing the unresolved action to the peers.  This won't resolve the action (even if it's the last
+  // one we're waiting for) so that 'GetUnresolvedActions()' will return this one, allowing us to then
   // sync it to our peers.
-  void AddLocalEntry(const typename MergePolicy::UnresolvedEntry& entry);
-  // Returns true if the entry becomes resolved.
-  std::vector<typename MergePolicy::ResolvedEntry>
-      AddAccountTransferRecord(const typename MergePolicy::UnresolvedEntry& entry,
+  void AddLocalAction(const typename MergePolicy::UnresolvedAction& action);
+  // Returns true if the action becomes resolved.
+  std::vector<typename MergePolicy::ResolvedAction>
+      AddAccountTransferRecord(const typename MergePolicy::UnresolvedAction& action,
                                bool all_account_transfers_received);
   // This is called if, during an ongoing account transfer, another churn event occurs.  The
-  // old node's ID is replaced throughout the list of unresolved entries with the new node's ID.
-  // The new node's ID is also applied to any entries which didn't contain the old one, in the
+  // old node's ID is replaced throughout the list of unresolved actions with the new node's ID.
+  // The new node's ID is also applied to any actions which didn't contain the old one, in the
   // expectation that the old node would have eventually supplied the message.
   void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
-  // This returns all unresoved entries containing this node's ID.  Each returned entry is provided
+  // This returns all unresoved actions containing this node's ID.  Each returned action is provided
   // with just this node's ID inserted, even if the master copy has several other peers' IDs.
-  std::vector<typename MergePolicy::UnresolvedEntry> GetUnresolvedData();
+  std::vector<typename MergePolicy::UnresolvedAction> GetUnresolvedActions();
   size_t GetUnresolvedCount() const { return MergePolicy::unresolved_data_.size(); }
-  // Calling this will increment the sync counter and delete entries that reach the
-  // 'sync_counter_max_' limit.  Entries which are resolved by all peers (i.e. have 4 messages) are
+  // Calling this will increment the sync counter and delete actions that reach the
+  // 'sync_counter_max_' limit.  Actions which are resolved by all peers (i.e. have 4 messages) are
   // also pruned here.
   void IncrementSyncAttempts();
 
  private:
   Sync(const Sync&);
   Sync& operator=(const Sync&);
-  std::vector<typename MergePolicy::ResolvedEntry>
-      AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge);
+  std::vector<typename MergePolicy::ResolvedAction>
+      AddAction(const typename MergePolicy::UnresolvedAction& action, bool merge);
   template <typename Data>
-  bool AddEntry(const typename MergePolicy::UnresolvedEntry& entry, bool merge);
-  bool CanBeErased(const typename MergePolicy::UnresolvedEntry& entry) const;
+  bool AddAction(const typename MergePolicy::UnresolvedAction& action, bool merge);
+  bool CanBeErased(const typename MergePolicy::UnresolvedAction& action) const;
 
   int32_t sync_counter_max_;
   NodeId this_node_id_;
