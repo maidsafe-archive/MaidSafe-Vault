@@ -29,6 +29,7 @@ License.
 #include "maidsafe/data_store/data_store.h"
 #include "maidsafe/data_store/memory_buffer.h"
 #include "maidsafe/data_store/permanent_store.h"
+#include "maidsafe/data_types/data_type_values.h"
 #include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/message.h"
@@ -85,15 +86,17 @@ class PmidNodeService {
                              const routing::ReplyFunctor& reply_functor);
 
   void SendAccountRequest();
+
+  // populates chunks map
   void ApplyAccountTransfer(const size_t& total_pmidmgrs,
                             const size_t& pmidmagsr_with_account,
-                            std::map<Identity, uint16_t>& chunks);
+                            std::map<DataNameVariant, uint16_t>& chunks);
   bool ChunkExists(const Identity& key);
-  void UpdateLocalStorage(const std::map<Identity, uint16_t>& expected_files);
-  void ApplyUpdateLocalStorage(const std::vector<Identity>& to_be_deleted,
-                               const std::vector<Identity>& to_be_retrieved);
-  std::vector<Identity> RetrieveAllFiles();
-  void RetrieveFileFromNetwork(const Identity& /*file_id*/);
+  void UpdateLocalStorage(const std::map<DataNameVariant, uint16_t>& expected_files);
+  void ApplyUpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
+                               const std::vector<DataNameVariant>& to_be_retrieved);
+  std::vector<DataNameVariant> StoredFileNames();
+  void RetrieveFileFromNetwork(const DataNameVariant &file_id);
 
   void ValidatePutSender(const nfs::Message& message) const;
   void ValidateGetSender(const nfs::Message& message) const;

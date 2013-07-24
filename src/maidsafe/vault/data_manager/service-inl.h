@@ -216,7 +216,7 @@ void DataManagerService::HandlePutResult(const nfs::Message& message) {
 
 template<typename Data>
 void DataManagerService::HandleGet(nfs::Message message,
-                                       const routing::ReplyFunctor& reply_functor) {
+                                   const routing::ReplyFunctor& reply_functor) {
   try {
     ValidateGetSender(message);
     typename Data::name_type data_name(Identity(message.data().name));
@@ -239,7 +239,7 @@ void DataManagerService::HandleGet(nfs::Message message,
 
 template<typename Data>
 void DataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_handler,
-                                         const std::string& serialised_reply) {
+                                     const std::string& serialised_reply) {
   protobuf::DataOrProof data_or_proof;
   try {
     nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));

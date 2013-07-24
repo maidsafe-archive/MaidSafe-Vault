@@ -85,17 +85,17 @@ void PmidNodeService::SendAccountRequest() {
 
 void PmidNodeService::ApplyAccountTransfer(const size_t& total_pmidmgrs,
                                            const size_t& pmidmgrs_with_account,
-                                           std::map<Identity, uint16_t>& chunks) {
+                                           std::map<DataNameVariant, uint16_t>& chunks) {
   struct ChunkInfo {
-    ChunkInfo(const Identity& hash_in, const uint64_t& size_in) :
-        hash(hash_in), size(size_in) {}
-    Identity hash;
+    ChunkInfo(const DataNameVariant& file_name_in, const uint64_t& size_in) :
+        file_name(file_name_in), size(size_in) {}
+    DataNameVariant file_name;
     uint64_t size;
   };
 
   struct ChunkInfoComparison {
     bool operator() (const ChunkInfo& lhs, const ChunkInfo& rhs) const {
-      return lhs.hash.string() < rhs.hash.string();
+      return lhs.file_name < rhs.file_name;
     }
   };
 
@@ -105,13 +105,12 @@ void PmidNodeService::ApplyAccountTransfer(const size_t& total_pmidmgrs,
 
   for (auto pending_request : accumulator_.pending_requests_) {
     if (static_cast<nfs::MessageAction>(pending_request.msg.data().action) == nfs::MessageAction::kAccountTransfer) {
-      protobuf::PmidAccountResponse account_response;
-      account_response.ParseFromString(pending_request.msg.data().content.string());
+      pmid_account_response.ParseFromString(pending_request.msg.data().content.string());
       pmid_account_response.ParseFromString(pending_request.msg.data().content.string());
       pmid_account_details.ParseFromString(pmid_account_response.pmid_account().serialised_account_details());
-      if (account_response.status() == static_cast<int>(CommonErrors::success)) {
+      if (pmid_account_response.status() == static_cast<int>(CommonErrors::success)) {
         for (int index(0); index < pmid_account_details.db_entry_size(); ++index) {
-          ChunkInfo chunk_info(Identity(pmid_account_details.db_entry(index).name()),
+          ChunkInfo chunk_info(PmidName(Identity(pmid_account_details.db_entry(index).name())),
                                pmid_account_details.db_entry(index).value().size());
           expected_chunks[chunk_info]++;
         }
@@ -122,7 +121,8 @@ void PmidNodeService::ApplyAccountTransfer(const size_t& total_pmidmgrs,
     if ((iter->second >= routing::Parameters::node_group_size / 2 + 1) ||
         ((iter->second == routing::Parameters::node_group_size / 2)
          && (total_pmidmgrs > pmidmgrs_with_account))) {
-      chunks[iter->first.hash] = iter->second;
+      std::pair<DataNameVariant, int16_t> pair(iter->first.file_name, iter->second);
+      chunks.insert(pair);
     }
   }
 }
@@ -131,22 +131,23 @@ bool PmidNodeService::ChunkExists(const Identity& /*key*/) {
   return true;
 }
 
-void PmidNodeService::UpdateLocalStorage(const std::map<Identity, uint16_t>& expected_files) {
-  std::vector<Identity> existing_files(RetrieveAllFiles());
-  std::vector<Identity> to_be_deleted, to_be_retrieved;
-  for (auto hash : existing_files) {
+void PmidNodeService::UpdateLocalStorage(
+    const std::map<DataNameVariant, uint16_t>& expected_files) {
+  std::vector<DataNameVariant> existing_files(StoredFileNames());
+  std::vector<DataNameVariant> to_be_deleted, to_be_retrieved;
+  for (auto file_name : existing_files) {
     if (std::find_if(expected_files.begin(),
                      expected_files.end(),
-                     [&hash](const std::pair<Identity, bool>& expected) {
-                       return expected.first == hash;
+                     [&file_name](const std::pair<DataNameVariant, bool>& expected) {
+                       return expected.first == file_name;
                      }) == expected_files.end()) {
-      to_be_deleted.push_back(hash);
+      to_be_deleted.push_back(file_name);
     }
   }
   for (auto iter(expected_files.begin()); iter != expected_files.end(); ++iter) {
     if ((std::find_if(existing_files.begin(),
                      existing_files.end(),
-                     [&](const Identity& existing) {
+                     [&](const DataNameVariant& existing) {
                        return existing == iter->first;
                      }) == existing_files.end()) &&
         (iter->second >= routing::Parameters::node_group_size / 2 + 1)) {
@@ -156,21 +157,29 @@ void PmidNodeService::UpdateLocalStorage(const std::map<Identity, uint16_t>& exp
   ApplyUpdateLocalStorage(to_be_deleted, to_be_retrieved);
 }
 
-void PmidNodeService::ApplyUpdateLocalStorage(const std::vector<Identity>& /*to_be_deleted*/,
-                                              const std::vector<Identity>& to_be_retrieved) {
-//  for (auto file : to_be_deleted) {
-//    // permanent_data_store_.Delete(file);
-//  }
-  for (auto file : to_be_retrieved) {
+void PmidNodeService::ApplyUpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
+                                              const std::vector<DataNameVariant>& to_be_retrieved) {
+  for (auto file : to_be_deleted)
+    permanent_data_store_.Delete(file);
+
+  for (auto file : to_be_retrieved)
     RetrieveFileFromNetwork(file);
+}
+
+void PmidNodeService::RetrieveFileFromNetwork(const DataNameVariant& /*file_id*/) {
+}
+
+std::vector<DataNameVariant> PmidNodeService::StoredFileNames() {
+  std::vector<DataNameVariant> file_ids;
+  fs::directory_iterator end_iter;
+  auto root_path(permanent_data_store_.GetDiskPath());
+
+  if (fs::exists(root_path) && fs::is_directory(root_path)) {
+    for(fs::directory_iterator dir_iter(root_path); dir_iter != end_iter; ++dir_iter)
+      if (fs::is_regular_file(dir_iter->status()))
+        file_ids.push_back(PmidName(Identity(dir_iter->path().string())));
   }
-}
-
-void PmidNodeService::RetrieveFileFromNetwork(const Identity& /*file_id*/) {
-}
-
-std::vector<Identity> PmidNodeService::RetrieveAllFiles() {
-  return std::vector<Identity>();
+  return file_ids;
 }
 
 void PmidNodeService::ValidatePutSender(const nfs::Message& message) const {

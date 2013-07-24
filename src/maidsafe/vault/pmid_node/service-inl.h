@@ -61,7 +61,7 @@ template<typename Data>
 void PmidNodeService::HandleAccountTransfer(const nfs::Message& message,
                                             const routing::ReplyFunctor& reply_functor) {
   bool send_account_transfer(false);
-  std::map<Identity, u_int16_t> expected_chunks;
+  std::map<DataNameVariant, u_int16_t> expected_chunks;
   protobuf::PmidAccountResponse pmid_account_response;
   pmid_account_response.ParseFromString(message.data().content.string());
   {
@@ -75,31 +75,29 @@ void PmidNodeService::HandleAccountTransfer(const nfs::Message& message,
                      }));
     assert((total < routing::Parameters::node_group_size) && "Invalid number of account transfer");
     if (total < routing::Parameters::node_group_size / 2) {
-      Accumulator<DataNameVariant>::PendingRequest
-          pending_request(message,
-                          reply_functor,
-                          nfs::Reply(maidsafe_error(CommonErrors::success)));
-      accumulator_.pending_requests_.push_back(pending_request);
+      accumulator_.pending_requests_.push_back(
+          Accumulator<DataNameVariant>::PendingRequest(
+              message, reply_functor, nfs::Reply(maidsafe_error(CommonErrors::success))));
       return;
     } else {
-      size_t has_account(std::count_if(
-                         accumulator_.pending_requests_.begin(),
-                         accumulator_.pending_requests_.end(),
-                         [](const Accumulator<DataNameVariant>::PendingRequest& pending_request) {
-                           protobuf::PmidAccountResponse account_response;
-                           account_response.ParseFromString(pending_request.msg.data().content.string());
-                           return (pending_request.msg.data().action ==
-                                       nfs::MessageAction::kAccountTransfer) &&
-                                   (account_response.status() == static_cast<int>(CommonErrors::success));
-                       }));
-      total++;
+      size_t total_has_account(std::count_if(
+                 accumulator_.pending_requests_.begin(),
+                 accumulator_.pending_requests_.end(),
+                 [](const Accumulator<DataNameVariant>::PendingRequest& pending_request) {
+                   protobuf::PmidAccountResponse account_response;
+                   account_response.ParseFromString(pending_request.msg.data().content.string());
+                   return (pending_request.msg.data().action ==
+                               nfs::MessageAction::kAccountTransfer) &&
+                           (account_response.status() == static_cast<int>(CommonErrors::success));
+                   }));
+      total++;  // to address the current response
       if (pmid_account_response.status() == static_cast<int>(CommonErrors::success))
-        has_account++;
+        total_has_account++;
       if ((static_cast<int>(total) >= (routing::Parameters::node_group_size / 2 + 1)) &&
-           has_account >= routing::Parameters::node_group_size) {
-        ApplyAccountTransfer(total, has_account, expected_chunks);
+           total_has_account >= routing::Parameters::node_group_size) {
+        ApplyAccountTransfer(total, total_has_account, expected_chunks);
       } else if ((static_cast<uint16_t>(total) == routing::Parameters::node_group_size) ||
-                 (static_cast<uint16_t>(has_account) == routing::Parameters::node_group_size - 1)) {
+                 (static_cast<uint16_t>(total_has_account) == routing::Parameters::node_group_size - 1)) {
         send_account_transfer = true;
         accumulator_.pending_requests_.erase(
             std::remove_if(accumulator_.pending_requests_.begin(),

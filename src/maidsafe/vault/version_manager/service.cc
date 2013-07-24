@@ -128,7 +128,7 @@ NonEmptyString VersionManagerService::GetSerialisedRecord(
 // =============== Get data =================================================================
 
 void VersionManagerService::HandleGet(const nfs::Message& message,
-                                             routing::ReplyFunctor reply_functor) {
+                                      routing::ReplyFunctor reply_functor) {
   try {
     nfs::Reply reply(CommonErrors::success);
     StructuredDataVersions version(

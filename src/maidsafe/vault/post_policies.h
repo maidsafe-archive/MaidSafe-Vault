@@ -159,17 +159,8 @@ class PmidManagerMiscellaneousPolicy {
   const passport::Pmid kPmid_;
 };
 
-class DataHolderMiscellaneousPolicy {
- public:
-  DataHolderMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
-      : routing_(routing),
-        kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()),
-        kPmid_(pmid) {}
-
- private:
-  routing::Routing& routing_;
-  const nfs::PersonaId kSource_;
-  const passport::Pmid kPmid_;
+struct NoPostPolicy {
+  NoPostPolicy(routing::Routing& /*routing*/, const passport::Pmid& /*pmid*/) {}
 };
 
 typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kMaidManager>,
@@ -180,9 +171,8 @@ typedef VaultPostPolicy<ManagersSyncPolicy<nfs::Persona::kDataManager>,
 
 typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kPmidManager>,
                         PmidManagerMiscellaneousPolicy> PmidManagerPostPolicy;
-// FIXME
-typedef VaultPostPolicy<HoldersSyncPolicy<nfs::Persona::kPmidNode>,
-                        DataHolderMiscellaneousPolicy> DataHolderPostPolicy;
+
+typedef NoPostPolicy PmidNodePostPolicy;
 
 typedef VaultPostPolicy<ManagersSyncPolicy<nfs::Persona::kVersionManager>,
                         ManagerMiscellaneousPolicy> VersionManagerPostPolicy;
