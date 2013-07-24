@@ -174,25 +174,35 @@ void MaidManagerService::HandleMessage(const nfs::Message& message,
   reply_functor(reply.Serialise()->string());
 }
 
-void MaidManagerService::ValidateDataSender(const nfs::Message& message) const {
+void MaidManagerService::CheckSenderIsConnectedMaidNode(const nfs::Message& message) const {
   if (!routing_.IsConnectedClient(message.source().node_id))
     ThrowError(VaultErrors::permission_denied);
-
-  if (!FromClientMaid(message) || !ForThisPersona(message))
+  if (!FromClientMaid(message))
     ThrowError(CommonErrors::invalid_parameter);
 }
 
+void MaidManagerService::CheckSenderIsConnectedMaidManager(const nfs::Message& message) const {
+  if (!routing_.IsConnectedVault(message.source().node_id))
+    ThrowError(VaultErrors::permission_denied);
+  if (!FromMaidManager(message))
+    ThrowError(CommonErrors::invalid_parameter);
+}
+
+void MaidManagerService::ValidateDataSender(const nfs::Message& message) const {
+  if (!ForThisPersona(message))
+    ThrowError(CommonErrors::invalid_parameter);
+  CheckSenderIsConnectedMaidNode(message);
+}
+
 void MaidManagerService::ValidateGenericSender(const nfs::Message& message) const {
-  if (message.data().action == nfs::MessageAction::kRegisterPmid) {
-    if (!routing_.IsConnectedClient(message.source().node_id))
-      ThrowError(VaultErrors::permission_denied);
-    if (!FromClientMaid(message) || !ForThisPersona(message))
-      ThrowError(CommonErrors::invalid_parameter);
+  if (!ForThisPersona(message))
+    ThrowError(CommonErrors::invalid_parameter);
+
+  if (message.data().action == nfs::MessageAction::kRegisterPmid ||
+      message.data().action == nfs::MessageAction::kUnregisterPmid) {
+    CheckSenderIsConnectedMaidNode(message);
   } else {
-    if (!routing_.IsConnectedVault(message.source().node_id))
-      ThrowError(VaultErrors::permission_denied);
-    if (!FromMaidManager(message) || !ForThisPersona(message))
-      ThrowError(CommonErrors::invalid_parameter);
+    CheckSenderIsConnectedMaidManager(message);
   }
 }
 

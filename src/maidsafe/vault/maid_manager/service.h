@@ -37,7 +37,7 @@ License.
 #include "maidsafe/nfs/utils.h"
 
 #include "maidsafe/vault/accumulator.h"
-#include "maidsafe/vault/db.h"
+#include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/unresolved_action.h"
@@ -81,6 +81,8 @@ class MaidManagerService {
   MaidManagerService(MaidManagerService&&);
   MaidManagerService& operator=(MaidManagerService&&);
 
+  void CheckSenderIsConnectedMaidNode(const nfs::Message& message) const;
+  void CheckSenderIsConnectedMaidManager(const nfs::Message& message) const;
   void ValidateDataSender(const nfs::Message& message) const;
   void ValidateGenericSender(const nfs::Message& message) const;
 
@@ -150,16 +152,14 @@ class MaidManagerService {
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
-  Db& db_;
+  GroupDb& group_db_;
   std::mutex accumulator_mutex_;
   Accumulator<MaidName> accumulator_;
   MaidManagerNfs nfs_;
-  // FIXME - account_dbs_ needs mutex
-  std::vector<AccountDb> account_dbs_;
-  Sync<Db, ActionMaidManagerPut> sync_puts_;
-  Sync<Db, ActionMaidManagerDelete> sync_deletes_;
-  Sync<Db, ActionRegisterPmid> sync_register_pmids_;
-  Sync<Db, ActionUnregisterPmid> sync_unregister_pmids_;
+  Sync<GroupDb, ActionMaidManagerPut> sync_puts_;
+  Sync<GroupDb, ActionMaidManagerDelete> sync_deletes_;
+  Sync<GroupDb, ActionRegisterPmid> sync_register_pmids_;
+  Sync<GroupDb, ActionUnregisterPmid> sync_unregister_pmids_;
   static const int kPutRepliesSuccessesRequired_;
   static const int kDefaultPaymentFactor_;
 };
@@ -209,7 +209,7 @@ typename Data::name_type GetDataName(const nfs::Message& message) {
 
 template<typename Data>
 void MaidManagerService::HandleMessage(const nfs::Message& message,
-                                             const routing::ReplyFunctor& reply_functor) {
+                                       const routing::ReplyFunctor& reply_functor) {
   ValidateDataSender(message);
   nfs::Reply reply(CommonErrors::success);
   {
@@ -222,8 +222,8 @@ void MaidManagerService::HandleMessage(const nfs::Message& message,
       return HandlePut<Data>(message, reply_functor);
     case nfs::MessageAction::kDelete:
       return HandleDelete<Data>(message, reply_functor);
-    case nfs::MessageAction::kGet:  // fallthrough
-    case nfs::MessageAction::kGetBranch:  // fallthrough
+    case nfs::MessageAction::kGet:        // intentional fallthrough
+    case nfs::MessageAction::kGetBranch:  // intentional fallthrough
     case nfs::MessageAction::kDeleteBranchUntilFork:
       return HandleVersionMessage<Data>(message, reply_functor);
     default:

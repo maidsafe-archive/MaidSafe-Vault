@@ -36,7 +36,7 @@ namespace vault {
 
 namespace detail {
 
-enum class DataType : int32_t { kMetadata };
+enum class DataType : int32_t { kMetadata = 10000 };
 
 }  // namespace detail
 
