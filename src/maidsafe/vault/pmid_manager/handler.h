@@ -54,7 +54,7 @@ class PmidAccountHandler {
 
   void AddLocalUnresolvedEntry(const PmidName& account_name,
                                const PmidManagerUnresolvedEntry& unresolved_entry);
-  PmidRecord GetPmidRecord(const PmidName& account_name);
+  PmidManagerMetadata GetMetadata(const PmidName& account_name);
 
   // Sync operations
   std::vector<PmidName> GetAccountNames() const;

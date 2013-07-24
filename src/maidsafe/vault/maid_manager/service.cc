@@ -96,12 +96,12 @@ T Merge(std::vector<T> values) {
   return total / count;
 }
 
-PmidRecord MergePmidTotals(std::shared_ptr<GetPmidTotalsOp> op_data) {
+PmidManagerMetadata MergePmidTotals(std::shared_ptr<GetPmidTotalsOp> op_data) {
   // Remove invalid results
   op_data->pmid_records.erase(
       std::remove_if(std::begin(op_data->pmid_records),
                      std::end(op_data->pmid_records),
-                     [&op_data](const PmidRecord& pmid_record) {
+                     [&op_data](const PmidManagerMetadata& pmid_record) {
                          return pmid_record.pmid_name->IsInitialised() &&
                                 pmid_record.pmid_name == op_data->kPmidAccountName;
                      }),
@@ -117,7 +117,7 @@ PmidRecord MergePmidTotals(std::shared_ptr<GetPmidTotalsOp> op_data) {
     all_claimed_available_size.push_back(pmid_record.claimed_available_size);
   }
 
-  PmidRecord merged(op_data->kPmidAccountName);
+  PmidManagerMetadata merged(op_data->kPmidAccountName);
   merged.stored_count = Merge(all_stored_counts);
   merged.stored_total_size = Merge(all_stored_total_size);
   merged.lost_count = Merge(all_lost_count);
@@ -344,11 +344,11 @@ void MaidManagerService::UpdatePmidTotals(const MaidName& account_name) {
 
 void MaidManagerService::UpdatePmidTotalsCallback(const std::string& serialised_reply,
                                                         std::shared_ptr<GetPmidTotalsOp> op_data) {
-  PmidRecord pmid_record;
+  PmidManagerMetadata pmid_record;
   try {
     nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));
     if (reply.IsSuccess())
-      pmid_record = PmidRecord(PmidRecord::serialised_type(reply.data()));
+      pmid_record = PmidManagerMetadata(PmidManagerMetadata::serialised_type(reply.data()));
   }
   catch(const std::exception& e) {
     LOG(kWarning) << "Error updating PMID totals: " << e.what();

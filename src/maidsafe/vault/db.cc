@@ -15,6 +15,8 @@ License.
 
 #include "maidsafe/vault/db.h"
 
+#include "boost/filesystem/operations.hpp"
+
 #include "leveldb/status.h"
 
 #include "maidsafe/vault/utils.h"

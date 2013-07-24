@@ -1,4 +1,4 @@
-/* Copyright 2012 MaidSafe.net limited
+/* Copyright 2013 MaidSafe.net limited
 
 This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
 and The General Public License (GPL), version 3. By contributing code to this project You agree to
@@ -13,32 +13,21 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_
-#define MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_
+#include "maidsafe/vault/maid_manager/action_delete.h"
 
-#include <cstdint>
-#include <string>
+#include "maidsafe/vault/maid_manager/value.h"
 
 
 namespace maidsafe {
 namespace vault {
 
-class PmidManagerValue {
- public:
-  PmidManagerValue();
-  explicit PmidManagerValue(int32_t size);
-  explicit PmidManagerValue(const std::string& serialised_pmid_manager_value);
-  std::string Serialise() const;
+const nfs::MessageAction ActionPmidManagerDelete::kActionId(nfs::MessageAction::kDelete);
 
-  int32_t size() const { return size_; }
-
- private:
-  int32_t size_;
-};
-
-bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);
+void ActionPmidManagerDelete::operator()(boost::optional<PmidManagerValue>& value) const {
+  if (!value)
+    return;
+  value.reset(PmidManagerValue());
+}
 
 }  // namespace vault
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_

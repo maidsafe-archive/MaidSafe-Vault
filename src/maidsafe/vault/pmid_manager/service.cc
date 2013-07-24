@@ -18,6 +18,7 @@ License.
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
+#include "maidsafe/vault/pmid_manager/metadata.h"
 #include "maidsafe/vault/sync.pb.h"
 
 namespace fs = boost::filesystem;
@@ -73,9 +74,9 @@ void PmidManagerService::HandleMessage(const nfs::Message& message,
 void PmidManagerService::HandleGetPmidTotals(const nfs::Message& message,
                                                    const routing::ReplyFunctor& reply_functor) {
   try {
-    PmidRecord pmid_record(pmid_account_handler_.GetPmidRecord(PmidName(message.data().name)));
-    if (!pmid_record.pmid_name.data.string().empty())
-      nfs::Reply reply(CommonErrors::success, pmid_record.Serialise());
+    PmidManagerMetadata metadata(pmid_account_handler_.GetMetadata(PmidName(message.data().name)));
+    if (!metadata.pmid_name.data.string().empty())
+      nfs::Reply reply(CommonErrors::success, metadata.Serialise());
       // send it...
       // nfs_.
   }

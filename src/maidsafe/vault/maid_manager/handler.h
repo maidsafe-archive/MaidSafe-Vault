@@ -37,7 +37,7 @@ namespace maidsafe {
 
 namespace vault {
 
-struct PmidRecord;
+struct PmidManagerMetadata;
 
 namespace test { class MaidManagerHandlerTest; }
 
@@ -57,7 +57,7 @@ class MaidAccountHandler {
   void RegisterPmid(const MaidName& account_name, const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const MaidName& account_name, const PmidName& pmid_name);
   std::vector<PmidName> GetPmidNames(const MaidName& account_name) const;
-  void UpdatePmidTotals(const MaidName& account_name, const PmidRecord& pmid_totals);
+  void UpdatePmidTotals(const MaidName& account_name, const PmidManagerMetadata& pmid_totals);
   void AddLocalUnresolvedEntry(const MaidName& account_name,
                                const MaidManagerUnresolvedEntry& unresolved_entry);
   // Sync operations

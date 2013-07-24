@@ -22,8 +22,11 @@ License.
 
 
 namespace maidsafe {
-
 namespace vault {
+
+PmidManagerValue::PmidManagerValue() : size_(0) {}
+
+PmidManagerValue::PmidManagerValue(int32_t size) : size_(size) {}
 
 PmidManagerValue::PmidManagerValue(const std::string& serialised_pmid_manager_value)
     : size_(0) {
@@ -36,8 +39,6 @@ PmidManagerValue::PmidManagerValue(const std::string& serialised_pmid_manager_va
   }
 }
 
-PmidManagerValue::PmidManagerValue(int32_t size) : size_(size) {}
-
 std::string PmidManagerValue::Serialise() const {
   protobuf::PmidManagerValue pmid_manager_value_proto;
   pmid_manager_value_proto.set_size(size_);
@@ -49,5 +50,4 @@ bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs) {
 }
 
 }  // namespace vault
-
 }  // namespace maidsafe

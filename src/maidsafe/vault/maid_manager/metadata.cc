@@ -33,7 +33,7 @@ MaidManagerMetadata::MaidManagerMetadata(const std::string& serialised_metadata_
       pmid_totals_.emplace_back(PmidTotals(
           nfs::PmidRegistration::serialised_type(NonEmptyString(
               maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_registration())),
-          PmidRecord(maid_manager_metadata_proto.pmid_totals(index).pmid_record())));
+          PmidManagerMetadata(maid_manager_metadata_proto.pmid_totals(index).pmid_record())));
     }
   }
 }
@@ -49,7 +49,7 @@ void MaidManagerMetadata::RegisterPmid(const nfs::PmidRegistration& pmid_registr
     nfs::PmidRegistration::serialised_type serialised_pmid_registration(
         pmid_registration.Serialise());
     pmid_totals_.emplace_back(serialised_pmid_registration,
-                              PmidRecord(pmid_registration.pmid_name()));
+                              PmidManagerMetadata(pmid_registration.pmid_name()));
   }
 }
 
@@ -59,7 +59,7 @@ void MaidManagerMetadata::UnregisterPmid(const nfs::PmidRegistration& pmid_regis
     pmid_totals_.erase(itr);
 }
 
-void MaidManagerMetadata::UpdatePmidTotals(const PmidRecord& pmid_record) {
+void MaidManagerMetadata::UpdatePmidTotals(const PmidManagerMetadata& pmid_record) {
   auto itr(Find(pmid_record.pmid_name));
   if (itr == std::end(pmid_totals_))
     ThrowError(CommonErrors::no_such_element);

@@ -19,7 +19,7 @@ License.
 
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/pmid_manager/pmid_record.h"
+#include "maidsafe/vault/pmid_manager/metadata.h"
 
 
 namespace maidsafe {
@@ -67,7 +67,7 @@ std::vector<PmidName> MaidAccountHandler::GetPmidNames(const MaidName& account_n
 }
 
 void MaidAccountHandler::UpdatePmidTotals(const MaidName& account_name,
-                                          const PmidRecord& pmid_record) {
+                                          const PmidManagerMetadata& pmid_record) {
   std::lock_guard<std::mutex> lock(mutex_);
   maid_accounts_.at(account_name)->UpdatePmidTotals(pmid_record);
 }

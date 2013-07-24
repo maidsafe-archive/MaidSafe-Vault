@@ -40,7 +40,7 @@ message MaidManagerDetails {
 
 message MaidManagerMetadata {
   message PmidTotal {
-    required PmidRecord pmid_record = 1;
+    required PmidManagerMetadata pmid_metadata = 1;
     required bytes serialised_pmid_registration = 2;
   }
   repeated PmidTotal pmid_totals = 1;

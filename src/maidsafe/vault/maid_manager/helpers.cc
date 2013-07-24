@@ -43,7 +43,7 @@ PmidTotals::PmidTotals(
 
 PmidTotals::PmidTotals(
     const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
-    const PmidRecord& pmid_record_in)
+    const PmidManagerMetadata& pmid_record_in)
         : serialised_pmid_registration(serialised_pmid_registration_in),
           pmid_record(pmid_record_in) {}
 

@@ -15,7 +15,7 @@ License.
 
 package maidsafe.vault.protobuf;
 
-message PmidRecord {
+message PmidManagerMetadata {
   required bytes pmid_name = 1;
   required int64 stored_count = 2;
   required int64 stored_total_size = 3;
@@ -49,7 +49,7 @@ message PmidAccount {
 }
 
 message PmidAccountDetails {
-  required bytes serialised_pmid_record = 1;
+  required bytes serialised_pmid_manager_metadata = 1;
   repeated PmidAccountDbEntry db_entry = 2;
   repeated bytes serialised_unresolved_entry = 3;
 }

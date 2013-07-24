@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_PMID_MANAGER_PMID_RECORD_H_
-#define MAIDSAFE_VAULT_PMID_MANAGER_PMID_RECORD_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_METADATA_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_METADATA_H_
 
 #include <cstdint>
 
@@ -25,25 +25,21 @@ License.
 
 
 namespace maidsafe {
-
 namespace vault {
 
-namespace protobuf { class PmidRecord; }
-
-struct PmidRecord {
+struct PmidManagerMetadata {
  public:
-  typedef TaggedValue<NonEmptyString, struct SerialisedPmidRecordTag> serialised_type;
+  typedef TaggedValue<NonEmptyString, struct SerialisedPmidManagerMetadataTag> serialised_type;
 
-  PmidRecord();
-  explicit PmidRecord(const PmidName& pmid_name_in);
-  explicit PmidRecord(const protobuf::PmidRecord& proto_pmid_record);
-  protobuf::PmidRecord ToProtobuf() const;
-  explicit PmidRecord(const serialised_type& serialised_pmid_record);
+  PmidManagerMetadata();
+  explicit PmidManagerMetadata(const PmidName& pmid_name);
+  explicit PmidManagerMetadata(const serialised_type& serialised_metadata);
+  PmidManagerMetadata(const PmidManagerMetadata& other);
+  PmidManagerMetadata(PmidManagerMetadata&& other);
+  PmidManagerMetadata& operator=(PmidManagerMetadata other);
+
   serialised_type Serialise() const;
-  PmidRecord(const PmidRecord& other);
-  PmidRecord(PmidRecord&& other);
-  PmidRecord& operator=(PmidRecord other);
-
+  
   PmidName pmid_name;
   int64_t stored_count;
   int64_t stored_total_size;
@@ -52,10 +48,9 @@ struct PmidRecord {
   int64_t claimed_available_size;
 };
 
-bool operator==(const PmidRecord& lhs, const PmidRecord& rhs);
+bool operator==(const PmidManagerMetadata& lhs, const PmidManagerMetadata& rhs);
 
 }  // namespace vault
-
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_PMID_RECORD_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_METADATA_H_

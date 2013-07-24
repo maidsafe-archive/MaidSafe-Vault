@@ -79,7 +79,7 @@ PmidAccount& PmidAccount::operator=(PmidAccount&& other) {
 }
 
 PmidAccount::serialised_type PmidAccount::Serialise() {
-  protobuf::PmidRecord proto_pmid_record;
+  protobuf::PmidManagerMetadata proto_pmid_record;
   proto_pmid_record.set_pmid_name(pmid_record_.pmid_name.data.string());
   proto_pmid_record.set_stored_count(pmid_record_.stored_count);
   proto_pmid_record.set_stored_total_size(pmid_record_.stored_total_size);
@@ -129,7 +129,7 @@ bool PmidAccount::ApplyAccountTransfer(const NodeId& source_id,
   if (!proto_pmid_account_details.ParseFromString(serialised_pmid_account_details.data.string()))
     ThrowError(CommonErrors::parsing_error);
 
-  protobuf::PmidRecord proto_pmid_record;
+  protobuf::PmidManagerMetadata proto_pmid_record;
   if (!proto_pmid_record.ParseFromString(proto_pmid_account_details.serialised_pmid_record()))
     ThrowError(CommonErrors::parsing_error);
   pmid_record_.pmid_name.data = Identity(proto_pmid_record.pmid_name());
@@ -211,7 +211,7 @@ void PmidAccount::IncrementSyncAttempts() {
   sync_.IncrementSyncAttempts();
 }
 
-PmidRecord PmidAccount::GetPmidRecord() {
+PmidManagerMetadata PmidAccount::GetMetadata() {
   return pmid_record_;
 }
 

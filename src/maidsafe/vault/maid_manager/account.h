@@ -37,7 +37,7 @@ namespace vault {
 
 class Db;
 class AccountDb;
-struct PmidRecord;
+struct PmidManagerMetadata;
 
 //namespace protobuf { class MaidManager; }
 
@@ -76,7 +76,7 @@ class MaidAccount {
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);
   std::vector<PmidName> GetPmidNames() const;
-  void UpdatePmidTotals(const PmidRecord& pmid_record);
+  void UpdatePmidTotals(const PmidManagerMetadata& pmid_record);
 
   // headers and unresolved data
   void AddLocalUnresolvedEntry(const MaidManagerUnresolvedEntry& unresolved_entry);
