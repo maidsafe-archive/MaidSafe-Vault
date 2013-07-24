@@ -37,15 +37,16 @@ class Db;
 
 template<typename GroupName>
 struct GroupKey {
+  typedef GroupName GroupNameType;
   template<typename Data>
-  GroupKey(const typename GroupName& group_name_in, const typename Data::name_type& data_name_in);
+  GroupKey(const GroupName& group_name_in, const typename Data::name_type& data_name_in);
   explicit GroupKey(const std::string& serialised_group_key);
   GroupKey(const GroupKey& other);
   GroupKey(GroupKey&& other);
   GroupKey& operator=(GroupKey other);
   std::string Serialise() const;
 
-  typename GroupName group_name;
+  GroupName group_name;
   Identity data_name;
   DataTagValue data_type;
 
@@ -64,7 +65,7 @@ struct GroupKey {
 
 template<typename GroupName>
 template<typename Data>
-GroupKey<GroupName>::GroupKey(const typename GroupName& group_name_in,
+GroupKey<GroupName>::GroupKey(const GroupName& group_name_in,
                               const typename Data::name_type& data_name_in)
     : group_name(group_name_in),
       data_name(data_name_in.data),
@@ -87,7 +88,7 @@ template<typename GroupName>
 GroupKey<GroupName>::GroupKey(const GroupName& group_name_in,
                               const FixedWidthString& fixed_width_string)
     : group_name(group_name_in),
-    : data_name(fixed_width_string.string().substr(0, NodeId::kSize)),
+      data_name(fixed_width_string.string().substr(0, NodeId::kSize)),
       data_type(static_cast<DataTagValue>(
                     detail::FromFixedWidthString<detail::PaddedWidth::value>(
                         fixed_width_string.string().substr(NodeId::kSize)))) {}
@@ -114,8 +115,8 @@ template<typename GroupName>
 std::string GroupKey<GroupName>::Serialise() const {
   protobuf::GroupKey group_key_proto;
   group_key_proto.set_group_name(group_name->string());
-  group_key_proto.set_data_name(data_name->string());
-  group_key_proto.set_data_type(static_cast<int32_t>(Data::name_type::tag_type::kEnumValue));
+  group_key_proto.set_data_name(data_name.string());
+  group_key_proto.set_data_type(static_cast<int32_t>(data_type));
   return group_key_proto.SerializeAsString();
 }
 

@@ -79,9 +79,9 @@ class MaidAccount {
   void UpdatePmidTotals(const PmidManagerMetadata& pmid_record);
 
   // headers and unresolved data
-  void AddLocalUnresolvedEntry(const MaidManagerUnresolvedEntry& unresolved_entry);
+  void AddLocalUnresolvedAction(const MaidManagerUnresolvedAction& unresolved_action);
   NonEmptyString GetSyncData();
-  void ApplySyncData(const NonEmptyString& serialised_unresolved_entries);
+  void ApplySyncData(const NonEmptyString& serialised_unresolved_actions);
   void ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node);
   void IncrementSyncAttempts();
 

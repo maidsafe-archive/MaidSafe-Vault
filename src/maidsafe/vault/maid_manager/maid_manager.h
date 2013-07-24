@@ -48,15 +48,6 @@ struct PersonaTypes<Persona::kMaidManager> {
   typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerDelete> UnresolvedDelete;
   typedef vault::UnresolvedAction<Key, vault::ActionRegisterPmid> UnresolvedRegisterPmid;
   typedef vault::UnresolvedAction<Key, vault::ActionUnregisterPmid> UnresolvedUnregisterPmid;
-
-  enum class Action : int32_t {
-    kPut,
-    kDelete,
-    kRegisterPmid,
-    kUnregisterPmid,
-    kSync,
-    kAccountTransfer
-  };
 };
 
 }  // namespace nfs

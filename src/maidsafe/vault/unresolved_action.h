@@ -18,6 +18,7 @@ License.
 
 #include <cstdint>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -53,21 +54,46 @@ struct UnresolvedAction {
 
  private:
   UnresolvedAction& operator=(UnresolvedAction other);
+
+  // Helpers to handle Action class with/without Serialise() member function.
+  template<typename T, typename Signature>
+  class HasSerialise {
+   private:
+    typedef char Yes[1];
+    typedef char No[2];
+    template<typename U, U> struct type_check;
+    template<typename V> static Yes &Check(type_check<Signature, &V::Serialise>*);
+    template<typename> static No &Check(...);
+   public:
+    static bool const value = sizeof(Check<T>(0)) == sizeof(Yes);
+  };
+
+  template<typename T>
+  typename std::enable_if<HasSerialise<T, std::string(T::*)() const>::value, void>::type
+      SerialiseAction(protobuf::UnresolvedAction& proto_unresolved_action) const;
+
+  template<typename T>
+  typename std::enable_if<!HasSerialise<T, std::string(T::*)() const>::value, void>::type
+      SerialiseAction(protobuf::UnresolvedAction& proto_unresolved_action) const;
+
+  template<typename T>
+  typename std::enable_if<HasSerialise<T, std::string(T::*)() const>::value, T>::type
+      ParseAction(const std::string& serialised_copy) const;
+
+  template<typename T>
+  typename std::enable_if<!HasSerialise<T, std::string(T::*)() const>::value, T>::type
+      ParseAction(const std::string& serialised_copy) const;
 };
 
 
 
+// ==================== Implementation =============================================================
 template<typename Key, typename Action>
 UnresolvedAction<Key, Action>::UnresolvedAction(const std::string& serialised_copy,
                                                 const NodeId& sender_id,
                                                 const NodeId& this_node_id)
     : key(),
-      action([&serialised_copy]()->Action {
-        protobuf::UnresolvedAction proto_unresolved_action;
-        if (!proto_unresolved_action.ParseFromString(serialised_copy))
-          ThrowError(CommonErrors::parsing_error);
-        return Action(proto_unresolved_action.serialised_action());
-      }()),
+      action(ParseAction<Action>(serialised_copy)),
       this_node_and_entry_id(),
       peer_and_entry_ids(),
       sync_counter(0) {
@@ -111,7 +137,7 @@ template<typename Key, typename Action>
 std::string UnresolvedAction<Key, Action>::Serialise() const {
   protobuf::UnresolvedAction proto_unresolved_action;
   proto_unresolved_action.set_serialised_key(key.Serialise());
-  proto_unresolved_action.set_serialised_action(action.Serialise());
+  SerialiseAction<Action>(proto_unresolved_action);
   proto_unresolved_action.set_entry_id(this_node_and_entry_id.second);
   return proto_unresolved_action.SerializeAsString();
 }
@@ -120,6 +146,40 @@ template<typename Key, typename Action>
 bool UnresolvedAction<Key, Action>::IsReadyForSync() const {
   // TODO(Fraser#5#): 2013-07-22 - Confirm sync_counter limit and remove magic number
   return !this_node_and_entry_id.first.IsZero() && sync_counter < 10;
+}
+
+template<typename Key, typename Action>
+template<typename T>
+typename std::enable_if<UnresolvedAction<Key, Action>::template HasSerialise<T,
+    std::string(T::*)() const>::value, void>::type
+        UnresolvedAction<Key, Action>::SerialiseAction(
+            protobuf::UnresolvedAction& proto_unresolved_action) const {
+  proto_unresolved_action.set_serialised_action(action.Serialise());
+}
+
+template<typename Key, typename Action>
+template<typename T>
+typename std::enable_if<!UnresolvedAction<Key, Action>::template HasSerialise<T,
+    std::string(T::*)() const>::value, void>::type
+        UnresolvedAction<Key, Action>::SerialiseAction(protobuf::UnresolvedAction&) const {}
+
+template<typename Key, typename Action>
+template<typename T>
+typename std::enable_if<UnresolvedAction<Key, Action>::template HasSerialise<T,
+    std::string(T::*)() const>::value, T>::type
+        UnresolvedAction<Key, Action>::ParseAction(const std::string& serialised_copy) const {
+  protobuf::UnresolvedAction proto_unresolved_action;
+  if (!proto_unresolved_action.ParseFromString(serialised_copy))
+    ThrowError(CommonErrors::parsing_error);
+  return T(proto_unresolved_action.serialised_action());
+}
+
+template<typename Key, typename Action>
+template<typename T>
+typename std::enable_if<!UnresolvedAction<Key, Action>::template HasSerialise<T,
+    std::string(T::*)() const>::value, T>::type
+        UnresolvedAction<Key, Action>::ParseAction(const std::string& /*serialised_copy*/) const {
+  return T();
 }
 
 }  // namespace vault

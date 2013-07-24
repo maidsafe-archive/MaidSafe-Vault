@@ -72,11 +72,11 @@ void MaidAccountHandler::UpdatePmidTotals(const MaidName& account_name,
   maid_accounts_.at(account_name)->UpdatePmidTotals(pmid_record);
 }
 
-void MaidAccountHandler::AddLocalUnresolvedEntry(
+void MaidAccountHandler::AddLocalUnresolvedAction(
     const MaidName& account_name,
-    const MaidManagerUnresolvedEntry& unresolved_entry) {
+    const MaidManagerUnresolvedAction& unresolved_action) {
   std::lock_guard<std::mutex> lock(mutex_);
-  maid_accounts_.at(account_name)->AddLocalUnresolvedEntry(unresolved_entry);
+  maid_accounts_.at(account_name)->AddLocalUnresolvedAction(unresolved_action);
 }
 
 std::vector<MaidName> MaidAccountHandler::GetAccountNames() const {
@@ -99,9 +99,9 @@ NonEmptyString MaidAccountHandler::GetSyncData(const MaidName& account_name) {
 }
 
 void MaidAccountHandler::ApplySyncData(const MaidName& account_name,
-                                       const NonEmptyString& serialised_unresolved_entries) {
+                                       const NonEmptyString& serialised_unresolved_actions) {
   std::lock_guard<std::mutex> lock(mutex_);
-  maid_accounts_.at(account_name)->ApplySyncData(serialised_unresolved_entries);
+  maid_accounts_.at(account_name)->ApplySyncData(serialised_unresolved_actions);
 }
 
 void MaidAccountHandler::ReplaceNodeInSyncList(const MaidName& account_name,

@@ -99,10 +99,10 @@ MaidAccount::serialised_type MaidAccount::Serialise() {
     proto_db_entry->mutable_value()->CopyFrom(proto_db_value);
   }
 
-  auto unresolved_data(sync_.GetUnresolvedData());
-  for (const auto& unresolved_entry : unresolved_data) {
-    proto_maid_account_details.add_serialised_unresolved_entry(
-        unresolved_entry.Serialise()->string());
+  auto unresolved_data(sync_.GetUnresolvedActions());
+  for (const auto& unresolved_action : unresolved_data) {
+    proto_maid_account_details.add_serialised_unresolved_action(
+        unresolved_action.Serialise()->string());
   }
 
   return serialised_type(NonEmptyString(proto_maid_account_details.SerializeAsString()));
@@ -131,19 +131,19 @@ bool MaidAccount::ApplyAccountTransfer(const NodeId& source_id,
         Identity(proto_maid_account_details.db_entry(i).name())));
     int32_t average_cost(proto_maid_account_details.db_entry(i).value().average_cost());
     int32_t count(proto_maid_account_details.db_entry(i).value().count());
-    MaidManagerUnresolvedEntry entry(
+    MaidManagerUnresolvedAction action(
         std::make_pair(data_name, nfs::MessageAction::kPut), average_cost, source_id);
     for (int32_t i(0); i != count; ++i) {
-      if (sync_.AddAccountTransferRecord(entry, all_account_transfers_received).size() == 1U)
+      if (sync_.AddAccountTransferRecord(action, all_account_transfers_received).size() == 1U)
         total_put_data_ += average_cost;
     }
   }
 
-  for (int i(0); i != proto_maid_account_details.serialised_unresolved_entry_size(); ++i) {
-    MaidManagerUnresolvedEntry entry(MaidManagerUnresolvedEntry::serialised_type(
-        NonEmptyString(proto_maid_account_details.serialised_unresolved_entry(i))));
-    if (!sync_.AddUnresolvedEntry(entry).empty() && entry.messages_contents.front().value)
-      total_put_data_ += *entry.messages_contents.front().value;
+  for (int i(0); i != proto_maid_account_details.serialised_unresolved_action_size(); ++i) {
+    MaidManagerUnresolvedAction action(MaidManagerUnresolvedAction::serialised_type(
+        NonEmptyString(proto_maid_account_details.serialised_unresolved_action(i))));
+    if (!sync_.AddUnresolvedAction(action).empty() && action.messages_contents.front().value)
+      total_put_data_ += *action.messages_contents.front().value;
   }
 
   return all_account_transfers_received;
@@ -179,39 +179,39 @@ void MaidAccount::UpdatePmidTotals(const PmidManagerMetadata& pmid_record) {
   (*itr).pmid_record = pmid_record;
 }
 
-void MaidAccount::AddLocalUnresolvedEntry(const MaidManagerUnresolvedEntry& unresolved_entry) {
-  sync_.AddLocalEntry(unresolved_entry);
+void MaidAccount::AddLocalUnresolvedAction(const MaidManagerUnresolvedAction& unresolved_action) {
+  sync_.AddLocalAction(unresolved_action);
 }
 
 NonEmptyString MaidAccount::GetSyncData() {
   if (sync_.GetUnresolvedCount() < kSyncTriggerCount_)
     return NonEmptyString();
 
-  auto unresolved_entries(sync_.GetUnresolvedData());
-  if (unresolved_entries.empty())
+  auto unresolved_actions(sync_.GetUnresolvedActions());
+  if (unresolved_actions.empty())
     return NonEmptyString();
 
-  protobuf::UnresolvedEntries proto_unresolved_entries;
-  for (const auto& unresolved_entry : unresolved_entries) {
-    proto_unresolved_entries.add_serialised_unresolved_entry(
-        unresolved_entry.Serialise()->string());
+  protobuf::UnresolvedActions proto_unresolved_actions;
+  for (const auto& unresolved_action : unresolved_actions) {
+    proto_unresolved_actions.add_serialised_unresolved_action(
+        unresolved_action.Serialise()->string());
   }
-  return NonEmptyString(proto_unresolved_entries.SerializeAsString());
+  return NonEmptyString(proto_unresolved_actions.SerializeAsString());
 }
 
-void MaidAccount::ApplySyncData(const NonEmptyString& serialised_unresolved_entries) {
-  protobuf::UnresolvedEntries proto_unresolved_entries;
-  if (!proto_unresolved_entries.ParseFromString(serialised_unresolved_entries.string()))
+void MaidAccount::ApplySyncData(const NonEmptyString& serialised_unresolved_actions) {
+  protobuf::UnresolvedActions proto_unresolved_actions;
+  if (!proto_unresolved_actions.ParseFromString(serialised_unresolved_actions.string()))
     ThrowError(CommonErrors::parsing_error);
 
-  for (int i(0); i != proto_unresolved_entries.serialised_unresolved_entry_size(); ++i) {
-    MaidManagerUnresolvedEntry entry(MaidManagerUnresolvedEntry::serialised_type(
-        NonEmptyString(proto_unresolved_entries.serialised_unresolved_entry(i))));
-    if (!sync_.AddUnresolvedEntry(entry).empty() && entry.messages_contents.front().value) {
-      if (entry.key.second == nfs::MessageAction::kPut)
-        total_put_data_ += *entry.messages_contents.front().value;
+  for (int i(0); i != proto_unresolved_actions.serialised_unresolved_action_size(); ++i) {
+    MaidManagerUnresolvedAction action(MaidManagerUnresolvedAction::serialised_type(
+        NonEmptyString(proto_unresolved_actions.serialised_unresolved_action(i))));
+    if (!sync_.AddUnresolvedAction(action).empty() && action.messages_contents.front().value) {
+      if (action.key.second == nfs::MessageAction::kPut)
+        total_put_data_ += *action.messages_contents.front().value;
       else
-        total_put_data_ -= *entry.messages_contents.front().value;
+        total_put_data_ -= *action.messages_contents.front().value;
     }
   }
 }

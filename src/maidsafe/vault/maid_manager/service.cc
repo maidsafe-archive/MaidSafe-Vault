@@ -18,6 +18,9 @@ License.
 #include <string>
 
 #include "maidsafe/nfs/pmid_registration.h"
+#include "maidsafe/data_types/owner_directory.h"
+#include "maidsafe/data_types/group_directory.h"
+#include "maidsafe/data_types/world_directory.h"
 
 #include "maidsafe/vault/maid_manager/helpers.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
@@ -45,7 +48,7 @@ int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&) {
   return 0;
 }
 
-MaidName GetMaidManagerName(const nfs::Message& message) {
+MaidName GetMaidAccountName(const nfs::Message& message) {
   return MaidName(Identity(message.source().node_id.string()));
 }
 
@@ -205,6 +208,23 @@ void MaidManagerService::SendReplyAndAddToAccumulator(
   accumulator_.SetHandled(message, reply);
 }
 
+template<>
+void MaidManagerService::HandlePut<OwnerDirectory>(const nfs::Message& message,
+                                                   const routing::ReplyFunctor& reply_functor) {
+  return HandleVersionMessage<OwnerDirectory>(message, reply_functor);
+}
+
+template<>
+void MaidManagerService::HandlePut<GroupDirectory>(const nfs::Message& message,
+                                                   const routing::ReplyFunctor& reply_functor) {
+  return HandleVersionMessage<GroupDirectory>(message, reply_functor);
+}
+
+template<>
+void MaidManagerService::HandlePut<WorldDirectory>(const nfs::Message& message,
+                                                   const routing::ReplyFunctor& reply_functor) {
+  return HandleVersionMessage<WorldDirectory>(message, reply_functor);
+}
 
 // =============== Pmid registration ===============================================================
 
@@ -278,14 +298,14 @@ void MaidManagerService::FinalisePmidRegistration(
 
 // =============== Sync ============================================================================
 
-void MaidManagerService::Sync(const MaidName& account_name) {
+void MaidManagerService::DoSync(const MaidName& account_name) {
   auto serialised_sync_data(maid_account_handler_.GetSyncData(account_name));
   if (!serialised_sync_data.IsInitialised())  // Nothing to sync
     return;
 
   protobuf::Sync proto_sync;
   proto_sync.set_account_name(account_name->string());
-  proto_sync.set_serialised_unresolved_entries(serialised_sync_data.string());
+  proto_sync.set_serialised_unresolved_actions(serialised_sync_data.string());
 
   nfs_.Sync(account_name, NonEmptyString(proto_sync.SerializeAsString()));
   // TODO(Fraser#5#): 2013-05-03 - Check this is correct place to increment sync attempt counter.
@@ -299,7 +319,7 @@ void MaidManagerService::HandleSync(const nfs::Message& message) {
     return;
   }
   maid_account_handler_.ApplySyncData(MaidName(Identity(proto_sync.account_name())),
-                                      NonEmptyString(proto_sync.serialised_unresolved_entries()));
+                                      NonEmptyString(proto_sync.serialised_unresolved_actions()));
 }
 
 

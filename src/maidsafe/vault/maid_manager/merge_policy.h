@@ -36,20 +36,20 @@ class AccountDb;
 
 class MaidManagerMergePolicy {
  public:
-  typedef MaidManagerUnresolvedEntry UnresolvedEntry;
-  typedef MaidManagerResolvedEntry ResolvedEntry;
+  typedef MaidManagerUnresolvedAction UnresolvedAction;
+  typedef MaidManagerResolvedAction ResolvedAction;
   typedef AccountDb Database;
   explicit MaidManagerMergePolicy(AccountDb* account_db);
   MaidManagerMergePolicy(MaidManagerMergePolicy&& other);
   MaidManagerMergePolicy& operator=(MaidManagerMergePolicy&& other);
-  // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
+  // This flags a "Put" action in 'unresolved_data_' as not to be added to the db.
   template<typename Data>
   int32_t AllowDelete(const typename Data::name_type& name);
 
  protected:
-  void Merge(const UnresolvedEntry& unresolved_entry);
+  void Merge(const UnresolvedAction& unresolved_action);
 
-  std::vector<UnresolvedEntry> unresolved_data_;
+  std::vector<UnresolvedAction> unresolved_data_;
   AccountDb* account_db_;
 
  private:
@@ -60,9 +60,9 @@ class MaidManagerMergePolicy {
   MaidManagerMergePolicy(const MaidManagerMergePolicy&);
   MaidManagerMergePolicy& operator=(const MaidManagerMergePolicy&);
 
-  UnresolvedEntry::Value MergedCost(const UnresolvedEntry& unresolved_entry) const;
+  UnresolvedAction::Value MergedCost(const UnresolvedAction& unresolved_action) const;
   void MergePut(const DataNameVariant& data_name,
-                UnresolvedEntry::Value cost,
+                UnresolvedAction::Value cost,
                 const NonEmptyString& serialised_db_value);
   void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
   NonEmptyString SerialiseDbValue(DbValue db_value) const;

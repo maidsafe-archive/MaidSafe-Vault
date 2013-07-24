@@ -58,14 +58,15 @@ class MaidAccountHandler {
   void UnregisterPmid(const MaidName& account_name, const PmidName& pmid_name);
   std::vector<PmidName> GetPmidNames(const MaidName& account_name) const;
   void UpdatePmidTotals(const MaidName& account_name, const PmidManagerMetadata& pmid_totals);
-  void AddLocalUnresolvedEntry(const MaidName& account_name,
-                               const MaidManagerUnresolvedEntry& unresolved_entry);
+  void AddLocalUnresolvedAction(const MaidName& account_name,
+                               const MaidManagerUnresolvedAction& unresolved_action);
+
   // Sync operations
   std::vector<MaidName> GetAccountNames() const;
   MaidAccount::serialised_type GetSerialisedAccount(const MaidName& account_name) const;
   NonEmptyString GetSyncData(const MaidName& account_name);
   void ApplySyncData(const MaidName& account_name,
-                     const NonEmptyString& serialised_unresolved_entries);
+                     const NonEmptyString& serialised_unresolved_actions);
   void ReplaceNodeInSyncList(const MaidName& account_name,
                              const NodeId& old_node,
                              const NodeId& new_node);
