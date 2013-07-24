@@ -13,7 +13,7 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/pmid_manager/pmid_record.h"
+#include "maidsafe/vault/pmid_manager/metadata.h"
 
 #include "maidsafe/common/log.h"
 
@@ -21,10 +21,9 @@ License.
 
 
 namespace maidsafe {
-
 namespace vault {
 
-PmidRecord::PmidRecord()
+PmidManagerMetadata::PmidManagerMetadata()
     : pmid_name(),
       stored_count(0),
       stored_total_size(0),
@@ -32,7 +31,7 @@ PmidRecord::PmidRecord()
       lost_total_size(0),
       claimed_available_size(0) {}
 
-PmidRecord::PmidRecord(const PmidName& pmid_name_in)
+PmidManagerMetadata::PmidManagerMetadata(const PmidName& pmid_name_in)
     : pmid_name(pmid_name_in),
       stored_count(0),
       stored_total_size(0),
@@ -40,57 +39,31 @@ PmidRecord::PmidRecord(const PmidName& pmid_name_in)
       lost_total_size(0),
       claimed_available_size(0) {}
 
-PmidRecord::PmidRecord(const protobuf::PmidRecord& proto_pmid_record)
+PmidManagerMetadata::PmidManagerMetadata(const serialised_type& serialised_metadata)
     : pmid_name(),
       stored_count(0),
       stored_total_size(0),
       lost_count(0),
       lost_total_size(0),
       claimed_available_size(0) {
-  if (!proto_pmid_record.IsInitialized()) {
-    LOG(kError) << "Failed to construct pmid_record.";
-    ThrowError(CommonErrors::invalid_parameter);
-  }
-  pmid_name = PmidName(Identity(proto_pmid_record.pmid_name()));
-  stored_count = proto_pmid_record.stored_count();
-  stored_total_size = proto_pmid_record.stored_total_size();
-  lost_count = proto_pmid_record.lost_count();
-  lost_total_size = proto_pmid_record.lost_total_size();
-  claimed_available_size = proto_pmid_record.claimed_available_size();
-}
-
-protobuf::PmidRecord PmidRecord::ToProtobuf() const {
-  protobuf::PmidRecord proto_pmid_record;
-  proto_pmid_record.set_pmid_name(pmid_name->string());
-  proto_pmid_record.set_stored_count(stored_count);
-  proto_pmid_record.set_stored_total_size(stored_total_size);
-  proto_pmid_record.set_lost_count(lost_count);
-  proto_pmid_record.set_lost_total_size(lost_total_size);
-  proto_pmid_record.set_claimed_available_size(claimed_available_size);
-  return proto_pmid_record;
-}
-
-PmidRecord::PmidRecord(const serialised_type& serialised_pmid_record)
-    : pmid_name(),
-      stored_count(0),
-      stored_total_size(0),
-      lost_count(0),
-      lost_total_size(0),
-      claimed_available_size(0) {
-  protobuf::PmidRecord proto_pmid_record;
-  if (!proto_pmid_record.ParseFromString(serialised_pmid_record->string())) {
-    LOG(kError) << "Failed to parse pmid_record.";
+  protobuf::PmidManagerMetadata proto_metadata;
+  if (!proto_metadata.ParseFromString(serialised_metadata->string())) {
+    LOG(kError) << "Failed to parse pmid metadata.";
     ThrowError(CommonErrors::parsing_error);
   }
-  *this = PmidRecord(proto_pmid_record);
+  if (!proto_metadata.IsInitialized()) {
+    LOG(kError) << "Failed to construct pmid metadata.";
+    ThrowError(CommonErrors::invalid_parameter);
+  }
+  pmid_name = PmidName(Identity(proto_metadata.pmid_name()));
+  stored_count = proto_metadata.stored_count();
+  stored_total_size = proto_metadata.stored_total_size();
+  lost_count = proto_metadata.lost_count();
+  lost_total_size = proto_metadata.lost_total_size();
+  claimed_available_size = proto_metadata.claimed_available_size();
 }
 
-PmidRecord::serialised_type PmidRecord::Serialise() const {
-  auto proto_pmid_record(ToProtobuf());
-  return serialised_type(NonEmptyString(proto_pmid_record.SerializeAsString()));
-}
-
-PmidRecord::PmidRecord(const PmidRecord& other)
+PmidManagerMetadata::PmidManagerMetadata(const PmidManagerMetadata& other)
     : pmid_name(other.pmid_name),
       stored_count(other.stored_count),
       stored_total_size(other.stored_total_size),
@@ -98,7 +71,7 @@ PmidRecord::PmidRecord(const PmidRecord& other)
       lost_total_size(other.lost_total_size),
       claimed_available_size(other.claimed_available_size) {}
 
-PmidRecord::PmidRecord(PmidRecord&& other)
+PmidManagerMetadata::PmidManagerMetadata(PmidManagerMetadata&& other)
     : pmid_name(std::move(other.pmid_name)),
       stored_count(std::move(other.stored_count)),
       stored_total_size(std::move(other.stored_total_size)),
@@ -106,7 +79,7 @@ PmidRecord::PmidRecord(PmidRecord&& other)
       lost_total_size(std::move(other.lost_total_size)),
       claimed_available_size(std::move(other.claimed_available_size)) {}
 
-PmidRecord& PmidRecord::operator=(PmidRecord other) {
+PmidManagerMetadata& PmidManagerMetadata::operator=(PmidManagerMetadata other) {
   using std::swap;
   swap(pmid_name, other.pmid_name);
   swap(stored_count, other.stored_count);
@@ -117,7 +90,18 @@ PmidRecord& PmidRecord::operator=(PmidRecord other) {
   return *this;
 }
 
-bool operator==(const PmidRecord& lhs, const PmidRecord& rhs) {
+PmidManagerMetadata::serialised_type PmidManagerMetadata::Serialise() const {
+  protobuf::PmidManagerMetadata proto_metadata;
+  proto_metadata.set_pmid_name(pmid_name->string());
+  proto_metadata.set_stored_count(stored_count);
+  proto_metadata.set_stored_total_size(stored_total_size);
+  proto_metadata.set_lost_count(lost_count);
+  proto_metadata.set_lost_total_size(lost_total_size);
+  proto_metadata.set_claimed_available_size(claimed_available_size);
+  return serialised_type(NonEmptyString(proto_metadata.SerializeAsString()));
+}
+
+bool operator==(const PmidManagerMetadata& lhs, const PmidManagerMetadata& rhs) {
   return lhs.pmid_name == rhs.pmid_name &&
          lhs.stored_count == rhs.stored_count &&
          lhs.stored_total_size == rhs.stored_total_size &&
@@ -126,7 +110,5 @@ bool operator==(const PmidRecord& lhs, const PmidRecord& rhs) {
          lhs.claimed_available_size == rhs.claimed_available_size;
 }
 
-
 }  // namespace vault
-
 }  // namespace maidsafe

@@ -86,15 +86,15 @@ void PmidAccountHandler::AddLocalUnresolvedEntry(const PmidName& account_name,
   pmid_accounts_.at(account_name)->AddLocalUnresolvedEntry(unresolved_entry);
 }
 
-PmidRecord PmidAccountHandler::GetPmidRecord(const PmidName& account_name) {
+PmidManagerMetadata PmidAccountHandler::GetMetadata(const PmidName& account_name) {
   auto it = std::find_if(std::begin(pmid_accounts_),
                          std::end(pmid_accounts_),
                          [&account_name](const AccountMap::value_type& pmid_account) {
                             return account_name == pmid_account.second->name();
                          });
   if (it != std::end(pmid_accounts_))
-    return it->second->GetPmidRecord();
-  return PmidRecord();
+    return it->second->GetMetadata();
+  return PmidManagerMetadata();
 }
 
 std::vector<PmidName> PmidAccountHandler::GetAccountNames() const {

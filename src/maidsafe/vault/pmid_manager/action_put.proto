@@ -1,4 +1,4 @@
-/* Copyright 2012 MaidSafe.net limited
+/* Copyright 2013 MaidSafe.net limited
 
 This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
 and The General Public License (GPL), version 3. By contributing code to this project You agree to
@@ -13,32 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_
-#define MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_
+package maidsafe.vault.protobuf;
 
-#include <cstdint>
-#include <string>
-
-
-namespace maidsafe {
-namespace vault {
-
-class PmidManagerValue {
- public:
-  PmidManagerValue();
-  explicit PmidManagerValue(int32_t size);
-  explicit PmidManagerValue(const std::string& serialised_pmid_manager_value);
-  std::string Serialise() const;
-
-  int32_t size() const { return size_; }
-
- private:
-  int32_t size_;
-};
-
-bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);
-
-}  // namespace vault
-}  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_
+message ActionPmidManagerPut {
+  required uint32 size = 1;
+}

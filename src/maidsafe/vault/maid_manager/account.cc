@@ -155,7 +155,7 @@ void MaidAccount::RegisterPmid(const nfs::PmidRegistration& pmid_registration) {
     nfs::PmidRegistration::serialised_type serialised_pmid_registration(
         pmid_registration.Serialise());
     pmid_totals_.emplace_back(serialised_pmid_registration,
-                              PmidRecord(pmid_registration.pmid_name()));
+                              PmidManagerMetadata(pmid_registration.pmid_name()));
   }
 }
 
@@ -172,7 +172,7 @@ std::vector<PmidName> MaidAccount::GetPmidNames() const {
   return pmid_names;
 }
 
-void MaidAccount::UpdatePmidTotals(const PmidRecord& pmid_record) {
+void MaidAccount::UpdatePmidTotals(const PmidManagerMetadata& pmid_record) {
   auto itr(Find(pmid_record.pmid_name));
   if (itr == std::end(pmid_totals_))
     ThrowError(CommonErrors::no_such_element);

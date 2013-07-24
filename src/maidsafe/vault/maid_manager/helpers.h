@@ -25,7 +25,7 @@ License.
 #include "maidsafe/routing/api_config.h"
 #include "maidsafe/nfs/pmid_registration.h"
 
-#include "maidsafe/vault/pmid_manager/pmid_record.h"
+#include "maidsafe/vault/pmid_manager/metadata.h"
 
 
 namespace maidsafe {
@@ -64,11 +64,11 @@ struct GetPmidTotalsOp {
       : kMaidManagerName(maid_account_name),
         kPmidAccountName(pmid_account_name),
         mutex(),
-        pmid_records() {}
+        pmid_metadata() {}
   const MaidName kMaidManagerName;
   const PmidName kPmidAccountName;
   std::mutex mutex;
-  std::vector<PmidRecord> pmid_records;
+  std::vector<PmidManagerMetadata> pmid_metadata;
 };
 
 struct PmidTotals {
@@ -76,13 +76,13 @@ struct PmidTotals {
   explicit PmidTotals(
       const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in);
   PmidTotals(const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
-             const PmidRecord& pmid_record_in);
+             const PmidManagerMetadata& pmid_metadata_in);
   PmidTotals(const PmidTotals& other);
   PmidTotals(PmidTotals&& other);
   PmidTotals& operator=(PmidTotals other);
 
   nfs::PmidRegistration::serialised_type serialised_pmid_registration;
-  PmidRecord pmid_record;
+  PmidManagerMetadata pmid_metadata;
 };
 
 bool operator==(const PmidTotals& lhs, const PmidTotals& rhs);

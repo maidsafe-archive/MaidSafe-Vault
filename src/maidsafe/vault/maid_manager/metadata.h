@@ -40,7 +40,7 @@ class MaidManagerMetadata {
 
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const nfs::PmidRegistration& pmid_registration);
-  void UpdatePmidTotals(const PmidRecord& pmid_record);
+  void UpdatePmidTotals(const PmidManagerMetadata& pmid_metadata);
 
   friend void swap(MaidManagerMetadata& lhs, MaidManagerMetadata& rhs);
   friend bool operator==(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs);

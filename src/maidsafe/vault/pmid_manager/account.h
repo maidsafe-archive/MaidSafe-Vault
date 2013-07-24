@@ -29,7 +29,7 @@ License.
 
 #include "maidsafe/vault/pmid_manager/merge_policy.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
-#include "maidsafe/vault/pmid_manager/pmid_record.h"
+#include "maidsafe/vault/pmid_manager/metadata.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
 
@@ -76,7 +76,7 @@ class PmidAccount {
   void ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node);
   void IncrementSyncAttempts();
 
-  PmidRecord GetPmidRecord();
+  PmidManagerMetadata GetMetadata();
 
   name_type name() const { return pmid_name_; }
   DataHolderStatus pmid_node_status() const { return pmid_node_status_; }
@@ -87,7 +87,7 @@ class PmidAccount {
   PmidAccount& operator=(const PmidAccount&);
 
   name_type pmid_name_;
-  PmidRecord pmid_record_;
+  PmidManagerMetadata pmid_record_;
   DataHolderStatus pmid_node_status_;
   std::unique_ptr<AccountDb> account_db_;
   Sync<PmidManagerMergePolicy> sync_;
