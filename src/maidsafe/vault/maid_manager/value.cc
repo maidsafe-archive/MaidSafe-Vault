@@ -16,6 +16,8 @@ License.
 #include "maidsafe/vault/maid_manager/value.h"
 
 #include <functional>
+#include <limits>
+#include <utility>
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
@@ -34,13 +36,27 @@ MaidManagerValue::MaidManagerValue(const std::string& serialised_maid_manager_va
   if (!maid_manager_value_proto.ParseFromString(serialised_maid_manager_value)) {
     LOG(kError) << "Failed to read or parse serialised maid manager value.";
     ThrowError(CommonErrors::parsing_error);
-  } else {
-    count_ = maid_manager_value_proto.count();
-    total_cost_ = maid_manager_value_proto.total_cost();
   }
+  count_ = maid_manager_value_proto.count();
+  total_cost_ = maid_manager_value_proto.total_cost();
+  if (count_ < 0 || total_cost_ < 0)
+    ThrowError(CommonErrors::invalid_parameter);
 }
 
 MaidManagerValue::MaidManagerValue() : count_(0), total_cost_(0) {}
+
+MaidManagerValue::MaidManagerValue(const MaidManagerValue& other)
+    : count_(other.count_),
+      total_cost_(other.total_cost_) {}
+
+MaidManagerValue::MaidManagerValue(MaidManagerValue&& other)
+    : count_(std::move(other.count_)),
+      total_cost_(std::move(other.total_cost_)) {}
+
+MaidManagerValue& MaidManagerValue::operator=(MaidManagerValue other) {
+  swap(*this, other);
+  return *this;
+}
 
 std::string MaidManagerValue::Serialise() const {
   if (count_ == 0 || total_cost_ == 0)
@@ -57,12 +73,20 @@ void MaidManagerValue::Put(int32_t cost) {
   total_cost_ += cost;
 }
 
-void MaidManagerValue::Delete() {
-  if (count_ <= 0 || total_cost_ < 0)
+int32_t MaidManagerValue::Delete() {
+  if (count_ < 0 || total_cost_ < 0)
     ThrowError(CommonErrors::unknown);
   auto average_cost(total_cost_ / count_);
   --count_;
   total_cost_ -= average_cost;
+  assert(std::numeric_limits<int32_t>::max() >= average_cost);
+  return static_cast<int32_t>(average_cost);
+}
+
+void swap(MaidManagerValue& lhs, MaidManagerValue& rhs) {
+  using std::swap;
+  swap(lhs.count_, rhs.count_);
+  swap(lhs.total_cost_, rhs.total_cost_);
 }
 
 bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs) {

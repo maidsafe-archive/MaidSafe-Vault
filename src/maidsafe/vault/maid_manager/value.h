@@ -28,12 +28,18 @@ class MaidManagerValue {
  public:
   explicit MaidManagerValue(const std::string& serialised_maid_manager_value);
   MaidManagerValue();
+  MaidManagerValue(const MaidManagerValue& other);
+  MaidManagerValue(MaidManagerValue&& other);
+  MaidManagerValue& operator=(MaidManagerValue other);
   std::string Serialise() const;
 
   void Put(int32_t cost);
-  void Delete();
+  // Returns amount which was subtracted from 'total_cost'.
+  int32_t Delete();
   int32_t count() const { return count_; }
   int64_t total_cost() const { return total_cost_; }
+
+  friend void swap(MaidManagerValue& lhs, MaidManagerValue& rhs);
 
  private:
   int32_t count_;

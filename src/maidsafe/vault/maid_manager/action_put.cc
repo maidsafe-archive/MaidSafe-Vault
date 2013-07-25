@@ -18,6 +18,7 @@ License.
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/maid_manager/action_put.pb.h"
+#include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/value.h"
 
 
@@ -49,10 +50,12 @@ std::string ActionMaidManagerPut::Serialise() const {
   return action_put_proto.SerializeAsString();
 }
 
-void ActionMaidManagerPut::operator()(boost::optional<MaidManagerValue>& value) const {
+void ActionMaidManagerPut::operator()(MaidManagerMetadata& metadata,
+                                      boost::optional<MaidManagerValue>& value) const {
   if (!value)
     value.reset(MaidManagerValue());
   value->Put(kCost);
+  metadata.PutData(kCost);
 }
 
 bool operator==(const ActionMaidManagerPut& lhs, const ActionMaidManagerPut& rhs) {

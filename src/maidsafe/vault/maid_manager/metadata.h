@@ -20,24 +20,31 @@ License.
 #include <string>
 #include <vector>
 
-#include "maidsafe/vault/maid_manager/helpers.h"
-#include "maidsafe/vault/maid_manager/maid_manager.pb.h"
+#include "maidsafe/nfs/pmid_registration.h"
+
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
+struct PmidTotals;
+struct PmidManagerMetadata;
+
 class MaidManagerMetadata {
  public:
-  explicit MaidManagerMetadata(const std::string& serialised_metadata_value);
+  MaidManagerMetadata();
   MaidManagerMetadata(int64_t total_put_data, const std::vector<PmidTotals>& pmid_totals);
   MaidManagerMetadata(const MaidManagerMetadata& other);
   MaidManagerMetadata(MaidManagerMetadata&& other);
   MaidManagerMetadata& operator=(MaidManagerMetadata other);
+  explicit MaidManagerMetadata(const std::string& serialised_metadata_value);
 
   std::string Serialise() const;
 
+  void PutData(int32_t cost);
+  void DeleteData(int32_t cost);
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UpdatePmidTotals(const PmidManagerMetadata& pmid_metadata);

@@ -86,6 +86,7 @@ struct PmidTotals {
 };
 
 bool operator==(const PmidTotals& lhs, const PmidTotals& rhs);
+void swap(PmidTotals& lhs, PmidTotals& rhs);
 
 }  // namespace vault
 

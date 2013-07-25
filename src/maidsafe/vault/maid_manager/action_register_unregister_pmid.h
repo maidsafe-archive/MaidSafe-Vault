@@ -38,7 +38,7 @@ struct ActionRegisterUnregisterPmid {
   ActionRegisterUnregisterPmid(ActionRegisterUnregisterPmid&& other);
   std::string Serialise() const;
 
-  void operator()(boost::optional<MaidManagerMetadata>& value) const;
+  void operator()(MaidManagerMetadata& metadata) const;
 
   static const nfs::MessageAction kActionId;
   const nfs::PmidRegistration kPmidRegistration;
@@ -49,12 +49,10 @@ struct ActionRegisterUnregisterPmid {
 };
 
 template<>
-void ActionRegisterUnregisterPmid<false>::operator()(
-    boost::optional<MaidManagerMetadata>& value) const;
+void ActionRegisterUnregisterPmid<false>::operator()(MaidManagerMetadata& metadata) const;
 
 template<>
-void ActionRegisterUnregisterPmid<true>::operator()(
-    boost::optional<MaidManagerMetadata>& value) const;
+void ActionRegisterUnregisterPmid<true>::operator()(MaidManagerMetadata& metadata) const;
 
 template<bool Unregister>
 bool operator==(const ActionRegisterUnregisterPmid<Unregister>& lhs,

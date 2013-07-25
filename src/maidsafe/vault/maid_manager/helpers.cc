@@ -15,6 +15,8 @@ License.
 
 #include "maidsafe/vault/maid_manager/helpers.h"
 
+#include <utility>
+
 
 namespace maidsafe {
 
@@ -34,38 +36,41 @@ void PmidRegistrationOp::SetPublicFob<passport::PublicPmid>(
 
 
 
-PmidTotals::PmidTotals() : serialised_pmid_registration(), pmid_record() {}
+PmidTotals::PmidTotals() : serialised_pmid_registration(), pmid_metadata() {}
 
 PmidTotals::PmidTotals(
     const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in)
         : serialised_pmid_registration(serialised_pmid_registration_in),
-          pmid_record() {}
+          pmid_metadata() {}
 
 PmidTotals::PmidTotals(
     const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
-    const PmidManagerMetadata& pmid_record_in)
+    const PmidManagerMetadata& pmid_metadata_in)
         : serialised_pmid_registration(serialised_pmid_registration_in),
-          pmid_record(pmid_record_in) {}
+          pmid_metadata(pmid_metadata_in) {}
 
 PmidTotals::PmidTotals(const PmidTotals& other)
     : serialised_pmid_registration(other.serialised_pmid_registration),
-      pmid_record(other.pmid_record) {}
+      pmid_metadata(other.pmid_metadata) {}
 
 PmidTotals::PmidTotals(PmidTotals&& other)
     : serialised_pmid_registration(std::move(other.serialised_pmid_registration)),
-      pmid_record(std::move(other.pmid_record)) {}
+      pmid_metadata(std::move(other.pmid_metadata)) {}
 
 PmidTotals& PmidTotals::operator=(PmidTotals other) {
-  using std::swap;
-  swap(serialised_pmid_registration, other.serialised_pmid_registration);
-  swap(pmid_record, other.pmid_record);
+  swap(*this, other);
   return *this;
 }
 
-
 bool operator==(const PmidTotals& lhs, const PmidTotals& rhs) {
-  return (lhs.pmid_record == rhs.pmid_record) &&
-          (lhs.serialised_pmid_registration == rhs.serialised_pmid_registration);
+  return lhs.serialised_pmid_registration == rhs.serialised_pmid_registration &&
+         lhs.pmid_metadata == rhs.pmid_metadata;
+}
+
+void swap(PmidTotals& lhs, PmidTotals& rhs) {
+  using std::swap;
+  swap(lhs.serialised_pmid_registration, rhs.serialised_pmid_registration);
+  swap(lhs.pmid_metadata, rhs.pmid_metadata);
 }
 
 }  // namespace vault

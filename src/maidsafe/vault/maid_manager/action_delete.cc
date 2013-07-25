@@ -15,6 +15,7 @@ License.
 
 #include "maidsafe/vault/maid_manager/action_delete.h"
 
+#include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/value.h"
 
 
@@ -24,12 +25,14 @@ namespace vault {
 
 const nfs::MessageAction ActionMaidManagerDelete::kActionId(nfs::MessageAction::kDelete);
 
-void ActionMaidManagerDelete::operator()(boost::optional<MaidManagerValue>& value) const {
+void ActionMaidManagerDelete::operator()(MaidManagerMetadata& metadata,
+                                         boost::optional<MaidManagerValue>& value) const {
   if (!value)
     return;
-  value->Delete();
+  auto deleted_cost(value->Delete());
   if (value->count() == 0)
     value.reset();
+  metadata.DeleteData(deleted_cost);
 }
 
 }  // namespace vault
