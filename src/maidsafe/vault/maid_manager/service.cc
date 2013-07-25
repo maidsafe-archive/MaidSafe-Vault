@@ -136,26 +136,34 @@ PmidManagerMetadata MergePmidTotals(std::shared_ptr<GetPmidTotalsOp> op_data) {
 const int MaidManagerService::kPutRepliesSuccessesRequired_(3);
 const int MaidManagerService::kDefaultPaymentFactor_(4);
 
+
 MaidManagerService::MaidManagerService(const passport::Pmid& pmid,
-                                                   routing::Routing& routing,
-                                                   nfs::PublicKeyGetter& public_key_getter,
-                                                   Db& db)
+                                       routing::Routing& routing,
+                                       nfs::PublicKeyGetter& public_key_getter,
+                                       Db& db)
     : routing_(routing),
       public_key_getter_(public_key_getter),
+      group_db_(),
       accumulator_mutex_(),
       accumulator_(),
-      maid_account_handler_(db, routing.kNodeId()),
-      nfs_(routing, pmid) {}
+      nfs_(routing, pmid),
+      sync_create_accounts_(routing.kNodeId()),
+      sync_remove_accounts_(routing.kNodeId()),
+      sync_puts_(routing.kNodeId()),
+      sync_deletes_(routing.kNodeId()),
+      sync_register_pmids_(routing.kNodeId()),
+      sync_unregister_pmids_(routing.kNodeId()) {}
 
 void MaidManagerService::HandleMessage(const nfs::Message& message,
-                                             const routing::ReplyFunctor& reply_functor) {
+                                       const routing::ReplyFunctor& reply_functor) {
   ValidateGenericSender(message);
   nfs::Reply reply(CommonErrors::success);
-  //{
-  //  std::lock_guard<std::mutex> lock(accumulator_mutex_);
-  //  if (accumulator_.CheckHandled(message, reply))
-  //    return reply_functor(reply.Serialise()->string());
-  //}
+  // TODO(Fraser#5#): 2013-07-25 - Uncomment once accummulator can handle non-Data messages
+  // {
+  //   std::lock_guard<std::mutex> lock(accumulator_mutex_);
+  //   if (accumulator_.CheckHandled(message, reply))
+  //     return reply_functor(reply.Serialise()->string());
+  // }
 
   nfs::MessageAction action(message.data().action);
   switch (action) {
