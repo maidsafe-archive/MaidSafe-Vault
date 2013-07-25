@@ -147,7 +147,7 @@ void PmidNodeService::HandlePutMessage(const nfs::Message& message,
 
 template<typename Data>
 void PmidNodeService::HandleGetMessage(const nfs::Message& message,
-                                         const routing::ReplyFunctor& reply_functor) {
+                                       const routing::ReplyFunctor& reply_functor) {
   try {
 #ifndef TESTING
     ValidateGetSender(message);
@@ -163,7 +163,7 @@ void PmidNodeService::HandleGetMessage(const nfs::Message& message,
 
 template<typename Data>
 void PmidNodeService::HandleDeleteMessage(const nfs::Message& message,
-                                            const routing::ReplyFunctor& reply_functor) {
+                                          const routing::ReplyFunctor& reply_functor) {
   try {
 #ifndef TESTING
     ValidateDeleteSender(message);

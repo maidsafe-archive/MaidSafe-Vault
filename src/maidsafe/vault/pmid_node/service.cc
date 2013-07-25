@@ -20,6 +20,7 @@ License.
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_store/data_buffer.h"
+#include "maidsafe/nfs/client_utils.h"
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 
@@ -61,8 +62,8 @@ inline bool ForThisPersona(const Message& message) {
 
 
 PmidNodeService::PmidNodeService(const passport::Pmid& pmid,
-                                     routing::Routing& routing,
-                                     const fs::path& vault_root_dir)
+                                 routing::Routing& routing,
+                                 const fs::path& vault_root_dir)
     : space_info_(fs::space(vault_root_dir)),
       disk_total_(space_info_.available),
       permanent_size_(disk_total_ * 4 / 5),
@@ -76,11 +77,13 @@ PmidNodeService::PmidNodeService(const passport::Pmid& pmid,
       routing_(routing),
       accumulator_mutex_(),
       accumulator_(),
+      miscellaneous_policy(routing_, pmid),
       nfs_(routing_, pmid) {
 //  nfs_.GetElementList();  // TODO (Fraser) BEFORE_RELEASE Implementation needed
 }
 
 void PmidNodeService::SendAccountRequest() {
+  miscellaneous_policy.RequestPmidNodeAccount(PmidName(Identity(routing_.kNodeId().string())));
 }
 
 void PmidNodeService::ApplyAccountTransfer(const size_t& total_pmidmgrs,
@@ -162,11 +165,35 @@ void PmidNodeService::ApplyUpdateLocalStorage(const std::vector<DataNameVariant>
   for (auto file : to_be_deleted)
     permanent_data_store_.Delete(file);
 
+  std::vector<future> futures;
   for (auto file : to_be_retrieved)
-    RetrieveFileFromNetwork(file);
+    futures.push_back(RetrieveFileFromNetwork(file));
 }
 
-void PmidNodeService::RetrieveFileFromNetwork(const DataNameVariant& /*file_id*/) {
+std::future<std::unique_ptr<ImmutableData>>
+PmidNodeService::RetrieveFileFromNetwork(const DataNameVariant& file_id) {
+  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), file_id));
+  ImmutableData::name_type name(result.second);
+  auto get_op(std::make_shared<nfs::detail::GetOp<ImmutableData>>());
+  nfs_.Get<ImmutableData>(ImmutableData::name_type(Identity(result.second)),
+                          [get_op, name](std::string serialised_reply) {
+    try {
+      nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));
+      if (!reply.IsSuccess())
+        throw reply.error();
+      ImmutableData data(name, (ImmutableData::serialised_type(reply.data())));
+      get_op->SetPromiseValue(std::move(data));
+    }
+    catch(const maidsafe_error& error) {
+      LOG(kWarning) << "nfs Get error: " << error.code() << " - " << error.what();
+      get_op->HandleFailure(error);
+    }
+    catch(const std::exception& e) {
+      LOG(kWarning) << "nfs Get error: " << e.what();
+      get_op->HandleFailure(MakeError(CommonErrors::unknown));
+    }
+  });
+  return get_op->GetFutureFromPromise();
 }
 
 std::vector<DataNameVariant> PmidNodeService::StoredFileNames() {

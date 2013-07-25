@@ -37,6 +37,7 @@ License.
 
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/post_policies.h"
 
 
 namespace maidsafe {
@@ -57,8 +58,8 @@ class PmidNodeService {
   enum : uint32_t { kPutRequestsRequired = 3, kDeleteRequestsRequired = 3 };
 
   PmidNodeService(const passport::Pmid& pmid,
-                    routing::Routing& routing,
-                    const boost::filesystem::path& vault_root_dir);
+                  routing::Routing& routing,
+                  const boost::filesystem::path& vault_root_dir);
 
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
@@ -96,7 +97,9 @@ class PmidNodeService {
   void ApplyUpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
                                const std::vector<DataNameVariant>& to_be_retrieved);
   std::vector<DataNameVariant> StoredFileNames();
-  void RetrieveFileFromNetwork(const DataNameVariant &file_id);
+
+  std::future<std::unique_ptr<ImmutableData>>
+  RetrieveFileFromNetwork(const DataNameVariant &file_id);
 
   void ValidatePutSender(const nfs::Message& message) const;
   void ValidateGetSender(const nfs::Message& message) const;
@@ -134,6 +137,7 @@ class PmidNodeService {
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
   Accumulator<DataNameVariant> accumulator_;
+  PmidNodeMiscellaneousPolicy miscellaneous_policy;
   PmidNodeNfs nfs_;
 };
 
