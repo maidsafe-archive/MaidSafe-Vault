@@ -39,7 +39,7 @@ template<typename GroupName>
 struct GroupKey {
   typedef GroupName GroupNameType;
   template<typename Data>
-  GroupKey(const GroupName& group_name_in, const typename Data::name_type& data_name_in);
+  GroupKey(const GroupName& group_name_in, const typename Data::name_type& name_in);
   explicit GroupKey(const std::string& serialised_group_key);
   GroupKey(const GroupKey& other);
   GroupKey(GroupKey&& other);
@@ -47,8 +47,8 @@ struct GroupKey {
   std::string Serialise() const;
 
   GroupName group_name;
-  Identity data_name;
-  DataTagValue data_type;
+  Identity name;
+  DataTagValue type;
 
   friend class Db;
 
@@ -66,44 +66,44 @@ struct GroupKey {
 template<typename GroupName>
 template<typename Data>
 GroupKey<GroupName>::GroupKey(const GroupName& group_name_in,
-                              const typename Data::name_type& data_name_in)
+                              const typename Data::name_type& name_in)
     : group_name(group_name_in),
-      data_name(data_name_in.data),
-      data_type(Data::type_enum_value()) {}
+      name(name_in.data),
+      type(Data::type_enum_value()) {}
 
 template<typename GroupName>
 GroupKey<GroupName>::GroupKey(const std::string& serialised_group_key)
     : group_name(),
-      data_name(),
-      data_type(DataTagValue::kOwnerDirectoryValue) {
+      name(),
+      type(DataTagValue::kOwnerDirectoryValue) {
   protobuf::GroupKey group_key_proto;
   if (!group_key_proto.ParseFromString(serialised_group_key))
     ThrowError(CommonErrors::parsing_error);
   group_name = GroupName(Identity(group_key_proto.group_name()));
-  data_name = Identity(group_key_proto.data_name());
-  data_type = static_cast<DataTagValue>(group_key_proto.data_type());
+  name = Identity(group_key_proto.name());
+  type = static_cast<DataTagValue>(group_key_proto.type());
 }
 
 template<typename GroupName>
 GroupKey<GroupName>::GroupKey(const GroupName& group_name_in,
                               const FixedWidthString& fixed_width_string)
     : group_name(group_name_in),
-      data_name(fixed_width_string.string().substr(0, NodeId::kSize)),
-      data_type(static_cast<DataTagValue>(
-                    detail::FromFixedWidthString<detail::PaddedWidth::value>(
-                        fixed_width_string.string().substr(NodeId::kSize)))) {}
+      name(fixed_width_string.string().substr(0, NodeId::kSize)),
+      type(static_cast<DataTagValue>(
+          detail::FromFixedWidthString<detail::PaddedWidth::value>(
+              fixed_width_string.string().substr(NodeId::kSize)))) {}
 
 template<typename GroupName>
 GroupKey<GroupName>::GroupKey(const GroupKey& other)
     : group_name(other.group_name),
-      data_name(other.data_name),
-      data_type(other.data_type) {}
+      name(other.name),
+      type(other.type) {}
 
 template<typename GroupName>
 GroupKey<GroupName>::GroupKey(GroupKey&& other)
     : group_name(std::move(other.group_name)),
-      data_name(std::move(other.data_name)),
-      data_type(std::move(other.data_type)) {}
+      name(std::move(other.name)),
+      type(std::move(other.type)) {}
 
 template<typename GroupName>
 GroupKey<GroupName>& GroupKey<GroupName>::operator=(GroupKey other) {
@@ -115,8 +115,8 @@ template<typename GroupName>
 std::string GroupKey<GroupName>::Serialise() const {
   protobuf::GroupKey group_key_proto;
   group_key_proto.set_group_name(group_name->string());
-  group_key_proto.set_data_name(data_name.string());
-  group_key_proto.set_data_type(static_cast<int32_t>(data_type));
+  group_key_proto.set_name(name.string());
+  group_key_proto.set_type(static_cast<int32_t>(type));
   return group_key_proto.SerializeAsString();
 }
 
@@ -124,23 +124,21 @@ template<typename GroupName>
 typename GroupKey<GroupName>::FixedWidthString
     GroupKey<GroupName>::ToFixedWidthString() const {
   return FixedWidthString(
-      data_name.string() +
-      detail::ToFixedWidthString<detail::PaddedWidth::value>(static_cast<uint32_t>(data_type)));
+      name.string() +
+      detail::ToFixedWidthString<detail::PaddedWidth::value>(static_cast<uint32_t>(type)));
 }
 
 template<typename GroupName>
 void swap(GroupKey<GroupName>& lhs, GroupKey<GroupName>& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
   swap(lhs.group_name, rhs.group_name);
-  swap(lhs.data_name, rhs.data_name);
-  swap(lhs.data_type, rhs.data_type);
+  swap(lhs.name, rhs.name);
+  swap(lhs.type, rhs.type);
 }
 
 template<typename GroupName>
 bool operator==(const GroupKey<GroupName>& lhs, const GroupKey<GroupName>& rhs) {
-  return lhs.group_name == rhs.group_name &&
-         lhs.data_name == rhs.data_name &&
-         lhs.data_type == rhs.data_type;
+  return lhs.group_name == rhs.group_name && lhs.name == rhs.name && lhs.type == rhs.type;
 }
 
 template<typename GroupName>
@@ -150,8 +148,8 @@ bool operator!=(const GroupKey<GroupName>& lhs, const GroupKey<GroupName>& rhs) 
 
 template<typename GroupName>
 bool operator<(const GroupKey<GroupName>& lhs, const GroupKey<GroupName>& rhs) {
-  return std::tie(lhs.group_name, lhs.data_name, lhs.data_type) <
-         std::tie(rhs.group_name, rhs.data_name, rhs.data_type);
+  return std::tie(lhs.group_name, lhs.name, lhs.type) <
+         std::tie(rhs.group_name, rhs.name, rhs.type);
 }
 
 template<typename GroupName>

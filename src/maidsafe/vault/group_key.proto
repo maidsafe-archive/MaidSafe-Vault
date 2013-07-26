@@ -17,6 +17,6 @@ package maidsafe.vault.protobuf;
 
 message GroupKey {
   required bytes group_name = 1;
-  required bytes data_name = 2;
-  required int32 data_type = 3;
+  required bytes name = 2;
+  required int32 type = 3;
 }

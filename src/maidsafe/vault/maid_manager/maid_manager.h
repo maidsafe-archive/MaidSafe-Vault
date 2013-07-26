@@ -28,6 +28,7 @@ namespace maidsafe {
 
 namespace vault {
 
+class MaidManagerMetadata;
 struct ActionMaidManagerPut;
 struct ActionMaidManagerDelete;
 template<bool Unregister>
@@ -42,8 +43,10 @@ namespace nfs {
 template<>
 struct PersonaTypes<Persona::kMaidManager> {
   static const Persona persona = Persona::kMaidManager;
-  typedef vault::GroupKey<passport::PublicMaid::name_type> Key;
+  typedef passport::PublicMaid::name_type GroupName;
+  typedef vault::GroupKey<GroupName> Key;
   typedef vault::MaidManagerValue Value;
+  typedef vault::MaidManagerMetadata Metadata;
   typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerDelete> UnresolvedDelete;
   typedef vault::UnresolvedAction<Key, vault::ActionRegisterPmid> UnresolvedRegisterPmid;

@@ -17,6 +17,8 @@ License.
 #define MAIDSAFE_VAULT_GROUP_DB_H_
 
 #include <cstdint>
+#include <functional>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <set>
@@ -35,18 +37,21 @@ namespace maidsafe {
 
 namespace vault {
 
-template <typename GroupName, typename Key, typename Value, typename Metadata>
+template <typename Persona>
 class GroupDb {
  public:
+  typedef typename Persona::GroupName GroupName;
+  typedef typename Persona::Key Key,
+  typedef typename Persona::Value Value;
+  typedef typename Persona::Metadata Metadata;
   typedef std::pair<Key, Value> KvPair;
+  typedef std::map<NodeId, std::vector<Contents>> TransferInfo;
 
   struct Contents {
     GroupName group_name;
     Metadata metadata;
     std::vector<KvPair> kv_pair;
   };
-
-  typedef std::map<NodeId, std::vector<Contents>> TransferInfo;
 
   GroupDb();
   ~GroupDb();
@@ -57,7 +62,8 @@ class GroupDb {
   // For atomically updating metadata only
   void Commit(const GroupName& group_name, std::function<void(Metadata& metadata)> functor);
   // For atomically updating metadata and value
-  void Commit(const GroupName& group_name, const Key& key,
+  void Commit(const GroupName& group_name,
+              const Key& key,
               std::function<void(Metadata& metadata, boost::optional<Value>& value)> functor);
   TransferInfo GetTransferInfo(std::shared_ptr<routing::MatrixChange> matrix_change);
   void HandleTransfer(const std::vector<Contents>& contents);
