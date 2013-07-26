@@ -48,8 +48,8 @@ struct VersionManagerKey {
 
  private:
   typedef maidsafe::detail::BoundedString<
-      NodeId::kSize + detail::PaddedWidth::value,
-      NodeId::kSize + detail::PaddedWidth::value> FixedWidthString;
+      NodeId::kSize * 2 + detail::PaddedWidth::value,
+      NodeId::kSize * 2 + detail::PaddedWidth::value> FixedWidthString;
 
   explicit VersionManagerKey(const FixedWidthString& fixed_width_string);
   FixedWidthString ToFixedWidthString() const;
