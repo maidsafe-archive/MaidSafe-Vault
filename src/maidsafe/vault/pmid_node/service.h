@@ -92,11 +92,12 @@ class PmidNodeService {
   void ApplyAccountTransfer(const size_t& total_pmidmgrs,
                             const size_t& pmidmagsr_with_account,
                             std::map<DataNameVariant, uint16_t>& chunks);
-  bool ChunkExists(const Identity& key);
   void UpdateLocalStorage(const std::map<DataNameVariant, uint16_t>& expected_files);
   void ApplyUpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
                                const std::vector<DataNameVariant>& to_be_retrieved);
   std::vector<DataNameVariant> StoredFileNames();
+  uint16_t TotalPmidAccountReplies() const;
+  uint16_t TotalValidPmidAccountReplies() const;
 
   std::future<std::unique_ptr<ImmutableData>>
   RetrieveFileFromNetwork(const DataNameVariant &file_id);

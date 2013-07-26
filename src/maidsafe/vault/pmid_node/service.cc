@@ -107,14 +107,16 @@ void PmidNodeService::ApplyAccountTransfer(const size_t& total_pmidmgrs,
   protobuf::PmidAccountDetails pmid_account_details;
 
   for (auto pending_request : accumulator_.pending_requests_) {
-    if (static_cast<nfs::MessageAction>(pending_request.msg.data().action) == nfs::MessageAction::kAccountTransfer) {
+    if (static_cast<nfs::MessageAction>(pending_request.msg.data().action) ==
+            nfs::MessageAction::kAccountTransfer) {
       pmid_account_response.ParseFromString(pending_request.msg.data().content.string());
-      pmid_account_response.ParseFromString(pending_request.msg.data().content.string());
-      pmid_account_details.ParseFromString(pmid_account_response.pmid_account().serialised_account_details());
       if (pmid_account_response.status() == static_cast<int>(CommonErrors::success)) {
+        pmid_account_details.ParseFromString(
+            pmid_account_response.pmid_account().serialised_account_details());
         for (int index(0); index < pmid_account_details.db_entry_size(); ++index) {
-          ChunkInfo chunk_info(PmidName(Identity(pmid_account_details.db_entry(index).name())),
-                               pmid_account_details.db_entry(index).value().size());
+          ChunkInfo chunk_info(
+              ImmutableData::name_type(Identity(pmid_account_details.db_entry(index).name())),
+              pmid_account_details.db_entry(index).value().size());
           expected_chunks[chunk_info]++;
         }
       }
@@ -128,10 +130,6 @@ void PmidNodeService::ApplyAccountTransfer(const size_t& total_pmidmgrs,
       chunks.insert(pair);
     }
   }
-}
-
-bool PmidNodeService::ChunkExists(const Identity& /*key*/) {
-  return true;
 }
 
 void PmidNodeService::UpdateLocalStorage(
@@ -162,34 +160,56 @@ void PmidNodeService::UpdateLocalStorage(
 
 void PmidNodeService::ApplyUpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
                                               const std::vector<DataNameVariant>& to_be_retrieved) {
-  for (auto file : to_be_deleted)
-    permanent_data_store_.Delete(file);
+  for (auto file : to_be_deleted) {
+    try {
+      permanent_data_store_.Delete(file);
+    }
+    catch(const maidsafe_error& error) {
+      LOG(kWarning) << "Error in deletion: " << error.code() << " - " << error.what();
+    }
+  }
 
-  std::vector<future> futures;
+  std::vector<std::future<std::unique_ptr<ImmutableData>>> futures;
   for (auto file : to_be_retrieved)
     futures.push_back(RetrieveFileFromNetwork(file));
+
+  for (auto iter(futures.begin()); iter != futures.end(); ++iter) {
+    try {
+      iter->wait();
+    }
+    catch(const maidsafe_error& error) {
+      LOG(kWarning) << "Error in retreivel: " << error.code() << " - " << error.what();
+    }
+  }
 }
 
 std::future<std::unique_ptr<ImmutableData>>
 PmidNodeService::RetrieveFileFromNetwork(const DataNameVariant& file_id) {
   auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), file_id));
   ImmutableData::name_type name(result.second);
+  std::mutex opt_mutex;
   auto get_op(std::make_shared<nfs::detail::GetOp<ImmutableData>>());
   nfs_.Get<ImmutableData>(ImmutableData::name_type(Identity(result.second)),
-                          [get_op, name](std::string serialised_reply) {
+                          [this, get_op, name, &opt_mutex](std::string serialised_reply) {
     try {
       nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));
       if (!reply.IsSuccess())
         throw reply.error();
-      ImmutableData data(name, (ImmutableData::serialised_type(reply.data())));
-      get_op->SetPromiseValue(std::move(data));
+      {
+        std::lock_guard<std::mutex> lock(opt_mutex);
+        if (!get_op->IsPromiseSet()) {
+          ImmutableData data(name, (ImmutableData::serialised_type(reply.data())));
+          permanent_data_store_.Put(data.name(), reply.data());
+          get_op->SetPromiseValue(std::move(data));
+        }
+      }
     }
     catch(const maidsafe_error& error) {
-      LOG(kWarning) << "nfs Get error: " << error.code() << " - " << error.what();
+      LOG(kWarning) << "Error in retreivel: " << error.code() << " - " << error.what();
       get_op->HandleFailure(error);
     }
     catch(const std::exception& e) {
-      LOG(kWarning) << "nfs Get error: " << e.what();
+      LOG(kWarning) << "Error in retreivel: " << e.what();
       get_op->HandleFailure(MakeError(CommonErrors::unknown));
     }
   });
@@ -231,6 +251,27 @@ void PmidNodeService::ValidateDeleteSender(const nfs::Message& message) const {
 
   if (!FromPmidManager(message) || !ForThisPersona(message))
     ThrowError(CommonErrors::invalid_parameter);
+}
+
+uint16_t PmidNodeService::TotalPmidAccountReplies() const {
+  return std::count_if(
+             accumulator_.pending_requests_.begin(),
+             accumulator_.pending_requests_.end(),
+             [](const Accumulator<DataNameVariant>::PendingRequest& pending_request) {
+               return pending_request.msg.data().action == nfs::MessageAction::kAccountTransfer;
+             });
+}
+
+uint16_t PmidNodeService::TotalValidPmidAccountReplies() const {
+  return std::count_if(
+             accumulator_.pending_requests_.begin(),
+             accumulator_.pending_requests_.end(),
+             [](const Accumulator<DataNameVariant>::PendingRequest& pending_request) {
+               protobuf::PmidAccountResponse account_response;
+               account_response.ParseFromString(pending_request.msg.data().content.string());
+               return (pending_request.msg.data().action == nfs::MessageAction::kAccountTransfer) &&
+                       (account_response.status() == static_cast<int>(CommonErrors::success));
+             });
 }
 
 }  // namespace vault
