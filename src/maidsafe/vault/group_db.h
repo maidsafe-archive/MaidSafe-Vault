@@ -42,6 +42,7 @@ class GroupDb {
 
   struct Contents {
     GroupName group_name;
+    Metadata metadata;
     std::vector<KvPair> kv_pair;
   };
 
