@@ -13,28 +13,9 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/maid_manager/action_delete.h"
+package maidsafe.vault.protobuf;
 
-#include "maidsafe/vault/maid_manager/metadata.h"
-#include "maidsafe/vault/maid_manager/value.h"
-
-
-namespace maidsafe {
-
-namespace vault {
-
-const nfs::MessageAction ActionMaidManagerDelete::kActionId;
-
-void ActionMaidManagerDelete::operator()(MaidManagerMetadata& metadata,
-                                         boost::optional<MaidManagerValue>& value) const {
-  if (!value)
-    return;
-  auto deleted_cost(value->Delete());
-  if (value->count() == 0)
-    value.reset();
-  metadata.DeleteData(deleted_cost);
+message Sync {
+  required int32 action_type = 1;
+  required bytes serialised_unresolved_action = 2;
 }
-
-}  // namespace vault
-
-}  // namespace maidsafe

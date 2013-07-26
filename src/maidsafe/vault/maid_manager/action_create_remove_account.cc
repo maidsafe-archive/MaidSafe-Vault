@@ -20,13 +20,13 @@ namespace maidsafe {
 
 namespace vault {
 
-template<>
-const nfs::MessageAction ActionCreateRemoveAccount<false>::kActionId =
-    nfs::MessageAction::kCreateAccount;
-
-template<>
-const nfs::MessageAction ActionCreateRemoveAccount<true>::kActionId =
-    nfs::MessageAction::kRemoveAccount;
+//template<>
+//const nfs::MessageAction ActionCreateRemoveAccount<false>::kActionId =
+//    nfs::MessageAction::kCreateAccount;
+//
+//template<>
+//const nfs::MessageAction ActionCreateRemoveAccount<true>::kActionId =
+//    nfs::MessageAction::kRemoveAccount;
 
 }  // namespace vault
 

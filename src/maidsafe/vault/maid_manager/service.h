@@ -67,8 +67,7 @@ class MaidManagerService {
  public:
   MaidManagerService(const passport::Pmid& pmid,
                      routing::Routing& routing,
-                     nfs::PublicKeyGetter& public_key_getter,
-                     Db& db);
+                     nfs::PublicKeyGetter& public_key_getter);
   // Handling of received requests (sending of requests is done via nfs_ object).
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
@@ -148,7 +147,7 @@ class MaidManagerService {
   void FinalisePmidRegistration(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
 
   // =============== Sync ==========================================================================
-  void DoSync(const MaidName& account_name);
+  void DoSync();
   void HandleSync(const nfs::Message& message);
 
   // =============== Account transfer ==============================================================
@@ -162,16 +161,16 @@ class MaidManagerService {
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
-  GroupDb group_db_;
+  GroupDb<MaidManager> group_db_;
   std::mutex accumulator_mutex_;
   Accumulator<MaidName> accumulator_;
   MaidManagerNfs nfs_;
-  Sync<ActionCreateAccount> sync_create_accounts_;
-  Sync<ActionRemoveAccount> sync_remove_accounts_;
-  Sync<ActionMaidManagerPut> sync_puts_;
-  Sync<ActionMaidManagerDelete> sync_deletes_;
-  Sync<ActionRegisterPmid> sync_register_pmids_;
-  Sync<ActionUnregisterPmid> sync_unregister_pmids_;
+  Sync<MaidManager::UnresolvedCreateAccount> sync_create_accounts_;
+  Sync<MaidManager::UnresolvedRemoveAccount> sync_remove_accounts_;
+  Sync<MaidManager::UnresolvedPut> sync_puts_;
+  Sync<MaidManager::UnresolvedDelete> sync_deletes_;
+  Sync<MaidManager::UnresolvedRegisterPmid> sync_register_pmids_;
+  Sync<MaidManager::UnresolvedUnregisterPmid> sync_unregister_pmids_;
   static const int kPutRepliesSuccessesRequired_;
   static const int kDefaultPaymentFactor_;
 };
@@ -254,6 +253,11 @@ void MaidManagerService::HandlePut(const nfs::Message& message,
     auto account_name(detail::GetMaidAccountName(message));
     auto estimated_cost(detail::EstimateCost(message.data()));
     CreateAccount<Data>(account_name);
+
+
+
+
+
   }
   catch(const maidsafe_error& error) {
     LOG(kWarning) << error.what();
@@ -282,7 +286,7 @@ void MaidManagerService::HandlePut<WorldDirectory>(const nfs::Message& message,
 template<typename Data>
 void MaidManagerService::CreateAccount(const MaidName& account_name, AllowedAccountCreationType) {
   sync_create_accounts_.AddLocalAction();
-  do sync
+  DoSync();
 }
 
 template<typename Data>

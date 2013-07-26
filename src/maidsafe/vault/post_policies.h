@@ -31,6 +31,8 @@ License.
 #include "maidsafe/nfs/message_wrapper.h"
 #include "maidsafe/nfs/types.h"
 
+#include "maidsafe/vault/sync.pb.h"
+
 
 namespace maidsafe {
 
@@ -54,7 +56,10 @@ class SyncPolicy {
 
   template<typename UnresolvedAction>
   void Sync(const UnresolvedAction& unresolved_action) {
-    nfs::Message::Data data(Identity(), unresolved_action.Serialise(),
+    protobuf::Sync proto_sync;
+    proto_sync.set_action_type(typename UnresolvedAction::Action::kActionId);
+    proto_sync.set_serialised_unresolved_action(unresolved_action.Serialise());
+    nfs::Message::Data data(Identity(), proto_sync.SerializeAsString(),
                             nfs::MessageAction::kSynchronise);
     nfs::Message message(source_persona, kSource_, data);
     nfs::MessageWrapper message_wrapper(message.Serialise());

@@ -37,14 +37,15 @@ namespace maidsafe {
 
 namespace vault {
 
-template <typename Persona>
+template<typename Persona>
 class GroupDb {
  public:
   typedef typename Persona::GroupName GroupName;
-  typedef typename Persona::Key Key,
+  typedef typename Persona::Key Key;
   typedef typename Persona::Value Value;
   typedef typename Persona::Metadata Metadata;
   typedef std::pair<Key, Value> KvPair;
+  struct Contents;
   typedef std::map<NodeId, std::vector<Contents>> TransferInfo;
 
   struct Contents {
@@ -62,8 +63,7 @@ class GroupDb {
   // For atomically updating metadata only
   void Commit(const GroupName& group_name, std::function<void(Metadata& metadata)> functor);
   // For atomically updating metadata and value
-  void Commit(const GroupName& group_name,
-              const Key& key,
+  void Commit(const Key& key,
               std::function<void(Metadata& metadata, boost::optional<Value>& value)> functor);
   TransferInfo GetTransferInfo(std::shared_ptr<routing::MatrixChange> matrix_change);
   void HandleTransfer(const std::vector<Contents>& contents);
@@ -92,21 +92,20 @@ class GroupDb {
   std::map<GroupName, GroupId> group_map_;
 };
 
-template <typename GroupName, typename Key, typename Value, typename Metadata>
-GroupDb<GroupName, Key, Value, Metadata>::GroupDb()
+template<typename Persona>
+GroupDb<Persona>::GroupDb()
     : kDbPath_(boost::filesystem::unique_path()),
       mutex_(),
       leveldb_(InitialiseLevelDb(kDbPath_)),
       group_map_() {}
 
-template <typename GroupName, typename Key, typename Value, typename Metadata>
-GroupDb<GroupName, Key, Value, Metadata>::~GroupDb() {
+template<typename Persona>
+GroupDb<Persona>::~GroupDb() {
   leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
 }
 
-template <typename GroupName, typename Key, typename Value, typename Metadata>
-void GroupDb<GroupName, Key, Value, Metadata>::AddGroup(const GroupName& group_name,
-                                                        const Metadata& metadata) {
+template<typename Persona>
+void GroupDb<Persona>::AddGroup(const GroupName& group_name, const Metadata& metadata) {
   std::lock_guard<std::mutex> lock(mutex_);
   static const uint64_t kGroupsLimit(static_cast<GroupId>(std::pow(256, kPrefixWidth_)));
   if (group_map_.size() == kGroupsLimit - 1)
@@ -125,15 +124,15 @@ void GroupDb<GroupName, Key, Value, Metadata>::AddGroup(const GroupName& group_n
   }
 }
 
-template <typename GroupName, typename Key, typename Value, typename Metadata>
-void GroupDb<GroupName, Key, Value, Metadata>::DeleteGroup(const GroupName& group_name) {
+template<typename Persona>
+void GroupDb<Persona>::DeleteGroup(const GroupName& group_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   DeleteGroupEntries(group_name);
 }
 
-template <typename GroupName, typename Key, typename Value, typename Metadata>
-void GroupDb<GroupName, Key, Value, Metadata>::Commit(const GroupName& group_name,
-    std::function<void(Metadata& metadata)> functor) {
+template<typename Persona>
+void GroupDb<Persona>::Commit(const GroupName& group_name,
+                              std::function<void(Metadata& metadata)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
   Metadata metadata(GetMetadata(group_name));  // throws
@@ -141,11 +140,12 @@ void GroupDb<GroupName, Key, Value, Metadata>::Commit(const GroupName& group_nam
   PutMetadata(group_name, metadata);
 }
 
-template <typename GroupName, typename Key, typename Value, typename Metadata>
-void GroupDb<GroupName, Key, Value, Metadata>::Commit(const GroupName& group_name, const Key& key,
+template<typename Persona>
+void GroupDb<Persona>::Commit(
+    const Key& key,
     std::function<void(Metadata& metadata, boost::optional<Value>& value)> functor) {
   assert(functor);
-  Metadata metadata(GetMetadata(group_name));  // throws
+  Metadata metadata(GetMetadata(key.group_name));  // throws
   boost::optional<Value> value(GetValue(key));
   functor(metadata, value);
   // TODO Consider using batch operation here
@@ -153,12 +153,11 @@ void GroupDb<GroupName, Key, Value, Metadata>::Commit(const GroupName& group_nam
     Put(KvPair(key, value));
   else
     Delete(key);
-  PutMetadata(group_name, metadata);
+  PutMetadata(key.group_name, metadata);
 }
 
-template <typename GroupName, typename Key, typename Value, typename Metadata>
-typename GroupDb<GroupName, Key, Value, Metadata>::TransferInfo
-GroupDb<GroupName, Key, Value, Metadata>::GetTransferInfo(
+template<typename Persona>
+typename GroupDb<Persona>::TransferInfo GroupDb<Persona>::GetTransferInfo(
     std::shared_ptr<routing::MatrixChange> matrix_change) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<GroupName> prune_vector;
@@ -186,16 +185,15 @@ GroupDb<GroupName, Key, Value, Metadata>::GetTransferInfo(
 }
 
 // Ignores values which are already in db
-template <typename GroupName, typename Key, typename Value, typename Metadata>
-void GroupDb<GroupName, Key, Value, Metadata>::HandleTransfer(
-    const std::vector<Contents>& contents) {
+template<typename Persona>
+void GroupDb<Persona>::HandleTransfer(const std::vector<Contents>& contents) {
   std::lock_guard<std::mutex> lock(mutex_);
   for (const auto& kv_pair : contents) {
   }
 }
 
-template <typename GroupName, typename Key, typename Value, typename Metadata>
-void GroupDb<GroupName, Key, Value, Metadata>::DeleteGroupEntries(const GroupName& group_name) {
+template<typename Persona>
+void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
   std::vector<std::string> group_db_keys;
   std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
   auto it(group_map_.find(group_name));
@@ -226,14 +224,13 @@ void GroupDb<GroupName, Key, Value, Metadata>::DeleteGroupEntries(const GroupNam
 }
 
 // throws
-template <typename GroupName, typename Key, typename Value, typename Metadata>
-Metadata GroupDb<GroupName, Key, Value, Metadata>::GetMetadata(const GroupName& /*group_name*/) {
+template<typename Persona>
+typename GroupDb<Persona>::Metadata GroupDb<Persona>::GetMetadata(const GroupName& /*group_name*/) {
   return Metadata();
 }
 
-template <typename GroupName, typename Key, typename Value, typename Metadata>
-void GroupDb<GroupName, Key, Value, Metadata>::PutMetadata(const GroupName& /*group_name*/,
-                                                           const Metadata& /*metadata*/) {
+template<typename Persona>
+void GroupDb<Persona>::PutMetadata(const GroupName& /*group_name*/, const Metadata& /*metadata*/) {
 }
 
 }  // namespace vault

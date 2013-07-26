@@ -24,7 +24,9 @@ License.
 
 #include "maidsafe/vault/maid_manager/helpers.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
+#include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/sync.h"
+#include "maidsafe/vault/sync.pb.h"
 
 
 namespace maidsafe {
@@ -101,31 +103,31 @@ T Merge(std::vector<T> values) {
 
 PmidManagerMetadata MergePmidTotals(std::shared_ptr<GetPmidTotalsOp> op_data) {
   // Remove invalid results
-  op_data->pmid_records.erase(
-      std::remove_if(std::begin(op_data->pmid_records),
-                     std::end(op_data->pmid_records),
-                     [&op_data](const PmidManagerMetadata& pmid_record) {
-                         return pmid_record.pmid_name->IsInitialised() &&
-                                pmid_record.pmid_name == op_data->kPmidAccountName;
-                     }),
-      std::end(op_data->pmid_records));
+  //op_data->pmid_records.erase(
+  //    std::remove_if(std::begin(op_data->pmid_records),
+  //                   std::end(op_data->pmid_records),
+  //                   [&op_data](const PmidManagerMetadata& pmid_record) {
+  //                       return pmid_record.pmid_name->IsInitialised() &&
+  //                              pmid_record.pmid_name == op_data->kPmidAccountName;
+  //                   }),
+  //    std::end(op_data->pmid_records));
 
-  std::vector<int64_t> all_stored_counts, all_stored_total_size, all_lost_count,
-                       all_lost_total_size, all_claimed_available_size;
-  for (const auto& pmid_record : op_data->pmid_records) {
-    all_stored_counts.push_back(pmid_record.stored_count);
-    all_stored_total_size.push_back(pmid_record.stored_total_size);
-    all_lost_count.push_back(pmid_record.lost_count);
-    all_lost_total_size.push_back(pmid_record.lost_total_size);
-    all_claimed_available_size.push_back(pmid_record.claimed_available_size);
-  }
+  //std::vector<int64_t> all_stored_counts, all_stored_total_size, all_lost_count,
+  //                     all_lost_total_size, all_claimed_available_size;
+  //for (const auto& pmid_record : op_data->pmid_records) {
+  //  all_stored_counts.push_back(pmid_record.stored_count);
+  //  all_stored_total_size.push_back(pmid_record.stored_total_size);
+  //  all_lost_count.push_back(pmid_record.lost_count);
+  //  all_lost_total_size.push_back(pmid_record.lost_total_size);
+  //  all_claimed_available_size.push_back(pmid_record.claimed_available_size);
+  //}
 
   PmidManagerMetadata merged(op_data->kPmidAccountName);
-  merged.stored_count = Merge(all_stored_counts);
-  merged.stored_total_size = Merge(all_stored_total_size);
-  merged.lost_count = Merge(all_lost_count);
-  merged.lost_total_size = Merge(all_lost_total_size);
-  merged.claimed_available_size = Merge(all_claimed_available_size);
+  //merged.stored_count = Merge(all_stored_counts);
+  //merged.stored_total_size = Merge(all_stored_total_size);
+  //merged.lost_count = Merge(all_lost_count);
+  //merged.lost_total_size = Merge(all_lost_total_size);
+  //merged.claimed_available_size = Merge(all_claimed_available_size);
   return merged;
 }
 
@@ -139,8 +141,7 @@ const int MaidManagerService::kDefaultPaymentFactor_(4);
 
 MaidManagerService::MaidManagerService(const passport::Pmid& pmid,
                                        routing::Routing& routing,
-                                       nfs::PublicKeyGetter& public_key_getter,
-                                       Db& db)
+                                       nfs::PublicKeyGetter& public_key_getter)
     : routing_(routing),
       public_key_getter_(public_key_getter),
       group_db_(),
@@ -316,28 +317,106 @@ void MaidManagerService::FinalisePmidRegistration(
 
 // =============== Sync ============================================================================
 
-void MaidManagerService::DoSync(const MaidName& account_name) {
-  auto serialised_sync_data(maid_account_handler_.GetSyncData(account_name));
-  if (!serialised_sync_data.IsInitialised())  // Nothing to sync
-    return;
-
-  protobuf::Sync proto_sync;
-  proto_sync.set_account_name(account_name->string());
-  proto_sync.set_serialised_unresolved_actions(serialised_sync_data.string());
-
-  nfs_.Sync(account_name, NonEmptyString(proto_sync.SerializeAsString()));
-  // TODO(Fraser#5#): 2013-05-03 - Check this is correct place to increment sync attempt counter.
-  maid_account_handler_.IncrementSyncAttempts(account_name);
+void MaidManagerService::DoSync() {
+  auto unresolved_create_accounts(sync_create_accounts_.GetUnresolvedActions());
+  if (!unresolved_create_accounts.empty()) {
+    sync_create_accounts_.IncrementSyncAttempts();
+    for (const auto& unresolved_action : unresolved_create_accounts)
+      nfs_.Sync(unresolved_action);
+  }
+  auto unresolved_remove_accounts(sync_remove_accounts_.GetUnresolvedActions());
+  if (!unresolved_remove_accounts.empty()) {
+    sync_remove_accounts_.IncrementSyncAttempts();
+    for (const auto& unresolved_action : unresolved_remove_accounts)
+      nfs_.Sync(unresolved_action);
+  }
+  auto unresolved_puts(sync_puts_.GetUnresolvedActions());
+  if (!unresolved_puts.empty()) {
+    sync_puts_.IncrementSyncAttempts();
+    for (const auto& unresolved_action : unresolved_puts)
+      nfs_.Sync(unresolved_action);
+  }
+  auto unresolved_deletes(sync_deletes_.GetUnresolvedActions());
+  if (!unresolved_deletes.empty()) {
+    sync_deletes_.IncrementSyncAttempts();
+    for (const auto& unresolved_action : unresolved_deletes)
+      nfs_.Sync(unresolved_action);
+  }
+  auto unresolved_register_pmids(sync_register_pmids_.GetUnresolvedActions());
+  if (!unresolved_register_pmids.empty()) {
+    sync_register_pmids_.IncrementSyncAttempts();
+    for (const auto& unresolved_action : unresolved_register_pmids)
+      nfs_.Sync(unresolved_action);
+  }
+  auto unresolved_unregister_pmids(sync_unregister_pmids_.GetUnresolvedActions());
+  if (!unresolved_unregister_pmids.empty()) {
+    sync_unregister_pmids_.IncrementSyncAttempts();
+    for (const auto& unresolved_action : unresolved_unregister_pmids)
+      nfs_.Sync(unresolved_action);
+  }
 }
 
 void MaidManagerService::HandleSync(const nfs::Message& message) {
   protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(message.data().content.string())) {
-    LOG(kError) << "Error parsing kSynchronise message.";
-    return;
+  if (!proto_sync.ParseFromString(message.data().content.string()))
+    ThrowError(CommonErrors::parsing_error);
+
+  switch (proto_sync.action_type()) {
+    case ActionCreateAccount::kActionId: {
+      MaidManager::UnresolvedCreateAccount unresolved_action(
+          proto_sync.serialised_unresolved_action(), message.source().node_id, routing_.kNodeId());
+      auto resolveds(sync_create_accounts_.AddUnresolvedAction(group_db_, unresolved_action));
+      for (const auto& resolved_action : resolveds) {
+        MaidManager::Metadata metadata;
+        group_db_.AddGroup(resolved_action.key.group_name, metadata);
+      }
+      break;
+    }
+    case ActionRemoveAccount::kActionId: {
+      MaidManager::UnresolvedRemoveAccount unresolved_action(
+          proto_sync.serialised_unresolved_action(), message.source().node_id, routing_.kNodeId());
+      auto resolveds(sync_remove_accounts_.AddUnresolvedAction(group_db_, unresolved_action));
+      for (const auto& resolved_action : resolveds)
+        group_db_.DeleteGroup(resolved_action.key.group_name);
+      break;
+    }
+    case ActionMaidManagerPut::kActionId: {
+      MaidManager::UnresolvedPut unresolved_action(
+          proto_sync.serialised_unresolved_action(), message.source().node_id, routing_.kNodeId());
+      auto resolveds(sync_puts_.AddUnresolvedAction(group_db_, unresolved_action));
+      for (const auto& resolved_action : resolveds)
+        group_db_.Commit(resolved_action.key, resolved_action.action);
+      break;
+    }
+    case ActionMaidManagerDelete::kActionId: {
+      MaidManager::UnresolvedDelete unresolved_action(
+          proto_sync.serialised_unresolved_action(), message.source().node_id, routing_.kNodeId());
+      auto resolveds(sync_deletes_.AddUnresolvedAction(group_db_, unresolved_action));
+      for (const auto& resolved_action : resolveds)
+        group_db_.Commit(resolved_action.key, resolved_action.action);
+      break;
+    }
+    case ActionRegisterPmid::kActionId: {
+      MaidManager::UnresolvedRegisterPmid unresolved_action(
+          proto_sync.serialised_unresolved_action(), message.source().node_id, routing_.kNodeId());
+      auto resolveds(sync_register_pmids_.AddUnresolvedAction(group_db_, unresolved_action));
+      for (const auto& resolved_action : resolveds)
+        group_db_.Commit(resolved_action.key.group_name, resolved_action.action);
+      break;
+    }
+    case ActionUnregisterPmid::kActionId: {
+      MaidManager::UnresolvedUnregisterPmid unresolved_action(
+          proto_sync.serialised_unresolved_action(), message.source().node_id, routing_.kNodeId());
+      auto resolveds(sync_unregister_pmids_.AddUnresolvedAction(group_db_, unresolved_action));
+      for (const auto& resolved_action : resolveds)
+        group_db_.Commit(resolved_action.key.group_name, resolved_action.action);
+      break;
+    }
+    default: {
+      assert(false);
+      LOG(kError) << "Unhandled action type";
+    }
   }
-  maid_account_handler_.ApplySyncData(MaidName(Identity(proto_sync.account_name())),
-                                      NonEmptyString(proto_sync.serialised_unresolved_actions()));
 }
 
 

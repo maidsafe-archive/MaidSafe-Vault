@@ -28,6 +28,14 @@ struct ActionCreateRemoveAccount {
   static const nfs::MessageAction kActionId;
 };
 
+template<>
+const nfs::MessageAction ActionCreateRemoveAccount<false>::kActionId =
+    nfs::MessageAction::kCreateAccount;
+
+template<>
+const nfs::MessageAction ActionCreateRemoveAccount<true>::kActionId =
+    nfs::MessageAction::kRemoveAccount;
+
 typedef ActionCreateRemoveAccount<false> ActionCreateAccount;
 typedef ActionCreateRemoveAccount<true> ActionRemoveAccount;
 

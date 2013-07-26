@@ -49,6 +49,14 @@ struct ActionRegisterUnregisterPmid {
 };
 
 template<>
+const nfs::MessageAction ActionRegisterUnregisterPmid<false>::kActionId =
+    nfs::MessageAction::kRegisterPmid;
+
+template<>
+const nfs::MessageAction ActionRegisterUnregisterPmid<true>::kActionId =
+    nfs::MessageAction::kUnregisterPmid;
+
+template<>
 void ActionRegisterUnregisterPmid<false>::operator()(MaidManagerMetadata& metadata) const;
 
 template<>
