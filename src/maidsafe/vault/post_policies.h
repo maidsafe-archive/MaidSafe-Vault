@@ -131,7 +131,8 @@ class PmidManagerMiscellaneousPolicy {
 
 class PmidNodeMiscellaneousPolicy {
  public:
-  PmidNodeMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
+  PmidNodeMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid,
+                              const routing::ResponseFunctor& callback)
       : routing_(routing),
         kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()),
         kPmid_(pmid) {}
@@ -141,8 +142,7 @@ class PmidNodeMiscellaneousPolicy {
                             nfs::MessageAction::kGetPmidAccount);
     nfs::Message message(nfs::Persona::kPmidNode, kSource_, data, pmid_name);
     nfs::MessageWrapper message_wrapper(message.Serialise());
-    routing_.SendGroup(NodeId(pmid_name), message_wrapper.Serialise()->string(),
-                       false, routing::ResponseFunctor());
+    routing_.SendGroup(NodeId(pmid_name), message_wrapper.Serialise()->string(), false, callback);
   }
 
  private:

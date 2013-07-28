@@ -83,7 +83,45 @@ PmidNodeService::PmidNodeService(const passport::Pmid& pmid,
 }
 
 void PmidNodeService::SendAccountRequest() {
-  miscellaneous_policy.RequestPmidNodeAccount(PmidName(Identity(routing_.kNodeId().string())));
+  auto response_vector(std::make_shared<std::vector<protobuf::PmidAccountResponse>>());
+  auto mutex(std::make_shared<std::mutex>());
+  auto done(std::make_shared<bool>(false));
+  miscellaneous_policy.RequestPmidNodeAccount(PmidName(Identity(routing_.kNodeId().string())),
+      [done, response_vector, mutex, this](std::string serialised_reply) {
+        std::map<DataNameVariant, u_int16_t> expected_chunks;
+        {
+          std::lock_guard<std::mutex> lock(*mutex);
+          if (*done)
+            return;
+          nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));
+          if (!reply.IsSuccess()) {
+            LOG(kWarning) << "Failure in PmidAccount response";
+            return;
+          }
+          protobuf::PmidAccountResponse pmid_account_response;
+          if (pmid_account_response.ParseFromString(reply.data().string())) {
+            response_vector->push_back(pmid_account_response);
+          } else {
+            LOG(kWarning) << "Failed to parse PmidAccount response";
+            return;
+          }
+          uint16_t total_replies(response_vector->size()), total_valid_replies(0);
+          assert((total_replies <= routing::Parameters::node_group_size) &&
+                 "Invalid number of account transfer");
+          if (total_replies <= routing::Parameters::node_group_size / 2) {
+            return;
+          } else {
+            total_valid_replies = this->TotalValidPmidAccountReplies(response_vector);
+            if ((total_replies >= (routing::Parameters::node_group_size / 2 + 1)) &&
+                 total_valid_replies >= routing::Parameters::node_group_size / 2) {
+              ApplyAccountTransfer(total_replies, total_valid_replies, expected_chunks);
+              *done = true;
+            }
+          }
+        }
+        if (*done)
+          this->UpdateLocalStorage(expected_chunks);
+      });
 }
 
 void PmidNodeService::ApplyAccountTransfer(const size_t& total_pmidmgrs,
@@ -187,7 +225,7 @@ std::future<std::unique_ptr<ImmutableData>>
 PmidNodeService::RetrieveFileFromNetwork(const DataNameVariant& file_id) {
   auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), file_id));
   ImmutableData::name_type name(result.second);
-  std::mutex opt_mutex;
+  auto opt_mutex(std::make_shared<std::mutex>()) ;
   auto get_op(std::make_shared<nfs::detail::GetOp<ImmutableData>>());
   nfs_.Get<ImmutableData>(ImmutableData::name_type(Identity(result.second)),
                           [this, get_op, name, &opt_mutex](std::string serialised_reply) {
@@ -196,7 +234,7 @@ PmidNodeService::RetrieveFileFromNetwork(const DataNameVariant& file_id) {
       if (!reply.IsSuccess())
         throw reply.error();
       {
-        std::lock_guard<std::mutex> lock(opt_mutex);
+        std::lock_guard<std::mutex> lock(*opt_mutex);
         if (!get_op->IsPromiseSet()) {
           ImmutableData data(name, (ImmutableData::serialised_type(reply.data())));
           permanent_data_store_.Put(data.name(), reply.data());
@@ -253,25 +291,13 @@ void PmidNodeService::ValidateDeleteSender(const nfs::Message& message) const {
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-uint16_t PmidNodeService::TotalPmidAccountReplies() const {
-  return std::count_if(
-             accumulator_.pending_requests_.begin(),
-             accumulator_.pending_requests_.end(),
-             [](const Accumulator<DataNameVariant>::PendingRequest& pending_request) {
-               return pending_request.msg.data().action == nfs::MessageAction::kAccountTransfer;
-             });
-}
-
-uint16_t PmidNodeService::TotalValidPmidAccountReplies() const {
-  return std::count_if(
-             accumulator_.pending_requests_.begin(),
-             accumulator_.pending_requests_.end(),
-             [](const Accumulator<DataNameVariant>::PendingRequest& pending_request) {
-               protobuf::PmidAccountResponse account_response;
-               account_response.ParseFromString(pending_request.msg.data().content.string());
-               return (pending_request.msg.data().action == nfs::MessageAction::kAccountTransfer) &&
-                       (account_response.status() == static_cast<int>(CommonErrors::success));
-             });
+uint16_t PmidNodeService::TotalValidPmidAccountReplies(
+    std::shared_ptr<std::vector<protobuf::PmidAccountResponse>> response_vector) const {
+  return std::count_if(response_vector->begin(),
+                       response_vector->end(),
+                       [](const protobuf::PmidAccountResponse& response) {
+                         return response.status() == static_cast<int>(CommonErrors::success);
+                       });
 }
 
 }  // namespace vault
