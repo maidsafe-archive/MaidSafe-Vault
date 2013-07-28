@@ -38,6 +38,7 @@ License.
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/post_policies.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 
 
 namespace maidsafe {
@@ -82,9 +83,6 @@ class PmidNodeService {
   void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template<typename Data>
   void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  template<typename Data>
-  void HandleAccountTransfer(const nfs::Message& message,
-                             const routing::ReplyFunctor& reply_functor);
 
   void SendAccountRequest();
 
@@ -96,8 +94,8 @@ class PmidNodeService {
   void ApplyUpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
                                const std::vector<DataNameVariant>& to_be_retrieved);
   std::vector<DataNameVariant> StoredFileNames();
-  uint16_t TotalPmidAccountReplies() const;
-  uint16_t TotalValidPmidAccountReplies() const;
+  uint16_t TotalValidPmidAccountReplies(
+      std::shared_ptr<std::vector<protobuf::PmidAccountResponse>> response_vector) const;
 
   std::future<std::unique_ptr<ImmutableData>>
   RetrieveFileFromNetwork(const DataNameVariant &file_id);

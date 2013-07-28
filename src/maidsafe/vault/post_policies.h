@@ -140,13 +140,13 @@ class PmidNodeMiscellaneousPolicy {
         kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()),
         kPmid_(pmid) {}
 
-  void RequestPmidNodeAccount(const passport::PublicPmid::name_type& pmid_name) {
+  void RequestPmidNodeAccount(const passport::PublicPmid::name_type& pmid_name,
+                              const routing::ResponseFunctor& callback) {
     nfs::Message::Data data(DataTagValue::kPmidValue, pmid_name.data, NonEmptyString(),
                             nfs::MessageAction::kGetPmidAccount);
     nfs::Message message(nfs::Persona::kPmidNode, kSource_, data, pmid_name);
     nfs::MessageWrapper message_wrapper(message.Serialise());
-    routing_.SendGroup(NodeId(pmid_name), message_wrapper.Serialise()->string(),
-                       false, routing::ResponseFunctor());
+    routing_.SendGroup(NodeId(pmid_name), message_wrapper.Serialise()->string(), false, callback);
   }
 
  private:
