@@ -20,7 +20,6 @@ License.
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 
-
 namespace maidsafe {
 namespace vault {
 

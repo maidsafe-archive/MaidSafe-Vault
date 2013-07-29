@@ -33,6 +33,10 @@ PmidAccountHandler::PmidAccountHandler(Db& db, const NodeId& this_node_id)
 
 void PmidAccountHandler::CreateAccount(const PmidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
+  std::vector<PmidName> account_names(GetAccountNames());
+  for (auto& pmid_account_name : account_names)
+    if (pmid_account_name == account_name)
+      return;
   std::unique_ptr<PmidAccount> account(new PmidAccount(account_name, db_, kThisNodeId_));
   pmid_accounts_.insert(std::move(std::make_pair(account_name, std::move(account))));
 }
@@ -58,26 +62,20 @@ void PmidAccountHandler::DeleteAccount(const PmidName& account_name) {
   pmid_accounts_.erase(account_name);
 }
 
-PmidAccount::DataHolderStatus PmidAccountHandler::AccountStatus(
+PmidAccount::PmidNodeStatus PmidAccountHandler::PmidNodeStatus(
     const PmidName& account_name) const {
   std::lock_guard<std::mutex> lock(mutex_);
   return pmid_accounts_.at(account_name)->pmid_node_status();
 }
 
-void PmidAccountHandler::SetDataHolderGoingDown(const PmidName& /*account_name*/) {
-}
-
-void PmidAccountHandler::SetDataHolderDown(const PmidName& account_name) {
+void PmidAccountHandler::SetPmidNodeDown(const PmidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
-  pmid_accounts_.at(account_name)->SetDataHolderDown();
+  pmid_accounts_.at(account_name)->SetPmidNodeDown();
 }
 
-void PmidAccountHandler::SetDataHolderGoingUp(const PmidName& /*account_name*/) {
-}
-
-void PmidAccountHandler::SetDataHolderUp(const PmidName& account_name) {
+void PmidAccountHandler::SetPmidNodeUp(const PmidName& account_name) {
   std::lock_guard<std::mutex> lock(mutex_);
-  pmid_accounts_.at(account_name)->SetDataHolderUp();
+  pmid_accounts_.at(account_name)->SetPmidNodeUp();
 }
 
 void PmidAccountHandler::AddLocalUnresolvedEntry(const PmidName& account_name,
@@ -106,8 +104,8 @@ std::vector<PmidName> PmidAccountHandler::GetAccountNames() const {
 }
 
 PmidAccount::serialised_type PmidAccountHandler::GetSerialisedAccount(
-    const PmidName& account_name) const {
-  return pmid_accounts_.at(account_name)->Serialise();
+    const PmidName& account_name, bool include_pmid_record) const {
+  return pmid_accounts_.at(account_name)->Serialise(include_pmid_record);
 }
 
 NonEmptyString PmidAccountHandler::GetSyncData(const PmidName& account_name) {
@@ -115,7 +113,7 @@ NonEmptyString PmidAccountHandler::GetSyncData(const PmidName& account_name) {
   return pmid_accounts_.at(account_name)->GetSyncData();
 }
 
-std::vector<PmidManagerUnresolvedEntry> PmidAccountHandler::ApplySyncData(const PmidName& account_name,
+void PmidAccountHandler::ApplySyncData(const PmidName& account_name,
                                        const NonEmptyString& serialised_unresolved_entries) {
   std::lock_guard<std::mutex> lock(mutex_);
   return pmid_accounts_.at(account_name)->ApplySyncData(serialised_unresolved_entries);
@@ -126,11 +124,6 @@ void PmidAccountHandler::ReplaceNodeInSyncList(const PmidName& account_name,
                                                const NodeId& new_node) {
   std::lock_guard<std::mutex> lock(mutex_);
   pmid_accounts_.at(account_name)->ReplaceNodeInSyncList(old_node, new_node);
-}
-
-void PmidAccountHandler::IncrementSyncAttempts(const PmidName& account_name) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  pmid_accounts_.at(account_name)->IncrementSyncAttempts();
 }
 
 }  // namespace vault

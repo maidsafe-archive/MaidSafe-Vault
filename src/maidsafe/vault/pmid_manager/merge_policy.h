@@ -40,14 +40,18 @@ class PmidManagerMergePolicy {
   explicit PmidManagerMergePolicy(AccountDb* account_db);
   PmidManagerMergePolicy(PmidManagerMergePolicy&& other);
   PmidManagerMergePolicy& operator=(PmidManagerMergePolicy&& other);
+
   // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
   template<typename Data>
   int32_t AllowDelete(const typename Data::name_type& name);
 
  protected:
+  typedef std::vector<UnresolvedEntry> UnresolvedEntries;
+  typedef std::vector<UnresolvedEntry>::iterator UnresolvedEntriesItr;
+
   void Merge(const UnresolvedEntry& unresolved_entry);
 
-  std::vector<UnresolvedEntry> unresolved_data_;
+  UnresolvedEntries unresolved_data_;
   AccountDb* account_db_;
 
  private:

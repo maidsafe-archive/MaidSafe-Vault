@@ -54,29 +54,19 @@ class PmidManagerService {
   void ValidateDataSender(const nfs::Message& message) const;
   void ValidateGenericSender(const nfs::Message& message) const;
 
-  void SendReplyAndAddToAccumulator(const nfs::Message& message,
-                                    const routing::ReplyFunctor& reply_functor,
-                                    const nfs::Reply& reply);
+  void CreatePmidAccount(const nfs::Message& message);
+  void GetPmidTotals(const nfs::Message& message);
+  void GetPmidAccount(const nfs::Message& message);
 
+  // =============== Put/Delete data ================================================================
   template<typename Data>
-  void HandlePut(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandlePut(const nfs::Message& message);
   template<typename Data>
   void HandleDelete(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-
-  void HandleGetPmidTotals(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-
   template<typename Data>
-  void AdjustAccount(const nfs::Message& message);
+  void HandlePutCallback(const std::string& reply, const nfs::Message& message);
   template<typename Data>
-  void SendMessages(const nfs::Message& message);
-
-  template<typename Data>
-  void HandlePutResult(const nfs::Reply& overall_result,
-                       const nfs::Message& message,
-                       routing::ReplyFunctor reply_functor);
-
-  bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
-
+  void SendPutResult(const nfs::Message& message, bool result);
 
   // =============== Sync ==========================================================================
   void Sync(const PmidName& account_name);
@@ -86,31 +76,10 @@ class PmidManagerService {
   void TransferAccount(const PmidName& account_name, const NodeId& new_node);
   void HandleAccountTransfer(const nfs::Message& message);
 
-  void CheckAccounts();
-  bool AssessRange(const PmidName& account_name,
-                   PmidAccount::DataHolderStatus account_status,
-                   bool is_connected);
   void ValidateMessage(const nfs::Message& message) const;
-  void InformOfDataHolderDown(const PmidName& pmid_name);
-  void InformOfDataHolderUp(const PmidName& pmid_name);
-  void InformAboutDataHolder(const PmidName& pmid_name, bool node_up);
-
-  bool StatusHasReverted(const PmidName& pmid_name, bool node_up) const;
-  void RevertMessages(const PmidName& pmid_name,
-                      const std::vector<boost::filesystem::path>::reverse_iterator& begin,
-                      std::vector<boost::filesystem::path>::reverse_iterator& current,
-                      bool node_up);
-  std::set<PmidName> GetDataNamesInFile(const PmidName& pmid_name,
-                                        const boost::filesystem::path& path) const;
-  void SendMessages(const PmidName& pmid_name,
-                    const std::set<PmidName>& data_manager_ids,
-                    bool node_up);
 
   template<typename Data, nfs::MessageAction action>
   void AddLocalUnresolvedEntryThenSync(const nfs::Message& message);
-  template<typename Data, nfs::MessageAction action>
-  void ReplyToDataManagers(const std::vector<PmidManagerResolvedEntry>& resolved_entries,
-                               const PmidName& pmid_name);
 
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
