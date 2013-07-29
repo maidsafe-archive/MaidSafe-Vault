@@ -20,7 +20,6 @@ License.
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 
-
 namespace maidsafe {
 namespace vault {
 
@@ -37,6 +36,17 @@ PmidManagerValue::PmidManagerValue(const std::string& serialised_pmid_manager_va
   } else {
     size_ = pmid_manager_value_proto.size();
   }
+}
+
+PmidManagerValue::PmidManagerValue(const PmidManagerValue& other)
+    : size_(other.size_) {}
+
+PmidManagerValue::PmidManagerValue(PmidManagerValue&& other)
+    : size_(std::move(other.size_)) {}
+
+PmidManagerValue& PmidManagerValue::operator=(PmidManagerValue other) {
+  swap(*this, other);
+  return *this;
 }
 
 std::string PmidManagerValue::Serialise() const {

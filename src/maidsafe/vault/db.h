@@ -22,7 +22,7 @@ License.
 #include <utility>
 #include <vector>
 
-#include "boost/filesystem/path.hpp"
+#include "boost/filesystem.hpp"
 #include "boost/optional/optional.hpp"
 
 #include "leveldb/db.h"
@@ -108,7 +108,7 @@ template<typename Key, typename Value>
 typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
     std::shared_ptr<routing::MatrixChange> matrix_change) {
   std::lock_guard<std::mutex> lock(mutex_);
-  std::vector<string> prune_vector;
+  std::vector<std::string> prune_vector;
   TransferInfo transfer_info;
   {
     std::unique_ptr<leveldb::Iterator> db_iter(leveldb_->NewIterator(leveldb::ReadOptions()));
@@ -128,7 +128,7 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
           }
         }
       } else {
-        prune_vector.push_back(db_iter->key());
+        prune_vector.push_back(db_iter->key().data());
       }
     }
   }

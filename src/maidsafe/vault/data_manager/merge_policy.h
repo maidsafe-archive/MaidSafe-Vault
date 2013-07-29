@@ -25,8 +25,8 @@ License.
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 
-#include "maidsafe/vault/unresolved_element.h"
-#include "maidsafe/vault/manager_db.h"
+#include "maidsafe/vault/unresolved_action.h"
+//#include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
 
 

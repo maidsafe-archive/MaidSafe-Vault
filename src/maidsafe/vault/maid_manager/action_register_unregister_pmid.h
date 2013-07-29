@@ -23,6 +23,8 @@ License.
 #include "maidsafe/nfs/pmid_registration.h"
 #include "maidsafe/nfs/types.h"
 
+#include "maidsafe/vault/maid_manager/action_register_unregister_pmid.pb.h"
+
 
 namespace maidsafe {
 

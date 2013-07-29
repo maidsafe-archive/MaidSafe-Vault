@@ -36,7 +36,7 @@ License.
 #include "maidsafe/vault/storage_merge/storage_merge.h"
 #include "maidsafe/vault/version_manager/version_manager.h"
 #include "maidsafe/vault/version_manager/merge_policy.h"
-#include "maidsafe/vault/manager_db.h"
+//#include "maidsafe/vault/manager_db.h"
 
 
 namespace maidsafe {

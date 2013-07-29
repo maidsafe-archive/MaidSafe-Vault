@@ -18,29 +18,36 @@ License.
 
 #include <cstdint>
 #include <set>
-#include <string>
+#include <vector>
 
-#include "boost/optional/optional.hpp"
-
-#include "maidsafe/passport/types.h"
-
+#include "maidsafe/common/types.h"
+#include "maidsafe/vault/data_manager/data_manager.pb.h"
+#include "maidsafe/vault/types.h"
 
 namespace maidsafe {
 
 namespace vault {
 
+// not thread safe
 class DataManagerValue {
- public:
-  explicit DataManagerValue(const std::string& serialised_data_manager_value);
-  explicit DataManagerValue(int32_t data_size);
-  std::string Serialise() const;
+  typedef TaggedValue<NonEmptyString, struct SerialisedDataManagerValueTag> serialised_type;
+  explicit DataManagerValue(const serialised_type& serialised_metadata_value);
+  DataManagerValue(const PmidName& pmid_name, int size_in);
+  serialised_type Serialise() const;
 
-  int32_t data_size() const { return data_size_; }
+  void AddPmid(const PmidName& pmid_name);
+  void RemovePmid(const PmidName& pmid_name);
+  void Increamentsubscribers();
+  void Decreamentsubscribers();
+  void SetPmidOnline(const PmidName& pmid_name);
+  void SetPmidOffline(const PmidName& pmid_name);
+
+  friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
 
  private:
-  int32_t data_size_;
-  boost::optional<int64_t> subscribers;
-  std::set<passport::PublicPmid::name_type> online_pmid_name, offline_pmid_name;
+  int data_size_;
+  int64_t subscribers_;
+  std::set<PmidName> online_pmids_, offline_pmids_;
 };
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);

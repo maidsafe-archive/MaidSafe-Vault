@@ -21,7 +21,7 @@ License.
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/pmid_manager/account.h"
-#include "maidsafe/vault/unresolved_element.pb.h"
+#include "maidsafe/vault/unresolved_action.pb.h"
 
 
 namespace maidsafe {
@@ -31,8 +31,8 @@ const size_t PmidAccount::kSyncTriggerCount_(1);
 
 PmidAccount::PmidAccount(const PmidName& pmid_name,  Db& db, const NodeId& this_node_id)
     : pmid_name_(pmid_name),
-      pmid_record_(pmid_name),
-      pmid_node_status_(DataHolderStatus::kUp),
+      metadata_(pmid_name),
+      pmid_node_status_(PmidNodeStatus::kUp),
       account_db_(new AccountDb(db)),
       sync_(account_db_.get(), this_node_id),
       account_transfer_nodes_(0) {}
@@ -43,7 +43,7 @@ PmidAccount::PmidAccount(const PmidName& pmid_name,
                          const NodeId& source_id,
                          const serialised_type& serialised_pmid_account_details)
     : pmid_name_(pmid_name),
-      pmid_record_(),
+      metadata_(),
       account_db_(new AccountDb(db)),
       sync_(account_db_.get(), this_node_id),
       account_transfer_nodes_(routing::Parameters::node_group_size - 1) {
@@ -64,14 +64,14 @@ PmidAccount::PmidAccount(const PmidName& pmid_name,
 
 PmidAccount::PmidAccount(PmidAccount&& other)
     : pmid_name_(std::move(other.pmid_name_)),
-      pmid_record_(std::move(other.pmid_record_)),
+      metadata_(std::move(other.metadata_)),
       account_db_(std::move(other.account_db_)),
       sync_(std::move(other.sync_)),
       account_transfer_nodes_(std::move(other.account_transfer_nodes_)) {}
 
 PmidAccount& PmidAccount::operator=(PmidAccount&& other) {
   pmid_name_ = std::move(other.pmid_name_);
-  pmid_record_ = std::move(other.pmid_record_);
+  metadata_ = std::move(other.metadata_);
   account_db_ = std::move(other.account_db_);
   sync_ = std::move(other.sync_);
   account_transfer_nodes_ = std::move(other.account_transfer_nodes_);
@@ -79,17 +79,17 @@ PmidAccount& PmidAccount::operator=(PmidAccount&& other) {
 }
 
 PmidAccount::serialised_type PmidAccount::Serialise() {
-  protobuf::PmidManagerMetadata proto_pmid_record;
-  proto_pmid_record.set_pmid_name(pmid_record_.pmid_name.data.string());
-  proto_pmid_record.set_stored_count(pmid_record_.stored_count);
-  proto_pmid_record.set_stored_total_size(pmid_record_.stored_total_size);
-  proto_pmid_record.set_lost_count(pmid_record_.lost_count);
-  proto_pmid_record.set_lost_total_size(pmid_record_.lost_total_size);
-  proto_pmid_record.set_claimed_available_size(pmid_record_.claimed_available_size);
+  protobuf::PmidManagerMetadata proto_metadata;
+  proto_metadata.set_pmid_name(metadata_.pmid_name.data.string());
+  proto_metadata.set_stored_count(metadata_.stored_count);
+  proto_metadata.set_stored_total_size(metadata_.stored_total_size);
+  proto_metadata.set_lost_count(metadata_.lost_count);
+  proto_metadata.set_lost_total_size(metadata_.lost_total_size);
+  proto_metadata.set_claimed_available_size(metadata_.claimed_available_size);
 
   protobuf::PmidAccountDetails proto_pmid_account_details;
 
-  proto_pmid_account_details.set_serialised_pmid_record(proto_pmid_record.SerializeAsString());
+  proto_pmid_account_details.set_serialised_pmid_manager_metadata(proto_metadata.SerializeAsString());
 
   auto db_entries(account_db_->Get());
   GetTagValueAndIdentityVisitor type_and_name_visitor;
@@ -115,7 +115,7 @@ PmidAccount::serialised_type PmidAccount::Serialise() {
 }
 
 void PmidAccount::PutData(int32_t size) {
-  pmid_record_.stored_total_size += size;
+  metadata_.stored_total_size += size;
 }
 
 bool PmidAccount::ApplyAccountTransfer(const NodeId& source_id,
@@ -132,12 +132,12 @@ bool PmidAccount::ApplyAccountTransfer(const NodeId& source_id,
   protobuf::PmidManagerMetadata proto_pmid_record;
   if (!proto_pmid_record.ParseFromString(proto_pmid_account_details.serialised_pmid_record()))
     ThrowError(CommonErrors::parsing_error);
-  pmid_record_.pmid_name.data = Identity(proto_pmid_record.pmid_name());
-  pmid_record_.stored_count = proto_pmid_record.stored_count();
-  pmid_record_.stored_total_size = proto_pmid_record.stored_total_size();
-  pmid_record_.lost_count = proto_pmid_record.lost_count();
-  pmid_record_.lost_total_size = proto_pmid_record.lost_total_size();
-  pmid_record_.claimed_available_size = proto_pmid_record.claimed_available_size();
+  metadata_.pmid_name.data = Identity(proto_pmid_record.pmid_name());
+  metadata_.stored_count = proto_pmid_record.stored_count();
+  metadata_.stored_total_size = proto_pmid_record.stored_total_size();
+  metadata_.lost_count = proto_pmid_record.lost_count();
+  metadata_.lost_total_size = proto_pmid_record.lost_total_size();
+  metadata_.claimed_available_size = proto_pmid_record.claimed_available_size();
 
   for (int i(0); i != proto_pmid_account_details.db_entry_size(); ++i) {
     auto data_name(GetDataNameVariant(
@@ -146,16 +146,15 @@ bool PmidAccount::ApplyAccountTransfer(const NodeId& source_id,
     int32_t size(proto_pmid_account_details.db_entry(i).value().size());
     PmidManagerUnresolvedEntry entry(
         std::make_pair(data_name, nfs::MessageAction::kPut), size, source_id);
-    if (sync_.AddAccountTransferRecord(entry, all_account_transfers_received).size() == 1U) {
-      pmid_record_.stored_total_size += size;
-    }
+    if (sync_.AddAccountTransferRecord(entry, all_account_transfers_received).size() == 1U)
+      metadata_.stored_total_size += size;
   }
 
   for (int i(0); i != proto_pmid_account_details.serialised_unresolved_entry_size(); ++i) {
     PmidManagerUnresolvedEntry entry(PmidManagerUnresolvedEntry::serialised_type(
         NonEmptyString(proto_pmid_account_details.serialised_unresolved_entry(i))));
     if (!sync_.AddUnresolvedEntry(entry).empty() && entry.messages_contents.front().value)
-      pmid_record_.stored_total_size += *entry.messages_contents.front().value;
+      metadata_.stored_total_size += *entry.messages_contents.front().value;
   }
 
   return all_account_transfers_received;
@@ -181,8 +180,7 @@ NonEmptyString PmidAccount::GetSyncData() {
   return NonEmptyString(proto_unresolved_entries.SerializeAsString());
 }
 
-std::vector<PmidManagerUnresolvedEntry> PmidAccount::ApplySyncData(const NonEmptyString& serialised_unresolved_entries) {
-  std::vector<PmidManagerUnresolvedEntry> resolved_entries;
+void PmidAccount::ApplySyncData(const NonEmptyString& serialised_unresolved_entries) {
   protobuf::UnresolvedEntries proto_unresolved_entries;
   if (!proto_unresolved_entries.ParseFromString(serialised_unresolved_entries.string()))
     ThrowError(CommonErrors::parsing_error);
@@ -190,15 +188,13 @@ std::vector<PmidManagerUnresolvedEntry> PmidAccount::ApplySyncData(const NonEmpt
   for (int i(0); i != proto_unresolved_entries.serialised_unresolved_entry_size(); ++i) {
     PmidManagerUnresolvedEntry entry(PmidManagerUnresolvedEntry::serialised_type(
         NonEmptyString(proto_unresolved_entries.serialised_unresolved_entry(i))));
-    resolved_entries = sync_.AddUnresolvedEntry(entry);
-    if (!resolved_entries.empty() && entry.messages_contents.front().value) {
+    if (!sync_.AddUnresolvedEntry(entry).empty() && entry.messages_contents.front().value) {
       if (entry.key.second == nfs::MessageAction::kPut)
-        pmid_record_.stored_total_size += *entry.messages_contents.front().value;
+        metadata_.stored_total_size += *entry.messages_contents.front().value;
       else
-        pmid_record_.stored_total_size -= *entry.messages_contents.front().value;
+        metadata_.stored_total_size -= *entry.messages_contents.front().value;
     }
   }
-  return resolved_entries;
 }
 
 void PmidAccount::ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& new_node) {
@@ -207,12 +203,21 @@ void PmidAccount::ReplaceNodeInSyncList(const NodeId& old_node, const NodeId& ne
   sync_.ReplaceNode(old_node, new_node);
 }
 
-void PmidAccount::IncrementSyncAttempts() {
-  sync_.IncrementSyncAttempts();
+PmidManagerMetadata PmidAccount::GetMetadata() {
+  return metadata_;
+
 }
 
-PmidManagerMetadata PmidAccount::GetMetadata() {
-  return pmid_record_;
+PmidAccount::name_type PmidAccount::name() const {
+  return pmid_name_;
+}
+
+PmidAccount::PmidNodeStatus PmidAccount::pmid_node_status() const {
+  return pmid_node_status_;
+}
+
+int64_t PmidAccount::total_data_stored_by_pmids() const {
+  return metadata_.stored_total_size;
 }
 
 }  // namespace vault

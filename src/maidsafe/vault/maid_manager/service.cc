@@ -103,31 +103,31 @@ T Merge(std::vector<T> values) {
 
 PmidManagerMetadata MergePmidTotals(std::shared_ptr<GetPmidTotalsOp> op_data) {
   // Remove invalid results
-  //op_data->pmid_records.erase(
-  //    std::remove_if(std::begin(op_data->pmid_records),
-  //                   std::end(op_data->pmid_records),
-  //                   [&op_data](const PmidManagerMetadata& pmid_record) {
-  //                       return pmid_record.pmid_name->IsInitialised() &&
-  //                              pmid_record.pmid_name == op_data->kPmidAccountName;
-  //                   }),
-  //    std::end(op_data->pmid_records));
+  op_data->pmid_records.erase(
+      std::remove_if(std::begin(op_data->pmid_records),
+                     std::end(op_data->pmid_records),
+                     [&op_data](const PmidManagerMetadata& pmid_record) {
+                         return pmid_record.pmid_name->IsInitialised() &&
+                                pmid_record.pmid_name == op_data->kPmidAccountName;
+                     }),
+      std::end(op_data->pmid_records));
 
-  //std::vector<int64_t> all_stored_counts, all_stored_total_size, all_lost_count,
-  //                     all_lost_total_size, all_claimed_available_size;
-  //for (const auto& pmid_record : op_data->pmid_records) {
-  //  all_stored_counts.push_back(pmid_record.stored_count);
-  //  all_stored_total_size.push_back(pmid_record.stored_total_size);
-  //  all_lost_count.push_back(pmid_record.lost_count);
-  //  all_lost_total_size.push_back(pmid_record.lost_total_size);
-  //  all_claimed_available_size.push_back(pmid_record.claimed_available_size);
-  //}
+  std::vector<int64_t> all_stored_counts, all_stored_total_size, all_lost_count,
+                       all_lost_total_size, all_claimed_available_size;
+  for (const auto& pmid_record : op_data->pmid_records) {
+    all_stored_counts.push_back(pmid_record.stored_count);
+    all_stored_total_size.push_back(pmid_record.stored_total_size);
+    all_lost_count.push_back(pmid_record.lost_count);
+    all_lost_total_size.push_back(pmid_record.lost_total_size);
+    all_claimed_available_size.push_back(pmid_record.claimed_available_size);
+  }
 
   PmidManagerMetadata merged(op_data->kPmidAccountName);
-  //merged.stored_count = Merge(all_stored_counts);
-  //merged.stored_total_size = Merge(all_stored_total_size);
-  //merged.lost_count = Merge(all_lost_count);
-  //merged.lost_total_size = Merge(all_lost_total_size);
-  //merged.claimed_available_size = Merge(all_claimed_available_size);
+  merged.stored_count = Merge(all_stored_counts);
+  merged.stored_total_size = Merge(all_stored_total_size);
+  merged.lost_count = Merge(all_lost_count);
+  merged.lost_total_size = Merge(all_lost_total_size);
+  merged.claimed_available_size = Merge(all_claimed_available_size);
   return merged;
 }
 

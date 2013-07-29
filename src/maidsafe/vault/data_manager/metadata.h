@@ -23,7 +23,7 @@ License.
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
 
-#include "maidsafe/vault/manager_db.h"
+//#include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/types.h"
@@ -37,7 +37,7 @@ class Metadata {
  public:
   // This constructor reads the existing element or creates a new one if it doesn't already exist.
   Metadata(const DataNameVariant& data_name,
-           ManagerDb<DataManagerKey, DataManagerValue>* metadata_db,
+           ManagerDb<DataManager::name_type>* metadata_db,
            int32_t data_size);
   // This constructor reads the existing element or throws if it doesn't already exist.
   Metadata(const DataNameVariant& data_name,
