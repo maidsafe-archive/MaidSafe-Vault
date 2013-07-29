@@ -30,6 +30,7 @@ License.
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/message_wrapper.h"
 #include "maidsafe/nfs/types.h"
+#include "maidsafe/nfs/reply.h"
 
 #include "maidsafe/vault/sync.pb.h"
 
@@ -57,7 +58,7 @@ class SyncPolicy {
   template<typename UnresolvedAction>
   void Sync(const UnresolvedAction& unresolved_action) {
     protobuf::Sync proto_sync;
-    proto_sync.set_action_type(typename UnresolvedAction::Action::kActionId);
+    proto_sync.set_action_type(UnresolvedAction::Action::kActionId);
     proto_sync.set_serialised_unresolved_action(unresolved_action.Serialise());
     nfs::Message::Data data(Identity(), proto_sync.SerializeAsString(),
                             nfs::MessageAction::kSynchronise);

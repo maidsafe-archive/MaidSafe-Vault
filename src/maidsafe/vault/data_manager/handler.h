@@ -27,7 +27,7 @@ License.
 #include "maidsafe/vault/data_manager/value.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/data_manager/helpers.h"
-#include "maidsafe/vault/manager_db.h"
+//#include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/data_manager/merge_policy.h"
 #include "maidsafe/vault/sync.h"

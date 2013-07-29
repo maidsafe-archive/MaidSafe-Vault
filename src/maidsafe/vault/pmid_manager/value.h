@@ -25,8 +25,11 @@ namespace vault {
 class PmidManagerValue {
  public:
   PmidManagerValue();
-  explicit PmidManagerValue(int32_t size);
+  explicit PmidManagerValue(const int32_t& size);
   explicit PmidManagerValue(const std::string& serialised_pmid_manager_value);
+  PmidManagerValue(const PmidManagerValue& other);
+  PmidManagerValue(PmidManagerValue&& other);
+  PmidManagerValue& operator=(PmidManagerValue other);
 
   std::string Serialise() const;
 

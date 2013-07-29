@@ -24,8 +24,7 @@ License.
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
-#include "maidsafe/vault/account_db.h"
-#include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 
 

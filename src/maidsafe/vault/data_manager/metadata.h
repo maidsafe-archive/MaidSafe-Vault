@@ -23,7 +23,7 @@ License.
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
 
-#include "maidsafe/vault/manager_db.h"
+//#include "maidsafe/vault/manager_db.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/types.h"

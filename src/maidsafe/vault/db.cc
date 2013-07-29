@@ -26,7 +26,7 @@ namespace maidsafe {
 
 namespace vault {
 
-const int Db::kPrefixWidth_(2);
+// const int Db::kPrefixWidth_(2);
 
 }  // namespace vault
 

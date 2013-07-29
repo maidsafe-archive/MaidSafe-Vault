@@ -38,6 +38,17 @@ PmidManagerValue::PmidManagerValue(const std::string& serialised_pmid_manager_va
   }
 }
 
+PmidManagerValue::PmidManagerValue(const PmidManagerValue& other)
+    : size_(other.size_) {}
+
+PmidManagerValue::PmidManagerValue(PmidManagerValue&& other)
+    : size_(std::move(other.size_)) {}
+
+PmidManagerValue& PmidManagerValue::operator=(PmidManagerValue other) {
+  swap(*this, other);
+  return *this;
+}
+
 std::string PmidManagerValue::Serialise() const {
   protobuf::PmidManagerValue pmid_manager_value_proto;
   pmid_manager_value_proto.set_size(size_);

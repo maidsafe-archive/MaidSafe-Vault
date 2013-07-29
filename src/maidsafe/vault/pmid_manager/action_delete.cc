@@ -13,9 +13,9 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/maid_manager/action_delete.h"
+#include "maidsafe/vault/pmid_manager/action_delete.h"
 
-#include "maidsafe/vault/maid_manager/value.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 
 
 namespace maidsafe {
@@ -26,7 +26,7 @@ const nfs::MessageAction ActionPmidManagerDelete::kActionId(nfs::MessageAction::
 void ActionPmidManagerDelete::operator()(boost::optional<PmidManagerValue>& value) const {
   if (!value)
     return;
-  value.reset(PmidManagerValue());
+  value.reset();
 }
 
 }  // namespace vault
