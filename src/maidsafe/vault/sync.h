@@ -32,6 +32,7 @@ License.
 #include "maidsafe/vault/maid_manager/action_put.h"
 #include "maidsafe/vault/maid_manager/action_register_unregister_pmid.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.h"
 
 
 namespace maidsafe {
@@ -119,7 +120,23 @@ void Sync<MaidManager::UnresolvedUnregisterPmid>::AddUnresolvedAction(
     GroupDb<MaidManager>& database,
     const MaidManager::UnresolvedUnregisterPmid& unresolved_action);
 
+template<>
+template<>
+void Sync<PmidManager::UnresolvedPut>::AddUnresolvedAction(
+    GroupDb<PmidManager>& database,
+    const PmidManager::UnresolvedPut& unresolved_action);
 
+template<>
+template<>
+void Sync<PmidManager::UnresolvedDelete>::AddUnresolvedAction(
+    GroupDb<PmidManager>& database,
+    const PmidManager::UnresolvedDelete& unresolved_action);
+
+template<>
+template<>
+void Sync<PmidManager::UnresolvedGetPmidTotals>::AddUnresolvedAction(
+    GroupDb<PmidManager>& database,
+    const PmidManager::UnresolvedGetPmidTotals& unresolved_action);
 
 // ==================== Implementation =============================================================
 namespace detail {

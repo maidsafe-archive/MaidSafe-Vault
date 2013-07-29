@@ -84,6 +84,36 @@ void Sync<MaidManager::UnresolvedUnregisterPmid>::AddUnresolvedAction(
     database.Commit(resolved_action->key.group_name, resolved_action->action);
 }
 
+template<>
+template<>
+void Sync<PmidManager::UnresolvedPut>::AddUnresolvedAction(
+    GroupDb<PmidManager>& database,
+    const PmidManager::UnresolvedPut& unresolved_action) {
+  auto resolved_action(AddAction(unresolved_action));
+  if (resolved_action)
+    database.Commit(resolved_action->key, resolved_action->action);
+}
+
+template<>
+template<>
+void Sync<PmidManager::UnresolvedDelete>::AddUnresolvedAction(
+    GroupDb<PmidManager>& database,
+    const PmidManager::UnresolvedDelete& unresolved_action) {
+  auto resolved_action(AddAction(unresolved_action));
+  if (resolved_action)
+    database.Commit(resolved_action->key, resolved_action->action);
+}
+
+template<>
+template<>
+void Sync<PmidManager::UnresolvedGetPmidTotals>::AddUnresolvedAction(
+    GroupDb<PmidManager>& database,
+    const PmidManager::UnresolvedGetPmidTotals& unresolved_action) {
+  auto resolved_action(AddAction(unresolved_action));
+  if (resolved_action)
+    database.Commit(resolved_action->key.group_name, resolved_action->action);
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe
