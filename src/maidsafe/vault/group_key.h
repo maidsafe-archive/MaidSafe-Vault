@@ -39,8 +39,7 @@ class GroupDb;
 template<typename GroupName>
 struct GroupKey {
   typedef GroupName GroupNameType;
-  template<typename Data>
-  GroupKey(const GroupName& group_name_in, const typename Data::name_type& name_in);
+  GroupKey(const GroupName& group_name_in, const Identity& name_in, DataTagValue type_in);
   explicit GroupKey(const std::string& serialised_group_key);
   GroupKey(const GroupKey& other);
   GroupKey(GroupKey&& other);
@@ -66,12 +65,12 @@ struct GroupKey {
 
 
 template<typename GroupName>
-template<typename Data>
 GroupKey<GroupName>::GroupKey(const GroupName& group_name_in,
-                              const typename Data::name_type& name_in)
+                              const Identity& name_in,
+                              DataTagValue type_in)
     : group_name(group_name_in),
-      name(name_in.data),
-      type(Data::type_enum_value()) {}
+      name(name_in),
+      type(type_in) {}
 
 template<typename GroupName>
 GroupKey<GroupName>::GroupKey(const std::string& serialised_group_key)

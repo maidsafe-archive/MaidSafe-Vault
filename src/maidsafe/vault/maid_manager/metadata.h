@@ -34,6 +34,7 @@ struct PmidManagerMetadata;
 
 class MaidManagerMetadata {
  public:
+  enum class Status { kOk, kLowSpace, kNoSpace };
   MaidManagerMetadata();
   MaidManagerMetadata(int64_t total_put_data, const std::vector<PmidTotals>& pmid_totals);
   MaidManagerMetadata(const MaidManagerMetadata& other);
@@ -43,6 +44,7 @@ class MaidManagerMetadata {
 
   std::string Serialise() const;
 
+  Status AllowPut(int32_t cost) const;
   void PutData(int32_t cost);
   void DeleteData(int32_t cost);
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);

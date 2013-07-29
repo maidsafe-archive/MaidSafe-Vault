@@ -39,10 +39,7 @@ template<typename Persona>
 class ManagerDb;
 
 struct Key {
-  template<typename Data>
-  explicit Key(const typename Data::name_type& name_in)
-      : name(name_in.data),
-        type(Data::type_enum_value()) {}
+  Key(const Identity& name_in, DataTagValue type_in);
   explicit Key(const std::string& serialised_key);
   Key(const Key& other);
   Key(Key&& other);

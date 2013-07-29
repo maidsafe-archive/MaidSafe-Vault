@@ -64,6 +64,18 @@ MaidManagerMetadata::MaidManagerMetadata(const std::string& serialised_metadata_
     ThrowError(CommonErrors::invalid_parameter);
 }
 
+MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(int32_t cost) const {
+  int64_t total_claimed_available_size_by_pmids(0);
+  for (const auto& pmid_total : pmid_totals_)
+    total_claimed_available_size_by_pmids += pmid_total.pmid_metadata.claimed_available_size;
+
+  if (total_claimed_available_size_by_pmids < total_put_data_ + cost)
+    return Status::kNoSpace;
+
+  return ((total_claimed_available_size_by_pmids / 100) * 3 < total_put_data_ + cost) ?
+         Status::kLowSpace : Status::kOk;
+}
+
 void MaidManagerMetadata::PutData(int32_t cost) {
   total_put_data_ += cost;
 }
