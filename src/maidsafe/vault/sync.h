@@ -18,11 +18,10 @@ License.
 
 #include <algorithm>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <utility>
 #include <vector>
-
-#include "boost/optional/optional.hpp"
 
 #include "maidsafe/common/node_id.h"
 
@@ -72,7 +71,7 @@ class Sync {
   Sync(Sync&&);
   Sync(const Sync&);
   Sync& operator=(Sync other);
-  boost::optional<UnresolvedAction> AddAction(const UnresolvedAction& unresolved_action,
+  std::unique_ptr<UnresolvedAction> AddAction(const UnresolvedAction& unresolved_action,
                                               bool merge = true);
   bool CanBeErased(const UnresolvedAction& unresolved_action) const;
 
@@ -172,10 +171,10 @@ void Sync<UnresolvedAction>::AddLocalAction(const UnresolvedAction& unresolved_a
 }
 
 template<typename UnresolvedAction>
-boost::optional<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
+std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
     const UnresolvedAction& unresolved_action,
     bool merge) {
-  boost::optional<UnresolvedAction> resolved_action;
+  std::unique_ptr<UnresolvedAction> resolved_action;
   auto found(std::begin(unresolved_actions_));
   for (;;) {
     found = std::find_if(found,
@@ -202,14 +201,14 @@ boost::optional<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
     }
 
     if (merge && detail::IsResolved(*found)) {
-      resolved_action.reset(*found);
+      resolved_action.reset(new UnresolvedAction(*found));
       break;
     }
 
     ++found;
   }
 
-  return resolved_action;
+  return std::move(resolved_action);
 }
 
 template<typename UnresolvedAction>

@@ -23,6 +23,7 @@ License.
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
+#include "boost/optional/optional.hpp"
 
 #include "leveldb/db.h"
 
