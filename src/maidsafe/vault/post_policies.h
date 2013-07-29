@@ -131,13 +131,13 @@ class PmidManagerMiscellaneousPolicy {
 
 class PmidNodeMiscellaneousPolicy {
  public:
-  PmidNodeMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid,
-                              const routing::ResponseFunctor& callback)
+  PmidNodeMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
       : routing_(routing),
         kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()),
         kPmid_(pmid) {}
 
-  void RequestPmidNodeAccount(const passport::PublicPmid::name_type& pmid_name) {
+  void RequestPmidNodeAccount(const passport::PublicPmid::name_type& pmid_name,
+                              const routing::ResponseFunctor& callback) {
     nfs::Message::Data data(DataTagValue::kPmidValue, pmid_name.data, NonEmptyString(),
                             nfs::MessageAction::kGetPmidAccount);
     nfs::Message message(nfs::Persona::kPmidNode, kSource_, data, pmid_name);

@@ -96,7 +96,7 @@ void Db<Key, Value>::Commit(const Key& key,
   bool value_found_in_db(value);
   functor(value);
   if(value)
-    Put(KvPair(key, value));
+    Put(std::make_pair(key, value));
   else if (value_found_in_db)
     Delete(key);
 }
@@ -119,10 +119,10 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
           assert(check_holder_result.new_holders.size() == 1);
           auto found_itr = transfer_info.find(check_holder_result.new_holders.at(0));
           if (found_itr != transfer_info.end()) {
-            found_itr->second.push_back(KvPair(key, Value(db_iter->value));
+            found_itr->second.push_back(std::make_pair(key, Value(db_iter->value)));
           } else {  // create
             std::vector<KvPair> kv_pair;
-            kv_pair.push_back(KvPair(key, Value(db_iter->value)));
+            kv_pair.push_back(std::make_pair(key, Value(db_iter->value)));
             transfer_info.insert(std::make_pair(check_holder_result.new_holders.at(0), kv_pair));
           }
         }

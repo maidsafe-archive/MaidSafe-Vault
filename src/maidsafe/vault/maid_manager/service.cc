@@ -248,7 +248,7 @@ void MaidManagerService::HandlePut<WorldDirectory>(const nfs::Message& message,
 // =============== Pmid registration ===============================================================
 
 void MaidManagerService::HandlePmidRegistration(const nfs::Message& message,
-                                                      const routing::ReplyFunctor& reply_functor) {
+                                                const routing::ReplyFunctor& reply_functor) {
   NodeId source_id(message.source().node_id);
 
   // TODO(Fraser#5#): 2013-04-22 - Validate Message signature.  Currently the Message does not have
@@ -365,51 +365,37 @@ void MaidManagerService::HandleSync(const nfs::Message& message) {
     case ActionCreateAccount::kActionId: {
       MaidManager::UnresolvedCreateAccount unresolved_action(
           proto_sync.serialised_unresolved_action(), message.source().node_id, routing_.kNodeId());
-      auto resolveds(sync_create_accounts_.AddUnresolvedAction(group_db_, unresolved_action));
-      for (const auto& resolved_action : resolveds) {
-        MaidManager::Metadata metadata;
-        group_db_.AddGroup(resolved_action.key.group_name, metadata);
-      }
+      sync_create_accounts_.AddUnresolvedAction(group_db_, unresolved_action);
       break;
     }
     case ActionRemoveAccount::kActionId: {
       MaidManager::UnresolvedRemoveAccount unresolved_action(
           proto_sync.serialised_unresolved_action(), message.source().node_id, routing_.kNodeId());
-      auto resolveds(sync_remove_accounts_.AddUnresolvedAction(group_db_, unresolved_action));
-      for (const auto& resolved_action : resolveds)
-        group_db_.DeleteGroup(resolved_action.key.group_name);
+      sync_remove_accounts_.AddUnresolvedAction(group_db_, unresolved_action);
       break;
     }
     case ActionMaidManagerPut::kActionId: {
       MaidManager::UnresolvedPut unresolved_action(
           proto_sync.serialised_unresolved_action(), message.source().node_id, routing_.kNodeId());
-      auto resolveds(sync_puts_.AddUnresolvedAction(group_db_, unresolved_action));
-      for (const auto& resolved_action : resolveds)
-        group_db_.Commit(resolved_action.key, resolved_action.action);
+      sync_puts_.AddUnresolvedAction(group_db_, unresolved_action);
       break;
     }
     case ActionMaidManagerDelete::kActionId: {
       MaidManager::UnresolvedDelete unresolved_action(
           proto_sync.serialised_unresolved_action(), message.source().node_id, routing_.kNodeId());
-      auto resolveds(sync_deletes_.AddUnresolvedAction(group_db_, unresolved_action));
-      for (const auto& resolved_action : resolveds)
-        group_db_.Commit(resolved_action.key, resolved_action.action);
+      sync_deletes_.AddUnresolvedAction(group_db_, unresolved_action);
       break;
     }
     case ActionRegisterPmid::kActionId: {
       MaidManager::UnresolvedRegisterPmid unresolved_action(
           proto_sync.serialised_unresolved_action(), message.source().node_id, routing_.kNodeId());
-      auto resolveds(sync_register_pmids_.AddUnresolvedAction(group_db_, unresolved_action));
-      for (const auto& resolved_action : resolveds)
-        group_db_.Commit(resolved_action.key.group_name, resolved_action.action);
+      sync_register_pmids_.AddUnresolvedAction(group_db_, unresolved_action);
       break;
     }
     case ActionUnregisterPmid::kActionId: {
       MaidManager::UnresolvedUnregisterPmid unresolved_action(
           proto_sync.serialised_unresolved_action(), message.source().node_id, routing_.kNodeId());
-      auto resolveds(sync_unregister_pmids_.AddUnresolvedAction(group_db_, unresolved_action));
-      for (const auto& resolved_action : resolveds)
-        group_db_.Commit(resolved_action.key.group_name, resolved_action.action);
+      sync_unregister_pmids_.AddUnresolvedAction(group_db_, unresolved_action);
       break;
     }
     default: {

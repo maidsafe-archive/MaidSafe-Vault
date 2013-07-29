@@ -33,7 +33,8 @@ namespace maidsafe {
 
 namespace vault {
 
-class Db;
+template<typename Persona>
+class GroupDb;
 
 template<typename GroupName>
 struct GroupKey {
@@ -50,7 +51,8 @@ struct GroupKey {
   Identity name;
   DataTagValue type;
 
-  friend class Db;
+  template<typename Persona>
+  friend class GroupDb;
 
  private:
   typedef maidsafe::detail::BoundedString<

@@ -16,6 +16,7 @@ License.
 #ifndef MAIDSAFE_VAULT_GROUP_DB_H_
 #define MAIDSAFE_VAULT_GROUP_DB_H_
 
+#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -111,10 +112,15 @@ void GroupDb<Persona>::AddGroup(const GroupName& group_name, const Metadata& met
   if (group_map_.size() == kGroupsLimit - 1)
     ThrowError(VaultErrors::failed_to_handle_request);
   GroupId group_id(RandomInt32() % kGroupsLimit);
-  while (group_map_.find(group_id) != group_map_.end())
+  while (std::any_of(std::begin(group_map_),
+                     std::end(group_map_),
+                     [&group_id](const std::pair<GroupName, GroupId>& element) {
+                         return group_id == element.second;
+                     })) {
     group_id = RandomInt32() % kGroupsLimit;
+  }
   // TODO Consider using batch operation here
-  if (!(group_map_.insert(std::make_pair<GroupName, GroupId>(group_name, group_id))).second)
+  if (!(group_map_.insert(std::make_pair(group_name, group_id))).second)
     ThrowError(VaultErrors::failed_to_handle_request); //TODO change to account already exist!
   try {
     PutMetadata(group_name, metadata);
@@ -150,7 +156,7 @@ void GroupDb<Persona>::Commit(
   functor(metadata, value);
   // TODO Consider using batch operation here
   if(value)
-    Put(KvPair(key, value));
+    Put(std::make_pair(key, value));
   else
     Delete(key);
   PutMetadata(key.group_name, metadata);
