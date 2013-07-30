@@ -47,6 +47,7 @@ License.
 #include "maidsafe/vault/maid_manager/action_delete.h"
 #include "maidsafe/vault/maid_manager/action_register_unregister_pmid.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
+#include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 
 
@@ -61,7 +62,6 @@ namespace vault {
 class AccountDb;
 struct PmidRegistrationOp;
 struct GetPmidTotalsOp;
-class MaidManagerMetadata;
 
 class MaidManagerService {
  public:
@@ -90,28 +90,11 @@ class MaidManagerService {
   template<typename Data>
   void HandlePut(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
 
-  // Only Maid and Anmaid can create account; for all others this is a no-op.
-  typedef std::true_type AllowedAccountCreationType;
-  typedef std::false_type DisallowedAccountCreationType;
-  template<typename Data>
-  void CreateAccount(const MaidName& account_name, AllowedAccountCreationType);
-  template<typename Data>
-  void CreateAccount(const MaidName& /*account_name*/, DisallowedAccountCreationType) {}
-
   template<typename Data>
   void HandleDelete(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  typedef std::true_type UniqueDataType;
-  template<typename Data>
-  void SendEarlySuccessReply(const nfs::Message& /*message*/,
-                             const routing::ReplyFunctor& /*reply_functor*/,
-                             bool /*low_space*/,
-                             UniqueDataType) {}
-  typedef std::false_type NonUniqueDataType;
-  template<typename Data>
-  void SendEarlySuccessReply(const nfs::Message& message,
-                             const routing::ReplyFunctor& reply_functor,
-                             bool low_space,
-                             NonUniqueDataType);
+
+  MaidManagerMetadata::Status AllowPut(const MaidName& account_name, int32_t cost);
+
   void SendReplyAndAddToAccumulator(const nfs::Message& message,
                                     const routing::ReplyFunctor& reply_functor,
                                     const nfs::Reply& reply);
@@ -119,16 +102,15 @@ class MaidManagerService {
   template<typename Data>
   void HandlePutResult(const nfs::Reply& overall_result,
                        const nfs::Message& message,
-                       routing::ReplyFunctor client_reply_functor,
-                       bool low_space,
-                       UniqueDataType);
+                       routing::ReplyFunctor client_reply_functor);
 
+  // Only Maid and Anmaid can create account; for all others this is a no-op.
+  typedef std::true_type AllowedAccountCreationType;
+  typedef std::false_type DisallowedAccountCreationType;
   template<typename Data>
-  void HandlePutResult(const nfs::Reply& overall_result,
-                       const nfs::Message& message,
-                       routing::ReplyFunctor client_reply_functor,
-                       bool low_space,
-                       NonUniqueDataType);
+  void CreateAccount(const MaidName& account_name, AllowedAccountCreationType);
+  template<typename Data>
+  void CreateAccount(const MaidName& /*account_name*/, DisallowedAccountCreationType) {}
 
   template<typename Data, nfs::MessageAction action>
   void AddLocalUnresolvedActionThenSync(const nfs::Message& message, int32_t cost);
@@ -149,6 +131,7 @@ class MaidManagerService {
   // =============== Sync ==========================================================================
   void DoSync();
   void HandleSync(const nfs::Message& message);
+
 
   // =============== Account transfer ==============================================================
   void TransferAccount(const MaidName& account_name, const NodeId& new_node);
@@ -252,12 +235,24 @@ void MaidManagerService::HandlePut(const nfs::Message& message,
               typename Data::serialised_type(message.data().content));
     auto account_name(detail::GetMaidAccountName(message));
     auto estimated_cost(detail::EstimateCost(message.data()));
-    CreateAccount<Data>(account_name);
+    auto account_status(AllowPut(account_name, estimated_cost));
 
+    if (account_status == MaidManagerMetadata::Status::kNoSpace)
+      ThrowError(VaultErrors::not_enough_space);
+    if (account_status == MaidManagerMetadata::Status::kLowSpace)
+      UpdatePmidTotals(account_name);
 
+    auto put_op(std::make_shared<nfs::OperationOp>(
+        kPutRepliesSuccessesRequired_,
+        [this, message, reply_functor, low_space](nfs::Reply overall_result) {
+            this->HandlePutResult<Data>(overall_result, message, reply_functor);
+        }));
 
-
-
+    nfs_.Put(data,
+             message.pmid_node(),
+             [put_op](std::string serialised_reply) {
+                 nfs::HandleOperationReply(put_op, serialised_reply);
+             });
   }
   catch(const maidsafe_error& error) {
     LOG(kWarning) << error.what();
@@ -284,12 +279,6 @@ void MaidManagerService::HandlePut<WorldDirectory>(const nfs::Message& message,
                                                    const routing::ReplyFunctor& reply_functor);
 
 template<typename Data>
-void MaidManagerService::CreateAccount(const MaidName& account_name, AllowedAccountCreationType) {
-  sync_create_accounts_.AddLocalAction();
-  DoSync();
-}
-
-template<typename Data>
 void MaidManagerService::HandleDelete(const nfs::Message& message,
                                       const routing::ReplyFunctor& reply_functor) {
   SendReplyAndAddToAccumulator(message, reply_functor, nfs::Reply(CommonErrors::success));
@@ -310,30 +299,32 @@ void MaidManagerService::HandleDelete(const nfs::Message& message,
   }
 }
 
-template<typename Data>
-void MaidManagerService::SendEarlySuccessReply(const nfs::Message& message,
-                                               const routing::ReplyFunctor& reply_functor,
-                                               bool low_space,
-                                               NonUniqueDataType) {
-  nfs::Reply reply(CommonErrors::success);
-  if (low_space)
-    reply = nfs::Reply(VaultErrors::low_space);
-  SendReplyAndAddToAccumulator(message, reply_functor, reply);
+MaidManagerMetadata::Status MaidManagerService::AllowPut(const MaidName& account_name,
+                                                         int32_t cost) {
+  auto metadata(group_db_.GetMetadata(account_name));
+  if (metadata)
+    return metadata->AllowPut(cost);
+  // If A/C doesn't exist, disallow any Puts with non-zero cost.  Effectively blocks client from
+  // Putting data until A/C has been successfully created.
+  return cost ? MaidManagerMetadata::Status::kNoSpace : MaidManagerMetadata::Status::kOk;
 }
 
 template<typename Data>
 void MaidManagerService::HandlePutResult(const nfs::Reply& overall_result,
                                          const nfs::Message& message,
-                                         routing::ReplyFunctor client_reply_functor,
-                                         bool low_space,
-                                         UniqueDataType) {
+                                         routing::ReplyFunctor client_reply_functor) {
   if (overall_result.IsSuccess()) {
+    protobuf::Cost proto_cost;
+    if (!proto_cost.ParseFromString(overall_result.data().string())) {
+      return SendReplyAndAddToAccumulator(message, client_reply_functor,
+                                          nfs::Reply(CommonErrors::parsing_error));
+    }
     nfs::Reply reply(CommonErrors::success);
     if (low_space)
       reply = nfs::Reply(VaultErrors::low_space);
     AddLocalUnresolvedActionThenSync<Data, nfs::MessageAction::kPut>(
         message,
-        detail::EstimateCost(message.data()));
+        proto_cost.cost());
     SendReplyAndAddToAccumulator(message, client_reply_functor, reply);
   } else {
     SendReplyAndAddToAccumulator(message, client_reply_functor, overall_result);
@@ -341,22 +332,9 @@ void MaidManagerService::HandlePutResult(const nfs::Reply& overall_result,
 }
 
 template<typename Data>
-void MaidManagerService::HandlePutResult(const nfs::Reply& overall_result,
-                                         const nfs::Message& message,
-                                         routing::ReplyFunctor /*client_reply_functor*/,
-                                         bool /*low_space*/,
-                                         NonUniqueDataType) {
-  try {
-    if (overall_result.IsSuccess()) {
-      protobuf::Cost proto_cost;
-      proto_cost.ParseFromString(overall_result.data().string());
-      // TODO(Fraser#5#): 2013-05-09 - The client's reply should only be sent *after* this call.
-      AddLocalUnresolvedActionThenSync<Data, nfs::MessageAction::kPut>(message, proto_cost.cost());
-    }
-  }
-  catch(const std::exception& e) {
-    LOG(kError) << "Failed to Handle Put result: " << e.what();
-  }
+void MaidManagerService::CreateAccount(const MaidName& account_name, AllowedAccountCreationType) {
+  sync_create_accounts_.AddLocalAction();
+  DoSync();
 }
 
 template<typename Data, nfs::MessageAction action>
@@ -368,7 +346,6 @@ void MaidManagerService::AddLocalUnresolvedActionThenSync(const nfs::Message& me
   maid_account_handler_.AddLocalUnresolvedAction(account_name, unresolved_action);
   DoSync(account_name);
 }
-
 
 template<typename Data>
 void MaidManagerService::HandleVersionMessage(const nfs::Message& message,
