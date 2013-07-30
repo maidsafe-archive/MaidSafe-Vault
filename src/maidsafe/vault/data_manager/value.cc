@@ -13,7 +13,7 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/data_manager/data_manager_value.h"
+#include "maidsafe/vault/data_manager/value.h"
 
 #include <string>
 
@@ -23,7 +23,6 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace delete_me {
 
 DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_value)
   : data_size_(),
@@ -107,8 +106,6 @@ bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
          lhs.online_pmids_ == rhs.online_pmids_ &&
          lhs.offline_pmids_ == rhs.offline_pmids_;
 }
-
-} // delete_me
 
 }  // namespace vault
 
