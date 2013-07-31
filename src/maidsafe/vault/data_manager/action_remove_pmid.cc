@@ -13,11 +13,11 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/data_manager/action_add_pmid.h"
+#include "maidsafe/vault/data_manager/action_remove_pmid.h"
 
 #include "maidsafe/common/error.h"
 
-#include "maidsafe/vault/data_manager/action_add_pmid.pb.h"
+#include "maidsafe/vault/data_manager/action_remove_pmid.pb.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/value.h"
 
@@ -26,40 +26,40 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(const PmidName& pmid_name)
+ActionDataManagerRemovePmid::ActionDataManagerRemovePmid(const PmidName& pmid_name)
     : kPmidName(pmid_name) {}
 
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(const std::string& serialised_action)
+ActionDataManagerRemovePmid::ActionDataManagerRemovePmid(const std::string& serialised_action)
     : kPmidName([&serialised_action]()->PmidName {
-        protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
-        if (!action_add_pmid_proto.ParseFromString(serialised_action))
+        protobuf::ActionDataManagerRemovePmid action_remove_pmid_proto;
+        if (!action_remove_pmid_proto.ParseFromString(serialised_action))
           ThrowError(CommonErrors::parsing_error);
-        return PmidName(Identity(action_add_pmid_proto.pmid_name()));
+        return PmidName(Identity(action_remove_pmid_proto.pmid_name()));
       }()) {}
 
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(const ActionDataManagerAddPmid& other)
+ActionDataManagerRemovePmid::ActionDataManagerRemovePmid(const ActionDataManagerRemovePmid& other)
     : kPmidName(other.kPmidName) {}
 
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other)
+ActionDataManagerRemovePmid::ActionDataManagerRemovePmid(ActionDataManagerRemovePmid&& other)
     : kPmidName(std::move(other.kPmidName)) {}
 
-std::string ActionDataManagerAddPmid::Serialise() const {
-  protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
-  action_add_pmid_proto.set_pmid_name(kPmidName);
-  return action_add_pmid_proto.SerializeAsString();
+std::string ActionDataManagerRemovePmid::Serialise() const {
+  protobuf::ActionDataManagerRemovePmid action_remove_pmid_proto;
+  action_remove_pmid_proto.set_pmid_name(kPmidName);
+  return action_remove_pmid_proto.SerializeAsString();
 }
 
-void ActionDataManagerAddPmid::operator()(boos::optional<DataManagerValue>& value) const {
+void ActionDataManagerRemovePmid::operator()(boos::optional<DataManagerValue>& value) const {
   if (!value)
-    value.reset(MaidManagerValue());
-  value->AddPmid(kPmidName);
+    ThrowError(CommonErrors::invalid_parameter);
+  value->RemovePmid(kPmidName);
 }
 
-bool operator==(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs) {
+bool operator==(const ActionDataManagerRemovePmid& lhs, const ActionDataManagerRemovePmid& rhs) {
   return lhs.kPmidName == rhs.kPmidName;
 }
 
-bool operator!=(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs) {
+bool operator!=(const ActionDataManagerRemovePmid& lhs, const ActionDataManagerRemovePmid& rhs) {
   return !operator==(lhs, rhs);
 }
 

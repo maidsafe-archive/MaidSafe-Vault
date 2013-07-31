@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACTION_ADD_PMID_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_ACTION_ADD_PMID_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACTION_REMOVE_PMID_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_ACTION_REMOVE_PMID_H_
 
 #include <cstdint>
 #include <string>
@@ -31,29 +31,29 @@ namespace vault {
 class MaidManagerMetadata;
 class MaidManagerValue;
 
-struct ActionDataManagerAddPmid {
-  explicit ActionDataManagerAddPmid(const PmidName& pmid_name);
-  explicit ActionDataManagerAddPmid(const std::string& serialised_action);
-  ActionDataManagerAddPmid(const ActionDataManagerAddPmid& other);
-  ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other);
+struct ActionDataManagerRemovePmid {
+  explicit ActionDataManagerRemovePmid(const PmidName& pmid_name);
+  explicit ActionDataManagerRemovePmid(const std::string& serialised_action);
+  ActionDataManagerRemovePmid(const ActionDataManagerRemovePmid& other);
+  ActionDataManagerRemovePmid(ActionDataManagerRemovePmid&& other);
   std::string Serialise() const;
 
   void operator()(boost::optional<DataManagerValue>& value) const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kAddPmid;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kRemovePmid;
   const PmidName kPmidName;
 
  private:
-  ActionDataManagerAddPmid();
-  ActionDataManagerAddPmid& operator=(ActionDataManagerAddPmid other);
+  ActionDataManagerRemovePmid();
+  ActionDataManagerRemovePmid& operator=(ActionDataManagerRemovePmid other);
 };
 
-bool operator==(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs);
+bool operator==(const ActionDataManagerRemovePmid& lhs, const ActionDataManagerRemovePmid& rhs);
 
-bool operator!=(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs);
+bool operator!=(const ActionDataManagerRemovePmid& lhs, const ActionDataManagerRemovePmid& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_ADD_PMID_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_REMOVE_PMID_H_

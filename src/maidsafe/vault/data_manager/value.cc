@@ -70,6 +70,8 @@ void DataManagerValue::Increamentsubscribers() {
 }
 
 void DataManagerValue::Decreamentsubscribers() {
+  if (subscribers_ <= 0)
+    ThrowError(CommonErrors::invalid_parameter);
   --subscribers_;
 }
 
