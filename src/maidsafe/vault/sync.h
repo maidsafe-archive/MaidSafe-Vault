@@ -45,11 +45,10 @@ namespace vault {
 template<typename UnresolvedAction>
 class Sync {
  public:
-  explicit Sync(const NodeId& this_node_id);
+  Sync();
   // This is called when receiving a Sync message from a peer or this node. If the
-  // unresolved_action becomes resolved then size() >= routing::Parameters::node_group_size -1
-  template<typename Database>
-  void AddUnresolvedAction(Database& database, const UnresolvedAction& unresolved_action);
+  // unresolved_action becomes resolved then it is returned, otherwise the return is null.
+  std::unique_ptr<UnresolvedAction> AddUnresolvedAction(const UnresolvedAction& unresolved_action);
   // This is called directly once an unresolved_action has been decided as valid in the Service, but before
   // syncing the unresolved unresolved_action to the peers.  This won't resolve the unresolved_action (even if it's the
   // last one we're waiting for) so that 'GetUnresolvedActions()' will return this one, allowing us
@@ -73,7 +72,7 @@ class Sync {
   Sync(const Sync&);
   Sync& operator=(Sync other);
   std::unique_ptr<UnresolvedAction> AddAction(const UnresolvedAction& unresolved_action,
-                                              bool merge = true);
+                                              bool merge);
   bool CanBeErased(const UnresolvedAction& unresolved_action) const;
 
   std::mutex mutex_;
@@ -82,61 +81,6 @@ class Sync {
 };
 
 
-
-// ==================== Specialisations ============================================================
-template<>
-template<>
-void Sync<MaidManager::UnresolvedCreateAccount>::AddUnresolvedAction(
-    GroupDb<MaidManager>& database,
-    const MaidManager::UnresolvedCreateAccount& unresolved_action);
-
-template<>
-template<>
-void Sync<MaidManager::UnresolvedRemoveAccount>::AddUnresolvedAction(
-    GroupDb<MaidManager>& database,
-    const MaidManager::UnresolvedRemoveAccount& unresolved_action);
-
-template<>
-template<>
-void Sync<MaidManager::UnresolvedPut>::AddUnresolvedAction(
-    GroupDb<MaidManager>& database,
-    const MaidManager::UnresolvedPut& unresolved_action);
-
-template<>
-template<>
-void Sync<MaidManager::UnresolvedDelete>::AddUnresolvedAction(
-    GroupDb<MaidManager>& database,
-    const MaidManager::UnresolvedDelete& unresolved_action);
-
-template<>
-template<>
-void Sync<MaidManager::UnresolvedRegisterPmid>::AddUnresolvedAction(
-    GroupDb<MaidManager>& database,
-    const MaidManager::UnresolvedRegisterPmid& unresolved_action);
-
-template<>
-template<>
-void Sync<MaidManager::UnresolvedUnregisterPmid>::AddUnresolvedAction(
-    GroupDb<MaidManager>& database,
-    const MaidManager::UnresolvedUnregisterPmid& unresolved_action);
-
-template<>
-template<>
-void Sync<PmidManager::UnresolvedPut>::AddUnresolvedAction(
-    GroupDb<PmidManager>& database,
-    const PmidManager::UnresolvedPut& unresolved_action);
-
-template<>
-template<>
-void Sync<PmidManager::UnresolvedDelete>::AddUnresolvedAction(
-    GroupDb<PmidManager>& database,
-    const PmidManager::UnresolvedDelete& unresolved_action);
-
-template<>
-template<>
-void Sync<PmidManager::UnresolvedGetPmidTotals>::AddUnresolvedAction(
-    GroupDb<PmidManager>& database,
-    const PmidManager::UnresolvedGetPmidTotals& unresolved_action);
 
 // ==================== Implementation =============================================================
 namespace detail {
@@ -180,7 +124,13 @@ bool IsResolvedOnAllPeers(const UnresolvedAction& unresolved_action) {
 
 
 template<typename UnresolvedAction>
-Sync<UnresolvedAction>::Sync(const NodeId& this_node_id) : mutex_(), unresolved_actions_() {}
+Sync<UnresolvedAction>::Sync() : mutex_(), unresolved_actions_() {}
+
+template<typename UnresolvedAction>
+std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddUnresolvedAction(
+    const UnresolvedAction& unresolved_action) {
+  return AddAction(unresolved_action, true);
+}
 
 template<typename UnresolvedAction>
 void Sync<UnresolvedAction>::AddLocalAction(const UnresolvedAction& unresolved_action) {
