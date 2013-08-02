@@ -21,22 +21,15 @@ namespace maidsafe {
 
 namespace vault {
 
-const VersionManager::Action ActionPutVersion::action_id(VersionManager::Action::kPut);
-
-ActionPutVersion::ActionPutVersion(const std::string& serialised_action)
-    : old_version([&serialised_action]()->StructuredDataVersions::VersionName {
-        protobuf::ActionPutVersion action_put_version_proto;
-        if (!action_put_version_proto.ParseFromString(serialised_action))
-          ThrowError(CommonErrors::parsing_error);
-        return StructuredDataVersions::VersionName(action_put_version_proto.old_version().index(),
-            ImmutableData::name_type(Identity(action_put_version_proto.old_version().id())));
-      }()),
-      new_version([&serialised_action]()->StructuredDataVersions::VersionName {
-        protobuf::ActionPutVersion action_put_version_proto;
-        action_put_version_proto.ParseFromString(serialised_action);
-        return StructuredDataVersions::VersionName(action_put_version_proto.new_version().index(),
-            ImmutableData::name_type(Identity(action_put_version_proto.new_version().id())));
-      }()) {}
+ActionPutVersion::ActionPutVersion(const std::string& serialised_action) {
+  protobuf::ActionPutVersion action_put_version_proto;
+  if (!action_put_version_proto.ParseFromString(serialised_action))
+    ThrowError(CommonErrors::parsing_error);
+  old_version = StructuredDataVersions::VersionName(
+                    action_put_version_proto.serialised_old_version);
+  new_version = StructuredDataVersions::VersionName(
+                    action_put_version_proto.serialised_new_version);
+}
 
 ActionPutVersion::ActionPutVersion(const ActionPutVersion& other)
     : old_version(other.old_version),
@@ -48,11 +41,13 @@ ActionPutVersion::ActionPutVersion(ActionPutVersion&& other)
 
 std::string ActionPutVersion::Serialise() const {
   protobuf::ActionPutVersion action_put_version_proto;
-  action_put_version_proto.mutable_old_version()->set_index(old_version.index);
-  action_put_version_proto.mutable_old_version()->set_id(old_version.id->string());
-  action_put_version_proto.mutable_new_version()->set_index(new_version.index);
-  action_put_version_proto.mutable_new_version()->set_id(new_version.id->string());
+  action_put_version_proto.set_serialised_old_version(old_version.Serialise());
+  action_put_version_proto.set_serialised_new_version(new_version.Serialise());
   return action_put_version_proto.SerializeAsString();
+}
+
+void ActionPutVersion::operator()(boost::optional<VersionManagerValue> value) const {
+  value->Put(old_version, new_version);
 }
 
 bool operator==(const ActionPutVersion& lhs, const ActionPutVersion& rhs) {
@@ -63,6 +58,8 @@ bool operator==(const ActionPutVersion& lhs, const ActionPutVersion& rhs) {
 bool operator!=(const ActionPutVersion& lhs, const ActionPutVersion& rhs) {
   return !operator==(lhs, rhs);
 }
+
+
 
 }  // namespace vault
 

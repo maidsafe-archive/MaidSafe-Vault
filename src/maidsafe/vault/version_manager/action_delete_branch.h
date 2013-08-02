@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_VERSION_H_
-#define MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_VERSION_H_
+#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_DELETE_BRANCH_H_
+#define MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_DELETE_BRANCH_H_
 
 #include <string>
 
@@ -28,32 +28,28 @@ namespace maidsafe {
 
 namespace vault {
 
-struct ActionPutVersion {
-  ActionPutVersion(const StructuredDataVersions::VersionName& old_version_in,
-                   const StructuredDataVersions::VersionName& new_version_in)
-      : old_version(old_version_in),
-        new_version(new_version_in) {}
-  explicit ActionPutVersion(const std::string& serialised_action);
-  ActionPutVersion(const ActionPutVersion& other);
-  ActionPutVersion(ActionPutVersion&& other);
+struct ActionDeleteBranch {
+  explicit ActionDeleteBranch(const std::string& serialised_action);
+  explicit ActionDeleteBranch(const StructuredDataVersions::VersionName& version_name);
 
   void operator()(boost::optional<VersionManagerValue> value) const;
 
   std::string Serialise() const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kPut;
-  const StructuredDataVersions::VersionName old_version, new_version;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kDelete;
 
  private:
-  ActionPutVersion();
-  ActionPutVersion& operator=(ActionPutVersion other);
+  ActionDeleteBranch();
+  ActionDeleteBranch& operator=(ActionDeleteBranch other);
+  StructuredDataVersions::VersionName version_name;
 };
 
-bool operator==(const ActionPutVersion& lhs, const ActionPutVersion& rhs);
-bool operator!=(const ActionPutVersion& lhs, const ActionPutVersion& rhs);
+bool operator==(const ActionDeleteBranch& lhs, const ActionDeleteBranch& rhs);
+bool operator!=(const ActionDeleteBranch& lhs, const ActionDeleteBranch& rhs);
+
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_VERSION_H_
+#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_DELETE_BRANCH_H_

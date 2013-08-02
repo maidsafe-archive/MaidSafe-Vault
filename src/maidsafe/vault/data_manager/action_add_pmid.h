@@ -49,7 +49,6 @@ struct ActionDataManagerAddPmid {
 };
 
 bool operator==(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs);
-
 bool operator!=(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs);
 
 }  // namespace vault

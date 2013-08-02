@@ -13,9 +13,34 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-package maidsafe.vault.protobuf;
+#include "maidsafe/vault/version_manager/action_get_version.h"
+#include "maidsafe/vault/version_manager/action_get_version.pb.h"
 
-message ActionPutVersion {
-  required bytes serialised_old_version = 1;
-  required bytes serialised_new_version = 2;
+
+namespace maidsafe {
+
+namespace vault {
+
+ActionGetVersion::ActionGetVersion() {}
+
+std::string ActionGetVersion::Serialise() const {
+  protobuf::ActionGetVersion action_get_version_proto;
+  return action_get_version_proto.SerializeAsString();
 }
+
+maidsafe_error ActionGetVersion::operator()(boost::optional<VersionManagerValue> value) const {
+  value->Get();
+}
+
+bool operator==(const ActionGetVersion& lhs, const ActionGetVersion& rhs) {
+  return true;
+}
+
+bool operator!=(const ActionGetVersion& lhs, const ActionGetVersion& rhs) {
+  return !operator==(lhs, rhs);
+}
+
+
+}  // namespace vault
+
+}  // namespace maidsafe

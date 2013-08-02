@@ -29,7 +29,7 @@ namespace vault {
 
 struct ActionDataManagerDeccrementSubscribers {
 
-  void operator()(boost::optional<PmidManagerValue>& value) const;
+  void operator()(boost::optional<DataManagerValue>& value) const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDecrementSubscribers;
 

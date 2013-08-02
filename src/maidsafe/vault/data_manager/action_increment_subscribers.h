@@ -33,7 +33,7 @@ struct ActionDataManagerIncrementSubscribers {
   ActionDataManagerIncrementSubscribers(const ActionDataManagerIncrementSubscribers& other);
   ActionDataManagerIncrementSubscribers(ActionDataManagerIncrementSubscribers&& other);
 
-  void operator()(boost::optional<PmidManagerValue>& value) const;
+  void operator()(boost::optional<DataManagerValue>& value) const;
 
   std::string Serialise() const;
 

@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_VERSION_H_
-#define MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_VERSION_H_
+#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_DELETE_BRANCH_UNTIL_FORK_H_
+#define MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_DELETE_BRANCH_UNTIL_FORK_H_
 
 #include <string>
 
@@ -28,32 +28,31 @@ namespace maidsafe {
 
 namespace vault {
 
-struct ActionPutVersion {
-  ActionPutVersion(const StructuredDataVersions::VersionName& old_version_in,
-                   const StructuredDataVersions::VersionName& new_version_in)
-      : old_version(old_version_in),
-        new_version(new_version_in) {}
-  explicit ActionPutVersion(const std::string& serialised_action);
-  ActionPutVersion(const ActionPutVersion& other);
-  ActionPutVersion(ActionPutVersion&& other);
+struct ActionDeleteBranchUntilFork {
+  explicit ActionDeleteBranchUntilFork(const std::string& serialised_action);
+  explicit ActionDeleteBranchUntilFork(const StructuredDataVersions::VersionName& version_name);
 
   void operator()(boost::optional<VersionManagerValue> value) const;
 
   std::string Serialise() const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kPut;
-  const StructuredDataVersions::VersionName old_version, new_version;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteBranchUntilFork;
+
+  friend bool operator==(const ActionDeleteBranchUntilFork& lhs,
+                         const ActionDeleteBranchUntilFork& rhs);
 
  private:
-  ActionPutVersion();
-  ActionPutVersion& operator=(ActionPutVersion other);
+  ActionDeleteBranchUntilFork();
+  ActionDeleteBranchUntilFork& operator=(ActionDeleteBranchUntilFork other);
+  StructuredDataVersions::VersionName version_name;
 };
 
-bool operator==(const ActionPutVersion& lhs, const ActionPutVersion& rhs);
-bool operator!=(const ActionPutVersion& lhs, const ActionPutVersion& rhs);
+bool operator==(const ActionDeleteBranchUntilFork& lhs, const ActionDeleteBranchUntilFork& rhs);
+bool operator!=(const ActionDeleteBranchUntilFork& lhs, const ActionDeleteBranchUntilFork& rhs);
+
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_VERSION_H_
+#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_DELETE_BRANCH_UNTIL_FORK_H_
