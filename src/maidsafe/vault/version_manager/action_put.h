@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_VERSION_H_
-#define MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_VERSION_H_
+#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_H_
+#define MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_H_
 
 #include <string>
 
@@ -28,14 +28,14 @@ namespace maidsafe {
 
 namespace vault {
 
-struct ActionPutVersion {
-  ActionPutVersion(const StructuredDataVersions::VersionName& old_version_in,
+struct ActionVersionManagerPut {
+  ActionVersionManagerPut(const StructuredDataVersions::VersionName& old_version_in,
                    const StructuredDataVersions::VersionName& new_version_in)
       : old_version(old_version_in),
         new_version(new_version_in) {}
-  explicit ActionPutVersion(const std::string& serialised_action);
-  ActionPutVersion(const ActionPutVersion& other);
-  ActionPutVersion(ActionPutVersion&& other);
+  explicit ActionVersionManagerPut(const std::string& serialised_action);
+  ActionVersionManagerPut(const ActionVersionManagerPut& other);
+  ActionVersionManagerPut(ActionVersionManagerPut&& other);
 
   void operator()(boost::optional<VersionManagerValue>& value) const;
 
@@ -45,12 +45,12 @@ struct ActionPutVersion {
   const StructuredDataVersions::VersionName old_version, new_version;
 
  private:
-  ActionPutVersion();
-  ActionPutVersion& operator=(ActionPutVersion other);
+  ActionVersionManagerPut();
+  ActionVersionManagerPut& operator=(ActionVersionManagerPut other);
 };
 
-bool operator==(const ActionPutVersion& lhs, const ActionPutVersion& rhs);
-bool operator!=(const ActionPutVersion& lhs, const ActionPutVersion& rhs);
+bool operator==(const ActionVersionManagerPut& lhs, const ActionVersionManagerPut& rhs);
+bool operator!=(const ActionVersionManagerPut& lhs, const ActionVersionManagerPut& rhs);
 
 }  // namespace vault
 

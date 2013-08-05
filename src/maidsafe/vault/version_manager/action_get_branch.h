@@ -28,9 +28,9 @@ namespace maidsafe {
 
 namespace vault {
 
-struct ActionGetBranch {
-  explicit ActionGetBranch(const std::string& serialised_action);
-  explicit ActionGetBranch(const StructuredDataVersions::VersionName& version_name);
+struct ActionVersionManagerGetBranch {
+  explicit ActionVersionManagerGetBranch(const std::string& serialised_action);
+  explicit ActionVersionManagerGetBranch(const StructuredDataVersions::VersionName& version_name);
 
   void operator()(boost::optional<VersionManagerValue>& value,
                   std::vector<StructuredDataVersions::VersionName>& version_names) const;
@@ -40,13 +40,13 @@ struct ActionGetBranch {
   static const nfs::MessageAction kActionId = nfs::MessageAction::kGetBranch;
 
  private:
-  ActionGetBranch();
-  ActionGetBranch& operator=(ActionGetBranch other);
+  ActionVersionManagerGetBranch();
+  ActionVersionManagerGetBranch& operator=(ActionVersionManagerGetBranch other);
   StructuredDataVersions::VersionName version_name;
 };
 
-bool operator==(const ActionGetBranch& lhs, const ActionGetBranch& rhs);
-bool operator!=(const ActionGetBranch& lhs, const ActionGetBranch& rhs);
+bool operator==(const ActionVersionManagerGetBranch& lhs, const ActionVersionManagerGetBranch& rhs);
+bool operator!=(const ActionVersionManagerGetBranch& lhs, const ActionVersionManagerGetBranch& rhs);
 
 
 }  // namespace vault

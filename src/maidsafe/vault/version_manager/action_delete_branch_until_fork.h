@@ -28,9 +28,10 @@ namespace maidsafe {
 
 namespace vault {
 
-struct ActionDeleteBranchUntilFork {
-  explicit ActionDeleteBranchUntilFork(const std::string& serialised_action);
-  explicit ActionDeleteBranchUntilFork(const StructuredDataVersions::VersionName& version_name);
+struct ActionVersionManagerDeleteBranchUntilFork {
+  explicit ActionVersionManagerDeleteBranchUntilFork(const std::string& serialised_action);
+  explicit ActionVersionManagerDeleteBranchUntilFork(
+      const StructuredDataVersions::VersionName& version_name);
 
   void operator()(boost::optional<VersionManagerValue>& value) const;
 
@@ -38,17 +39,20 @@ struct ActionDeleteBranchUntilFork {
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteBranchUntilFork;
 
-  friend bool operator==(const ActionDeleteBranchUntilFork& lhs,
-                         const ActionDeleteBranchUntilFork& rhs);
+  friend bool operator==(const ActionVersionManagerDeleteBranchUntilFork& lhs,
+                         const ActionVersionManagerDeleteBranchUntilFork& rhs);
 
  private:
-  ActionDeleteBranchUntilFork();
-  ActionDeleteBranchUntilFork& operator=(ActionDeleteBranchUntilFork other);
+  ActionVersionManagerDeleteBranchUntilFork();
+  ActionVersionManagerDeleteBranchUntilFork& operator=(
+      ActionVersionManagerDeleteBranchUntilFork other);
   StructuredDataVersions::VersionName version_name;
 };
 
-bool operator==(const ActionDeleteBranchUntilFork& lhs, const ActionDeleteBranchUntilFork& rhs);
-bool operator!=(const ActionDeleteBranchUntilFork& lhs, const ActionDeleteBranchUntilFork& rhs);
+bool operator==(const ActionVersionManagerDeleteBranchUntilFork& lhs,
+                const ActionVersionManagerDeleteBranchUntilFork& rhs);
+bool operator!=(const ActionVersionManagerDeleteBranchUntilFork& lhs,
+                const ActionVersionManagerDeleteBranchUntilFork& rhs);
 
 
 }  // namespace vault

@@ -21,42 +21,49 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionGetBranch::ActionGetBranch(const std::string& serialised_action)
+const nfs::MessageAction ActionVersionManagerGetBranch::kActionId;
+
+ActionVersionManagerGetBranch::ActionVersionManagerGetBranch(const std::string& serialised_action)
     : version_name_([&serialised_action]() {
-                      protobuf::ActionGetBranch action_get_branch_proto;
+                      protobuf::ActionVersionManagerGetBranch action_get_branch_proto;
                       if (!action_get_branch_proto.ParseFromString(serialised_action))
                         ThrowError(CommonErrors::parsing_error);
                       return StructuredDataVersions::VersionName(
                           action_get_branch_proto.serialised_version_name());
                     }()) {}
 
-ActionGetBranch::ActionGetBranch(
+ActionVersionManagerGetBranch::ActionVersionManagerGetBranch(
     const StructuredDataVersions::VersionName& version_name)
     : version_name_(version_name) {}
 
-ActionGetBranch::ActionGetBranch(const ActionGetBranch& other)
+ActionVersionManagerGetBranch::ActionVersionManagerGetBranch(
+    const ActionVersionManagerGetBranch& other)
     : version_name(other.version_name) {}
 
-ActionGetBranch::ActionGetBranch(ActionGetBranch&& other)
+ActionVersionManagerGetBranch::ActionVersionManagerGetBranch(ActionVersionManagerGetBranch&& other)
     : version_name(std::move(other.version_name)) {}
 
-std::string ActionGetBranch::Serialise() const {
-  protobuf::ActionGetBranch action_get_branch_proto;
+std::string ActionVersionManagerGetBranch::Serialise() const {
+  protobuf::ActionVersionManagerGetBranch action_get_branch_proto;
   action_get_branch_proto.set_serialised_version_name(version_name.Serialise());
   return action_get_branch_proto.SerializeAsString();
 }
 
-void ActionGetBranch::operator()(
+void ActionVersionManagerGetBranch::operator()(
     boost::optional<VersionManagerValue>& value,
     std::vector<StructuredDataVersions::VersionName>& version_names) const {
-  version_names = value->GetBranch();
+  version_names.clear();
+  if (value)
+    version_names = value->GetBranch();
 }
 
-bool operator==(const ActionGetBranch& lhs, const ActionGetBranch& rhs) {
+bool operator==(const ActionVersionManagerGetBranch& lhs,
+                const ActionVersionManagerGetBranch& rhs) {
   return lhs.version_name == rhs.version_name;
 }
 
-bool operator!=(const ActionGetBranch& lhs, const ActionGetBranch& rhs) {
+bool operator!=(const ActionVersionManagerGetBranch& lhs,
+                const ActionVersionManagerGetBranch& rhs) {
   return !operator==(lhs, rhs);
 }
 

@@ -13,9 +13,26 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-package maidsafe.vault.protobuf;
+#include "maidsafe/vault/version_manager/action_get.h"
+#include "maidsafe/vault/version_manager/action_get_version.pb.h"
 
-message ActionPutVersion {
-  required bytes serialised_old_version = 1;
-  required bytes serialised_new_version = 2;
+
+namespace maidsafe {
+
+namespace vault {
+
+const nfs::MessageAction ActionVersionManagerGet::kActionId;
+
+ActionVersionManagerGet::ActionVersionManagerGet() {}
+
+void ActionVersionManagerGet::operator()(
+    boost::optional<VersionManagerValue>& value,
+    std::vector<StructuredDataVersions::VersionName>& version_names) const {
+  version_names.clear();
+  if (value)
+    version_names = value->Get();
 }
+
+}  // namespace vault
+
+}  // namespace maidsafe

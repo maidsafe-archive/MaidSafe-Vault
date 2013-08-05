@@ -28,22 +28,17 @@ namespace maidsafe {
 
 namespace vault {
 
-struct ActionGetVersion {
-  ActionGetVersion();
+struct ActionVersionManagerGet {
+  ActionVersionManagerGet();
 
   void operator()(boost::optional<VersionManagerValue>& value,
                   std::vector<StructuredDataVersions::VersionName>& version_names) const;
 
-  std::string Serialise() const;
-
   static const nfs::MessageAction kActionId = nfs::MessageAction::kGet;
 
  private:
-  ActionGetVersion& operator=(ActionGetVersion other);
+  ActionVersionManagerGet& operator=(ActionVersionManagerGet other);
 };
-
-bool operator==(const ActionGetVersion& lhs, const ActionGetVersion& rhs);
-bool operator!=(const ActionGetVersion& lhs, const ActionGetVersion& rhs);
 
 }  // namespace vault
 
