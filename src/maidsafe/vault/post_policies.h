@@ -30,7 +30,6 @@ License.
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/message_wrapper.h"
 #include "maidsafe/nfs/types.h"
-#include "maidsafe/nfs/reply.h"
 
 #include "maidsafe/vault/sync.pb.h"
 
