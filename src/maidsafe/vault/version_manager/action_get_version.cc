@@ -28,8 +28,10 @@ std::string ActionGetVersion::Serialise() const {
   return action_get_version_proto.SerializeAsString();
 }
 
-maidsafe_error ActionGetVersion::operator()(boost::optional<VersionManagerValue> value) const {
-  value->Get();
+void ActionGetVersion::operator()(
+    boost::optional<VersionManagerValue>& value,
+    std::vector<StructuredDataVersions::VersionName>& version_names) const {
+  version_names = value->Get();
 }
 
 bool operator==(const ActionGetVersion& lhs, const ActionGetVersion& rhs) {

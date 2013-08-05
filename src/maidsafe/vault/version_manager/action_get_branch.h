@@ -13,8 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_DELETE_BRANCH_H_
-#define MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_DELETE_BRANCH_H_
+#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_GET_BRANCH_H_
+#define MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_GET_BRANCH_H_
 
 #include <string>
 
@@ -28,28 +28,29 @@ namespace maidsafe {
 
 namespace vault {
 
-struct ActionDeleteBranch {
-  explicit ActionDeleteBranch(const std::string& serialised_action);
-  explicit ActionDeleteBranch(const StructuredDataVersions::VersionName& version_name);
+struct ActionGetBranch {
+  explicit ActionGetBranch(const std::string& serialised_action);
+  explicit ActionGetBranch(const StructuredDataVersions::VersionName& version_name);
 
-  void operator()(boost::optional<VersionManagerValue> value) const;
+  void operator()(boost::optional<VersionManagerValue>& value,
+                  std::vector<StructuredDataVersions::VersionName>& version_names) const;
 
   std::string Serialise() const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kDelete;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kGetBranch;
 
  private:
-  ActionDeleteBranch();
-  ActionDeleteBranch& operator=(ActionDeleteBranch other);
+  ActionGetBranch();
+  ActionGetBranch& operator=(ActionGetBranch other);
   StructuredDataVersions::VersionName version_name;
 };
 
-bool operator==(const ActionDeleteBranch& lhs, const ActionDeleteBranch& rhs);
-bool operator!=(const ActionDeleteBranch& lhs, const ActionDeleteBranch& rhs);
+bool operator==(const ActionGetBranch& lhs, const ActionGetBranch& rhs);
+bool operator!=(const ActionGetBranch& lhs, const ActionGetBranch& rhs);
 
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_DELETE_BRANCH_H_
+#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_GET_BRANCH_H_

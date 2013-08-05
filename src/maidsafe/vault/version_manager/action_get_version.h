@@ -31,7 +31,8 @@ namespace vault {
 struct ActionGetVersion {
   ActionGetVersion();
 
-  void operator()(boost::optional<VersionManagerValue> value) const;
+  void operator()(boost::optional<VersionManagerValue>& value,
+                  std::vector<StructuredDataVersions::VersionName>& version_names) const;
 
   std::string Serialise() const;
 

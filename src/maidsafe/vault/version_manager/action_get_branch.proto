@@ -15,6 +15,6 @@ License.
 
 package maidsafe.vault.protobuf;
 
-message ActionDeleteBranch {
+message ActionGetBranch {
   required bytes serialised_version = 1;
 }

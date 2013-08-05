@@ -13,48 +13,50 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/version_manager/action_delete_branch.h"
-#include "maidsafe/vault/version_manager/action_delete_branch.pb.h"
+#include "maidsafe/vault/version_manager/action_get_branch.h"
+#include "maidsafe/vault/version_manager/action_get_branch.pb.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-ActionDeleteBranch::ActionDeleteBranch(const std::string& serialised_action)
+ActionGetBranch::ActionGetBranch(const std::string& serialised_action)
     : version_name_([&serialised_action]() {
-                      protobuf::ActionDeleteBranch action_delete_branch_proto;
-                      if (!action_delete_branch_proto.ParseFromString(serialised_action))
+                      protobuf::ActionGetBranch action_get_branch_proto;
+                      if (!action_get_branch_proto.ParseFromString(serialised_action))
                         ThrowError(CommonErrors::parsing_error);
                       return StructuredDataVersions::VersionName(
-                          action_delete_branch_proto.serialised_version_name());
+                          action_get_branch_proto.serialised_version_name());
                     }()) {}
 
-ActionDeleteBranch::ActionDeleteBranch(
+ActionGetBranch::ActionGetBranch(
     const StructuredDataVersions::VersionName& version_name)
     : version_name_(version_name) {}
 
-ActionDeleteBranch::ActionDeleteBranch(const ActionDeleteBranch& other)
+ActionGetBranch::ActionGetBranch(const ActionGetBranch& other)
     : version_name(other.version_name) {}
 
-ActionDeleteBranch::ActionDeleteBranch(ActionDeleteBranch&& other)
+ActionGetBranch::ActionGetBranch(ActionGetBranch&& other)
     : version_name(std::move(other.version_name)) {}
 
-std::string ActionDeleteBranch::Serialise() const {
-  protobuf::ActionDeleteBranch action_delete_branch_proto;
-  action_delete_branch_proto.set_serialised_version_name(version_name.Serialise());
-  return action_delete_branch_proto.SerializeAsString();
+std::string ActionGetBranch::Serialise() const {
+  protobuf::ActionGetBranch action_get_branch_proto;
+  action_get_branch_proto.set_serialised_version_name(version_name.Serialise());
+  return action_get_branch_proto.SerializeAsString();
 }
 
-void ActionDeleteBranch::operator()(boost::optional<VersionManagerValue> value) const {
-  value->DeleteBranch();
+void ActionGetBranch::operator()(
+    boost::optional<VersionManagerValue>& value,
+    std::vector<StructuredDataVersions::VersionName>& version_names) const {
+  version_names = value->GetBranch();
 }
 
-bool operator==(const ActionDeleteBranch& lhs, const ActionDeleteBranch& rhs) {
+bool operator==(const ActionGetBranch& lhs, const ActionGetBranch& rhs) {
   return lhs.version_name == rhs.version_name;
 }
 
-bool operator!=(const ActionDeleteBranch& lhs, const ActionDeleteBranch& rhs) {
+bool operator!=(const ActionGetBranch& lhs, const ActionGetBranch& rhs) {
   return !operator==(lhs, rhs);
 }
 

@@ -68,22 +68,18 @@ void VersionManagerValue::Put(const VersionName& old_version, const VersionName&
   structured_data_versions_.Put(old_version, new_version);
 }
 
-void VersionManagerValue::Get() const {
-   version_names_.clear();
-   version_names_ = structured_data_versions_.Get();
+std::vector<StructuredDataVersions::VersionName> VersionManagerValue::Get() const {
+  return structured_data_versions_.Get();
 }
 
-void VersionManagerValue::GetBranch(const VersionName& branch_tip) const {
-  version_names_.clear();
-  version_names_  = structured_data_versions_.GetBranch(branch_tip);
+std::vector<StructuredDataVersions::VersionName> VersionManagerValue::GetBranch(
+    const VersionName& branch_tip) const {
+  return structured_data_versions_.GetBranch(branch_tip);
 }
 
-void VersionManagerValue::DeleteBranchUntilFork(const VersionName& branch_tip) {
+std::vector<StructuredDataVersions::VersionName> VersionManagerValue::DeleteBranchUntilFork(
+    const VersionName& branch_tip) {
   return structured_data_versions_.DeleteBranchUntilFork(branch_tip);
-}
-
-std::vector<StructuredDataVersions::VersionName> VersionManagerValue::GetVersionNames() {
-  version_names_;
 }
 
 void swap(VersionManagerValue& lhs, VersionManagerValue& rhs) {

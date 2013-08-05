@@ -37,19 +37,16 @@ class VersionManagerValue {
   std::string Serialise() const;
 
   void Put(const VersionName& old_version, const VersionName& new_version);
-  // Returns amount which was subtracted from 'total_cost'.
   void Get() const;
-  void GetBranch(const VersionName& branch_tip) const;
-  void DeleteBranchUntilFork(const VersionName& branch_tip);
-
-  std::vector<StructuredDataVersions::VersionName> GetVersionNames();
+  std::vector<StructuredDataVersions::VersionName> GetBranch(const VersionName& branch_tip) const;
+  std::vector<StructuredDataVersions::VersionName> DeleteBranchUntilFork(
+      const VersionName& branch_tip);
 
   friend void swap(VersionManagerValue& lhs, VersionManagerValue& rhs);
   friend bool operator==(const VersionManagerValue& lhs, const VersionManagerValue& rhs);
 
  private:
   StructuredDataVersions structured_data_versions_;
-  std::vector<StructuredDataVersions::VersionName>  version_names_;
 };
 
 bool operator==(const VersionManagerValue& lhs, const VersionManagerValue& rhs);

@@ -32,7 +32,7 @@ struct ActionDeleteBranchUntilFork {
   explicit ActionDeleteBranchUntilFork(const std::string& serialised_action);
   explicit ActionDeleteBranchUntilFork(const StructuredDataVersions::VersionName& version_name);
 
-  void operator()(boost::optional<VersionManagerValue> value) const;
+  void operator()(boost::optional<VersionManagerValue>& value) const;
 
   std::string Serialise() const;
 

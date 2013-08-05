@@ -37,7 +37,7 @@ struct ActionPutVersion {
   ActionPutVersion(const ActionPutVersion& other);
   ActionPutVersion(ActionPutVersion&& other);
 
-  void operator()(boost::optional<VersionManagerValue> value) const;
+  void operator()(boost::optional<VersionManagerValue>& value) const;
 
   std::string Serialise() const;
 
