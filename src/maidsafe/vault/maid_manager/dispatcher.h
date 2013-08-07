@@ -51,22 +51,29 @@ class MaidManagerDispatcher {
   template<typename Data>
   void SendPutResponse(const MaidName& account_name,
                        const typename Data::name_type& data_name,
-                       const maidsafe_error& result);
+                       const maidsafe_error& result,
+                       nfs::MessageId message_id);
 
   template<typename Data>
   void SendDeleteRequest(const MaidName& account_name, const typename Data::name_type& data_name);
 
-  void SendCreateAccountResponse(const MaidName& account_name, const maidsafe_error& result);
+  void SendCreateAccountResponse(const MaidName& account_name,
+                                 const maidsafe_error& result,
+                                 nfs::MessageId message_id);
 
-  void SendRemoveAccountResponse(const MaidName& account_name, const maidsafe_error& result);
+  void SendRemoveAccountResponse(const MaidName& account_name,
+                                 const maidsafe_error& result,
+                                 nfs::MessageId message_id);
 
   void SendRegisterPmidResponse(const MaidName& account_name,
                                 const PmidName& pmid_name,
-                                const maidsafe_error& result);
+                                const maidsafe_error& result,
+                                nfs::MessageId message_id);
 
   void SendUnregisterPmidResponse(const MaidName& account_name,
                                   const PmidName& pmid_name,
-                                  const maidsafe_error& result);
+                                  const maidsafe_error& result,
+                                  nfs::MessageId message_id);
 
   void SendSync(const NodeId& destination_peer,
                 const MaidName& account_name,
@@ -134,7 +141,7 @@ void MaidManagerDispatcher::SendPutRequest<OwnerDirectory>(const MaidName& /*acc
   static const routing::Cacheable cacheable(is_cacheable<OwnerDirectory>::value ?
                                             routing::Cacheable::kGet : routing::Cacheable::kNone);
   static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
-  static const nfs::Persona kDestinationPersona(nfs::Persona::kOwnerDirectoryManager);
+  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
   static const DataTagValue kDataEnumValue(OwnerDirectory::name_type::tag_type::kEnumValue);
   // TODO(Fraser#5#): 2013-08-03 - Handle
 }
@@ -147,7 +154,7 @@ void MaidManagerDispatcher::SendPutRequest<GroupDirectory>(const MaidName& /*acc
   static const routing::Cacheable cacheable(is_cacheable<GroupDirectory>::value ?
                                             routing::Cacheable::kGet : routing::Cacheable::kNone);
   static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
-  static const nfs::Persona kDestinationPersona(nfs::Persona::kGroupDirectoryManager);
+  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
   static const DataTagValue kDataEnumValue(GroupDirectory::name_type::tag_type::kEnumValue);
   // TODO(Fraser#5#): 2013-08-03 - Handle
 }
@@ -160,7 +167,7 @@ void MaidManagerDispatcher::SendPutRequest<WorldDirectory>(const MaidName& /*acc
   static const routing::Cacheable cacheable(is_cacheable<WorldDirectory>::value ?
                                             routing::Cacheable::kGet : routing::Cacheable::kNone);
   static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
-  static const nfs::Persona kDestinationPersona(nfs::Persona::kWorldDirectoryManager);
+  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
   static const DataTagValue kDataEnumValue(WorldDirectory::name_type::tag_type::kEnumValue);
   // TODO(Fraser#5#): 2013-08-03 - Handle
 }
@@ -168,7 +175,8 @@ void MaidManagerDispatcher::SendPutRequest<WorldDirectory>(const MaidName& /*acc
 template<typename Data>
 void MaidManagerDispatcher::SendPutResponse(const MaidName& account_name,
                                             const typename Data::name_type& data_name,
-                                            const maidsafe_error& result) {
+                                            const maidsafe_error& result,
+                                            nfs::MessageId message_id) {
   typedef routing::GroupToSingleMessage RoutingMessage;
   static const routing::Cacheable cacheable(routing::Cacheable::kNone);
   static const nfs::MessageAction kAction(nfs::MessageAction::kPutResponse);

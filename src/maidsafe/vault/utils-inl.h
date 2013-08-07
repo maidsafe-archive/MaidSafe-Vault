@@ -62,18 +62,8 @@ inline bool FromClientMpid(const Message& message) {
 }
 
 template<typename Message>
-inline bool FromOwnerDirectoryManager(const Message& message) {
-  return message.source().persona == nfs::Persona::kOwnerDirectoryManager;
-}
-
-template<typename Message>
-inline bool FromGroupDirectoryManager(const Message& message) {
-  return message.source().persona == nfs::Persona::kGroupDirectoryManager;
-}
-
-template<typename Message>
-inline bool FromWorldDirectoryManager(const Message& message) {
-  return message.source().persona == nfs::Persona::kWorldDirectoryManager;
+inline bool FromVersionManager(const Message& message) {
+  return message.source().persona == nfs::Persona::kVersionManager;
 }
 
 template<typename Message>

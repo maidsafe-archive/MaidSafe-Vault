@@ -33,7 +33,6 @@ License.
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/public_key_getter.h"
-#include "maidsafe/nfs/reply.h"
 #include "maidsafe/nfs/utils.h"
 
 #include "maidsafe/vault/accumulator.h"
@@ -46,6 +45,7 @@ License.
 #include "maidsafe/vault/maid_manager/action_put.h"
 #include "maidsafe/vault/maid_manager/action_delete.h"
 #include "maidsafe/vault/maid_manager/action_register_unregister_pmid.h"
+#include "maidsafe/vault/maid_manager/dispatcher.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
@@ -70,8 +70,8 @@ class MaidManagerService {
                      nfs::PublicKeyGetter& public_key_getter);
   // Handling of received requests (sending of requests is done via nfs_ object).
   template<typename Data>
-  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleMessage(const nfs::Message& message);
+  void HandleMessage(const nfs::Message& message);
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
 
@@ -147,7 +147,7 @@ class MaidManagerService {
   GroupDb<MaidManager> group_db_;
   std::mutex accumulator_mutex_;
   Accumulator<MaidName> accumulator_;
-  MaidManagerNfs nfs_;
+  MaidManagerDispatcher dispatcher_;
   Sync<MaidManager::UnresolvedCreateAccount> sync_create_accounts_;
   Sync<MaidManager::UnresolvedRemoveAccount> sync_remove_accounts_;
   Sync<MaidManager::UnresolvedPut> sync_puts_;
