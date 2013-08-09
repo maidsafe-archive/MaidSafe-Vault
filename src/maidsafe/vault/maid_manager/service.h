@@ -98,14 +98,14 @@ class MaidManagerService {
 
   MaidManagerMetadata::Status AllowPut(const MaidName& account_name, int32_t cost);
 
-  void SendReplyAndAddToAccumulator(const nfs::Message& message,
-                                    const routing::ReplyFunctor& reply_functor,
-                                    const nfs::Reply& reply);
+//  void SendReplyAndAddToAccumulator(const nfs::Message& message,
+//                                    const routing::ReplyFunctor& reply_functor,
+//                                    const nfs::Reply& reply);
 
-  template<typename Data>
-  void HandlePutResult(const nfs::Reply& overall_result,
-                       const nfs::Message& message,
-                       routing::ReplyFunctor client_reply_functor);
+//  template<typename Data>
+//  void HandlePutResult(const nfs::Reply& overall_result,
+//                       const nfs::Message& message,
+//                       routing::ReplyFunctor client_reply_functor);
 
   // Only Maid and Anmaid can create account; for all others this is a no-op.
   typedef std::true_type AllowedAccountCreationType;
@@ -149,7 +149,7 @@ class MaidManagerService {
 //  nfs::PublicKeyGetter& public_key_getter_;
   GroupDb<MaidManager> group_db_;
   std::mutex accumulator_mutex_;
-  Accumulator<MaidName> accumulator_;
+//  Accumulator<MaidName> accumulator_;
   MaidManagerDispatcher dispatcher_;
   Sync<MaidManager::UnresolvedCreateAccount> sync_create_accounts_;
   Sync<MaidManager::UnresolvedRemoveAccount> sync_remove_accounts_;
@@ -207,7 +207,7 @@ template<typename T>
 void HandleMessage(const T& /*message*/,
                    const typename T::Receiver& /*receiver*/,
                    const typename T::Sender& /*sender*/) {
-  T::should_not_reach_here_;
+  T::should_not_reach_here;
 }
 
 template<typename Data>
@@ -217,8 +217,8 @@ void MaidManagerService::HandleMessage(const nfs::Message& message,
   nfs::Reply reply(CommonErrors::success);
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    if (accumulator_.CheckHandled(message, reply))
-      return reply_functor(reply.Serialise()->string());
+//    if (accumulator_.CheckHandled(message, reply))  // FIXME
+//      return reply_functor(reply.Serialise()->string());
   }
   switch (message.data().action) {
     case nfs::MessageAction::kPut:

@@ -44,9 +44,13 @@ namespace vault {
 
 class DataManagerService {
  public:
+  typedef boost::variant<MaidNodePut, MaidNodeDelete> Messages;
   DataManagerService(const passport::Pmid& pmid,
-                         routing::Routing& routing,
-                         nfs::PublicKeyGetter& public_key_getter);
+                         routing::Routing& routing);
+  template<typename T>
+  void HandleMessage(const T& message,
+                     const typename T::Receiver& receiver,
+                     const typename T::Sender& sender);
   template<typename Data>
   void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor& /*reply_functor*/) {}
@@ -135,10 +139,18 @@ class DataManagerService {
   static const int kDeleteRequestsRequired_;
 };
 
+template<typename T>
+void HandleMessage(const T& /*message*/,
+                   const typename T::Receiver& /*receiver*/,
+                   const typename T::Sender& /*sender*/) {
+  T::should_not_reach_here;
+}
+
+
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/data_manager/service-inl.h"
+//#include "maidsafe/vault/data_manager/service-inl.h"
 
 #endif  // MAIDSAFE_VAULT_DATA_MANAGER_SERVICE_H_

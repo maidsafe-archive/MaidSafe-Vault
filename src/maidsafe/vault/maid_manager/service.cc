@@ -217,14 +217,14 @@ void MaidManagerService::ValidateGenericSender(const nfs::Message& message) cons
 
 // =============== Put/Delete data =================================================================
 
-void MaidManagerService::SendReplyAndAddToAccumulator(
-    const nfs::Message& message,
-    const routing::ReplyFunctor& reply_functor,
-    const nfs::Reply& reply) {
-  reply_functor(reply.Serialise()->string());
-  std::lock_guard<std::mutex> lock(accumulator_mutex_);
-  accumulator_.SetHandled(message, reply);
-}
+//void MaidManagerService::SendReplyAndAddToAccumulator(
+//    const nfs::Message& message,
+//    const routing::ReplyFunctor& reply_functor,
+//    const nfs::Reply& reply) {
+//  reply_functor(reply.Serialise()->string());
+//  std::lock_guard<std::mutex> lock(accumulator_mutex_);
+//  accumulator_.SetHandled(message, reply);
+//}
 
 template<>
 void MaidManagerService::HandlePut<OwnerDirectory>(const nfs::Message& message,
