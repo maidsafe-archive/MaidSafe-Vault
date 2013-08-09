@@ -35,10 +35,10 @@ Vault::Vault(const passport::Pmid& pmid,
       on_new_bootstrap_endpoint_(on_new_bootstrap_endpoint),
       routing_(new routing::Routing(pmid)),
       public_key_getter_(*routing_, pmids_from_file),
-      maid_manager_service_(pmid, *routing_, public_key_getter_),
-      version_manager_service_(pmid, *routing_, public_key_getter),
-      data_manager_service_(pmid, *routing_, public_key_getter_),
-      pmid_manager_service_(pmid, *routing_, public_key_getter_),
+      maid_manager_service_(pmid, *routing_),
+      version_manager_service_(pmid, *routing_),
+      data_manager_service_(pmid, *routing_),
+      pmid_manager_service_(pmid, *routing_),
       pmid_node_service_(pmid, *routing_, vault_root_dir), // FIXME need to specialise
       demux_(maid_manager_service_,
              version_manager_service_,
@@ -148,22 +148,22 @@ void Vault::OnPublicKeyRequested(const NodeId& node_id,
   asio_service_.service().post([=] { DoOnPublicKeyRequested(node_id, give_key); });
 }
 
-void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
-                                   const routing::GivePublicKeyFunctor& give_key) {
-  passport::PublicPmid::name_type name(Identity(node_id.string()));
-  public_key_getter_.GetKey<passport::PublicPmid>(
-      name,
-      [name, give_key] (nfs::Reply reply) {
-        try {
-          if (reply.IsSuccess()) {
-            passport::PublicPmid pmid(name, passport::PublicPmid::serialised_type(reply.data()));
-            give_key(pmid.public_key());
-          }
-        }
-        catch(const std::exception& ex) {
-          LOG(kError) << "Failed to get key for " << DebugId(name) << " : " << ex.what();
-        }
-      });
+void Vault::DoOnPublicKeyRequested(const NodeId& /*node_id*/,
+                                   const routing::GivePublicKeyFunctor& /*give_key*/) {
+//  passport::PublicPmid::name_type name(Identity(node_id.string()));
+//  public_key_getter_.GetKey<passport::PublicPmid>(
+//      name,
+//      [name, give_key] (nfs::Reply reply) {
+//        try {
+//          if (reply.IsSuccess()) {
+//            passport::PublicPmid pmid(name, passport::PublicPmid::serialised_type(reply.data()));
+//            give_key(pmid.public_key());
+//          }
+//        }
+//        catch(const std::exception& ex) {
+//          LOG(kError) << "Failed to get key for " << DebugId(name) << " : " << ex.what();
+//        }
+//      });
 }
 
 void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {

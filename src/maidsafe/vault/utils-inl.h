@@ -24,7 +24,7 @@ License.
 
 #include "maidsafe/routing/parameters.h"
 
-#include "maidsafe/vault/accumulator.h"
+//#include "maidsafe/vault/accumulator.h"
 
 
 namespace maidsafe {
@@ -71,10 +71,10 @@ inline bool FromDataGetter(const Message& message) {
   return message.source().persona == nfs::Persona::kDataGetter;
 }
 
-template<typename Message>
-inline bool ValidateSyncSender(const nfs::Message& message) {
-  return message.source().persona == nfs::Persona::kVersionManager;
-}
+//template<typename Message>
+//inline bool ValidateSyncSender(const nfs::Message& message) {
+//  return message.source().persona == nfs::Persona::kVersionManager;
+//}
 
 
 
@@ -87,35 +87,35 @@ bool IsDataElement(const typename Data::name_type& name,
 }
 
 // Returns true if the required successful request count has been reached
-template<typename Accumulator>
-bool AddResult(const nfs::Message& message,
-               const routing::ReplyFunctor& reply_functor,
-               const maidsafe_error& return_code,
-               Accumulator& accumulator,
-               std::mutex& accumulator_mutex,
-               int requests_required) {
-  std::vector<typename Accumulator::PendingRequest> pending_requests;
-  maidsafe_error overall_return_code(CommonErrors::success);
-  {
-    std::lock_guard<std::mutex> lock(accumulator_mutex);
-    auto pending_results(accumulator.PushSingleResult(message, reply_functor,
-                                                      nfs::Reply(return_code)));
-    if (static_cast<int>(pending_results.size()) < requests_required)
-      return false;
+//template<typename Accumulator>
+//bool AddResult(const nfs::Message& message,
+//               const routing::ReplyFunctor& reply_functor,
+//               const maidsafe_error& return_code,
+//               Accumulator& accumulator,
+//               std::mutex& accumulator_mutex,
+//               int requests_required) {
+//  std::vector<typename Accumulator::PendingRequest> pending_requests;
+//  maidsafe_error overall_return_code(CommonErrors::success);
+//  {
+//    std::lock_guard<std::mutex> lock(accumulator_mutex);
+//    auto pending_results(accumulator.PushSingleResult(message, reply_functor,
+//                                                      nfs::Reply(return_code)));
+//    if (static_cast<int>(pending_results.size()) < requests_required)
+//      return false;
 
-    auto result(nfs::GetSuccessOrMostFrequentReply(pending_results, requests_required));
-    if (!result.second && pending_results.size() < routing::Parameters::node_group_size)
-      return false;
+//    auto result(nfs::GetSuccessOrMostFrequentReply(pending_results, requests_required));
+//    if (!result.second && pending_results.size() < routing::Parameters::node_group_size)
+//      return false;
 
-    overall_return_code = (*result.first).error();
-    pending_requests = accumulator.SetHandled(message, nfs::Reply(overall_return_code));
-  }
+//    overall_return_code = (*result.first).error();
+//    pending_requests = accumulator.SetHandled(message, nfs::Reply(overall_return_code));
+//  }
 
-  for (auto& pending_request : pending_requests)
-    SendReply(pending_request.msg, overall_return_code, pending_request.reply_functor);
+//  for (auto& pending_request : pending_requests)
+//    SendReply(pending_request.msg, overall_return_code, pending_request.reply_functor);
 
-  return true;
-}
+//  return true;
+//}
 
 }  // namespace detail
 

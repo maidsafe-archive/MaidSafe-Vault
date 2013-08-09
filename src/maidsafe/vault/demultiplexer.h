@@ -22,16 +22,15 @@ License.
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message.h"
 #include "maidsafe/vault/service.h"
+#include "maidsafe/vault/pmid_node/service.h"
+#include "maidsafe/vault/maid_manager/service.h"
+#include "maidsafe/vault/data_manager/service.h"
+#include "maidsafe/vault/pmid_manager/service.h"
+#include "maidsafe/vault/version_manager/service.h"
 
 namespace maidsafe {
 
 namespace vault {
-
-class MaidManagerService;
-class VersionManagerService;
-class DataManagerService;
-class PmidManagerService;
-class PmidNodeService;
 
 class Demultiplexer {
  public:
@@ -46,7 +45,7 @@ class Demultiplexer {
   void HandleMessage(const T& routing_message);
 
  private:
-  template<typename MessageType>
+//  template<typename MessageType>
 //  NonEmptyString HandleGetFromCache(const nfs::Message& message);
 //  void HandleStoreInCache(const nfs::Message& message);
 

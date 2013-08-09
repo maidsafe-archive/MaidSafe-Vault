@@ -30,17 +30,17 @@ namespace maidsafe {
 
 namespace vault {
 
-template<typename PersonaService, typename Message>
-class PersonaDemuxer : public boost::static_visitor<std::string> {
+template<typename PersonaService, typename T>
+class PersonaDemuxer : public boost::static_visitor<> {
  public:
-  PersonaDemuxer(PersonaService& persona_service, const typename Message::Sender& sender,
-                 const typename Message::Receiver& receiver)
+  PersonaDemuxer(PersonaService& persona_service, const typename T::Sender& sender,
+                 const typename T::Receiver& receiver)
     : persona_service_(persona_service),
       sender_(sender),
       receiver_(receiver) {}
   template<typename Message>
-  std::string operator()(const Message& message) const {
-    return persona_service_.HandleMessage(message, sender_, receiver_);
+  void operator()(const Message& message) const {
+    persona_service_.HandleMessage(message, sender_, receiver_);
   }
  private:
   PersonaService& persona_service_;
@@ -54,7 +54,7 @@ class Service {
   typedef typename PersonaService::Messages Messages;
 
   Service(const passport::Pmid& pmid, routing::Routing& routing)
-      : impl_(pmid, routing), demuxer_(impl_) {}
+      : impl_(pmid, routing) {}
 
   template<typename T>
   void HandleMessage(const nfs::TypeErasedMessageWrapper& message,
@@ -67,7 +67,6 @@ class Service {
 
  private:
   PersonaService impl_;
-  PersonaDemuxer<PersonaService> demuxer_;
 };
 
 }  // namespace vault

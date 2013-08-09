@@ -76,7 +76,7 @@ PmidNodeService::PmidNodeService(const passport::Pmid& pmid,
       //                vault_root_dir / "pmid_node" / "cache"),  // FIXME - DiskUsage should be 0  NOLINT
       routing_(routing),
       accumulator_mutex_(),
-      accumulator_(),
+//      accumulator_(),
       miscellaneous_policy(routing_, pmid),
       nfs_(routing_, pmid) {
 //  nfs_.GetElementList();  // TODO (Fraser) BEFORE_RELEASE Implementation needed

@@ -35,7 +35,7 @@ License.
 #include "maidsafe/nfs/public_key_getter.h"
 #include "maidsafe/nfs/utils.h"
 
-#include "maidsafe/vault/accumulator.h"
+//#include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
@@ -67,9 +67,7 @@ class MaidManagerService {
  public:
   typedef boost::variant<MaidNodePut, MaidNodeDelete> Messages;
 
-  MaidManagerService(const passport::Pmid& pmid,
-                     routing::Routing& routing,
-                     nfs::PublicKeyGetter& public_key_getter);
+  MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing);
   template<typename T>
   std::string HandleMessage(const T& /*message*/);
 
@@ -148,7 +146,7 @@ class MaidManagerService {
                                 std::shared_ptr<GetPmidTotalsOp> op_data);
 
   routing::Routing& routing_;
-  nfs::PublicKeyGetter& public_key_getter_;
+//  nfs::PublicKeyGetter& public_key_getter_;
   GroupDb<MaidManager> group_db_;
   std::mutex accumulator_mutex_;
   Accumulator<MaidName> accumulator_;

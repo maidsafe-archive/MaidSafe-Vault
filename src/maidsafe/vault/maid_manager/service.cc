@@ -140,10 +140,9 @@ const int MaidManagerService::kDefaultPaymentFactor_(4);
 
 
 MaidManagerService::MaidManagerService(const passport::Pmid& pmid,
-                                       routing::Routing& routing,
-                                       nfs::PublicKeyGetter& public_key_getter)
+                                       routing::Routing& routing)
     : routing_(routing),
-      public_key_getter_(public_key_getter),
+//      public_key_getter_(public_key_getter),
       group_db_(),
       accumulator_mutex_(),
       accumulator_(),
@@ -259,19 +258,19 @@ void MaidManagerService::HandlePmidRegistration(const nfs::Message& message,
     return reply_functor(nfs::Reply(VaultErrors::permission_denied).Serialise()->string());
 
   auto pmid_registration_op(std::make_shared<PmidRegistrationOp>(pmid_registration, reply_functor));
-
-  public_key_getter_.GetKey<passport::PublicMaid>(
-      pmid_registration.maid_name(),
-      [this, pmid_registration_op, &pmid_registration](const nfs::Reply& reply) {
-          ValidatePmidRegistration<passport::PublicMaid>(reply, pmid_registration.maid_name(),
-                                                         pmid_registration_op);
-      });
-  public_key_getter_.GetKey<passport::PublicPmid>(
-      pmid_registration.pmid_name(),
-      [this, pmid_registration_op, &pmid_registration](const nfs::Reply& reply) {
-          ValidatePmidRegistration<passport::PublicPmid>(reply, pmid_registration.pmid_name(),
-                                                         pmid_registration_op);
-      });
+//FIXME Prakash need to have utility to get public key
+//  public_key_getter_.GetKey<passport::PublicMaid>(
+//      pmid_registration.maid_name(),
+//      [this, pmid_registration_op, &pmid_registration](const nfs::Reply& reply) {
+//          ValidatePmidRegistration<passport::PublicMaid>(reply, pmid_registration.maid_name(),
+//                                                         pmid_registration_op);
+//      });
+//  public_key_getter_.GetKey<passport::PublicPmid>(
+//      pmid_registration.pmid_name(),
+//      [this, pmid_registration_op, &pmid_registration](const nfs::Reply& reply) {
+//          ValidatePmidRegistration<passport::PublicPmid>(reply, pmid_registration.pmid_name(),
+//                                                         pmid_registration_op);
+//      });
 }
 
 void MaidManagerService::FinalisePmidRegistration(
