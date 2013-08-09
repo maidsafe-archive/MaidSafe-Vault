@@ -155,7 +155,7 @@ bool UnresolvedAction<Key, Action>::IsReadyForSync() const {
 
 template<typename Key, typename Action>
 template<typename T>
-typename std::enable_if<UnresolvedAction<Key, Action>::HasSerialise<T,
+typename std::enable_if<UnresolvedAction<Key, Action>::template HasSerialise<T,
     std::string(T::*)() const>::value, void>::type
         UnresolvedAction<Key, Action>::SerialiseAction(
             protobuf::UnresolvedAction& proto_unresolved_action) const {
@@ -164,13 +164,13 @@ typename std::enable_if<UnresolvedAction<Key, Action>::HasSerialise<T,
 
 template<typename Key, typename Action>
 template<typename T>
-typename std::enable_if<!UnresolvedAction<Key, Action>::HasSerialise<T,
+typename std::enable_if<!UnresolvedAction<Key, Action>::template HasSerialise<T,
     std::string(T::*)() const>::value, void>::type
         UnresolvedAction<Key, Action>::SerialiseAction(protobuf::UnresolvedAction&) const {}
 
 template<typename Key, typename Action>
 template<typename T>
-typename std::enable_if<UnresolvedAction<Key, Action>::HasSerialise<T,
+typename std::enable_if<UnresolvedAction<Key, Action>::template HasSerialise<T,
     std::string(T::*)() const>::value, T>::type
         UnresolvedAction<Key, Action>::ParseAction(const std::string& serialised_copy) const {
   protobuf::UnresolvedAction proto_unresolved_action;
@@ -181,7 +181,7 @@ typename std::enable_if<UnresolvedAction<Key, Action>::HasSerialise<T,
 
 template<typename Key, typename Action>
 template<typename T>
-typename std::enable_if<!UnresolvedAction<Key, Action>::HasSerialise<T,
+typename std::enable_if<!UnresolvedAction<Key, Action>::template HasSerialise<T,
     std::string(T::*)() const>::value, T>::type
         UnresolvedAction<Key, Action>::ParseAction(const std::string& /*serialised_copy*/) const {
   return T();
