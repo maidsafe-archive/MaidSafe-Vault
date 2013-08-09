@@ -22,7 +22,7 @@ License.
 
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/reply.h"
+//#include "maidsafe/nfs/reply.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/nfs/utils.h"
 

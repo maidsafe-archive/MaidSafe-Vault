@@ -35,7 +35,7 @@ License.
 #include "maidsafe/vault/version_manager/service.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/demultiplexer.h"
-
+#include "maidsafe/vault/service.h"
 
 namespace maidsafe {
 
@@ -56,7 +56,8 @@ class Vault {
  private:
   void InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
   routing::Functors InitialiseRoutingCallbacks();
-  void OnMessageReceived(const std::string& message,  const routing::ReplyFunctor& reply_functor);
+  template <typename T>
+  void OnMessageReceived(const T& message);
   void OnNetworkStatusChange(const int& network_health);
   void DoOnNetworkStatusChange(const int& network_health);
   void OnPublicKeyRequested(const NodeId &node_id, const routing::GivePublicKeyFunctor &give_key);
@@ -73,17 +74,21 @@ class Vault {
   std::condition_variable network_health_condition_variable_;
   int network_health_;
   std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint_;
-  Db db_;
   std::unique_ptr<routing::Routing> routing_;
   nfs::PublicKeyGetter public_key_getter_;
-  MaidManagerService maid_manager_service_;
-  VersionManagerService version_manager_service_;
-  DataManagerService data_manager_service_;
-  PmidManagerService pmid_manager_service_;
-  PmidNodeService pmid_node_;
+  Service<MaidManagerService> maid_manager_service_;
+  Service<VersionManagerService> version_manager_service_;
+  Service<DataManagerService> data_manager_service_;
+  Service<PmidManagerService> pmid_manager_service_;
+  Service<PmidNodeService> pmid_node_service_;
   Demultiplexer demux_;
   AsioService asio_service_;
 };
+
+template <typename T>
+void OnMessageReceived(const T& message) {
+  asio_service_.service().post([=] { demux_.HandleMessage(message); });
+}
 
 }  // namespace vault
 

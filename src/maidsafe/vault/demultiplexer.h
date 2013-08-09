@@ -21,7 +21,7 @@ License.
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message.h"
-
+#include "maidsafe/vault/service.h"
 
 namespace maidsafe {
 
@@ -39,29 +39,44 @@ class Demultiplexer {
                 VersionManagerService& version_manager_service,
                 DataManagerService& data_manager_service,
                 PmidManagerService& pmid_manager_service,
-                PmidNodeService& pmid_node);
-  void HandleMessage(const std::string& serialised_message,
-                     const routing::ReplyFunctor& reply_functor);
-  bool GetFromCache(std::string& serialised_message);
-  void StoreInCache(const std::string& serialised_message);
+                PmidNodeService& pmid_node_service);
+//  bool GetFromCache(std::string& serialised_message);
+//  void StoreInCache(const std::string& serialised_message);
+  template <typename T>
+  void HandleMessage(const T& routing_message);
 
  private:
   template<typename MessageType>
-  void PersonaHandleMessage(const MessageType& message, const routing::ReplyFunctor& reply_functor);
-  NonEmptyString HandleGetFromCache(const nfs::Message& message);
-  void HandleStoreInCache(const nfs::Message& message);
+//  NonEmptyString HandleGetFromCache(const nfs::Message& message);
+//  void HandleStoreInCache(const nfs::Message& message);
 
-  MaidManagerService& maid_manager_service_;
-  VersionManagerService& version_manager_service_;
-  DataManagerService& data_manager_service_;
-  PmidManagerService& pmid_manager_service_;
-  PmidNodeService& pmid_node_;
+  Service<MaidManagerService>& maid_manager_service_;
+  Service<VersionManagerService>& version_manager_service_;
+  Service<DataManagerService>& data_manager_service_;
+  Service<PmidManagerService>& pmid_manager_service_;
+  Service<PmidNodeService>& pmid_node_service_;
 };
 
-template<>
-void Demultiplexer::PersonaHandleMessage<nfs::Message>(
-    const nfs::Message& message,
-    const routing::ReplyFunctor& reply_functor);
+template <typename T>
+void Demultiplexer::HandleMessage(const T& routing_message) {
+  auto wrapper_tuple(ParseMessageWrapper(routing_message.contents));
+  switch (std::get<1>(wrapper_tuple)) {
+    case nfs::Persona::kMaidManager:
+      return maid_manager_service_.HandleMessage(wrapper_tuple, routing_message.sender,
+                                                 routing_message.receiver);
+    case nfs::Persona::kDataManager:
+      return data_manager_service_.HandleMessage(wrapper_tuple, routing_message.sender,
+                                                 routing_message.receiver);
+    case nfs::Persona::kPmidManager:
+      return pmid_manager_service_.HandleMessage(wrapper_tuple, routing_message.sender,
+                                                 routing_message.receiver);
+    case nfs::Persona::kPmidNode:
+      return pmid_node_.HandleMessage(wrapper_tuple, routing_message.sender,
+                                      routing_message.receiver);
+    default:
+      LOG(kError) << "Unhandled Persona";
+  }
+}
 
 }  // namespace vault
 

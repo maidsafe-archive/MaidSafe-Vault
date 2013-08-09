@@ -33,19 +33,18 @@ Vault::Vault(const passport::Pmid& pmid,
       network_health_condition_variable_(),
       network_health_(-1),
       on_new_bootstrap_endpoint_(on_new_bootstrap_endpoint),
-      db_(),
       routing_(new routing::Routing(pmid)),
       public_key_getter_(*routing_, pmids_from_file),
-      maid_manager_service_(pmid, *routing_, public_key_getter_, db_),
-      version_manager_service_(pmid, *routing_),
+      maid_manager_service_(pmid, *routing_, public_key_getter_),
+      version_manager_service_(pmid, *routing_, public_key_getter),
       data_manager_service_(pmid, *routing_, public_key_getter_),
-      pmid_manager_service_(pmid, *routing_, db_),
-      pmid_node_(pmid, *routing_, vault_root_dir),
+      pmid_manager_service_(pmid, *routing_, public_key_getter_),
+      pmid_node_service_(pmid, *routing_, vault_root_dir), // FIXME need to specialise
       demux_(maid_manager_service_,
              version_manager_service_,
              data_manager_service_,
              pmid_manager_service_,
-             pmid_node_),
+             pmid_node_service_),
       asio_service_(2) {
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
   asio_service_.Start();
@@ -79,11 +78,23 @@ void Vault::InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_
 
 routing::Functors Vault::InitialiseRoutingCallbacks() {
   routing::Functors functors;
-  functors.message_received = [this](const std::string& message,
-                                     bool /*cache_lookup*/,
-                                     const routing::ReplyFunctor& reply_functor) {
-                                OnMessageReceived(message, reply_functor);
-                              };
+  functors.typed_message_and_caching.single_to_single =
+      [this](const SingleToSingleMessage& message) {
+          OnMessageReceived(message);
+      };
+  functors.typed_message_and_caching.single_to_group =
+      [this](const SingleToGroupMessage& message) {
+          OnMessageReceived(message);
+      };
+  functors.typed_message_and_caching.group_to_single =
+      [this](const GroupToSingleMessage& message) {
+          OnMessageReceived(message);
+      };
+  functors.typed_message_and_caching.group_to_group =
+      [this](const GroupToGroupMessage& message) {
+          OnMessageReceived(message);
+      };
+
   functors.network_status = [this] (const int& network_health) {
                               OnNetworkStatusChange(network_health);
                             };
@@ -103,11 +114,6 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
   functors.store_cache_data = [this] (const std::string& message) { OnStoreInCache(message); };
   functors.have_cache_data = [this] (std::string& message) { return OnGetFromCache(message); };
   return functors;
-}
-
-void Vault::OnMessageReceived(const std::string& message,
-                              const routing::ReplyFunctor& reply_functor) {
-  asio_service_.service().post([=] { demux_.HandleMessage(message, reply_functor); });  // NOLINT (Dan)
 }
 
 void Vault::OnNetworkStatusChange(const int& network_health) {

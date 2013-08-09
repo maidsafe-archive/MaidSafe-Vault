@@ -65,9 +65,14 @@ struct GetPmidTotalsOp;
 
 class MaidManagerService {
  public:
+  typedef boost::variant<MaidNodePut, MaidNodeDelete> Messages;
+
   MaidManagerService(const passport::Pmid& pmid,
                      routing::Routing& routing,
                      nfs::PublicKeyGetter& public_key_getter);
+  template<typename T>
+  std::string HandleMessage(const T& /*message*/);
+
   // Handling of received requests (sending of requests is done via nfs_ object).
   template<typename Data>
   void HandleMessage(const nfs::Message& message);
@@ -200,6 +205,12 @@ typename Data::name_type GetDataName(const nfs::Message& message) {
 
 }  // namespace detail
 
+template<typename T>
+void HandleMessage(const T& /*message*/,
+                   const typename T::Receiver& /*receiver*/,
+                   const typename T::Sender& /*sender*/) {
+  T::should_not_reach_here_;
+}
 
 template<typename Data>
 void MaidManagerService::HandleMessage(const nfs::Message& message,
