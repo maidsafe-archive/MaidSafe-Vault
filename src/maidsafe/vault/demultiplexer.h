@@ -17,15 +17,18 @@ License.
 #define MAIDSAFE_VAULT_DEMULTIPLEXER_H_
 
 #include <string>
+#include <type_traits>
 
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/message_wrapper.h"
+
 #include "maidsafe/vault/service.h"
-#include "maidsafe/vault/pmid_node/service.h"
-#include "maidsafe/vault/maid_manager/service.h"
 #include "maidsafe/vault/data_manager/service.h"
+#include "maidsafe/vault/maid_manager/service.h"
 #include "maidsafe/vault/pmid_manager/service.h"
+#include "maidsafe/vault/pmid_node/service.h"
 #include "maidsafe/vault/version_manager/service.h"
 
 namespace maidsafe {
@@ -41,7 +44,7 @@ class Demultiplexer {
                 PmidNodeService& pmid_node_service);
 //  bool GetFromCache(std::string& serialised_message);
 //  void StoreInCache(const std::string& serialised_message);
-  template <typename T>
+  template<typename T>
   void HandleMessage(const T& routing_message);
 
  private:
@@ -56,13 +59,20 @@ class Demultiplexer {
   Service<PmidNodeService>& pmid_node_service_;
 };
 
-template <typename T>
+template<typename T>
 void Demultiplexer::HandleMessage(const T& routing_message) {
   auto wrapper_tuple(ParseMessageWrapper(routing_message.contents));
-  switch (std::get<1>(wrapper_tuple)) {
+  const auto& destination_persona(std::get<2>(wrapper_tuple));
+  static_assert(std::is_same<decltype(destination_persona),
+                             const detail::DestinationTaggedValue&>::value,
+                "The value retrieved from the tuple isn't the destination type, but should be.");
+  switch (destination_persona.data) {
     case nfs::Persona::kMaidManager:
       return maid_manager_service_.HandleMessage(wrapper_tuple, routing_message.sender,
                                                  routing_message.receiver);
+    case nfs::Persona::kVersionManager:
+      return version_manager_service_.HandleMessage(wrapper_tuple, routing_message.sender,
+                                                    routing_message.receiver);
     case nfs::Persona::kDataManager:
       return data_manager_service_.HandleMessage(wrapper_tuple, routing_message.sender,
                                                  routing_message.receiver);

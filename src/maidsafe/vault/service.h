@@ -30,11 +30,10 @@ namespace maidsafe {
 
 namespace vault {
 
-template<typename PersonaService, typename T>
+template<typename PersonaService, typename Sender, typename Receiver>
 class PersonaDemuxer : public boost::static_visitor<> {
  public:
-  PersonaDemuxer(PersonaService& persona_service, const typename T::Sender& sender,
-                 const typename T::Receiver& receiver)
+  PersonaDemuxer(PersonaService& persona_service, const Sender& sender, const Receiver& receiver)
     : persona_service_(persona_service),
       sender_(sender),
       receiver_(receiver) {}
@@ -42,10 +41,11 @@ class PersonaDemuxer : public boost::static_visitor<> {
   void operator()(const Message& message) const {
     persona_service_.HandleMessage(message, sender_, receiver_);
   }
+
  private:
   PersonaService& persona_service_;
-  const typename T::Sender& sender_;
-  const typename T::Receiver& receiver_;
+  const Sender& sender_;
+  const Receiver& receiver_;
 };
 
 template<typename PersonaService>
@@ -56,12 +56,12 @@ class Service {
   Service(const passport::Pmid& pmid, routing::Routing& routing)
       : impl_(pmid, routing) {}
 
-  template<typename T>
+  template<typename Sender, typename Receiver>
   void HandleMessage(const nfs::TypeErasedMessageWrapper& message,
-                     const typename T::Sender& sender,
-                     const typename T::Receiver& receiver) {
+                     const Sender& sender,
+                     const Receiver& receiver) {
     auto variant_message(nfs::GetVariant<Messages>(message));
-    static const PersonaDemuxer<PersonaService, T> demuxer(impl_, sender, receiver);
+    static const PersonaDemuxer<PersonaService, Sender, Receiver> demuxer(impl_, sender, receiver);
     return boost::apply_visitor(demuxer, variant_message);
   }
 

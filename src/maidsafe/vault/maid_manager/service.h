@@ -31,12 +31,14 @@ License.
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/messages.h"
+#include "maidsafe/nfs/message_wrapper.h"
 #include "maidsafe/nfs/public_key_getter.h"
 #include "maidsafe/nfs/utils.h"
 
 //#include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/group_db.h"
+#include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/unresolved_action.h"
@@ -65,16 +67,59 @@ struct GetPmidTotalsOp;
 
 class MaidManagerService {
  public:
-  typedef boost::variant<MaidNodePut, MaidNodeDelete> Messages;
+  typedef boost::variant<maid_manager::MaidNodePut, maid_manager::MaidNodeDelete> Messages;
 
   MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing);
-  template<typename T>
-  std::string HandleMessage(const T& /*message*/);
 
-  // Handling of received requests (sending of requests is done via nfs_ object).
+  template<typename T>
+  void HandleMessage(const T& message,
+                     const typename nfs::Sender<T>::type& sender,
+                     const typename nfs::Receiver<T>::type& receiver) {
+    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
+  }
+
+  template<>
+  void HandleMessage<maid_manager::MaidNodePut>(
+      const maid_manager::MaidNodePut& message,
+      const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender,
+      const typename nfs::Receiver<maid_manager::MaidNodePut>::type& receiver);
+
+  template<>
+  void HandleMessage<maid_manager::MaidNodeDelete>(
+      const maid_manager::MaidNodeDelete& message,
+      const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender,
+      const typename nfs::Receiver<maid_manager::MaidNodeDelete>::type& receiver);
+
+ private:
   template<typename Data>
-  void HandleMessage(const nfs::Message& message);
-  void HandleMessage(const nfs::Message& message);
+  void HandleDelete(const typename Data::name_type& data_name,
+                    const maid_manager::MaidNodeDelete& message,
+                    const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender);
+
+  class DataVisitorDelete : public boost::static_visitor<> {
+   public:
+    DataVisitorDelete(MaidManagerService* service,
+                      const maid_manager::MaidNodeDelete& message,
+                      const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender)
+        : service_(service),
+          message_(message),
+          sender_(sender) {}
+    template<typename DataName>
+    void operator()(const DataName& data_name) {
+      service_->HandleDelete(data_name, message_, sender_);
+    }
+    MaidManagerService* service_;
+    const maid_manager::MaidNodeDelete& message_;
+    const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender_;
+  };
+
+
+
+
+
+
+
+
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
 
@@ -203,12 +248,64 @@ typename Data::name_type GetDataName(const nfs::Message& message) {
 
 }  // namespace detail
 
-template<typename T>
-void HandleMessage(const T& /*message*/,
-                   const typename T::Receiver& /*receiver*/,
-                   const typename T::Sender& /*sender*/) {
-  T::should_not_reach_here;
+
+
+template<>
+void MaidManagerService::HandleMessage<maid_manager::MaidNodePut>(
+    const maid_manager::MaidNodePut& message,
+    const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender,
+    const typename nfs::Receiver<maid_manager::MaidNodePut>::type& receiver) {
+
 }
+
+template<>
+void MaidManagerService::HandleMessage<maid_manager::MaidNodeDelete>(
+    const maid_manager::MaidNodeDelete& message,
+    const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender,
+    const typename nfs::Receiver<maid_manager::MaidNodeDelete>::type& receiver) {
+  try {
+    AddToAccumulator(message);
+    nfs::DataName parsed_data_name(message.serialised_message);
+    auto data_name_variant(GetDataNameVariant(parsed_data_name.type, parsed_data_name.raw_name));
+    DataVisitorDelete visitor(this, message, sender);
+    boost::apply_visitor(visitor, data_name_variant);
+  }
+  catch(const maidsafe_error& error) {
+    LOG(kWarning) << error.what();
+  }
+  catch(...) {
+    LOG(kWarning) << "Unknown error.";
+  }
+}
+
+template<typename Data>
+void MaidManagerService::HandleDelete(
+    const typename Data::name_type& data_name,
+    const maid_manager::MaidNodeDelete& message,
+    const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender) {
+  MaidName account_name(Identity(sender->string()));
+
+
+  AddLocalUnresolvedActionThenSync<Data, nfs::MessageAction::kDelete>(message, 0);
+
+
+  dispatcher_.SendDeleteRequest(account_name, data_name);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 template<typename Data>
 void MaidManagerService::HandleMessage(const nfs::Message& message,

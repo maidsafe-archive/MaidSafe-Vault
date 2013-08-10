@@ -27,7 +27,6 @@ License.
 #include "maidsafe/common/error.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/message.h"
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
@@ -41,15 +40,14 @@ namespace vault {
 namespace detail {
 
 void InitialiseDirectory(const boost::filesystem::path& directory);
-bool ShouldRetry(routing::Routing& routing, const nfs::Message& message);
+//bool ShouldRetry(routing::Routing& routing, const nfs::Message& message);
 
 template<typename Data>
-bool IsDataElement(const typename Data::name_type& name,
-                   const DataNameVariant& data_name_variant);
+bool IsDataElement(const typename Data::name_type& name, const DataNameVariant& data_name_variant);
 
-void SendReply(const nfs::Message& original_message,
-               const maidsafe_error& return_code,
-               const routing::ReplyFunctor& reply_functor);
+//void SendReply(const nfs::Message& original_message,
+//               const maidsafe_error& return_code,
+//               const routing::ReplyFunctor& reply_functor);
 
 template<typename AccountSet, typename Account>
 typename Account::serialised_type GetSerialisedAccount(
@@ -74,38 +72,38 @@ bool AddResult(const nfs::Message& message,
 }  // namespace detail
 
 
-template<typename Message>
-inline bool FromMaidManager(const Message& message);
-
-template<typename Message>
-inline bool FromDataManager(const Message& message);
-
-template<typename Message>
-inline bool FromPmidManager(const Message& message);
-
-template<typename Message>
-inline bool FromDataHolder(const Message& message);
-
-template<typename Message>
-inline bool FromClientMaid(const Message& message);
-
-template<typename Message>
-inline bool FromClientMpid(const Message& message);
-
-template<typename Message>
-inline bool FromOwnerDirectoryManager(const Message& message);
-
-template<typename Message>
-inline bool FromGroupDirectoryManager(const Message& message);
-
-template<typename Message>
-inline bool FromWorldDirectoryManager(const Message& message);
-
-template<typename Message>
-inline bool FromDataGetter(const Message& message);
-
-template<typename Message>
-inline bool FromVersionManager(const nfs::Message& message);
+//template<typename Message>
+//inline bool FromMaidManager(const Message& message);
+//
+//template<typename Message>
+//inline bool FromDataManager(const Message& message);
+//
+//template<typename Message>
+//inline bool FromPmidManager(const Message& message);
+//
+//template<typename Message>
+//inline bool FromDataHolder(const Message& message);
+//
+//template<typename Message>
+//inline bool FromClientMaid(const Message& message);
+//
+//template<typename Message>
+//inline bool FromClientMpid(const Message& message);
+//
+//template<typename Message>
+//inline bool FromOwnerDirectoryManager(const Message& message);
+//
+//template<typename Message>
+//inline bool FromGroupDirectoryManager(const Message& message);
+//
+//template<typename Message>
+//inline bool FromWorldDirectoryManager(const Message& message);
+//
+//template<typename Message>
+//inline bool FromDataGetter(const Message& message);
+//
+//template<typename Message>
+//inline bool FromVersionManager(const nfs::Message& message);
 
 template<typename Persona>
 typename Persona::DbKey GetKeyFromMessage(const nfs::Message& message) {
