@@ -32,6 +32,7 @@ License.
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/messages.h"
+#include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/message_wrapper.h"
 #include "maidsafe/nfs/public_key_getter.h"
 #include "maidsafe/nfs/utils.h"
@@ -67,45 +68,43 @@ struct GetPmidTotalsOp;
 
 class MaidManagerService {
  public:
-  typedef boost::variant<maid_manager::MaidNodePut, maid_manager::MaidNodeDelete> Messages;
+  typedef nfs::MaidManagerServiceMessages Messages;
 
   MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing);
 
   template<typename T>
   void HandleMessage(const T& message,
-                     const typename nfs::Sender<T>::type& sender,
-                     const typename nfs::Receiver<T>::type& receiver) {
+                     const typename T::Sender& sender,
+                     const typename T::Receiver& receiver) {
     T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
   }
 
   template<>
-  void HandleMessage<maid_manager::MaidNodePut>(
-      const maid_manager::MaidNodePut& message,
-      const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender,
-      const typename nfs::Receiver<maid_manager::MaidNodePut>::type& receiver);
+  void HandleMessage<nfs::PutRequestFromMaidNodeToMaidManager>(
+      const nfs::PutRequestFromMaidNodeToMaidManager& message,
+      const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
+      const typename nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
   template<>
-  void HandleMessage<maid_manager::MaidNodeDelete>(
-      const maid_manager::MaidNodeDelete& message,
-      const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender,
-      const typename nfs::Receiver<maid_manager::MaidNodeDelete>::type& receiver);
+  void HandleMessage<nfs::DeleteRequestFromMaidNodeToMaidManager>(
+      const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
+      const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
+      const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
  private:
   template<typename Data>
-  void HandleDelete(const typename Data::name_type& data_name,
-                    const maid_manager::MaidNodeDelete& message,
-                    const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender);
+  void HandlePut(const nfs::PutRequestFromMaidNodeToMaidManager& message,
+                 const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender);
 
   template<typename Data>
-  void HandlePut(const typename Data::name_type& data_name,
-                 const maid_manager::MaidNodeDelete& message,
-                 const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender);
+  void HandleDelete(const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
+                    const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender);
 
   class DataVisitorPut : public boost::static_visitor<> {
    public:
     DataVisitorPut(MaidManagerService* service,
-                   const maid_manager::MaidNodeDelete& message,
-                   const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender)
+                   const nfs::PutRequestFromMaidNodeToMaidManager& message,
+                   const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender)
         : service_(service),
           message_(message),
           sender_(sender) {}
@@ -114,15 +113,15 @@ class MaidManagerService {
       service_->HandlePut(data_name, message_, sender_);
     }
     MaidManagerService* service_;
-    const maid_manager::MaidNodePut& message_;
-    const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender_;
+    const nfs::PutRequestFromMaidNodeToMaidManager& message_;
+    const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender_;
   };
 
   class DataVisitorDelete : public boost::static_visitor<> {
    public:
     DataVisitorDelete(MaidManagerService* service,
-                      const maid_manager::MaidNodeDelete& message,
-                      const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender)
+                      const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
+                      const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender)
         : service_(service),
           message_(message),
           sender_(sender) {}
@@ -131,8 +130,8 @@ class MaidManagerService {
       service_->HandleDelete(data_name, message_, sender_);
     }
     MaidManagerService* service_;
-    const maid_manager::MaidNodeDelete& message_;
-    const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender_;
+    const nfs::DeleteRequestFromMaidNodeToMaidManager& message_;
+    const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender_;
   };
 
 

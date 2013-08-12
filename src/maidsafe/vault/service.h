@@ -20,8 +20,8 @@ License.
 #include "boost/variant/variant.hpp"
 
 #include "maidsafe/passport/types.h"
+#include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/message_wrapper.h"
-#include "maidsafe/nfs/message_wrapper_variant.h"
 #include "maidsafe/nfs/public_key_getter.h"
 #include "maidsafe/nfs/types.h"
 
@@ -60,9 +60,10 @@ class Service {
   void HandleMessage(const nfs::TypeErasedMessageWrapper& message,
                      const Sender& sender,
                      const Receiver& receiver) {
-    auto variant_message(nfs::GetVariant<Messages>(message));
+    Messages variant_message;
+    nfs::GetVariant(message, variant_message);
     static const PersonaDemuxer<PersonaService, Sender, Receiver> demuxer(impl_, sender, receiver);
-    return boost::apply_visitor(demuxer, variant_message);
+    boost::apply_visitor(demuxer, variant_message);
   }
 
  private:

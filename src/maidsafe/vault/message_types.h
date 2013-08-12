@@ -27,64 +27,38 @@ namespace vault {
 
 namespace maid_manager {
 
-typedef nfs::MessageWrapper<nfs::MessageAction::kPutRequest,
-                            nfs::DestinationPersona<nfs::Persona::kMaidManager>,
-                            nfs::SourcePersona<nfs::Persona::kMaidNode>> MaidNodePut;
-
-typedef nfs::MessageWrapper<nfs::MessageAction::kDeleteRequest,
-                            nfs::DestinationPersona<nfs::Persona::kMaidManager>,
-                            nfs::SourcePersona<nfs::Persona::kMaidNode>> MaidNodeDelete;
+//typedef nfs::MessageWrapper<nfs::MessageAction::kPutRequest,
+//                            nfs::DestinationPersona<nfs::Persona::kMaidManager>,
+//                            nfs::SourcePersona<nfs::Persona::kMaidNode>> MaidNodePut;
+//
+//typedef nfs::MessageWrapper<nfs::MessageAction::kDeleteRequest,
+//                            nfs::DestinationPersona<nfs::Persona::kMaidManager>,
+//                            nfs::SourcePersona<nfs::Persona::kMaidNode>> MaidNodeDelete;
 
 }  // namespace maid_manager
 
 
 namespace data_manager {
 
-typedef nfs::MessageWrapper<nfs::MessageAction::kGetRequest,
-                            nfs::DestinationPersona<nfs::Persona::kDataManager>,
-                            nfs::SourcePersona<nfs::Persona::kMaidNode>> MaidNodeGet;
-
-typedef nfs::MessageWrapper<nfs::MessageAction::kGetRequest,
-                            nfs::DestinationPersona<nfs::Persona::kDataManager>,
-                            nfs::SourcePersona<nfs::Persona::kPmidNode>> PmidNodeGet;
-
-typedef nfs::MessageWrapper<nfs::MessageAction::kPutRequest,
-                            nfs::DestinationPersona<nfs::Persona::kDataManager>,
-                            nfs::SourcePersona<nfs::Persona::kMaidManager>> MaidManagerPut;
-
-typedef nfs::MessageWrapper<nfs::MessageAction::kDeleteRequest,
-                            nfs::DestinationPersona<nfs::Persona::kDataManager>,
-                            nfs::SourcePersona<nfs::Persona::kMaidManager>> MaidManagerDelete;
+//typedef nfs::MessageWrapper<nfs::MessageAction::kGetRequest,
+//                            nfs::DestinationPersona<nfs::Persona::kDataManager>,
+//                            nfs::SourcePersona<nfs::Persona::kMaidNode>> MaidNodeGet;
+//
+//typedef nfs::MessageWrapper<nfs::MessageAction::kGetRequest,
+//                            nfs::DestinationPersona<nfs::Persona::kDataManager>,
+//                            nfs::SourcePersona<nfs::Persona::kPmidNode>> PmidNodeGet;
+//
+//typedef nfs::MessageWrapper<nfs::MessageAction::kPutRequest,
+//                            nfs::DestinationPersona<nfs::Persona::kDataManager>,
+//                            nfs::SourcePersona<nfs::Persona::kMaidManager>> MaidManagerPut;
+//
+//typedef nfs::MessageWrapper<nfs::MessageAction::kDeleteRequest,
+//                            nfs::DestinationPersona<nfs::Persona::kDataManager>,
+//                            nfs::SourcePersona<nfs::Persona::kMaidManager>> MaidManagerDelete;
 
 }  // namespace data_manager
 
 }  // namespace vault
-
-namespace nfs {
-
-template<>
-struct Sender<vault::maid_manager::MaidNodePut> {
-  typedef routing::SingleSource type;
-};
-
-template<>
-struct Receiver<vault::maid_manager::MaidNodePut> {
-  typedef routing::GroupId type;
-};
-
-template<>
-struct Sender<vault::maid_manager::MaidNodeDelete> {
-  typedef routing::SingleSource type;
-};
-
-template<>
-struct Receiver<vault::maid_manager::MaidNodeDelete> {
-  typedef routing::GroupId type;
-};
-
-
-
-}  // namespace nfs
 
 }  // namespace maidsafe
 
