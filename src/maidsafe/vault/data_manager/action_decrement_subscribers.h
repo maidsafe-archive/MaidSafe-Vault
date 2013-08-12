@@ -27,20 +27,20 @@ License.
 namespace maidsafe {
 namespace vault {
 
-struct ActionDataManagerDeccrementSubscribers {
+struct ActionDataManagerDecrementSubscribers {
 
   void operator()(boost::optional<DataManagerValue>& value) const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDecrementSubscribers;
 
  private:
-  ActionDataManagerDeccrementSubscribers& operator=(ActionDataManagerDeccrementSubscribers other);
+  ActionDataManagerDecrementSubscribers& operator=(ActionDataManagerDecrementSubscribers other);
 };
 
-bool operator==(const ActionDataManagerDeccrementSubscribers& lhs,
-               const ActionDataManagerDeccrementSubscribers& rhs);
-bool operator!=(const ActionDataManagerDeccrementSubscribers& lhs,
-                const ActionDataManagerDeccrementSubscribers& rhs);
+bool operator==(const ActionDataManagerDecrementSubscribers& lhs,
+               const ActionDataManagerDecrementSubscribers& rhs);
+bool operator!=(const ActionDataManagerDecrementSubscribers& lhs,
+                const ActionDataManagerDecrementSubscribers& rhs);
 
 }  // namespace vault
 }  // namespace maidsafe

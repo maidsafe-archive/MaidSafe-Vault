@@ -13,35 +13,36 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#include "maidsafe/vault/data_manager/action_deccrement_subscribers.h"
+#include "maidsafe/vault/data_manager/action_decrement_subscribers.h"
 #include "maidsafe/vault/data_manager/action_decrement_subscribers.pb.h"
 
 
 namespace maidsafe {
 namespace vault {
 
-std::string ActionDataManagerDeccrementSubscribers::Serialise() const {
-  protobuf::ActionDataManagerDeccrementSubscribers action_decrement_subscribers_proto;
+std::string ActionDataManagerDecrementSubscribers::Serialise() const {
+  protobuf::ActionDataManagerDecrementSubscribers action_decrement_subscribers_proto;
   return action_decrement_subscribers_proto.SerializeAsString();
 }
 
-void ActionDataManagerDeccrementSubscribers::operator()(
+void ActionDataManagerDecrementSubscribers::operator()(
     boost::optional<PmidManagerValue>& value) const {
   if (value)
-    value.DeccrementSubscribers();
+    value.DecrementSubscribers();
   else
     Throw(CommonErrors::invalid_parameter);
 }
 
-bool operator==(const ActionDataManagerDeccrementSubscribers& lhs,
-                const ActionDataManagerDeccrementSubscribers& rhs) {
+bool operator==(const ActionDataManagerDecrementSubscribers& lhs,
+                const ActionDataManagerDecrementSubscribers& rhs) {
   return true;
 }
 
-bool operator!=(const ActionDataManagerDeccrementSubscribers& lhs,
-                const ActionDataManagerDeccrementSubscribers& rhs) {
+bool operator!=(const ActionDataManagerDecrementSubscribers& lhs,
+                const ActionDataManagerDecrementSubscribers& rhs) {
   return !operator==(lhs, rhs);
 }
 
 }  // namespace vault
+
 }  // namespace maidsafe
