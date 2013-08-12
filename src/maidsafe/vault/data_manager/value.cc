@@ -36,12 +36,26 @@ DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_va
     LOG(kError) << "Failed to read or parse serialised metadata value";
     ThrowError(CommonErrors::parsing_error);
   } else {
+    if (metadata_value_proto.size() < 1) {
+      LOG(kError) << "Invalid data size";
+      ThrowError(CommonErrors::invalid_parameter);
+    }
     data_size_ = metadata_value_proto.size();
+
+    if (metadata_value_proto.subscribers() < 1) {
+      LOG(kError) << "Invalid subscribers count";
+      ThrowError(CommonErrors::invalid_parameter);
+    }
     subscribers_ = metadata_value_proto.subscribers();
+
     for (auto& i : metadata_value_proto.online_pmid_name())
       online_pmids_.insert(PmidName(Identity(i)));
     for (auto& i : metadata_value_proto.offline_pmid_name())
       offline_pmids_.insert(PmidName(Identity(i)));
+    if (online_pmids_.size() + offline_pmids_.size() < 1) {
+      LOG(kError) << "Invalid online/offline pmids";
+      ThrowError(CommonErrors::invalid_parameter);
+    }
   }
 }
 
@@ -50,8 +64,10 @@ DataManagerValue::DataManagerValue(const PmidName& pmid_name, int size)
       subscribers_(1),
       online_pmids_(),
       offline_pmids_() {
-  if (size < 1)
+  if (data_size_ < 1) {
+    LOG(kError) << "Invalid data size";
     ThrowError(CommonErrors::invalid_parameter);
+  }
   online_pmids_.insert(pmid_name);
 }
 
@@ -61,6 +77,10 @@ void DataManagerValue::AddPmid(const PmidName& pmid_name) {
 }
 
 void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
+  if (online_pmids_.size() + offline_pmids_.size() < 4) {
+    LOG(kError) << "RemovePmid not allowed";
+    ThrowError(CommonErrors::invalid_parameter); // TODO add error - not_allowed
+  }
   online_pmids_.erase(pmid_name);
   offline_pmids_.erase(pmid_name);
 }
@@ -69,28 +89,36 @@ void DataManagerValue::Increamentsubscribers() {
   ++subscribers_;
 }
 
-void DataManagerValue::Decreamentsubscribers() {
-  if (subscribers_ <= 0)
-    ThrowError(CommonErrors::invalid_parameter);
+int64_t DataManagerValue::Decreamentsubscribers() {
   --subscribers_;
+  return subscribers_;
 }
 
 void DataManagerValue::SetPmidOnline(const PmidName& pmid_name) {
   auto deleted = offline_pmids_.erase(pmid_name);
-  if (deleted == 1)
+  if (deleted == 1) {
     online_pmids_.insert(pmid_name);
+  } else {
+    LOG(kError) << "Invalid Pmid reported";
+    ThrowError(CommonErrors::invalid_parameter);
+  }
 }
 
 void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
   auto deleted = online_pmids_.erase(pmid_name);
-  if (deleted == 1)
+  if (deleted == 1) {
     offline_pmids_.insert(pmid_name);
+  } else {
+    LOG(kError) << "Invalid Pmid reported";
+    ThrowError(CommonErrors::invalid_parameter);
+  }
 }
 
 DataManagerValue::serialised_type DataManagerValue::Serialise() const {
-  if ((subscribers_ <= 0) || online_pmids_.empty())
+  if (subscribers_ < 1)
     ThrowError(CommonErrors::uninitialised);  // Cannot serialise if not a complete db value
-
+  assert((online_pmids_.size() + offline_pmids_.size()) > 0);
+  assert(data_size_ > 0);
   protobuf::DataManagerValue metadata_value_proto;
   metadata_value_proto.set_size(data_size_);
   metadata_value_proto.set_subscribers(subscribers_);

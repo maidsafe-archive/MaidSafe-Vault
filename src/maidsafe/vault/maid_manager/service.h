@@ -98,8 +98,25 @@ class MaidManagerService {
 
   template<typename Data>
   void HandlePut(const typename Data::name_type& data_name,
-                    const maid_manager::MaidNodeDelete& message,
-                    const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender);
+                 const maid_manager::MaidNodeDelete& message,
+                 const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender);
+
+  class DataVisitorPut : public boost::static_visitor<> {
+   public:
+    DataVisitorPut(MaidManagerService* service,
+                   const maid_manager::MaidNodeDelete& message,
+                   const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender)
+        : service_(service),
+          message_(message),
+          sender_(sender) {}
+    template<typename DataName>
+    void operator()(const DataName& data_name) {
+      service_->HandlePut(data_name, message_, sender_);
+    }
+    MaidManagerService* service_;
+    const maid_manager::MaidNodePut& message_;
+    const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender_;
+  };
 
   class DataVisitorDelete : public boost::static_visitor<> {
    public:
@@ -116,22 +133,6 @@ class MaidManagerService {
     MaidManagerService* service_;
     const maid_manager::MaidNodeDelete& message_;
     const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender_;
-  };
-  class DataVisitorPut : public boost::static_visitor<> {
-   public:
-    DataVisitorPut(MaidManagerService* service,
-                   const maid_manager::MaidNodeDelete& message,
-                   const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender)
-        : service_(service),
-          message_(message),
-          sender_(sender) {}
-    template<typename DataName>
-    void operator()(const DataName& data_name) {
-      service_->HandlePut(data_name, message_, sender_);
-    }
-    MaidManagerService* service_;
-    const maid_manager::MaidNodePut& message_;
-    const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender_;
   };
 
 
@@ -275,7 +276,21 @@ void MaidManagerService::HandleMessage<maid_manager::MaidNodePut>(
     const maid_manager::MaidNodePut& message,
     const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender,
     const typename nfs::Receiver<maid_manager::MaidNodePut>::type& receiver) {
-
+  try {
+    AddToAccumulator(message);
+    message.contents
+    nfs::DataNameContentAndPmidHint parsed_content(message.serialised_message);
+    auto data_name_variant(GetDataNameVariant(parsed_content.name_and_content.name.type,
+                                              parsed_content.name_and_content.name.raw_name));
+    DataVisitorPut visitor(this, message, sender);
+    boost::apply_visitor(visitor, data_name_variant);
+  }
+  catch(const maidsafe_error& error) {
+    LOG(kWarning) << error.what();
+  }
+  catch(...) {
+    LOG(kWarning) << "Unknown error.";
+  }
 }
 
 template<>
@@ -300,9 +315,12 @@ void MaidManagerService::HandleMessage<maid_manager::MaidNodeDelete>(
 
 template<typename Data>
 void HandlePut(const typename Data::name_type& data_name,
-                  const maid_manager::MaidNodePut& message,
-                  const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender) {
+               const maid_manager::MaidNodePut& message,
+               const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender) {
   MaidName account_name(Identity(sender->string()));
+  nfs::DataNameContentAndPmidHint parsed_content(message.serialised_message);
+
+
   message. // figure out from metadata if we have space and if low return to client
       // we need o send the whole data item not only name
   AddLocalUnresolvedActionThenSync<Data, nfs::MessageAction::kPutRequest>(message, 0);
