@@ -26,7 +26,6 @@ License.
 
 #include "maidsafe/vault/types.h"
 
-
 namespace maidsafe {
 
 class OwnerDirectory;

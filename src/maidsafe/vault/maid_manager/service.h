@@ -96,6 +96,11 @@ class MaidManagerService {
                     const maid_manager::MaidNodeDelete& message,
                     const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender);
 
+  template<typename Data>
+  void HandlePut(const typename Data::name_type& data_name,
+                    const maid_manager::MaidNodeDelete& message,
+                    const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender);
+
   class DataVisitorDelete : public boost::static_visitor<> {
    public:
     DataVisitorDelete(MaidManagerService* service,
@@ -112,7 +117,22 @@ class MaidManagerService {
     const maid_manager::MaidNodeDelete& message_;
     const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender_;
   };
-
+  class DataVisitorPut : public boost::static_visitor<> {
+   public:
+    DataVisitorPut(MaidManagerService* service,
+                   const maid_manager::MaidNodeDelete& message,
+                   const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender)
+        : service_(service),
+          message_(message),
+          sender_(sender) {}
+    template<typename DataName>
+    void operator()(const DataName& data_name) {
+      service_->HandlePut(data_name, message_, sender_);
+    }
+    MaidManagerService* service_;
+    const maid_manager::MaidNodePut& message_;
+    const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender_;
+  };
 
 
 
@@ -279,16 +299,23 @@ void MaidManagerService::HandleMessage<maid_manager::MaidNodeDelete>(
 }
 
 template<typename Data>
+void HandlePut(const typename Data::name_type& data_name,
+                  const maid_manager::MaidNodePut& message,
+                  const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender) {
+  MaidName account_name(Identity(sender->string()));
+  message. // figure out from metadata if we have space and if low return to client
+      // we need o send the whole data item not only name
+  AddLocalUnresolvedActionThenSync<Data, nfs::MessageAction::kPutRequest>(message, 0);
+  dispatcher_.SendPutRequest(account_name, data_name);
+}
+
+template<typename Data>
 void MaidManagerService::HandleDelete(
     const typename Data::name_type& data_name,
     const maid_manager::MaidNodeDelete& message,
     const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender) {
   MaidName account_name(Identity(sender->string()));
-
-
   AddLocalUnresolvedActionThenSync<Data, nfs::MessageAction::kDelete>(message, 0);
-
-
   dispatcher_.SendDeleteRequest(account_name, data_name);
 }
 
