@@ -85,7 +85,7 @@ void PmidManagerService::CreatePmidAccount(const nfs::Message& message) {
 void PmidManagerService::GetPmidTotals(const nfs::Message& message) {
   try {
     PmidManagerMetadata metadata(pmid_account_handler_.GetMetadata(PmidName(message.data().name)));
-    if (!metadata.pmid_name.data.string().empty()) {
+    if (!metadata.pmid_name->string().empty()) {
       nfs::Reply reply(CommonErrors::success, metadata.Serialise());
       nfs_.ReturnPmidTotals(message.source().node_id, reply.Serialise());
     } else {

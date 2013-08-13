@@ -40,7 +40,7 @@ namespace nfs {
 template<>
 struct PersonaTypes<Persona::kPmidManager> {
   static const Persona persona = Persona::kPmidManager;
-  typedef vault::GroupKey<passport::PublicPmid::name_type> Key;
+  typedef vault::GroupKey<passport::PublicPmid::Name> Key;
   typedef vault::PmidManagerValue Value;
   typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerDelete> UnresolvedDelete;

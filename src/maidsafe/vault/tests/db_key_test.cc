@@ -31,7 +31,7 @@ namespace vault {
 namespace test {
 
 TEST(DbKeyTest, BEH_Serialise) {
-  DataNameVariant name(ImmutableData::name_type(Identity(
+  DataNameVariant name(ImmutableData::Name(Identity(
       RandomString(crypto::SHA512::DIGESTSIZE))));
   DbKey db_key(name);
   EXPECT_TRUE(db_key.name() == name);
@@ -46,7 +46,7 @@ TEST(DbKeyTest, BEH_Serialise) {
 }
 
 TEST(DbKeyTest, BEH_All) {
-  DataNameVariant name(ImmutableData::name_type(Identity(
+  DataNameVariant name(ImmutableData::Name(Identity(
       RandomString(crypto::SHA512::DIGESTSIZE))));
   DbKey db_key;
   db_key = DbKey(name);

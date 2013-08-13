@@ -43,7 +43,7 @@ void InitialiseDirectory(const boost::filesystem::path& directory);
 //bool ShouldRetry(routing::Routing& routing, const nfs::Message& message);
 
 template<typename Data>
-bool IsDataElement(const typename Data::name_type& name, const DataNameVariant& data_name_variant);
+bool IsDataElement(const typename Data::Name& name, const DataNameVariant& data_name_variant);
 
 //void SendReply(const nfs::Message& original_message,
 //               const maidsafe_error& return_code,
@@ -53,13 +53,13 @@ template<typename AccountSet, typename Account>
 typename Account::serialised_type GetSerialisedAccount(
     std::mutex& mutex,
     const AccountSet& accounts,
-    const typename Account::name_type& account_name);
+    const typename Account::Name& account_name);
 
 template<typename AccountSet, typename Account>
 typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
     std::mutex& mutex,
     const AccountSet& accounts,
-    const typename Account::name_type& account_name);
+    const typename Account::Name& account_name);
 // Returns true if the required successful request count has been reached
 template<typename Accumulator>
 bool AddResult(const nfs::Message& message,

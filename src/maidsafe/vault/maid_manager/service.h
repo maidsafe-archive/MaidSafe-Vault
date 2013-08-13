@@ -192,7 +192,7 @@ class MaidManagerService {
                               const routing::ReplyFunctor& reply_functor);
   template<typename PublicFobType>
   void ValidatePmidRegistration(const nfs::Reply& reply,
-                                typename PublicFobType::name_type public_fob_name,
+                                typename PublicFobType::Name public_fob_name,
                                 std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
   void FinalisePmidRegistration(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
 
@@ -261,9 +261,9 @@ int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&);
 MaidName GetMaidAccountName(const nfs::Message& message);
 
 template<typename Data>
-typename Data::name_type GetDataName(const nfs::Message& message) {
+typename Data::Name GetDataName(const nfs::Message& message) {
   // Hash the data name to obfuscate the list of chunks associated with the client.
-  return typename Data::name_type(crypto::Hash<crypto::SHA512>(message.data().name));
+  return typename Data::Name(crypto::Hash<crypto::SHA512>(message.data().name));
 }
 
 }  // namespace detail
@@ -313,7 +313,7 @@ void MaidManagerService::HandleMessage<maid_manager::MaidNodeDelete>(
 }
 
 template<typename Data>
-void HandlePut(const typename Data::name_type& data_name,
+void HandlePut(const typename Data::Name& data_name,
                const maid_manager::MaidNodePut& message,
                const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender) {
   MaidName account_name(Identity(sender->string()));
@@ -328,7 +328,7 @@ void HandlePut(const typename Data::name_type& data_name,
 
 template<typename Data>
 void MaidManagerService::HandleDelete(
-    const typename Data::name_type& data_name,
+    const typename Data::Name& data_name,
     const maid_manager::MaidNodeDelete& message,
     const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender) {
   MaidName account_name(Identity(sender->string()));
@@ -381,7 +381,7 @@ void MaidManagerService::HandlePut(const nfs::Message& message,
                                    const routing::ReplyFunctor& reply_functor) {
   maidsafe_error return_code(CommonErrors::success);
   try {
-    Data data(typename Data::name_type(message.data().name),
+    Data data(typename Data::Name(message.data().name),
               typename Data::serialised_type(message.data().content));
     auto account_name(detail::GetMaidAccountName(message));
     auto estimated_cost(detail::EstimateCost(message.data()));
@@ -434,7 +434,7 @@ void MaidManagerService::HandleDelete(const nfs::Message& message,
   SendReplyAndAddToAccumulator(message, reply_functor, nfs::Reply(CommonErrors::success));
   try {
     auto account_name(detail::GetMaidAccountName(message));
-    typename Data::name_type data_name(message.data().name);
+    typename Data::Name data_name(message.data().name);
     maid_account_handler_.DeleteData<Data>(account_name, data_name);
     AddLocalUnresolvedActionThenSync<Data, nfs::MessageAction::kDelete>(message, 0);
     nfs_.Delete<Data>(data_name, [](std::string /*serialised_reply*/) {});
@@ -506,7 +506,7 @@ void MaidManagerService::HandleVersionMessage(const nfs::Message& message,
 template<typename PublicFobType>
 void MaidManagerService::ValidatePmidRegistration(
     const nfs::Reply& reply,
-    typename PublicFobType::name_type public_fob_name,
+    typename PublicFobType::Name public_fob_name,
     std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
   std::unique_ptr<PublicFobType> public_fob;
   try {

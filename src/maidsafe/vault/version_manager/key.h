@@ -32,7 +32,7 @@ namespace vault {
 
 struct VersionManagerKey {
   template<typename Data>
-  VersionManagerKey(const typename Data::name_type& name_in, const Identity& originator_in)
+  VersionManagerKey(const typename Data::Name& name_in, const Identity& originator_in)
       : name(name_in.data),
         type(Data::type_enum_value()),
         originator(originator_in) {}

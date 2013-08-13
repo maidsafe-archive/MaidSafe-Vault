@@ -42,7 +42,7 @@ class AccountDb;
 
 class PmidAccount {
  public:
-  typedef PmidName name_type;
+  typedef PmidName Name;
   typedef TaggedValue<NonEmptyString, struct SerialisedPmidAccountTag> serialised_type;
 
   enum class PmidNodeStatus : int32_t { kDown, kGoingDown, kUp, kGoingUp };
@@ -64,7 +64,7 @@ class PmidAccount {
 
   void PutData(int32_t size);
   template<typename Data>
-  void DeleteData(const typename Data::name_type& name);
+  void DeleteData(const typename Data::Name& name);
 
   bool ApplyAccountTransfer(const NodeId& source_id,
                             const serialised_type& serialised_pmid_account_details);
@@ -77,7 +77,7 @@ class PmidAccount {
 
   PmidManagerMetadata GetMetadata();
 
-  name_type name() const;
+  Name name() const;
   PmidNodeStatus pmid_node_status() const;
   int64_t total_data_stored_by_pmids() const;
 
@@ -85,7 +85,7 @@ class PmidAccount {
   PmidAccount(const PmidAccount&);
   PmidAccount& operator=(const PmidAccount&);
 
-  name_type pmid_name_;
+  Name pmid_name_;
   PmidManagerMetadata metadata_;
   PmidNodeStatus pmid_node_status_;
   std::unique_ptr<AccountDb> account_db_;
@@ -96,7 +96,7 @@ class PmidAccount {
 
 
 template<typename Data>
-void PmidAccount::DeleteData(const typename Data::name_type& name) {
+void PmidAccount::DeleteData(const typename Data::Name& name) {
   metadata_.stored_count--;
   metadata_.stored_total_size -= sync_.AllowDelete<Data>(name);
 }

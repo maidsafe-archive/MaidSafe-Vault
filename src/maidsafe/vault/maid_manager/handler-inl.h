@@ -47,7 +47,7 @@ void MaidAccountHandler::CreateAccount(const MaidName& account_name, AllowedAcco
 
 template<typename Data>
 void MaidAccountHandler::DeleteData(const MaidName& account_name,
-                                    const typename Data::name_type& data_name) {
+                                    const typename Data::Name& data_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   maid_accounts_.at(account_name)->DeleteData<Data>(data_name);
 }

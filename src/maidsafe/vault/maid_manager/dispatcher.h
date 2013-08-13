@@ -39,8 +39,7 @@ class MaidManagerDispatcher {
   MaidManagerDispatcher(routing::Routing& routing, const passport::Pmid& signing_fob);
 
   template<typename Data>
-  void SendGetVersionRequest(const MaidName& account_name,
-                             const typename Data::name_type& data_name);
+  void SendGetVersionRequest(const MaidName& account_name, const typename Data::Name& data_name);
 
   template<typename Data>
   void SendPutRequest(const MaidName& account_name,
@@ -49,12 +48,12 @@ class MaidManagerDispatcher {
 
   template<typename Data>
   void SendPutResponse(const MaidName& account_name,
-                       const typename Data::name_type& data_name,
+                       const typename Data::Name& data_name,
                        const maidsafe_error& result,
                        nfs::MessageId message_id);
 
   template<typename Data>
-  void SendDeleteRequest(const MaidName& account_name, const typename Data::name_type& data_name);
+  void SendDeleteRequest(const MaidName& account_name, const typename Data::Name& data_name);
 
   void SendCreateAccountResponse(const MaidName& account_name,
                                  const maidsafe_error& result,
@@ -100,12 +99,12 @@ class MaidManagerDispatcher {
 // ==================== Implementation =============================================================
 template<typename Data>
 void MaidManagerDispatcher::SendGetVersionRequest(const MaidName& account_name,
-                                                  const typename Data::name_type& data_name) {
+                                                  const typename Data::Name& data_name) {
   typedef routing::GroupToGroupMessage RoutingMessage;
   static const routing::Cacheable cacheable(routing::Cacheable::kNone);
   static const nfs::MessageAction kAction(nfs::MessageAction::kGetRequest);
   static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
-  static const DataTagValue kDataEnumValue(Data::name_type::tag_type::kEnumValue);
+  static const DataTagValue kDataEnumValue(Data::Tag::kValue);
 
   nfs::Message::Data inner_data(kDataEnumValue, data_name.data, NonEmptyString(), kAction);
   nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
@@ -123,7 +122,7 @@ void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name,
                                                                         routing::Cacheable::kNone);
   static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
   static const nfs::Persona kDestinationPersona(nfs::Persona::kDataManager);
-  static const DataTagValue kDataEnumValue(Data::name_type::tag_type::kEnumValue);
+  static const DataTagValue kDataEnumValue(Data::Tag::kValue);
 
   nfs::Message::Data inner_data(kDataEnumValue, data.name().data, data.Serialise().data, kAction);
   nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data, pmid_node_hint);
@@ -141,7 +140,7 @@ void MaidManagerDispatcher::SendPutRequest<OwnerDirectory>(const MaidName& /*acc
 //                                            routing::Cacheable::kGet : routing::Cacheable::kNone);
 //  static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
 //  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
-//  static const DataTagValue kDataEnumValue(OwnerDirectory::name_type::tag_type::kEnumValue);
+//  static const DataTagValue kDataEnumValue(OwnerDirectory::Tag::kValue);
   // TODO(Fraser#5#): 2013-08-03 - Handle
 }
 
@@ -154,7 +153,7 @@ void MaidManagerDispatcher::SendPutRequest<GroupDirectory>(const MaidName& /*acc
 //                                            routing::Cacheable::kGet : routing::Cacheable::kNone);
 //  static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
 //  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
-//  static const DataTagValue kDataEnumValue(GroupDirectory::name_type::tag_type::kEnumValue);
+//  static const DataTagValue kDataEnumValue(GroupDirectory::Tag::kValue);
   // TODO(Fraser#5#): 2013-08-03 - Handle
 }
 
@@ -167,20 +166,20 @@ void MaidManagerDispatcher::SendPutRequest<WorldDirectory>(const MaidName& /*acc
 //                                            routing::Cacheable::kGet : routing::Cacheable::kNone);
 //  static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
 //  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
-//  static const DataTagValue kDataEnumValue(WorldDirectory::name_type::tag_type::kEnumValue);
+//  static const DataTagValue kDataEnumValue(WorldDirectory::Tag::kValue);
   // TODO(Fraser#5#): 2013-08-03 - Handle
 }
 
 template<typename Data>
 void MaidManagerDispatcher::SendPutResponse(const MaidName& account_name,
-                                            const typename Data::name_type& data_name,
+                                            const typename Data::Name& data_name,
                                             const maidsafe_error& result,
                                             nfs::MessageId /*message_id*/) {
   typedef routing::GroupToSingleMessage RoutingMessage;
   static const routing::Cacheable cacheable(routing::Cacheable::kNone);
   static const nfs::MessageAction kAction(nfs::MessageAction::kPutResponse);
   static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
-  static const DataTagValue kDataEnumValue(Data::name_type::tag_type::kEnumValue);
+  static const DataTagValue kDataEnumValue(Data::Tag::kValue);
 
   nfs::Message::Data inner_data(result);
   inner_data.type = kDataEnumValue;
@@ -194,12 +193,12 @@ void MaidManagerDispatcher::SendPutResponse(const MaidName& account_name,
 
 template<typename Data>
 void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
-                                              const typename Data::name_type& data_name) {
+                                              const typename Data::Name& data_name) {
   typedef routing::GroupToGroupMessage RoutingMessage;
   static const routing::Cacheable cacheable(routing::Cacheable::kNone);
   static const nfs::MessageAction kAction(nfs::MessageAction::kDeleteRequest);
   static const nfs::Persona kDestinationPersona(nfs::Persona::kDataManager);
-  static const DataTagValue kDataEnumValue(Data::name_type::tag_type::kEnumValue);
+  static const DataTagValue kDataEnumValue(Data::Tag::kValue);
 
   nfs::Message::Data inner_data(kDataEnumValue, data_name.data, NonEmptyString(), kAction);
   nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);

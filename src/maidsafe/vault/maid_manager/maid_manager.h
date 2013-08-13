@@ -48,7 +48,7 @@ namespace nfs {
 template<>
 struct PersonaTypes<Persona::kMaidManager> {
   static const Persona persona = Persona::kMaidManager;
-  typedef passport::PublicMaid::name_type GroupName;
+  typedef passport::PublicMaid::Name GroupName;
   typedef vault::GroupKey<GroupName> Key;
   typedef vault::MaidManagerValue Value;
   typedef vault::MaidManagerMetadata Metadata;

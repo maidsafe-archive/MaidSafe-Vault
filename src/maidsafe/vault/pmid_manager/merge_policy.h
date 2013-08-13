@@ -42,7 +42,7 @@ class PmidManagerMergePolicy {
 
   // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
   template<typename Data>
-  int32_t AllowDelete(const typename Data::name_type& name);
+  int32_t AllowDelete(const typename Data::Name& name);
 
  protected:
   typedef std::vector<UnresolvedEntry> UnresolvedEntries;
@@ -70,7 +70,7 @@ class PmidManagerMergePolicy {
 };
 
 template<typename Data>
-int32_t PmidManagerMergePolicy::AllowDelete(const typename Data::name_type& name) {
+int32_t PmidManagerMergePolicy::AllowDelete(const typename Data::Name& name) {
   auto serialised_db_value(GetFromDb(name));
   Size size(0);
   Count current_count(0);

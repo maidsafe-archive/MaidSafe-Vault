@@ -153,7 +153,7 @@ void DataManagerService::HandlePut(const nfs::Message& message,
                                        const routing::ReplyFunctor& reply_functor) {
   try {
     ValidatePutSender(message);
-    Data data(typename Data::name_type(message.data().name),
+    Data data(typename Data::Name(message.data().name),
               typename Data::serialised_type(message.data().content));
     auto data_name(data.name());
     auto data_size(static_cast<int32_t>(message.data().content.string().size()));
@@ -201,7 +201,7 @@ void DataManagerService::HandlePutResult(const nfs::Message& message) {
         AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, metadata_value);
       } else {
         // FIXME need a record failure nodes vector to workout when we need to retry on different data holder
-        Data data(typename Data::name_type(message.data().name),
+        Data data(typename Data::Name(message.data().name),
                   typename Data::serialised_type(
                     NonEmptyString(proto_put_result.serialised_data())));
         PmidName target_pmid_node(Identity(routing_.RandomConnectedNode().string()));
@@ -219,7 +219,7 @@ void DataManagerService::HandleGet(nfs::Message message,
                                    const routing::ReplyFunctor& reply_functor) {
   try {
     ValidateGetSender(message);
-    typename Data::name_type data_name(Identity(message.data().name));
+    typename Data::Name data_name(Identity(message.data().name));
     auto online_holders(metadata_handler_.GetOnlineDataHolders<Data>(data_name));
     std::shared_ptr<GetHandler<Data>> get_handler(new GetHandler<Data>(reply_functor,
                                                                        online_holders.size(),
@@ -252,7 +252,7 @@ void DataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_handl
         ThrowError(CommonErrors::parsing_error);
       if (proto_data.type() != static_cast<uint32_t>(Data::type_enum_value()))
         ThrowError(CommonErrors::parsing_error);
-      Data data(typename Data::name_type(Identity(proto_data.name())),
+      Data data(typename Data::Name(Identity(proto_data.name())),
                 typename Data::serialised_type(NonEmptyString(proto_data.content())));
       std::lock_guard<std::mutex> lock(get_handler->mutex);
       on_scope_exit strong_guarantee(on_scope_exit::RevertValue(get_handler->reply_functor));
@@ -375,7 +375,7 @@ void DataManagerService::AddLocalUnresolvedEntryThenSync(
   auto unresolved_entry(detail::CreateUnresolvedEntry<Data, Action>(message, metadata_value,
                                                                     routing_.kNodeId()));
   metadata_handler_.AddLocalUnresolvedEntry(unresolved_entry);
-  typename Data::name_type data_name(message.data().name);
+  typename Data::Name data_name(message.data().name);
   Sync();
 }
 

@@ -81,7 +81,7 @@ namespace vault {
 namespace detail {
 
 template<typename Data>
-bool IsDataElement(const typename Data::name_type& name,
+bool IsDataElement(const typename Data::Name& name,
                    const DataNameVariant& data_name_variant) {
   return DataNameVariant(name) == data_name_variant;
 }

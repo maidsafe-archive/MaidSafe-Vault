@@ -153,7 +153,7 @@ void PmidNodeService::ApplyAccountTransfer(const size_t& total_pmidmgrs,
             pmid_account_response.pmid_account().serialised_account_details());
         for (int index(0); index < pmid_account_details.db_entry_size(); ++index) {
           ChunkInfo chunk_info(
-              ImmutableData::name_type(Identity(pmid_account_details.db_entry(index).name())),
+              ImmutableData::Name(Identity(pmid_account_details.db_entry(index).name())),
               pmid_account_details.db_entry(index).value().size());
           expected_chunks[chunk_info]++;
         }
@@ -224,10 +224,10 @@ void PmidNodeService::ApplyUpdateLocalStorage(const std::vector<DataNameVariant>
 std::future<std::unique_ptr<ImmutableData>>
 PmidNodeService::RetrieveFileFromNetwork(const DataNameVariant& file_id) {
   auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), file_id));
-  ImmutableData::name_type name(result.second);
+  ImmutableData::Name name(result.second);
   auto opt_mutex(std::make_shared<std::mutex>()) ;
   auto get_op(std::make_shared<nfs::detail::GetOp<ImmutableData>>());
-  nfs_.Get<ImmutableData>(ImmutableData::name_type(Identity(result.second)),
+  nfs_.Get<ImmutableData>(ImmutableData::Name(Identity(result.second)),
                           [this, get_op, name, &opt_mutex](std::string serialised_reply) {
     try {
       nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));

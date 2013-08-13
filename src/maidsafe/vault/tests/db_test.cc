@@ -54,21 +54,21 @@ class DbTest : public testing::Test {
              type_number;
     type_number = RandomUint32() % number_of_types;
     switch (type_number) {
-      case  0: return passport::Anmid::name_type();
-      case  1: return passport::Ansmid::name_type();
-      case  2: return passport::Antmid::name_type();
-      case  3: return passport::Anmaid::name_type();
-      case  4: return passport::Maid::name_type();
-      case  5: return passport::Pmid::name_type();
-      case  6: return passport::Mid::name_type();
-      case  7: return passport::Smid::name_type();
-      case  8: return passport::Tmid::name_type();
-      case  9: return passport::Anmpid::name_type();
-      case 10: return passport::Mpid::name_type();
-      case 11: return ImmutableData::name_type();
-      case 12: return OwnerDirectory::name_type();
-      case 13: return GroupDirectory::name_type();
-      case 14: return WorldDirectory::name_type();
+      case  0: return passport::Anmid::Name();
+      case  1: return passport::Ansmid::Name();
+      case  2: return passport::Antmid::Name();
+      case  3: return passport::Anmaid::Name();
+      case  4: return passport::Maid::Name();
+      case  5: return passport::Pmid::Name();
+      case  6: return passport::Mid::Name();
+      case  7: return passport::Smid::Name();
+      case  8: return passport::Tmid::Name();
+      case  9: return passport::Anmpid::Name();
+      case 10: return passport::Mpid::Name();
+      case 11: return ImmutableData::Name();
+      case 12: return OwnerDirectory::Name();
+      case 13: return GroupDirectory::Name();
+      case 14: return WorldDirectory::Name();
       // default:
         // Throw something!
       //  ;

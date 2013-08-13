@@ -65,7 +65,7 @@ void MaidManagerDispatcher::SendRegisterPmidResponse(const MaidName& account_nam
   static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
 
   nfs::Message::Data inner_data(result);
-  inner_data.type = PmidName::tag_type::kEnumValue;
+  inner_data.type = PmidName::data_type::Tag::kValue;
   inner_data.name = pmid_name.data;
   inner_data.action = kAction;
   nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
@@ -83,7 +83,7 @@ void MaidManagerDispatcher::SendUnregisterPmidResponse(const MaidName& account_n
   static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
 
   nfs::Message::Data inner_data(result);
-  inner_data.type = PmidName::tag_type::kEnumValue;
+  inner_data.type = PmidName::data_type::Tag::kValue;
   inner_data.name = pmid_name.data;
   inner_data.action = kAction;
   nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);

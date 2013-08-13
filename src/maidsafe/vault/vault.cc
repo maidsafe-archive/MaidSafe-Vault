@@ -150,7 +150,7 @@ void Vault::OnPublicKeyRequested(const NodeId& node_id,
 
 void Vault::DoOnPublicKeyRequested(const NodeId& /*node_id*/,
                                    const routing::GivePublicKeyFunctor& /*give_key*/) {
-//  passport::PublicPmid::name_type name(Identity(node_id.string()));
+//  passport::PublicPmid::Name name(Identity(node_id.string()));
 //  public_key_getter_.GetKey<passport::PublicPmid>(
 //      name,
 //      [name, give_key] (nfs::Reply reply) {

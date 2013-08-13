@@ -84,7 +84,7 @@ class MaidAccountHandler {
   void CreateAccount(const MaidName& /*account_name*/, DisallowedAccountCreationType) {}
 
   template<typename Data>
-  void DeleteData(const MaidName& account_name, const typename Data::name_type& data_name);
+  void DeleteData(const MaidName& account_name, const typename Data::Name& data_name);
 
   friend class test::MaidManagerHandlerTest;
 
@@ -97,7 +97,7 @@ class MaidAccountHandler {
   Db& db_;
   const NodeId kThisNodeId_;
   mutable std::mutex mutex_;
-  std::map<typename MaidAccount::name_type, std::unique_ptr<MaidAccount>> maid_accounts_;
+  std::map<typename MaidAccount::Name, std::unique_ptr<MaidAccount>> maid_accounts_;
 };
 
 }  // namespace vault

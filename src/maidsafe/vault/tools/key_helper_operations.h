@@ -67,7 +67,7 @@ class NetworkGenerator {
 
     routing::NodeInfo MakeNodeInfo(const passport::Pmid& pmid) {
       routing::NodeInfo node;
-      node.node_id = NodeId(pmid.name().data.string());
+      node.node_id = NodeId(pmid.name()->string());
       node.public_key = pmid.public_key();
       return node;
     }
@@ -110,7 +110,7 @@ class KeyStorer : public ClientTester {
   void StoreKey(const Data& key, std::promise<bool>& promise) {
     nfs::Put<Data>(*client_nfs_,
                    key,
-                   passport::PublicPmid::name_type(),
+                   passport::PublicPmid::Name(),
                    routing::Parameters::node_group_size,
                    callback(std::ref(promise)));
   }

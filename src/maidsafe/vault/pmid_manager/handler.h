@@ -35,7 +35,7 @@ namespace vault {
 
 class PmidAccountHandler {
  public:
-  typedef std::map<typename PmidAccount::name_type, std::unique_ptr<PmidAccount>> AccountMap;
+  typedef std::map<typename PmidAccount::Name, std::unique_ptr<PmidAccount>> AccountMap;
 
   explicit PmidAccountHandler(Db& db, const NodeId& this_node_id);
 
@@ -67,9 +67,9 @@ class PmidAccountHandler {
 
   // Data operations
   template<typename Data>
-  void Put(const PmidName& account_name, const typename Data::name_type& data_name, int32_t size);
+  void Put(const PmidName& account_name, const typename Data::Name& data_name, int32_t size);
   template<typename Data>
-  void Delete(const PmidName& account_name, const typename Data::name_type& data_name);
+  void Delete(const PmidName& account_name, const typename Data::Name& data_name);
 
  private:
   PmidAccountHandler(const PmidAccountHandler&);

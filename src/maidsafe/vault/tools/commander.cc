@@ -346,12 +346,12 @@ void Commander::HandleGenerateChunks() {
   assert(chunk_set_count_ > 0);
   for (int i(0); i < chunk_set_count_; ++i) {
     ImmutableData::serialised_type content(NonEmptyString(RandomString(1 << 18)));  // 256 KB
-    ImmutableData::name_type name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
+    ImmutableData::Name name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
     ImmutableData chunk_data(name, content);
 
-    fs::path chunk_file(store_path / EncodeToBase32(chunk_data.name().data.string()));
-    if (!WriteFile(chunk_file, content.data.string()))
-      LOG(kError) << "Can't store chunk " << HexSubstr(chunk_data.name().data.string());
+    fs::path chunk_file(store_path / EncodeToBase32(chunk_data.name()->string()));
+    if (!WriteFile(chunk_file, content->string()))
+      LOG(kError) << "Can't store chunk " << HexSubstr(chunk_data.name()->string());
   }
 }
 

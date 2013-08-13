@@ -53,10 +53,10 @@ class MetadataHandler {
 
   // This increments the subscribers count, or adds a new element if it doesn't exist.
   template<typename Data>
-  void IncrementSubscribers(const typename Data::name_type& data_name, int32_t data_size);
+  void IncrementSubscribers(const typename Data::Name& data_name, int32_t data_size);
   // This decrements the subscribers count.  If it hits 0, the element is removed.
   template<typename Data>
-  void DecrementSubscribers(const typename Data::name_type& data_name);
+  void DecrementSubscribers(const typename Data::Name& data_name);
 
   // This is used when synchronising with other MMs.  It simply adds or replaces any existing
   // element of the same type and name.
@@ -64,34 +64,34 @@ class MetadataHandler {
   // This is used when synchronising with other MMs.  If this node sends a sync (group message) for
   // this element, and doesn't receive its own request, it's no longer responsible for this element.
   template<typename Data>
-  void DeleteMetadata(const typename Data::name_type& data_name);
+  void DeleteMetadata(const typename Data::Name& data_name);
 
   void DeleteRecord(const DataNameVariant& record_name);
 
   template<typename Data>
-  void MarkNodeDown(const typename Data::name_type& data_name,
+  void MarkNodeDown(const typename Data::Name& data_name,
                     const PmidName& pmid_name,
                     int& remaining_online_holders);
   template<typename Data>
-  void MarkNodeUp(const typename Data::name_type& data_name, const PmidName& pmid_name);
+  void MarkNodeUp(const typename Data::Name& data_name, const PmidName& pmid_name);
 
   // The data holder is assumed to be online
   template<typename Data>
-  void AddDataHolder(const typename Data::name_type& data_name, const PmidName& online_pmid_name);
+  void AddDataHolder(const typename Data::Name& data_name, const PmidName& online_pmid_name);
   // The data holder could be online or offline
   template<typename Data>
-  void RemoveDataHolder(const typename Data::name_type& data_name, const PmidName& pmid_name);
+  void RemoveDataHolder(const typename Data::Name& data_name, const PmidName& pmid_name);
 
   template<typename Data>
-  std::vector<PmidName> GetOnlineDataHolders(const typename Data::name_type& data_name) const;
+  std::vector<PmidName> GetOnlineDataHolders(const typename Data::Name& data_name) const;
 
   template<typename Data>
-  bool CheckMetadataExists(const typename Data::name_type& data_name) const;
+  bool CheckMetadataExists(const typename Data::Name& data_name) const;
 
   // Returns a pair of - is already stored and its cost.
   // Checks for duplication of unique data (throws)
   template<typename Data>
-  std::pair<bool, int32_t> CheckPut(const typename Data::name_type& data_name, int32_t data_size);
+  std::pair<bool, int32_t> CheckPut(const typename Data::Name& data_name, int32_t data_size);
 
   void AddLocalUnresolvedEntry(const DataManagerUnresolvedEntry& unresolved_entry);
 
@@ -99,7 +99,7 @@ class MetadataHandler {
   std::vector<DataManagerKey> GetRecordNames() const;
   serialised_record_type GetSerialisedRecord(const DataNameVariant& data_name);
   template <typename Data>
-  NonEmptyString GetSyncData(const typename Data::name_type& data_name);
+  NonEmptyString GetSyncData(const typename Data::Name& data_name);
   std::vector<DataManagerUnresolvedEntry> GetSyncData();
   void ApplySyncData(const NonEmptyString& serialised_unresolved_entry);
   void ApplyRecordTransfer(const NonEmptyString& serialised_unresolved_entries);
@@ -107,7 +107,7 @@ class MetadataHandler {
                              const NodeId& old_node,
                              const NodeId& new_node);
   template<typename Data>
-  void IncrementSyncAttempts(const typename Data::name_type& data_name);
+  void IncrementSyncAttempts(const typename Data::Name& data_name);
 
 
   template<typename Data>

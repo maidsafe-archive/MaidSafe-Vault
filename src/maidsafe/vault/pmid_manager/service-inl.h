@@ -70,7 +70,7 @@ void PmidManagerService::HandleMessage(const nfs::Message& message,
 template<typename Data>
 void PmidManagerService::HandlePut(const nfs::Message& message) {
   try {
-    Data data(typename Data::name_type(message.data().name),
+    Data data(typename Data::Name(message.data().name),
               typename Data::serialised_type(message.data().content));
     nfs_.Put(PmidName(detail::GetPmidAccountName(message)),
              data,
@@ -95,7 +95,7 @@ void PmidManagerService::HandleDelete(const nfs::Message& message,
                                       const routing::ReplyFunctor& /*reply_functor*/) {
   try {
     auto account_name(detail::GetPmidAccountName(message));
-    typename Data::name_type data_name(message.data().name);
+    typename Data::Name data_name(message.data().name);
     try  {
       pmid_account_handler_.Delete<Data>(account_name, data_name);
     }
@@ -139,7 +139,7 @@ void PmidManagerService::SendPutResult(const nfs::Message& message, bool result)
   } else {
     proto_put_result.set_serialised_data(message.Serialise()->string());
   }
-  nfs_.SendPutResult<Data>(Data::name_type(message.data().name),
+  nfs_.SendPutResult<Data>(Data::Name(message.data().name),
                            NonEmptyString(proto_put_result.SerializeAsString()));
 }
 

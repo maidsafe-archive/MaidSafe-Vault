@@ -62,7 +62,7 @@ namespace vault {
 //#ifndef TESTING
 //    ValidatePutSender(message);
 //#endif
-//    Data data(typename Data::name_type(message.data().name),
+//    Data data(typename Data::Name(message.data().name),
 //              typename Data::serialised_type(message.data().content));
 //    if (detail::AddResult(message, reply_functor, MakeError(CommonErrors::success),
 //                          accumulator_, accumulator_mutex_, kPutRequestsRequired)) {
@@ -86,7 +86,7 @@ namespace vault {
 //#ifndef TESTING
 //    ValidateGetSender(message);
 //#endif
-//    typename Data::name_type data_name(message.data().name);
+//    typename Data::Name data_name(message.data().name);
 //    nfs::Reply reply(CommonErrors::success, permanent_data_store_.Get(data_name));
 //    reply_functor(reply.Serialise()->string());
 //  } catch(const std::exception& /*ex*/) {
@@ -104,7 +104,7 @@ namespace vault {
 //#endif
 //    if (detail::AddResult(message, reply_functor, MakeError(CommonErrors::success),
 //                          accumulator_, accumulator_mutex_, kDeleteRequestsRequired)) {
-//      permanent_data_store_.Delete(typename Data::name_type(message.data().name));
+//      permanent_data_store_.Delete(typename Data::Name(message.data().name));
 //    }
 //  }
 //  catch(const maidsafe_error& error) {
@@ -125,7 +125,7 @@ NonEmptyString PmidNodeService::GetFromCache(const nfs::Message& message) {
 
 template<typename Data>
 NonEmptyString PmidNodeService::GetFromCache(const nfs::Message& message, IsCacheable) {
-  return CacheGet<Data>(typename Data::name_type(message.data().name),
+  return CacheGet<Data>(typename Data::Name(message.data().name),
                         is_long_term_cacheable<Data>());
 }
 
@@ -135,7 +135,7 @@ NonEmptyString PmidNodeService::GetFromCache(const nfs::Message& /*message*/, Is
 }
 
 template<typename Data>
-NonEmptyString PmidNodeService::CacheGet(const typename Data::name_type& name,
+NonEmptyString PmidNodeService::CacheGet(const typename Data::Name& name,
                                          IsShortTermCacheable) {
   static_assert(is_short_term_cacheable<Data>::value,
                 "This should only be called for short-term cacheable data types.");
@@ -143,7 +143,7 @@ NonEmptyString PmidNodeService::CacheGet(const typename Data::name_type& name,
 }
 
 template<typename Data>
-NonEmptyString PmidNodeService::CacheGet(const typename Data::name_type& name,
+NonEmptyString PmidNodeService::CacheGet(const typename Data::Name& name,
                                          IsLongTermCacheable) {
   static_assert(is_long_term_cacheable<Data>::value,
                 "This should only be called for long-term cacheable data types.");
@@ -157,7 +157,7 @@ void PmidNodeService::StoreInCache(const nfs::Message& message) {
 
 template<typename Data>
 void PmidNodeService::StoreInCache(const nfs::Message& message, IsCacheable) {
-  CacheStore<Data>(typename Data::name_type(message.data().name), message.data().content,
+  CacheStore<Data>(typename Data::Name(message.data().name), message.data().content,
                    is_long_term_cacheable<Data>());
 }
 
@@ -165,7 +165,7 @@ template<typename Data>
 void PmidNodeService::StoreInCache(const nfs::Message& /*message*/, IsNotCacheable) {}
 
 template<typename Data>
-void PmidNodeService::CacheStore(const typename Data::name_type& name,
+void PmidNodeService::CacheStore(const typename Data::Name& name,
                             const NonEmptyString& value,
                             IsShortTermCacheable) {
   static_assert(is_short_term_cacheable<Data>::value,
@@ -174,7 +174,7 @@ void PmidNodeService::CacheStore(const typename Data::name_type& name,
 }
 
 template<typename Data>
-void PmidNodeService::CacheStore(const typename Data::name_type& name,
+void PmidNodeService::CacheStore(const typename Data::Name& name,
                             const NonEmptyString& value,
                             IsLongTermCacheable) {
   static_assert(is_long_term_cacheable<Data>::value,

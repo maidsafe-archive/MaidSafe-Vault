@@ -80,7 +80,7 @@ PmidAccount& PmidAccount::operator=(PmidAccount&& other) {
 
 PmidAccount::serialised_type PmidAccount::Serialise() {
   protobuf::PmidManagerMetadata proto_metadata;
-  proto_metadata.set_pmid_name(metadata_.pmid_name.data.string());
+  proto_metadata.set_pmid_name(metadata_.pmid_name->string());
   proto_metadata.set_stored_count(metadata_.stored_count);
   proto_metadata.set_stored_total_size(metadata_.stored_total_size);
   proto_metadata.set_lost_count(metadata_.lost_count);
@@ -126,7 +126,7 @@ bool PmidAccount::ApplyAccountTransfer(const NodeId& source_id,
   bool all_account_transfers_received(--account_transfer_nodes_ == 0);
 
   protobuf::PmidAccountDetails proto_pmid_account_details;
-  if (!proto_pmid_account_details.ParseFromString(serialised_pmid_account_details.data.string()))
+  if (!proto_pmid_account_details.ParseFromString(serialised_pmid_account_details->string()))
     ThrowError(CommonErrors::parsing_error);
 
   protobuf::PmidManagerMetadata proto_pmid_record;
@@ -208,7 +208,7 @@ PmidManagerMetadata PmidAccount::GetMetadata() {
 
 }
 
-PmidAccount::name_type PmidAccount::name() const {
+PmidAccount::Name PmidAccount::name() const {
   return pmid_name_;
 }
 

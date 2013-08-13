@@ -109,20 +109,20 @@ class PmidNodeService {
   template<typename Data>
   NonEmptyString GetFromCache(const nfs::Message& message, IsNotCacheable);
   template<typename Data>
-  NonEmptyString CacheGet(const typename Data::name_type& name, IsShortTermCacheable);
+  NonEmptyString CacheGet(const typename Data::Name& name, IsShortTermCacheable);
   template<typename Data>
-  NonEmptyString CacheGet(const typename Data::name_type& name, IsLongTermCacheable);
+  NonEmptyString CacheGet(const typename Data::Name& name, IsLongTermCacheable);
 
   template<typename Data>
   void StoreInCache(const nfs::Message& message, IsCacheable);
   template<typename Data>
   void StoreInCache(const nfs::Message& message, IsNotCacheable);
   template<typename Data>
-  void CacheStore(const typename Data::name_type& name,
+  void CacheStore(const typename Data::Name& name,
                   const NonEmptyString& value,
                   IsShortTermCacheable);
   template<typename Data>
-  void CacheStore(const typename Data::name_type& name,
+  void CacheStore(const typename Data::Name& name,
                   const NonEmptyString& value,
                   IsLongTermCacheable);
 

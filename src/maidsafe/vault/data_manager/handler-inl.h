@@ -41,7 +41,7 @@ boost::filesystem::path GetPath(const std::string& data_name,
                                 const boost::filesystem::path& root);
 
 template<typename Data>
-boost::filesystem::path GetPath(const typename Data::name_type& data_name,
+boost::filesystem::path GetPath(const typename Data::Name& data_name,
                                 const boost::filesystem::path& root) {
   return GetPath(data_name->string(), static_cast<int>(Data::type_enum_value()), root);
 }
@@ -54,7 +54,7 @@ boost::filesystem::path GetPath(const typename Data::name_type& data_name,
 }  // namespace detail
 
 template<typename Data>
-void MetadataHandler::IncrementSubscribers(const typename Data::name_type& /*data_name*/,
+void MetadataHandler::IncrementSubscribers(const typename Data::Name& /*data_name*/,
                                            int32_t /*data_size*/) {
 //  Metadata<Data> metadata(data_name, metadata_db_.get(), data_size);
 //  MetadataValueDelta metadata_value_delta;
@@ -62,7 +62,7 @@ void MetadataHandler::IncrementSubscribers(const typename Data::name_type& /*dat
 }
 
 //template<typename Data>
-//void MetadataHandler::IncrementSubscribers(const typename Data::name_type& data_name,
+//void MetadataHandler::IncrementSubscribers(const typename Data::Name& data_name,
 //                                           int32_t data_size) {
 //  Metadata<Data> metadata(data_name, metadata_db_.get(), data_size);
 //  ++metadata.value_.subscribers;
@@ -70,21 +70,21 @@ void MetadataHandler::IncrementSubscribers(const typename Data::name_type& /*dat
 //}
 
 template<typename Data>
-void MetadataHandler::DecrementSubscribers(const typename Data::name_type& /*data_name*/) {
+void MetadataHandler::DecrementSubscribers(const typename Data::Name& /*data_name*/) {
 //  Metadata<Data> metadata(data_name, metadata_db_.get());
 //  --metadata.value_.subscribers;
 //  metadata.SaveChanges(metadata_db_.get());
 }
 
 template<typename Data>
-void MetadataHandler::DeleteMetadata(const typename Data::name_type& /*data_name*/) {
+void MetadataHandler::DeleteMetadata(const typename Data::Name& /*data_name*/) {
 //  Metadata<Data> metadata(data_name, kMetadataRoot_);
 //  metadata.value_.subscribers = 0;
 //  metadata.SaveChanges();
 }
 
 template<typename Data>
-void MetadataHandler::MarkNodeDown(const typename Data::name_type& /*data_name*/,
+void MetadataHandler::MarkNodeDown(const typename Data::Name& /*data_name*/,
                                    const PmidName& /*pmid_name*/,
                                    int& /*remaining_online_holders*/) {
 //  Metadata<Data> metadata(data_name, kMetadataRoot_);
@@ -95,7 +95,7 @@ void MetadataHandler::MarkNodeDown(const typename Data::name_type& /*data_name*/
 }
 
 template<typename Data>
-void MetadataHandler::MarkNodeUp(const typename Data::name_type& /*data_name*/,
+void MetadataHandler::MarkNodeUp(const typename Data::Name& /*data_name*/,
                                  const PmidName& /*pmid_name*/) {
 //  Metadata<Data> metadata(data_name, kMetadataRoot_);
 //  metadata.value_.online_pmid_name.insert(pmid_name);
@@ -104,7 +104,7 @@ void MetadataHandler::MarkNodeUp(const typename Data::name_type& /*data_name*/,
 }
 
 template<typename Data>
-void MetadataHandler::AddDataHolder(const typename Data::name_type& /*data_name*/,
+void MetadataHandler::AddDataHolder(const typename Data::Name& /*data_name*/,
                                     const PmidName& /*online_pmid_name*/) {
 //  Metadata<Data> metadata(data_name, kMetadataRoot_);
 //  metadata.value_.online_pmid_name.insert(online_pmid_name);
@@ -112,7 +112,7 @@ void MetadataHandler::AddDataHolder(const typename Data::name_type& /*data_name*
 }
 
 template<typename Data>
-void MetadataHandler::RemoveDataHolder(const typename Data::name_type& /*data_name*/,
+void MetadataHandler::RemoveDataHolder(const typename Data::Name& /*data_name*/,
                                        const PmidName& /*pmid_name*/) {
 //  Metadata<Data> metadata(data_name, kMetadataRoot_);
 //  metadata.value_.online_pmid_name.erase(pmid_name);
@@ -122,7 +122,7 @@ void MetadataHandler::RemoveDataHolder(const typename Data::name_type& /*data_na
 
 template<typename Data>
 std::vector<PmidName> MetadataHandler::GetOnlineDataHolders(
-    const typename Data::name_type& data_name) const {
+    const typename Data::Name& data_name) const {
   DataNameVariant db_key(data_name);
   Metadata metadata(db_key, metadata_db_.get());
   std::vector<PmidName> onlines(metadata.value_.online_pmid_name.begin(),
@@ -134,7 +134,7 @@ std::vector<PmidName> MetadataHandler::GetOnlineDataHolders(
 
 // Do we need to check unresolved list as well ?
 template<typename Data>
-bool MetadataHandler::CheckMetadataExists(const typename Data::name_type& data_name) const {
+bool MetadataHandler::CheckMetadataExists(const typename Data::Name& data_name) const {
   try {
     DataNameVariant db_key(data_name);
     Metadata metadata(db_key, metadata_db_.get());
@@ -146,7 +146,7 @@ bool MetadataHandler::CheckMetadataExists(const typename Data::name_type& data_n
 }
 
 template<typename Data>
-std::pair<bool, int32_t> MetadataHandler::CheckPut(const typename Data::name_type& /*data_name*/, int32_t /*data_size*/) {
+std::pair<bool, int32_t> MetadataHandler::CheckPut(const typename Data::Name& /*data_name*/, int32_t /*data_size*/) {
   return std::make_pair(false, 0);
 }
 

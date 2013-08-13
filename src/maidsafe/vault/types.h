@@ -71,9 +71,9 @@ enum class DataType : int32_t { kMetadata = 10000 };
 //    nfs::PmidNodeDeletePolicy,
 //    PmidNodePostPolicy> PmidNodeNfs;
 
-typedef passport::PublicMaid::name_type MaidName;
-typedef passport::PublicPmid::name_type PmidName;
-typedef passport::PublicMpid::name_type MpidName;
+typedef passport::PublicMaid::Name MaidName;
+typedef passport::PublicPmid::Name PmidName;
+typedef passport::PublicMpid::Name MpidName;
 
 }  // namespace vault
 

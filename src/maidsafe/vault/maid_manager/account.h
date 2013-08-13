@@ -54,7 +54,7 @@ class MaidManagerHandlerTypedTest;
 class MaidAccount {
  public:
   enum class Status { kOk, kLowSpace, kNoSpace };
-  typedef MaidName name_type;
+  typedef MaidName Name;
   typedef TaggedValue<NonEmptyString, struct SerialisedMaidManagerTag> serialised_type;
 
   // For client adding new account
@@ -88,10 +88,10 @@ class MaidAccount {
   Status AllowPut(int32_t cost) const;
   // This offers the strong exception guarantee
   template<typename Data>
-  void DeleteData(const typename Data::name_type& name) {
+  void DeleteData(const typename Data::Name& name) {
     total_put_data_ -= sync_.AllowDelete<Data>(name);
   }
-  name_type name() const { return maid_name_; }
+  Name name() const { return maid_name_; }
 
   friend class test::MaidManagerHandlerTest;
   template<typename Data>
@@ -103,7 +103,7 @@ class MaidAccount {
 
   std::vector<PmidTotals>::iterator Find(const PmidName& pmid_name);
 
-  name_type maid_name_;
+  Name maid_name_;
   std::vector<PmidTotals> pmid_totals_;
   int64_t total_claimed_available_size_by_pmids_, total_put_data_;
   std::unique_ptr<AccountDb> account_db_;

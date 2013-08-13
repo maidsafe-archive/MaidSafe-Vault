@@ -45,7 +45,7 @@ std::pair<Identity, NonEmptyString> GetNameAndContent();
 
 template<typename Fob>
 std::pair<Identity, NonEmptyString> MakeNameAndContentPair(const Fob& fob) {
-  maidsafe::passport::detail::PublicFob<typename Fob::name_type::tag_type> public_fob(fob);
+  maidsafe::passport::detail::PublicFob<typename Fob::Name::tag_type> public_fob(fob);
   return std::make_pair(public_fob.name().data, public_fob.Serialise().data);
 }
 
@@ -158,7 +158,7 @@ template<>
 std::pair<Identity, NonEmptyString> GetNameAndContent<OwnerDirectory>() {
   NonEmptyString value(RandomString(RandomUint32() % 10000 + 10));
   Identity name(crypto::Hash<crypto::SHA512>(value));
-  OwnerDirectory owner_directory(OwnerDirectory::name_type(name), value);
+  OwnerDirectory owner_directory(OwnerDirectory::Name(name), value);
   return std::make_pair(owner_directory.name().data, owner_directory.Serialise().data);
 }
 
@@ -166,7 +166,7 @@ template<>
 std::pair<Identity, NonEmptyString> GetNameAndContent<GroupDirectory>() {
   NonEmptyString value(RandomString(RandomUint32() % 10000 + 10));
   Identity name(crypto::Hash<crypto::SHA512>(value));
-  GroupDirectory group_directory(GroupDirectory::name_type(name), value);
+  GroupDirectory group_directory(GroupDirectory::Name(name), value);
   return std::make_pair(group_directory.name().data, group_directory.Serialise().data);
 }
 
@@ -174,7 +174,7 @@ template<>
 std::pair<Identity, NonEmptyString> GetNameAndContent<WorldDirectory>() {
   NonEmptyString value(RandomString(RandomUint32() % 10000 + 10));
   Identity name(crypto::Hash<crypto::SHA512>(value));
-  WorldDirectory world_directory(WorldDirectory::name_type(name), value);
+  WorldDirectory world_directory(WorldDirectory::Name(name), value);
   return std::make_pair(world_directory.name().data, world_directory.Serialise().data);
 }
 
@@ -224,7 +224,7 @@ TYPED_TEST_CASE_P(DataHolderTest);
 TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
   nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
-  nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
+  nfs::Message::Data data(TypeParam::Tag::kValue,
                           name_and_content.first,
                           name_and_content.second,
                           nfs::MessageAction::kPut);
@@ -241,7 +241,7 @@ TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
 TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
   nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
-  nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
+  nfs::Message::Data data(TypeParam::Tag::kValue,
                           name_and_content.first,
                           name_and_content.second,
                           nfs::MessageAction::kGet);
@@ -256,7 +256,7 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
 TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
   nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
-  nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
+  nfs::Message::Data data(TypeParam::Tag::kValue,
                           name_and_content.first,
                           name_and_content.second,
                           nfs::MessageAction::kPut);
@@ -269,7 +269,7 @@ TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
                                    });
   EXPECT_NE(retrieved.find(name_and_content.second.string()), -1);
 
-  nfs::Message::Data delete_data(TypeParam::name_type::tag_type::kEnumValue,
+  nfs::Message::Data delete_data(TypeParam::Tag::kValue,
                                  name_and_content.first,
                                  name_and_content.second,
                                  nfs::MessageAction::kDelete);
@@ -303,7 +303,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
       case 0: {
         if (RandomUint32() % 2 == 0) {
           value_type name_content_pair(name_content_pairs[RandomUint32() % name_content_pairs.size()]);
-          nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
+          nfs::Message::Data data(TypeParam::Tag::kValue,
                                   name_content_pair.first,
                                   NonEmptyString("A"),
                                   nfs::MessageAction::kDelete);
@@ -316,7 +316,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
                                                       });
                                             }));
         } else {
-          nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
+          nfs::Message::Data data(TypeParam::Tag::kValue,
                                   name_and_content.first,
                                   NonEmptyString("A"),
                                   nfs::MessageAction::kDelete);
@@ -332,7 +332,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
         break;
       }
       case 1: {
-        nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
+        nfs::Message::Data data(TypeParam::Tag::kValue,
                                 name_and_content.first,
                                 name_and_content.second,
                                 nfs::MessageAction::kPut);
@@ -349,7 +349,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
       case 2: {
         if (RandomUint32() % 2 != 0) {
           value_type name_content_pair(name_content_pairs[RandomUint32() % name_content_pairs.size()]);
-          nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
+          nfs::Message::Data data(TypeParam::Tag::kValue,
                                   name_content_pair.first,
                                   NonEmptyString("A"),
                                   nfs::MessageAction::kGet);
@@ -366,7 +366,7 @@ TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
                                         });
             }));
         } else {
-          nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
+          nfs::Message::Data data(TypeParam::Tag::kValue,
                                   name_and_content.first,
                                   NonEmptyString("A"),
                                   nfs::MessageAction::kGet);
@@ -454,7 +454,7 @@ TYPED_TEST_CASE_P(DataHolderCacheableTest);
 TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
   nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
   std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
-  nfs::Message::Data data(TypeParam::name_type::tag_type::kEnumValue,
+  nfs::Message::Data data(TypeParam::Tag::kValue,
                           name_and_content.first,
                           name_and_content.second,
                           nfs::MessageAction::kPut);

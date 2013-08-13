@@ -47,7 +47,7 @@ typedef std::future<passport::PublicPmid> PublicPmidFuture;
 //  return nfs::Reply(nfs::Reply::serialised_type(NonEmptyString(response)));
 //}
 
-asymm::PublicKey GetPublicKeyFromReply(const passport::PublicPmid::name_type& name,
+asymm::PublicKey GetPublicKeyFromReply(const passport::PublicPmid::Name& name,
                                        const nfs::Reply& reply) {
   passport::PublicPmid pmid(name, passport::PublicPmid::serialised_type(reply.data()));
   return pmid.public_key();
@@ -123,7 +123,7 @@ std::vector<boost::asio::ip::udp::endpoint> NetworkGenerator::BootstrapEndpoints
 void NetworkGenerator::DoOnPublicKeyRequested(const NodeId& node_id,
                                               const routing::GivePublicKeyFunctor& give_key,
                                               nfs::PublicKeyGetter& public_key_getter) {
-  passport::PublicPmid::name_type name(Identity(node_id.string()));
+  passport::PublicPmid::Name name(Identity(node_id.string()));
   public_key_getter.GetKey<passport::PublicPmid>(
       name,
       [name, give_key] (nfs::Reply reply) {
@@ -283,7 +283,7 @@ bool DataChunkStorer::Done(int32_t quantity, int32_t rounds) const {
 
 void DataChunkStorer::OneChunkRun(size_t& num_chunks, size_t& num_store, size_t& num_get) {
   ImmutableData::serialised_type content(NonEmptyString(RandomString(1 << 18)));  // 256 KB
-  ImmutableData::name_type name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
+  ImmutableData::Name name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
   ImmutableData chunk_data(name, content);
   ++num_chunks;
 
@@ -309,7 +309,7 @@ void DataChunkStorer::OneChunkRunWithDelete(size_t& num_chunks,
                                             size_t& num_store,
                                             size_t& num_get) {
   ImmutableData::serialised_type content(NonEmptyString(RandomString(1 << 18)));  // 256 KB
-  ImmutableData::name_type name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
+  ImmutableData::Name name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
   ImmutableData chunk_data(name, content);
   ++num_chunks;
 
@@ -363,7 +363,7 @@ bool DataChunkStorer::StoreOneChunk(const ImmutableData& chunk_data) {
 
 bool DataChunkStorer::GetOneChunk(const ImmutableData& chunk_data) {
   auto equal_immutables = [] (const ImmutableData& lhs, const ImmutableData& rhs) {
-                            return lhs.name().data.string() == lhs.name().data.string() &&
+                            return lhs.name()->string() == lhs.name()->string() &&
                                    lhs.data().string() == rhs.data().string();
                           };
 
@@ -396,7 +396,7 @@ void DataChunkStorer::LoadChunksFromFiles() {
       ReadFile(itr->path(), &string_content);
       NonEmptyString temp(string_content);
       ImmutableData::serialised_type content(temp);
-      ImmutableData::name_type name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
+      ImmutableData::Name name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
       ImmutableData chunk_data(name, content);
       chunk_list_.push_back(chunk_data);
     }

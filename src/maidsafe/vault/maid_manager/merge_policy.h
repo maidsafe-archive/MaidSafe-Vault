@@ -44,7 +44,7 @@ class MaidManagerMergePolicy {
   MaidManagerMergePolicy& operator=(MaidManagerMergePolicy&& other);
   // This flags a "Put" action in 'unresolved_data_' as not to be added to the db.
   template<typename Data>
-  int32_t AllowDelete(const typename Data::name_type& name);
+  int32_t AllowDelete(const typename Data::Name& name);
 
  protected:
   void Merge(const UnresolvedAction& unresolved_action);
@@ -71,7 +71,7 @@ class MaidManagerMergePolicy {
 };
 
 template<typename Data>
-int32_t MaidManagerMergePolicy::AllowDelete(const typename Data::name_type& name) {
+int32_t MaidManagerMergePolicy::AllowDelete(const typename Data::Name& name) {
   auto serialised_db_value(GetFromDb(name));
   Count current_count(0);
   AverageCost size(0);

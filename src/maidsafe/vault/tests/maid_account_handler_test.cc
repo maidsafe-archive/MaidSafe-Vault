@@ -382,26 +382,26 @@ class MaidAccountHandlerTest : public testing::Test {
 
 // protected:
 //  void PutData(const MaidName& account_name,
-//               const typename Data::name_type& data_name,
+//               const typename Data::Name& data_name,
 //               int32_t cost) {
 //    this->maid_account_handler_.template PutData<Data>(account_name,
 //                                                       data_name,
 //                                                       cost);
 //  }
 
-//  void DeleteData(const MaidName& account_name, const typename Data::name_type& data_name) {
+//  void DeleteData(const MaidName& account_name, const typename Data::Name& data_name) {
 //    this->maid_account_handler_.template DeleteData<Data>(account_name, data_name);
 //  }
 
 //  void Adjust(const MaidName& account_name,
-//              const typename Data::name_type& data_name,
+//              const typename Data::Name& data_name,
 //              int32_t new_cost)
 //  {
 //    this->maid_account_handler_.template Adjust<Data>(account_name, data_name, new_cost);
 //  }
 
 //  void CheckPutDetails(const MaidName& account_name,
-//                       typename Data::name_type data_name,
+//                       typename Data::Name data_name,
 //                       int32_t cost,
 //                       int size) {
 //    std::deque<MaidAccount::PutDataDetails> put_details(this->GetPutDataDetails(account_name));
@@ -419,7 +419,7 @@ class MaidAccountHandlerTest : public testing::Test {
 //TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest);
 
 //TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_PutData) {
-//  typename TypeParam::name_type data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
+//  typename TypeParam::Name data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
 //  MaidName account_name(this->GenerateMaidName());
 //  int32_t cost(1000);
 //  std::unique_ptr<MaidAccount> account(
@@ -438,7 +438,7 @@ class MaidAccountHandlerTest : public testing::Test {
 //}
 
 //TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_DeleteData) {
-//  typename TypeParam::name_type data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
+//  typename TypeParam::Name data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
 //  int32_t cost(1000);
 //  MaidName account_name(this->GenerateMaidName());
 //  std::unique_ptr<MaidAccount> account(
@@ -459,7 +459,7 @@ class MaidAccountHandlerTest : public testing::Test {
 //}
 
 //TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_Adjust) {
-//  typename TypeParam::name_type data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
+//  typename TypeParam::Name data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
 //  int32_t old_cost(1000), new_cost_small(500), new_cost_large(20000);
 //  MaidName account_name(this->GenerateMaidName());
 //  std::unique_ptr<MaidAccount> account(

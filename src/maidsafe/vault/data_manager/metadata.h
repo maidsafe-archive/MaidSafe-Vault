@@ -37,7 +37,7 @@ class Metadata {
  public:
   // This constructor reads the existing element or creates a new one if it doesn't already exist.
   Metadata(const DataNameVariant& data_name,
-           ManagerDb<DataManager::name_type>* metadata_db,
+           ManagerDb<DataManager::Name>* metadata_db,
            int32_t data_size);
   // This constructor reads the existing element or throws if it doesn't already exist.
   Metadata(const DataNameVariant& data_name,

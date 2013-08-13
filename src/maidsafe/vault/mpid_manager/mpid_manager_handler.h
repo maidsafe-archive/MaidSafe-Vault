@@ -42,29 +42,29 @@ class AccountHandler : public ModifyPolicy {
                  nfs::PublicKeyGetter& public_key_getter,
                  const boost::filesystem::path& vault_root_dir);
   bool AddAccount(const Account& account);
-  bool DeleteAccount(const typename Account::name_type& account_name);
+  bool DeleteAccount(const typename Account::Name& account_name);
   // modify here will use the policy class ModifyPolicy members !!
-  Account GetAccount(const typename Account::name_type& account_name) const;
-  std::vector<typename Account::name_type> GetAccountNames() const;
+  Account GetAccount(const typename Account::Name& account_name) const;
+  std::vector<typename Account::Name> GetAccountNames() const;
 
   template<typename Data>
-  bool DeleteDataElement(const typename Account::name_type& account_name,
-                         const typename Data::name_type& data_name,
+  bool DeleteDataElement(const typename Account::Name& account_name,
+                         const typename Data::Name& data_name,
                          int32_t data_version);
   // This will atomically attempt to modify then add if not found
   // a nullptr can be passed to make this add only
   template<typename Data>
-  bool ModifyOrAddDataElement(const typename Account::name_type& account_name,
-                              const typename Data::name_type& data_name,
+  bool ModifyOrAddDataElement(const typename Account::Name& account_name,
+                              const typename Data::Name& data_name,
                               int32_t data_version,
                               const typename Account::structure& account_structure,
                               std::function<void(std::string&)> modify_functor);
 
  private:
   typename std::vector<Account>::iterator FindAccount(
-      const typename Account::name_type& account_name);
+      const typename Account::Name& account_name);
   typename std::vector<Account>::const_iterator FindAccount(
-      const typename Account::name_type& account_name) const;
+      const typename Account::Name& account_name) const;
 
   mutable std::mutex mutex_;
   std::vector<Account> accounts_;

@@ -43,7 +43,7 @@ namespace vault {
 
 //template<typename Account, typename ModifyPolicy>
 //bool AccountHandler<Account, ModifyPolicy>::DeleteAccount(
-//    const typename Account::name_type& account_name) {
+//    const typename Account::Name& account_name) {
 //  std::lock_guard<std::mutex> lock(mutex_);
 //  auto itr(FindAccount(account_name));
 //  if (itr == accounts_.end())
@@ -55,7 +55,7 @@ namespace vault {
 
 //template<typename Account, typename ModifyPolicy>
 //Account AccountHandler<Account, ModifyPolicy>::GetAccount(
-//    const typename Account::name_type& account_name) const {
+//    const typename Account::Name& account_name) const {
 //  std::lock_guard<std::mutex> lock(mutex_);
 //  auto itr(FindAccount(account_name));
 //  if (itr == accounts_.end())
@@ -65,9 +65,9 @@ namespace vault {
 //}
 
 //template<typename Account, typename ModifyPolicy>
-//  std::vector<typename Account::name_type> AccountHandler<Account, ModifyPolicy>::GetAccountNames()
+//  std::vector<typename Account::Name> AccountHandler<Account, ModifyPolicy>::GetAccountNames()
 //                                                                                  const {
-//  std::vector<typename Account::name_type> account_names;
+//  std::vector<typename Account::Name> account_names;
 //  std::lock_guard<std::mutex> lock(mutex_);
 //  for (auto& account : accounts_)
 //    account_names.push_back(account.name());
@@ -77,16 +77,16 @@ namespace vault {
 //template<typename Account, typename ModifyPolicy>
 //template<typename Data>
 //bool AccountHandler<Account, ModifyPolicy>::DeleteDataElement(
-//    const typename Account::name_type& account_name,
-//    const typename Data::name_type& data_name,
+//    const typename Account::Name& account_name,
+//    const typename Data::Name& data_name,
 //    int32_t data_version) {
 //}
 
 //template<typename Account, typename ModifyPolicy>
 //template<typename Data>
 //bool AccountHandler<Account, ModifyPolicy>::ModifyOrAddDataElement(
-//    const typename Account::name_type& account_name,
-//    const typename Data::name_type& data_name,
+//    const typename Account::Name& account_name,
+//    const typename Data::Name& data_name,
 //    int32_t data_version,
 //    const typename Account::structure& account_structure,
 //    std::function<void(std::string&)> modify_functor) {
@@ -94,7 +94,7 @@ namespace vault {
 
 //template<typename Account, typename ModifyPolicy>
 //typename std::vector<Account>::iterator AccountHandler<Account, ModifyPolicy>::FindAccount(
-//    const typename Account::name_type& account_name) {
+//    const typename Account::Name& account_name) {
 //  return std::find_if(accounts_.begin(),
 //                      accounts_.end(),
 //                      [&account_name](const Account& account) {
@@ -104,7 +104,7 @@ namespace vault {
 
 //template<typename Account, typename ModifyPolicy>
 //typename std::vector<Account>::const_iterator AccountHandler<Account, ModifyPolicy>::FindAccount(
-//    const typename Account::name_type& account_name) const {
+//    const typename Account::Name& account_name) const {
 //  return std::find_if(accounts_.begin(),
 //                      accounts_.end(),
 //                      [&account_name](const Account& account) {

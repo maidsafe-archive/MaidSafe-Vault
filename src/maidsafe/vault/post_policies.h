@@ -87,7 +87,7 @@ class MaidManagerMiscellaneousPolicy {
         kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()),
         kPmid_(pmid) {}
 
-  void RequestPmidTotals(const passport::PublicPmid::name_type& pmid_name,
+  void RequestPmidTotals(const passport::PublicPmid::Name& pmid_name,
                          const routing::ResponseFunctor& callback) {
     nfs::Message::Data data(DataTagValue::kPmidValue, pmid_name.data, NonEmptyString(),
                             nfs::MessageAction::kGetPmidTotals);
@@ -133,7 +133,7 @@ class PmidManagerMiscellaneousPolicy {
   }
 
   template<typename Data>
-  void SendPutResult(const typename Data::name_type& data_name,
+  void SendPutResult(const typename Data::Name& data_name,
                      const NonEmptyString& serialised_put_result) {
     nfs::Message::Data data(data_name, serialised_put_result, nfs::MessageAction::kPutResult);
     nfs::Message message(nfs::Persona::kDataManager, kSource_, data, kPmid_.name());
@@ -149,7 +149,7 @@ class PmidManagerMiscellaneousPolicy {
   }
 
   template<typename Data>
-  void AccountTransfer(const typename Data::name_type& data_name,
+  void AccountTransfer(const typename Data::Name& data_name,
                        const NonEmptyString& serialised_account) {
     nfs::Message::Data data(data_name, serialised_account, nfs::MessageAction::kAccountTransfer);
     nfs::Message message(nfs::Persona::kPmidNode, kSource_, data, kPmid_.name());
@@ -170,7 +170,7 @@ class PmidNodeMiscellaneousPolicy {
         kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()),
         kPmid_(pmid) {}
 
-  void RequestPmidNodeAccount(const passport::PublicPmid::name_type& pmid_name,
+  void RequestPmidNodeAccount(const passport::PublicPmid::Name& pmid_name,
                               const routing::ResponseFunctor& callback) {
     nfs::Message::Data data(DataTagValue::kPmidValue, pmid_name.data, NonEmptyString(),
                             nfs::MessageAction::kGetPmidAccount);
