@@ -23,6 +23,8 @@ License.
 #include "maidsafe/data_types/data_type_values.h"
 #include "maidsafe/routing/message.h"
 #include "maidsafe/routing/routing_api.h"
+#include "maidsafe/nfs/messages.h"
+#include "maidsafe/nfs/message_types.h"
 
 #include "maidsafe/vault/types.h"
 
@@ -39,8 +41,22 @@ class PmidManagerDispatcher {
   PmidManagerDispatcher(routing::Routing& routing);
 
   template<typename Data>
-  void SendPutRequest(const Data& data, const PmidName& pmid_node);
+  void SendPutRequest(const routing::TaksId& task_id,
+                      const Data& data,
+                      const PmidName& pmid_node);
 
+  template<typename Data>
+  void SendDeleteRequest(const routing::TaskId& task_id,
+                         const PmidName& pmid_node,
+                         const typename Data::Name& data_name);
+
+  template<typename Data>
+  void SendPutResponse(const routing::TaskId& task_id,
+                       const PmidName& pmid_node,
+                       const Data::Name& data_name,
+                       const maidsafe_error& error_code);
+
+  void StateChange(const PmidName& pmid_node, const Data::Name& data_name);
 
   void SendSync(const NodeId& destination_peer,
                 const PmidName& account_name,
@@ -64,41 +80,59 @@ class PmidManagerDispatcher {
 // ==================== Implementation =============================================================
 
 template<typename Data>
-void PmidManagerDispatcher::SendPutRequest(const Data& data, const PmidName& pmid_node) {
-  typedef routing::GroupToSingleMessage RoutingMessage;
-  static const routing::Cacheable cacheable(is_cacheable<Data>::value ? routing::Cacheable::kGet :
-                                                                        routing::Cacheable::kNone);
-  static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
-  static const nfs::Persona kDestinationPersona(nfs::Persona::kPmidNode);
-  static const DataTagValue kDataEnumValue(Data::Tag::kValue);
-
-  nfs::Message::Data inner_data(kDataEnumValue, data.name().data, data.Serialise().data, kAction);
-  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data, pmid_node_hint);
-  RoutingMessage message(inner.Serialise()->string(),
-                         routing::GroupSource(routing::GroupId(pmid_node),
-                                              routing::SingleId(routing_.kNodeId())),
-                         routing::GroupId(NodeId(data.name()->string())), cacheable);
+void PmidManagerDispatcher::SendPutRequest(const routing::TaksId& task_id,
+                                           const Data& data,
+                                           const PmidName& pmid_node) {
+  typedef nfs::PutRequestFromPmidManagerToPmidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  nfs::DataNameAndContent data_name_and_content;
+  data_name_and_content.name = nfs::DataName(data.name());
+  data_name_and_content.content = data.content();
+  NfsMessage nfs_message(task_id, data_name_and_content);
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(
+                             routing::GroupSource(routing::GroupId(pmid_node),
+                                                  routing::SingleId(routing_.kNodeId()))),
+                         NfsMessage::Receiver(routing::SingleId(NodeId(data.name()->string()))));
   routing_.Send(message);
 }
 
 
 template<typename Data>
-void PmidManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
+void PmidManagerDispatcher::SendDeleteRequest(const routing::TaskId& task_id,
+                                              const PmidName& pmid_node,
                                               const typename Data::Name& data_name) {
-  typedef routing::GroupToSingleMessage RoutingMessage;
-  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-  static const nfs::MessageAction kAction(nfs::MessageAction::kDeleteRequest);
-  static const nfs::Persona kDestinationPersona(nfs::Persona::kPmidNode);
-  static const DataTagValue kDataEnumValue(Data::Tag::kValue);
-
-  nfs::Message::Data inner_data(kDataEnumValue, data_name.data, NonEmptyString(), kAction);
-  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-  RoutingMessage message(inner.Serialise()->string(),
-                         routing::GroupSource(routing::GroupId(pmid_node),
-                                              routing::SingleId(routing_.kNodeId())),
-                         routing::GroupId(NodeId(data_name->string())), cacheable);
+  typedef nfs::DeleteRequestFromPmidManagerToPmidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  nfs::DataName data;
+  data = nfs::DataName(data_name);
+  NfsMessage nfs_message(task_id, data);
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(
+                             routing::GroupSource(routing::GroupId(pmid_node),
+                                                  routing::SingleId(routing_.kNodeId()))),
+                         NfsMessage::Receiver(routing::SingleId(NodeId(data_name->string()))));
   routing_.Send(message);
 }
+
+template<typename Data>
+void PmidManagerDispatcher::SendPutResponse(const routing::TaskId& task_id,
+                                            const PmidName& pmid_node,
+                                            const Data::Name& data_name,
+                                            const maidsafe_error& error_code) {
+  typedef nfs::PutResponseFromPmidManagerToDataManager NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  nfs::DataNameAndReturnCode data;
+  data.name = nfs::DataName(data_name);
+  data.return_code = nfs::ReturnCode(error_code);
+  NfsMessage nfs_message(task_id, data);
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::GroupId(pmid_node),
+                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(NodeId(data_name->string())));
+  routing_.Send(message);
+}
+
 
 }  // namespace vault
 

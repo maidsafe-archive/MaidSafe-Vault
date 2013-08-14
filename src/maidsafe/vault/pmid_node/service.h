@@ -98,7 +98,7 @@ class PmidNodeService {
       std::shared_ptr<std::vector<protobuf::PmidAccountResponse>> response_vector) const;
 
   std::future<std::unique_ptr<ImmutableData>>
-  RetrieveFileFromNetwork(const DataNameVariant &file_id);
+  RetrieveFileFromNetwork(const DataNameVariant& file_id);
 
   void ValidatePutSender(const nfs::Message& message) const;
   void ValidateGetSender(const nfs::Message& message) const;
