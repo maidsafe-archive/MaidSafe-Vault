@@ -22,6 +22,18 @@ namespace vault {
 PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing)
     : routing_(routing) {}
 
+void PmidManagerDispatcher::StateChange(const PmidName& pmid_node, const Data::Name &data_name) {
+  typedef nfs::StateChangeFromPmidManagerToDataManager NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  nfs::DataName data(nfs::DataName(pmid_node));
+  NfsMessage nfs_message(data);
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::GroupId(pmid_node),
+                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(NodeId(data_name->string())));
+  routing_.Send(message);
+}
+
 void PmidManagerDispatcher::SendSync(const NodeId& destination_peer,
                                      const PmidName& account_name,
                                      const std::string& serialised_sync) {
