@@ -22,7 +22,8 @@ namespace vault {
 PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing)
     : routing_(routing) {}
 
-void PmidManagerDispatcher::StateChange(const PmidName& pmid_node, const Data::Name &data_name) {
+void PmidManagerDispatcher::SendStateChange(const PmidName& pmid_node,
+                                            const Data::Name &data_name) {
   typedef nfs::StateChangeFromPmidManagerToDataManager NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   nfs::DataName data(nfs::DataName(pmid_node));
@@ -34,39 +35,43 @@ void PmidManagerDispatcher::StateChange(const PmidName& pmid_node, const Data::N
   routing_.Send(message);
 }
 
-void PmidManagerDispatcher::SendSync(const NodeId& destination_peer,
-                                     const PmidName& account_name,
+void PmidManagerDispatcher::SendSync(const PmidName& pmid_node,
                                      const std::string& serialised_sync) {
-  typedef routing::GroupToGroupMessage RoutingMessage;
-  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-  static const nfs::MessageAction kAction(nfs::MessageAction::kSynchronise);
-  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidManager);
+  typedef nfs::SynchroniseFromPmidManagerToPmidManager NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
 
-  nfs::Message::Data inner_data;
-  inner_data.content = NonEmptyString(serialised_sync);
-  inner_data.action = kAction;
-  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-  RoutingMessage message(inner.Serialise()->string(),
-                         routing::GroupSource(routing::GroupId(account_name),
-                                              routing::SingleId(routing_.kNodeId())),
-                         routing::SingleId(destination_peer), cacheable);
+  NfsMessage nfs_message(serialised_sync); // TODO(Mahmoud): MUST BE FIXED
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::GroupId(pmid_node),
+                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(routing::GroupId(pmid_node)));
   routing_.Send(message);
 }
 
-void PmidManagerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
-                                                const PmidName& account_name,
+void PmidManagerDispatcher::SendAccountTransfer(const PmidName& destination_peer,
+                                                const PmidName& pmid_node,
                                                 const std::string& serialised_account) {
-  typedef routing::GroupToSingleMessage RoutingMessage;
-  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-  static const nfs::MessageAction kAction(nfs::MessageAction::kAccountTransfer);
-  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidManager);
+  typedef nfs::AccountTransferFromPmidManagerToPmidManager NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
 
-  nfs::Message::Data inner_data;
-  inner_data.content = NonEmptyString(serialised_account);
-  inner_data.action = kAction;
-  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-                         routing::SingleId(destination_peer), cacheable);
+  NfsMessage nfs_message(serialised_account);  // TODO(Mahmoud): MUST BE FIXED
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::GroupId(pmid_node),
+                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(routing::GroupId(destination_peer)));
+  routing_.Send(message);
+}
+
+void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
+                                            const std::string& serialised_account) {
+  typedef nfs::GetPmidAccountResponseFromPmidManagerToPmidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+
+  NfsMessage nfs_message(serialised_account);  // TODO(Mahmoud): MUST BE FIXED
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::SingleSource(
+                                                routing::SingleId(routing_.kNodeId()))),
+                         NfsMessage::Receiver(routing::SingleId(pmid_node)));
   routing_.Send(message);
 }
 
