@@ -44,27 +44,21 @@ class PmidManagerDispatcher {
   void SendPutRequest(const routing::TaksId& task_id,
                       const Data& data,
                       const PmidName& pmid_node);
-
   template<typename Data>
   void SendDeleteRequest(const routing::TaskId& task_id,
                          const PmidName& pmid_node,
                          const typename Data::Name& data_name);
-
   template<typename Data>
   void SendPutResponse(const routing::TaskId& task_id,
                        const PmidName& pmid_node,
                        const Data::Name& data_name,
                        const maidsafe_error& error_code);
-
-  void StateChange(const PmidName& pmid_node, const Data::Name& data_name);
-
-  void SendSync(const NodeId& destination_peer,
-                const PmidName& account_name,
-                const std::string& serialised_sync);
-
-  void SendAccountTransfer(const NodeId& destination_peer,
-                           const PmidName& account_name,
+  void SendStateChange(const PmidName& pmid_node, const Data::Name& data_name);
+  void SendSync(const PmidName& pmid_node, const std::string& serialised_sync);
+  void SendAccountTransfer(const PmidName& destination_peer,
+                           const PmidName& pmid_node,
                            const std::string& serialised_account);
+  void SendAccountTransfer(const PmidName& pmid_node, const std::string& serialised_account);
 
  private:
   PmidManagerDispatcher();
