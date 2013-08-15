@@ -38,6 +38,12 @@ include_directories(${nfs_SOURCE_DIR}/include)
 # Set up all files as GLOBs                                                                        #
 #==================================================================================================#
 set(VaultSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/vault)
+
+set(OutputFile ${PROJECT_BINARY_DIR}/message_types.h)
+set(InputFile ${PROJECT_SOURCE_DIR}/cmake/message_types.h.in)
+file(GLOB_RECURSE MetaFiles "${CMAKE_CURRENT_SOURCE_DIR}/cmake/*.message_types.meta")
+set_meta_files_custom_commands("${OutputFile}" "${InputFile}" "${MetaFiles}" "Vault Header Files" "Vault CMake Files")
+
 glob_dir(Vault ${VaultSourcesDir} Vault)
 list(REMOVE_ITEM VaultSources ${VaultSourcesDir}/vault_main.cc)
 glob_dir(DataManager ${VaultSourcesDir}/data_manager "Data Manager\\\\")
@@ -61,7 +67,8 @@ ms_add_static_library(vault ${VaultAllFiles}
                             ${PmidManagerAllFiles}
                             ${PmidNodeAllFiles}
                             ${StorageMergeAllFiles}
-                            ${VersionManagerAllFiles})
+                            ${VersionManagerAllFiles}
+                            ${OutputFile} ${InputFile} ${MetaFiles})
 ms_add_executable(lifestuff_vault Production ${VaultSourcesDir}/vault_main.cc)
 
 target_link_libraries(maidsafe_vault maidsafe_nfs_vault maidsafe_routing maidsafe_common maidsafe_private leveldb)

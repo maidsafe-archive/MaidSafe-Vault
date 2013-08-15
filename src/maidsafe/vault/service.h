@@ -51,7 +51,8 @@ class PersonaDemuxer : public boost::static_visitor<> {
 template<typename PersonaService>
 class Service {
  public:
-  typedef typename PersonaService::Messages Messages;
+  typedef typename PersonaService::PublicMessages PublicMessages;
+  typedef typename PersonaService::VaultMessages VaultMessages;
 
   Service(const passport::Pmid& pmid, routing::Routing& routing)
       : impl_(pmid, routing) {}
@@ -60,10 +61,17 @@ class Service {
   void HandleMessage(const nfs::TypeErasedMessageWrapper& message,
                      const Sender& sender,
                      const Receiver& receiver) {
-    Messages variant_message;
-    nfs::GetVariant(message, variant_message);
     static const PersonaDemuxer<PersonaService, Sender, Receiver> demuxer(impl_, sender, receiver);
-    boost::apply_visitor(demuxer, variant_message);
+    PublicMessages public_variant_message;
+    if (nfs::GetVariant(message, public_variant_message))
+      return boost::apply_visitor(demuxer, public_variant_message);
+
+    VaultMessages vault_variant_message;
+    if (nfs::GetVariant(message, vault_variant_message))
+      return boost::apply_visitor(demuxer, vault_variant_message);
+
+    LOG(kError) << "Invalid request.";
+    ThrowError(CommonErrors::invalid_parameter);
   }
 
  private:

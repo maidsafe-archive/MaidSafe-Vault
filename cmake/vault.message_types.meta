@@ -1,0 +1,2 @@
+Action:GetResponse                    Source:DataManager:Group        Destination:MaidManager:Group       Contents:struct:maidsafe::vault::DataOrDataNameAndReturnCode
+Action:PutResponse                    Source:DataManager:Group        Destination:MaidManager:Group       Contents:struct:maidsafe::vault::DataPmidHintAndReturnCode

@@ -68,7 +68,8 @@ struct GetPmidTotalsOp;
 
 class MaidManagerService {
  public:
-  typedef nfs::MaidManagerServiceMessages Messages;
+  typedef nfs::MaidManagerServiceMessages PublicMessages;
+  typedef MaidManagerServiceMessages VaultMessages;
 
   MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing);
 
