@@ -62,9 +62,9 @@ void PmidManagerDispatcher::SendAccountTransfer(const PmidName& destination_peer
   routing_.Send(message);
 }
 
-void PmidManagerDispatcher::SendAccountTransfer(const PmidName& pmid_node,
-                                                const std::string& serialised_account) {
-  typedef nfs::AccountTransferFromPmidManagerToPmidNode NfsMessage;
+void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
+                                            const std::string& serialised_account) {
+  typedef nfs::GetPmidAccountResponseFromPmidManagerToPmidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
 
   NfsMessage nfs_message(serialised_account);  // TODO(Mahmoud): MUST BE FIXED

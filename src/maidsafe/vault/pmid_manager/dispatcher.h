@@ -58,7 +58,7 @@ class PmidManagerDispatcher {
   void SendAccountTransfer(const PmidName& destination_peer,
                            const PmidName& pmid_node,
                            const std::string& serialised_account);
-  void SendAccountTransfer(const PmidName& pmid_node, const std::string& serialised_account);
+  void SendPmidAccount(const PmidName& pmid_node, const std::string& serialised_account);
 
  private:
   PmidManagerDispatcher();
