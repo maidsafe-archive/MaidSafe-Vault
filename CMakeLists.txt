@@ -64,14 +64,14 @@ ms_add_static_library(vault ${VaultAllFiles}
                             ${VersionManagerAllFiles})
 ms_add_executable(lifestuff_vault Production ${VaultSourcesDir}/vault_main.cc)
 
-target_link_libraries(maidsafe_vault maidsafe_nfs maidsafe_routing maidsafe_common maidsafe_private leveldb)
+target_link_libraries(maidsafe_vault maidsafe_nfs_vault maidsafe_routing maidsafe_common maidsafe_private leveldb)
 target_link_libraries(lifestuff_vault maidsafe_vault maidsafe_lifestuff_manager)
 
 if(MaidsafeTesting)
   ms_add_executable(TESTvault "Tests/Vault" ${VaultTestsAllFiles})
   target_link_libraries(TESTvault maidsafe_vault)
   ms_add_executable(vault_key_helper Tools ${VaultToolsAllFiles})
-  target_link_libraries(vault_key_helper maidsafe_routing maidsafe_nfs maidsafe_private)
+  target_link_libraries(vault_key_helper maidsafe_routing maidsafe_nfs_vault maidsafe_private)
 endif()
 
 rename_outdated_built_exes()
