@@ -30,10 +30,6 @@ License.
 
 namespace maidsafe {
 
-class OwnerDirectory;
-class GroupDirectory;
-class WorldDirectory;
-
 namespace vault {
 
 class PmidManagerDispatcher {
@@ -58,7 +54,7 @@ class PmidManagerDispatcher {
   void SendAccountTransfer(const PmidName& destination_peer,
                            const PmidName& pmid_node,
                            const std::string& serialised_account);
-  void SendPmidAccount(const PmidName& pmid_node, const std::string& serialised_account);
+  void SendPmidAccount(const PmidName& pmid_node, const std::string& serialised_account_response);
 
  private:
   PmidManagerDispatcher();

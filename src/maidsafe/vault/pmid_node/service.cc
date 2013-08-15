@@ -114,7 +114,10 @@ void PmidNodeService::SendAccountRequest() {
             total_valid_replies = this->TotalValidPmidAccountReplies(response_vector);
             if ((total_replies >= (routing::Parameters::node_group_size / 2 + 1)) &&
                  total_valid_replies >= routing::Parameters::node_group_size / 2) {
-              ApplyAccountTransfer(total_replies, total_valid_replies, expected_chunks);
+              ApplyAccountTransfer(response_vector,
+                                   total_replies,
+                                   total_valid_replies,
+                                   expected_chunks);
               *done = true;
             }
           }
@@ -124,9 +127,11 @@ void PmidNodeService::SendAccountRequest() {
       });
 }
 
-void PmidNodeService::ApplyAccountTransfer(const size_t& total_pmidmgrs,
-                                           const size_t& pmidmgrs_with_account,
-                                           std::map<DataNameVariant, uint16_t>& chunks) {
+void PmidNodeService::ApplyAccountTransfer(
+    std::make_shared<std::vector<protobuf::PmidAccountResponse>> responses,
+    const size_t& total_pmidmgrs,
+    const size_t& pmidmgrs_with_account,
+    std::map<DataNameVariant, uint16_t>& chunks) {
   struct ChunkInfo {
     ChunkInfo(const DataNameVariant& file_name_in, const uint64_t& size_in) :
         file_name(file_name_in), size(size_in) {}
@@ -141,13 +146,11 @@ void PmidNodeService::ApplyAccountTransfer(const size_t& total_pmidmgrs,
   };
 
   std::map<ChunkInfo, uint16_t, ChunkInfoComparison> expected_chunks;
-  protobuf::PmidAccountResponse pmid_account_response;
   protobuf::PmidAccountDetails pmid_account_details;
 
-  for (auto pending_request : accumulator_.pending_requests_) {
-    if (static_cast<nfs::MessageAction>(pending_request.msg.data().action) ==
+  for (auto pmid_account_response : responses) {
+    if (static_cast<nfs::MessageAction>(pmid_account_response.action()) ==
             nfs::MessageAction::kAccountTransfer) {
-      pmid_account_response.ParseFromString(pending_request.msg.data().content.string());
       if (pmid_account_response.status() == static_cast<int>(CommonErrors::success)) {
         pmid_account_details.ParseFromString(
             pmid_account_response.pmid_account().serialised_account_details());

@@ -45,6 +45,10 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace protobuf {
+  class PmidAccountResponse;
+}  // namespace protobuf
+
 namespace test {
 
 template<typename Data>
@@ -87,7 +91,8 @@ class PmidNodeService {
   void SendAccountRequest();
 
   // populates chunks map
-  void ApplyAccountTransfer(const size_t& total_pmidmgrs,
+  void ApplyAccountTransfer(std::make_shared<std::vector<protobuf::PmidAccountResponse>> responses,
+                            const size_t& total_pmidmgrs,
                             const size_t& pmidmagsr_with_account,
                             std::map<DataNameVariant, uint16_t>& chunks);
   void UpdateLocalStorage(const std::map<DataNameVariant, uint16_t>& expected_files);
