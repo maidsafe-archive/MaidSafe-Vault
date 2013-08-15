@@ -23,8 +23,8 @@ License.
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message_wrapper.h"
+#include "maidsafe/nfs/service.h"
 
-#include "maidsafe/vault/service.h"
 #include "maidsafe/vault/data_manager/service.h"
 #include "maidsafe/vault/maid_manager/service.h"
 #include "maidsafe/vault/pmid_manager/service.h"
@@ -52,11 +52,11 @@ class Demultiplexer {
 //  NonEmptyString HandleGetFromCache(const nfs::Message& message);
 //  void HandleStoreInCache(const nfs::Message& message);
 
-  Service<MaidManagerService>& maid_manager_service_;
-  Service<VersionManagerService>& version_manager_service_;
-  Service<DataManagerService>& data_manager_service_;
-  Service<PmidManagerService>& pmid_manager_service_;
-  Service<PmidNodeService>& pmid_node_service_;
+  nfs::Service<MaidManagerService>& maid_manager_service_;
+  nfs::Service<VersionManagerService>& version_manager_service_;
+  nfs::Service<DataManagerService>& data_manager_service_;
+  nfs::Service<PmidManagerService>& pmid_manager_service_;
+  nfs::Service<PmidNodeService>& pmid_node_service_;
 };
 
 template<typename T>
