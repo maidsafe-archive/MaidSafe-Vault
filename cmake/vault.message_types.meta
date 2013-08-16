@@ -1,2 +1,4 @@
 Action:GetResponse                    Source:DataManager:Group        Destination:MaidManager:Group       Contents:struct:maidsafe::vault::DataOrDataNameAndReturnCode
 Action:PutResponse                    Source:DataManager:Group        Destination:MaidManager:Group       Contents:struct:maidsafe::vault::DataPmidHintAndReturnCode
+Action:GetPmidAccountResponse         Source:PmidManager:Group        Destination:PmidNode:Single         Contents:struct:maidsafe::vault::PmidAccountResponse
+

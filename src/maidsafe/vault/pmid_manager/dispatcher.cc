@@ -15,6 +15,8 @@ License.
 
 #include "maidsafe/vault/pmid_manager/dispatcher.h"
 
+#include "message_types.h"
+
 namespace maidsafe {
 
 namespace vault {
@@ -64,14 +66,15 @@ void PmidManagerDispatcher::SendAccountTransfer(const PmidName& destination_peer
 
 void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
                                             const std::string& serialised_account_response) {
-  typedef nfs::GetPmidAccountResponseFromPmidManagerToPmidNode NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  typedef GetPmidAccountResponseFromPmidManagerToPmidNode VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  NfsMessage nfs_message(serialised_account_response);  // TODO(Mahmoud): MUST BE FIXED
-  RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(routing::SingleSource(
-                                                routing::SingleId(routing_.kNodeId()))),
-                         NfsMessage::Receiver(routing::SingleId(pmid_node)));
+  PmidAccountResponse pmid_account_response(serialised_account_response);
+  VaultMessage vault_message(pmid_account_response);
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::SingleSource(
+                                                  routing::SingleId(routing_.kNodeId()))),
+                         VaultMessage::Receiver(routing::SingleId(pmid_node)));
   routing_.Send(message);
 }
 

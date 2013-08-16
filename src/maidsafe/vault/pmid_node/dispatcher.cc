@@ -33,7 +33,7 @@ void PmidNodeDispatcher::SendGetRequest(const Data::Name &data_name) {
   routing_.Send(message);
 }
 
-void PmidNodeDispatcher::SendAccountTransferRequest() {
+void PmidNodeDispatcher::SendPmidAccountRequest() {
   typedef nfs::GetPmidAccountRequestFromPmidNodeToPmidManager NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
 

@@ -1,4 +1,4 @@
-/* Copyright 2013 MaidSafe.net limited
+/* Copyright 2012 MaidSafe.net limited
 
 This MaidSafe Software is licensed under the MaidSafe.net Commercial License, version 1.0 or later,
 and The General Public License (GPL), version 3. By contributing code to this project You agree to
@@ -13,38 +13,37 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_PMID_NODE_DISPATCHER_H_
-#define MAIDSAFE_VAULT_PMID_NODE_DISPATCHER_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_MESSAGES_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_MESSAGES_H_
 
-#include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/message_types.h"
+#include <cstdint>
+#include <string>
 
-#include "maidsafe/vault/types.h"
+#include "maidsafe/common/error.h"
 
 namespace maidsafe {
-
 namespace vault {
 
-class PmidNodeDispatcher {
+class PmidAccountResponse {
  public:
-  PmidNodeDispatcher(routing::Routing& routing);
+  explicit PmidAccountResponse(const std::string& serialised_pmid_accounts);
+  PmidAccountResponse(const PmidAccountResponse& other);
+  PmidAccountResponse(PmidAccountResponse&& other);
+  PmidAccountResponse& operator=(PmidAccountResponse other);
 
-  void SendGetRequest(const nfs::DataName& data_name);
-  void SendPmidAccountRequest();
+  std::string Serialise() const;
+
+  friend void swap(PmidAccountResponse& lhs, PmidAccountResponse& rhs) MAIDSAFE_NOEXCEPT;
 
  private:
-  PmidNodeDispatcher();
-  PmidNodeDispatcher(const PmidNodeDispatcher&);
-  PmidNodeDispatcher(PmidNodeDispatcher&&);
-  PmidNodeDispatcher& operator=(PmidNodeDispatcher);
-
-  routing::GroupSource Sender(const MaidName& account_name) const;
-
-  routing::Routing& routing_;
+  PmidAccountResponse();
+  std::string serialised_pmid_accounts_;
 };
+
+bool operator==(const PmidAccountResponse& lhs, const PmidAccountResponse& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_NODE_DISPATCHER_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_MESSAGES_H_

@@ -32,7 +32,7 @@ include_directories(${private_SOURCE_DIR}/include)
 include_directories(${rudp_SOURCE_DIR}/include)
 include_directories(${routing_SOURCE_DIR}/include)
 include_directories(${nfs_SOURCE_DIR}/include)
-
+include_directories(${PROJECT_BINARY_DIR})
 
 #==================================================================================================#
 # Set up all files as GLOBs                                                                        #

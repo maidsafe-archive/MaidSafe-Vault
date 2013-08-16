@@ -23,7 +23,6 @@ License.
 #include "maidsafe/data_types/data_type_values.h"
 #include "maidsafe/routing/message.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/messages.h"
 #include "maidsafe/nfs/message_types.h"
 
 #include "maidsafe/vault/types.h"
