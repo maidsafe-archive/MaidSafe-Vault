@@ -40,7 +40,7 @@ message PmidAccountDbEntry {
 
 message PmidAccountResponse {
   required PmidAccount pmid_account = 1;
-  required int status = 2;
+  required int32 status = 2;
 }
 
 message PmidAccount {
