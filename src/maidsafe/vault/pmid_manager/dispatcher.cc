@@ -15,7 +15,7 @@ License.
 
 #include "maidsafe/vault/pmid_manager/dispatcher.h"
 
-#include "message_types.h"
+#include "maidsafe/vault/message_types.h"
 
 namespace maidsafe {
 

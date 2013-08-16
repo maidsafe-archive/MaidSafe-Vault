@@ -32,14 +32,15 @@ include_directories(${private_SOURCE_DIR}/include)
 include_directories(${rudp_SOURCE_DIR}/include)
 include_directories(${routing_SOURCE_DIR}/include)
 include_directories(${nfs_SOURCE_DIR}/include)
-include_directories(${PROJECT_BINARY_DIR})
+
 
 #==================================================================================================#
 # Set up all files as GLOBs                                                                        #
 #==================================================================================================#
 set(VaultSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/vault)
 
-set(OutputFile ${PROJECT_BINARY_DIR}/message_types.h)
+set(OutputFile ${PROJECT_BINARY_DIR}/generated_message_types/maidsafe/vault/message_types.h)
+include_directories(${PROJECT_BINARY_DIR}/generated_message_types)
 set(InputFile ${PROJECT_SOURCE_DIR}/cmake/message_types.h.in)
 file(GLOB_RECURSE MetaFiles "${CMAKE_CURRENT_SOURCE_DIR}/cmake/*.message_types.meta")
 set_meta_files_custom_commands("${OutputFile}" "${InputFile}" "${MetaFiles}" "Vault Header Files" "Vault CMake Files")
