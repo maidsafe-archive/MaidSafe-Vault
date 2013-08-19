@@ -42,10 +42,12 @@ class Demultiplexer {
                 DataManagerService& data_manager_service,
                 PmidManagerService& pmid_manager_service,
                 PmidNodeService& pmid_node_service);
-//  bool GetFromCache(std::string& serialised_message);
-//  void StoreInCache(const std::string& serialised_message);
   template<typename T>
   void HandleMessage(const T& routing_message);
+  template<typename T>
+  bool GetFromCache(T& serialised_message);
+  template<typename T>
+  void StoreInCache(const T& serialised_message);
 
  private:
 //  template<typename MessageType>
@@ -61,7 +63,7 @@ class Demultiplexer {
 
 template<typename T>
 void Demultiplexer::HandleMessage(const T& routing_message) {
-  auto wrapper_tuple(ParseMessageWrapper(routing_message.contents));
+  auto wrapper_tuple(nfs::ParseMessageWrapper(routing_message.contents));
   const auto& destination_persona(std::get<2>(wrapper_tuple));
   static_assert(std::is_same<decltype(destination_persona),
                              const detail::DestinationTaggedValue&>::value,
@@ -85,6 +87,18 @@ void Demultiplexer::HandleMessage(const T& routing_message) {
     default:
       LOG(kError) << "Unhandled Persona";
   }
+}
+
+template<typename T>
+bool Demultiplexer::GetFromCache(T& serialised_message) {
+  auto wrapper_tuple(nfs::ParseMessageWrapper(routing_message.contents));
+  return pmid_node_.GetFromCache(wrapper_tuple, routing_message.sender, routing_message.receiver);
+}
+
+template<typename T>
+void Demultiplexer::StoreInCache(const T& serialised_message) {
+  auto wrapper_tuple(nfs::ParseMessageWrapper(routing_message.contents));
+  pmid_node_.StoreInCache(wrapper_tuple, routing_message.sender, routing_message.receiver);
 }
 
 }  // namespace vault

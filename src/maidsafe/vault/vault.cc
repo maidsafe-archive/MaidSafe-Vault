@@ -78,22 +78,30 @@ void Vault::InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_
 
 routing::Functors Vault::InitialiseRoutingCallbacks() {
   routing::Functors functors;
-  functors.typed_message_and_caching.single_to_single =
-      [this](const SingleToSingleMessage& message) {
-          OnMessageReceived(message);
-      };
-  functors.typed_message_and_caching.single_to_group =
-      [this](const SingleToGroupMessage& message) {
-          OnMessageReceived(message);
-      };
-  functors.typed_message_and_caching.group_to_single =
-      [this](const GroupToSingleMessage& message) {
-          OnMessageReceived(message);
-      };
-  functors.typed_message_and_caching.group_to_group =
-      [this](const GroupToGroupMessage& message) {
-          OnMessageReceived(message);
-      };
+  functors.typed_message_and_caching.single_to_single.message_received =
+      [this](const routing::SingleToSingleMessage& message) { OnMessageReceived(message); };
+  functors.typed_message_and_caching.single_to_group.message_received =
+      [this](const routing::SingleToGroupMessage& message) { OnMessageReceived(message); };
+  functors.typed_message_and_caching.group_to_single.message_received =
+      [this](const routing::GroupToSingleMessage& message) { OnMessageReceived(message); };
+  functors.typed_message_and_caching.group_to_group.message_received =
+      [this](const routing::GroupToGroupMessage& message) { OnMessageReceived(message); };
+  functors.typed_message_and_caching.single_to_single.get_cache_data =
+      [this](const routing::SingleToSingleMessage& message) { return OnGetFromCache(message); };
+  functors.typed_message_and_caching.single_to_group.get_cache_data =
+      [this](const routing::SingleToGroupMessage& message) { return OnGetFromCache(message); };
+  functors.typed_message_and_caching.group_to_single.get_cache_data =
+      [this](const routing::GroupToSingleMessage& message) { return OnGetFromCache(message); };
+  functors.typed_message_and_caching.group_to_group.get_cache_data =
+      [this](const routing::GroupToGroupMessage& message) { return OnGetFromCache(message); };
+  functors.typed_message_and_caching.single_to_single.put_cache_data =
+      [this](const routing::SingleToSingleMessage& message) { OnStoreInCache(message); };
+  functors.typed_message_and_caching.single_to_group.put_cache_data =
+      [this](const routing::SingleToGroupMessage& message) { OnStoreInCache(message); };
+  functors.typed_message_and_caching.group_to_single.put_cache_data =
+      [this](const routing::GroupToSingleMessage& message) { OnStoreInCache(message); };
+  functors.typed_message_and_caching.group_to_group.put_cache_data =
+      [this](const routing::GroupToGroupMessage& message) { OnStoreInCache(message); };
 
   functors.network_status = [this] (const int& network_health) {
                               OnNetworkStatusChange(network_health);
@@ -111,8 +119,6 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
   functors.new_bootstrap_endpoint = [this] (const boost::asio::ip::udp::endpoint& endpoint) {
                                       OnNewBootstrapEndpoint(endpoint);
                                     };
-  functors.store_cache_data = [this] (const std::string& message) { OnStoreInCache(message); };
-  functors.have_cache_data = [this] (std::string& message) { return OnGetFromCache(message); };
   return functors;
 }
 
@@ -184,24 +190,8 @@ void Vault::OnMatrixChanged(std::shared_ptr<routing::MatrixChange> matrix_change
   });
 }
 
-bool Vault::OnGetFromCache(std::string& message) {  // Need to be on routing's thread
-  return demux_.GetFromCache(message);
-}
-
-void Vault::OnStoreInCache(const std::string& message) {  // post/move data?
-  asio_service_.service().post([=] { DoOnStoreInCache(message); });
-}
-
-void Vault::DoOnStoreInCache(const std::string& message) {
-  demux_.StoreInCache(message);
-}
-
 void Vault::OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint) {
-  asio_service_.service().post([=] { DoOnNewBootstrapEndpoint(endpoint); });
-}
-
-void Vault::DoOnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint) {
-  on_new_bootstrap_endpoint_(endpoint);
+  asio_service_.service().post([=] { on_new_bootstrap_endpoint_(endpoint); });
 }
 
 }  // namespace vault

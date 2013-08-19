@@ -26,7 +26,8 @@ License.
 #include "maidsafe/common/asio_service.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/public_key_getter.h"
+#include "maidsafe/nfs/client/data_getter.h"
+#include "maidsafe/nfs/service.h"
 
 #include "maidsafe/vault/pmid_node/service.h"
 #include "maidsafe/vault/maid_manager/service.h"
@@ -35,7 +36,6 @@ License.
 #include "maidsafe/vault/version_manager/service.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/demultiplexer.h"
-#include "maidsafe/vault/service.h"
 
 namespace maidsafe {
 
@@ -56,7 +56,7 @@ class Vault {
  private:
   void InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
   routing::Functors InitialiseRoutingCallbacks();
-  template <typename T>
+  template<typename T>
   void OnMessageReceived(const T& message);
   void OnNetworkStatusChange(const int& network_health);
   void DoOnNetworkStatusChange(const int& network_health);
@@ -64,11 +64,11 @@ class Vault {
   void DoOnPublicKeyRequested(const NodeId &node_id, const routing::GivePublicKeyFunctor &give_key);
   void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
   void OnMatrixChanged(std::shared_ptr<routing::MatrixChange> matrix_change);
+  template<typename T>
   bool OnGetFromCache(std::string& message);
+  template<typename T>
   void OnStoreInCache(const std::string& message);
-  void DoOnStoreInCache(const std::string& message);
   void OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint);
-  void DoOnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint);
 
   std::mutex network_health_mutex_;
   std::condition_variable network_health_condition_variable_;
@@ -76,18 +76,28 @@ class Vault {
   std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint_;
   std::unique_ptr<routing::Routing> routing_;
   nfs::PublicKeyGetter public_key_getter_;
-  Service<MaidManagerService> maid_manager_service_;
-  Service<VersionManagerService> version_manager_service_;
-  Service<DataManagerService> data_manager_service_;
-  Service<PmidManagerService> pmid_manager_service_;
-  Service<PmidNodeService> pmid_node_service_;
+  nfs::Service<MaidManagerService> maid_manager_service_;
+  nfs::Service<VersionManagerService> version_manager_service_;
+  nfs::Service<DataManagerService> data_manager_service_;
+  nfs::Service<PmidManagerService> pmid_manager_service_;
+  nfs::Service<PmidNodeService> pmid_node_service_;
   Demultiplexer demux_;
   AsioService asio_service_;
 };
 
-template <typename T>
-void OnMessageReceived(const T& message) {
+template<typename T>
+void Vault::OnMessageReceived(const T& message) {
   asio_service_.service().post([=] { demux_.HandleMessage(message); });
+}
+
+template<typename T>
+bool Vault::OnGetFromCache(T& message) {  // Need to be on routing's thread
+  return demux_.GetFromCache(message);
+}
+
+template<typename T>
+void Vault::OnStoreInCache(const T& message) {
+  asio_service_.service().post([=] { demux_.StoreInCache(message) });
 }
 
 }  // namespace vault

@@ -19,7 +19,6 @@ License.
 #include "maidsafe/passport/types.h"
 #include "maidsafe/data_types/data_type_values.h"
 #include "maidsafe/data_types/data_name_variant.h"
-//#include "maidsafe/nfs/reply.h"
 
 #include "maidsafe/vault/pmid_node/service.h"
 #include "maidsafe/vault/maid_manager/service.h"
