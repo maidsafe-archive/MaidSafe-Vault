@@ -31,10 +31,8 @@ License.
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/messages.h"
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/message_wrapper.h"
-#include "maidsafe/nfs/public_key_getter.h"
 #include "maidsafe/nfs/utils.h"
 
 //#include "maidsafe/vault/accumulator.h"

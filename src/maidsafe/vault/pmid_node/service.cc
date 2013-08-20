@@ -20,7 +20,6 @@ License.
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_store/data_buffer.h"
-#include "maidsafe/nfs/client_utils.h"
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 

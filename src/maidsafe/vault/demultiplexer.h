@@ -90,15 +90,19 @@ void Demultiplexer::HandleMessage(const T& routing_message) {
 }
 
 template<typename T>
-bool Demultiplexer::GetFromCache(T& serialised_message) {
-  auto wrapper_tuple(nfs::ParseMessageWrapper(routing_message.contents));
-  return pmid_node_.GetFromCache(wrapper_tuple, routing_message.sender, routing_message.receiver);
+bool Demultiplexer::GetFromCache(const T& serialised_message) {
+  auto wrapper_tuple(nfs::ParseMessageWrapper(serialised_message.contents));
+  return pmid_node_service_.GetFromCache(wrapper_tuple,
+                                         serialised_message.sender,
+                                         serialised_message.receiver);
 }
 
 template<typename T>
 void Demultiplexer::StoreInCache(const T& serialised_message) {
-  auto wrapper_tuple(nfs::ParseMessageWrapper(routing_message.contents));
-  pmid_node_.StoreInCache(wrapper_tuple, routing_message.sender, routing_message.receiver);
+  auto wrapper_tuple(nfs::ParseMessageWrapper(serialised_message.contents));
+  pmid_node_service_.StoreInCache(wrapper_tuple,
+                                  serialised_message.sender,
+                                  serialised_message.receiver);
 }
 
 }  // namespace vault

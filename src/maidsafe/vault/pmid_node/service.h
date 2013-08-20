@@ -30,9 +30,8 @@ License.
 #include "maidsafe/data_store/memory_buffer.h"
 #include "maidsafe/data_store/permanent_store.h"
 #include "maidsafe/data_types/data_type_values.h"
-#include "maidsafe/nfs/nfs.h"
-#include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/message.h"
+#include "maidsafe/nfs/message_types.h"
+#include "maidsafe/vault/message_types.h"
 
 
 //#include "maidsafe/vault/accumulator.h" // FIXME
@@ -66,13 +65,26 @@ class PmidNodeService {
                   routing::Routing& routing,
                   const boost::filesystem::path& vault_root_dir);
 
-  template<typename Data>
-  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor& /*reply_functor*/) {}
-  template<typename Data>
-  NonEmptyString GetFromCache(const nfs::Message& message);
-  template<typename Data>
-  void StoreInCache(const nfs::Message& message);
+  template<typename T>
+  void HandleMessage(const T& message,
+                     const typename T::Sender& sender,
+                     const typename T::Receiver& receiver) {
+    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
+  }
+
+  template<typename T>
+  bool GetFromCache(const T& /*message*/,
+                    const typename T::Sender& /*sender*/,
+                    const typename T::Receiver& /*receiver*/) {
+    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
+  }
+
+  template<typename T>
+  void StoreInCache(const T& /*message*/,
+                    const typename T::Sender& /*sender*/,
+                    const typename T::Receiver& /*receiver*/) {
+    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
+  }
 
   template<typename Data>
   friend class test::DataHolderTest;
@@ -82,11 +94,11 @@ class PmidNodeService {
   typedef std::false_type IsNotCacheable, IsShortTermCacheable;
 
   template<typename Data>
-  void HandlePutMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandlePutMessage(const nfs::PutRequestFromPmidManagerToPmidNode& message);
   template<typename Data>
-  void HandleGetMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleGetMessage(const nfs::GetRequestFromDataManagerToPmidNode& message);
   template<typename Data>
-  void HandleDeleteMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandleDeleteMessage(const nfs::DeleteRequestFromPmidManagerToPmidNode);
 
   void SendAccountRequest();
 
@@ -109,27 +121,47 @@ class PmidNodeService {
   void ValidateGetSender(const nfs::Message& message) const;
   void ValidateDeleteSender(const nfs::Message& message) const;
 
-  template<typename Data>
-  NonEmptyString GetFromCache(const nfs::Message& message, IsCacheable);
-  template<typename Data>
-  NonEmptyString GetFromCache(const nfs::Message& message, IsNotCacheable);
-  template<typename Data>
-  NonEmptyString CacheGet(const typename Data::Name& name, IsShortTermCacheable);
-  template<typename Data>
-  NonEmptyString CacheGet(const typename Data::Name& name, IsLongTermCacheable);
+  template<typename T>
+  bool GetFromCache(const T& message,
+                    const typename T::Sender& sender,
+                    const typename T::Receiver& receiver,
+                    IsCacheable);
 
-  template<typename Data>
-  void StoreInCache(const nfs::Message& message, IsCacheable);
-  template<typename Data>
-  void StoreInCache(const nfs::Message& message, IsNotCacheable);
-  template<typename Data>
-  void CacheStore(const typename Data::Name& name,
-                  const NonEmptyString& value,
-                  IsShortTermCacheable);
-  template<typename Data>
-  void CacheStore(const typename Data::Name& name,
-                  const NonEmptyString& value,
-                  IsLongTermCacheable);
+  template<typename T>
+  bool GetFromCache(const T& message,
+                    const typename T::Sender& sender,
+                    const typename T::Receiver& receiver,
+                    IsNotCacheable);
+
+  template<typename T>
+  bool CacheGet(const T& message,
+                const typename T::Sender& sender,
+                const typename T::Receiver& receiver,
+                IsShortTermCacheable);
+
+  template<typename T>
+  bool CacheGet(const T& message,
+                const typename T::Sender& sender,
+                const typename T::Receiver& receiver,
+                IsLongTermCacheable);
+
+  template<typename T>
+  void StoreInCache(const T& message,
+                    const typename T::Sender& sender,
+                    const typename T::Receiver& receiver,
+                    IsCacheable);
+
+  template<typename T>
+  void StoreInCache(const T& message,
+                    const typename T::Sender& sender,
+                    const typename T::Receiver& receiver,
+                    IsNotCacheable);
+
+  template<typename T>
+  void CacheStore(const T& message, IsShortTermCacheable);
+
+  template<typename T>
+  void CacheStore(const T& message, IsLongTermCacheable);
 
   boost::filesystem::space_info space_info_;
   DiskUsage disk_total_;
@@ -144,6 +176,42 @@ class PmidNodeService {
 //  PmidNodeMiscellaneousPolicy miscellaneous_policy;
 //  PmidNodeNfs nfs_;
 };
+
+template<>
+void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
+    const nfs::GetRequestFromDataManagerToPmidNode& message,
+    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
+    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& receiver);
+
+template<>
+void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>(
+    const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
+    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
+    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
+
+template<>
+void PmidNodeService::HandleMessage<nfs::PutRequestFromPmidManagerToPmidNode>(
+    const nfs::PutRequestFromPmidManagerToPmidNode& message,
+    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
+    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver);
+
+template<>
+bool PmidNodeService::GetFromCache<nfs::GetRequestFromMaidNodeToDataManager>(
+    const nfs::GetRequestFromMaidNodeToDataManager& message,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
+
+template<>
+bool PmidNodeService::GetFromCache<nfs::GetRequestFromPmidNodeToDataManager>(
+    const nfs::GetRequestFromPmidNodeToDataManager& message,
+    const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver);
+
+template<>
+void PmidNodeService::StoreInCache<nfs::GetResponseFromDataManagerToMaidNode>(
+    const nfs::GetResponseFromDataManagerToMaidNode& message,
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& sender,
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& receiver);
 
 }  // namespace vault
 

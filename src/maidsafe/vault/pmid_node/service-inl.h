@@ -117,69 +117,131 @@ namespace vault {
 //  }
 //}
 
-
-template<typename Data>
-NonEmptyString PmidNodeService::GetFromCache(const nfs::Message& message) {
-  return GetFromCache<Data>(message, is_cacheable<Data>());
+template<>
+void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
+    const nfs::GetRequestFromDataManagerToPmidNode& message,
+    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
+    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& receiver) {
+  try {
+#ifndef TESTING
+    ValidateGetSender(sender);
+#endif
+    auto data_name(nfs::DataName(message.Contents.data));
+    nfs::Reply reply(CommonErrors::success, permanent_data_store_.Get(data_name));
+    nfs::GetResponseFromPmidNodeToDataManager return_message;
+  } catch(const std::exception& /*ex*/) {
+    //
+  }
 }
 
-template<typename Data>
-NonEmptyString PmidNodeService::GetFromCache(const nfs::Message& message, IsCacheable) {
-  return CacheGet<Data>(typename Data::Name(message.data().name),
-                        is_long_term_cacheable<Data>());
+template<>
+void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>(
+    const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
+    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
+    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver) {
 }
 
-template<typename Data>
-NonEmptyString PmidNodeService::GetFromCache(const nfs::Message& /*message*/, IsNotCacheable) {
-  return NonEmptyString();
+template<>
+void PmidNodeService::HandleMessage<nfs::PutRequestFromPmidManagerToPmidNode>(
+    const nfs::PutRequestFromPmidManagerToPmidNode& message,
+    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
+    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver) {
 }
 
-template<typename Data>
-NonEmptyString PmidNodeService::CacheGet(const typename Data::Name& name,
-                                         IsShortTermCacheable) {
-  static_assert(is_short_term_cacheable<Data>::value,
+template<>
+bool PmidNodeService::GetFromCache<nfs::GetRequestFromMaidNodeToDataManager>(
+    const nfs::GetRequestFromMaidNodeToDataManager& message,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
+    return GetFromCache(message, sender, receiver,
+                        is_cacheable<nfs::DataName(message.Contents>()));
+}
+
+template<>
+bool GetFromCache<nfs::GetRequestFromPmidNodeToDataManager>(
+    const nfs::GetRequestFromPmidNodeToDataManager& message,
+    const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver) {
+  return GetFromCache(message, sender, receiver,
+                      is_cacheable<nfs::DataName(message.Contents>()));
+}
+
+
+template<typename T>
+bool PmidNodeService::GetFromCache(const T& message,
+                                   const typename T::Sender& sender,
+                                   const typename T::Receiver& receiver,
+                                   IsCacheable) {
+  return CacheGet<T>(message,
+                     sender,
+                     receiver,
+                     is_long_term_cachable<nfs::DataName(message.Contents())>);
+}
+
+template<typename T>
+bool PmidNodeService::GetFromCache(const T& /*message*/,
+                                   const typename T::Sender& /*sender*/,
+                                   const typename T::Receiver& /*receiver*/,
+                                   IsNotCacheable) {
+  return false;
+}
+
+
+template<typename T>
+bool PmidNodeService::CacheGet(const T& message,
+                               const typename T::Sender& sender,
+                               const typename T::Receiver& receiver,
+                               IsShortTermCacheable) {
+  static_assert(is_short_term_cacheable<nfs::Dataname(message.Contents())>::value,
                 "This should only be called for short-term cacheable data types.");
-  return mem_only_cache_.Get(name);
+  NonEmptyString data(mem_only_cache_.Get(message.Contents()));
+  if (data.empty())
+    return false;
+  // TODO(Mahmoud): Must send the data to the requestor
 }
 
-template<typename Data>
-NonEmptyString PmidNodeService::CacheGet(const typename Data::Name& name,
+template<typename T>
+NonEmptyString PmidNodeService::CacheGet(const T& message,
+                                         const typename T::Sender& sender,
+                                         const typename T::Receiver& receiver,
                                          IsLongTermCacheable) {
-  static_assert(is_long_term_cacheable<Data>::value,
+  static_assert(is_long_term_cacheable<nfs::Dataname(message.Contents())>::value,
                 "This should only be called for long-term cacheable data types.");
-  return cache_data_store_.Get(name);
+  NonEmptyString data(cache_data_store_.Get(message.Contents()));
+  if (data.empty())
+    return false;
+  // TODO(Mahmoud): Must send the data to the requestor
 }
 
-template<typename Data>
-void PmidNodeService::StoreInCache(const nfs::Message& message) {
-  StoreInCache<Data>(message, is_cacheable<Data>());
+template<>
+void PmidNodeService::StoreInCache<nfs::GetResponseFromDataManagerToMaidNode>(
+    const nfs::GetResponseFromDataManagerToMaidNode& message,
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& /*sender*/,
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& /*receiver*/) {
+  StoreInCache(message, is_cacheable<Data>(nfs::DataName(message.Contents().data.name)));
 }
 
-template<typename Data>
-void PmidNodeService::StoreInCache(const nfs::Message& message, IsCacheable) {
-  CacheStore<Data>(typename Data::Name(message.data().name), message.data().content,
-                   is_long_term_cacheable<Data>());
+
+template<typename T>
+void PmidNodeService::StoreInCache(const T& message, IsCacheable) {
+  CacheStore(message, is_long_term_cacheable<nfs::DataName(message.Contents.data.name>()));
 }
 
-template<typename Data>
-void PmidNodeService::StoreInCache(const nfs::Message& /*message*/, IsNotCacheable) {}
+template<typename T>
+void PmidNodeService::StoreInCache(const T& /*message*/, IsNotCacheable) {}
 
-template<typename Data>
-void PmidNodeService::CacheStore(const typename Data::Name& name,
-                            const NonEmptyString& value,
-                            IsShortTermCacheable) {
-  static_assert(is_short_term_cacheable<Data>::value,
+template<typename T>
+void PmidNodeService::CacheStore(const T& message, IsShortTermCacheable) {
+  static_assert(is_short_term_cacheable<nfs::DataName(message.Contents.data.name)>::value,
                 "This should only be called for short-term cacheable data types.");
-  return mem_only_cache_.Store(name, value);
+  return mem_only_cache_.Store(message.Contents.data.name, message.Contents.data.value);
 }
 
-template<typename Data>
-void PmidNodeService::CacheStore(const typename Data::Name& name,
-                            const NonEmptyString& value,
-                            IsLongTermCacheable) {
-  static_assert(is_long_term_cacheable<Data>::value,
+template<typename T>
+void PmidNodeService::CacheStore(const T& message, IsLongTermCacheable) {
+  static_assert(is_long_term_cacheable<nfs::DataName(message.Contents.data.name)>::value,
                 "This should only be called for long-term cacheable data types.");
-  return cache_data_store_.Store(name, value);
+  return cache_data_store_.Store(message.Contents.data.name, message.Contents.data.value);
 }
 
 }  // namespace vault

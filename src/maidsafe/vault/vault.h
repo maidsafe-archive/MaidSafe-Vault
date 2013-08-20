@@ -65,7 +65,7 @@ class Vault {
   void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
   void OnMatrixChanged(std::shared_ptr<routing::MatrixChange> matrix_change);
   template<typename T>
-  bool OnGetFromCache(std::string& message);
+  bool OnGetFromCache(const T& message);
   template<typename T>
   void OnStoreInCache(const std::string& message);
   void OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint);
@@ -91,7 +91,7 @@ void Vault::OnMessageReceived(const T& message) {
 }
 
 template<typename T>
-bool Vault::OnGetFromCache(T& message) {  // Need to be on routing's thread
+bool Vault::OnGetFromCache(const T& message) {  // Need to be on routing's thread
   return demux_.GetFromCache(message);
 }
 
