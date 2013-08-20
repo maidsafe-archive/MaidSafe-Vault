@@ -122,17 +122,24 @@ void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
     const nfs::GetRequestFromDataManagerToPmidNode& message,
     const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
     const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& receiver) {
+  typedef nfs::GetResponseFromPmidNodeToDataManager NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   try {
 #ifndef TESTING
     ValidateGetSender(sender);
 #endif
-    auto data_name(nfs::DataName(message.Contents.data));
-    nfs::Reply reply(CommonErrors::success, permanent_data_store_.Get(data_name));
-    nfs::GetResponseFromPmidNodeToDataManager return_message;
+    auto data_name(nfs::DataName(message.Contents));
+    auto content(permanent_data_store_.Get(data_name));
+    NfsMessage nfs_message(nfs::DataNameAndContent(data_name.type, data_name.raw_name, content));
+    RoutingMessage message(nfs_message.Serialise(),
+                           NfsMessage::Sender(routing::SingleId(routing_.KnodeId())),
+                           sender);
+    routing_.Send(message);
   } catch(const std::exception& /*ex*/) {
     //
   }
 }
+
 
 template<>
 void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>(
