@@ -125,10 +125,23 @@ class AccumulatorTest_BEH_FindHandled_Test;
 
 namespace {
 
+template <typename RequestType>
+class HasMessageId {
+  typedef char Yes;
+  typedef long No;
+
+  template <typename C> static Yes Check(decltype(&C::message_id)) ;
+  template <typename C> static No Check(...);
+
+ public:
+    static bool const value = sizeof(test<RequestType>(0)) == sizeof(Yes);
+};
+
 class message_id_requestor_visitor : public boost::static_visitor<nfs::MessageId> {
  public:
   template<typename T>
   nfs::MessageId operator()(const T& message) const {
+    static_assert(HasMessageId<T>::value, "Input parameter must have message_id");
     return message.message_id;
   }
 };
@@ -141,7 +154,7 @@ class content_eraser_visitor : public boost::static_visitor<> {
 
 template<>
 void content_eraser_visitor::operator()(const nfs_vault::DataNameAndContent& name_and_content) {
-  name_and_content.content = NonEmptyString("A");
+  name_and_content.content = NonEmptyString("NA");
 }
 
 } // noname namespace
