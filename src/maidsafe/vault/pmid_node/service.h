@@ -34,7 +34,7 @@ License.
 #include "maidsafe/vault/message_types.h"
 
 
-//#include "maidsafe/vault/accumulator.h" // FIXME
+#include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/types.h"
 //#include "maidsafe/vault/post_policies.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
@@ -172,9 +172,7 @@ class PmidNodeService {
   data_store::MemoryBuffer mem_only_cache_;
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
-//  Accumulator<DataNameVariant> accumulator_;
-//  PmidNodeMiscellaneousPolicy miscellaneous_policy;
-//  PmidNodeNfs nfs_;
+  Accumulator<PmidNodeServiceMessages> accumulator_;
 };
 
 template<>

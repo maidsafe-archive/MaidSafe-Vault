@@ -121,7 +121,7 @@ template<>
 void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
     const nfs::GetRequestFromDataManagerToPmidNode& message,
     const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
-    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& receiver) {
+    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/) {
   typedef nfs::GetResponseFromPmidNodeToDataManager NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   try {
@@ -135,6 +135,10 @@ void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
                            NfsMessage::Sender(routing::SingleId(routing_.KnodeId())),
                            sender);
     routing_.Send(message);
+    {
+      std::lock_guard<mutex> lock(accumulator_mutex_);
+      accumulator_.SetHandled(message, sender);
+    }
   } catch(const std::exception& /*ex*/) {
     // TODO(Mahmoud): Handle non-existing data or failure
   }
@@ -144,14 +148,42 @@ template<>
 void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>(
     const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
     const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
-    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver) {
+    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+  try {
+#ifndef TESTNG
+  ValidateDeleteSender(sender);
+#endif
+    {
+      std::lock_guard<mutex> lock(accumulator_mutex_);
+      if (!accumulator_.AddPendingRequest(message, sender, kDeleteRequestsRequired))
+        return;
+      permanent_data_store_.Delete(nfs::DataName(message.Contents));
+      accumulator_.SetHandled(message, sender);
+    }
+  } catch(const std::exception& /*ex*/) {
+      // TODO(Mahmoud): Handle failure to delete
+  }
 }
 
 template<>
 void PmidNodeService::HandleMessage<nfs::PutRequestFromPmidManagerToPmidNode>(
     const nfs::PutRequestFromPmidManagerToPmidNode& message,
     const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
-    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver) {
+    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+  try {
+#ifndef TESTNG
+  ValidateDeleteSender(sender);
+#endif
+    {
+      std::lock_guard<mutex> lock(accumulator_mutex_);
+      if (!accumulator_.AddPendingRequest(message, sender, kDeleteRequestsRequired))
+        return;
+      permanent_data_store_.Put(nfs::DataName(message.Contents.name), message.Contents.content);
+      accumulator_.SetHandled(message, sender);
+    }
+  } catch(const std::exception& /*ex*/) {
+      // TODO(Mahmoud): Handle failure to put
+  }
 }
 
 template<>

@@ -152,10 +152,12 @@ Accumulator<RequestType>::Accumulator()
       kMaxHandledRequestsCount_(1000) {}
 
 template<typename RequestType>
-bool Accumulator<RequestType>::AddPendingRequest(
+bool Accumulator::Accumulator<RequestType>::AddPendingRequest(
     const RequestType& request,
     routing::GroupSource source,
     size_t required) {
+  if (CheckHandled(request))
+    return false;
   bool already_exists(false);
   auto request_message_id(boost::apply_visitor(message_id_requestor_visitor(), request));
   nfs::MessageId message_id;
@@ -172,13 +174,15 @@ bool Accumulator<RequestType>::AddPendingRequest(
   }
   if (!already_exists) {
     --required;
-    pending_request_.push_back(request);
+    pending_requests_.push_back(request);
+    if (pending_requests_.size() > kMaxPendingRequestsCount_)
+      handled_requests_.pop_front();
   }
   return !(required > 0);
 }
 
 template<typename RequestType>
-bool CheckHandled(const RequestType& request) {
+bool Accumulator::CheckHandled(const RequestType& request) {
   auto request_message_id(boost::apply_visitor(message_id_requestor_visitor(), request));
   nfs::MessageId message_id;
   for (auto handled_request : handled_requests_) {
@@ -192,10 +196,10 @@ bool CheckHandled(const RequestType& request) {
 }
 
 template<typename RequestType>
-void SetHandled(const RequestType& request, const routing::GroupSource& source) {
-  std::set<int> pending_requests_to_remove;
-  nfs::MessageId message_id;
+void Accumulator::SetHandled(const RequestType& request, const routing::GroupSource& source) {
   if (!CheckHandled(request)) {
+    std::set<int> pending_requests_to_remove;
+    nfs::MessageId message_id;
     auto request_message_id(boost::apply_visitor(message_id_requestor_visitor(), request));
     boost::apply_visitor(content_eraser_visitor(), request);
     for (int index(0); index < pending_requests_.size(); ++index) {
@@ -215,10 +219,10 @@ void SetHandled(const RequestType& request, const routing::GroupSource& source) 
       pending_requests_.erase(iterator);
       indexes_to_remove.erase(indexes_to_remove.begin());
     }
+    if (handled_requests_.size() > kMaxHandledRequestsCount_)
+      handled_requests_.pop_front();
   }
 }
-
-
 
 //template<typename Name>
 //typename std::deque<typename Accumulator<Name>::HandledRequest>::const_iterator
