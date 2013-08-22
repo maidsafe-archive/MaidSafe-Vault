@@ -183,7 +183,6 @@ void DataManagerService::HandlePut(const nfs::Message& message,
   }
 }
 
-
 template<typename Data>
 void DataManagerService::HandlePutResult(const nfs::Message& message) {
   try {

@@ -136,10 +136,9 @@ void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
                            sender);
     routing_.Send(message);
   } catch(const std::exception& /*ex*/) {
-    //
+    // TODO(Mahmoud): Handle non-existing data or failure
   }
 }
-
 
 template<>
 void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>(
