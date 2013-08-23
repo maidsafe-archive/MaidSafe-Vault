@@ -37,8 +37,8 @@ namespace vault {
 
 class MetadataMergePolicy {
  public:
-  typedef DataManagerUnresolvedEntry UnresolvedEntry;
-  typedef DataManagerResolvedEntry ResolvedEntry;
+  typedef UnresolvedAction UnresolvedEntry;
+  typedef UnresolvedAction ResolvedEntry;
   typedef ManagerDb<DataManagerKey, DataManagerValue> Database;
 
   explicit MetadataMergePolicy(ManagerDb<DataManagerKey, DataManagerValue>* metadata_db);

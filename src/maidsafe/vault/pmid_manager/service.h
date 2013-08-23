@@ -25,9 +25,6 @@ License.
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/message.h"
-#include "maidsafe/nfs/public_key_getter.h"
-#include "maidsafe/nfs/reply.h"
 
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/pmid_manager/handler.h"

@@ -25,9 +25,7 @@ License.
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/data_types/structured_data_versions.h"
-#include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/types.h"
-#include "maidsafe/nfs/persona_id.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/sync.h"
@@ -35,7 +33,6 @@ License.
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/storage_merge/storage_merge.h"
 #include "maidsafe/vault/version_manager/version_manager.h"
-#include "maidsafe/vault/version_manager/merge_policy.h"
 //#include "maidsafe/vault/manager_db.h"
 
 

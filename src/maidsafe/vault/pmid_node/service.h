@@ -103,7 +103,7 @@ class PmidNodeService {
   void SendAccountRequest();
 
   // populates chunks map
-  void ApplyAccountTransfer(std::make_shared<std::vector<protobuf::PmidAccountResponse>> responses,
+  void ApplyAccountTransfer(std::shared_ptr<std::vector<protobuf::PmidAccountResponse>> responses,
                             const size_t& total_pmidmgrs,
                             const size_t& pmidmagsr_with_account,
                             std::map<DataNameVariant, uint16_t>& chunks);

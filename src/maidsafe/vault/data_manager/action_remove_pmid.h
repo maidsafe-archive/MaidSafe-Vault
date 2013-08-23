@@ -21,7 +21,7 @@ License.
 
 #include "boost/optional/optional.hpp"
 
-#include "maidsafe/nfs/types.h"
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
@@ -30,6 +30,7 @@ namespace vault {
 
 class MaidManagerMetadata;
 class MaidManagerValue;
+class DataManagerValue;
 
 struct ActionDataManagerRemovePmid {
   explicit ActionDataManagerRemovePmid(const PmidName& pmid_name);
@@ -40,7 +41,7 @@ struct ActionDataManagerRemovePmid {
 
   void operator()(boost::optional<DataManagerValue>& value) const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kRemovePmid;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kUnregisterPmidRequest;
   const PmidName kPmidName;
 
  private:

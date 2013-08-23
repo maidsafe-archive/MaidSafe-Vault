@@ -27,7 +27,6 @@ License.
 #include "maidsafe/common/active.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/routing/parameters.h"
-#include "maidsafe/nfs/message.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/storage_merge/storage_merge.pb.h"

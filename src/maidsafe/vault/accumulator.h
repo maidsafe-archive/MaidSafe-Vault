@@ -134,7 +134,7 @@ class HasMessageId {
   template <typename C> static No Check(...);
 
  public:
-    static bool const value = sizeof(test<RequestType>(0)) == sizeof(Yes);
+    static bool const value = sizeof(Check<RequestType>(0)) == sizeof(Yes);
 };
 
 class message_id_requestor_visitor : public boost::static_visitor<nfs::MessageId> {
@@ -149,30 +149,30 @@ class message_id_requestor_visitor : public boost::static_visitor<nfs::MessageId
 class content_eraser_visitor : public boost::static_visitor<> {
   public:
    template<typename ContentType>
-   void operator()(const ContentType& content) {}
+   void operator()(ContentType& content) {}
 };
 
 template<>
-void content_eraser_visitor::operator()(const nfs_vault::DataNameAndContent& name_and_content) {
-  name_and_content.content = NonEmptyString("NA");
+void content_eraser_visitor::operator()(nfs_vault::DataNameAndContent& name_and_content) {
+  name_and_content.content = NonEmptyString(std::string("NA"));
 }
 
 } // noname namespace
 
-template<typename RequestType>
+template<typename T>
 class Accumulator {
  public:
-  template<typename RequestType>
+
   struct PendingRequest {
-    RequestType request;
+    T request;
     routing::GroupSource source;
   };
 
   Accumulator();
 
-  bool AddPendingRequest(const RequestType& request, routing::GroupSource source, size_t required);
-  bool CheckHandled(const RequestType& request);
-  void SetHandled(const RequestType& request, const routing::GroupSource& source);
+  bool AddPendingRequest(const T& request, routing::GroupSource& source, size_t required);
+  bool CheckHandled(const T& request);
+  void SetHandled(const T& request, const routing::GroupSource& source);
 
  private:
   Accumulator(const Accumulator&);
@@ -180,8 +180,8 @@ class Accumulator {
   Accumulator(Accumulator&&);
   Accumulator& operator=(Accumulator&&);
 
-  std::vector<PendingRequest> pending_requests_;
-  std::vector<RequestType> handled_requests_;
+  std::deque<PendingRequest> pending_requests_;
+  std::deque<T> handled_requests_;
   const size_t kMaxPendingRequestsCount_, kMaxHandledRequestsCount_;
 };
 

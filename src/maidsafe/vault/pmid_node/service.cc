@@ -127,7 +127,7 @@ void PmidNodeService::SendAccountRequest() {
 }
 
 void PmidNodeService::ApplyAccountTransfer(
-    std::make_shared<std::vector<protobuf::PmidAccountResponse>> responses,
+    std::shared_ptr<std::vector<protobuf::PmidAccountResponse> > responses,
     const size_t& total_pmidmgrs,
     const size_t& pmidmgrs_with_account,
     std::map<DataNameVariant, uint16_t>& chunks) {

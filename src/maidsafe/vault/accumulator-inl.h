@@ -144,17 +144,17 @@ namespace vault {
 //  return *this;
 //}
 
-template<typename RequestType>
-Accumulator<RequestType>::Accumulator()
+template<typename T>
+Accumulator<T>::Accumulator()
     : pending_requests_(),
       handled_requests_(),
       kMaxPendingRequestsCount_(300),
       kMaxHandledRequestsCount_(1000) {}
 
-template<typename RequestType>
-bool Accumulator::Accumulator<RequestType>::AddPendingRequest(
-    const RequestType& request,
-    routing::GroupSource source,
+template<typename T>
+bool Accumulator<T>::AddPendingRequest(
+    const T& request,
+    routing::GroupSource& source,
     size_t required) {
   if (CheckHandled(request))
     return false;
@@ -178,11 +178,11 @@ bool Accumulator::Accumulator<RequestType>::AddPendingRequest(
     if (pending_requests_.size() > kMaxPendingRequestsCount_)
       handled_requests_.pop_front();
   }
-  return !(required > 0);
+  return required == 0;
 }
 
-template<typename RequestType>
-bool Accumulator::CheckHandled(const RequestType& request) {
+template<typename T>
+bool Accumulator<T>::CheckHandled(const T& request) {
   auto request_message_id(boost::apply_visitor(message_id_requestor_visitor(), request));
   nfs::MessageId message_id;
   for (auto handled_request : handled_requests_) {
@@ -195,33 +195,32 @@ bool Accumulator::CheckHandled(const RequestType& request) {
   return false;
 }
 
-template<typename RequestType>
-void Accumulator::SetHandled(const RequestType& request, const routing::GroupSource& source) {
-  if (!CheckHandled(request)) {
-    std::set<int> pending_requests_to_remove;
-    nfs::MessageId message_id;
-    auto request_message_id(boost::apply_visitor(message_id_requestor_visitor(), request));
-    boost::apply_visitor(content_eraser_visitor(), request);
-    for (int index(0); index < pending_requests_.size(); ++index) {
-      if (pending_requests_.at(index).which() == request.which()) {
-        message_id = boost::apply_visitor(message_id_requestor_visitor(),
-                                          pending_requests_.at(index).request);
-        if ((message_id == request_message_id) && (source == pending_requests_.at(index).source))
-          pending_requests_to_remove.insert(index);
-      }
+template<typename T>
+void Accumulator<T>::SetHandled(const T& request, const routing::GroupSource& source) {
+  assert(!CheckHandled(request) && "Request has already been set as handled");
+  std::set<int> pending_requests_to_remove;
+  nfs::MessageId message_id;
+  auto request_message_id(boost::apply_visitor(message_id_requestor_visitor(), request));
+  boost::apply_visitor(content_eraser_visitor(), request);
+  for (int index(0); index < pending_requests_.size(); ++index) {
+    if (pending_requests_.at(index).which() == request.which()) {
+      message_id = boost::apply_visitor(message_id_requestor_visitor(),
+                                        pending_requests_.at(index).request);
+      if ((message_id == request_message_id) && (source == pending_requests_.at(index).source))
+        pending_requests_to_remove.insert(index);
     }
-    boost::apply_visitor(content_eraser_visitor(), request);
-    handled_requests_.push_back(request);
-    auto size_to_remove(pending_requests_to_remove.size());
-    for (auto index(0); index < size_to_remove; ++index) {
-      auto iterator(pending_requests_.begin());
-      std::advance(iterator, pending_requests_to_remove.begin() - index);
-      pending_requests_.erase(iterator);
-      indexes_to_remove.erase(indexes_to_remove.begin());
-    }
-    if (handled_requests_.size() > kMaxHandledRequestsCount_)
-      handled_requests_.pop_front();
   }
+  boost::apply_visitor(content_eraser_visitor(), request);
+  handled_requests_.push_back(request);
+  size_t size_to_remove(pending_requests_to_remove.size());
+  for (size_t index(0); index < size_to_remove; ++index) {
+    auto iterator(pending_requests_.begin());
+    std::advance(iterator, *pending_requests_to_remove.begin() - index);
+    pending_requests_.erase(iterator);
+    pending_requests_to_remove.erase(pending_requests_to_remove.begin());
+  }
+  if (handled_requests_.size() > kMaxHandledRequestsCount_)
+    handled_requests_.pop_front();
 }
 
 //template<typename Name>

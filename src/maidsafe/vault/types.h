@@ -23,8 +23,6 @@ License.
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/passport/types.h"
-#include "maidsafe/nfs/data_policies.h"
-#include "maidsafe/nfs/nfs.h"
 #include "maidsafe/nfs/types.h"
 
 

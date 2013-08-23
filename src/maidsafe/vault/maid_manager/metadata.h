@@ -20,8 +20,6 @@ License.
 #include <string>
 #include <vector>
 
-#include "maidsafe/nfs/pmid_registration.h"
-
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/maid_manager/helpers.h"
 
