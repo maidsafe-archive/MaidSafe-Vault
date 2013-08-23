@@ -11,7 +11,7 @@ distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, e
 implied. See the License for the specific language governing permissions and limitations under the
 License.
 */
-#include "maidsafe/vault/storage_merge.h"
+#include "maidsafe/vault/storage_merge/storage_merge.h"
 
 #include <memory>
 #include <mutex>
@@ -25,7 +25,6 @@ License.
 #include "maidsafe/common/active.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/nfs/message.h"
 #include "maidsafe/vault/types.h"
 
 

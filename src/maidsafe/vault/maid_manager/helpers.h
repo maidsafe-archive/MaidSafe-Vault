@@ -23,9 +23,9 @@ License.
 
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/api_config.h"
-#include "maidsafe/nfs/pmid_registration.h"
 
 #include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/nfs/vault/pmid_registration.h"
 
 
 namespace maidsafe {
@@ -33,7 +33,7 @@ namespace maidsafe {
 namespace vault {
 
 struct PmidRegistrationOp {
-  PmidRegistrationOp(const nfs::PmidRegistration& pmid_registration_in,
+  PmidRegistrationOp(const nfs_vault::PmidRegistration& pmid_registration_in,
                      const routing::ReplyFunctor& reply_functor_in)
       : mutex(),
         pmid_registration(pmid_registration_in),
@@ -44,7 +44,7 @@ struct PmidRegistrationOp {
   template<typename PublicFobType>
   void SetPublicFob(std::unique_ptr<PublicFobType>&&);
   std::mutex mutex;
-  nfs::PmidRegistration pmid_registration;
+  nfs_vault::PmidRegistration pmid_registration;
   routing::ReplyFunctor reply_functor;
   std::unique_ptr<passport::PublicMaid> public_maid;
   std::unique_ptr<passport::PublicPmid> public_pmid;
@@ -73,15 +73,14 @@ struct GetPmidTotalsOp {
 
 struct PmidTotals {
   PmidTotals();
-  explicit PmidTotals(
-      const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in);
-  PmidTotals(const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
+  explicit PmidTotals(const std::string& serialised_pmid_registration_in);
+  PmidTotals(const std::strig& serialised_pmid_registration_in,
              const PmidManagerMetadata& pmid_metadata_in);
   PmidTotals(const PmidTotals& other);
   PmidTotals(PmidTotals&& other);
   PmidTotals& operator=(PmidTotals other);
 
-  nfs::PmidRegistration::serialised_type serialised_pmid_registration;
+  nfs_vault::PmidRegistration::serialised_type serialised_pmid_registration;
   PmidManagerMetadata pmid_metadata;
 };
 

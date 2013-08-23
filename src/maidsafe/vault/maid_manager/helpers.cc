@@ -38,16 +38,14 @@ void PmidRegistrationOp::SetPublicFob<passport::PublicPmid>(
 
 PmidTotals::PmidTotals() : serialised_pmid_registration(), pmid_metadata() {}
 
-PmidTotals::PmidTotals(
-    const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in)
-        : serialised_pmid_registration(serialised_pmid_registration_in),
-          pmid_metadata() {}
+PmidTotals::PmidTotals(const std::string& serialised_pmid_registration_in)
+    : serialised_pmid_registration(serialised_pmid_registration_in),
+      pmid_metadata() {}
 
-PmidTotals::PmidTotals(
-    const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
-    const PmidManagerMetadata& pmid_metadata_in)
-        : serialised_pmid_registration(serialised_pmid_registration_in),
-          pmid_metadata(pmid_metadata_in) {}
+PmidTotals::PmidTotals(const std::string& serialised_pmid_registration_in,
+                       const PmidManagerMetadata& pmid_metadata_in)
+    : serialised_pmid_registration(serialised_pmid_registration_in),
+      pmid_metadata(pmid_metadata_in) {}
 
 PmidTotals::PmidTotals(const PmidTotals& other)
     : serialised_pmid_registration(other.serialised_pmid_registration),

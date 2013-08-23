@@ -25,7 +25,7 @@ License.
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 
-#include "maidsafe/vault/unresolved_element.h"
+#include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 
 namespace maidsafe {
