@@ -32,118 +32,6 @@ namespace maidsafe {
 
 namespace vault {
 
-//template<typename Name>
-//Accumulator<Name>::PendingRequest::PendingRequest(const nfs::Message& msg_in,
-//                                                  const routing::ReplyFunctor& reply_functor_in,
-//                                                  const nfs::Reply& reply_in)
-//    : msg(msg_in),
-//      reply_functor(reply_functor_in),
-//      reply(reply_in) {}
-
-//template<typename Name>
-//Accumulator<Name>::PendingRequest::PendingRequest(const PendingRequest& other)
-//    : msg(other.msg),
-//      reply_functor(other.reply_functor),
-//      reply(other.reply) {}
-
-//template<typename Name>
-//typename Accumulator<Name>::PendingRequest& Accumulator<Name>::PendingRequest::operator=(
-//    const PendingRequest& other) {
-//  msg = other.msg;
-//  reply_functor = other.reply_functor;
-//  reply = other.reply;
-//  return *this;
-//}
-
-//template<typename Name>
-//Accumulator<Name>::PendingRequest::PendingRequest(PendingRequest&& other)
-//    : msg(std::move(other.msg)),
-//      reply_functor(std::move(other.reply_functor)),
-//      reply(std::move(other.reply)) {}
-
-//template<typename Name>
-//typename Accumulator<Name>::PendingRequest& Accumulator<Name>::PendingRequest::operator=(
-//    PendingRequest&& other) {
-//  msg = std::move(other.msg);
-//  reply_functor = std::move(other.reply_functor);
-//  reply = std::move(other.reply);
-//  return *this;
-//}
-
-//template<typename Name>
-//Accumulator<Name>::HandledRequest::HandledRequest(const nfs::MessageId& msg_id_in,
-//                                                  const Name& account_name_in,
-//                                                  const nfs::MessageAction& action_type_in,
-//                                                  const Identity& data_name_in,
-//                                                  const DataTagValue& data_type_in,
-//                                                  const int32_t& size_in,
-//                                                  const nfs::Reply& reply_in)
-//    : msg_id(msg_id_in),
-//      account_name(account_name_in),
-//      action(action_type_in),
-//      data_name(data_name_in),
-//      data_type(data_type_in),
-//      size(size_in),
-//      reply(reply_in) {}
-
-//template<typename Name>
-//Accumulator<Name>::HandledRequest::HandledRequest(const nfs::MessageId& msg_id_in,
-//                                                  const Name& account_name_in,
-//                                                  const nfs::Reply& reply_in)
-//    : msg_id(msg_id_in),
-//      account_name(account_name_in),
-//      action(),
-//      data_name(),
-//      data_type(),
-//      size(),
-//      reply(reply_in) {}
-
-//template<typename Name>
-//Accumulator<Name>::HandledRequest::HandledRequest(const HandledRequest& other)
-//    : msg_id(other.msg_id),
-//      account_name(other.account_name),
-//      action(other.action),
-//      data_name(other.data_name),
-//      data_type(other.data_type),
-//      size(other.size),
-//      reply(other.reply) {}
-
-//template<typename Name>
-//typename Accumulator<Name>::HandledRequest& Accumulator<Name>::HandledRequest::operator=(
-//    const HandledRequest& other) {
-//  msg_id = other.msg_id;
-//  account_name = other.account_name;
-//  action = other.action;
-//  data_name = other.data_name,
-//  data_type = other.data_type,
-//  size = other.size;
-//  reply = other.reply;
-//  return *this;
-//}
-
-//template<typename Name>
-//Accumulator<Name>::HandledRequest::HandledRequest(HandledRequest&& other)
-//    : msg_id(std::move(other.msg_id)),
-//      account_name(std::move(other.account_name)),
-//      action(std::move(other.action)),
-//      data_name(std::move(other.data_name)),
-//      data_type(std::move(other.data_type)),
-//      size(std::move(other.size)),
-//      reply(std::move(other.reply)) {}
-
-//template<typename Name>
-//typename Accumulator<Name>::HandledRequest& Accumulator<Name>::HandledRequest::operator=(
-//    HandledRequest&& other) {
-//  msg_id = std::move(other.msg_id);
-//  account_name = std::move(other.account_name);
-//  action = std::move(other.action);
-//  data_name = std::move(other.data_name),
-//  data_type = std::move(data_type);
-//  size = std::move(other.size);
-//  reply = std::move(other.reply);
-//  return *this;
-//}
-
 template<typename T>
 Accumulator<T>::Accumulator()
     : pending_requests_(),
@@ -186,7 +74,7 @@ bool Accumulator<T>::CheckHandled(const T& request) {
   auto request_message_id(boost::apply_visitor(message_id_requestor_visitor(), request));
   nfs::MessageId message_id;
   for (auto handled_request : handled_requests_) {
-    if (handled_request.request.which() == request.which()) {
+    if (handled_request.which() == request.which()) {
       message_id = boost::apply_visitor(message_id_requestor_visitor(), handled_request);
       if (message_id == request_message_id)
         return true;
@@ -202,11 +90,12 @@ void Accumulator<T>::SetHandled(const T& request, const routing::GroupSource& so
   nfs::MessageId message_id;
   auto request_message_id(boost::apply_visitor(message_id_requestor_visitor(), request));
   boost::apply_visitor(content_eraser_visitor(), request);
-  for (int index(0); index < pending_requests_.size(); ++index) {
-    if (pending_requests_.at(index).which() == request.which()) {
+  for (uint16_t index(0); index < pending_requests_.size(); ++index) {
+    if (pending_requests_.at(index).request.which() == request.which()) {
       message_id = boost::apply_visitor(message_id_requestor_visitor(),
                                         pending_requests_.at(index).request);
-      if ((message_id == request_message_id) && (source == pending_requests_.at(index).source))
+      if ((message_id == request_message_id) &&
+          (source.group_id == pending_requests_.at(index).source.group_id))
         pending_requests_to_remove.insert(index);
     }
   }

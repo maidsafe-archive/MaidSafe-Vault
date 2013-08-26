@@ -56,6 +56,18 @@ class DataHolderTest;
 }  // namespace test
 
 
+namespace {
+
+class cacheable_type_visitor : public boost::static_visitor<bool> {
+  public:
+   template<typename Data>
+   void operator()() {
+     return is_long_term_cacheable<Data>::value;
+   }
+};
+
+}  // noname namespace
+
 class PmidNodeService {
  public:
 
@@ -117,21 +129,17 @@ class PmidNodeService {
   std::future<std::unique_ptr<ImmutableData>>
   RetrieveFileFromNetwork(const DataNameVariant& file_id);
 
-  void ValidatePutSender(const nfs::Message& message) const;
-  void ValidateGetSender(const nfs::Message& message) const;
-  void ValidateDeleteSender(const nfs::Message& message) const;
+  void ValidatePutSender(const nfs::PutRequestFromPmidManagerToPmidNode& message,
+      const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender) const;
+  void ValidateGetSender(const nfs::GetRequestFromDataManagerToPmidNode& message,
+      const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender) const;
+  void ValidateDeleteSender(const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
+      const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender) const;
 
   template<typename T>
   bool GetFromCache(const T& message,
                     const typename T::Sender& sender,
-                    const typename T::Receiver& receiver,
-                    IsCacheable);
-
-  template<typename T>
-  bool GetFromCache(const T& message,
-                    const typename T::Sender& sender,
-                    const typename T::Receiver& receiver,
-                    IsNotCacheable);
+                    const typename T::Receiver& receiver);
 
   template<typename T>
   bool CacheGet(const T& message,
@@ -146,22 +154,10 @@ class PmidNodeService {
                 IsLongTermCacheable);
 
   template<typename T>
-  void StoreInCache(const T& message,
-                    const typename T::Sender& sender,
-                    const typename T::Receiver& receiver,
-                    IsCacheable);
+  void CacheStore(const T& message, const DataNameVariant& data_name, IsShortTermCacheable);
 
   template<typename T>
-  void StoreInCache(const T& message,
-                    const typename T::Sender& sender,
-                    const typename T::Receiver& receiver,
-                    IsNotCacheable);
-
-  template<typename T>
-  void CacheStore(const T& message, IsShortTermCacheable);
-
-  template<typename T>
-  void CacheStore(const T& message, IsLongTermCacheable);
+  void CacheStore(const T& message, const DataNameVariant& data_name, IsLongTermCacheable);
 
   boost::filesystem::space_info space_info_;
   DiskUsage disk_total_;

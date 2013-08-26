@@ -269,7 +269,9 @@ std::vector<DataNameVariant> PmidNodeService::StoredFileNames() {
   return file_ids;
 }
 
-void PmidNodeService::ValidatePutSender(const nfs::Message& message) const {
+void PmidNodeService::ValidatePutSender(
+    const nfs::PutRequestFromPmidManagerToPmidNode& message,
+    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender) const {
   if (!SenderIsConnectedVault(message, routing_))
     ThrowError(VaultErrors::permission_denied);
 
@@ -277,7 +279,9 @@ void PmidNodeService::ValidatePutSender(const nfs::Message& message) const {
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void PmidNodeService::ValidateGetSender(const nfs::Message& message) const {
+void PmidNodeService::ValidateGetSender(
+    const nfs::GetRequestFromDataManagerToPmidNode& message,
+    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender) const {
   if (!SenderInGroupForMetadata(message, routing_))
     ThrowError(VaultErrors::permission_denied);
 
@@ -285,7 +289,9 @@ void PmidNodeService::ValidateGetSender(const nfs::Message& message) const {
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void PmidNodeService::ValidateDeleteSender(const nfs::Message& message) const {
+void PmidNodeService::ValidateDeleteSender(
+    const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
+    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender) const {
   if (!SenderIsConnectedVault(message, routing_))
     ThrowError(VaultErrors::permission_denied);
 
