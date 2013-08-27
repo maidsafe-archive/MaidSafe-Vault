@@ -77,7 +77,8 @@ PmidNodeService::PmidNodeService(const passport::Pmid& pmid,
       accumulator_mutex_(),
 //      accumulator_(),
       miscellaneous_policy(routing_, pmid),
-      nfs_(routing_, pmid) {
+      nfs_(routing_, pmid),
+      active_() {
 //  nfs_.GetElementList();  // TODO (Fraser) BEFORE_RELEASE Implementation needed
 }
 

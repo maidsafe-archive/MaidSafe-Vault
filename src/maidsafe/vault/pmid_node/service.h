@@ -25,6 +25,7 @@ License.
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/types.h"
+#include "maidsafe/common/active.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/data_store/data_store.h"
 #include "maidsafe/data_store/memory_buffer.h"
@@ -36,7 +37,6 @@ License.
 
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/types.h"
-//#include "maidsafe/vault/post_policies.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 
 
@@ -98,6 +98,7 @@ class PmidNodeService {
                     const typename T::Sender& /*sender*/,
                     const typename T::Receiver& /*receiver*/) {
     T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
+    return false;
   }
 
   template<typename T>
@@ -114,12 +115,25 @@ class PmidNodeService {
   typedef std::true_type IsCacheable, IsLongTermCacheable;
   typedef std::false_type IsNotCacheable, IsShortTermCacheable;
 
-  template<typename Data>
-  void HandlePutMessage(const nfs::PutRequestFromPmidManagerToPmidNode& message);
-  template<typename Data>
-  void HandleGetMessage(const nfs::GetRequestFromDataManagerToPmidNode& message);
-  template<typename Data>
-  void HandleDeleteMessage(const nfs::DeleteRequestFromPmidManagerToPmidNode);
+
+  template<typename T>
+  void HandlePutMessage(const T& /*message*/,
+                        const typename T::Sender& /*sender*/,
+                        const typename T::Receiver& /*receiver*/) {
+    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
+  }
+  template<typename T>
+  void HandleGetMessage(const T& /*message*/,
+                        const typename T::Sender& /*sender*/,
+                        const typename T::Receiver& /*receiver*/) {
+    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
+  }
+  template<typename T>
+  void HandleDeleteMessage(const T& /*message*/,
+                           const typename T::Sender& /*sender*/,
+                           const typename T::Receiver& /*receiver*/) {
+    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
+  }
 
   void SendAccountRequest();
 
@@ -169,10 +183,10 @@ class PmidNodeService {
   void CacheStore(const T& message, const DataNameVariant& data_name, IsLongTermCacheable);
 
   template <typename T>
-  void SendCachedData(const T message,
-                      const typename T::Sender sender,
-                      const typename T::Receiver receiver,
-                      const std::unique_ptr<NonEmptyString> content);
+  void SendCachedData(const T& message,
+                      const typename T::Sender& sender,
+                      const typename T::Receiver& receiver,
+                      const std::shared_ptr<NonEmptyString> content);
 
   boost::filesystem::space_info space_info_;
   DiskUsage disk_total_;
@@ -184,6 +198,7 @@ class PmidNodeService {
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
   Accumulator<PmidNodeServiceMessages> accumulator_;
+  Active active_;
 };
 
 template<>
@@ -221,6 +236,22 @@ void PmidNodeService::StoreInCache<nfs::GetResponseFromDataManagerToMaidNode>(
     const nfs::GetResponseFromDataManagerToMaidNode& message,
     const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& sender,
     const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& receiver);
+
+template<>
+void PmidNodeService::HandlePutMessage(const nfs::PutRequestFromPmidManagerToPmidNode& message,
+    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
+    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/);
+
+template<>
+void PmidNodeService::HandleGetMessage(const nfs::GetRequestFromDataManagerToPmidNode& message,
+    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
+    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& receiver);
+
+template<>
+void PmidNodeService::HandleDeleteMessage(
+    const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
+    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
+    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
 }  // namespace vault
 
