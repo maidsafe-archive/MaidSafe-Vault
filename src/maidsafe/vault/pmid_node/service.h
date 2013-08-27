@@ -58,13 +58,22 @@ class DataHolderTest;
 
 namespace {
 
-class cacheable_type_visitor : public boost::static_visitor<bool> {
+class long_term_cacheable_visitor : public boost::static_visitor<bool> {
   public:
    template<typename Data>
    void operator()() {
      return is_long_term_cacheable<Data>::value;
    }
 };
+
+class cacheable_visitor : public boost::static_visitor<bool> {
+  public:
+   template<typename Data>
+   void operator()() {
+     return is_cacheable<Data>::value;
+   }
+};
+
 
 }  // noname namespace
 
@@ -129,17 +138,17 @@ class PmidNodeService {
   std::future<std::unique_ptr<ImmutableData>>
   RetrieveFileFromNetwork(const DataNameVariant& file_id);
 
-  void ValidatePutSender(const nfs::PutRequestFromPmidManagerToPmidNode& message,
+  void ValidatePutSender(
       const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender) const;
-  void ValidateGetSender(const nfs::GetRequestFromDataManagerToPmidNode& message,
+  void ValidateGetSender(
       const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender) const;
-  void ValidateDeleteSender(const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
+  void ValidateDeleteSender(
       const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender) const;
 
   template<typename T>
-  bool GetFromCache(const T& message,
-                    const typename T::Sender& sender,
-                    const typename T::Receiver& receiver);
+  bool DoGetFromCache(const T& message,
+                      const typename T::Sender& sender,
+                      const typename T::Receiver& receiver);
 
   template<typename T>
   bool CacheGet(const T& message,
@@ -158,6 +167,12 @@ class PmidNodeService {
 
   template<typename T>
   void CacheStore(const T& message, const DataNameVariant& data_name, IsLongTermCacheable);
+
+  template <typename T>
+  void SendCachedData(const T message,
+                      const typename T::Sender sender,
+                      const typename T::Receiver receiver,
+                      const std::unique_ptr<NonEmptyString> content);
 
   boost::filesystem::space_info space_info_;
   DiskUsage disk_total_;

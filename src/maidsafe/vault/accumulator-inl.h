@@ -42,7 +42,7 @@ Accumulator<T>::Accumulator()
 template<typename T>
 bool Accumulator<T>::AddPendingRequest(
     const T& request,
-    routing::GroupSource& source,
+    const routing::GroupSource& source,
     size_t required) {
   if (CheckHandled(request))
     return false;
@@ -50,7 +50,7 @@ bool Accumulator<T>::AddPendingRequest(
   auto request_message_id(boost::apply_visitor(message_id_requestor_visitor(), request));
   nfs::MessageId message_id;
   for (auto pending_request : pending_requests_) {
-    if (pending_request.which() == request.which()) {
+    if (pending_request.request.which() == request.which()) {
       message_id = boost::apply_visitor(message_id_requestor_visitor(), pending_request.request);
       if (message_id == request_message_id) {
         if (source != pending_request.source)
@@ -62,7 +62,7 @@ bool Accumulator<T>::AddPendingRequest(
   }
   if (!already_exists) {
     --required;
-    pending_requests_.push_back(request);
+    pending_requests_.push_back(PendingRequest(request, source));
     if (pending_requests_.size() > kMaxPendingRequestsCount_)
       handled_requests_.pop_front();
   }

@@ -164,13 +164,15 @@ class Accumulator {
  public:
 
   struct PendingRequest {
+    PendingRequest(const T& request_in, const routing::GroupSource& source_in)
+        : request(request_in), source(source_in) {}
     T request;
     routing::GroupSource source;
   };
 
   Accumulator();
 
-  bool AddPendingRequest(const T& request, routing::GroupSource& source, size_t required);
+  bool AddPendingRequest(const T& request, const routing::GroupSource& source, size_t required);
   bool CheckHandled(const T& request);
   void SetHandled(const T& request, const routing::GroupSource& source);
 

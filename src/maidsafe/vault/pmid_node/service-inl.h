@@ -23,7 +23,10 @@ License.
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 #include "maidsafe/nfs/vault/messages.h"
+#include "maidsafe/nfs/client/messages.h"
 #include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/routing/message.h"
+#include "maidsafe/vault/messages.h"
 
 
 namespace maidsafe {
@@ -42,27 +45,34 @@ void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
     if (accumulator_.CheckHandled(message))
       return;
   }
+  nfs_vault::DataName data_name(message.contents->type, message.contents->raw_name);
   try {
 #ifndef TESTING
     ValidateGetSender(sender);
 #endif
-    auto data_name(nfs_vault::DataName(message.contents));
     auto content(permanent_data_store_.Get(data_name));
-    NfsMessage nfs_message(nfs::DataNameAndContent(data_name.type, data_name.raw_name, content));
-    RoutingMessage message(nfs_message.Serialise(),
-                           NfsMessage::Sender(routing::SingleId(routing_.KnodeId())),
-                           sender);
-    routing_.Send(message);
+    NfsMessage nfs_message(nfs_client::DataNameAndContentOrReturnCode(
+        nfs_vault::DataNameAndContent(DataTagValue(message.contents->type),
+                                      message.contents->raw_name,
+                                      content)));
+    RoutingMessage routing_message(nfs_message.Serialise(),
+                                   NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
+                                   NfsMessage::Receiver(
+                                       NodeId(message.contents->raw_name.string())));
+    routing_.Send(routing_message);
     {
       std::lock_guard<mutex> lock(accumulator_mutex_);
       accumulator_.SetHandled(message, sender);
     }
   } catch (const maidsafe_error& error) {
-    NfsMessage nfs_message(nfs::DataNameAndReturnCode(data_name.type, error.code));
-    RoutingMessage message(nfs_message.Serialise(),
-                           NfsMessage::Sender(routing::SingleId(routing_.KnodeId())),
-                           sender);
-    routing_.Send(message);
+    NfsMessage nfs_message(
+        nfs_client::DataNameAndContentOrReturnCode(
+            nfs_client::DataNameAndReturnCode(data_name, nfs_client::ReturnCode(error))));
+    RoutingMessage routing_message(nfs_message.Serialise(),
+                                   NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
+                                   NfsMessage::Receiver(
+                                       NodeId(message.contents->raw_name.string())));
+    routing_.Send(routing_message);
     {
       std::lock_guard<mutex> lock(accumulator_mutex_);
       accumulator_.SetHandled(message, sender);
@@ -78,7 +88,7 @@ void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>
     const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
   {
     std::lock_guard<mutex> lock(accumulator_mutex_);
-    if (accumulator_.CheckHandled(message, sender))
+    if (accumulator_.CheckHandled(message))
       return;
   }
   try {
@@ -87,9 +97,12 @@ void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>
 #endif
     {
       std::lock_guard<mutex> lock(accumulator_mutex_);
-      if (!accumulator_.AddPendingRequest(message, sender, kDeleteRequestsRequired))
+      if (!accumulator_.AddPendingRequest(PmidNodeServiceMessages(message),
+                                          sender,
+                                          kDeleteRequestsRequired))
         return;
-      permanent_data_store_.Delete(nfs::DataName(message.Contents));
+      permanent_data_store_.Delete(nfs_vault::DataName(message.contents->type,
+                                                       message.contents->raw_name));
       accumulator_.SetHandled(message, sender);
     }
   } catch(const std::exception& /*ex*/) {
@@ -105,7 +118,7 @@ void PmidNodeService::HandleMessage<nfs::PutRequestFromPmidManagerToPmidNode>(
     const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
   {
     std::lock_guard<mutex> lock(accumulator_mutex_);
-    if (accumulator_.CheckHandled(message, sender))
+    if (accumulator_.CheckHandled(message))
       return;
   }
   try {
@@ -117,27 +130,31 @@ void PmidNodeService::HandleMessage<nfs::PutRequestFromPmidManagerToPmidNode>(
       if (!accumulator_.AddPendingRequest(message, sender, kPutRequestsRequired))
         return;
     }
-    permanent_data_store_.Put(nfs::DataName(message.Contents.name), message.Contents.content);
-    typedef Nfs::PutResponseFromPmidNodeToPmidManager NfsMessage;
+    permanent_data_store_.Put(nfs_vault::DataName(message.contents->name),
+                              message.contents->content);
+    typedef nfs::PutResponseFromPmidNodeToPmidManager NfsMessage;
     typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-    NfsMessage nfs_message(nfs::DataName(message.Contents.name));
+    NfsMessage nfs_message(nfs_vault::DataName(message.contents->name));
     RoutingMessage routing_message(nfs_message.Serialise(),
-                                   NfsMessage::Sender(routing::SingleId(routing_.KnodeId())),
-                                   NfsMessage::Receiver(routing::GroupId(routing_.KnodeId())));
+                                   NfsMessage::Sender(routing_.kNodeId()),
+                                   NfsMessage::Receiver(routing_.kNodeId()));
     routing_.Send(routing_message);
     {
       std::lock_guard<mutex> lock(accumulator_mutex_);
       accumulator_.SetHandled(message, sender);
     }
   } catch(const maidsafe_error& error) {
-    typedef Nfs::PutResponseFromPmidNodeToDataManager NfsMessage;
+    typedef PutResponseFromPmidNodeToDataManager NfsMessage;
     typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-    NfsMessage nfs_message(nfs::DataNameAndContentAndReturnCode(message.Contents.name,
-                                                                message.Contents.content,
-                                                                error.code));
+    NfsMessage nfs_message(DataNameAndContentAndReturnCode(
+                               message.contents->name.type,
+                               message.contents->name.raw_name,
+                               message.contents->content,
+                               nfs_client::ReturnCode(error)));
     RoutingMessage routing_message(nfs_message.Serialise(),
-                                   NfsMessage::Sender(routing::SingleId(routing_.KnodeId())),
-                                   NfsMessage::Receiver(routing::GroupId(message.Contents.name)));
+                                   NfsMessage::Sender(routing_.kNodeId()),
+                                   NfsMessage::Receiver(
+                                       NodeId(message.contents->name.raw_name.string())));
     routing_.Send(routing_message);
     std::lock_guard<mutex> lock(accumulator_mutex_);
     accumulator_.SetHandled(message, sender);
@@ -149,64 +166,60 @@ bool PmidNodeService::GetFromCache<nfs::GetRequestFromMaidNodeToDataManager>(
     const nfs::GetRequestFromMaidNodeToDataManager& message,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
-    return GetFromCache(message, sender, receiver,
-                        is_cacheable<nfs::DataName(message.Contents>()));
+  return DoGetFromCache(message, sender, receiver);
 }
 
 template<>
-bool GetFromCache<nfs::GetRequestFromPmidNodeToDataManager>(
+bool PmidNodeService::GetFromCache<nfs::GetRequestFromPmidNodeToDataManager>(
     const nfs::GetRequestFromPmidNodeToDataManager& message,
     const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
     const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver) {
-  return GetFromCache(message, sender, receiver,
-                      is_cacheable<nfs::DataName(message.Contents>()));
-}
-
-
-template<typename T>
-bool PmidNodeService::GetFromCache(const T& message,
-                                   const typename T::Sender& sender,
-                                   const typename T::Receiver& receiver,
-                                   IsCacheable) {
-  return CacheGet<T>(message,
-                     sender,
-                     receiver,
-                     is_long_term_cachable<nfs::DataName(message.Contents())>);
+  return DoGetFromCache(message, sender, receiver);
 }
 
 template<typename T>
-bool PmidNodeService::GetFromCache(const T& /*message*/,
-                                   const typename T::Sender& /*sender*/,
-                                   const typename T::Receiver& /*receiver*/,
-                                   IsNotCacheable) {
-  return false;
+bool PmidNodeService::DoGetFromCache(const T& message,
+                                     const typename T::Sender& sender,
+                                     const typename T::Receiver& receiver) {
+  auto data_name(GetDataNameVariant(message.contents->type, message.contents->raw_name));
+  if (!boost::apply_visitor(cacheable_visitor(), data_name))
+    return false;
+  if (boost::apply_visitor(long_term_cacheable_visitor(), data_name))
+    return CacheGet(message, sender, receiver, IsLongTermCacheable());
+  return CacheGet(message, sender, receiver, IsShortTermCacheable());
 }
-
 
 template<typename T>
 bool PmidNodeService::CacheGet(const T& message,
-                               const typename T::Sender& sender,
-                               const typename T::Receiver& receiver,
+                               const typename T::Sender& /*sender*/,
+                               const typename T::Receiver& /*receiver*/,
                                IsShortTermCacheable) {
-  static_assert(is_short_term_cacheable<nfs::Dataname(message.Contents())>::value,
-                "This should only be called for short-term cacheable data types.");
-  NonEmptyString data(mem_only_cache_.Get(message.Contents()));
-  if (data.empty())
+  try {
+    NonEmptyString data(mem_only_cache_.Get(*message.contents));
+    unique_ptr<NonEmptyString> content(new NonEmptyString(data));
+    std::thread([this] {
+                  SendCachedData(message, sender, receiver, content);
+                });
+  } catch(maidsafe_error& /*error*/) {
     return false;
-  // TODO(Mahmoud): Must send the data to the requestor
+  }
+  return true;
 }
 
 template<typename T>
-NonEmptyString PmidNodeService::CacheGet(const T& message,
-                                         const typename T::Sender& sender,
-                                         const typename T::Receiver& receiver,
-                                         IsLongTermCacheable) {
-  static_assert(is_long_term_cacheable<nfs::Dataname(message.Contents())>::value,
-                "This should only be called for long-term cacheable data types.");
-  NonEmptyString data(cache_data_store_.Get(message.Contents()));
-  if (data.empty())
+bool PmidNodeService::CacheGet(const T& message,
+                               const typename T::Sender& /*sender*/,
+                               const typename T::Receiver& /*receiver*/,
+                               IsLongTermCacheable) {
+  try {
+    NonEmptyString data(cache_data_store_.Get(*message.contents));
+    std::thread([this] {
+                  SendCachedData(message, sender, receiver, content);
+                });
+  } catch(maidsafe_error& /*error*/) {
     return false;
-  // TODO(Mahmoud): Must send the data to the requestor
+  }
+  return true;
 }
 
 template<>
@@ -216,25 +229,43 @@ void PmidNodeService::StoreInCache<nfs::GetResponseFromDataManagerToMaidNode>(
     const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& /*receiver*/) {
   auto data_name(GetDataNameVariant(message.contents->data->name.type,
                                     message.contents->data->name.raw_name));
-  auto result(boost::apply_visitor(cacheable_type_visitor(), data_name));
-  if (result)
+  if (!boost::apply_visitor(cacheable_visitor(), data_name))
+    return;
+  if (boost::apply_visitor(long_term_cacheable_visitor(), data_name))
     CacheStore(message, data_name, IsLongTermCacheable());
   else
     CacheStore(message, data_name, IsShortTermCacheable());
 }
 
 template<typename T>
-void PmidNodeService::CacheStore(const T& message, const DataNameVariant& data_name, IsShortTermCacheable) {
-//  static_assert(is_short_term_cacheable<nfs::DataName(message.Contents.data.name)>::value,
-//                "This should only be called for short-term cacheable data types.");
+void PmidNodeService::CacheStore(const T& message,
+                                 const DataNameVariant& data_name,
+                                 IsShortTermCacheable) {
   return mem_only_cache_.Store(data_name, message.contents->data->content);
 }
 
 template<typename T>
-void PmidNodeService::CacheStore(const T& message, const DataNameVariant& data_name, IsLongTermCacheable) {
-//  static_assert(is_long_term_cacheable<nfs::DataName(message.Contents.data.name)>::value,
-//                "This should only be called for long-term cacheable data types.");
+void PmidNodeService::CacheStore(const T& message,
+                                 const DataNameVariant& data_name,
+                                 IsLongTermCacheable) {
   return cache_data_store_.Store(data_name, message.contents->data->content);
+}
+
+template <typename T>
+void PmidNodeService::SendCachedData(const T message,
+                                     const typename T::Sender sender,
+                                     const typename T::Receiver receiver,
+                                     const std::unique_ptr<NonEmptyString> content) {
+  typedef nfs::GetCachedResponseFromPmidNodeToMaidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  NfsMessage nfs_message(nfs_client::DataNameAndContentOrReturnCode(
+      nfs_vault::DataNameAndContent(DataTagValue(message.contents->type),
+                                    message.contents->raw_name,
+                                    *content)));
+  RoutingMessage routing_message(nfs_message.Serialise(),
+                                 NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
+                                 NfsMessage::Receiver(sender));
+  routing_.Send(routing_message);
 }
 
 }  // namespace vault
