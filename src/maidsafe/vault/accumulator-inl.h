@@ -45,17 +45,16 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
     const routing::GroupSource& source,
     AddRequestPredicate predicate) {
   if (CheckHandled(request))
-    return false;
+    return Accumulator<T>::AddResult::kHandled;
   bool already_exists(false);
   auto request_message_id(boost::apply_visitor(message_id_requestor_visitor(), request));
   nfs::MessageId message_id;
   for (auto pending_request : pending_requests_) {
     if (pending_request.request.which() == request.which()) {
       message_id = boost::apply_visitor(message_id_requestor_visitor(), pending_request.request);
-      if (message_id == request_message_id) {
-        if (source == pending_request.source)
-          already_exists = true;
-      }
+      if ((message_id == request_message_id) &&
+          (source.sender_id == pending_request.source.sender_id))
+        already_exists = true;
     }
   }
   if (!already_exists) {
@@ -83,28 +82,22 @@ bool Accumulator<T>::CheckHandled(const T& request) {
 template<typename T>
 void Accumulator<T>::SetHandled(const T& request, const routing::GroupSource& source) {
   assert(!CheckHandled(request) && "Request has already been set as handled");
-  std::set<int> pending_requests_to_remove;
   nfs::MessageId message_id;
   auto request_message_id(boost::apply_visitor(message_id_requestor_visitor(), request));
   boost::apply_visitor(content_eraser_visitor(), request);
-  for (uint16_t index(0); index < pending_requests_.size(); ++index) {
-    if (pending_requests_.at(index).request.which() == request.which()) {
-      message_id = boost::apply_visitor(message_id_requestor_visitor(),
-                                        pending_requests_.at(index).request);
-      if ((message_id == request_message_id) &&
-          (source.group_id == pending_requests_.at(index).source.group_id))
-        pending_requests_to_remove.insert(index);
+  for (auto itr(pending_requests_.begin()); itr != pending_requests_.end();) {
+    if (itr->request.which() == request.which()) {
+      message_id = boost::apply_visitor(message_id_requestor_visitor(), itr->request.request);
+      if ((message_id == request_message_id) && (source.group_id == itr->request->source.group_id))
+        pending_requests_.erase(itr);
+      else
+        itr++;
+    } else {
+      itr++;
     }
   }
   boost::apply_visitor(content_eraser_visitor(), request);
   handled_requests_.push_back(request);
-  size_t size_to_remove(pending_requests_to_remove.size());
-  for (size_t index(0); index < size_to_remove; ++index) {
-    auto iterator(pending_requests_.begin());
-    std::advance(iterator, *pending_requests_to_remove.begin() - index);
-    pending_requests_.erase(iterator);
-    pending_requests_to_remove.erase(pending_requests_to_remove.begin());
-  }
   if (handled_requests_.size() > kMaxHandledRequestsCount_)
     handled_requests_.pop_front();
 }
@@ -118,7 +111,7 @@ std::vector<T> Accumulator<T>::Get(const T& request) {
     if (pending_request.request.which() == request.which()) {
       message_id = boost::apply_visitor(message_id_requestor_visitor(), pending_request.request);
       if ((message_id == request_message_id))
-        requests.insert(pending_request.request);
+        requests.push_back(pending_request.request);
     }
   }
   return std::move(requests);
