@@ -162,8 +162,8 @@ void content_eraser_visitor::operator()(nfs_vault::DataNameAndContent& name_and_
 template<typename T>
 class Accumulator {
  public:
+  enum class AddResult { kSuccess, kWaiting, kFailure };
   typedef std::function<AddResult(const std::vector<T>&)> AddPredicateFunctor;
-  enum class AddResult { kSucess, kWaiting, kFailure };
   class AddRequestPredicate {
     public:
      explicit AddRequestPredicate(const size_t& required_requests)

@@ -40,7 +40,7 @@ Accumulator<T>::Accumulator()
       kMaxHandledRequestsCount_(1000) {}
 
 template<typename T>
-AddResult Accumulator<T>::AddPendingRequest(
+typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
     const T& request,
     const routing::GroupSource& source,
     AddRequestPredicate predicate) {
@@ -53,9 +53,7 @@ AddResult Accumulator<T>::AddPendingRequest(
     if (pending_request.request.which() == request.which()) {
       message_id = boost::apply_visitor(message_id_requestor_visitor(), pending_request.request);
       if (message_id == request_message_id) {
-        if (source != pending_request.source)
-          --required;
-        else
+        if (source == pending_request.source)
           already_exists = true;
       }
     }

@@ -152,7 +152,7 @@ class PmidNodeService {
       const std::vector<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>& responses);
 
   template<typename T>
-  void ValidateSender(const T& /*message*/, const typename ::Sender& /*sender*/) const {
+  void ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
     T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
   }
 
@@ -265,9 +265,10 @@ void PmidNodeService::ValidateSender(
 
 template<>
 void PmidNodeService::ValidateSender(
-    nfs::GetRequestFromDataManagerToPmidNode& message,
+    const nfs::GetRequestFromDataManagerToPmidNode& message,
     const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender) const;
 
+template<>
 void PmidNodeService::ValidateSender(
     const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
     const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender) const;
