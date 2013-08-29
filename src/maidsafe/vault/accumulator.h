@@ -162,6 +162,30 @@ void content_eraser_visitor::operator()(nfs_vault::DataNameAndContent& name_and_
 template<typename T>
 class Accumulator {
  public:
+  typedef std::function<bool(const std::vector<T>&)> AddPredicateFunctor;
+  enum class AddResult { kSucess, kWaiting, kFailure };
+  class AddRequestPredicate {
+    public:
+     explicit AddRequestPredicate(const size_t& required_requests)
+                  : required_requests_(required_requests),
+                    functor_() {}
+
+     AddRequestPredicate(AddPredicateFunctor functor)
+         : required_requests_(0),
+           functor_(functor) {}
+
+     AddResult operator()(const std::vector<T>& requests) {
+       if (functor_)
+         return functor_(requests);
+       if (requests.size() == required_requests_)
+         return AddResult::kSucess;
+       else
+         return AddResult::kWaiting;
+     }
+    private:
+     size_t required_requests_;
+     AddPredicateFunctor functor_;
+  };
 
   struct PendingRequest {
     PendingRequest(const T& request_in, const routing::GroupSource& source_in)
@@ -172,9 +196,12 @@ class Accumulator {
 
   Accumulator();
 
-  bool AddPendingRequest(const T& request, const routing::GroupSource& source, size_t required);
+  AddResult AddPendingRequest(const T& request,
+                              const routing::GroupSource& source,
+                              AddRequestPredicate predicate);
   bool CheckHandled(const T& request);
   void SetHandled(const T& request, const routing::GroupSource& source);
+  std::vector<T> Get(const T& request);
 
  private:
   Accumulator(const Accumulator&);

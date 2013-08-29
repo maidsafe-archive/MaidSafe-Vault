@@ -32,6 +32,7 @@ License.
 #include "maidsafe/data_store/permanent_store.h"
 #include "maidsafe/data_types/data_type_values.h"
 #include "maidsafe/nfs/message_types.h"
+#include "maidsafe/nfs/client/data_getter.h"
 #include "maidsafe/vault/message_types.h"
 
 
@@ -73,7 +74,6 @@ class cacheable_visitor : public boost::static_visitor<bool> {
      return is_cacheable<Data>::value;
    }
 };
-
 
 }  // noname namespace
 
@@ -138,26 +138,23 @@ class PmidNodeService {
   void SendAccountRequest();
 
   // populates chunks map
-  void ApplyAccountTransfer(std::shared_ptr<std::vector<protobuf::PmidAccountResponse>> responses,
+  void ApplyAccountTransfer(const std::vector<protobuf::PmidAccountResponse>& responses,
                             const size_t& total_pmidmgrs,
-                            const size_t& pmidmagsr_with_account,
-                            std::map<DataNameVariant, uint16_t>& chunks);
+                            const size_t& pmidmagsr_with_account);
   void UpdateLocalStorage(const std::map<DataNameVariant, uint16_t>& expected_files);
   void ApplyUpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
                                const std::vector<DataNameVariant>& to_be_retrieved);
   std::vector<DataNameVariant> StoredFileNames();
-  uint16_t TotalValidPmidAccountReplies(
-      std::shared_ptr<std::vector<protobuf::PmidAccountResponse>> response_vector) const;
 
   std::future<std::unique_ptr<ImmutableData>>
   RetrieveFileFromNetwork(const DataNameVariant& file_id);
+  void HandleAccountResponses(
+      const std::vector<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>& responses);
 
-  void ValidatePutSender(
-      const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender) const;
-  void ValidateGetSender(
-      const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender) const;
-  void ValidateDeleteSender(
-      const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender) const;
+  template<typename T>
+  void ValidateSender(const T& /*message*/, const typename ::Sender& /*sender*/) const {
+    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
+  }
 
   template<typename T>
   bool DoGetFromCache(const T& message,
@@ -199,6 +196,8 @@ class PmidNodeService {
   std::mutex accumulator_mutex_;
   Accumulator<PmidNodeServiceMessages> accumulator_;
   Active active_;
+  AsioService asio_service_;
+  nfs_client::DataGetter data_getter_;
 };
 
 template<>
@@ -218,6 +217,12 @@ void PmidNodeService::HandleMessage<nfs::PutRequestFromPmidManagerToPmidNode>(
     const nfs::PutRequestFromPmidManagerToPmidNode& message,
     const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
     const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver);
+
+template<>
+void PmidNodeService::HandleMessage<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(
+    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& message,
+    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
+    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
 
 template<>
 bool PmidNodeService::GetFromCache<nfs::GetRequestFromMaidNodeToDataManager>(
@@ -252,6 +257,20 @@ void PmidNodeService::HandleDeleteMessage(
     const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
     const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
     const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
+
+template<>
+void PmidNodeService::ValidateSender(
+    const nfs::PutRequestFromPmidManagerToPmidNode& message,
+    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender) const;
+
+template<>
+void PmidNodeService::ValidateSender(
+    nfs::GetRequestFromDataManagerToPmidNode& message,
+    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender) const;
+
+void PmidNodeService::ValidateSender(
+    const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
+    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender) const;
 
 }  // namespace vault
 

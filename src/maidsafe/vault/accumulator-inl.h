@@ -40,10 +40,10 @@ Accumulator<T>::Accumulator()
       kMaxHandledRequestsCount_(1000) {}
 
 template<typename T>
-bool Accumulator<T>::AddPendingRequest(
+AddResult Accumulator<T>::AddPendingRequest(
     const T& request,
     const routing::GroupSource& source,
-    size_t required) {
+    AddRequestPredicate predicate) {
   if (CheckHandled(request))
     return false;
   bool already_exists(false);
@@ -61,12 +61,11 @@ bool Accumulator<T>::AddPendingRequest(
     }
   }
   if (!already_exists) {
-    --required;
     pending_requests_.push_back(PendingRequest(request, source));
     if (pending_requests_.size() > kMaxPendingRequestsCount_)
       handled_requests_.pop_front();
   }
-  return required == 0;
+  return predicate(Get(request));
 }
 
 template<typename T>
@@ -111,6 +110,22 @@ void Accumulator<T>::SetHandled(const T& request, const routing::GroupSource& so
   if (handled_requests_.size() > kMaxHandledRequestsCount_)
     handled_requests_.pop_front();
 }
+
+template<typename T>
+std::vector<T> Accumulator<T>::Get(const T& request) {
+  std::vector<T> requests;
+  nfs::MessageId message_id;
+  auto request_message_id(boost::apply_visitor(message_id_requestor_visitor(), request));
+  for (auto pending_request : pending_requests_) {
+    if (pending_request.request.which() == request.which()) {
+      message_id = boost::apply_visitor(message_id_requestor_visitor(), pending_request.request);
+      if ((message_id == request_message_id))
+        requests.insert(pending_request.request);
+    }
+  }
+  return std::move(requests);
+}
+
 
 //template<typename Name>
 //typename std::deque<typename Accumulator<Name>::HandledRequest>::const_iterator
