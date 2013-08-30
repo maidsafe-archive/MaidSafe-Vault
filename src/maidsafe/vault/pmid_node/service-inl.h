@@ -44,7 +44,7 @@ void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
     ValidateGetSender(message, sender);
 #endif
   {
-    std::lock_guard<mutex> lock(accumulator_mutex_);
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
     if (accumulator_.CheckHandled(message))
       return;
   }
@@ -60,7 +60,7 @@ void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>
   ValidateSender(message, sender);
 #endif
   {
-    std::lock_guard<mutex> lock(accumulator_mutex_);
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
     if (accumulator_.CheckHandled(message))
       return;
 
@@ -83,7 +83,7 @@ void PmidNodeService::HandleMessage<nfs::PutRequestFromPmidManagerToPmidNode>(
   ValidateSender(message, sender);
 #endif
   {
-    std::lock_guard<mutex> lock(accumulator_mutex_);
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
     if (accumulator_.CheckHandled(message))
       return;
 
@@ -108,7 +108,7 @@ void PmidNodeService::HandleMessage<nfs::GetPmidAccountResponseFromPmidManagerTo
   Accumulator<PmidNodeServiceMessages>::AddResult result;
   std::vector<PmidNodeServiceMessages> responses;
   {
-    std::lock_guard<mutex> lock(accumulator_mutex_);
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
     if (accumulator_.CheckHandled(message))
       return;
     auto add_request_predicate(
@@ -181,7 +181,7 @@ void PmidNodeService::HandlePutMessage<nfs::PutRequestFromPmidManagerToPmidNode>
                                    NfsMessage::Receiver(routing_.kNodeId()));
     routing_.Send(routing_message);
     {
-      std::lock_guard<mutex> lock(accumulator_mutex_);
+      std::lock_guard<std::mutex> lock(accumulator_mutex_);
       accumulator_.SetHandled(message, sender);
     }
   } catch(const maidsafe_error& error) {
@@ -197,7 +197,7 @@ void PmidNodeService::HandlePutMessage<nfs::PutRequestFromPmidManagerToPmidNode>
                                    NfsMessage::Receiver(
                                        NodeId(message.contents->name.raw_name.string())));
     routing_.Send(routing_message);
-    std::lock_guard<mutex> lock(accumulator_mutex_);
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
     accumulator_.SetHandled(message, sender);
   }
 }
@@ -221,7 +221,7 @@ void PmidNodeService::HandleGetMessage(const nfs::GetRequestFromDataManagerToPmi
                                        NodeId(message.contents->raw_name.string())));
     routing_.Send(routing_message);
     {
-      std::lock_guard<mutex> lock(accumulator_mutex_);
+      std::lock_guard<std::mutex> lock(accumulator_mutex_);
       accumulator_.SetHandled(message, sender);
     }
   } catch (const maidsafe_error& error) {
@@ -234,7 +234,7 @@ void PmidNodeService::HandleGetMessage(const nfs::GetRequestFromDataManagerToPmi
                                        NodeId(message.contents->raw_name.string())));
     routing_.Send(routing_message);
     {
-      std::lock_guard<mutex> lock(accumulator_mutex_);
+      std::lock_guard<std::mutex> lock(accumulator_mutex_);
       accumulator_.SetHandled(message, sender);
     }
   } catch(const std::exception& /*ex*/) {
@@ -253,7 +253,7 @@ void PmidNodeService::HandleDeleteMessage(
       accumulator_.SetHandled(message, sender);
     }
   } catch(const std::exception& /*ex*/) {
-    std::lock_guard<mutex> lock(accumulator_mutex_);
+    std::lock_guard<std::mutex> lock(accumulator_mutex_);
     accumulator_.SetHandled(message, sender);
   }
 }

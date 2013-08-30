@@ -18,12 +18,10 @@ License.
 
 #include <algorithm>
 #include <deque>
-#include <iterator>
 #include <string>
 #include <vector>
-#include "maidsafe/routing/routing_api.h"
-#include "maidsafe/data_types/data_name_variant.h"
 
+#include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/vault/handled_request.pb.h"
 #include "maidsafe/vault/types.h"
 

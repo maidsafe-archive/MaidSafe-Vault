@@ -20,6 +20,7 @@ License.
 #include <type_traits>
 #include <set>
 #include <vector>
+#include <functional>
 
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
@@ -59,7 +60,45 @@ class DataHolderTest;
 
 namespace {
 
-class long_term_cacheable_visitor : public boost::static_visitor<bool> {
+class ContentRetrievalVisitor : public boost::static_visitor<NonEmptyString> {
+  template<typename Data>
+  void operator()(const Data& /*data_name*/) {
+    // TO BE IMPLEMENTED
+  }
+};
+
+class GetCallerVisitor : public boost::static_visitor<> {
+ public:
+  typedef std::function<void(const DataNameVariant& key, const NonEmptyString& value)> DataStoreFunctor;
+  GetCallerVisitor(nfs_client::DataGetter& data_getter,
+                   std::vector<std::future<void>>& futures,
+                   DataStoreFunctor store_functor)
+      : data_getter_(data_getter), futures_(futures), store_functor_(store_functor) {}
+
+  template<typename DataName>
+  void operator()(const DataName& data_name) {
+    auto future(std::async(std::launch::async,
+                           [&] {
+                             data_getter_.Get<typename DataName::data_type>(
+                                 data_name,
+                                 std::chrono::seconds(10));
+                           }));
+    futures_.push_back(future.then(
+        [this, data_name](std::future<typename DataName::data_type> result_future) {
+          auto result(result_future.get());
+          auto content(boost::apply_visitor(ContentRetrievalVisitor(), result));
+          try {
+            store_functor_(data_name, content);
+          } catch (const maidsafe_error& /*error*/) {}
+        }));
+  }
+ private:
+  nfs_client::DataGetter& data_getter_;
+  std::vector<std::future<void>>& futures_;
+  DataStoreFunctor store_functor_;
+};
+
+class LongTermCacheableVisitor : public boost::static_visitor<bool> {
   public:
    template<typename Data>
    void operator()() {
@@ -67,7 +106,7 @@ class long_term_cacheable_visitor : public boost::static_visitor<bool> {
    }
 };
 
-class cacheable_visitor : public boost::static_visitor<bool> {
+class CacheableVisitor : public boost::static_visitor<bool> {
   public:
    template<typename Data>
    void operator()() {

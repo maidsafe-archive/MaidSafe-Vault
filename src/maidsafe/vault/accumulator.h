@@ -17,15 +17,11 @@ License.
 #define MAIDSAFE_VAULT_ACCUMULATOR_H_
 
 #include <deque>
-#include <utility>
-#include <vector>
 
-#include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/types.h"
-#include "maidsafe/nfs/utils.h"
 #include "maidsafe/nfs/vault/messages.h"
-#include "maidsafe/nfs/client/messages.h"
+
 
 namespace maidsafe {
 
@@ -64,9 +60,9 @@ class message_id_requestor_visitor : public boost::static_visitor<nfs::MessageId
 };
 
 class content_eraser_visitor : public boost::static_visitor<> {
-  public:
-   template<typename ContentType>
-   void operator()(ContentType& content) {}
+ public:
+  template<typename ContentType>
+  void operator()(ContentType& content) {}
 };
 
 template<>

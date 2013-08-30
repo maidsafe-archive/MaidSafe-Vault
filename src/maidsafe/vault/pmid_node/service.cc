@@ -16,6 +16,7 @@ License.
 #include "maidsafe/vault/pmid_node/service.h"
 
 #include <string>
+#include <chrono>
 
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/types.h"
@@ -231,9 +232,15 @@ void PmidNodeService::ApplyUpdateLocalStorage(const std::vector<DataNameVariant>
     }
   }
 
-  std::vector<std::future<std::unique_ptr<ImmutableData>>> futures;
-  for (auto file : to_be_retrieved)
-    futures.push_back(RetrieveFileFromNetwork(file));
+  std::vector<std::future<void>> futures;
+  for (auto file : to_be_retrieved) {
+    GetCallerVisitor get_caller_visitor(data_getter_,
+                                        futures,
+                                        [this](const KeyType& key, const NonEmptyString& value) {
+                                          this->permanent_data_store_(key, value);
+                                        });
+    boost::apply_visitor(get_caller_visitor, file);
+  }
 
   for (auto iter(futures.begin()); iter != futures.end(); ++iter) {
     try {
@@ -243,43 +250,6 @@ void PmidNodeService::ApplyUpdateLocalStorage(const std::vector<DataNameVariant>
       LOG(kWarning) << "Error in retreivel: " << error.code() << " - " << error.what();
     }
   }
-}
-
-std::future<std::unique_ptr<ImmutableData>>
-PmidNodeService::RetrieveFileFromNetwork(const DataNameVariant& file_id) {
-  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), file_id));
-  ImmutableData::Name name(result.second);
-  auto opt_mutex(std::make_shared<std::mutex>()) ;
-  auto get_op(std::make_shared<nfs::detail::GetOp<ImmutableData>>());
-  nfs_.Get<ImmutableData>(ImmutableData::Name(Identity(result.second)),
-                          [this, get_op, name, &opt_mutex](std::string serialised_reply) {
-    try {
-      nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));
-      if (!reply.IsSuccess())
-        throw reply.error();
-      {
-        std::lock_guard<std::mutex> lock(*opt_mutex);
-        if (!get_op->IsPromiseSet()) {
-          ImmutableData data(name, (ImmutableData::serialised_type(reply.data())));
-          permanent_data_store_.Put(data.name(), reply.data());
-          get_op->SetPromiseValue(std::move(data));
-        }
-      }
-    }
-    catch(const maidsafe_error& error) {
-      LOG(kWarning) << "Error in retreivel: " << error.code() << " - " << error.what();
-      get_op->HandleFailure(error);
-    }
-    catch(const std::exception& e) {
-      LOG(kWarning) << "Error in retreivel: " << e.what();
-      get_op->HandleFailure(MakeError(CommonErrors::unknown));
-    }
-  });
-  return get_op->GetFutureFromPromise();  
-}
-
-std::future<std::unique_ptr<ImmutableData>>
-PmidNodeService::RetrieveFileFromNetwork(const DataNameVariant& /*file_id*/) {
 }
 
 std::vector<DataNameVariant> PmidNodeService::StoredFileNames() {
