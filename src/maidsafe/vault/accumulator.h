@@ -163,20 +163,13 @@ template<typename T>
 class Accumulator {
  public:
   enum class AddResult { kSuccess, kWaiting, kFailure, kHandled };
-  typedef std::function<AddResult(const std::vector<T>&)> AddPredicateFunctor;
-  class AddRequestPredicate {
+  typedef std::function<AddResult(const std::vector<T>&)> AddCheckerFunctor;
+  class AddRequestChecker {
     public:
-     explicit AddRequestPredicate(const size_t& required_requests)
-                  : required_requests_(required_requests),
-                    functor_() {}
-
-     AddRequestPredicate(AddPredicateFunctor functor)
-         : required_requests_(0),
-           functor_(functor) {}
+     explicit AddRequestChecker(const size_t& required_requests)
+         : required_requests_(required_requests) {}
 
      AddResult operator()(const std::vector<T>& requests) {
-       if (functor_)
-         return functor_(requests);
        if (requests.size() == required_requests_)
          return AddResult::kSuccess;
        else
@@ -185,7 +178,6 @@ class Accumulator {
 
     private:
      size_t required_requests_;
-     AddPredicateFunctor functor_;
   };
 
   struct PendingRequest {
@@ -199,7 +191,7 @@ class Accumulator {
 
   AddResult AddPendingRequest(const T& request,
                               const routing::GroupSource& source,
-                              AddRequestPredicate predicate);
+                              AddCheckerFunctor predicate);
   bool CheckHandled(const T& request);
   void SetHandled(const T& request, const routing::GroupSource& source);
   std::vector<T> Get(const T& request);

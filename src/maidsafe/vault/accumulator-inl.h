@@ -43,7 +43,7 @@ template<typename T>
 typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
     const T& request,
     const routing::GroupSource& source,
-    AddRequestPredicate predicate) {
+    AddCheckerFunctor predicate) {
   if (CheckHandled(request))
     return Accumulator<T>::AddResult::kHandled;
   bool already_exists(false);
@@ -87,8 +87,8 @@ void Accumulator<T>::SetHandled(const T& request, const routing::GroupSource& so
   boost::apply_visitor(content_eraser_visitor(), request);
   for (auto itr(pending_requests_.begin()); itr != pending_requests_.end();) {
     if (itr->request.which() == request.which()) {
-      message_id = boost::apply_visitor(message_id_requestor_visitor(), itr->request.request);
-      if ((message_id == request_message_id) && (source.group_id == itr->request->source.group_id))
+      message_id = boost::apply_visitor(message_id_requestor_visitor(), itr->request);
+      if ((message_id == request_message_id) && (source.group_id == itr->source.group_id))
         pending_requests_.erase(itr);
       else
         itr++;

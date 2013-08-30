@@ -68,7 +68,7 @@ void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>
             accumulator_.AddPendingRequest(
                 message,
                 sender,
-                Accumulator<PmidNodeServiceMessages>::AddRequestPredicate(kDeleteRequestsRequired)))
+                Accumulator<PmidNodeServiceMessages>::AddRequestChecker(kDeleteRequestsRequired)))
       return;
   }
   HandleDeleteMessage(message, sender, receiver);
@@ -91,7 +91,7 @@ void PmidNodeService::HandleMessage<nfs::PutRequestFromPmidManagerToPmidNode>(
             accumulator_.AddPendingRequest(
                 message,
                 sender,
-                Accumulator<PmidNodeServiceMessages>::AddRequestPredicate(kPutRequestsRequired)))
+                Accumulator<PmidNodeServiceMessages>::AddRequestChecker(kPutRequestsRequired)))
       return;
   }
   HandlePutMessage(message, sender, receiver);
@@ -111,7 +111,7 @@ void PmidNodeService::HandleMessage<nfs::GetPmidAccountResponseFromPmidManagerTo
     std::lock_guard<mutex> lock(accumulator_mutex_);
     if (accumulator_.CheckHandled(message))
       return;
-    Accumulator<PmidNodeServiceMessages>::AddRequestPredicate add_request_predicate(
+    auto add_request_predicate(
         [&](const std::vector<PmidNodeServiceMessages>& requests_in) {
           if (requests_in.size() < 2)
             return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
@@ -121,7 +121,7 @@ void PmidNodeService::HandleMessage<nfs::GetPmidAccountResponseFromPmidManagerTo
           nfs::GetPmidAccountResponseFromPmidManagerToPmidNode response;
           for (auto& request : requests_in) {
             response = boost::get<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(request);
-            if (data.ParseFromString(response.contents->content.string())) {
+            if (data.ParseFromString(response.contents->data->content.string())) {
               if (data.has_serialised_data_name_and_content()) {
                 if (pmid_account_response.ParseFromString(
                         data.serialised_data_name_and_content())) {
