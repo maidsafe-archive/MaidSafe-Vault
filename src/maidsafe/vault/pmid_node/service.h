@@ -60,16 +60,45 @@ class DataHolderTest;
 
 namespace {
 
-class ContentRetrievalVisitor : public boost::static_visitor<NonEmptyString> {
-  template<typename Data>
-  void operator()(const Data& /*data_name*/) {
-    // TO BE IMPLEMENTED
+template <typename T>
+class HasData {
+  typedef char Yes;
+  typedef long No;
+
+  template <typename C> static Yes Check(decltype(&C::data)) ;
+  template <typename C> static No Check(...);
+
+ public:
+    static bool const value = sizeof(Check<T>(0)) == sizeof(Yes);
+};
+
+class ContentRetrievalVisitor : public boost::static_visitor<std::string> {
+ public:
+  template<typename T>
+  result_type operator()(const T& data) {
+    if (HasData<T>::value)
+      return data.data();
+    else
+      return result_type();
   }
 };
 
+//template<typename T>
+//typename std::enable_if<HasData<T>::value, ContentRetrievalVisitor::result_type>::type
+//ContentRetrievalVisitor::operator()(const T& data) {
+//  return data.data();
+//}
+
+//template<typename T>
+//typename std::enable_if<!HasData<T>::value, ContentRetrievalVisitor::result_type>::type
+//ContentRetrievalVisitor::operator()(const T& /*data*/) {
+//  return result_type();
+//}
+
 class GetCallerVisitor : public boost::static_visitor<> {
  public:
-  typedef std::function<void(const DataNameVariant& key, const NonEmptyString& value)> DataStoreFunctor;
+  typedef std::function<void(const DataNameVariant& key,
+                             const NonEmptyString& value)> DataStoreFunctor;
   GetCallerVisitor(nfs_client::DataGetter& data_getter,
                    std::vector<std::future<void>>& futures,
                    DataStoreFunctor store_functor)
@@ -88,7 +117,8 @@ class GetCallerVisitor : public boost::static_visitor<> {
           auto result(result_future.get());
           auto content(boost::apply_visitor(ContentRetrievalVisitor(), result));
           try {
-            store_functor_(data_name, content);
+            if (!content.empty())
+              store_functor_(data_name, NonEmptyString(content));
           } catch (const maidsafe_error& /*error*/) {}
         }));
   }

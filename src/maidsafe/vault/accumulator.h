@@ -50,7 +50,7 @@ class HasMessageId {
     static bool const value = sizeof(Check<RequestType>(0)) == sizeof(Yes);
 };
 
-class message_id_requestor_visitor : public boost::static_visitor<nfs::MessageId> {
+class MessageIdRequestVisitor : public boost::static_visitor<nfs::MessageId> {
  public:
   template<typename T>
   nfs::MessageId operator()(const T& message) const {
@@ -59,14 +59,14 @@ class message_id_requestor_visitor : public boost::static_visitor<nfs::MessageId
   }
 };
 
-class content_eraser_visitor : public boost::static_visitor<> {
+class ContentEraseVisitor : public boost::static_visitor<> {
  public:
   template<typename ContentType>
   void operator()(ContentType& content) {}
 };
 
 template<>
-void content_eraser_visitor::operator()(nfs_vault::DataNameAndContent& name_and_content) {
+void ContentEraseVisitor::operator()(nfs_vault::DataNameAndContent& name_and_content) {
   name_and_content.content = NonEmptyString(std::string("NA"));
 }
 
