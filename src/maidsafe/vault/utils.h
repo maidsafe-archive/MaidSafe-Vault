@@ -60,6 +60,10 @@ typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
     std::mutex& mutex,
     const AccountSet& accounts,
     const typename Account::Name& account_name);
+
+// To be moved to Routing
+bool operator ==(const routing::GroupSource& lhs,  const routing::GroupSource& rhs);
+
 // Returns true if the required successful request count has been reached
 template<typename Accumulator>
 bool AddResult(const nfs::Message& message,

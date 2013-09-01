@@ -42,11 +42,12 @@ void InitialiseDirectory(const boost::filesystem::path& directory) {
   }
 }
 
-bool ShouldRetry(routing::Routing& routing, const nfs::Message& message) {
+bool ShouldRetry(routing::Routing& routing, const NodeId& source_id, const NodeId& data_name) {
   return routing.network_status() >= Parameters::kMinNetworkHealth &&
-         routing.EstimateInGroup(message.source().node_id, NodeId(message.data().name.string()));
+         routing.EstimateInGroup(source_id, data_name);
 }
 
+ Tempararily commented by Mahmoud 25 Aug
 void SendReply(const nfs::Message& original_message,
                const maidsafe_error& return_code,
                const routing::ReplyFunctor& reply_functor) {
@@ -73,6 +74,12 @@ std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db
     ThrowError(CommonErrors::filesystem_io_error);
   assert(db);
   return std::move(std::unique_ptr<leveldb::DB>(db));
+}
+
+// To be moved to Routing
+bool operator ==(const routing::GroupSource& lhs,  const routing::GroupSource& rhs) {
+  return lhs.group_id == rhs.group_id &&
+         lhs.sender_id == rhs.sender_id;
 }
 
 }  // namespace vault

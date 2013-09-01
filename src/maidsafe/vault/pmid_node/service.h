@@ -72,28 +72,30 @@ class HasData {
     static bool const value = sizeof(Check<T>(0)) == sizeof(Yes);
 };
 
+template <bool>
+struct message_has_data : public std::false_type {};
+
+template <>
+struct message_has_data<true> : public std::true_type {};
+
 class ContentRetrievalVisitor : public boost::static_visitor<std::string> {
  public:
   template<typename T>
-  result_type operator()(const T& data) {
-    if (HasData<T>::value)
-      return data.data();
-    else
-      return result_type();
+  result_type operator()(const T& message) {
+    return GetData(message, message_has_data<HasData<T>::value>());
+  }
+
+ private:
+  template<typename T>
+  result_type GetData(const T& message, std::true_type) {
+    return message.data();
+  }
+
+  template<typename T>
+  result_type GetData(const T& /*message*/, std::false_type) {
+    return result_type();
   }
 };
-
-//template<typename T>
-//typename std::enable_if<HasData<T>::value, ContentRetrievalVisitor::result_type>::type
-//ContentRetrievalVisitor::operator()(const T& data) {
-//  return data.data();
-//}
-
-//template<typename T>
-//typename std::enable_if<!HasData<T>::value, ContentRetrievalVisitor::result_type>::type
-//ContentRetrievalVisitor::operator()(const T& /*data*/) {
-//  return result_type();
-//}
 
 class GetCallerVisitor : public boost::static_visitor<> {
  public:
