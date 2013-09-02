@@ -37,9 +37,10 @@ namespace vault {
 class PmidManagerService {
  public:
   PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing, Db& db);
-  template<typename Data>
-  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  template<typename T>
+  void HandleMessage(const T& message,
+                     const typename T::Sender& sender,
+                     const typename T::Receiver& receiver);
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
  private:
@@ -80,12 +81,39 @@ class PmidManagerService {
 
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
-  Accumulator<PmidName> accumulator_;
+  Accumulator<nfs::PmidManagerServiceMessages> accumulator_;
   PmidAccountHandler pmid_account_handler_;
   PmidManagerNfs nfs_;
   static const int kPutRepliesSuccessesRequired_;
   static const int kDeleteRequestsRequired_;
 };
+
+template<typename T>
+void PmidManagerService::HandleMessage(const T& /*message*/,
+                                       const typename T::Sender& /*sender*/,
+                                       const typename T::Receiver& /*receiver*/) {
+  T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
+}
+
+
+template<T>
+void PmidManagerService::HandleMessage(
+  const nfs::PutRequestFromDataManagerToPmidManager& message,
+  const typename nfs::PutRequestFromDataManagerToPmidManager& sender,
+  const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver);
+
+template<T>
+void PmidManagerService::HandleMessage(
+  const nfs::PutResponseFromPmidNodeToPmidManager& message,
+  const typename nfs::PutResponseFromPmidNodeToPmidManager& sender,
+  const typename nfs::PutResponseFromPmidNodeToPmidManager::Receiver& receiver);
+
+template<T>
+void PmidManagerService::HandleMessage(
+  const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& message,
+  const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& sender,
+  const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
+
 
 }  // namespace vault
 }  // namespace maidsafe

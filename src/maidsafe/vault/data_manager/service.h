@@ -27,6 +27,8 @@ License.
 #include "maidsafe/routing/api_config.h"
 #include "maidsafe/routing/routing_api.h"
 
+#include "maidsafe/nfs/client/data_getter.h"
+
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/data_manager/helpers.h"
 #include "maidsafe/vault/data_manager/handler.h"
@@ -126,7 +128,7 @@ class DataManagerService {
   void TransferRecord(const DataNameVariant& record_name, const NodeId& new_node);
   void HandleRecordTransfer(const nfs::Message& message);
   routing::Routing& routing_;
-  nfs::PublicKeyGetter& public_key_getter_;
+  nfs_client::DataGetter& public_key_getter_;
   std::mutex accumulator_mutex_;
   Accumulator<DataNameVariant> accumulator_;
   MetadataHandler metadata_handler_;
@@ -143,6 +145,53 @@ void HandleMessage(const T& /*message*/,
   T::should_not_reach_here;
 }
 
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::GetRequestFromMaidNodeToDataManager& message,
+   const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver,
+   const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender);
+
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::GetRequestFromPmidNodeToDataManager& message,
+   const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver,
+   const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender);
+
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::GetRequestFromDataGetterToDataManager& message,
+   const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver,
+   const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender);
+
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::PutRequestFromMaidManagerToDataManager& message,
+   const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver& receiver,
+   const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender);
+
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::DeleteRequestFromMaidManagerToDataManager& message,
+   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver,
+   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender);
+
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::PutResponseFromPmidManagerToDataManager& message,
+   const typename nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver,
+   const typename nfs::PutResponseFromPmidManagerToDataManager::Sender& sender);
+
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::StateChangeFromPmidManagerToDataManager& message,
+   const typename nfs::StateChangeFromPmidManagerToDataManager::Receiver& receiver,
+   const typename nfs::StateChangeFromPmidManagerToDataManager::Sender& sender);
+
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::GetResponseFromPmidNodeToDataManager& message,
+   const typename nfs::GetResponseFromPmidNodeToDataManager::Receiver& receiver,
+   const typename nfs::GetResponseFromPmidNodeToDataManager::Sender& sender);
 
 }  // namespace vault
 
