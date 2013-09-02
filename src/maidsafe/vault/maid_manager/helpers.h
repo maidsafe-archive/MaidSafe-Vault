@@ -74,13 +74,13 @@ struct GetPmidTotalsOp {
 struct PmidTotals {
   PmidTotals();
   explicit PmidTotals(const std::string& serialised_pmid_registration_in);
-  PmidTotals(const std::strig& serialised_pmid_registration_in,
+  PmidTotals(const std::string& serialised_pmid_registration_in,
              const PmidManagerMetadata& pmid_metadata_in);
   PmidTotals(const PmidTotals& other);
   PmidTotals(PmidTotals&& other);
   PmidTotals& operator=(PmidTotals other);
 
-  nfs_vault::PmidRegistration::serialised_type serialised_pmid_registration;
+  std::string serialised_pmid_registration;
   PmidManagerMetadata pmid_metadata;
 };
 

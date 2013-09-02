@@ -30,6 +30,7 @@ namespace vault {
 
 // not thread safe
 class DataManagerValue {
+ public:
   typedef TaggedValue<NonEmptyString, struct SerialisedDataManagerValueTag> serialised_type;
   explicit DataManagerValue(const serialised_type& serialised_metadata_value);
   DataManagerValue(const PmidName& pmid_name, int size_in);
@@ -37,8 +38,8 @@ class DataManagerValue {
 
   void AddPmid(const PmidName& pmid_name);
   void RemovePmid(const PmidName& pmid_name);
-  void Increamentsubscribers();
-  int64_t Decreamentsubscribers();
+  void IncrementSubscribers();
+  int64_t DecrementSubscribers();
   void SetPmidOnline(const PmidName& pmid_name);
   void SetPmidOffline(const PmidName& pmid_name);
 

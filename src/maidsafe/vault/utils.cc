@@ -47,7 +47,7 @@ bool ShouldRetry(routing::Routing& routing, const NodeId& source_id, const NodeI
          routing.EstimateInGroup(source_id, data_name);
 }
 
- Tempararily commented by Mahmoud 25 Aug
+/* Commented by Mahmoud on 2 Sep -- It may be of no use any more or needs refactoring
 void SendReply(const nfs::Message& original_message,
                const maidsafe_error& return_code,
                const routing::ReplyFunctor& reply_functor) {
@@ -57,7 +57,7 @@ void SendReply(const nfs::Message& original_message,
   if (return_code.code() != CommonErrors::success)
     reply = nfs::Reply(return_code, original_message.Serialise().data);
   reply_functor(reply.Serialise()->string());
-}
+} */
 
 }  // namespace detail
 

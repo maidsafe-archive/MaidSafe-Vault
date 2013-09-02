@@ -22,14 +22,14 @@ License.
 #include "boost/optional/optional.hpp"
 
 #include "maidsafe/nfs/types.h"
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-class MaidManagerMetadata;
-class MaidManagerValue;
+class DataManagerValue;
 
 struct ActionDataManagerSetPmidOffline {
   explicit ActionDataManagerSetPmidOffline(const PmidName& pmid_name);

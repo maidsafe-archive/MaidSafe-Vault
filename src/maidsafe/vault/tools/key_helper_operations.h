@@ -33,11 +33,13 @@ License.
 
 #include "maidsafe/passport/types.h"
 
-#include "maidsafe/nfs/client_utils.h"
-#include "maidsafe/nfs/public_key_getter.h"
-
 #include "maidsafe/routing/api_config.h"
 #include "maidsafe/routing/node_info.h"
+#include "maidsafe/routing/routing_api.h"
+
+#include "maidsafe/nfs/client/data_getter.h"
+#include "maidsafe/nfs/client/maid_node_nfs.h"
+
 
 namespace maidsafe {
 
@@ -55,6 +57,7 @@ class NetworkGenerator {
   std::vector<boost::asio::ip::udp::endpoint> BootstrapEndpoints() const;
 
  private:
+  AsioService asio_service_;
   boost::asio::ip::udp::endpoint endpoint1_, endpoint2_;
   struct BootstrapData {
     BootstrapData(const passport::Pmid& pmid1, const passport::Pmid& pmid2)
@@ -75,7 +78,7 @@ class NetworkGenerator {
 
   void DoOnPublicKeyRequested(const NodeId& node_id,
                               const routing::GivePublicKeyFunctor& give_key,
-                              nfs::PublicKeyGetter& public_key_getter);
+                              nfs_client::DataGetter& data_getter);
 };
 
 class ClientTester {
@@ -90,10 +93,11 @@ class ClientTester {
   typedef std::promise<bool> BoolPromise;
   typedef std::future<bool> BoolFuture;
 
+  AsioService asio_service_;
   passport::detail::AnmaidToPmid key_chain_;
   routing::Routing client_routing_;
   routing::Functors functors_;
-  std::unique_ptr<nfs::ClientMaidNfs> client_nfs_;
+  std::unique_ptr<nfs_client::MaidNodeNfs> client_nfs_;
 
   ~ClientTester();
   std::future<bool> RoutingJoin(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
@@ -107,15 +111,9 @@ class KeyStorer : public ClientTester {
 
  private:
   template<typename Data>
-  void StoreKey(const Data& key, std::promise<bool>& promise) {
-    nfs::Put<Data>(*client_nfs_,
-                   key,
-                   passport::PublicPmid::Name(),
-                   routing::Parameters::node_group_size,
-                   callback(std::ref(promise)));
+  void StoreKey(const Data& key) {
+    client_nfs_->Put(key);
   }
-
-  std::function<void(nfs::Reply)> callback(std::promise<bool>& promise);
 };
 
 class KeyVerifier : public ClientTester {
@@ -150,7 +148,7 @@ class DataChunkStorer : public ClientTester {
   bool Done(int32_t quantity, int32_t rounds) const;
   void OneChunkRun(size_t& num_chunks, size_t& num_store, size_t& num_get);
   void OneChunkRunWithDelete(size_t& num_chunks, size_t& num_store, size_t& num_get);
-  bool StoreOneChunk(const ImmutableData& chunk_data);
+  void StoreOneChunk(const ImmutableData& chunk_data);
   bool GetOneChunk(const ImmutableData& chunk_data);
   bool DeleteOneChunk(const ImmutableData& chunk_data);
   void LoadChunksFromFiles();

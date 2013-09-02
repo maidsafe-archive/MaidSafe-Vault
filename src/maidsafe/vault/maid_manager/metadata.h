@@ -45,8 +45,8 @@ class MaidManagerMetadata {
   Status AllowPut(int32_t cost) const;
   void PutData(int32_t cost);
   void DeleteData(int32_t cost);
-  void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
-  void UnregisterPmid(const nfs::PmidRegistration& pmid_registration);
+  void RegisterPmid(const nfs_vault::PmidRegistration& pmid_registration);
+  void UnregisterPmid(const nfs_vault::PmidRegistration& pmid_registration);
   void UpdatePmidTotals(const PmidManagerMetadata& pmid_metadata);
 
   friend void swap(MaidManagerMetadata& lhs, MaidManagerMetadata& rhs);

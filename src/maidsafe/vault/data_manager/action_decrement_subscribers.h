@@ -21,16 +21,18 @@ License.
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
-#include "maidsafe/vault/data_manager/data_manager.h"
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
 namespace vault {
 
+class DataManagerValue;
+
 struct ActionDataManagerDecrementSubscribers {
-
-  void operator()(boost::optional<DataManagerValue>& value) const;
-
+ public:
+  void operator()(boost::optional<DataManagerValue>& value);
+  std::string Serialise() const;
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDecrementSubscribers;
 
  private:

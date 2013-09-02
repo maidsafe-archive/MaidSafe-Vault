@@ -83,50 +83,6 @@ PmidNodeService::PmidNodeService(const passport::Pmid& pmid,
 //  nfs_.GetElementList();  // TODO (Fraser) BEFORE_RELEASE Implementation needed
 }
 
-//void PmidNodeService::SendAccountRequest() {
-//  auto mutex(std::make_shared<std::mutex>());
-//  auto done(std::make_shared<bool>(false));
-//  miscellaneous_policy.RequestPmidNodeAccount(PmidName(Identity(routing_.kNodeId().string())),
-//      [done, response_vector, mutex, this](std::string serialised_reply) {
-//        std::map<DataNameVariant, u_int16_t> expected_chunks;
-//        {
-//          std::lock_guard<std::mutex> lock(*mutex);
-//          if (*done)
-//            return;
-//          nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));
-//          if (!reply.IsSuccess()) {
-//            LOG(kWarning) << "Failure in PmidAccount response";
-//            return;
-//          }
-//          protobuf::PmidAccountResponse pmid_account_response;
-//          if (pmid_account_response.ParseFromString(reply.data().string())) {
-//            response_vector->push_back(pmid_account_response);
-//          } else {
-//            LOG(kWarning) << "Failed to parse PmidAccount response";
-//            return;
-//          }
-//          uint16_t total_replies(response_vector->size()), total_valid_replies(0);
-//          assert((total_replies <= routing::Parameters::node_group_size) &&
-//                 "Invalid number of account transfer");
-//          if (total_replies <= routing::Parameters::node_group_size / 2) {
-//            return;
-//          } else {
-//            total_valid_replies = this->TotalValidPmidAccountReplies(response_vector);
-//            if ((total_replies >= (routing::Parameters::node_group_size / 2 + 1)) &&
-//                 total_valid_replies >= routing::Parameters::node_group_size / 2) {
-//              ApplyAccountTransfer(response_vector,
-//                                   total_replies,
-//                                   total_valid_replies,
-//                                   expected_chunks);
-//              *done = true;
-//            }
-//          }
-//        }
-//        if (*done)
-//          this->UpdateLocalStorage(expected_chunks);
-//      });
-//}
-
 void PmidNodeService::HandleAccountResponses(
   const std::vector<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>& responses) {
   std::map<DataNameVariant, u_int16_t> expected_chunks;

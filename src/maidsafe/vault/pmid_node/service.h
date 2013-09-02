@@ -57,7 +57,6 @@ class DataHolderTest;
 
 }  // namespace test
 
-
 namespace {
 
 template <typename T>
@@ -206,6 +205,7 @@ class PmidNodeService {
     T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
   }
 
+// ================================ Pmid Account ===============================================
   void SendAccountRequest();
 
   // populates chunks map
@@ -222,11 +222,13 @@ class PmidNodeService {
   void HandleAccountResponses(
       const std::vector<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>& responses);
 
+// ================================ Sender Validation =========================================
   template<typename T>
   void ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
     T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
   }
 
+// ===================================Cache=====================================================
   template<typename T>
   bool DoGetFromCache(const T& message,
                       const typename T::Sender& sender,

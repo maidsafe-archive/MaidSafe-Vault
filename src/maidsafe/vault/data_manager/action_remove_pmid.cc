@@ -19,7 +19,7 @@ License.
 
 #include "maidsafe/vault/data_manager/action_remove_pmid.pb.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
-#include "maidsafe/vault/maid_manager/value.h"
+#include "maidsafe/vault/data_manager/value.h"
 
 
 namespace maidsafe {
@@ -45,11 +45,11 @@ ActionDataManagerRemovePmid::ActionDataManagerRemovePmid(ActionDataManagerRemove
 
 std::string ActionDataManagerRemovePmid::Serialise() const {
   protobuf::ActionDataManagerRemovePmid action_remove_pmid_proto;
-  action_remove_pmid_proto.set_pmid_name(kPmidName);
+  action_remove_pmid_proto.set_pmid_name(kPmidName.value.string());
   return action_remove_pmid_proto.SerializeAsString();
 }
 
-void ActionDataManagerRemovePmid::operator()(boos::optional<DataManagerValue>& value) const {
+void ActionDataManagerRemovePmid::operator()(boost::optional<DataManagerValue>& value) const {
   if (!value)
     ThrowError(CommonErrors::invalid_parameter);
   value->RemovePmid(kPmidName);

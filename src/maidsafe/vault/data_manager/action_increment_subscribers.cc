@@ -14,49 +14,53 @@ License.
 */
 
 #include "maidsafe/vault/data_manager/action_increment_subscribers.h"
-#include "maidsafe/vault/pmid_manager/action_increment_subscribers.pb.h"
+#include "maidsafe/vault/data_manager/action_increment_subscribers.pb.h"
 
+#include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
 namespace vault {
 
 ActionDataManagerIncrementSubscribers::ActionDataManagerIncrementSubscribers(
-    const PmidNode& pmid_node, const uint32_t& size)
-    : kPmidNode(pmid_node),
-      kSize(size) {}
+    const PmidName& pmid_name, const uint32_t& size)
+    : kSize(size),
+      kPmidName(pmid_name) {}
 
 ActionDataManagerIncrementSubscribers::ActionDataManagerIncrementSubscribers(
     const std::string& serialised_action)
-    : kSize(0) {
-  protobuf::ActionDataManagerIncrementSubscribers action_increment_subscribers_proto;
-  action_increment_subscribers_proto.ParseFromString(serialised_action);
-  kPmidName = action_increment_subscribers_proto.pmid_name();
-  kSize = action_increment_subscribers_proto.size();
-}
+    : kSize([&]()->int32_t {
+              protobuf::ActionDataManagerIncrementSubscribers action_increment_subscribers_proto;
+              action_increment_subscribers_proto.ParseFromString(serialised_action);
+              return action_increment_subscribers_proto.size();
+            }()),
+      kPmidName([&]()->Identity {
+                  protobuf::ActionDataManagerIncrementSubscribers action_increment_subscribers_proto;
+                  action_increment_subscribers_proto.ParseFromString(serialised_action);
+                  return Identity(action_increment_subscribers_proto.pmid_name());
+      }()) {}
 
 ActionDataManagerIncrementSubscribers::ActionDataManagerIncrementSubscribers(
     const ActionDataManagerIncrementSubscribers& other)
-    : kPmidName(other.kPmidName),
-      kSize(other.kSize) {}
+    : kSize(other.kSize),
+      kPmidName(other.kPmidName) {}
 
 ActionDataManagerIncrementSubscribers::ActionDataManagerIncrementSubscribers(
     ActionDataManagerIncrementSubscribers&& other)
-    : kPmidName(std::move(other.kPmidName)),
-      kSize(std::move(other.kSize)) {}
+    : kSize(std::move(other.kSize)),
+      kPmidName(std::move(other.kPmidName)) {}
 
 std::string ActionDataManagerIncrementSubscribers::Serialise() const {
   protobuf::ActionDataManagerIncrementSubscribers action_increment_subscribers_proto;
-  action_increment_subscribers_proto.set_size(kPmidName);
+  action_increment_subscribers_proto.set_pmid_name(kPmidName->string());
   action_increment_subscribers_proto.set_size(kSize);
   return action_increment_subscribers_proto.SerializeAsString();
 }
 
-void ActionDataManagerIncrementSubscribers::operator()(
-    boost::optional<PmidManagerValue>& value) const {
+void ActionDataManagerIncrementSubscribers::operator()(boost::optional<DataManagerValue>& value) {
   if (value)
-    value.IncrementSubscribers();
+    value->IncrementSubscribers();
   else
-    value.reset(PmidManagerValue(kPmidName, kSize));
+    value.reset(DataManagerValue(kPmidName, kSize));
 }
 
 bool operator==(const ActionDataManagerIncrementSubscribers& lhs,

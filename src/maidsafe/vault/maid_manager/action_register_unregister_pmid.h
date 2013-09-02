@@ -22,6 +22,8 @@ License.
 
 #include "maidsafe/nfs/types.h"
 
+#include "maidsafe/nfs/vault/pmid_registration.h"
+
 #include "maidsafe/vault/maid_manager/action_register_unregister_pmid.pb.h"
 
 
@@ -33,7 +35,7 @@ class MaidManagerMetadata;
 
 template<bool Unregister>
 struct ActionRegisterUnregisterPmid {
-  explicit ActionRegisterUnregisterPmid(const nfs::PmidRegistration& pmid_registration);
+  explicit ActionRegisterUnregisterPmid(const nfs_vault::PmidRegistration& pmid_registration);
   explicit ActionRegisterUnregisterPmid(const std::string& serialised_action);
   ActionRegisterUnregisterPmid(const ActionRegisterUnregisterPmid& other);
   ActionRegisterUnregisterPmid(ActionRegisterUnregisterPmid&& other);
@@ -42,7 +44,7 @@ struct ActionRegisterUnregisterPmid {
   void operator()(MaidManagerMetadata& metadata) const;
 
   static const nfs::MessageAction kActionId;
-  const nfs::PmidRegistration kPmidRegistration;
+  const nfs_vault::PmidRegistration kPmidRegistration;
 
  private:
   ActionRegisterUnregisterPmid();
@@ -79,18 +81,17 @@ typedef ActionRegisterUnregisterPmid<true> ActionUnregisterPmid;
 // ==================== Implementation =============================================================
 template<bool Unregister>
 ActionRegisterUnregisterPmid<Unregister>::ActionRegisterUnregisterPmid(
-    const nfs::PmidRegistration& pmid_registration_in)
+    const nfs_vault::PmidRegistration& pmid_registration_in)
         : kPmidRegistration(pmid_registration_in) {}
 
 template<bool Unregister>
 ActionRegisterUnregisterPmid<Unregister>::ActionRegisterUnregisterPmid(
     const std::string& serialised_action)
-        : kPmidRegistration([&serialised_action]()->nfs::PmidRegistration::serialised_type {
+        : kPmidRegistration([&serialised_action]()->std::string {
             protobuf::ActionRegisterUnregisterPmid action_register_pmid_proto;
             if (!action_register_pmid_proto.ParseFromString(serialised_action))
               ThrowError(CommonErrors::parsing_error);
-            return nfs::PmidRegistration::serialised_type(NonEmptyString(
-                action_register_pmid_proto.serialised_pmid_registration()));
+            return action_register_pmid_proto.serialised_pmid_registration();
           }()) {
   assert(kPmidRegistration.unregister() == Unregister);
 }
@@ -108,8 +109,7 @@ ActionRegisterUnregisterPmid<Unregister>::ActionRegisterUnregisterPmid(
 template<bool Unregister>
 std::string ActionRegisterUnregisterPmid<Unregister>::Serialise() const {
   protobuf::ActionRegisterUnregisterPmid action_register_pmid_proto;
-  action_register_pmid_proto.set_serialised_pmid_registration(
-      kPmidRegistration.Serialise()->string());
+  action_register_pmid_proto.set_serialised_pmid_registration(kPmidRegistration.Serialise());
   return action_register_pmid_proto.SerializeAsString();
 }
 

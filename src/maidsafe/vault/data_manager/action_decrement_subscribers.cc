@@ -16,9 +16,13 @@ License.
 #include "maidsafe/vault/data_manager/action_decrement_subscribers.h"
 #include "maidsafe/vault/data_manager/action_decrement_subscribers.pb.h"
 
+#include "maidsafe/vault/data_manager/value.h"
+
 
 namespace maidsafe {
 namespace vault {
+
+const nfs::MessageAction ActionDataManagerDecrementSubscribers::kActionId;
 
 std::string ActionDataManagerDecrementSubscribers::Serialise() const {
   protobuf::ActionDataManagerDecrementSubscribers action_decrement_subscribers_proto;
@@ -26,15 +30,15 @@ std::string ActionDataManagerDecrementSubscribers::Serialise() const {
 }
 
 void ActionDataManagerDecrementSubscribers::operator()(
-    boost::optional<PmidManagerValue>& value) const {
+    boost::optional<DataManagerValue>& value) {
   if (value)
-    value.DecrementSubscribers();
+    value->DecrementSubscribers();
   else
-    Throw(CommonErrors::invalid_parameter);
+    ThrowError(CommonErrors::invalid_parameter);
 }
 
-bool operator==(const ActionDataManagerDecrementSubscribers& lhs,
-                const ActionDataManagerDecrementSubscribers& rhs) {
+bool operator==(const ActionDataManagerDecrementSubscribers& /*lhs*/,
+                const ActionDataManagerDecrementSubscribers& /*rhs*/) {
   return true;
 }
 

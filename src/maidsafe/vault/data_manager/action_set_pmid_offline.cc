@@ -17,7 +17,7 @@ License.
 
 #include "maidsafe/common/error.h"
 
-#include "maidsafe/vault/maid_manager/action_set_pmid_offline.pb.h"
+#include "maidsafe/vault/data_manager/action_set_pmid_offline.pb.h"
 #include "maidsafe/vault/data_manager/metadata.h"
 #include "maidsafe/vault/data_manager/value.h"
 
@@ -48,11 +48,11 @@ ActionDataManagerSetPmidOffline::ActionDataManagerSetPmidOffline(
 
 std::string ActionDataManagerSetPmidOffline::Serialise() const {
   protobuf::ActionDataManagerSetPmidOffline action_set_pmid_offline_proto;
-  action_set_pmid_offline_proto.set_pmid_name(kPmidName);
+  action_set_pmid_offline_proto.set_pmid_name(kPmidName->string());
   return action_set_pmid_offline_proto.SerializeAsString();
 }
 
-void ActionDataManagerSetPmidOffline::operator()(boos::optional<DataManagerValue>& value) const {
+void ActionDataManagerSetPmidOffline::operator()(boost::optional<DataManagerValue>& value) const {
   if (!value)
     ThrowError(CommonErrors::invalid_parameter);
   value->SetPmidOffline(kPmidName);

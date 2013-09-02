@@ -47,11 +47,11 @@ typedef std::future<passport::PublicPmid> PublicPmidFuture;
 //  return nfs::Reply(nfs::Reply::serialised_type(NonEmptyString(response)));
 //}
 
-asymm::PublicKey GetPublicKeyFromReply(const passport::PublicPmid::Name& name,
-                                       const nfs::Reply& reply) {
-  passport::PublicPmid pmid(name, passport::PublicPmid::serialised_type(reply.data()));
-  return pmid.public_key();
-}
+//asymm::PublicKey GetPublicKeyFromReply(const passport::PublicPmid::Name& name,
+//                                       const passport::PublicPmid& pmid) {
+//  passport::PublicPmid pmid(name, passport::PublicPmid::serialised_type(reply.data()));
+//  return pmid.public_key();
+//}
 
 std::mutex g_mutex;
 std::condition_variable g_cond_var;
@@ -66,7 +66,8 @@ void CtrlCHandler(int /*signum*/) {
 
 }  // namespace
 
-NetworkGenerator::NetworkGenerator() {}
+NetworkGenerator::NetworkGenerator()
+    : asio_service_(1) {}
 
 void NetworkGenerator::SetupBootstrapNodes(const PmidVector &all_keys) {
   std::cout << "Creating zero state routing network..." << std::endl;
@@ -76,8 +77,9 @@ void NetworkGenerator::SetupBootstrapNodes(const PmidVector &all_keys) {
   all_public_pmids.reserve(all_keys.size());
   for (auto& pmid : all_keys)
     all_public_pmids.push_back(passport::PublicPmid(pmid));
-  nfs::PublicKeyGetter public_key_getter(*bootstrap_data.routing1, all_public_pmids);
-
+  nfs_client::DataGetter public_key_getter(asio_service_,
+                                           *bootstrap_data.routing1,
+                                           all_public_pmids);
   routing::Functors functors1, functors2;
   functors1.request_public_key = functors2.request_public_key =
       [&public_key_getter, this] (NodeId node_id, const routing::GivePublicKeyFunctor& give_key) {
@@ -122,26 +124,20 @@ std::vector<boost::asio::ip::udp::endpoint> NetworkGenerator::BootstrapEndpoints
 
 void NetworkGenerator::DoOnPublicKeyRequested(const NodeId& node_id,
                                               const routing::GivePublicKeyFunctor& give_key,
-                                              nfs::PublicKeyGetter& public_key_getter) {
+                                              nfs_client::DataGetter &data_getter) {
   passport::PublicPmid::Name name(Identity(node_id.string()));
-  public_key_getter.GetKey<passport::PublicPmid>(
-      name,
-      [name, give_key] (nfs::Reply reply) {
-        if (reply.IsSuccess()) {
-          try {
-            asymm::PublicKey public_key(GetPublicKeyFromReply(name, reply));
-            give_key(public_key);
-          }
-          catch(const std::exception& ex) {
-            LOG(kError) << "Failed to get key for " << DebugId(name) << " : " << ex.what();
-          }
-        }
-      });
+  try {
+    auto future(data_getter.Get<passport::PublicPmid>(name));
+    give_key(future.get().public_key());
+  } catch(const std::exception& ex) {
+    LOG(kError) << "Failed to get key for " << DebugId(name) << " : " << ex.what();
+  }
 }
 
 ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
                            const std::vector<UdpEndpoint>& peer_endpoints)
-    : key_chain_(key_chain),
+    : asio_service_(2),
+      key_chain_(key_chain),
       client_routing_(key_chain.maid),
       functors_(),
       client_nfs_() {
@@ -150,7 +146,10 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
   if (status == std::future_status::timeout || !future.get())
     throw ToolsException("Failed to join client to network.");
   LOG(kInfo) << "Bootstrapped anonymous node to store keys";
-  client_nfs_.reset(new nfs::ClientMaidNfs(client_routing_, key_chain_.maid));
+  passport::PublicPmid::Name pmid_name(Identity(key_chain.pmid.name().value));
+  client_nfs_.reset(new nfs_client::MaidNodeNfs(asio_service_,
+                                                client_routing_,
+                                                pmid_name));
 }
 
 ClientTester::~ClientTester() {}
@@ -178,35 +177,11 @@ void KeyStorer::Store() {
   std::vector<BoolFuture> bool_futures;
   for (auto& promise : bool_promises)
     bool_futures.push_back(promise.get_future());
-  StoreKey<passport::PublicAnmaid>(passport::PublicAnmaid(key_chain_.anmaid),
-                                   std::ref(bool_promises.at(0)));
-  StoreKey<passport::PublicMaid>(passport::PublicMaid(key_chain_.maid),
-                                 std::ref(bool_promises.at(1)));
-  StoreKey<passport::PublicPmid>(passport::PublicPmid(key_chain_.pmid),
-                                 std::ref(bool_promises.at(2)));
+  StoreKey(passport::PublicAnmaid(key_chain_.anmaid));
+  StoreKey(passport::PublicMaid(key_chain_.maid));
+  StoreKey(passport::PublicPmid(key_chain_.pmid));
 
-  size_t error_stored_keys(0);
-  for (auto& future : bool_futures) {
-    if (IsReady(future) || !future.get())
-      ++error_stored_keys;
-  }
-
-  if (error_stored_keys > 0) {
-    throw ToolsException(std::string("Could not store " + std::to_string(error_stored_keys) +
-                                     " out of " + std::to_string(key_chain_.chain_size)));
-  }
-  std::cout << "StoreKeys - Stored all " << key_chain_.chain_size << " keys." << std::endl;
-}
-
-std::function<void(nfs::Reply)> KeyStorer::callback(std::promise<bool>& promise) {
-  return ([&promise] (nfs::Reply reply) {
-           try {
-             promise.set_value(reply.IsSuccess());
-           }
-           catch(...) {
-             promise.set_exception(std::current_exception());
-           }
-         });
+  boost::this_thread::sleep_for(boost::chrono::seconds(3));
 }
 
 KeyVerifier::KeyVerifier(const passport::detail::AnmaidToPmid& key_chain,
@@ -214,19 +189,26 @@ KeyVerifier::KeyVerifier(const passport::detail::AnmaidToPmid& key_chain,
     : ClientTester(key_chain, peer_endpoints) {}
 
 void KeyVerifier::Verify() {
-  auto anmaid_future(nfs::Get<passport::PublicAnmaid>(*client_nfs_, key_chain_.anmaid.name()));
-  auto maid_future(nfs::Get<passport::PublicMaid>(*client_nfs_, key_chain_.maid.name()));
-  auto pmid_future(nfs::Get<passport::PublicPmid>(*client_nfs_, key_chain_.pmid.name()));
+  try {
+    auto anmaid_future(client_nfs_->Get<passport::PublicAnmaid>(
+        passport::PublicAnmaid::Name(key_chain_.anmaid.name())));
+    auto maid_future(client_nfs_->Get<passport::PublicMaid>(
+        passport::PublicMaid::Name(key_chain_.maid.name())));
+    auto pmid_future(client_nfs_->Get<passport::PublicPmid>(
+        passport::PublicPmid::Name(key_chain_.pmid.name())));
 
-  size_t verified_keys(0);
-  if (EqualKeys<passport::PublicAnmaid>(passport::PublicAnmaid(key_chain_.anmaid),
-                                        *anmaid_future.get()))
-    ++verified_keys;
-  if (EqualKeys<passport::PublicMaid>(passport::PublicMaid(key_chain_.maid), *maid_future.get()))
-    ++verified_keys;
-  if (EqualKeys<passport::PublicPmid>(passport::PublicPmid(key_chain_.pmid), *pmid_future.get()))
-    ++verified_keys;
-  std::cout << "VerifyKeys - Verified all " << verified_keys << " keys.\n";
+    size_t verified_keys(0);
+    if (EqualKeys<passport::PublicAnmaid>(passport::PublicAnmaid(key_chain_.anmaid),
+                                                                 anmaid_future.get()))
+      ++verified_keys;
+    if (EqualKeys<passport::PublicMaid>(passport::PublicMaid(key_chain_.maid), maid_future.get()))
+      ++verified_keys;
+    if (EqualKeys<passport::PublicPmid>(passport::PublicPmid(key_chain_.pmid), pmid_future.get()))
+      ++verified_keys;
+    std::cout << "VerifyKeys - Verified all " << verified_keys << " keys.\n";
+  } catch(const std::exception& ex) {
+    LOG(kError)  << "Failed to verify keys " << ex.what();
+  }
 }
 
 DataChunkStorer::DataChunkStorer(const passport::detail::AnmaidToPmid& key_chain,
@@ -262,7 +244,8 @@ void DataChunkStorer::TestWithDelete(int32_t quantity) {
 }
 
 void DataChunkStorer::TestStoreChunk(int chunk_index) {
-  if (!StoreOneChunk(chunk_list_[chunk_index]))
+  StoreOneChunk(chunk_list_[chunk_index]);
+  if (!GetOneChunk(chunk_list_[chunk_index]))
     throw ToolsException("Failed to store a generated chunk.");
 }
 
@@ -287,21 +270,22 @@ void DataChunkStorer::OneChunkRun(size_t& num_chunks, size_t& num_store, size_t&
   ImmutableData chunk_data(name, content);
   ++num_chunks;
 
-  if (StoreOneChunk(chunk_data)) {
-    LOG(kInfo) << "Stored chunk " << HexSubstr(name.data);
+  StoreOneChunk(chunk_data);
+  if (GetOneChunk(chunk_data)) {
+    LOG(kInfo) << "Stored chunk " << HexSubstr(name.value);
     ++num_store;
   } else {
-    LOG(kError) << "Failed to store chunk " << HexSubstr(name.data);
+    LOG(kError) << "Failed to store chunk " << HexSubstr(name.value);
     return;
   }
 
   // The current client is anonymous, which incurs a 10 mins faded out for stored data
   LOG(kInfo) << "Going to retrieve the stored chunk";
   if (GetOneChunk(chunk_data)) {
-    LOG(kInfo) << "Got chunk " << HexSubstr(name.data);
+    LOG(kInfo) << "Got chunk " << HexSubstr(name.value);
     ++num_get;
   } else {
-    LOG(kError) << "Failed to store chunk " << HexSubstr(name.data);
+    LOG(kError) << "Failed to store chunk " << HexSubstr(name.value);
   }
 }
 
@@ -313,78 +297,52 @@ void DataChunkStorer::OneChunkRunWithDelete(size_t& num_chunks,
   ImmutableData chunk_data(name, content);
   ++num_chunks;
 
-  if (StoreOneChunk(chunk_data)) {
-    LOG(kInfo) << "Stored chunk " << HexSubstr(name.data);
+  StoreOneChunk(chunk_data);
+  if (GetOneChunk(chunk_data)) {
+    LOG(kInfo) << "Stored chunk " << HexSubstr(name.value);
     ++num_store;
   } else {
-    LOG(kError) << "Failed to store chunk " << HexSubstr(name.data);
+    LOG(kError) << "Failed to store chunk " << HexSubstr(name.value);
     return;
   }
 
   // The current client is anonymous, which incurs a 10 mins faded out for stored data
   LOG(kInfo) << "Going to retrieve the stored chunk";
   if (GetOneChunk(chunk_data)) {
-    LOG(kInfo) << "Got chunk " << HexSubstr(name.data);
+    LOG(kInfo) << "Got chunk " << HexSubstr(name.value);
     ++num_get;
   } else {
-    LOG(kError) << "Failed to get chunk " << HexSubstr(name.data);
+    LOG(kError) << "Failed to get chunk " << HexSubstr(name.value);
   }
 
   LOG(kInfo) << "Going to delete the stored chunk";
   if (DeleteOneChunk(chunk_data)) {
-    LOG(kInfo) << "Delete chunk " << HexSubstr(name.data);
+    LOG(kInfo) << "Delete chunk " << HexSubstr(name.value);
   } else {
-    LOG(kError) << "Failed to delete chunk " << HexSubstr(name.data);
+    LOG(kError) << "Failed to delete chunk " << HexSubstr(name.value);
   }
 
   LOG(kInfo) << "Going to retrieve the deleted chunk";
   if (GetOneChunk(chunk_data)) {
-    LOG(kError) << "Chunk " << HexSubstr(name.data) << " still exists on network";
+    LOG(kError) << "Chunk " << HexSubstr(name.value) << " still exists on network";
   } else {
-    LOG(kInfo) << "chunk " << HexSubstr(name.data) << " get deleted, disappear on network";
+    LOG(kInfo) << "chunk " << HexSubstr(name.value) << " get deleted, disappear on network";
   }
 }
 
-bool DataChunkStorer::StoreOneChunk(const ImmutableData& chunk_data) {
-  std::promise<bool> store_promise;
-  std::future<bool> store_future(store_promise.get_future());
-  std::function<void(nfs::Reply)> cb([&store_promise] (nfs::Reply reply) {
-                                       try {
-                                         store_promise.set_value(reply.IsSuccess());
-                                       }
-                                       catch(...) {
-                                         store_promise.set_exception(std::current_exception());
-                                       }
-                                     });
-  LOG(kInfo) << "Storing chunk " << HexSubstr(chunk_data.data()) << " ...";
-  nfs::Put<ImmutableData>(*client_nfs_, chunk_data, key_chain_.pmid.name(), 4, cb);
-  return store_future.get();
+void DataChunkStorer::StoreOneChunk(const ImmutableData& chunk_data) {
+  client_nfs_->Put<ImmutableData>(chunk_data);
 }
 
 bool DataChunkStorer::GetOneChunk(const ImmutableData& chunk_data) {
-  auto equal_immutables = [] (const ImmutableData& lhs, const ImmutableData& rhs) {
-                            return lhs.name()->string() == lhs.name()->string() &&
-                                   lhs.data().string() == rhs.data().string();
-                          };
-
-  auto future = nfs::Get<ImmutableData>(*client_nfs_, chunk_data.name());
-  return equal_immutables(chunk_data, *future.get());
+  auto future = client_nfs_->Get<ImmutableData>(chunk_data.name());
+  return chunk_data.data() == future.get().data();
 }
 
 bool DataChunkStorer::DeleteOneChunk(const ImmutableData& chunk_data) {
-  std::promise<bool> delete_promise;
-  std::future<bool> delete_future(delete_promise.get_future());
-  std::function<void(nfs::Reply)> cb([&delete_promise] (nfs::Reply reply) {
-                                       try {
-                                         delete_promise.set_value(reply.IsSuccess());
-                                       }
-                                       catch(...) {
-                                         delete_promise.set_exception(std::current_exception());
-                                       }
-                                     });
   LOG(kInfo) << "Deleting chunk " << HexSubstr(chunk_data.data()) << " ...";
-  nfs::Delete<ImmutableData>(*client_nfs_, chunk_data.name(), 4, cb);
-  return delete_future.get();
+  client_nfs_->Delete<ImmutableData>(chunk_data.name());
+  return !GetOneChunk(chunk_data);
 }
 
 void DataChunkStorer::LoadChunksFromFiles() {

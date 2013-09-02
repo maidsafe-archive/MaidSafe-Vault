@@ -85,11 +85,11 @@ void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
   offline_pmids_.erase(pmid_name);
 }
 
-void DataManagerValue::Increamentsubscribers() {
+void DataManagerValue::IncrementSubscribers() {
   ++subscribers_;
 }
 
-int64_t DataManagerValue::Decreamentsubscribers() {
+int64_t DataManagerValue::DecrementSubscribers() {
   --subscribers_;
   return subscribers_;
 }

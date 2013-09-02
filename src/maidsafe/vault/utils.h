@@ -64,6 +64,7 @@ typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
 // To be moved to Routing
 bool operator ==(const routing::GroupSource& lhs,  const routing::GroupSource& rhs);
 
+/* Commented by Mahmoud on 2 Sep -- It may be of no use any more
 // Returns true if the required successful request count has been reached
 template<typename Accumulator>
 bool AddResult(const nfs::Message& message,
@@ -72,6 +73,7 @@ bool AddResult(const nfs::Message& message,
                Accumulator& accumulator,
                std::mutex& accumulator_mutex,
                int requests_required);
+*/
 
 }  // namespace detail
 
@@ -109,13 +111,14 @@ bool AddResult(const nfs::Message& message,
 //template<typename Message>
 //inline bool FromVersionManager(const nfs::Message& message);
 
+/* Commented by Mahmoud on 2 Sep -- It may be of no use any more
 template<typename Persona>
 typename Persona::DbKey GetKeyFromMessage(const nfs::Message& message) {
   if (!message.data().type)
     ThrowError(CommonErrors::parsing_error);
   return GetDataNameVariant(*message.data().type, message.data().name);
 }
-
+*/
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path);
 
 }  // namespace vault

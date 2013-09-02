@@ -18,6 +18,7 @@ License.
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/data_manager/action_set_pmid_online.h"
+#include "maidsafe/vault/data_manager/action_set_pmid_online.pb.h"
 #include "maidsafe/vault/data_manager/metadata.h"
 #include "maidsafe/vault/data_manager/value.h"
 
@@ -46,11 +47,11 @@ ActionDataManagerSetPmidOnline::ActionDataManagerSetPmidOnline(
 
 std::string ActionDataManagerSetPmidOnline::Serialise() const {
   protobuf::ActionDataManagerSetPmidOnline action_set_pmid_online_proto;
-  action_set_pmid_online_proto.set_pmid_name(kPmidName);
+  action_set_pmid_online_proto.set_pmid_name(kPmidName->string());
   return action_set_pmid_online_proto.SerializeAsString();
 }
 
-void ActionDataManagerSetPmidOnline::operator()(boos::optional<DataManagerValue>& value) const {
+void ActionDataManagerSetPmidOnline::operator()(boost::optional<DataManagerValue>& value) {
   if (!value)
     ThrowError(CommonErrors::invalid_parameter);
   value->SetPmidOnline(kPmidName);

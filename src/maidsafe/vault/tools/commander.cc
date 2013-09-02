@@ -253,9 +253,9 @@ void Commander::HandleKeys() {
   if (selected_ops_.do_print) {
     for (size_t i(0); i < all_keychains_.size(); ++i)
       std::cout << '\t' << i
-                << "\t ANMAID " << HexSubstr(all_keychains_.at(i).anmaid.name().data)
-                << "\t MAID " << HexSubstr(all_keychains_.at(i).maid.name().data)
-                << "\t PMID " << HexSubstr(all_keychains_.at(i).pmid.name().data)
+                << "\t ANMAID " << HexSubstr(all_keychains_.at(i).anmaid.name().value)
+                << "\t MAID " << HexSubstr(all_keychains_.at(i).maid.name().value)
+                << "\t PMID " << HexSubstr(all_keychains_.at(i).pmid.name().value)
                 << (i < 2 ? " (bootstrap)" : "") << std::endl;
   }
 }
@@ -274,7 +274,7 @@ void Commander::HandleStore() {
       storer.Store();
     }
     catch(const std::exception& e) {
-      std::cout << "Failed storing key chain with PMID " << HexSubstr(keychain.pmid.name().data)
+      std::cout << "Failed storing key chain with PMID " << HexSubstr(keychain.pmid.name().value)
                 << ": " << e.what() << std::endl;
       ++failures;
     }
@@ -292,7 +292,7 @@ void Commander::HandleVerify() {
       verifier.Verify();
     }
     catch(const std::exception& e) {
-      std::cout << "Failed verifying key chain with PMID " << HexSubstr(keychain.pmid.name().data)
+      std::cout << "Failed verifying key chain with PMID " << HexSubstr(keychain.pmid.name().value)
                 << ": " << e.what() << std::endl;
       ++failures;
     }

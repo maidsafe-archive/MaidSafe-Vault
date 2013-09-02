@@ -22,23 +22,24 @@ License.
 #include "boost/optional/optional.hpp"
 
 #include "maidsafe/nfs/types.h"
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-class MaidManagerMetadata;
-class MaidManagerValue;
+class DataManagerValue;
 
 struct ActionDataManagerSetPmidOnline {
+ public:
   explicit ActionDataManagerSetPmidOnline(const PmidName& pmid_name);
   explicit ActionDataManagerSetPmidOnline(const std::string& serialised_action);
   ActionDataManagerSetPmidOnline(const ActionDataManagerSetPmidOnline& other);
   ActionDataManagerSetPmidOnline(ActionDataManagerSetPmidOnline&& other);
   std::string Serialise() const;
 
-  void operator()(boost::optional<DataManagerValue>& value) const;
+  void operator()(boost::optional<DataManagerValue>& value);
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kSetPmidOnline;
   const PmidName kPmidName;

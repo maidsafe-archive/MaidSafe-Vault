@@ -22,24 +22,25 @@ License.
 #include "maidsafe/common/log.h"
 
 #include "maidsafe/vault/data_manager/data_manager.h"
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
 namespace vault {
 
 struct ActionDataManagerIncrementSubscribers {
-  ActionDataManagerIncrementSubscribers(const PmidNode& pmid_node, const uint32_t& size);
+  ActionDataManagerIncrementSubscribers(const PmidName& pmid_name, const uint32_t& size);
   explicit ActionDataManagerIncrementSubscribers(const std::string& serialised_action);
   ActionDataManagerIncrementSubscribers(const ActionDataManagerIncrementSubscribers& other);
   ActionDataManagerIncrementSubscribers(ActionDataManagerIncrementSubscribers&& other);
 
-  void operator()(boost::optional<DataManagerValue>& value) const;
+  void operator()(boost::optional<DataManagerValue>& value);
 
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kIncrementSubscribers;
-  const PmidNane kPmidName;
   const uint32_t kSize;
+  const PmidName kPmidName;
 
  private:
   ActionDataManagerIncrementSubscribers();
