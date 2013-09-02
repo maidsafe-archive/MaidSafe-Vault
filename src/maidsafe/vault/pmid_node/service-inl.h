@@ -280,9 +280,9 @@ bool PmidNodeService::DoGetFromCache(const T& message,
                                      const typename T::Sender& sender,
                                      const typename T::Receiver& receiver) {
   auto data_name(GetDataNameVariant(message.contents->type, message.contents->raw_name));
-  if (!boost::apply_visitor(cacheable_visitor(), data_name))
+  if (!boost::apply_visitor(CacheableVisitor(), data_name))
     return false;
-  if (boost::apply_visitor(long_term_cacheable_visitor(), data_name))
+  if (boost::apply_visitor(LongTermCacheableVisitor(), data_name))
     return CacheGet(message, sender, receiver, IsLongTermCacheable());
   return CacheGet(message, sender, receiver, IsShortTermCacheable());
 }
@@ -326,9 +326,9 @@ void PmidNodeService::StoreInCache<nfs::GetResponseFromDataManagerToMaidNode>(
     const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& /*receiver*/) {
   auto data_name(GetDataNameVariant(message.contents->data->name.type,
                                     message.contents->data->name.raw_name));
-  if (!boost::apply_visitor(cacheable_visitor(), data_name))
+  if (!boost::apply_visitor(CacheableVisitor(), data_name))
     return;
-  if (boost::apply_visitor(long_term_cacheable_visitor(), data_name))
+  if (boost::apply_visitor(LongTermCacheableVisitor(), data_name))
     CacheStore(message, data_name, IsLongTermCacheable());
   else
     CacheStore(message, data_name, IsShortTermCacheable());
