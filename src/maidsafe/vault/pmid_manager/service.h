@@ -34,9 +34,40 @@ License.
 namespace maidsafe {
 namespace vault {
 
+template <typename T,
+          typename Accumulator,
+          typename Checker,
+          typename Handler>
+struct MessageHandlerWrapper {
+ public:
+  MessageHandlerWrapper(Accumulator& accumulator_in,                        
+                        Checker checker_in,
+                        Handler handler_in)
+      : accumulator(accumulator_in),
+        validator([](const T& message, const typename T::Sender& sender) {
+                    return Validate(message, sender);
+                  }),
+        checker(checker_in),
+        handler(handler_in) {}
+
+  template<typename MessageType, typename Sender, typename Receiver>
+  void operator() (const MessageType& message, const Sender& sender, const Receiver& receiver) {
+    validator(message, sender);
+    if (accumulator.AddPendingRequest(message, sender, checker) == Accumulator::AddResult::kSuccess)
+      handler(message, sender, receiver);
+  }
+
+ private:
+  std::function<bool(const T& message, const typename T::Sender& sender)> validator;
+  Accumulator& accumulator;
+  Checker checker;
+  Handler handler;
+};
+
 class PmidManagerService {
  public:
   PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing, Db& db);
+
   template<typename T>
   void HandleMessage(const T& message,
                      const typename T::Sender& sender,
@@ -49,22 +80,28 @@ class PmidManagerService {
   PmidManagerService(PmidManagerService&&);
   PmidManagerService& operator=(PmidManagerService&&);
 
-  void ValidateDataSender(const nfs::Message& message) const;
-  void ValidateGenericSender(const nfs::Message& message) const;
+  template<typename T>
+  void ValidateSender(const T& message, routing::GroupSource& source) const;
 
   void CreatePmidAccount(const nfs::Message& message);
   void GetPmidTotals(const nfs::Message& message);
   void GetPmidAccount(const nfs::Message& message);
 
   // =============== Put/Delete data ================================================================
-  template<typename Data>
-  void HandlePut(const nfs::Message& message);
-  template<typename Data>
-  void HandleDelete(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  template<typename Data>
-  void HandlePutCallback(const std::string& reply, const nfs::Message& message);
-  template<typename Data>
-  void SendPutResult(const nfs::Message& message, bool result);
+  template<typename T>
+  void HandlePut(const T& /*message*/,
+                 const typename T::Sender& /*sender*/,
+                 const typename T::Receiver& /*receiver*/);
+
+  void HandleDelete(
+      const nfs::DeleteRequestFromDataManagerToPmidManager& message,
+      const typename nfs::DeleteRequestFromDataManagerToPmidManager::Sender& sender,
+      const typename nfs::DeleteRequestFromDataManagerToPmidManager::Receiver& receiver);
+
+//  template<typename Data>
+//  void HandlePutCallback(const std::string& reply, const nfs::Message& message);
+//  template<typename Data>
+//  void SendPutResult(const nfs::Message& message, bool result);
 
   // =============== Sync ==========================================================================
   void Sync(const PmidName& account_name);
@@ -83,10 +120,11 @@ class PmidManagerService {
   std::mutex accumulator_mutex_;
   Accumulator<nfs::PmidManagerServiceMessages> accumulator_;
   PmidAccountHandler pmid_account_handler_;
-  PmidManagerNfs nfs_;
   static const int kPutRepliesSuccessesRequired_;
   static const int kDeleteRequestsRequired_;
 };
+
+// ============================= Handle Message Specialisations ===================================
 
 template<typename T>
 void PmidManagerService::HandleMessage(const T& /*message*/,
@@ -95,24 +133,85 @@ void PmidManagerService::HandleMessage(const T& /*message*/,
   T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
 }
 
+//template<>
+//void PmidManagerService::HandleMessage(
+//    const nfs::PutRequestFromDataManagerToPmidManager& message,
+//    const typename nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
+//    const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver);
 
-template<T>
+template<>
 void PmidManagerService::HandleMessage(
-  const nfs::PutRequestFromDataManagerToPmidManager& message,
-  const typename nfs::PutRequestFromDataManagerToPmidManager& sender,
-  const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver);
+    const nfs::PutRequestFromDataManagerToPmidManager& message,
+    const typename nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
+    const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  MessageHandlerWrapper<
+      nfs::PutRequestFromDataManagerToPmidManager,
+      Accumulator<nfs::PmidManagerServiceMessages>,
+      Accumulator::AddCheckerFunctor,
+      std::function<void(const nfs::PutRequestFromDataManagerToPmidManager&,
+                         const typename nfs::PutRequestFromDataManagerToPmidManager::Sender&,
+                         const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver&)>(
+      accumulator_,
+      Accumulator::AddRequestChecker(3),
+      [](const nfs::PutRequestFromDataManagerToPmidManager& message,
+         const typename nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
+         const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
+        HandlePut(message, sender, receiver);
+      })(message, sender, receiver);
+}
 
-template<T>
-void PmidManagerService::HandleMessage(
-  const nfs::PutResponseFromPmidNodeToPmidManager& message,
-  const typename nfs::PutResponseFromPmidNodeToPmidManager& sender,
-  const typename nfs::PutResponseFromPmidNodeToPmidManager::Receiver& receiver);
 
-template<T>
+template<>
 void PmidManagerService::HandleMessage(
-  const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-  const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& sender,
-  const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
+    const nfs::PutResponseFromPmidNodeToPmidManager& message,
+    const typename nfs::PutResponseFromPmidNodeToPmidManager::Sender& sender,
+    const typename nfs::PutResponseFromPmidNodeToPmidManager::Receiver& receiver);
+
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::DeleteRequestFromDataManagerToPmidManager& message,
+    const typename nfs::DeleteRequestFromDataManagerToPmidManager::Sender& sender,
+    const typename nfs::DeleteRequestFromDataManagerToPmidManager::Receiver& receiver);
+
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& message,
+    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
+    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
+
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::SynchroniseFromPmidManagerToPmidManager& message,
+    const typename nfs::SynchroniseFromPmidManagerToPmidManager::Sender& sender,
+    const typename nfs::SynchroniseFromPmidManagerToPmidManager::Receiver& receiver);
+
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::AccountTransferFromPmidManagerToPmidManager& message,
+    const typename nfs::AccountTransferFromPmidManagerToPmidManager::Sender& sender,
+    const typename nfs::AccountTransferFromPmidManagerToPmidManager::Receiver& receiver);
+
+// ============================= Handle Put Specialisations =======================================
+
+template<typename T>
+void PmidManagerService::HandlePut(
+    const T& /*message*/,
+    const typename T::Sender& /*sender*/,
+    const typename T::Receiver& /*receiver*/) {
+  T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
+}
+
+template<>
+void PmidManagerService::HandlePut(
+    const nfs::PutRequestFromDataManagerToPmidManager& message,
+    const typename nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
+    const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver);
+
+template<>
+void PmidManagerService::HandlePut(
+    const nfs::PutResponseFromPmidNodeToPmidManager& message,
+    const typename nfs::PutResponseFromPmidNodeToPmidManager::Sender& sender,
+    const typename nfs::PutResponseFromPmidNodeToPmidManager::Receiver& receiver);
 
 
 }  // namespace vault

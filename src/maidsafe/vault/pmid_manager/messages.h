@@ -34,13 +34,15 @@ class PmidAccountResponse {
   std::string Serialise() const;
 
   friend void swap(PmidAccountResponse& lhs, PmidAccountResponse& rhs) MAIDSAFE_NOEXCEPT;
+  friend bool operator==(const PmidAccountResponse& lhs,
+                         const PmidAccountResponse& rhs) MAIDSAFE_NOEXCEPT;
 
  private:
   PmidAccountResponse();
   std::string serialised_pmid_accounts_;
 };
 
-bool operator==(const PmidAccountResponse& lhs, const PmidAccountResponse& rhs);
+bool operator==(const PmidAccountResponse& lhs, const PmidAccountResponse& rhs) MAIDSAFE_NOEXCEPT;
 
 }  // namespace vault
 

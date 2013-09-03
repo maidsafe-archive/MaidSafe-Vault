@@ -18,8 +18,8 @@ License.
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/data_manager/action_add_pmid.pb.h"
-#include "maidsafe/vault/maid_manager/metadata.h"
-#include "maidsafe/vault/maid_manager/value.h"
+#include "maidsafe/vault/data_manager/metadata.h"
+#include "maidsafe/vault/data_manager/value.h"
 
 
 namespace maidsafe {
@@ -45,13 +45,13 @@ ActionDataManagerAddPmid::ActionDataManagerAddPmid(ActionDataManagerAddPmid&& ot
 
 std::string ActionDataManagerAddPmid::Serialise() const {
   protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
-  action_add_pmid_proto.set_pmid_name(kPmidName);
+  action_add_pmid_proto.set_pmid_name(kPmidName->string());
   return action_add_pmid_proto.SerializeAsString();
 }
 
-void ActionDataManagerAddPmid::operator()(boos::optional<DataManagerValue>& value) const {
+void ActionDataManagerAddPmid::operator()(boost::optional<DataManagerValue>& value) {
   if (!value)
-    value.reset(MaidManagerValue());
+    value.reset(new DataManagerValue(kPmidName, ));
   value->AddPmid(kPmidName);
 }
 

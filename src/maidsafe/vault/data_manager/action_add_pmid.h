@@ -23,13 +23,14 @@ License.
 
 #include "maidsafe/nfs/types.h"
 
+#include "maidsafe/vault/types.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
-class MaidManagerMetadata;
-class MaidManagerValue;
+class DataManagerValue;
 
 struct ActionDataManagerAddPmid {
   explicit ActionDataManagerAddPmid(const PmidName& pmid_name);
@@ -38,7 +39,7 @@ struct ActionDataManagerAddPmid {
   ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other);
   std::string Serialise() const;
 
-  void operator()(boost::optional<DataManagerValue>& value) const;
+  void operator()(boost::optional<DataManagerValue>& value);
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kAddPmid;
   const PmidName kPmidName;

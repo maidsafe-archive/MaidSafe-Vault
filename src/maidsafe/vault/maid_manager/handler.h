@@ -26,7 +26,7 @@ License.
 
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/types.h"
-#include "maidsafe/nfs/pmid_registration.h"
+#include "maidsafe/nfs/vault/pmid_registration.h"
 
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/types.h"
@@ -54,7 +54,7 @@ class MaidAccountHandler {
   // client request or going out of range
   void DeleteAccount(const MaidName& account_name);
 
-  void RegisterPmid(const MaidName& account_name, const nfs::PmidRegistration& pmid_registration);
+  void RegisterPmid(const MaidName& account_name, const nfs_vault::PmidRegistration& pmid_registration);
   void UnregisterPmid(const MaidName& account_name, const PmidName& pmid_name);
   std::vector<PmidName> GetPmidNames(const MaidName& account_name) const;
   void UpdatePmidTotals(const MaidName& account_name, const PmidManagerMetadata& pmid_totals);

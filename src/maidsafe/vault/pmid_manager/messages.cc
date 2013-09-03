@@ -41,8 +41,8 @@ std::string PmidAccountResponse::Serialise() const {
   return serialised_pmid_accounts_;
 }
 
-bool operator==(const PmidAccountResponse& lhs, const PmidAccountResponse& rhs) {
-  return lhs.serialised_pmid_accounts() == rhs.serialised_pmid_accounts();
+bool operator==(const PmidAccountResponse& lhs, const PmidAccountResponse& rhs) MAIDSAFE_NOEXCEPT {
+  return lhs.serialised_pmid_accounts_ == rhs.serialised_pmid_accounts_;
 }
 
 void swap(PmidAccountResponse& lhs, PmidAccountResponse& rhs) MAIDSAFE_NOEXCEPT {

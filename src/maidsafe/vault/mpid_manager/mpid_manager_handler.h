@@ -25,7 +25,7 @@ License.
 #include "maidsafe/common/types.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/api_config.h"
-#include "maidsafe/nfs/public_key_getter.h"
+#include "maidsafe/nfs/client/data_getter.h"
 
 #include "maidsafe/vault/types.h"
 

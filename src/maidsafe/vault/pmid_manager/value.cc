@@ -25,7 +25,7 @@ namespace vault {
 
 PmidManagerValue::PmidManagerValue() : size_(0) {}
 
-PmidManagerValue::PmidManagerValue(int32_t size) : size_(size) {}
+PmidManagerValue::PmidManagerValue(const int32_t& size) : size_(size) {}
 
 PmidManagerValue::PmidManagerValue(const std::string& serialised_pmid_manager_value)
     : size_(0) {
@@ -57,6 +57,11 @@ std::string PmidManagerValue::Serialise() const {
 
 bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs) {
   return lhs.size() == rhs.size();
+}
+
+void swap(PmidManagerValue& lhs, PmidManagerValue& rhs) {
+  using std::swap;
+  swap(lhs.size_, rhs.size_);
 }
 
 }  // namespace vault

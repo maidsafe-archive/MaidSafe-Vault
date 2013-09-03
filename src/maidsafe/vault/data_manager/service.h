@@ -43,16 +43,12 @@ namespace vault {
 
 class DataManagerService {
  public:
-  typedef boost::variant<MaidNodePut, MaidNodeDelete> Messages;
+//  typedef boost::variant<MaidNodePut, MaidNodeDelete> Messages;
   DataManagerService(const passport::Pmid& pmid,
-                         routing::Routing& routing);
+                     routing::Routing& routing,
+                     nfs_client::DataGetter& data_getter);
   template<typename T>
-  void HandleMessage(const T& message,
-                     const typename T::Receiver& receiver,
-                     const typename T::Sender& sender);
-  template<typename Data>
-  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor& /*reply_functor*/) {}
+  void HandleMessage(const T&, const typename T::Sender& , const typename T::Receiver&);
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
  private:
@@ -80,123 +76,177 @@ class DataManagerService {
   DataManagerService(DataManagerService&&);
   DataManagerService& operator=(DataManagerService&&);
 
-  template<typename Data>
-  void HandlePut(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  template<typename Data>
-  void Put(const Data& data, const PmidName& target_pmid_node);
-  template<typename Data>
-  void HandlePutResult(const nfs::Message& message);
-  template<typename Data>
-  void HandleGet(nfs::Message message, const routing::ReplyFunctor& reply_functor);
+  template<typename T>
+  void HandlePut(const T&, const typename T::Sender&, const typename T::Receiver&);
+
+  template<typename T>
+  void HandleGet(const T&, const typename T::Sender&, const typename T::Receiver&);
+
+  void HandleDelete(const nfs::DeleteRequestFromMaidManagerToDataManager& message,
+   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender,
+   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
+
+  void HandleStateChange(const nfs::StateChangeFromPmidManagerToDataManager& message,
+   const typename nfs::StateChangeFromPmidManagerToDataManager::Sender& sender,
+   const typename nfs::StateChangeFromPmidManagerToDataManager::Receiver& receiver);
+
   template<typename Data>
   void OnHandleGet(std::shared_ptr<GetHandler<Data>> get_handler,
                    const std::string& serialised_reply);
   template<typename Data>
   void IntegrityCheck(std::shared_ptr<GetHandler<Data>> get_handler);
-  template<typename Data>
-  void HandleDelete(const nfs::Message& message);
 
-  template<typename Data>
-  void HandleStateChange(const nfs::Message& message);
+  template<typename T>
+  void ValidateSender(const T& message, const typename T::Sender& sender) const;
+//  void ValidatePutSender(const nfs::Message& message) const;
+//  void ValidateGetSender(const nfs::Message& message) const;
+//  void ValidateDeleteSender(const nfs::Message& message) const;
+//  void ValidatePostSender(const nfs::Message& message) const;
+//  void ValidatePutResultSender(const nfs::Message& message) const;
 
-  void ValidatePutSender(const nfs::Message& message) const;
-  void ValidateGetSender(const nfs::Message& message) const;
-  void ValidateDeleteSender(const nfs::Message& message) const;
-  void ValidatePostSender(const nfs::Message& message) const;
-  void ValidatePutResultSender(const nfs::Message& message) const;
-
+/* Commented by Mahmoud on 3 Sep. Code need refactoring
   void HandleNodeDown(const nfs::Message& message);
   void HandleNodeUp(const nfs::Message& message);
-
   template<typename Data>
   void HandlePutResult(const nfs::Reply& overall_result);
   template<typename Data>
   void HandleGetReply(std::string serialised_reply);
-
   template<typename Data>
   void OnGenericErrorHandler(nfs::Message message);
-
   bool ThisVaultInGroupForData(const nfs::Message& message) const;
-
   template<typename Data, nfs::MessageAction Action>
   void AddLocalUnresolvedEntryThenSync(const nfs::Message& message,
                                        const DataManagerValue& metadata_value);
+*/
 
   // =============== Sync and Record transfer =====================================================
   void Sync();
-  void HandleSync(const nfs::Message& message);
+/* Commented by Mahmoud on 3 Sep. Code need refactoring
+  void HandleSync(const nfs::Message& message); */
   void TransferRecord(const DataNameVariant& record_name, const NodeId& new_node);
+/* Commented by Mahmoud on 3 Sep. Code need refactoring
   void HandleRecordTransfer(const nfs::Message& message);
+*/
   routing::Routing& routing_;
   nfs_client::DataGetter& public_key_getter_;
   std::mutex accumulator_mutex_;
   Accumulator<DataNameVariant> accumulator_;
   MetadataHandler metadata_handler_;
-  DataManagerNfs nfs_;
   static const int kPutRequestsRequired_;
   static const int kStateChangesRequired_;
   static const int kDeleteRequestsRequired_;
 };
 
+// =========================== Handle Message Specialisations ======================================
+
 template<typename T>
 void HandleMessage(const T& /*message*/,
-                   const typename T::Receiver& /*receiver*/,
-                   const typename T::Sender& /*sender*/) {
+                   const typename T::Sender& /*sender*/,
+                   const typename T::Receiver& /*receiver*/) {
   T::should_not_reach_here;
 }
 
 template<>
 void DataManagerService::HandleMessage(
    const nfs::GetRequestFromMaidNodeToDataManager& message,
-   const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver,
-   const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender);
+   const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
+   const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
 
 template<>
 void DataManagerService::HandleMessage(
    const nfs::GetRequestFromPmidNodeToDataManager& message,
-   const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver,
-   const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender);
+   const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
+   const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver);
 
 template<>
 void DataManagerService::HandleMessage(
    const nfs::GetRequestFromDataGetterToDataManager& message,
-   const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver,
-   const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender);
+   const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
+   const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
 
 template<>
 void DataManagerService::HandleMessage(
    const nfs::PutRequestFromMaidManagerToDataManager& message,
-   const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver& receiver,
-   const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender);
+   const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
+   const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver& receiver);
 
 template<>
 void DataManagerService::HandleMessage(
    const nfs::DeleteRequestFromMaidManagerToDataManager& message,
-   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver,
-   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender);
+   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender,
+   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
 
 template<>
 void DataManagerService::HandleMessage(
    const nfs::PutResponseFromPmidManagerToDataManager& message,
-   const typename nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver,
-   const typename nfs::PutResponseFromPmidManagerToDataManager::Sender& sender);
+   const typename nfs::PutResponseFromPmidManagerToDataManager::Sender& sender,
+   const typename nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver);
 
 template<>
 void DataManagerService::HandleMessage(
    const nfs::StateChangeFromPmidManagerToDataManager& message,
-   const typename nfs::StateChangeFromPmidManagerToDataManager::Receiver& receiver,
-   const typename nfs::StateChangeFromPmidManagerToDataManager::Sender& sender);
+   const typename nfs::StateChangeFromPmidManagerToDataManager::Sender& sender,
+   const typename nfs::StateChangeFromPmidManagerToDataManager::Receiver& receiver);
 
 template<>
 void DataManagerService::HandleMessage(
    const nfs::GetResponseFromPmidNodeToDataManager& message,
-   const typename nfs::GetResponseFromPmidNodeToDataManager::Receiver& receiver,
-   const typename nfs::GetResponseFromPmidNodeToDataManager::Sender& sender);
+   const typename nfs::GetResponseFromPmidNodeToDataManager::Sender& sender,
+   const typename nfs::GetResponseFromPmidNodeToDataManager::Receiver& receiver);
+
+// ============================== Handle Get Specialisations ======================================
+
+template<typename T>
+void DataManagerService::HandleGet(const T&,
+                                   const typename T::Sender&,
+                                   const typename T::Receiver&) {
+  T::should_not_reach_here;
+}
+
+template<>
+void DataManagerService::HandleGet(
+  const nfs::GetRequestFromMaidNodeToDataManager& message,
+  const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
+  const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
+
+template<>
+void DataManagerService::HandleGet(
+   const nfs::GetRequestFromPmidNodeToDataManager& message,
+   const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
+   const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver);
+
+template<>
+void DataManagerService::HandleGet(
+   const nfs::GetRequestFromDataGetterToDataManager& message,
+   const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
+   const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
+
+// ============================== Handle Put Specialisations ======================================
+
+template<typename T>
+void DataManagerService::HandlePut(const T&,
+                                   const typename T::Sender&,
+                                   const typename T::Receiver&) {
+  T::should_not_reach_here;
+}
+
+template<>
+void DataManagerService::HandlePut(
+    const nfs::PutRequestFromMaidManagerToDataManager& message,
+    const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
+    const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver& receiver);
+
+template<>
+void DataManagerService::HandlePut(
+   const nfs::PutResponseFromPmidManagerToDataManager& message,
+   const typename nfs::PutResponseFromPmidManagerToDataManager::Sender& sender,
+   const typename nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver);
+
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-//#include "maidsafe/vault/data_manager/service-inl.h"
+#include "maidsafe/vault/data_manager/service-inl.h"
 
 #endif  // MAIDSAFE_VAULT_DATA_MANAGER_SERVICE_H_

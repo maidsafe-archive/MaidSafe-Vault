@@ -45,17 +45,8 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
     AddCheckerFunctor checker) {
   if (CheckHandled(request))
     return Accumulator<T>::AddResult::kHandled;
-  bool already_exists(false);
-  auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
-  nfs::MessageId message_id;
-  for (auto pending_request : pending_requests_) {
-    if (pending_request.request.which() == request.which()) {
-      message_id = boost::apply_visitor(MessageIdRequestVisitor(), pending_request.request);
-      if ((message_id == request_message_id) && (source == pending_request.source))
-        already_exists = true;
-    }
-  }
-  if (!already_exists) {
+
+  if (!AlreadyExists(request, source)) {
     pending_requests_.push_back(PendingRequest(request, source));
     if (pending_requests_.size() > kMaxPendingRequestsCount_)
       handled_requests_.pop_front();
@@ -113,6 +104,18 @@ std::vector<T> Accumulator<T>::Get(const T& request) {
     }
   }
   return std::move(requests);
+}
+
+template<typename T>
+bool Accumulator<T>::RequestExists(const T& request, const routing::GroupSource& source) {
+  auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
+  for (auto pending_request : pending_requests_)
+    if (pending_request.request.which() == request.which() &&
+        source == pending_request.source &&
+        request_message_id == boost::apply_visitor(MessageIdRequestVisitor(),
+                                                   pending_request.request))
+      return true;
+  return false;
 }
 
 }  // namespace vault

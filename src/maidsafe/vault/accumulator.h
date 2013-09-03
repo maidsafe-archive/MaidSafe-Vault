@@ -115,6 +115,8 @@ class Accumulator {
   Accumulator(Accumulator&&);
   Accumulator& operator=(Accumulator&&);
 
+  bool RequestExists(const T& request, const routing::GroupSource& source);
+
   std::deque<PendingRequest> pending_requests_;
   std::deque<T> handled_requests_;
   const size_t kMaxPendingRequestsCount_, kMaxHandledRequestsCount_;

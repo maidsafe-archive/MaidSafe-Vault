@@ -32,8 +32,9 @@ class PmidManagerValue {
   PmidManagerValue& operator=(PmidManagerValue other);
 
   std::string Serialise() const;
-
   int32_t size() const { return size_; }
+
+  friend void swap(PmidManagerValue& lhs, PmidManagerValue& rhs);
 
  private:
   int32_t size_;

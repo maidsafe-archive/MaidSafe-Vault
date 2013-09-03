@@ -54,11 +54,10 @@ MaidManagerMetadata::MaidManagerMetadata(const std::string& serialised_metadata_
   }
   total_put_data_ = maid_manager_metadata_proto.total_put_data();
   for (auto index(0); index < maid_manager_metadata_proto.pmid_totals_size(); ++index) {
-    pmid_totals_.emplace_back(
-        nfs::PmidRegistration::serialised_type(NonEmptyString(
+    pmid_totals_.emplace_back(NonEmptyString(
             maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_registration())),
         PmidManagerMetadata(PmidManagerMetadata::serialised_type(NonEmptyString(
-            maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_metadata()))));
+            maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_metadata())));
   }
   if (total_put_data_ < 0)
     ThrowError(CommonErrors::invalid_parameter);
@@ -86,17 +85,16 @@ void MaidManagerMetadata::DeleteData(int32_t cost) {
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-void MaidManagerMetadata::RegisterPmid(const nfs::PmidRegistration& pmid_registration) {
+void MaidManagerMetadata::RegisterPmid(const nfs_vault::PmidRegistration& pmid_registration) {
   auto itr(Find(pmid_registration.pmid_name()));
   if (itr == std::end(pmid_totals_)) {
-    nfs::PmidRegistration::serialised_type serialised_pmid_registration(
-        pmid_registration.Serialise());
+    auto serialised_pmid_registration(pmid_registration.Serialise());
     pmid_totals_.emplace_back(serialised_pmid_registration,
                               PmidManagerMetadata(pmid_registration.pmid_name()));
   }
 }
 
-void MaidManagerMetadata::UnregisterPmid(const nfs::PmidRegistration& pmid_registration) {
+void MaidManagerMetadata::UnregisterPmid(const nfs_vault::PmidRegistration& pmid_registration) {
   auto itr(Find(pmid_registration.pmid_name()));
   if (itr != std::end(pmid_totals_))
     pmid_totals_.erase(itr);
@@ -114,8 +112,7 @@ std::string MaidManagerMetadata::Serialise() const {
   maid_manager_metadata_proto.set_total_put_data(total_put_data_);
   for (const auto& pmid_total : pmid_totals_) {
     auto pmid_total_proto(maid_manager_metadata_proto.add_pmid_totals());
-    pmid_total_proto->set_serialised_pmid_registration(
-        pmid_total.serialised_pmid_registration->string());
+    pmid_total_proto->set_serialised_pmid_registration(pmid_total.serialised_pmid_registration);
     pmid_total_proto->set_serialised_pmid_metadata(pmid_total.pmid_metadata.Serialise()->string());
   }
   return maid_manager_metadata_proto.SerializeAsString();
