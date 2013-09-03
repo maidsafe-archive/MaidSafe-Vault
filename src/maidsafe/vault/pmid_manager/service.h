@@ -35,17 +35,19 @@ namespace maidsafe {
 namespace vault {
 
 template <typename T,
-          typename Accumulator,
+          typename AccumulatorType,
           typename Checker,
           typename Handler>
 struct MessageHandlerWrapper {
  public:
-  MessageHandlerWrapper(Accumulator& accumulator_in,                        
+  typedef std::function<bool(const T& message, const typename T::Sender& sender)> Validator;
+  MessageHandlerWrapper(AccumulatorType& accumulator_in,
                         Checker checker_in,
                         Handler handler_in)
       : accumulator(accumulator_in),
-        validator([](const T& message, const typename T::Sender& sender) {
-                    return Validate(message, sender);
+        validator([](const T& /*message*/, const typename T::Sender& /*sender*/) {
+                    // Validate(message, sender);
+                    return true;
                   }),
         checker(checker_in),
         handler(handler_in) {}
@@ -58,8 +60,8 @@ struct MessageHandlerWrapper {
   }
 
  private:
-  std::function<bool(const T& message, const typename T::Sender& sender)> validator;
-  Accumulator& accumulator;
+  AccumulatorType& accumulator;
+  Validator validator;
   Checker checker;
   Handler handler;
 };
@@ -144,19 +146,21 @@ void PmidManagerService::HandleMessage(
     const nfs::PutRequestFromDataManagerToPmidManager& message,
     const typename nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
     const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  typedef std::function<
+      void(const nfs::PutRequestFromDataManagerToPmidManager&,
+           const typename nfs::PutRequestFromDataManagerToPmidManager::Sender&,
+           const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver&)> LocalFunctor;
   MessageHandlerWrapper<
       nfs::PutRequestFromDataManagerToPmidManager,
       Accumulator<nfs::PmidManagerServiceMessages>,
-      Accumulator::AddCheckerFunctor,
-      std::function<void(const nfs::PutRequestFromDataManagerToPmidManager&,
-                         const typename nfs::PutRequestFromDataManagerToPmidManager::Sender&,
-                         const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver&)>(
+      Accumulator<nfs::PmidManagerServiceMessages>::AddCheckerFunctor,
+      LocalFunctor>(
       accumulator_,
-      Accumulator::AddRequestChecker(3),
-      [](const nfs::PutRequestFromDataManagerToPmidManager& message,
+      Accumulator<nfs::PutRequestFromDataManagerToPmidManager>::AddRequestChecker(3),
+      [this](const nfs::PutRequestFromDataManagerToPmidManager& message,
          const typename nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
          const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
-        HandlePut(message, sender, receiver);
+        this->HandlePut(message, sender, receiver);
       })(message, sender, receiver);
 }
 

@@ -46,7 +46,7 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
   if (CheckHandled(request))
     return Accumulator<T>::AddResult::kHandled;
 
-  if (!AlreadyExists(request, source)) {
+  if (!RequestExists(request, source)) {
     pending_requests_.push_back(PendingRequest(request, source));
     if (pending_requests_.size() > kMaxPendingRequestsCount_)
       handled_requests_.pop_front();
