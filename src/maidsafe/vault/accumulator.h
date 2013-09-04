@@ -75,6 +75,7 @@ void ContentEraseVisitor::operator()(nfs_vault::DataNameAndContent& name_and_con
 template<typename T>
 class Accumulator {
  public:
+  typedef T type;
   enum class AddResult { kSuccess, kWaiting, kFailure, kHandled };
   typedef std::function<AddResult(const std::vector<T>&)> AddCheckerFunctor;
   class AddRequestChecker {

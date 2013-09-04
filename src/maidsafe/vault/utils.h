@@ -27,6 +27,7 @@ License.
 #include "maidsafe/common/error.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
+#include "maidsafe/routing/parameters.h"
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
@@ -36,6 +37,89 @@ License.
 namespace maidsafe {
 
 namespace vault {
+
+template<typename T>
+class Accumulator;
+
+template <typename ValidateSender,
+          typename AccumulatorType,
+          typename Checker,
+          typename Handler>
+struct OperationHandler {
+ public:
+  OperationHandler(ValidateSender validate_sender_in,
+                   AccumulatorType& accumulator_in,
+                   Checker checker_in,
+                   Handler handler_in,
+                   std::mutex& mutex)
+      : validate_sender(validate_sender_in),
+        accumulator(accumulator_in),
+        checker(checker_in),
+        handler(handler_in) {}
+
+  template<typename MessageType, typename Sender, typename Receiver>
+  void operator() (const MessageType& message, const Sender& sender, const Receiver& receiver) {
+    if (!validator(message, sender))
+      return;
+    {
+      std::lock_guard<std::mutex> lock(mutex);
+        if (accumulator.CheckHandled(message))
+          return;
+      if (accumulator.AddPendingRequest(message, sender, checker) !=
+              Accumulator<typename AccumulatorType::type>::AddResult::kSuccess)
+        return;
+    }
+    handler(message, sender, receiver);
+  }
+
+ private:
+  ValidateSender validate_sender;
+  AccumulatorType& accumulator;
+  Checker checker;
+  Handler handler;
+  std::mutex& mutex;
+};
+
+template <typename MessageType>
+struct HandlerType {
+  typedef std::function<void(const MessageType&,
+                             const typename MessageType::Sender&,
+                             const typename MessageType::Receiver&)> type;
+};
+
+template <typename MessageType>
+struct ValidateSenderType {
+  typedef std::function<bool(const MessageType&,
+                             const typename MessageType::Sender&)> type;
+};
+
+
+template <typename MessageType,
+          typename AccumulatorVariantType>
+struct OperationHandlerWrapper {
+  typedef OperationHandler<typename ValidateSenderType<MessageType>::type,
+                           Accumulator<AccumulatorVariantType>,
+                           typename Accumulator<AccumulatorVariantType>::AddCheckerFunctor,
+                           typename HandlerType<MessageType>::type> TypedOperationHandler;
+
+  OperationHandlerWrapper(Accumulator<AccumulatorVariantType>& accumulator,
+                          typename ValidateSenderType<MessageType>::type validate_sender,
+                          typename Accumulator<AccumulatorVariantType>::AddCheckerFunctor checker,
+                          typename HandlerType<MessageType>::type handler,
+                          std::mutex& mutex)
+      : typed_operation_handler(validate_sender, accumulator, checker, handler, mutex) {}
+
+  void operator() (const MessageType& message,
+                   const typename MessageType::Sender& sender,
+                   const typename MessageType::Receiver& receiver) {
+    typed_operation_handler(message, sender, receiver);
+  }
+
+ private:
+  TypedOperationHandler typed_operation_handler;
+};
+
+
 
 namespace detail {
 
@@ -74,6 +158,13 @@ bool AddResult(const nfs::Message& message,
                std::mutex& accumulator_mutex,
                int requests_required);
 */
+
+template <typename T>
+struct RequiredRequests {
+  static uint16_t Value() {
+    return  routing::Parameters::node_group_size - 1;
+  }
+};
 
 }  // namespace detail
 

@@ -47,6 +47,31 @@ PmidName GetPmidAccountName(const nfs::Message& message);
 
 }  // namespace detail
 
+
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::PutRequestFromDataManagerToPmidManager& message,
+    const typename nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
+    const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  OperationHandlerWrapper<nfs::PutRequestFromDataManagerToPmidManager, typename accumulator_::type>(
+      accumulator_,
+      [this](const nfs::PutRequestFromDataManagerToPmidManager& message,
+             const typename nfs::PutRequestFromDataManagerToPmidManager::Sender& sender) {
+        return this->ValidateSender(message, sender);
+      },
+      Accumulator<nfs::PutRequestFromDataManagerToPmidManager>::AddRequestChecker(
+          RequiredRequests<nfs::PutRequestFromDataManagerToPmidManager>::Value()),
+      [this](const nfs::PutRequestFromDataManagerToPmidManager& message,
+             const typename nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
+             const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
+        this->HandlePut(message, sender, receiver);
+      },
+      accumulator)(message, sender, receiver);
+}
+
+
+
+/* Commented by Mahmoud on 3 Sep. Code need refactoring
 template<typename Data>
 void PmidManagerService::HandleMessage(const nfs::Message& message,
                                        const routing::ReplyFunctor& reply_functor) {
@@ -66,6 +91,7 @@ void PmidManagerService::HandleMessage(const nfs::Message& message,
     LOG(kError) << "Unsupported operation.";
   }
 }
+*/
 
 template<typename Data>
 void PmidManagerService::HandlePut(const nfs::Message& message) {
