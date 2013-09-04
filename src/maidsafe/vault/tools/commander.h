@@ -34,7 +34,7 @@ namespace vault {
 
 namespace tools {
 
-const std::string kHelperVersion = "MaidSafe Vault KeysHelper " + kApplicationVersion;
+const std::string kHelperVersion = "MaidSafe Vault KeysHelper " + kApplicationVersion();
 
 class SelectedOperationsContainer {
  public:
