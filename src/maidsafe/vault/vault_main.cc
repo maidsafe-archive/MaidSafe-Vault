@@ -229,7 +229,7 @@ void ActOnOptions(int argc, char* argv[]) {
   po::options_description cmdline_options(PopulateVariablesMap(argc, argv, variables_map));
 
   if (variables_map.count("version") != 0) {
-    std::cout << "Lifestuff Vault " + kApplicationVersion << std::endl;
+    std::cout << "Lifestuff Vault " + kApplicationVersion() << std::endl;
     return;
   }
 
