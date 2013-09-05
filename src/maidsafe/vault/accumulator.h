@@ -83,12 +83,7 @@ class Accumulator {
      explicit AddRequestChecker(const size_t& required_requests)
          : required_requests_(required_requests) {}
 
-     AddResult operator()(const std::vector<T>& requests) {
-       if (requests.size() == required_requests_)
-         return AddResult::kSuccess;
-       else
-         return AddResult::kWaiting;
-     }
+     AddResult operator()(const std::vector<T>& requests);
 
     private:
      size_t required_requests_;

@@ -22,6 +22,7 @@ License.
 #include <vector>
 
 #include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/nfs/utils.h"
 #include "maidsafe/vault/handled_request.pb.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/utils.h"
@@ -116,6 +117,27 @@ bool Accumulator<T>::RequestExists(const T& request, const routing::GroupSource&
                                                    pending_request.request))
       return true;
   return false;
+}
+
+template<typename T>
+typename Accumulator<T>::AddResult Accumulator<T>::AddRequestChecker::operator()(
+    const std::vector<T>& requests) {
+  assert((requests.size() <= routing::Parameters::node_group_size) && "Invalid number of requests");
+  if (requests.size() < required_requests_) {
+    return AddResult::kWaiting;
+  } else {
+    uint16_t index(0);
+    while (requests.size() - index >= required_requests_) {
+      if (std::count_if(requests.begin(),
+                        requests.end(),
+                        [&](const T& request) {
+                          return nfs::Equals(requests.at(index), request);
+                        }) == required_requests_)
+        return AddResult::kSuccess;
+      ++index;
+    }
+  }
+  return AddResult::kWaiting;
 }
 
 }  // namespace vault

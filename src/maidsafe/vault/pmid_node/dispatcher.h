@@ -29,7 +29,7 @@ class PmidNodeDispatcher {
  public:
   PmidNodeDispatcher(routing::Routing& routing);
 
-  void SendGetRequest(const nfs::DataName& data_name);
+  void SendGetRequest(const nfs_vault::DataName& data_name);
   void SendPmidAccountRequest();
 
  private:

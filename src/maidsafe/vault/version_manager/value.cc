@@ -22,7 +22,7 @@ License.
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
-#include "maidsafe/vault/maid_manager/maid_manager.pb.h"
+#include "maidsafe/vault/version_manager/version_manager.pb.h"
 
 
 namespace maidsafe {
@@ -33,17 +33,17 @@ VersionManagerValue::VersionManagerValue(const std::string& serialised_version_m
     : structured_data_versions_(
           [&serialised_version_manager_value](){
             protobuf::VersionManagerValue version_manager_value_proto;
-            if (!version_manager_value_proto.ParseFromString(serialised_maid_manager_value)) {
+            if (!version_manager_value_proto.ParseFromString(serialised_version_manager_value)) {
               LOG(kError) << "Failed to read or parse serialised maid manager value.";
              ThrowError(CommonErrors::parsing_error);
             }
             return StructuredDataVersions(
-                StructuredDataVersions::serialised_type(NonEmptyString(
+                typename StructuredDataVersions::serialised_type(NonEmptyString(
                     version_manager_value_proto.serialised_structured_data_versions())));
           }()) {}
 
 VersionManagerValue::VersionManagerValue(uint32_t max_versions, uint32_t max_branches)
-     : structured_data_versions(max_versions, max_branches) {}
+     : structured_data_versions_(max_versions, max_branches) {}
 
 VersionManagerValue::VersionManagerValue(const VersionManagerValue& other)
     : structured_data_versions_(other.structured_data_versions_) {}
@@ -57,14 +57,14 @@ VersionManagerValue& VersionManagerValue::operator=(VersionManagerValue other) {
 }
 
 std::string VersionManagerValue::Serialise() const {
-
   protobuf::VersionManagerValue version_manager_value_proto;
   version_manager_value_proto.set_serialised_structured_data_versions(
-      structured_data_versions_.Serialize);
+      structured_data_versions_.Serialize());
   return version_manager_value_proto.SerializeAsString();
 }
 
-void VersionManagerValue::Put(const VersionName& old_version, const VersionName& new_version) {
+void VersionManagerValue::Put(const StructuredDataVersions::VersionName& old_version,
+                              const StructuredDataVersions::VersionName& new_version) {
   structured_data_versions_.Put(old_version, new_version);
 }
 
@@ -73,24 +73,23 @@ std::vector<StructuredDataVersions::VersionName> VersionManagerValue::Get() cons
 }
 
 std::vector<StructuredDataVersions::VersionName> VersionManagerValue::GetBranch(
-    const VersionName& branch_tip) const {
+    const StructuredDataVersions::VersionName& branch_tip) const {
   return structured_data_versions_.GetBranch(branch_tip);
 }
 
-std::vector<StructuredDataVersions::VersionName> VersionManagerValue::DeleteBranchUntilFork(
-    const VersionName& branch_tip) {
+void VersionManagerValue::DeleteBranchUntilFork(
+    const StructuredDataVersions::VersionName& branch_tip) {
   return structured_data_versions_.DeleteBranchUntilFork(branch_tip);
 }
 
 void swap(VersionManagerValue& lhs, VersionManagerValue& rhs) {
   using std::swap;
-  swap(lhs.count_, rhs.count_);
-  swap(lhs.total_cost_, rhs.total_cost_);
+  swap(lhs.structured_data_versions_, rhs.structured_data_versions_);
 }
 
-bool operator==(const VersionManagerValue& lhs, const VersionManagerValue& rhs) {
-  return lhs.structured_data_versions_ == rhs.structured_data_versions_;
-}
+//bool operator==(const VersionManagerValue& lhs, const VersionManagerValue& rhs) {
+//  return lhs.structured_data_versions_ == rhs.structured_data_versions_;
+//}
 
 }  // namespace vault
 

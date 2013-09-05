@@ -51,9 +51,12 @@ class PmidManagerService {
   PmidManagerService& operator=(PmidManagerService&&);
 
   template<typename T>
-  bool ValidateSender(const T& message, routing::GroupSource& source) const;
+  bool ValidateSender(const T& message, const routing::GroupSource& source) const;
 
-  void CreatePmidAccount(const nfs::Message& message);
+  void CreatePmidAccount(
+      const nfs::CreateAccountRequestFromMaidManagerToPmidManager& message,
+      const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
+      const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);
   void GetPmidTotals(const nfs::Message& message);
   void GetPmidAccount(const nfs::Message& message);
 
@@ -138,6 +141,13 @@ void PmidManagerService::HandleMessage(
     const nfs::AccountTransferFromPmidManagerToPmidManager& message,
     const typename nfs::AccountTransferFromPmidManagerToPmidManager::Sender& sender,
     const typename nfs::AccountTransferFromPmidManagerToPmidManager::Receiver& receiver);
+
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::CreateAccountRequestFromMaidManagerToPmidManager& message,
+    const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
+    const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);
+
 
 // ============================= Handle Put Specialisations =======================================
 

@@ -42,7 +42,7 @@ class PmidAccountHandler {
   // Account operations
   void CreateAccount(const PmidName& account_name);
   bool ApplyAccountTransfer(const PmidName& account_name, const NodeId& source_id,
-                            const PmidAccount::serialised_type& serialised_pmid_account_details);
+                            const std::string& serialised_pmid_account_details);
   void AddAccount(std::unique_ptr<PmidAccount> pmid_account);
   void DeleteAccount(const PmidName& account_name);
   PmidAccount::PmidNodeStatus PmidNodeStatus(const PmidName& account_name) const;

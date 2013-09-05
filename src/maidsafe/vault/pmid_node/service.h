@@ -224,7 +224,7 @@ class PmidNodeService {
 
 // ================================ Sender Validation =========================================
   template<typename T>
-  void ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
+  bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
     T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
   }
 
@@ -332,17 +332,17 @@ void PmidNodeService::HandleDeleteMessage(
     const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
 template<>
-void PmidNodeService::ValidateSender(
+bool PmidNodeService::ValidateSender(
     const nfs::PutRequestFromPmidManagerToPmidNode& message,
     const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender) const;
 
 template<>
-void PmidNodeService::ValidateSender(
+bool PmidNodeService::ValidateSender(
     const nfs::GetRequestFromDataManagerToPmidNode& message,
     const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender) const;
 
 template<>
-void PmidNodeService::ValidateSender(
+bool PmidNodeService::ValidateSender(
     const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
     const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender) const;
 

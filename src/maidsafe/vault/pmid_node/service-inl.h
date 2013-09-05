@@ -366,7 +366,7 @@ void PmidNodeService::SendCachedData(const T& message,
 }
 
 template<>
-void PmidNodeService::ValidateSender(
+bool PmidNodeService::ValidateSender(
     const nfs::PutRequestFromPmidManagerToPmidNode& message,
     const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/) const {
   if (!SenderIsConnectedVault(message, routing_))
@@ -377,7 +377,7 @@ void PmidNodeService::ValidateSender(
 }
 
 template<>
-void PmidNodeService::ValidateSender(
+bool PmidNodeService::ValidateSender(
     const nfs::GetRequestFromDataManagerToPmidNode& message,
     const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& /*sender*/) const {
   if (!SenderInGroupForMetadata(message, routing_))
@@ -388,7 +388,7 @@ void PmidNodeService::ValidateSender(
 }
 
 template<>
-void PmidNodeService::ValidateSender(
+bool PmidNodeService::ValidateSender(
     const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
     const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& /*sender*/) const {
   if (!SenderIsConnectedVault(message, routing_))

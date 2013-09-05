@@ -43,7 +43,6 @@ class AccountDb;
 class PmidAccount {
  public:
   typedef PmidName Name;
-  typedef TaggedValue<NonEmptyString, struct SerialisedPmidAccountTag> serialised_type;
 
   enum class PmidNodeStatus : int32_t { kDown, kGoingDown, kUp, kGoingUp };
 
@@ -57,7 +56,7 @@ class PmidAccount {
   PmidAccount(PmidAccount&& other);
   PmidAccount& operator=(PmidAccount&& other);
 
-  serialised_type Serialise(bool include_pmid_record);
+  std::string Serialise(bool include_pmid_record);
 
   void SetPmidNodeUp() { pmid_node_status_ = PmidNodeStatus::kUp; }
   void SetPmidNodeDown() { pmid_node_status_ = PmidNodeStatus::kDown; }
@@ -67,7 +66,7 @@ class PmidAccount {
   void DeleteData(const typename Data::Name& name);
 
   bool ApplyAccountTransfer(const NodeId& source_id,
-                            const serialised_type& serialised_pmid_account_details);
+                            const std::string& serialised_pmid_account_details);
 
   void AddLocalUnresolvedEntry(const PmidManagerUnresolvedEntry& unresolved_entry);
   NonEmptyString GetSyncData();

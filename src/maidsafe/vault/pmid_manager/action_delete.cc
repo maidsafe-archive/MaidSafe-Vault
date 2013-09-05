@@ -21,7 +21,7 @@ License.
 namespace maidsafe {
 namespace vault {
 
-const nfs::MessageAction ActionPmidManagerDelete::kActionId(nfs::MessageAction::kDelete);
+const nfs::MessageAction ActionPmidManagerDelete::kActionId;
 
 void ActionPmidManagerDelete::operator()(boost::optional<PmidManagerValue>& value) const {
   if (!value)

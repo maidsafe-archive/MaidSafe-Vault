@@ -50,8 +50,8 @@ std::string ActionDataManagerAddPmid::Serialise() const {
 }
 
 void ActionDataManagerAddPmid::operator()(boost::optional<DataManagerValue>& value) {
-  if (!value)
-    value.reset(new DataManagerValue(kPmidName, ));
+//  if (!value)
+//    value.reset(new DataManagerValue(kPmidName, size)); // TODO(Team): Size required here
   value->AddPmid(kPmidName);
 }
 

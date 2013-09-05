@@ -51,28 +51,31 @@ PmidManagerService::PmidManagerService(const passport::Pmid& pmid,
       pmid_account_handler_(db, routing.kNodeId()),
       nfs_(routing, pmid) {}
 
-void PmidManagerService::HandleMessage(const nfs::Message& message,
-                                       const routing::ReplyFunctor& /*reply_functor*/) {
-  ValidateGenericSender(message);
-  nfs::Reply reply(CommonErrors::success);
-  nfs::MessageAction action(message.data().action);
-  switch (action) {
-    case nfs::MessageAction::kSynchronise:
-      return HandleSync(message);
-    case nfs::MessageAction::kAccountTransfer:
-      return HandleAccountTransfer(message);
-    case nfs::MessageAction::kGetPmidTotals:
-      return GetPmidTotals(message);
-    case nfs::MessageAction::kGetPmidAccount:
-      return GetPmidAccount(message);
-    default:
-      LOG(kError) << "Unhandled Post action type";
-  }
-}
+//void PmidManagerService::HandleMessage(const nfs::Message& message,
+//                                       const routing::ReplyFunctor& /*reply_functor*/) {
+//  ValidateGenericSender(message);
+//  nfs::Reply reply(CommonErrors::success);
+//  nfs::MessageAction action(message.data().action);
+//  switch (action) {
+//    case nfs::MessageAction::kSynchronise:
+//      return HandleSync(message);
+//    case nfs::MessageAction::kAccountTransfer:
+//      return HandleAccountTransfer(message);
+//    case nfs::MessageAction::kGetPmidTotals:
+//      return GetPmidTotals(message);
+//    case nfs::MessageAction::kGetPmidAccount:
+//      return GetPmidAccount(message);
+//    default:
+//      LOG(kError) << "Unhandled Post action type";
+//  }
+//}
 
-void PmidManagerService::CreatePmidAccount(const nfs::Message& message) {
+void PmidManagerService::CreatePmidAccount(
+    const nfs::CreateAccountRequestFromMaidManagerToPmidManager& message,
+    const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Sender& /*sender*/,
+    const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Receiver& /*receiver*/)
   try {
-    pmid_account_handler_.CreateAccount(message.pmid_node());
+    pmid_account_handler_.CreateAccount(PmidName(message.contents->raw_name));
   }
   catch(const maidsafe_error& error) {
     LOG(kWarning) << error.what();

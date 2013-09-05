@@ -89,10 +89,8 @@ struct HandlerType {
 
 template <typename MessageType>
 struct ValidateSenderType {
-  typedef std::function<bool(const MessageType&,
-                             const typename MessageType::Sender&)> type;
+  typedef std::function<bool(const MessageType&, const typename MessageType::Sender&)> type;
 };
-
 
 template <typename MessageType,
           typename AccumulatorVariantType>
@@ -119,6 +117,12 @@ struct OperationHandlerWrapper {
   TypedOperationHandler typed_operation_handler;
 };
 
+template <typename T>
+struct RequiredRequests {
+  static uint16_t Value() {
+    return  routing::Parameters::node_group_size - 1;
+  }
+};
 
 
 namespace detail {
@@ -158,13 +162,6 @@ bool AddResult(const nfs::Message& message,
                std::mutex& accumulator_mutex,
                int requests_required);
 */
-
-template <typename T>
-struct RequiredRequests {
-  static uint16_t Value() {
-    return  routing::Parameters::node_group_size - 1;
-  }
-};
 
 }  // namespace detail
 

@@ -36,11 +36,12 @@ class VersionManagerValue {
   VersionManagerValue& operator=(VersionManagerValue other);
   std::string Serialise() const;
 
-  void Put(const VersionName& old_version, const VersionName& new_version);
-  void Get() const;
-  std::vector<StructuredDataVersions::VersionName> GetBranch(const VersionName& branch_tip) const;
-  std::vector<StructuredDataVersions::VersionName> DeleteBranchUntilFork(
-      const VersionName& branch_tip);
+  void Put(const StructuredDataVersions::VersionName& old_version,
+           const StructuredDataVersions::VersionName& new_version);
+  std::vector<StructuredDataVersions::VersionName> Get() const;
+  std::vector<StructuredDataVersions::VersionName> GetBranch(
+      const StructuredDataVersions::VersionName& branch_tip) const;
+  void DeleteBranchUntilFork(const StructuredDataVersions::VersionName& branch_tip);
 
   friend void swap(VersionManagerValue& lhs, VersionManagerValue& rhs);
   friend bool operator==(const VersionManagerValue& lhs, const VersionManagerValue& rhs);
@@ -49,7 +50,7 @@ class VersionManagerValue {
   StructuredDataVersions structured_data_versions_;
 };
 
-bool operator==(const VersionManagerValue& lhs, const VersionManagerValue& rhs);
+// bool operator==(const VersionManagerValue& lhs, const VersionManagerValue& rhs);
 void swap(VersionManagerValue& lhs, VersionManagerValue& rhs);
 
 }  // namespace vault

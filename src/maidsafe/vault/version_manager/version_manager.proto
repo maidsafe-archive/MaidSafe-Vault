@@ -13,29 +13,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-#ifndef MAIDSAFE_VAULT_PMID_MANAGER_ACTION_DELETE_H_
-#define MAIDSAFE_VAULT_PMID_MANAGER_ACTION_DELETE_H_
+package maidsafe.vault.protobuf;
 
-#include <cstdint>
-#include <string>
-
-#include "boost/optional/optional.hpp"
-
-#include "maidsafe/nfs/types.h"
-
-
-namespace maidsafe {
-namespace vault {
-
-class PmidManagerValue;
-
-struct ActionPmidManagerDelete {
-  ActionPmidManagerDelete() {}
-  void operator()(boost::optional<PmidManagerValue>& value) const;
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
-};
-
-}  // namespace vault
-}  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_ACTION_DELETE_H_
+message VersionManagerValue {
+  required bytes serialised_structured_data_versions = 1;
+}
