@@ -24,19 +24,17 @@ License.
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/utils.h"
-#include "maidsafe/nfs/reply.h"
+
 
 #include "maidsafe/vault/utils.h"
 
-#include "maidsafe/nfs/pmid_registration.h"
-#include "maidsafe/nfs/persona_id.h"
-#include "maidsafe/nfs/structured_data.h"
+#include "maidsafe/nfs/vault/pmid_registration.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/version_manager/key.h"
 #include "maidsafe/vault/version_manager/unresolved_entry_value.h"
-#include "maidsafe/vault/unresolved_element.pb.h"
-#include "maidsafe/vault/manager_db.h"
+#include "maidsafe/vault/unresolved_action.pb.h"
+#include "maidsafe/vault/db.h"
 
 namespace maidsafe {
 

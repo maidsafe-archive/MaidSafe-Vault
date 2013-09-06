@@ -31,13 +31,17 @@ namespace vault {
 struct ActionVersionManagerDeleteBranchUntilFork {
   explicit ActionVersionManagerDeleteBranchUntilFork(const std::string& serialised_action);
   explicit ActionVersionManagerDeleteBranchUntilFork(
+      const ActionVersionManagerDeleteBranchUntilFork& other);
+  explicit ActionVersionManagerDeleteBranchUntilFork(
+    const ActionVersionManagerDeleteBranchUntilFork&& other);
+  explicit ActionVersionManagerDeleteBranchUntilFork(
       const StructuredDataVersions::VersionName& version_name);
 
   void operator()(boost::optional<VersionManagerValue>& value) const;
 
   std::string Serialise() const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteBranchUntilFork;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteBranchUntilForkRequest;
 
   friend bool operator==(const ActionVersionManagerDeleteBranchUntilFork& lhs,
                          const ActionVersionManagerDeleteBranchUntilFork& rhs);

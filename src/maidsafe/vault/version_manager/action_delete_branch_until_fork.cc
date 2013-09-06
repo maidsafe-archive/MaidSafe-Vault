@@ -25,30 +25,30 @@ const nfs::MessageAction ActionVersionManagerDeleteBranchUntilFork::kActionId;
 
 ActionVersionManagerDeleteBranchUntilFork::ActionVersionManagerDeleteBranchUntilFork(
     const std::string& serialised_action)
-    : version_name_(
+    : version_name(
         [&serialised_action]() {
-          protobuf::ActionVersionManagerDeleteBranchUntilFork action_delete_branch_until_fork_proto;
+          protobuf::ActionDeleteBranchUntilFork action_delete_branch_until_fork_proto;
           if (!action_delete_branch_until_fork_proto.ParseFromString(serialised_action))
             ThrowError(CommonErrors::parsing_error);
           return StructuredDataVersions::VersionName(
-                     action_delete_branch_until_fork_proto.serialised_version_name());
+                     action_delete_branch_until_fork_proto.serialised_version());
         }()) {}
 
 ActionVersionManagerDeleteBranchUntilFork::ActionVersionManagerDeleteBranchUntilFork(
-    const StructuredDataVersions::VersionName& version_name)
-    : version_name_(version_name) {}
+    const StructuredDataVersions::VersionName& version_name_in)
+    : version_name(version_name_in) {}
 
 ActionVersionManagerDeleteBranchUntilFork::ActionVersionManagerDeleteBranchUntilFork(
     const ActionVersionManagerDeleteBranchUntilFork& other)
     : version_name(other.version_name) {}
 
 ActionVersionManagerDeleteBranchUntilFork::ActionVersionManagerDeleteBranchUntilFork(
-    ActionVersionManagerDeleteBranchUntilFork&& other)
+    const ActionVersionManagerDeleteBranchUntilFork&& other)
     : version_name(std::move(other.version_name)) {}
 
 std::string ActionVersionManagerDeleteBranchUntilFork::Serialise() const {
-  protobuf::ActionVersionManagerDeleteBranchUntilFork action_delete_branch_until_fork_proto;
-  action_delete_branch_until_fork_proto.set_serialised_version_name(version_name.Serialise());
+  protobuf::ActionDeleteBranchUntilFork action_delete_branch_until_fork_proto;
+  action_delete_branch_until_fork_proto.set_serialised_version(version_name.Serialise());
   return action_delete_branch_until_fork_proto.SerializeAsString();
 }
 
@@ -56,7 +56,7 @@ void ActionVersionManagerDeleteBranchUntilFork::operator()(
     boost::optional<VersionManagerValue>& value) const {
   if (!value)
     ThrowError(CommonErrors::uninitialised);
-  value->DeleteBranchUntilFork();
+  value->DeleteBranchUntilFork(version_name);
 }
 
 bool operator==(const ActionVersionManagerDeleteBranchUntilFork& lhs,

@@ -29,6 +29,7 @@ License.
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/pmid_manager/handler.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/pmid_manager/dispatcher.h"
 
 
 namespace maidsafe {
@@ -93,6 +94,7 @@ class PmidManagerService {
   std::mutex accumulator_mutex_;
   Accumulator<nfs::PmidManagerServiceMessages> accumulator_;
   PmidAccountHandler pmid_account_handler_;
+  PmidManagerDispatcher dispatcher_;
   static const int kPutRepliesSuccessesRequired_;
   static const int kDeleteRequestsRequired_;
 };

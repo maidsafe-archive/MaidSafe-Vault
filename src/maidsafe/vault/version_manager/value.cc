@@ -29,27 +29,30 @@ namespace maidsafe {
 
 namespace vault {
 
-VersionManagerValue::VersionManagerValue(const std::string& serialised_version_manager_value)
-    : structured_data_versions_(
-          [&serialised_version_manager_value](){
-            protobuf::VersionManagerValue version_manager_value_proto;
-            if (!version_manager_value_proto.ParseFromString(serialised_version_manager_value)) {
-              LOG(kError) << "Failed to read or parse serialised maid manager value.";
-             ThrowError(CommonErrors::parsing_error);
-            }
-            return StructuredDataVersions(
-                typename StructuredDataVersions::serialised_type(NonEmptyString(
-                    version_manager_value_proto.serialised_structured_data_versions())));
-          }()) {}
+//  Commented by Mahmoud on 5 Sep. Requires fix in structureddata
+//VersionManagerValue::VersionManagerValue(const std::string& serialised_version_manager_value)
+//    : structured_data_versions_(
+//          [&serialised_version_manager_value](){
+//            protobuf::VersionManagerValue version_manager_value_proto;
+//            if (!version_manager_value_proto.ParseFromString(serialised_version_manager_value)) {
+//              LOG(kError) << "Failed to read or parse serialised maid manager value.";
+//             ThrowError(CommonErrors::parsing_error);
+//            }
+//            return StructuredDataVersions(
+//                typename StructuredDataVersions::serialised_type(NonEmptyString(
+//                    version_manager_value_proto.serialised_structured_data_versions())));
+//          }()) {}
 
 VersionManagerValue::VersionManagerValue(uint32_t max_versions, uint32_t max_branches)
      : structured_data_versions_(max_versions, max_branches) {}
 
-VersionManagerValue::VersionManagerValue(const VersionManagerValue& other)
-    : structured_data_versions_(other.structured_data_versions_) {}
+//  Commented by Mahmoud on 5 Sep. Requires fix in structureddata
+//VersionManagerValue::VersionManagerValue(const VersionManagerValue& other)
+//    : structured_data_versions_(other.structured_data_versions_) {}
 
-VersionManagerValue::VersionManagerValue(VersionManagerValue&& other)
-    : structured_data_versions_(std::move(other.structured_data_versions_)) {}
+//  Commented by Mahmoud on 5 Sep. Requires fix in structureddata
+//VersionManagerValue::VersionManagerValue(VersionManagerValue&& other)
+//    : structured_data_versions_(std::move(other.structured_data_versions_)) {}
 
 VersionManagerValue& VersionManagerValue::operator=(VersionManagerValue other) {
   swap(*this, other);
@@ -59,7 +62,7 @@ VersionManagerValue& VersionManagerValue::operator=(VersionManagerValue other) {
 std::string VersionManagerValue::Serialise() const {
   protobuf::VersionManagerValue version_manager_value_proto;
   version_manager_value_proto.set_serialised_structured_data_versions(
-      structured_data_versions_.Serialize());
+      structured_data_versions_.Serialise()->string());
   return version_manager_value_proto.SerializeAsString();
 }
 

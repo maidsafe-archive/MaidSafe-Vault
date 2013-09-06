@@ -31,8 +31,9 @@ class VersionManagerValue {
  public:
   explicit VersionManagerValue(const std::string& serialised_version_manager_value);
   VersionManagerValue(uint32_t max_versions = 1, uint32_t max_branches = 1);
-  VersionManagerValue(const VersionManagerValue& other);
-  VersionManagerValue(VersionManagerValue&& other);
+//  Commented by Mahmoud on 5 Sep. Requires fix in structureddata
+//  VersionManagerValue(const VersionManagerValue& other);
+//  VersionManagerValue(VersionManagerValue&& other);
   VersionManagerValue& operator=(VersionManagerValue other);
   std::string Serialise() const;
 

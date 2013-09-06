@@ -25,6 +25,7 @@ License.
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/utils.h"
+#include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/utils.h"
 

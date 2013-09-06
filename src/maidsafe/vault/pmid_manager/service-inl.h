@@ -113,6 +113,13 @@ void PmidManagerService::HandleMessage(const nfs::Message& message,
 }
 */
 
+template<>
+void PmidManagerService::HandlePut(
+    const nfs::PutRequestFromDataManagerToPmidManager& message,
+    const typename nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
+    const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
+}
+
 template<typename Data>
 void PmidManagerService::HandlePut(const nfs::Message& message) {
   try {
