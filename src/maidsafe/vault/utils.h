@@ -41,6 +41,8 @@ namespace vault {
 template<typename T>
 class Accumulator;
 
+namespace detail {
+
 template <typename ValidateSender,
           typename AccumulatorType,
           typename Checker,
@@ -51,15 +53,16 @@ struct OperationHandler {
                    AccumulatorType& accumulator_in,
                    Checker checker_in,
                    Handler handler_in,
-                   std::mutex& mutex)
+                   std::mutex& mutex_in)
       : validate_sender(validate_sender_in),
         accumulator(accumulator_in),
         checker(checker_in),
-        handler(handler_in) {}
+        handler(handler_in),
+        mutex(mutex_in) {}
 
   template<typename MessageType, typename Sender, typename Receiver>
   void operator() (const MessageType& message, const Sender& sender, const Receiver& receiver) {
-    if (!validator(message, sender))
+    if (!validate_sender(message, sender))
       return;
     {
       std::lock_guard<std::mutex> lock(mutex);
@@ -92,40 +95,6 @@ struct ValidateSenderType {
   typedef std::function<bool(const MessageType&, const typename MessageType::Sender&)> type;
 };
 
-template <typename MessageType,
-          typename AccumulatorVariantType>
-struct OperationHandlerWrapper {
-  typedef OperationHandler<typename ValidateSenderType<MessageType>::type,
-                           Accumulator<AccumulatorVariantType>,
-                           typename Accumulator<AccumulatorVariantType>::AddCheckerFunctor,
-                           typename HandlerType<MessageType>::type> TypedOperationHandler;
-
-  OperationHandlerWrapper(Accumulator<AccumulatorVariantType>& accumulator,
-                          typename ValidateSenderType<MessageType>::type validate_sender,
-                          typename Accumulator<AccumulatorVariantType>::AddCheckerFunctor checker,
-                          typename HandlerType<MessageType>::type handler,
-                          std::mutex& mutex)
-      : typed_operation_handler(validate_sender, accumulator, checker, handler, mutex) {}
-
-  void operator() (const MessageType& message,
-                   const typename MessageType::Sender& sender,
-                   const typename MessageType::Receiver& receiver) {
-    typed_operation_handler(message, sender, receiver);
-  }
-
- private:
-  TypedOperationHandler typed_operation_handler;
-};
-
-template <typename T>
-struct RequiredRequests {
-  static uint16_t Value() {
-    return  routing::Parameters::node_group_size - 1;
-  }
-};
-
-
-namespace detail {
 
 void InitialiseDirectory(const boost::filesystem::path& directory);
 //bool ShouldRetry(routing::Routing& routing, const nfs::Message& message);
@@ -164,6 +133,39 @@ bool AddResult(const nfs::Message& message,
 */
 
 }  // namespace detail
+
+template <typename MessageType,
+          typename AccumulatorVariantType>
+struct OperationHandlerWrapper {
+  typedef detail::OperationHandler<
+              typename detail::ValidateSenderType<MessageType>::type,
+              Accumulator<AccumulatorVariantType>,
+              typename Accumulator<AccumulatorVariantType>::AddCheckerFunctor,
+              typename detail::HandlerType<MessageType>::type> TypedOperationHandler;
+
+  OperationHandlerWrapper(Accumulator<AccumulatorVariantType>& accumulator,
+                          typename detail::ValidateSenderType<MessageType>::type validate_sender,
+                          typename Accumulator<AccumulatorVariantType>::AddCheckerFunctor checker,
+                          typename detail::HandlerType<MessageType>::type handler,
+                          std::mutex& mutex)
+      : typed_operation_handler(validate_sender, accumulator, checker, handler, mutex) {}
+
+  void operator() (const MessageType& message,
+                   const typename MessageType::Sender& sender,
+                   const typename MessageType::Receiver& receiver) {
+    typed_operation_handler(message, sender, receiver);
+  }
+
+ private:
+  TypedOperationHandler typed_operation_handler;
+};
+
+template <typename T>
+struct RequiredRequests {
+  static uint16_t Value() {
+    return  routing::Parameters::node_group_size - 1;
+  }
+};
 
 
 //template<typename Message>

@@ -147,7 +147,7 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
     found = std::find_if(found,
                          std::end(unresolved_actions_),
                          [&unresolved_action](const UnresolvedAction &test) {
-                             return test.key == unresolved_action.key;
+                           return test.key == unresolved_action.key;
                          });
 
     if (found == std::end(unresolved_actions_)) {
