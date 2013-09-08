@@ -36,15 +36,15 @@ class PmidManagerDispatcher {
   PmidManagerDispatcher(routing::Routing& routing);
 
   template<typename Data>
-  void SendPutRequest(const routing::TaksId& task_id,
+  void SendPutRequest(const nfs::MessageId& task_id,
                       const Data& data,
                       const PmidName& pmid_node);
   template<typename Data>
-  void SendDeleteRequest(const routing::TaskId& task_id,
+  void SendDeleteRequest(const nfs::MessageId& task_id,
                          const PmidName& pmid_node,
                          const typename Data::Name& data_name);
   template<typename Data>
-  void SendPutResponse(const routing::TaskId& task_id,
+  void SendPutResponse(const nfs::MessageId& task_id,
                        const PmidName& pmid_node,
                        const Data::Name& data_name,
                        const maidsafe_error& error_code);
@@ -69,13 +69,13 @@ class PmidManagerDispatcher {
 // ==================== Implementation =============================================================
 
 template<typename Data>
-void PmidManagerDispatcher::SendPutRequest(const routing::TaksId& task_id,
+void PmidManagerDispatcher::SendPutRequest(const nfs::MessageId& task_id,
                                            const Data& data,
                                            const PmidName& pmid_node) {
   typedef nfs::PutRequestFromPmidManagerToPmidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  nfs::DataNameAndContent data_name_and_content;
-  data_name_and_content.name = nfs::DataName(data.name());
+  nfs_vault::DataNameAndContent data_name_and_content;
+  data_name_and_content.name = nfs_vault::DataName(data.name());
   data_name_and_content.content = data.content();
   NfsMessage nfs_message(task_id, data_name_and_content);
   RoutingMessage message(nfs_message.Serialise(),
@@ -88,13 +88,13 @@ void PmidManagerDispatcher::SendPutRequest(const routing::TaksId& task_id,
 
 
 template<typename Data>
-void PmidManagerDispatcher::SendDeleteRequest(const routing::TaskId& task_id,
+void PmidManagerDispatcher::SendDeleteRequest(const nfs::MessageId& task_id,
                                               const PmidName& pmid_node,
                                               const typename Data::Name& data_name) {
   typedef nfs::DeleteRequestFromPmidManagerToPmidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  nfs::DataName data;
-  data = nfs::DataName(data_name);
+  nfs_vault::DataName data;
+  data = nfs_vault::DataName(data_name);
   NfsMessage nfs_message(task_id, data);
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(
@@ -105,7 +105,7 @@ void PmidManagerDispatcher::SendDeleteRequest(const routing::TaskId& task_id,
 }
 
 template<typename Data>
-void PmidManagerDispatcher::SendPutResponse(const routing::TaskId& task_id,
+void PmidManagerDispatcher::SendPutResponse(const nfs::MessageId& task_id,
                                             const PmidName& pmid_node,
                                             const Data::Name& data_name,
                                             const maidsafe_error& error_code) {

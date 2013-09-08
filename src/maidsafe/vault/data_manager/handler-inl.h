@@ -27,6 +27,7 @@ License.
 
 #include "maidsafe/vault/unresolved_action.pb.h"
 #include "maidsafe/vault/data_manager/metadata.h"
+#include "maidsafe/vault/types.h"
 
 namespace fs = boost::filesystem;
 
