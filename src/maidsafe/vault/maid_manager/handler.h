@@ -33,7 +33,6 @@
 
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/maid_manager/account.h"
 
 
 namespace maidsafe {

@@ -25,9 +25,9 @@ namespace maidsafe {
 namespace vault {
 
 ActionDataManagerPut::ActionDataManagerPut(
-    const PmidName& pmid_name, const uint32_t& size)
+    const DataNameVariant& data_name, const uint32_t& size)
     : kSize(size),
-      kPmidName(pmid_name) {}
+      kDataName(data_name) {}
 
 ActionDataManagerPut::ActionDataManagerPut(
     const std::string& serialised_action)
@@ -36,25 +36,28 @@ ActionDataManagerPut::ActionDataManagerPut(
               action_put_proto.ParseFromString(serialised_action);
               return action_put_proto.size();
             }()),
-      kPmidName([&]()->Identity {
+      kDataName([&]()->DataNameVariant {
                   protobuf::ActionDataManagerPut action_put_proto;
                   action_put_proto.ParseFromString(serialised_action);
-                  return Identity(action_put_proto.pmid_name());
+                  return GetDataNameVariant(static_cast<DataTagValue>(action_put_proto.data_type()),
+                                            Identity(action_put_proto.data_name()));
       }()) {}
 
 ActionDataManagerPut::ActionDataManagerPut(
     const ActionDataManagerPut& other)
     : kSize(other.kSize),
-      kPmidName(other.kPmidName) {}
+      kDataName(other.kDataName) {}
 
 ActionDataManagerPut::ActionDataManagerPut(
     ActionDataManagerPut&& other)
     : kSize(std::move(other.kSize)),
-      kPmidName(std::move(other.kPmidName)) {}
+      kDataName(std::move(other.kDataName)) {}
 
 std::string ActionDataManagerPut::Serialise() const {
   protobuf::ActionDataManagerPut action_put_proto;
-  action_put_proto.set_pmid_name(kPmidName->string());
+  action_put_proto.set_data_name((boost::apply_visitor(GetIdentityVisitor(), kDataName)).string());
+  action_put_proto.set_data_type(static_cast<int32_t>(boost::apply_visitor(GetTagValueVisitor(),
+                                                                           kDataName)));
   action_put_proto.set_size(kSize);
   return action_put_proto.SerializeAsString();
 }
@@ -63,12 +66,12 @@ void ActionDataManagerPut::operator()(boost::optional<DataManagerValue>& value) 
   if (value)
     value->IncrementSubscribers();
   else
-    value.reset(DataManagerValue(kPmidName, kSize));
+    value.reset(DataManagerValue(kSize));
 }
 
 bool operator==(const ActionDataManagerPut& lhs,
                 const ActionDataManagerPut& rhs) {
-  return lhs.kPmidName == rhs.kPmidName && lhs.kSize == rhs.kSize;
+  return lhs.kDataName == rhs.kDataName && lhs.kSize == rhs.kSize;
 }
 
 bool operator!=(const ActionDataManagerPut& lhs,

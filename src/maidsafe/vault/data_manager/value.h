@@ -26,6 +26,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/data_types/data_name_variant.h"
 
 namespace maidsafe {
 
@@ -36,7 +37,7 @@ class DataManagerValue {
  public:
   typedef TaggedValue<NonEmptyString, struct SerialisedDataManagerValueTag> serialised_type;
   explicit DataManagerValue(const serialised_type& serialised_metadata_value);
-  DataManagerValue(const PmidName& pmid_name, int size_in);
+  DataManagerValue(const uint64_t& size_in);
   serialised_type Serialise() const;
 
   void AddPmid(const PmidName& pmid_name);
@@ -45,11 +46,12 @@ class DataManagerValue {
   int64_t DecrementSubscribers();
   void SetPmidOnline(const PmidName& pmid_name);
   void SetPmidOffline(const PmidName& pmid_name);
+  int64_t Subscribers();
 
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
 
  private:
-  int data_size_;
+  uint64_t data_size_;
   int64_t subscribers_;
   std::set<PmidName> online_pmids_, offline_pmids_;
 };

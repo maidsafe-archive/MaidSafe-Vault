@@ -42,10 +42,8 @@ struct ActionDataManagerDelete {
   ActionDataManagerDelete& operator=(ActionDataManagerDelete other);
 };
 
-bool operator==(const ActionDataManagerDelete& lhs,
-               const ActionDataManagerDelete& rhs);
-bool operator!=(const ActionDataManagerDelete& lhs,
-                const ActionDataManagerDelete& rhs);
+bool operator==(const ActionDataManagerDelete& lhs, const ActionDataManagerDelete& rhs);
+bool operator!=(const ActionDataManagerDelete& lhs, const ActionDataManagerDelete& rhs);
 
 }  // namespace vault
 }  // namespace maidsafe

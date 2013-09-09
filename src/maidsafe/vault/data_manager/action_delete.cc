@@ -40,13 +40,11 @@ void ActionDataManagerDelete::operator()(
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-bool operator==(const ActionDataManagerDelete& /*lhs*/,
-                const ActionDataManagerDelete& /*rhs*/) {
+bool operator==(const ActionDataManagerDelete& /*lhs*/, const ActionDataManagerDelete& /*rhs*/) {
   return true;
 }
 
-bool operator!=(const ActionDataManagerDelete& lhs,
-                const ActionDataManagerDelete& rhs) {
+bool operator!=(const ActionDataManagerDelete& lhs, const ActionDataManagerDelete& rhs) {
   return !operator==(lhs, rhs);
 }
 

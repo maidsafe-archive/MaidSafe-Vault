@@ -52,11 +52,9 @@ struct ActionDataManagerNodeUp {
   ActionDataManagerNodeUp& operator=(ActionDataManagerNodeUp other);
 };
 
-bool operator==(const ActionDataManagerNodeUp& lhs,
-                const ActionDataManagerNodeUp& rhs);
+bool operator==(const ActionDataManagerNodeUp& lhs, const ActionDataManagerNodeUp& rhs);
 
-bool operator!=(const ActionDataManagerNodeUp& lhs,
-                const ActionDataManagerNodeUp& rhs);
+bool operator!=(const ActionDataManagerNodeUp& lhs, const ActionDataManagerNodeUp& rhs);
 
 }  // namespace vault
 

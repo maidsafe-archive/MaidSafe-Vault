@@ -62,16 +62,15 @@ DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_va
   }
 }
 
-DataManagerValue::DataManagerValue(const PmidName& pmid_name, int size)
+DataManagerValue::DataManagerValue(const uint64_t& size)
     : data_size_(size),
-      subscribers_(1),
+      subscribers_(0),
       online_pmids_(),
       offline_pmids_() {
   if (data_size_ < 1) {
     LOG(kError) << "Invalid data size";
     ThrowError(CommonErrors::invalid_parameter);
   }
-  online_pmids_.insert(pmid_name);
 }
 
 void DataManagerValue::AddPmid(const PmidName& pmid_name) {

@@ -134,7 +134,7 @@ class DataManagerService {
   routing::Routing& routing_;
   nfs_client::DataGetter& public_key_getter_;
   std::mutex accumulator_mutex_;
-  Accumulator<DataNameVariant> accumulator_;
+  Accumulator<nfs::DataManagerServiceMessages> accumulator_;
   GroupDb<DataManager> group_db_;
   MetadataHandler metadata_handler_;
   Sync<DataManager::UnresolvedPut> sync_puts_;
@@ -239,26 +239,6 @@ void DataManagerService::HandleGet(
    const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
    const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
 
-// ============================== Handle Put Specialisations ======================================
-
-template<typename T>
-void DataManagerService::HandlePut(const T&,
-                                   const typename T::Sender&,
-                                   const typename T::Receiver&) {
-  T::should_not_reach_here;
-}
-
-template<>
-void DataManagerService::HandlePut(
-    const nfs::PutRequestFromMaidManagerToDataManager& message,
-    const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
-    const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver& receiver);
-
-template<>
-void DataManagerService::HandlePut(
-   const nfs::PutResponseFromPmidManagerToDataManager& message,
-   const typename nfs::PutResponseFromPmidManagerToDataManager::Sender& sender,
-   const typename nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver);
 
 
 }  // namespace vault

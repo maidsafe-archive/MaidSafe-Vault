@@ -60,13 +60,11 @@ void ActionDataManagerNodeUp::operator()(boost::optional<DataManagerValue>& valu
   value->SetPmidOnline(kPmidName);
 }
 
-bool operator==(const ActionDataManagerNodeUp& lhs,
-    const ActionDataManagerNodeUp& rhs) {
+bool operator==(const ActionDataManagerNodeUp& lhs, const ActionDataManagerNodeUp& rhs) {
   return lhs.kPmidName == rhs.kPmidName;
 }
 
-bool operator!=(const ActionDataManagerNodeUp& lhs,
-    const ActionDataManagerNodeUp& rhs) {
+bool operator!=(const ActionDataManagerNodeUp& lhs, const ActionDataManagerNodeUp& rhs) {
   return !operator==(lhs, rhs);
 }
 

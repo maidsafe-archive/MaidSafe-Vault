@@ -84,9 +84,7 @@ class DataManagerDispatcher {
                          nfs::MessageId message_id);
 
 
-  void SendSync(const NodeId& destination_peer,
-                const MaidName& account_name,
-                const std::string& serialised_sync);
+  void SendSync(const Identity& data_name, const std::string& serialised_sync);
 
   void SendAccountTransfer(const NodeId& destination_peer,
                            const MaidName& account_name,

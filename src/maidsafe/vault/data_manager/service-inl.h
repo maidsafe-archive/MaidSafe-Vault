@@ -39,8 +39,8 @@
 #include "maidsafe/vault/data_manager/action_remove_pmid.h"
 #include "maidsafe/vault/data_manager/action_put.h"
 #include "maidsafe/vault/data_manager/action_delete.h"
-#include "maidsafe/vault/data_manager/action_set_pmid_online.h"
-#include "maidsafe/vault/data_manager/action_set_pmid_offline.h"
+#include "maidsafe/vault/data_manager/action_node_down.h"
+#include "maidsafe/vault/data_manager/action_node_up.h"
 
 
 namespace maidsafe {
@@ -121,76 +121,117 @@ DataManagerService::GetHandler<Data>::GetHandler(const routing::ReplyFunctor& re
       validation_result(),
       pmid_node_results() {}
 
+// Commented by Mahmoud on 9 Sep.
+//template<typename Data>
+//void DataManagerService::HandleMessage(const nfs::Message& message,
+//                                           const routing::ReplyFunctor& reply_functor) {
+//  nfs::Reply reply(CommonErrors::success);
+//  // FIXME Prakash validate sender
+//  {
+//    std::lock_guard<std::mutex> lock(accumulator_mutex_);
+//    if (accumulator_.CheckHandled(message, reply))
+//      return reply_functor(reply.Serialise()->string());
+//  }
 
-template<typename Data>
-void DataManagerService::HandleMessage(const nfs::Message& message,
-                                           const routing::ReplyFunctor& reply_functor) {
-  nfs::Reply reply(CommonErrors::success);
-  // FIXME Prakash validate sender
-  {
-    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    if (accumulator_.CheckHandled(message, reply))
-      return reply_functor(reply.Serialise()->string());
-  }
+//  switch (message.data().action) {
+//    case nfs::MessageAction::kPut:
+//      return HandlePut<Data>(message, reply_functor);
+//    case nfs::MessageAction::kPutResult:
+//      return HandlePutResult<Data>(message);
+//    case nfs::MessageAction::kGet:
+//      return HandleGet<Data>(message, reply_functor);
+//    case nfs::MessageAction::kDelete:
+//      return HandleDelete<Data>(message);
+//    case nfs::MessageAction::kStateChange:
+//      return HandleStateChange<Data>(message);
+//    case nfs::MessageAction::kSynchronise:
+//      return HandleSync(message);
+//    case nfs::MessageAction::kAccountTransfer:
+//      return HandleRecordTransfer(message);
+//    default: {
+//      reply = nfs::Reply(VaultErrors::operation_not_supported, message.Serialise().data);
+//      std::lock_guard<std::mutex> lock(accumulator_mutex_);
+//      accumulator_.SetHandled(message, reply);
+//      reply_functor(reply.Serialise()->string());
+//    }
+//  }
+//}
 
-  switch (message.data().action) {
-    case nfs::MessageAction::kPut:
-      return HandlePut<Data>(message, reply_functor);
-    case nfs::MessageAction::kPutResult:
-      return HandlePutResult<Data>(message);
-    case nfs::MessageAction::kGet:
-      return HandleGet<Data>(message, reply_functor);
-    case nfs::MessageAction::kDelete:
-      return HandleDelete<Data>(message);
-    case nfs::MessageAction::kStateChange:
-      return HandleStateChange<Data>(message);
-    case nfs::MessageAction::kSynchronise:
-      return HandleSync(message);
-    case nfs::MessageAction::kAccountTransfer:
-      return HandleRecordTransfer(message);
-    default: {
-      reply = nfs::Reply(VaultErrors::operation_not_supported, message.Serialise().data);
-      std::lock_guard<std::mutex> lock(accumulator_mutex_);
-      accumulator_.SetHandled(message, reply);
-      reply_functor(reply.Serialise()->string());
-    }
-  }
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::GetRequestFromMaidNodeToDataManager& message,
+   const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
+   const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
 }
 
-template<typename Data>
-void DataManagerService::HandlePut(const nfs::Message& message,
-                                       const routing::ReplyFunctor& reply_functor) {
-  try {
-    ValidatePutSender(message);
-    Data data(typename Data::Name(message.data().name),
-              typename Data::serialised_type(message.data().content));
-    auto data_name(data.name());
-    auto data_size(static_cast<int32_t>(message.data().content.string().size()));
-    auto is_duplicate_and_cost(metadata_handler_.template CheckPut<Data>(data_name, data_size));
-    if (detail::AccumulateMetadataPut(message, reply_functor, MakeError(CommonErrors::success),
-                                      is_duplicate_and_cost.second, accumulator_,
-                                      accumulator_mutex_, kPutRequestsRequired_)) {
-      if (is_duplicate_and_cost.first) {  // No need to store data on DH
-        DataManagerValue metadata_value(data_size);
-        AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, metadata_value);
-      } else {
-        PmidName target_pmid_node(routing_.ClosestToId(message.source().node_id) ?
-                                    message.pmid_node() :
-                                    Identity(routing_.RandomConnectedNode().string()));
-        // Account will be created by PutResult message from PAH
-        nfs_.Put(target_pmid_node, data, nullptr);
-      }
-    }
-  }
-  catch(const maidsafe_error& error) {
-    detail::AccumulateMetadataPut(message, reply_functor, error, 0, accumulator_,
-                                  accumulator_mutex_, kPutRequestsRequired_);
-  }
-  catch(...) {
-    detail::AccumulateMetadataPut(message, reply_functor, MakeError(CommonErrors::unknown), 0,
-                                  accumulator_, accumulator_mutex_, kPutRequestsRequired_);
-  }
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::PutRequestFromMaidManagerToDataManager& message,
+   const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
+   const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver& receiver) {
+  typedef nfs::PutRequestFromMaidManagerToDataManager MessageType;
+  OperationHandlerWrapper<MessageType,
+                          nfs::DataManagerServiceMessages>(
+      accumulator_,
+      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+        return this->ValidateSender(message, sender);
+      },
+      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
+          RequiredRequests<MessageType>::Value()),
+      [this](const MessageType& message,
+             const typename MessageType::Sender& sender,
+             const typename MessageType::Receiver& receiver) {
+        this->HandlePut(message, sender, receiver);
+      },
+      accumulator_mutex_)(message, sender, receiver);
 }
+
+
+template<typename T>
+void DataManagerService::HandlePut(const T& message,
+                                   const typename T::Sender& /*sender*/,
+                                   const typename T::Receiver& /*receiver*/) {
+  DataManager::UnresolvedPut unresolved_put(
+      GetDataNameVariant(message.contents->name.type, message.contents->name.raw_name),
+      message.contents.content->size());
+  dispatcher_.SendSync(message.contents->name.raw_name, unresolved_put.Serialise());
+}
+
+
+//template<typename Data>
+//void DataManagerService::HandlePut(const nfs::Message& message,
+//                                       const routing::ReplyFunctor& reply_functor) {
+//  try {
+//    ValidatePutSender(message);
+//    Data data(typename Data::Name(message.data().name),
+//              typename Data::serialised_type(message.data().content));
+//    auto data_name(data.name());
+//    auto data_size(static_cast<int32_t>(message.data().content.string().size()));
+//    auto is_duplicate_and_cost(metadata_handler_.template CheckPut<Data>(data_name, data_size));
+//    if (detail::AccumulateMetadataPut(message, reply_functor, MakeError(CommonErrors::success),
+//                                      is_duplicate_and_cost.second, accumulator_,
+//                                      accumulator_mutex_, kPutRequestsRequired_)) {
+//      if (is_duplicate_and_cost.first) {  // No need to store data on DH
+//        DataManagerValue metadata_value(data_size);
+//        AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, metadata_value);
+//      } else {
+//        PmidName target_pmid_node(routing_.ClosestToId(message.source().node_id) ?
+//                                    message.pmid_node() :
+//                                    Identity(routing_.RandomConnectedNode().string()));
+//        // Account will be created by PutResult message from PAH
+//        nfs_.Put(target_pmid_node, data, nullptr);
+//      }
+//    }
+//  }
+//  catch(const maidsafe_error& error) {
+//    detail::AccumulateMetadataPut(message, reply_functor, error, 0, accumulator_,
+//                                  accumulator_mutex_, kPutRequestsRequired_);
+//  }
+//  catch(...) {
+//    detail::AccumulateMetadataPut(message, reply_functor, MakeError(CommonErrors::unknown), 0,
+//                                  accumulator_, accumulator_mutex_, kPutRequestsRequired_);
+//  }
+//}
 
 template<typename Data>
 void DataManagerService::HandlePutResult(const nfs::Message& message) {
@@ -430,7 +471,7 @@ void DataManagerService::HandleMessage(
         group_db_.Commit(resolved_action->key, resolved_action->action);
       break;
     }
-    case ActionDataManagerSetPmidOnline::kActionId: {
+    case ActionDataManagerNodeUp::kActionId: {
       DataManager::UnresolvedNodeUp unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
@@ -438,7 +479,7 @@ void DataManagerService::HandleMessage(
         group_db_.Commit(resolved_action->key, resolved_action->action);
       break;
     }
-    case ActionDataManagerSetPmidOffline::kActionId: {
+    case ActionDataManagerNodeDown::kActionId: {
       DataManager::UnresolvedNodeDown unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
