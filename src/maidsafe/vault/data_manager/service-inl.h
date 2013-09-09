@@ -35,6 +35,12 @@
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/data_manager/action_add_pmid.h"
+#include "maidsafe/vault/data_manager/action_remove_pmid.h"
+#include "maidsafe/vault/data_manager/action_put.h"
+#include "maidsafe/vault/data_manager/action_delete.h"
+#include "maidsafe/vault/data_manager/action_set_pmid_online.h"
+#include "maidsafe/vault/data_manager/action_set_pmid_offline.h"
 
 
 namespace maidsafe {
@@ -380,6 +386,73 @@ void DataManagerService::AddLocalUnresolvedEntryThenSync(
   typename Data::Name data_name(message.data().name);
   Sync();
 }
+
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::SynchroniseFromDataManagerToDataManager& message,
+   const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& sender,
+   const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& /*receiver*/) {
+  protobuf::Sync proto_sync;
+  if (!proto_sync.ParseFromString(message.contents->content.string()))
+    ThrowError(CommonErrors::parsing_error);
+
+  switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
+    case ActionDataManagerPut::kActionId: {
+      DataManager::UnresolvedPut unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        group_db_.Commit(resolved_action->key, resolved_action->action);
+      }
+      break;
+    }
+    case ActionDataManagerDelete::kActionId: {
+      DataManager::UnresolvedDelete unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action)
+        group_db_.Commit(resolved_action->key, resolved_action->action);
+      break;
+    }
+    case ActionDataManagerAddPmid::kActionId: {
+      DataManager::UnresolvedAddPmid unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action)
+        group_db_.Commit(resolved_action->key, resolved_action->action);
+      break;
+    }
+    case ActionDataManagerRemovePmid::kActionId: {
+      DataManager::UnresolvedRemovePmid unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_remove_pmids_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action)
+        group_db_.Commit(resolved_action->key, resolved_action->action);
+      break;
+    }
+    case ActionDataManagerSetPmidOnline::kActionId: {
+      DataManager::UnresolvedNodeUp unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action)
+        group_db_.Commit(resolved_action->key, resolved_action->action);
+      break;
+    }
+    case ActionDataManagerSetPmidOffline::kActionId: {
+      DataManager::UnresolvedNodeDown unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action)
+        group_db_.Commit(resolved_action->key, resolved_action->action);
+      break;
+    }
+    default: {
+      assert(false);
+      LOG(kError) << "Unhandled action type";
+    }
+  }
+}
+
 
 }  // namespace vault
 

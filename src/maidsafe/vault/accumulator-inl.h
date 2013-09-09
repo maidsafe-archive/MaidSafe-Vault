@@ -78,7 +78,7 @@ void Accumulator<T>::SetHandled(const T& request, const routing::GroupSource& so
   nfs::MessageId message_id;
   auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
   boost::apply_visitor(ContentEraseVisitor(), request);
-  for (auto itr(pending_requests_.begin()); itr != pending_requests_.end();) {
+  for (auto itr(std::begin(pending_requests_)); itr != std::end(pending_requests_);) {
     if (itr->request.which() == request.which()) {
       message_id = boost::apply_visitor(MessageIdRequestVisitor(), itr->request);
       if ((message_id == request_message_id) && (source.group_id == itr->source.group_id))
@@ -131,8 +131,8 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddRequestChecker::operator()
   } else {
     uint16_t index(0);
     while (requests.size() - index >= required_requests_) {
-      if (std::count_if(requests.begin(),
-                        requests.end(),
+      if (std::count_if(std::begin(requests),
+                        std::end(requests.end),
                         [&](const T& request) {
                           return nfs::Equals(requests.at(index), request);
                         }) == required_requests_)

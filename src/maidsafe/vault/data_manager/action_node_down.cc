@@ -16,11 +16,11 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/data_manager/action_set_pmid_offline.h"
+#include "maidsafe/vault/data_manager/action_node_down.h"
 
 #include "maidsafe/common/error.h"
 
-#include "maidsafe/vault/data_manager/action_set_pmid_offline.pb.h"
+#include "maidsafe/vault/data_manager/action_node_down.pb.h"
 #include "maidsafe/vault/data_manager/metadata.h"
 #include "maidsafe/vault/data_manager/value.h"
 
@@ -29,45 +29,43 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionDataManagerSetPmidOffline::ActionDataManagerSetPmidOffline(const PmidName& pmid_name)
+ActionDataManagerNodeDown::ActionDataManagerNodeDown(const PmidName& pmid_name)
     : kPmidName(pmid_name) {}
 
-ActionDataManagerSetPmidOffline::ActionDataManagerSetPmidOffline(
+ActionDataManagerNodeDown::ActionDataManagerNodeDown(
     const std::string& serialised_action)
     : kPmidName([&serialised_action]()->PmidName {
-        protobuf::ActionDataManagerSetPmidOffline action_set_pmid_offline_proto;
-        if (!action_set_pmid_offline_proto.ParseFromString(serialised_action))
+        protobuf::ActionDataManagerNodeDown action_node_down_proto;
+        if (!action_node_down_proto.ParseFromString(serialised_action))
           ThrowError(CommonErrors::parsing_error);
-        return PmidName(Identity(action_set_pmid_offline_proto.pmid_name()));
+        return PmidName(Identity(action_node_down_proto.pmid_name()));
       }()) {}
 
-ActionDataManagerSetPmidOffline::ActionDataManagerSetPmidOffline(
-    const ActionDataManagerSetPmidOffline& other)
+ActionDataManagerNodeDown::ActionDataManagerNodeDown(
+    const ActionDataManagerNodeDown& other)
     : kPmidName(other.kPmidName) {}
 
-ActionDataManagerSetPmidOffline::ActionDataManagerSetPmidOffline(
-    ActionDataManagerSetPmidOffline&& other)
+ActionDataManagerNodeDown::ActionDataManagerNodeDown(
+    ActionDataManagerNodeDown&& other)
     : kPmidName(std::move(other.kPmidName)) {}
 
-std::string ActionDataManagerSetPmidOffline::Serialise() const {
-  protobuf::ActionDataManagerSetPmidOffline action_set_pmid_offline_proto;
-  action_set_pmid_offline_proto.set_pmid_name(kPmidName->string());
-  return action_set_pmid_offline_proto.SerializeAsString();
+std::string ActionDataManagerNodeDown::Serialise() const {
+  protobuf::ActionDataManagerNodeDown action_node_down_proto;
+  action_node_down_proto.set_pmid_name(kPmidName->string());
+  return action_node_down_proto.SerializeAsString();
 }
 
-void ActionDataManagerSetPmidOffline::operator()(boost::optional<DataManagerValue>& value) const {
+void ActionDataManagerNodeDown::operator()(boost::optional<DataManagerValue>& value) const {
   if (!value)
     ThrowError(CommonErrors::invalid_parameter);
   value->SetPmidOffline(kPmidName);
 }
 
-bool operator==(const ActionDataManagerSetPmidOffline& lhs,
-                const ActionDataManagerSetPmidOffline& rhs) {
+bool operator==(const ActionDataManagerNodeDown& lhs, const ActionDataManagerNodeDown& rhs) {
   return lhs.kPmidName == rhs.kPmidName;
 }
 
-bool operator!=(const ActionDataManagerSetPmidOffline& lhs,
-                const ActionDataManagerSetPmidOffline& rhs) {
+bool operator!=(const ActionDataManagerNodeDown& lhs, const ActionDataManagerNodeDown& rhs) {
   return !operator==(lhs, rhs);
 }
 

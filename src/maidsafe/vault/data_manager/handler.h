@@ -98,7 +98,7 @@ class MetadataHandler {
   void AddLocalUnresolvedEntry(const DataManagerUnresolvedEntry& unresolved_entry);
 
   // Sync operations
-  std::vector<DataManagerKey> GetRecordNames() const;
+  std::vector<DataManager::Key> GetRecordNames() const;
   serialised_record_type GetSerialisedRecord(const DataNameVariant& data_name);
   template <typename Data>
   NonEmptyString GetSyncData(const typename Data::Name& data_name);
@@ -117,7 +117,7 @@ class MetadataHandler {
 
  private:
   const boost::filesystem::path kMetadataRoot_;
-  std::unique_ptr<ManagerDb<DataManagerKey, DataManagerValue>> metadata_db_;
+  std::unique_ptr<ManagerDb<DataManager::Key, DataManagerValue>> metadata_db_;
   const NodeId kThisNodeId_;
   mutable std::mutex mutex_;
   Sync<MetadataMergePolicy> sync_;

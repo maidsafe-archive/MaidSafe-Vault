@@ -16,49 +16,47 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACTION_SET_PMID_OFFLINE_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_ACTION_SET_PMID_OFFLINE_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACTION_PUT_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_ACTION_PUT_H_
 
-#include <cstdint>
 #include <string>
 
-#include "boost/optional/optional.hpp"
+#include "maidsafe/common/error.h"
+#include "maidsafe/common/log.h"
 
-#include "maidsafe/nfs/types.h"
+#include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
-
 namespace vault {
 
-class DataManagerValue;
+struct ActionDataManagerPut {
+  ActionDataManagerPut(const PmidName& pmid_name, const uint32_t& size);
+  explicit ActionDataManagerPut(const std::string& serialised_action);
+  ActionDataManagerPut(const ActionDataManagerPut& other);
+  ActionDataManagerPut(ActionDataManagerPut&& other);
 
-struct ActionDataManagerSetPmidOffline {
-  explicit ActionDataManagerSetPmidOffline(const PmidName& pmid_name);
-  explicit ActionDataManagerSetPmidOffline(const std::string& serialised_action);
-  ActionDataManagerSetPmidOffline(const ActionDataManagerSetPmidOffline& other);
-  ActionDataManagerSetPmidOffline(ActionDataManagerSetPmidOffline&& other);
+  void operator()(boost::optional<DataManagerValue>& value);
+
   std::string Serialise() const;
 
-  void operator()(boost::optional<DataManagerValue>& value) const;
-
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kSetPmidOffline;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kIncrementSubscribers;
+  const uint32_t kSize;
   const PmidName kPmidName;
 
  private:
-  ActionDataManagerSetPmidOffline();
-  ActionDataManagerSetPmidOffline& operator=(ActionDataManagerSetPmidOffline other);
+  ActionDataManagerPut();
+  ActionDataManagerPut& operator=(ActionDataManagerPut other);
 };
 
-bool operator==(const ActionDataManagerSetPmidOffline& lhs,
-                const ActionDataManagerSetPmidOffline& rhs);
-
-bool operator!=(const ActionDataManagerSetPmidOffline& lhs,
-                const ActionDataManagerSetPmidOffline& rhs);
+bool operator==(const ActionDataManagerPut& lhs,
+                const ActionDataManagerPut& rhs);
+bool operator!=(const ActionDataManagerPut& lhs,
+                const ActionDataManagerPut& rhs);
 
 }  // namespace vault
-
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_SET_PMID_OFFLINE_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_PUT_H_
+

@@ -18,7 +18,4 @@
 
 package maidsafe.vault.protobuf;
 
-message ActionDataManagerIncrementSubscribers {
-  required bytes pmid_name = 1;
-  required uint32 size = 2;
-}
+message ActionDataManagerDelete {}

@@ -16,63 +16,63 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/data_manager/action_increment_subscribers.h"
-#include "maidsafe/vault/data_manager/action_increment_subscribers.pb.h"
+#include "maidsafe/vault/data_manager/action_put.h"
+#include "maidsafe/vault/data_manager/action_put.pb.h"
 
 #include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
 namespace vault {
 
-ActionDataManagerIncrementSubscribers::ActionDataManagerIncrementSubscribers(
+ActionDataManagerPut::ActionDataManagerPut(
     const PmidName& pmid_name, const uint32_t& size)
     : kSize(size),
       kPmidName(pmid_name) {}
 
-ActionDataManagerIncrementSubscribers::ActionDataManagerIncrementSubscribers(
+ActionDataManagerPut::ActionDataManagerPut(
     const std::string& serialised_action)
     : kSize([&]()->int32_t {
-              protobuf::ActionDataManagerIncrementSubscribers action_increment_subscribers_proto;
-              action_increment_subscribers_proto.ParseFromString(serialised_action);
-              return action_increment_subscribers_proto.size();
+              protobuf::ActionDataManagerPut action_put_proto;
+              action_put_proto.ParseFromString(serialised_action);
+              return action_put_proto.size();
             }()),
       kPmidName([&]()->Identity {
-                  protobuf::ActionDataManagerIncrementSubscribers action_increment_subscribers_proto;
-                  action_increment_subscribers_proto.ParseFromString(serialised_action);
-                  return Identity(action_increment_subscribers_proto.pmid_name());
+                  protobuf::ActionDataManagerPut action_put_proto;
+                  action_put_proto.ParseFromString(serialised_action);
+                  return Identity(action_put_proto.pmid_name());
       }()) {}
 
-ActionDataManagerIncrementSubscribers::ActionDataManagerIncrementSubscribers(
-    const ActionDataManagerIncrementSubscribers& other)
+ActionDataManagerPut::ActionDataManagerPut(
+    const ActionDataManagerPut& other)
     : kSize(other.kSize),
       kPmidName(other.kPmidName) {}
 
-ActionDataManagerIncrementSubscribers::ActionDataManagerIncrementSubscribers(
-    ActionDataManagerIncrementSubscribers&& other)
+ActionDataManagerPut::ActionDataManagerPut(
+    ActionDataManagerPut&& other)
     : kSize(std::move(other.kSize)),
       kPmidName(std::move(other.kPmidName)) {}
 
-std::string ActionDataManagerIncrementSubscribers::Serialise() const {
-  protobuf::ActionDataManagerIncrementSubscribers action_increment_subscribers_proto;
-  action_increment_subscribers_proto.set_pmid_name(kPmidName->string());
-  action_increment_subscribers_proto.set_size(kSize);
-  return action_increment_subscribers_proto.SerializeAsString();
+std::string ActionDataManagerPut::Serialise() const {
+  protobuf::ActionDataManagerPut action_put_proto;
+  action_put_proto.set_pmid_name(kPmidName->string());
+  action_put_proto.set_size(kSize);
+  return action_put_proto.SerializeAsString();
 }
 
-void ActionDataManagerIncrementSubscribers::operator()(boost::optional<DataManagerValue>& value) {
+void ActionDataManagerPut::operator()(boost::optional<DataManagerValue>& value) {
   if (value)
     value->IncrementSubscribers();
   else
     value.reset(DataManagerValue(kPmidName, kSize));
 }
 
-bool operator==(const ActionDataManagerIncrementSubscribers& lhs,
-                const ActionDataManagerIncrementSubscribers& rhs) {
+bool operator==(const ActionDataManagerPut& lhs,
+                const ActionDataManagerPut& rhs) {
   return lhs.kPmidName == rhs.kPmidName && lhs.kSize == rhs.kSize;
 }
 
-bool operator!=(const ActionDataManagerIncrementSubscribers& lhs,
-                const ActionDataManagerIncrementSubscribers& rhs) {
+bool operator!=(const ActionDataManagerPut& lhs,
+                const ActionDataManagerPut& rhs) {
   return !operator==(lhs, rhs);
 }
 

@@ -38,6 +38,7 @@
 #include "maidsafe/vault/data_manager/value.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/sync.h"
 
 
 namespace maidsafe {
@@ -123,7 +124,7 @@ class DataManagerService {
 */
 
   // =============== Sync and Record transfer =====================================================
-  void Sync();
+//  void Sync();
 /* Commented by Mahmoud on 3 Sep. Code need refactoring
   void HandleSync(const nfs::Message& message); */
   void TransferRecord(const DataNameVariant& record_name, const NodeId& new_node);
@@ -134,7 +135,14 @@ class DataManagerService {
   nfs_client::DataGetter& public_key_getter_;
   std::mutex accumulator_mutex_;
   Accumulator<DataNameVariant> accumulator_;
+  GroupDb<DataManager> group_db_;
   MetadataHandler metadata_handler_;
+  Sync<DataManager::UnresolvedPut> sync_puts_;
+  Sync<DataManager::UnresolvedDelete> sync_deletes_;
+  Sync<DataManager::UnresolvedAddPmid> sync_add_pmids_;
+  Sync<DataManager::UnresolvedRemovePmid> sync_remove_pmids_;
+  Sync<DataManager::UnresolvedNodeDown> sync_node_downs_;
+  Sync<DataManager::UnresolvedNodeUp> sync_node_ups_;
   static const int kPutRequestsRequired_;
   static const int kStateChangesRequired_;
   static const int kDeleteRequestsRequired_;
@@ -196,6 +204,13 @@ void DataManagerService::HandleMessage(
    const nfs::GetResponseFromPmidNodeToDataManager& message,
    const typename nfs::GetResponseFromPmidNodeToDataManager::Sender& sender,
    const typename nfs::GetResponseFromPmidNodeToDataManager::Receiver& receiver);
+
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::SynchroniseFromDataManagerToDataManager& message,
+   const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& sender,
+   const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& receiver);
+
 
 // ============================== Handle Get Specialisations ======================================
 

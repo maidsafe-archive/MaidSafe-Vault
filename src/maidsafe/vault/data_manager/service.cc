@@ -153,12 +153,12 @@ bool DataManagerService::ThisVaultInGroupForData(const nfs::Message& message) co
 
 // =============== Sync and Record transfer =====================================================
 
-void DataManagerService::Sync() {
-  auto unresolved_entries(metadata_handler_.GetSyncData());
-  for (const auto& unresolved_entry : unresolved_entries) {
-    nfs_.Sync(unresolved_entry.key.first.name(), unresolved_entry.Serialise());
-  }
-}
+//void DataManagerService::Sync() {
+//  auto unresolved_entries(metadata_handler_.GetSyncData());
+//  for (const auto& unresolved_entry : unresolved_entries) {
+//    nfs_.Sync(unresolved_entry.key.first.name(), unresolved_entry.Serialise());
+//  }
+//}
 
 void DataManagerService::HandleSync(const nfs::Message& message) {
   metadata_handler_.ApplySyncData(NonEmptyString(message.data().content.string()));

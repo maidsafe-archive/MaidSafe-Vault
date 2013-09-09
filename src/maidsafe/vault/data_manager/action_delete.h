@@ -16,40 +16,39 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/data_manager/action_decrement_subscribers.h"
-#include "maidsafe/vault/data_manager/action_decrement_subscribers.pb.h"
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACTION_DELETE_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_ACTION_DELETE_H_
 
-#include "maidsafe/vault/data_manager/value.h"
+#include <string>
+
+#include "maidsafe/common/error.h"
+#include "maidsafe/common/log.h"
+
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
 namespace vault {
 
-const nfs::MessageAction ActionDataManagerDecrementSubscribers::kActionId;
+class DataManagerValue;
 
-std::string ActionDataManagerDecrementSubscribers::Serialise() const {
-  protobuf::ActionDataManagerDecrementSubscribers action_decrement_subscribers_proto;
-  return action_decrement_subscribers_proto.SerializeAsString();
-}
+struct ActionDataManagerDelete {
+ public:
+  void operator()(boost::optional<DataManagerValue>& value);
+  std::string Serialise() const;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kDecrementSubscribers;
 
-void ActionDataManagerDecrementSubscribers::operator()(
-    boost::optional<DataManagerValue>& value) {
-  if (value)
-    value->DecrementSubscribers();
-  else
-    ThrowError(CommonErrors::invalid_parameter);
-}
+ private:
+  ActionDataManagerDelete& operator=(ActionDataManagerDelete other);
+};
 
-bool operator==(const ActionDataManagerDecrementSubscribers& /*lhs*/,
-                const ActionDataManagerDecrementSubscribers& /*rhs*/) {
-  return true;
-}
-
-bool operator!=(const ActionDataManagerDecrementSubscribers& lhs,
-                const ActionDataManagerDecrementSubscribers& rhs) {
-  return !operator==(lhs, rhs);
-}
+bool operator==(const ActionDataManagerDelete& lhs,
+               const ActionDataManagerDelete& rhs);
+bool operator!=(const ActionDataManagerDelete& lhs,
+                const ActionDataManagerDelete& rhs);
 
 }  // namespace vault
-
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_DELETE_H_
+

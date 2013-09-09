@@ -16,8 +16,40 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-package maidsafe.vault.protobuf;
+#include "maidsafe/vault/data_manager/action_delete.h"
+#include "maidsafe/vault/data_manager/action_delete.pb.h"
 
-message ActionDataManagerSetPmidOnline {
-  required bytes pmid_name = 1;
+#include "maidsafe/vault/data_manager/value.h"
+
+
+namespace maidsafe {
+namespace vault {
+
+const nfs::MessageAction ActionDataManagerDelete::kActionId;
+
+std::string ActionDataManagerDelete::Serialise() const {
+  protobuf::ActionDataManagerDelete action_delete_proto;
+  return action_delete_proto.SerializeAsString();
 }
+
+void ActionDataManagerDelete::operator()(
+    boost::optional<DataManagerValue>& value) {
+  if (value)
+    value->DecrementSubscribers();
+  else
+    ThrowError(CommonErrors::invalid_parameter);
+}
+
+bool operator==(const ActionDataManagerDelete& /*lhs*/,
+                const ActionDataManagerDelete& /*rhs*/) {
+  return true;
+}
+
+bool operator!=(const ActionDataManagerDelete& lhs,
+                const ActionDataManagerDelete& rhs) {
+  return !operator==(lhs, rhs);
+}
+
+}  // namespace vault
+
+}  // namespace maidsafe

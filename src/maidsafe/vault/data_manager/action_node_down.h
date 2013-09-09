@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACTION_SET_PMID_ONLINE_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_ACTION_SET_PMID_ONLINE_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACTION_NODE_DOWN_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_ACTION_NODE_DOWN_H_
 
 #include <cstdint>
 #include <string>
@@ -34,32 +34,29 @@ namespace vault {
 
 class DataManagerValue;
 
-struct ActionDataManagerSetPmidOnline {
- public:
-  explicit ActionDataManagerSetPmidOnline(const PmidName& pmid_name);
-  explicit ActionDataManagerSetPmidOnline(const std::string& serialised_action);
-  ActionDataManagerSetPmidOnline(const ActionDataManagerSetPmidOnline& other);
-  ActionDataManagerSetPmidOnline(ActionDataManagerSetPmidOnline&& other);
+struct ActionDataManagerNodeDown {
+  explicit ActionDataManagerNodeDown(const PmidName& pmid_name);
+  explicit ActionDataManagerNodeDown(const std::string& serialised_action);
+  ActionDataManagerNodeDown(const ActionDataManagerNodeDown& other);
+  ActionDataManagerNodeDown(ActionDataManagerNodeDown&& other);
   std::string Serialise() const;
 
-  void operator()(boost::optional<DataManagerValue>& value);
+  void operator()(boost::optional<DataManagerValue>& value) const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kSetPmidOnline;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kSetPmidOffline;
   const PmidName kPmidName;
 
  private:
-  ActionDataManagerSetPmidOnline();
-  ActionDataManagerSetPmidOnline& operator=(ActionDataManagerSetPmidOnline other);
+  ActionDataManagerNodeDown();
+  ActionDataManagerNodeDown& operator=(ActionDataManagerNodeDown other);
 };
 
-bool operator==(const ActionDataManagerSetPmidOnline& lhs,
-                const ActionDataManagerSetPmidOnline& rhs);
+bool operator==(const ActionDataManagerNodeDown& lhs, const ActionDataManagerNodeDown& rhs);
 
-bool operator!=(const ActionDataManagerSetPmidOnline& lhs,
-                const ActionDataManagerSetPmidOnline& rhs);
+bool operator!=(const ActionDataManagerNodeDown& lhs, const ActionDataManagerNodeDown& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_SET_PMID_ONLINE_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_NODE_DOWN_H_

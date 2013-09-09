@@ -28,13 +28,18 @@ namespace maidsafe {
 
 namespace vault {
 
-Metadata::Metadata(const DataNameVariant& data_name, ManagerDb<DataManager>* metadata_db,
+Metadata::Metadata(const DataNameVariant& data_name,
+                   Db<DataManager::Key, DataManager::Value>* metadata_db,
                    int32_t data_size)
     : data_name_(data_name),
       value_([&metadata_db, data_name, data_size, this]()->DataManagerValue {
                 assert(metadata_db);
                 try {
-                  return metadata_db->Get(DbKey(data_name));
+                  auto value(metadata_db->Get(DataManager::Key(data_name)));
+                  if (value)
+                    return *value;
+                  else
+                    return DataManagerValue(data_size);
                 }
                 catch(const std::exception& /*ex*/) {
                   return DataManagerValue(data_size);
@@ -44,27 +49,34 @@ Metadata::Metadata(const DataNameVariant& data_name, ManagerDb<DataManager>* met
   strong_guarantee_.SetAction(on_scope_exit::RevertValue(value_));
 }
 
-Metadata::Metadata(const DataNameVariant& data_name, ManagerDb<DataManager>* metadata_db)
-  : data_name_(data_name),
-    value_([&metadata_db, data_name, this]()->DataManagerValue {
-            assert(metadata_db);
-            return metadata_db->Get(DbKey(data_name));
-          } ()),
-    strong_guarantee_(on_scope_exit::ExitAction()) {
-  strong_guarantee_.SetAction(on_scope_exit::RevertValue(value_));
-}
+// Commented by Mahmoud on 9 Sept. data_size is not available
+//Metadata::Metadata(const DataNameVariant& data_name,
+//                   Db<DataManager::Key, DataManager::Value>* metadata_db)
+//  : data_name_(data_name),
+//    value_([&metadata_db, data_name, this]()->DataManagerValue {
+//            assert(metadata_db);
+//            auto value(metadata_db->Get(DataManager::Key(data_name)));
+//            if (value)
+//              return *value;
+//            else
+//              return DataManagerValue(data_size);
+//          } ()),
+//    strong_guarantee_(on_scope_exit::ExitAction()) {
+//  strong_guarantee_.SetAction(on_scope_exit::RevertValue(value_));
+//}
 
-void Metadata::SaveChanges(ManagerDb<DataManager>* metadata_db) {
-  assert(metadata_db);
-  //TODO(Prakash): Handle case of modifying unique data
-  if (*value_.subscribers < 1) {
-    metadata_db->Delete(DbKey(data_name_));
-  } else {
-    auto kv_pair(std::make_pair(DbKey(data_name_), value_));
-    metadata_db->Put(kv_pair);
-  }
-  strong_guarantee_.Release();
-}
+// Commented by Mahmoud on 9 Sept.
+//void Metadata::SaveChanges(Db<DataManager::Key, DataManager::Value>* metadata_db) {
+//  assert(metadata_db);
+//  //TODO(Prakash): Handle case of modifying unique data
+//  if (value_.Subscribers() < 1) {
+//    metadata_db->Delete(DataManager::Key(data_name_));
+//  } else {
+//    auto kv_pair(std::make_pair(DbKey(data_name_), value_));
+//    metadata_db->Put(kv_pair);
+//  }
+//  strong_guarantee_.Release();
+//}
 
 }  // namespace vault
 

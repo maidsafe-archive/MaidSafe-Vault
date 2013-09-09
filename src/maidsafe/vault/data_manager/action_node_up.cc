@@ -16,12 +16,12 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/data_manager/action_set_pmid_online.h"
+#include "maidsafe/vault/data_manager/action_node_up.h"
 
 #include "maidsafe/common/error.h"
 
-#include "maidsafe/vault/data_manager/action_set_pmid_online.h"
-#include "maidsafe/vault/data_manager/action_set_pmid_online.pb.h"
+
+#include "maidsafe/vault/data_manager/action_node_up.pb.h"
 #include "maidsafe/vault/data_manager/metadata.h"
 #include "maidsafe/vault/data_manager/value.h"
 
@@ -30,43 +30,43 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionDataManagerSetPmidOnline::ActionDataManagerSetPmidOnline(const PmidName& pmid_name)
+ActionDataManagerNodeUp::ActionDataManagerNodeUp(const PmidName& pmid_name)
     : kPmidName(pmid_name) {}
 
-ActionDataManagerSetPmidOnline::ActionDataManagerSetPmidOnline(const std::string& serialised_action)
+ActionDataManagerNodeUp::ActionDataManagerNodeUp(const std::string& serialised_action)
     : kPmidName([&serialised_action]()->PmidName {
-        protobuf::ActionDataManagerSetPmidOnline action_set_pmid_online_proto;
+        protobuf::ActionDataManagerNodeUp action_set_pmid_online_proto;
         if (!action_set_pmid_online_proto.ParseFromString(serialised_action))
           ThrowError(CommonErrors::parsing_error);
         return PmidName(Identity(action_set_pmid_online_proto.pmid_name()));
       }()) {}
 
-ActionDataManagerSetPmidOnline::ActionDataManagerSetPmidOnline(const ActionDataManagerSetPmidOnline& other)
+ActionDataManagerNodeUp::ActionDataManagerNodeUp(const ActionDataManagerNodeUp& other)
     : kPmidName(other.kPmidName) {}
 
-ActionDataManagerSetPmidOnline::ActionDataManagerSetPmidOnline(
-    ActionDataManagerSetPmidOnline&& other)
+ActionDataManagerNodeUp::ActionDataManagerNodeUp(
+    ActionDataManagerNodeUp&& other)
     : kPmidName(std::move(other.kPmidName)) {}
 
-std::string ActionDataManagerSetPmidOnline::Serialise() const {
-  protobuf::ActionDataManagerSetPmidOnline action_set_pmid_online_proto;
+std::string ActionDataManagerNodeUp::Serialise() const {
+  protobuf::ActionDataManagerNodeUp action_set_pmid_online_proto;
   action_set_pmid_online_proto.set_pmid_name(kPmidName->string());
   return action_set_pmid_online_proto.SerializeAsString();
 }
 
-void ActionDataManagerSetPmidOnline::operator()(boost::optional<DataManagerValue>& value) {
+void ActionDataManagerNodeUp::operator()(boost::optional<DataManagerValue>& value) {
   if (!value)
     ThrowError(CommonErrors::invalid_parameter);
   value->SetPmidOnline(kPmidName);
 }
 
-bool operator==(const ActionDataManagerSetPmidOnline& lhs,
-    const ActionDataManagerSetPmidOnline& rhs) {
+bool operator==(const ActionDataManagerNodeUp& lhs,
+    const ActionDataManagerNodeUp& rhs) {
   return lhs.kPmidName == rhs.kPmidName;
 }
 
-bool operator!=(const ActionDataManagerSetPmidOnline& lhs,
-    const ActionDataManagerSetPmidOnline& rhs) {
+bool operator!=(const ActionDataManagerNodeUp& lhs,
+    const ActionDataManagerNodeUp& rhs) {
   return !operator==(lhs, rhs);
 }
 
