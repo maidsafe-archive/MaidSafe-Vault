@@ -25,6 +25,7 @@
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_types/data_type_values.h"
+#include "maidsafe/data_types/data_name_variant.h"
 
 #include "maidsafe/vault/key_utils.h"
 
@@ -43,6 +44,7 @@ class ManagerDb;
 
 struct Key {
   Key(const Identity& name_in, DataTagValue type_in);
+  Key(const DataNameVariant& data_name);
   explicit Key(const std::string& serialised_key);
   Key(const Key& other);
   Key(Key&& other);

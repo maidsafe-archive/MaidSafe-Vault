@@ -170,19 +170,16 @@ void DataManagerService::HandleMessage(
    const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
    const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver& receiver) {
   typedef nfs::PutRequestFromMaidManagerToDataManager MessageType;
-  OperationHandlerWrapper<MessageType,
+  OperationHandlerWrapper<DataManagerService,
+                          MessageType,
                           nfs::DataManagerServiceMessages>(
       accumulator_,
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
+      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(
           RequiredRequests<MessageType>::Value()),
-      [this](const MessageType& message,
-             const typename MessageType::Sender& sender,
-             const typename MessageType::Receiver& receiver) {
-        this->HandlePut(message, sender, receiver);
-      },
+      this,
       accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -194,6 +191,7 @@ void DataManagerService::HandlePut(const T& message,
   DataManager::UnresolvedPut unresolved_put(
       GetDataNameVariant(message.contents->name.type, message.contents->name.raw_name),
       message.contents.content->size());
+
   dispatcher_.SendSync(message.contents->name.raw_name, unresolved_put.Serialise());
 }
 
