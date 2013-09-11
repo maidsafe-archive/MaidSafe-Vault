@@ -67,7 +67,7 @@ void PmidManagerService::HandleMessage(
         return this->ValidateSender(message, sender);
       },
       Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>::Value()),
+          RequiredRequests<MessageType>::value),
       [this](const MessageType& message,
              const typename MessageType::Sender& sender,
              const typename MessageType::Receiver& receiver) {

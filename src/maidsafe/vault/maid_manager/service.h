@@ -49,6 +49,7 @@
 #include "maidsafe/vault/maid_manager/action_put.h"
 #include "maidsafe/vault/maid_manager/action_delete.h"
 #include "maidsafe/vault/maid_manager/action_register_unregister_pmid.h"
+#include "maidsafe/vault/maid_manager/handler.h"
 #include "maidsafe/vault/maid_manager/dispatcher.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
@@ -82,16 +83,59 @@ class MaidManagerService {
   }
 
   template<>
-  void HandleMessage<nfs::PutRequestFromMaidNodeToMaidManager>(
+  void HandleMessage(
       const nfs::PutRequestFromMaidNodeToMaidManager& message,
       const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
       const typename nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
   template<>
-  void HandleMessage<nfs::DeleteRequestFromMaidNodeToMaidManager>(
+  void HandleMessage(
       const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
       const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
       const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+  template<>
+  void HandleMessage(
+      const nfs::PutVersionRequestFromMaidNodeToMaidManager& message,
+      const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Sender& sender,
+      const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+  template<>
+  void HandleMessage(
+      const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager& message,
+      const typename nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Sender& sender,
+      const typename
+          nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+  template<>
+  void HandleMessage(
+      const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
+      const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& sender,
+      const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+  template<>
+  void HandleMessage(
+      const nfs::RemoveAccountRequestFromMaidNodeToMaidManager& message,
+      const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Sender& sender,
+      const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+  template<>
+  void HandleMessage(
+      const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
+      const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
+      const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+  template<>
+  void HandleMessage(
+      const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
+      const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
+      const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+  template<>
+  void HandleMessage(
+      const nfs::GetPmidHealthRequestFromMaidNodeToMaidManager& message,
+      const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
+      const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
  private:
   template<typename Data>
@@ -136,12 +180,6 @@ class MaidManagerService {
     const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender_;
   };
 
-
-
-
-
-
-
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
 
@@ -156,9 +194,11 @@ class MaidManagerService {
   void ValidateDataSender(const nfs::Message& message) const;
   void ValidateGenericSender(const nfs::Message& message) const;
 
+   void HandleCreateAccount(const MaidName& maid_name);
+
   // =============== Put/Delete data ===============================================================
   template<typename Data>
-  void HandlePut(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  void HandlePut(const Data& message);
 
   template<typename Data>
   void HandleDelete(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
@@ -216,7 +256,8 @@ class MaidManagerService {
 //  nfs::PublicKeyGetter& public_key_getter_;
   GroupDb<MaidManager> group_db_;
   std::mutex accumulator_mutex_;
-//  Accumulator<MaidName> accumulator_;
+  Accumulator<MaidManagerServiceMessages> accumulator_;
+  MaidAccountHandler handler_;
   MaidManagerDispatcher dispatcher_;
   Sync<MaidManager::UnresolvedCreateAccount> sync_create_accounts_;
   Sync<MaidManager::UnresolvedRemoveAccount> sync_remove_accounts_;
@@ -227,8 +268,6 @@ class MaidManagerService {
   static const int kPutRepliesSuccessesRequired_;
   static const int kDefaultPaymentFactor_;
 };
-
-
 
 // ==================== Implementation =============================================================
 namespace detail {
@@ -269,7 +308,6 @@ typename Data::Name GetDataName(const nfs::Message& message) {
 }
 
 }  // namespace detail
-
 
 
 template<>
@@ -338,21 +376,6 @@ void MaidManagerService::HandleDelete(
   dispatcher_.SendDeleteRequest(account_name, data_name);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template<typename Data>
 void MaidManagerService::HandleMessage(const nfs::Message& message,
                                        const routing::ReplyFunctor& reply_functor) {
@@ -379,8 +402,7 @@ void MaidManagerService::HandleMessage(const nfs::Message& message,
 }
 
 template<typename Data>
-void MaidManagerService::HandlePut(const nfs::Message& message,
-                                   const routing::ReplyFunctor& reply_functor) {
+void MaidManagerService::HandlePut(const maidsafe::vault::MaidManagerService::Data &message) {
   maidsafe_error return_code(CommonErrors::success);
   try {
     Data data(typename Data::Name(message.data().name),

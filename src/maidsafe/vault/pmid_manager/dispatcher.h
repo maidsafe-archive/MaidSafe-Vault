@@ -72,23 +72,21 @@ class PmidManagerDispatcher {
 // ==================== Implementation =============================================================
 
 template<typename Data>
-void PmidManagerDispatcher::SendPutRequest(const nfs::MessageId& task_id,
-                                           const Data& data,
-                                           const PmidName& pmid_node) {
+void PmidManagerDispatcher::SendPutRequest(const Data& data,
+                                           const PmidName& pmid_node,
+                                           const nfs::MessageId& message_id) {
   typedef nfs::PutRequestFromPmidManagerToPmidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  nfs_vault::DataNameAndContent data_name_and_content;
-  data_name_and_content.name = nfs_vault::DataName(data.name());
-  data_name_and_content.content = data.content();
-  NfsMessage nfs_message(task_id, data_name_and_content);
+  NfsMessage nfs_message(message_id,
+                         nfs_vault::DataNameAndContent(Data::Name::data_type,
+                                                       data.name(),
+                                                       data.data()));
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(
-                             routing::GroupSource(routing::GroupId(pmid_node),
-                                                  routing::SingleId(routing_.kNodeId()))),
-                         NfsMessage::Receiver(routing::SingleId(NodeId(data.name()->string()))));
+                             NfsMessage::Sender(pmid_node,routing_.kNodeId()),
+                             NfsMessage::Receiver(NodeId(data.name()->string()))));
   routing_.Send(message);
 }
-
 
 template<typename Data>
 void PmidManagerDispatcher::SendDeleteRequest(const nfs::MessageId& task_id,
@@ -100,10 +98,8 @@ void PmidManagerDispatcher::SendDeleteRequest(const nfs::MessageId& task_id,
   data = nfs_vault::DataName(data_name);
   NfsMessage nfs_message(task_id, data);
   RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(
-                             routing::GroupSource(routing::GroupId(pmid_node),
-                                                  routing::SingleId(routing_.kNodeId()))),
-                         NfsMessage::Receiver(routing::SingleId(NodeId(data_name->string()))));
+                         NfsMessage::Sender(pmid_node),routing_.kNodeId()),
+                         NfsMessage::Receiver(NodeId(data_name->string()));
   routing_.Send(message);
 }
 

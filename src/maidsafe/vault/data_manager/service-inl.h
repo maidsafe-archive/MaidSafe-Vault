@@ -178,21 +178,22 @@ void DataManagerService::HandleMessage(
         return this->ValidateSender(message, sender);
       },
       Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>::Value()),
+          RequiredRequests<MessageType>::value),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
 
 
-template<typename T>
-void DataManagerService::HandlePut(const T& message,
-                                   const typename T::Sender& /*sender*/,
+template<typename Data>
+void DataManagerService::HandlePut(const Data& data,
+                                   const nfs::MessageId& message_id,
                                    const typename T::Receiver& /*receiver*/) {
-  DataManager::UnresolvedPut unresolved_put(
-      GetDataNameVariant(message.contents->name.type, message.contents->name.raw_name),
-      message.contents.content->size());
-
-  dispatcher_.SendSync(message.contents->name.raw_name, unresolved_put.Serialise());
+//  DataManager::UnresolvedPut unresolved_put(
+//      GetDataNameVariant(message.contents->name.type, message.contents->name.raw_name),
+//      message.contents.content->size());
+//  dispatcher_.SendSync(message.contents->name.raw_name, unresolved_put.Serialise());
+  auto pmid_name(PmidName(routing_.RandomConnectedNode().string()));
+  dispatcher_.SendPutRequest(pmid_name, data, message_id);
 }
 
 

@@ -27,6 +27,8 @@
 #include "maidsafe/routing/message.h"
 #include "maidsafe/routing/routing_api.h"
 
+#include "maidsafe/nfs/message_types.h"
+
 #include "maidsafe/vault/types.h"
 
 namespace maidsafe {
@@ -47,7 +49,8 @@ class MaidManagerDispatcher {
   template<typename Data>
   void SendPutRequest(const MaidName& account_name,
                       const Data& data,
-                      const PmidName& pmid_node_hint);
+                      const PmidName& pmid_node_hint,
+                      const nfs::MessageId& message_id);
 
   template<typename Data>
   void SendPutResponse(const MaidName& account_name,
@@ -56,11 +59,13 @@ class MaidManagerDispatcher {
                        nfs::MessageId message_id);
 
   template<typename Data>
-  void SendDeleteRequest(const MaidName& account_name, const typename Data::Name& data_name);
+  void SendDeleteRequest(const MaidName& account_name,
+                         const typename Data::Name& data_name,
+                         const nfs::MessageId& message_id);
 
   void SendCreateAccountResponse(const MaidName& account_name,
                                  const maidsafe_error& result,
-                                 nfs::MessageId message_id);
+                                 const nfs::MessageId& message_id);
 
   void SendRemoveAccountResponse(const MaidName& account_name,
                                  const maidsafe_error& result,
@@ -119,25 +124,27 @@ void MaidManagerDispatcher::SendGetVersionRequest(const MaidName& account_name,
 template<typename Data>
 void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name,
                                            const Data& data,
-                                           const PmidName& pmid_node_hint) {
-  typedef routing::GroupToGroupMessage RoutingMessage;
-  static const routing::Cacheable cacheable(is_cacheable<Data>::value ? routing::Cacheable::kGet :
-                                                                        routing::Cacheable::kNone);
-  static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
-  static const nfs::Persona kDestinationPersona(nfs::Persona::kDataManager);
-  static const DataTagValue kDataEnumValue(Data::Tag::kValue);
+                                           const PmidName& pmid_node_hint,
+                                           const nfs::MessageId& message_id) {
+  typedef nfs::PutRequestFromMaidManagerToDataManager NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
 
-  nfs::Message::Data inner_data(kDataEnumValue, data.name().data, data.Serialise().data, kAction);
-  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data, pmid_node_hint);
-  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-                         routing::GroupId(NodeId(data.name()->string())), cacheable);
+  NfsMessage nfs_message(message_id,
+                         nfs_vault::DataAndPmidHint(nfs_vault::DataName(
+                                                        Data::Name::data_type, data.name()),
+                                                    data.data(),
+                                                    pmid_node_hint));
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(account_name.value, routing_.kNodeId()),
+                         NfsMessage::Receiver(data.name()));
   routing_.Send(message);
 }
 
 template<>
 void MaidManagerDispatcher::SendPutRequest<OwnerDirectory>(const MaidName& /*account_name*/,
                                                            const OwnerDirectory& /*data*/,
-                                                           const PmidName& /*pmid_node_hint*/) {
+                                                           const PmidName& /*pmid_node_hint*/,
+                                                           const nfs::MessageId& /*message_id*/) {
   typedef routing::GroupToGroupMessage RoutingMessage;
 //  static const routing::Cacheable cacheable(is_cacheable<OwnerDirectory>::value ?
 //                                            routing::Cacheable::kGet : routing::Cacheable::kNone);
@@ -150,7 +157,8 @@ void MaidManagerDispatcher::SendPutRequest<OwnerDirectory>(const MaidName& /*acc
 template<>
 void MaidManagerDispatcher::SendPutRequest<GroupDirectory>(const MaidName& /*account_name*/,
                                                            const GroupDirectory& /*data*/,
-                                                           const PmidName& /*pmid_node_hint*/) {
+                                                           const PmidName& /*pmid_node_hint*/,
+                                                           const nfs::MessageId& /*message_id*/) {
   typedef routing::GroupToGroupMessage RoutingMessage;
 //  static const routing::Cacheable cacheable(is_cacheable<GroupDirectory>::value ?
 //                                            routing::Cacheable::kGet : routing::Cacheable::kNone);
@@ -163,7 +171,8 @@ void MaidManagerDispatcher::SendPutRequest<GroupDirectory>(const MaidName& /*acc
 template<>
 void MaidManagerDispatcher::SendPutRequest<WorldDirectory>(const MaidName& /*account_name*/,
                                                            const WorldDirectory& /*data*/,
-                                                           const PmidName& /*pmid_node_hint*/) {
+                                                           const PmidName& /*pmid_node_hint*/,
+                                                           const nfs::MessageId& /*message_id*/) {
   typedef routing::GroupToGroupMessage RoutingMessage;
 //  static const routing::Cacheable cacheable(is_cacheable<WorldDirectory>::value ?
 //                                            routing::Cacheable::kGet : routing::Cacheable::kNone);
@@ -196,7 +205,8 @@ void MaidManagerDispatcher::SendPutResponse(const MaidName& account_name,
 
 template<typename Data>
 void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
-                                              const typename Data::Name& data_name) {
+                                              const typename Data::Name& data_name,
+                                              const nfs::MessageId& /*message_id*/) {
   typedef routing::GroupToGroupMessage RoutingMessage;
   static const routing::Cacheable cacheable(routing::Cacheable::kNone);
   static const nfs::MessageAction kAction(nfs::MessageAction::kDeleteRequest);

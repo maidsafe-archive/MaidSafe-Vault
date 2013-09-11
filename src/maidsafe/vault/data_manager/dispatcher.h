@@ -44,30 +44,30 @@ class DataManagerDispatcher {
   template<typename Data>
   void SendGetRequest(const PmidName& pmid_node,
                       const typename Data::Name& data_name,
-                      nfs::MessageId message_id);
+                      const nfs::MessageId& message_id);
   // To MaidNode
   template<typename Data>
   void SendGetResponse(const MaidName& maid_node,
                        const Data& data,
-                       nfs::MessageId message_id);
+                       const nfs::MessageId& message_id);
   // To MaidNode (failure)
   template<typename Data>
   void SendGetResponse(const MaidName& maid_node,
                        const typename Data::Name& data_name,
                        const maidsafe_error& result,
-                       nfs::MessageId message_id);
+                       const nfs::MessageId& message_id);
 
   // To PmidNode
   template<typename Data>
   void SendGetResponse(const PmidName& pmid_node,
                        const Data& data,
-                       nfs::MessageId message_id);
+                       const nfs::MessageId& message_id);
 
   // To PmidManager
   template<typename Data>
   void SendPutRequest(const PmidName& pmid_name,
                       const Data& data,
-                      nfs::MessageId message_id);
+                      const nfs::MessageId& message_id);
 
   // To MaidManager
   template<typename Data>
@@ -75,13 +75,13 @@ class DataManagerDispatcher {
                        const typename Data::Name& data_name,
                        const maidsafe_error& result,
                        const int32_t cost,
-                       nfs::MessageId message_id);
+                       const nfs::MessageId& message_id);
 
   // To PmidManager
   template<typename Data>
   void SendDeleteRequest(const PmidName& pmid_name,
                          const typename Data::Name& data_name,
-                         nfs::MessageId message_id);
+                         const nfs::MessageId& message_id);
 
 
   void SendSync(const Identity& data_name, const std::string& serialised_sync);
@@ -140,21 +140,20 @@ void SendGetResponse(const MaidName& maid_node,
   routing_.Send(RoutingMessage(nfs_message.Serialise(), Sender(data.name), receiver, kCacheable));
 }
 
-
 template<typename Data>
 void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name,
                                            const Data& data,
-                                           nfs::MessageId message_id) {
-  typedef PutRequestFromDataManagerToPmidManager NfsMessage;
-  CheckSourcePersonaType<NfsMessage>();
+                                           const nfs::MessageId& message_id) {
+  typedef nfs::PutRequestFromDataManagerToPmidManager NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  static const routing::Cacheable kCacheable(is_cacheable<Data>::value ? routing::Cacheable::kPut :
-                                                                         routing::Cacheable::kNone);
-  NfsMessage nfs_message((message_id, NfsMessage::Contents(data)));
-  routing::GroupId receiver(NodeId(pmid_name->string()));
-  routing_.Send(RoutingMessage(nfs_message.Serialise(), Sender(data.name), receiver, kCacheable));
+  NfsMessage nfs_message(message_id,
+                         nfs_vault::DataNameAndContent(
+                             Data::Name::data_type, data.name(), data.data()));
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(data.name(), routing_.kNodeId()),
+                         NfsMessage::Receiver(pmid_name.value));
+  routing_.Send(message);
 }
-
 
 template<typename Data>
 routing::GroupSource MaidManagerDispatcher::Sender(const typename Data::Name& data_name) const {
