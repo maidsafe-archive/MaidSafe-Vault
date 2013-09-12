@@ -31,18 +31,15 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/active.h"
 #include "maidsafe/routing/routing_api.h"
-#include "maidsafe/data_store/data_store.h"
-#include "maidsafe/data_store/memory_buffer.h"
-#include "maidsafe/data_store/permanent_store.h"
 #include "maidsafe/data_types/data_type_values.h"
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/client/data_getter.h"
+
 #include "maidsafe/vault/message_types.h"
-
-
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
+#include "maidsafe/vault/pmid_node/handler.h"
 
 
 namespace maidsafe {
@@ -265,12 +262,10 @@ class PmidNodeService {
   DiskUsage disk_total_;
   DiskUsage permanent_size_;
   DiskUsage cache_size_;
-  data_store::PermanentStore permanent_data_store_;
-  data_store::DataStore<data_store::DataBuffer> cache_data_store_;
-  data_store::MemoryBuffer mem_only_cache_;
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
   Accumulator<PmidNodeServiceMessages> accumulator_;
+  PmidNodeHandler handler_;
   Active active_;
   AsioService asio_service_;
   nfs_client::DataGetter data_getter_;

@@ -64,11 +64,9 @@ class PmidManagerService {
   void GetPmidTotals(const nfs::Message& message);
   void GetPmidAccount(const nfs::Message& message);
 
-  // =============== Put/Delete data ================================================================
-  template<typename T>
-  void HandlePut(const T& message,
-                 const typename T::Sender& sender,
-                 const typename T::Receiver& receiver);
+// =============== Put/Delete data ================================================================
+  template<typename Data>
+  void HandlePut(const Data& data, const PmidName& pmid_node, const nfs::MessageId& message_id);
 
   template<typename T>
   void HandleDelete(const T& message,

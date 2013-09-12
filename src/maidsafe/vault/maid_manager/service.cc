@@ -136,8 +136,6 @@ PmidManagerMetadata MergePmidTotals(std::shared_ptr<GetPmidTotalsOp> op_data) {
 
 }  // unnamed namespace
 
-
-
 const int MaidManagerService::kPutRepliesSuccessesRequired_(3);
 const int MaidManagerService::kDefaultPaymentFactor_(4);
 
@@ -314,6 +312,10 @@ void MaidManagerService::FinalisePmidRegistration(
     LOG(kWarning) << "Failed to register new PMID: " << ex.what();
     send_reply(maidsafe_error(CommonErrors::unknown));
   }
+}
+
+void MaidManagerService::HandleCreateAccount(const MaidName& maid_name) {
+  CreateAccount(maid_name, can_create_account<>;
 }
 
 

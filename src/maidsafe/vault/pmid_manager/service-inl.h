@@ -60,30 +60,37 @@ void PmidManagerService::HandleMessage(
     const typename nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
     const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
   typedef nfs::PutRequestFromDataManagerToPmidManager MessageType;
-  OperationHandlerWrapper<MessageType,
+  OperationHandlerWrapper<PmidManagerService,
+                          MessageType,
                           nfs::PmidManagerServiceMessages>(
       accumulator_,
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
       Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>::value),
-      [this](const MessageType& message,
-             const typename MessageType::Sender& sender,
-             const typename MessageType::Receiver& receiver) {
-        this->HandlePut(message, sender, receiver);
-      },
+          RequiredRequests<MessageType>()),
+      this,
       accumulator_mutex_)(message, sender, receiver);
 }
 
-
 template<>
 void PmidManagerService::HandleMessage(
-    const nfs::PutResponseFromPmidNodeToPmidManager& /*message*/,
-    const typename nfs::PutResponseFromPmidNodeToPmidManager::Sender& /*sender*/,
-    const typename nfs::PutResponseFromPmidNodeToPmidManager::Receiver& /*receiver*/) {
+    const nfs::PutResponseFromPmidNodeToPmidManager& message,
+    const typename nfs::PutResponseFromPmidNodeToPmidManager::Sender& sender,
+    const typename nfs::PutResponseFromPmidNodeToPmidManager::Receiver& receiver) {
+  typedef nfs::PutResponseFromPmidNodeToPmidManager MessageType;
+  OperationHandlerWrapper<PmidManagerService,
+                          MessageType,
+                          nfs::PmidManagerServiceMessages>(
+      accumulator_,
+      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+        return this->ValidateSender(message, sender);
+      },
+      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
+          RequiredRequests<MessageType>()),
+      this,
+      accumulator_mutex_)(message, sender, receiver);
 }
-
 
 template<>
 void PmidManagerService::HandleMessage(
@@ -91,7 +98,6 @@ void PmidManagerService::HandleMessage(
     const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& /*sender*/,
     const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
 }
-
 
 template<>
 void PmidManagerService::HandleMessage(
@@ -114,113 +120,21 @@ void PmidManagerService::HandleMessage(
       accumulator_mutex_)(message, sender, receiver);
 }
 
-/* Commented by Mahmoud on 3 Sep. Code need refactoring
 template<typename Data>
-void PmidManagerService::HandleMessage(const nfs::Message& message,
-                                       const routing::ReplyFunctor& reply_functor) {
-  ValidateDataSender(message);
-  nfs::Reply reply(CommonErrors::success);
-  {
-    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    if (accumulator_.CheckHandled(message, reply))
-      return;
-  }
-
-  if (message.data().action == nfs::MessageAction::kPut) {
-    HandlePut<Data>(message);
-  } else if (message.data().action == nfs::MessageAction::kDelete) {
-    HandleDelete<Data>(message, reply_functor);
-  } else {
-    LOG(kError) << "Unsupported operation.";
-  }
-}
-*/
-
-class PutVisitor : public boost::static_visitor<> {
- public:
-  PutVisitor(PmidManagerDispatcher& dispatcher,
-             const PmidName& pmid_name,
-             const nfs::MessageId& task_id,
-             const NonEmptyString& content)
-    : dispatcher_(dispatcher),
-      kPmidName_(pmid_name),
-      kTtaskId_(task_id),
-      kContent_(content) {}
-
-  template <typename T>
-  void operator()(const T& data_name) {
-    dispatcher_.SendPutRequest<T::data_type>(kTtaskId_,
-                                             T::data_type(data_name, kContent_),
-                                             kPmidName_);
-  }
-
- private:
-  PmidManagerDispatcher& dispatcher_;
-  const PmidName kPmidName_;
-  const nfs::MessageId& kTtaskId_;
-  const NonEmptyString kContent_;
-};
-
-template<typename T>
-void PmidManagerService::HandlePut(
-    const T& message,
-    const typename T::Sender& /*sender*/,
-    const typename T::Receiver& receiver) {
-  auto data_name(GetDataNameVariant(message.contents->name.type,
-                                    message.contents->name.raw_name));
-
-  PutVisitor put_visitor(dispatcher_,
-                         PmidName(Identity(NodeId(receiver).string())),
-                         message.message_id,
-                         message.contents->content);
-  boost::apply_visitor(put_visitor, data_name);
+void PmidManagerService::HandlePut(const Data& data,
+                                   const nfs::MessageId& message_id,
+                                   const PmidName& pmid_node) {
+  disptcher_.SendPutRequest(data, pmid_node, message_id);
 }
 
-
-//template<typename Data>
-//void PmidManagerService::HandlePut(const nfs::Message& message) {
-//  try {
-//    Data data(typename Data::Name(message.data().name),
-//              typename Data::serialised_type(message.data().content));
-//    nfs_.Put(PmidName(detail::GetPmidAccountName(message)),
-//             data,
-//             [this, message](std::string reply) {
-//                this->HandlePutCallback<Data>(reply, message);
-//             });
-//    nfs::Reply reply(maidsafe::CommonErrors::success);
-//    accumulator_.SetHandled(message, reply);
-//    return;
-//  }
-//  catch(const maidsafe_error& error) {
-//    LOG(kWarning) << error.what();
-//  }
-//  catch(...) {
-//    LOG(kWarning) << "Unknown error.";
-//  }
-//  SendPutResult<Data>(message, false);
-//}
-
-
-class DeleteVisitor : public boost::static_visitor<> {
- public:
-  DeleteVisitor(PmidManagerDispatcher& dispatcher,
-             const PmidName& pmid_name,
-             const nfs::MessageId& task_id)
-    : dispatcher_(dispatcher),
-      kPmidName_(pmid_name),
-      kTtaskId_(task_id) {}
-
-  template <typename T>
-  void operator()(const T& data_name) {
-    dispatcher_.SendDeleteRequest<T::data_type>(kTtaskId_, kPmidName_, data_name);
-  }
-
- private:
-  PmidManagerDispatcher& dispatcher_;
-  const PmidName kPmidName_;
-  const nfs::MessageId& kTtaskId_;
-};
-
+template<typename Data>
+void PmidManagerService::HandlePutResponse(const Data& data,
+                                           const nfs::MessageId& message_id,
+                                           const PmidName& pmid_node,
+                                           const maidsafe_error& error) {
+  // DIFFERENT ERRORS MUST BE HANDLED DIFFERENTLY
+  disptcher_.SendPutResponse(data, pmid_node, message_id, error);
+}
 
 template<>
 void PmidManagerService::HandleMessage(

@@ -31,7 +31,7 @@
 #include "maidsafe/routing/message.h"
 #include "maidsafe/vault/messages.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
-
+#include "maidsafe/vault/utils.h"
 
 
 namespace maidsafe {
@@ -82,22 +82,18 @@ void PmidNodeService::HandleMessage<nfs::PutRequestFromPmidManagerToPmidNode>(
     const nfs::PutRequestFromPmidManagerToPmidNode& message,
     const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
     const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver) {
-#ifndef TESTNG
-  ValidateSender(message, sender);
-#endif
-  {
-    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    if (accumulator_.CheckHandled(message))
-      return;
-
-    if (Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess !=
-            accumulator_.AddPendingRequest(
-                message,
-                sender,
-                Accumulator<PmidNodeServiceMessages>::AddRequestChecker(kPutRequestsRequired)))
-      return;
-  }
-  HandlePutMessage(message, sender, receiver);
+  typedef nfs::PutRequestFromPmidManagerToPmidNode MessageType;
+  OperationHandlerWrapper<PmidNodeService,
+                           MessageType,
+                           nfs::PmidNodeServiceMessages>(
+      accumulator_,
+      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+        return this->ValidateSender(message, sender);
+      },
+      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
+          RequiredRequests<MessageType>::value),
+      this,
+      accumulator_mutex_)(message, sender, receiver);
 }
 
 template<>
@@ -168,40 +164,17 @@ void PmidNodeService::HandleMessage<nfs::GetPmidAccountResponseFromPmidManagerTo
   }
 }
 
-template<>
-void PmidNodeService::HandlePutMessage<nfs::PutRequestFromPmidManagerToPmidNode>(
-    const nfs::PutRequestFromPmidManagerToPmidNode& message,
-    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
-    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-  try {
-    permanent_data_store_.Put(nfs_vault::DataName(message.contents->name),
-                              message.contents->content);
-    typedef nfs::PutResponseFromPmidNodeToPmidManager NfsMessage;
-    typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-    NfsMessage nfs_message(nfs_vault::DataName(message.contents->name));
-    RoutingMessage routing_message(nfs_message.Serialise(),
-                                   NfsMessage::Sender(routing_.kNodeId()),
-                                   NfsMessage::Receiver(routing_.kNodeId()));
-    routing_.Send(routing_message);
-    {
-      std::lock_guard<std::mutex> lock(accumulator_mutex_);
-      accumulator_.SetHandled(message, sender);
-    }
-  } catch(const maidsafe_error& error) {
-    typedef PutResponseFromPmidNodeToDataManager NfsMessage;
-    typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-    NfsMessage nfs_message(DataNameAndContentAndReturnCode(
-                               message.contents->name.type,
-                               message.contents->name.raw_name,
-                               message.contents->content,
-                               nfs_client::ReturnCode(error)));
-    RoutingMessage routing_message(nfs_message.Serialise(),
-                                   NfsMessage::Sender(routing_.kNodeId()),
-                                   NfsMessage::Receiver(
-                                       NodeId(message.contents->name.raw_name.string())));
-    routing_.Send(routing_message);
+template<typename Data>
+void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_id) {
+  {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    accumulator_.SetHandled(message, sender);
+    accumulator_.SetHandled(message_id);
+  }
+
+  try {
+    handler_.Put(data);
+  } catch(const maidsafe_error& error) {
+    dispatcher_.SendPutRespnse(data, message_id, error);
   }
 }
 

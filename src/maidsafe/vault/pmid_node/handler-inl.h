@@ -1,4 +1,4 @@
-/*  Copyright 2013 MaidSafe.net limited
+/*  Copyright 2012 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,12 +16,26 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/messages.h"
+#ifndef MAIDSAFE_VAULT_PMID_NODE_HANDLER_INL_H_
+#define MAIDSAFE_VAULT_PMID_NODE_HANDLER_INL_H_
+
+
+#include "maidsafe/data_store/data_store.h"
+#include "maidsafe/data_store/memory_buffer.h"
+#include "maidsafe/data_store/permanent_store.h"
+
 
 namespace maidsafe {
-
 namespace vault {
 
-}  // namespace vault
+template<typename Data>
+void PmidNodeHandler::Put(const Data& data) {
+  permanent_data_store_.Put(data.name, data.data());
+}
 
+}  // namespace vault
 }  // namespace maidsafe
+
+#include "maidsafe/vault/pmid_manager/handler-inl.h"
+
+#endif  // MAIDSAFE_VAULT_PMID_NODE_HANDLER_INL_H_
