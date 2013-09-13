@@ -90,6 +90,12 @@ class MaidManagerService {
 
   template<>
   void HandleMessage(
+      const nfs::PutResponseFromDataManagerToMaidManager& message,
+      const typename nfs::PutResponseFromDataManagerToMaidManager::Sender& sender,
+      const typename nfs::PutResponseFromDataManagerToMaidManager::Receiver& receiver);
+
+  template<>
+  void HandleMessage(
       const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
       const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
       const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver);
@@ -145,40 +151,6 @@ class MaidManagerService {
   template<typename Data>
   void HandleDelete(const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
                     const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender);
-
-  class DataVisitorPut : public boost::static_visitor<> {
-   public:
-    DataVisitorPut(MaidManagerService* service,
-                   const nfs::PutRequestFromMaidNodeToMaidManager& message,
-                   const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender)
-        : service_(service),
-          message_(message),
-          sender_(sender) {}
-    template<typename DataName>
-    void operator()(const DataName& data_name) {
-      service_->HandlePut(data_name, message_, sender_);
-    }
-    MaidManagerService* service_;
-    const nfs::PutRequestFromMaidNodeToMaidManager& message_;
-    const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender_;
-  };
-
-  class DataVisitorDelete : public boost::static_visitor<> {
-   public:
-    DataVisitorDelete(MaidManagerService* service,
-                      const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
-                      const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender)
-        : service_(service),
-          message_(message),
-          sender_(sender) {}
-    template<typename DataName>
-    void operator()(const DataName& data_name) {
-      service_->HandleDelete(data_name, message_, sender_);
-    }
-    MaidManagerService* service_;
-    const nfs::DeleteRequestFromMaidNodeToMaidManager& message_;
-    const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender_;
-  };
 
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }

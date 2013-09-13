@@ -538,6 +538,8 @@ void DoOperation(ServiceHandlerType* service,
 
 // ================ Put Response Specialisations ===================================================
 // PutResponseFromPmidManagerToDataManager, DataNameAndContentAndReturnCode
+// PutResponseFromDataManagerToMaidManager, DataNameAndContent
+// PutResponseFromPmidNodeToPmidManager, DataNameAndContentAndReturnCode
 
 template <typename ServiceHandlerType>
 class PutResponseVisitor : public boost::static_visitor<> {
@@ -568,6 +570,41 @@ class PutResponseVisitor : public boost::static_visitor<> {
    const NodeId kSender;
    const maidsafe_error kReturnCode_;
 };
+
+template <typename ServiceHandlerType>
+class MaidManagerPutResponseVisitor : public boost::static_visitor<> {
+ public:
+  MaidManagerPutResponseVisitor(ServiceHandlerType* service,
+                                const Identity& maid_node,
+                                const int32_t& cost)
+      : service_(service),
+        kMaidNode_(maid_node),
+        kCost_(cost) {}
+
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    service_.HandlePutResponse(kMaidNode_, data_name, kCost_);
+  }
+  private:
+   ServiceHandlerType* service_;
+   const MaidName kMaidNode_;
+   const int32_t kCost_;
+};
+
+
+template<typename ServiceHandlerType, typename Sender>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::PutResponseFromDataManagerToMaidManager& temp_message,
+                 const Sender& /*sender*/,
+                 const NodeId& receiver) {
+  auto data_name(GetNameVariant(temp_message.contents->name));
+  MaidManagerPutResponseVisitor<ServiceHandlerType> put_response_visitor(
+      service,
+      GetNodeId(receiver),
+      static_cast<int32_t>(std::strtol(temp_message.contents.data())),
+      temp_message.message_id);
+  boost::apply_visitor(put_response_visitor, data_name);
+}
 
 template<typename ServiceHandlerType, typename Sender>
 void DoOperation(ServiceHandlerType* service,

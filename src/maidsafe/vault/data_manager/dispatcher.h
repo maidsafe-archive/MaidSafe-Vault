@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_DATA_MANAGER_DISPATCHER_H_
 #define MAIDSAFE_VAULT_DATA_MANAGER_DISPATCHER_H_
 
+#include <string>
+
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
@@ -73,8 +75,7 @@ class DataManagerDispatcher {
   template<typename Data>
   void SendPutResponse(const MaidName& account_name,
                        const typename Data::Name& data_name,
-                       const maidsafe_error& result,
-                       const int32_t cost,
+                       const int32_t& cost,
                        const nfs::MessageId& message_id);
 
   // To PmidManager
@@ -152,6 +153,22 @@ void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name,
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(data.name(), routing_.kNodeId()),
                          NfsMessage::Receiver(pmid_name.value));
+  routing_.Send(message);
+}
+
+template<typename Data>
+void DataManagerDispatcher::SendPutResponse(const MaidName& account_name,
+                                            const typename Data::Name& data_name,
+                                            const int32_t& cost,
+                                            const nfs::MessageId& message_id) {
+  typedef nfs::PutResponseFromDataManagerToMaidManager NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  NfsMessage nfs_message(message_id,
+                         nfs_vault::DataNameAndContent(
+                             Data::Name::data_type, data_name.name(), std::to_string(cost)));
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(data.name(), routing_.kNodeId()),
+                         NfsMessage::Receiver(account_name));
   routing_.Send(message);
 }
 
