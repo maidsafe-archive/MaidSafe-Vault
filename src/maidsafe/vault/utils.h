@@ -594,15 +594,15 @@ class MaidManagerPutResponseVisitor : public boost::static_visitor<> {
 
 template<typename ServiceHandlerType, typename Sender>
 void DoOperation(ServiceHandlerType* service,
-                 const nfs::PutResponseFromDataManagerToMaidManager& temp_message,
+                 const nfs::PutResponseFromDataManagerToMaidManager& message,
                  const Sender& /*sender*/,
                  const NodeId& receiver) {
-  auto data_name(GetNameVariant(temp_message.contents->name));
+  auto data_name(GetNameVariant(message.contents->name));
   MaidManagerPutResponseVisitor<ServiceHandlerType> put_response_visitor(
       service,
       GetNodeId(receiver),
-      static_cast<int32_t>(std::strtol(temp_message.contents.data())),
-      temp_message.message_id);
+      std::stoi(message.contents->content.string()),
+      message.message_id);
   boost::apply_visitor(put_response_visitor, data_name);
 }
 
@@ -636,8 +636,6 @@ void DoOperation(ServiceHandlerType* service,
 
 
 // =============================================================================================
-
-
 
 
 template <typename MessageType>

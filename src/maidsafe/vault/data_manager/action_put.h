@@ -32,7 +32,8 @@ namespace maidsafe {
 namespace vault {
 
 struct ActionDataManagerPut {
-  ActionDataManagerPut(const DataNameVariant& data_name, const uint32_t& size);
+  template<typename Data>
+  ActionDataManagerPut(const Data::Name& data_name, const uint32_t& size);
   explicit ActionDataManagerPut(const std::string& serialised_action);
   ActionDataManagerPut(const ActionDataManagerPut& other);
   ActionDataManagerPut(ActionDataManagerPut&& other);

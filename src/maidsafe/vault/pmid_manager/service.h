@@ -96,8 +96,7 @@ class PmidManagerService {
   Accumulator<nfs::PmidManagerServiceMessages> accumulator_;
   PmidAccountHandler pmid_account_handler_;
   PmidManagerDispatcher dispatcher_;
-  static const int kPutRepliesSuccessesRequired_;
-  static const int kDeleteRequestsRequired_;
+  Sync<PmidManager::UnresolvedPut> sync_puts_;
 };
 
 // ============================= Handle Message Specialisations ===================================

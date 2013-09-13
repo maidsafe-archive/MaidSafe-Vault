@@ -35,7 +35,7 @@ void MaidManagerService::HandleMessage(
     const nfs::PutRequestFromMaidNodeToMaidManager& message,
     const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver) {
-  typedef nfs::PutRequestFromMaidManagerToDataManager MessageType;
+  typedef nfs::PutRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService,
                           MessageType,
                           nfs::MaidManagerServiceMessages>(
@@ -70,11 +70,17 @@ void HandleMessage(
 
 
 template <typename Data>
-void MaidManagerService::HandlePutResponse(const MaidName& /*maid_name*/,
-                                           const Data::Name& /*data_name*/,
-                                           const int32_t& /*cost*/) {
-  // Create unresolved entry and sync
+void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
+                                           const Data::Name& data_name,
+                                           const int32_t& cost) {
+  nfs::PersonaTypes<Persona::kMaidManager>::Key group_key(
+      nfs::PersonaTypes<Persona::kMaidManager>::GroupName(maid_name.data),
+      data_name(),
+      Data::Name::data_type);
+  sync_puts_.AddLocalAction(nfs::UnresolvedPut(group_key, ActionMaidManagerPut(cost)));
+  DoSync();
 }
+
 
 template <typename Data>
 void MaidManagerService::HandlePut(const MaidName& account_name,

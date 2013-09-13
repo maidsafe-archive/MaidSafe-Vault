@@ -31,6 +31,7 @@
 #include "maidsafe/vault/pmid_manager/dispatcher.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/nfs/message_types.h"
+#include "maidsafe/vault/pmid_manager/action_put.h"
 
 namespace maidsafe {
 namespace vault {
@@ -125,6 +126,13 @@ void PmidManagerService::HandlePut(const Data& data,
                                    const nfs::MessageId& message_id,
                                    const PmidName& pmid_node) {
   disptcher_.SendPutRequest(data, pmid_node, message_id);
+  nfs::PersonaTypes<Persona::kMaidManager>::Key group_key(
+      nfs::PersonaTypes<Persona::kMaidManager>::GroupName(pmid_node),
+      data.name(),
+      Data::Name::data_type);
+  sync_puts_.AddLocalAction(nfs::UnresolvedPut(group_key,
+                                               ActionPmidManagerPut(data.data().string().size())));
+  DoSync();
 }
 
 template<typename Data>

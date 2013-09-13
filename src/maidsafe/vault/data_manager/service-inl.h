@@ -202,16 +202,17 @@ void DataManagerService::HandleMessage(
       accumulator_mutex_)(message, sender, receiver);
 }
 
-
 template<typename Data>
-void DataManagerService::HandlePut(const Data& data,
-                                   const nfs::MessageId& message_id) {
-//  DataManager::UnresolvedPut unresolved_put(
-//      GetDataNameVariant(message.contents->name.type, message.contents->name.raw_name),
-//      message.contents.content->size());
-//  dispatcher_.SendSync(message.contents->name.raw_name, unresolved_put.Serialise());
+void DataManagerService::HandlePut(const Data& data, const nfs::MessageId& message_id) {
   auto pmid_name(PmidName(routing_.RandomConnectedNode().string()));
   dispatcher_.SendPutRequest(pmid_name, data, message_id);
+  nfs::PersonaTypes<Persona::kMaidManager>::Key key(data.name().raw_name(), Data::Name::data_type);
+  sync_puts_.AddLocalAction(nfs::UnresolvedPut(
+      key,
+      ActionDataManagerPut(data.name(), data.data().string().size())),
+      routing_.kNodeId(),
+      message_id.data);
+  DoSync();
 }
 
 template<typename Data>
@@ -225,41 +226,6 @@ void DataManagerService::HandlePutResponse(const Data& data,
     pmid_name = PmidName(routing_.RandomConnectedNode().string());
   dispatcher_.SendPutRequest(pmid_name, data, message_id);
 }
-
-//template<typename Data>
-//void DataManagerService::HandlePut(const nfs::Message& message,
-//                                       const routing::ReplyFunctor& reply_functor) {
-//  try {
-//    ValidatePutSender(message);
-//    Data data(typename Data::Name(message.data().name),
-//              typename Data::serialised_type(message.data().content));
-//    auto data_name(data.name());
-//    auto data_size(static_cast<int32_t>(message.data().content.string().size()));
-//    auto is_duplicate_and_cost(metadata_handler_.template CheckPut<Data>(data_name, data_size));
-//    if (detail::AccumulateMetadataPut(message, reply_functor, MakeError(CommonErrors::success),
-//                                      is_duplicate_and_cost.second, accumulator_,
-//                                      accumulator_mutex_, kPutRequestsRequired_)) {
-//      if (is_duplicate_and_cost.first) {  // No need to store data on DH
-//        DataManagerValue metadata_value(data_size);
-//        AddLocalUnresolvedEntryThenSync<Data, nfs::MessageAction::kPut>(message, metadata_value);
-//      } else {
-//        PmidName target_pmid_node(routing_.ClosestToId(message.source().node_id) ?
-//                                    message.pmid_node() :
-//                                    Identity(routing_.RandomConnectedNode().string()));
-//        // Account will be created by PutResult message from PAH
-//        nfs_.Put(target_pmid_node, data, nullptr);
-//      }
-//    }
-//  }
-//  catch(const maidsafe_error& error) {
-//    detail::AccumulateMetadataPut(message, reply_functor, error, 0, accumulator_,
-//                                  accumulator_mutex_, kPutRequestsRequired_);
-//  }
-//  catch(...) {
-//    detail::AccumulateMetadataPut(message, reply_functor, MakeError(CommonErrors::unknown), 0,
-//                                  accumulator_, accumulator_mutex_, kPutRequestsRequired_);
-//  }
-//}
 
 template<typename Data>
 void DataManagerService::HandlePutResult(const nfs::Message& message) {
