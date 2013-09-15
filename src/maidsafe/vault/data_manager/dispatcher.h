@@ -147,9 +147,8 @@ void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name,
                                            const nfs::MessageId& message_id) {
   typedef nfs::PutRequestFromDataManagerToPmidManager NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  NfsMessage nfs_message(message_id,
-                         nfs_vault::DataNameAndContent(
-                             Data::Name::data_type, data.name(), data.data()));
+  NfsMessage nfs_message(
+      message_id, nfs_vault::DataNameAndContent(Data::Name::data_type, data.name(), data.data()));
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(data.name(), routing_.kNodeId()),
                          NfsMessage::Receiver(pmid_name.value));

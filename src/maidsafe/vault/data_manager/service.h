@@ -38,6 +38,7 @@
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/sync.h"
+#include "maidsafe/vault/data_manager/dispatcher.h"
 
 
 namespace maidsafe {
@@ -54,6 +55,13 @@ class DataManagerService {
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
  private:
+  template<typename Data>
+  void HandlePut(const Data& data, const PmidName& pmid_name_in, const nfs::MessageId& message_id);
+
+  template<typename Data>
+  void HandlePutResponse(const Data& data, const PmidName& attempted_pmid_node,
+                        const nfs::MessageId& message_id, const maidsafe_error& error);
+  void DoSync();
 // commented out for code to compile (may not be required anymore)
 //  template<typename Data>
 //  struct GetHandler {
@@ -99,6 +107,7 @@ class DataManagerService {
   nfs_client::DataGetter& data_getter_;
   std::mutex accumulator_mutex_;
   Accumulator<nfs::DataManagerServiceMessages> accumulator_;
+  DataManagerDispatcher dispatcher_;
   GroupDb<DataManager> group_db_;
   Sync<DataManager::UnresolvedPut> sync_puts_;
   Sync<DataManager::UnresolvedDelete> sync_deletes_;
@@ -172,33 +181,38 @@ void DataManagerService::HandleMessage(
    const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& receiver);
 
 
-// ============================== Handle Get Specialisations ======================================
+// ================================== Put implementation ==========================================
 
-template<typename T>
-void DataManagerService::HandleGet(const T&,
-                                   const typename T::Sender&,
-                                   const typename T::Receiver&) {
-  T::should_not_reach_here;
+template<typename Data>
+void DataManagerService::HandlePut(const Data& data,
+                                   const PmidName& pmid_name_in,
+                                   const nfs::MessageId& message_id) {
+  PmidName pmid_name;
+  if (routing_.ClosestToId(data.name()))
+    pmid_name = pmid_name_in;
+  else
+    pmid_name = routing_.RandomConnectedNode().string();
+  dispatcher_.SendPutRequest(pmid_name, data, message_id);
 }
 
-template<>
-void DataManagerService::HandleGet(
-  const nfs::GetRequestFromMaidNodeToDataManager& message,
-  const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-  const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
-
-template<>
-void DataManagerService::HandleGet(
-   const nfs::GetRequestFromPmidNodeToDataManager& message,
-   const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
-   const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver);
-
-template<>
-void DataManagerService::HandleGet(
-   const nfs::GetRequestFromDataGetterToDataManager& message,
-   const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
-   const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
-
+template<typename Data>
+void DataManagerService::HandlePutResponse(const Data& data,
+                                           const PmidName& attempted_pmid_node,
+                                           const nfs::MessageId& message_id,
+                                           const maidsafe_error& error) {
+  if (error.code() == CommonErrors::success) {
+    typename DataManager::Key key(data.name().raw_name, Data::Name::data_type);
+    sync_puts_.AddLocalAction(DataManager::UnresolvedPut(key,
+        ActionDataManagerPut(data.name(), std::stoi(data.data().string()))));
+    DoSync();
+  } else {
+    // TODO(Team): Following should be done only if error is fixable by repeat
+    auto pmid_name(PmidName(routing_.RandomConnectedNode().string()));
+    while (pmid_name == attempted_pmid_node)
+      pmid_name = PmidName(routing_.RandomConnectedNode().string());
+    dispatcher_.SendPutRequest(pmid_name, data, message_id);
+  }
+}
 
 
 }  // namespace vault

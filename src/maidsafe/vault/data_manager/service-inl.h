@@ -166,25 +166,6 @@ void DataManagerService::HandleMessage(
 
 template<>
 void DataManagerService::HandleMessage(
-   const nfs::PutRequestFromMaidManagerToDataManager& message,
-   const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
-   const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver& receiver) {
-  typedef nfs::PutRequestFromMaidManagerToDataManager MessageType;
-  OperationHandlerWrapper<DataManagerService,
-                          MessageType,
-                          nfs::DataManagerServiceMessages>(
-      accumulator_,
-      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-        return this->ValidateSender(message, sender);
-      },
-      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()),
-      this,
-      accumulator_mutex_)(message, sender, receiver);
-}
-
-template<>
-void DataManagerService::HandleMessage(
    const nfs::PutResponseFromPmidManagerToDataManager& message,
    const typename nfs::PutResponseFromPmidManagerToDataManager::Sender& sender,
    const typename nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver) {
@@ -197,34 +178,9 @@ void DataManagerService::HandleMessage(
         return this->ValidateSender(message, sender);
       },
       Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()),
+          RequiredRequests<MessageType>()()),
       this,
       accumulator_mutex_)(message, sender, receiver);
-}
-
-template<typename Data>
-void DataManagerService::HandlePut(const Data& data, const nfs::MessageId& message_id) {
-  auto pmid_name(PmidName(routing_.RandomConnectedNode().string()));
-  dispatcher_.SendPutRequest(pmid_name, data, message_id);
-  nfs::PersonaTypes<Persona::kMaidManager>::Key key(data.name().raw_name(), Data::Name::data_type);
-  sync_puts_.AddLocalAction(nfs::UnresolvedPut(
-      key,
-      ActionDataManagerPut(data.name(), data.data().string().size())),
-      routing_.kNodeId(),
-      message_id.data);
-  DoSync();
-}
-
-template<typename Data>
-void DataManagerService::HandlePutResponse(const Data& data,
-                                           const PmidName& failed_pmid_node,
-                                           const nfs::MessageId& message_id,
-                                           const maidsafe_error& /*error*/) {
-  // TODO(Team): Following should be done only if error is fixable by repeat
-  auto pmid_name(PmidName(routing_.RandomConnectedNode().string()));
-  while (pmid_name == failed_pmid_node)
-    pmid_name = PmidName(routing_.RandomConnectedNode().string());
-  dispatcher_.SendPutRequest(pmid_name, data, message_id);
 }
 
 template<typename Data>

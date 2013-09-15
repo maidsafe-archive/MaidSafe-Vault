@@ -35,7 +35,6 @@ class PmidNodeHandler {
   template<typename Data>
   void Put(const Data& data);
 
- private:
   data_store::PermanentStore permanent_data_store_;
   data_store::DataStore<data_store::DataBuffer> cache_data_store_;
   data_store::MemoryBuffer mem_only_cache_;

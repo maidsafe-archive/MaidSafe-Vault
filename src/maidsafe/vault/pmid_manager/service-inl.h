@@ -54,45 +54,6 @@ PmidName GetPmidAccountName(const nfs::Message& message);
 
 }  // namespace detail
 
-
-template<>
-void PmidManagerService::HandleMessage(
-    const nfs::PutRequestFromDataManagerToPmidManager& message,
-    const typename nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
-    const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
-  typedef nfs::PutRequestFromDataManagerToPmidManager MessageType;
-  OperationHandlerWrapper<PmidManagerService,
-                          MessageType,
-                          nfs::PmidManagerServiceMessages>(
-      accumulator_,
-      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-        return this->ValidateSender(message, sender);
-      },
-      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()),
-      this,
-      accumulator_mutex_)(message, sender, receiver);
-}
-
-template<>
-void PmidManagerService::HandleMessage(
-    const nfs::PutResponseFromPmidNodeToPmidManager& message,
-    const typename nfs::PutResponseFromPmidNodeToPmidManager::Sender& sender,
-    const typename nfs::PutResponseFromPmidNodeToPmidManager::Receiver& receiver) {
-  typedef nfs::PutResponseFromPmidNodeToPmidManager MessageType;
-  OperationHandlerWrapper<PmidManagerService,
-                          MessageType,
-                          nfs::PmidManagerServiceMessages>(
-      accumulator_,
-      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-        return this->ValidateSender(message, sender);
-      },
-      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()),
-      this,
-      accumulator_mutex_)(message, sender, receiver);
-}
-
 template<>
 void PmidManagerService::HandleMessage(
     const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& /*message*/,
@@ -106,43 +67,18 @@ void PmidManagerService::HandleMessage(
     const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
     const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver) {
   typedef nfs::CreateAccountRequestFromMaidManagerToPmidManager MessageType;
-  OperationHandlerWrapper<MessageType, nfs::PmidManagerServiceMessages>(
+  OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
       accumulator_,
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
       Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>::Value()),
-      [this](const MessageType& message,
-             const typename MessageType::Sender& sender,
-             const typename MessageType::Receiver& receiver) {
-        this->CreatePmidAccount(message, sender, receiver);
-      },
+          RequiredRequests<MessageType>()()),
+      this,
       accumulator_mutex_)(message, sender, receiver);
 }
 
-template<typename Data>
-void PmidManagerService::HandlePut(const Data& data,
-                                   const nfs::MessageId& message_id,
-                                   const PmidName& pmid_node) {
-  disptcher_.SendPutRequest(data, pmid_node, message_id);
-  nfs::PersonaTypes<Persona::kMaidManager>::Key group_key(
-      nfs::PersonaTypes<Persona::kMaidManager>::GroupName(pmid_node),
-      data.name(),
-      Data::Name::data_type);
-  sync_puts_.AddLocalAction(nfs::UnresolvedPut(group_key,
-                                               ActionPmidManagerPut(data.data().string().size())));
-  DoSync();
-}
 
-template<typename Data>
-void PmidManagerService::HandlePutResponse(const Data& data,
-                                           const nfs::MessageId& message_id,
-                                           const PmidName& pmid_node,
-                                           const maidsafe_error& error) {
-  // DIFFERENT ERRORS MUST BE HANDLED DIFFERENTLY
-  disptcher_.SendPutResponse(data, pmid_node, message_id, error);
-}
 
 template<>
 void PmidManagerService::HandleMessage(
@@ -150,36 +86,16 @@ void PmidManagerService::HandleMessage(
     const typename nfs::DeleteRequestFromDataManagerToPmidManager::Sender& sender,
     const typename nfs::DeleteRequestFromDataManagerToPmidManager::Receiver& receiver) {
   typedef nfs::DeleteRequestFromDataManagerToPmidManager MessageType;
-  OperationHandlerWrapper<MessageType,
-                          nfs::PmidManagerServiceMessages>(
+  OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
       accumulator_,
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
       Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>::Value()),
-      [this](const MessageType& message,
-             const typename MessageType::Sender& sender,
-             const typename MessageType::Receiver& receiver) {
-        this->HandleDelete(message, sender, receiver);
-      },
+          RequiredRequests<MessageType>()()),
+      this,
       accumulator_mutex_)(message, sender, receiver);
 }
-
-template<typename T>
-void PmidManagerService::HandleDelete(
-    const T& message,
-    const typename T::Sender& /*sender*/,
-    const typename T::Receiver& receiver) {
-  auto data_name(GetDataNameVariant(message.contents->type,
-                                    message.contents->raw_name));
-
-  DeleteVisitor delete_visitor(dispatcher_,
-                               PmidName(Identity(NodeId(receiver).string())),
-                               message.message_id);
-  boost::apply_visitor(delete_visitor, data_name);
-}
-
 
 
 //template<typename Data>

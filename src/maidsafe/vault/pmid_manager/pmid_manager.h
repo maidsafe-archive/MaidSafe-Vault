@@ -44,6 +44,7 @@ template<>
 struct PersonaTypes<Persona::kPmidManager> {
   static const Persona persona = Persona::kPmidManager;
   typedef vault::GroupKey<passport::PublicPmid::Name> Key;
+  typedef passport::PublicPmid::Name GroupName;
   typedef vault::PmidManagerValue Value;
   typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerDelete> UnresolvedDelete;

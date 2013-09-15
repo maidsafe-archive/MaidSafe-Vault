@@ -82,76 +82,7 @@ class MaidManagerService {
     T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
   }
 
-  template<>
-  void HandleMessage(
-      const nfs::PutRequestFromMaidNodeToMaidManager& message,
-      const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
-      const typename nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-  template<>
-  void HandleMessage(
-      const nfs::PutResponseFromDataManagerToMaidManager& message,
-      const typename nfs::PutResponseFromDataManagerToMaidManager::Sender& sender,
-      const typename nfs::PutResponseFromDataManagerToMaidManager::Receiver& receiver);
-
-  template<>
-  void HandleMessage(
-      const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
-      const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
-      const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-  template<>
-  void HandleMessage(
-      const nfs::PutVersionRequestFromMaidNodeToMaidManager& message,
-      const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Sender& sender,
-      const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-  template<>
-  void HandleMessage(
-      const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager& message,
-      const typename nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Sender& sender,
-      const typename
-          nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-  template<>
-  void HandleMessage(
-      const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
-      const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& sender,
-      const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-  template<>
-  void HandleMessage(
-      const nfs::RemoveAccountRequestFromMaidNodeToMaidManager& message,
-      const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Sender& sender,
-      const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-  template<>
-  void HandleMessage(
-      const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
-      const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
-      const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-  template<>
-  void HandleMessage(
-      const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
-      const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
-      const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-  template<>
-  void HandleMessage(
-      const nfs::GetPmidHealthRequestFromMaidNodeToMaidManager& message,
-      const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
-      const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
  private:
-  template<typename Data>
-  void HandlePut(const nfs::PutRequestFromMaidNodeToMaidManager& message,
-                 const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender);
-
-  template<typename Data>
-  void HandleDelete(const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
-                    const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender);
-
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
 
@@ -161,30 +92,31 @@ class MaidManagerService {
   MaidManagerService(MaidManagerService&&);
   MaidManagerService& operator=(MaidManagerService&&);
 
-  void CheckSenderIsConnectedMaidNode(const nfs::Message& message) const;
-  void CheckSenderIsConnectedMaidManager(const nfs::Message& message) const;
-  void ValidateDataSender(const nfs::Message& message) const;
-  void ValidateGenericSender(const nfs::Message& message) const;
+//  void CheckSenderIsConnectedMaidNode(const nfs::Message& message) const;
+//  void CheckSenderIsConnectedMaidManager(const nfs::Message& message) const;
+//  void ValidateDataSender(const nfs::Message& message) const;
+  template <typename T>
+  bool ValidateSender(const T& message, const typename T::Sender& sender) const;
 
    void HandleCreateAccount(const MaidName& maid_name);
 
   // =============== Put/Delete data ===============================================================
   template<typename Data>
-  void HandlePut(const Data& message);
+  void HandlePut(const MaidName& account_name, const Data& data, const PmidName& pmid_node_hint,
+                 const nfs::MessageId& message_id);
 
-  template<typename Data>
-  void HandleDelete(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  template <typename Data>
+  void HandlePutResponse(const MaidName& maid_name,
+                         const typename Data::Name& data_name,
+                         const int32_t& cost);
+
+  template <typename Data>
+  void HandleDelete(const NodeId& account_name,
+                    const typename Data::Name& data_name,
+                    const nfs::MessageId& message_id);
 
   MaidManagerMetadata::Status AllowPut(const MaidName& account_name, int32_t cost);
 
-//  void SendReplyAndAddToAccumulator(const nfs::Message& message,
-//                                    const routing::ReplyFunctor& reply_functor,
-//                                    const nfs::Reply& reply);
-
-//  template<typename Data>
-//  void HandlePutResult(const nfs::Reply& overall_result,
-//                       const nfs::Message& message,
-//                       routing::ReplyFunctor client_reply_functor);
 
   // Only Maid and Anmaid can create account; for all others this is a no-op.
   typedef std::true_type AllowedAccountCreationType;
@@ -194,41 +126,39 @@ class MaidManagerService {
   template<typename Data>
   void CreateAccount(const MaidName& /*account_name*/, DisallowedAccountCreationType) {}
 
-  template<typename Data, nfs::MessageAction action>
-  void AddLocalUnresolvedActionThenSync(const nfs::Message& message, int32_t cost);
+//  template<typename Data, nfs::MessageAction action>
+//  void AddLocalUnresolvedActionThenSync(const nfs::Message& message, int32_t cost);
 
-  template<typename Data>
-  void HandleVersionMessage(const nfs::Message& message,
-                            const routing::ReplyFunctor& reply_functor);
+//  template<typename Data>
+//  void HandleVersionMessage(const nfs::Message& message,
+//                            const routing::ReplyFunctor& reply_functor);
 
-  // =============== Pmid registration =============================================================
-  void HandlePmidRegistration(const nfs::Message& message,
-                              const routing::ReplyFunctor& reply_functor);
-  template<typename PublicFobType>
-  void ValidatePmidRegistration(const nfs::Reply& reply,
-                                typename PublicFobType::Name public_fob_name,
-                                std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
+//  // =============== Pmid registration =============================================================
+//  void HandlePmidRegistration(const nfs::Message& message,
+//                              const routing::ReplyFunctor& reply_functor);
+//  template<typename PublicFobType>
+//  void ValidatePmidRegistration(const nfs::Reply& reply,
+//                                typename PublicFobType::Name public_fob_name,
+//                                std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
   void FinalisePmidRegistration(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
-
-  // =============== Sync ==========================================================================
-  void DoSync();
-  void HandleSync(const nfs::Message& message);
 
 
   // =============== Account transfer ==============================================================
-  void TransferAccount(const MaidName& account_name, const NodeId& new_node);
-  void HandleAccountTransfer(const nfs::Message& message);
+//  void TransferAccount(const MaidName& account_name, const NodeId& new_node);
+//  void HandleAccountTransfer(const nfs::Message& message);
 
   // =============== PMID totals ===================================================================
   void UpdatePmidTotals(const MaidName& account_name);
   void UpdatePmidTotalsCallback(const std::string& serialised_reply,
                                 std::shared_ptr<GetPmidTotalsOp> op_data);
 
+  void DoSync();
+
   routing::Routing& routing_;
 //  nfs::PublicKeyGetter& public_key_getter_;
   GroupDb<MaidManager> group_db_;
   std::mutex accumulator_mutex_;
-  Accumulator<MaidManagerServiceMessages> accumulator_;
+  Accumulator<nfs::MaidManagerServiceMessages> accumulator_;
   MaidAccountHandler handler_;
   MaidManagerDispatcher dispatcher_;
   Sync<MaidManager::UnresolvedCreateAccount> sync_create_accounts_;
@@ -240,6 +170,69 @@ class MaidManagerService {
   static const int kPutRepliesSuccessesRequired_;
   static const int kDefaultPaymentFactor_;
 };
+
+template<>
+void MaidManagerService::HandleMessage(
+    const nfs::PutRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+//template<>
+//void MaidManagerService::HandleMessage(
+//    const nfs::PutResponseFromDataManagerToMaidManager& message,
+//    const typename nfs::PutResponseFromDataManagerToMaidManager::Sender& sender,
+//    const typename nfs::PutResponseFromDataManagerToMaidManager::Receiver& receiver);
+
+template<>
+void MaidManagerService::HandleMessage(
+    const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template<>
+void MaidManagerService::HandleMessage(
+    const nfs::PutVersionRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template<>
+void MaidManagerService::HandleMessage(
+    const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename
+        nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template<>
+void MaidManagerService::HandleMessage(
+    const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template<>
+void MaidManagerService::HandleMessage(
+    const nfs::RemoveAccountRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template<>
+void MaidManagerService::HandleMessage(
+    const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template<>
+void MaidManagerService::HandleMessage(
+    const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template<>
+void MaidManagerService::HandleMessage(
+    const nfs::GetPmidHealthRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+
 
 // ==================== Implementation =============================================================
 namespace detail {
@@ -271,257 +264,290 @@ int32_t EstimateCost<passport::PublicMaid>(const passport::PublicMaid&);
 template<>
 int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&);
 
-MaidName GetMaidAccountName(const nfs::Message& message);
+//MaidName GetMaidAccountName(const nfs::Message& message);
 
-template<typename Data>
-typename Data::Name GetDataName(const nfs::Message& message) {
-  // Hash the data name to obfuscate the list of chunks associated with the client.
-  return typename Data::Name(crypto::Hash<crypto::SHA512>(message.data().name));
-}
+//template<typename Data>
+//typename Data::Name GetDataName(const nfs::Message& message) {
+//  // Hash the data name to obfuscate the list of chunks associated with the client.
+//  return typename Data::Name(crypto::Hash<crypto::SHA512>(message.data().name));
+//}
 
 }  // namespace detail
 
 
-template<>
-void MaidManagerService::HandleMessage<maid_manager::MaidNodePut>(
-    const maid_manager::MaidNodePut& message,
-    const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender,
-    const typename nfs::Receiver<maid_manager::MaidNodePut>::type& receiver) {
-  try {
-    AddToAccumulator(message);
-    message.contents
-    nfs::DataNameContentAndPmidHint parsed_content(message.serialised_message);
-    auto data_name_variant(GetDataNameVariant(parsed_content.name_and_content.name.type,
-                                              parsed_content.name_and_content.name.raw_name));
-    DataVisitorPut visitor(this, message, sender);
-    boost::apply_visitor(visitor, data_name_variant);
-  }
-  catch(const maidsafe_error& error) {
-    LOG(kWarning) << error.what();
-  }
-  catch(...) {
-    LOG(kWarning) << "Unknown error.";
-  }
+// ================================== Put Implementation ========================================
+
+template <typename Data>
+void MaidManagerService::HandlePut(const MaidName& account_name,
+                                   const Data& data,
+                                   const PmidName& pmid_node_hint,
+                                   const nfs::MessageId& message_id) {
+  dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
 }
 
-template<>
-void MaidManagerService::HandleMessage<maid_manager::MaidNodeDelete>(
-    const maid_manager::MaidNodeDelete& message,
-    const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender,
-    const typename nfs::Receiver<maid_manager::MaidNodeDelete>::type& receiver) {
-  try {
-    AddToAccumulator(message);
-    nfs::DataName parsed_data_name(message.serialised_message);
-    auto data_name_variant(GetDataNameVariant(parsed_data_name.type, parsed_data_name.raw_name));
-    DataVisitorDelete visitor(this, message, sender);
-    boost::apply_visitor(visitor, data_name_variant);
-  }
-  catch(const maidsafe_error& error) {
-    LOG(kWarning) << error.what();
-  }
-  catch(...) {
-    LOG(kWarning) << "Unknown error.";
-  }
-}
-
-template<typename Data>
-void HandlePut(const typename Data::Name& data_name,
-               const maid_manager::MaidNodePut& message,
-               const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender) {
-  MaidName account_name(Identity(sender->string()));
-  nfs::DataNameContentAndPmidHint parsed_content(message.serialised_message);
-
-
-  message. // figure out from metadata if we have space and if low return to client
-      // we need o send the whole data item not only name
-  AddLocalUnresolvedActionThenSync<Data, nfs::MessageAction::kPutRequest>(message, 0);
-  dispatcher_.SendPutRequest(account_name, data_name);
-}
-
-template<typename Data>
-void MaidManagerService::HandleDelete(
-    const typename Data::Name& data_name,
-    const maid_manager::MaidNodeDelete& message,
-    const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender) {
-  MaidName account_name(Identity(sender->string()));
-  AddLocalUnresolvedActionThenSync<Data, nfs::MessageAction::kDelete>(message, 0);
-  dispatcher_.SendDeleteRequest(account_name, data_name);
-}
-
-template<typename Data>
-void MaidManagerService::HandleMessage(const nfs::Message& message,
-                                       const routing::ReplyFunctor& reply_functor) {
-  ValidateDataSender(message);
-  nfs::Reply reply(CommonErrors::success);
-  {
-    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-//    if (accumulator_.CheckHandled(message, reply))  // FIXME
-//      return reply_functor(reply.Serialise()->string());
-  }
-  switch (message.data().action) {
-    case nfs::MessageAction::kPut:
-      return HandlePut<Data>(message, reply_functor);
-    case nfs::MessageAction::kDelete:
-      return HandleDelete<Data>(message, reply_functor);
-    case nfs::MessageAction::kGet:        // intentional fallthrough
-    case nfs::MessageAction::kGetBranch:  // intentional fallthrough
-    case nfs::MessageAction::kDeleteBranchUntilFork:
-      return HandleVersionMessage<Data>(message, reply_functor);
-    default:
-      reply = nfs::Reply(VaultErrors::operation_not_supported, message.Serialise().data);
-      SendReplyAndAddToAccumulator(message, reply_functor, reply);
-  }
-}
-
-template<typename Data>
-void MaidManagerService::HandlePut(const maidsafe::vault::MaidManagerService::Data &message) {
-  maidsafe_error return_code(CommonErrors::success);
-  try {
-    Data data(typename Data::Name(message.data().name),
-              typename Data::serialised_type(message.data().content));
-    auto account_name(detail::GetMaidAccountName(message));
-    auto estimated_cost(detail::EstimateCost(message.data()));
-    auto account_status(AllowPut(account_name, estimated_cost));
-
-    if (account_status == MaidManagerMetadata::Status::kNoSpace)
-      ThrowError(VaultErrors::not_enough_space);
-    if (account_status == MaidManagerMetadata::Status::kLowSpace)
-      UpdatePmidTotals(account_name);
-
-    auto put_op(std::make_shared<nfs::OperationOp>(
-        kPutRepliesSuccessesRequired_,
-        [this, message, reply_functor, low_space](nfs::Reply overall_result) {
-            this->HandlePutResult<Data>(overall_result, message, reply_functor);
-        }));
-
-    nfs_.Put(data,
-             message.pmid_node(),
-             [put_op](std::string serialised_reply) {
-                 nfs::HandleOperationReply(put_op, serialised_reply);
-             });
-  }
-  catch(const maidsafe_error& error) {
-    LOG(kWarning) << error.what();
-    return_code = error;
-  }
-  catch(...) {
-    LOG(kWarning) << "Unknown error.";
-    return_code = MakeError(CommonErrors::unknown);
-  }
-  nfs::Reply reply(return_code, message.Serialise().data);
-  SendReplyAndAddToAccumulator(message, reply_functor, reply);
-}
-
-template<>
-void MaidManagerService::HandlePut<OwnerDirectory>(const nfs::Message& message,
-                                                   const routing::ReplyFunctor& reply_functor);
-
-template<>
-void MaidManagerService::HandlePut<GroupDirectory>(const nfs::Message& message,
-                                                   const routing::ReplyFunctor& reply_functor);
-
-template<>
-void MaidManagerService::HandlePut<WorldDirectory>(const nfs::Message& message,
-                                                   const routing::ReplyFunctor& reply_functor);
-
-template<typename Data>
-void MaidManagerService::HandleDelete(const nfs::Message& message,
-                                      const routing::ReplyFunctor& reply_functor) {
-  SendReplyAndAddToAccumulator(message, reply_functor, nfs::Reply(CommonErrors::success));
-  try {
-    auto account_name(detail::GetMaidAccountName(message));
-    typename Data::Name data_name(message.data().name);
-    maid_account_handler_.DeleteData<Data>(account_name, data_name);
-    AddLocalUnresolvedActionThenSync<Data, nfs::MessageAction::kDelete>(message, 0);
-    nfs_.Delete<Data>(data_name, [](std::string /*serialised_reply*/) {});
-  }
-  catch(const maidsafe_error& error) {
-    LOG(kWarning) << error.what();
-    // Always return success for Deletes
-  }
-  catch(...) {
-    LOG(kWarning) << "Unknown error.";
-    // Always return success for Deletes
-  }
-}
-
-MaidManagerMetadata::Status MaidManagerService::AllowPut(const MaidName& account_name,
-                                                         int32_t cost) {
-  auto metadata(group_db_.GetMetadata(account_name));
-  if (metadata)
-    return metadata->AllowPut(cost);
-  // If A/C doesn't exist, disallow any Puts with non-zero cost.  Effectively blocks client from
-  // Putting data until A/C has been successfully created.
-  return cost ? MaidManagerMetadata::Status::kNoSpace : MaidManagerMetadata::Status::kOk;
-}
-
-template<typename Data>
-void MaidManagerService::HandlePutResult(const nfs::Reply& overall_result,
-                                         const nfs::Message& message,
-                                         routing::ReplyFunctor client_reply_functor) {
-  if (overall_result.IsSuccess()) {
-    protobuf::Cost proto_cost;
-    if (!proto_cost.ParseFromString(overall_result.data().string())) {
-      return SendReplyAndAddToAccumulator(message, client_reply_functor,
-                                          nfs::Reply(CommonErrors::parsing_error));
-    }
-    nfs::Reply reply(CommonErrors::success);
-    if (low_space)
-      reply = nfs::Reply(VaultErrors::low_space);
-    AddLocalUnresolvedActionThenSync<Data, nfs::MessageAction::kPut>(
-        message,
-        proto_cost.cost());
-    SendReplyAndAddToAccumulator(message, client_reply_functor, reply);
-  } else {
-    SendReplyAndAddToAccumulator(message, client_reply_functor, overall_result);
-  }
-}
-
-template<typename Data>
-void MaidManagerService::CreateAccount(const MaidName& account_name, AllowedAccountCreationType) {
-  sync_create_accounts_.AddLocalAction();
+template <typename Data>
+void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
+                                           const typename Data::Name& data_name,
+                                           const int32_t& cost) {
+  typename MaidManager::Key group_key(
+      typename MaidManager::GroupName(maid_name.value),
+      data_name,
+      Data::Name::data_type);
+  sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(group_key,
+                            ActionMaidManagerPut(cost)));
   DoSync();
 }
 
-template<typename Data, nfs::MessageAction action>
-void MaidManagerService::AddLocalUnresolvedActionThenSync(const nfs::Message& message,
-                                                          int32_t cost) {
-  auto account_name(detail::GetMaidAccountName(message));
-  auto unresolved_action(detail::CreateUnresolvedAction<Data, action>(message, cost,
-                                                                      routing_.kNodeId()));
-  maid_account_handler_.AddLocalUnresolvedAction(account_name, unresolved_action);
-  DoSync(account_name);
+// ================================== Delete Implementation =======================================
+
+template <typename Data>
+void MaidManagerService::HandleDelete(const NodeId& account_name,
+                                      const typename Data::Name& data_name,
+                                      const nfs::MessageId& message_id) {
+  dispatcher_.SendDeleteRequest(MaidName(account_name), data_name, message_id);
 }
 
-template<typename Data>
-void MaidManagerService::HandleVersionMessage(const nfs::Message& message,
-                                              const routing::ReplyFunctor& reply_functor) {
+// ===============================================================================================
 
-}
+//template<>
+//void MaidManagerService::HandleMessage<maid_manager::MaidNodePut>(
+//    const maid_manager::MaidNodePut& message,
+//    const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender,
+//    const typename nfs::Receiver<maid_manager::MaidNodePut>::type& receiver) {
+//  try {
+//    AddToAccumulator(message);
+//    message.contents
+//    nfs::DataNameContentAndPmidHint parsed_content(message.serialised_message);
+//    auto data_name_variant(GetDataNameVariant(parsed_content.name_and_content.name.type,
+//                                              parsed_content.name_and_content.name.raw_name));
+//    DataVisitorPut visitor(this, message, sender);
+//    boost::apply_visitor(visitor, data_name_variant);
+//  }
+//  catch(const maidsafe_error& error) {
+//    LOG(kWarning) << error.what();
+//  }
+//  catch(...) {
+//    LOG(kWarning) << "Unknown error.";
+//  }
+//}
 
-template<typename PublicFobType>
-void MaidManagerService::ValidatePmidRegistration(
-    const nfs::Reply& reply,
-    typename PublicFobType::Name public_fob_name,
-    std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
-  std::unique_ptr<PublicFobType> public_fob;
-  try {
-    public_fob.reset(new PublicFobType(public_fob_name,
-                                       typename PublicFobType::serialised_type(reply.data())));
-  }
-  catch(const std::exception& e) {
-    public_fob.reset();
-    LOG(kError) << e.what();
-  }
-  bool finalise(false);
-  {
-    std::lock_guard<std::mutex> lock(pmid_registration_op->mutex);
-    pmid_registration_op->SetPublicFob(std::move(public_fob));
-    finalise = (++pmid_registration_op->count == 2);
-  }
-  if (finalise)
-    FinalisePmidRegistration(pmid_registration_op);
-}
+//template<>
+//void MaidManagerService::HandleMessage<maid_manager::MaidNodeDelete>(
+//    const maid_manager::MaidNodeDelete& message,
+//    const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender,
+//    const typename nfs::Receiver<maid_manager::MaidNodeDelete>::type& receiver) {
+//  try {
+//    AddToAccumulator(message);
+//    nfs::DataName parsed_data_name(message.serialised_message);
+//    auto data_name_variant(GetDataNameVariant(parsed_data_name.type, parsed_data_name.raw_name));
+//    DataVisitorDelete visitor(this, message, sender);
+//    boost::apply_visitor(visitor, data_name_variant);
+//  }
+//  catch(const maidsafe_error& error) {
+//    LOG(kWarning) << error.what();
+//  }
+//  catch(...) {
+//    LOG(kWarning) << "Unknown error.";
+//  }
+//}
+
+//template<typename Data>
+//void HandlePut(const typename Data::Name& data_name,
+//               const maid_manager::MaidNodePut& message,
+//               const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender) {
+//  MaidName account_name(Identity(sender->string()));
+//  nfs::DataNameContentAndPmidHint parsed_content(message.serialised_message);
+
+
+//  message. // figure out from metadata if we have space and if low return to client
+//      // we need o send the whole data item not only name
+//  AddLocalUnresolvedActionThenSync<Data, nfs::MessageAction::kPutRequest>(message, 0);
+//  dispatcher_.SendPutRequest(account_name, data_name);
+//}
+
+//template<typename Data>
+//void MaidManagerService::HandleDelete(
+//    const typename Data::Name& data_name,
+//    const maid_manager::MaidNodeDelete& message,
+//    const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender) {
+//  MaidName account_name(Identity(sender->string()));
+//  AddLocalUnresolvedActionThenSync<Data, nfs::MessageAction::kDelete>(message, 0);
+//  dispatcher_.SendDeleteRequest(account_name, data_name);
+//}
+
+//template<typename Data>
+//void MaidManagerService::HandleMessage(const nfs::Message& message,
+//                                       const routing::ReplyFunctor& reply_functor) {
+//  ValidateDataSender(message);
+//  nfs::Reply reply(CommonErrors::success);
+//  {
+//    std::lock_guard<std::mutex> lock(accumulator_mutex_);
+////    if (accumulator_.CheckHandled(message, reply))  // FIXME
+////      return reply_functor(reply.Serialise()->string());
+//  }
+//  switch (message.data().action) {
+//    case nfs::MessageAction::kPut:
+//      return HandlePut<Data>(message, reply_functor);
+//    case nfs::MessageAction::kDelete:
+//      return HandleDelete<Data>(message, reply_functor);
+//    case nfs::MessageAction::kGet:        // intentional fallthrough
+//    case nfs::MessageAction::kGetBranch:  // intentional fallthrough
+//    case nfs::MessageAction::kDeleteBranchUntilFork:
+//      return HandleVersionMessage<Data>(message, reply_functor);
+//    default:
+//      reply = nfs::Reply(VaultErrors::operation_not_supported, message.Serialise().data);
+//      SendReplyAndAddToAccumulator(message, reply_functor, reply);
+//  }
+//}
+
+//template<typename Data>
+//void MaidManagerService::HandlePut(const maidsafe::vault::MaidManagerService::Data &message) {
+//  maidsafe_error return_code(CommonErrors::success);
+//  try {
+//    Data data(typename Data::Name(message.data().name),
+//              typename Data::serialised_type(message.data().content));
+//    auto account_name(detail::GetMaidAccountName(message));
+//    auto estimated_cost(detail::EstimateCost(message.data()));
+//    auto account_status(AllowPut(account_name, estimated_cost));
+
+//    if (account_status == MaidManagerMetadata::Status::kNoSpace)
+//      ThrowError(VaultErrors::not_enough_space);
+//    if (account_status == MaidManagerMetadata::Status::kLowSpace)
+//      UpdatePmidTotals(account_name);
+
+//    auto put_op(std::make_shared<nfs::OperationOp>(
+//        kPutRepliesSuccessesRequired_,
+//        [this, message, reply_functor, low_space](nfs::Reply overall_result) {
+//            this->HandlePutResult<Data>(overall_result, message, reply_functor);
+//        }));
+
+//    nfs_.Put(data,
+//             message.pmid_node(),
+//             [put_op](std::string serialised_reply) {
+//                 nfs::HandleOperationReply(put_op, serialised_reply);
+//             });
+//  }
+//  catch(const maidsafe_error& error) {
+//    LOG(kWarning) << error.what();
+//    return_code = error;
+//  }
+//  catch(...) {
+//    LOG(kWarning) << "Unknown error.";
+//    return_code = MakeError(CommonErrors::unknown);
+//  }
+//  nfs::Reply reply(return_code, message.Serialise().data);
+//  SendReplyAndAddToAccumulator(message, reply_functor, reply);
+//}
+
+//template<>
+//void MaidManagerService::HandlePut<OwnerDirectory>(const nfs::Message& message,
+//                                                   const routing::ReplyFunctor& reply_functor);
+
+//template<>
+//void MaidManagerService::HandlePut<GroupDirectory>(const nfs::Message& message,
+//                                                   const routing::ReplyFunctor& reply_functor);
+
+//template<>
+//void MaidManagerService::HandlePut<WorldDirectory>(const nfs::Message& message,
+//                                                   const routing::ReplyFunctor& reply_functor);
+
+//template<typename Data>
+//void MaidManagerService::HandleDelete(const nfs::Message& message,
+//                                      const routing::ReplyFunctor& reply_functor) {
+//  SendReplyAndAddToAccumulator(message, reply_functor, nfs::Reply(CommonErrors::success));
+//  try {
+//    auto account_name(detail::GetMaidAccountName(message));
+//    typename Data::Name data_name(message.data().name);
+//    maid_account_handler_.DeleteData<Data>(account_name, data_name);
+//    AddLocalUnresolvedActionThenSync<Data, nfs::MessageAction::kDelete>(message, 0);
+//    nfs_.Delete<Data>(data_name, [](std::string /*serialised_reply*/) {});
+//  }
+//  catch(const maidsafe_error& error) {
+//    LOG(kWarning) << error.what();
+//    // Always return success for Deletes
+//  }
+//  catch(...) {
+//    LOG(kWarning) << "Unknown error.";
+//    // Always return success for Deletes
+//  }
+//}
+
+//MaidManagerMetadata::Status MaidManagerService::AllowPut(const MaidName& account_name,
+//                                                         int32_t cost) {
+//  auto metadata(group_db_.GetMetadata(account_name));
+//  if (metadata)
+//    return metadata->AllowPut(cost);
+//  // If A/C doesn't exist, disallow any Puts with non-zero cost.  Effectively blocks client from
+//  // Putting data until A/C has been successfully created.
+//  return cost ? MaidManagerMetadata::Status::kNoSpace : MaidManagerMetadata::Status::kOk;
+//}
+
+//template<typename Data>
+//void MaidManagerService::HandlePutResult(const nfs::Reply& overall_result,
+//                                         const nfs::Message& message,
+//                                         routing::ReplyFunctor client_reply_functor) {
+//  if (overall_result.IsSuccess()) {
+//    protobuf::Cost proto_cost;
+//    if (!proto_cost.ParseFromString(overall_result.data().string())) {
+//      return SendReplyAndAddToAccumulator(message, client_reply_functor,
+//                                          nfs::Reply(CommonErrors::parsing_error));
+//    }
+//    nfs::Reply reply(CommonErrors::success);
+//    if (low_space)
+//      reply = nfs::Reply(VaultErrors::low_space);
+//    AddLocalUnresolvedActionThenSync<Data, nfs::MessageAction::kPut>(
+//        message,
+//        proto_cost.cost());
+//    SendReplyAndAddToAccumulator(message, client_reply_functor, reply);
+//  } else {
+//    SendReplyAndAddToAccumulator(message, client_reply_functor, overall_result);
+//  }
+//}
+
+//template<typename Data>
+//void MaidManagerService::CreateAccount(const MaidName& account_name, AllowedAccountCreationType) {
+//  sync_create_accounts_.AddLocalAction();
+//  DoSync();
+//}
+
+//template<typename Data, nfs::MessageAction action>
+//void MaidManagerService::AddLocalUnresolvedActionThenSync(const nfs::Message& message,
+//                                                          int32_t cost) {
+//  auto account_name(detail::GetMaidAccountName(message));
+//  auto unresolved_action(detail::CreateUnresolvedAction<Data, action>(message, cost,
+//                                                                      routing_.kNodeId()));
+//  maid_account_handler_.AddLocalUnresolvedAction(account_name, unresolved_action);
+//  DoSync(account_name);
+//}
+
+//template<typename Data>
+//void MaidManagerService::HandleVersionMessage(const nfs::Message& message,
+//                                              const routing::ReplyFunctor& reply_functor) {
+//}
+
+//template<typename PublicFobType>
+//void MaidManagerService::ValidatePmidRegistration(
+//    const nfs::Reply& reply,
+//    typename PublicFobType::Name public_fob_name,
+//    std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
+//  std::unique_ptr<PublicFobType> public_fob;
+//  try {
+//    public_fob.reset(new PublicFobType(public_fob_name,
+//                                       typename PublicFobType::serialised_type(reply.data())));
+//  }
+//  catch(const std::exception& e) {
+//    public_fob.reset();
+//    LOG(kError) << e.what();
+//  }
+//  bool finalise(false);
+//  {
+//    std::lock_guard<std::mutex> lock(pmid_registration_op->mutex);
+//    pmid_registration_op->SetPublicFob(std::move(public_fob));
+//    finalise = (++pmid_registration_op->count == 2);
+//  }
+//  if (finalise)
+//    FinalisePmidRegistration(pmid_registration_op);
+//}
 
 }  // namespace vault
 

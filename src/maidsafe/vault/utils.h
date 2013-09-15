@@ -128,12 +128,12 @@ struct OperationHandler {
   OperationHandler(ValidateSender validate_sender_in,
                    AccumulatorType& accumulator_in,
                    Checker checker_in,
-                   ServiceHandlerType* service,
+                   ServiceHandlerType* service_in,
                    std::mutex& mutex_in)
       : validate_sender(validate_sender_in),
         accumulator(accumulator_in),
         checker(checker_in),
-        service_(service),
+        service(service_in),
         mutex(mutex_in) {}
 
   template<typename MessageType, typename Sender, typename Receiver>
@@ -147,18 +147,19 @@ struct OperationHandler {
       if (accumulator.AddPendingRequest(message, sender, checker) !=
               Accumulator<typename AccumulatorType::type>::AddResult::kSuccess)
         return;
+      accumulator.SetHandled(message, sender);
     }
-    DoOperation<MessageType, ServiceHandlerType>(service_,
+    DoOperation<MessageType, ServiceHandlerType>(service,
                                                  message,
                                                  sender,
-                                                 detail::GetNodeId(receiver));
+                                                 receiver.data);
   }
 
  private:
   ValidateSender validate_sender;
   AccumulatorType& accumulator;
   Checker checker;
-  ServiceHandlerType* service_;
+  ServiceHandlerType* service;
   std::mutex& mutex;
 };
 
@@ -274,24 +275,24 @@ class GetResponseVisitor : public boost::static_visitor<> {
  public:
   GetResponseVisitor(ServiceHandlerType* service, const NonEmptyString& content)
       : service_(service),
-        content_(content),
-        error_(CommonErrors::success) {}
+        kContent_(content),
+        kError_(CommonErrors::success) {}
 
   GetResponseVisitor(ServiceHandlerType* service, const maidsafe_error& error)
       : service_(service),
-        error_(error) {}
+        kError_(error) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    if (error_.code() == CommonErrors::success)
-      service_.HandleGetResponse<Name::data_type>(data_name, content_);
+    if (kError_.code() == CommonErrors::success)
+      service_.HandleGetResponse<Name::data_type>(data_name, kContent_);
     else
-      service_.HandleGetResponse<Name::data_type>(data_name, error_);
+      service_.HandleGetResponse<Name::data_type>(data_name, kError_);
   }
   private:
    ServiceHandlerType* service_;
-   NonEmptyString content_;
-   maidsafe_error error_;
+   NonEmptyString kContent_;
+   maidsafe_error kError_;
 };
 
 template<typename ServiceHandlerType, typename Sender>
@@ -419,47 +420,47 @@ class HintedPutVisitor : public boost::static_visitor<> {
                    const Identity pmid_hint,
                    const nfs::MessageId& message_id)
       : service_(service),
-        content_(content),
+        kContent_(content),
         kSender(sender),
-        pmid_hint_(pmid_hint),
+        kPmidHint_(pmid_hint),
         kMessageId(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     service_.HandlePut(MaidName(kSender),
-                       Name::data_type(data_name, content_),
-                       pmid_hint_,
+                       Name::data_type(data_name, kContent_),
+                       kPmidHint_,
                        kMessageId);
   }
   private:
    ServiceHandlerType* service_;
-   NonEmptyString content_;
-   Identity pmid_hint_;
+   NonEmptyString kContent_;
+   Identity kPmidHint_;
    nfs::MessageId kMessageId;
    NodeId kSender;
 };
 
 template <typename ServiceHandlerType>
-class PutVisitor : public boost::static_visitor<> {
+class DataManagerPutVisitor : public boost::static_visitor<> {
  public:
-  PutVisitor(ServiceHandlerType* service,
-             const NonEmptyString& content,
-             const nfs::MessageId& message_id,
-             const NodeId& receiver)
+  DataManagerPutVisitor(ServiceHandlerType* service,
+                        const NonEmptyString& content,
+                        const nfs::MessageId& message_id,
+                        const Identity& pmid_name)
       : service_(service),
-        content_(content),
+        kContent_(content),
         kMessageId(message_id),
-        kReceiver(Identity(receiver)) {}
+        kPmidName_(pmid_name) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    service_.HandlePut(Name::data_type(data_name, content_), kMessageId, kReceiver);
+    service_.HandlePut(Name::data_type(data_name, kContent_), kPmidName_, kMessageId);
   }
  private:
   ServiceHandlerType* service_;
-  NonEmptyString content_;
+  NonEmptyString kContent_;
   const nfs::MessageId kMessageId;
-  const PmidName kReceiver;
+  const PmidName kPmidName_;
 };
 
 template <typename ServiceHandlerType>
@@ -489,10 +490,10 @@ void DoOperation(ServiceHandlerType* service,
                  const Sender& /*sender*/,
                  const NodeId& receiver) {
   auto data_name(GetNameVariant(message.contents));
-  PutVisitor<ServiceHandlerType> put_visitor(service,
-                                             message.contents->content,
-                                             message.message_id,
-                                             receiver);
+  DataManagerPutVisitor<ServiceHandlerType> put_visitor(service,
+                                                        message.contents->content,
+                                                        message.message_id,
+                                                        receiver);
   boost::apply_visitor(put_visitor, data_name);
 }
 
@@ -514,9 +515,10 @@ void DoOperation(ServiceHandlerType* service,
                  const Sender& /*sender*/,
                  const NodeId& /*receiver*/) {
   auto data_name(GetNameVariant(message.contents));
-  HintedPutVisitor<ServiceHandlerType> put_visitor(service,
-                                                   message.contents->data.content,
-                                                   message.contents->pmid_hint);
+  DataManagerPutVisitor<ServiceHandlerType> put_visitor(service,
+                                                        message.contents->data.content,
+                                                        message.message_id,
+                                                        message.contents->pmid_hint);
   boost::apply_visitor(put_visitor, data_name);
 }
 
@@ -616,7 +618,7 @@ void DoOperation(ServiceHandlerType* service,
                                                      message.contents->content,
                                                      PmidName(GetNodeId(sender)),
                                                      message.message_id,
-                                                     message.contents->code);
+                                                     message.contents->return_code);
   boost::apply_visitor(put_visitor, data_name);
 }
 
@@ -630,7 +632,7 @@ void DoOperation(ServiceHandlerType* service,
                                                      message.contents->content,
                                                      PmidName(Identity(sender.group_id)),
                                                      message.message_id,
-                                                     message.contents->code);
+                                                     message.contents->return_code);
   boost::apply_visitor(put_visitor, data_name);
 }
 
@@ -711,8 +713,8 @@ struct OperationHandlerWrapper {
 
 template <typename T>
 struct RequiredRequests {
-  int operator()(const T&) {
-    return detail::RequiredValue<typename T::Sender>();
+  int operator()() {
+    return detail::RequiredValue<typename T::Sender>()();
   }
 };
 

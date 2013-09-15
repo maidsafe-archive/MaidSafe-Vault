@@ -43,15 +43,16 @@ void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
     const nfs::GetRequestFromDataManagerToPmidNode& message,
     const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
     const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& receiver) {
-#ifndef TESTING
-    ValidateGetSender(message, sender);
-#endif
-  {
-    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    if (accumulator_.CheckHandled(message))
-      return;
-  }
-  HandleGetMessage(message, sender, receiver);
+  typedef nfs::GetRequestFromDataManagerToPmidNode MessageType;
+  OperationHandlerWrapper<PmidNodeService, MessageType, nfs::PmidNodeServiceMessages>(
+      accumulator_,
+      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+        return this->ValidateSender(message, sender);
+      },
+      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(
+          RequiredRequests<MessageType>()()),
+      this,
+      accumulator_mutex_)(message, sender, receiver);
 }
 
 template<>
@@ -59,53 +60,28 @@ void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>
     const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
     const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
     const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver) {
-#ifndef TESTNG
-  ValidateSender(message, sender);
-#endif
-  {
-    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    if (accumulator_.CheckHandled(message))
-      return;
-
-    if (Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess !=
-            accumulator_.AddPendingRequest(
-                message,
-                sender,
-                Accumulator<PmidNodeServiceMessages>::AddRequestChecker(kDeleteRequestsRequired)))
-      return;
-  }
-  HandleDeleteMessage(message, sender, receiver);
-}
-
-template<>
-void PmidNodeService::HandleMessage<nfs::PutRequestFromPmidManagerToPmidNode>(
-    const nfs::PutRequestFromPmidManagerToPmidNode& message,
-    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
-    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver) {
-  typedef nfs::PutRequestFromPmidManagerToPmidNode MessageType;
-  OperationHandlerWrapper<PmidNodeService,
-                           MessageType,
-                           nfs::PmidNodeServiceMessages>(
+  typedef nfs::DeleteRequestFromPmidManagerToPmidNode MessageType;
+  OperationHandlerWrapper<PmidNodeService, MessageType, nfs::PmidNodeServiceMessages>(
       accumulator_,
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>::value),
+      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(
+          RequiredRequests<MessageType>()()),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
 
 template<>
-void PmidNodeService::HandleMessage<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(
+void PmidNodeService::HandleMessage(
     const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& message,
     const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
     const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
 #ifndef TESTNG
   ValidateSender(message, sender);
 #endif
-  Accumulator<PmidNodeServiceMessages>::AddResult result;
-  std::vector<PmidNodeServiceMessages> responses;
+  Accumulator<nfs::PmidNodeServiceMessages>::AddResult result;
+  std::vector<nfs::PmidNodeServiceMessages> responses;
   {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     if (accumulator_.CheckHandled(message))
@@ -143,94 +119,78 @@ void PmidNodeService::HandleMessage<nfs::GetPmidAccountResponseFromPmidManagerTo
           return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
         });
     result = accumulator_.AddPendingRequest(message, sender, add_request_predicate);
-    if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kFailure) {
+    if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
       accumulator_.SetHandled(message, sender);
       return;
     }
-    if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess) {
+    if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kSuccess) {
       responses = accumulator_.Get(message);
       accumulator_.SetHandled(message, sender);
     }
   }
-  if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess) {
+  if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kSuccess) {
     std::vector<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode> typed_responses;
     for (auto response : responses)
       typed_responses.push_back(
           boost::get<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
     HandleAccountResponses(typed_responses);
   }
-  if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kFailure) {
+  if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
     SendAccountRequest();
   }
 }
 
+// Commented by Mahmoud on 15 Sep. Needs refactoring
+//template<>
+//void PmidNodeService::HandleGetMessage(const nfs::GetRequestFromDataManagerToPmidNode& message,
+//    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
+//    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/) {
+//  typedef nfs::GetResponseFromPmidNodeToDataManager NfsMessage;
+//  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+//  nfs_vault::DataName data_name(message.contents->type, message.contents->raw_name);
+//  try {
+//    auto content(permanent_data_store_.Get(data_name));
+//    NfsMessage nfs_message(nfs_client::DataNameAndContentOrReturnCode(
+//        nfs_vault::DataNameAndContent(DataTagValue(message.contents->type),
+//                                      message.contents->raw_name,
+//                                      content)));
+//    RoutingMessage routing_message(nfs_message.Serialise(),
+//                                   NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
+//                                   NfsMessage::Receiver(
+//                                       NodeId(message.contents->raw_name.string())));
+//    routing_.Send(routing_message);
+//    {
+//      std::lock_guard<std::mutex> lock(accumulator_mutex_);
+//      accumulator_.SetHandled(message, sender);
+//    }
+//  } catch (const maidsafe_error& error) {
+//    NfsMessage nfs_message(
+//        nfs_client::DataNameAndContentOrReturnCode(
+//            nfs_client::DataNameAndReturnCode(data_name, nfs_client::ReturnCode(error))));
+//    RoutingMessage routing_message(nfs_message.Serialise(),
+//                                   NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
+//                                   NfsMessage::Receiver(
+//                                       NodeId(message.contents->raw_name.string())));
+//    routing_.Send(routing_message);
+//    {
+//      std::lock_guard<std::mutex> lock(accumulator_mutex_);
+//      accumulator_.SetHandled(message, sender);
+//    }
+//  } catch(const std::exception& /*ex*/) {
+//  }
+//}
+
 template<typename Data>
-void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_id) {
-  {
-    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    accumulator_.SetHandled(message_id);
-  }
-
-  try {
-    handler_.Put(data);
-  } catch(const maidsafe_error& error) {
-    dispatcher_.SendPutRespnse(data, message_id, error);
-  }
-}
-
-template<>
-void PmidNodeService::HandleGetMessage(const nfs::GetRequestFromDataManagerToPmidNode& message,
-    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
-    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/) {
-  typedef nfs::GetResponseFromPmidNodeToDataManager NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  nfs_vault::DataName data_name(message.contents->type, message.contents->raw_name);
-  try {
-    auto content(permanent_data_store_.Get(data_name));
-    NfsMessage nfs_message(nfs_client::DataNameAndContentOrReturnCode(
-        nfs_vault::DataNameAndContent(DataTagValue(message.contents->type),
-                                      message.contents->raw_name,
-                                      content)));
-    RoutingMessage routing_message(nfs_message.Serialise(),
-                                   NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
-                                   NfsMessage::Receiver(
-                                       NodeId(message.contents->raw_name.string())));
-    routing_.Send(routing_message);
-    {
-      std::lock_guard<std::mutex> lock(accumulator_mutex_);
-      accumulator_.SetHandled(message, sender);
-    }
-  } catch (const maidsafe_error& error) {
-    NfsMessage nfs_message(
-        nfs_client::DataNameAndContentOrReturnCode(
-            nfs_client::DataNameAndReturnCode(data_name, nfs_client::ReturnCode(error))));
-    RoutingMessage routing_message(nfs_message.Serialise(),
-                                   NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
-                                   NfsMessage::Receiver(
-                                       NodeId(message.contents->raw_name.string())));
-    routing_.Send(routing_message);
-    {
-      std::lock_guard<std::mutex> lock(accumulator_mutex_);
-      accumulator_.SetHandled(message, sender);
-    }
-  } catch(const std::exception& /*ex*/) {
-  }
-}
-
-template<>
-void PmidNodeService::HandleDeleteMessage(
-    const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
-    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
-    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+void PmidNodeService::HandleDelete(const typename Data::Name& name,
+                                   const nfs::MessageId& /*message_id*/) {
   try {
     {
-      permanent_data_store_.Delete(nfs_vault::DataName(message.contents->type,
-                                                       message.contents->raw_name));
-      accumulator_.SetHandled(message, sender);
+      handler_.permanent_data_store_.Delete(nfs_vault::DataName(name.type, name.raw_name));
+      // accumulator_.SetHandled(message, sender); To be moved to OperationWrapper
     }
   } catch(const std::exception& /*ex*/) {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    accumulator_.SetHandled(message, sender);
+    // accumulator_.SetHandled(message, sender); To be moved to OperationWrapper
   }
 }
 
@@ -269,7 +229,7 @@ bool PmidNodeService::CacheGet(const T& message,
                                const typename T::Receiver& receiver,
                                IsShortTermCacheable) {
   try {
-    auto content(std::make_shared<NonEmptyString>(mem_only_cache_.Get(*message.contents)));
+    auto content(std::make_shared<NonEmptyString>(handler_.mem_only_cache_.Get(*message.contents)));
     active_.Send([=]() {
                    SendCachedData(message, sender, receiver, content);
                  });
@@ -285,7 +245,7 @@ bool PmidNodeService::CacheGet(const T& message,
                                const typename T::Receiver& receiver,
                                IsLongTermCacheable) {
   try {
-    auto content(std::make_shared<NonEmptyString>(cache_data_store_.Get(*message.contents)));
+    auto content(std::make_shared<NonEmptyString>(handler_.cache_data_store_.Get(*message.contents)));
     active_.Send([=]() {
                    SendCachedData(message, sender, receiver, content);
                  });
@@ -314,14 +274,14 @@ template<typename T>
 void PmidNodeService::CacheStore(const T& message,
                                  const DataNameVariant& data_name,
                                  IsShortTermCacheable) {
-  return mem_only_cache_.Store(data_name, message.contents->data->content);
+  handler_.mem_only_cache_.Store(data_name, message.contents->data->content);
 }
 
 template<typename T>
 void PmidNodeService::CacheStore(const T& message,
-                                 const DataNameVariant& data_name,
+                                 const DataNameVariant& name,
                                  IsLongTermCacheable) {
-  return cache_data_store_.Store(data_name, message.contents->data->content);
+  handler_.cache_data_store_.Store(name, message.contents->data->content);
 }
 
 template <typename T>
@@ -341,38 +301,39 @@ void PmidNodeService::SendCachedData(const T& message,
   routing_.Send(routing_message);
 }
 
-template<>
-bool PmidNodeService::ValidateSender(
-    const nfs::PutRequestFromPmidManagerToPmidNode& message,
-    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/) const {
-  if (!SenderIsConnectedVault(message, routing_))
-    ThrowError(VaultErrors::permission_denied);
+// Commented by Mahmoud on 15 Sep. MUST BE FIXED
+//template<>
+//bool PmidNodeService::ValidateSender(
+//    const nfs::PutRequestFromPmidManagerToPmidNode& message,
+//    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/) const {
+//  if (!SenderIsConnectedVault(message, routing_))
+//    ThrowError(VaultErrors::permission_denied);
 
-  if (!FromPmidManager(message) || !ForThisPersona(message))
-    ThrowError(CommonErrors::invalid_parameter);
-}
+//  if (!FromPmidManager(message) || !ForThisPersona(message))
+//    ThrowError(CommonErrors::invalid_parameter);
+//}
 
-template<>
-bool PmidNodeService::ValidateSender(
-    const nfs::GetRequestFromDataManagerToPmidNode& message,
-    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& /*sender*/) const {
-  if (!SenderInGroupForMetadata(message, routing_))
-    ThrowError(VaultErrors::permission_denied);
+//template<>
+//bool PmidNodeService::ValidateSender(
+//    const nfs::GetRequestFromDataManagerToPmidNode& message,
+//    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& /*sender*/) const {
+//  if (!SenderInGroupForMetadata(message, routing_))
+//    ThrowError(VaultErrors::permission_denied);
 
-  if (!FromDataManager(message) || !ForThisPersona(message))
-    ThrowError(CommonErrors::invalid_parameter);
-}
+//  if (!FromDataManager(message) || !ForThisPersona(message))
+//    ThrowError(CommonErrors::invalid_parameter);
+//}
 
-template<>
-bool PmidNodeService::ValidateSender(
-    const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
-    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& /*sender*/) const {
-  if (!SenderIsConnectedVault(message, routing_))
-    ThrowError(VaultErrors::permission_denied);
+//template<>
+//bool PmidNodeService::ValidateSender(
+//    const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
+//    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& /*sender*/) const {
+//  if (!SenderIsConnectedVault(message, routing_))
+//    ThrowError(VaultErrors::permission_denied);
 
-  if (!FromPmidManager(message) || !ForThisPersona(message))
-    ThrowError(CommonErrors::invalid_parameter);
-}
+//  if (!FromPmidManager(message) || !ForThisPersona(message))
+//    ThrowError(CommonErrors::invalid_parameter);
+//}
 
 }  // namespace vault
 
