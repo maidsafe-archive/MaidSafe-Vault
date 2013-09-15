@@ -47,11 +47,11 @@ class PmidManagerDispatcher {
                          const PmidName& pmid_node,
                          const typename Data::Name& data_name);
   template<typename Data>
-  void SendPutResponse(const nfs::MessageId& task_id,
+  void SendPutResponse(const Data& data,
                        const PmidName& pmid_node,
-                       const Data::Name& data_name,
+                       const nfs::MessageId& message_id,
                        const maidsafe_error& error_code);
-  void SendStateChange(const PmidName& pmid_node, const Data::Name& data_name);
+//  void SendStateChange(const PmidName& pmid_node, const typename Data::Name& data_name);
   void SendSync(const PmidName& pmid_node, const std::string& serialised_sync);
   void SendAccountTransfer(const PmidName& destination_peer,
                            const PmidName& pmid_node,
@@ -88,17 +88,15 @@ void PmidManagerDispatcher::SendPutRequest(const Data& data,
 }
 
 template<typename Data>
-void PmidManagerDispatcher::SendDeleteRequest(const nfs::MessageId& task_id,
+void PmidManagerDispatcher::SendDeleteRequest(const nfs::MessageId& message_id,
                                               const PmidName& pmid_node,
                                               const typename Data::Name& data_name) {
   typedef nfs::DeleteRequestFromPmidManagerToPmidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  nfs_vault::DataName data;
-  data = nfs_vault::DataName(data_name);
-  NfsMessage nfs_message(task_id, data);
+  NfsMessage nfs_message(message_id, nfs_vault::DataName(data_name.type, data_name.raw_name));
   RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(pmid_node),routing_.kNodeId()),
-                         NfsMessage::Receiver(NodeId(data_name->string()));
+                         NfsMessage::Sender(NodeId(pmid_node.value.string()), routing_.kNodeId()),
+                         NfsMessage::Receiver(NodeId(data_name().string())));
   routing_.Send(message);
 }
 

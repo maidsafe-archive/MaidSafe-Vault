@@ -49,8 +49,7 @@ void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
@@ -66,8 +65,7 @@ void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }

@@ -526,8 +526,7 @@ void MaidManagerService::HandleMessage(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
@@ -545,8 +544,7 @@ void HandleMessage(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
@@ -564,8 +562,7 @@ void MaidManagerService::HandleMessage(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>::value),
+      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
@@ -583,8 +580,7 @@ void MaidManagerService::HandleMessage(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
@@ -602,8 +598,7 @@ void MaidManagerService::HandleMessage(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
@@ -621,8 +616,7 @@ void MaidManagerService::HandleMessage(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
@@ -640,8 +634,7 @@ void MaidManagerService::HandleMessage(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>::value),
+      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
@@ -659,8 +652,7 @@ void MaidManagerService::HandleMessage(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
@@ -678,8 +670,7 @@ void MaidManagerService::HandleMessage(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
@@ -697,8 +688,7 @@ void MaidManagerService::HandleMessage(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }

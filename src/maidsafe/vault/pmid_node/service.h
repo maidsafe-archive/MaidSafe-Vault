@@ -327,8 +327,7 @@ void PmidNodeService::HandleMessage(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }

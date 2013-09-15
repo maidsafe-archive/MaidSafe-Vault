@@ -95,7 +95,7 @@ class MaidManagerDispatcher {
   MaidManagerDispatcher(MaidManagerDispatcher&&);
   MaidManagerDispatcher& operator=(MaidManagerDispatcher);
 
-  routing::GroupSource Sender(const MaidName& account_name) const;
+//  routing::GroupSource Sender(const MaidName& account_name) const;
 
   routing::Routing& routing_;
   const passport::Pmid kSigningFob_;
@@ -105,21 +105,21 @@ class MaidManagerDispatcher {
 
 
 // ==================== Implementation =============================================================
-template<typename Data>
-void MaidManagerDispatcher::SendGetVersionRequest(const MaidName& account_name,
-                                                  const typename Data::Name& data_name) {
-  typedef routing::GroupToGroupMessage RoutingMessage;
-  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-  static const nfs::MessageAction kAction(nfs::MessageAction::kGetRequest);
-  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
-  static const DataTagValue kDataEnumValue(Data::Tag::kValue);
+//template<typename Data>
+//void MaidManagerDispatcher::SendGetVersionRequest(const MaidName& account_name,
+//                                                  const typename Data::Name& data_name) {
+//  typedef routing::GroupToGroupMessage RoutingMessage;
+//  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
+//  static const nfs::MessageAction kAction(nfs::MessageAction::kGetRequest);
+//  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
+//  static const DataTagValue kDataEnumValue(Data::Tag::kValue);
 
-  nfs::Message::Data inner_data(kDataEnumValue, data_name.data, NonEmptyString(), kAction);
-  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-                         routing::GroupId(NodeId(data_name->string())), cacheable);
-  routing_.Send(message);
-}
+//  nfs::Message::Data inner_data(kDataEnumValue, data_name.data, NonEmptyString(), kAction);
+//  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
+//  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
+//                         routing::GroupId(NodeId(data_name->string())), cacheable);
+//  routing_.Send(message);
+//}
 
 template<typename Data>
 void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name,
@@ -182,41 +182,39 @@ void MaidManagerDispatcher::SendPutRequest<WorldDirectory>(const MaidName& /*acc
   // TODO(Fraser#5#): 2013-08-03 - Handle
 }
 
-template<typename Data>
-void MaidManagerDispatcher::SendPutResponse(const MaidName& account_name,
-                                            const typename Data::Name& data_name,
-                                            const maidsafe_error& result,
-                                            nfs::MessageId /*message_id*/) {
-  typedef routing::GroupToSingleMessage RoutingMessage;
-  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-  static const nfs::MessageAction kAction(nfs::MessageAction::kPutResponse);
-  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
-  static const DataTagValue kDataEnumValue(Data::Tag::kValue);
+//template<typename Data>
+//void MaidManagerDispatcher::SendPutResponse(const MaidName& account_name,
+//                                            const typename Data::Name& data_name,
+//                                            const maidsafe_error& result,
+//                                            nfs::MessageId /*message_id*/) {
+//  typedef routing::GroupToSingleMessage RoutingMessage;
+//  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
+//  static const nfs::MessageAction kAction(nfs::MessageAction::kPutResponse);
+//  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
+//  static const DataTagValue kDataEnumValue(Data::Tag::kValue);
 
-  nfs::Message::Data inner_data(result);
-  inner_data.type = kDataEnumValue;
-  inner_data.name = data_name.data;
-  inner_data.action = kAction;
-  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-                         routing::SingleId(NodeId(account_name->string())), cacheable);
-  routing_.Send(message);
-}
+//  nfs::Message::Data inner_data(result);
+//  inner_data.type = kDataEnumValue;
+//  inner_data.name = data_name.data;
+//  inner_data.action = kAction;
+//  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
+//  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
+//                         routing::SingleId(NodeId(account_name->string())), cacheable);
+//  routing_.Send(message);
+//}
 
 template<typename Data>
 void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
                                               const typename Data::Name& data_name,
-                                              const nfs::MessageId& /*message_id*/) {
-  typedef routing::GroupToGroupMessage RoutingMessage;
-  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-  static const nfs::MessageAction kAction(nfs::MessageAction::kDeleteRequest);
-  static const nfs::Persona kDestinationPersona(nfs::Persona::kDataManager);
-  static const DataTagValue kDataEnumValue(Data::Tag::kValue);
+                                              const nfs::MessageId& message_id) {
+  typedef nfs::DeleteRequestFromMaidManagerToDataManager NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
 
-  nfs::Message::Data inner_data(kDataEnumValue, data_name.data, NonEmptyString(), kAction);
-  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-                         routing::GroupId(NodeId(data_name->string())), cacheable);
+  NfsMessage nfs_message(message_id, nfs_vault::DataName(data_name.type,
+                                                         data_name.raw_name));
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(NodeId(account_name.value.string())),
+                         NfsMessage::Receiver(data_name));
   routing_.Send(message);
 }
 

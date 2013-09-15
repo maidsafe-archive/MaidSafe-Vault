@@ -212,8 +212,7 @@ void DataManagerService::HandleMessage(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
