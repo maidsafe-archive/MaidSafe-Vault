@@ -35,28 +35,27 @@ ActionDataManagerPut::ActionDataManagerPut(
               action_put_proto.ParseFromString(serialised_action);
               return action_put_proto.size();
             }()),
-      kDataName([&]()->DataNameVariant {
+      kPmidName([&]()->PmidName {
                   protobuf::ActionDataManagerPut action_put_proto;
                   action_put_proto.ParseFromString(serialised_action);
-                  return GetDataNameVariant(static_cast<DataTagValue>(action_put_proto.data_type()),
-                                            Identity(action_put_proto.data_name()));
+                  return PmidName(Identity(action_put_proto.data_name()));
       }()) {}
 
 ActionDataManagerPut::ActionDataManagerPut(
     const ActionDataManagerPut& other)
     : kSize(other.kSize),
-      kDataName(other.kDataName) {}
+      kPmidName(other.kPmidName) {}
 
 ActionDataManagerPut::ActionDataManagerPut(
     ActionDataManagerPut&& other)
     : kSize(std::move(other.kSize)),
-      kDataName(std::move(other.kDataName)) {}
+      kPmidName(std::move(other.kPmidName)) {}
 
 std::string ActionDataManagerPut::Serialise() const {
   protobuf::ActionDataManagerPut action_put_proto;
-  action_put_proto.set_data_name((boost::apply_visitor(GetIdentityVisitor(), kDataName)).string());
+  action_put_proto.set_data_name((boost::apply_visitor(GetIdentityVisitor(), kPmidName)).string());
   action_put_proto.set_data_type(static_cast<int32_t>(boost::apply_visitor(GetTagValueVisitor(),
-                                                                           kDataName)));
+                                                                           kPmidName)));
   action_put_proto.set_size(kSize);
   return action_put_proto.SerializeAsString();
 }
@@ -66,7 +65,7 @@ void ActionDataManagerPut::operator()(boost::optional<DataManagerValue>& value) 
     value->IncrementSubscribers();
     value->AddPmid(kPmidName);
   } else {
-    value.reset(DataManagerValue(kSize, kPmidName));
+    value.reset(DataManagerValue(kSize));
     value->IncrementSubscribers();
     value->AddPmid(kPmidName);
   }
@@ -74,7 +73,7 @@ void ActionDataManagerPut::operator()(boost::optional<DataManagerValue>& value) 
 
 bool operator==(const ActionDataManagerPut& lhs,
                 const ActionDataManagerPut& rhs) {
-  return lhs.kDataName == rhs.kDataName && lhs.kSize == rhs.kSize;
+  return lhs.kPmidName == rhs.kPmidName && lhs.kSize == rhs.kSize;
 }
 
 bool operator!=(const ActionDataManagerPut& lhs,

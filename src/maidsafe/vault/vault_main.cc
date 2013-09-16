@@ -42,7 +42,6 @@
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/vault.h"
-#include "maidsafe/vault/tools/tools_exception.h"
 
 
 namespace maidsafe {

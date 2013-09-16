@@ -22,7 +22,6 @@
 
 
 #include "maidsafe/vault/data_manager/action_node_up.pb.h"
-#include "maidsafe/vault/data_manager/metadata.h"
 #include "maidsafe/vault/data_manager/value.h"
 
 

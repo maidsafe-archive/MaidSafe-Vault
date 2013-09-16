@@ -591,10 +591,10 @@ class PutResponseSuccessVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    service_.HandlePutResponse<typename Name::data_type>(data_name,
-                                                         PmidName(kSender),
-                                                         kMessageId,
-                                                         maidsafe_error(kReturnCode_));
+    service_->template HandlePutResponse<typename Name::data_type>(data_name,
+                                                                   PmidName(kSender),
+                                                                   kMessageId,
+                                                                   maidsafe_error(kReturnCode_));
   }
   private:
    ServiceHandlerType* service_;

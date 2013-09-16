@@ -111,17 +111,17 @@ class DataManagerDispatcher {
 
 // To PmidManager
 template<typename Data>
-void DataManagerDispatcher::SendGetRequest(const PmidName& pmid_node,
-                                           const typename Data::Name& data_name,
-                                           nfs::MessageId message_id) {
-  typedef GetRequestFromDataManagerToPmidNode NfsMessage;
-  CheckSourcePersonaType<NfsMessage>();
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  static const routing::Cacheable kCacheable(is_cacheable<Data>::value ? routing::Cacheable::kGet :
-                                                                         routing::Cacheable::kNone);
-  NfsMessage nfs_message((message_id, NfsMessage::Contents(data_name)));
-  NfsMessage::Receiver receiver(routing::SingleId(NodeId(pmid_node->string())));
-  routing_.Send(RoutingMessage(nfs_message.Serialise(), Sender(data.name), receiver, kCacheable));
+void DataManagerDispatcher::SendGetRequest(const PmidName& /*pmid_node*/,
+                                           const typename Data::Name& /*data_name*/,
+                                           const nfs::MessageId& /*message_id*/) {
+//  typedef nfs::GetRequestFromDataManagerToPmidNode NfsMessage;
+//  CheckSourcePersonaType<NfsMessage>();
+//  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+//  static const routing::Cacheable kCacheable(is_cacheable<Data>::value ? routing::Cacheable::kGet :
+//                                                                         routing::Cacheable::kNone);
+//  NfsMessage nfs_message((message_id, NfsMessage::Contents(data_name)));
+//  NfsMessage::Receiver receiver(routing::SingleId(NodeId(pmid_node->string())));
+//  routing_.Send(RoutingMessage(nfs_message.Serialise(), Sender(data.name), receiver, kCacheable));
 }
 
 // To MaidNode
@@ -170,17 +170,17 @@ void DataManagerDispatcher::SendPutResponse(const MaidName& account_name,
   routing_.Send(message);
 }
 
-template<typename Data>
-routing::GroupSource MaidManagerDispatcher::Sender(const typename Data::Name& data_name) const {
-  return routing::GroupSource(routing::GroupId(NodeId(data_name->string())),
-                              routing::SingleId(routing_.kNodeId()));
-}
+//template<typename Data>
+//routing::GroupSource MaidManagerDispatcher::Sender(const typename Data::Name& data_name) const {
+//  return routing::GroupSource(routing::GroupId(NodeId(data_name->string())),
+//                              routing::SingleId(routing_.kNodeId()));
+//}
 
-template<typename Message>
-void MaidNodeDispatcher::CheckSourcePersonaType() const {
-  static_assert(NfsMessage::SourcePersona::value == Persona::kDataManager,
-                  "The source Persona must be kDataManager.");
-}
+//template<typename Message>
+//void MaidNodeDispatcher::CheckSourcePersonaType() const {
+//  static_assert(NfsMessage::SourcePersona::value == Persona::kDataManager,
+//                  "The source Persona must be kDataManager.");
+//}
 
 }  // namespace vault
 

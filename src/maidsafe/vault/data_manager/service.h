@@ -259,6 +259,4 @@ bool DataManagerService::EntryExist(const typename Data::Name& /*name*/) {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/data_manager/service-inl.h"
-
 #endif  // MAIDSAFE_VAULT_DATA_MANAGER_SERVICE_H_

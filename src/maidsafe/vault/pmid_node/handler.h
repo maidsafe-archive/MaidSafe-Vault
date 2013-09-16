@@ -38,7 +38,7 @@ class PmidNodeHandler {
   void Put(const Data& data);
 
   template<typename Data, typename Store>
-  void Delete(const Data::name& name);
+  void Delete(const typename Data::name& name);
 
   boost::filesystem::space_info space_info_;
   DiskUsage disk_total_;
@@ -55,7 +55,7 @@ void PmidNodeHandler::Put(const Data& data) {
 }
 
 template<typename Data>
-void PmidNodeHandler::Delete<Data, data_store::PermanentStore>(const Data::name& name) {
+void PmidNodeHandler::Delete<Data, data_store::PermanentStore>(const typename Data::name& name) {
   permanent_data_store_.Delete(name);
 }
 

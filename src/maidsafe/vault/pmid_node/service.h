@@ -334,7 +334,7 @@ void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_
     handler_.permanent_data_store_.Put(
         GetDataNameVariant(data.name().type, data.name().raw_name),
         data.data());
-    dispatcher_.SendPutRespnse(data, message_id, make_error_code(CommonErrors::success);
+    dispatcher_.SendPutRespnse(data, message_id, make_error_code(CommonErrors::success));
   } catch(const maidsafe_error& error) {
     dispatcher_.SendPutRespnse(data, message_id, error);
   }
