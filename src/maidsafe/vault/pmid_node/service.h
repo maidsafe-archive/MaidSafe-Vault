@@ -243,10 +243,6 @@ class PmidNodeService {
                       const typename T::Receiver& receiver,
                       const std::shared_ptr<NonEmptyString> content);
 
-  boost::filesystem::space_info space_info_;
-  DiskUsage disk_total_;
-  DiskUsage permanent_size_;
-  DiskUsage cache_size_;
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
   Accumulator<nfs::PmidNodeServiceMessages> accumulator_;
