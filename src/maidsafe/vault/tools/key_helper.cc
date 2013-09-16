@@ -19,7 +19,6 @@
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/tools/commander.h"
-#include "maidsafe/vault/tools/tools_exception.h"
 
 int main(int argc, char* argv[]) {
   maidsafe::log::Logging::Instance().Initialise(argc, argv);

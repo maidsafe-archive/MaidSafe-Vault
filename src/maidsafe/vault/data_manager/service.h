@@ -56,12 +56,23 @@ class DataManagerService {
 
  private:
   template<typename Data>
-  void HandlePut(const Data& data, const PmidName& pmid_name_in, const nfs::MessageId& message_id);
+  void HandlePut(const Data& data,
+                 const MaidName& maid_name,
+                 const PmidName& pmid_name_in,
+                 const nfs::MessageId& message_id);
 
   template<typename Data>
   void HandlePutResponse(const Data& data, const PmidName& attempted_pmid_node,
                         const nfs::MessageId& message_id, const maidsafe_error& error);
+  template<typename Data>
+  void HandlePutResponse(const typename Data::name& data_name,
+                         const PmidName& pmid_node,
+                         const nfs::MessageId& message_id,
+                         const maidsafe_error& error);
   void DoSync();
+  template<typename Data>
+  bool EntryExist(const typename Data::Name& /*name*/);
+
 // commented out for code to compile (may not be required anymore)
 //  template<typename Data>
 //  struct GetHandler {
@@ -185,33 +196,59 @@ void DataManagerService::HandleMessage(
 
 template<typename Data>
 void DataManagerService::HandlePut(const Data& data,
+                                   const MaidName& maid_name,
                                    const PmidName& pmid_name_in,
                                    const nfs::MessageId& message_id) {
-  PmidName pmid_name;
-  if (routing_.ClosestToId(data.name()))
-    pmid_name = pmid_name_in;
-  else
-    pmid_name = routing_.RandomConnectedNode().string();
-  dispatcher_.SendPutRequest(pmid_name, data, message_id);
+  int32_t cost(data.data().string().size());
+  if (!EntryExist<Data>(data.name())) {
+    cost *= routing::Parameters::node_group_size;
+    PmidName pmid_name;
+    if (routing_.ClosestToId(data.name()))
+      pmid_name = pmid_name_in;
+    else
+      pmid_name = PmidName(Identity(routing_.RandomConnectedNode()));
+    dispatcher_.SendPutRequest(pmid_name, data, message_id);
+  } else {
+    typename DataManager::Key key(data.name().raw_name, Data::Name::data_type);
+    sync_puts_.AddLocalAction(DataManager::UnresolvedPut(key,
+        ActionDataManagerPut(data.name(), data.data().string().size())));
+    DoSync();
+  }
+  dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);
 }
 
+// failure handler
 template<typename Data>
 void DataManagerService::HandlePutResponse(const Data& data,
                                            const PmidName& attempted_pmid_node,
                                            const nfs::MessageId& message_id,
                                            const maidsafe_error& error) {
-  if (error.code() == CommonErrors::success) {
-    typename DataManager::Key key(data.name().raw_name, Data::Name::data_type);
-    sync_puts_.AddLocalAction(DataManager::UnresolvedPut(key,
-        ActionDataManagerPut(data.name(), std::stoi(data.data().string()))));
-    DoSync();
-  } else {
-    // TODO(Team): Following should be done only if error is fixable by repeat
-    auto pmid_name(PmidName(routing_.RandomConnectedNode().string()));
-    while (pmid_name == attempted_pmid_node)
-      pmid_name = PmidName(routing_.RandomConnectedNode().string());
-    dispatcher_.SendPutRequest(pmid_name, data, message_id);
-  }
+  // TODO(Team): Following should be done only if error is fixable by repeat
+  auto pmid_name(PmidName(routing_.RandomConnectedNode().string()));
+  while (pmid_name == attempted_pmid_node)
+    pmid_name = PmidName(routing_.RandomConnectedNode().string());
+  dispatcher_.SendPutRequest(pmid_name, data, message_id);
+}
+
+// Success handler
+template<typename Data>
+void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
+                                           const PmidName& pmid_node,
+                                           const nfs::MessageId& message_id,
+                                           const maidsafe_error& /*error*/) {
+  typename DataManager::Key key(data_name().raw_name, Data::Name::data_type);
+  sync_puts_.AddLocalAction(DataManager::UnresolvedPut(
+      key,
+      ActionDataManagerPut(pmid_node, 0), // size should be retrieved or ignored
+      routing_.kNodeId(),
+      message_id));
+  DoSync();
+}
+
+
+template<typename Data>
+bool DataManagerService::EntryExist(const typename Data::Name& /*name*/) {
+  return true; // MUST BE FIXED
 }
 
 

@@ -73,6 +73,7 @@ DataManagerValue::DataManagerValue(const uint64_t& size)
   }
 }
 
+
 void DataManagerValue::AddPmid(const PmidName& pmid_name) {
   online_pmids_.insert(pmid_name);
   offline_pmids_.erase(pmid_name);
