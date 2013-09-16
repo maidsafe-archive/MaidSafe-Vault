@@ -30,17 +30,13 @@ int main(int argc, char* argv[]) {
     maidsafe::vault::tools::Commander commander(12);
     commander.AnalyseCommandLineOptions(argc, argv);
   }
-  catch(const maidsafe::vault::tools::ToolsException& exception) {
-    std::cout << "Tools Exception: " << exception.what() << std::endl;
-    return -1;
-  }
   catch(const maidsafe::maidsafe_error& exception) {
     std::cout << "Error: " << exception.what() << std::endl;
-    return -2;
+    return -1;
   }
   catch(...) {
     std::cout << "Unexpected exception." << std::endl;
-    return -3;
+    return -2;
   }
 
   return 0;

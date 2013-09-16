@@ -107,7 +107,7 @@ void NetworkGenerator::SetupBootstrapNodes(const PmidVector &all_keys) {
                        });
   if (a1.get() != 0 || a2.get() != 0) {
     LOG(kError) << "SetupNetwork - Could not start bootstrap nodes.";
-    throw ToolsException("Failed to set up bootstrap nodes");
+    ThrowError(RoutingErrors::not_connected);
   }
 
   // just wait till process receives termination signal
@@ -147,7 +147,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
   auto future(RoutingJoin(peer_endpoints));
   auto status(future.wait_for(std::chrono::seconds(10)));
   if (status == std::future_status::timeout || !future.get())
-    throw ToolsException("Failed to join client to network.");
+    ThrowError(RoutingErrors::not_connected);
   LOG(kInfo) << "Bootstrapped anonymous node to store keys";
   passport::PublicPmid::Name pmid_name(Identity(key_chain.pmid.name().value));
   client_nfs_.reset(new nfs_client::MaidNodeNfs(asio_service_,
@@ -232,7 +232,7 @@ void DataChunkStorer::Test(int32_t quantity) {
     ++rounds;
   }
   if (num_chunks != num_get)
-    throw ToolsException("Failed to store and verify all data chunks.");
+    ThrowError(CommonErrors::invalid_parameter);
 }
 
 void DataChunkStorer::TestWithDelete(int32_t quantity) {
@@ -243,23 +243,23 @@ void DataChunkStorer::TestWithDelete(int32_t quantity) {
     ++rounds;
   }
   if (num_chunks != num_get)
-    throw ToolsException("Failed to store and verify all data chunks.");
+    ThrowError(CommonErrors::invalid_parameter);
 }
 
 void DataChunkStorer::TestStoreChunk(int chunk_index) {
   StoreOneChunk(chunk_list_[chunk_index]);
   if (!GetOneChunk(chunk_list_[chunk_index]))
-    throw ToolsException("Failed to store a generated chunk.");
+    ThrowError(CommonErrors::invalid_parameter);
 }
 
 void DataChunkStorer::TestFetchChunk(int chunk_index) {
   if (!GetOneChunk(chunk_list_[chunk_index]))
-    throw ToolsException("Failed to retrieve a stored chunk.");
+    ThrowError(CommonErrors::invalid_parameter);
 }
 
 void DataChunkStorer::TestDeleteChunk(int chunk_index) {
   if (!DeleteOneChunk(chunk_list_[chunk_index]))
-    throw ToolsException("Failed to delete a stored chunk.");
+    ThrowError(CommonErrors::invalid_parameter);
 }
 
 

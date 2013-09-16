@@ -17,8 +17,8 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/vault/tools/commander.h"
+#include "maidsafe/common/error.h"
 
-#include "maidsafe/vault/tools/tools_exception.h"
 
 namespace maidsafe {
 
@@ -123,8 +123,10 @@ void Commander::GetPathFromProgramOption(const std::string& option_name,
     return;
 
   keys_path_ = variables_map.at(option_name).as<std::string>();
-  if (keys_path_.empty())
-    throw ToolsException("Incorrect information in parameter " + option_name);
+  if (keys_path_.empty()) {
+    std::cout << "Incorrect information in parameter " << option_name << '\n';
+    ThrowError(CommonErrors::invalid_parameter);
+  }
 
   LOG(kInfo) << "GetPathFromProgramOption - " << option_name << " is " << keys_path_;
 }
@@ -201,8 +203,10 @@ void Commander::CheckOptionValidity(po::options_description& cmdline_options,
 
   if (variables_map.count("help") || selected_ops_.InvalidOptions(variables_map, peer_endpoints_)) {
     std::cout << cmdline_options << "Options order: [c|l|d] p [b|(s|v)|t]" << std::endl;
-    if (!variables_map.count("help"))
-      throw ToolsException("Invalid command line options.");
+    if (!variables_map.count("help")) {
+      std::cout << "Invalid command line options.\n";
+      ThrowError(CommonErrors::invalid_parameter);
+    }
   }
 }
 
@@ -237,10 +241,12 @@ void Commander::CreateKeys() {
     all_keychains_.push_back(passport::detail::AnmaidToPmid(anmaid, maid, pmid));
   }
   LOG(kInfo) << "Created " << all_keychains_.size() << " pmids.";
-  if (maidsafe::passport::detail::WriteKeyChainList(keys_path_, all_keychains_))
-    std::cout << "Wrote keys to " << keys_path_ << std::endl;
-  else
-    throw ToolsException("Could not write keys to " + keys_path_.string());
+  if (maidsafe::passport::detail::WriteKeyChainList(keys_path_, all_keychains_)) {
+    std::cout << "Wrote keys to " << keys_path_ << '\n';
+  } else {
+    std::cout << "Could not write keys to " << keys_path_ << '\n';
+    ThrowError(CommonErrors::invalid_parameter);
+  }
 }
 
 void Commander::HandleKeys() {
@@ -278,13 +284,15 @@ void Commander::HandleStore() {
     }
     catch(const std::exception& e) {
       std::cout << "Failed storing key chain with PMID " << HexSubstr(keychain.pmid.name().value)
-                << ": " << e.what() << std::endl;
+                << ": " << e.what() << '\n';
       ++failures;
     }
   }
-  if (failures > 0)
-    throw ToolsException(std::string("Could not store " + std::to_string(failures) + " out of " +
-                                     std::to_string(all_keychains_.size())));
+  if (failures) {
+    std::cout << "Could not store " << std::to_string(failures) << " out of "
+              << std::to_string(all_keychains_.size()) << '\n';
+    ThrowError(CommonErrors::invalid_parameter);
+  }
 }
 
 void Commander::HandleVerify() {
@@ -296,13 +304,15 @@ void Commander::HandleVerify() {
     }
     catch(const std::exception& e) {
       std::cout << "Failed verifying key chain with PMID " << HexSubstr(keychain.pmid.name().value)
-                << ": " << e.what() << std::endl;
+                << ": " << e.what() << '\n';
       ++failures;
     }
   }
-  if (failures > 0)
-    throw ToolsException(std::string("Could not verify " + std::to_string(failures) + " out of " +
-                                     std::to_string(all_keychains_.size())));
+  if (failures) {
+    std::cout << "Could not verify " << std::to_string(failures) << " out of "
+              << std::to_string(all_keychains_.size()) << '\n';
+    ThrowError(CommonErrors::invalid_parameter);
+  }
 }
 
 void Commander::HandleDoTest(size_t client_index) {

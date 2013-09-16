@@ -31,6 +31,7 @@
 #include "boost/program_options.hpp"
 
 #include "maidsafe/common/config.h"
+#include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
@@ -61,34 +62,6 @@ void SigHandler(int signum) {
   g_cond_var.notify_one();
 }
 
-fs::path GetPathFromProgramOption(const std::string& option_name,
-                                  po::variables_map& variables_map,
-                                  bool is_dir,
-                                  bool create_new_if_absent) {
-  fs::path option_path(variables_map.at(option_name).as<std::string>());
-  if (!fs::exists(option_path)) {
-    if (!create_new_if_absent)
-      throw tools::ToolsException("Invalid " + option_name + ", " + option_path.string() +
-                                  " doesn't exist or can't be accessed");
-  } else if (is_dir && !fs::is_directory(option_path)) {
-    throw tools::ToolsException(option_name + " path " + option_path.string() +
-                                " isn't a directory.");
-  } else if (!is_dir && !fs::is_regular_file(option_path)) {
-    throw tools::ToolsException(option_name + " path " + option_path.string() +
-                                " isn't a regular file.");
-  }
-
-  if (is_dir && create_new_if_absent) {  // Create new dir
-    fs::create_directories(option_path);
-  } else if (!is_dir && create_new_if_absent) {  // Create new file
-    std::ofstream ofs(option_path.c_str());
-    ofs.close();
-  }
-
-  LOG(kInfo) << "GetPathFromProgramOption - " << option_name << " is " << option_path;
-  return option_path;
-}
-
 boost::asio::ip::udp::endpoint GetEndpointFromString(const std::string& string_ep) {
   size_t delim(string_ep.rfind(':'));
   boost::asio::ip::udp::endpoint ep;
@@ -109,17 +82,17 @@ void GetIdentityAndEndpoints(po::variables_map& variables_map,
   }
 
   if (variables_map.count("identity_index") == 0) {
-    std::cout << "No identity selected" << std::endl;
-    throw tools::ToolsException("No identity selected");
+    std::cout << "No identity selected\n";
+    ThrowError(CommonErrors::invalid_parameter);
   }
 
-  fs::path keys_path(GetPathFromProgramOption("keys_path", variables_map, false, false));
+  auto keys_path(maidsafe::GetPathFromProgramOptions("keys_path", variables_map, false, false));
   std::vector<passport::detail::AnmaidToPmid> key_chains(
       passport::detail::ReadKeyChainList(keys_path));
   size_t identity_index(variables_map.at("identity_index").as<int>());
   if (identity_index >= key_chains.size()) {
-    std::cout << "Identity selected out of bounds" << std::endl;
-    throw tools::ToolsException("Identity selected out of bounds");
+    std::cout << "Identity selected out of bounds\n";
+    ThrowError(CommonErrors::invalid_parameter);
   }
   pmid.reset(new passport::Pmid(key_chains.at(identity_index).pmid));
   for (auto& key_chain : key_chains)
@@ -128,7 +101,7 @@ void GetIdentityAndEndpoints(po::variables_map& variables_map,
 #endif
 
 void RunVault(po::variables_map& variables_map) {
-  fs::path chunk_path(GetPathFromProgramOption("chunk_path", variables_map, true, true));
+  auto chunk_path(maidsafe::GetPathFromProgramOptions("chunk_path", variables_map, true, true));
   std::vector<boost::asio::ip::udp::endpoint> peer_endpoints;
   std::unique_ptr<passport::Pmid> pmid;
   std::vector<passport::PublicPmid> pmids;
@@ -240,7 +213,7 @@ void ActOnOptions(int argc, char* argv[]) {
   if (variables_map.count("help") != 0 || invalid_options) {
     std::cout << cmdline_options << std::endl;
     if (invalid_options)
-      throw tools::ToolsException("Invalid options");
+      ThrowError(CommonErrors::invalid_parameter);
   }
 
   RunVault(variables_map);
