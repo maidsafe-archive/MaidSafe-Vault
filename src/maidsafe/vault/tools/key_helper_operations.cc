@@ -29,7 +29,6 @@
 
 #include "maidsafe/routing/parameters.h"
 
-#include "maidsafe/vault/tools/tools_exception.h"
 
 namespace maidsafe {
 

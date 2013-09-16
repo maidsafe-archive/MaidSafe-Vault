@@ -24,10 +24,9 @@
 namespace maidsafe {
 namespace vault {
 
-ActionDataManagerPut::ActionDataManagerPut(
-    const DataNameVariant& data_name, const uint32_t& size)
+ActionDataManagerPut::ActionDataManagerPut(const PmidName& pmid_name, const uint32_t& size)
     : kSize(size),
-      kDataName(data_name) {}
+      kPmidName(pmid_name) {}
 
 ActionDataManagerPut::ActionDataManagerPut(
     const std::string& serialised_action)
@@ -63,10 +62,14 @@ std::string ActionDataManagerPut::Serialise() const {
 }
 
 void ActionDataManagerPut::operator()(boost::optional<DataManagerValue>& value) {
-  if (value)
+  if (value) {
     value->IncrementSubscribers();
-  else
-    value.reset(DataManagerValue(kSize));
+    value->AddPmid(kPmidName);
+  } else {
+    value.reset(DataManagerValue(kSize, kPmidName));
+    value->IncrementSubscribers();
+    value->AddPmid(kPmidName);
+  }
 }
 
 bool operator==(const ActionDataManagerPut& lhs,

@@ -125,21 +125,21 @@ void DataManagerDispatcher::SendGetRequest(const PmidName& pmid_node,
 }
 
 // To MaidNode
-template<typename Data>
-void SendGetResponse(const MaidName& maid_node,
-                     const Data& data,
-                     nfs::MessageId message_id) {
-  typedef SendGetResponseFromDataManagerToMaidNode NfsMessage;
-  CheckSourcePersonaType<NfsMessage>();
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  static const routing::Cacheable kCacheable(is_cacheable<Data>::value ? routing::Cacheable::kPut :
-                                                                         routing::Cacheable::kNone);
-  NfsMessage::Contents contents;
-  *contents.data = data;
-  NfsMessage nfs_message((message_id, contents));
-  NfsMessage::Receiver receiver(routing::SingleId(NodeId(maid_node->string())));
-  routing_.Send(RoutingMessage(nfs_message.Serialise(), Sender(data.name), receiver, kCacheable));
-}
+//template<typename Data>
+//void SendGetResponse(const MaidName& maid_node,
+//                     const Data& data,
+//                     nfs::MessageId message_id) {
+//  typedef SendGetResponseFromDataManagerToMaidNode NfsMessage;
+//  CheckSourcePersonaType<NfsMessage>();
+//  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+//  static const routing::Cacheable kCacheable(is_cacheable<Data>::value ? routing::Cacheable::kPut :
+//                                                                         routing::Cacheable::kNone);
+//  NfsMessage::Contents contents;
+//  *contents.data = data;
+//  NfsMessage nfs_message((message_id, contents));
+//  NfsMessage::Receiver receiver(routing::SingleId(NodeId(maid_node->string())));
+//  routing_.Send(RoutingMessage(nfs_message.Serialise(), Sender(data.name), receiver, kCacheable));
+//}
 
 template<typename Data>
 void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name,
@@ -163,10 +163,9 @@ void DataManagerDispatcher::SendPutResponse(const MaidName& account_name,
   typedef nfs::PutResponseFromDataManagerToMaidManager NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   NfsMessage nfs_message(message_id,
-                         nfs_vault::DataNameAndContent(
-                             Data::Name::data_type, data_name.name(), std::to_string(cost)));
+                         nfs_vault::DataNameAndCost(Data::Name::data_type, data_name.name(), cost));
   RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(data.name(), routing_.kNodeId()),
+                         NfsMessage::Sender(data_name.raw_name, routing_.kNodeId()),
                          NfsMessage::Receiver(account_name));
   routing_.Send(message);
 }

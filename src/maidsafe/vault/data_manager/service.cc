@@ -31,10 +31,10 @@ namespace vault {
 
 namespace {
 
-inline bool SenderInGroupForClientMaid(const nfs::Message& message, routing::Routing& routing) {
-  return routing.EstimateInGroup(message.source().node_id,
-                                 NodeId(message.client_validation().name.string()));
-}
+//inline bool SenderInGroupForClientMaid(const nfs::Message& message, routing::Routing& routing) {
+//  return routing.EstimateInGroup(message.source().node_id,
+//                                 NodeId(message.client_validation().name.string()));
+//}
 
 template<typename Message>
 inline bool ForThisPersona(const Message& message) {
@@ -44,112 +44,107 @@ inline bool ForThisPersona(const Message& message) {
 }  // unnamed namespace
 
 namespace detail {
-void SendMetadataCost(const nfs::Message& original_message,
-                      const routing::ReplyFunctor& reply_functor,
-                      nfs::Reply& reply) {
-  if (!reply_functor)
-    return;
-  if (!reply.IsSuccess())
-    reply = nfs::Reply(reply.error(), original_message.Serialise().data);
+//void SendMetadataCost(const nfs::Message& original_message,
+//                      const routing::ReplyFunctor& reply_functor,
+//                      nfs::Reply& reply) {
+//  if (!reply_functor)
+//    return;
+//  if (!reply.IsSuccess())
+//    reply = nfs::Reply(reply.error(), original_message.Serialise().data);
 
-  reply_functor(reply.Serialise()->string());
-}
+//  reply_functor(reply.Serialise()->string());
+//}
 
 }  // namspace detail
 
-const int DataManagerService::kPutRequestsRequired_(3);
-const int DataManagerService::kStateChangesRequired_(3);
-const int DataManagerService::kDeleteRequestsRequired_(3);
+//DataManagerService::DataManagerService(const passport::Pmid& pmid,
+//                                               routing::Routing& routing,
+//                                               nfs::PublicKeyGetter& public_key_getter)
+//    : routing_(routing),
+//      public_key_getter_(public_key_getter),
+//      accumulator_mutex_(),
+//      accumulator_(),
+//      metadata_handler_(routing.kNodeId()),
+//      nfs_(routing, pmid) {}
 
+//void DataManagerService::ValidatePutSender(const nfs::Message& message) const {
+//  if (!SenderInGroupForClientMaid(message, routing_) || !ThisVaultInGroupForData(message)) {
+//    ThrowError(VaultErrors::permission_denied);
+//  }
 
-DataManagerService::DataManagerService(const passport::Pmid& pmid,
-                                               routing::Routing& routing,
-                                               nfs::PublicKeyGetter& public_key_getter)
-    : routing_(routing),
-      public_key_getter_(public_key_getter),
-      accumulator_mutex_(),
-      accumulator_(),
-      metadata_handler_(routing.kNodeId()),
-      nfs_(routing, pmid) {}
+//  if (!FromMaidManager(message) || !ForThisPersona(message))
+//    ThrowError(CommonErrors::invalid_parameter);
+//}
 
-void DataManagerService::ValidatePutSender(const nfs::Message& message) const {
-  if (!SenderInGroupForClientMaid(message, routing_) || !ThisVaultInGroupForData(message)) {
-    ThrowError(VaultErrors::permission_denied);
-  }
+//void DataManagerService::ValidatePutResultSender(const nfs::Message& message) const {
+//  // FIXME(Prakash) Need to pass PmidName in message to validate
+//  if (!FromPmidManager(message) || !ForThisPersona(message))
+//    ThrowError(CommonErrors::invalid_parameter);
+//}
 
-  if (!FromMaidManager(message) || !ForThisPersona(message))
-    ThrowError(CommonErrors::invalid_parameter);
-}
+//void DataManagerService::ValidateGetSender(const nfs::Message& message) const {
+//  if (!(FromClientMaid(message) ||
+//          FromDataHolder(message) ||
+//          FromDataGetter(message) ||
+//          FromOwnerDirectoryManager(message) ||
+//          FromGroupDirectoryManager(message) ||
+//          FromWorldDirectoryManager(message)) ||
+//      !ForThisPersona(message)) {
+//    ThrowError(CommonErrors::invalid_parameter);
+//  }
+//}
 
-void DataManagerService::ValidatePutResultSender(const nfs::Message& message) const {
-  // FIXME(Prakash) Need to pass PmidName in message to validate
-  if (!FromPmidManager(message) || !ForThisPersona(message))
-    ThrowError(CommonErrors::invalid_parameter);
-}
+//void DataManagerService::ValidateDeleteSender(const nfs::Message& message) const {
+//  if (!SenderInGroupForClientMaid(message, routing_))
+//    ThrowError(VaultErrors::permission_denied);
 
-void DataManagerService::ValidateGetSender(const nfs::Message& message) const {
-  if (!(FromClientMaid(message) ||
-          FromDataHolder(message) ||
-          FromDataGetter(message) ||
-          FromOwnerDirectoryManager(message) ||
-          FromGroupDirectoryManager(message) ||
-          FromWorldDirectoryManager(message)) ||
-      !ForThisPersona(message)) {
-    ThrowError(CommonErrors::invalid_parameter);
-  }
-}
+//  if (!FromMaidManager(message) || !ForThisPersona(message))
+//    ThrowError(CommonErrors::invalid_parameter);
+//}
 
-void DataManagerService::ValidateDeleteSender(const nfs::Message& message) const {
-  if (!SenderInGroupForClientMaid(message, routing_))
-    ThrowError(VaultErrors::permission_denied);
-
-  if (!FromMaidManager(message) || !ForThisPersona(message))
-    ThrowError(CommonErrors::invalid_parameter);
-}
-
-void DataManagerService::ValidatePostSender(const nfs::Message& message) const {
-  if (!(FromDataManager(message) || FromPmidManager(message)) ||
-      !ForThisPersona(message)) {
-    ThrowError(CommonErrors::invalid_parameter);
-  }
-}
+//void DataManagerService::ValidatePostSender(const nfs::Message& message) const {
+//  if (!(FromDataManager(message) || FromPmidManager(message)) ||
+//      !ForThisPersona(message)) {
+//    ThrowError(CommonErrors::invalid_parameter);
+//  }
+//}
 
 //void DataManagerService::SendSyncData() {}
 
-void DataManagerService::HandleNodeDown(const nfs::Message& /*message*/) {
-  try {
-    int online_holders(-1);
-//    metadata_handler_.MarkNodeDown(message.name(), PmidName(), online_holders);
-    if (online_holders < 3) {
-      // TODO(Team): Get content. There is no manager available yet.
+//void DataManagerService::HandleNodeDown(const nfs::Message& /*message*/) {
+//  try {
+//    int online_holders(-1);
+////    metadata_handler_.MarkNodeDown(message.name(), PmidName(), online_holders);
+//    if (online_holders < 3) {
+//      // TODO(Team): Get content. There is no manager available yet.
 
-      // Select new holder
-      NodeId new_holder(routing_.RandomConnectedNode());
+//      // Select new holder
+//      NodeId new_holder(routing_.RandomConnectedNode());
 
-      // TODO(Team): Put content. There is no manager available yet.
-    }
-  }
-  catch(const std::exception &e) {
-    LOG(kError) << "HandleNodeDown - Dropping process after exception: " << e.what();
-    return;
-  }
-}
+//      // TODO(Team): Put content. There is no manager available yet.
+//    }
+//  }
+//  catch(const std::exception &e) {
+//    LOG(kError) << "HandleNodeDown - Dropping process after exception: " << e.what();
+//    return;
+//  }
+//}
 
-void DataManagerService::HandleNodeUp(const nfs::Message& /*message*/) {
-  //try {
-  //  metadata_handler_.MarkNodeUp(message.name(),
-  //                               PmidName(Identity(message.name().string())));
-  //}
-  //catch(const std::exception &e) {
-  //  LOG(kError) << "HandleNodeUp - Dropping process after exception: " << e.what();
-  //  return;
-  //}
-}
+//void DataManagerService::HandleNodeUp(const nfs::Message& /*message*/) {
+//  try {
+//    metadata_handler_.MarkNodeUp(message.name(),
+//                                 PmidName(Identity(message.name().string())));
+//  }
+//  catch(const std::exception &e) {
+//    LOG(kError) << "HandleNodeUp - Dropping process after exception: " << e.what();
+//    return;
+//  }
+//}
 
-bool DataManagerService::ThisVaultInGroupForData(const nfs::Message& message) const {
-  return routing::GroupRangeStatus::kInRange ==
-         routing_.IsNodeIdInGroupRange(NodeId(message.data().name.string()));
-}
+//bool DataManagerService::ThisVaultInGroupForData(const nfs::Message& message) const {
+//  return routing::GroupRangeStatus::kInRange ==
+//         routing_.IsNodeIdInGroupRange(NodeId(message.data().name.string()));
+//}
 
 // =============== Sync and Record transfer =====================================================
 
