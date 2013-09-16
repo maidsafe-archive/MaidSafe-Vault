@@ -28,11 +28,6 @@
 namespace maidsafe {
 namespace vault {
 
-template<typename Data>
-void PmidNodeHandler::Put(const Data& data) {
-  permanent_data_store_.Put(data.name, data.data());
-}
-
 }  // namespace vault
 }  // namespace maidsafe
 

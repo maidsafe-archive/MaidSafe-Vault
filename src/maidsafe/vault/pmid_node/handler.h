@@ -23,6 +23,8 @@
 #include "maidsafe/data_store/data_store.h"
 #include "maidsafe/data_store/memory_buffer.h"
 #include "maidsafe/data_store/permanent_store.h"
+#include "maidsafe/data_store/data_buffer.h"
+#include "maidsafe/data_types/data_name_variant.h"
 
 
 namespace maidsafe {
@@ -30,19 +32,34 @@ namespace vault {
 
 class PmidNodeHandler {
  public:
-  PmidNodeHandler();
+  PmidNodeHandler(const boost::filesystem::path vault_root_dir);
 
   template<typename Data>
   void Put(const Data& data);
 
+  template<typename Data, typename Store>
+  void Delete(const Data::name& name);
+
+  boost::filesystem::space_info space_info_;
+  DiskUsage disk_total_;
+  DiskUsage permanent_size_;
+  DiskUsage cache_size_;
   data_store::PermanentStore permanent_data_store_;
-  data_store::DataStore<data_store::DataBuffer> cache_data_store_;
+  data_store::DataStore<data_store::DataBuffer<DataNameVariant>> cache_data_store_;
   data_store::MemoryBuffer mem_only_cache_;
 };
 
+template<typename Data>
+void PmidNodeHandler::Put(const Data& data) {
+  permanent_data_store_.Put(data.name, data.data());
+}
+
+template<typename Data>
+void PmidNodeHandler::Delete<Data, data_store::PermanentStore>(const Data::name& name) {
+  permanent_data_store_.Delete(name);
+}
+
 }  // namespace vault
 }  // namespace maidsafe
-
-#include "maidsafe/vault/pmid_manager/handler-inl.h"
 
 #endif  // MAIDSAFE_VAULT_PMID_NODE_HANDLER_H_
