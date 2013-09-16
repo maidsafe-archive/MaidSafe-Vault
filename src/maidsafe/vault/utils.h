@@ -200,7 +200,7 @@ class DeleteVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    service_.HandleDelete<Name::data_type>(kSender, data_name, kMessageId);
+    service_->template HandleDelete<typename Name::data_type>(kSender, data_name, kMessageId);
   }
  private:
   ServiceHandlerType* service_;
@@ -213,7 +213,7 @@ void DoOperation(ServiceHandlerType* service,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
                  const Sender& sender,
                  const NodeId& /*receiver*/) {
-  auto data_name(GetNameVariant(message.contents));
+  auto data_name(GetNameVariant()(*(message.contents)));
   DeleteVisitor<ServiceHandlerType> delete_visitor(service,
                                                    detail::GetNodeId(sender),
                                                    message.message_id);
@@ -225,7 +225,7 @@ void DoOperation(ServiceHandlerType* service,
                  const nfs::DeleteRequestFromMaidManagerToDataManager& message,
                  const Sender& /*sender*/,
                  const NodeId& /*receiver*/) {
-  auto data_name(GetNameVariant(message.contents));
+  auto data_name(detail::GetNameVariant()(*message.contents));
   DeleteVisitor<ServiceHandlerType> delete_visitor(service);
   boost::apply_visitor(delete_visitor, data_name);
 }

@@ -62,11 +62,14 @@ class DataManagerService {
                  const nfs::MessageId& message_id);
 
   template<typename Data>
-  void HandlePutResponse(const Data& data, const PmidName& attempted_pmid_node,
-                        const nfs::MessageId& message_id, const maidsafe_error& error);
-  template<typename Data>
   void HandlePutResponse(const typename Data::name& data_name,
                          const PmidName& pmid_node,
+                         const nfs::MessageId& message_id,
+                         const maidsafe_error& error);
+  // Failure case
+  template<typename Data>
+  void HandlePutResponse(const Data& data,
+                         const PmidName& attempted_pmid_node,
                          const nfs::MessageId& message_id,
                          const maidsafe_error& error);
   void DoSync();

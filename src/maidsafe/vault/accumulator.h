@@ -65,7 +65,7 @@ class MessageIdRequestVisitor : public boost::static_visitor<nfs::MessageId> {
 class ContentEraseVisitor : public boost::static_visitor<> {
  public:
   template<typename ContentType>
-  void operator()(ContentType& content) {}
+  void operator()(ContentType& /*content*/) {}
 };
 
 template<>
