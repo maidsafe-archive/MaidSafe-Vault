@@ -37,12 +37,17 @@ Vault::Vault(const passport::Pmid& pmid,
       network_health_(-1),
       on_new_bootstrap_endpoint_(on_new_bootstrap_endpoint),
       routing_(new routing::Routing(pmid)),
-      public_key_getter_(*routing_, pmids_from_file),
-      maid_manager_service_(pmid, *routing_),
-      version_manager_service_(pmid, *routing_),
-      data_manager_service_(pmid, *routing_),
-      pmid_manager_service_(pmid, *routing_),
-      pmid_node_service_(pmid, *routing_, vault_root_dir), // FIXME need to specialise
+      data_getter_(asio_service_, *routing_, pmids_from_file),
+      maid_manager_service_(std::move(std::unique_ptr<MaidManagerService>(
+                                new MaidManagerService(pmid, *routing_)))),
+      version_manager_service_(std::move(std::unique_ptr<VersionManagerService>(
+                                   new VersionManagerService(pmid, *routing_)))),
+      data_manager_service_(std::move(std::unique_ptr<DataManagerService>(
+                                   new DataManagerService(pmid, *routing_, data_getter_)))),
+      pmid_manager_service_(std::move(std::unique_ptr<PmidManagerService>(
+                                   new PmidManagerService(pmid, *routing_)))),
+      pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
+                                   new PmidNodeService(pmid, *routing_, vault_root_dir)))), // FIXME need to specialise
       demux_(maid_manager_service_,
              version_manager_service_,
              data_manager_service_,

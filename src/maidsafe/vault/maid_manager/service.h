@@ -82,7 +82,6 @@ class MaidManagerService {
   }
 
  private:
-  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
 
  private:

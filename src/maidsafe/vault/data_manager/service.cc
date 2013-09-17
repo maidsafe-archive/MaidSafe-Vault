@@ -23,7 +23,12 @@
 
 #include "maidsafe/routing/parameters.h"
 #include "maidsafe/nfs/utils.h"
-
+#include "maidsafe/vault/sync.pb.h"
+#include "maidsafe/vault/data_manager/action_delete.h"
+#include "maidsafe/vault/data_manager/action_add_pmid.h"
+#include "maidsafe/vault/data_manager/action_remove_pmid.h"
+#include "maidsafe/vault/data_manager/action_node_down.h"
+#include "maidsafe/vault/data_manager/action_node_up.h"
 
 namespace maidsafe {
 
@@ -42,9 +47,9 @@ inline bool ForThisPersona(const Message& message) {
 // GetRequestFromMaidNodeToDataManager
 template<>
 void DataManagerService::HandleMessage(
-   const nfs::GetRequestFromMaidNodeToDataManager& message,
-   const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-   const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {}
+   const nfs::GetRequestFromMaidNodeToDataManager& /*message*/,
+   const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& /*sender*/,
+   const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {}
 
 
 
@@ -60,7 +65,8 @@ void DataManagerService::HandleMessage(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
+      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(
+          RequiredRequests<MessageType>()()),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
@@ -79,7 +85,8 @@ void DataManagerService::HandleMessage(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
+      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(
+          RequiredRequests<MessageType>()()),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }

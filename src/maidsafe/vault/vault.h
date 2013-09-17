@@ -70,7 +70,7 @@ class Vault {
   template<typename T>
   bool OnGetFromCache(const T& message);
   template<typename T>
-  void OnStoreInCache(const std::string& message);
+  void OnStoreInCache(const T& message);
   void OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint);
 
   std::mutex network_health_mutex_;
@@ -78,7 +78,7 @@ class Vault {
   int network_health_;
   std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint_;
   std::unique_ptr<routing::Routing> routing_;
-  nfs::PublicKeyGetter public_key_getter_;
+  nfs_client::DataGetter data_getter_;
   nfs::Service<MaidManagerService> maid_manager_service_;
   nfs::Service<VersionManagerService> version_manager_service_;
   nfs::Service<DataManagerService> data_manager_service_;
@@ -98,9 +98,10 @@ bool Vault::OnGetFromCache(const T& message) {  // Need to be on routing's threa
   return demux_.GetFromCache(message);
 }
 
+
 template<typename T>
-void Vault::OnStoreInCache(const T& message) {
-  asio_service_.service().post([=] { demux_.StoreInCache(message) });
+void Vault::OnStoreInCache(const T& /*message*/) {
+//  asio_service_.service().post([=] { demux_.StoreInCache(message) });
 }
 
 }  // namespace vault

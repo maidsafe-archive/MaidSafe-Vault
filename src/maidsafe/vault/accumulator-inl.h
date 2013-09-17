@@ -132,10 +132,10 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddRequestChecker::operator()
     uint16_t index(0);
     while (requests.size() - index >= required_requests_) {
       if (std::count_if(std::begin(requests),
-                        std::end(requests.end),
+                        std::end(requests),
                         [&](const T& request) {
                           return nfs::Equals(requests.at(index), request);
-                        }) == required_requests_)
+                        }) == static_cast<int>(required_requests_))
         return AddResult::kSuccess;
       ++index;
     }

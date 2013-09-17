@@ -40,11 +40,11 @@ namespace vault {
 
 class Demultiplexer {
  public:
-  Demultiplexer(MaidManagerService& maid_manager_service,
-                VersionManagerService& version_manager_service,
-                DataManagerService& data_manager_service,
-                PmidManagerService& pmid_manager_service,
-                PmidNodeService& pmid_node_service);
+  Demultiplexer(nfs::Service<MaidManagerService>& maid_manager_service,
+                nfs::Service<VersionManagerService>& version_manager_service,
+                nfs::Service<DataManagerService>& data_manager_service,
+                nfs::Service<PmidManagerService>& pmid_manager_service,
+                nfs::Service<PmidNodeService>& pmid_node_service);
   template<typename T>
   void HandleMessage(const T& routing_message);
   template<typename T>
@@ -92,21 +92,22 @@ void Demultiplexer::HandleMessage(const T& routing_message) {
   }
 }
 
-template<typename T>
-bool Demultiplexer::GetFromCache(const T& serialised_message) {
-  auto wrapper_tuple(nfs::ParseMessageWrapper(serialised_message.contents));
-  return pmid_node_service_.GetFromCache(wrapper_tuple,
-                                         serialised_message.sender,
-                                         serialised_message.receiver);
-}
+// NEEDS REFACTORING
+//template<typename T>
+//bool Demultiplexer::GetFromCache(const T& serialised_message) {
+//  auto wrapper_tuple(nfs::ParseMessageWrapper(serialised_message.contents));
+//  return pmid_node_service_.GetFromCache(wrapper_tuple,
+//                                         serialised_message.sender,
+//                                         serialised_message.receiver);
+//}
 
-template<typename T>
-void Demultiplexer::StoreInCache(const T& serialised_message) {
-  auto wrapper_tuple(nfs::ParseMessageWrapper(serialised_message.contents));
-  pmid_node_service_.StoreInCache(wrapper_tuple,
-                                  serialised_message.sender,
-                                  serialised_message.receiver);
-}
+//template<typename T>
+//void Demultiplexer::StoreInCache(const T& serialised_message) {
+//  auto wrapper_tuple(nfs::ParseMessageWrapper(serialised_message.contents));
+//  pmid_node_service_.StoreInCache(wrapper_tuple,
+//                                  serialised_message.sender,
+//                                  serialised_message.receiver);
+//}
 
 }  // namespace vault
 
