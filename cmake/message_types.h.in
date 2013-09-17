@@ -33,6 +33,8 @@
 
 #include "maidsafe/common/error.h"
 
+#include "maidsafe/nfs/client/messages.h"
+#include "maidsafe/nfs/vault/messages.h"
 
 // Auto-generated forward declarations.
 // Modify in vault/cmake/*.message_types.meta if required, not here.

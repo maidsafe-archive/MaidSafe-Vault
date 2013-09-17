@@ -39,8 +39,8 @@ class KeyTest_BEH_Serialise_Test;
 class KeyTest_BEH_All_Test;
 }  // namespace test
 
-template<typename Persona>
-class ManagerDb;
+//template<typename Persona>
+//class ManagerDb;
 
 struct Key {
   Key(const Identity& name_in, DataTagValue type_in);

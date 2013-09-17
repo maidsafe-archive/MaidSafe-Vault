@@ -78,7 +78,7 @@ class MaidManagerService {
   void HandleMessage(const T& /*message*/,
                      const typename T::Sender& /*sender*/,
                      const typename T::Receiver& /*receiver*/) {
-    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
+    //T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
   }
 
  private:

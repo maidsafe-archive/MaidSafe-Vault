@@ -50,8 +50,10 @@ class VersionManagerService {
 
   typedef Identity VersionManagerAccountName;
   VersionManagerService(const passport::Pmid& pmid, routing::Routing& routing);
-  template<typename Data>
+//  template<typename Data>
 //  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  template<typename T>
+  void HandleMessage(const T&, const typename T::Sender& , const typename T::Receiver&);
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
  private:

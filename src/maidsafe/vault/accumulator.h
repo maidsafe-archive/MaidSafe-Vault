@@ -95,7 +95,7 @@ class Accumulator {
                               const routing::GroupSource& source,
                               AddCheckerFunctor checker);
   bool CheckHandled(const T& request);
-  void SetHandled(const T& request, const routing::GroupSource& source);
+//  void SetHandled(const T& request, const routing::GroupSource& source);
   std::vector<T> Get(const T& request);
 
  private:

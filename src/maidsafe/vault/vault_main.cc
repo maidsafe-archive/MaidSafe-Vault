@@ -133,7 +133,7 @@ void RunVault(po::variables_map& variables_map) {
               [] (const boost::asio::ip::udp::endpoint&) {},
               pmids,
               peer_endpoints);
-  std::cout << "Vault running as " << maidsafe::HexSubstr(NodeId(pmid->name().raw_name().string())) << std::endl;
+  std::cout << "Vault running as " << maidsafe::HexSubstr(pmid->name().value) << std::endl;
   {
     std::unique_lock<std::mutex> lock(g_mutex);
     g_cond_var.wait(lock, [] { return g_ctrlc_pressed.load(); });  // NOLINT

@@ -44,6 +44,23 @@ inline bool ForThisPersona(const Message& message) {
 
 }  // unnamed namespace
 
+DataManagerService::DataManagerService(const passport::Pmid& pmid,
+                                       routing::Routing& routing,
+                                       nfs_client::DataGetter& data_getter)
+    : routing_(routing),
+      data_getter_(data_getter),
+      accumulator_mutex_(),
+      accumulator_(),
+      dispatcher_(routing_, pmid),
+      db_(),
+      sync_puts_(),
+      sync_deletes_(),
+      sync_add_pmids_(),
+      sync_remove_pmids_(),
+      sync_node_downs_(),
+      sync_node_ups_() {
+}
+
 // GetRequestFromMaidNodeToDataManager
 template<>
 void DataManagerService::HandleMessage(
@@ -94,68 +111,68 @@ void DataManagerService::HandleMessage(
 // =============== Sync ============================================================================
 template<>
 void DataManagerService::HandleMessage(
-   const nfs::SynchroniseFromDataManagerToDataManager& message,
-   const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& sender,
+   const nfs::SynchroniseFromDataManagerToDataManager& /*message*/,
+   const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& /*sender*/,
    const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& /*receiver*/) {
-  protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(message.contents->content.string()))
-    ThrowError(CommonErrors::parsing_error);
+//  protobuf::Sync proto_sync;
+//  if (!proto_sync.ParseFromString(message.contents->content.string()))
+//    ThrowError(CommonErrors::parsing_error);
 
-  switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
-    case ActionDataManagerPut::kActionId: {
-      DataManager::UnresolvedPut unresolved_action(
-          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action) {
-        db_.Commit(resolved_action->key, resolved_action->action);
-      }
-      break;
-    }
-    case ActionDataManagerDelete::kActionId: {
-      DataManager::UnresolvedDelete unresolved_action(
-          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
-        db_.Commit(resolved_action->key, resolved_action->action);
-      break;
-    }
-    case ActionDataManagerAddPmid::kActionId: {
-      DataManager::UnresolvedAddPmid unresolved_action(
-          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
-        db_.Commit(resolved_action->key, resolved_action->action);
-      break;
-    }
-    case ActionDataManagerRemovePmid::kActionId: {
-      DataManager::UnresolvedRemovePmid unresolved_action(
-          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_remove_pmids_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
-        db_.Commit(resolved_action->key, resolved_action->action);
-      break;
-    }
-    case ActionDataManagerNodeUp::kActionId: {
-      DataManager::UnresolvedNodeUp unresolved_action(
-          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
-        db_.Commit(resolved_action->key, resolved_action->action);
-      break;
-    }
-    case ActionDataManagerNodeDown::kActionId: {
-      DataManager::UnresolvedNodeDown unresolved_action(
-          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
-        db_.Commit(resolved_action->key, resolved_action->action);
-      break;
-    }
-    default: {
-      assert(false);
-      LOG(kError) << "Unhandled action type";
-    }
-  }
+//  switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
+//    case ActionDataManagerPut::kActionId: {
+//      DataManager::UnresolvedPut unresolved_action(
+//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+//      auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
+//      if (resolved_action) {
+//        db_.Commit(resolved_action->key, resolved_action->action);
+//      }
+//      break;
+//    }
+//    case ActionDataManagerDelete::kActionId: {
+//      DataManager::UnresolvedDelete unresolved_action(
+//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+//      auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
+//      if (resolved_action)
+//        db_.Commit(resolved_action->key, resolved_action->action);
+//      break;
+//    }
+//    case ActionDataManagerAddPmid::kActionId: {
+//      DataManager::UnresolvedAddPmid unresolved_action(
+//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+//      auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
+//      if (resolved_action)
+//        db_.Commit(resolved_action->key, resolved_action->action);
+//      break;
+//    }
+//    case ActionDataManagerRemovePmid::kActionId: {
+//      DataManager::UnresolvedRemovePmid unresolved_action(
+//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+//      auto resolved_action(sync_remove_pmids_.AddUnresolvedAction(unresolved_action));
+//      if (resolved_action)
+//        db_.Commit(resolved_action->key, resolved_action->action);
+//      break;
+//    }
+//    case ActionDataManagerNodeUp::kActionId: {
+//      DataManager::UnresolvedNodeUp unresolved_action(
+//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+//      auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
+//      if (resolved_action)
+//        db_.Commit(resolved_action->key, resolved_action->action);
+//      break;
+//    }
+//    case ActionDataManagerNodeDown::kActionId: {
+//      DataManager::UnresolvedNodeDown unresolved_action(
+//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+//      auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
+//      if (resolved_action)
+//        db_.Commit(resolved_action->key, resolved_action->action);
+//      break;
+//    }
+//    default: {
+//      assert(false);
+//      LOG(kError) << "Unhandled action type";
+//    }
+//  }
 }
 
 // =============== Churn ===========================================================================

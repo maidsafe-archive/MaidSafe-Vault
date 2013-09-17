@@ -24,7 +24,12 @@
 #include "maidsafe/vault/key.h"
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/data_manager/value.h"
-
+#include "maidsafe/vault/data_manager/action_add_pmid.h"
+#include "maidsafe/vault/data_manager/action_delete.h"
+#include "maidsafe/vault/data_manager/action_node_down.h"
+#include "maidsafe/vault/data_manager/action_node_up.h"
+#include "maidsafe/vault/data_manager/action_put.h"
+#include "maidsafe/vault/data_manager/action_remove_pmid.h"
 
 namespace maidsafe {
 
@@ -32,12 +37,12 @@ namespace vault {
 
 class Metadata;
 
-struct ActionDataManagerPut;
-struct ActionDataManagerDelete;
-struct ActionDataManagerAddPmid;
-struct ActionDataManagerRemovePmid;
-struct ActionDataManagerNodeUp;
-struct ActionDataManagerNodeDown;
+//struct ActionDataManagerPut;
+//struct ActionDataManagerDelete;
+//struct ActionDataManagerAddPmid;
+//struct ActionDataManagerRemovePmid;
+//struct ActionDataManagerNodeUp;
+//struct ActionDataManagerNodeDown;
 
 }  // namespace vault
 
