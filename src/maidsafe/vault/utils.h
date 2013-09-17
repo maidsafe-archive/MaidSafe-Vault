@@ -124,7 +124,6 @@ template <typename ValidateSender,
           typename Checker,
           typename ServiceHandlerType>
 struct OperationHandler {
- public:
   OperationHandler(ValidateSender validate_sender_in,
                    AccumulatorType& accumulator_in,
                    Checker checker_in,
