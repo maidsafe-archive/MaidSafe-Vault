@@ -33,9 +33,11 @@
 #include "maidsafe/nfs/client/data_getter.h"
 
 #include "maidsafe/vault/accumulator.h"
+#include "maidsafe/vault/data_manager/action_put.h"
 #include "maidsafe/vault/data_manager/helpers.h"
 #include "maidsafe/vault/data_manager/value.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
+#include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/data_manager/dispatcher.h"
@@ -209,7 +211,7 @@ void DataManagerService::HandlePut(const Data& data,
     if (routing_.ClosestToId(data.name()))
       pmid_name = pmid_name_in;
     else
-      pmid_name = PmidName(Identity(routing_.RandomConnectedNode()));
+      pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
     dispatcher_.SendPutRequest(pmid_name, data, message_id);
   } else {
     typename DataManager::Key key(data.name().raw_name, Data::Name::data_type);
@@ -225,11 +227,11 @@ template<typename Data>
 void DataManagerService::HandlePutResponse(const Data& data,
                                            const PmidName& attempted_pmid_node,
                                            const nfs::MessageId& message_id,
-                                           const maidsafe_error& error) {
+                                           const maidsafe_error& /*error*/) {
   // TODO(Team): Following should be done only if error is fixable by repeat
-  auto pmid_name(PmidName(routing_.RandomConnectedNode().string()));
+  auto pmid_name(PmidName(Identity(routing_.RandomConnectedNode().string())));
   while (pmid_name == attempted_pmid_node)
-    pmid_name = PmidName(routing_.RandomConnectedNode().string());
+    pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
   dispatcher_.SendPutRequest(pmid_name, data, message_id);
 }
 

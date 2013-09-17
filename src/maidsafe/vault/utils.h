@@ -635,7 +635,7 @@ void DoOperation(ServiceHandlerType* service,
   auto data_name(GetNameVariant()(message.contents->name));
   MaidManagerPutResponseVisitor<ServiceHandlerType> put_response_visitor(
       service,
-      GetNodeId(receiver),
+      receiver,
       message.contents->cost,
       message.message_id);
   boost::apply_visitor(put_response_visitor, data_name);
@@ -649,7 +649,7 @@ void DoOperation(ServiceHandlerType* service,
   auto data_name(GetNameVariant()(*message.contents));
   PutResponseVisitor<ServiceHandlerType> put_visitor(service,
                                                      message.contents->content,
-                                                     PmidName(GetNodeId(sender)),
+                                                     sender,
                                                      message.message_id,
                                                      message.contents->return_code);
   boost::apply_visitor(put_visitor, data_name);
