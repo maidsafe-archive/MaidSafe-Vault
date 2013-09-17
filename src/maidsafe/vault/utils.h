@@ -754,8 +754,8 @@ struct OperationHandlerWrapper {
 
 template <typename T>
 struct RequiredRequests {
-  int operator()(const T& /*sender*/) {
-    return detail::RequiredValue<T>()();
+  int operator()() {
+    return detail::RequiredValue<typename T::Sender>()();
   }
 };
 

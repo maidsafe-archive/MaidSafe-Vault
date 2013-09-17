@@ -54,10 +54,10 @@ void PmidNodeHandler::Put(const Data& data) {
   permanent_data_store_.Put(data.name, data.data());
 }
 
-template<typename Data>
-void PmidNodeHandler::Delete<Data, data_store::PermanentStore>(const typename Data::name& name) {
-  permanent_data_store_.Delete(name);
-}
+//template<typename Data>
+//void PmidNodeHandler::Delete<Data, data_store::PermanentStore>(const typename Data::name& name) {
+//  permanent_data_store_.Delete(name);
+//}
 
 }  // namespace vault
 }  // namespace maidsafe

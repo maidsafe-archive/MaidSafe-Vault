@@ -24,6 +24,7 @@
 
 #include "maidsafe/vault/group_key.h"
 #include "maidsafe/vault/unresolved_action.h"
+#include "maidsafe/vault/pmid_manager/action_put.h"
 #include "maidsafe/vault/pmid_manager/value.h"
 
 
@@ -31,7 +32,7 @@ namespace maidsafe {
 
 namespace vault {
 
-struct ActionPmidManagerPut;
+//struct ActionPmidManagerPut;
 struct ActionPmidManagerDelete;
 struct ActionGetPmidTotals;
 

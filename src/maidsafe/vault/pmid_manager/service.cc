@@ -45,6 +45,14 @@ inline bool ForThisPersona(const Message& message) {
 
 }  // namespace detail
 
+
+PmidManagerService::PmidManagerService(const passport::Pmid& pmid,
+                                                   routing::Routing& routing)
+    : routing_(routing),
+      accumulator_mutex_(),
+      accumulator_() {}
+//      pmid_account_handler_(db, routing.kNodeId()),
+
 template<>
 void PmidManagerService::HandleMessage(
     const nfs::PutRequestFromDataManagerToPmidManager& message,
@@ -77,15 +85,46 @@ void PmidManagerService::HandleMessage(
       accumulator_mutex_)(message, sender, receiver);
 }
 
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& /*message*/,
+    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& /*sender*/,
+    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+}
 
-PmidManagerService::PmidManagerService(const passport::Pmid& pmid,
-                                                   routing::Routing& routing,
-                                                   Db& db)
-    : routing_(routing),
-      accumulator_mutex_(),
-      accumulator_(),
-      pmid_account_handler_(db, routing.kNodeId()),
-      nfs_(routing, pmid) {}
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::CreateAccountRequestFromMaidManagerToPmidManager& message,
+    const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
+    const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver) {
+  typedef nfs::CreateAccountRequestFromMaidManagerToPmidManager MessageType;
+  OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
+      accumulator_,
+      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+        return this->ValidateSender(message, sender);
+      },
+      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
+      this,
+      accumulator_mutex_)(message, sender, receiver);
+}
+
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::DeleteRequestFromDataManagerToPmidManager& message,
+    const typename nfs::DeleteRequestFromDataManagerToPmidManager::Sender& sender,
+    const typename nfs::DeleteRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  typedef nfs::DeleteRequestFromDataManagerToPmidManager MessageType;
+  OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
+      accumulator_,
+      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+        return this->ValidateSender(message, sender);
+      },
+      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
+      this,
+      accumulator_mutex_)(message, sender, receiver);
+}
+
+
 
 //void PmidManagerService::HandleMessage(const nfs::Message& message,
 //                                       const routing::ReplyFunctor& /*reply_functor*/) {

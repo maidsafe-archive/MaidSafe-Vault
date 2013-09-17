@@ -43,7 +43,10 @@ namespace vault {
 
 class PmidManagerService {
  public:
-  PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing, Db& db);
+  typedef nfs::PmidManagerServiceMessages PublicMessages;
+  typedef nfs::PmidManagerServiceMessages VaultMessages; // FIXME (Check with Fraser)
+
+  PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing);
 
   template<typename T>
   void HandleMessage(const T& message,
@@ -64,18 +67,15 @@ class PmidManagerService {
       const nfs::CreateAccountRequestFromMaidManagerToPmidManager& message,
       const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
       const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);
-  void GetPmidTotals(const nfs::Message& message);
-  void GetPmidAccount(const nfs::Message& message);
+//  void GetPmidTotals(const nfs::Message& message);
+//  void GetPmidAccount(const nfs::Message& message);
 
 // =============== Put/Delete data ================================================================
   template<typename Data>
   void HandlePut(const Data& data, const PmidName& pmid_node, const nfs::MessageId& message_id);
-
-  template<typename T>
-  void HandleDelete(const T& message,
-                    const typename T::Sender& sender,
-                    const typename T::Receiver& receiver);
-
+  template<typename Data>
+  void HandlePutResponse(const Data& data, const nfs::MessageId& message_id,
+                         const PmidName& pmid_node, const maidsafe_error& error);
   void DoSync();
 
 //  template<typename Data>
@@ -84,18 +84,18 @@ class PmidManagerService {
 //  void SendPutResult(const nfs::Message& message, bool result);
 
   // =============== Account transfer ==============================================================
-  void TransferAccount(const PmidName& account_name, const NodeId& new_node);
-  void HandleAccountTransfer(const nfs::Message& message);
+//  void TransferAccount(const PmidName& account_name, const NodeId& new_node);
+//  void HandleAccountTransfer(const nfs::Message& message);
 
-  void ValidateMessage(const nfs::Message& message) const;
+//  void ValidateMessage(const nfs::Message& message) const;
 
-  template<typename Data, nfs::MessageAction action>
-  void AddLocalUnresolvedEntryThenSync(const nfs::Message& message);
+//  template<typename Data, nfs::MessageAction action>
+//  void AddLocalUnresolvedEntryThenSync(const nfs::Message& message);
 
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
   Accumulator<nfs::PmidManagerServiceMessages> accumulator_;
-  PmidAccountHandler pmid_account_handler_;
+//  PmidAccountHandler pmid_account_handler_;
   PmidManagerDispatcher dispatcher_;
   Sync<PmidManager::UnresolvedPut> sync_puts_;
 };
@@ -164,7 +164,9 @@ void PmidManagerService::HandlePut(const Data& data,
                                       Data::Name::data_type);
   sync_puts_.AddLocalAction(
       typename PmidManager::UnresolvedPut(group_key,
-                                          ActionPmidManagerPut(data.data().string().size())));
+                                          ActionPmidManagerPut(data.data().string().size()),
+                                          routing_.kNodeId(),
+                                          message_id));
   DoSync();
 }
 

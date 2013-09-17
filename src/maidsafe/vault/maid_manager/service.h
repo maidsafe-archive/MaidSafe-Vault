@@ -49,7 +49,6 @@
 #include "maidsafe/vault/maid_manager/action_put.h"
 #include "maidsafe/vault/maid_manager/action_delete.h"
 #include "maidsafe/vault/maid_manager/action_register_unregister_pmid.h"
-#include "maidsafe/vault/maid_manager/handler.h"
 #include "maidsafe/vault/maid_manager/dispatcher.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
@@ -76,9 +75,9 @@ class MaidManagerService {
   MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing);
 
   template<typename T>
-  void HandleMessage(const T& message,
-                     const typename T::Sender& sender,
-                     const typename T::Receiver& receiver) {
+  void HandleMessage(const T& /*message*/,
+                     const typename T::Sender& /*sender*/,
+                     const typename T::Receiver& /*receiver*/) {
     T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
   }
 
@@ -108,7 +107,8 @@ class MaidManagerService {
   template <typename Data>
   void HandlePutResponse(const MaidName& maid_name,
                          const typename Data::Name& data_name,
-                         const int32_t& cost);
+                         const int32_t& cost,
+                         const nfs::MessageId& message_id);
 
   template <typename Data>
   void HandleDelete(const NodeId& account_name,
@@ -159,7 +159,7 @@ class MaidManagerService {
   GroupDb<MaidManager> group_db_;
   std::mutex accumulator_mutex_;
   Accumulator<nfs::MaidManagerServiceMessages> accumulator_;
-  MaidAccountHandler handler_;
+//  MaidAccountHandler handler_;
   MaidManagerDispatcher dispatcher_;
   Sync<MaidManager::UnresolvedCreateAccount> sync_create_accounts_;
   Sync<MaidManager::UnresolvedRemoveAccount> sync_remove_accounts_;
@@ -246,23 +246,23 @@ struct can_create_account<passport::PublicAnmaid> : public std::true_type {};
 template<>
 struct can_create_account<passport::PublicMaid> : public std::true_type {};
 
-template<typename Data>
-int32_t EstimateCost(const Data& data) {
-  static_assert(!std::is_same<Data, passport::PublicAnmaid>::value, "Cost of Anmaid should be 0.");
-  static_assert(!std::is_same<Data, passport::PublicMaid>::value, "Cost of Maid should be 0.");
-  static_assert(!std::is_same<Data, passport::PublicPmid>::value, "Cost of Pmid should be 0.");
-  return static_cast<int32_t>(MaidManagerService::DefaultPaymentFactor() *
-                              data.content.string().size());
-}
+//template<typename Data>
+//int32_t EstimateCost(const Data& data) {
+//  static_assert(!std::is_same<Data, passport::PublicAnmaid>::value, "Cost of Anmaid should be 0.");
+//  static_assert(!std::is_same<Data, passport::PublicMaid>::value, "Cost of Maid should be 0.");
+//  static_assert(!std::is_same<Data, passport::PublicPmid>::value, "Cost of Pmid should be 0.");
+//  return static_cast<int32_t>(MaidManagerService::DefaultPaymentFactor() *
+//                              data.content.string().size());
+//}
 
-template<>
-int32_t EstimateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&);
+//template<>
+//int32_t EstimateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&);
 
-template<>
-int32_t EstimateCost<passport::PublicMaid>(const passport::PublicMaid&);
+//template<>
+//int32_t EstimateCost<passport::PublicMaid>(const passport::PublicMaid&);
 
-template<>
-int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&);
+//template<>
+//int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&);
 
 //MaidName GetMaidAccountName(const nfs::Message& message);
 
@@ -288,23 +288,24 @@ void MaidManagerService::HandlePut(const MaidName& account_name,
 template <typename Data>
 void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
                                            const typename Data::Name& data_name,
-                                           const int32_t& cost) {
+                                           const int32_t& cost,
+                                           const nfs::MessageId& message_id) {
   typename MaidManager::Key group_key(
       typename MaidManager::GroupName(maid_name.value),
       data_name,
       Data::Name::data_type);
-  sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(group_key,
-                            ActionMaidManagerPut(cost)));
+  sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(
+      group_key, ActionMaidManagerPut(cost), routing_.kNodeId(), message_id));
   DoSync();
 }
 
 // ================================== Delete Implementation =======================================
 
 template <typename Data>
-void MaidManagerService::HandleDelete(const NodeId& account_name,
-                                      const typename Data::Name& data_name,
-                                      const nfs::MessageId& message_id) {
-  dispatcher_.SendDeleteRequest(MaidName(account_name), data_name, message_id);
+void MaidManagerService::HandleDelete(const NodeId& /*account_name*/,
+                                      const typename Data::Name& /*data_name*/,
+                                      const nfs::MessageId& /*message_id*/) {
+//  dispatcher_.SendDeleteRequest(MaidName(account_name), data_name, message_id);
 }
 
 // ===============================================================================================

@@ -82,8 +82,9 @@ void PmidManagerDispatcher::SendPutRequest(const Data& data,
                                                        data.name(),
                                                        data.data()));
   RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(pmid_node, routing_.kNodeId()),
-                         NfsMessage::Receiver(pmid_node));
+                         NfsMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
+                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(routing::SingleId(NodeId(pmid_node.value.string()))));
   routing_.Send(message);
 }
 
@@ -95,7 +96,8 @@ void PmidManagerDispatcher::SendDeleteRequest(const nfs::MessageId& message_id,
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   NfsMessage nfs_message(message_id, nfs_vault::DataName(data_name.type, data_name.raw_name));
   RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(NodeId(pmid_node.value.string()), routing_.kNodeId()),
+                         NfsMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
+                                            routing::SingleId(routing_.kNodeId())),
                          NfsMessage::Receiver(NodeId(data_name().string())));
   routing_.Send(message);
 }
@@ -113,7 +115,8 @@ void PmidManagerDispatcher::SendPutResponse(const Data& data,
                                          data.data(),
                                          nfs_client::ReturnCode(error_code)));
   RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(pmid_node.value, routing_.kNodeId()),
+                         NfsMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
+                                            routing::SingleId(routing_.kNodeId())),
                          NfsMessage::Receiver(NodeId(data.name()->string())));
   routing_.Send(message);
 }

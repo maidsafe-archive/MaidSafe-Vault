@@ -38,64 +38,64 @@ namespace vault {
 
 namespace detail {
 
-VersionManagerUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message);
+//VersionManagerUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message);
 
 }  // namespace detail
 
-template<typename Data>
-void VersionManagerService::HandleMessage(const nfs::Message& message,
-                                                  const routing::ReplyFunctor& reply_functor) {
- //   ValidateSender(message);
+//template<typename Data>
+//void VersionManagerService::HandleMessage(const nfs::Message& message,
+//                                                  const routing::ReplyFunctor& reply_functor) {
+// //   ValidateSender(message);
 
-  nfs::Reply reply(CommonErrors::pending_result);
-  {
-    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    if (accumulator_.CheckHandled(message, reply))
-      return reply_functor(reply.Serialise()->string());
-  }
+//  nfs::Reply reply(CommonErrors::pending_result);
+//  {
+//    std::lock_guard<std::mutex> lock(accumulator_mutex_);
+//    if (accumulator_.CheckHandled(message, reply))
+//      return reply_functor(reply.Serialise()->string());
+//  }
 
-   if (message.data().action == nfs::MessageAction::kSynchronise)
-      return HandleSynchronise(message);   // No accumulate
-     database_merge_.insert(message);
-   if (message.data().action == nfs::MessageAction::kAccountTransfer)
-     database_merge_.insert(message);
+//   if (message.data().action == nfs::MessageAction::kSynchronise)
+//      return HandleSynchronise(message);   // No accumulate
+//     database_merge_.insert(message);
+//   if (message.data().action == nfs::MessageAction::kAccountTransfer)
+//     database_merge_.insert(message);
 
-   if (message.data().action == nfs::MessageAction::kGet)
-     return HandleGet(message, reply_functor);  //  Add to accumulator on action
-   if (message.data().action == nfs::MessageAction::kGetBranch)
-     return HandleGetBranch(message, reply_functor);  //  Add to accumulator on action
+//   if (message.data().action == nfs::MessageAction::kGet)
+//     return HandleGet(message, reply_functor);  //  Add to accumulator on action
+//   if (message.data().action == nfs::MessageAction::kGetBranch)
+//     return HandleGetBranch(message, reply_functor);  //  Add to accumulator on action
 
-   if (message.data().action != nfs::MessageAction::kPut &&
-       message.data().action != nfs::MessageAction::kDeleteBranchUntilFork &&
-       message.data().action != nfs::MessageAction::kDelete &&
-       message.data().action != nfs::MessageAction::kAccountTransfer)
-     ThrowError(CommonErrors::invalid_parameter);
+//   if (message.data().action != nfs::MessageAction::kPut &&
+//       message.data().action != nfs::MessageAction::kDeleteBranchUntilFork &&
+//       message.data().action != nfs::MessageAction::kDelete &&
+//       message.data().action != nfs::MessageAction::kAccountTransfer)
+//     ThrowError(CommonErrors::invalid_parameter);
 
-   // accumulate then action, on completion then set reply
-   std::lock_guard<std::mutex> lock(accumulator_mutex_);
-   if (!(accumulator_.PushSingleResult(
-         message,
-         reply_functor,
-         nfs::Reply(maidsafe_error(CommonErrors::pending_result))).size() <
-         routing::Parameters::node_group_size -1U)) {
-     Synchronise<Data>(message);
-   }
-}
+//   // accumulate then action, on completion then set reply
+//   std::lock_guard<std::mutex> lock(accumulator_mutex_);
+//   if (!(accumulator_.PushSingleResult(
+//         message,
+//         reply_functor,
+//         nfs::Reply(maidsafe_error(CommonErrors::pending_result))).size() <
+//         routing::Parameters::node_group_size -1U)) {
+//     Synchronise<Data>(message);
+//   }
+//}
 
-// In this persona we sync all mutating actions, on sucess the reply_functor is fired (if available)
+//// In this persona we sync all mutating actions, on sucess the reply_functor is fired (if available)
 
-template<typename Data>
-void VersionManagerService::Synchronise(const nfs::Message& message) {
-  auto entry =  detail::UnresolvedEntryFromMessage(message);
-  nfs_.Sync(DataNameVariant(Data::Name(message.data().name)), entry.Serialise().data);  // does not include
-                                                                            // original_message_id
-  entry.original_message_id = message.message_id();
-  entry.source_node_id = message.source().node_id; // with data().originator_id we can
-                                                    // recover the accumulated requests in
-                                                    // HandleSync
-  std::lock_guard<std::mutex> lock(sync_mutex_);
-  sync_.AddUnresolvedEntry(entry);
-}
+//template<typename Data>
+//void VersionManagerService::Synchronise(const nfs::Message& message) {
+//  auto entry =  detail::UnresolvedEntryFromMessage(message);
+//  nfs_.Sync(DataNameVariant(Data::Name(message.data().name)), entry.Serialise().data);  // does not include
+//                                                                            // original_message_id
+//  entry.original_message_id = message.message_id();
+//  entry.source_node_id = message.source().node_id; // with data().originator_id we can
+//                                                    // recover the accumulated requests in
+//                                                    // HandleSync
+//  std::lock_guard<std::mutex> lock(sync_mutex_);
+//  sync_.AddUnresolvedEntry(entry);
+//}
 
 
 }  // namespace vault

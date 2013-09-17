@@ -150,6 +150,8 @@ class CacheableVisitor : public boost::static_visitor<bool> {
 
 class PmidNodeService {
  public:
+  typedef nfs::PmidNodeServiceMessages PublicMessages;
+  typedef nfs::PmidNodeServiceMessages VaultMessages; // FIXME (Check with Fraser)
 
   enum : uint32_t { kPutRequestsRequired = 3, kDeleteRequestsRequired = 3 };
 
@@ -158,9 +160,9 @@ class PmidNodeService {
                   const boost::filesystem::path& vault_root_dir);
 
   template<typename T>
-  void HandleMessage(const T& message,
-                     const typename T::Sender& sender,
-                     const typename T::Receiver& receiver) {
+  void HandleMessage(const T& /*message*/,
+                     const typename T::Sender& /*sender*/,
+                     const typename T::Receiver& /*receiver*/) {
     T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
   }
 
@@ -314,18 +316,19 @@ bool PmidNodeService::ValidateSender(
 
 template<>
 void PmidNodeService::HandleMessage(
-    const nfs::PutRequestFromPmidManagerToPmidNode& message,
-    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
-    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver) {
-  typedef nfs::PutRequestFromPmidManagerToPmidNode MessageType;
-  OperationHandlerWrapper<PmidNodeService, MessageType, nfs::PmidNodeServiceMessages>(
-      accumulator_,
-      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-        return this->ValidateSender(message, sender);
-      },
-      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
-      this,
-      accumulator_mutex_)(message, sender, receiver);
+    const nfs::PutRequestFromPmidManagerToPmidNode& /*message*/,
+    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
+    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+//  typedef nfs::PutRequestFromPmidManagerToPmidNode MessageType;
+//  OperationHandlerWrapper<PmidNodeService, MessageType, nfs::PmidNodeServiceMessages>(
+//      accumulator_,
+//      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+//        return this->ValidateSender(message, sender);
+//      },
+//      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
+//          RequiredRequests<MessageType>()()),
+//      this,
+//      accumulator_mutex_)(message, sender, receiver);
 }
 
 template<typename Data>

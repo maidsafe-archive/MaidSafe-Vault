@@ -49,7 +49,8 @@ void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
+      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(
+          RequiredRequests<MessageType>()()),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
@@ -65,77 +66,78 @@ void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>
       [this](const MessageType& message, const typename MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
+      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(
+          RequiredRequests<MessageType>()()),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
 
 template<>
 void PmidNodeService::HandleMessage(
-    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
+    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& /*message*/,
+    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& /*sender*/,
     const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-#ifndef TESTNG
-  ValidateSender(message, sender);
-#endif
-  Accumulator<nfs::PmidNodeServiceMessages>::AddResult result;
-  std::vector<nfs::PmidNodeServiceMessages> responses;
-  {
-    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    if (accumulator_.CheckHandled(message))
-      return;
-    auto add_request_predicate(
-        [&](const std::vector<PmidNodeServiceMessages>& requests_in) {
-          if (requests_in.size() < 2)
-            return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-          std::vector<protobuf::PmidAccountResponse> pmid_account_responses;
-          protobuf::PmidAccountResponse pmid_account_response;
-          nfs_client::protobuf::DataNameAndContentOrReturnCode data;
-          nfs::GetPmidAccountResponseFromPmidManagerToPmidNode response;
-          for (auto& request : requests_in) {
-            response = boost::get<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(request);
-            if (data.ParseFromString(response.contents->data->content.string())) {
-              if (data.has_serialised_data_name_and_content()) {
-                if (pmid_account_response.ParseFromString(
-                        data.serialised_data_name_and_content())) {
-                  pmid_account_responses.push_back(pmid_account_response);
-                } else {
-                  LOG(kWarning) << "Failed to parse the contents";
-                }
-              }
-            } else {
-              LOG(kWarning) << "Failed to parse the contents of the response";
-            }
-          }
-          if ((static_cast<uint16_t>(requests_in.size()) >= (routing::Parameters::node_group_size / 2 + 1)) &&
-               pmid_account_responses.size() >= routing::Parameters::node_group_size / 2)
-            return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
-          if ((requests_in.size() == routing::Parameters::node_group_size) ||
-               (requests_in.size() - pmid_account_responses.size() >
-                    routing::Parameters::node_group_size / 2))
-            return Accumulator<PmidNodeServiceMessages>::AddResult::kFailure;
-          return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-        });
-    result = accumulator_.AddPendingRequest(message, sender, add_request_predicate);
-    if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
-      accumulator_.SetHandled(message, sender);
-      return;
-    }
-    if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kSuccess) {
-      responses = accumulator_.Get(message);
-      accumulator_.SetHandled(message, sender);
-    }
-  }
-  if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kSuccess) {
-    std::vector<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode> typed_responses;
-    for (auto response : responses)
-      typed_responses.push_back(
-          boost::get<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
-    HandleAccountResponses(typed_responses);
-  }
-  if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
-    SendAccountRequest();
-  }
+//#ifndef TESTNG
+//  ValidateSender(message, sender);
+//#endif
+//  Accumulator<nfs::PmidNodeServiceMessages>::AddResult result;
+//  std::vector<nfs::PmidNodeServiceMessages> responses;
+//  {
+//    std::lock_guard<std::mutex> lock(accumulator_mutex_);
+//    if (accumulator_.CheckHandled(message))
+//      return;
+//    auto add_request_predicate(
+//        [&](const std::vector<PmidNodeServiceMessages>& requests_in) {
+//          if (requests_in.size() < 2)
+//            return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
+//          std::vector<protobuf::PmidAccountResponse> pmid_account_responses;
+//          protobuf::PmidAccountResponse pmid_account_response;
+//          nfs_client::protobuf::DataNameAndContentOrReturnCode data;
+//          nfs::GetPmidAccountResponseFromPmidManagerToPmidNode response;
+//          for (auto& request : requests_in) {
+//            response = boost::get<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(request);
+//            if (data.ParseFromString(response.contents->data->content.string())) {
+//              if (data.has_serialised_data_name_and_content()) {
+//                if (pmid_account_response.ParseFromString(
+//                        data.serialised_data_name_and_content())) {
+//                  pmid_account_responses.push_back(pmid_account_response);
+//                } else {
+//                  LOG(kWarning) << "Failed to parse the contents";
+//                }
+//              }
+//            } else {
+//              LOG(kWarning) << "Failed to parse the contents of the response";
+//            }
+//          }
+//          if ((static_cast<uint16_t>(requests_in.size()) >= (routing::Parameters::node_group_size / 2 + 1)) &&
+//               pmid_account_responses.size() >= routing::Parameters::node_group_size / 2)
+//            return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
+//          if ((requests_in.size() == routing::Parameters::node_group_size) ||
+//               (requests_in.size() - pmid_account_responses.size() >
+//                    routing::Parameters::node_group_size / 2))
+//            return Accumulator<PmidNodeServiceMessages>::AddResult::kFailure;
+//          return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
+//        });
+//    result = accumulator_.AddPendingRequest(message, sender, add_request_predicate);
+//    if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
+//      accumulator_.SetHandled(message, sender);
+//      return;
+//    }
+//    if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kSuccess) {
+//      responses = accumulator_.Get(message);
+//      accumulator_.SetHandled(message, sender);
+//    }
+//  }
+//  if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kSuccess) {
+//    std::vector<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode> typed_responses;
+//    for (auto response : responses)
+//      typed_responses.push_back(
+//          boost::get<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
+//    HandleAccountResponses(typed_responses);
+//  }
+//  if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
+//    SendAccountRequest();
+//  }
 }
 
 // Commented by Mahmoud on 15 Sep. Needs refactoring
@@ -282,22 +284,22 @@ void PmidNodeService::CacheStore(const T& message,
   handler_.cache_data_store_.Store(name, message.contents->data->content);
 }
 
-template <typename T>
-void PmidNodeService::SendCachedData(const T& message,
-                                     const typename T::Sender& sender,
-                                     const typename T::Receiver& /*receiver*/,
-                                     const std::shared_ptr<NonEmptyString> content) {
-  typedef nfs::GetCachedResponseFromPmidNodeToMaidNode NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  NfsMessage nfs_message(nfs_client::DataNameAndContentOrReturnCode(
-      nfs_vault::DataNameAndContent(DataTagValue(message.contents->type),
-                                    message.contents->raw_name,
-                                    *content)));
-  RoutingMessage routing_message(nfs_message.Serialise(),
-                                 NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
-                                 NfsMessage::Receiver(sender));
-  routing_.Send(routing_message);
-}
+//template <typename T>
+//void PmidNodeService::SendCachedData(const T& message,
+//                                     const typename T::Sender& sender,
+//                                     const typename T::Receiver& /*receiver*/,
+//                                     const std::shared_ptr<NonEmptyString> content) {
+//  typedef nfs::GetCachedResponseFromPmidNodeToMaidNode NfsMessage;
+//  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+//  NfsMessage nfs_message(nfs_client::DataNameAndContentOrReturnCode(
+//      nfs_vault::DataNameAndContent(DataTagValue(message.contents->type),
+//                                    message.contents->raw_name,
+//                                    *content)));
+//  RoutingMessage routing_message(nfs_message.Serialise(),
+//                                 NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
+//                                 NfsMessage::Receiver(sender));
+//  routing_.Send(routing_message);
+//}
 
 // Commented by Mahmoud on 15 Sep. MUST BE FIXED
 //template<>

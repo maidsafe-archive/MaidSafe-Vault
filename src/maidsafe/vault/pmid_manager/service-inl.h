@@ -38,62 +38,23 @@ namespace vault {
 
 namespace detail {
 
-template<typename Data, nfs::MessageAction Action>
-PmidManagerUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
-                                                 const NodeId& this_id) {
-  static_assert(Action == nfs::MessageAction::kPut || Action == nfs::MessageAction::kDelete,
-                "Action must be either kPut of kDelete.");
-  return PmidManagerUnresolvedEntry(
-      std::make_pair(GetDataNameVariant(DataTagValue(message.data().type.get()),
-                                        Identity(message.data().name)), Action),
-      static_cast<int32_t>(message.data().content.string().size()),
-      this_id);
-}
+//template<typename Data, nfs::MessageAction Action>
+//PmidManagerUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
+//                                                 const NodeId& this_id) {
+//  static_assert(Action == nfs::MessageAction::kPut || Action == nfs::MessageAction::kDelete,
+//                "Action must be either kPut of kDelete.");
+//  return PmidManagerUnresolvedEntry(
+//      std::make_pair(GetDataNameVariant(DataTagValue(message.data().type.get()),
+//                                        Identity(message.data().name)), Action),
+//      static_cast<int32_t>(message.data().content.string().size()),
+//      this_id);
+//}
 
-PmidName GetPmidAccountName(const nfs::Message& message);
+//PmidName GetPmidAccountName(const nfs::Message& message);
 
 }  // namespace detail
 
-template<>
-void PmidManagerService::HandleMessage(
-    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& /*message*/,
-    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& /*sender*/,
-    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-}
 
-template<>
-void PmidManagerService::HandleMessage(
-    const nfs::CreateAccountRequestFromMaidManagerToPmidManager& message,
-    const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
-    const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver) {
-  typedef nfs::CreateAccountRequestFromMaidManagerToPmidManager MessageType;
-  OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
-      accumulator_,
-      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-        return this->ValidateSender(message, sender);
-      },
-      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
-      this,
-      accumulator_mutex_)(message, sender, receiver);
-}
-
-
-
-template<>
-void PmidManagerService::HandleMessage(
-    const nfs::DeleteRequestFromDataManagerToPmidManager& message,
-    const typename nfs::DeleteRequestFromDataManagerToPmidManager::Sender& sender,
-    const typename nfs::DeleteRequestFromDataManagerToPmidManager::Receiver& receiver) {
-  typedef nfs::DeleteRequestFromDataManagerToPmidManager MessageType;
-  OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
-      accumulator_,
-      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-        return this->ValidateSender(message, sender);
-      },
-      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
-      this,
-      accumulator_mutex_)(message, sender, receiver);
-}
 
 
 //template<typename Data>

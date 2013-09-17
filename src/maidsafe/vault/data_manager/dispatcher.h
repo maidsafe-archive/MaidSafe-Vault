@@ -151,7 +151,7 @@ void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name,
       message_id, nfs_vault::DataNameAndContent(Data::Name::data_type, data.name(), data.data()));
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(data.name(), routing_.kNodeId()),
-                         NfsMessage::Receiver(pmid_name.value));
+                         NfsMessage::Receiver(NodeId(pmid_name.value.string())));
   routing_.Send(message);
 }
 
@@ -166,7 +166,7 @@ void DataManagerDispatcher::SendPutResponse(const MaidName& account_name,
                          nfs_vault::DataNameAndCost(Data::Name::data_type, data_name.name(), cost));
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(data_name.raw_name, routing_.kNodeId()),
-                         NfsMessage::Receiver(account_name));
+                         NfsMessage::Receiver(NodeId(account_name)));
   routing_.Send(message);
 }
 

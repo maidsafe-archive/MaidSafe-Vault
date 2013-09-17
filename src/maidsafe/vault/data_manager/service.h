@@ -36,6 +36,7 @@
 #include "maidsafe/vault/data_manager/action_put.h"
 #include "maidsafe/vault/data_manager/helpers.h"
 #include "maidsafe/vault/data_manager/value.h"
+#include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/types.h"
@@ -49,6 +50,9 @@ namespace vault {
 
 class DataManagerService {
  public:
+  typedef nfs::DataManagerServiceMessages PublicMessages;
+  typedef nfs::DataManagerServiceMessages VaultMessages; // FIXME (Check with Fraser)
+
   DataManagerService(const passport::Pmid& pmid,
                      routing::Routing& routing,
                      nfs_client::DataGetter& data_getter);
@@ -124,7 +128,7 @@ class DataManagerService {
   std::mutex accumulator_mutex_;
   Accumulator<nfs::DataManagerServiceMessages> accumulator_;
   DataManagerDispatcher dispatcher_;
-  GroupDb<DataManager> group_db_;
+  Db<DataManager::Key, DataManager::Value> db_;
   Sync<DataManager::UnresolvedPut> sync_puts_;
   Sync<DataManager::UnresolvedDelete> sync_deletes_;
   Sync<DataManager::UnresolvedAddPmid> sync_add_pmids_;
@@ -215,8 +219,11 @@ void DataManagerService::HandlePut(const Data& data,
     dispatcher_.SendPutRequest(pmid_name, data, message_id);
   } else {
     typename DataManager::Key key(data.name().raw_name, Data::Name::data_type);
-    sync_puts_.AddLocalAction(DataManager::UnresolvedPut(key,
-        ActionDataManagerPut(data.name(), data.data().string().size())));
+    sync_puts_.AddLocalAction(DataManager::UnresolvedPut(
+        key,
+        ActionDataManagerPut(data.name(), data.data().string().size()),
+        routing_.kNodeId(),
+        message_id));
     DoSync();
   }
   dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);

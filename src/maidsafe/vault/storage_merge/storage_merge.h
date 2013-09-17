@@ -44,7 +44,7 @@ class StorageMerge : public Key, public Value, public StoragePolicy {
   StorageMerge() :
     active_(),
     unmerged_entries_() {}
-  void insert(const nfs::Message& message);
+//  void insert(const nfs::Message& message);
   typedef std::tuple<std::tuple<Key, Value>, NodeId> UnmergedEntry;
  private:
   StorageMerge(const StorageMerge&);
@@ -79,33 +79,33 @@ typename std::vector<std::tuple<std::tuple<Key, Value>, std::set<NodeId>>>::iter
          });
 }
 
-template <typename Key, typename Value, typename StoragePolicy>
-void StorageMerge<Key, Value, StoragePolicy>::insert(const nfs::Message& message) {
-  if (static_cast<nfs::MessageAction>(message.data().action) !=
-      nfs::MessageAction::kAccountTransfer)
-    ThrowError(CommonErrors::invalid_parameter);
-  protobuf::StorageMerge storage_proto;
-  storage_proto.ParseFromString(message.data().content.string());
-  for (const auto& record: storage_proto.records()) {
-    auto key(record.key());
-    if (KeyExist(key))
-      continue;
-    auto value(record.value());
-    auto unmerged_entry(std::make_tuple(key, value));
-    auto found = FindUnmergedEntry(std::make_tuple(key, value));
-    if (found == std::end(unmerged_entries_)) {
-      unmerged_entries_.emplace_back(std::make_tuple(std::make_tuple(key, value),
-                                                   std::set<NodeId> { message.source().node_id }));
-    } else {
-      std::get<1>(found).insert(message.source());
-      if (std::get<1>(found).size() >=
-          static_cast<size_t>((routing::Parameters::node_group_size / 2))) {
-        StoragePolicy::Put(key, value);
-        std::get<1>(found).erase();
-      }
-    }
-  }
-}
+//template <typename Key, typename Value, typename StoragePolicy>
+//void StorageMerge<Key, Value, StoragePolicy>::insert(const nfs::Message& message) {
+//  if (static_cast<nfs::MessageAction>(message.data().action) !=
+//      nfs::MessageAction::kAccountTransfer)
+//    ThrowError(CommonErrors::invalid_parameter);
+//  protobuf::StorageMerge storage_proto;
+//  storage_proto.ParseFromString(message.data().content.string());
+//  for (const auto& record: storage_proto.records()) {
+//    auto key(record.key());
+//    if (KeyExist(key))
+//      continue;
+//    auto value(record.value());
+//    auto unmerged_entry(std::make_tuple(key, value));
+//    auto found = FindUnmergedEntry(std::make_tuple(key, value));
+//    if (found == std::end(unmerged_entries_)) {
+//      unmerged_entries_.emplace_back(std::make_tuple(std::make_tuple(key, value),
+//                                                   std::set<NodeId> { message.source().node_id }));
+//    } else {
+//      std::get<1>(found).insert(message.source());
+//      if (std::get<1>(found).size() >=
+//          static_cast<size_t>((routing::Parameters::node_group_size / 2))) {
+//        StoragePolicy::Put(key, value);
+//        std::get<1>(found).erase();
+//      }
+//    }
+//  }
+//}
 
 }  // namespace vault
 

@@ -100,7 +100,7 @@ void DataManagerService::HandleMessage(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
-        group_db_.Commit(resolved_action->key, resolved_action->action);
+        db_.Commit(resolved_action->key, resolved_action->action);
       }
       break;
     }
@@ -109,7 +109,7 @@ void DataManagerService::HandleMessage(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
       if (resolved_action)
-        group_db_.Commit(resolved_action->key, resolved_action->action);
+        db_.Commit(resolved_action->key, resolved_action->action);
       break;
     }
     case ActionDataManagerAddPmid::kActionId: {
@@ -117,7 +117,7 @@ void DataManagerService::HandleMessage(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
       if (resolved_action)
-        group_db_.Commit(resolved_action->key, resolved_action->action);
+        db_.Commit(resolved_action->key, resolved_action->action);
       break;
     }
     case ActionDataManagerRemovePmid::kActionId: {
@@ -125,7 +125,7 @@ void DataManagerService::HandleMessage(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_remove_pmids_.AddUnresolvedAction(unresolved_action));
       if (resolved_action)
-        group_db_.Commit(resolved_action->key, resolved_action->action);
+        db_.Commit(resolved_action->key, resolved_action->action);
       break;
     }
     case ActionDataManagerNodeUp::kActionId: {
@@ -133,7 +133,7 @@ void DataManagerService::HandleMessage(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
       if (resolved_action)
-        group_db_.Commit(resolved_action->key, resolved_action->action);
+        db_.Commit(resolved_action->key, resolved_action->action);
       break;
     }
     case ActionDataManagerNodeDown::kActionId: {
@@ -141,7 +141,7 @@ void DataManagerService::HandleMessage(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
       if (resolved_action)
-        group_db_.Commit(resolved_action->key, resolved_action->action);
+        db_.Commit(resolved_action->key, resolved_action->action);
       break;
     }
     default: {

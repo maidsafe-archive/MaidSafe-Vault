@@ -25,6 +25,7 @@
 #include "maidsafe/common/log.h"
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 
 
 namespace maidsafe {
