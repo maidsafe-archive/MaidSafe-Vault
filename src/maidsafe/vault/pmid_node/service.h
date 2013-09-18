@@ -163,7 +163,7 @@ class PmidNodeService {
   void HandleMessage(const T& /*message*/,
                      const typename T::Sender& /*sender*/,
                      const typename T::Receiver& /*receiver*/) {
-    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
+//    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
   }
 
   template<typename T>
@@ -192,13 +192,13 @@ class PmidNodeService {
   void SendAccountRequest();
 
   // populates chunks map
-  void ApplyAccountTransfer(const std::vector<protobuf::PmidAccountResponse>& responses,
-                            const size_t& total_pmidmgrs,
-                            const size_t& pmidmagsr_with_account);
-  void UpdateLocalStorage(const std::map<DataNameVariant, uint16_t>& expected_files);
-  void ApplyUpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
-                               const std::vector<DataNameVariant>& to_be_retrieved);
-  std::vector<DataNameVariant> StoredFileNames();
+//  void ApplyAccountTransfer(const std::vector<protobuf::PmidAccountResponse>& responses,
+//                            const size_t& total_pmidmgrs,
+//                            const size_t& pmidmagsr_with_account);
+//  void UpdateLocalStorage(const std::map<DataNameVariant, uint16_t>& expected_files);
+//  void ApplyUpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
+//                               const std::vector<DataNameVariant>& to_be_retrieved);
+//  std::vector<DataNameVariant> StoredFileNames();
 
   std::future<std::unique_ptr<ImmutableData>>
   RetrieveFileFromNetwork(const DataNameVariant& file_id);
@@ -255,70 +255,56 @@ class PmidNodeService {
   nfs_client::DataGetter data_getter_;
 };
 
-template<>
-void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
-    const nfs::GetRequestFromDataManagerToPmidNode& message,
-    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
-    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& receiver);
+//template<>
+//void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
+//    const nfs::GetRequestFromDataManagerToPmidNode& message,
+//    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
+//    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& receiver);
 
-template<>
-void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>(
-    const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
-    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
-    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
+//template<>
+//void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>(
+//    const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
+//    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
+//    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
-template<>
-void PmidNodeService::HandleMessage<nfs::PutRequestFromPmidManagerToPmidNode>(
-    const nfs::PutRequestFromPmidManagerToPmidNode& message,
-    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
-    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver);
+//template<>
+//void PmidNodeService::HandleMessage<nfs::PutRequestFromPmidManagerToPmidNode>(
+//    const nfs::PutRequestFromPmidManagerToPmidNode& message,
+//    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
+//    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
-template<>
-void PmidNodeService::HandleMessage<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(
-    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
-    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
+//template<>
+//void PmidNodeService::HandleMessage<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(
+//    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& message,
+//    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
+//    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
 
-template<>
-bool PmidNodeService::GetFromCache<nfs::GetRequestFromMaidNodeToDataManager>(
-    const nfs::GetRequestFromMaidNodeToDataManager& message,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
+//template<>
+//bool PmidNodeService::GetFromCache<nfs::GetRequestFromMaidNodeToDataManager>(
+//    const nfs::GetRequestFromMaidNodeToDataManager& message,
+//    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
+//    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
 
-template<>
-bool PmidNodeService::GetFromCache<nfs::GetRequestFromPmidNodeToDataManager>(
-    const nfs::GetRequestFromPmidNodeToDataManager& message,
-    const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver);
+//template<>
+//bool PmidNodeService::GetFromCache<nfs::GetRequestFromPmidNodeToDataManager>(
+//    const nfs::GetRequestFromPmidNodeToDataManager& message,
+//    const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
+//    const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver);
 
-template<>
-void PmidNodeService::StoreInCache<nfs::GetResponseFromDataManagerToMaidNode>(
-    const nfs::GetResponseFromDataManagerToMaidNode& message,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& sender,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& receiver);
+//template<>
+//void PmidNodeService::StoreInCache<nfs::GetResponseFromDataManagerToMaidNode>(
+//    const nfs::GetResponseFromDataManagerToMaidNode& message,
+//    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& sender,
+//    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& receiver);
 
-template<>
-bool PmidNodeService::ValidateSender(
-    const nfs::PutRequestFromPmidManagerToPmidNode& message,
-    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender) const;
-
-template<>
-bool PmidNodeService::ValidateSender(
-    const nfs::GetRequestFromDataManagerToPmidNode& message,
-    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender) const;
-
-template<>
-bool PmidNodeService::ValidateSender(
-    const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
-    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender) const;
 
 // ============================== Put implementation =============================================
 
-template<>
-void PmidNodeService::HandleMessage(
-    const nfs::PutRequestFromPmidManagerToPmidNode& /*message*/,
-    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
-    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+//template<>
+//void PmidNodeService::HandleMessage(
+//    const nfs::PutRequestFromPmidManagerToPmidNode& /*message*/,
+//    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
+//    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
 //  typedef nfs::PutRequestFromPmidManagerToPmidNode MessageType;
 //  OperationHandlerWrapper<PmidNodeService, MessageType, nfs::PmidNodeServiceMessages>(
 //      accumulator_,
@@ -329,7 +315,7 @@ void PmidNodeService::HandleMessage(
 //          RequiredRequests<MessageType>()()),
 //      this,
 //      accumulator_mutex_)(message, sender, receiver);
-}
+//}
 
 template<typename Data>
 void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_id) {

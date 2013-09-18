@@ -72,11 +72,11 @@ namespace vault {
 //      accumulator_mutex_)(message, sender, receiver);
 //}
 
-template<>
-void PmidNodeService::HandleMessage(
-    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& /*message*/,
-    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& /*sender*/,
-    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+//template<>
+//void PmidNodeService::HandleMessage(
+//    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& /*message*/,
+//    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& /*sender*/,
+//    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
 //#ifndef TESTNG
 //  ValidateSender(message, sender);
 //#endif
@@ -138,7 +138,7 @@ void PmidNodeService::HandleMessage(
 //  if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
 //    SendAccountRequest();
 //  }
-}
+//}
 
 // Commented by Mahmoud on 15 Sep. Needs refactoring
 //template<>

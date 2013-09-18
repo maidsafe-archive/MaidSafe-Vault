@@ -32,7 +32,7 @@ namespace maidsafe {
 
 namespace vault {
 
-//struct ActionPmidManagerPut;
+struct ActionPmidManagerPut;
 struct ActionPmidManagerDelete;
 struct ActionGetPmidTotals;
 

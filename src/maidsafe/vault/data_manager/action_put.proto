@@ -19,7 +19,6 @@
 package maidsafe.vault.protobuf;
 
 message ActionDataManagerPut {
-  required bytes data_name = 1;
-  required uint32 data_type = 2;
-  required uint32 size = 3;
+  required bytes pmid_name = 1;
+  required uint32 size = 2;
 }

@@ -58,7 +58,7 @@ class DataManagerService {
                      nfs_client::DataGetter& data_getter);
   template<typename T>
   void HandleMessage(const T&, const typename T::Sender& , const typename T::Receiver&);
-  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
+  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {}
 
  private:
   template<typename Data>
@@ -140,65 +140,65 @@ class DataManagerService {
 // =========================== Handle Message Specialisations ======================================
 
 template<typename T>
-void HandleMessage(const T& /*message*/,
-                   const typename T::Sender& /*sender*/,
-                   const typename T::Receiver& /*receiver*/) {
-  T::should_not_reach_here;
-}
+void DataManagerService::HandleMessage(const T&,
+                                       const typename T::Sender& ,
+                                       const typename T::Receiver&) {}
 
-template<>
-void DataManagerService::HandleMessage(
-   const nfs::GetRequestFromMaidNodeToDataManager& message,
-   const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-   const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
+//template<>
+//void DataManagerService::HandleMessage(
+//    const nfs::PutRequestFromMaidManagerToDataManager& message,
+//    const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& ,
+//    const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver&);
 
-template<>
-void DataManagerService::HandleMessage(
-   const nfs::GetRequestFromPmidNodeToDataManager& message,
-   const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
-   const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver);
 
-template<>
-void DataManagerService::HandleMessage(
-   const nfs::GetRequestFromDataGetterToDataManager& message,
-   const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
-   const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
 
-template<>
-void DataManagerService::HandleMessage(
-   const nfs::PutRequestFromMaidManagerToDataManager& message,
-   const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
-   const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver& receiver);
+//template<>
+//void DataManagerService::HandleMessage(
+//   const nfs::GetRequestFromMaidNodeToDataManager& message,
+//   const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
+//   const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
 
-template<>
-void DataManagerService::HandleMessage(
-   const nfs::DeleteRequestFromMaidManagerToDataManager& message,
-   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender,
-   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
+//template<>
+//void DataManagerService::HandleMessage(
+//   const nfs::GetRequestFromPmidNodeToDataManager& message,
+//   const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
+//   const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver);
 
-template<>
-void DataManagerService::HandleMessage(
-   const nfs::PutResponseFromPmidManagerToDataManager& message,
-   const typename nfs::PutResponseFromPmidManagerToDataManager::Sender& sender,
-   const typename nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver);
+//template<>
+//void DataManagerService::HandleMessage(
+//   const nfs::GetRequestFromDataGetterToDataManager& message,
+//   const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
+//   const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
 
-template<>
-void DataManagerService::HandleMessage(
-   const nfs::StateChangeFromPmidManagerToDataManager& message,
-   const typename nfs::StateChangeFromPmidManagerToDataManager::Sender& sender,
-   const typename nfs::StateChangeFromPmidManagerToDataManager::Receiver& receiver);
+//template<>
+//void DataManagerService::HandleMessage(
+//   const nfs::DeleteRequestFromMaidManagerToDataManager& message,
+//   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender,
+//   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
 
-template<>
-void DataManagerService::HandleMessage(
-   const nfs::GetResponseFromPmidNodeToDataManager& message,
-   const typename nfs::GetResponseFromPmidNodeToDataManager::Sender& sender,
-   const typename nfs::GetResponseFromPmidNodeToDataManager::Receiver& receiver);
+//template<>
+//void DataManagerService::HandleMessage(
+//   const nfs::PutResponseFromPmidManagerToDataManager& message,
+//   const typename nfs::PutResponseFromPmidManagerToDataManager::Sender& sender,
+//   const typename nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver);
 
-template<>
-void DataManagerService::HandleMessage(
-   const nfs::SynchroniseFromDataManagerToDataManager& message,
-   const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& sender,
-   const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& receiver);
+//template<>
+//void DataManagerService::HandleMessage(
+//   const nfs::StateChangeFromPmidManagerToDataManager& message,
+//   const typename nfs::StateChangeFromPmidManagerToDataManager::Sender& sender,
+//   const typename nfs::StateChangeFromPmidManagerToDataManager::Receiver& receiver);
+
+//template<>
+//void DataManagerService::HandleMessage(
+//   const nfs::GetResponseFromPmidNodeToDataManager& message,
+//   const typename nfs::GetResponseFromPmidNodeToDataManager::Sender& sender,
+//   const typename nfs::GetResponseFromPmidNodeToDataManager::Receiver& receiver);
+
+//template<>
+//void DataManagerService::HandleMessage(
+//   const nfs::SynchroniseFromDataManagerToDataManager& message,
+//   const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& sender,
+//   const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& receiver);
 
 
 // ================================== Put implementation ==========================================

@@ -53,6 +53,7 @@
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
+#include "maidsafe/vault/accumulator.h"
 
 
 namespace maidsafe {
@@ -75,11 +76,8 @@ class MaidManagerService {
   MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing);
 
   template<typename T>
-  void HandleMessage(const T& /*message*/,
-                     const typename T::Sender& /*sender*/,
-                     const typename T::Receiver& /*receiver*/) {
-    //T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
-  }
+  void HandleMessage(const T&, const typename T::Sender& , const typename T::Receiver&);
+  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {}
 
  private:
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
@@ -94,7 +92,7 @@ class MaidManagerService {
 //  void CheckSenderIsConnectedMaidManager(const nfs::Message& message) const;
 //  void ValidateDataSender(const nfs::Message& message) const;
   template <typename T>
-  bool ValidateSender(const T& message, const typename T::Sender& sender) const;
+  bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const { return false; }
 
    void HandleCreateAccount(const MaidName& maid_name);
 
@@ -170,6 +168,14 @@ class MaidManagerService {
   static const int kDefaultPaymentFactor_;
 };
 
+template<typename T>
+void MaidManagerService::HandleMessage(const T&,
+                                       const typename T::Sender& ,
+                                       const typename T::Receiver&) {
+//  T::specialisation_required;
+}
+
+
 template<>
 void MaidManagerService::HandleMessage(
     const nfs::PutRequestFromMaidNodeToMaidManager& message,
@@ -182,54 +188,54 @@ void MaidManagerService::HandleMessage(
 //    const typename nfs::PutResponseFromDataManagerToMaidManager::Sender& sender,
 //    const typename nfs::PutResponseFromDataManagerToMaidManager::Receiver& receiver);
 
-template<>
-void MaidManagerService::HandleMessage(
-    const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
-    const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver);
+//template<>
+//void MaidManagerService::HandleMessage(
+//    const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
+//    const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
+//    const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
-void MaidManagerService::HandleMessage(
-    const nfs::PutVersionRequestFromMaidNodeToMaidManager& message,
-    const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Receiver& receiver);
+//template<>
+//void MaidManagerService::HandleMessage(
+//    const nfs::PutVersionRequestFromMaidNodeToMaidManager& message,
+//    const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Sender& sender,
+//    const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
-void MaidManagerService::HandleMessage(
-    const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager& message,
-    const typename nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Sender& sender,
-    const typename
-        nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Receiver& receiver);
+//template<>
+//void MaidManagerService::HandleMessage(
+//    const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager& message,
+//    const typename nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Sender& sender,
+//    const typename
+//        nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
-void MaidManagerService::HandleMessage(
-    const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
-    const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
+//template<>
+//void MaidManagerService::HandleMessage(
+//    const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
+//    const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& sender,
+//    const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
-void MaidManagerService::HandleMessage(
-    const nfs::RemoveAccountRequestFromMaidNodeToMaidManager& message,
-    const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
+//template<>
+//void MaidManagerService::HandleMessage(
+//    const nfs::RemoveAccountRequestFromMaidNodeToMaidManager& message,
+//    const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Sender& sender,
+//    const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
-void MaidManagerService::HandleMessage(
-    const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
-    const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
+//template<>
+//void MaidManagerService::HandleMessage(
+//    const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
+//    const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
+//    const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
-void MaidManagerService::HandleMessage(
-    const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
-    const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
+//template<>
+//void MaidManagerService::HandleMessage(
+//    const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
+//    const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
+//    const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
-void MaidManagerService::HandleMessage(
-    const nfs::GetPmidHealthRequestFromMaidNodeToMaidManager& message,
-    const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver);
+//template<>
+//void MaidManagerService::HandleMessage(
+//    const nfs::GetPmidHealthRequestFromMaidNodeToMaidManager& message,
+//    const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
+//    const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
 
 

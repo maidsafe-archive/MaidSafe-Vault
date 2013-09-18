@@ -44,7 +44,7 @@ class MessageIdRequestVisitor : public boost::static_visitor<nfs::MessageId> {
  public:
   template<typename T>
   nfs::MessageId operator()(const T& message) const {
-    static_assert(HasMessageId<T>::value, "Input parameter must have message_id");
+//    static_assert(HasMessageId<T>::value, "Input parameter must have message_id");
     return message.message_id;
   }
 };
@@ -94,6 +94,10 @@ class Accumulator {
   AddResult AddPendingRequest(const T& request,
                               const routing::GroupSource& source,
                               AddCheckerFunctor checker);
+  AddResult AddPendingRequest(const T& request,
+                              const routing::SingleSource& source,
+                              AddCheckerFunctor checker);
+
   bool CheckHandled(const T& request);
 //  void SetHandled(const T& request, const routing::GroupSource& source);
   std::vector<T> Get(const T& request);
@@ -136,6 +140,12 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
 }
 
 template<typename T>
+typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
+    const T& /*request*/,
+    const routing::SingleSource& /*source*/,
+    AddCheckerFunctor /*checker*/) {}
+
+template<typename T>
 bool Accumulator<T>::CheckHandled(const T& request) {
   auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
   nfs::MessageId message_id;
@@ -149,28 +159,28 @@ bool Accumulator<T>::CheckHandled(const T& request) {
   return false;
 }
 
-template<typename T>
-void Accumulator<T>::SetHandled(const T& request, const routing::GroupSource& source) {
-    assert(!CheckHandled(request) && "Request has already been set as handled");
-    nfs::MessageId message_id;
-    auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
-    boost::apply_visitor(ContentEraseVisitor(), request);
-    for (auto itr(std::begin(pending_requests_)); itr != std::end(pending_requests_);) {
-        if (itr->request.which() == request.which()) {
-            message_id = boost::apply_visitor(MessageIdRequestVisitor(), itr->request);
-            if ((message_id == request_message_id) && (source.group_id == itr->source.group_id))
-                pending_requests_.erase(itr);
-            else
-                ++itr;
-        } else {
-            ++itr;
-        }
-    }
-    boost::apply_visitor(ContentEraseVisitor(), request);
-    handled_requests_.push_back(request);
-    if (handled_requests_.size() > kMaxHandledRequestsCount_)
-        handled_requests_.pop_front();
-}
+//template<typename T>
+//void Accumulator<T>::SetHandled(const T& request, const routing::GroupSource& source) {
+//    assert(!CheckHandled(request) && "Request has already been set as handled");
+//    nfs::MessageId message_id;
+//    auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
+//    boost::apply_visitor(ContentEraseVisitor(), request);
+//    for (auto itr(std::begin(pending_requests_)); itr != std::end(pending_requests_);) {
+//        if (itr->request.which() == request.which()) {
+//            message_id = boost::apply_visitor(MessageIdRequestVisitor(), itr->request);
+//            if ((message_id == request_message_id) && (source.group_id == itr->source.group_id))
+//                pending_requests_.erase(itr);
+//            else
+//                ++itr;
+//        } else {
+//            ++itr;
+//        }
+//    }
+//    boost::apply_visitor(ContentEraseVisitor(), request);
+//    handled_requests_.push_back(request);
+//    if (handled_requests_.size() > kMaxHandledRequestsCount_)
+//        handled_requests_.pop_front();
+//}
 
 template<typename T>
 std::vector<T> Accumulator<T>::Get(const T& request) {

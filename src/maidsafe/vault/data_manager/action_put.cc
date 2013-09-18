@@ -38,7 +38,7 @@ ActionDataManagerPut::ActionDataManagerPut(
       kPmidName([&]()->PmidName {
                   protobuf::ActionDataManagerPut action_put_proto;
                   action_put_proto.ParseFromString(serialised_action);
-                  return PmidName(Identity(action_put_proto.data_name()));
+                  return PmidName(Identity(action_put_proto.pmid_name()));
       }()) {}
 
 ActionDataManagerPut::ActionDataManagerPut(
@@ -53,9 +53,7 @@ ActionDataManagerPut::ActionDataManagerPut(
 
 std::string ActionDataManagerPut::Serialise() const {
   protobuf::ActionDataManagerPut action_put_proto;
-  action_put_proto.set_data_name((boost::apply_visitor(GetIdentityVisitor(), kPmidName)).string());
-  action_put_proto.set_data_type(static_cast<int32_t>(boost::apply_visitor(GetTagValueVisitor(),
-                                                                           kPmidName)));
+  action_put_proto.set_pmid_name(kPmidName.value.string());
   action_put_proto.set_size(kSize);
   return action_put_proto.SerializeAsString();
 }

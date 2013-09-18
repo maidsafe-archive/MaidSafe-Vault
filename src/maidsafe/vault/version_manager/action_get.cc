@@ -17,7 +17,6 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/vault/version_manager/action_get.h"
-#include "maidsafe/vault/version_manager/action_get_version.pb.h"
 
 
 namespace maidsafe {

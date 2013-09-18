@@ -48,7 +48,7 @@ class Demultiplexer {
   template<typename T>
   void HandleMessage(const T& routing_message);
   template<typename T>
-  bool GetFromCache(T& serialised_message);
+  bool GetFromCache(T& /*serialised_message*/) { return true; }
   template<typename T>
   void StoreInCache(const T& serialised_message);
 

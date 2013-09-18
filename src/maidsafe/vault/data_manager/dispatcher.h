@@ -40,7 +40,9 @@ namespace vault {
 
 class DataManagerDispatcher {
  public:
-  DataManagerDispatcher(routing::Routing& routing, const passport::Pmid& signing_fob);
+  DataManagerDispatcher(routing::Routing& routing, const passport::Pmid& signing_fob)
+      : routing_(routing),
+        kSigningFob_(signing_fob) {}
 
   // To PmidManager
   template<typename Data>

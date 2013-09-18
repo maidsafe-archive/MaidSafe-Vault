@@ -42,7 +42,7 @@ class AccountHandler : public ModifyPolicy {
  public:
   AccountHandler(const passport::Pmid& pmid,
                  routing::Routing& routing,
-                 nfs::PublicKeyGetter& public_key_getter,
+                 nfs_client::DataGetter& data_getter,
                  const boost::filesystem::path& vault_root_dir);
   bool AddAccount(const Account& account);
   bool DeleteAccount(const typename Account::Name& account_name);

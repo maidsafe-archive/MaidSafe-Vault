@@ -27,6 +27,8 @@
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/parameters.h"
 
+#include "maidsafe/vault/operations_visitor.h"
+
 
 namespace fs = boost::filesystem;
 
@@ -35,6 +37,54 @@ namespace maidsafe {
 namespace vault {
 
 namespace detail {
+
+template<typename T>
+DataNameVariant GetNameVariant(const T&) {
+  T::invalid_parameter;
+  return DataNameVariant();
+}
+
+template<>
+DataNameVariant GetNameVariant(const nfs_vault::DataName& data) {
+   return GetDataNameVariant(data.type, data.raw_name);
+}
+
+template<>
+DataNameVariant GetNameVariant(const nfs_vault::DataNameAndContent& data) {
+   return GetNameVariant(data.name);
+}
+
+template<>
+DataNameVariant GetNameVariant(const nfs_vault::DataAndPmidHint& data) {
+   return GetNameVariant(data.data.name);
+}
+
+template<>
+DataNameVariant GetNameVariant(const nfs_client::DataAndReturnCode& data) {
+   return GetNameVariant(data.data.name);
+}
+
+template<>
+DataNameVariant GetNameVariant(const nfs_client::DataNameAndContentOrReturnCode& data) {
+  if (data.data)
+    return GetNameVariant(data.data->name);
+  else
+    return GetNameVariant(data.data_name_and_return_code->name);
+}
+
+template<typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::PutRequestFromMaidNodeToMaidManager& message,
+                 const nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::PutRequestFromMaidNodeToMaidManager::Receiver & /*receiver*/) {
+  auto data_name(detail::GetNameVariant(*message.contents));
+  HintedPutVisitor<ServiceHandlerType> put_visitor(service,
+                                                   message.contents->data.content,
+                                                   sender.data,
+                                                   message.contents->pmid_hint,
+                                                   message.message_id);
+  boost::apply_visitor(put_visitor, data_name);
+}
 
 void InitialiseDirectory(const boost::filesystem::path& directory) {
   if (fs::exists(directory)) {

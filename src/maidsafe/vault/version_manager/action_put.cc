@@ -17,7 +17,7 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/vault/version_manager/action_put.h"
-#include "maidsafe/vault/version_manager/action_put_version.pb.h"
+#include "maidsafe/vault/version_manager/action_put.pb.h"
 
 
 namespace maidsafe {
@@ -28,13 +28,13 @@ const nfs::MessageAction ActionVersionManagerPut::kActionId;
 
 ActionVersionManagerPut::ActionVersionManagerPut(
     const std::string& serialised_action) {
-  protobuf::ActionVersionManagerPut action_put_version_proto;
+  protobuf::ActionPut action_put_version_proto;
   if (!action_put_version_proto.ParseFromString(serialised_action))
     ThrowError(CommonErrors::parsing_error);
-  old_version = StructuredDataVersions::VersionName(
-                    action_put_version_proto.serialised_old_version);
-  new_version = StructuredDataVersions::VersionName(
-                    action_put_version_proto.serialised_new_version);
+//  old_version = StructuredDataVersions::VersionName(
+//                    action_put_version_proto.serialised_old_version);
+//  new_version = StructuredDataVersions::VersionName(
+//                    action_put_version_proto.serialised_new_version);
 }
 
 ActionVersionManagerPut::ActionVersionManagerPut(const ActionVersionManagerPut& other)
@@ -46,16 +46,16 @@ ActionVersionManagerPut::ActionVersionManagerPut(ActionVersionManagerPut&& other
       new_version(std::move(other.new_version)) {}
 
 std::string ActionVersionManagerPut::Serialise() const {
-  protobuf::ActionVersionManagerPut action_put_version_proto;
+  protobuf::ActionPut action_put_version_proto;
   action_put_version_proto.set_serialised_old_version(old_version.Serialise());
   action_put_version_proto.set_serialised_new_version(new_version.Serialise());
   return action_put_version_proto.SerializeAsString();
 }
 
 void ActionVersionManagerPut::operator()(boost::optional<VersionManagerValue>& value) const {
-  if (!value) {
-    value.reset(VersionManagerValue());
-  }
+//  if (!value) {
+//    value.reset(VersionManagerValue());
+//  }
   value->Put(old_version, new_version);
 }
 

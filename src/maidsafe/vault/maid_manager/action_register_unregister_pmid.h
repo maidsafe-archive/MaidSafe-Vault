@@ -54,13 +54,13 @@ struct ActionRegisterUnregisterPmid {
   ActionRegisterUnregisterPmid& operator=(ActionRegisterUnregisterPmid other);
 };
 
-template<>
-const nfs::MessageAction ActionRegisterUnregisterPmid<false>::kActionId =
-    nfs::MessageAction::kRegisterPmidRequest;
+//template<>
+//const nfs::MessageAction ActionRegisterUnregisterPmid<false>::kActionId =
+//    nfs::MessageAction::kRegisterPmidRequest;
 
-template<>
-const nfs::MessageAction ActionRegisterUnregisterPmid<true>::kActionId =
-    nfs::MessageAction::kUnregisterPmidRequest;
+//template<>
+//const nfs::MessageAction ActionRegisterUnregisterPmid<true>::kActionId =
+//    nfs::MessageAction::kUnregisterPmidRequest;
 
 template<>
 void ActionRegisterUnregisterPmid<false>::operator()(MaidManagerMetadata& metadata) const;

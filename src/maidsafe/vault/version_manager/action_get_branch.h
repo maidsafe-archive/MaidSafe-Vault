@@ -40,7 +40,7 @@ struct ActionVersionManagerGetBranch {
 
   std::string Serialise() const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kGetBranch;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kGetBranchRequest;
 
  private:
   ActionVersionManagerGetBranch();

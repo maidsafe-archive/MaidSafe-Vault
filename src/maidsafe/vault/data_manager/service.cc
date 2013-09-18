@@ -62,58 +62,58 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid,
 }
 
 // GetRequestFromMaidNodeToDataManager
-template<>
-void DataManagerService::HandleMessage(
-   const nfs::GetRequestFromMaidNodeToDataManager& /*message*/,
-   const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& /*sender*/,
-   const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {}
+//template<>
+//void DataManagerService::HandleMessage(
+//   const nfs::GetRequestFromMaidNodeToDataManager& /*message*/,
+//   const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& /*sender*/,
+//   const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {}
 
 
 
 // PutRequestFromMaidManagerToDataManager
-template<>
-void DataManagerService::HandleMessage(
-   const nfs::PutRequestFromMaidManagerToDataManager& message,
-   const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
-   const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver& receiver) {
-  typedef nfs::PutRequestFromMaidManagerToDataManager MessageType;
-  OperationHandlerWrapper<DataManagerService, MessageType, nfs::DataManagerServiceMessages>(
-      accumulator_,
-      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-        return this->ValidateSender(message, sender);
-      },
-      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
-      this,
-      accumulator_mutex_)(message, sender, receiver);
-}
+//template<>
+//void DataManagerService::HandleMessage(
+//   const nfs::PutRequestFromMaidManagerToDataManager& message,
+//   const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
+//   const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver& receiver) {
+//  typedef nfs::PutRequestFromMaidManagerToDataManager MessageType;
+//  OperationHandlerWrapper<DataManagerService, MessageType, nfs::DataManagerServiceMessages>(
+//      accumulator_,
+//      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+//        return this->ValidateSender(message, sender);
+//      },
+//      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(
+//          RequiredRequests<MessageType>()()),
+//      this,
+//      accumulator_mutex_)(message, sender, receiver);
+//}
 
 // PutResponseFromPmidManagerToDataManager
-template<>
-void DataManagerService::HandleMessage(
-   const nfs::PutResponseFromPmidManagerToDataManager& message,
-   const typename nfs::PutResponseFromPmidManagerToDataManager::Sender& sender,
-   const typename nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver) {
-  typedef nfs::PutResponseFromPmidManagerToDataManager MessageType;
-  OperationHandlerWrapper<DataManagerService,
-                          MessageType,
-                          nfs::DataManagerServiceMessages>(
-      accumulator_,
-      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-        return this->ValidateSender(message, sender);
-      },
-      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
-      this,
-      accumulator_mutex_)(message, sender, receiver);
-}
+//template<>
+//void DataManagerService::HandleMessage(
+//   const nfs::PutResponseFromPmidManagerToDataManager& message,
+//   const typename nfs::PutResponseFromPmidManagerToDataManager::Sender& sender,
+//   const typename nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver) {
+//  typedef nfs::PutResponseFromPmidManagerToDataManager MessageType;
+//  OperationHandlerWrapper<DataManagerService,
+//                          MessageType,
+//                          nfs::DataManagerServiceMessages>(
+//      accumulator_,
+//      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+//        return this->ValidateSender(message, sender);
+//      },
+//      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(
+//          RequiredRequests<MessageType>()()),
+//      this,
+//      accumulator_mutex_)(message, sender, receiver);
+//}
 
 // =============== Sync ============================================================================
-template<>
-void DataManagerService::HandleMessage(
-   const nfs::SynchroniseFromDataManagerToDataManager& /*message*/,
-   const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& /*sender*/,
-   const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& /*receiver*/) {
+//template<>
+//void DataManagerService::HandleMessage(
+//   const nfs::SynchroniseFromDataManagerToDataManager& /*message*/,
+//   const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& /*sender*/,
+//   const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& /*receiver*/) {
 //  protobuf::Sync proto_sync;
 //  if (!proto_sync.ParseFromString(message.contents->content.string()))
 //    ThrowError(CommonErrors::parsing_error);
@@ -173,7 +173,7 @@ void DataManagerService::HandleMessage(
 //      LOG(kError) << "Unhandled action type";
 //    }
 //  }
-}
+//}
 
 // =============== Churn ===========================================================================
 //void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {

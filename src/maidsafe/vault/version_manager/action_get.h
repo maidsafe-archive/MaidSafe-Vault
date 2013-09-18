@@ -37,7 +37,7 @@ struct ActionVersionManagerGet {
   void operator()(boost::optional<VersionManagerValue>& value,
                   std::vector<StructuredDataVersions::VersionName>& version_names) const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kGet;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kGetRequest;
 
  private:
   ActionVersionManagerGet& operator=(ActionVersionManagerGet other);

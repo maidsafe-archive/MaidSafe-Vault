@@ -1,83 +1,82 @@
-/*  Copyright 2013 MaidSafe.net limited
+///*  Copyright 2013 MaidSafe.net limited
 
-    This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
-    version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
-    licence you accepted on initial access to the Software (the "Licences").
+//    This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
+//    version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
+//    licence you accepted on initial access to the Software (the "Licences").
 
-    By contributing code to the MaidSafe Software, or to this project generally, you agree to be
-    bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
-    directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also
-    available at: http://www.novinet.com/license
+//    By contributing code to the MaidSafe Software, or to this project generally, you agree to be
+//    bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
+//    directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also
+//    available at: http://www.novinet.com/license
 
-    Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
-    under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
-    OF ANY KIND, either express or implied.
+//    Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
+//    under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+//    OF ANY KIND, either express or implied.
 
-    See the Licences for the specific language governing permissions and limitations relating to
-    use of the MaidSafe Software.                                                                 */
-
-#include "maidsafe/vault/db_key.h"
-
-#include "maidsafe/common/test.h"
-#include "maidsafe/common/utils.h"
-
-#include "maidsafe/data_types/immutable_data.h"
-#include "maidsafe/data_types/data_name_variant.h"
-
-#include "maidsafe/vault/utils-inl.h"
+//    See the Licences for the specific language governing permissions and limitations relating to
+//    use of the MaidSafe Software.                                                                 */
 
 
-namespace maidsafe {
+//#include "maidsafe/common/test.h"
+//#include "maidsafe/common/utils.h"
 
-namespace vault {
+//#include "maidsafe/data_types/immutable_data.h"
+//#include "maidsafe/data_types/data_name_variant.h"
 
-namespace test {
+//#include "maidsafe/vault/utils-inl.h"
 
-TEST(DbKeyTest, BEH_Serialise) {
-  DataNameVariant name(ImmutableData::Name(Identity(
-      RandomString(crypto::SHA512::DIGESTSIZE))));
-  DbKey db_key(name);
-  EXPECT_TRUE(db_key.name() == name);
 
-  // Simulation a serialisation
-  static GetTagValueAndIdentityVisitor visitor;
-  auto result(boost::apply_visitor(visitor, name));
-  std::string simulated = std::string(result.second.string() +
-            maidsafe::vault::detail::ToFixedWidthString<1>(static_cast<uint32_t>(result.first)));
+//namespace maidsafe {
 
-  EXPECT_EQ(simulated, db_key.Serialise());
-}
+//namespace vault {
 
-TEST(DbKeyTest, BEH_All) {
-  DataNameVariant name(ImmutableData::Name(Identity(
-      RandomString(crypto::SHA512::DIGESTSIZE))));
-  DbKey db_key;
-  db_key = DbKey(name);
-  EXPECT_TRUE(db_key.name() == name);
+//namespace test {
 
-  auto temp = name;
-  DbKey db_key_copy1(db_key);
-  EXPECT_TRUE(db_key == db_key_copy1);
-  EXPECT_FALSE(db_key != db_key_copy1);
-  EXPECT_FALSE(db_key < db_key_copy1);
-  EXPECT_FALSE(db_key > db_key_copy1);
-  EXPECT_TRUE(db_key <= db_key_copy1);
-  EXPECT_TRUE(db_key >= db_key_copy1);
+//TEST(DbKeyTest, BEH_Serialise) {
+//  DataNameVariant name(ImmutableData::Name(Identity(
+//      RandomString(crypto::SHA512::DIGESTSIZE))));
+//  DbKey db_key(name);
+//  EXPECT_TRUE(db_key.name() == name);
 
-  DbKey db_key_copy2(std::move(db_key_copy1));
-  EXPECT_EQ(db_key, db_key_copy2);
+//  // Simulation a serialisation
+//  static GetTagValueAndIdentityVisitor visitor;
+//  auto result(boost::apply_visitor(visitor, name));
+//  std::string simulated = std::string(result.second.string() +
+//            maidsafe::vault::detail::ToFixedWidthString<1>(static_cast<uint32_t>(result.first)));
 
-  DbKey db_key_copy3;
-  db_key_copy3 = std::move(db_key_copy2);
-  EXPECT_EQ(db_key, db_key_copy3);
+//  EXPECT_EQ(simulated, db_key.Serialise());
+//}
 
-  auto serialised_db_key(db_key.Serialise());
-  DbKey parsed_db_key(serialised_db_key);
-  EXPECT_EQ(db_key, parsed_db_key);
-}
+//TEST(DbKeyTest, BEH_All) {
+//  DataNameVariant name(ImmutableData::Name(Identity(
+//      RandomString(crypto::SHA512::DIGESTSIZE))));
+//  DbKey db_key;
+//  db_key = DbKey(name);
+//  EXPECT_TRUE(db_key.name() == name);
 
-}  // namespace test
+//  auto temp = name;
+//  DbKey db_key_copy1(db_key);
+//  EXPECT_TRUE(db_key == db_key_copy1);
+//  EXPECT_FALSE(db_key != db_key_copy1);
+//  EXPECT_FALSE(db_key < db_key_copy1);
+//  EXPECT_FALSE(db_key > db_key_copy1);
+//  EXPECT_TRUE(db_key <= db_key_copy1);
+//  EXPECT_TRUE(db_key >= db_key_copy1);
 
-}  // namespace vault
+//  DbKey db_key_copy2(std::move(db_key_copy1));
+//  EXPECT_EQ(db_key, db_key_copy2);
 
-}  // namespace maidsafe
+//  DbKey db_key_copy3;
+//  db_key_copy3 = std::move(db_key_copy2);
+//  EXPECT_EQ(db_key, db_key_copy3);
+
+//  auto serialised_db_key(db_key.Serialise());
+//  DbKey parsed_db_key(serialised_db_key);
+//  EXPECT_EQ(db_key, parsed_db_key);
+//}
+
+//}  // namespace test
+
+//}  // namespace vault
+
+//}  // namespace maidsafe

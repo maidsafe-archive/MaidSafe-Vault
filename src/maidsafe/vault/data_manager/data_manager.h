@@ -28,7 +28,7 @@
 #include "maidsafe/vault/data_manager/action_delete.h"
 #include "maidsafe/vault/data_manager/action_node_down.h"
 #include "maidsafe/vault/data_manager/action_node_up.h"
-#include "maidsafe/vault/data_manager/action_put.h"
+//#include "maidsafe/vault/data_manager/action_put.h"
 #include "maidsafe/vault/data_manager/action_remove_pmid.h"
 
 namespace maidsafe {
@@ -37,7 +37,7 @@ namespace vault {
 
 class Metadata;
 
-//struct ActionDataManagerPut;
+struct ActionDataManagerPut;
 //struct ActionDataManagerDelete;
 //struct ActionDataManagerAddPmid;
 //struct ActionDataManagerRemovePmid;
