@@ -67,6 +67,25 @@ PmidNodeService::PmidNodeService(const passport::Pmid& /*pmid*/,
 //  nfs_.GetElementList();  // TODO (Fraser) BEFORE_RELEASE Implementation needed
 }
 
+
+template<>
+void PmidNodeService::HandleMessage(
+    const nfs::PutRequestFromPmidManagerToPmidNode& message,
+    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
+    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver) {
+  typedef nfs::PutRequestFromPmidManagerToPmidNode MessageType;
+  OperationHandlerWrapper<PmidNodeService, MessageType, nfs::PmidNodeServiceMessages>(
+      accumulator_,
+      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+        return this->ValidateSender(message, sender);
+      },
+      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(
+          RequiredRequests<MessageType>()()),
+      this,
+      accumulator_mutex_)(message, sender, receiver);
+}
+
+
 //void PmidNodeService::HandleAccountResponses(
 //  const std::vector<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>& responses) {
 //  std::map<DataNameVariant, uint16_t> expected_chunks;

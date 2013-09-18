@@ -34,8 +34,9 @@
 #include "maidsafe/data_types/data_type_values.h"
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/client/data_getter.h"
+#include "maidsafe/nfs/message_types.h"
 
-#include "maidsafe/vault/message_types.h"
+//#include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
@@ -160,11 +161,9 @@ class PmidNodeService {
                   const boost::filesystem::path& vault_root_dir);
 
   template<typename T>
-  void HandleMessage(const T& /*message*/,
-                     const typename T::Sender& /*sender*/,
-                     const typename T::Receiver& /*receiver*/) {
-//    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
-  }
+  void HandleMessage(const T& message,
+                     const typename T::Sender& sender,
+                     const typename T::Receiver& receiver);
 
   template<typename T>
   bool GetFromCache(const T& /*message*/,
@@ -255,6 +254,13 @@ class PmidNodeService {
   nfs_client::DataGetter data_getter_;
 };
 
+template<>
+void PmidNodeService::HandleMessage(
+    const nfs::PutRequestFromPmidManagerToPmidNode& message,
+    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
+    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver);
+
+
 //template<>
 //void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
 //    const nfs::GetRequestFromDataManagerToPmidNode& message,
@@ -267,11 +273,6 @@ class PmidNodeService {
 //    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
 //    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
-//template<>
-//void PmidNodeService::HandleMessage<nfs::PutRequestFromPmidManagerToPmidNode>(
-//    const nfs::PutRequestFromPmidManagerToPmidNode& message,
-//    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
-//    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
 //template<>
 //void PmidNodeService::HandleMessage<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(
@@ -300,22 +301,11 @@ class PmidNodeService {
 
 // ============================== Put implementation =============================================
 
-//template<>
-//void PmidNodeService::HandleMessage(
-//    const nfs::PutRequestFromPmidManagerToPmidNode& /*message*/,
-//    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
-//    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-//  typedef nfs::PutRequestFromPmidManagerToPmidNode MessageType;
-//  OperationHandlerWrapper<PmidNodeService, MessageType, nfs::PmidNodeServiceMessages>(
-//      accumulator_,
-//      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-//        return this->ValidateSender(message, sender);
-//      },
-//      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
-//          RequiredRequests<MessageType>()()),
-//      this,
-//      accumulator_mutex_)(message, sender, receiver);
-//}
+template<typename T>
+void PmidNodeService::HandleMessage(const T& /*message*/,
+                                    const typename T::Sender& /*sender*/,
+                                    const typename T::Receiver& /*receiver*/) {}
+
 
 template<typename Data>
 void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_id) {

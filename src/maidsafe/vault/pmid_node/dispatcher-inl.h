@@ -29,24 +29,6 @@ namespace maidsafe {
 
 namespace vault {
 
-template<typename Data>
-void PmidNodeDispatcher::SendPutRespnse(const Data& data,
-                                        const nfs::MessageId& message_id,
-                                        const maidsafe_error& error) {
-  typedef PutResponseFromPmidNodeToPmidManager NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  NfsMessage nfs_message(message_id,
-                         DataNameAndContentAndReturnCode(
-                             data.name().type,
-                             data.name()->name.raw_name,
-                             data.data(),
-                             nfs_client::ReturnCode(error)));
-  RoutingMessage routing_message(nfs_message.Serialise(),
-                                 NfsMessage::Sender(routing_.kNodeId()),
-                                 NfsMessage::Receiver(routing_.kNodeId()));
-  routing_.Send(routing_message);
-}
-
 
 }  // namespace vault
 

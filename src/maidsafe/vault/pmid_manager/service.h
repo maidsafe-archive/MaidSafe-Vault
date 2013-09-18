@@ -74,9 +74,20 @@ class PmidManagerService {
 // =============== Put/Delete data ================================================================
   template<typename Data>
   void HandlePut(const Data& data, const PmidName& pmid_node, const nfs::MessageId& message_id);
+
+  // Failure Handle
   template<typename Data>
-  void HandlePutResponse(const Data& data, const nfs::MessageId& message_id,
-                         const PmidName& pmid_node, const maidsafe_error& error);
+  void HandlePutResponse(const Data& data,
+                         const nfs::MessageId& message_id,
+                         const PmidName& pmid_node,
+                         const maidsafe_error& error);
+  // Success Handle
+  template<typename Data>
+  void HandlePutResponse(const typename Data::Name& data,
+                         const nfs::MessageId& message_id,
+                         const PmidName& pmid_node,
+                         const maidsafe_error& error);
+
   void DoSync();
 
 //  template<typename Data>
@@ -110,17 +121,17 @@ void PmidManagerService::HandleMessage(const T& /*message*/,
   //T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
 }
 
-//template<>
-//void PmidManagerService::HandleMessage(
-//    const nfs::PutRequestFromDataManagerToPmidManager& message,
-//    const typename nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
-//    const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver);
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::PutRequestFromDataManagerToPmidManager& message,
+    const typename nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
+    const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver);
 
-//template<>
-//void PmidManagerService::HandleMessage(
-//    const nfs::PutResponseFromPmidNodeToPmidManager& message,
-//    const typename nfs::PutResponseFromPmidNodeToPmidManager::Sender& sender,
-//    const typename nfs::PutResponseFromPmidNodeToPmidManager::Receiver& receiver);
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::PutResponseFromPmidNodeToPmidManager& message,
+    const typename nfs::PutResponseFromPmidNodeToPmidManager::Sender& sender,
+    const typename nfs::PutResponseFromPmidNodeToPmidManager::Receiver& receiver);
 
 //template<>
 //void PmidManagerService::HandleMessage(
@@ -160,15 +171,6 @@ void PmidManagerService::HandlePut(const Data& data,
                                    const PmidName& pmid_node,
                                    const nfs::MessageId& message_id) {
   dispatcher_.SendPutRequest(data, pmid_node, message_id);
-  typename PmidManager::Key group_key(PmidManager::GroupName(pmid_node),
-                                      data.name(),
-                                      Data::Name::data_type);
-  sync_puts_.AddLocalAction(
-      typename PmidManager::UnresolvedPut(group_key,
-                                          ActionPmidManagerPut(data.data().string().size()),
-                                          routing_.kNodeId(),
-                                          message_id));
-  DoSync();
 }
 
 template<typename Data>
@@ -179,6 +181,24 @@ void PmidManagerService::HandlePutResponse(const Data& data,
   // DIFFERENT ERRORS MUST BE HANDLED DIFFERENTLY
   dispatcher_.SendPutResponse(data, pmid_node, message_id, error);
 }
+
+template<typename Data>
+void PmidManagerService::HandlePutResponse(const typename Data::Name& name,
+                                           const nfs::MessageId& message_id,
+                                           const PmidName& pmid_node,
+                                           const maidsafe_error& error) {
+  dispatcher_.SendPutResponse<Data>(name, pmid_node, message_id, error);
+  typename PmidManager::Key group_key(PmidManager::GroupName(pmid_node),
+                                      name.raw_name,
+                                      name.type);
+  sync_puts_.AddLocalAction(
+      typename PmidManager::UnresolvedPut(group_key,
+                                          ActionPmidManagerPut(1/* Needs size*/),
+                                          routing_.kNodeId(),
+                                          message_id));
+  DoSync();
+}
+
 
 // ===============================================================================================
 

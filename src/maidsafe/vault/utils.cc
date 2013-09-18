@@ -78,13 +78,69 @@ void DoOperation(ServiceHandlerType* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Receiver & /*receiver*/) {
   auto data_name(detail::GetNameVariant(*message.contents));
-  HintedPutVisitor<ServiceHandlerType> put_visitor(service,
-                                                   message.contents->data.content,
-                                                   sender.data,
-                                                   message.contents->pmid_hint,
-                                                   message.message_id);
+  MaidManagerPutVisitor<ServiceHandlerType> put_visitor(service,
+                                                        message.contents->data.content,
+                                                        sender.data,
+                                                        message.contents->pmid_hint,
+                                                        message.message_id);
   boost::apply_visitor(put_visitor, data_name);
 }
+
+template<typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::PutRequestFromMaidManagerToDataManager& message,
+                 const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
+                 const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver&) {
+  auto data_name(detail::GetNameVariant(*message.contents));
+  DataManagerPutVisitor<ServiceHandlerType> put_visitor(service,
+                                                        message.contents->data.content,
+                                                        sender.group_id,
+                                                        message.contents->pmid_hint,
+                                                        message.message_id);
+  boost::apply_visitor(put_visitor, data_name);
+}
+
+template<typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::PutRequestFromDataManagerToPmidManager& message,
+                 const nfs::PutRequestFromDataManagerToPmidManager::Sender& /*sender*/,
+                 const nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  auto data_name(detail::GetNameVariant(*message.contents));
+  PmidManagerPutVisitor<ServiceHandlerType> put_visitor(service,
+                                                        message.contents->content,
+                                                        message.message_id,
+                                                        receiver);
+  boost::apply_visitor(put_visitor, data_name);
+}
+
+
+template<typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::PutRequestFromPmidManagerToPmidNode& message,
+                 const nfs::PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
+                 const nfs::PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+  auto data_name(detail::GetNameVariant(*message.contents));
+  PmidNodePutVisitor<ServiceHandlerType> put_visitor(service,
+                                                     message.contents->content,
+                                                     message.message_id);
+  boost::apply_visitor(put_visitor, data_name);
+}
+
+template<typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::PutResponseFromPmidNodeToPmidManager& message,
+                 const nfs::PutResponseFromPmidNodeToPmidManager::Sender& sender,
+                 const nfs::PutResponseFromPmidNodeToPmidManager::Receiver& /*receiver*/) {
+  auto data_name(detail::GetNameVariant(*message.contents));
+  PutResponseVisitor<ServiceHandlerType> put_visitor(service,
+                                                     message.contents->content,
+                                                     sender,
+                                                     message.message_id,
+                                                     message.contents->return_code);
+  boost::apply_visitor(put_visitor, data_name);
+}
+
+
 
 void InitialiseDirectory(const boost::filesystem::path& directory) {
   if (fs::exists(directory)) {

@@ -51,6 +51,35 @@ class PmidNodeDispatcher {
   routing::Routing& routing_;
 };
 
+
+template<typename Data>
+void PmidNodeDispatcher::SendPutRespnse(const Data& data,
+                                        const nfs::MessageId& message_id,
+                                        const maidsafe_error& error) {
+  typedef nfs::PutResponseFromPmidNodeToPmidManager NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  NfsMessage nfs_message;
+  if (error.code() != CommonErrors::success) {
+    nfs_message = NfsMessage(message_id,
+                             nfs_client::DataNameAndContentAndReturnCode(
+                                 data.name().type,
+                                 data.name()->name.raw_name,
+                                 nfs_client::ReturnCode(error),
+                                 data.data()));
+  } else {
+    nfs_message = NfsMessage(message_id,
+                             nfs_client::DataNameAndContentAndReturnCode(
+                                 data.name().type,
+                                 data.name()->name.raw_name,
+                                 nfs_client::ReturnCode(error)));
+  }
+  RoutingMessage routing_message(nfs_message.Serialise(),
+                                 NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
+                                 NfsMessage::Receiver(routing::GroupId(routing_.kNodeId())));
+  routing_.Send(routing_message);
+}
+
+
 }  // namespace vault
 
 }  // namespace maidsafe

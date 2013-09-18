@@ -31,6 +31,7 @@
 #include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/nfs/client/data_getter.h"
+#include "maidsafe/nfs/message_types.h"
 
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/data_manager/action_put.h"
@@ -116,7 +117,7 @@ class DataManagerService {
 //  void IntegrityCheck(std::shared_ptr<GetHandler<Data>> get_handler);
 
   template<typename T>
-  bool ValidateSender(const T& message, const typename T::Sender& sender) const;
+  bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const { return false; }
 
   // =============== Sync and Record transfer =====================================================
 // Commented by Mahmoud on 3 Sep. Code need refactoring
@@ -144,12 +145,11 @@ void DataManagerService::HandleMessage(const T&,
                                        const typename T::Sender& ,
                                        const typename T::Receiver&) {}
 
-//template<>
-//void DataManagerService::HandleMessage(
-//    const nfs::PutRequestFromMaidManagerToDataManager& message,
-//    const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& ,
-//    const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver&);
-
+template<>
+void DataManagerService::HandleMessage(
+    const nfs::PutRequestFromMaidManagerToDataManager& message,
+    const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& ,
+    const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver&);
 
 
 //template<>

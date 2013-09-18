@@ -70,21 +70,22 @@ void PmidManagerService::HandleMessage(
       accumulator_mutex_)(message, sender, receiver);
 }
 
-//template<>
-//void PmidManagerService::HandleMessage(
-//    const nfs::PutResponseFromPmidNodeToPmidManager& message,
-//    const typename nfs::PutResponseFromPmidNodeToPmidManager::Sender& sender,
-//    const typename nfs::PutResponseFromPmidNodeToPmidManager::Receiver& receiver) {
-//  typedef nfs::PutResponseFromPmidNodeToPmidManager MessageType;
-//  OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(-+
-//      accumulator_,
-//      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-//        return this->ValidateSender(message, sender);
-//      },
-//      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
-//      this,
-//      accumulator_mutex_)(message, sender, receiver);
-//}
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::PutResponseFromPmidNodeToPmidManager& message,
+    const typename nfs::PutResponseFromPmidNodeToPmidManager::Sender& sender,
+    const typename nfs::PutResponseFromPmidNodeToPmidManager::Receiver& receiver) {
+  typedef nfs::PutResponseFromPmidNodeToPmidManager MessageType;
+  OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
+      accumulator_,
+      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+        return this->ValidateSender(message, sender);
+      },
+      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
+          RequiredRequests<MessageType>()()),
+      this,
+      accumulator_mutex_)(message, sender, receiver);
+}
 
 template<>
 void PmidManagerService::HandleMessage(

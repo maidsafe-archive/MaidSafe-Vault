@@ -153,11 +153,35 @@ void DoOperation(ServiceHandlerType* /*service*/,
 //  MessageType::Invalid_function_call;
 }
 
-template<typename ServiceHandlerType, typename MessageType>
+template<typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager& message,
                  const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
                  const typename nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template<typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::PutRequestFromMaidManagerToDataManager& message,
+                 const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
+                 const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver&);
+
+template<typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::PutRequestFromDataManagerToPmidManager& message,
+                 const nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
+                 const nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver);
+
+template<typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::PutRequestFromPmidManagerToPmidNode& message,
+                 const nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
+                 const nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver);
+
+template<typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::PutResponseFromPmidNodeToPmidManager& message,
+                 const nfs::PutResponseFromPmidNodeToPmidManager::Sender& sender,
+                 const nfs::PutResponseFromPmidNodeToPmidManager::Receiver& receiver);
 
 
 // ================================== Account Specialisations ====================================
@@ -397,158 +421,11 @@ void DoOperation(ServiceHandlerType* service,
 //  boost::apply_visitor(get_visitor, data_name);
 //}
 
-// ================================== Put Specialisations ======================================
-
-//template <typename ServiceHandlerType>
-//class HintedPutVisitor : public boost::static_visitor<> {
-// public:
-//  HintedPutVisitor(ServiceHandlerType* service,
-//                   const NonEmptyString& content,
-//                   const NodeId& sender,
-//                   const Identity pmid_hint,
-//                   const nfs::MessageId& message_id)
-//      : service_(service),
-//        kContent_(content),
-//        kSender(sender),
-//        kPmidHint_(pmid_hint),
-//        kMessageId(message_id) {}
-
-//  template <typename Name>
-//  void operator()(const Name& data_name) {
-//    service_->template HandlePut(MaidName(kSender),
-//                                 Name::data_type(data_name, kContent_),
-//                                 kPmidHint_,
-//                                 kMessageId);
-//  }
-//  private:
-//   ServiceHandlerType* service_;
-//   NonEmptyString kContent_;
-//   Identity kPmidHint_;
-//   nfs::MessageId kMessageId;
-//   NodeId kSender;
-//};
-
-//template <typename ServiceHandlerType>
-//class DataManagerPutVisitor : public boost::static_visitor<> {
-// public:
-//  DataManagerPutVisitor(ServiceHandlerType* service,
-//                        const NonEmptyString& content,
-//                        const Identity& maid_name,
-//                        const Identity& pmid_name,
-//                        const nfs::MessageId& message_id)
-//      : service_(service),
-//        kContent_(content),
-//        kMaidName(maid_name),
-//        kPmidName_(pmid_name) ,
-//        kMessageId(message_id) {}
-
-//  template <typename Name>
-//  void operator()(const Name& data_name) {
-//    service_->template HandlePut(Name::data_type(data_name, kContent_), kMaidName, kPmidName_,
-//                                 kMessageId);
-//  }
-// private:
-//  ServiceHandlerType* service_;
-//  NonEmptyString kContent_;
-//  const MaidName kMaidName;
-//  const PmidName kPmidName_;
-//  const nfs::MessageId kMessageId;
-//};
-
-//template <typename ServiceHandlerType>
-//class PmidNodePutVisitor : public boost::static_visitor<> {
-// public:
-//  PmidNodePutVisitor(ServiceHandlerType* service,
-//                     const NonEmptyString& content,
-//                     const nfs::MessageId& message_id)
-//      : service_(service),
-//        kContent_(content),
-//        kMessageId(message_id) {}
-
-//  template <typename Name>
-//  void operator()(const Name& data_name) {
-//    service_->template HandlePut(Name::data_type(data_name, kContent_), kMessageId);
-//  }
-// private:
-//  ServiceHandlerType* service_;
-//  NonEmptyString kContent_;
-//  const nfs::MessageId kMessageId;
-//};
-
-
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
-//                 const nfs::PutRequestFromDataManagerToPmidManager& message,
-//                 const Sender& /*sender*/,
-//                 const NodeId& receiver) {
-//  auto data_name(detail::GetNameVariant(*message.contents));
-//  DataManagerPutVisitor<ServiceHandlerType> put_visitor(service,
-//                                                        message.contents->content,
-//                                                        message.message_id,
-//                                                        receiver);
-//  boost::apply_visitor(put_visitor, data_name);
-//}
-
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
-//                 const nfs::PutRequestFromPmidManagerToPmidNode& message,
-//                 const Sender& /*sender*/,
-//                 const NodeId& /*receiver*/) {
-//  auto data_name(detail::GetNameVariant(*message.contents));
-//  PmidNodePutVisitor<ServiceHandlerType> put_visitor(service,
-//                                                     message.contents->content,
-//                                                     message.message_id);
-//  boost::apply_visitor(put_visitor, data_name);
-//}
-
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
-//                 const nfs::PutRequestFromMaidManagerToDataManager& message,
-//                 const Sender& sender,
-//                 const NodeId& /*receiver*/) {
-//  auto data_name(detail::GetNameVariant(*message.contents));
-//  DataManagerPutVisitor<ServiceHandlerType> put_visitor(service,
-//                                                        message.contents->data.content,
-//                                                        sender.group_id,
-//                                                        message.contents->pmid_hint,
-//                                                        message.message_id);
-//  boost::apply_visitor(put_visitor, data_name);
-//}
-
 // ================ Put Response Specialisations ===================================================
 // PutResponseFromPmidManagerToDataManager, DataNameAndContentAndReturnCode
 // PutResponseFromDataManagerToMaidManager, DataNameAndContent
 // PutResponseFromPmidNodeToPmidManager, DataNameAndContentAndReturnCode
 
-//template <typename ServiceHandlerType>
-//class PutResponseVisitor : public boost::static_visitor<> {
-// public:
-//  PutResponseVisitor(ServiceHandlerType* service,
-//                     const NonEmptyString& content,
-//                     const Identity& pmid_node,
-//                     const nfs::MessageId& message_id,
-//                     const maidsafe_error& return_code)
-//      : service_(service),
-//        kContent_(content),
-//        kPmidNode_(pmid_node),
-//        kMessageId(message_id),
-//        kReturnCode_(return_code) {}
-
-//  template <typename Name>
-//  void operator()(const Name& data_name) {
-//    service_->template HandlePutResponse(Name::data_type(data_name, kContent_),
-//                                         PmidName(kSender),
-//                                         kMessageId,
-//                                         maidsafe_error(kReturnCode_));
-//  }
-//  private:
-//   ServiceHandlerType* service_;
-//   const NonEmptyString kContent_;
-//   const PmidName kPmidNode_;
-//   const nfs::MessageId kMessageId;
-//   const NodeId kSender;
-//   const maidsafe_error kReturnCode_;
-//};
 
 //template <typename ServiceHandlerType>
 //class PutResponseSuccessVisitor : public boost::static_visitor<> {
@@ -611,20 +488,6 @@ void DoOperation(ServiceHandlerType* service,
 //      message.contents->cost,
 //      message.message_id);
 //  boost::apply_visitor(put_response_visitor, data_name);
-//}
-
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
-//                 const nfs::PutResponseFromPmidNodeToPmidManager& message,
-//                 const Sender& sender,
-//                 const NodeId& /*receiver*/) {
-//  auto data_name(detail::GetNameVariant(*message.contents));
-//  PutResponseVisitor<ServiceHandlerType> put_visitor(service,
-//                                                     message.contents->content,
-//                                                     sender,
-//                                                     message.message_id,
-//                                                     message.contents->return_code);
-//  boost::apply_visitor(put_visitor, data_name);
 //}
 
 //template<typename ServiceHandlerType, typename Sender>
