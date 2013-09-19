@@ -51,5 +51,9 @@ PmidNodeHandler::PmidNodeHandler(const boost::filesystem::path vault_root_dir)
     mem_only_cache_(mem_only_cache_usage) {
 }
 
+boost::filesystem::path PmidNodeHandler::GetPermanentStorePath() const {
+  return permanent_data_store_.GetDiskPath();
+}
+
 }  // namespace vault
 }  // namespace maidsafe
