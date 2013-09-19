@@ -133,17 +133,17 @@ void PmidManagerService::HandleMessage(
     const typename nfs::PutResponseFromPmidNodeToPmidManager::Sender& sender,
     const typename nfs::PutResponseFromPmidNodeToPmidManager::Receiver& receiver);
 
-//template<>
-//void PmidManagerService::HandleMessage(
-//    const nfs::DeleteRequestFromDataManagerToPmidManager& message,
-//    const typename nfs::DeleteRequestFromDataManagerToPmidManager::Sender& sender,
-//    const typename nfs::DeleteRequestFromDataManagerToPmidManager::Receiver& receiver);
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::DeleteRequestFromDataManagerToPmidManager& message,
+    const typename nfs::DeleteRequestFromDataManagerToPmidManager::Sender& sender,
+    const typename nfs::DeleteRequestFromDataManagerToPmidManager::Receiver& receiver);
 
-//template<>
-//void PmidManagerService::HandleMessage(
-//    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-//    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
-//    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& message,
+    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
+    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
 
 //template<>
 //void PmidManagerService::HandleMessage(
@@ -157,11 +157,11 @@ void PmidManagerService::HandleMessage(
 //    const typename nfs::AccountTransferFromPmidManagerToPmidManager::Sender& sender,
 //    const typename nfs::AccountTransferFromPmidManagerToPmidManager::Receiver& receiver);
 
-//template<>
-//void PmidManagerService::HandleMessage(
-//    const nfs::CreateAccountRequestFromMaidManagerToPmidManager& message,
-//    const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
-//    const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::CreateAccountRequestFromMaidManagerToPmidManager& message,
+    const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
+    const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);
 
 
 // ================================= Put Implementation ===========================================

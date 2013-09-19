@@ -47,9 +47,7 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace protobuf {
-  class PmidAccountResponse;
-}  // namespace protobuf
+namespace protobuf { class PmidAccountResponse; }
 
 namespace test {
 
@@ -327,8 +325,7 @@ void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_
 //      [this](const MessageType& message, const typename MessageType::Sender& sender) {
 //        return this->ValidateSender(message, sender);
 //      },
-//      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(
-//          RequiredRequests<MessageType>()()),
+//      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(RequiredRequests(message)),
 //      this,
 //      accumulator_mutex_)(message, sender, receiver);
 //}
@@ -344,79 +341,16 @@ void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_
 //      [this](const MessageType& message, const typename MessageType::Sender& sender) {
 //        return this->ValidateSender(message, sender);
 //      },
-//      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(
-//          RequiredRequests<MessageType>()()),
+//      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(RequiredRequests(message)),
 //      this,
 //      accumulator_mutex_)(message, sender, receiver);
 //}
 
 template<>
 void PmidNodeService::HandleMessage(
-    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& /*message*/,
-    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& /*sender*/,
-    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-//#ifndef TESTNG
-//  ValidateSender(message, sender);
-//#endif
-//  Accumulator<nfs::PmidNodeServiceMessages>::AddResult result;
-//  std::vector<nfs::PmidNodeServiceMessages> responses;
-//  {
-//    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-//    if (accumulator_.CheckHandled(message))
-//      return;
-//    auto add_request_predicate(
-//        [&](const std::vector<PmidNodeServiceMessages>& requests_in) {
-//          if (requests_in.size() < 2)
-//            return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-//          std::vector<protobuf::PmidAccountResponse> pmid_account_responses;
-//          protobuf::PmidAccountResponse pmid_account_response;
-//          nfs_client::protobuf::DataNameAndContentOrReturnCode data;
-//          nfs::GetPmidAccountResponseFromPmidManagerToPmidNode response;
-//          for (auto& request : requests_in) {
-//            response = boost::get<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(request);
-//            if (data.ParseFromString(response.contents->data->content.string())) {
-//              if (data.has_serialised_data_name_and_content()) {
-//                if (pmid_account_response.ParseFromString(
-//                        data.serialised_data_name_and_content())) {
-//                  pmid_account_responses.push_back(pmid_account_response);
-//                } else {
-//                  LOG(kWarning) << "Failed to parse the contents";
-//                }
-//              }
-//            } else {
-//              LOG(kWarning) << "Failed to parse the contents of the response";
-//            }
-//          }
-//          if ((static_cast<uint16_t>(requests_in.size()) >= (routing::Parameters::node_group_size / 2 + 1)) &&
-//               pmid_account_responses.size() >= routing::Parameters::node_group_size / 2)
-//            return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
-//          if ((requests_in.size() == routing::Parameters::node_group_size) ||
-//               (requests_in.size() - pmid_account_responses.size() >
-//                    routing::Parameters::node_group_size / 2))
-//            return Accumulator<PmidNodeServiceMessages>::AddResult::kFailure;
-//          return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-//        });
-//    result = accumulator_.AddPendingRequest(message, sender, add_request_predicate);
-//    if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
-//      accumulator_.SetHandled(message, sender);
-//      return;
-//    }
-//    if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kSuccess) {
-//      responses = accumulator_.Get(message);
-//      accumulator_.SetHandled(message, sender);
-//    }
-//  }
-//  if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kSuccess) {
-//    std::vector<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode> typed_responses;
-//    for (auto response : responses)
-//      typed_responses.push_back(
-//          boost::get<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
-//    HandleAccountResponses(typed_responses);
-//  }
-//  if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
-//    SendAccountRequest();
-//  }
-}
+    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& message,
+    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
+    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
 
 // Commented by Mahmoud on 15 Sep. Needs refactoring
 //template<>

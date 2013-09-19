@@ -587,12 +587,10 @@ struct OperationHandlerWrapper {
   TypedOperationHandler typed_operation_handler;
 };
 
-template <typename T>
-struct RequiredRequests {
-  int operator()() {
-    return detail::RequiredValue<typename T::Sender>()();
-  }
-};
+template<typename Message>
+int RequiredRequests(const Message&) {
+  return detail::RequiredValue<typename Message::Sender>()();
+}
 
 
 //template<typename Message>

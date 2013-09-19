@@ -64,8 +64,7 @@ void PmidManagerService::HandleMessage(
       [this](const MessageType& message, const MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
@@ -81,8 +80,7 @@ void PmidManagerService::HandleMessage(
       [this](const MessageType& message, const MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
@@ -105,8 +103,7 @@ void PmidManagerService::HandleMessage(
       [this](const MessageType& message, const MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
@@ -122,8 +119,7 @@ void PmidManagerService::HandleMessage(
       [this](const MessageType& message, const MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
-      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
-          RequiredRequests<MessageType>()()),
+      Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
       this,
       accumulator_mutex_)(message, sender, receiver);
 }

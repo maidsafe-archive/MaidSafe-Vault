@@ -25,8 +25,6 @@ namespace vault {
 
 namespace detail {
 
-const int PaddedWidth::value;
-
 template<>
 std::string ToFixedWidthString<1>(uint32_t number) {
   assert(number < 256);
