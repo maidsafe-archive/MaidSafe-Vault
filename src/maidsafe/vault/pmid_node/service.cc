@@ -67,7 +67,6 @@ PmidNodeService::PmidNodeService(const passport::Pmid& /*pmid*/,
 //  nfs_.GetElementList();  // TODO (Fraser) BEFORE_RELEASE Implementation needed
 }
 
-
 template<>
 void PmidNodeService::HandleMessage(
     const nfs::PutRequestFromPmidManagerToPmidNode& message,
@@ -84,7 +83,6 @@ void PmidNodeService::HandleMessage(
       this,
       accumulator_mutex_)(message, sender, receiver);
 }
-
 
 //void PmidNodeService::HandleAccountResponses(
 //  const std::vector<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>& responses) {
