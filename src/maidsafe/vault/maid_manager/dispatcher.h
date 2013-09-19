@@ -81,9 +81,9 @@ class MaidManagerDispatcher {
                                   const maidsafe_error& result,
                                   const nfs::MessageId& message_id);
 
-  void SendSync(const NodeId& destination_peer,
-                const MaidName& account_name,
-                const std::string& serialised_sync);
+  void SendSync(const MaidName& account_name,
+                const NonEmptyString& serialised_sync,
+                const nfs::MessageId& message_id);
 
   void SendAccountTransfer(const NodeId& destination_peer,
                            const MaidName& account_name,

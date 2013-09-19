@@ -71,8 +71,7 @@ class DataManagerService {
   template<typename Data>
   void HandlePutResponse(const typename Data::name& data_name,
                          const PmidName& pmid_node,
-                         const nfs::MessageId& message_id,
-                         const maidsafe_error& error);
+                         const nfs::MessageId& message_id);
   // Failure case
   template<typename Data>
   void HandlePutResponse(const Data& data,
@@ -151,6 +150,13 @@ void DataManagerService::HandleMessage(
     const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& ,
     const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver&);
 
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::PutResponseFromPmidManagerToDataManager& message,
+   const typename nfs::PutResponseFromPmidManagerToDataManager::Sender& sender,
+   const typename nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver);
+
+
 
 //template<>
 //void DataManagerService::HandleMessage(
@@ -175,12 +181,6 @@ void DataManagerService::HandleMessage(
 //   const nfs::DeleteRequestFromMaidManagerToDataManager& message,
 //   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender,
 //   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
-
-//template<>
-//void DataManagerService::HandleMessage(
-//   const nfs::PutResponseFromPmidManagerToDataManager& message,
-//   const typename nfs::PutResponseFromPmidManagerToDataManager::Sender& sender,
-//   const typename nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver);
 
 //template<>
 //void DataManagerService::HandleMessage(
@@ -246,12 +246,11 @@ void DataManagerService::HandlePutResponse(const Data& data,
 template<typename Data>
 void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
                                            const PmidName& pmid_node,
-                                           const nfs::MessageId& message_id,
-                                           const maidsafe_error& /*error*/) {
-  typename DataManager::Key key(data_name().raw_name, Data::Name::data_type);
+                                           const nfs::MessageId& message_id) {
+  typename DataManager::Key key(data_name.raw_name, data_name.type);
   sync_puts_.AddLocalAction(DataManager::UnresolvedPut(
       key,
-      ActionDataManagerPut(pmid_node, 0), // size should be retrieved or ignored
+      ActionDataManagerPut(pmid_node),
       routing_.kNodeId(),
       message_id));
   DoSync();

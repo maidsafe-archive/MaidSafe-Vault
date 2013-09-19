@@ -327,7 +327,7 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
 //  if (!unresolved_create_accounts.empty()) {
 //    sync_create_accounts_.IncrementSyncAttempts();
 //    for (const auto& unresolved_action : unresolved_create_accounts)
-//      nfs_.Sync(unresolved_action);
+//      dispatcher_.SendSync(unresolved_action);
 //  }
 //  auto unresolved_remove_accounts(sync_remove_accounts_.GetUnresolvedActions());
 //  if (!unresolved_remove_accounts.empty()) {
@@ -533,23 +533,22 @@ void MaidManagerService::HandleMessage(
       accumulator_mutex_)(message, sender, receiver);
 }
 
-//template<>
-//void HandleMessage(
-//    const nfs::PutResponseFromDataManagerToMaidManager& message,
-//    const typename nfs::PutResponseFromDataManagerToMaidManager::Sender& sender,
-//    const typename nfs::PutResponseFromDataManagerToMaidManager::Receiver& receiver) {
-//  typedef nfs::PutResponseFromDataManagerToMaidManager MessageType;
-//  OperationHandlerWrapper<MaidManagerService,
-//                          MessageType,
-//                          nfs::MaidManagerServiceMessages>(
-//      accumulator_,
-//      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-//        return this->ValidateSender(message, sender);
-//      },
-//      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(sender)),
-//      this,
-//      accumulator_mutex_)(message, sender, receiver);
-//}
+template<>
+void MaidManagerService::HandleMessage(
+    const nfs::PutResponseFromDataManagerToMaidManager& message,
+    const typename nfs::PutResponseFromDataManagerToMaidManager::Sender& sender,
+    const typename nfs::PutResponseFromDataManagerToMaidManager::Receiver& receiver) {
+  typedef nfs::PutResponseFromDataManagerToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType, nfs::MaidManagerServiceMessages>(
+      accumulator_,
+      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+        return this->ValidateSender(message, sender);
+      },
+      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(
+          RequiredRequests<MessageType>()()),
+      this,
+      accumulator_mutex_)(message, sender, receiver);
+}
 
 //template<>
 //void MaidManagerService::HandleMessage(

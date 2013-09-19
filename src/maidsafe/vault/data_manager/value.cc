@@ -28,8 +28,7 @@ namespace vault {
 
 
 DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_value)
-  : data_size_(),
-    subscribers_(),
+  : subscribers_(),
     online_pmids_(),
     offline_pmids_() {
   protobuf::DataManagerValue metadata_value_proto;
@@ -43,7 +42,6 @@ DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_va
       LOG(kError) << "Invalid data size";
       ThrowError(CommonErrors::invalid_parameter);
     }
-    data_size_ = metadata_value_proto.size();
 
     if (metadata_value_proto.subscribers() < 1) {
       LOG(kError) << "Invalid subscribers count";
@@ -62,16 +60,10 @@ DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_va
   }
 }
 
-DataManagerValue::DataManagerValue(const uint64_t& size)
-    : data_size_(size),
-      subscribers_(0),
+DataManagerValue::DataManagerValue()
+    : subscribers_(0),
       online_pmids_(),
-      offline_pmids_() {
-  if (data_size_ < 1) {
-    LOG(kError) << "Invalid data size";
-    ThrowError(CommonErrors::invalid_parameter);
-  }
-}
+      offline_pmids_() {}
 
 
 void DataManagerValue::AddPmid(const PmidName& pmid_name) {
@@ -121,9 +113,7 @@ DataManagerValue::serialised_type DataManagerValue::Serialise() const {
   if (subscribers_ < 1)
     ThrowError(CommonErrors::uninitialised);  // Cannot serialise if not a complete db value
   assert((online_pmids_.size() + offline_pmids_.size()) > 0);
-  assert(data_size_ > 0);
   protobuf::DataManagerValue metadata_value_proto;
-  metadata_value_proto.set_size(data_size_);
   metadata_value_proto.set_subscribers(subscribers_);
   for (const auto& i: online_pmids_)
     metadata_value_proto.add_online_pmid_name(i->string());
@@ -134,8 +124,7 @@ DataManagerValue::serialised_type DataManagerValue::Serialise() const {
 }
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
-  return lhs.data_size_ == rhs.data_size_ &&
-         lhs.subscribers_ == rhs.subscribers_ &&
+  return lhs.subscribers_ == rhs.subscribers_ &&
          lhs.online_pmids_ == rhs.online_pmids_ &&
          lhs.offline_pmids_ == rhs.offline_pmids_;
 }
