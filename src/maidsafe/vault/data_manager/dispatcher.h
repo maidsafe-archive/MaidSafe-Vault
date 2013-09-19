@@ -149,10 +149,12 @@ void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name,
                                            const nfs::MessageId& message_id) {
   typedef nfs::PutRequestFromDataManagerToPmidManager NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+
   NfsMessage nfs_message(
       message_id, nfs_vault::DataNameAndContent(Data::Name::data_type, data.name(), data.data()));
   RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(data.name(), routing_.kNodeId()),
+                         NfsMessage::Sender(routing::GroupId(data.name().string()),
+                                            routing::SingleId(routing_.kNodeId())),
                          NfsMessage::Receiver(NodeId(pmid_name.value.string())));
   routing_.Send(message);
 }
@@ -164,10 +166,12 @@ void DataManagerDispatcher::SendPutResponse(const MaidName& account_name,
                                             const nfs::MessageId& message_id) {
   typedef nfs::PutResponseFromDataManagerToMaidManager NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+
   NfsMessage nfs_message(message_id,
                          nfs_vault::DataNameAndCost(Data::Name::data_type, data_name.name(), cost));
   RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(data_name.raw_name, routing_.kNodeId()),
+                         NfsMessage::Sender(routing::GroupId(data_name().string()),
+                                            routing::SingleId(routing_.kNodeId())),
                          NfsMessage::Receiver(NodeId(account_name)));
   routing_.Send(message);
 }

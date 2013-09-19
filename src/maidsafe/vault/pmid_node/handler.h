@@ -35,11 +35,14 @@ class PmidNodeHandler {
   PmidNodeHandler(const boost::filesystem::path vault_root_dir);
 
   template<typename Data>
-  void Put(const Data& data);
+  void PutToPermanentStore(const Data& data);
 
-  template<typename Data, typename Store>
-  void Delete(const typename Data::name& name);
+  template<typename Data>
+  void DeleteFromPermanentStore(const typename Data::name& name);
 
+  boost::filesystem::path GetPermanentStorePath() const;
+
+ private:
   boost::filesystem::space_info space_info_;
   DiskUsage disk_total_;
   DiskUsage permanent_size_;
@@ -50,14 +53,15 @@ class PmidNodeHandler {
 };
 
 template<typename Data>
-void PmidNodeHandler::Put(const Data& data) {
-  permanent_data_store_.Put(data.name, data.data());
+void PmidNodeHandler::PutToPermanentStore(const Data& data) {
+  typename Data::Name data_name(GetDataNameVariant(data.name().type, data.name().raw_name));
+  permanent_data_store_.Put(data_name, data.data());
 }
 
-//template<typename Data>
-//void PmidNodeHandler::Delete<Data, data_store::PermanentStore>(const typename Data::name& name) {
-//  permanent_data_store_.Delete(name);
-//}
+template<typename Data>
+void PmidNodeHandler::DeleteFromPermanentStore(const typename Data::name& name) {
+  permanent_data_store_.Delete(name);
+}
 
 }  // namespace vault
 }  // namespace maidsafe

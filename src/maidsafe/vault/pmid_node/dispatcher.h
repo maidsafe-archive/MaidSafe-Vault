@@ -21,7 +21,7 @@
 
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message_types.h"
-
+#include "maidsafe/vault/messages.h"
 #include "maidsafe/vault/types.h"
 
 namespace maidsafe {
@@ -50,7 +50,6 @@ class PmidNodeDispatcher {
   routing::Routing& routing_;
 };
 
-
 template<typename Data>
 void PmidNodeDispatcher::SendPutRespnse(const Data& data,
                                         const nfs::MessageId& message_id,
@@ -77,7 +76,6 @@ void PmidNodeDispatcher::SendPutRespnse(const Data& data,
                                  NfsMessage::Receiver(routing::GroupId(routing_.kNodeId())));
   routing_.Send(routing_message);
 }
-
 
 }  // namespace vault
 
