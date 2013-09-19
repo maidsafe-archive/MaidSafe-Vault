@@ -74,19 +74,26 @@ struct UnresolvedAction {
 
   template<typename T>
   typename std::enable_if<HasSerialise<T, std::string(T::*)() const>::value, void>::type
-      SerialiseAction(protobuf::UnresolvedAction& proto_unresolved_action) const;
+      SerialiseAction(protobuf::UnresolvedAction& proto_unresolved_action) const {
+    proto_unresolved_action.set_serialised_action(action.Serialise());
+  }
 
   template<typename T>
   typename std::enable_if<!HasSerialise<T, std::string(T::*)() const>::value, void>::type
-      SerialiseAction(protobuf::UnresolvedAction& proto_unresolved_action) const;
+      SerialiseAction(protobuf::UnresolvedAction& /*proto_unresolved_action*/) const {}
 
   template<typename T>
   typename std::enable_if<HasSerialise<T, std::string(T::*)() const>::value, T>::type
-      ParseAction(const std::string& serialised_copy) const;
+      ParseAction(const std::string& serialised_copy) const {
+    protobuf::UnresolvedAction proto_unresolved_action;
+    if (!proto_unresolved_action.ParseFromString(serialised_copy))
+      ThrowError(CommonErrors::parsing_error);
+    return T(proto_unresolved_action.serialised_action());
+  }
 
   template<typename T>
   typename std::enable_if<!HasSerialise<T, std::string(T::*)() const>::value, T>::type
-      ParseAction(const std::string& serialised_copy) const;
+      ParseAction(const std::string& /*serialised_copy*/) const {}
 };
 
 
@@ -154,40 +161,6 @@ template<typename Key, typename Action>
 bool UnresolvedAction<Key, Action>::IsReadyForSync() const {
   // TODO(Fraser#5#): 2013-07-22 - Confirm sync_counter limit and remove magic number
   return !this_node_and_entry_id.first.IsZero() && sync_counter < 10;
-}
-
-template<typename Key, typename Action>
-template<typename T>
-typename std::enable_if<UnresolvedAction<Key, Action>::template HasSerialise<T,
-    std::string(T::*)() const>::value, void>::type
-        UnresolvedAction<Key, Action>::SerialiseAction(
-            protobuf::UnresolvedAction& proto_unresolved_action) const {
-  proto_unresolved_action.set_serialised_action(action.Serialise());
-}
-
-template<typename Key, typename Action>
-template<typename T>
-typename std::enable_if<!UnresolvedAction<Key, Action>::template HasSerialise<T,
-    std::string(T::*)() const>::value, void>::type
-        UnresolvedAction<Key, Action>::SerialiseAction(protobuf::UnresolvedAction&) const {}
-
-template<typename Key, typename Action>
-template<typename T>
-typename std::enable_if<UnresolvedAction<Key, Action>::template HasSerialise<T,
-    std::string(T::*)() const>::value, T>::type
-        UnresolvedAction<Key, Action>::ParseAction(const std::string& serialised_copy) const {
-  protobuf::UnresolvedAction proto_unresolved_action;
-  if (!proto_unresolved_action.ParseFromString(serialised_copy))
-    ThrowError(CommonErrors::parsing_error);
-  return T(proto_unresolved_action.serialised_action());
-}
-
-template<typename Key, typename Action>
-template<typename T>
-typename std::enable_if<!UnresolvedAction<Key, Action>::template HasSerialise<T,
-    std::string(T::*)() const>::value, T>::type
-        UnresolvedAction<Key, Action>::ParseAction(const std::string& /*serialised_copy*/) const {
-  return T();
 }
 
 }  // namespace vault

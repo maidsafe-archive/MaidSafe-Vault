@@ -62,7 +62,7 @@ DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_va
   }
 }
 
-DataManagerValue::DataManagerValue(const uint64_t& size)
+DataManagerValue::DataManagerValue(const int32_t& size)
     : data_size_(size),
       subscribers_(0),
       online_pmids_(),

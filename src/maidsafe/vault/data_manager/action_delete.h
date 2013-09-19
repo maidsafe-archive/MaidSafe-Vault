@@ -21,6 +21,8 @@
 
 #include <string>
 
+#include "boost/optional/optional.hpp"
+
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
@@ -36,7 +38,7 @@ struct ActionDataManagerDelete {
  public:
   void operator()(boost::optional<DataManagerValue>& value);
   std::string Serialise() const;
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kDecrementSubscribers;
+  static const nfs::MessageAction kActionId;
 
  private:
   ActionDataManagerDelete& operator=(ActionDataManagerDelete other);

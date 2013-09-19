@@ -29,7 +29,7 @@ namespace maidsafe {
 
 namespace vault {
 
-const nfs::MessageAction ActionMaidManagerPut::kActionId;
+const nfs::MessageAction ActionMaidManagerPut::kActionId(nfs::MessageAction::kPutRequest);
 
 ActionMaidManagerPut::ActionMaidManagerPut(int32_t cost) : kCost(cost) {}
 

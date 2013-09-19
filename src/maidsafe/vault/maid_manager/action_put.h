@@ -43,7 +43,7 @@ struct ActionMaidManagerPut {
 
   void operator()(MaidManagerMetadata& metadata, boost::optional<MaidManagerValue>& value) const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
+  static const nfs::MessageAction kActionId;
   const int32_t kCost;
 
  private:

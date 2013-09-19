@@ -61,7 +61,7 @@ void PmidManagerService::HandleMessage(
   typedef nfs::PutRequestFromDataManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
       accumulator_,
-      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+      [this](const MessageType& message, const MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
       Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
@@ -78,7 +78,7 @@ void PmidManagerService::HandleMessage(
   typedef nfs::PutResponseFromPmidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
       accumulator_,
-      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+      [this](const MessageType& message, const MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
       Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
@@ -102,7 +102,7 @@ void PmidManagerService::HandleMessage(
   typedef nfs::CreateAccountRequestFromMaidManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
       accumulator_,
-      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+      [this](const MessageType& message, const MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
       Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(
@@ -119,7 +119,7 @@ void PmidManagerService::HandleMessage(
   typedef nfs::DeleteRequestFromDataManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
       accumulator_,
-      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+      [this](const MessageType& message, const MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
       Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(

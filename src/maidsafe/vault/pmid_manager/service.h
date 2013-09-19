@@ -66,8 +66,8 @@ class PmidManagerService {
 
   void CreatePmidAccount(
       const nfs::CreateAccountRequestFromMaidManagerToPmidManager& message,
-      const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
-      const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);
+      const nfs::CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
+      const nfs::CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);
 //  void GetPmidTotals(const nfs::Message& message);
 //  void GetPmidAccount(const nfs::Message& message);
 

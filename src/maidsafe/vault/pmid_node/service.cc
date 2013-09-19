@@ -75,7 +75,7 @@ void PmidNodeService::HandleMessage(
   typedef nfs::PutRequestFromPmidManagerToPmidNode MessageType;
   OperationHandlerWrapper<PmidNodeService, MessageType, nfs::PmidNodeServiceMessages>(
       accumulator_,
-      [this](const MessageType& message, const typename MessageType::Sender& sender) {
+      [this](const MessageType& message, const MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);
       },
       Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(
