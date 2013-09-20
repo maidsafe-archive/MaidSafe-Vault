@@ -397,7 +397,7 @@ void PmidNodeService::HandleDelete(const typename Data::Name& name,
                                    const nfs::MessageId& /*message_id*/) {
   try {
     {
-      handler_.DeleteFromPermanentStore(nfs_vault::DataName(name.type, name.raw_name));
+      handler_.DeleteFromPermanentStore<Data>(nfs_vault::DataName(name.type, name.raw_name));
       // accumulator_.SetHandled(message, sender); To be moved to OperationWrapper
     }
   } catch(const std::exception& /*ex*/) {
