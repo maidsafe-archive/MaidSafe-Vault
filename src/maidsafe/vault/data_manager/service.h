@@ -152,9 +152,9 @@ void DataManagerService::HandleMessage(
 
 template<>
 void DataManagerService::HandleMessage(
-   const nfs::PutResponseFromPmidManagerToDataManager& message,
-   const typename nfs::PutResponseFromPmidManagerToDataManager::Sender& sender,
-   const typename nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver);
+   const nfs::PutFailureFromPmidManagerToDataManager& message,
+   const typename nfs::PutFailureFromPmidManagerToDataManager::Sender& sender,
+   const typename nfs::PutFailureFromPmidManagerToDataManager::Receiver& receiver);
 
 
 

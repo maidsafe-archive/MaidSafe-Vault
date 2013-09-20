@@ -47,11 +47,10 @@ inline bool ForThisPersona(const Message& message) {
 PmidManagerService::PmidManagerService(const passport::Pmid& /*pmid*/,
                                        routing::Routing& routing)
     : routing_(routing),
-
+      asio_service_(1),
       accumulator_mutex_(),
       accumulator_(),
       dispatcher_(routing_) {}
-//      pmid_account_handler_(db, routing.kNodeId()),
 
 template<>
 void PmidManagerService::HandleMessage(
@@ -71,10 +70,10 @@ void PmidManagerService::HandleMessage(
 
 template<>
 void PmidManagerService::HandleMessage(
-    const nfs::PutResponseFromPmidNodeToPmidManager& message,
-    const typename nfs::PutResponseFromPmidNodeToPmidManager::Sender& sender,
-    const typename nfs::PutResponseFromPmidNodeToPmidManager::Receiver& receiver) {
-  typedef nfs::PutResponseFromPmidNodeToPmidManager MessageType;
+    const nfs::PutFailureFromPmidNodeToPmidManager& message,
+    const typename nfs::PutFailureFromPmidNodeToPmidManager::Sender& sender,
+    const typename nfs::PutFailureFromPmidNodeToPmidManager::Receiver& receiver) {
+  typedef nfs::PutFailureFromPmidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
       accumulator_,
       [this](const MessageType& message, const MessageType::Sender& sender) {

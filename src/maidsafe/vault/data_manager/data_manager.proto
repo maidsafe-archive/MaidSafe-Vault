@@ -19,8 +19,8 @@
 package maidsafe.vault.protobuf;
 
 message DataManagerValue {
-  required int32 size = 1;
-  optional int64 subscribers = 2;
+  optional int64 subscribers = 1;
+  required int32 store_failures = 2;
   repeated bytes online_pmid_name = 3;
   repeated bytes offline_pmid_name = 4;
 }

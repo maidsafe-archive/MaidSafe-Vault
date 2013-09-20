@@ -52,6 +52,7 @@ class DataManagerValue {
 
  private:
   int64_t subscribers_;
+  int32_t store_failures_;
   std::set<PmidName> online_pmids_, offline_pmids_;
 };
 

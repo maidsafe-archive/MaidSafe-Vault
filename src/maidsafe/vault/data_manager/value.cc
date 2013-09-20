@@ -28,21 +28,16 @@ namespace vault {
 
 
 DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_value)
-  : subscribers_(),
+  : subscribers_(0),
+    store_failures_(0),
     online_pmids_(),
     offline_pmids_() {
   protobuf::DataManagerValue metadata_value_proto;
   if (!metadata_value_proto.ParseFromString(serialised_metadata_value->string()) ||
-      metadata_value_proto.size() != 0 ||
       metadata_value_proto.subscribers() < 1) {
     LOG(kError) << "Failed to read or parse serialised metadata value";
     ThrowError(CommonErrors::parsing_error);
   } else {
-    if (metadata_value_proto.size() < 1) {
-      LOG(kError) << "Invalid data size";
-      ThrowError(CommonErrors::invalid_parameter);
-    }
-
     if (metadata_value_proto.subscribers() < 1) {
       LOG(kError) << "Invalid subscribers count";
       ThrowError(CommonErrors::invalid_parameter);
@@ -62,6 +57,7 @@ DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_va
 
 DataManagerValue::DataManagerValue()
     : subscribers_(0),
+      store_failures_(0),
       online_pmids_(),
       offline_pmids_() {}
 
@@ -115,6 +111,7 @@ DataManagerValue::serialised_type DataManagerValue::Serialise() const {
   assert((online_pmids_.size() + offline_pmids_.size()) > 0);
   protobuf::DataManagerValue metadata_value_proto;
   metadata_value_proto.set_subscribers(subscribers_);
+  metadata_value_proto.set_store_failures(store_failures_);
   for (const auto& i: online_pmids_)
     metadata_value_proto.add_online_pmid_name(i->string());
   for (const auto& i: offline_pmids_)
@@ -125,6 +122,7 @@ DataManagerValue::serialised_type DataManagerValue::Serialise() const {
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
   return lhs.subscribers_ == rhs.subscribers_ &&
+         lhs.store_failures_ == rhs.store_failures_ &&
          lhs.online_pmids_ == rhs.online_pmids_ &&
          lhs.offline_pmids_ == rhs.offline_pmids_;
 }

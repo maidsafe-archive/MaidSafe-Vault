@@ -52,11 +52,11 @@ class PmidManagerDispatcher {
                        const nfs::MessageId& message_id,
                        const maidsafe_error& error_code);
 
-  // Handing suceess
   template<typename Data>
-  void SendPutResponse(const typename Data::Name& name,
-                       const PmidName& pmid_node,
-                       const nfs::MessageId& message_id);
+  void SendPutFailure(const typename Data::Name& name,
+                      const PmidName& pmid_node,
+                      const maidsafe_error& error_code,
+                      const nfs::MessageId& message_id);
 
 //  void SendStateChange(const PmidName& pmid_node, const typename Data::Name& data_name);
   void SendSync(const PmidName& pmid_node, const std::string& serialised_sync);
@@ -109,37 +109,38 @@ void PmidManagerDispatcher::SendDeleteRequest(const nfs::MessageId& message_id,
   routing_.Send(message);
 }
 
-template<typename Data>
-void PmidManagerDispatcher::SendPutResponse(const Data& data,
-                                            const PmidName& pmid_node,
-                                            const nfs::MessageId& message_id,
-                                            const maidsafe_error& error_code) {
-  typedef nfs::PutResponseFromPmidManagerToDataManager NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  NfsMessage nfs_message(message_id,
-                         nfs_client::DataNameAndContentAndReturnCode(
-                             data.name.type,
-                             data.name(),
-                             data.data(),
-                             nfs_client::ReturnCode(error_code)));
-  RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
-                                            routing::SingleId(routing_.kNodeId())),
-                         NfsMessage::Receiver(NodeId(data.name()->string())));
-  routing_.Send(message);
-}
+//template<typename Data>
+//void PmidManagerDispatcher::SendPutResponse(const Data& data,
+//                                            const PmidName& pmid_node,
+//                                            const nfs::MessageId& message_id,
+//                                            const maidsafe_error& error_code) {
+//  typedef nfs::PutResponseFromPmidManagerToDataManager NfsMessage;
+//  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+//  NfsMessage nfs_message(message_id,
+//                         nfs_client::DataNameAndContentAndReturnCode(
+//                             data.name.type,
+//                             data.name(),
+//                             data.data(),
+//                             nfs_client::ReturnCode(error_code)));
+//  RoutingMessage message(nfs_message.Serialise(),
+//                         NfsMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
+//                                            routing::SingleId(routing_.kNodeId())),
+//                         NfsMessage::Receiver(NodeId(data.name()->string())));
+//  routing_.Send(message);
+//}
 
 template<typename Data>
-void PmidManagerDispatcher::SendPutResponse(const typename Data::Name& name,
-                                            const PmidName& pmid_node,
-                                            const nfs::MessageId& message_id) {
-  typedef nfs::PutResponseFromPmidManagerToDataManager NfsMessage;
+void PmidManagerDispatcher::SendPutFailure(const typename Data::Name& name,
+                                           const PmidName& pmid_node,
+                                           const maidsafe_error& error_code,
+                                           const nfs::MessageId& message_id) {
+  typedef nfs::PutFailureFromPmidManagerToDataManager NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   NfsMessage nfs_message(message_id,
-                         nfs_client::DataNameAndContentAndReturnCode(
+                         nfs_client::DataNameAndReturnCode(
                              name.type,
                              name.raw_name,
-                             nfs_client::ReturnCode(CommonErrors::success)));
+                             nfs_client::ReturnCode(error_code)));
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
                                             routing::SingleId(routing_.kNodeId())),

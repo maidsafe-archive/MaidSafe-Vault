@@ -83,9 +83,9 @@ class PmidManagerService {
                          const maidsafe_error& error);
   // Success Handle
   template<typename Data>
-  void HandlePutResponse(const typename Data::Name& data,
-                         const PmidName& pmid_node,
-                         const nfs::MessageId& message_id);
+  void HandlePutFailure(const typename Data::Name& data,
+                        const PmidName& pmid_node,
+                        const nfs::MessageId& message_id);
   void DoSync();
 
 //  template<typename Data>
@@ -103,6 +103,7 @@ class PmidManagerService {
 //  void AddLocalUnresolvedEntryThenSync(const nfs::Message& message);
 
   routing::Routing& routing_;
+  AsioService asio_service_;
   std::mutex accumulator_mutex_;
   Accumulator<nfs::PmidManagerServiceMessages> accumulator_;
 //  PmidAccountHandler pmid_account_handler_;
@@ -127,9 +128,9 @@ void PmidManagerService::HandleMessage(
 
 template<>
 void PmidManagerService::HandleMessage(
-    const nfs::PutResponseFromPmidNodeToPmidManager& message,
-    const typename nfs::PutResponseFromPmidNodeToPmidManager::Sender& sender,
-    const typename nfs::PutResponseFromPmidNodeToPmidManager::Receiver& receiver);
+    const nfs::PutFailureFromPmidNodeToPmidManager& message,
+    const typename nfs::PutFailureFromPmidNodeToPmidManager::Sender& sender,
+    const typename nfs::PutFailureFromPmidNodeToPmidManager::Receiver& receiver);
 
 template<>
 void PmidManagerService::HandleMessage(
@@ -181,10 +182,10 @@ void PmidManagerService::HandlePutResponse(const Data& data,
 }
 
 template<typename Data>
-void PmidManagerService::HandlePutResponse(const typename Data::Name& name,
-                                           const PmidName& pmid_node,
-                                           const nfs::MessageId& message_id) {
-  dispatcher_.SendPutResponse<Data>(name, pmid_node, message_id);
+void PmidManagerService::HandlePutFailure(const typename Data::Name& name,
+                                          const PmidName& pmid_node,
+                                          const nfs::MessageId& message_id) {
+  dispatcher_.SendPutFailure<Data>(name, pmid_node, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node),
                              name.raw_name,
                              name.type);

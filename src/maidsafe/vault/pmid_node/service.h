@@ -308,9 +308,8 @@ template<typename Data>
 void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_id) {
   try {
     handler_.PutToPermanentStore(data);
-    dispatcher_.SendPutRespnse(data, message_id, make_error_code(CommonErrors::success));
   } catch(const maidsafe_error& error) {
-    dispatcher_.SendPutRespnse(data, message_id, error);
+    dispatcher_.SendPutFailure(data, message_id, error);
   }
 }
 

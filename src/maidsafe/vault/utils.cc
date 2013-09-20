@@ -128,44 +128,27 @@ void DoOperation(ServiceHandlerType* service,
 
 template<typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
-                 const nfs::PutResponseFromPmidNodeToPmidManager& message,
-                 const nfs::PutResponseFromPmidNodeToPmidManager::Sender& sender,
-                 const nfs::PutResponseFromPmidNodeToPmidManager::Receiver& /*receiver*/) {
+                 const nfs::PutFailureFromPmidNodeToPmidManager& message,
+                 const nfs::PutFailureFromPmidNodeToPmidManager::Sender& sender,
+                 const nfs::PutFailureFromPmidNodeToPmidManager::Receiver& /*receiver*/) {
   auto data_name(detail::GetNameVariant(*message.contents));
-  if (message.contents->content) {
-    PutResponseFailureVisitor<ServiceHandlerType> put_visitor(
-        service,
-        message.contents->content,
-        sender,
-        message.contents->return_code,
-        message.message_id);
-    boost::apply_visitor(put_visitor, data_name);
-  } else {
-    PutResponseSuccessVisitor<ServiceHandlerType> put_response_visitor(
-        service, sender, message.message_id);
-    boost::apply_visitor(put_response_visitor, data_name);
-  }
+  PutResponseFailureVisitor<ServiceHandlerType> put_visitor(
+      service, sender, message.contents->return_code, message.message_id);
+  boost::apply_visitor(put_visitor, data_name);
 }
 
 template<typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
-                 const nfs::PutResponseFromPmidManagerToDataManager& message,
-                 const nfs::PutResponseFromPmidManagerToDataManager::Sender& sender,
-                 const nfs::PutResponseFromPmidManagerToDataManager::Receiver& /*receiver*/) {
+                 const nfs::PutFailureFromPmidManagerToDataManager & message,
+                 const nfs::PutFailureFromPmidManagerToDataManager::Sender& sender,
+                 const nfs::PutFailureFromPmidManagerToDataManager::Receiver& /*receiver*/) {
   auto data_name(detail::GetNameVariant(*message.contents));
-  if (message.contents->content) {
-    PutResponseFailureVisitor<ServiceHandlerType> put_visitor(
-        service,
-        message.contents->content,
-        sender,
-        message.contents->return_code,
-        message.message_id);
-    boost::apply_visitor(put_visitor, data_name);
-  } else {
-    PutResponseSuccessVisitor<ServiceHandlerType> put_response_visitor(
-        service, sender, message.message_id);
-    boost::apply_visitor(put_response_visitor, data_name);
-  }
+  PutResponseFailureVisitor<ServiceHandlerType> put_visitor(
+      service,
+      sender,
+      message.contents->return_code,
+      message.message_id);
+  boost::apply_visitor(put_visitor, data_name);
 }
 
 template<typename ServiceHandlerType>

@@ -179,15 +179,9 @@ void DoOperation(ServiceHandlerType* service,
 
 template<typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
-                 const nfs::PutResponseFromPmidNodeToPmidManager& message,
-                 const nfs::PutResponseFromPmidNodeToPmidManager::Sender& sender,
-                 const nfs::PutResponseFromPmidNodeToPmidManager::Receiver& receiver);
-
-template<typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
-                 const nfs::PutResponseFromPmidManagerToDataManager& message,
-                 const nfs::PutResponseFromPmidManagerToDataManager::Sender& sender,
-                 const nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver);
+                 const nfs::PutFailureFromPmidNodeToPmidManager& message,
+                 const nfs::PutFailureFromPmidNodeToPmidManager::Sender& sender,
+                 const nfs::PutFailureFromPmidNodeToPmidManager::Receiver& receiver);
 
 template<typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
