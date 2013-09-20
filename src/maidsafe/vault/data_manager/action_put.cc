@@ -24,18 +24,12 @@
 namespace maidsafe {
 namespace vault {
 
-ActionDataManagerPut::ActionDataManagerPut(const PmidName& pmid_name, const uint32_t& size)
-    : kSize(size),
-      kPmidName(pmid_name) {}
+ActionDataManagerPut::ActionDataManagerPut(PmidName pmid_name)
+    : kPmidName(std::move(pmid_name)) {}
 
 ActionDataManagerPut::ActionDataManagerPut(
     const std::string& serialised_action)
-    : kSize([&]()->int32_t {
-              protobuf::ActionDataManagerPut action_put_proto;
-              action_put_proto.ParseFromString(serialised_action);
-              return action_put_proto.size();
-            }()),
-      kPmidName([&]()->PmidName {
+    : kPmidName([&]()->PmidName {
                   protobuf::ActionDataManagerPut action_put_proto;
                   action_put_proto.ParseFromString(serialised_action);
                   return PmidName(Identity(action_put_proto.pmid_name()));
@@ -43,18 +37,15 @@ ActionDataManagerPut::ActionDataManagerPut(
 
 ActionDataManagerPut::ActionDataManagerPut(
     const ActionDataManagerPut& other)
-    : kSize(other.kSize),
-      kPmidName(other.kPmidName) {}
+    : kPmidName(other.kPmidName) {}
 
 ActionDataManagerPut::ActionDataManagerPut(
     ActionDataManagerPut&& other)
-    : kSize(std::move(other.kSize)),
-      kPmidName(std::move(other.kPmidName)) {}
+        : kPmidName(std::move(other.kPmidName)) {}
 
 std::string ActionDataManagerPut::Serialise() const {
   protobuf::ActionDataManagerPut action_put_proto;
   action_put_proto.set_pmid_name(kPmidName.value.string());
-  action_put_proto.set_size(kSize);
   return action_put_proto.SerializeAsString();
 }
 
@@ -63,7 +54,7 @@ void ActionDataManagerPut::operator()(boost::optional<DataManagerValue>& value) 
     value->IncrementSubscribers();
     value->AddPmid(kPmidName);
   } else {
-    value.reset(DataManagerValue(kSize));
+    value.reset(DataManagerValue());
     value->IncrementSubscribers();
     value->AddPmid(kPmidName);
   }
@@ -71,7 +62,7 @@ void ActionDataManagerPut::operator()(boost::optional<DataManagerValue>& value) 
 
 bool operator==(const ActionDataManagerPut& lhs,
                 const ActionDataManagerPut& rhs) {
-  return lhs.kPmidName == rhs.kPmidName && lhs.kSize == rhs.kSize;
+  return lhs.kPmidName == rhs.kPmidName;
 }
 
 bool operator!=(const ActionDataManagerPut& lhs,

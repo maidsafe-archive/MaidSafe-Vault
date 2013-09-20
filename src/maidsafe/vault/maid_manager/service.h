@@ -34,11 +34,13 @@
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
+
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/message_wrapper.h"
 #include "maidsafe/nfs/utils.h"
+#include "maidsafe/nfs/client/data_getter.h"
 
-//#include "maidsafe/vault/accumulator.h"
+#include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/sync.h"
@@ -98,7 +100,9 @@ class MaidManagerService {
 
   // =============== Put/Delete data ===============================================================
   template<typename Data>
-  void HandlePut(const MaidName& account_name, const Data& data, const PmidName& pmid_node_hint,
+  void HandlePut(const MaidName& account_name,
+                 const Data& data,
+                 const PmidName& pmid_node_hint,
                  const nfs::MessageId& message_id);
 
   template <typename Data>
@@ -152,11 +156,10 @@ class MaidManagerService {
   void DoSync();
 
   routing::Routing& routing_;
-//  nfs::PublicKeyGetter& public_key_getter_;
+//  nfs_client::DataGetter data_getter_;
   GroupDb<MaidManager> group_db_;
   std::mutex accumulator_mutex_;
   Accumulator<nfs::MaidManagerServiceMessages> accumulator_;
-//  MaidAccountHandler handler_;
   MaidManagerDispatcher dispatcher_;
   Sync<MaidManager::UnresolvedCreateAccount> sync_create_accounts_;
   Sync<MaidManager::UnresolvedRemoveAccount> sync_remove_accounts_;
@@ -296,9 +299,7 @@ void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
                                            const int32_t& cost,
                                            const nfs::MessageId& message_id) {
   typename MaidManager::Key group_key(
-      typename MaidManager::GroupName(maid_name.value),
-      data_name,
-      Data::Name::data_type);
+      typename MaidManager::GroupName(maid_name.value), data_name.raw_name, data_name.type);
   sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(
       group_key, ActionMaidManagerPut(cost), routing_.kNodeId(), message_id));
   DoSync();

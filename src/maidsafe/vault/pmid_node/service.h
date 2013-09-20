@@ -393,7 +393,7 @@ void PmidNodeService::HandleMessage(
 //}
 
 template<typename Data>
-void PmidNodeService::HandleDelete(const typename Data::Name& name,
+void PmidNodeService::HandleDelete(const typename Data::Name& /*name*/,
                                    const nfs::MessageId& /*message_id*/) {
   try {
     {

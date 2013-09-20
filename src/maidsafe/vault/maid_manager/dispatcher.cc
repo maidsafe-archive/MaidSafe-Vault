@@ -99,21 +99,9 @@ void MaidManagerDispatcher::SendUnregisterPmidResponse(const MaidName& /*account
 //  routing_.Send(message);
 }
 
-void MaidManagerDispatcher::SendSync(const NodeId& /*destination_peer*/,
-                                     const MaidName& /*account_name*/,
-                                     const std::string& /*serialised_sync*/) {
-//  typedef routing::GroupToSingleMessage RoutingMessage;
-//  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-//  static const nfs::MessageAction kAction(nfs::MessageAction::kSynchronise);
-//  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidManager);
-
-//  nfs::Message::Data inner_data;
-//  inner_data.content = NonEmptyString(serialised_sync);
-//  inner_data.action = kAction;
-//  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-//  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-//                         routing::SingleId(destination_peer), cacheable);
-//  routing_.Send(message);
+void MaidManagerDispatcher::SendSync(const MaidName& /*account_name*/,
+                                     const NonEmptyString& /*serialised_action*/,
+                                     const nfs::MessageId& /*message_id*/) {
 }
 
 void MaidManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer*/,

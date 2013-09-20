@@ -88,23 +88,21 @@ void DataManagerService::HandleMessage(
 }
 
 // PutResponseFromPmidManagerToDataManager
-//template<>
-//void DataManagerService::HandleMessage(
-//   const nfs::PutResponseFromPmidManagerToDataManager& message,
-//   const typename nfs::PutResponseFromPmidManagerToDataManager::Sender& sender,
-//   const typename nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver) {
-//  typedef nfs::PutResponseFromPmidManagerToDataManager MessageType;
-//  OperationHandlerWrapper<DataManagerService,
-//                          MessageType,
-//                          nfs::DataManagerServiceMessages>(
-//      accumulator_,
-//      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-//        return this->ValidateSender(message, sender);
-//      },
-//      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
-//      this,
-//      accumulator_mutex_)(message, sender, receiver);
-//}
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::PutResponseFromPmidManagerToDataManager& message,
+   const typename nfs::PutResponseFromPmidManagerToDataManager::Sender& sender,
+   const typename nfs::PutResponseFromPmidManagerToDataManager::Receiver& receiver) {
+  typedef nfs::PutResponseFromPmidManagerToDataManager MessageType;
+  OperationHandlerWrapper<DataManagerService, MessageType, nfs::DataManagerServiceMessages>(
+      accumulator_,
+      [this](const MessageType& message, const MessageType::Sender& sender) {
+        return this->ValidateSender(message, sender);
+      },
+      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
+      this,
+      accumulator_mutex_)(message, sender, receiver);
+}
 
 // =============== Sync ============================================================================
 //template<>

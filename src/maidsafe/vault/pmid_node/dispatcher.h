@@ -39,7 +39,6 @@ class PmidNodeDispatcher {
   void SendPutRespnse(const Data& data,
                       const nfs::MessageId& message_id,
                       const maidsafe_error& error);
-
  private:
   PmidNodeDispatcher();
   PmidNodeDispatcher(const PmidNodeDispatcher&);

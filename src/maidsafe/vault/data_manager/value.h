@@ -37,7 +37,7 @@ class DataManagerValue {
  public:
   typedef TaggedValue<NonEmptyString, struct SerialisedDataManagerValueTag> serialised_type;
   explicit DataManagerValue(const serialised_type& serialised_metadata_value);
-  DataManagerValue(const int32_t& size_in);
+  DataManagerValue();
   serialised_type Serialise() const;
 
   void AddPmid(const PmidName& pmid_name);
@@ -51,7 +51,6 @@ class DataManagerValue {
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
 
  private:
-  int32_t data_size_;
   int64_t subscribers_;
   std::set<PmidName> online_pmids_, offline_pmids_;
 };

@@ -32,7 +32,7 @@ namespace maidsafe {
 namespace vault {
 
 struct ActionDataManagerPut {
-  ActionDataManagerPut(const PmidName& pmid_name, const uint32_t& size);
+  ActionDataManagerPut(PmidName pmid_name);
   explicit ActionDataManagerPut(const std::string& serialised_action);
   ActionDataManagerPut(const ActionDataManagerPut& other);
   ActionDataManagerPut(ActionDataManagerPut&& other);
@@ -42,7 +42,6 @@ struct ActionDataManagerPut {
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
-  const uint32_t kSize;
   const PmidName kPmidName;
 
  private:

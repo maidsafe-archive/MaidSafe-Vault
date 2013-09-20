@@ -78,16 +78,14 @@ class PmidManagerService {
   // Failure Handle
   template<typename Data>
   void HandlePutResponse(const Data& data,
-                         const nfs::MessageId& message_id,
                          const PmidName& pmid_node,
+                         const nfs::MessageId& message_id,
                          const maidsafe_error& error);
   // Success Handle
   template<typename Data>
   void HandlePutResponse(const typename Data::Name& data,
-                         const nfs::MessageId& message_id,
                          const PmidName& pmid_node,
-                         const maidsafe_error& error);
-
+                         const nfs::MessageId& message_id);
   void DoSync();
 
 //  template<typename Data>
@@ -175,8 +173,8 @@ void PmidManagerService::HandlePut(const Data& data,
 
 template<typename Data>
 void PmidManagerService::HandlePutResponse(const Data& data,
-                                           const nfs::MessageId& message_id,
                                            const PmidName& pmid_node,
+                                           const nfs::MessageId& message_id,
                                            const maidsafe_error& error) {
   // DIFFERENT ERRORS MUST BE HANDLED DIFFERENTLY
   dispatcher_.SendPutResponse(data, pmid_node, message_id, error);
@@ -184,18 +182,17 @@ void PmidManagerService::HandlePutResponse(const Data& data,
 
 template<typename Data>
 void PmidManagerService::HandlePutResponse(const typename Data::Name& name,
-                                           const nfs::MessageId& message_id,
                                            const PmidName& pmid_node,
-                                           const maidsafe_error& error) {
-  dispatcher_.SendPutResponse<Data>(name, pmid_node, message_id, error);
-  typename PmidManager::Key group_key(PmidManager::GroupName(pmid_node),
-                                      name.raw_name,
-                                      name.type);
+                                           const nfs::MessageId& message_id) {
+  dispatcher_.SendPutResponse<Data>(name, pmid_node, message_id);
+  PmidManager::Key group_key(PmidManager::GroupName(pmid_node),
+                             name.raw_name,
+                             name.type);
   sync_puts_.AddLocalAction(
-      typename PmidManager::UnresolvedPut(group_key,
-                                          ActionPmidManagerPut(1/* Needs size*/),
-                                          routing_.kNodeId(),
-                                          message_id));
+      PmidManager::UnresolvedPut(group_key,
+                                 ActionPmidManagerPut(1024/* Needs size from timer cons*/),
+                                 routing_.kNodeId(),
+                                 message_id));
   DoSync();
 }
 
