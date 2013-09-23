@@ -27,6 +27,7 @@
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/data_manager/data_manager.h"
 
 
 namespace maidsafe {
@@ -35,9 +36,11 @@ namespace vault {
 
 class DataManagerValue;
 
+typedef std::function<void(const NonEmptyString&)> IntegrityCheckFunctor;
+
 struct ActionDataManagerAddPmid {
-  explicit ActionDataManagerAddPmid(const PmidName& pmid_name);
-  explicit ActionDataManagerAddPmid(const std::string& serialised_action);
+  ActionDataManagerAddPmid(const PmidName& pmid_name);
+  ActionDataManagerAddPmid(const std::string& serialised_action);
   ActionDataManagerAddPmid(const ActionDataManagerAddPmid& other);
   ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other);
   std::string Serialise() const;

@@ -52,9 +52,11 @@ std::string ActionDataManagerAddPmid::Serialise() const {
 }
 
 void ActionDataManagerAddPmid::operator()(boost::optional<DataManagerValue>& value) {
-//  if (!value)
-//    value.reset(new DataManagerValue(kPmidName, size)); // TODO(Team): Size required here
+  if (!value)
+    value.reset();
   value->AddPmid(kPmidName);
+  if (value->Subscribers() == 0)
+    value->IncrementSubscribers();
 }
 
 bool operator==(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs) {

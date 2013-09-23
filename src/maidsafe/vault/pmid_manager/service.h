@@ -36,6 +36,7 @@
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/pmid_manager/dispatcher.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
+#include "maidsafe/vault/pmid_manager/action_delete.h"
 #include "maidsafe/vault/sync.h"
 
 
@@ -75,16 +76,10 @@ class PmidManagerService {
   template<typename Data>
   void HandlePut(const Data& data, const PmidName& pmid_node, const nfs::MessageId& message_id);
 
-  // Failure Handle
-  template<typename Data>
-  void HandlePutResponse(const Data& data,
-                         const PmidName& pmid_node,
-                         const nfs::MessageId& message_id,
-                         const maidsafe_error& error);
-  // Success Handle
   template<typename Data>
   void HandlePutFailure(const typename Data::Name& data,
                         const PmidName& pmid_node,
+                        const maidsafe_error& error_code,
                         const nfs::MessageId& message_id);
   void DoSync();
 
@@ -109,6 +104,7 @@ class PmidManagerService {
 //  PmidAccountHandler pmid_account_handler_;
   PmidManagerDispatcher dispatcher_;
   Sync<PmidManager::UnresolvedPut> sync_puts_;
+  Sync<PmidManager::UnresolvedDelete> sync_deletes_;
 };
 
 // ============================= Handle Message Specialisations ===================================
@@ -170,30 +166,31 @@ void PmidManagerService::HandlePut(const Data& data,
                                    const PmidName& pmid_node,
                                    const nfs::MessageId& message_id) {
   dispatcher_.SendPutRequest(data, pmid_node, message_id);
-}
-
-template<typename Data>
-void PmidManagerService::HandlePutResponse(const Data& data,
-                                           const PmidName& pmid_node,
-                                           const nfs::MessageId& message_id,
-                                           const maidsafe_error& error) {
-  // DIFFERENT ERRORS MUST BE HANDLED DIFFERENTLY
-  dispatcher_.SendPutResponse(data, pmid_node, message_id, error);
+  PmidManager::Key group_key(PmidManager::GroupName(pmid_node),
+                             data.name().raw_name,
+                             data.name().type);
+  sync_puts_.AddLocalAction(
+      PmidManager::UnresolvedPut(group_key,
+                                 ActionPmidManagerPut(data.data().string().size()),
+                                 routing_.kNodeId(),
+                                 message_id));
+  DoSync();
 }
 
 template<typename Data>
 void PmidManagerService::HandlePutFailure(const typename Data::Name& name,
                                           const PmidName& pmid_node,
+                                          const maidsafe_error& error_code,
                                           const nfs::MessageId& message_id) {
-  dispatcher_.SendPutFailure<Data>(name, pmid_node, message_id);
+  dispatcher_.SendPutFailure<Data>(name, pmid_node, error_code, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node),
                              name.raw_name,
                              name.type);
-  sync_puts_.AddLocalAction(
-      PmidManager::UnresolvedPut(group_key,
-                                 ActionPmidManagerPut(1024/* Needs size from timer cons*/),
-                                 routing_.kNodeId(),
-                                 message_id));
+  sync_deletes_.AddLocalAction(
+      PmidManager::UnresolvedDelete(group_key,
+                                    ActionPmidManagerDelete(),
+                                    routing_.kNodeId(),
+                                    message_id));
   DoSync();
 }
 

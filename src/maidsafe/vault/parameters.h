@@ -36,6 +36,8 @@ struct Parameters {
   static size_t max_recent_data_list_size;
   // Max count of elements allowed in each account file
   static int max_file_element_count;
+  // Size of the string passed for integrity checking
+  static int integrity_check_string_size;
 
  private:
   Parameters();

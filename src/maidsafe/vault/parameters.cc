@@ -33,6 +33,7 @@ namespace detail {
 const int Parameters::kMinNetworkHealth(12);
 size_t Parameters::max_recent_data_list_size(1000);
 int Parameters::max_file_element_count(10000);
+int Parameters::integrity_check_string_size(64);
 
 }  // namespace detail
 

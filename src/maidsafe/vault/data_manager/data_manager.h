@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_H_
 #define MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_H_
 
+#include <functional>
+
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/key.h"
@@ -39,7 +41,7 @@ class Metadata;
 
 struct ActionDataManagerPut;
 //struct ActionDataManagerDelete;
-//struct ActionDataManagerAddPmid;
+struct ActionDataManagerAddPmid;
 //struct ActionDataManagerRemovePmid;
 //struct ActionDataManagerNodeUp;
 //struct ActionDataManagerNodeDown;
