@@ -64,7 +64,7 @@ class Sync {
   void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
   // This returns all unresoved actions containing this node's ID.  Each returned unresolved_action is provided
   // with just this node's ID inserted, even if the master copy has several other peers' IDs.
-  std::vector<UnresolvedAction> GetUnresolvedActions();
+  std::vector<std::unique_ptr<UnresolvedAction>> GetUnresolvedActions();
   // Calling this will increment the sync counter and delete actions that reach the
   // 'kSyncCounterMax_' limit.  Actions which are resolved by all peers (i.e. have 4 messages) are
   // also pruned here.
@@ -79,7 +79,7 @@ class Sync {
   bool CanBeErased(const UnresolvedAction& unresolved_action) const;
 
   std::mutex mutex_;
-  std::vector<UnresolvedAction> unresolved_actions_;
+  std::vector<std::unique_ptr<UnresolvedAction>> unresolved_actions_;
   static const int32_t kSyncCounterMax_ = 10;  // TODO(dirvine) decide how to decide on this number.
 };
 
@@ -119,7 +119,7 @@ bool IsResolved(const UnresolvedAction& unresolved_action) {
 
 template<typename UnresolvedAction>
 bool IsResolvedOnAllPeers(const UnresolvedAction& unresolved_action) {
-  return unresolved_action.peer_and_entry_ids.size() == routing::Parameters::node_group_size - 1 &&
+  return unresolved_action.peer_and_entry_ids.size() == routing::Parameters::node_group_size - 1U &&
          unresolved_action.sent_to_peers;
 }
 
@@ -149,12 +149,14 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
   for (;;) {
     found = std::find_if(found,
                          std::end(unresolved_actions_),
-                         [&unresolved_action](const UnresolvedAction &test) {
-                           return test.key == unresolved_action.key;
+                         [&unresolved_action](const std::unique_ptr<UnresolvedAction> &test) {
+                           return test->key == unresolved_action.key;
                          });
 
     if (found == std::end(unresolved_actions_)) {
-      unresolved_actions_.push_back(unresolved_action);
+      std::unique_ptr<UnresolvedAction>
+          unresolved_action_ptr(new UnresolvedAction(unresolved_action));
+      unresolved_actions_.push_back(std::move(unresolved_action_ptr));
       break;
     } else {
       // If merge is false and the unresolved_action is from this node, we're adding local
@@ -182,14 +184,16 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
 }
 
 template<typename UnresolvedAction>
-std::vector<UnresolvedAction> Sync<UnresolvedAction>::GetUnresolvedActions() {
-  std::vector<UnresolvedAction> result;
+std::vector<std::unique_ptr<UnresolvedAction>> Sync<UnresolvedAction>::GetUnresolvedActions() {
+  std::vector<std::unique_ptr<UnresolvedAction>> result;
   for (auto& unresolved_action : unresolved_actions_) {
-    if (detail::IsResolvedOnAllPeers(unresolved_action))
+    if (detail::IsResolvedOnAllPeers(*unresolved_action))
       continue;
-    if (detail::IsFromThisNode(unresolved_action)) {
-      unresolved_action.sent_to_peers = true;
-      result.push_back(unresolved_action);
+    if (detail::IsFromThisNode(*unresolved_action)) {
+      unresolved_action->sent_to_peers = true;
+      std::unique_ptr<UnresolvedAction>
+        unresolved_action_ptr(new UnresolvedAction(*unresolved_action));
+      result.push_back(std::move(unresolved_action_ptr));
     }
   }
   return result;
@@ -205,9 +209,9 @@ template<typename UnresolvedAction>
 void Sync<UnresolvedAction>::IncrementSyncAttempts() {
   auto itr = std::begin(unresolved_actions_);
   while (itr != std::end(unresolved_actions_)) {
-    assert((*itr).peer_and_entry_ids.size() < routing::Parameters::node_group_size);
-    ++(*itr).sync_counter;
-    if (CanBeErased(*itr))
+    assert((*itr)->peer_and_entry_ids.size() < routing::Parameters::node_group_size);
+    ++(*itr)->sync_counter;
+    if (CanBeErased(**itr))
       itr = unresolved_actions_.erase(itr);
     else
       ++itr;

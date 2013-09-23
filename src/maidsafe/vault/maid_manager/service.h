@@ -280,6 +280,17 @@ struct can_create_account<passport::PublicMaid> : public std::true_type {};
 //  return typename Data::Name(crypto::Hash<crypto::SHA512>(message.data().name));
 //}
 
+template <typename MaidManagerSyncType>
+void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
+                                  MaidManagerSyncType& sync_type) {
+  auto unresolved_actions(sync_type.GetUnresolvedActions());
+  if (!unresolved_actions.empty()) {
+    sync_type.IncrementSyncAttempts();
+    for (const auto& unresolved_action : unresolved_actions)
+      dispatcher.SendSync(unresolved_action->key.group_name, unresolved_action->Serialise());
+  }
+}
+
 }  // namespace detail
 
 

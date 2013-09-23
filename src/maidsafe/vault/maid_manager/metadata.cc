@@ -29,64 +29,64 @@ namespace maidsafe {
 
 namespace vault {
 
-//MaidManagerMetadata::MaidManagerMetadata() : total_put_data_(0), pmid_totals_() {}
+MaidManagerMetadata::MaidManagerMetadata() : total_put_data_(0), pmid_totals_() {}
 
-//MaidManagerMetadata::MaidManagerMetadata(int64_t total_put_data,
-//                                         const std::vector<PmidTotals>& pmid_totals)
-//    : total_put_data_(total_put_data),
-//      pmid_totals_(pmid_totals) {}
+MaidManagerMetadata::MaidManagerMetadata(int64_t total_put_data,
+                                         const std::vector<PmidTotals>& pmid_totals)
+    : total_put_data_(total_put_data),
+      pmid_totals_(pmid_totals) {}
 
-//MaidManagerMetadata::MaidManagerMetadata(const MaidManagerMetadata& other)
-//    : total_put_data_(other.total_put_data_),
-//      pmid_totals_(other.pmid_totals_) {}
+MaidManagerMetadata::MaidManagerMetadata(const MaidManagerMetadata& other)
+    : total_put_data_(other.total_put_data_),
+      pmid_totals_(other.pmid_totals_) {}
 
-//MaidManagerMetadata::MaidManagerMetadata(MaidManagerMetadata&& other)
-//    : total_put_data_(std::move(other.total_put_data_)),
-//      pmid_totals_(std::move(other.pmid_totals_)) {}
+MaidManagerMetadata::MaidManagerMetadata(MaidManagerMetadata&& other)
+    : total_put_data_(std::move(other.total_put_data_)),
+      pmid_totals_(std::move(other.pmid_totals_)) {}
 
 MaidManagerMetadata& MaidManagerMetadata::operator=(MaidManagerMetadata other) {
   swap(*this, other);
   return *this;
 }
 
-//MaidManagerMetadata::MaidManagerMetadata(const std::string& serialised_metadata_value) {
-//  protobuf::MaidManagerMetadata maid_manager_metadata_proto;
-//  if (!maid_manager_metadata_proto.ParseFromString(serialised_metadata_value)) {
-//    LOG(kError) << "Failed to read or parse serialised maid manager value";
-//    ThrowError(CommonErrors::parsing_error);
-//  }
-//  total_put_data_ = maid_manager_metadata_proto.total_put_data();
-//  for (auto index(0); index < maid_manager_metadata_proto.pmid_totals_size(); ++index) {
-//    pmid_totals_.emplace_back(NonEmptyString(
-//            maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_registration())),
-//        PmidManagerMetadata(PmidManagerMetadata::serialised_type(NonEmptyString(
-//            maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_metadata())));
-//  }
-//  if (total_put_data_ < 0)
-//    ThrowError(CommonErrors::invalid_parameter);
-//}
+MaidManagerMetadata::MaidManagerMetadata(const std::string& serialised_metadata_value) {
+  protobuf::MaidManagerMetadata maid_manager_metadata_proto;
+  if (!maid_manager_metadata_proto.ParseFromString(serialised_metadata_value)) {
+    LOG(kError) << "Failed to read or parse serialised maid manager value";
+    ThrowError(CommonErrors::parsing_error);
+  }
+  total_put_data_ = maid_manager_metadata_proto.total_put_data();
+  for (auto index(0); index < maid_manager_metadata_proto.pmid_totals_size(); ++index) {
+    pmid_totals_.emplace_back(
+            maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_registration()),
+        PmidManagerMetadata(PmidManagerMetadata::serialised_type(NonEmptyString(
+            maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_metadata())));
+  }
+  if (total_put_data_ < 0)
+    ThrowError(CommonErrors::invalid_parameter);
+}
 
-//MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(int32_t cost) const {
-//  int64_t total_claimed_available_size_by_pmids(0);
-//  for (const auto& pmid_total : pmid_totals_)
-//    total_claimed_available_size_by_pmids += pmid_total.pmid_metadata.claimed_available_size;
+MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(int32_t cost) const {
+  int64_t total_claimed_available_size_by_pmids(0);
+  for (const auto& pmid_total : pmid_totals_)
+    total_claimed_available_size_by_pmids += pmid_total.pmid_metadata.claimed_available_size;
 
-//  if (total_claimed_available_size_by_pmids < total_put_data_ + cost)
-//    return Status::kNoSpace;
+  if (total_claimed_available_size_by_pmids < total_put_data_ + cost)
+    return Status::kNoSpace;
 
-//  return ((total_claimed_available_size_by_pmids / 100) * 3 < total_put_data_ + cost) ?
-//         Status::kLowSpace : Status::kOk;
-//}
+  return ((total_claimed_available_size_by_pmids / 100) * 3 < total_put_data_ + cost) ?
+         Status::kLowSpace : Status::kOk;
+}
 
-//void MaidManagerMetadata::PutData(int32_t cost) {
-//  total_put_data_ += cost;
-//}
+void MaidManagerMetadata::PutData(int32_t cost) {
+  total_put_data_ += cost;
+}
 
-//void MaidManagerMetadata::DeleteData(int32_t cost) {
-//  total_put_data_ -= cost;
-//  if (total_put_data_ < 0)
-//    ThrowError(CommonErrors::invalid_parameter);
-//}
+void MaidManagerMetadata::DeleteData(int32_t cost) {
+  total_put_data_ -= cost;
+  if (total_put_data_ < 0)
+    ThrowError(CommonErrors::invalid_parameter);
+}
 
 //void MaidManagerMetadata::RegisterPmid(const nfs_vault::PmidRegistration& pmid_registration) {
 //  auto itr(Find(pmid_registration.pmid_name()));
@@ -121,24 +121,24 @@ MaidManagerMetadata& MaidManagerMetadata::operator=(MaidManagerMetadata other) {
 //  return maid_manager_metadata_proto.SerializeAsString();
 //}
 
-//std::vector<PmidTotals>::iterator MaidManagerMetadata::Find(const PmidName& pmid_name) {
-//  return std::find_if(std::begin(pmid_totals_),
-//                      std::end(pmid_totals_),
-//                      [&pmid_name](const PmidTotals& pmid_totals) {
-//                        return pmid_name == pmid_totals.pmid_metadata.pmid_name;
-//                      });
-//}
+std::vector<PmidTotals>::iterator MaidManagerMetadata::Find(const PmidName& pmid_name) {
+  return std::find_if(std::begin(pmid_totals_),
+                      std::end(pmid_totals_),
+                      [&pmid_name](const PmidTotals& pmid_totals) {
+                        return pmid_name == pmid_totals.pmid_metadata.pmid_name;
+                      });
+}
 
-//void swap(MaidManagerMetadata& lhs, MaidManagerMetadata& rhs) {
-//  using std::swap;
-//  swap(lhs.total_put_data_, rhs.total_put_data_);
-//  swap(lhs.pmid_totals_, rhs.pmid_totals_);
-//}
+void swap(MaidManagerMetadata& lhs, MaidManagerMetadata& rhs) {
+  using std::swap;
+  swap(lhs.total_put_data_, rhs.total_put_data_);
+  swap(lhs.pmid_totals_, rhs.pmid_totals_);
+}
 
-//bool operator==(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs) {
-//  return lhs.total_put_data_ == rhs.total_put_data_ &&
-//         lhs.pmid_totals_ == rhs.pmid_totals_;
-//}
+bool operator==(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs) {
+  return lhs.total_put_data_ == rhs.total_put_data_ &&
+         lhs.pmid_totals_ == rhs.pmid_totals_;
+}
 
 }  // namespace vault
 

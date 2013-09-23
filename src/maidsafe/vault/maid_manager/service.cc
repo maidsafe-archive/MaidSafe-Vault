@@ -144,7 +144,7 @@ T Merge(std::vector<T> values) {
 
 MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing)
     : routing_(routing),
-//      public_key_getter_(public_key_getter),
+//      data_getter_(public_key_getter),
       group_db_(),
       accumulator_mutex_(),
       accumulator_(),
@@ -322,44 +322,14 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
 
 // =============== Sync ============================================================================
 
-//void MaidManagerService::DoSync() {
-//  auto unresolved_create_accounts(sync_create_accounts_.GetUnresolvedActions());
-//  if (!unresolved_create_accounts.empty()) {
-//    sync_create_accounts_.IncrementSyncAttempts();
-//    for (const auto& unresolved_action : unresolved_create_accounts)
-//      dispatcher_.SendSync(unresolved_action);
-//  }
-//  auto unresolved_remove_accounts(sync_remove_accounts_.GetUnresolvedActions());
-//  if (!unresolved_remove_accounts.empty()) {
-//    sync_remove_accounts_.IncrementSyncAttempts();
-//    for (const auto& unresolved_action : unresolved_remove_accounts)
-//      nfs_.Sync(unresolved_action);
-//  }
-//  auto unresolved_puts(sync_puts_.GetUnresolvedActions());
-//  if (!unresolved_puts.empty()) {
-//    sync_puts_.IncrementSyncAttempts();
-//    for (const auto& unresolved_action : unresolved_puts)
-//      nfs_.Sync(unresolved_action);
-//  }
-//  auto unresolved_deletes(sync_deletes_.GetUnresolvedActions());
-//  if (!unresolved_deletes.empty()) {
-//    sync_deletes_.IncrementSyncAttempts();
-//    for (const auto& unresolved_action : unresolved_deletes)
-//      nfs_.Sync(unresolved_action);
-//  }
-//  auto unresolved_register_pmids(sync_register_pmids_.GetUnresolvedActions());
-//  if (!unresolved_register_pmids.empty()) {
-//    sync_register_pmids_.IncrementSyncAttempts();
-//    for (const auto& unresolved_action : unresolved_register_pmids)
-//      nfs_.Sync(unresolved_action);
-//  }
-//  auto unresolved_unregister_pmids(sync_unregister_pmids_.GetUnresolvedActions());
-//  if (!unresolved_unregister_pmids.empty()) {
-//    sync_unregister_pmids_.IncrementSyncAttempts();
-//    for (const auto& unresolved_action : unresolved_unregister_pmids)
-//      nfs_.Sync(unresolved_action);
-//  }
-//}
+void MaidManagerService::DoSync() {
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accounts_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_accounts_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_register_pmids_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_);
+}
 
 //void MaidManagerService::HandleSync(const nfs::Message& message) {
 //  protobuf::Sync proto_sync;

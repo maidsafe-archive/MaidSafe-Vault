@@ -100,8 +100,7 @@ void MaidManagerDispatcher::SendUnregisterPmidResponse(const MaidName& /*account
 }
 
 void MaidManagerDispatcher::SendSync(const MaidName& /*account_name*/,
-                                     const NonEmptyString& /*serialised_action*/,
-                                     const nfs::MessageId& /*message_id*/) {
+                                     const std::string& /*serialised_action*/) {
 }
 
 void MaidManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer*/,

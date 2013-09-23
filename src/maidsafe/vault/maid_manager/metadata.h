@@ -56,10 +56,10 @@ class MaidManagerMetadata {
   friend bool operator==(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs);
 
  private:
-//  std::vector<PmidTotals>::iterator Find(const PmidName& pmid_name);
+  std::vector<PmidTotals>::iterator Find(const PmidName& pmid_name);
 
-//  int64_t total_put_data_;
-//  std::vector<PmidTotals> pmid_totals_;
+  int64_t total_put_data_;
+  std::vector<PmidTotals> pmid_totals_;
 };
 
 }  // namespace vault
