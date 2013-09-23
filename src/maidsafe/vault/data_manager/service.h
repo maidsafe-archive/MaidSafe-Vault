@@ -43,6 +43,7 @@
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/data_manager/dispatcher.h"
+#include "maidsafe/vault/parameters.h"
 
 
 namespace maidsafe {
@@ -79,11 +80,17 @@ void HandlePutFailure(const typename Data::Name& data_name,
                       const nfs::MessageId& message_id,
                       const maidsafe_error& error);
   void DoSync();
+
   template<typename Data>
   bool EntryExist(const typename Data::Name& /*name*/);
 
   template<typename Data>
-  SendPutRetryRequired(const typename Data::Name& /*name*/);
+  bool SendPutRetryRequired(const typename Data::Name& name);
+
+  template<typename Data>
+  void SendIntegrityCheck(const typename Data::name& data_name,
+                          const PmidName& pmid_node,
+                          const nfs::MessageId& message_id);
 
   template<typename Data>
   NonEmptyString GetContentFromCache(const typename Data::Name& data_name);
@@ -269,10 +276,28 @@ template<typename Data>
 void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
                                            const PmidName& pmid_node,
                                            const nfs::MessageId& message_id) {
+  SendIntegrityCheck(data_name, pmid_node, message_id);
   typename DataManager::Key key(data_name.raw_name, data_name.type);
   sync_add_pmids_.AddLocalAction(DataManager::UnresolvedAddPmid(
       key, ActionDataManagerAddPmid(pmid_node), routing_.kNodeId(), message_id));
   DoSync();
+}
+
+template<typename Data>
+void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name,
+                                            const PmidName& pmid_node,
+                                            const nfs::MessageId& message_id) {
+  try {
+    NonEmptyString data(GetContentFromCache(data_name));
+    std::string random_string(RandomString(detail::Parameters::integrity_check_string_size));
+    NonEmptyString hash(crypto::Hash<crypto::SHA512>(
+                            NonEmptyString(data.string() + random_string)));
+    hash = hash;  // Just avoids warning
+    // FIX ME ADD TO TIMER
+    dispatcher_.SendIntegrityCheck(data_name, random_string, pmid_node, message_id);
+  } catch (const std::exception& /*ex*/) {
+    // handle failure to retrieve from cache
+  }
 }
 
 
@@ -280,7 +305,6 @@ template<typename Data>
 bool DataManagerService::EntryExist(const typename Data::Name& /*name*/) {
   return true; // MUST BE FIXED
 }
-
 
 }  // namespace vault
 

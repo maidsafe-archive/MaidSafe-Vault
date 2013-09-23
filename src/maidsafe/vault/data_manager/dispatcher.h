@@ -86,6 +86,11 @@ class DataManagerDispatcher {
                          const typename Data::Name& data_name,
                          const nfs::MessageId& message_id);
 
+  template <typename Data>
+  void SendIntegrityCheck(const typename Data::Name& name,
+                          const NonEmptyString& random_string,
+                          const PmidName& pmid_node,
+                          const nfs::MessageId& message_id);
 
   void SendSync(const Identity& data_name, const std::string& serialised_sync);
 
@@ -175,6 +180,25 @@ void DataManagerDispatcher::SendPutResponse(const MaidName& account_name,
                          NfsMessage::Receiver(NodeId(account_name)));
   routing_.Send(message);
 }
+
+template <typename Data>
+void DataManagerDispatcher::SendIntegrityCheck(const typename Data::Name& name,
+                                               const NonEmptyString& random_string,
+                                               const PmidName& pmid_node,
+                                               const nfs::MessageId& message_id) {
+  typedef nfs::IntegrityCheckRequestFromDataManagerToPmidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  NfsMessage nfs_message(message_id,
+                         nfs_vault::DataNameAndRandomString(name.type,
+                                                            name.raw_name,
+                                                            random_string));
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::SingleId(routing_.kNodeId()),
+                         NfsMessage::Receiver(
+                             routing::SingleId(NodeId(pmid_node.value.string())))));
+  routing_.Send(message);
+}
+
 
 //template<typename Data>
 //routing::GroupSource MaidManagerDispatcher::Sender(const typename Data::Name& data_name) const {

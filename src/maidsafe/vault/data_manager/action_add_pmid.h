@@ -39,12 +39,8 @@ class DataManagerValue;
 typedef std::function<void(const NonEmptyString&)> IntegrityCheckFunctor;
 
 struct ActionDataManagerAddPmid {
-  ActionDataManagerAddPmid(const PmidName& pmid_name,
-                           const NonEmptyString& content,
-                           IntegrityCheckFunctor integrity_check);
-  ActionDataManagerAddPmid(const std::string& serialised_action,
-                           const NonEmptyString& content,
-                           IntegrityCheckFunctor integrity_check);
+  ActionDataManagerAddPmid(const PmidName& pmid_name);
+  ActionDataManagerAddPmid(const std::string& serialised_action);
   ActionDataManagerAddPmid(const ActionDataManagerAddPmid& other);
   ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other);
   std::string Serialise() const;
@@ -53,8 +49,6 @@ struct ActionDataManagerAddPmid {
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kAddPmid;
   const PmidName kPmidName;
-  const NonEmptyString& kContent_;
-  IntegrityCheckFunctor integrity_check_;
 
  private:
   ActionDataManagerAddPmid();

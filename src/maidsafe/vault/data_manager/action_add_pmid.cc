@@ -16,8 +16,6 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include <functional>
-
 #include "maidsafe/vault/data_manager/action_add_pmid.h"
 
 #include "maidsafe/common/error.h"
@@ -30,31 +28,22 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(const PmidName& pmid_name,
-                                                   const NonEmptyString& content,
-                                                   IntegrityCheckFunctor integrity_check)
-    : kPmidName(pmid_name),
-      kContent_(content),
-      integrity_check_(integrity_check) {}
+ActionDataManagerAddPmid::ActionDataManagerAddPmid(const PmidName& pmid_name)
+    : kPmidName(pmid_name) {}
 
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(const std::string& serialised_action,
-                                                   const NonEmptyString& content,
-                                                   IntegrityCheckFunctor integrity_check)
+ActionDataManagerAddPmid::ActionDataManagerAddPmid(const std::string& serialised_action)
     : kPmidName([&serialised_action]()->PmidName {
         protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
         if (!action_add_pmid_proto.ParseFromString(serialised_action))
           ThrowError(CommonErrors::parsing_error);
         return PmidName(Identity(action_add_pmid_proto.pmid_name()));
-      }()),
-      kContent_(content),
-      integrity_check_(integrity_check) {}
+      }()) {}
 
 ActionDataManagerAddPmid::ActionDataManagerAddPmid(const ActionDataManagerAddPmid& other)
-    : kPmidName(other.kPmidName),
-      integrity_check_(other.integrity_check_) {}
+    : kPmidName(other.kPmidName) {}
 
-//ActionDataManagerAddPmid::ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other)
-//    : kPmidName(std::move(other.kPmidName)) {}
+ActionDataManagerAddPmid::ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other)
+    : kPmidName(std::move(other.kPmidName)) {}
 
 std::string ActionDataManagerAddPmid::Serialise() const {
   protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
@@ -68,7 +57,6 @@ void ActionDataManagerAddPmid::operator()(boost::optional<DataManagerValue>& val
   value->AddPmid(kPmidName);
   if (value->Subscribers() == 0)
     value->IncrementSubscribers();
-  integrity_check_(kContent_);
 }
 
 bool operator==(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs) {
