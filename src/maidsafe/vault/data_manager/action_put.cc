@@ -24,45 +24,21 @@
 namespace maidsafe {
 namespace vault {
 
-ActionDataManagerPut::ActionDataManagerPut(PmidName pmid_name)
-    : kPmidName(std::move(pmid_name)) {}
-
-ActionDataManagerPut::ActionDataManagerPut(
-    const std::string& serialised_action)
-    : kPmidName([&]()->PmidName {
-                  protobuf::ActionDataManagerPut action_put_proto;
-                  action_put_proto.ParseFromString(serialised_action);
-                  return PmidName(Identity(action_put_proto.pmid_name()));
-      }()) {}
-
-ActionDataManagerPut::ActionDataManagerPut(
-    const ActionDataManagerPut& other)
-    : kPmidName(other.kPmidName) {}
-
-ActionDataManagerPut::ActionDataManagerPut(
-    ActionDataManagerPut&& other)
-        : kPmidName(std::move(other.kPmidName)) {}
-
 std::string ActionDataManagerPut::Serialise() const {
   protobuf::ActionDataManagerPut action_put_proto;
-  action_put_proto.set_pmid_name(kPmidName.value.string());
   return action_put_proto.SerializeAsString();
 }
 
 void ActionDataManagerPut::operator()(boost::optional<DataManagerValue>& value) {
   if (value) {
     value->IncrementSubscribers();
-    value->AddPmid(kPmidName);
   } else {
-    value.reset(DataManagerValue());
-    value->IncrementSubscribers();
-    value->AddPmid(kPmidName);
+    ThrowError(CommonErrors::no_such_element);
   }
 }
 
-bool operator==(const ActionDataManagerPut& lhs,
-                const ActionDataManagerPut& rhs) {
-  return lhs.kPmidName == rhs.kPmidName;
+bool operator==(const ActionDataManagerPut& /*lhs*/, const ActionDataManagerPut& /*rhs*/) {
+  return true;
 }
 
 bool operator!=(const ActionDataManagerPut& lhs,

@@ -73,14 +73,20 @@ class DataManagerService {
                          const PmidName& pmid_node,
                          const nfs::MessageId& message_id);
   // Failure case
-  template<typename Data>
-  void HandlePutResponse(const Data& data,
-                         const PmidName& attempted_pmid_node,
-                         const nfs::MessageId& message_id,
-                         const maidsafe_error& error);
+template<typename Data>
+void HandlePutFailure(const typename Data::Name& data_name,
+                      const PmidName& attempted_pmid_node,
+                      const nfs::MessageId& message_id,
+                      const maidsafe_error& error);
   void DoSync();
   template<typename Data>
   bool EntryExist(const typename Data::Name& /*name*/);
+
+  template<typename Data>
+  SendPutRetryRequired(const typename Data::Name& /*name*/);
+
+  template<typename Data>
+  NonEmptyString GetContentFromCache(const typename Data::Name& data_name);
 
 // commented out for code to compile (may not be required anymore)
 //  template<typename Data>
@@ -216,12 +222,13 @@ void DataManagerService::HandlePut(const Data& data,
       pmid_name = pmid_name_in;
     else
       pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
+    StoreInCache(data);
     dispatcher_.SendPutRequest(pmid_name, data, message_id);
   } else {
     typename DataManager::Key key(data.name().raw_name, Data::Name::data_type);
     sync_puts_.AddLocalAction(DataManager::UnresolvedPut(
         key,
-        ActionDataManagerPut(data.name(), data.data().string().size()),
+        ActionDataManagerPut(data.name()),
         routing_.kNodeId(),
         message_id));
     DoSync();
@@ -231,15 +238,30 @@ void DataManagerService::HandlePut(const Data& data,
 
 // failure handler
 template<typename Data>
-void DataManagerService::HandlePutResponse(const Data& data,
-                                           const PmidName& attempted_pmid_node,
-                                           const nfs::MessageId& message_id,
-                                           const maidsafe_error& /*error*/) {
+void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
+                                          const PmidName& attempted_pmid_node,
+                                          const nfs::MessageId& message_id,
+                                          const maidsafe_error& /*error*/) {
   // TODO(Team): Following should be done only if error is fixable by repeat
   auto pmid_name(PmidName(Identity(routing_.RandomConnectedNode().string())));
   while (pmid_name == attempted_pmid_node)
     pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
-  dispatcher_.SendPutRequest(pmid_name, data, message_id);
+  if (SendPutRetryRequired<Data>(data_name)) {
+    try {
+      NonEmptyString content(GetContentFromCache<Data>(data_name));
+      dispatcher_.SendPutRequest(pmid_name, Data(data_name, content), message_id);
+    }
+    catch (std::exception& /*ex*/) {
+      // handle failure to retrieve content from cache
+    }
+  }
+  typename DataManager::Key key(data_name.raw_name, data_name.type);
+  sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
+      key,
+      ActionDataManagerRemovePmid(pmid_name),
+      routing_.kNodeId(),
+      message_id));
+  DoSync();
 }
 
 // Success handler
@@ -248,11 +270,8 @@ void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
                                            const PmidName& pmid_node,
                                            const nfs::MessageId& message_id) {
   typename DataManager::Key key(data_name.raw_name, data_name.type);
-  sync_puts_.AddLocalAction(DataManager::UnresolvedPut(
-      key,
-      ActionDataManagerPut(pmid_node),
-      routing_.kNodeId(),
-      message_id));
+  sync_add_pmids_.AddLocalAction(DataManager::UnresolvedAddPmid(
+      key, ActionDataManagerAddPmid(pmid_node), routing_.kNodeId(), message_id));
   DoSync();
 }
 

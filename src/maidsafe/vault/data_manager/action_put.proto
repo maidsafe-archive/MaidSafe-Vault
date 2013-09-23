@@ -18,6 +18,4 @@
 
 package maidsafe.vault.protobuf;
 
-message ActionDataManagerPut {
-  required bytes pmid_name = 1;
-}
+message ActionDataManagerPut {}
