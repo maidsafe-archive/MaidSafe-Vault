@@ -193,9 +193,9 @@ void DataManagerDispatcher::SendIntegrityCheck(const typename Data::Name& name,
                                                             name.raw_name,
                                                             random_string));
   RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(routing::SingleId(routing_.kNodeId()),
+                         NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
                          NfsMessage::Receiver(
-                             routing::SingleId(NodeId(pmid_node.value.string())))));
+                             routing::SingleId(NodeId(pmid_node.value.string()))));
   routing_.Send(message);
 }
 

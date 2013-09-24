@@ -42,6 +42,7 @@ class GroupDb;
 template<typename GroupName>
 struct GroupKey {
   typedef GroupName GroupNameType;
+  GroupKey();
   GroupKey(const GroupName& group_name_in, const Identity& name_in, DataTagValue type_in);
   explicit GroupKey(const std::string& serialised_group_key);
   GroupKey(const GroupKey& other);
@@ -65,7 +66,11 @@ struct GroupKey {
   FixedWidthString ToFixedWidthString() const;
 };
 
-
+template<typename GroupName>
+GroupKey<GroupName>::GroupKey()
+    : group_name(),
+      name(),
+      type() {}
 
 template<typename GroupName>
 GroupKey<GroupName>::GroupKey(const GroupName& group_name_in,

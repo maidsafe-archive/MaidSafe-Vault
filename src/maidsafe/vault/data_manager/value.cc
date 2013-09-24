@@ -105,6 +105,10 @@ void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
   }
 }
 
+int64_t DataManagerValue::Subscribers() const {
+return subscribers_;
+}
+
 DataManagerValue::serialised_type DataManagerValue::Serialise() const {
   if (subscribers_ < 1)
     ThrowError(CommonErrors::uninitialised);  // Cannot serialise if not a complete db value

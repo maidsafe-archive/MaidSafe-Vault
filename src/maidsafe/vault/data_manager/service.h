@@ -169,8 +169,6 @@ void DataManagerService::HandleMessage(
    const typename nfs::PutFailureFromPmidManagerToDataManager::Sender& sender,
    const typename nfs::PutFailureFromPmidManagerToDataManager::Receiver& receiver);
 
-
-
 //template<>
 //void DataManagerService::HandleMessage(
 //   const nfs::GetRequestFromMaidNodeToDataManager& message,
@@ -213,6 +211,21 @@ void DataManagerService::HandleMessage(
 //   const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& sender,
 //   const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& receiver);
 
+
+// ==================== Implementation =============================================================
+namespace detail {
+template <typename DataManagerSyncType>
+void IncrementAttemptsAndSendSync(DataManagerDispatcher& dispatcher,
+                                  DataManagerSyncType& sync_type) {
+  auto unresolved_actions(sync_type.GetUnresolvedActions());
+  if (!unresolved_actions.empty()) {
+    sync_type.IncrementSyncAttempts();
+    for (const auto& unresolved_action : unresolved_actions)
+      dispatcher.SendSync(unresolved_action->key.name, unresolved_action->Serialise());
+  }
+}
+
+}  // namespace detail
 
 // ================================== Put implementation ==========================================
 

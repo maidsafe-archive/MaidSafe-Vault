@@ -43,7 +43,6 @@
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/message_types.h"
-#include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/utils.h"
@@ -55,6 +54,7 @@
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
+#include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/accumulator.h"
 
 
@@ -240,6 +240,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
+template<>
+void MaidManagerService::HandleMessage(
+    const nfs::SynchroniseFromMaidManagerToMaidManager& message,
+    const typename nfs::SynchroniseFromMaidManagerToMaidManager::Sender& sender,
+    const typename nfs::SynchroniseFromMaidManagerToMaidManager::Receiver& receiver);
 
 
 // ==================== Implementation =============================================================
@@ -301,6 +306,8 @@ void MaidManagerService::HandlePut(const MaidName& account_name,
                                    const Data& data,
                                    const PmidName& pmid_node_hint,
                                    const nfs::MessageId& message_id) {
+  // FIXME(Team) need to return fail/stop forwarding message to next persona here if no space available for account
+  // Needs discussion (similar to AllowPut)
   dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
 }
 

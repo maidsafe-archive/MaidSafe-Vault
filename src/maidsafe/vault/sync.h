@@ -164,16 +164,16 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
       assert(!merge || !detail::IsFromThisNode(unresolved_action));
     }
 
-    if (!detail::IsRecorded(unresolved_action, (*found))) {
+    if (!detail::IsRecorded(unresolved_action, (**found))) {
       if (detail::IsFromThisNode(unresolved_action)) {
-        found->this_node_and_entry_id = unresolved_action.this_node_and_entry_id;
+        (*found)->this_node_and_entry_id = unresolved_action.this_node_and_entry_id;
       } else {
-        found->peer_and_entry_ids.push_back(unresolved_action.peer_and_entry_ids.front());
+        (*found)->peer_and_entry_ids.push_back(unresolved_action.peer_and_entry_ids.front());
       }
     }
 
-    if (merge && detail::IsResolved(*found)) {
-      resolved_action.reset(new UnresolvedAction(*found));
+    if (merge && detail::IsResolved(**found)) {
+      resolved_action.reset(new UnresolvedAction(**found));
       break;
     }
 

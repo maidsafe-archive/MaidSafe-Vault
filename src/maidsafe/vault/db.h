@@ -100,7 +100,7 @@ void Db<Key, Value>::Commit(const Key& key,
   bool value_found_in_db(value);
   functor(value);
   if(value)
-    Put(std::make_pair(key, value));
+    Put(KvPair(key, Value(*value)));
   else if (value_found_in_db)
     Delete(key);
 }

@@ -26,6 +26,8 @@
 #include "maidsafe/data_types/world_directory.h"
 #include "maidsafe/passport/types.h"
 
+#include "maidsafe/vault/maid_manager/action_put.h"
+#include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/helpers.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
@@ -331,7 +333,7 @@ void MaidManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_);
 }
 
-//void MaidManagerService::HandleSync(const nfs::Message& message) {
+//void MaidManagerService::HandleSync(const nfs::Message& /*message*/) {
 //  protobuf::Sync proto_sync;
 //  if (!proto_sync.ParseFromString(message.data().content.string()))
 //    ThrowError(CommonErrors::parsing_error);
@@ -660,6 +662,41 @@ void MaidManagerService::HandleMessage(
       Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
       this,
       accumulator_mutex_)(message, sender, receiver);
+}
+
+template<>
+void MaidManagerService::HandleMessage(
+    const nfs::SynchroniseFromMaidManagerToMaidManager& message,
+    const typename nfs::SynchroniseFromMaidManagerToMaidManager::Sender& sender,
+    const typename nfs::SynchroniseFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
+    protobuf::Sync proto_sync;
+    if (!proto_sync.ParseFromString(message.contents->content.string()))
+      ThrowError(CommonErrors::parsing_error);
+    switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
+      case ActionMaidManagerPut::kActionId: {
+        MaidManager::UnresolvedPut unresolved_action(
+            proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+        auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
+        if (resolved_action)
+          group_db_.Commit(resolved_action->key, resolved_action->action);
+        break;
+      }
+//      case ActionCreateAccount::kActionId: {
+//        MaidManager::UnresolvedCreateAccount unresolved_action(
+//            proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+//        auto resolved_action(sync_create_accounts_.AddUnresolvedAction(unresolved_action));
+//        if (resolved_action) {
+//          MaidManager::Metadata metadata;
+//          group_db_.AddGroup(resolved_action->key.group_name, metadata);
+//        }
+//        break;
+//      }
+
+      default: {
+        assert(false);
+        LOG(kError) << "Unhandled action type";
+      }
+    }
 }
 
 }  // namespace vault

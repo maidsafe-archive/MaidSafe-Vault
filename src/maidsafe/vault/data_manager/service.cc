@@ -104,26 +104,27 @@ void DataManagerService::HandleMessage(
       accumulator_mutex_)(message, sender, receiver);
 }
 
-// =============== Sync ============================================================================
-//template<>
-//void DataManagerService::HandleMessage(
-//   const nfs::SynchroniseFromDataManagerToDataManager& /*message*/,
-//   const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& /*sender*/,
-//   const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& /*receiver*/) {
-//  protobuf::Sync proto_sync;
-//  if (!proto_sync.ParseFromString(message.contents->content.string()))
-//    ThrowError(CommonErrors::parsing_error);
 
-//  switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
-//    case ActionDataManagerPut::kActionId: {
-//      DataManager::UnresolvedPut unresolved_action(
-//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-//      auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action) {
+// =============== Sync ============================================================================
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::SynchroniseFromDataManagerToDataManager& message,
+   const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& sender,
+   const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& /*receiver*/) {
+  protobuf::Sync proto_sync;
+  if (!proto_sync.ParseFromString(message.contents->content.string()))
+    ThrowError(CommonErrors::parsing_error);
+
+  switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
+    case ActionDataManagerPut::kActionId: {
+      DataManager::UnresolvedPut unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
 //        db_.Commit(resolved_action->key, resolved_action->action);
-//      }
-//      break;
-//    }
+      }
+      break;
+    }
 //    case ActionDataManagerDelete::kActionId: {
 //      DataManager::UnresolvedDelete unresolved_action(
 //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
@@ -164,12 +165,22 @@ void DataManagerService::HandleMessage(
 //        db_.Commit(resolved_action->key, resolved_action->action);
 //      break;
 //    }
-//    default: {
-//      assert(false);
-//      LOG(kError) << "Unhandled action type";
-//    }
-//  }
-//}
+    default: {
+      assert(false);
+      LOG(kError) << "Unhandled action type";
+    }
+  }
+}
+
+
+void DataManagerService::DoSync() {
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_add_pmids_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_pmids_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_downs_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_ups_);
+}
 
 // =============== Churn ===========================================================================
 //void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {

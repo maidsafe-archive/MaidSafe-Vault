@@ -46,7 +46,7 @@ class DataManagerValue {
   int64_t DecrementSubscribers();
   void SetPmidOnline(const PmidName& pmid_name);
   void SetPmidOffline(const PmidName& pmid_name);
-  int64_t Subscribers();
+  int64_t Subscribers() const;
 
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
 

@@ -16,41 +16,15 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/data_manager/action_put.h"
-#include "maidsafe/vault/data_manager/action_put.pb.h"
-
-#include "maidsafe/vault/pmid_manager/value.h"
+#include "maidsafe/vault/data_manager/dispatcher.h"
 
 namespace maidsafe {
+
 namespace vault {
 
-ActionDataManagerPut::ActionDataManagerPut(const std::string& /*serialised_action*/) {
-}
-
-ActionDataManagerPut::ActionDataManagerPut(const ActionDataManagerPut& /*other*/) {
-}
-
-std::string ActionDataManagerPut::Serialise() const {
-  protobuf::ActionDataManagerPut action_put_proto;
-  return action_put_proto.SerializeAsString();
-}
-
-void ActionDataManagerPut::operator()(boost::optional<DataManagerValue>& value) {
-  if (value) {
-    value->IncrementSubscribers();
-  } else {
-    ThrowError(CommonErrors::no_such_element);
-  }
-}
-
-bool operator==(const ActionDataManagerPut& /*lhs*/, const ActionDataManagerPut& /*rhs*/) {
-  return true;
-}
-
-bool operator!=(const ActionDataManagerPut& lhs,
-                const ActionDataManagerPut& rhs) {
-  return !operator==(lhs, rhs);
-}
+void DataManagerDispatcher::SendSync(const Identity& /*data_name*/,
+                                     const std::string& /*serialised_sync*/) {}
 
 }  // namespace vault
+
 }  // namespace maidsafe

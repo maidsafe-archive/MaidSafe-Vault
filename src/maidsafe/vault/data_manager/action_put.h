@@ -41,7 +41,7 @@ struct ActionDataManagerPut {
 
   std::string Serialise() const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
+  static constexpr nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
 
  private:
   ActionDataManagerPut();
