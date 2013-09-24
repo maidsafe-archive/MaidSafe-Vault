@@ -28,7 +28,7 @@ namespace vault {
 
 template<bool Remove>
 struct ActionCreateRemoveAccount {
-  static constexpr nfs::MessageAction kActionId = nfs::MessageAction::kCreateAccountRequest;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kCreateAccountRequest;
 };
 
 //template<>
