@@ -40,11 +40,7 @@ namespace vault {
 class Metadata;
 
 struct ActionDataManagerPut;
-//struct ActionDataManagerDelete;
 struct ActionDataManagerAddPmid;
-//struct ActionDataManagerRemovePmid;
-//struct ActionDataManagerNodeUp;
-//struct ActionDataManagerNodeDown;
 
 }  // namespace vault
 

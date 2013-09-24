@@ -85,6 +85,23 @@ void PmidNodeService::HandleMessage(
 
 template<>
 void PmidNodeService::HandleMessage(
+    const nfs::IntegrityCheckRequestFromDataManagerToPmidNode& message,
+    const typename nfs::IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
+    const typename nfs::IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver) {
+  typedef nfs::IntegrityCheckRequestFromDataManagerToPmidNode MessageType;
+  OperationHandlerWrapper<PmidNodeService, MessageType, nfs::PmidNodeServiceMessages>(
+      accumulator_,
+      [this](const MessageType& message, const MessageType::Sender& sender) {
+        return this->ValidateSender(message, sender);
+      },
+      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(RequiredRequests(message)),
+      this,
+      accumulator_mutex_)(message, sender, receiver);
+}
+
+
+template<>
+void PmidNodeService::HandleMessage(
     const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& /*message*/,
     const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& /*sender*/,
     const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {

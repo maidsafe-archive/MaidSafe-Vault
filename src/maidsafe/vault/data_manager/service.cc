@@ -48,10 +48,12 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid,
                                        routing::Routing& routing,
                                        nfs_client::DataGetter& data_getter)
     : routing_(routing),
+      asio_service_(2),
       data_getter_(data_getter),
       accumulator_mutex_(),
       accumulator_(),
       dispatcher_(routing_, pmid),
+      integrity_check_timer_(asio_service_),
       db_(),
       sync_puts_(),
       sync_deletes_(),
@@ -172,7 +174,6 @@ void DataManagerService::HandleMessage(
   }
 }
 
-
 void DataManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
@@ -180,6 +181,15 @@ void DataManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_pmids_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_downs_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_ups_);
+}
+
+void DataManagerService::HandleDataIntergirity(const IntegrityCheckResponse& response,
+                                               const nfs::MessageId& message_id) {
+  try {
+    integrity_check_timer_.AddResponse(message_id.data, response);
+  } catch(const std::exception /*ex*/) {
+    // Failure to find the task
+  }
 }
 
 // =============== Churn ===========================================================================

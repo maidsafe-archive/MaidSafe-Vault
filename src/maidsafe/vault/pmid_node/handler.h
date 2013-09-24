@@ -40,6 +40,8 @@ class PmidNodeHandler {
   template<typename Data>
   void DeleteFromPermanentStore(const typename Data::name& name);
 
+  NonEmptyString GetFromPermanentStore(const DataNameVariant& data_name);
+
   boost::filesystem::path GetPermanentStorePath() const;
 
  private:

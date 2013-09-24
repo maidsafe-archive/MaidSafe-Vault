@@ -39,6 +39,12 @@ class PmidNodeDispatcher {
   void SendPutFailure(const typename Data::Name& name,
                       const nfs::MessageId& message_id,
                       const maidsafe_error& error);
+  template<typename Data>
+  void SendIntegrityCheckResponse(const typename Data::Name& data_name,
+                                  const std::string& hash,
+                                  const NodeId& receiver,
+                                  const maidsafe_error& error,
+                                  const nfs::MessageId& message_id);
  private:
   PmidNodeDispatcher();
   PmidNodeDispatcher(const PmidNodeDispatcher&);
@@ -56,14 +62,37 @@ void PmidNodeDispatcher::SendPutFailure(const typename Data::Name& name,
                                         const maidsafe_error& error) {
   typedef nfs::PutFailureFromPmidNodeToPmidManager NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  NfsMessage nfs_message;
-  nfs_message = NfsMessage(message_id, nfs_client::DataNameAndReturnCode(
-                                           name.type,
-                                           name.raw_name,
-                                           nfs_client::ReturnCode(error)));
+  NfsMessage nfs_message(message_id, nfs_client::DataNameAndReturnCode(
+                                         name.type, name.raw_name, nfs_client::ReturnCode(error)));
   RoutingMessage routing_message(nfs_message.Serialise(),
                                  NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
                                  NfsMessage::Receiver(routing::GroupId(routing_.kNodeId())));
+  routing_.Send(routing_message);
+}
+
+template<typename Data>
+void PmidNodeDispatcher::SendIntegrityCheckResponse(const typename Data::Name& data_name,
+                                                    const std::string& signature,
+                                                    const NodeId& receiver,
+                                                    const maidsafe_error& error,
+                                                    const nfs::MessageId& message_id) {
+  typedef nfs::IntegrityCheckResponseFromPmidNodeToDataManager NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  NfsMessage nfs_message;
+  if (error.code() == CommonErrors::success)
+    nfs_message = NfsMessage(message_id, nfs_client::DataNameAndSignatureAndReturnCode(
+                                             data_name.type,
+                                             data_name.raw_name,
+                                             nfs_client::ReturnCode(error),
+                                             signature));
+  else
+    nfs_message = NfsMessage(message_id, nfs_client::DataNameAndSignatureAndReturnCode(
+                                             data_name.type,
+                                             data_name.raw_name,
+                                             nfs_client::ReturnCode(error)));
+  RoutingMessage routing_message(nfs_message.Serialise(),
+                                 NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
+                                 NfsMessage::Receiver(routing::SingleId(receiver)));
   routing_.Send(routing_message);
 }
 

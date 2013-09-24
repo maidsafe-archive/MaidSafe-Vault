@@ -205,6 +205,12 @@ class PmidNodeService {
   template<typename Data>
   void HandleDelete(const typename Data::Name& name, const nfs::MessageId& message_id);
 
+  template<typename Data>
+  void HandleIntegrityChech(const typename Data::Name& data_name,
+                            const NonEmptyString& random_string,
+                            const NodeId& sender,
+                            const nfs::MessageId& message_id);
+
 // ================================ Sender Validation =========================================
   template<typename T>
   bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
@@ -256,6 +262,12 @@ void PmidNodeService::HandleMessage(
     const nfs::PutRequestFromPmidManagerToPmidNode& message,
     const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
     const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver);
+
+template<>
+void PmidNodeService::HandleMessage(
+    const nfs::IntegrityCheckRequestFromDataManagerToPmidNode& message,
+    const typename nfs::IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
+    const typename nfs::IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver);
 
 
 //template<>
@@ -310,6 +322,23 @@ void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_
     handler_.PutToPermanentStore(data);
   } catch(const maidsafe_error& error) {
     dispatcher_.SendPutFailure(data, message_id, error);
+  }
+}
+
+template<typename Data>
+void PmidNodeService::HandleIntegrityChech(const typename Data::Name& data_name,
+                                           const NonEmptyString& random_string,
+                                           const NodeId& sender,
+                                           const nfs::MessageId& message_id) {
+  try {
+    auto content(handler_.GetFromPermanentStore(GetDataNameVariant(
+                                                    data_name.type, data_name.raw_name)));
+    NonEmptyString signature(crypto::Hash<crypto::SHA512>(
+                            NonEmptyString(content + random_string)));
+    dispatcher_.SendIntegrityCheckResponse(
+        data_name, signature, sender, CommonErrors::success, message_id);
+  } catch(const maidsafe_error& error) {
+    dispatcher_.SendIntegrityCheckResponse(data_name, std::string(), sender, error, message_id);
   }
 }
 

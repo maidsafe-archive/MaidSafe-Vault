@@ -20,6 +20,8 @@
 
 #include "maidsafe/common/error.h"
 
+#include "maidsafe/data_types/data_name_variant.h"
+
 #include "maidsafe/vault/data_manager/action_add_pmid.pb.h"
 #include "maidsafe/vault/data_manager/value.h"
 
@@ -28,16 +30,30 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(const PmidName& pmid_name)
-    : kPmidName(pmid_name) {}
+template <typename Data>
+ActionDataManagerAddPmid::ActionDataManagerAddPmid(const PmidName& pmid_name,
+                                                   const typename Data::Name& data_name,
+                                                   IntegrityCheckFunctor integrity_check)
+    : kPmidName(pmid_name),
+      kDataName(GetDataNameVariant(data_name.type, data_name.raw_name)),
+      integrity_check_(integrity_check) {}
 
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(const std::string& serialised_action)
+ActionDataManagerAddPmid::ActionDataManagerAddPmid(const std::string& serialised_action,
+                                                   IntegrityCheckFunctor integrity_check)
     : kPmidName([&serialised_action]()->PmidName {
         protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
         if (!action_add_pmid_proto.ParseFromString(serialised_action))
           ThrowError(CommonErrors::parsing_error);
         return PmidName(Identity(action_add_pmid_proto.pmid_name()));
-      }()) {}
+      }()),
+      kDataName([&serialised_action]()->DataNameVariant {
+        protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
+        if (!action_add_pmid_proto.ParseFromString(serialised_action))
+          ThrowError(CommonErrors::parsing_error);
+        return GetDataNameVariant(static_cast<DataTagValue>(action_add_pmid_proto.data_type()),
+                                  Identity(action_add_pmid_proto.data_name()));
+      }()),
+      integrity_check_(integrity_check) {}
 
 ActionDataManagerAddPmid::ActionDataManagerAddPmid(const ActionDataManagerAddPmid& other)
     : kPmidName(other.kPmidName) {}
@@ -57,6 +73,7 @@ void ActionDataManagerAddPmid::operator()(boost::optional<DataManagerValue>& val
   value->AddPmid(kPmidName);
   if (value->Subscribers() == 0)
     value->IncrementSubscribers();
+  integrity_check_(kDataName);
 }
 
 bool operator==(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs) {

@@ -27,6 +27,7 @@
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/config.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
 
 
@@ -36,11 +37,13 @@ namespace vault {
 
 class DataManagerValue;
 
-typedef std::function<void(const NonEmptyString&)> IntegrityCheckFunctor;
-
 struct ActionDataManagerAddPmid {
-  ActionDataManagerAddPmid(const PmidName& pmid_name);
-  ActionDataManagerAddPmid(const std::string& serialised_action);
+  template<typename Data>
+  ActionDataManagerAddPmid(const PmidName& pmid_name,
+                           const typename Data::Name& data_name,
+                           IntegrityCheckFunctor integrity_check);
+  ActionDataManagerAddPmid(const std::string& serialised_action,
+                           IntegrityCheckFunctor integrity_check);
   ActionDataManagerAddPmid(const ActionDataManagerAddPmid& other);
   ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other);
   std::string Serialise() const;
@@ -49,6 +52,8 @@ struct ActionDataManagerAddPmid {
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kAddPmid;
   const PmidName kPmidName;
+  const DataNameVariant kDataName;
+  IntegrityCheckFunctor integrity_check_;
 
  private:
   ActionDataManagerAddPmid();

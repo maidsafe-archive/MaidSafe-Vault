@@ -54,6 +54,7 @@ class DataManagerService {
  public:
   typedef nfs::DataManagerServiceMessages PublicMessages;
   typedef nfs::DataManagerServiceMessages VaultMessages; // FIXME (Check with Fraser)
+  typedef nfs::IntegrityCheckResponseFromPmidNodeToDataManager::Contents IntegrityCheckResponse;
 
   DataManagerService(const passport::Pmid& pmid,
                      routing::Routing& routing,
@@ -91,6 +92,9 @@ void HandlePutFailure(const typename Data::Name& data_name,
   void SendIntegrityCheck(const typename Data::name& data_name,
                           const PmidName& pmid_node,
                           const nfs::MessageId& message_id);
+
+  void HandleDataIntergirity(const IntegrityCheckResponse& response,
+                             const nfs::MessageId& message_id);
 
   template<typename Data>
   NonEmptyString GetContentFromCache(const typename Data::Name& data_name);
@@ -137,10 +141,12 @@ void HandlePutFailure(const typename Data::Name& data_name,
 //  void HandleRecordTransfer(const nfs::Message& message);
 
   routing::Routing& routing_;
+  AsioService asio_service_;
   nfs_client::DataGetter& data_getter_;
   std::mutex accumulator_mutex_;
   Accumulator<nfs::DataManagerServiceMessages> accumulator_;
   DataManagerDispatcher dispatcher_;
+  routing::Timer<IntegrityCheckResponse> integrity_check_timer_;
   Db<DataManager::Key, DataManager::Value> db_;
   Sync<DataManager::UnresolvedPut> sync_puts_;
   Sync<DataManager::UnresolvedDelete> sync_deletes_;
@@ -263,8 +269,13 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
                                           const nfs::MessageId& message_id,
                                           const maidsafe_error& /*error*/) {
   // TODO(Team): Following should be done only if error is fixable by repeat
+  auto pmids_to_avoid(data_name);
+  pmids_to_avoid.push_back(attempted_pmid_node);
   auto pmid_name(PmidName(Identity(routing_.RandomConnectedNode().string())));
-  while (pmid_name == attempted_pmid_node)
+  while (std::find(std::begin(pmids_to_avoid),
+                   std::end(pmids_to_avoid),
+                   pmid_name)
+             != attempted_pmid_node)
     pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
   if (SendPutRetryRequired<Data>(data_name)) {
     try {
@@ -289,10 +300,19 @@ template<typename Data>
 void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
                                            const PmidName& pmid_node,
                                            const nfs::MessageId& message_id) {
-  SendIntegrityCheck(data_name, pmid_node, message_id);
   typename DataManager::Key key(data_name.raw_name, data_name.type);
   sync_add_pmids_.AddLocalAction(DataManager::UnresolvedAddPmid(
-      key, ActionDataManagerAddPmid(pmid_node), routing_.kNodeId(), message_id));
+      key,
+      ActionDataManagerAddPmid(
+          pmid_node,
+          typename Data::Name(data_name),
+          [this](const DataNameVariant& data_name, const PmidName& pmid_node) {
+            auto identity(boost::apply_visitor(GetIdentityVisitor(), data_name));
+              return this->SendIntegrityCheck<Data>(typename Data::Name(identity),
+                                                    pmid_node,
+                                                    message_id);
+          }),
+          routing_.kNodeId(), message_id));
   DoSync();
 }
 
@@ -303,16 +323,53 @@ void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name
   try {
     NonEmptyString data(GetContentFromCache(data_name));
     std::string random_string(RandomString(detail::Parameters::integrity_check_string_size));
-    NonEmptyString hash(crypto::Hash<crypto::SHA512>(
+    NonEmptyString signature(crypto::Hash<crypto::SHA512>(
                             NonEmptyString(data.string() + random_string)));
-    hash = hash;  // Just avoids warning
-    // FIX ME ADD TO TIMER
-    dispatcher_.SendIntegrityCheck(data_name, random_string, pmid_node, message_id);
+    integrity_check_timer_.AddTask(
+        std::chrono::seconds(10),
+        [signature, pmid_node, message_id, this](
+            DataManagerService::IntegrityCheckResponse response) {
+          if (response == DataManagerService::IntegrityCheckResponse()) {
+            // Timer expired, sync remove pmid_node, inform PMs, drank potentially
+            dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
+            sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
+                typename DataManager::Key(data_name.raw_name, data_name.type),
+                ActionDataManagerRemovePmid(pmid_node),
+                routing_.kNodeId(),
+                message_id));
+            DoSync();
+            return;
+          }
+          if (response.return_code.value.code() != CommonErrors::success) {
+            // Data not available on pmid , sync remove pmid_node, inform PMs
+            dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
+            sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
+                typename DataManager::Key(data_name.raw_name, data_name.type),
+                ActionDataManagerRemovePmid(pmid_node),
+                routing_.kNodeId(),
+                message_id));
+            DoSync();
+            return;
+          }
+          if (response.return_code.value.code() == CommonErrors::success) {
+            if (response.signature != signature) {
+              // Lieing pmid_node, sync remove pmid_node, inform PMs and drank
+              dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
+              sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
+                  typename DataManager::Key(data_name.raw_name, data_name.type),
+                  ActionDataManagerRemovePmid(pmid_node),
+                  routing_.kNodeId(),
+                  message_id));
+              DoSync();
+              return;
+            }
+          }
+        }, 1, message_id.data);
+    dispatcher_.SendIntegrityCheck(data_name, random_string, pmid_node, nfs::MessageId(message_id));
   } catch (const std::exception& /*ex*/) {
     // handle failure to retrieve from cache
   }
 }
-
 
 template<typename Data>
 bool DataManagerService::EntryExist(const typename Data::Name& /*name*/) {

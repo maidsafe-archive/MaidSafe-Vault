@@ -19,14 +19,18 @@
 #ifndef MAIDSAFE_VAULT_CONFIG_H_
 #define MAIDSAFE_VAULT_CONFIG_H_
 
+#include <functional>
+
+#include "maidsafe/data_types/data_name_variant.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-namespace detail {
+typedef std::function<void(const DataNameVariant&)> IntegrityCheckFunctor;
 
+namespace detail {
 
 
 }  // namespace detail
