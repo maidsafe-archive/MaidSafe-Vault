@@ -79,6 +79,7 @@ class PmidManagerService {
   template<typename Data>
   void HandlePutFailure(const typename Data::Name& data,
                         const PmidName& pmid_node,
+                        const int64_t& available_space,
                         const maidsafe_error& error_code,
                         const nfs::MessageId& message_id);
   void DoSync();
@@ -180,6 +181,7 @@ void PmidManagerService::HandlePut(const Data& data,
 template<typename Data>
 void PmidManagerService::HandlePutFailure(const typename Data::Name& name,
                                           const PmidName& pmid_node,
+                                          const int64_t& /*available_space*/,
                                           const maidsafe_error& error_code,
                                           const nfs::MessageId& message_id) {
   dispatcher_.SendPutFailure<Data>(name, pmid_node, error_code, message_id);
@@ -188,12 +190,11 @@ void PmidManagerService::HandlePutFailure(const typename Data::Name& name,
                              name.type);
   sync_deletes_.AddLocalAction(
       PmidManager::UnresolvedDelete(group_key,
-                                    ActionPmidManagerDelete(),
+                                    ActionPmidManagerDelete(name),
                                     routing_.kNodeId(),
                                     message_id));
   DoSync();
 }
-
 
 // ===============================================================================================
 

@@ -44,6 +44,8 @@ class PmidNodeHandler {
 
   boost::filesystem::path GetPermanentStorePath() const;
 
+  int64_t AvailableSpace();
+
  private:
   boost::filesystem::space_info space_info_;
   DiskUsage disk_total_;

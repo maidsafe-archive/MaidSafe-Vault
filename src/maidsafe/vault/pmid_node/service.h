@@ -321,7 +321,7 @@ void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_
   try {
     handler_.PutToPermanentStore(data);
   } catch(const maidsafe_error& error) {
-    dispatcher_.SendPutFailure(data, message_id, error);
+    dispatcher_.SendPutFailure(data.name(), handler_.AvailableSpace(), error, message_id);
   }
 }
 

@@ -27,8 +27,14 @@ message PmidManagerMetadata {
   required int64 claimed_available_size = 6;
 }
 
+message PmidManagerValueEntry {
+  required int32 data_type = 1;
+  required bytes data_name = 2;
+  required int32 size = 3;
+}
+
 message PmidManagerValue {
-  required int32 size = 1;
+  repeated PmidManagerValueEntry data_elements = 1;
 }
 
 message PmidAccountDbValue {
