@@ -311,14 +311,15 @@ void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_
     handler_.PutToPermanentStore(data);
   }
   catch (const maidsafe_error& error) {
-    dispatcher_.SendPutFailure(data, message_id, error);
+    dispatcher_.SendPutFailure(data.name(), handler_.AvailableSpace(), error, message_id);
   }
 }
 
 template <typename Data>
 void PmidNodeService::HandleIntegrityChech(const typename Data::Name& data_name,
                                            const NonEmptyString& random_string,
-                                           const NodeId& sender, const nfs::MessageId& message_id) {
+                                           const NodeId& sender,
+                                           const nfs::MessageId& message_id) {
   try {
     auto content(
         handler_.GetFromPermanentStore(GetDataNameVariant(data_name.type, data_name.raw_name)));
