@@ -39,16 +39,15 @@ class PmidManagerValue {
 
   std::string Serialise() const;
 
-  void DeleteEntry(const DataNameVariant& data_name);
-  void AddEntry(const DataNameVariant& data_name, const int64_t& size);
+  void Delete(const DataNameVariant& data_name);
+  void Add(const DataNameVariant& data_name, int32_t size);
 
   friend void swap(PmidManagerValue& lhs, PmidManagerValue& rhs);
   friend bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);
 
  private:
-  std::set<std::pair<DataNameVariant, int32_t>,
-           std::function<bool(const std::pair<DataNameVariant, int32_t>&,
-                              const std::pair<DataNameVariant, int32_t>&)>> data_elements_;
+  typedef std::pair<DataNameVariant, int32_t> ValueType;
+  std::set<ValueType, std::function<bool(const ValueType&, const ValueType&)>> data_elements_;
 };
 
 bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);

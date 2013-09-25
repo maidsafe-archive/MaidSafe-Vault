@@ -29,10 +29,9 @@ namespace maidsafe {
 namespace vault {
 
 PmidManagerValue::PmidManagerValue()
-   : data_elements_([](const std::pair<DataNameVariant, int32_t>& lhs,
-                       const std::pair<DataNameVariant, int32_t>& rhs) {
-                        return (boost::apply_visitor(GetIdentityVisitor(), lhs.first)).string() <
-                               (boost::apply_visitor(GetIdentityVisitor(), rhs.first)).string();
+   : data_elements_([](const ValueType& lhs, const ValueType& rhs) {
+                      return (boost::apply_visitor(GetIdentityVisitor(), lhs.first)).string() <
+                             (boost::apply_visitor(GetIdentityVisitor(), rhs.first)).string();
                     }) {}
 
 PmidManagerValue::PmidManagerValue(const std::string& serialised_pmid_manager_value)
@@ -77,13 +76,13 @@ std::string PmidManagerValue::Serialise() const {
   return value_proto.SerializeAsString();
 }
 
-void PmidManagerValue::DeleteEntry(const DataNameVariant& data_name) {
+void PmidManagerValue::Delete(const DataNameVariant& data_name) {
   auto identity(boost::apply_visitor(GetIdentityVisitor(), data_name));
   auto tag_value(boost::apply_visitor(GetTagValueVisitor(), data_name));
   auto iter(std::find_if(
                 std::begin(data_elements_),
                 std::end(data_elements_),
-                [identity, tag_value](const std::pair<DataNameVariant, int32_t>& element)->bool {
+                [identity, tag_value](const ValueType& element)->bool {
                   return (boost::apply_visitor(GetIdentityVisitor(), element.first) == identity) &&
                          (boost::apply_visitor(GetTagValueVisitor(), element.first) == tag_value);
                    }));
@@ -91,10 +90,9 @@ void PmidManagerValue::DeleteEntry(const DataNameVariant& data_name) {
     data_elements_.erase(iter);
 }
 
-void PmidManagerValue::AddEntry(const DataNameVariant& data_name, const int64_t& size) {
+void PmidManagerValue::Add(const DataNameVariant& data_name, int32_t size) {
   data_elements_.insert(std::make_pair(data_name, size));
 }
-
 
 bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs) {
   if (lhs.data_elements_.size() != rhs.data_elements_.size())

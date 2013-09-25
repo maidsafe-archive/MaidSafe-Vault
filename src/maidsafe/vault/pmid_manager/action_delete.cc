@@ -35,7 +35,7 @@ void ActionPmidManagerDelete::operator()(boost::optional<PmidManagerValue>& valu
     ThrowError(CommonErrors::no_such_element);
     return;
   }
-  value->DeleteEntry(kDataName);
+  value->Delete(kDataName);
 }
 
 }  // namespace vault

@@ -65,7 +65,7 @@ std::string ActionPmidManagerPut::Serialise() const {
 void ActionPmidManagerPut::operator()(boost::optional<PmidManagerValue>& value) const {
   if (!value)
     value.reset(PmidManagerValue());
-  value->AddEntry(kDataName, kSize);
+  value->Add(kDataName, kSize);
 }
 
 bool operator==(const ActionPmidManagerPut& lhs, const ActionPmidManagerPut& rhs) {
