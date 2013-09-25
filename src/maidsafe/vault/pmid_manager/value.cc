@@ -85,7 +85,7 @@ void PmidManagerValue::Delete(const DataNameVariant& data_name) {
                 [identity, tag_value](const ValueType& element)->bool {
                   return (boost::apply_visitor(GetIdentityVisitor(), element.first) == identity) &&
                          (boost::apply_visitor(GetTagValueVisitor(), element.first) == tag_value);
-                   }));
+                }));
   if (iter != std::end(data_elements_))
     data_elements_.erase(iter);
 }

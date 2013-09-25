@@ -40,7 +40,7 @@ class PmidNodeDispatcher {
                       const int64_t& available_space,
                       const maidsafe_error& error,
                       const nfs::MessageId& message_id);
-  template<typename Data>
+  template <typename Data>
   void SendIntegrityCheckResponse(const typename Data::Name& data_name,
                                   const std::string& hash,
                                   const NodeId& receiver,
