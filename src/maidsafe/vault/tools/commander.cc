@@ -362,7 +362,7 @@ void Commander::HandleGenerateChunks() {
     ImmutableData::Name name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
     ImmutableData chunk_data(name, content);
 
-    fs::path chunk_file(store_path / EncodeToBase32(chunk_data.name()->string()));
+    fs::path chunk_file(store_path / Base64Encode(chunk_data.name()->string()));
     if (!WriteFile(chunk_file, content->string()))
       LOG(kError) << "Can't store chunk " << HexSubstr(chunk_data.name()->string());
   }

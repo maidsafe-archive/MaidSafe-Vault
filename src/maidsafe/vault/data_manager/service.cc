@@ -123,7 +123,7 @@ void DataManagerService::HandleMessage(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
-//        db_.Commit(resolved_action->key, resolved_action->action);
+        db_.Commit(resolved_action->key, resolved_action->action);
       }
       break;
     }

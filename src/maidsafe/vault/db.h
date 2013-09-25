@@ -160,14 +160,14 @@ boost::optional<Value> Db<Key, Value>::GetValue(const Key& key) {
   std::string value_string;
   leveldb::Status status(leveldb_->Get(read_options, key.ToFixedWidthString().string(),
                                        &value_string));
-  boost::optional<Value> value;
   if (status.ok()) {
     assert(!value_string.empty());
-    return boost::optional<Value>(value_string);
+    return boost::optional<Value>(typename Value::serialised_type((NonEmptyString(value_string))));
   } else if (status.IsNotFound()) {
     return boost::optional<Value>();
   }
   ThrowError(VaultErrors::failed_to_handle_request);
+  return boost::optional<Value>();
 }
 
 template<typename Key, typename Value>

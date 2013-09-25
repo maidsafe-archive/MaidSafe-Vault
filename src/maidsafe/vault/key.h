@@ -39,6 +39,8 @@ class KeyTest_BEH_Serialise_Test;
 class KeyTest_BEH_All_Test;
 }  // namespace test
 
+template<typename Key, typename Value>
+class Db;
 
 struct Key {
   Key();  // FIXME Prakash
@@ -53,8 +55,8 @@ struct Key {
   Identity name;
   DataTagValue type;
 
-  template<typename Persona>
-  friend class ManagerDb;
+template<typename Key, typename Value>
+friend class Db;
 
  private:
   typedef maidsafe::detail::BoundedString<

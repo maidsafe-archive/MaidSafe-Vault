@@ -30,6 +30,10 @@ ActionDataManagerPut::ActionDataManagerPut(const std::string& /*serialised_actio
 ActionDataManagerPut::ActionDataManagerPut(const ActionDataManagerPut& /*other*/) {
 }
 
+ActionDataManagerPut::ActionDataManagerPut(ActionDataManagerPut&& /*other*/) {
+
+}
+
 std::string ActionDataManagerPut::Serialise() const {
   protobuf::ActionDataManagerPut action_put_proto;
   return action_put_proto.SerializeAsString();

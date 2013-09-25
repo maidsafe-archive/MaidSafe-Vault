@@ -306,7 +306,7 @@ void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
       ActionDataManagerAddPmid(
           pmid_node,
           typename Data::Name(data_name),
-          [this](const DataNameVariant& data_name, const PmidName& pmid_node) {
+          [this, message_id](const DataNameVariant& data_name, const PmidName& pmid_node) {
             auto identity(boost::apply_visitor(GetIdentityVisitor(), data_name));
               return this->SendIntegrityCheck<Data>(typename Data::Name(identity),
                                                     pmid_node,
@@ -327,7 +327,7 @@ void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name
                             NonEmptyString(data.string() + random_string)));
     integrity_check_timer_.AddTask(
         std::chrono::seconds(10),
-        [signature, pmid_node, message_id, this](
+        [signature, pmid_node, message_id, data_name, this](
             DataManagerService::IntegrityCheckResponse response) {
           if (response == DataManagerService::IntegrityCheckResponse()) {
             // Timer expired, sync remove pmid_node, inform PMs, drank potentially
