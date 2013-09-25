@@ -24,7 +24,6 @@
 
 #include "maidsafe/vault/key.pb.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -33,9 +32,7 @@ Key::Key() : name(), type() {}
 
 Key::Key(const Identity& name_in, DataTagValue type_in) : name(name_in), type(type_in) {}
 
-Key::Key(const std::string& serialised_key)
-    : name(),
-      type(DataTagValue::kOwnerDirectoryValue) {
+Key::Key(const std::string& serialised_key) : name(), type(DataTagValue::kOwnerDirectoryValue) {
   protobuf::Key key_proto;
   if (!key_proto.ParseFromString(serialised_key))
     ThrowError(CommonErrors::parsing_error);
@@ -45,9 +42,8 @@ Key::Key(const std::string& serialised_key)
 
 Key::Key(const FixedWidthString& fixed_width_string)
     : name(fixed_width_string.string().substr(0, NodeId::kSize)),
-      type(static_cast<DataTagValue>(
-               detail::FromFixedWidthString<detail::PaddedWidth::value>(
-                   fixed_width_string.string().substr(NodeId::kSize)))) {}
+      type(static_cast<DataTagValue>(detail::FromFixedWidthString<detail::PaddedWidth::value>(
+          fixed_width_string.string().substr(NodeId::kSize)))) {}
 
 Key::Key(const Key& other) : name(other.name) {}
 
@@ -66,9 +62,8 @@ std::string Key::Serialise() const {
 }
 
 Key::FixedWidthString Key::ToFixedWidthString() const {
-  return FixedWidthString(
-      name.string() +
-      detail::ToFixedWidthString<detail::PaddedWidth::value>(static_cast<uint32_t>(type)));
+  return FixedWidthString(name.string() + detail::ToFixedWidthString<detail::PaddedWidth::value>(
+                                              static_cast<uint32_t>(type)));
 }
 
 void swap(Key& lhs, Key& rhs) MAIDSAFE_NOEXCEPT {
@@ -81,25 +76,17 @@ bool operator==(const Key& lhs, const Key& rhs) {
   return lhs.name == rhs.name && lhs.type == rhs.type;
 }
 
-bool operator!=(const Key& lhs, const Key& rhs) {
-  return !operator==(lhs, rhs);
-}
+bool operator!=(const Key& lhs, const Key& rhs) { return !operator==(lhs, rhs); }
 
 bool operator<(const Key& lhs, const Key& rhs) {
   return std::tie(lhs.name, lhs.type) < std::tie(rhs.name, rhs.type);
 }
 
-bool operator>(const Key& lhs, const Key& rhs) {
-  return operator<(rhs, lhs);
-}
+bool operator>(const Key& lhs, const Key& rhs) { return operator<(rhs, lhs); }
 
-bool operator<=(const Key& lhs, const Key& rhs) {
-  return !operator>(lhs, rhs);
-}
+bool operator<=(const Key& lhs, const Key& rhs) { return !operator>(lhs, rhs); }
 
-bool operator>=(const Key& lhs, const Key& rhs) {
-  return !operator<(lhs, rhs);
-}
+bool operator>=(const Key& lhs, const Key& rhs) { return !operator<(lhs, rhs); }
 
 }  // namespace vault
 

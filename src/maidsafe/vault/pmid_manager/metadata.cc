@@ -22,7 +22,6 @@
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 
-
 namespace maidsafe {
 namespace vault {
 
@@ -105,10 +104,8 @@ PmidManagerMetadata::serialised_type PmidManagerMetadata::Serialise() const {
 }
 
 bool operator==(const PmidManagerMetadata& lhs, const PmidManagerMetadata& rhs) {
-  return lhs.pmid_name == rhs.pmid_name &&
-         lhs.stored_count == rhs.stored_count &&
-         lhs.stored_total_size == rhs.stored_total_size &&
-         lhs.lost_count == rhs.lost_count &&
+  return lhs.pmid_name == rhs.pmid_name && lhs.stored_count == rhs.stored_count &&
+         lhs.stored_total_size == rhs.stored_total_size && lhs.lost_count == rhs.lost_count &&
          lhs.lost_total_size == rhs.lost_total_size &&
          lhs.claimed_available_size == rhs.claimed_available_size;
 }

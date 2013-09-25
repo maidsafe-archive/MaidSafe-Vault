@@ -24,12 +24,11 @@
 #include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/value.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
-//const nfs::MessageAction ActionMaidManagerPut::kActionId(nfs::MessageAction::kPutRequest);
+// const nfs::MessageAction ActionMaidManagerPut::kActionId(nfs::MessageAction::kPutRequest);
 
 ActionMaidManagerPut::ActionMaidManagerPut(int32_t cost) : kCost(cost) {}
 

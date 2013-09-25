@@ -42,16 +42,17 @@
 #include "maidsafe/vault/pmid_node/handler.h"
 #include "maidsafe/vault/pmid_node/dispatcher.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
-namespace protobuf { class PmidAccountResponse; }
+namespace protobuf {
+class PmidAccountResponse;
+}
 
 namespace test {
 
-template<typename Data>
+template <typename Data>
 class DataHolderTest;
 
 }  // namespace test
@@ -63,11 +64,13 @@ class HasData {
   typedef char Yes;
   typedef long No;
 
-  template <typename C> static Yes Check(decltype(&C::data)) ;
-  template <typename C> static No Check(...);
+  template <typename C>
+  static Yes Check(decltype(&C::data));
+  template <typename C>
+  static No Check(...);
 
  public:
-    static bool const value = sizeof(Check<T>(0)) == sizeof(Yes);
+  static bool const value = sizeof(Check<T>(0)) == sizeof(Yes);
 };
 
 template <bool>
@@ -78,18 +81,18 @@ struct message_has_data<true> : public std::true_type {};
 
 class ContentRetrievalVisitor : public boost::static_visitor<std::string> {
  public:
-  template<typename T>
+  template <typename T>
   result_type operator()(const T& message) {
     return GetData(message, message_has_data<HasData<T>::value>());
   }
 
  private:
-  template<typename T>
+  template <typename T>
   result_type GetData(const T& message, std::true_type) {
     return message.data();
   }
 
-  template<typename T>
+  template <typename T>
   result_type GetData(const T& /*message*/, std::false_type) {
     return result_type();
   }
@@ -97,31 +100,30 @@ class ContentRetrievalVisitor : public boost::static_visitor<std::string> {
 
 class GetCallerVisitor : public boost::static_visitor<> {
  public:
-  typedef std::function<void(const DataNameVariant& key,
-                             const NonEmptyString& value)> DataStoreFunctor;
-  GetCallerVisitor(nfs_client::DataGetter& data_getter,
-                   std::vector<std::future<void>>& futures,
+  typedef std::function<void(const DataNameVariant& key, const NonEmptyString& value)>
+      DataStoreFunctor;
+  GetCallerVisitor(nfs_client::DataGetter& data_getter, std::vector<std::future<void>>& futures,
                    DataStoreFunctor store_functor)
       : data_getter_(data_getter), futures_(futures), store_functor_(store_functor) {}
 
-  template<typename DataName>
+  template <typename DataName>
   void operator()(const DataName& data_name) {
-    auto future(std::async(std::launch::async,
-                           [&] {
-                             data_getter_.Get<typename DataName::data_type>(
-                                 data_name,
-                                 std::chrono::seconds(10));
-                           }));
-    futures_.push_back(future.then(
-        [this, data_name](std::future<typename DataName::data_type> result_future) {
+    auto future(std::async(std::launch::async, [&] {
+      data_getter_.Get<typename DataName::data_type>(data_name, std::chrono::seconds(10));
+    }));
+    futures_.push_back(
+        future.then([this, data_name](std::future<typename DataName::data_type> result_future) {
           auto result(result_future.get());
           auto content(boost::apply_visitor(ContentRetrievalVisitor(), result));
           try {
             if (!content.empty())
               store_functor_(data_name, NonEmptyString(content));
-          } catch (const maidsafe_error& /*error*/) {}
+          }
+          catch (const maidsafe_error& /*error*/) {
+          }
         }));
   }
+
  private:
   nfs_client::DataGetter& data_getter_;
   std::vector<std::future<void>>& futures_;
@@ -129,19 +131,19 @@ class GetCallerVisitor : public boost::static_visitor<> {
 };
 
 class LongTermCacheableVisitor : public boost::static_visitor<bool> {
-  public:
-   template<typename Data>
-   void operator()() {
-     return is_long_term_cacheable<Data>::value;
-   }
+ public:
+  template <typename Data>
+  void operator()() {
+    return is_long_term_cacheable<Data>::value;
+  }
 };
 
 class CacheableVisitor : public boost::static_visitor<bool> {
-  public:
-   template<typename Data>
-   void operator()() {
-     return is_cacheable<Data>::value;
-   }
+ public:
+  template <typename Data>
+  void operator()() {
+    return is_cacheable<Data>::value;
+  }
 };
 
 }  // noname namespace
@@ -149,101 +151,93 @@ class CacheableVisitor : public boost::static_visitor<bool> {
 class PmidNodeService {
  public:
   typedef nfs::PmidNodeServiceMessages PublicMessages;
-  typedef nfs::PmidNodeServiceMessages VaultMessages; // FIXME (Check with Fraser)
+  typedef nfs::PmidNodeServiceMessages VaultMessages;  // FIXME (Check with Fraser)
 
-  enum : uint32_t { kPutRequestsRequired = 3, kDeleteRequestsRequired = 3 };
+  enum : uint32_t {
+    kPutRequestsRequired = 3,
+    kDeleteRequestsRequired = 3
+  };
 
-  PmidNodeService(const passport::Pmid& pmid,
-                  routing::Routing& routing,
+  PmidNodeService(const passport::Pmid& pmid, routing::Routing& routing,
                   const boost::filesystem::path& vault_root_dir);
 
-  template<typename T>
-  void HandleMessage(const T& message,
-                     const typename T::Sender& sender,
+  template <typename T>
+  void HandleMessage(const T& message, const typename T::Sender& sender,
                      const typename T::Receiver& receiver);
 
-  template<typename T>
-  bool GetFromCache(const T& /*message*/,
-                    const typename T::Sender& /*sender*/,
+  template <typename T>
+  bool GetFromCache(const T& /*message*/, const typename T::Sender& /*sender*/,
                     const typename T::Receiver& /*receiver*/) {
     T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
     return false;
   }
 
-  template<typename T>
-  void StoreInCache(const T& /*message*/,
-                    const typename T::Sender& /*sender*/,
+  template <typename T>
+  void StoreInCache(const T& /*message*/, const typename T::Sender& /*sender*/,
                     const typename T::Receiver& /*receiver*/) {
     T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
   }
 
-  template<typename Data>
+  template <typename Data>
   friend class test::DataHolderTest;
 
  private:
   typedef std::true_type IsCacheable, IsLongTermCacheable;
   typedef std::false_type IsNotCacheable, IsShortTermCacheable;
 
-// ================================ Pmid Account ===============================================
+  // ================================ Pmid Account ===============================================
   void SendAccountRequest();
 
   // populates chunks map
-//  void ApplyAccountTransfer(const std::vector<protobuf::PmidAccountResponse>& responses,
-//                            const size_t& total_pmidmgrs,
-//                            const size_t& pmidmagsr_with_account);
-//  void UpdateLocalStorage(const std::map<DataNameVariant, uint16_t>& expected_files);
-//  void ApplyUpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
-//                               const std::vector<DataNameVariant>& to_be_retrieved);
-//  std::vector<DataNameVariant> StoredFileNames();
+  //  void ApplyAccountTransfer(const std::vector<protobuf::PmidAccountResponse>& responses,
+  //                            const size_t& total_pmidmgrs,
+  //                            const size_t& pmidmagsr_with_account);
+  //  void UpdateLocalStorage(const std::map<DataNameVariant, uint16_t>& expected_files);
+  //  void ApplyUpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
+  //                               const std::vector<DataNameVariant>& to_be_retrieved);
+  //  std::vector<DataNameVariant> StoredFileNames();
 
-  std::future<std::unique_ptr<ImmutableData>>
-  RetrieveFileFromNetwork(const DataNameVariant& file_id);
+  std::future<std::unique_ptr<ImmutableData>> RetrieveFileFromNetwork(
+      const DataNameVariant& file_id);
   void HandleAccountResponses(
       const std::vector<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>& responses);
   template <typename Data>
   void HandlePut(const Data& data, const nfs::MessageId& message_id);
-  template<typename Data>
+  template <typename Data>
   void HandleDelete(const typename Data::Name& name, const nfs::MessageId& message_id);
 
-  template<typename Data>
+  template <typename Data>
   void HandleIntegrityChech(const typename Data::Name& data_name,
-                            const NonEmptyString& random_string,
-                            const NodeId& sender,
+                            const NonEmptyString& random_string, const NodeId& sender,
                             const nfs::MessageId& message_id);
 
-// ================================ Sender Validation =========================================
-  template<typename T>
+  // ================================ Sender Validation =========================================
+  template <typename T>
   bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
     return true;
   }
 
-// ===================================Cache=====================================================
-  template<typename T>
-  bool DoGetFromCache(const T& message,
-                      const typename T::Sender& sender,
+  // ===================================Cache=====================================================
+  template <typename T>
+  bool DoGetFromCache(const T& message, const typename T::Sender& sender,
                       const typename T::Receiver& receiver);
 
-  template<typename T>
-  bool CacheGet(const T& message,
-                const typename T::Sender& sender,
-                const typename T::Receiver& receiver,
-                IsShortTermCacheable);
+  template <typename T>
+  bool CacheGet(const T& message, const typename T::Sender& sender,
+                const typename T::Receiver& receiver, IsShortTermCacheable);
 
-  template<typename T>
-  bool CacheGet(const T& message,
-                const typename T::Sender& sender,
-                const typename T::Receiver& receiver,
-                IsLongTermCacheable);
+  template <typename T>
+  bool CacheGet(const T& message, const typename T::Sender& sender,
+                const typename T::Receiver& receiver, IsLongTermCacheable);
 
-  template<typename T>
+  template <typename T>
   void CacheStore(const T& message, const DataNameVariant& data_name, IsShortTermCacheable);
 
-  template<typename T>
+  template <typename T>
   void CacheStore(const T& message, const DataNameVariant& data_name, IsLongTermCacheable);
 
   template <typename T>
-  void SendCachedData(const T& message,
-                      const typename T::Sender& sender,
+  void SendCachedData(const T& message, const typename T::Sender& sender,
                       const typename T::Receiver& receiver,
                       const std::shared_ptr<NonEmptyString> content);
 
@@ -257,93 +251,88 @@ class PmidNodeService {
   nfs_client::DataGetter data_getter_;
 };
 
-template<>
+template <>
 void PmidNodeService::HandleMessage(
     const nfs::PutRequestFromPmidManagerToPmidNode& message,
     const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
     const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
-template<>
+template <>
 void PmidNodeService::HandleMessage(
     const nfs::IntegrityCheckRequestFromDataManagerToPmidNode& message,
     const typename nfs::IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
     const typename nfs::IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver);
 
-
-//template<>
-//void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
+// template<>
+// void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
 //    const nfs::GetRequestFromDataManagerToPmidNode& message,
 //    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
 //    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& receiver);
 
-//template<>
-//void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>(
+// template<>
+// void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>(
 //    const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
 //    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
 //    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
-
-//template<>
-//void PmidNodeService::HandleMessage<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(
+// template<>
+// void PmidNodeService::HandleMessage<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(
 //    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& message,
 //    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
 //    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
 
-//template<>
-//bool PmidNodeService::GetFromCache<nfs::GetRequestFromMaidNodeToDataManager>(
+// template<>
+// bool PmidNodeService::GetFromCache<nfs::GetRequestFromMaidNodeToDataManager>(
 //    const nfs::GetRequestFromMaidNodeToDataManager& message,
 //    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
 //    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
 
-//template<>
-//bool PmidNodeService::GetFromCache<nfs::GetRequestFromPmidNodeToDataManager>(
+// template<>
+// bool PmidNodeService::GetFromCache<nfs::GetRequestFromPmidNodeToDataManager>(
 //    const nfs::GetRequestFromPmidNodeToDataManager& message,
 //    const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
 //    const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver);
 
-//template<>
-//void PmidNodeService::StoreInCache<nfs::GetResponseFromDataManagerToMaidNode>(
+// template<>
+// void PmidNodeService::StoreInCache<nfs::GetResponseFromDataManagerToMaidNode>(
 //    const nfs::GetResponseFromDataManagerToMaidNode& message,
 //    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& sender,
 //    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& receiver);
 
-
 // ============================== Put implementation =============================================
 
-template<typename T>
-void PmidNodeService::HandleMessage(const T& /*message*/,
-                                    const typename T::Sender& /*sender*/,
+template <typename T>
+void PmidNodeService::HandleMessage(const T& /*message*/, const typename T::Sender& /*sender*/,
                                     const typename T::Receiver& /*receiver*/) {}
 
-
-template<typename Data>
+template <typename Data>
 void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_id) {
   try {
     handler_.PutToPermanentStore(data);
-  } catch(const maidsafe_error& error) {
+  }
+  catch (const maidsafe_error& error) {
     dispatcher_.SendPutFailure(data, message_id, error);
   }
 }
 
-template<typename Data>
+template <typename Data>
 void PmidNodeService::HandleIntegrityChech(const typename Data::Name& data_name,
                                            const NonEmptyString& random_string,
-                                           const NodeId& sender,
-                                           const nfs::MessageId& message_id) {
+                                           const NodeId& sender, const nfs::MessageId& message_id) {
   try {
-    auto content(handler_.GetFromPermanentStore(GetDataNameVariant(
-                                                    data_name.type, data_name.raw_name)));
-    NonEmptyString signature(crypto::Hash<crypto::SHA512>(
-                            NonEmptyString(content + random_string)));
-    dispatcher_.SendIntegrityCheckResponse(
-        data_name, signature, sender, CommonErrors::success, message_id);
-  } catch(const maidsafe_error& error) {
+    auto content(
+        handler_.GetFromPermanentStore(GetDataNameVariant(data_name.type, data_name.raw_name)));
+    NonEmptyString signature(crypto::Hash<crypto::SHA512>(NonEmptyString(content + random_string)));
+    dispatcher_.SendIntegrityCheckResponse(data_name, signature, sender, CommonErrors::success,
+                                           message_id);
+  }
+  catch (const maidsafe_error& error) {
     dispatcher_.SendIntegrityCheckResponse(data_name, std::string(), sender, error, message_id);
   }
 }
 
-//template<>
-//void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
+// template<>
+// void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
 //    const nfs::GetRequestFromDataManagerToPmidNode& message,
 //    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
 //    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& receiver) {
@@ -358,8 +347,8 @@ void PmidNodeService::HandleIntegrityChech(const typename Data::Name& data_name,
 //      accumulator_mutex_)(message, sender, receiver);
 //}
 
-//template<>
-//void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>(
+// template<>
+// void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>(
 //    const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
 //    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
 //    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver) {
@@ -374,15 +363,15 @@ void PmidNodeService::HandleIntegrityChech(const typename Data::Name& data_name,
 //      accumulator_mutex_)(message, sender, receiver);
 //}
 
-template<>
+template <>
 void PmidNodeService::HandleMessage(
     const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& message,
     const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
     const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
 
 // Commented by Mahmoud on 15 Sep. Needs refactoring
-//template<>
-//void PmidNodeService::HandleGetMessage(const nfs::GetRequestFromDataManagerToPmidNode& message,
+// template<>
+// void PmidNodeService::HandleGetMessage(const nfs::GetRequestFromDataManagerToPmidNode& message,
 //    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
 //    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/) {
 //  typedef nfs::GetResponseFromPmidNodeToDataManager NfsMessage;
@@ -420,7 +409,7 @@ void PmidNodeService::HandleMessage(
 //  }
 //}
 
-template<typename Data>
+template <typename Data>
 void PmidNodeService::HandleDelete(const typename Data::Name& name,
                                    const nfs::MessageId& /*message_id*/) {
   try {
@@ -428,31 +417,31 @@ void PmidNodeService::HandleDelete(const typename Data::Name& name,
       handler_.DeleteFromPermanentStore<Data>(nfs_vault::DataName(name.type, name.raw_name));
       // accumulator_.SetHandled(message, sender); To be moved to OperationWrapper
     }
-  } catch(const std::exception& /*ex*/) {
+  }
+  catch (const std::exception& /*ex*/) {
     std::lock_guard<std::mutex> lock(accumulator_mutex_);
     // accumulator_.SetHandled(message, sender); To be moved to OperationWrapper
   }
 }
 
-
-//template<>
-//bool PmidNodeService::GetFromCache<nfs::GetRequestFromMaidNodeToDataManager>(
+// template<>
+// bool PmidNodeService::GetFromCache<nfs::GetRequestFromMaidNodeToDataManager>(
 //    const nfs::GetRequestFromMaidNodeToDataManager& message,
 //    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
 //    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
 //  return DoGetFromCache(message, sender, receiver);
 //}
 
-//template<>
-//bool PmidNodeService::GetFromCache<nfs::GetRequestFromPmidNodeToDataManager>(
+// template<>
+// bool PmidNodeService::GetFromCache<nfs::GetRequestFromPmidNodeToDataManager>(
 //    const nfs::GetRequestFromPmidNodeToDataManager& message,
 //    const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
 //    const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver) {
 //  return DoGetFromCache(message, sender, receiver);
 //}
 
-//template<typename T>
-//bool PmidNodeService::DoGetFromCache(const T& message,
+// template<typename T>
+// bool PmidNodeService::DoGetFromCache(const T& message,
 //                                     const typename T::Sender& sender,
 //                                     const typename T::Receiver& receiver) {
 //  auto data_name(GetDataNameVariant(message.contents->type, message.contents->raw_name));
@@ -463,13 +452,14 @@ void PmidNodeService::HandleDelete(const typename Data::Name& name,
 //  return CacheGet(message, sender, receiver, IsShortTermCacheable());
 //}
 
-//template<typename T>
-//bool PmidNodeService::CacheGet(const T& message,
+// template<typename T>
+// bool PmidNodeService::CacheGet(const T& message,
 //                               const typename T::Sender& sender,
 //                               const typename T::Receiver& receiver,
 //                               IsShortTermCacheable) {
 //  try {
-//    auto content(std::make_shared<NonEmptyString>(handler_.mem_only_cache_.Get(*message.contents)));
+//    auto
+// content(std::make_shared<NonEmptyString>(handler_.mem_only_cache_.Get(*message.contents)));
 //    active_.Send([=]() {
 //                   SendCachedData(message, sender, receiver, content);
 //                 });
@@ -479,13 +469,14 @@ void PmidNodeService::HandleDelete(const typename Data::Name& name,
 //  return true;
 //}
 
-//template<typename T>
-//bool PmidNodeService::CacheGet(const T& message,
+// template<typename T>
+// bool PmidNodeService::CacheGet(const T& message,
 //                               const typename T::Sender& sender,
 //                               const typename T::Receiver& receiver,
 //                               IsLongTermCacheable) {
 //  try {
-//    auto content(std::make_shared<NonEmptyString>(handler_.cache_data_store_.Get(*message.contents)));
+//    auto
+// content(std::make_shared<NonEmptyString>(handler_.cache_data_store_.Get(*message.contents)));
 //    active_.Send([=]() {
 //                   SendCachedData(message, sender, receiver, content);
 //                 });
@@ -495,8 +486,8 @@ void PmidNodeService::HandleDelete(const typename Data::Name& name,
 //  return true;
 //}
 
-//template<>
-//void PmidNodeService::StoreInCache<nfs::GetResponseFromDataManagerToMaidNode>(
+// template<>
+// void PmidNodeService::StoreInCache<nfs::GetResponseFromDataManagerToMaidNode>(
 //    const nfs::GetResponseFromDataManagerToMaidNode& message,
 //    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& /*sender*/,
 //    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& /*receiver*/) {
@@ -510,22 +501,22 @@ void PmidNodeService::HandleDelete(const typename Data::Name& name,
 //    CacheStore(message, data_name, IsShortTermCacheable());
 //}
 
-//template<typename T>
-//void PmidNodeService::CacheStore(const T& message,
+// template<typename T>
+// void PmidNodeService::CacheStore(const T& message,
 //                                 const DataNameVariant& data_name,
 //                                 IsShortTermCacheable) {
 //  handler_.mem_only_cache_.Store(data_name, message.contents->data->content);
 //}
 
-//template<typename T>
-//void PmidNodeService::CacheStore(const T& message,
+// template<typename T>
+// void PmidNodeService::CacheStore(const T& message,
 //                                 const DataNameVariant& name,
 //                                 IsLongTermCacheable) {
 //  handler_.cache_data_store_.Store(name, message.contents->data->content);
 //}
 
-//template <typename T>
-//void PmidNodeService::SendCachedData(const T& message,
+// template <typename T>
+// void PmidNodeService::SendCachedData(const T& message,
 //                                     const typename T::Sender& sender,
 //                                     const typename T::Receiver& /*receiver*/,
 //                                     const std::shared_ptr<NonEmptyString> content) {
@@ -542,8 +533,8 @@ void PmidNodeService::HandleDelete(const typename Data::Name& name,
 //}
 
 // Commented by Mahmoud on 15 Sep. MUST BE FIXED
-//template<>
-//bool PmidNodeService::ValidateSender(
+// template<>
+// bool PmidNodeService::ValidateSender(
 //    const nfs::PutRequestFromPmidManagerToPmidNode& message,
 //    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/) const {
 //  if (!SenderIsConnectedVault(message, routing_))
@@ -553,8 +544,8 @@ void PmidNodeService::HandleDelete(const typename Data::Name& name,
 //    ThrowError(CommonErrors::invalid_parameter);
 //}
 
-//template<>
-//bool PmidNodeService::ValidateSender(
+// template<>
+// bool PmidNodeService::ValidateSender(
 //    const nfs::GetRequestFromDataManagerToPmidNode& message,
 //    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& /*sender*/) const {
 //  if (!SenderInGroupForMetadata(message, routing_))
@@ -564,8 +555,8 @@ void PmidNodeService::HandleDelete(const typename Data::Name& name,
 //    ThrowError(CommonErrors::invalid_parameter);
 //}
 
-//template<>
-//bool PmidNodeService::ValidateSender(
+// template<>
+// bool PmidNodeService::ValidateSender(
 //    const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
 //    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& /*sender*/) const {
 //  if (!SenderIsConnectedVault(message, routing_))

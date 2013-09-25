@@ -57,7 +57,6 @@
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/accumulator.h"
 
-
 namespace maidsafe {
 
 class OwnerDirectory;
@@ -77,8 +76,8 @@ class MaidManagerService {
 
   MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing);
 
-  template<typename T>
-  void HandleMessage(const T&, const typename T::Sender& , const typename T::Receiver&);
+  template <typename T>
+  void HandleMessage(const T&, const typename T::Sender&, const typename T::Receiver&);
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {}
 
  private:
@@ -90,63 +89,59 @@ class MaidManagerService {
   MaidManagerService(MaidManagerService&&);
   MaidManagerService& operator=(MaidManagerService&&);
 
-//  void CheckSenderIsConnectedMaidNode(const nfs::Message& message) const;
-//  void CheckSenderIsConnectedMaidManager(const nfs::Message& message) const;
-//  void ValidateDataSender(const nfs::Message& message) const;
+  //  void CheckSenderIsConnectedMaidNode(const nfs::Message& message) const;
+  //  void CheckSenderIsConnectedMaidManager(const nfs::Message& message) const;
+  //  void ValidateDataSender(const nfs::Message& message) const;
   template <typename T>
-  bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const { return false; }
+  bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
+    return false;
+  }
 
-   void HandleCreateAccount(const MaidName& maid_name);
+  void HandleCreateAccount(const MaidName& maid_name);
 
   // =============== Put/Delete data ===============================================================
-  template<typename Data>
-  void HandlePut(const MaidName& account_name,
-                 const Data& data,
-                 const PmidName& pmid_node_hint,
+  template <typename Data>
+  void HandlePut(const MaidName& account_name, const Data& data, const PmidName& pmid_node_hint,
                  const nfs::MessageId& message_id);
 
   template <typename Data>
-  void HandlePutResponse(const MaidName& maid_name,
-                         const typename Data::Name& data_name,
-                         const int32_t& cost,
-                         const nfs::MessageId& message_id);
+  void HandlePutResponse(const MaidName& maid_name, const typename Data::Name& data_name,
+                         const int32_t& cost, const nfs::MessageId& message_id);
 
   template <typename Data>
-  void HandleDelete(const NodeId& account_name,
-                    const typename Data::Name& data_name,
+  void HandleDelete(const NodeId& account_name, const typename Data::Name& data_name,
                     const nfs::MessageId& message_id);
 
   MaidManagerMetadata::Status AllowPut(const MaidName& account_name, int32_t cost);
 
-
   // Only Maid and Anmaid can create account; for all others this is a no-op.
   typedef std::true_type AllowedAccountCreationType;
   typedef std::false_type DisallowedAccountCreationType;
-  template<typename Data>
+  template <typename Data>
   void CreateAccount(const MaidName& account_name, AllowedAccountCreationType);
-  template<typename Data>
+  template <typename Data>
   void CreateAccount(const MaidName& /*account_name*/, DisallowedAccountCreationType) {}
 
-//  template<typename Data, nfs::MessageAction action>
-//  void AddLocalUnresolvedActionThenSync(const nfs::Message& message, int32_t cost);
+  //  template<typename Data, nfs::MessageAction action>
+  //  void AddLocalUnresolvedActionThenSync(const nfs::Message& message, int32_t cost);
 
-//  template<typename Data>
-//  void HandleVersionMessage(const nfs::Message& message,
-//                            const routing::ReplyFunctor& reply_functor);
+  //  template<typename Data>
+  //  void HandleVersionMessage(const nfs::Message& message,
+  //                            const routing::ReplyFunctor& reply_functor);
 
-//  // =============== Pmid registration =============================================================
-//  void HandlePmidRegistration(const nfs::Message& message,
-//                              const routing::ReplyFunctor& reply_functor);
-//  template<typename PublicFobType>
-//  void ValidatePmidRegistration(const nfs::Reply& reply,
-//                                typename PublicFobType::Name public_fob_name,
-//                                std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
+  //  // =============== Pmid registration
+  // =============================================================
+  //  void HandlePmidRegistration(const nfs::Message& message,
+  //                              const routing::ReplyFunctor& reply_functor);
+  //  template<typename PublicFobType>
+  //  void ValidatePmidRegistration(const nfs::Reply& reply,
+  //                                typename PublicFobType::Name public_fob_name,
+  //                                std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
   void FinalisePmidRegistration(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
 
-
   // =============== Account transfer ==============================================================
-//  void TransferAccount(const MaidName& account_name, const NodeId& new_node);
-//  void HandleAccountTransfer(const nfs::Message& message);
+  //  void TransferAccount(const MaidName& account_name, const NodeId& new_node);
+  //  void HandleAccountTransfer(const nfs::Message& message);
 
   // =============== PMID totals ===================================================================
   void UpdatePmidTotals(const MaidName& account_name);
@@ -156,7 +151,7 @@ class MaidManagerService {
   void DoSync();
 
   routing::Routing& routing_;
-//  nfs_client::DataGetter data_getter_;
+  //  nfs_client::DataGetter data_getter_;
   GroupDb<MaidManager> group_db_;
   std::mutex accumulator_mutex_;
   Accumulator<nfs::MaidManagerServiceMessages> accumulator_;
@@ -171,116 +166,113 @@ class MaidManagerService {
   static const int kDefaultPaymentFactor_;
 };
 
-template<typename T>
-void MaidManagerService::HandleMessage(const T&,
-                                       const typename T::Sender& ,
+template <typename T>
+void MaidManagerService::HandleMessage(const T&, const typename T::Sender&,
                                        const typename T::Receiver&) {
-//  T::specialisation_required;
+  //  T::specialisation_required;
 }
 
-
-template<>
+template <>
 void MaidManagerService::HandleMessage(
     const nfs::PutRequestFromMaidNodeToMaidManager& message,
     const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
+template <>
 void MaidManagerService::HandleMessage(
     const nfs::PutResponseFromDataManagerToMaidManager& message,
     const typename nfs::PutResponseFromDataManagerToMaidManager::Sender& sender,
     const typename nfs::PutResponseFromDataManagerToMaidManager::Receiver& receiver);
 
-template<>
+template <>
 void MaidManagerService::HandleMessage(
     const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
     const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
+template <>
 void MaidManagerService::HandleMessage(
     const nfs::PutVersionRequestFromMaidNodeToMaidManager& message,
     const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
+template <>
 void MaidManagerService::HandleMessage(
     const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager& message,
     const typename nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Sender& sender,
-    const typename
-        nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Receiver& receiver);
+    const typename nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
+template <>
 void MaidManagerService::HandleMessage(
     const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
     const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
+template <>
 void MaidManagerService::HandleMessage(
     const nfs::RemoveAccountRequestFromMaidNodeToMaidManager& message,
     const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
+template <>
 void MaidManagerService::HandleMessage(
     const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
     const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
+template <>
 void MaidManagerService::HandleMessage(
     const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
     const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
+template <>
 void MaidManagerService::HandleMessage(
     const nfs::GetPmidHealthRequestFromMaidNodeToMaidManager& message,
     const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<>
+template <>
 void MaidManagerService::HandleMessage(
     const nfs::SynchroniseFromMaidManagerToMaidManager& message,
     const typename nfs::SynchroniseFromMaidManagerToMaidManager::Sender& sender,
     const typename nfs::SynchroniseFromMaidManagerToMaidManager::Receiver& receiver);
 
-
 // ==================== Implementation =============================================================
 namespace detail {
 
-template<typename T>
+template <typename T>
 struct can_create_account : public std::false_type {};
 
-template<>
+template <>
 struct can_create_account<passport::PublicAnmaid> : public std::true_type {};
 
-template<>
+template <>
 struct can_create_account<passport::PublicMaid> : public std::true_type {};
 
-//template<typename Data>
-//int32_t EstimateCost(const Data& data) {
-//  static_assert(!std::is_same<Data, passport::PublicAnmaid>::value, "Cost of Anmaid should be 0.");
+// template<typename Data>
+// int32_t EstimateCost(const Data& data) {
+//  static_assert(!std::is_same<Data, passport::PublicAnmaid>::value, "Cost of Anmaid should be
+// 0.");
 //  static_assert(!std::is_same<Data, passport::PublicMaid>::value, "Cost of Maid should be 0.");
 //  static_assert(!std::is_same<Data, passport::PublicPmid>::value, "Cost of Pmid should be 0.");
 //  return static_cast<int32_t>(MaidManagerService::DefaultPaymentFactor() *
 //                              data.content.string().size());
 //}
 
-//template<>
-//int32_t EstimateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&);
+// template<>
+// int32_t EstimateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&);
 
-//template<>
-//int32_t EstimateCost<passport::PublicMaid>(const passport::PublicMaid&);
+// template<>
+// int32_t EstimateCost<passport::PublicMaid>(const passport::PublicMaid&);
 
-//template<>
-//int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&);
+// template<>
+// int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&);
 
-//MaidName GetMaidAccountName(const nfs::Message& message);
+// MaidName GetMaidAccountName(const nfs::Message& message);
 
-//template<typename Data>
-//typename Data::Name GetDataName(const nfs::Message& message) {
+// template<typename Data>
+// typename Data::Name GetDataName(const nfs::Message& message) {
 //  // Hash the data name to obfuscate the list of chunks associated with the client.
 //  return typename Data::Name(crypto::Hash<crypto::SHA512>(message.data().name));
 //}
@@ -298,15 +290,14 @@ void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
 
 }  // namespace detail
 
-
 // ================================== Put Implementation ========================================
 
 template <typename Data>
-void MaidManagerService::HandlePut(const MaidName& account_name,
-                                   const Data& data,
+void MaidManagerService::HandlePut(const MaidName& account_name, const Data& data,
                                    const PmidName& pmid_node_hint,
                                    const nfs::MessageId& message_id) {
-  // FIXME(Team) need to return fail/stop forwarding message to next persona here if no space available for account
+  // FIXME(Team) need to return fail/stop forwarding message to next persona here if no space
+  // available for account
   // Needs discussion (similar to AllowPut)
   dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
 }
@@ -314,10 +305,9 @@ void MaidManagerService::HandlePut(const MaidName& account_name,
 template <typename Data>
 void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
                                            const typename Data::Name& data_name,
-                                           const int32_t& cost,
-                                           const nfs::MessageId& message_id) {
-  typename MaidManager::Key group_key(
-      typename MaidManager::GroupName(maid_name.value), data_name.raw_name, data_name.type);
+                                           const int32_t& cost, const nfs::MessageId& message_id) {
+  typename MaidManager::Key group_key(typename MaidManager::GroupName(maid_name.value),
+                                      data_name.raw_name, data_name.type);
   sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(
       group_key, ActionMaidManagerPut(cost), routing_.kNodeId(), message_id));
   DoSync();
@@ -329,13 +319,13 @@ template <typename Data>
 void MaidManagerService::HandleDelete(const NodeId& /*account_name*/,
                                       const typename Data::Name& /*data_name*/,
                                       const nfs::MessageId& /*message_id*/) {
-//  dispatcher_.SendDeleteRequest(MaidName(account_name), data_name, message_id);
+  //  dispatcher_.SendDeleteRequest(MaidName(account_name), data_name, message_id);
 }
 
 // ===============================================================================================
 
-//template<>
-//void MaidManagerService::HandleMessage<maid_manager::MaidNodePut>(
+// template<>
+// void MaidManagerService::HandleMessage<maid_manager::MaidNodePut>(
 //    const maid_manager::MaidNodePut& message,
 //    const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender,
 //    const typename nfs::Receiver<maid_manager::MaidNodePut>::type& receiver) {
@@ -356,8 +346,8 @@ void MaidManagerService::HandleDelete(const NodeId& /*account_name*/,
 //  }
 //}
 
-//template<>
-//void MaidManagerService::HandleMessage<maid_manager::MaidNodeDelete>(
+// template<>
+// void MaidManagerService::HandleMessage<maid_manager::MaidNodeDelete>(
 //    const maid_manager::MaidNodeDelete& message,
 //    const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender,
 //    const typename nfs::Receiver<maid_manager::MaidNodeDelete>::type& receiver) {
@@ -376,13 +366,12 @@ void MaidManagerService::HandleDelete(const NodeId& /*account_name*/,
 //  }
 //}
 
-//template<typename Data>
-//void HandlePut(const typename Data::Name& data_name,
+// template<typename Data>
+// void HandlePut(const typename Data::Name& data_name,
 //               const maid_manager::MaidNodePut& message,
 //               const typename nfs::Sender<maid_manager::MaidNodePut>::type& sender) {
 //  MaidName account_name(Identity(sender->string()));
 //  nfs::DataNameContentAndPmidHint parsed_content(message.serialised_message);
-
 
 //  message. // figure out from metadata if we have space and if low return to client
 //      // we need o send the whole data item not only name
@@ -390,8 +379,8 @@ void MaidManagerService::HandleDelete(const NodeId& /*account_name*/,
 //  dispatcher_.SendPutRequest(account_name, data_name);
 //}
 
-//template<typename Data>
-//void MaidManagerService::HandleDelete(
+// template<typename Data>
+// void MaidManagerService::HandleDelete(
 //    const typename Data::Name& data_name,
 //    const maid_manager::MaidNodeDelete& message,
 //    const typename nfs::Sender<maid_manager::MaidNodeDelete>::type& sender) {
@@ -400,8 +389,8 @@ void MaidManagerService::HandleDelete(const NodeId& /*account_name*/,
 //  dispatcher_.SendDeleteRequest(account_name, data_name);
 //}
 
-//template<typename Data>
-//void MaidManagerService::HandleMessage(const nfs::Message& message,
+// template<typename Data>
+// void MaidManagerService::HandleMessage(const nfs::Message& message,
 //                                       const routing::ReplyFunctor& reply_functor) {
 //  ValidateDataSender(message);
 //  nfs::Reply reply(CommonErrors::success);
@@ -425,8 +414,8 @@ void MaidManagerService::HandleDelete(const NodeId& /*account_name*/,
 //  }
 //}
 
-//template<typename Data>
-//void MaidManagerService::HandlePut(const maidsafe::vault::MaidManagerService::Data &message) {
+// template<typename Data>
+// void MaidManagerService::HandlePut(const maidsafe::vault::MaidManagerService::Data &message) {
 //  maidsafe_error return_code(CommonErrors::success);
 //  try {
 //    Data data(typename Data::Name(message.data().name),
@@ -464,20 +453,20 @@ void MaidManagerService::HandleDelete(const NodeId& /*account_name*/,
 //  SendReplyAndAddToAccumulator(message, reply_functor, reply);
 //}
 
-//template<>
-//void MaidManagerService::HandlePut<OwnerDirectory>(const nfs::Message& message,
+// template<>
+// void MaidManagerService::HandlePut<OwnerDirectory>(const nfs::Message& message,
 //                                                   const routing::ReplyFunctor& reply_functor);
 
-//template<>
-//void MaidManagerService::HandlePut<GroupDirectory>(const nfs::Message& message,
+// template<>
+// void MaidManagerService::HandlePut<GroupDirectory>(const nfs::Message& message,
 //                                                   const routing::ReplyFunctor& reply_functor);
 
-//template<>
-//void MaidManagerService::HandlePut<WorldDirectory>(const nfs::Message& message,
+// template<>
+// void MaidManagerService::HandlePut<WorldDirectory>(const nfs::Message& message,
 //                                                   const routing::ReplyFunctor& reply_functor);
 
-//template<typename Data>
-//void MaidManagerService::HandleDelete(const nfs::Message& message,
+// template<typename Data>
+// void MaidManagerService::HandleDelete(const nfs::Message& message,
 //                                      const routing::ReplyFunctor& reply_functor) {
 //  SendReplyAndAddToAccumulator(message, reply_functor, nfs::Reply(CommonErrors::success));
 //  try {
@@ -497,7 +486,7 @@ void MaidManagerService::HandleDelete(const NodeId& /*account_name*/,
 //  }
 //}
 
-//MaidManagerMetadata::Status MaidManagerService::AllowPut(const MaidName& account_name,
+// MaidManagerMetadata::Status MaidManagerService::AllowPut(const MaidName& account_name,
 //                                                         int32_t cost) {
 //  auto metadata(group_db_.GetMetadata(account_name));
 //  if (metadata)
@@ -507,8 +496,8 @@ void MaidManagerService::HandleDelete(const NodeId& /*account_name*/,
 //  return cost ? MaidManagerMetadata::Status::kNoSpace : MaidManagerMetadata::Status::kOk;
 //}
 
-//template<typename Data>
-//void MaidManagerService::HandlePutResult(const nfs::Reply& overall_result,
+// template<typename Data>
+// void MaidManagerService::HandlePutResult(const nfs::Reply& overall_result,
 //                                         const nfs::Message& message,
 //                                         routing::ReplyFunctor client_reply_functor) {
 //  if (overall_result.IsSuccess()) {
@@ -529,14 +518,15 @@ void MaidManagerService::HandleDelete(const NodeId& /*account_name*/,
 //  }
 //}
 
-//template<typename Data>
-//void MaidManagerService::CreateAccount(const MaidName& account_name, AllowedAccountCreationType) {
+// template<typename Data>
+// void MaidManagerService::CreateAccount(const MaidName& account_name, AllowedAccountCreationType)
+// {
 //  sync_create_accounts_.AddLocalAction();
 //  DoSync();
 //}
 
-//template<typename Data, nfs::MessageAction action>
-//void MaidManagerService::AddLocalUnresolvedActionThenSync(const nfs::Message& message,
+// template<typename Data, nfs::MessageAction action>
+// void MaidManagerService::AddLocalUnresolvedActionThenSync(const nfs::Message& message,
 //                                                          int32_t cost) {
 //  auto account_name(detail::GetMaidAccountName(message));
 //  auto unresolved_action(detail::CreateUnresolvedAction<Data, action>(message, cost,
@@ -545,13 +535,13 @@ void MaidManagerService::HandleDelete(const NodeId& /*account_name*/,
 //  DoSync(account_name);
 //}
 
-//template<typename Data>
-//void MaidManagerService::HandleVersionMessage(const nfs::Message& message,
+// template<typename Data>
+// void MaidManagerService::HandleVersionMessage(const nfs::Message& message,
 //                                              const routing::ReplyFunctor& reply_functor) {
 //}
 
-//template<typename PublicFobType>
-//void MaidManagerService::ValidatePmidRegistration(
+// template<typename PublicFobType>
+// void MaidManagerService::ValidatePmidRegistration(
 //    const nfs::Reply& reply,
 //    typename PublicFobType::Name public_fob_name,
 //    std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {

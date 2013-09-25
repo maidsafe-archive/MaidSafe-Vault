@@ -21,13 +21,12 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
 PmidAccountResponse::PmidAccountResponse(const std::string& serialised_pmid_accounts)
-   : serialised_pmid_accounts_(serialised_pmid_accounts) {}
+    : serialised_pmid_accounts_(serialised_pmid_accounts) {}
 
 PmidAccountResponse::PmidAccountResponse(const PmidAccountResponse& other)
     : serialised_pmid_accounts_(other.serialised_pmid_accounts_) {}
@@ -40,9 +39,7 @@ PmidAccountResponse& PmidAccountResponse::operator=(PmidAccountResponse other) {
   return *this;
 }
 
-std::string PmidAccountResponse::Serialise() const {
-  return serialised_pmid_accounts_;
-}
+std::string PmidAccountResponse::Serialise() const { return serialised_pmid_accounts_; }
 
 bool operator==(const PmidAccountResponse& lhs, const PmidAccountResponse& rhs) MAIDSAFE_NOEXCEPT {
   return lhs.serialised_pmid_accounts_ == rhs.serialised_pmid_accounts_;

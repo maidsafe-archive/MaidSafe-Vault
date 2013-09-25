@@ -24,7 +24,6 @@
 
 #include "maidsafe/vault/utils.h"
 
-
 namespace maidsafe {
 
 namespace vault {

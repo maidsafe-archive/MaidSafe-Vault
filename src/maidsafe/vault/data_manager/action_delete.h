@@ -28,7 +28,6 @@
 
 #include "maidsafe/vault/types.h"
 
-
 namespace maidsafe {
 namespace vault {
 
@@ -51,4 +50,3 @@ bool operator!=(const ActionDataManagerDelete& lhs, const ActionDataManagerDelet
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_DELETE_H_
-

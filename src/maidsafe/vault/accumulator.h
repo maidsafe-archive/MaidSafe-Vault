@@ -37,49 +37,53 @@ namespace maidsafe {
 
 namespace vault {
 
-
 namespace {
 
 class MessageIdRequestVisitor : public boost::static_visitor<nfs::MessageId> {
  public:
-  template<typename T>
+  template <typename T>
   nfs::MessageId operator()(const T& message) const {
-//    static_assert(HasMessageId<T>::value, "Input parameter must have message_id");
+    //    static_assert(HasMessageId<T>::value, "Input parameter must have message_id");
     return message.message_id;
   }
 };
 
 class ContentEraseVisitor : public boost::static_visitor<> {
  public:
-  template<typename ContentType>
+  template <typename ContentType>
   void operator()(ContentType& /*content*/) {}
 };
 
-template<>
+template <>
 void ContentEraseVisitor::operator()(nfs_vault::DataNameAndContent& name_and_content) {
   name_and_content.content = NonEmptyString(std::string("NA"));
 }
 
-} // noname namespace
+}  // noname namespace
 
-template<typename T>
+template <typename T>
 class Accumulator {
  public:
   typedef T type;
-  enum class AddResult { kSuccess, kWaiting, kFailure, kHandled };
+  enum class AddResult {
+    kSuccess,
+    kWaiting,
+    kFailure,
+    kHandled
+  };
   typedef std::function<AddResult(const std::vector<T>&)> AddCheckerFunctor;
   class AddRequestChecker {
-    public:
-     explicit AddRequestChecker(const size_t& required_requests)
-         : required_requests_(required_requests) {
-             assert((required_requests <= routing::Parameters::node_group_size) &&
-                     "Invalid number of requests");
-         }
+   public:
+    explicit AddRequestChecker(const size_t& required_requests)
+        : required_requests_(required_requests) {
+      assert((required_requests <= routing::Parameters::node_group_size) &&
+             "Invalid number of requests");
+    }
 
-     AddResult operator()(const std::vector<T>& requests);
+    AddResult operator()(const std::vector<T>& requests);
 
-    private:
-     size_t required_requests_;
+   private:
+    size_t required_requests_;
   };
 
   struct PendingRequest {
@@ -91,15 +95,13 @@ class Accumulator {
 
   Accumulator();
 
-  AddResult AddPendingRequest(const T& request,
-                              const routing::GroupSource& source,
+  AddResult AddPendingRequest(const T& request, const routing::GroupSource& source,
                               AddCheckerFunctor checker);
-  AddResult AddPendingRequest(const T& request,
-                              const routing::SingleSource& source,
+  AddResult AddPendingRequest(const T& request, const routing::SingleSource& source,
                               AddCheckerFunctor checker);
 
   bool CheckHandled(const T& request);
-//  void SetHandled(const T& request, const routing::GroupSource& source);
+  //  void SetHandled(const T& request, const routing::GroupSource& source);
   std::vector<T> Get(const T& request);
 
  private:
@@ -115,19 +117,16 @@ class Accumulator {
   const size_t kMaxPendingRequestsCount_, kMaxHandledRequestsCount_;
 };
 
-
-template<typename T>
+template <typename T>
 Accumulator<T>::Accumulator()
     : pending_requests_(),
       handled_requests_(),
       kMaxPendingRequestsCount_(300),
       kMaxHandledRequestsCount_(1000) {}
 
-template<typename T>
+template <typename T>
 typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
-    const T& request,
-    const routing::GroupSource& source,
-    AddCheckerFunctor checker) {
+    const T& request, const routing::GroupSource& source, AddCheckerFunctor checker) {
   if (CheckHandled(request))
     return Accumulator<T>::AddResult::kHandled;
 
@@ -139,13 +138,11 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
   return checker(Get(request));
 }
 
-template<typename T>
+template <typename T>
 typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
-    const T& /*request*/,
-    const routing::SingleSource& /*source*/,
-    AddCheckerFunctor /*checker*/) {}
+    const T& /*request*/, const routing::SingleSource& /*source*/, AddCheckerFunctor /*checker*/) {}
 
-template<typename T>
+template <typename T>
 bool Accumulator<T>::CheckHandled(const T& request) {
   auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
   nfs::MessageId message_id;
@@ -159,8 +156,8 @@ bool Accumulator<T>::CheckHandled(const T& request) {
   return false;
 }
 
-//template<typename T>
-//void Accumulator<T>::SetHandled(const T& request, const routing::GroupSource& source) {
+// template<typename T>
+// void Accumulator<T>::SetHandled(const T& request, const routing::GroupSource& source) {
 //    assert(!CheckHandled(request) && "Request has already been set as handled");
 //    nfs::MessageId message_id;
 //    auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
@@ -182,7 +179,7 @@ bool Accumulator<T>::CheckHandled(const T& request) {
 //        handled_requests_.pop_front();
 //}
 
-template<typename T>
+template <typename T>
 std::vector<T> Accumulator<T>::Get(const T& request) {
   std::vector<T> requests;
   nfs::MessageId message_id;
@@ -197,32 +194,29 @@ std::vector<T> Accumulator<T>::Get(const T& request) {
   return requests;
 }
 
-template<typename T>
+template <typename T>
 bool Accumulator<T>::RequestExists(const T& request, const routing::GroupSource& source) {
   auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
   for (auto pending_request : pending_requests_)
-    if (pending_request.request.which() == request.which() &&
-        source == pending_request.source &&
-        request_message_id == boost::apply_visitor(MessageIdRequestVisitor(),
-                                                   pending_request.request))
+    if (pending_request.request.which() == request.which() && source == pending_request.source &&
+        request_message_id ==
+            boost::apply_visitor(MessageIdRequestVisitor(), pending_request.request))
       return true;
   return false;
 }
 
-template<typename T>
+template <typename T>
 typename Accumulator<T>::AddResult Accumulator<T>::AddRequestChecker::operator()(
-                                                   const std::vector<T>& requests) {
+    const std::vector<T>& requests) {
   assert((requests.size() <= routing::Parameters::node_group_size) && "Invalid number of requests");
   if (requests.size() < required_requests_) {
     return AddResult::kWaiting;
   } else {
     auto index(0);
     while (requests.size() - index >= required_requests_) {
-      if (std::count_if(std::begin(requests),
-                        std::end(requests),
-                        [&](const T& request) {
-                          return nfs::Equals(requests.at(index), request);
-                        }) == static_cast<int>(required_requests_))
+      if (std::count_if(std::begin(requests), std::end(requests), [&](const T & request) {
+            return nfs::Equals(requests.at(index), request);
+          }) == static_cast<int>(required_requests_))
         return AddResult::kSuccess;
       ++index;
     }
@@ -233,6 +227,5 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddRequestChecker::operator()
 }  // namespace vault
 
 }  // namespace maidsafe
-
 
 #endif  // MAIDSAFE_VAULT_ACCUMULATOR_H_

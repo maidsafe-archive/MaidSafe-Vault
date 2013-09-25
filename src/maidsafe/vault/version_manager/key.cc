@@ -24,15 +24,12 @@
 
 #include "maidsafe/vault/version_manager/key.pb.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
 VersionManagerKey::VersionManagerKey(const std::string& serialised_key)
-    : name(),
-      type(DataTagValue::kOwnerDirectoryValue),
-      originator() {
+    : name(), type(DataTagValue::kOwnerDirectoryValue), originator() {
   protobuf::VersionManagerKey key_proto;
   if (!key_proto.ParseFromString(serialised_key))
     ThrowError(CommonErrors::parsing_error);
@@ -43,15 +40,12 @@ VersionManagerKey::VersionManagerKey(const std::string& serialised_key)
 
 VersionManagerKey::VersionManagerKey(const FixedWidthString& fixed_width_string)
     : name(fixed_width_string.string().substr(0, NodeId::kSize)),
-      type(static_cast<DataTagValue>(
-               detail::FromFixedWidthString<detail::PaddedWidth::value>(
-                   fixed_width_string.string().substr(NodeId::kSize, detail::PaddedWidth::value)))),
+      type(static_cast<DataTagValue>(detail::FromFixedWidthString<detail::PaddedWidth::value>(
+          fixed_width_string.string().substr(NodeId::kSize, detail::PaddedWidth::value)))),
       originator(fixed_width_string.string().substr(NodeId::kSize + detail::PaddedWidth::value)) {}
 
 VersionManagerKey::VersionManagerKey(const VersionManagerKey& other)
-    : name(other.name),
-      type(other.type),
-      originator(other.originator) {}
+    : name(other.name), type(other.type), originator(other.originator) {}
 
 VersionManagerKey::VersionManagerKey(VersionManagerKey&& other)
     : name(std::move(other.name)),
@@ -72,10 +66,9 @@ std::string VersionManagerKey::Serialise() const {
 }
 
 VersionManagerKey::FixedWidthString VersionManagerKey::ToFixedWidthString() const {
-  return FixedWidthString(
-      name.string() +
-      detail::ToFixedWidthString<detail::PaddedWidth::value>(static_cast<uint32_t>(type)) +
-      originator.string());
+  return FixedWidthString(name.string() + detail::ToFixedWidthString<detail::PaddedWidth::value>(
+                                              static_cast<uint32_t>(type)) +
+                          originator.string());
 }
 
 void swap(VersionManagerKey& lhs, VersionManagerKey& rhs) MAIDSAFE_NOEXCEPT {
@@ -86,9 +79,7 @@ void swap(VersionManagerKey& lhs, VersionManagerKey& rhs) MAIDSAFE_NOEXCEPT {
 }
 
 bool operator==(const VersionManagerKey& lhs, const VersionManagerKey& rhs) {
-  return lhs.name == rhs.name &&
-         lhs.type == rhs.type &&
-         lhs.originator == rhs.originator;
+  return lhs.name == rhs.name && lhs.type == rhs.type && lhs.originator == rhs.originator;
 }
 
 bool operator!=(const VersionManagerKey& lhs, const VersionManagerKey& rhs) {

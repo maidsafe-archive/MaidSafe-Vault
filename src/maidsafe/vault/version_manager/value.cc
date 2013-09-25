@@ -27,13 +27,12 @@
 
 #include "maidsafe/vault/version_manager/version_manager.pb.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
 //  Commented by Mahmoud on 5 Sep. Requires fix in structureddata
-//VersionManagerValue::VersionManagerValue(const std::string& serialised_version_manager_value)
+// VersionManagerValue::VersionManagerValue(const std::string& serialised_version_manager_value)
 //    : structured_data_versions_(
 //          [&serialised_version_manager_value](){
 //            protobuf::VersionManagerValue version_manager_value_proto;
@@ -47,14 +46,14 @@ namespace vault {
 //          }()) {}
 
 VersionManagerValue::VersionManagerValue(uint32_t max_versions, uint32_t max_branches)
-     : structured_data_versions_(max_versions, max_branches) {}
+    : structured_data_versions_(max_versions, max_branches) {}
 
 //  Commented by Mahmoud on 5 Sep. Requires fix in structureddata
-//VersionManagerValue::VersionManagerValue(const VersionManagerValue& other)
+// VersionManagerValue::VersionManagerValue(const VersionManagerValue& other)
 //    : structured_data_versions_(other.structured_data_versions_) {}
 
 //  Commented by Mahmoud on 5 Sep. Requires fix in structureddata
-//VersionManagerValue::VersionManagerValue(VersionManagerValue&& other)
+// VersionManagerValue::VersionManagerValue(VersionManagerValue&& other)
 //    : structured_data_versions_(std::move(other.structured_data_versions_)) {}
 
 VersionManagerValue& VersionManagerValue::operator=(VersionManagerValue other) {
@@ -93,7 +92,7 @@ void swap(VersionManagerValue& lhs, VersionManagerValue& rhs) {
   swap(lhs.structured_data_versions_, rhs.structured_data_versions_);
 }
 
-//bool operator==(const VersionManagerValue& lhs, const VersionManagerValue& rhs) {
+// bool operator==(const VersionManagerValue& lhs, const VersionManagerValue& rhs) {
 //  return lhs.structured_data_versions_ == rhs.structured_data_versions_;
 //}
 

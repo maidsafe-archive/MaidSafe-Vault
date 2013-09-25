@@ -29,7 +29,6 @@
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/pmid_manager/value.h"
 
-
 namespace maidsafe {
 namespace vault {
 
@@ -58,4 +57,3 @@ bool operator!=(const ActionPmidManagerPut& lhs, const ActionPmidManagerPut& rhs
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_PMID_MANAGER_ACTION_PUT_H_
-

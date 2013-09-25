@@ -18,14 +18,12 @@
 
 #include "maidsafe/vault/mpid_manager/mpid_manager_holder_service.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
 MpidAccountHolder::MpidAccountHolder(routing::Routing& /*routing*/,
-                                     const boost::filesystem::path& /*vault_root_dir*/) {
-}
+                                     const boost::filesystem::path& /*vault_root_dir*/) {}
 
 }  // namespace vault
 

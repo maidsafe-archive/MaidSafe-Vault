@@ -26,12 +26,8 @@ namespace maidsafe {
 
 namespace vault {
 
-
 DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_value)
-  : subscribers_(0),
-    store_failures_(0),
-    online_pmids_(),
-    offline_pmids_() {
+    : subscribers_(0), store_failures_(0), online_pmids_(), offline_pmids_() {
   protobuf::DataManagerValue metadata_value_proto;
   if (!metadata_value_proto.ParseFromString(serialised_metadata_value->string()) ||
       metadata_value_proto.subscribers() < 1) {
@@ -56,11 +52,7 @@ DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_va
 }
 
 DataManagerValue::DataManagerValue()
-    : subscribers_(0),
-      store_failures_(0),
-      online_pmids_(),
-      offline_pmids_() {}
-
+    : subscribers_(0), store_failures_(0), online_pmids_(), offline_pmids_() {}
 
 void DataManagerValue::AddPmid(const PmidName& pmid_name) {
   online_pmids_.insert(pmid_name);
@@ -70,15 +62,13 @@ void DataManagerValue::AddPmid(const PmidName& pmid_name) {
 void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
   if (online_pmids_.size() + offline_pmids_.size() < 4) {
     LOG(kError) << "RemovePmid not allowed";
-    ThrowError(CommonErrors::invalid_parameter); // TODO add error - not_allowed
+    ThrowError(CommonErrors::invalid_parameter);  // TODO add error - not_allowed
   }
   online_pmids_.erase(pmid_name);
   offline_pmids_.erase(pmid_name);
 }
 
-void DataManagerValue::IncrementSubscribers() {
-  ++subscribers_;
-}
+void DataManagerValue::IncrementSubscribers() { ++subscribers_; }
 
 int64_t DataManagerValue::DecrementSubscribers() {
   --subscribers_;
@@ -105,9 +95,7 @@ void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
   }
 }
 
-int64_t DataManagerValue::Subscribers() const {
-return subscribers_;
-}
+int64_t DataManagerValue::Subscribers() const { return subscribers_; }
 
 DataManagerValue::serialised_type DataManagerValue::Serialise() const {
   if (subscribers_ < 1)
@@ -116,19 +104,17 @@ DataManagerValue::serialised_type DataManagerValue::Serialise() const {
   protobuf::DataManagerValue metadata_value_proto;
   metadata_value_proto.set_subscribers(subscribers_);
   metadata_value_proto.set_store_failures(store_failures_);
-  for (const auto& i: online_pmids_)
+  for (const auto& i : online_pmids_)
     metadata_value_proto.add_online_pmid_name(i->string());
-  for (const auto& i: offline_pmids_)
+  for (const auto& i : offline_pmids_)
     metadata_value_proto.add_offline_pmid_name(i->string());
   assert(metadata_value_proto.IsInitialized());
   return serialised_type(NonEmptyString(metadata_value_proto.SerializeAsString()));
 }
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
-  return lhs.subscribers_ == rhs.subscribers_ &&
-         lhs.store_failures_ == rhs.store_failures_ &&
-         lhs.online_pmids_ == rhs.online_pmids_ &&
-         lhs.offline_pmids_ == rhs.offline_pmids_;
+  return lhs.subscribers_ == rhs.subscribers_ && lhs.store_failures_ == rhs.store_failures_ &&
+         lhs.online_pmids_ == rhs.online_pmids_ && lhs.offline_pmids_ == rhs.offline_pmids_;
 }
 
 }  // namespace vault

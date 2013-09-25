@@ -30,21 +30,17 @@
 
 #include "maidsafe/vault/unresolved_action.pb.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
-template<typename Key, typename Action>
+template <typename Key, typename Action>
 struct UnresolvedAction {
-  UnresolvedAction(const std::string& serialised_copy,
-                   const NodeId& sender_id,
+  UnresolvedAction(const std::string& serialised_copy, const NodeId& sender_id,
                    const NodeId& this_node_id);
   UnresolvedAction(const UnresolvedAction& other);
   UnresolvedAction(UnresolvedAction&& other);
-  UnresolvedAction(const Key& key_in,
-                   const Action& action_in,
-                   const NodeId& this_node_id,
+  UnresolvedAction(const Key& key_in, const Action& action_in, const NodeId& this_node_id,
                    int32_t this_entry_id);
   std::string Serialise() const;
   bool IsReadyForSync() const;
@@ -60,49 +56,50 @@ struct UnresolvedAction {
   UnresolvedAction& operator=(UnresolvedAction other);
 
   // Helpers to handle Action class with/without Serialise() member function.
-  template<typename T, typename Signature>
+  template <typename T, typename Signature>
   class HasSerialise {
    private:
     typedef char Yes[1];
     typedef char No[2];
-    template<typename U, U> struct type_check;
-    template<typename V> static Yes &Check(type_check<Signature, &V::Serialise>*);
-    template<typename> static No &Check(...);
+    template <typename U, U>
+    struct type_check;
+    template <typename V>
+    static Yes& Check(type_check<Signature, &V::Serialise>*);
+    template <typename>
+    static No& Check(...);
+
    public:
     static bool const value = sizeof(Check<T>(0)) == sizeof(Yes);
   };
 
-  template<typename T>
-  typename std::enable_if<HasSerialise<T, std::string(T::*)() const>::value, void>::type
-      SerialiseAction(protobuf::UnresolvedAction& proto_unresolved_action) const {
+  template <typename T>
+  typename std::enable_if<HasSerialise<T, std::string (T::*)() const>::value, void>::type
+  SerialiseAction(protobuf::UnresolvedAction& proto_unresolved_action) const {
     proto_unresolved_action.set_serialised_action(action.Serialise());
   }
 
-  template<typename T>
-  typename std::enable_if<!HasSerialise<T, std::string(T::*)() const>::value, void>::type
-      SerialiseAction(protobuf::UnresolvedAction& /*proto_unresolved_action*/) const {}
+  template <typename T>
+  typename std::enable_if<!HasSerialise<T, std::string (T::*)() const>::value, void>::type
+  SerialiseAction(protobuf::UnresolvedAction& /*proto_unresolved_action*/) const {}
 
-  template<typename T>
-  typename std::enable_if<HasSerialise<T, std::string(T::*)() const>::value, T>::type
-      ParseAction(const std::string& serialised_copy) const {
+  template <typename T>
+  typename std::enable_if<HasSerialise<T, std::string (T::*)() const>::value, T>::type ParseAction(
+      const std::string& serialised_copy) const {
     protobuf::UnresolvedAction proto_unresolved_action;
     if (!proto_unresolved_action.ParseFromString(serialised_copy))
       ThrowError(CommonErrors::parsing_error);
     return T(proto_unresolved_action.serialised_action());
   }
 
-  template<typename T>
-  typename std::enable_if<!HasSerialise<T, std::string(T::*)() const>::value, T>::type
-      ParseAction(const std::string& /*serialised_copy*/) const {}
+  template <typename T>
+  typename std::enable_if<!HasSerialise<T, std::string (T::*)() const>::value, T>::type ParseAction(
+      const std::string& /*serialised_copy*/) const {}
 };
 
-
-
 // ==================== Implementation =============================================================
-template<typename Key, typename Action>
+template <typename Key, typename Action>
 UnresolvedAction<Key, Action>::UnresolvedAction(const std::string& serialised_copy,
-                                                const NodeId& sender_id,
-                                                const NodeId& this_node_id)
+                                                const NodeId& sender_id, const NodeId& this_node_id)
     : key(),
       action(ParseAction<Action>(serialised_copy)),
       this_node_and_entry_id(),
@@ -118,7 +115,7 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const std::string& serialised_co
     peer_and_entry_ids.push_back(std::make_pair(sender_id, proto_unresolved_action.entry_id()));
 }
 
-template<typename Key, typename Action>
+template <typename Key, typename Action>
 UnresolvedAction<Key, Action>::UnresolvedAction(const UnresolvedAction& other)
     : key(other.key),
       action(other.action),
@@ -127,7 +124,7 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const UnresolvedAction& other)
       sent_to_peers(other.sent_to_peers),
       sync_counter(other.sync_counter) {}
 
-template<typename Key, typename Action>
+template <typename Key, typename Action>
 UnresolvedAction<Key, Action>::UnresolvedAction(UnresolvedAction&& other)
     : key(std::move(other.key)),
       action(std::move(other.action)),
@@ -136,11 +133,9 @@ UnresolvedAction<Key, Action>::UnresolvedAction(UnresolvedAction&& other)
       sent_to_peers(std::move(other.sent_to_peers)),
       sync_counter(std::move(other.sync_counter)) {}
 
-template<typename Key, typename Action>
-UnresolvedAction<Key, Action>::UnresolvedAction(const Key& key_in,
-                                                const Action& action_in,
-                                                const NodeId& this_node_id,
-                                                int32_t this_entry_id)
+template <typename Key, typename Action>
+UnresolvedAction<Key, Action>::UnresolvedAction(const Key& key_in, const Action& action_in,
+                                                const NodeId& this_node_id, int32_t this_entry_id)
     : key(key_in),
       action(action_in),
       this_node_and_entry_id(std::make_pair(this_node_id, this_entry_id)),
@@ -148,7 +143,7 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const Key& key_in,
       sent_to_peers(false),
       sync_counter(0) {}
 
-template<typename Key, typename Action>
+template <typename Key, typename Action>
 std::string UnresolvedAction<Key, Action>::Serialise() const {
   protobuf::UnresolvedAction proto_unresolved_action;
   proto_unresolved_action.set_serialised_key(key.Serialise());
@@ -157,7 +152,7 @@ std::string UnresolvedAction<Key, Action>::Serialise() const {
   return proto_unresolved_action.SerializeAsString();
 }
 
-template<typename Key, typename Action>
+template <typename Key, typename Action>
 bool UnresolvedAction<Key, Action>::IsReadyForSync() const {
   // TODO(Fraser#5#): 2013-07-22 - Confirm sync_counter limit and remove magic number
   return !this_node_and_entry_id.first.IsZero() && sync_counter < 10;

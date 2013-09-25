@@ -25,17 +25,14 @@ namespace maidsafe {
 namespace vault {
 
 VersionManagerUnresolvedEntryValue::VersionManagerUnresolvedEntryValue()
-    : version(),
-      new_version(),
-      reply_functor(),
-      serialised_db_value() {}
+    : version(), new_version(), reply_functor(), serialised_db_value() {}
 
 VersionManagerUnresolvedEntryValue::VersionManagerUnresolvedEntryValue(
     const VersionManagerUnresolvedEntryValue& other)
-        : version(other.version),
-          new_version(other.new_version),
-          reply_functor(other.reply_functor),
-          serialised_db_value(other.serialised_db_value) {}
+    : version(other.version),
+      new_version(other.new_version),
+      reply_functor(other.reply_functor),
+      serialised_db_value(other.serialised_db_value) {}
 
 VersionManagerUnresolvedEntryValue& VersionManagerUnresolvedEntryValue::operator=(
     VersionManagerUnresolvedEntryValue other) {
@@ -60,8 +57,7 @@ VersionManagerUnresolvedEntryValue& VersionManagerUnresolvedEntryValue::operator
 
 bool operator==(const VersionManagerUnresolvedEntryValue& lhs,
                 const VersionManagerUnresolvedEntryValue& rhs) {
-  return lhs.version == rhs.version &&
-         lhs.new_version == rhs.new_version &&
+  return lhs.version == rhs.version && lhs.new_version == rhs.new_version &&
          lhs.serialised_db_value == rhs.serialised_db_value;
 }
 

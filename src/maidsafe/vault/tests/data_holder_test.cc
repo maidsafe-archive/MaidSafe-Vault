@@ -14,7 +14,8 @@
 //    OF ANY KIND, either express or implied.
 
 //    See the Licences for the specific language governing permissions and limitations relating to
-//    use of the MaidSafe Software.                                                                 */
+//    use of the MaidSafe Software.
+// */
 
 //#include "maidsafe/vault/pmid_node/service.h"
 
@@ -35,74 +36,73 @@
 //#include "maidsafe/data_types/group_directory.h"
 //#include "maidsafe/data_types/world_directory.h"
 
+// namespace maidsafe {
+// namespace vault {
+// namespace test {
 
-//namespace maidsafe {
-//namespace vault {
-//namespace test {
+// template<typename Data>
+// std::pair<Identity, NonEmptyString> GetNameAndContent();
 
-//template<typename Data>
-//std::pair<Identity, NonEmptyString> GetNameAndContent();
-
-//template<typename Fob>
-//std::pair<Identity, NonEmptyString> MakeNameAndContentPair(const Fob& fob) {
+// template<typename Fob>
+// std::pair<Identity, NonEmptyString> MakeNameAndContentPair(const Fob& fob) {
 //  maidsafe::passport::detail::PublicFob<typename Fob::Name::tag_type> public_fob(fob);
 //  return std::make_pair(public_fob.name().data, public_fob.Serialise().data);
 //}
 
-//template<>
-//std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnmid>() {
+// template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnmid>() {
 //  passport::Anmid anmid;
 //  return MakeNameAndContentPair(anmid);
 //}
 
-//template<>
-//std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnsmid>() {
+// template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnsmid>() {
 //  passport::Ansmid ansmid;
 //  return MakeNameAndContentPair(ansmid);
 //}
 
-//template<>
-//std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAntmid>() {
+// template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAntmid>() {
 //  passport::Antmid antmid;
 //  return MakeNameAndContentPair(antmid);
 //}
 
-//template<>
-//std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnmaid>() {
+// template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnmaid>() {
 //  passport::Anmaid anmaid;
 //  return MakeNameAndContentPair(anmaid);
 //}
 
-//template<>
-//std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicMaid>() {
+// template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicMaid>() {
 //  passport::Anmaid anmaid;
 //  passport::Maid maid(anmaid);
 //  return MakeNameAndContentPair(maid);
 //}
 
-//template<>
-//std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicPmid>() {
+// template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicPmid>() {
 //  passport::Anmaid anmaid;
 //  passport::Maid maid(anmaid);
 //  passport::Pmid pmid(maid);
 //  return MakeNameAndContentPair(pmid);
 //}
 
-//template<>
-//std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnmpid>() {
+// template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnmpid>() {
 //  passport::Anmpid anmpid;
 //  return MakeNameAndContentPair(anmpid);
 //}
 
-//template<>
-//std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicMpid>() {
+// template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicMpid>() {
 //  passport::Anmpid anmpid;
 //  passport::Mpid mpid(NonEmptyString("Test"), anmpid);
 //  return MakeNameAndContentPair(mpid);
 //}
 
-//template<>
-//std::pair<Identity, NonEmptyString> GetNameAndContent<passport::Mid>() {
+// template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<passport::Mid>() {
 //  const passport::detail::Keyword kKeyword(RandomAlphaNumericString(20));
 //  const passport::detail::Password kPassword(RandomAlphaNumericString(20));
 //  const passport::detail::Pin kPin(std::to_string(RandomUint32() % 9999 + 1));
@@ -118,8 +118,8 @@
 //  return std::make_pair(mid.name().data, mid.Serialise().data);
 //}
 
-//template<>
-//std::pair<Identity, NonEmptyString> GetNameAndContent<passport::Smid>() {
+// template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<passport::Smid>() {
 //  const passport::detail::Keyword kKeyword(RandomAlphaNumericString(20));
 //  const passport::detail::Password kPassword(RandomAlphaNumericString(20));
 //  const passport::detail::Pin kPin(std::to_string(RandomUint32() % 9999 + 1));
@@ -135,8 +135,8 @@
 //  return std::make_pair(smid.name().data, smid.Serialise().data);
 //}
 
-//template<>
-//std::pair<Identity, NonEmptyString> GetNameAndContent<passport::Tmid>() {
+// template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<passport::Tmid>() {
 //  const passport::detail::Keyword kKeyword(RandomAlphaNumericString(20));
 //  const passport::detail::Password kPassword(RandomAlphaNumericString(20));
 //  const passport::detail::Pin kPin(std::to_string(RandomUint32() % 9999 + 1));
@@ -147,40 +147,39 @@
 //  return std::make_pair(tmid.name().data, tmid.Serialise().data);
 //}
 
-//template<>
-//std::pair<Identity, NonEmptyString> GetNameAndContent<ImmutableData>() {
+// template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<ImmutableData>() {
 //  NonEmptyString value(RandomString(RandomUint32() % 10000 + 10));
 //  ImmutableData immutable(value);
 //  return std::make_pair(immutable.name().data, immutable.Serialise().data);
 //}
 
-//template<>
-//std::pair<Identity, NonEmptyString> GetNameAndContent<OwnerDirectory>() {
+// template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<OwnerDirectory>() {
 //  NonEmptyString value(RandomString(RandomUint32() % 10000 + 10));
 //  Identity name(crypto::Hash<crypto::SHA512>(value));
 //  OwnerDirectory owner_directory(OwnerDirectory::Name(name), value);
 //  return std::make_pair(owner_directory.name().data, owner_directory.Serialise().data);
 //}
 
-//template<>
-//std::pair<Identity, NonEmptyString> GetNameAndContent<GroupDirectory>() {
+// template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<GroupDirectory>() {
 //  NonEmptyString value(RandomString(RandomUint32() % 10000 + 10));
 //  Identity name(crypto::Hash<crypto::SHA512>(value));
 //  GroupDirectory group_directory(GroupDirectory::Name(name), value);
 //  return std::make_pair(group_directory.name().data, group_directory.Serialise().data);
 //}
 
-//template<>
-//std::pair<Identity, NonEmptyString> GetNameAndContent<WorldDirectory>() {
+// template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<WorldDirectory>() {
 //  NonEmptyString value(RandomString(RandomUint32() % 10000 + 10));
 //  Identity name(crypto::Hash<crypto::SHA512>(value));
 //  WorldDirectory world_directory(WorldDirectory::Name(name), value);
 //  return std::make_pair(world_directory.name().data, world_directory.Serialise().data);
 //}
 
-
-//template<class T>
-//class DataHolderTest : public testing::Test {
+// template<class T>
+// class DataHolderTest : public testing::Test {
 // public:
 
 //  DataHolderTest()
@@ -219,9 +218,9 @@
 //  std::unique_ptr<PmidNodeService> pmid_node_;
 //};
 
-//TYPED_TEST_CASE_P(DataHolderTest);
+// TYPED_TEST_CASE_P(DataHolderTest);
 
-//TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
+// TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
 //  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
 //  std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
 //  nfs::Message::Data data(TypeParam::Tag::kValue,
@@ -238,7 +237,7 @@
 //  EXPECT_NE(retrieved.find(name_and_content.second.string()), -1);
 //}
 
-//TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
+// TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
 //  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
 //  std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
 //  nfs::Message::Data data(TypeParam::Tag::kValue,
@@ -250,10 +249,11 @@
 //  this->HandleGetMessage(message, [&](const std::string& result) {
 //                                      retrieved = result;
 //                                  });
-//  EXPECT_EQ(retrieved, nfs::Reply(CommonErrors::unknown, message.Serialise().data).Serialise()->string());
+//  EXPECT_EQ(retrieved, nfs::Reply(CommonErrors::unknown,
+// message.Serialise().data).Serialise()->string());
 //}
 
-//TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
+// TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
 //  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
 //  std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
 //  nfs::Message::Data data(TypeParam::Tag::kValue,
@@ -282,10 +282,11 @@
 //  this->HandleGetMessage(message, [&](const std::string& result) {
 //                                      retrieved = result;
 //                                  });
-//  EXPECT_EQ(retrieved, nfs::Reply(CommonErrors::unknown, message.Serialise().data).Serialise()->string());
+//  EXPECT_EQ(retrieved, nfs::Reply(CommonErrors::unknown,
+// message.Serialise().data).Serialise()->string());
 //}
 
-//TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
+// TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
 //  typedef std::vector<std::pair<Identity, NonEmptyString>> NameContentContainer;
 //  typedef typename NameContentContainer::value_type value_type;
 
@@ -302,7 +303,8 @@
 //    switch (event) {
 //      case 0: {
 //        if (RandomUint32() % 2 == 0) {
-//          value_type name_content_pair(name_content_pairs[RandomUint32() % name_content_pairs.size()]);
+//          value_type name_content_pair(name_content_pairs[RandomUint32() %
+// name_content_pairs.size()]);
 //          nfs::Message::Data data(TypeParam::Tag::kValue,
 //                                  name_content_pair.first,
 //                                  NonEmptyString("A"),
@@ -348,7 +350,8 @@
 //      }
 //      case 2: {
 //        if (RandomUint32() % 2 != 0) {
-//          value_type name_content_pair(name_content_pairs[RandomUint32() % name_content_pairs.size()]);
+//          value_type name_content_pair(name_content_pairs[RandomUint32() %
+// name_content_pairs.size()]);
 //          nfs::Message::Data data(TypeParam::Tag::kValue,
 //                                  name_content_pair.first,
 //                                  NonEmptyString("A"),
@@ -359,7 +362,8 @@
 //                                       [&](const std::string& result)->void {
 //                                          assert(!result.empty());
 //                                          NonEmptyString serialised_result(result);
-//                                          nfs::Reply::serialised_type serialised_reply(serialised_result);
+//                                          nfs::Reply::serialised_type
+// serialised_reply(serialised_result);
 //                                          nfs::Reply reply(serialised_reply);
 //                                          if (reply.IsSuccess())
 //                                            ASSERT_EQ(name_content_pair.second, reply.data());
@@ -376,7 +380,8 @@
 //                                       [&](const std::string& result)->void {
 //                                          assert(!result.empty());
 //                                          NonEmptyString serialised_result(result);
-//                                          nfs::Reply::serialised_type serialised_reply(serialised_result);
+//                                          nfs::Reply::serialised_type
+// serialised_reply(serialised_result);
 //                                          nfs::Reply reply(serialised_reply);
 //                                          if (reply.IsSuccess())
 //                                            ASSERT_EQ(name_and_content.second, reply.data());
@@ -412,13 +417,13 @@
 //  }
 //}
 
-//REGISTER_TYPED_TEST_CASE_P(DataHolderTest,
+// REGISTER_TYPED_TEST_CASE_P(DataHolderTest,
 //                           BEH_HandlePutMessage,
 //                           BEH_HandleGetMessage,
 //                           BEH_HandleDeleteMessage,
 //                           BEH_RandomAsync);
 
-//typedef testing::Types<passport::PublicAnmid,
+// typedef testing::Types<passport::PublicAnmid,
 //                       passport::PublicAnsmid,
 //                       passport::PublicAntmid,
 //                       passport::PublicAnmaid,
@@ -434,11 +439,10 @@
 //                       GroupDirectory,
 //                       WorldDirectory> AllTypes;
 
-//INSTANTIATE_TYPED_TEST_CASE_P(NoCache, DataHolderTest, AllTypes);
+// INSTANTIATE_TYPED_TEST_CASE_P(NoCache, DataHolderTest, AllTypes);
 
-
-//template<class T>
-//class DataHolderCacheableTest : public DataHolderTest<T> {
+// template<class T>
+// class DataHolderCacheableTest : public DataHolderTest<T> {
 // protected:
 //  NonEmptyString GetFromCache(nfs::Message& message) {
 //    return this->pmid_node_->template GetFromCache<T>(message);
@@ -449,9 +453,9 @@
 //  }
 //};
 
-//TYPED_TEST_CASE_P(DataHolderCacheableTest);
+// TYPED_TEST_CASE_P(DataHolderCacheableTest);
 
-//TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
+// TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
 //  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
 //  std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
 //  nfs::Message::Data data(TypeParam::Tag::kValue,
@@ -464,9 +468,9 @@
 //  EXPECT_EQ(message.data().content, this->GetFromCache(message));
 //}
 
-//REGISTER_TYPED_TEST_CASE_P(DataHolderCacheableTest, BEH_StoreInCache);
+// REGISTER_TYPED_TEST_CASE_P(DataHolderCacheableTest, BEH_StoreInCache);
 
-//typedef testing::Types<passport::PublicAnmid,
+// typedef testing::Types<passport::PublicAnmid,
 //                       passport::PublicAnsmid,
 //                       passport::PublicAntmid,
 //                       passport::PublicAnmaid,
@@ -479,8 +483,7 @@
 //                       GroupDirectory,
 //                       WorldDirectory> CacheableTypes;
 
-//INSTANTIATE_TYPED_TEST_CASE_P(Cache, DataHolderCacheableTest, CacheableTypes);
-
+// INSTANTIATE_TYPED_TEST_CASE_P(Cache, DataHolderCacheableTest, CacheableTypes);
 
 //}  // namespace test
 //}  // namespace vault

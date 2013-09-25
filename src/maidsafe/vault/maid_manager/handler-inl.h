@@ -28,19 +28,18 @@ namespace vault {
 
 namespace detail {
 
-template<typename Data>
+template <typename Data>
 struct AccountRequired : std::true_type {};
 
-template<>
+template <>
 struct AccountRequired<passport::Anmaid> : std::false_type {};
 
-template<>
+template <>
 struct AccountRequired<passport::Maid> : std::false_type {};
 
 }  // namespace detail
 
-
-template<typename Data>
+template <typename Data>
 void MaidAccountHandler::CreateAccount(const MaidName& account_name, AllowedAccountCreationType) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, db_, kThisNodeId_));
@@ -48,7 +47,7 @@ void MaidAccountHandler::CreateAccount(const MaidName& account_name, AllowedAcco
   maid_accounts_.insert(std::move(std::make_pair(account_name, std::move(account))));
 }
 
-template<typename Data>
+template <typename Data>
 void MaidAccountHandler::DeleteData(const MaidName& account_name,
                                     const typename Data::Name& data_name) {
   std::lock_guard<std::mutex> lock(mutex_);

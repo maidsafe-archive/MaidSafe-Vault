@@ -45,17 +45,19 @@ class Demultiplexer {
                 nfs::Service<DataManagerService>& data_manager_service,
                 nfs::Service<PmidManagerService>& pmid_manager_service,
                 nfs::Service<PmidNodeService>& pmid_node_service);
-  template<typename T>
+  template <typename T>
   void HandleMessage(const T& routing_message);
-  template<typename T>
-  bool GetFromCache(T& /*serialised_message*/) { return true; }
-  template<typename T>
+  template <typename T>
+  bool GetFromCache(T& /*serialised_message*/) {
+    return true;
+  }
+  template <typename T>
   void StoreInCache(const T& serialised_message);
 
  private:
-//  template<typename MessageType>
-//  NonEmptyString HandleGetFromCache(const nfs::Message& message);
-//  void HandleStoreInCache(const nfs::Message& message);
+  //  template<typename MessageType>
+  //  NonEmptyString HandleGetFromCache(const nfs::Message& message);
+  //  void HandleStoreInCache(const nfs::Message& message);
 
   nfs::Service<MaidManagerService>& maid_manager_service_;
   nfs::Service<VersionManagerService>& version_manager_service_;
@@ -64,7 +66,7 @@ class Demultiplexer {
   nfs::Service<PmidNodeService>& pmid_node_service_;
 };
 
-template<typename T>
+template <typename T>
 void Demultiplexer::HandleMessage(const T& routing_message) {
   auto wrapper_tuple(nfs::ParseMessageWrapper(routing_message.contents));
   const auto& destination_persona(std::get<2>(wrapper_tuple));
@@ -93,16 +95,16 @@ void Demultiplexer::HandleMessage(const T& routing_message) {
 }
 
 // NEEDS REFACTORING
-//template<typename T>
-//bool Demultiplexer::GetFromCache(const T& serialised_message) {
+// template<typename T>
+// bool Demultiplexer::GetFromCache(const T& serialised_message) {
 //  auto wrapper_tuple(nfs::ParseMessageWrapper(serialised_message.contents));
 //  return pmid_node_service_.GetFromCache(wrapper_tuple,
 //                                         serialised_message.sender,
 //                                         serialised_message.receiver);
 //}
 
-//template<typename T>
-//void Demultiplexer::StoreInCache(const T& serialised_message) {
+// template<typename T>
+// void Demultiplexer::StoreInCache(const T& serialised_message) {
 //  auto wrapper_tuple(nfs::ParseMessageWrapper(serialised_message.contents));
 //  pmid_node_service_.StoreInCache(wrapper_tuple,
 //                                  serialised_message.sender,

@@ -23,7 +23,6 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
-
 namespace maidsafe {
 
 namespace vault {

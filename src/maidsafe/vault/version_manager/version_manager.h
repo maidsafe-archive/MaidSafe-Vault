@@ -27,7 +27,6 @@
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/version_manager/key.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -39,10 +38,9 @@ struct ActionDeleteBranchUntilFork;
 
 }  // namespace vault
 
-
 namespace nfs {
 
-template<>
+template <>
 struct PersonaTypes<Persona::kVersionManager> {
   static const Persona persona = Persona::kVersionManager;
   typedef vault::VersionManagerKey Key;
@@ -55,7 +53,6 @@ struct PersonaTypes<Persona::kVersionManager> {
 };
 
 }  // namespace nfs
-
 
 namespace vault {
 

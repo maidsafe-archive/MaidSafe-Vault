@@ -20,7 +20,6 @@
 
 #include "maidsafe/vault/pmid_manager/value.h"
 
-
 namespace maidsafe {
 namespace vault {
 

@@ -27,14 +27,12 @@
 
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
 MaidManagerValue::MaidManagerValue(const std::string& serialised_maid_manager_value)
-    : count_(0),
-      total_cost_(0) {
+    : count_(0), total_cost_(0) {
   protobuf::MaidManagerValue maid_manager_value_proto;
   if (!maid_manager_value_proto.ParseFromString(serialised_maid_manager_value)) {
     LOG(kError) << "Failed to read or parse serialised maid manager value.";
@@ -49,12 +47,10 @@ MaidManagerValue::MaidManagerValue(const std::string& serialised_maid_manager_va
 MaidManagerValue::MaidManagerValue() : count_(0), total_cost_(0) {}
 
 MaidManagerValue::MaidManagerValue(const MaidManagerValue& other)
-    : count_(other.count_),
-      total_cost_(other.total_cost_) {}
+    : count_(other.count_), total_cost_(other.total_cost_) {}
 
 MaidManagerValue::MaidManagerValue(MaidManagerValue&& other)
-    : count_(std::move(other.count_)),
-      total_cost_(std::move(other.total_cost_)) {}
+    : count_(std::move(other.count_)), total_cost_(std::move(other.total_cost_)) {}
 
 MaidManagerValue& MaidManagerValue::operator=(MaidManagerValue other) {
   swap(*this, other);

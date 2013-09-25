@@ -22,10 +22,9 @@ namespace maidsafe {
 
 namespace vault {
 
-PmidNodeDispatcher::PmidNodeDispatcher(routing::Routing& routing)
-    : routing_(routing) {}
+PmidNodeDispatcher::PmidNodeDispatcher(routing::Routing& routing) : routing_(routing) {}
 
-void PmidNodeDispatcher::SendGetRequest(const nfs_vault::DataName &data_name) {
+void PmidNodeDispatcher::SendGetRequest(const nfs_vault::DataName& data_name) {
   typedef nfs::GetRequestFromPmidNodeToDataManager NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   nfs_vault::DataName data(data_name);
@@ -41,8 +40,7 @@ void PmidNodeDispatcher::SendPmidAccountRequest() {
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
 
   NfsMessage nfs_message;
-  RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(routing_.kNodeId()),
+  RoutingMessage message(nfs_message.Serialise(), NfsMessage::Sender(routing_.kNodeId()),
                          NfsMessage::Receiver(routing_.kNodeId()));
   routing_.Send(message);
 }

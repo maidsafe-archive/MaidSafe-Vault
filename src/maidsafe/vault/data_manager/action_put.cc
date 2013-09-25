@@ -24,15 +24,11 @@
 namespace maidsafe {
 namespace vault {
 
-ActionDataManagerPut::ActionDataManagerPut(const std::string& /*serialised_action*/) {
-}
+ActionDataManagerPut::ActionDataManagerPut(const std::string& /*serialised_action*/) {}
 
-ActionDataManagerPut::ActionDataManagerPut(const ActionDataManagerPut& /*other*/) {
-}
+ActionDataManagerPut::ActionDataManagerPut(const ActionDataManagerPut& /*other*/) {}
 
-ActionDataManagerPut::ActionDataManagerPut(ActionDataManagerPut&& /*other*/) {
-
-}
+ActionDataManagerPut::ActionDataManagerPut(ActionDataManagerPut&& /*other*/) {}
 
 std::string ActionDataManagerPut::Serialise() const {
   protobuf::ActionDataManagerPut action_put_proto;
@@ -51,8 +47,7 @@ bool operator==(const ActionDataManagerPut& /*lhs*/, const ActionDataManagerPut&
   return true;
 }
 
-bool operator!=(const ActionDataManagerPut& lhs,
-                const ActionDataManagerPut& rhs) {
+bool operator!=(const ActionDataManagerPut& lhs, const ActionDataManagerPut& rhs) {
   return !operator==(lhs, rhs);
 }
 

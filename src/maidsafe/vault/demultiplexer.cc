@@ -29,7 +29,6 @@
 #include "maidsafe/vault/pmid_manager/service.h"
 #include "maidsafe/vault/version_manager/service.h"
 
-
 namespace maidsafe {
 
 namespace vault {

@@ -27,8 +27,7 @@ namespace maidsafe {
 
 namespace vault {
 
-Vault::Vault(const passport::Pmid& pmid,
-             const boost::filesystem::path& vault_root_dir,
+Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_root_dir,
              std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint,
              const std::vector<passport::PublicPmid>& pmids_from_file,
              const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints)
@@ -38,21 +37,18 @@ Vault::Vault(const passport::Pmid& pmid,
       on_new_bootstrap_endpoint_(on_new_bootstrap_endpoint),
       routing_(new routing::Routing(pmid)),
       data_getter_(asio_service_, *routing_, pmids_from_file),
-      maid_manager_service_(std::move(std::unique_ptr<MaidManagerService>(
-                                new MaidManagerService(pmid, *routing_)))),
-      version_manager_service_(std::move(std::unique_ptr<VersionManagerService>(
-                                   new VersionManagerService(pmid, *routing_)))),
+      maid_manager_service_(
+          std::move(std::unique_ptr<MaidManagerService>(new MaidManagerService(pmid, *routing_)))),
+      version_manager_service_(std::move(
+          std::unique_ptr<VersionManagerService>(new VersionManagerService(pmid, *routing_)))),
       data_manager_service_(std::move(std::unique_ptr<DataManagerService>(
-                                   new DataManagerService(pmid, *routing_, data_getter_)))),
-      pmid_manager_service_(std::move(std::unique_ptr<PmidManagerService>(
-                                   new PmidManagerService(pmid, *routing_)))),
+          new DataManagerService(pmid, *routing_, data_getter_)))),
+      pmid_manager_service_(
+          std::move(std::unique_ptr<PmidManagerService>(new PmidManagerService(pmid, *routing_)))),
       pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
-                                   new PmidNodeService(pmid, *routing_, vault_root_dir)))), // FIXME need to specialise
-      demux_(maid_manager_service_,
-             version_manager_service_,
-             data_manager_service_,
-             pmid_manager_service_,
-             pmid_node_service_),
+          new PmidNodeService(pmid, *routing_, vault_root_dir)))),  // FIXME need to specialise
+      demux_(maid_manager_service_, version_manager_service_, data_manager_service_,
+             pmid_manager_service_, pmid_node_service_),
       asio_service_(2) {
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
   asio_service_.Start();
@@ -60,7 +56,7 @@ Vault::Vault(const passport::Pmid& pmid,
 }
 
 Vault::~Vault() {
-// call stop on all component
+  // call stop on all component
 }
 
 void Vault::InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
@@ -69,64 +65,55 @@ void Vault::InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_
 
   std::unique_lock<std::mutex> lock(network_health_mutex_);
 #ifdef TESTING
-  if (!network_health_condition_variable_.wait_for(lock,
-                                                   std::chrono::minutes(1),
-                                                   [this] { return network_health_ >=
-                                                            detail::Parameters::kMinNetworkHealth;
-                                                   }))
+  if (!network_health_condition_variable_.wait_for(lock, std::chrono::minutes(1), [this] {
+         return network_health_ >= detail::Parameters::kMinNetworkHealth;
+       }))
     ThrowError(VaultErrors::failed_to_join_network);
 #else
-  network_health_condition_variable_.wait(lock,
-                                          [this] {
-                                            return network_health_ >=
-                                                   detail::Parameters::kMinNetworkHealth;
-                                          });
+  network_health_condition_variable_.wait(
+      lock, [this] { return network_health_ >= detail::Parameters::kMinNetworkHealth; });
 #endif
 }
 
 routing::Functors Vault::InitialiseRoutingCallbacks() {
   routing::Functors functors;
-  functors.typed_message_and_caching.single_to_single.message_received =
-      [this](const routing::SingleToSingleMessage& message) { OnMessageReceived(message); };
-  functors.typed_message_and_caching.single_to_group.message_received =
-      [this](const routing::SingleToGroupMessage& message) { OnMessageReceived(message); };
-  functors.typed_message_and_caching.group_to_single.message_received =
-      [this](const routing::GroupToSingleMessage& message) { OnMessageReceived(message); };
-  functors.typed_message_and_caching.group_to_group.message_received =
-      [this](const routing::GroupToGroupMessage& message) { OnMessageReceived(message); };
-  functors.typed_message_and_caching.single_to_single.get_cache_data =
-      [this](const routing::SingleToSingleMessage& message) { return OnGetFromCache(message); };
-  functors.typed_message_and_caching.single_to_group.get_cache_data =
-      [this](const routing::SingleToGroupMessage& message) { return OnGetFromCache(message); };
-  functors.typed_message_and_caching.group_to_single.get_cache_data =
-      [this](const routing::GroupToSingleMessage& message) { return OnGetFromCache(message); };
-  functors.typed_message_and_caching.group_to_group.get_cache_data =
-      [this](const routing::GroupToGroupMessage& message) { return OnGetFromCache(message); };
-  functors.typed_message_and_caching.single_to_single.put_cache_data =
-      [this](const routing::SingleToSingleMessage& message) { OnStoreInCache(message); };
-  functors.typed_message_and_caching.single_to_group.put_cache_data =
-      [this](const routing::SingleToGroupMessage& message) { OnStoreInCache(message); };
-  functors.typed_message_and_caching.group_to_single.put_cache_data =
-      [this](const routing::GroupToSingleMessage& message) { OnStoreInCache(message); };
-  functors.typed_message_and_caching.group_to_group.put_cache_data =
-      [this](const routing::GroupToGroupMessage& message) { OnStoreInCache(message); };
+  functors.typed_message_and_caching.single_to_single.message_received = [this](
+      const routing::SingleToSingleMessage & message) { OnMessageReceived(message); };
+  functors.typed_message_and_caching.single_to_group.message_received = [this](
+      const routing::SingleToGroupMessage & message) { OnMessageReceived(message); };
+  functors.typed_message_and_caching.group_to_single.message_received = [this](
+      const routing::GroupToSingleMessage & message) { OnMessageReceived(message); };
+  functors.typed_message_and_caching.group_to_group.message_received = [this](
+      const routing::GroupToGroupMessage & message) { OnMessageReceived(message); };
+  functors.typed_message_and_caching.single_to_single.get_cache_data = [this](
+      const routing::SingleToSingleMessage & message) { return OnGetFromCache(message); };
+  functors.typed_message_and_caching.single_to_group.get_cache_data = [this](
+      const routing::SingleToGroupMessage & message) { return OnGetFromCache(message); };
+  functors.typed_message_and_caching.group_to_single.get_cache_data = [this](
+      const routing::GroupToSingleMessage & message) { return OnGetFromCache(message); };
+  functors.typed_message_and_caching.group_to_group.get_cache_data = [this](
+      const routing::GroupToGroupMessage & message) { return OnGetFromCache(message); };
+  functors.typed_message_and_caching.single_to_single.put_cache_data = [this](
+      const routing::SingleToSingleMessage & message) { OnStoreInCache(message); };
+  functors.typed_message_and_caching.single_to_group.put_cache_data = [this](
+      const routing::SingleToGroupMessage & message) { OnStoreInCache(message); };
+  functors.typed_message_and_caching.group_to_single.put_cache_data = [this](
+      const routing::GroupToSingleMessage & message) { OnStoreInCache(message); };
+  functors.typed_message_and_caching.group_to_group.put_cache_data = [this](
+      const routing::GroupToGroupMessage & message) { OnStoreInCache(message); };
 
-  functors.network_status = [this] (const int& network_health) {
-                              OnNetworkStatusChange(network_health);
-                            };
-  functors.close_node_replaced = [this] (const std::vector<routing::NodeInfo>& new_close_nodes) {
-                                   OnCloseNodeReplaced(new_close_nodes);
-                                 };
-  functors.matrix_changed = [this] (std::shared_ptr<routing::MatrixChange> matrix_change) {
-                              OnMatrixChanged(matrix_change);
-                            };
-  functors.request_public_key = [this] (const NodeId& node_id,
-                                        const routing::GivePublicKeyFunctor& give_key) {
-                                  OnPublicKeyRequested(node_id, give_key);
-                                };
-  functors.new_bootstrap_endpoint = [this] (const boost::asio::ip::udp::endpoint& endpoint) {
-                                      OnNewBootstrapEndpoint(endpoint);
-                                    };
+  functors.network_status = [this](const int &
+                                   network_health) { OnNetworkStatusChange(network_health); };
+  functors.close_node_replaced = [this](const std::vector<routing::NodeInfo> &
+                                        new_close_nodes) { OnCloseNodeReplaced(new_close_nodes); };
+  functors.matrix_changed = [this](std::shared_ptr<routing::MatrixChange> matrix_change) {
+    OnMatrixChanged(matrix_change);
+  };
+  functors.request_public_key = [this](
+      const NodeId & node_id,
+      const routing::GivePublicKeyFunctor & give_key) { OnPublicKeyRequested(node_id, give_key); };
+  functors.new_bootstrap_endpoint = [this](const boost::asio::ip::udp::endpoint &
+                                           endpoint) { OnNewBootstrapEndpoint(endpoint); };
   return functors;
 }
 
@@ -137,16 +124,14 @@ void Vault::OnNetworkStatusChange(const int& network_health) {
 void Vault::DoOnNetworkStatusChange(const int& network_health) {
   if (network_health >= 0) {
     if (network_health >= network_health_)
-      LOG(kVerbose) << "Init - " << DebugId(routing_->kNodeId())
-                    << " - Network health is " << network_health
-                    << "% (was " << network_health_ << "%)";
+      LOG(kVerbose) << "Init - " << DebugId(routing_->kNodeId()) << " - Network health is "
+                    << network_health << "% (was " << network_health_ << "%)";
     else
-      LOG(kWarning) << "Init - " << DebugId(routing_->kNodeId())
-                    << " - Network health is " << network_health
-                    << "% (was " << network_health_ << "%)";
+      LOG(kWarning) << "Init - " << DebugId(routing_->kNodeId()) << " - Network health is "
+                    << network_health << "% (was " << network_health_ << "%)";
   } else {
-    LOG(kWarning) << "Init - " << DebugId(routing_->kNodeId())
-                  << " - Network is down (" << network_health << ")";
+    LOG(kWarning) << "Init - " << DebugId(routing_->kNodeId()) << " - Network is down ("
+                  << network_health << ")";
   }
 
   {
@@ -164,38 +149,30 @@ void Vault::OnPublicKeyRequested(const NodeId& node_id,
 
 void Vault::DoOnPublicKeyRequested(const NodeId& /*node_id*/,
                                    const routing::GivePublicKeyFunctor& /*give_key*/) {
-//  passport::PublicPmid::Name name(Identity(node_id.string()));
-//  public_key_getter_.GetKey<passport::PublicPmid>(
-//      name,
-//      [name, give_key] (nfs::Reply reply) {
-//        try {
-//          if (reply.IsSuccess()) {
-//            passport::PublicPmid pmid(name, passport::PublicPmid::serialised_type(reply.data()));
-//            give_key(pmid.public_key());
-//          }
-//        }
-//        catch(const std::exception& ex) {
-//          LOG(kError) << "Failed to get key for " << DebugId(name) << " : " << ex.what();
-//        }
-//      });
+  //  passport::PublicPmid::Name name(Identity(node_id.string()));
+  //  public_key_getter_.GetKey<passport::PublicPmid>(
+  //      name,
+  //      [name, give_key] (nfs::Reply reply) {
+  //        try {
+  //          if (reply.IsSuccess()) {
+  //            passport::PublicPmid pmid(name,
+  // passport::PublicPmid::serialised_type(reply.data()));
+  //            give_key(pmid.public_key());
+  //          }
+  //        }
+  //        catch(const std::exception& ex) {
+  //          LOG(kError) << "Failed to get key for " << DebugId(name) << " : " << ex.what();
+  //        }
+  //      });
 }
 
-void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {
-}
+void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {}
 
 void Vault::OnMatrixChanged(std::shared_ptr<routing::MatrixChange> matrix_change) {
-  asio_service_.service().post([=] {
-      maid_manager_service_.HandleChurnEvent(matrix_change);
-  });
-  asio_service_.service().post([=] {
-      version_manager_service_.HandleChurnEvent(matrix_change);
-  });
-  asio_service_.service().post([=] {
-      data_manager_service_.HandleChurnEvent(matrix_change);
-  });
-  asio_service_.service().post([=] {
-      pmid_manager_service_.HandleChurnEvent(matrix_change);
-  });
+  asio_service_.service().post([=] { maid_manager_service_.HandleChurnEvent(matrix_change); });
+  asio_service_.service().post([=] { version_manager_service_.HandleChurnEvent(matrix_change); });
+  asio_service_.service().post([=] { data_manager_service_.HandleChurnEvent(matrix_change); });
+  asio_service_.service().post([=] { pmid_manager_service_.HandleChurnEvent(matrix_change); });
 }
 
 void Vault::OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint) {

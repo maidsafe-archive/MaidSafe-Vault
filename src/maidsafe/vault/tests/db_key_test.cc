@@ -14,8 +14,8 @@
 //    OF ANY KIND, either express or implied.
 
 //    See the Licences for the specific language governing permissions and limitations relating to
-//    use of the MaidSafe Software.                                                                 */
-
+//    use of the MaidSafe Software.
+// */
 
 //#include "maidsafe/common/test.h"
 //#include "maidsafe/common/utils.h"
@@ -25,14 +25,13 @@
 
 //#include "maidsafe/vault/utils-inl.h"
 
+// namespace maidsafe {
 
-//namespace maidsafe {
+// namespace vault {
 
-//namespace vault {
+// namespace test {
 
-//namespace test {
-
-//TEST(DbKeyTest, BEH_Serialise) {
+// TEST(DbKeyTest, BEH_Serialise) {
 //  DataNameVariant name(ImmutableData::Name(Identity(
 //      RandomString(crypto::SHA512::DIGESTSIZE))));
 //  DbKey db_key(name);
@@ -47,7 +46,7 @@
 //  EXPECT_EQ(simulated, db_key.Serialise());
 //}
 
-//TEST(DbKeyTest, BEH_All) {
+// TEST(DbKeyTest, BEH_All) {
 //  DataNameVariant name(ImmutableData::Name(Identity(
 //      RandomString(crypto::SHA512::DIGESTSIZE))));
 //  DbKey db_key;

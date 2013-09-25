@@ -29,15 +29,13 @@
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/vault.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
 namespace test {
 
-
-template<int width>
+template <int width>
 testing::AssertionResult CheckToAndFromFixedWidthString() {
   uint64_t max_value(1);
   for (int pow(1); pow != width + 1; ++pow) {
@@ -58,21 +56,13 @@ testing::AssertionResult CheckToAndFromFixedWidthString() {
   return testing::AssertionSuccess();
 }
 
-TEST(UtilsTest, BEH_FixedWidthStringSize1) {
-  CheckToAndFromFixedWidthString<1>();
-}
+TEST(UtilsTest, BEH_FixedWidthStringSize1) { CheckToAndFromFixedWidthString<1>(); }
 
-TEST(UtilsTest, BEH_FixedWidthStringSize2) {
-  CheckToAndFromFixedWidthString<2>();
-}
+TEST(UtilsTest, BEH_FixedWidthStringSize2) { CheckToAndFromFixedWidthString<2>(); }
 
-TEST(UtilsTest, BEH_FixedWidthStringSize3) {
-  CheckToAndFromFixedWidthString<3>();
-}
+TEST(UtilsTest, BEH_FixedWidthStringSize3) { CheckToAndFromFixedWidthString<3>(); }
 
-TEST(UtilsTest, BEH_FixedWidthStringSize4) {
-  CheckToAndFromFixedWidthString<4>();
-}
+TEST(UtilsTest, BEH_FixedWidthStringSize4) { CheckToAndFromFixedWidthString<4>(); }
 
 }  // namespace test
 

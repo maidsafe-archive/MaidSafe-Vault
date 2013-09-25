@@ -28,17 +28,14 @@
 
 #include "maidsafe/vault/key_utils.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
 struct VersionManagerKey {
-  template<typename Data>
+  template <typename Data>
   VersionManagerKey(const typename Data::Name& name_in, const Identity& originator_in)
-      : name(name_in.data),
-        type(Data::type_enum_value()),
-        originator(originator_in) {}
+      : name(name_in.data), type(Data::type_enum_value()), originator(originator_in) {}
   explicit VersionManagerKey(const std::string& serialised_key);
   VersionManagerKey(const VersionManagerKey& other);
   VersionManagerKey(VersionManagerKey&& other);
@@ -50,9 +47,9 @@ struct VersionManagerKey {
   Identity originator;
 
  private:
-  typedef maidsafe::detail::BoundedString<
-      NodeId::kSize * 2 + detail::PaddedWidth::value,
-      NodeId::kSize * 2 + detail::PaddedWidth::value> FixedWidthString;
+  typedef maidsafe::detail::BoundedString<NodeId::kSize * 2 + detail::PaddedWidth::value,
+                                          NodeId::kSize * 2 + detail::PaddedWidth::value>
+      FixedWidthString;
 
   explicit VersionManagerKey(const FixedWidthString& fixed_width_string);
   FixedWidthString ToFixedWidthString() const;

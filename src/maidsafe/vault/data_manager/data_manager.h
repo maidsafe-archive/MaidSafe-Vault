@@ -44,10 +44,9 @@ struct ActionDataManagerAddPmid;
 
 }  // namespace vault
 
-
 namespace nfs {
 
-template<>
+template <>
 struct PersonaTypes<Persona::kDataManager> {
   static const Persona persona = Persona::kDataManager;
   typedef vault::Key Key;
@@ -62,7 +61,6 @@ struct PersonaTypes<Persona::kDataManager> {
 };
 
 }  // namespace nfs
-
 
 namespace vault {
 

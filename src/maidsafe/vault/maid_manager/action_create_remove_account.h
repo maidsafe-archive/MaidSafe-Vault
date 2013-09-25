@@ -21,22 +21,21 @@
 
 #include "maidsafe/nfs/types.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
-template<bool Remove>
+template <bool Remove>
 struct ActionCreateRemoveAccount {
   static const nfs::MessageAction kActionId = nfs::MessageAction::kCreateAccountRequest;
 };
 
-//template<>
-//const nfs::MessageAction ActionCreateRemoveAccount<false>::kActionId =
+// template<>
+// const nfs::MessageAction ActionCreateRemoveAccount<false>::kActionId =
 //    nfs::MessageAction::kCreateAccountRequest;
 
-//template<>
-//const nfs::MessageAction ActionCreateRemoveAccount<true>::kActionId =
+// template<>
+// const nfs::MessageAction ActionCreateRemoveAccount<true>::kActionId =
 //    nfs::MessageAction::kRemoveAccountRequest;
 
 typedef ActionCreateRemoveAccount<false> ActionCreateAccount;

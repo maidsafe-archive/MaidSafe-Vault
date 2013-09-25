@@ -30,7 +30,6 @@
 #include "maidsafe/vault/config.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -38,9 +37,8 @@ namespace vault {
 class DataManagerValue;
 
 struct ActionDataManagerAddPmid {
-  template<typename Data>
-  ActionDataManagerAddPmid(const PmidName& pmid_name,
-                           const typename Data::Name& data_name,
+  template <typename Data>
+  ActionDataManagerAddPmid(const PmidName& pmid_name, const typename Data::Name& data_name,
                            IntegrityCheckFunctor integrity_check);
   ActionDataManagerAddPmid(const std::string& serialised_action,
                            IntegrityCheckFunctor integrity_check);

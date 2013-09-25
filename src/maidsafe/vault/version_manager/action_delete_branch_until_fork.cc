@@ -19,7 +19,6 @@
 #include "maidsafe/vault/version_manager/action_delete_branch_until_fork.h"
 #include "maidsafe/vault/version_manager/action_delete_branch_until_fork.pb.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -28,14 +27,13 @@ const nfs::MessageAction ActionVersionManagerDeleteBranchUntilFork::kActionId;
 
 ActionVersionManagerDeleteBranchUntilFork::ActionVersionManagerDeleteBranchUntilFork(
     const std::string& serialised_action)
-    : version_name(
-        [&serialised_action]() {
-          protobuf::ActionDeleteBranchUntilFork action_delete_branch_until_fork_proto;
-          if (!action_delete_branch_until_fork_proto.ParseFromString(serialised_action))
-            ThrowError(CommonErrors::parsing_error);
-          return StructuredDataVersions::VersionName(
-                     action_delete_branch_until_fork_proto.serialised_version());
-        }()) {}
+    : version_name([&serialised_action]() {
+        protobuf::ActionDeleteBranchUntilFork action_delete_branch_until_fork_proto;
+        if (!action_delete_branch_until_fork_proto.ParseFromString(serialised_action))
+          ThrowError(CommonErrors::parsing_error);
+        return StructuredDataVersions::VersionName(
+            action_delete_branch_until_fork_proto.serialised_version());
+      }()) {}
 
 ActionVersionManagerDeleteBranchUntilFork::ActionVersionManagerDeleteBranchUntilFork(
     const StructuredDataVersions::VersionName& version_name_in)

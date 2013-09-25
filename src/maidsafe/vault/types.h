@@ -28,45 +28,46 @@
 #include "maidsafe/passport/types.h"
 #include "maidsafe/nfs/types.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
 namespace detail {
 
-enum class DataType : int32_t { kMetadata = 10000 };
+enum class DataType : int32_t {
+  kMetadata = 10000
+};
 
 }  // namespace detail
 
-//class MaidAccount;
-//class PmidAccount;
+// class MaidAccount;
+// class PmidAccount;
 //
-//typedef nfs::NetworkFileSystem<
+// typedef nfs::NetworkFileSystem<
 //    nfs::MaidManagerPutPolicy,
 //    nfs::MaidManagerGetPolicy,
 //    nfs::MaidManagerDeletePolicy,
 //    MaidManagerPostPolicy> MaidManagerNfs;
 //
-//typedef nfs::NetworkFileSystem<
+// typedef nfs::NetworkFileSystem<
 //    nfs::DataManagerPutPolicy,
 //    nfs::DataManagerGetPolicy,
 //    nfs::DataManagerDeletePolicy,
 //    DataManagerPostPolicy> DataManagerNfs;
 //
-//typedef nfs::NetworkFileSystem<
+// typedef nfs::NetworkFileSystem<
 //    nfs::VersionManagerPutPolicy,
 //    nfs::VersionManagerGetPolicy,
 //    nfs::VersionManagerDeletePolicy,
 //    VersionManagerPostPolicy> VersionManagerNfs;
 //
-//typedef nfs::NetworkFileSystem<
+// typedef nfs::NetworkFileSystem<
 //    nfs::PmidManagerPutPolicy,
 //    nfs::PmidManagerGetPolicy,
 //    nfs::PmidManagerDeletePolicy,
 //    PmidManagerPostPolicy> PmidManagerNfs;
 //
-//typedef nfs::NetworkFileSystem<
+// typedef nfs::NetworkFileSystem<
 //    nfs::PmidNodePutPolicy,
 //    nfs::PmidNodeGetPolicy,
 //    nfs::PmidNodeDeletePolicy,

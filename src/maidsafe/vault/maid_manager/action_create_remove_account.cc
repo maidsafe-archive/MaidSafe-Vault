@@ -18,17 +18,16 @@
 
 #include "maidsafe/vault/maid_manager/action_create_remove_account.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
-//template<>
-//const nfs::MessageAction ActionCreateRemoveAccount<false>::kActionId =
+// template<>
+// const nfs::MessageAction ActionCreateRemoveAccount<false>::kActionId =
 //    nfs::MessageAction::kCreateAccount;
 //
-//template<>
-//const nfs::MessageAction ActionCreateRemoveAccount<true>::kActionId =
+// template<>
+// const nfs::MessageAction ActionCreateRemoveAccount<true>::kActionId =
 //    nfs::MessageAction::kRemoveAccount;
 
 }  // namespace vault

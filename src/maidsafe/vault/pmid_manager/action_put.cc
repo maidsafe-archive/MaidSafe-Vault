@@ -19,7 +19,6 @@
 #include "maidsafe/vault/pmid_manager/action_put.h"
 #include "maidsafe/vault/pmid_manager/action_put.pb.h"
 
-
 namespace maidsafe {
 namespace vault {
 
@@ -28,17 +27,17 @@ const nfs::MessageAction ActionPmidManagerPut::kActionId(nfs::MessageAction::kPu
 ActionPmidManagerPut::ActionPmidManagerPut(const uint32_t size) : kSize(size) {}
 
 ActionPmidManagerPut::ActionPmidManagerPut(const std::string& serialised_action)
-  : kSize([&serialised_action]()->uint32_t {
+    : kSize([&serialised_action]()->uint32_t {
         protobuf::ActionPmidManagerPut action_put_proto;
         action_put_proto.ParseFromString(serialised_action);
         return action_put_proto.size();
       }()) {}
 
 ActionPmidManagerPut::ActionPmidManagerPut(const ActionPmidManagerPut& other)
-  : kSize(other.kSize) {}
+    : kSize(other.kSize) {}
 
 ActionPmidManagerPut::ActionPmidManagerPut(ActionPmidManagerPut&& other)
-  : kSize(std::move(other.kSize)) {}
+    : kSize(std::move(other.kSize)) {}
 
 std::string ActionPmidManagerPut::Serialise() const {
   protobuf::ActionPmidManagerPut action_put_proto;

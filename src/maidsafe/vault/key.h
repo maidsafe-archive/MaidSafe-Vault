@@ -29,7 +29,6 @@
 
 #include "maidsafe/vault/key_utils.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -39,7 +38,7 @@ class KeyTest_BEH_Serialise_Test;
 class KeyTest_BEH_All_Test;
 }  // namespace test
 
-template<typename Key, typename Value>
+template <typename Key, typename Value>
 class Db;
 
 struct Key {
@@ -55,13 +54,13 @@ struct Key {
   Identity name;
   DataTagValue type;
 
-template<typename Key, typename Value>
-friend class Db;
+  template <typename Key, typename Value>
+  friend class Db;
 
  private:
-  typedef maidsafe::detail::BoundedString<
-      NodeId::kSize + detail::PaddedWidth::value,
-      NodeId::kSize + detail::PaddedWidth::value> FixedWidthString;
+  typedef maidsafe::detail::BoundedString<NodeId::kSize + detail::PaddedWidth::value,
+                                          NodeId::kSize + detail::PaddedWidth::value>
+      FixedWidthString;
 
   explicit Key(const FixedWidthString& fixed_width_string);
   FixedWidthString ToFixedWidthString() const;

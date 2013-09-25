@@ -43,7 +43,6 @@
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/vault.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -107,12 +106,12 @@ void RunVault(po::variables_map& variables_map) {
 #ifdef TESTING
   GetIdentityAndEndpoints(variables_map, pmid, peer_endpoints, pmids);
 #endif
-  std::string vmid(variables_map.count("vmid") == 0 ?
-                       "test" : variables_map.at("vmid").as<std::string>());
+  std::string vmid(variables_map.count("vmid") == 0 ? "test"
+                                                    : variables_map.at("vmid").as<std::string>());
   lifestuff_manager::VaultController vault_controller(vmid, [] {
-                                                              g_ctrlc_pressed.store(true);
-                                                              g_cond_var.notify_one();
-                                                            });
+    g_ctrlc_pressed.store(true);
+    g_cond_var.notify_one();
+  });
   if (vmid != "test" && !vault_controller.GetIdentity(pmid, peer_endpoints)) {
     std::cout << "Failed to get ID from VC" << std::endl;
     ThrowError(CommonErrors::uninitialised);
@@ -128,10 +127,7 @@ void RunVault(po::variables_map& variables_map) {
 
   // Starting Vault
   std::cout << "Starting vault..." << std::endl;
-  Vault vault(*pmid,
-              chunk_path,
-              [] (const boost::asio::ip::udp::endpoint&) {},
-              pmids,
+  Vault vault(*pmid, chunk_path, [](const boost::asio::ip::udp::endpoint&) {}, pmids,
               peer_endpoints);
   std::cout << "Vault running as " << maidsafe::HexSubstr(pmid->name().value) << std::endl;
   {
@@ -144,14 +140,12 @@ void RunVault(po::variables_map& variables_map) {
 
 #ifdef TESTING
 void AddTestingOptions(po::options_description& config_file_options) {
-  config_file_options.add_options()
-      ("peer", po::value<std::string>(), "Endpoint of bootstrap node")
-      ("keys_path",
-       po::value<std::string>()->default_value(fs::path(fs::temp_directory_path() /
-                                                        "key_directory.dat").string()),
-       "Path to keys file for bootstrapping")
-      ("identity_index", po::value<int>(), "Entry from keys file to use as ID")
-      ("disable_ctrl_c", po::value<bool>()->default_value(false), "disable ctrl+c");
+  config_file_options.add_options()("peer", po::value<std::string>(), "Endpoint of bootstrap node")(
+      "keys_path", po::value<std::string>()->default_value(
+                       fs::path(fs::temp_directory_path() / "key_directory.dat").string()),
+      "Path to keys file for bootstrapping")("identity_index", po::value<int>(),
+                                             "Entry from keys file to use as ID")(
+      "disable_ctrl_c", po::value<bool>()->default_value(false), "disable ctrl+c");
 }
 #endif
 
@@ -170,21 +164,19 @@ bool InvalidOptions(po::variables_map& variables_map) {
   return false;
 }
 
-po::options_description PopulateVariablesMap(int argc,
-                                             char* argv[],
+po::options_description PopulateVariablesMap(int argc, char* argv[],
                                              po::variables_map& variables_map) {
   po::options_description generic_options("General options");
-  generic_options.add_options()
-      ("help,h", "Print this help message")
-      ("version,v", "Display version");
+  generic_options.add_options()("help,h", "Print this help message")("version,v",
+                                                                     "Display version");
 
   po::options_description config_file_options("Configuration options");
   config_file_options.add_options()
 #ifndef __APPLE__
       ("plugins_path", po::value<std::string>(), "Path to statistics plugins (enables stats)")
 #endif
-      ("chunk_path", po::value<std::string>(), "Directory to store chunks in")
-      ("vmid", po::value<std::string>(), "ID to identify to vault manager");
+      ("chunk_path", po::value<std::string>(), "Directory to store chunks in")(
+          "vmid", po::value<std::string>(), "ID to identify to vault manager");
 #ifdef TESTING
   AddTestingOptions(config_file_options);
 #endif
@@ -232,15 +224,15 @@ int main(int argc, char* argv[]) {
   try {
     maidsafe::vault::ActOnOptions(argc, argv);
   }
-  catch(const maidsafe::maidsafe_error& e) {
+  catch (const maidsafe::maidsafe_error& e) {
     LOG(kError) << "Maidsafe exception: " << e.what();
     return -1;
   }
-  catch(const std::exception& e) {
+  catch (const std::exception& e) {
     LOG(kError) << "Standard exception: " << e.what();
     return -2;
   }
-  catch(...) {
+  catch (...) {
     LOG(kError) << "Unknown exception";
     return -3;
   }

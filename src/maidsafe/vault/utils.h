@@ -40,34 +40,29 @@
 #include "maidsafe/vault/version_manager/version_manager.h"
 #include "maidsafe/routing/message.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
-template<typename T>
+template <typename T>
 class Accumulator;
 
 namespace detail {
 
-template<typename T>
+template <typename T>
 struct RequiredValue {};
 
-template<>
+template <>
 struct RequiredValue<routing::SingleSource> {
-  int operator()() {
-    return 1;
-  }
+  int operator()() { return 1; }
 };
 
-template<>
+template <>
 struct RequiredValue<routing::GroupSource> {
-  int operator()() {
-    return routing::Parameters::node_group_size - 1;
-  }
+  int operator()() { return routing::Parameters::node_group_size - 1; }
 };
 
-//class GetNodeId {
+// class GetNodeId {
 // public:
 //  template<typename T>
 //  NodeId operator()(const T& node) {
@@ -75,64 +70,58 @@ struct RequiredValue<routing::GroupSource> {
 //  }
 //};
 
-//template<>
-//NodeId GetNodeId::operator()(const routing::GroupSource& node) {
+// template<>
+// NodeId GetNodeId::operator()(const routing::GroupSource& node) {
 //  return node.sender_id.data;
 //}
 
-template<typename T>
+template <typename T>
 DataNameVariant GetNameVariant(const T&);
 
-template<>
+template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataName& data);
 
-template<>
+template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndContent& data);
 
-template<>
+template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataAndPmidHint& data);
 
-template<>
+template <>
 DataNameVariant GetNameVariant(const nfs_client::DataAndReturnCode& data);
 
-template<>
+template <>
 DataNameVariant GetNameVariant(const nfs_client::DataNameAndContentOrReturnCode& data);
 
-template<typename ServiceHandlerType, typename MessageType>
-void DoOperation(ServiceHandlerType* service,
-                 const MessageType& message,
+template <typename ServiceHandlerType, typename MessageType>
+void DoOperation(ServiceHandlerType* service, const MessageType& message,
                  const typename MessageType::Sender& sender,
                  const typename MessageType::Receiver& receiver);
 
-template <typename ValidateSender,
-          typename AccumulatorType,
-          typename Checker,
+template <typename ValidateSender, typename AccumulatorType, typename Checker,
           typename ServiceHandlerType>
 struct OperationHandler {
-  OperationHandler(ValidateSender validate_sender_in,
-                   AccumulatorType& accumulator_in,
-                   Checker checker_in,
-                   ServiceHandlerType* service_in,
-                   std::mutex& mutex_in)
+  OperationHandler(ValidateSender validate_sender_in, AccumulatorType& accumulator_in,
+                   Checker checker_in, ServiceHandlerType* service_in, std::mutex& mutex_in)
       : validate_sender(validate_sender_in),
         accumulator(accumulator_in),
         checker(checker_in),
         service(service_in),
         mutex(mutex_in) {}
 
-  template<typename MessageType, typename Sender, typename Receiver>
-  void operator() (const MessageType& message, const Sender& sender, const Receiver& receiver) {
+  template <typename MessageType, typename Sender, typename Receiver>
+  void operator()(const MessageType& message, const Sender& sender, const Receiver& receiver) {
     if (!validate_sender(message, sender))
       return;
     {
       std::lock_guard<std::mutex> lock(mutex);
-        if (accumulator.CheckHandled(message))
-          return;
-//      if ((RequiredValue<Sender>()() > 1) &&
-//          accumulator.AddPendingRequest(message, sender, checker) !=
-//              Accumulator<AccumulatorType>::AddResult::kSuccess)
-//        return;
-//      accumulator.SetHandled(message, sender);
+      if (accumulator.CheckHandled(message))
+        return;
+      //      if ((RequiredValue<Sender>()() > 1) &&
+      //          accumulator.AddPendingRequest(message, sender, checker) !=
+      //              Accumulator<AccumulatorType>::AddResult::kSuccess)
+      //        return;
+      //      accumulator.SetHandled(message, sender);
     }
     DoOperation<ServiceHandlerType, MessageType>(service, message, sender, receiver);
   }
@@ -145,62 +134,59 @@ struct OperationHandler {
   std::mutex& mutex;
 };
 
-template<typename ServiceHandlerType, typename MessageType>
-void DoOperation(ServiceHandlerType* /*service*/,
-                 const MessageType& /*message*/,
+template <typename ServiceHandlerType, typename MessageType>
+void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/,
                  const typename MessageType::Sender& /*sender*/,
-                 const typename MessageType::Receiver& /*receiver*/){
-//  MessageType::Invalid_function_call;
+                 const typename MessageType::Receiver& /*receiver*/) {
+  //  MessageType::Invalid_function_call;
 }
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager& message,
                  const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
                  const typename nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutRequestFromMaidManagerToDataManager& message,
                  const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
                  const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver&);
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutRequestFromDataManagerToPmidManager& message,
                  const nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
                  const nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver);
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutRequestFromPmidManagerToPmidNode& message,
                  const nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
                  const nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutFailureFromPmidNodeToPmidManager& message,
                  const nfs::PutFailureFromPmidNodeToPmidManager::Sender& sender,
                  const nfs::PutFailureFromPmidNodeToPmidManager::Receiver& receiver);
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutResponseFromDataManagerToMaidManager& message,
                  const nfs::PutResponseFromDataManagerToMaidManager::Sender& sender,
                  const nfs::PutResponseFromDataManagerToMaidManager::Receiver& receiver);
 
-
 // ================================== Account Specialisations ====================================
 // CreateAccountRequestFromMaidNodeToMaidManager, Empty
 
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
+// template<typename ServiceHandlerType, typename Sender>
+// void DoOperation(ServiceHandlerType* service,
 //                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager& /*message*/,
 //                 const Sender& sender,
 //                 const NodeId& /*receiver*/) {
 //  service->CreateAccount(MaidName(sender));
 //}
-
 
 // ================================== Delete Specialisations ======================================
 //   DeleteRequestFromMaidNodeToMaidManager, DataName
@@ -208,10 +194,11 @@ void DoOperation(ServiceHandlerType* service,
 //   DeleteRequestFromDataManagerToPmidManager, DataName
 //   DeleteRequestFromPmidManagerToPmidNode, DataName
 
-//template <typename ServiceHandlerType>
-//class DeleteVisitor : public boost::static_visitor<> {
+// template <typename ServiceHandlerType>
+// class DeleteVisitor : public boost::static_visitor<> {
 // public:
-//  DeleteVisitor(ServiceHandlerType* service, const NodeId& sender, const nfs::MessageId& message_id)
+//  DeleteVisitor(ServiceHandlerType* service, const NodeId& sender, const nfs::MessageId&
+// message_id)
 //      : service_(service),
 //        kSender(sender),
 //        kMessageId(message_id) {}
@@ -226,8 +213,8 @@ void DoOperation(ServiceHandlerType* service,
 //  nfs::MessageId kMessageId;
 //};
 
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
+// template<typename ServiceHandlerType, typename Sender>
+// void DoOperation(ServiceHandlerType* service,
 //                 const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
 //                 const Sender& sender,
 //                 const NodeId& /*receiver*/) {
@@ -238,8 +225,8 @@ void DoOperation(ServiceHandlerType* service,
 //  boost::apply_visitor(delete_visitor, data_name);
 //}
 
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
+// template<typename ServiceHandlerType, typename Sender>
+// void DoOperation(ServiceHandlerType* service,
 //                 const nfs::DeleteRequestFromMaidManagerToDataManager& message,
 //                 const Sender& /*sender*/,
 //                 const NodeId& /*receiver*/) {
@@ -248,8 +235,8 @@ void DoOperation(ServiceHandlerType* service,
 //  boost::apply_visitor(delete_visitor, data_name);
 //}
 
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
+// template<typename ServiceHandlerType, typename Sender>
+// void DoOperation(ServiceHandlerType* service,
 //                 const nfs::DeleteRequestFromDataManagerToPmidManager& message,
 //                 const Sender& /*sender*/,
 //                 const NodeId& /*receiver*/) {
@@ -258,8 +245,8 @@ void DoOperation(ServiceHandlerType* service,
 //  boost::apply_visitor(delete_visitor, data_name);
 //}
 
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
+// template<typename ServiceHandlerType, typename Sender>
+// void DoOperation(ServiceHandlerType* service,
 //                 const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
 //                 const Sender& /*sender*/,
 //                 const NodeId& /*receiver*/) {
@@ -282,14 +269,13 @@ void DoOperation(ServiceHandlerType* service,
 //   GetBranchRequestFromDataGetterToVersionManager, DataNameAndVersion
 //   GetPmidAccountResponseFromPmidManagerToPmidNode, DataNameAndContentOrReturnCode
 
-
 // ================================= Get Response Specialisations ================================
 //   GetResponseFromDataManagerToMaidNode, DataNameAndContentOrReturnCode
 //   GetResponseFromDataManagerToDataGetter, DataNameAndContentOrReturnCode
 //   GetResponseFromPmidNodeToDataManager, DataNameAndContentOrReturnCode
 
-//template <typename ServiceHandlerType>
-//class GetResponseVisitor : public boost::static_visitor<> {
+// template <typename ServiceHandlerType>
+// class GetResponseVisitor : public boost::static_visitor<> {
 // public:
 //  GetResponseVisitor(ServiceHandlerType* service, const NonEmptyString& content)
 //      : service_(service),
@@ -313,8 +299,8 @@ void DoOperation(ServiceHandlerType* service,
 //   maidsafe_error kError_;
 //};
 
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
+// template<typename ServiceHandlerType, typename Sender>
+// void DoOperation(ServiceHandlerType* service,
 //                 const nfs::GetResponseFromDataManagerToMaidNode& message,
 //                 const Sender& /*sender*/,
 //                 const NodeId& /*receiver*/) {
@@ -331,8 +317,8 @@ void DoOperation(ServiceHandlerType* service,
 //  }
 //}
 
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
+// template<typename ServiceHandlerType, typename Sender>
+// void DoOperation(ServiceHandlerType* service,
 //                 const nfs::GetResponseFromDataManagerToDataGetter& message,
 //                 const Sender& /*sender*/,
 //                 const NodeId& /*receiver*/) {
@@ -349,8 +335,8 @@ void DoOperation(ServiceHandlerType* service,
 //  }
 //}
 
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
+// template<typename ServiceHandlerType, typename Sender>
+// void DoOperation(ServiceHandlerType* service,
 //                 const nfs::GetResponseFromPmidNodeToDataManager& message,
 //                 const Sender& /*sender*/,
 //                 const NodeId& /*receiver*/) {
@@ -367,14 +353,15 @@ void DoOperation(ServiceHandlerType* service,
 //  }
 //}
 
-//// ================================== Get Request Specialisations =================================
+//// ================================== Get Request Specialisations
+///=================================
 ////   GetRequestFromMaidNodeToDataManager, DataName
 ////   GetRequestFromDataManagerToPmidNode, DataName
 ////   GetRequestFromDataGetterToDataManager, DataName
 ////   GetRequestFromPmidNodeToDataManager, DataName
 
-//template <typename ServiceType>
-//class GetRequestVisitor : public boost::static_visitor<> {
+// template <typename ServiceType>
+// class GetRequestVisitor : public boost::static_visitor<> {
 // public:
 //  GetRequestVisitor(ServiceType& service)
 //      : service_(service) {}
@@ -387,8 +374,8 @@ void DoOperation(ServiceHandlerType* service,
 //   ServiceType& service_;
 //};
 
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
+// template<typename ServiceHandlerType, typename Sender>
+// void DoOperation(ServiceHandlerType* service,
 //                 const nfs::GetRequestFromMaidNodeToDataManager& message,
 //                 const Sender& /*sender*/,
 //                 const NodeId& /*receiver*/) {
@@ -397,8 +384,8 @@ void DoOperation(ServiceHandlerType* service,
 //  boost::apply_visitor(get_visitor, data_name);
 //}
 
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
+// template<typename ServiceHandlerType, typename Sender>
+// void DoOperation(ServiceHandlerType* service,
 //                 const nfs::GetRequestFromPmidNodeToDataManager& message,
 //                 const Sender& /*sender*/,
 //                 const NodeId& /*receiver*/) {
@@ -407,8 +394,8 @@ void DoOperation(ServiceHandlerType* service,
 //  boost::apply_visitor(get_visitor, data_name);
 //}
 
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
+// template<typename ServiceHandlerType, typename Sender>
+// void DoOperation(ServiceHandlerType* service,
 //                 const nfs::GetRequestFromDataManagerToPmidNode& message,
 //                 const Sender& /*sender*/,
 //                 const NodeId& /*receiver*/) {
@@ -417,8 +404,8 @@ void DoOperation(ServiceHandlerType* service,
 //  boost::apply_visitor(get_visitor, data_name);
 //}
 
-//template<typename ServiceHandlerType, typename Sender>
-//void DoOperation(ServiceHandlerType* service,
+// template<typename ServiceHandlerType, typename Sender>
+// void DoOperation(ServiceHandlerType* service,
 //                 const nfs::GetRequestFromDataGetterToDataManager& message,
 //                 const Sender& /*sender*/,
 //                 const NodeId& /*receiver*/) {
@@ -432,9 +419,8 @@ void DoOperation(ServiceHandlerType* service,
 // PutResponseFromDataManagerToMaidManager, DataNameAndContent
 // PutResponseFromPmidNodeToPmidManager, DataNameAndContentAndReturnCode
 
-
-//template <typename ServiceHandlerType>
-//class PutResponseSuccessVisitor : public boost::static_visitor<> {
+// template <typename ServiceHandlerType>
+// class PutResponseSuccessVisitor : public boost::static_visitor<> {
 // public:
 //  PutResponseSuccessVisitor(ServiceHandlerType* service,
 //                            const Identity& pmid_node,
@@ -462,37 +448,32 @@ void DoOperation(ServiceHandlerType* service,
 
 // =============================================================================================
 
-
 template <typename MessageType>
 struct ValidateSenderType {
   typedef std::function<bool(const MessageType&, const typename MessageType::Sender&)> type;
 };
 
-
 void InitialiseDirectory(const boost::filesystem::path& directory);
-//bool ShouldRetry(routing::Routing& routing, const nfs::Message& message);
+// bool ShouldRetry(routing::Routing& routing, const nfs::Message& message);
 
-template<typename Data>
+template <typename Data>
 bool IsDataElement(const typename Data::Name& name, const DataNameVariant& data_name_variant);
 
-//void SendReply(const nfs::Message& original_message,
+// void SendReply(const nfs::Message& original_message,
 //               const maidsafe_error& return_code,
 //               const routing::ReplyFunctor& reply_functor);
 
-template<typename AccountSet, typename Account>
-typename Account::serialised_type GetSerialisedAccount(
-    std::mutex& mutex,
-    const AccountSet& accounts,
-    const typename Account::Name& account_name);
+template <typename AccountSet, typename Account>
+typename Account::serialised_type GetSerialisedAccount(std::mutex& mutex,
+                                                       const AccountSet& accounts,
+                                                       const typename Account::Name& account_name);
 
-template<typename AccountSet, typename Account>
+template <typename AccountSet, typename Account>
 typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
-    std::mutex& mutex,
-    const AccountSet& accounts,
-    const typename Account::Name& account_name);
+    std::mutex& mutex, const AccountSet& accounts, const typename Account::Name& account_name);
 
 // To be moved to Routing
-bool operator ==(const routing::GroupSource& lhs,  const routing::GroupSource& rhs);
+bool operator==(const routing::GroupSource& lhs, const routing::GroupSource& rhs);
 
 /* Commented by Mahmoud on 2 Sep -- It may be of no use any more
 // Returns true if the required successful request count has been reached
@@ -507,26 +488,21 @@ bool AddResult(const nfs::Message& message,
 
 }  // namespace detail
 
-template <typename ServiceHandler,
-          typename MessageType,
-          typename AccumulatorVariantType>
+template <typename ServiceHandler, typename MessageType, typename AccumulatorVariantType>
 struct OperationHandlerWrapper {
-  typedef detail::OperationHandler<
-              typename detail::ValidateSenderType<MessageType>::type,
-              Accumulator<AccumulatorVariantType>,
-              typename Accumulator<AccumulatorVariantType>::AddCheckerFunctor,
-              ServiceHandler> TypedOperationHandler;
+  typedef detail::OperationHandler<typename detail::ValidateSenderType<MessageType>::type,
+                                   Accumulator<AccumulatorVariantType>,
+                                   typename Accumulator<AccumulatorVariantType>::AddCheckerFunctor,
+                                   ServiceHandler> TypedOperationHandler;
 
   OperationHandlerWrapper(Accumulator<AccumulatorVariantType>& accumulator,
                           typename detail::ValidateSenderType<MessageType>::type validate_sender,
                           typename Accumulator<AccumulatorVariantType>::AddCheckerFunctor checker,
-                          ServiceHandler* service,
-                          std::mutex& mutex)
+                          ServiceHandler* service, std::mutex& mutex)
       : typed_operation_handler(validate_sender, accumulator, checker, service, mutex) {}
 
-  void operator() (const MessageType& message,
-                   const typename MessageType::Sender& sender,
-                   const typename MessageType::Receiver& receiver) {
+  void operator()(const MessageType& message, const typename MessageType::Sender& sender,
+                  const typename MessageType::Receiver& receiver) {
     typed_operation_handler(message, sender, receiver);
   }
 
@@ -534,44 +510,43 @@ struct OperationHandlerWrapper {
   TypedOperationHandler typed_operation_handler;
 };
 
-template<typename Message>
+template <typename Message>
 int RequiredRequests(const Message&) {
   return detail::RequiredValue<typename Message::Sender>()();
 }
 
-
-//template<typename Message>
-//inline bool FromMaidManager(const Message& message);
+// template<typename Message>
+// inline bool FromMaidManager(const Message& message);
 //
-//template<typename Message>
-//inline bool FromDataManager(const Message& message);
+// template<typename Message>
+// inline bool FromDataManager(const Message& message);
 //
-//template<typename Message>
-//inline bool FromPmidManager(const Message& message);
+// template<typename Message>
+// inline bool FromPmidManager(const Message& message);
 //
-//template<typename Message>
-//inline bool FromDataHolder(const Message& message);
+// template<typename Message>
+// inline bool FromDataHolder(const Message& message);
 //
-//template<typename Message>
-//inline bool FromClientMaid(const Message& message);
+// template<typename Message>
+// inline bool FromClientMaid(const Message& message);
 //
-//template<typename Message>
-//inline bool FromClientMpid(const Message& message);
+// template<typename Message>
+// inline bool FromClientMpid(const Message& message);
 //
-//template<typename Message>
-//inline bool FromOwnerDirectoryManager(const Message& message);
+// template<typename Message>
+// inline bool FromOwnerDirectoryManager(const Message& message);
 //
-//template<typename Message>
-//inline bool FromGroupDirectoryManager(const Message& message);
+// template<typename Message>
+// inline bool FromGroupDirectoryManager(const Message& message);
 //
-//template<typename Message>
-//inline bool FromWorldDirectoryManager(const Message& message);
+// template<typename Message>
+// inline bool FromWorldDirectoryManager(const Message& message);
 //
-//template<typename Message>
-//inline bool FromDataGetter(const Message& message);
+// template<typename Message>
+// inline bool FromDataGetter(const Message& message);
 //
-//template<typename Message>
-//inline bool FromVersionManager(const nfs::Message& message);
+// template<typename Message>
+// inline bool FromVersionManager(const nfs::Message& message);
 
 /* Commented by Mahmoud on 2 Sep -- It may be of no use any more
 template<typename Persona>

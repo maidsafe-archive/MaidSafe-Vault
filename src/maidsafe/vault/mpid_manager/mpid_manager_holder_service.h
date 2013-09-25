@@ -26,7 +26,6 @@
 
 // #include "maidsafe/vault/disk_based_storage.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -35,28 +34,28 @@ class MpidAccountHolder {
  public:
   MpidAccountHolder(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
   ~MpidAccountHolder();
-  template<typename Data>
-//  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-//  void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor& /*reply_functor*/) {}
-  void HandleChurnEvent(routing::MatrixChange matrix_change);
+  template <typename Data>
+  //  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+      //  void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor&
+      // /*reply_functor*/) {}
+      void HandleChurnEvent(routing::MatrixChange matrix_change);
 
  private:
-//  void HandlePutMessage(const Message& message);
-//  void HandleGetMessage(const Message& message);
-//  void HandlePostMessage(const Message& message);
-//  void HandleDeleteMessage(const Message& message);
-//  boost::filesystem::path vault_root_dir_;
-//  routing::Routing& routing_;
-//  DiskBasedStorage disk_storage_;
+  //  void HandlePutMessage(const Message& message);
+  //  void HandleGetMessage(const Message& message);
+  //  void HandlePostMessage(const Message& message);
+  //  void HandleDeleteMessage(const Message& message);
+  //  boost::filesystem::path vault_root_dir_;
+  //  routing::Routing& routing_;
+  //  DiskBasedStorage disk_storage_;
 };
 
-//template<typename Data>
-//void MpidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
+// template<typename Data>
+// void MpidAccountHolder::HandleMessage(const nfs::Message& /*message*/,
 //                                      const routing::ReplyFunctor& /*reply_functor*/) {}
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
 
 #endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_SERVICE_H_

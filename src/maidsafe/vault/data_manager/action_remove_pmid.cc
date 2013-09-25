@@ -24,7 +24,6 @@
 #include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/data_manager/value.h"
 
-
 namespace maidsafe {
 
 namespace vault {

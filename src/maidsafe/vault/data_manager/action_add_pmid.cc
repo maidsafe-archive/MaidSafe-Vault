@@ -25,7 +25,6 @@
 #include "maidsafe/vault/data_manager/action_add_pmid.pb.h"
 #include "maidsafe/vault/data_manager/value.h"
 
-
 namespace maidsafe {
 
 namespace vault {

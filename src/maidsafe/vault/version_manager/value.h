@@ -25,7 +25,6 @@
 #include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/vault/version_manager/version_manager.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -34,9 +33,9 @@ class VersionManagerValue {
  public:
   explicit VersionManagerValue(const std::string& serialised_version_manager_value);
   VersionManagerValue(uint32_t max_versions = 1, uint32_t max_branches = 1);
-//  Commented by Mahmoud on 5 Sep. Requires fix in structureddata
-//  VersionManagerValue(const VersionManagerValue& other);
-//  VersionManagerValue(VersionManagerValue&& other);
+  //  Commented by Mahmoud on 5 Sep. Requires fix in structureddata
+  //  VersionManagerValue(const VersionManagerValue& other);
+  //  VersionManagerValue(VersionManagerValue&& other);
   VersionManagerValue& operator=(VersionManagerValue other);
   std::string Serialise() const;
 
@@ -60,6 +59,5 @@ void swap(VersionManagerValue& lhs, VersionManagerValue& rhs);
 }  // namespace vault
 
 }  // namespace maidsafe
-
 
 #endif  // MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_

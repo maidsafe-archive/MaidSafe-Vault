@@ -26,7 +26,6 @@
 #include "maidsafe/vault/version_manager/version_manager.h"
 #include "maidsafe/vault/version_manager/value.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -50,7 +49,6 @@ struct ActionVersionManagerGetBranch {
 
 bool operator==(const ActionVersionManagerGetBranch& lhs, const ActionVersionManagerGetBranch& rhs);
 bool operator!=(const ActionVersionManagerGetBranch& lhs, const ActionVersionManagerGetBranch& rhs);
-
 
 }  // namespace vault
 

@@ -19,13 +19,11 @@
 #ifndef MAIDSAFE_VAULT_PMID_NODE_HANDLER_H_
 #define MAIDSAFE_VAULT_PMID_NODE_HANDLER_H_
 
-
 #include "maidsafe/data_store/data_store.h"
 #include "maidsafe/data_store/memory_buffer.h"
 #include "maidsafe/data_store/permanent_store.h"
 #include "maidsafe/data_store/data_buffer.h"
 #include "maidsafe/data_types/data_name_variant.h"
-
 
 namespace maidsafe {
 namespace vault {
@@ -34,10 +32,10 @@ class PmidNodeHandler {
  public:
   PmidNodeHandler(const boost::filesystem::path vault_root_dir);
 
-  template<typename Data>
+  template <typename Data>
   void PutToPermanentStore(const Data& data);
 
-  template<typename Data>
+  template <typename Data>
   void DeleteFromPermanentStore(const typename Data::name& name);
 
   NonEmptyString GetFromPermanentStore(const DataNameVariant& data_name);
@@ -54,13 +52,13 @@ class PmidNodeHandler {
   data_store::MemoryBuffer mem_only_cache_;
 };
 
-template<typename Data>
+template <typename Data>
 void PmidNodeHandler::PutToPermanentStore(const Data& data) {
   typename Data::Name data_name(GetDataNameVariant(data.name().type, data.name().raw_name));
   permanent_data_store_.Put(data_name, data.data());
 }
 
-template<typename Data>
+template <typename Data>
 void PmidNodeHandler::DeleteFromPermanentStore(const typename Data::name& name) {
   permanent_data_store_.Delete(name);
 }

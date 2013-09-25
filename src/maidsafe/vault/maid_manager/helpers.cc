@@ -20,30 +20,26 @@
 
 #include <utility>
 
-
 namespace maidsafe {
 
 namespace vault {
 
-template<>
+template <>
 void PmidRegistrationOp::SetPublicFob<passport::PublicMaid>(
     std::unique_ptr<passport::PublicMaid>&& pub_maid) {
   public_maid = std::move(pub_maid);
 }
 
-template<>
+template <>
 void PmidRegistrationOp::SetPublicFob<passport::PublicPmid>(
     std::unique_ptr<passport::PublicPmid>&& pub_pmid) {
   public_pmid = std::move(pub_pmid);
 }
 
-
-
 PmidTotals::PmidTotals() : serialised_pmid_registration(), pmid_metadata() {}
 
 PmidTotals::PmidTotals(const std::string& serialised_pmid_registration_in)
-    : serialised_pmid_registration(serialised_pmid_registration_in),
-      pmid_metadata() {}
+    : serialised_pmid_registration(serialised_pmid_registration_in), pmid_metadata() {}
 
 PmidTotals::PmidTotals(const std::string& serialised_pmid_registration_in,
                        const PmidManagerMetadata& pmid_metadata_in)

@@ -26,101 +26,99 @@ const nfs::Persona MaidManagerDispatcher::kSourcePersona_(nfs::Persona::kMaidMan
 
 MaidManagerDispatcher::MaidManagerDispatcher(routing::Routing& routing,
                                              const passport::Pmid& signing_fob)
-    : routing_(routing),
-      kSigningFob_(signing_fob) {}
+    : routing_(routing), kSigningFob_(signing_fob) {}
 
 void MaidManagerDispatcher::SendCreateAccountResponse(const MaidName& /*account_name*/,
                                                       const maidsafe_error& /*result*/,
                                                       const nfs::MessageId& /*message_id*/) {
-//  typedef routing::GroupToSingleMessage RoutingMessage;
-//  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-//  static const nfs::MessageAction kAction(nfs::MessageAction::kCreateAccountResponse);
-//  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
+  //  typedef routing::GroupToSingleMessage RoutingMessage;
+  //  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
+  //  static const nfs::MessageAction kAction(nfs::MessageAction::kCreateAccountResponse);
+  //  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
 
-//  nfs::Message::Data inner_data(result);
-//  inner_data.action = kAction;
-//  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-//  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-//                         routing::SingleId(NodeId(account_name->string())), cacheable);
-//  routing_.Send(message);
+  //  nfs::Message::Data inner_data(result);
+  //  inner_data.action = kAction;
+  //  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
+  //  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
+  //                         routing::SingleId(NodeId(account_name->string())), cacheable);
+  //  routing_.Send(message);
 }
 
 void MaidManagerDispatcher::SendRemoveAccountResponse(const MaidName& /*account_name*/,
                                                       const maidsafe_error& /*result*/,
                                                       const nfs::MessageId& /*message_id*/) {
-//  typedef routing::GroupToSingleMessage RoutingMessage;
-//  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-//  static const nfs::MessageAction kAction(nfs::MessageAction::kRemoveAccountResponse);
-//  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
+  //  typedef routing::GroupToSingleMessage RoutingMessage;
+  //  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
+  //  static const nfs::MessageAction kAction(nfs::MessageAction::kRemoveAccountResponse);
+  //  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
 
-//  nfs::Message::Data inner_data(result);
-//  inner_data.action = kAction;
-//  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-//  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-//                         routing::SingleId(NodeId(account_name->string())), cacheable);
-//  routing_.Send(message);
+  //  nfs::Message::Data inner_data(result);
+  //  inner_data.action = kAction;
+  //  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
+  //  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
+  //                         routing::SingleId(NodeId(account_name->string())), cacheable);
+  //  routing_.Send(message);
 }
 
 void MaidManagerDispatcher::SendRegisterPmidResponse(const MaidName& /*account_name*/,
                                                      const PmidName& /*pmid_name*/,
                                                      const maidsafe_error& /*result*/,
                                                      const nfs::MessageId& /*message_id*/) {
-//  typedef routing::GroupToSingleMessage RoutingMessage;
-//  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-//  static const nfs::MessageAction kAction(nfs::MessageAction::kRegisterPmidResponse);
-//  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
+  //  typedef routing::GroupToSingleMessage RoutingMessage;
+  //  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
+  //  static const nfs::MessageAction kAction(nfs::MessageAction::kRegisterPmidResponse);
+  //  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
 
-//  nfs::Message::Data inner_data(result);
-//  inner_data.type = PmidName::data_type::Tag::kValue;
-//  inner_data.name = pmid_name.data;
-//  inner_data.action = kAction;
-//  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-//  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-//                         routing::SingleId(NodeId(account_name->string())), cacheable);
-//  routing_.Send(message);
+  //  nfs::Message::Data inner_data(result);
+  //  inner_data.type = PmidName::data_type::Tag::kValue;
+  //  inner_data.name = pmid_name.data;
+  //  inner_data.action = kAction;
+  //  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
+  //  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
+  //                         routing::SingleId(NodeId(account_name->string())), cacheable);
+  //  routing_.Send(message);
 }
 
 void MaidManagerDispatcher::SendUnregisterPmidResponse(const MaidName& /*account_name*/,
                                                        const PmidName& /*pmid_name*/,
                                                        const maidsafe_error& /*result*/,
                                                        const nfs::MessageId& /*message_id*/) {
-//  typedef routing::GroupToSingleMessage RoutingMessage;
-//  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-//  static const nfs::MessageAction kAction(nfs::MessageAction::kUnregisterPmidResponse);
-//  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
+  //  typedef routing::GroupToSingleMessage RoutingMessage;
+  //  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
+  //  static const nfs::MessageAction kAction(nfs::MessageAction::kUnregisterPmidResponse);
+  //  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
 
-//  nfs::Message::Data inner_data(result);
-//  inner_data.type = PmidName::data_type::Tag::kValue;
-//  inner_data.name = pmid_name.data;
-//  inner_data.action = kAction;
-//  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-//  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-//                         routing::SingleId(NodeId(account_name->string())), cacheable);
-//  routing_.Send(message);
+  //  nfs::Message::Data inner_data(result);
+  //  inner_data.type = PmidName::data_type::Tag::kValue;
+  //  inner_data.name = pmid_name.data;
+  //  inner_data.action = kAction;
+  //  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
+  //  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
+  //                         routing::SingleId(NodeId(account_name->string())), cacheable);
+  //  routing_.Send(message);
 }
 
 void MaidManagerDispatcher::SendSync(const MaidName& /*account_name*/,
-                                     const std::string& /*serialised_action*/) {
-}
+                                     const std::string& /*serialised_action*/) {}
 
 void MaidManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer*/,
                                                 const MaidName& /*account_name*/,
                                                 const std::string& /*serialised_account*/) {
-//  typedef routing::GroupToSingleMessage RoutingMessage;
-//  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-//  static const nfs::MessageAction kAction(nfs::MessageAction::kAccountTransfer);
-//  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidManager);
+  //  typedef routing::GroupToSingleMessage RoutingMessage;
+  //  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
+  //  static const nfs::MessageAction kAction(nfs::MessageAction::kAccountTransfer);
+  //  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidManager);
 
-//  nfs::Message::Data inner_data;
-//  inner_data.content = NonEmptyString(serialised_account);
-//  inner_data.action = kAction;
-//  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-//  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-//                         routing::SingleId(destination_peer), cacheable);
-//  routing_.Send(message);
+  //  nfs::Message::Data inner_data;
+  //  inner_data.content = NonEmptyString(serialised_account);
+  //  inner_data.action = kAction;
+  //  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
+  //  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
+  //                         routing::SingleId(destination_peer), cacheable);
+  //  routing_.Send(message);
 }
 
-//routing::GroupSource MaidManagerDispatcher::Sender(const MaidName& account_name) const {
+// routing::GroupSource MaidManagerDispatcher::Sender(const MaidName& account_name) const {
 //  return routing::GroupSource(routing::GroupId(NodeId(account_name->string())),
 //                              routing::SingleId(routing_.kNodeId()));
 //}

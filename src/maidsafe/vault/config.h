@@ -23,17 +23,13 @@
 
 #include "maidsafe/data_types/data_name_variant.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
 typedef std::function<void(const DataNameVariant&)> IntegrityCheckFunctor;
 
-namespace detail {
-
-
-}  // namespace detail
+namespace detail {}  // namespace detail
 
 }  // namespace vault
 

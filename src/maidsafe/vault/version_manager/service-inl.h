@@ -38,12 +38,12 @@ namespace vault {
 
 namespace detail {
 
-//VersionManagerUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message);
+// VersionManagerUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message);
 
 }  // namespace detail
 
-//template<typename Data>
-//void VersionManagerService::HandleMessage(const nfs::Message& message,
+// template<typename Data>
+// void VersionManagerService::HandleMessage(const nfs::Message& message,
 //                                                  const routing::ReplyFunctor& reply_functor) {
 // //   ValidateSender(message);
 
@@ -82,12 +82,14 @@ namespace detail {
 //   }
 //}
 
-//// In this persona we sync all mutating actions, on sucess the reply_functor is fired (if available)
+//// In this persona we sync all mutating actions, on sucess the reply_functor is fired (if
+///available)
 
-//template<typename Data>
-//void VersionManagerService::Synchronise(const nfs::Message& message) {
+// template<typename Data>
+// void VersionManagerService::Synchronise(const nfs::Message& message) {
 //  auto entry =  detail::UnresolvedEntryFromMessage(message);
-//  nfs_.Sync(DataNameVariant(Data::Name(message.data().name)), entry.Serialise().data);  // does not include
+//  nfs_.Sync(DataNameVariant(Data::Name(message.data().name)), entry.Serialise().data);  // does
+// not include
 //                                                                            // original_message_id
 //  entry.original_message_id = message.message_id();
 //  entry.source_node_id = message.source().node_id; // with data().originator_id we can
@@ -96,7 +98,6 @@ namespace detail {
 //  std::lock_guard<std::mutex> lock(sync_mutex_);
 //  sync_.AddUnresolvedEntry(entry);
 //}
-
 
 }  // namespace vault
 

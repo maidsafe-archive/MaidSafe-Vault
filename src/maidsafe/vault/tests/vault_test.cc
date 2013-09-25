@@ -29,7 +29,6 @@
 
 #include "maidsafe/passport/types.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -53,9 +52,7 @@ class VaultTest : public testing::Test {
     return passport::Maid(anmaid);
   }
 
-  passport::Pmid MakePmid() {
-    return passport::Pmid(MakeMaid());
-  }
+  passport::Pmid MakePmid() { return passport::Pmid(MakeMaid()); }
 
   const maidsafe::test::TestPath kTestRoot_;
   boost::filesystem::path vault_root_directory_;

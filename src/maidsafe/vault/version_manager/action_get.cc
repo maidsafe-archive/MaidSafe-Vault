@@ -18,7 +18,6 @@
 
 #include "maidsafe/vault/version_manager/action_get.h"
 
-
 namespace maidsafe {
 
 namespace vault {

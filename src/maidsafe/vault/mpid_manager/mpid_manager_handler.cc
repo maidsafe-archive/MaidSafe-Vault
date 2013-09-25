@@ -18,13 +18,8 @@
 
 #include "maidsafe/vault/mpid_manager/mpid_manager_handler.h"
 
-
 namespace maidsafe {
 
-namespace vault {
-
-
-
-}  // namespace vault
+namespace vault {}  // namespace vault
 
 }  // namespace maidsafe

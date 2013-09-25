@@ -43,7 +43,6 @@
 #include "maidsafe/nfs/client/data_getter.h"
 #include "maidsafe/nfs/client/maid_node_nfs.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -56,7 +55,7 @@ typedef std::vector<passport::Pmid> PmidVector;
 class NetworkGenerator {
  public:
   NetworkGenerator();
-  void SetupBootstrapNodes(const PmidVector &all_keys);
+  void SetupBootstrapNodes(const PmidVector& all_keys);
   std::vector<boost::asio::ip::udp::endpoint> BootstrapEndpoints() const;
 
  private:
@@ -79,8 +78,7 @@ class NetworkGenerator {
     }
   };
 
-  void DoOnPublicKeyRequested(const NodeId& node_id,
-                              const routing::GivePublicKeyFunctor& give_key,
+  void DoOnPublicKeyRequested(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key,
                               nfs_client::DataGetter& data_getter);
 };
 
@@ -113,7 +111,7 @@ class KeyStorer : public ClientTester {
   void Store();
 
  private:
-  template<typename Data>
+  template <typename Data>
   void StoreKey(const Data& key) {
     client_nfs_->Put(key);
   }
@@ -126,7 +124,7 @@ class KeyVerifier : public ClientTester {
   void Verify();
 
  private:
-  template<typename SigningData>
+  template <typename SigningData>
   bool EqualKeys(const SigningData& lhs, const SigningData& rhs) {
     return lhs.name() == rhs.name() && asymm::MatchingKeys(lhs.public_key(), rhs.public_key());
   }

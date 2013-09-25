@@ -23,7 +23,6 @@
 #include "maidsafe/vault/data_manager/action_node_down.pb.h"
 #include "maidsafe/vault/data_manager/value.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -31,8 +30,7 @@ namespace vault {
 ActionDataManagerNodeDown::ActionDataManagerNodeDown(const PmidName& pmid_name)
     : kPmidName(pmid_name) {}
 
-ActionDataManagerNodeDown::ActionDataManagerNodeDown(
-    const std::string& serialised_action)
+ActionDataManagerNodeDown::ActionDataManagerNodeDown(const std::string& serialised_action)
     : kPmidName([&serialised_action]()->PmidName {
         protobuf::ActionDataManagerNodeDown action_node_down_proto;
         if (!action_node_down_proto.ParseFromString(serialised_action))
@@ -40,12 +38,10 @@ ActionDataManagerNodeDown::ActionDataManagerNodeDown(
         return PmidName(Identity(action_node_down_proto.pmid_name()));
       }()) {}
 
-ActionDataManagerNodeDown::ActionDataManagerNodeDown(
-    const ActionDataManagerNodeDown& other)
+ActionDataManagerNodeDown::ActionDataManagerNodeDown(const ActionDataManagerNodeDown& other)
     : kPmidName(other.kPmidName) {}
 
-ActionDataManagerNodeDown::ActionDataManagerNodeDown(
-    ActionDataManagerNodeDown&& other)
+ActionDataManagerNodeDown::ActionDataManagerNodeDown(ActionDataManagerNodeDown&& other)
     : kPmidName(std::move(other.kPmidName)) {}
 
 std::string ActionDataManagerNodeDown::Serialise() const {

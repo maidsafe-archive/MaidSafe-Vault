@@ -24,7 +24,6 @@
 #include "maidsafe/routing/api_config.h"
 #include "maidsafe/data_types/structured_data_versions.h"
 
-
 namespace maidsafe {
 
 namespace vault {

@@ -24,22 +24,17 @@
 #include "maidsafe/vault/types.h"
 #include "maidsafe/common/node_id.h"
 
-
 namespace maidsafe {
 
 namespace vault {
-
 
 namespace detail {
 
 template <typename ServiceHandlerType>
 class MaidManagerPutVisitor : public boost::static_visitor<> {
  public:
-  MaidManagerPutVisitor(ServiceHandlerType* service,
-                        NonEmptyString content,
-                        NodeId sender,
-                        Identity pmid_hint,
-                        nfs::MessageId message_id)
+  MaidManagerPutVisitor(ServiceHandlerType* service, NonEmptyString content, NodeId sender,
+                        Identity pmid_hint, nfs::MessageId message_id)
       : service_(service),
         kContent_(std::move(content)),
         kSender(std::move(sender)),
@@ -48,27 +43,23 @@ class MaidManagerPutVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    service_->template HandlePut(MaidName(kSender),
-                                 Name::data_type(data_name, kContent_),
-                                 kPmidHint_,
-                                 kMessageId);
+    service_->template HandlePut(MaidName(kSender), Name::data_type(data_name, kContent_),
+                                 kPmidHint_, kMessageId);
   }
-  private:
-   ServiceHandlerType* service_;
-   const NonEmptyString kContent_;
-   const Identity kPmidHint_;
-   const nfs::MessageId kMessageId;
-   const NodeId kSender;
+
+ private:
+  ServiceHandlerType* service_;
+  const NonEmptyString kContent_;
+  const Identity kPmidHint_;
+  const nfs::MessageId kMessageId;
+  const NodeId kSender;
 };
 
 template <typename ServiceHandlerType>
 class DataManagerPutVisitor : public boost::static_visitor<> {
  public:
-  DataManagerPutVisitor(ServiceHandlerType* service,
-                        NonEmptyString content,
-                        Identity maid_name,
-                        Identity pmid_name,
-                        nfs::MessageId message_id)
+  DataManagerPutVisitor(ServiceHandlerType* service, NonEmptyString content, Identity maid_name,
+                        Identity pmid_name, nfs::MessageId message_id)
       : service_(service),
         kContent_(std::move(content)),
         kMaidName(std::move(maid_name)),
@@ -89,18 +80,12 @@ class DataManagerPutVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId;
 };
 
-
 template <typename ServiceHandlerType>
 class PmidManagerPutVisitor : public boost::static_visitor<> {
  public:
-  PmidManagerPutVisitor(ServiceHandlerType* service,
-                        const NonEmptyString& content,
-                        const Identity& pmid_name,
-                        const nfs::MessageId& message_id)
-      : service_(service),
-        kContent_(content),
-        kPmidName_(pmid_name) ,
-        kMessageId(message_id) {}
+  PmidManagerPutVisitor(ServiceHandlerType* service, const NonEmptyString& content,
+                        const Identity& pmid_name, const nfs::MessageId& message_id)
+      : service_(service), kContent_(content), kPmidName_(pmid_name), kMessageId(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
@@ -117,12 +102,9 @@ class PmidManagerPutVisitor : public boost::static_visitor<> {
 template <typename ServiceHandlerType>
 class PmidNodePutVisitor : public boost::static_visitor<> {
  public:
-  PmidNodePutVisitor(ServiceHandlerType* service,
-                     const NonEmptyString& content,
+  PmidNodePutVisitor(ServiceHandlerType* service, const NonEmptyString& content,
                      const nfs::MessageId& message_id)
-      : service_(service),
-        kContent_(content),
-        kMessageId(message_id) {}
+      : service_(service), kContent_(content), kMessageId(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
@@ -135,14 +117,11 @@ class PmidNodePutVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId;
 };
 
-
 template <typename ServiceHandlerType>
 class PutResponseFailureVisitor : public boost::static_visitor<> {
  public:
-  PutResponseFailureVisitor(ServiceHandlerType* service,
-                            const Identity& pmid_node,
-                            const maidsafe_error& return_code,
-                            const nfs::MessageId& message_id)
+  PutResponseFailureVisitor(ServiceHandlerType* service, const Identity& pmid_node,
+                            const maidsafe_error& return_code, const nfs::MessageId& message_id)
       : service_(service),
         kPmidNode_(pmid_node),
         kMessageId(message_id),
@@ -150,61 +129,53 @@ class PutResponseFailureVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    service_->template HandlePutFailure(data_name,
-                                        kPmidNode_,
-                                        kMessageId,
+    service_->template HandlePutFailure(data_name, kPmidNode_, kMessageId,
                                         maidsafe_error(kReturnCode_));
   }
 
-  private:
-   ServiceHandlerType* service_;
-   const PmidName kPmidNode_;
-   const nfs::MessageId kMessageId;
-   const maidsafe_error kReturnCode_;
+ private:
+  ServiceHandlerType* service_;
+  const PmidName kPmidNode_;
+  const nfs::MessageId kMessageId;
+  const maidsafe_error kReturnCode_;
 };
 
 template <typename ServiceHandlerType>
 class PutResponseSuccessVisitor : public boost::static_visitor<> {
  public:
-  PutResponseSuccessVisitor(ServiceHandlerType* service,
-                                       const Identity& pmid_node,
-                                       const nfs::MessageId& message_id)
-      : service_(service),
-        kPmidNode_(pmid_node),
-        kMessageId(message_id) {}
+  PutResponseSuccessVisitor(ServiceHandlerType* service, const Identity& pmid_node,
+                            const nfs::MessageId& message_id)
+      : service_(service), kPmidNode_(pmid_node), kMessageId(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    service_->template HandlePutResponse<typename Name::data_type>(data_name,
-                                                                   kPmidNode_,
+    service_->template HandlePutResponse<typename Name::data_type>(data_name, kPmidNode_,
                                                                    kMessageId);
   }
-  private:
-   ServiceHandlerType* service_;
-   const PmidName kPmidNode_;
-   const nfs::MessageId kMessageId;
+
+ private:
+  ServiceHandlerType* service_;
+  const PmidName kPmidNode_;
+  const nfs::MessageId kMessageId;
 };
 
 template <typename ServiceHandlerType>
 class MaidManagerPutResponseVisitor : public boost::static_visitor<> {
  public:
-  MaidManagerPutResponseVisitor(ServiceHandlerType* service,
-                                const Identity& maid_node,
+  MaidManagerPutResponseVisitor(ServiceHandlerType* service, const Identity& maid_node,
                                 const int32_t& cost)
-      : service_(service),
-        kMaidNode_(maid_node),
-        kCost_(cost) {}
+      : service_(service), kMaidNode_(maid_node), kCost_(cost) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     service_->template HandlePutResponse(kMaidNode_, data_name, kCost_);
   }
-  private:
-   ServiceHandlerType* service_;
-   const MaidName kMaidNode_;
-   const int32_t kCost_;
-};
 
+ private:
+  ServiceHandlerType* service_;
+  const MaidName kMaidNode_;
+  const int32_t kCost_;
+};
 
 }  // namespace detail
 

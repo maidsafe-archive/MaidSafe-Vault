@@ -24,10 +24,9 @@ namespace maidsafe {
 
 namespace vault {
 
-PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing)
-    : routing_(routing) {}
+PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing) : routing_(routing) {}
 
-//void PmidManagerDispatcher::SendStateChange(const PmidName& pmid_node,
+// void PmidManagerDispatcher::SendStateChange(const PmidName& pmid_node,
 //                                            const Data::Name &data_name) {
 //  typedef nfs::StateChangeFromPmidManagerToDataManager NfsMessage;
 //  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
@@ -40,7 +39,7 @@ PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing)
 //  routing_.Send(message);
 //}
 
-//void PmidManagerDispatcher::SendSync(const PmidName& pmid_node,
+// void PmidManagerDispatcher::SendSync(const PmidName& pmid_node,
 //                                     const std::string& serialised_sync) {
 //  typedef nfs::SynchroniseFromPmidManagerToPmidManager NfsMessage;
 //  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
@@ -53,7 +52,7 @@ PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing)
 //  routing_.Send(message);
 //}
 
-//void PmidManagerDispatcher::SendAccountTransfer(const PmidName& destination_peer,
+// void PmidManagerDispatcher::SendAccountTransfer(const PmidName& destination_peer,
 //                                                const PmidName& pmid_node,
 //                                                const std::string& serialised_account) {
 //  typedef nfs::AccountTransferFromPmidManagerToPmidManager NfsMessage;
@@ -67,7 +66,7 @@ PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing)
 //  routing_.Send(message);
 //}
 
-//void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
+// void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
 //                                            const std::string& serialised_account_response) {
 //  typedef GetPmidAccountResponseFromPmidManagerToPmidNode VaultMessage;
 //  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;

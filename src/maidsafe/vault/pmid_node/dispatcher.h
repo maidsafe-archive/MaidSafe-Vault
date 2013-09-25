@@ -35,16 +35,14 @@ class PmidNodeDispatcher {
   void SendGetRequest(const nfs_vault::DataName& data_name);
   void SendPmidAccountRequest();
 
-  template<typename Data>
-  void SendPutFailure(const typename Data::Name& name,
-                      const nfs::MessageId& message_id,
+  template <typename Data>
+  void SendPutFailure(const typename Data::Name& name, const nfs::MessageId& message_id,
                       const maidsafe_error& error);
-  template<typename Data>
-  void SendIntegrityCheckResponse(const typename Data::Name& data_name,
-                                  const std::string& hash,
-                                  const NodeId& receiver,
-                                  const maidsafe_error& error,
+  template <typename Data>
+  void SendIntegrityCheckResponse(const typename Data::Name& data_name, const std::string& hash,
+                                  const NodeId& receiver, const maidsafe_error& error,
                                   const nfs::MessageId& message_id);
+
  private:
   PmidNodeDispatcher();
   PmidNodeDispatcher(const PmidNodeDispatcher&);
@@ -56,7 +54,7 @@ class PmidNodeDispatcher {
   routing::Routing& routing_;
 };
 
-template<typename Data>
+template <typename Data>
 void PmidNodeDispatcher::SendPutFailure(const typename Data::Name& name,
                                         const nfs::MessageId& message_id,
                                         const maidsafe_error& error) {
@@ -70,7 +68,7 @@ void PmidNodeDispatcher::SendPutFailure(const typename Data::Name& name,
   routing_.Send(routing_message);
 }
 
-template<typename Data>
+template <typename Data>
 void PmidNodeDispatcher::SendIntegrityCheckResponse(const typename Data::Name& data_name,
                                                     const std::string& signature,
                                                     const NodeId& receiver,
@@ -81,15 +79,12 @@ void PmidNodeDispatcher::SendIntegrityCheckResponse(const typename Data::Name& d
   NfsMessage nfs_message;
   if (error.code() == CommonErrors::success)
     nfs_message = NfsMessage(message_id, nfs_client::DataNameAndSignatureAndReturnCode(
-                                             data_name.type,
-                                             data_name.raw_name,
-                                             nfs_client::ReturnCode(error),
-                                             signature));
+                                             data_name.type, data_name.raw_name,
+                                             nfs_client::ReturnCode(error), signature));
   else
-    nfs_message = NfsMessage(message_id, nfs_client::DataNameAndSignatureAndReturnCode(
-                                             data_name.type,
-                                             data_name.raw_name,
-                                             nfs_client::ReturnCode(error)));
+    nfs_message = NfsMessage(
+        message_id, nfs_client::DataNameAndSignatureAndReturnCode(
+                        data_name.type, data_name.raw_name, nfs_client::ReturnCode(error)));
   RoutingMessage routing_message(nfs_message.Serialise(),
                                  NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
                                  NfsMessage::Receiver(routing::SingleId(receiver)));

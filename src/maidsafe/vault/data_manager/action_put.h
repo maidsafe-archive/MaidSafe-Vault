@@ -27,7 +27,6 @@
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/types.h"
 
-
 namespace maidsafe {
 namespace vault {
 
@@ -48,13 +47,10 @@ struct ActionDataManagerPut {
   ActionDataManagerPut& operator=(ActionDataManagerPut other);
 };
 
-bool operator==(const ActionDataManagerPut& lhs,
-                const ActionDataManagerPut& rhs);
-bool operator!=(const ActionDataManagerPut& lhs,
-                const ActionDataManagerPut& rhs);
+bool operator==(const ActionDataManagerPut& lhs, const ActionDataManagerPut& rhs);
+bool operator!=(const ActionDataManagerPut& lhs, const ActionDataManagerPut& rhs);
 
 }  // namespace vault
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_PUT_H_
-

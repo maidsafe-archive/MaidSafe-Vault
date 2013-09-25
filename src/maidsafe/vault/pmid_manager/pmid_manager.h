@@ -27,7 +27,6 @@
 #include "maidsafe/vault/pmid_manager/action_put.h"
 #include "maidsafe/vault/pmid_manager/value.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -38,10 +37,9 @@ struct ActionGetPmidTotals;
 
 }  // namespace vault
 
-
 namespace nfs {
 
-template<>
+template <>
 struct PersonaTypes<Persona::kPmidManager> {
   static const Persona persona = Persona::kPmidManager;
   typedef vault::GroupKey<passport::PublicPmid::Name> Key;
@@ -62,7 +60,6 @@ struct PersonaTypes<Persona::kPmidManager> {
 };
 
 }  // namespace nfs
-
 
 namespace vault {
 

@@ -30,8 +30,7 @@ PmidManagerValue::PmidManagerValue() : size_(0) {}
 
 PmidManagerValue::PmidManagerValue(const int32_t& size) : size_(size) {}
 
-PmidManagerValue::PmidManagerValue(const std::string& serialised_pmid_manager_value)
-    : size_(0) {
+PmidManagerValue::PmidManagerValue(const std::string& serialised_pmid_manager_value) : size_(0) {
   protobuf::PmidManagerValue pmid_manager_value_proto;
   if (!pmid_manager_value_proto.ParseFromString(serialised_pmid_manager_value)) {
     LOG(kError) << "Failed to read or parse serialised pmid manager value.";
@@ -41,11 +40,9 @@ PmidManagerValue::PmidManagerValue(const std::string& serialised_pmid_manager_va
   }
 }
 
-PmidManagerValue::PmidManagerValue(const PmidManagerValue& other)
-    : size_(other.size_) {}
+PmidManagerValue::PmidManagerValue(const PmidManagerValue& other) : size_(other.size_) {}
 
-PmidManagerValue::PmidManagerValue(PmidManagerValue&& other)
-    : size_(std::move(other.size_)) {}
+PmidManagerValue::PmidManagerValue(PmidManagerValue&& other) : size_(std::move(other.size_)) {}
 
 PmidManagerValue& PmidManagerValue::operator=(PmidManagerValue other) {
   swap(*this, other);

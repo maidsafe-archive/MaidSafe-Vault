@@ -34,17 +34,15 @@
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/types.h"
 
+// namespace maidsafe {
 
-//namespace maidsafe {
+// namespace vault {
 
-//namespace vault {
+// struct PmidManagerMetadata;
 
-//struct PmidManagerMetadata;
+// namespace test { class MaidManagerHandlerTest; }
 
-//namespace test { class MaidManagerHandlerTest; }
-
-
-//class MaidAccountHandler {
+// class MaidAccountHandler {
 // public:
 //  MaidAccountHandler(Db& db, const NodeId& this_node_id);
 
@@ -56,7 +54,8 @@
 //  // client request or going out of range
 //  void DeleteAccount(const MaidName& account_name);
 
-//  void RegisterPmid(const MaidName& account_name, const nfs_vault::PmidRegistration& pmid_registration);
+//  void RegisterPmid(const MaidName& account_name, const nfs_vault::PmidRegistration&
+// pmid_registration);
 //  void UnregisterPmid(const MaidName& account_name, const PmidName& pmid_name);
 //  std::vector<PmidName> GetPmidNames(const MaidName& account_name) const;
 //  void UpdatePmidTotals(const MaidName& account_name, const PmidManagerMetadata& pmid_totals);

@@ -29,14 +29,13 @@
 
 #include "maidsafe/vault/maid_manager/action_register_unregister_pmid.pb.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
 class MaidManagerMetadata;
 
-template<bool Unregister>
+template <bool Unregister>
 struct ActionRegisterUnregisterPmid {
   explicit ActionRegisterUnregisterPmid(const nfs_vault::PmidRegistration& pmid_registration);
   explicit ActionRegisterUnregisterPmid(const std::string& serialised_action);
@@ -54,69 +53,67 @@ struct ActionRegisterUnregisterPmid {
   ActionRegisterUnregisterPmid& operator=(ActionRegisterUnregisterPmid other);
 };
 
-//template<>
-//const nfs::MessageAction ActionRegisterUnregisterPmid<false>::kActionId =
+// template<>
+// const nfs::MessageAction ActionRegisterUnregisterPmid<false>::kActionId =
 //    nfs::MessageAction::kRegisterPmidRequest;
 
-//template<>
-//const nfs::MessageAction ActionRegisterUnregisterPmid<true>::kActionId =
+// template<>
+// const nfs::MessageAction ActionRegisterUnregisterPmid<true>::kActionId =
 //    nfs::MessageAction::kUnregisterPmidRequest;
 
-template<>
+template <>
 void ActionRegisterUnregisterPmid<false>::operator()(MaidManagerMetadata& metadata) const;
 
-template<>
+template <>
 void ActionRegisterUnregisterPmid<true>::operator()(MaidManagerMetadata& metadata) const;
 
-template<bool Unregister>
+template <bool Unregister>
 bool operator==(const ActionRegisterUnregisterPmid<Unregister>& lhs,
                 const ActionRegisterUnregisterPmid<Unregister>& rhs);
 
-template<bool Unregister>
+template <bool Unregister>
 bool operator!=(const ActionRegisterUnregisterPmid<Unregister>& lhs,
                 const ActionRegisterUnregisterPmid<Unregister>& rhs);
 
 typedef ActionRegisterUnregisterPmid<false> ActionRegisterPmid;
 typedef ActionRegisterUnregisterPmid<true> ActionUnregisterPmid;
 
-
-
 // ==================== Implementation =============================================================
-template<bool Unregister>
+template <bool Unregister>
 ActionRegisterUnregisterPmid<Unregister>::ActionRegisterUnregisterPmid(
     const nfs_vault::PmidRegistration& pmid_registration_in)
-        : kPmidRegistration(pmid_registration_in) {}
+    : kPmidRegistration(pmid_registration_in) {}
 
-template<bool Unregister>
+template <bool Unregister>
 ActionRegisterUnregisterPmid<Unregister>::ActionRegisterUnregisterPmid(
     const std::string& serialised_action)
-        : kPmidRegistration([&serialised_action]()->std::string {
-            protobuf::ActionRegisterUnregisterPmid action_register_pmid_proto;
-            if (!action_register_pmid_proto.ParseFromString(serialised_action))
-              ThrowError(CommonErrors::parsing_error);
-            return action_register_pmid_proto.serialised_pmid_registration();
-          }()) {
+    : kPmidRegistration([&serialised_action]()->std::string {
+        protobuf::ActionRegisterUnregisterPmid action_register_pmid_proto;
+        if (!action_register_pmid_proto.ParseFromString(serialised_action))
+          ThrowError(CommonErrors::parsing_error);
+        return action_register_pmid_proto.serialised_pmid_registration();
+      }()) {
   assert(kPmidRegistration.unregister() == Unregister);
 }
 
-template<bool Unregister>
+template <bool Unregister>
 ActionRegisterUnregisterPmid<Unregister>::ActionRegisterUnregisterPmid(
     const ActionRegisterUnregisterPmid& other)
-        : kPmidRegistration(other.kPmidRegistration) {}
+    : kPmidRegistration(other.kPmidRegistration) {}
 
-template<bool Unregister>
+template <bool Unregister>
 ActionRegisterUnregisterPmid<Unregister>::ActionRegisterUnregisterPmid(
     ActionRegisterUnregisterPmid&& other)
-        : kPmidRegistration(std::move(other.kPmidRegistration)) {}
+    : kPmidRegistration(std::move(other.kPmidRegistration)) {}
 
-template<bool Unregister>
+template <bool Unregister>
 std::string ActionRegisterUnregisterPmid<Unregister>::Serialise() const {
   protobuf::ActionRegisterUnregisterPmid action_register_pmid_proto;
   action_register_pmid_proto.set_serialised_pmid_registration(kPmidRegistration.Serialise());
   return action_register_pmid_proto.SerializeAsString();
 }
 
-template<bool Unregister>
+template <bool Unregister>
 bool operator==(const ActionRegisterUnregisterPmid<Unregister>& lhs,
                 const ActionRegisterUnregisterPmid<Unregister>& rhs) {
   return lhs.kPmidRegistration.maid_name() == rhs.kPmidRegistration.maid_name() &&
@@ -124,7 +121,7 @@ bool operator==(const ActionRegisterUnregisterPmid<Unregister>& lhs,
          lhs.kPmidRegistration.unregister() == rhs.kPmidRegistration.unregister();
 }
 
-template<bool Unregister>
+template <bool Unregister>
 bool operator!=(const ActionRegisterUnregisterPmid<Unregister>& lhs,
                 const ActionRegisterUnregisterPmid<Unregister>& rhs) {
   return !operator==(lhs, rhs);

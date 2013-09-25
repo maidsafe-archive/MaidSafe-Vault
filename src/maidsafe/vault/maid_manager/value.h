@@ -22,7 +22,6 @@
 #include <cstdint>
 #include <string>
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -54,6 +53,5 @@ bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs);
 }  // namespace vault
 
 }  // namespace maidsafe
-
 
 #endif  // MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_

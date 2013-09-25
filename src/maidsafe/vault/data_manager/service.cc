@@ -36,16 +36,14 @@ namespace vault {
 
 namespace {
 
-
-template<typename Message>
+template <typename Message>
 inline bool ForThisPersona(const Message& message) {
   return message.destination_persona() != nfs::Persona::kDataManager;
 }
 
 }  // unnamed namespace
 
-DataManagerService::DataManagerService(const passport::Pmid& pmid,
-                                       routing::Routing& routing,
+DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                                        nfs_client::DataGetter& data_getter)
     : routing_(routing),
       asio_service_(2),
@@ -60,113 +58,105 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid,
       sync_add_pmids_(),
       sync_remove_pmids_(),
       sync_node_downs_(),
-      sync_node_ups_() {
-}
+      sync_node_ups_() {}
 
 // GetRequestFromMaidNodeToDataManager
-//template<>
-//void DataManagerService::HandleMessage(
+// template<>
+// void DataManagerService::HandleMessage(
 //   const nfs::GetRequestFromMaidNodeToDataManager& /*message*/,
 //   const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& /*sender*/,
 //   const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {}
 
-
-
 // PutRequestFromMaidManagerToDataManager
-template<>
+template <>
 void DataManagerService::HandleMessage(
-   const nfs::PutRequestFromMaidManagerToDataManager& message,
-   const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
-   const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver& receiver) {
+    const nfs::PutRequestFromMaidManagerToDataManager& message,
+    const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
+    const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver& receiver) {
   typedef nfs::PutRequestFromMaidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType, nfs::DataManagerServiceMessages>(
-      accumulator_,
-      [this](const MessageType& message, const MessageType::Sender& sender) {
-        return this->ValidateSender(message, sender);
-      },
+      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
       Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
-      this,
-      accumulator_mutex_)(message, sender, receiver);
+      this, accumulator_mutex_)(message, sender, receiver);
 }
 
 // PutResponseFromPmidManagerToDataManager
-template<>
+template <>
 void DataManagerService::HandleMessage(
-   const nfs::PutFailureFromPmidManagerToDataManager& message,
-   const typename nfs::PutFailureFromPmidManagerToDataManager::Sender& sender,
-   const typename nfs::PutFailureFromPmidManagerToDataManager::Receiver& receiver) {
+    const nfs::PutFailureFromPmidManagerToDataManager& message,
+    const typename nfs::PutFailureFromPmidManagerToDataManager::Sender& sender,
+    const typename nfs::PutFailureFromPmidManagerToDataManager::Receiver& receiver) {
   typedef nfs::PutFailureFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType, nfs::DataManagerServiceMessages>(
-      accumulator_,
-      [this](const MessageType& message, const MessageType::Sender& sender) {
-        return this->ValidateSender(message, sender);
-      },
+      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
       Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
-      this,
-      accumulator_mutex_)(message, sender, receiver);
+      this, accumulator_mutex_)(message, sender, receiver);
 }
 
-
 // =============== Sync ============================================================================
-template<>
+template <>
 void DataManagerService::HandleMessage(
-   const nfs::SynchroniseFromDataManagerToDataManager& message,
-   const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& sender,
-   const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& /*receiver*/) {
+    const nfs::SynchroniseFromDataManagerToDataManager& message,
+    const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& sender,
+    const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& /*receiver*/) {
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.contents->content.string()))
     ThrowError(CommonErrors::parsing_error);
 
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
     case ActionDataManagerPut::kActionId: {
-      DataManager::UnresolvedPut unresolved_action(
-          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      DataManager::UnresolvedPut unresolved_action(proto_sync.serialised_unresolved_action(),
+                                                   sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         db_.Commit(resolved_action->key, resolved_action->action);
       }
       break;
     }
-//    case ActionDataManagerDelete::kActionId: {
-//      DataManager::UnresolvedDelete unresolved_action(
-//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-//      auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action)
-//        db_.Commit(resolved_action->key, resolved_action->action);
-//      break;
-//    }
-//    case ActionDataManagerAddPmid::kActionId: {
-//      DataManager::UnresolvedAddPmid unresolved_action(
-//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-//      auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action)
-//        db_.Commit(resolved_action->key, resolved_action->action);
-//      break;
-//    }
-//    case ActionDataManagerRemovePmid::kActionId: {
-//      DataManager::UnresolvedRemovePmid unresolved_action(
-//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-//      auto resolved_action(sync_remove_pmids_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action)
-//        db_.Commit(resolved_action->key, resolved_action->action);
-//      break;
-//    }
-//    case ActionDataManagerNodeUp::kActionId: {
-//      DataManager::UnresolvedNodeUp unresolved_action(
-//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-//      auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action)
-//        db_.Commit(resolved_action->key, resolved_action->action);
-//      break;
-//    }
-//    case ActionDataManagerNodeDown::kActionId: {
-//      DataManager::UnresolvedNodeDown unresolved_action(
-//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-//      auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action)
-//        db_.Commit(resolved_action->key, resolved_action->action);
-//      break;
-//    }
+    //    case ActionDataManagerDelete::kActionId: {
+    //      DataManager::UnresolvedDelete unresolved_action(
+    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+    //      auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
+    //      if (resolved_action)
+    //        db_.Commit(resolved_action->key, resolved_action->action);
+    //      break;
+    //    }
+    //    case ActionDataManagerAddPmid::kActionId: {
+    //      DataManager::UnresolvedAddPmid unresolved_action(
+    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+    //      auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
+    //      if (resolved_action)
+    //        db_.Commit(resolved_action->key, resolved_action->action);
+    //      break;
+    //    }
+    //    case ActionDataManagerRemovePmid::kActionId: {
+    //      DataManager::UnresolvedRemovePmid unresolved_action(
+    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+    //      auto resolved_action(sync_remove_pmids_.AddUnresolvedAction(unresolved_action));
+    //      if (resolved_action)
+    //        db_.Commit(resolved_action->key, resolved_action->action);
+    //      break;
+    //    }
+    //    case ActionDataManagerNodeUp::kActionId: {
+    //      DataManager::UnresolvedNodeUp unresolved_action(
+    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+    //      auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
+    //      if (resolved_action)
+    //        db_.Commit(resolved_action->key, resolved_action->action);
+    //      break;
+    //    }
+    //    case ActionDataManagerNodeDown::kActionId: {
+    //      DataManager::UnresolvedNodeDown unresolved_action(
+    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+    //      auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
+    //      if (resolved_action)
+    //        db_.Commit(resolved_action->key, resolved_action->action);
+    //      break;
+    //    }
     default: {
       assert(false);
       LOG(kError) << "Unhandled action type";
@@ -187,13 +177,14 @@ void DataManagerService::HandleDataIntergirity(const IntegrityCheckResponse& res
                                                const nfs::MessageId& message_id) {
   try {
     integrity_check_timer_.AddResponse(message_id.data, response);
-  } catch(const std::exception /*ex*/) {
+  }
+  catch (const std::exception /*ex*/) {
     // Failure to find the task
   }
 }
 
 // =============== Churn ===========================================================================
-//void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
+// void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
 //  auto record_names(metadata_handler_.GetRecordNames());
 //  auto itr(std::begin(record_names));
 //  auto name(itr->name());
@@ -219,8 +210,6 @@ void DataManagerService::HandleDataIntergirity(const IntegrityCheckResponse& res
 //  // TODO(Prakash):  modify ReplaceNodeInSyncList to be called once with vector of tuple/struct
 //  // containing record name, old_holders, new_holders.
 //}
-
-
 
 }  // namespace vault
 

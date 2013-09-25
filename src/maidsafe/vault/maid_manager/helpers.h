@@ -30,7 +30,6 @@
 #include "maidsafe/vault/pmid_manager/metadata.h"
 #include "maidsafe/nfs/vault/pmid_registration.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -44,7 +43,7 @@ struct PmidRegistrationOp {
         public_maid(),
         public_pmid(),
         count(0) {}
-  template<typename PublicFobType>
+  template <typename PublicFobType>
   void SetPublicFob(std::unique_ptr<PublicFobType>&&);
   std::mutex mutex;
   nfs_vault::PmidRegistration pmid_registration;
@@ -54,11 +53,11 @@ struct PmidRegistrationOp {
   int count;
 };
 
-template<>
+template <>
 void PmidRegistrationOp::SetPublicFob<passport::PublicMaid>(
     std::unique_ptr<passport::PublicMaid>&& pub_maid);
 
-template<>
+template <>
 void PmidRegistrationOp::SetPublicFob<passport::PublicPmid>(
     std::unique_ptr<passport::PublicPmid>&& pub_pmid);
 

@@ -29,7 +29,6 @@
 
 #include "maidsafe/routing/parameters.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -45,11 +44,11 @@ typedef boost::asio::ip::udp::endpoint UdpEndpoint;
 typedef std::future<passport::PublicPmid> PublicPmidFuture;
 
 // (dirvine) unused function
-//nfs::Reply GetReply(const std::string& response) {
+// nfs::Reply GetReply(const std::string& response) {
 //  return nfs::Reply(nfs::Reply::serialised_type(NonEmptyString(response)));
 //}
 
-//asymm::PublicKey GetPublicKeyFromReply(const passport::PublicPmid::Name& name,
+// asymm::PublicKey GetPublicKeyFromReply(const passport::PublicPmid::Name& name,
 //                                       const passport::PublicPmid& pmid) {
 //  passport::PublicPmid pmid(name, passport::PublicPmid::serialised_type(reply.data()));
 //  return pmid.public_key();
@@ -60,7 +59,7 @@ std::condition_variable g_cond_var;
 bool g_ctrlc_pressed;
 
 void CtrlCHandler(int /*signum*/) {
-//   LOG(kInfo) << " Signal received: " << signum;
+  //   LOG(kInfo) << " Signal received: " << signum;
   std::lock_guard<std::mutex> lock(g_mutex);
   g_ctrlc_pressed = true;
   g_cond_var.notify_one();
@@ -68,10 +67,9 @@ void CtrlCHandler(int /*signum*/) {
 
 }  // namespace
 
-NetworkGenerator::NetworkGenerator()
-    : asio_service_(1) {}
+NetworkGenerator::NetworkGenerator() : asio_service_(1) {}
 
-void NetworkGenerator::SetupBootstrapNodes(const PmidVector &all_keys) {
+void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_keys) {
   std::cout << "Creating zero state routing network..." << std::endl;
   BootstrapData bootstrap_data(all_keys.at(0), all_keys.at(1));
 
@@ -79,31 +77,24 @@ void NetworkGenerator::SetupBootstrapNodes(const PmidVector &all_keys) {
   all_public_pmids.reserve(all_keys.size());
   for (auto& pmid : all_keys)
     all_public_pmids.push_back(passport::PublicPmid(pmid));
-  nfs_client::DataGetter public_key_getter(asio_service_,
-                                           *bootstrap_data.routing1,
+  nfs_client::DataGetter public_key_getter(asio_service_, *bootstrap_data.routing1,
                                            all_public_pmids);
   routing::Functors functors1, functors2;
-  functors1.request_public_key = functors2.request_public_key =
-      [&public_key_getter, this] (NodeId node_id, const routing::GivePublicKeyFunctor& give_key) {
-        DoOnPublicKeyRequested(node_id, give_key, public_key_getter);
-      };
+  functors1.request_public_key = functors2.request_public_key = [&public_key_getter, this](
+      NodeId node_id, const routing::GivePublicKeyFunctor & give_key) {
+    DoOnPublicKeyRequested(node_id, give_key, public_key_getter);
+  };
 
   endpoint1_ = UdpEndpoint(GetLocalIp(), test::GetRandomPort());
   endpoint2_ = UdpEndpoint(GetLocalIp(), test::GetRandomPort());
-  auto a1 = std::async(std::launch::async,
-                       [&, this] {
-                         return bootstrap_data.routing1->ZeroStateJoin(functors1,
-                                                                       endpoint1_,
-                                                                       endpoint2_,
-                                                                       bootstrap_data.info2);
-                       });
-  auto a2 = std::async(std::launch::async,
-                       [&, this] {
-                         return bootstrap_data.routing2->ZeroStateJoin(functors2,
-                                                                       endpoint2_,
-                                                                       endpoint1_,
-                                                                       bootstrap_data.info1);
-                       });
+  auto a1 = std::async(std::launch::async, [&, this] {
+    return bootstrap_data.routing1->ZeroStateJoin(functors1, endpoint1_, endpoint2_,
+                                                  bootstrap_data.info2);
+  });
+  auto a2 = std::async(std::launch::async, [&, this] {
+    return bootstrap_data.routing2->ZeroStateJoin(functors2, endpoint2_, endpoint1_,
+                                                  bootstrap_data.info1);
+  });
   if (a1.get() != 0 || a2.get() != 0) {
     LOG(kError) << "SetupNetwork - Could not start bootstrap nodes.";
     ThrowError(RoutingErrors::not_connected);
@@ -126,12 +117,13 @@ std::vector<boost::asio::ip::udp::endpoint> NetworkGenerator::BootstrapEndpoints
 
 void NetworkGenerator::DoOnPublicKeyRequested(const NodeId& node_id,
                                               const routing::GivePublicKeyFunctor& give_key,
-                                              nfs_client::DataGetter &data_getter) {
+                                              nfs_client::DataGetter& data_getter) {
   passport::PublicPmid::Name name(Identity(node_id.string()));
   try {
     auto future(data_getter.Get<passport::PublicPmid>(name));
     give_key(future.get().public_key());
-  } catch(const std::exception& ex) {
+  }
+  catch (const std::exception& ex) {
     LOG(kError) << "Failed to get key for " << DebugId(name) << " : " << ex.what();
   }
 }
@@ -149,23 +141,19 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
     ThrowError(RoutingErrors::not_connected);
   LOG(kInfo) << "Bootstrapped anonymous node to store keys";
   passport::PublicPmid::Name pmid_name(Identity(key_chain.pmid.name().value));
-  client_nfs_.reset(new nfs_client::MaidNodeNfs(asio_service_,
-                                                client_routing_,
-                                                pmid_name));
+  client_nfs_.reset(new nfs_client::MaidNodeNfs(asio_service_, client_routing_, pmid_name));
 }
 
 ClientTester::~ClientTester() {}
 
 std::future<bool> ClientTester::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints) {
   std::once_flag join_promise_set_flag;
-  std::shared_ptr<std::promise<bool> > join_promise(std::make_shared<std::promise<bool> >());
-  functors_.network_status = [&join_promise_set_flag, join_promise] (int result) {
-                               std::cout << "Network health: " << result  << std::endl;
-                               std::call_once(join_promise_set_flag,
-                                              [join_promise, &result] {
-                                                join_promise->set_value(result > -1);
-                                              });
-                             };
+  std::shared_ptr<std::promise<bool>> join_promise(std::make_shared<std::promise<bool>>());
+  functors_.network_status = [&join_promise_set_flag, join_promise](int result) {
+    std::cout << "Network health: " << result << std::endl;
+    std::call_once(join_promise_set_flag,
+                   [join_promise, &result] { join_promise->set_value(result > -1); });
+  };
   client_routing_.Join(functors_, peer_endpoints);
   return std::move(join_promise->get_future());
 }
@@ -194,30 +182,29 @@ void KeyVerifier::Verify() {
   try {
     auto anmaid_future(client_nfs_->Get<passport::PublicAnmaid>(
         passport::PublicAnmaid::Name(key_chain_.anmaid.name())));
-    auto maid_future(client_nfs_->Get<passport::PublicMaid>(
-        passport::PublicMaid::Name(key_chain_.maid.name())));
-    auto pmid_future(client_nfs_->Get<passport::PublicPmid>(
-        passport::PublicPmid::Name(key_chain_.pmid.name())));
+    auto maid_future(
+        client_nfs_->Get<passport::PublicMaid>(passport::PublicMaid::Name(key_chain_.maid.name())));
+    auto pmid_future(
+        client_nfs_->Get<passport::PublicPmid>(passport::PublicPmid::Name(key_chain_.pmid.name())));
 
     size_t verified_keys(0);
     if (EqualKeys<passport::PublicAnmaid>(passport::PublicAnmaid(key_chain_.anmaid),
-                                                                 anmaid_future.get()))
+                                          anmaid_future.get()))
       ++verified_keys;
     if (EqualKeys<passport::PublicMaid>(passport::PublicMaid(key_chain_.maid), maid_future.get()))
       ++verified_keys;
     if (EqualKeys<passport::PublicPmid>(passport::PublicPmid(key_chain_.pmid), pmid_future.get()))
       ++verified_keys;
     std::cout << "VerifyKeys - Verified all " << verified_keys << " keys.\n";
-  } catch(const std::exception& ex) {
-    LOG(kError)  << "Failed to verify keys " << ex.what();
+  }
+  catch (const std::exception& ex) {
+    LOG(kError) << "Failed to verify keys " << ex.what();
   }
 }
 
 DataChunkStorer::DataChunkStorer(const passport::detail::AnmaidToPmid& key_chain,
                                  const std::vector<UdpEndpoint>& peer_endpoints)
-    : ClientTester(key_chain, peer_endpoints),
-      run_(false),
-      chunk_list_() {
+    : ClientTester(key_chain, peer_endpoints), run_(false), chunk_list_() {
   LoadChunksFromFiles();
 }
 
@@ -261,7 +248,6 @@ void DataChunkStorer::TestDeleteChunk(int chunk_index) {
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-
 bool DataChunkStorer::Done(int32_t quantity, int32_t rounds) const {
   return quantity < 1 ? run_.load() : rounds >= quantity;
 }
@@ -291,8 +277,7 @@ void DataChunkStorer::OneChunkRun(size_t& num_chunks, size_t& num_store, size_t&
   }
 }
 
-void DataChunkStorer::OneChunkRunWithDelete(size_t& num_chunks,
-                                            size_t& num_store,
+void DataChunkStorer::OneChunkRunWithDelete(size_t& num_chunks, size_t& num_store,
                                             size_t& num_get) {
   ImmutableData::serialised_type content(NonEmptyString(RandomString(1 << 18)));  // 256 KB
   ImmutableData::Name name(Identity(crypto::Hash<crypto::SHA512>(content.data)));

@@ -44,7 +44,7 @@ namespace maidsafe {
 
 namespace vault {
 
-template<typename Persona>
+template <typename Persona>
 class GroupDb {
  public:
   typedef typename Persona::GroupName GroupName;
@@ -65,7 +65,7 @@ class GroupDb {
   ~GroupDb();
 
   void AddGroup(const GroupName& group_name, const Metadata& metadata);
-   // use only in case of leaving or unregister
+  // use only in case of leaving or unregister
   void DeleteGroup(const GroupName& group_name);
   // For atomically updating metadata only
   void Commit(const GroupName& group_name, std::function<void(Metadata& metadata)> functor);
@@ -99,50 +99,49 @@ class GroupDb {
   std::map<GroupName, GroupId> group_map_;
 };
 
-template<typename Persona>
+template <typename Persona>
 GroupDb<Persona>::GroupDb()
     : kDbPath_(boost::filesystem::unique_path()),
       mutex_(),
       leveldb_(InitialiseLevelDb(kDbPath_)),
       group_map_() {}
 
-template<typename Persona>
+template <typename Persona>
 GroupDb<Persona>::~GroupDb() {
   leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
 }
 
-template<typename Persona>
+template <typename Persona>
 void GroupDb<Persona>::AddGroup(const GroupName& group_name, const Metadata& metadata) {
   std::lock_guard<std::mutex> lock(mutex_);
   static const uint64_t kGroupsLimit(static_cast<GroupId>(std::pow(256, kPrefixWidth_)));
   if (group_map_.size() == kGroupsLimit - 1)
     ThrowError(VaultErrors::failed_to_handle_request);
   GroupId group_id(RandomInt32() % kGroupsLimit);
-  while (std::any_of(std::begin(group_map_),
-                     std::end(group_map_),
-                     [&group_id](const std::pair<GroupName, GroupId>& element) {
-                         return group_id == element.second;
-                     })) {
+  while (std::any_of(std::begin(group_map_), std::end(group_map_),
+                     [&group_id](const std::pair<GroupName, GroupId> &
+                                 element) { return group_id == element.second; })) {
     group_id = RandomInt32() % kGroupsLimit;
   }
   // TODO Consider using batch operation here
   if (!(group_map_.insert(std::make_pair(group_name, group_id))).second)
-    ThrowError(VaultErrors::failed_to_handle_request); //TODO change to account already exist!
+    ThrowError(VaultErrors::failed_to_handle_request);  // TODO change to account already exist!
   try {
     PutMetadata(group_name, metadata);
-  } catch (const std::exception&) {
+  }
+  catch (const std::exception&) {
     group_map_.erase(group_name);
     ThrowError(VaultErrors::failed_to_handle_request);
   }
 }
 
-template<typename Persona>
+template <typename Persona>
 void GroupDb<Persona>::DeleteGroup(const GroupName& group_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   DeleteGroupEntries(group_name);
 }
 
-template<typename Persona>
+template <typename Persona>
 void GroupDb<Persona>::Commit(const GroupName& group_name,
                               std::function<void(Metadata& metadata)> functor) {
   assert(functor);
@@ -152,7 +151,7 @@ void GroupDb<Persona>::Commit(const GroupName& group_name,
   PutMetadata(group_name, metadata);
 }
 
-template<typename Persona>
+template <typename Persona>
 void GroupDb<Persona>::Commit(
     const Key& key,
     std::function<void(Metadata& metadata, boost::optional<Value>& value)> functor) {
@@ -161,14 +160,14 @@ void GroupDb<Persona>::Commit(
   boost::optional<Value> value(GetValue(key));
   functor(metadata, value);
   // TODO Consider using batch operation here
-  if(value)
+  if (value)
     PutValue(std::make_pair(key, *value));
   else
     DeleteValue(key);
   PutMetadata(key.group_name, metadata);
 }
 
-template<typename Persona>
+template <typename Persona>
 typename GroupDb<Persona>::TransferInfo GroupDb<Persona>::GetTransferInfo(
     std::shared_ptr<routing::MatrixChange> matrix_change) {
   std::lock_guard<std::mutex> lock(mutex_);
@@ -183,7 +182,7 @@ typename GroupDb<Persona>::TransferInfo GroupDb<Persona>::GetTransferInfo(
         if (found_itr != transfer_info.end()) {
           // Add to map
         } else {  // create contents
-          // Add to map
+                  // Add to map
         }
       }
     } else {  // Prune group
@@ -197,7 +196,7 @@ typename GroupDb<Persona>::TransferInfo GroupDb<Persona>::GetTransferInfo(
 }
 
 // Ignores values which are already in db
-template<typename Persona>
+template <typename Persona>
 void GroupDb<Persona>::HandleTransfer(const std::vector<Contents>& contents) {
   std::lock_guard<std::mutex> lock(mutex_);
   for (const auto& kv_pair : contents) {
@@ -205,45 +204,46 @@ void GroupDb<Persona>::HandleTransfer(const std::vector<Contents>& contents) {
 }
 
 // throws
-template<typename Persona>
+template <typename Persona>
 typename GroupDb<Persona>::Metadata GroupDb<Persona>::Get(const GroupName& /*group_name*/) {
   ThrowError(VaultErrors::no_such_account);
   return Metadata();
 }
 
-template<typename Persona>
+template <typename Persona>
 boost::optional<typename GroupDb<Persona>::Metadata> GroupDb<Persona>::GetMetadata(
     const GroupName& group_name) {
   boost::optional<Metadata> metadata;
   try {
     metadata = Get(group_name);
   }
-  catch(const vault_error&) {}
+  catch (const vault_error&) {
+  }
   return metadata;
 }
 
 // throws
-template<typename Persona>
+template <typename Persona>
 typename GroupDb<Persona>::Value GroupDb<Persona>::Get(const Key& /*key*/) {
   ThrowError(CommonErrors::no_such_element);
   return Value();
 }
 
-template<typename Persona>
+template <typename Persona>
 boost::optional<typename GroupDb<Persona>::Value> GroupDb<Persona>::GetValue(const Key& key) {
   boost::optional<Value> value;
   try {
     value = Get(key);
   }
-  catch(const common_error&) {}
+  catch (const common_error&) {
+  }
   return value;
 }
 
-template<typename Persona>
-void GroupDb<Persona>::PutMetadata(const GroupName& /*group_name*/, const Metadata& /*metadata*/) {
-}
+template <typename Persona>
+void GroupDb<Persona>::PutMetadata(const GroupName& /*group_name*/, const Metadata& /*metadata*/) {}
 
-template<typename Persona>
+template <typename Persona>
 void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
   std::vector<std::string> group_db_keys;
   std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
@@ -252,10 +252,9 @@ void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
     return;
   auto group_id = it->second;
   auto group_id_str = detail::ToFixedWidthString<kPrefixWidth_>(group_id);
-  if (++it != group_map_.end()) {// FIXME this may not work as group_ids are random
+  if (++it != group_map_.end()) {  // FIXME this may not work as group_ids are random
     for (iter->Seek(detail::ToFixedWidthString<kPrefixWidth_>(group_id));
-         iter->Valid() && iter->key().ToString() < group_id_str;
-         iter->Next())
+         iter->Valid() && iter->key().ToString() < group_id_str; iter->Next())
       group_db_keys.push_back(iter->key().ToString());
   } else {
     for (iter->Seek(detail::ToFixedWidthString<kPrefixWidth_>(group_id)); iter->Valid();
@@ -266,7 +265,7 @@ void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
 
   iter.reset();
 
-  for (auto i: group_db_keys) {
+  for (auto i : group_db_keys) {
     leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), i));
     if (!status.ok())
       ThrowError(VaultErrors::failed_to_handle_request);
@@ -275,13 +274,11 @@ void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
   leveldb_->CompactRange(nullptr, nullptr);
 }
 
-template<typename Persona>
-void GroupDb<Persona>::PutValue(const KvPair& /*key_value*/) {
-}
+template <typename Persona>
+void GroupDb<Persona>::PutValue(const KvPair& /*key_value*/) {}
 
-template<typename Persona>
-void GroupDb<Persona>::DeleteValue(const Key& /*key*/) {
-}
+template <typename Persona>
+void GroupDb<Persona>::DeleteValue(const Key& /*key*/) {}
 
 }  // namespace vault
 

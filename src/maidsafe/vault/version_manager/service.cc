@@ -28,7 +28,6 @@
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/utils.h"
 
-
 #include "maidsafe/vault/utils.h"
 
 #include "maidsafe/nfs/vault/pmid_registration.h"
@@ -45,12 +44,12 @@ namespace vault {
 
 namespace {
 
-template<typename Message>
+template <typename Message>
 inline bool ForThisPersona(const Message& message) {
   return message.destination_persona() == nfs::Persona::kVersionManager;
 }
 
-template<typename Message>
+template <typename Message>
 inline bool FromVersionManager(const Message& message) {
   return message.destination_persona() == nfs::Persona::kVersionManager;
 }
@@ -59,7 +58,7 @@ inline bool FromVersionManager(const Message& message) {
 
 namespace detail {
 
-//VersionManagerUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message) {
+// VersionManagerUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message) {
 //  // test message content is valid only
 //  protobuf::VersionManagerUnresolvedEntry entry_proto;
 //  if (!entry_proto.ParseFromString(message.data().content.string()))
@@ -72,8 +71,6 @@ namespace detail {
 
 }  // namespace detail
 
-
-
 VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
                                              routing::Routing& routing)
     : routing_(routing),
@@ -83,27 +80,27 @@ VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
       version_manager_db_(),
       kThisNodeId_(routing_.kNodeId()) {}
 
-
-//void VersionManagerService::ValidateClientSender(const nfs::Message& message) const {
+// void VersionManagerService::ValidateClientSender(const nfs::Message& message) const {
 //  if (!routing_.IsConnectedClient(message.source().node_id))
 //    ThrowError(VaultErrors::permission_denied);
 //  if (!(FromClientMaid(message) || FromClientMpid(message)) || !ForThisPersona(message))
 //    ThrowError(CommonErrors::invalid_parameter);
 //}
 
-//void VersionManagerService::ValidateSyncSender(const nfs::Message& message) const {
+// void VersionManagerService::ValidateSyncSender(const nfs::Message& message) const {
 //  if (!routing_.IsConnectedVault(message.source().node_id))
 //    ThrowError(VaultErrors::permission_denied);
 //  if (!FromVersionManager(message) || !ForThisPersona(message))
 //    ThrowError(CommonErrors::invalid_parameter);
 //}
 
-//std::vector<StructuredDataVersions::VersionName>
+// std::vector<StructuredDataVersions::VersionName>
 //    VersionManagerService::GetVersionsFromMessage(const nfs::Message& msg) const {
-//   return nfs::StructuredData(nfs::StructuredData::serialised_type(msg.data().content)).versions();
+//   return
+// nfs::StructuredData(nfs::StructuredData::serialised_type(msg.data().content)).versions();
 //}
 
-//NonEmptyString VersionManagerService::GetSerialisedRecord(
+// NonEmptyString VersionManagerService::GetSerialisedRecord(
 //    const VersionManager::DbKey& db_key) {
 //  protobuf::UnresolvedEntries proto_unresolved_entries;
 //  auto db_value(version_manager_db_.Get(db_key));
@@ -122,10 +119,9 @@ VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
 //  return NonEmptyString(proto_unresolved_entries.SerializeAsString());
 //}
 
-
 //// =============== Get data =================================================================
 
-//void VersionManagerService::HandleGet(const nfs::Message& message,
+// void VersionManagerService::HandleGet(const nfs::Message& message,
 //                                      routing::ReplyFunctor reply_functor) {
 //  try {
 //    nfs::Reply reply(CommonErrors::success);
@@ -145,7 +141,7 @@ VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
 // }
 //}
 
-//void VersionManagerService::HandleGetBranch(const nfs::Message& message,
+// void VersionManagerService::HandleGetBranch(const nfs::Message& message,
 //                                                   routing::ReplyFunctor reply_functor) {
 
 //  try {
@@ -167,9 +163,10 @@ VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
 // }
 //}
 
-//// // =============== Sync ============================================================================
+//// // =============== Sync
+///============================================================================
 
-//void VersionManagerService::HandleSynchronise(const nfs::Message& message) {
+// void VersionManagerService::HandleSynchronise(const nfs::Message& message) {
 //  std::vector<VersionManagerMergePolicy::UnresolvedEntry> unresolved_entries;
 //  bool success(false);
 //  try {
@@ -199,7 +196,8 @@ VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
 //  }
 //}
 
-//void VersionManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {
+// void VersionManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange>
+// /*matrix_change*/) {
 //  auto record_names(version_manager_db_.GetKeys());
 //  auto itr(std::begin(record_names));
 //  while (itr != std::end(record_names)) {
@@ -224,12 +222,11 @@ VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
 //    }
 //    ++itr;
 //  }
-  // TODO(Prakash):  modify ReplaceNodeInSyncList to be called once with vector of tuple/struct
-  // containing record name, old_holders, new_holders.
+// TODO(Prakash):  modify ReplaceNodeInSyncList to be called once with vector of tuple/struct
+// containing record name, old_holders, new_holders.
 //}
 
-
-//void VersionManagerService::HandleChurnEvent(const NodeId& /*old_node*/,
+// void VersionManagerService::HandleChurnEvent(const NodeId& /*old_node*/,
 //                                                    const NodeId& /*new_node*/) {
 //    //// for each unresolved entry replace node (only)
 //    //{
@@ -242,12 +239,12 @@ VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
 //    //for (const auto& key: db_keys) {
 //    //  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
 //    //  if (routing_.IsNodeIdInGroupRange(NodeId(result.second.string()), new_node) ==
-//    //      routing::GroupRangeStatus::kInRange) {  // TODO(dirvine) confirm routing method here !!!!!!!!
+//    //      routing::GroupRangeStatus::kInRange) {  // TODO(dirvine) confirm routing method here
+// !!!!!!!!
 //    //    // for each db record the new node should have, send it to him (AccountNameFromKey)
 //    //  }
 //    //}
 //}
-
 
 }  // namespace vault
 

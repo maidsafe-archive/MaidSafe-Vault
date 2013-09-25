@@ -19,34 +19,35 @@
 #include "maidsafe/vault/version_manager/action_get_branch.h"
 #include "maidsafe/vault/version_manager/action_get_branch.pb.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
 const nfs::MessageAction ActionVersionManagerGetBranch::kActionId;
 
-ActionVersionManagerGetBranch::ActionVersionManagerGetBranch(const std::string& /*serialised_action*/)
-/*    : version_name([&serialised_action]() {
+ActionVersionManagerGetBranch::ActionVersionManagerGetBranch(
+    const std::string& /*serialised_action*/)
+    /*    : version_name([&serialised_action]() {
                       protobuf::ActionVersionManagerGetBranch action_get_branch_proto;
                       if (!action_get_branch_proto.ParseFromString(serialised_action))
                         ThrowError(CommonErrors::parsing_error);
                       return StructuredDataVersions::VersionName(
                           action_get_branch_proto.serialised_version_name());
-                    }()) */{}
+                    }()) */ {}
 
 ActionVersionManagerGetBranch::ActionVersionManagerGetBranch(
     const StructuredDataVersions::VersionName& version_name_in)
     : version_name(version_name_in) {}
 
-//ActionVersionManagerGetBranch::ActionVersionManagerGetBranch(
+// ActionVersionManagerGetBranch::ActionVersionManagerGetBranch(
 //    const ActionVersionManagerGetBranch& other)
 //    : version_name(other.version_name) {}
 
-//ActionVersionManagerGetBranch::ActionVersionManagerGetBranch(ActionVersionManagerGetBranch&& other)
+// ActionVersionManagerGetBranch::ActionVersionManagerGetBranch(ActionVersionManagerGetBranch&&
+// other)
 //    : version_name(std::move(other.version_name)) {}
 
-//std::string ActionVersionManagerGetBranch::Serialise() const {
+// std::string ActionVersionManagerGetBranch::Serialise() const {
 //  protobuf::ActionVersionManagerGetBranch action_get_branch_proto;
 //  action_get_branch_proto.set_serialised_version_name(version_name.Serialise());
 //  return action_get_branch_proto.SerializeAsString();
@@ -56,16 +57,16 @@ void ActionVersionManagerGetBranch::operator()(
     boost::optional<VersionManagerValue>& /*value*/,
     std::vector<StructuredDataVersions::VersionName>& version_names) const {
   version_names.clear();
-//  if (value)
-//    version_names = value->GetBranch();
+  //  if (value)
+  //    version_names = value->GetBranch();
 }
 
-//bool operator==(const ActionVersionManagerGetBranch& lhs,
+// bool operator==(const ActionVersionManagerGetBranch& lhs,
 //                const ActionVersionManagerGetBranch& rhs) {
 //  return lhs.version_name == rhs.version_name;
 //}
 
-//bool operator!=(const ActionVersionManagerGetBranch& lhs,
+// bool operator!=(const ActionVersionManagerGetBranch& lhs,
 //                const ActionVersionManagerGetBranch& rhs) {
 //  return !operator==(lhs, rhs);
 //}

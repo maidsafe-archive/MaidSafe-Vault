@@ -27,16 +27,14 @@
 
 //#include "boost/filesystem/path.hpp"
 
-
 //#include "maidsafe/vault/pmid_manager/pmid_manager.h"
 //#include "maidsafe/vault/pmid_manager/metadata.h"
 //#include "maidsafe/vault/types.h"
 
+// namespace maidsafe {
+// namespace vault {
 
-//namespace maidsafe {
-//namespace vault {
-
-//class PmidAccountHandler {
+// class PmidAccountHandler {
 // public:
 ////  typedef std::map<typename PmidAccount::Name, std::unique_ptr<PmidAccount>> AccountMap;
 

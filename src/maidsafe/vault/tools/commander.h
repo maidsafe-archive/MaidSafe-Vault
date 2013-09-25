@@ -56,8 +56,8 @@ class SelectedOperationsContainer {
         do_delete(false),
         do_print(false) {}
   bool do_create, do_load, do_bootstrap, do_store, do_verify, do_test, do_test_with_delete,
-       do_generate_chunks, do_test_store_chunk, do_test_fetch_chunk, do_test_delete_chunk,
-       do_delete, do_print;
+      do_generate_chunks, do_test_store_chunk, do_test_fetch_chunk, do_test_delete_chunk, do_delete,
+      do_print;
   bool InvalidOptions(const boost::program_options::variables_map& variables_map,
                       const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
 
@@ -84,8 +84,7 @@ class Commander {
   boost::asio::ip::udp::endpoint GetBootstrapEndpoint(const std::string& peer);
   boost::program_options::options_description AddGenericOptions(const std::string& title);
   boost::program_options::options_description AddConfigurationOptions(const std::string& title);
-  void CheckOptionValidity(boost::program_options::options_description& cmdline_options,
-                           int argc,
+  void CheckOptionValidity(boost::program_options::options_description& cmdline_options, int argc,
                            char* argv[]);
 
   void ChooseOperations();

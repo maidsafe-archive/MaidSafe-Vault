@@ -43,49 +43,36 @@ class MaidManagerDispatcher {
  public:
   MaidManagerDispatcher(routing::Routing& routing, const passport::Pmid& signing_fob);
 
-  template<typename Data>
+  template <typename Data>
   void SendGetVersionRequest(const MaidName& account_name, const typename Data::Name& data_name);
 
-  template<typename Data>
-  void SendPutRequest(const MaidName& account_name,
-                      const Data& data,
-                      const PmidName& pmid_node_hint,
-                      const nfs::MessageId& message_id);
+  template <typename Data>
+  void SendPutRequest(const MaidName& account_name, const Data& data,
+                      const PmidName& pmid_node_hint, const nfs::MessageId& message_id);
 
-  template<typename Data>
-  void SendPutResponse(const MaidName& account_name,
-                       const typename Data::Name& data_name,
-                       const maidsafe_error& result,
-                       nfs::MessageId message_id);
+  template <typename Data>
+  void SendPutResponse(const MaidName& account_name, const typename Data::Name& data_name,
+                       const maidsafe_error& result, nfs::MessageId message_id);
 
-  template<typename Data>
-  void SendDeleteRequest(const MaidName& account_name,
-                         const typename Data::Name& data_name,
+  template <typename Data>
+  void SendDeleteRequest(const MaidName& account_name, const typename Data::Name& data_name,
                          const nfs::MessageId& message_id);
 
-  void SendCreateAccountResponse(const MaidName& account_name,
-                                 const maidsafe_error& result,
+  void SendCreateAccountResponse(const MaidName& account_name, const maidsafe_error& result,
                                  const nfs::MessageId& message_id);
 
-  void SendRemoveAccountResponse(const MaidName& account_name,
-                                 const maidsafe_error& result,
+  void SendRemoveAccountResponse(const MaidName& account_name, const maidsafe_error& result,
                                  const nfs::MessageId& message_id);
 
-  void SendRegisterPmidResponse(const MaidName& account_name,
-                                const PmidName& pmid_name,
-                                const maidsafe_error& result,
-                                const nfs::MessageId& message_id);
+  void SendRegisterPmidResponse(const MaidName& account_name, const PmidName& pmid_name,
+                                const maidsafe_error& result, const nfs::MessageId& message_id);
 
-  void SendUnregisterPmidResponse(const MaidName& account_name,
-                                  const PmidName& pmid_name,
-                                  const maidsafe_error& result,
-                                  const nfs::MessageId& message_id);
+  void SendUnregisterPmidResponse(const MaidName& account_name, const PmidName& pmid_name,
+                                  const maidsafe_error& result, const nfs::MessageId& message_id);
 
-  void SendSync(const MaidName& account_name,
-                const std::string& serialised_sync);
+  void SendSync(const MaidName& account_name, const std::string& serialised_sync);
 
-  void SendAccountTransfer(const NodeId& destination_peer,
-                           const MaidName& account_name,
+  void SendAccountTransfer(const NodeId& destination_peer, const MaidName& account_name,
                            const std::string& serialised_account);
 
  private:
@@ -94,30 +81,26 @@ class MaidManagerDispatcher {
   MaidManagerDispatcher(MaidManagerDispatcher&&);
   MaidManagerDispatcher& operator=(MaidManagerDispatcher);
 
-//  routing::GroupSource Sender(const MaidName& account_name) const;
+  //  routing::GroupSource Sender(const MaidName& account_name) const;
 
   routing::Routing& routing_;
   const passport::Pmid kSigningFob_;
   static const nfs::Persona kSourcePersona_;
 };
 
-
-
 // ==================== Implementation =============================================================
 
-template<typename Data>
-void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name,
-                                           const Data& data,
+template <typename Data>
+void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name, const Data& data,
                                            const PmidName& pmid_node_hint,
                                            const nfs::MessageId& message_id) {
   typedef nfs::PutRequestFromMaidManagerToDataManager NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
 
-  NfsMessage nfs_message(message_id,
-                         nfs_vault::DataAndPmidHint(
-                             nfs_vault::DataName(data.name().type, data.name().raw_name),
-                             data.data(),
-                             pmid_node_hint));
+  NfsMessage nfs_message(
+      message_id,
+      nfs_vault::DataAndPmidHint(nfs_vault::DataName(data.name().type, data.name().raw_name),
+                                 data.data(), pmid_node_hint));
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
                                             routing::SingleId(routing_.kNodeId())),
@@ -125,8 +108,8 @@ void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name,
   routing_.Send(message);
 }
 
-//template<typename Data>
-//void MaidManagerDispatcher::SendGetVersionRequest(const MaidName& account_name,
+// template<typename Data>
+// void MaidManagerDispatcher::SendGetVersionRequest(const MaidName& account_name,
 //                                                  const typename Data::Name& data_name) {
 //  typedef routing::GroupToGroupMessage RoutingMessage;
 //  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
@@ -141,8 +124,8 @@ void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name,
 //  routing_.Send(message);
 //}
 
-//template<>
-//void MaidManagerDispatcher::SendPutRequest<OwnerDirectory>(const MaidName& /*account_name*/,
+// template<>
+// void MaidManagerDispatcher::SendPutRequest<OwnerDirectory>(const MaidName& /*account_name*/,
 //                                                           const OwnerDirectory& /*data*/,
 //                                                           const PmidName& /*pmid_node_hint*/,
 //                                                           const nfs::MessageId& /*message_id*/) {
@@ -152,11 +135,11 @@ void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name,
 //  static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
 //  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
 //  static const DataTagValue kDataEnumValue(OwnerDirectory::Tag::kValue);
-  // TODO(Fraser#5#): 2013-08-03 - Handle
+// TODO(Fraser#5#): 2013-08-03 - Handle
 //}
 
-//template<>
-//void MaidManagerDispatcher::SendPutRequest<GroupDirectory>(const MaidName& /*account_name*/,
+// template<>
+// void MaidManagerDispatcher::SendPutRequest<GroupDirectory>(const MaidName& /*account_name*/,
 //                                                           const GroupDirectory& /*data*/,
 //                                                           const PmidName& /*pmid_node_hint*/,
 //                                                           const nfs::MessageId& /*message_id*/) {
@@ -166,11 +149,11 @@ void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name,
 //  static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
 //  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
 //  static const DataTagValue kDataEnumValue(GroupDirectory::Tag::kValue);
-  // TODO(Fraser#5#): 2013-08-03 - Handle
+// TODO(Fraser#5#): 2013-08-03 - Handle
 //}
 
-//template<>
-//void MaidManagerDispatcher::SendPutRequest<WorldDirectory>(const MaidName& /*account_name*/,
+// template<>
+// void MaidManagerDispatcher::SendPutRequest<WorldDirectory>(const MaidName& /*account_name*/,
 //                                                           const WorldDirectory& /*data*/,
 //                                                           const PmidName& /*pmid_node_hint*/,
 //                                                           const nfs::MessageId& /*message_id*/) {
@@ -180,11 +163,11 @@ void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name,
 //  static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
 //  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
 //  static const DataTagValue kDataEnumValue(WorldDirectory::Tag::kValue);
-  // TODO(Fraser#5#): 2013-08-03 - Handle
+// TODO(Fraser#5#): 2013-08-03 - Handle
 //}
 
-//template<typename Data>
-//void MaidManagerDispatcher::SendPutResponse(const MaidName& account_name,
+// template<typename Data>
+// void MaidManagerDispatcher::SendPutResponse(const MaidName& account_name,
 //                                            const typename Data::Name& data_name,
 //                                            const maidsafe_error& result,
 //                                            nfs::MessageId /*message_id*/) {
@@ -204,8 +187,8 @@ void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name,
 //  routing_.Send(message);
 //}
 
-//template<typename Data>
-//void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
+// template<typename Data>
+// void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
 //                                              const typename Data::Name& data_name,
 //                                              const nfs::MessageId& message_id) {
 //  typedef nfs::DeleteRequestFromMaidManagerToDataManager NfsMessage;

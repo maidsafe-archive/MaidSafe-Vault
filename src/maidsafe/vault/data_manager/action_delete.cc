@@ -21,7 +21,6 @@
 
 #include "maidsafe/vault/data_manager/value.h"
 
-
 namespace maidsafe {
 namespace vault {
 
@@ -33,8 +32,7 @@ std::string ActionDataManagerDelete::Serialise() const {
   return action_delete_proto.SerializeAsString();
 }
 
-void ActionDataManagerDelete::operator()(
-    boost::optional<DataManagerValue>& value) {
+void ActionDataManagerDelete::operator()(boost::optional<DataManagerValue>& value) {
   if (value)
     value->DecrementSubscribers();
   else

@@ -26,20 +26,19 @@
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/maid_manager/value.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
 class MaidManagerMetadata;
 
-template<bool Remove>
+template <bool Remove>
 struct ActionCreateRemoveAccount;
 typedef ActionCreateRemoveAccount<false> ActionCreateAccount;
 typedef ActionCreateRemoveAccount<true> ActionRemoveAccount;
 struct ActionMaidManagerPut;
 struct ActionMaidManagerDelete;
-template<bool Unregister>
+template <bool Unregister>
 struct ActionRegisterUnregisterPmid;
 typedef ActionRegisterUnregisterPmid<false> ActionRegisterPmid;
 typedef ActionRegisterUnregisterPmid<true> ActionUnregisterPmid;
@@ -48,7 +47,7 @@ typedef ActionRegisterUnregisterPmid<true> ActionUnregisterPmid;
 
 namespace nfs {
 
-template<>
+template <>
 struct PersonaTypes<Persona::kMaidManager> {
   static const Persona persona = Persona::kMaidManager;
   typedef passport::PublicMaid::Name GroupName;
@@ -64,7 +63,6 @@ struct PersonaTypes<Persona::kMaidManager> {
 };
 
 }  // namespace nfs
-
 
 namespace vault {
 

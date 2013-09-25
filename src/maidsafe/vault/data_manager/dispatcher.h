@@ -41,61 +41,48 @@ namespace vault {
 class DataManagerDispatcher {
  public:
   DataManagerDispatcher(routing::Routing& routing, const passport::Pmid& signing_fob)
-      : routing_(routing),
-        kSigningFob_(signing_fob) {}
+      : routing_(routing), kSigningFob_(signing_fob) {}
 
   // To PmidManager
-  template<typename Data>
-  void SendGetRequest(const PmidName& pmid_node,
-                      const typename Data::Name& data_name,
+  template <typename Data>
+  void SendGetRequest(const PmidName& pmid_node, const typename Data::Name& data_name,
                       const nfs::MessageId& message_id);
   // To MaidNode
-  template<typename Data>
-  void SendGetResponse(const MaidName& maid_node,
-                       const Data& data,
+  template <typename Data>
+  void SendGetResponse(const MaidName& maid_node, const Data& data,
                        const nfs::MessageId& message_id);
   // To MaidNode (failure)
-  template<typename Data>
-  void SendGetResponse(const MaidName& maid_node,
-                       const typename Data::Name& data_name,
-                       const maidsafe_error& result,
-                       const nfs::MessageId& message_id);
+  template <typename Data>
+  void SendGetResponse(const MaidName& maid_node, const typename Data::Name& data_name,
+                       const maidsafe_error& result, const nfs::MessageId& message_id);
 
   // To PmidNode
-  template<typename Data>
-  void SendGetResponse(const PmidName& pmid_node,
-                       const Data& data,
+  template <typename Data>
+  void SendGetResponse(const PmidName& pmid_node, const Data& data,
                        const nfs::MessageId& message_id);
 
   // To PmidManager
-  template<typename Data>
-  void SendPutRequest(const PmidName& pmid_name,
-                      const Data& data,
+  template <typename Data>
+  void SendPutRequest(const PmidName& pmid_name, const Data& data,
                       const nfs::MessageId& message_id);
 
   // To MaidManager
-  template<typename Data>
-  void SendPutResponse(const MaidName& account_name,
-                       const typename Data::Name& data_name,
-                       const int32_t& cost,
-                       const nfs::MessageId& message_id);
+  template <typename Data>
+  void SendPutResponse(const MaidName& account_name, const typename Data::Name& data_name,
+                       const int32_t& cost, const nfs::MessageId& message_id);
 
   // To PmidManager
-  template<typename Data>
-  void SendDeleteRequest(const PmidName& pmid_name,
-                         const typename Data::Name& data_name,
+  template <typename Data>
+  void SendDeleteRequest(const PmidName& pmid_name, const typename Data::Name& data_name,
                          const nfs::MessageId& message_id);
 
   template <typename Data>
-  void SendIntegrityCheck(const typename Data::Name& name,
-                          const NonEmptyString& random_string,
-                          const PmidName& pmid_node,
-                          const nfs::MessageId& message_id);
+  void SendIntegrityCheck(const typename Data::Name& name, const NonEmptyString& random_string,
+                          const PmidName& pmid_node, const nfs::MessageId& message_id);
 
   void SendSync(const Identity& data_name, const std::string& serialised_sync);
 
-  void SendAccountTransfer(const NodeId& destination_peer,
-                           const MaidName& account_name,
+  void SendAccountTransfer(const NodeId& destination_peer, const MaidName& account_name,
                            const std::string& serialised_account);
 
  private:
@@ -104,7 +91,7 @@ class DataManagerDispatcher {
   DataManagerDispatcher(DataManagerDispatcher&&);
   DataManagerDispatcher& operator=(DataManagerDispatcher);
 
-  template<typename Data>
+  template <typename Data>
   routing::GroupSource Sender(const typename Data::Name& data_name) const;
 
   routing::Routing& routing_;
@@ -112,34 +99,35 @@ class DataManagerDispatcher {
   const routing::SingleId kThisNodeAsSender_;
 };
 
-
-
 // ==================== Implementation =============================================================
 
 // To PmidManager
-template<typename Data>
+template <typename Data>
 void DataManagerDispatcher::SendGetRequest(const PmidName& /*pmid_node*/,
                                            const typename Data::Name& /*data_name*/,
                                            const nfs::MessageId& /*message_id*/) {
-//  typedef nfs::GetRequestFromDataManagerToPmidNode NfsMessage;
-//  CheckSourcePersonaType<NfsMessage>();
-//  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-//  static const routing::Cacheable kCacheable(is_cacheable<Data>::value ? routing::Cacheable::kGet :
-//                                                                         routing::Cacheable::kNone);
-//  NfsMessage nfs_message((message_id, NfsMessage::Contents(data_name)));
-//  NfsMessage::Receiver receiver(routing::SingleId(NodeId(pmid_node->string())));
-//  routing_.Send(RoutingMessage(nfs_message.Serialise(), Sender(data.name), receiver, kCacheable));
+  //  typedef nfs::GetRequestFromDataManagerToPmidNode NfsMessage;
+  //  CheckSourcePersonaType<NfsMessage>();
+  //  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  //  static const routing::Cacheable kCacheable(is_cacheable<Data>::value ?
+  // routing::Cacheable::kGet :
+  //                                                                         routing::Cacheable::kNone);
+  //  NfsMessage nfs_message((message_id, NfsMessage::Contents(data_name)));
+  //  NfsMessage::Receiver receiver(routing::SingleId(NodeId(pmid_node->string())));
+  //  routing_.Send(RoutingMessage(nfs_message.Serialise(), Sender(data.name), receiver,
+  // kCacheable));
 }
 
 // To MaidNode
-//template<typename Data>
-//void SendGetResponse(const MaidName& maid_node,
+// template<typename Data>
+// void SendGetResponse(const MaidName& maid_node,
 //                     const Data& data,
 //                     nfs::MessageId message_id) {
 //  typedef SendGetResponseFromDataManagerToMaidNode NfsMessage;
 //  CheckSourcePersonaType<NfsMessage>();
 //  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-//  static const routing::Cacheable kCacheable(is_cacheable<Data>::value ? routing::Cacheable::kPut :
+//  static const routing::Cacheable kCacheable(is_cacheable<Data>::value ? routing::Cacheable::kPut
+// :
 //                                                                         routing::Cacheable::kNone);
 //  NfsMessage::Contents contents;
 //  *contents.data = data;
@@ -148,9 +136,8 @@ void DataManagerDispatcher::SendGetRequest(const PmidName& /*pmid_node*/,
 //  routing_.Send(RoutingMessage(nfs_message.Serialise(), Sender(data.name), receiver, kCacheable));
 //}
 
-template<typename Data>
-void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name,
-                                           const Data& data,
+template <typename Data>
+void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name, const Data& data,
                                            const nfs::MessageId& message_id) {
   typedef nfs::PutRequestFromDataManagerToPmidManager NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
@@ -164,11 +151,10 @@ void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name,
   routing_.Send(message);
 }
 
-template<typename Data>
+template <typename Data>
 void DataManagerDispatcher::SendPutResponse(const MaidName& account_name,
                                             const typename Data::Name& data_name,
-                                            const int32_t& cost,
-                                            const nfs::MessageId& message_id) {
+                                            const int32_t& cost, const nfs::MessageId& message_id) {
   typedef nfs::PutResponseFromDataManagerToMaidManager NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
 
@@ -188,26 +174,22 @@ void DataManagerDispatcher::SendIntegrityCheck(const typename Data::Name& name,
                                                const nfs::MessageId& message_id) {
   typedef nfs::IntegrityCheckRequestFromDataManagerToPmidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  NfsMessage nfs_message(message_id,
-                         nfs_vault::DataNameAndRandomString(name.type,
-                                                            name.raw_name,
-                                                            random_string));
+  NfsMessage nfs_message(
+      message_id, nfs_vault::DataNameAndRandomString(name.type, name.raw_name, random_string));
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
-                         NfsMessage::Receiver(
-                             routing::SingleId(NodeId(pmid_node.value.string()))));
+                         NfsMessage::Receiver(routing::SingleId(NodeId(pmid_node.value.string()))));
   routing_.Send(message);
 }
 
-
-//template<typename Data>
-//routing::GroupSource MaidManagerDispatcher::Sender(const typename Data::Name& data_name) const {
+// template<typename Data>
+// routing::GroupSource MaidManagerDispatcher::Sender(const typename Data::Name& data_name) const {
 //  return routing::GroupSource(routing::GroupId(NodeId(data_name->string())),
 //                              routing::SingleId(routing_.kNodeId()));
 //}
 
-//template<typename Message>
-//void MaidNodeDispatcher::CheckSourcePersonaType() const {
+// template<typename Message>
+// void MaidNodeDispatcher::CheckSourcePersonaType() const {
 //  static_assert(NfsMessage::SourcePersona::value == Persona::kDataManager,
 //                  "The source Persona must be kDataManager.");
 //}

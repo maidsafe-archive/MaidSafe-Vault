@@ -38,8 +38,8 @@ namespace vault {
 
 namespace detail {
 
-//template<typename Data, nfs::MessageAction Action>
-//PmidManagerUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
+// template<typename Data, nfs::MessageAction Action>
+// PmidManagerUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
 //                                                 const NodeId& this_id) {
 //  static_assert(Action == nfs::MessageAction::kPut || Action == nfs::MessageAction::kDelete,
 //                "Action must be either kPut of kDelete.");
@@ -50,15 +50,12 @@ namespace detail {
 //      this_id);
 //}
 
-//PmidName GetPmidAccountName(const nfs::Message& message);
+// PmidName GetPmidAccountName(const nfs::Message& message);
 
 }  // namespace detail
 
-
-
-
-//template<typename Data>
-//void PmidManagerService::HandleDelete(const nfs::Message& message,
+// template<typename Data>
+// void PmidManagerService::HandleDelete(const nfs::Message& message,
 //                                      const routing::ReplyFunctor& /*reply_functor*/) {
 //  try {
 //    auto account_name(detail::GetPmidAccountName(message));
@@ -82,8 +79,8 @@ namespace detail {
 //}
 
 // Commented by Mahmoud on 7 Sep.
-//template<typename Data>
-//void PmidManagerService::HandlePutCallback(const std::string& serialised_reply,
+// template<typename Data>
+// void PmidManagerService::HandlePutCallback(const std::string& serialised_reply,
 //                                           const nfs::Message& message) {
 //  nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));
 //  if (reply.IsSuccess()) {
@@ -96,8 +93,8 @@ namespace detail {
 //}
 
 // Commented by Mahmoud on 7 Sep.
-//template<typename Data>
-//void PmidManagerService::SendPutResult(const nfs::Message& message, bool result) {
+// template<typename Data>
+// void PmidManagerService::SendPutResult(const nfs::Message& message, bool result) {
 //  std::lock_guard<std::mutex> lock(accumulator_mutex_);
 //  protobuf::PutResult proto_put_result;
 
@@ -113,8 +110,8 @@ namespace detail {
 //}
 
 // Commented by Mahmoud on 7 Sep.
-//template<typename Data, nfs::MessageAction Action>
-//void PmidManagerService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message) {
+// template<typename Data, nfs::MessageAction Action>
+// void PmidManagerService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message) {
 //  auto account_name(detail::GetPmidAccountName(message));
 //  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, Action>(message, routing_.kNodeId()));
 //  pmid_account_handler_.AddLocalUnresolvedEntry(account_name, unresolved_entry);

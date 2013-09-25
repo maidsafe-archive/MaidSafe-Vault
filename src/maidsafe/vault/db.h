@@ -36,7 +36,7 @@ namespace maidsafe {
 
 namespace vault {
 
-template<typename Key, typename Value>
+template <typename Key, typename Value>
 class Db {
  public:
   typedef std::pair<Key, Value> KvPair;
@@ -64,11 +64,9 @@ class Db {
   std::unique_ptr<leveldb::DB> leveldb_;
 };
 
-template<typename Key, typename Value>
+template <typename Key, typename Value>
 Db<Key, Value>::Db()
-    : kDbPath_(boost::filesystem::unique_path()),
-      mutex_(),
-      leveldb_() {
+    : kDbPath_(boost::filesystem::unique_path()), mutex_(), leveldb_() {
   leveldb::DB* db;
   leveldb::Options options;
   options.create_if_missing = true;
@@ -80,18 +78,18 @@ Db<Key, Value>::Db()
   assert(leveldb_);
 }
 
-template<typename Key, typename Value>
+template <typename Key, typename Value>
 Db<Key, Value>::~Db() {
   leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
 }
 
-template<typename Key, typename Value>
+template <typename Key, typename Value>
 boost::optional<Value> Db<Key, Value>::Get(const Key& key) {
   std::lock_guard<std::mutex> lock(mutex_);
   return GetValue(key);
 }
 
-template<typename Key, typename Value>
+template <typename Key, typename Value>
 void Db<Key, Value>::Commit(const Key& key,
                             std::function<void(boost::optional<Value>& value)> functor) {
   assert(functor);
@@ -99,7 +97,7 @@ void Db<Key, Value>::Commit(const Key& key,
   boost::optional<Value> value(GetValue(key));
   bool value_found_in_db(value);
   functor(value);
-  if(value)
+  if (value)
     Put(KvPair(key, Value(*value)));
   else if (value_found_in_db)
     Delete(key);
@@ -107,7 +105,7 @@ void Db<Key, Value>::Commit(const Key& key,
 
 // option 1 : Fire functor here with check_holder_result.new_holder & the corresponding value
 // option 2 : create a map<NodeId, std::vector<std::pair<Key, value>>> and return after pruning
-template<typename Key, typename Value>
+template <typename Key, typename Value>
 typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
     std::shared_ptr<routing::MatrixChange> matrix_change) {
   std::lock_guard<std::mutex> lock(mutex_);
@@ -142,7 +140,7 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
 }
 
 // Ignores values which are already in db
-template<typename Key, typename Value>
+template <typename Key, typename Value>
 void Db<Key, Value>::HandleTransfer(const std::vector<std::pair<Key, Value>>& contents) {
   std::lock_guard<std::mutex> lock(mutex_);
   for (const auto& kv_pair : contents) {
@@ -153,13 +151,13 @@ void Db<Key, Value>::HandleTransfer(const std::vector<std::pair<Key, Value>>& co
 
 // private members
 // throws on level-db errors other than key not found
-template<typename Key, typename Value>
+template <typename Key, typename Value>
 boost::optional<Value> Db<Key, Value>::GetValue(const Key& key) {
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
   std::string value_string;
-  leveldb::Status status(leveldb_->Get(read_options, key.ToFixedWidthString().string(),
-                                       &value_string));
+  leveldb::Status status(
+      leveldb_->Get(read_options, key.ToFixedWidthString().string(), &value_string));
   if (status.ok()) {
     assert(!value_string.empty());
     return boost::optional<Value>(typename Value::serialised_type((NonEmptyString(value_string))));
@@ -170,7 +168,7 @@ boost::optional<Value> Db<Key, Value>::GetValue(const Key& key) {
   return boost::optional<Value>();
 }
 
-template<typename Key, typename Value>
+template <typename Key, typename Value>
 void Db<Key, Value>::Put(const KvPair& key_value_pair) {
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
                                        key_value_pair.first.ToFixedWidthString().string(),
@@ -179,10 +177,10 @@ void Db<Key, Value>::Put(const KvPair& key_value_pair) {
     ThrowError(VaultErrors::failed_to_handle_request);
 }
 
-template<typename Key, typename Value>
+template <typename Key, typename Value>
 void Db<Key, Value>::Delete(const Key& key) {
-  leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(),
-                                          key.ToFixedWidthString().string()));
+  leveldb::Status status(
+      leveldb_->Delete(leveldb::WriteOptions(), key.ToFixedWidthString().string()));
   if (status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
 }

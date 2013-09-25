@@ -29,7 +29,6 @@
 
 #include "maidsafe/vault/operations_visitor.h"
 
-
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
@@ -38,33 +37,33 @@ namespace vault {
 
 namespace detail {
 
-template<typename T>
+template <typename T>
 DataNameVariant GetNameVariant(const T&) {
   T::invalid_parameter;
   return DataNameVariant();
 }
 
-template<>
+template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataName& data) {
-   return GetDataNameVariant(data.type, data.raw_name);
+  return GetDataNameVariant(data.type, data.raw_name);
 }
 
-template<>
+template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndContent& data) {
-   return GetNameVariant(data.name);
+  return GetNameVariant(data.name);
 }
 
-template<>
+template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataAndPmidHint& data) {
-   return GetNameVariant(data.data.name);
+  return GetNameVariant(data.data.name);
 }
 
-template<>
+template <>
 DataNameVariant GetNameVariant(const nfs_client::DataAndReturnCode& data) {
-   return GetNameVariant(data.data.name);
+  return GetNameVariant(data.data.name);
 }
 
-template<>
+template <>
 DataNameVariant GetNameVariant(const nfs_client::DataNameAndContentOrReturnCode& data) {
   if (data.data)
     return GetNameVariant(data.data->name);
@@ -72,61 +71,53 @@ DataNameVariant GetNameVariant(const nfs_client::DataNameAndContentOrReturnCode&
     return GetNameVariant(data.data_name_and_return_code->name);
 }
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager& message,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::PutRequestFromMaidNodeToMaidManager::Receiver & /*receiver*/) {
+                 const nfs::PutRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
   auto data_name(detail::GetNameVariant(*message.contents));
-  MaidManagerPutVisitor<ServiceHandlerType> put_visitor(service,
-                                                        message.contents->data.content,
-                                                        sender.data,
-                                                        message.contents->pmid_hint,
+  MaidManagerPutVisitor<ServiceHandlerType> put_visitor(service, message.contents->data.content,
+                                                        sender.data, message.contents->pmid_hint,
                                                         message.message_id);
   boost::apply_visitor(put_visitor, data_name);
 }
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutRequestFromMaidManagerToDataManager& message,
                  const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
                  const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver&) {
   auto data_name(detail::GetNameVariant(*message.contents));
-  DataManagerPutVisitor<ServiceHandlerType> put_visitor(service,
-                                                        message.contents->data.content,
-                                                        sender.group_id,
-                                                        message.contents->pmid_hint,
-                                                        message.message_id);
+  DataManagerPutVisitor<ServiceHandlerType> put_visitor(
+      service, message.contents->data.content, sender.group_id, message.contents->pmid_hint,
+      message.message_id);
   boost::apply_visitor(put_visitor, data_name);
 }
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutRequestFromDataManagerToPmidManager& message,
                  const nfs::PutRequestFromDataManagerToPmidManager::Sender& /*sender*/,
                  const nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
   auto data_name(detail::GetNameVariant(*message.contents));
-  PmidManagerPutVisitor<ServiceHandlerType> put_visitor(service,
-                                                        message.contents->content,
-                                                        message.message_id,
-                                                        receiver);
+  PmidManagerPutVisitor<ServiceHandlerType> put_visitor(service, message.contents->content,
+                                                        message.message_id, receiver);
   boost::apply_visitor(put_visitor, data_name);
 }
 
-
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutRequestFromPmidManagerToPmidNode& message,
                  const nfs::PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
                  const nfs::PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
   auto data_name(detail::GetNameVariant(*message.contents));
-  PmidNodePutVisitor<ServiceHandlerType> put_visitor(service,
-                                                     message.contents->content,
+  PmidNodePutVisitor<ServiceHandlerType> put_visitor(service, message.contents->content,
                                                      message.message_id);
   boost::apply_visitor(put_visitor, data_name);
 }
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutFailureFromPmidNodeToPmidManager& message,
                  const nfs::PutFailureFromPmidNodeToPmidManager::Sender& sender,
@@ -137,34 +128,27 @@ void DoOperation(ServiceHandlerType* service,
   boost::apply_visitor(put_visitor, data_name);
 }
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
-                 const nfs::PutFailureFromPmidManagerToDataManager & message,
+                 const nfs::PutFailureFromPmidManagerToDataManager& message,
                  const nfs::PutFailureFromPmidManagerToDataManager::Sender& sender,
                  const nfs::PutFailureFromPmidManagerToDataManager::Receiver& /*receiver*/) {
   auto data_name(detail::GetNameVariant(*message.contents));
   PutResponseFailureVisitor<ServiceHandlerType> put_visitor(
-      service,
-      sender,
-      message.contents->return_code,
-      message.message_id);
+      service, sender, message.contents->return_code, message.message_id);
   boost::apply_visitor(put_visitor, data_name);
 }
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutResponseFromDataManagerToMaidManager& message,
                  const nfs::PutResponseFromDataManagerToMaidManager::Sender& /*sender*/,
                  const nfs::PutResponseFromDataManagerToMaidManager::Receiver& receiver) {
   auto data_name(detail::GetNameVariant(message.contents->name));
   MaidManagerPutResponseVisitor<ServiceHandlerType> put_response_visitor(
-      service,
-      receiver,
-      message.contents->cost,
-      message.message_id);
+      service, receiver, message.contents->cost, message.message_id);
   boost::apply_visitor(put_response_visitor, data_name);
 }
-
 
 void InitialiseDirectory(const boost::filesystem::path& directory) {
   if (fs::exists(directory)) {
@@ -194,7 +178,6 @@ void SendReply(const nfs::Message& original_message,
 
 }  // namespace detail
 
-
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path) {
   if (boost::filesystem::exists(db_path))
     boost::filesystem::remove_all(db_path);
@@ -210,9 +193,8 @@ std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db
 }
 
 // To be moved to Routing
-bool operator ==(const routing::GroupSource& lhs,  const routing::GroupSource& rhs) {
-  return lhs.group_id == rhs.group_id &&
-         lhs.sender_id == rhs.sender_id;
+bool operator==(const routing::GroupSource& lhs, const routing::GroupSource& rhs) {
+  return lhs.group_id == rhs.group_id && lhs.sender_id == rhs.sender_id;
 }
 
 }  // namespace vault

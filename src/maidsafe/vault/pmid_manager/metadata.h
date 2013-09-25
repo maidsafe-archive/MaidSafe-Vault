@@ -26,7 +26,6 @@
 
 #include "maidsafe/vault/types.h"
 
-
 namespace maidsafe {
 namespace vault {
 
@@ -42,7 +41,7 @@ struct PmidManagerMetadata {
   PmidManagerMetadata& operator=(PmidManagerMetadata other);
 
   serialised_type Serialise() const;
-  
+
   PmidName pmid_name;
   int64_t stored_count;
   int64_t stored_total_size;

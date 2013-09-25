@@ -26,16 +26,14 @@
 #include "maidsafe/vault/version_manager/version_manager.h"
 #include "maidsafe/vault/version_manager/value.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
 struct ActionVersionManagerPut {
   ActionVersionManagerPut(const StructuredDataVersions::VersionName& old_version_in,
-                   const StructuredDataVersions::VersionName& new_version_in)
-      : old_version(old_version_in),
-        new_version(new_version_in) {}
+                          const StructuredDataVersions::VersionName& new_version_in)
+      : old_version(old_version_in), new_version(new_version_in) {}
   explicit ActionVersionManagerPut(const std::string& serialised_action);
   ActionVersionManagerPut(const ActionVersionManagerPut& other);
   ActionVersionManagerPut(ActionVersionManagerPut&& other);

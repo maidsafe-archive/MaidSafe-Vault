@@ -41,11 +41,10 @@ namespace vault {
 template <typename Key, typename Value, typename StoragePolicy>
 class StorageMerge : public Key, public Value, public StoragePolicy {
  public:
-  StorageMerge() :
-    active_(),
-    unmerged_entries_() {}
-//  void insert(const nfs::Message& message);
+  StorageMerge() : active_(), unmerged_entries_() {}
+  //  void insert(const nfs::Message& message);
   typedef std::tuple<std::tuple<Key, Value>, NodeId> UnmergedEntry;
+
  private:
   StorageMerge(const StorageMerge&);
   StorageMerge& operator=(const StorageMerge&);
@@ -54,7 +53,7 @@ class StorageMerge : public Key, public Value, public StoragePolicy {
   std::vector<std::tuple<std::tuple<Key, Value>, std::set<NodeId>>> unmerged_entries_;
   bool KeyExist(const Key& key);
   typename std::vector<std::tuple<std::tuple<Key, Value>, std::set<NodeId>>>::iterator
-             FindUnmergedEntry(const UnmergedEntry& unmerged_entry);
+      FindUnmergedEntry(const UnmergedEntry& unmerged_entry);
 };
 
 template <typename Key, typename Value, typename StoragePolicy>
@@ -62,7 +61,7 @@ bool StorageMerge<Key, Value, StoragePolicy>::KeyExist(const Key& key) {
   try {
     StoragePolicy::Get(key);
   }
-  catch (std::exception& ){
+  catch (std::exception&) {
     return false;
   }
   return true;
@@ -70,17 +69,14 @@ bool StorageMerge<Key, Value, StoragePolicy>::KeyExist(const Key& key) {
 
 template <typename Key, typename Value, typename StoragePolicy>
 typename std::vector<std::tuple<std::tuple<Key, Value>, std::set<NodeId>>>::iterator
-           StorageMerge<Key, Value, StoragePolicy>::FindUnmergedEntry(const UnmergedEntry&
-                                                                      unmerged_entry) {
+StorageMerge<Key, Value, StoragePolicy>::FindUnmergedEntry(const UnmergedEntry& unmerged_entry) {
   return std::find(std::begin(unmerged_entries_), std::end(unmerged_entries_),
-         [unmerged_entry] (const std::tuple<std::tuple<Key, Value>, std::set<NodeId>>& entry)
-         {
-           return(std::get<0>(entry) == unmerged_entry);
-         });
+                   [unmerged_entry](const std::tuple<std::tuple<Key, Value>, std::set<NodeId>> &
+                                    entry) { return (std::get<0>(entry) == unmerged_entry); });
 }
 
-//template <typename Key, typename Value, typename StoragePolicy>
-//void StorageMerge<Key, Value, StoragePolicy>::insert(const nfs::Message& message) {
+// template <typename Key, typename Value, typename StoragePolicy>
+// void StorageMerge<Key, Value, StoragePolicy>::insert(const nfs::Message& message) {
 //  if (static_cast<nfs::MessageAction>(message.data().action) !=
 //      nfs::MessageAction::kAccountTransfer)
 //    ThrowError(CommonErrors::invalid_parameter);
@@ -95,7 +91,8 @@ typename std::vector<std::tuple<std::tuple<Key, Value>, std::set<NodeId>>>::iter
 //    auto found = FindUnmergedEntry(std::make_tuple(key, value));
 //    if (found == std::end(unmerged_entries_)) {
 //      unmerged_entries_.emplace_back(std::make_tuple(std::make_tuple(key, value),
-//                                                   std::set<NodeId> { message.source().node_id }));
+//                                                   std::set<NodeId> { message.source().node_id
+// }));
 //    } else {
 //      std::get<1>(found).insert(message.source());
 //      if (std::get<1>(found).size() >=
@@ -110,6 +107,5 @@ typename std::vector<std::tuple<std::tuple<Key, Value>, std::set<NodeId>>>::iter
 }  // namespace vault
 
 }  // namespace maidsafe
-
 
 #endif  // MAIDSAFE_VAULT_STORAGE_MERGE_H_

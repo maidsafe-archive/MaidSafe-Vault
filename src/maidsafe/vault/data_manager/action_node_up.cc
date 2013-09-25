@@ -20,10 +20,8 @@
 
 #include "maidsafe/common/error.h"
 
-
 #include "maidsafe/vault/data_manager/action_node_up.pb.h"
 #include "maidsafe/vault/data_manager/value.h"
-
 
 namespace maidsafe {
 
@@ -43,8 +41,7 @@ ActionDataManagerNodeUp::ActionDataManagerNodeUp(const std::string& serialised_a
 ActionDataManagerNodeUp::ActionDataManagerNodeUp(const ActionDataManagerNodeUp& other)
     : kPmidName(other.kPmidName) {}
 
-ActionDataManagerNodeUp::ActionDataManagerNodeUp(
-    ActionDataManagerNodeUp&& other)
+ActionDataManagerNodeUp::ActionDataManagerNodeUp(ActionDataManagerNodeUp&& other)
     : kPmidName(std::move(other.kPmidName)) {}
 
 std::string ActionDataManagerNodeUp::Serialise() const {

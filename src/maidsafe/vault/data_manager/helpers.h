@@ -23,9 +23,7 @@
 
 namespace maidsafe {
 
-namespace vault {
-
-}  // namespace vault
+namespace vault {}  // namespace vault
 
 }  // namespace maidsafe
 

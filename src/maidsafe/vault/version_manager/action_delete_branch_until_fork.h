@@ -26,7 +26,6 @@
 #include "maidsafe/vault/version_manager/version_manager.h"
 #include "maidsafe/vault/version_manager/value.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -36,7 +35,7 @@ struct ActionVersionManagerDeleteBranchUntilFork {
   explicit ActionVersionManagerDeleteBranchUntilFork(
       const ActionVersionManagerDeleteBranchUntilFork& other);
   explicit ActionVersionManagerDeleteBranchUntilFork(
-    const ActionVersionManagerDeleteBranchUntilFork&& other);
+      const ActionVersionManagerDeleteBranchUntilFork&& other);
   explicit ActionVersionManagerDeleteBranchUntilFork(
       const StructuredDataVersions::VersionName& version_name);
 
@@ -60,7 +59,6 @@ bool operator==(const ActionVersionManagerDeleteBranchUntilFork& lhs,
                 const ActionVersionManagerDeleteBranchUntilFork& rhs);
 bool operator!=(const ActionVersionManagerDeleteBranchUntilFork& lhs,
                 const ActionVersionManagerDeleteBranchUntilFork& rhs);
-
 
 }  // namespace vault
 

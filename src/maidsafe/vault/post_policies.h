@@ -36,28 +36,24 @@
 
 #include "maidsafe/vault/sync.pb.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
-template<typename SyncPolicy, typename PersonaMiscellaneousPolicy>
+template <typename SyncPolicy, typename PersonaMiscellaneousPolicy>
 class VaultPostPolicy : public SyncPolicy, public PersonaMiscellaneousPolicy {
  public:
   VaultPostPolicy(routing::Routing& routing, const passport::Pmid& pmid)
-      : SyncPolicy(routing, pmid),
-        PersonaMiscellaneousPolicy(routing, pmid) {}
+      : SyncPolicy(routing, pmid), PersonaMiscellaneousPolicy(routing, pmid) {}
 };
 
-template<nfs::Persona source_persona>
+template <nfs::Persona source_persona>
 class SyncPolicy {
  public:
   SyncPolicy(routing::Routing& routing, const passport::Pmid& pmid)
-      : routing_(routing),
-        kSource_(source_persona, routing_.kNodeId()),
-        kPmid_(pmid) {}
+      : routing_(routing), kSource_(source_persona, routing_.kNodeId()), kPmid_(pmid) {}
 
-  template<typename UnresolvedAction>
+  template <typename UnresolvedAction>
   void Sync(const UnresolvedAction& unresolved_action) {
     protobuf::Sync proto_sync;
     proto_sync.set_action_type(UnresolvedAction::Action::kActionId);
@@ -86,9 +82,7 @@ class SyncPolicy {
 class MaidManagerMiscellaneousPolicy {
  public:
   MaidManagerMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
-      : routing_(routing),
-        kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()),
-        kPmid_(pmid) {}
+      : routing_(routing), kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()), kPmid_(pmid) {}
 
   void RequestPmidTotals(const passport::PublicPmid::Name& pmid_name,
                          const routing::ResponseFunctor& callback) {
@@ -96,8 +90,7 @@ class MaidManagerMiscellaneousPolicy {
                             nfs::MessageAction::kGetPmidTotals);
     nfs::Message message(nfs::Persona::kPmidManager, kSource_, data, pmid_name);
     nfs::MessageWrapper message_wrapper(message.Serialise());
-    routing_.SendGroup(NodeId(pmid_name), message_wrapper.Serialise()->string(),
-                       false, callback);
+    routing_.SendGroup(NodeId(pmid_name), message_wrapper.Serialise()->string(), false, callback);
   }
 
  private:
@@ -109,9 +102,7 @@ class MaidManagerMiscellaneousPolicy {
 class DataManagerMiscellaneousPolicy {
  public:
   DataManagerMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
-      : routing_(routing),
-        kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()),
-        kPmid_(pmid) {}
+      : routing_(routing), kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()), kPmid_(pmid) {}
 
  private:
   routing::Routing& routing_;
@@ -122,9 +113,7 @@ class DataManagerMiscellaneousPolicy {
 class PmidManagerMiscellaneousPolicy {
  public:
   PmidManagerMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
-      : routing_(routing),
-        kSource_(nfs::Persona::kPmidManager, routing_.kNodeId()),
-        kPmid_(pmid) {}
+      : routing_(routing), kSource_(nfs::Persona::kPmidManager, routing_.kNodeId()), kPmid_(pmid) {}
 
   void ReturnPmidTotals(const NodeId& target_node_id,
                         const nfs::Reply::serialised_type& serialised_reply) {
@@ -135,7 +124,7 @@ class PmidManagerMiscellaneousPolicy {
     routing_.SendGroup(target_node_id, message_wrapper.Serialise()->string(), false, nullptr);
   }
 
-  template<typename Data>
+  template <typename Data>
   void SendPutResult(const typename Data::Name& data_name,
                      const NonEmptyString& serialised_put_result) {
     nfs::Message::Data data(data_name, serialised_put_result, nfs::MessageAction::kPutResult);
@@ -151,7 +140,7 @@ class PmidManagerMiscellaneousPolicy {
     routing_.SendDirect(target_node_id, message_wrapper.Serialise()->string(), false, nullptr);
   }
 
-  template<typename Data>
+  template <typename Data>
   void AccountTransfer(const typename Data::Name& data_name,
                        const NonEmptyString& serialised_account) {
     nfs::Message::Data data(data_name, serialised_account, nfs::MessageAction::kAccountTransfer);
@@ -169,9 +158,7 @@ class PmidManagerMiscellaneousPolicy {
 class PmidNodeMiscellaneousPolicy {
  public:
   PmidNodeMiscellaneousPolicy(routing::Routing& routing, const passport::Pmid& pmid)
-      : routing_(routing),
-        kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()),
-        kPmid_(pmid) {}
+      : routing_(routing), kSource_(nfs::Persona::kMaidManager, routing_.kNodeId()), kPmid_(pmid) {}
 
   void RequestPmidNodeAccount(const passport::PublicPmid::Name& pmid_name,
                               const routing::ResponseFunctor& callback) {
@@ -193,20 +180,19 @@ class NoPolicy {
   NoPolicy(routing::Routing& /*routing*/, const passport::Pmid& /*pmid*/) {}
 };
 
+typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMaidManager>, MaidManagerMiscellaneousPolicy>
+    MaidManagerPostPolicy;
 
-typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMaidManager>,
-                        MaidManagerMiscellaneousPolicy> MaidManagerPostPolicy;
+typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kDataManager>, DataManagerMiscellaneousPolicy>
+    DataManagerPostPolicy;
 
-typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kDataManager>,
-                        DataManagerMiscellaneousPolicy> DataManagerPostPolicy;
-
-typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kPmidManager>,
-                        PmidManagerMiscellaneousPolicy> PmidManagerPostPolicy;
+typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kPmidManager>, PmidManagerMiscellaneousPolicy>
+    PmidManagerPostPolicy;
 // FIXME
 typedef VaultPostPolicy<NoPolicy, PmidNodeMiscellaneousPolicy> PmidNodePostPolicy;
 
-typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kVersionManager>,
-                        NoPolicy> VersionManagerPostPolicy;
+typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kVersionManager>, NoPolicy>
+    VersionManagerPostPolicy;
 
 }  // namespace vault
 

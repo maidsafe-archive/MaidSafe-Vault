@@ -29,69 +29,65 @@
 
 //#include "maidsafe/vault/accumulator.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
-//template<typename Message>
-//inline bool FromMaidManager(const Message& message) {
+// template<typename Message>
+// inline bool FromMaidManager(const Message& message) {
 //  return message.source().persona == nfs::Persona::kMaidManager;
 //}
 //
-//template<typename Message>
-//inline bool FromDataManager(const Message& message) {
+// template<typename Message>
+// inline bool FromDataManager(const Message& message) {
 //  return message.source().persona == nfs::Persona::kDataManager;
 //}
 //
-//template<typename Message>
-//inline bool FromPmidManager(const Message& message) {
+// template<typename Message>
+// inline bool FromPmidManager(const Message& message) {
 //  return message.source().persona == nfs::Persona::kPmidManager;
 //}
 //
-//template<typename Message>
-//inline bool FromDataHolder(const Message& message) {
+// template<typename Message>
+// inline bool FromDataHolder(const Message& message) {
 //  return message.source().persona == nfs::Persona::kPmidNode;
 //}
 //
-//template<typename Message>
-//inline bool FromClientMaid(const Message& message) {
+// template<typename Message>
+// inline bool FromClientMaid(const Message& message) {
 //  return message.source().persona == nfs::Persona::kMaidNode;
 //}
 //
-//template<typename Message>
-//inline bool FromClientMpid(const Message& message) {
+// template<typename Message>
+// inline bool FromClientMpid(const Message& message) {
 //  return message.source().persona == nfs::Persona::kMpidNode;
 //}
 //
-//template<typename Message>
-//inline bool FromVersionManager(const Message& message) {
+// template<typename Message>
+// inline bool FromVersionManager(const Message& message) {
 //  return message.source().persona == nfs::Persona::kVersionManager;
 //}
 //
-//template<typename Message>
-//inline bool FromDataGetter(const Message& message) {
+// template<typename Message>
+// inline bool FromDataGetter(const Message& message) {
 //  return message.source().persona == nfs::Persona::kDataGetter;
 //}
 //
-//template<typename Message>
-//inline bool ValidateSyncSender(const nfs::Message& message) {
+// template<typename Message>
+// inline bool ValidateSyncSender(const nfs::Message& message) {
 //  return message.source().persona == nfs::Persona::kVersionManager;
 //}
 
-
-
 namespace detail {
 
-template<typename Data>
-bool IsDataElement(const typename Data::Name& name,
-                   const DataNameVariant& data_name_variant) {
+template <typename Data>
+bool IsDataElement(const typename Data::Name& name, const DataNameVariant& data_name_variant) {
   return DataNameVariant(name) == data_name_variant;
 }
 
 // Returns true if the required successful request count has been reached
-//template<typename Accumulator>
-//bool AddResult(const nfs::Message& message,
+// template<typename Accumulator>
+// bool AddResult(const nfs::Message& message,
 //               const routing::ReplyFunctor& reply_functor,
 //               const maidsafe_error& return_code,
 //               Accumulator& accumulator,

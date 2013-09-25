@@ -29,103 +29,89 @@ namespace fs = boost::filesystem;
 namespace maidsafe {
 namespace vault {
 
-
 namespace detail {
 
-//PmidName GetPmidAccountName(const nfs::Message& message) {
+// PmidName GetPmidAccountName(const nfs::Message& message) {
 //  return PmidName(Identity(message.data().name));
 //}
 
-template<typename Message>
+template <typename Message>
 inline bool ForThisPersona(const Message& message) {
   return message.destination_persona() != nfs::Persona::kPmidManager;
 }
 
 }  // namespace detail
 
-
-PmidManagerService::PmidManagerService(const passport::Pmid& /*pmid*/,
-                                       routing::Routing& routing)
+PmidManagerService::PmidManagerService(const passport::Pmid& /*pmid*/, routing::Routing& routing)
     : routing_(routing),
       asio_service_(1),
       accumulator_mutex_(),
       accumulator_(),
       dispatcher_(routing_) {}
 
-template<>
+template <>
 void PmidManagerService::HandleMessage(
     const nfs::PutRequestFromDataManagerToPmidManager& message,
     const typename nfs::PutRequestFromDataManagerToPmidManager::Sender& sender,
     const typename nfs::PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
   typedef nfs::PutRequestFromDataManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
-      accumulator_,
-      [this](const MessageType& message, const MessageType::Sender& sender) {
-        return this->ValidateSender(message, sender);
-      },
+      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
       Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
-      this,
-      accumulator_mutex_)(message, sender, receiver);
+      this, accumulator_mutex_)(message, sender, receiver);
 }
 
-template<>
+template <>
 void PmidManagerService::HandleMessage(
     const nfs::PutFailureFromPmidNodeToPmidManager& message,
     const typename nfs::PutFailureFromPmidNodeToPmidManager::Sender& sender,
     const typename nfs::PutFailureFromPmidNodeToPmidManager::Receiver& receiver) {
   typedef nfs::PutFailureFromPmidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
-      accumulator_,
-      [this](const MessageType& message, const MessageType::Sender& sender) {
-        return this->ValidateSender(message, sender);
-      },
+      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
       Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
-      this,
-      accumulator_mutex_)(message, sender, receiver);
+      this, accumulator_mutex_)(message, sender, receiver);
 }
 
-template<>
+template <>
 void PmidManagerService::HandleMessage(
     const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& /*message*/,
     const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& /*sender*/,
-    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-}
+    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {}
 
-template<>
+template <>
 void PmidManagerService::HandleMessage(
     const nfs::CreateAccountRequestFromMaidManagerToPmidManager& message,
     const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
     const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver) {
   typedef nfs::CreateAccountRequestFromMaidManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
-      accumulator_,
-      [this](const MessageType& message, const MessageType::Sender& sender) {
-        return this->ValidateSender(message, sender);
-      },
+      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
       Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
-      this,
-      accumulator_mutex_)(message, sender, receiver);
+      this, accumulator_mutex_)(message, sender, receiver);
 }
 
-template<>
+template <>
 void PmidManagerService::HandleMessage(
     const nfs::DeleteRequestFromDataManagerToPmidManager& message,
     const typename nfs::DeleteRequestFromDataManagerToPmidManager::Sender& sender,
     const typename nfs::DeleteRequestFromDataManagerToPmidManager::Receiver& receiver) {
   typedef nfs::DeleteRequestFromDataManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType, nfs::PmidManagerServiceMessages>(
-      accumulator_,
-      [this](const MessageType& message, const MessageType::Sender& sender) {
-        return this->ValidateSender(message, sender);
-      },
+      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
       Accumulator<nfs::PmidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
-      this,
-      accumulator_mutex_)(message, sender, receiver);
+      this, accumulator_mutex_)(message, sender, receiver);
 }
 
-
-
-//void PmidManagerService::HandleMessage(const nfs::Message& message,
+// void PmidManagerService::HandleMessage(const nfs::Message& message,
 //                                       const routing::ReplyFunctor& /*reply_functor*/) {
 //  ValidateGenericSender(message);
 //  nfs::Reply reply(CommonErrors::success);
@@ -144,7 +130,7 @@ void PmidManagerService::HandleMessage(
 //  }
 //}
 
-//void PmidManagerService::CreatePmidAccount(
+// void PmidManagerService::CreatePmidAccount(
 //    const nfs::CreateAccountRequestFromMaidManagerToPmidManager& message,
 //    const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Sender& /*sender*/,
 //    const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Receiver& /*receiver*/)
@@ -159,9 +145,10 @@ void PmidManagerService::HandleMessage(
 //  }
 //}
 
-//void PmidManagerService::GetPmidTotals(const nfs::Message& message) {
+// void PmidManagerService::GetPmidTotals(const nfs::Message& message) {
 //  try {
-//    PmidManagerMetadata metadata(pmid_account_handler_.GetMetadata(PmidName(message.data().name)));
+//    PmidManagerMetadata
+// metadata(pmid_account_handler_.GetMetadata(PmidName(message.data().name)));
 //    if (!metadata.pmid_name->string().empty()) {
 //      nfs::Reply reply(CommonErrors::success, metadata.Serialise());
 //      nfs_.ReturnPmidTotals(message.source().node_id, reply.Serialise());
@@ -177,7 +164,7 @@ void PmidManagerService::HandleMessage(
 //  }
 //}
 
-//void PmidManagerService::GetPmidAccount(const nfs::Message& message) {
+// void PmidManagerService::GetPmidAccount(const nfs::Message& message) {
 //  try {
 //    PmidName pmid_name(detail::GetPmidAccountName(message));
 //    protobuf::PmidAccountResponse pmid_account_response;
@@ -205,7 +192,7 @@ void PmidManagerService::HandleMessage(
 //  }
 //}
 
-//void PmidManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
+// void PmidManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
 //  auto account_names(pmid_account_handler_.GetAccountNames());
 //  auto itr(std::begin(account_names));
 //  while (itr != std::end(account_names)) {
@@ -228,7 +215,7 @@ void PmidManagerService::HandleMessage(
 //  }
 //}
 
-//void PmidManagerService::ValidateDataSender(const nfs::Message& message) const {
+// void PmidManagerService::ValidateDataSender(const nfs::Message& message) const {
 //  if (!message.HasDataHolder()
 //      || !routing_.IsConnectedVault(NodeId(message.pmid_node()->string()))
 //      || routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
@@ -238,7 +225,7 @@ void PmidManagerService::HandleMessage(
 //    ThrowError(CommonErrors::invalid_parameter);
 //}
 
-//void PmidManagerService::ValidateGenericSender(const nfs::Message& message) const {
+// void PmidManagerService::ValidateGenericSender(const nfs::Message& message) const {
 //  if (!routing_.IsConnectedVault(message.source().node_id)
 //      || routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
 //    ThrowError(VaultErrors::permission_denied);
@@ -249,7 +236,7 @@ void PmidManagerService::HandleMessage(
 
 // =============== Sync ===========================================================================
 
-//void PmidManagerService::Sync(const PmidName& account_name) {
+// void PmidManagerService::Sync(const PmidName& account_name) {
 //  auto serialised_sync_data(pmid_account_handler_.GetSyncData(account_name));
 //  if (!serialised_sync_data.IsInitialised())  // Nothing to sync
 //    return;
@@ -261,7 +248,7 @@ void PmidManagerService::HandleMessage(
 //  nfs_.Sync(account_name, NonEmptyString(proto_sync.SerializeAsString()));
 //}
 
-//void PmidManagerService::HandleSync(const nfs::Message& message) {
+// void PmidManagerService::HandleSync(const nfs::Message& message) {
 //  std::vector<PmidManagerUnresolvedEntry> resolved_entries;
 //  protobuf::Sync proto_sync;
 //  if (!proto_sync.ParseFromString(message.data().content.string())) {
@@ -275,7 +262,7 @@ void PmidManagerService::HandleMessage(
 
 // =============== Account transfer ===============================================================
 
-//void PmidManagerService::TransferAccount(const PmidName& account_name, const NodeId& new_node) {
+// void PmidManagerService::TransferAccount(const PmidName& account_name, const NodeId& new_node) {
 //  protobuf::PmidAccount pmid_account;
 //  pmid_account.set_pmid_name(account_name.data.string());
 //  PmidAccount::serialised_type
@@ -284,7 +271,7 @@ void PmidManagerService::HandleMessage(
 //  nfs_.TransferAccount(new_node, NonEmptyString(pmid_account.SerializeAsString()));
 //}
 
-//void PmidManagerService::HandleAccountTransfer(const nfs::Message& message) {
+// void PmidManagerService::HandleAccountTransfer(const nfs::Message& message) {
 //  protobuf::PmidAccount pmid_account;
 //  NodeId source_id(message.source().node_id);
 //  if (!pmid_account.ParseFromString(message.data().content.string()))

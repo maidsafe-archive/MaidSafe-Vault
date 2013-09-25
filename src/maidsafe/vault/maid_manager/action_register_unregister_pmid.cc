@@ -23,25 +23,24 @@
 #include "maidsafe/vault/maid_manager/action_register_unregister_pmid.pb.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
-//template<>
-//const nfs::MessageAction ActionRegisterUnregisterPmid<false>::kActionId =
+// template<>
+// const nfs::MessageAction ActionRegisterUnregisterPmid<false>::kActionId =
 //    nfs::MessageAction::kRegisterPmid;
 //
-//template<>
-//const nfs::MessageAction ActionRegisterUnregisterPmid<true>::kActionId =
+// template<>
+// const nfs::MessageAction ActionRegisterUnregisterPmid<true>::kActionId =
 //    nfs::MessageAction::kUnregisterPmid;
 
-template<>
+template <>
 void ActionRegisterUnregisterPmid<false>::operator()(MaidManagerMetadata& metadata) const {
   metadata.RegisterPmid(kPmidRegistration);
 }
 
-template<>
+template <>
 void ActionRegisterUnregisterPmid<true>::operator()(MaidManagerMetadata& metadata) const {
   metadata.UnregisterPmid(kPmidRegistration);
 }

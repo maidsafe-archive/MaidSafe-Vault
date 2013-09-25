@@ -32,18 +32,14 @@
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/vault/types.h"
 
-
 namespace maidsafe {
 
 namespace vault {
 
-
-//void StorageMerge::insert(const& nfs::Message message) {
+// void StorageMerge::insert(const& nfs::Message message) {
 // // nfs::
 //}
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-

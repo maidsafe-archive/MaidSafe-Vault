@@ -47,8 +47,7 @@ namespace vault {
 class Vault {
  public:
   // pmids_from_file must only be non-empty for zero-state network.
-  Vault(const passport::Pmid& pmid,
-        const boost::filesystem::path& vault_root_dir,
+  Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_root_dir,
         std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint,
         const std::vector<passport::PublicPmid>& pmids_from_file =
             std::vector<passport::PublicPmid>(),
@@ -59,17 +58,17 @@ class Vault {
  private:
   void InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
   routing::Functors InitialiseRoutingCallbacks();
-  template<typename T>
+  template <typename T>
   void OnMessageReceived(const T& message);
   void OnNetworkStatusChange(const int& network_health);
   void DoOnNetworkStatusChange(const int& network_health);
-  void OnPublicKeyRequested(const NodeId &node_id, const routing::GivePublicKeyFunctor &give_key);
-  void DoOnPublicKeyRequested(const NodeId &node_id, const routing::GivePublicKeyFunctor &give_key);
+  void OnPublicKeyRequested(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key);
+  void DoOnPublicKeyRequested(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key);
   void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
   void OnMatrixChanged(std::shared_ptr<routing::MatrixChange> matrix_change);
-  template<typename T>
+  template <typename T>
   bool OnGetFromCache(const T& message);
-  template<typename T>
+  template <typename T>
   void OnStoreInCache(const T& message);
   void OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint);
 
@@ -88,20 +87,19 @@ class Vault {
   AsioService asio_service_;
 };
 
-template<typename T>
+template <typename T>
 void Vault::OnMessageReceived(const T& message) {
   asio_service_.service().post([=] { demux_.HandleMessage(message); });
 }
 
-template<typename T>
+template <typename T>
 bool Vault::OnGetFromCache(const T& message) {  // Need to be on routing's thread
   return demux_.GetFromCache(message);
 }
 
-
-template<typename T>
+template <typename T>
 void Vault::OnStoreInCache(const T& /*message*/) {
-//  asio_service_.service().post([=] { demux_.StoreInCache(message) });
+  //  asio_service_.service().post([=] { demux_.StoreInCache(message) });
 }
 
 }  // namespace vault

@@ -24,12 +24,11 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 
-
 namespace maidsafe {
 
 namespace nfs {
 
-template<>
+template <>
 struct PersonaTypes<Persona::kMpidManager> {
   typedef DataNameVariant DbKey;
   typedef NonEmptyString DbValue;
@@ -39,7 +38,6 @@ struct PersonaTypes<Persona::kMpidManager> {
 };
 
 }  // namespace nfs
-
 
 namespace vault {
 

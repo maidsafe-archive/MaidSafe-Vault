@@ -14,7 +14,8 @@
 //    OF ANY KIND, either express or implied.
 
 //    See the Licences for the specific language governing permissions and limitations relating to
-//    use of the MaidSafe Software.                                                                 */
+//    use of the MaidSafe Software.
+// */
 
 //#include "maidsafe/vault/maid_manager/handler.h"
 
@@ -22,14 +23,13 @@
 
 //#include "maidsafe/common/test.h"
 
-//namespace maidsafe {
+// namespace maidsafe {
 
-//namespace vault {
+// namespace vault {
 
-//namespace test {
+// namespace test {
 
-
-//class MaidAccountHandlerTest : public testing::Test {
+// class MaidAccountHandlerTest : public testing::Test {
 // public:
 //  MaidAccountHandlerTest()
 //      : vault_root_directory_(maidsafe::test::CreateTestPath("MaidSafe_Test_MaidAccountHandler")),
@@ -156,11 +156,11 @@
 ////  MaidAccountHandler maid_account_handler_;
 //};
 
-
 ////TEST_F(MaidAccountHandlerTest, BEH_AddAccount) {
 ////  std::vector<MaidName> account_names;
 ////  MaidName account_name(GenerateMaidName());
-////  std::unique_ptr<MaidAccount> new_account(new MaidAccount(account_name, *vault_root_directory_));
+////  std::unique_ptr<MaidAccount> new_account(new MaidAccount(account_name,
+///*vault_root_directory_));
 ////  std::unique_ptr<MaidAccount> duplicate(new MaidAccount(account_name, *vault_root_directory_));
 
 ////  AddAccount(std::move(new_account));
@@ -175,7 +175,8 @@
 ////TEST_F(MaidAccountHandlerTest, BEH_DeleteAccount) {
 ////  std::vector<MaidName> account_names;
 ////  MaidName account_name(GenerateMaidName());
-////  std::unique_ptr<MaidAccount> new_account(new MaidAccount(account_name, *vault_root_directory_));
+////  std::unique_ptr<MaidAccount> new_account(new MaidAccount(account_name,
+///*vault_root_directory_));
 
 ////  EXPECT_TRUE(maid_account_handler_.DeleteAccount(account_name));
 
@@ -188,7 +189,8 @@
 
 ////TEST_F(MaidAccountHandlerTest, BEH_RegisterPmid) {
 ////  MaidName account_name(GenerateMaidName());
-////  std::unique_ptr<MaidAccount> new_account(new MaidAccount(account_name, *vault_root_directory_));
+////  std::unique_ptr<MaidAccount> new_account(new MaidAccount(account_name,
+///*vault_root_directory_));
 ////  nfs::PmidRegistration registration(GenerateRegistration(false));
 ////  std::vector<PmidTotals> pmids;
 
@@ -309,7 +311,8 @@
 
 ////  EXPECT_THROW(maid_account_handler_.GetSerialisedAccount(account_name), vault_error);
 
-////  std::vector<PmidTotals> generated_pmids(SetupAndRegisterAccount(account_name, num_pmid_totals));
+////  std::vector<PmidTotals> generated_pmids(SetupAndRegisterAccount(account_name,
+///num_pmid_totals));
 ////  for (auto& pmid : generated_pmids) {
 ////    total_space_used += pmid.pmid_record.stored_total_size;
 ////    total_space_available += pmid.pmid_record.claimed_available_size;
@@ -333,7 +336,8 @@
 ////                                      });
 ////    EXPECT_EQ(generated_pmid->serialised_pmid_registration, pmid.serialised_pmid_registration);
 ////    EXPECT_EQ(generated_pmid->pmid_record.stored_count, pmid.pmid_record.stored_count);
-////    EXPECT_EQ(generated_pmid->pmid_record.stored_total_size, pmid.pmid_record.stored_total_size);
+////    EXPECT_EQ(generated_pmid->pmid_record.stored_total_size,
+///pmid.pmid_record.stored_total_size);
 ////    EXPECT_EQ(generated_pmid->pmid_record.lost_count, pmid.pmid_record.lost_count);
 ////    EXPECT_EQ(generated_pmid->pmid_record.lost_total_size, pmid.pmid_record.lost_total_size);
 ////    EXPECT_EQ(generated_pmid->pmid_record.claimed_available_size,
@@ -370,7 +374,8 @@
 ////  boost::filesystem::path filename;
 ////  NonEmptyString content;
 
-////  EXPECT_THROW(maid_account_handler_.PutArchiveFile(account_name, filename, content), vault_error);
+////  EXPECT_THROW(maid_account_handler_.PutArchiveFile(account_name, filename, content),
+///vault_error);
 ////  AddAccount(std::move(account));
 ////  EXPECT_NO_THROW(maid_account_handler_.PutArchiveFile(account_name, filename, content));
 
@@ -491,7 +496,8 @@
 ////  this->CheckPutDetails(account_name, data_name, new_cost_large, 1);
 ////}
 
-////REGISTER_TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest, BEH_PutData, BEH_DeleteData, BEH_Adjust);
+////REGISTER_TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest, BEH_PutData, BEH_DeleteData,
+///BEH_Adjust);
 
 ////typedef testing::Types<passport::PublicAnmid,
 ////                       passport::PublicAnsmid,
@@ -510,7 +516,6 @@
 ////                       WorldDirectory> AllTypes;
 
 ////INSTANTIATE_TYPED_TEST_CASE_P(All, MaidAccountHandlerTypedTest, AllTypes);
-
 
 //}  //  namespace test
 

@@ -26,7 +26,6 @@
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/maid_manager/helpers.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -35,7 +34,11 @@ struct PmidManagerMetadata;
 
 class MaidManagerMetadata {
  public:
-  enum class Status { kOk, kLowSpace, kNoSpace };
+  enum class Status {
+    kOk,
+    kLowSpace,
+    kNoSpace
+  };
   MaidManagerMetadata();
   MaidManagerMetadata(int64_t total_put_data, const std::vector<PmidTotals>& pmid_totals);
   MaidManagerMetadata(const MaidManagerMetadata& other);
@@ -65,6 +68,5 @@ class MaidManagerMetadata {
 }  // namespace vault
 
 }  // namespace maidsafe
-
 
 #endif  // MAIDSAFE_VAULT_MAID_MANAGER_METADATA_H_

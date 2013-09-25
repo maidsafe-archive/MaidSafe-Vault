@@ -38,7 +38,6 @@
 #include "maidsafe/vault/version_manager/version_manager.h"
 //#include "maidsafe/vault/manager_db.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -46,14 +45,14 @@ namespace vault {
 class VersionManagerService {
  public:
   typedef nfs::VersionManagerServiceMessages PublicMessages;
-  typedef nfs::VersionManagerServiceMessages VaultMessages; // FIXME (Check with Fraser)
+  typedef nfs::VersionManagerServiceMessages VaultMessages;  // FIXME (Check with Fraser)
 
   typedef Identity VersionManagerAccountName;
   VersionManagerService(const passport::Pmid& pmid, routing::Routing& routing);
-//  template<typename Data>
-//  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  template<typename T>
-  void HandleMessage(const T&, const typename T::Sender& , const typename T::Receiver&) {}
+  //  template<typename Data>
+  //  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
+  template <typename T>
+  void HandleMessage(const T&, const typename T::Sender&, const typename T::Receiver&) {}
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {}
 
  private:
@@ -62,22 +61,25 @@ class VersionManagerService {
   VersionManagerService(VersionManagerService&&);
   VersionManagerService& operator=(VersionManagerService&&);
 
-//  void ValidateClientSender(const nfs::Message& message) const;
-//  void ValidateSyncSender(const nfs::Message& message) const;
-//  std::vector<StructuredDataVersions::VersionName> GetVersionsFromMessage(
-//      const nfs::Message& message) const;
-//  NonEmptyString GetSerialisedRecord(const VersionManager::DbKey& db_key);
-//  //// =============== Get data ====================================================================
-//  void HandleGet(const nfs::Message& message, routing::ReplyFunctor reply_functor);
-//  void HandleGetBranch(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+  //  void ValidateClientSender(const nfs::Message& message) const;
+  //  void ValidateSyncSender(const nfs::Message& message) const;
+  //  std::vector<StructuredDataVersions::VersionName> GetVersionsFromMessage(
+  //      const nfs::Message& message) const;
+  //  NonEmptyString GetSerialisedRecord(const VersionManager::DbKey& db_key);
+  //  //// =============== Get data
+  // ====================================================================
+  //  void HandleGet(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+  //  void HandleGetBranch(const nfs::Message& message, routing::ReplyFunctor reply_functor);
 
-//  //// =============== Sync ========================================================================
-//  template<typename Data>
-//  void Synchronise(const nfs::Message& message);
-//  void HandleSynchronise(const nfs::Message& message);
+  //  //// =============== Sync
+  // ========================================================================
+  //  template<typename Data>
+  //  void Synchronise(const nfs::Message& message);
+  //  void HandleSynchronise(const nfs::Message& message);
 
-//  //// =============== Churn =======================================================================
-//  void HandleAccountTransfer(const nfs::Message& message);
+  //  //// =============== Churn
+  // =======================================================================
+  //  void HandleAccountTransfer(const nfs::Message& message);
 
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
@@ -85,12 +87,12 @@ class VersionManagerService {
   Accumulator<VersionManagerAccountName> accumulator_;
   Db<VersionManagerKey, StructuredDataVersions> version_manager_db_;
   const NodeId kThisNodeId_;
-//  Sync<VersionManagerMergePolicy> sync_;
-//  VersionManagerNfs nfs_;
-//  StorageMerge<VersionManagerKey,
-//               StructuredDataVersions,
-//               ManagerDb<VersionManagerKey,
-//                         StructuredDataVersions>>database_merge_;
+  //  Sync<VersionManagerMergePolicy> sync_;
+  //  VersionManagerNfs nfs_;
+  //  StorageMerge<VersionManagerKey,
+  //               StructuredDataVersions,
+  //               ManagerDb<VersionManagerKey,
+  //                         StructuredDataVersions>>database_merge_;
 };
 
 }  // namespace vault

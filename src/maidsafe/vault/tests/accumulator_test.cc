@@ -14,7 +14,8 @@
 //    OF ANY KIND, either express or implied.
 
 //    See the Licences for the specific language governing permissions and limitations relating to
-//    use of the MaidSafe Software.                                                                 */
+//    use of the MaidSafe Software.
+// */
 
 //#include "maidsafe/vault/accumulator.h"
 
@@ -24,27 +25,26 @@
 //#include "maidsafe/data_types/data_type_values.h"
 //#include "maidsafe/nfs/types.h"
 
+// namespace maidsafe {
 
-//namespace maidsafe {
+// namespace vault {
 
-//namespace vault {
+// namespace test {
 
-//namespace test {
+// namespace {
 
-//namespace {
-
-//nfs::MessageAction GenerateAction() {
+// nfs::MessageAction GenerateAction() {
 //  return static_cast<nfs::MessageAction>(RandomUint32() % 3);
 //}
 
-//nfs::PersonaId GenerateSource() {
+// nfs::PersonaId GenerateSource() {
 //  nfs::PersonaId source;
 //  // matches Persona enum in types.h
 //  source.persona = static_cast<nfs::Persona>(RandomUint32() % 7);
 //  source.node_id = NodeId(NodeId::kRandomId);
 //  return source;
 //}
-//nfs::Message MakeMessage() {
+// nfs::Message MakeMessage() {
 //  nfs::Message::Data data(static_cast<DataTagValue>(RandomUint32() % 13),
 //                              Identity(RandomString(NodeId::kSize)),
 //                              NonEmptyString(RandomString(1 + RandomUint32() % 50)),
@@ -55,7 +55,7 @@
 
 //}  // unnamed namespace
 
-//TEST(AccumulatorTest, BEH_PushSingleResult) {
+// TEST(AccumulatorTest, BEH_PushSingleResult) {
 //  nfs::Message message = MakeMessage();
 //  nfs::Reply reply(CommonErrors::success);
 //  Accumulator<passport::PublicMaid::Name> accumulator;
@@ -68,7 +68,7 @@
 //  EXPECT_TRUE(accumulator.CheckHandled(message, reply));
 //}
 
-//TEST(AccumulatorTest, BEH_PushSingleResultThreaded) {
+// TEST(AccumulatorTest, BEH_PushSingleResultThreaded) {
 //  maidsafe::test::RunInParallel(10, [] {
 //      nfs::Message message = MakeMessage();
 //      nfs::Reply reply(CommonErrors::success);
@@ -83,7 +83,7 @@
 //    });
 //}
 
-//TEST(AccumulatorTest, BEH_CheckPendingRequestsLimit) {
+// TEST(AccumulatorTest, BEH_CheckPendingRequestsLimit) {
 //  Accumulator<passport::PublicPmid::Name> accumulator;
 //  //  Pending list limit 300
 //  size_t pending_request_max_limit = accumulator.kMaxPendingRequestsCount_;
@@ -102,7 +102,7 @@
 //  EXPECT_EQ(accumulator.pending_requests_.size(), pending_request_max_limit);
 //}
 
-//TEST(AccumulatorTest, BEH_CheckHandled) {
+// TEST(AccumulatorTest, BEH_CheckHandled) {
 //  nfs::Message message = MakeMessage();
 //  nfs::Reply reply(CommonErrors::success);
 //  Accumulator<passport::PublicMaid::Name> accumulator;
@@ -112,7 +112,7 @@
 //  EXPECT_TRUE(accumulator.CheckHandled(message, reply));
 //}
 
-//TEST(AccumulatorTest, BEH_SetHandled) {
+// TEST(AccumulatorTest, BEH_SetHandled) {
 //  nfs::Message message = MakeMessage();
 //  nfs::Reply reply(CommonErrors::success);
 //  Accumulator<passport::PublicPmid::Name> accumulator;
@@ -126,7 +126,7 @@
 //  EXPECT_TRUE(accumulator.pending_requests_.empty());
 //}
 
-//TEST(AccumulatorTest, BEH_FindHandled) {
+// TEST(AccumulatorTest, BEH_FindHandled) {
 //  nfs::Message message = MakeMessage();
 //  nfs::Reply reply(CommonErrors::success);
 //  Accumulator<passport::PublicPmid::Name> accumulator;
@@ -138,7 +138,6 @@
 //  itr_handle = accumulator.FindHandled(message);
 //  EXPECT_TRUE(itr_handle != accumulator.handled_requests_.end());
 //}
-
 
 //}  // namespace test
 

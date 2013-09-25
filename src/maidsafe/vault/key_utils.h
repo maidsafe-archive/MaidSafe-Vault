@@ -24,7 +24,6 @@
 #include <cstdint>
 #include <string>
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -36,7 +35,7 @@ struct PaddedWidth {
   static const int value = 1;
 };
 
-template<int width>
+template <int width>
 std::string ToFixedWidthString(uint32_t number) {
   static_assert(width > 0 && width < 5, "width must be 1, 2, 3, or 4.");
   assert(number < std::pow(256, width));
@@ -48,7 +47,7 @@ std::string ToFixedWidthString(uint32_t number) {
   return result;
 }
 
-template<int width>
+template <int width>
 uint32_t FromFixedWidthString(const std::string& number_as_string) {
   static_assert(width > 0 && width < 5, "width must be 1, 2, 3, or 4.");
   assert(static_cast<int>(number_as_string.size()) == width);
@@ -61,10 +60,10 @@ uint32_t FromFixedWidthString(const std::string& number_as_string) {
   return result;
 }
 
-template<>
+template <>
 std::string ToFixedWidthString<1>(uint32_t number);
 
-template<>
+template <>
 uint32_t FromFixedWidthString<1>(const std::string& number_as_string);
 
 }  // namespace detail
