@@ -114,22 +114,22 @@ void PmidManagerService::HandleMessage(
 
 template<>
 void PmidManagerService::HandleMessage(
-    const nfs::SynchroniseFromPmidManagerToPmidManager& message,
-    const typename nfs::SynchroniseFromPmidManagerToPmidManager::Sender& sender,
+    const nfs::SynchroniseFromPmidManagerToPmidManager& /*message*/,
+    const typename nfs::SynchroniseFromPmidManagerToPmidManager::Sender& /*sender*/,
     const typename nfs::SynchroniseFromPmidManagerToPmidManager::Receiver& /*receiver*/) {
-  protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(message.contents->content.string()))
-    ThrowError(CommonErrors::parsing_error);
-  switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
-    case ActionMaidManagerPut::kActionId: {
-      PmidManager::UnresolvedPut unresolved_action(
-          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
-        group_db_.Commit(resolved_action->key, resolved_action->action);
-      break;
-    }
-  }
+//  protobuf::Sync proto_sync;
+//  if (!proto_sync.ParseFromString(message.contents->content.string()))
+//    ThrowError(CommonErrors::parsing_error);
+//  switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
+//    case ActionPmidManagerPut::kActionId: {
+//      PmidManager::UnresolvedPut unresolved_action(
+//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+//      auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
+//      if (resolved_action)
+//        group_db_.Commit(resolved_action->key, resolved_action->action);
+//      break;
+//    }
+//  }
 }
 
 //void PmidManagerService::HandleMessage(const nfs::Message& message,
