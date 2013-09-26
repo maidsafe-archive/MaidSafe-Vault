@@ -35,6 +35,8 @@ struct ActionPmidManagerPut;
 struct ActionPmidManagerDelete;
 struct ActionGetPmidTotals;
 
+struct PmidManagerMetadata;
+
 }  // namespace vault
 
 namespace nfs {
@@ -45,6 +47,7 @@ struct PersonaTypes<Persona::kPmidManager> {
   typedef vault::GroupKey<passport::PublicPmid::Name> Key;
   typedef passport::PublicPmid::Name GroupName;
   typedef vault::PmidManagerValue Value;
+  typedef vault::PmidManagerMetadata Metadata;
   typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerDelete> UnresolvedDelete;
   typedef vault::UnresolvedAction<Key, vault::ActionGetPmidTotals> UnresolvedGetPmidTotals;

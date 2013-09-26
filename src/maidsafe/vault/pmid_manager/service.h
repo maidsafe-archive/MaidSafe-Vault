@@ -100,10 +100,9 @@ class PmidManagerService {
   //  void AddLocalUnresolvedEntryThenSync(const nfs::Message& message);
 
   routing::Routing& routing_;
-  AsioService asio_service_;
+  GroupDb<PmidManager> group_db_;
   std::mutex accumulator_mutex_;
   Accumulator<nfs::PmidManagerServiceMessages> accumulator_;
-  //  PmidAccountHandler pmid_account_handler_;
   PmidManagerDispatcher dispatcher_;
   Sync<PmidManager::UnresolvedPut> sync_puts_;
   Sync<PmidManager::UnresolvedDelete> sync_deletes_;
@@ -158,6 +157,13 @@ void PmidManagerService::HandleMessage(
     const nfs::CreateAccountRequestFromMaidManagerToPmidManager& message,
     const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
     const typename nfs::CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);
+
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::SynchroniseFromPmidManagerToPmidManager& message,
+    const typename nfs::SynchroniseFromPmidManagerToPmidManager::Sender& sender,
+    const typename nfs::SynchroniseFromPmidManagerToPmidManager::Receiver& receiver);
+
 
 // ================================= Put Implementation ===========================================
 

@@ -204,11 +204,11 @@ void DataManagerService::HandleMessage(
 //   const typename nfs::GetResponseFromPmidNodeToDataManager::Sender& sender,
 //   const typename nfs::GetResponseFromPmidNodeToDataManager::Receiver& receiver);
 
-// template<>
-// void DataManagerService::HandleMessage(
-//   const nfs::SynchroniseFromDataManagerToDataManager& message,
-//   const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& sender,
-//   const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& receiver);
+template<>
+void DataManagerService::HandleMessage(
+   const nfs::SynchroniseFromDataManagerToDataManager& message,
+   const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& sender,
+   const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& receiver);
 
 // ==================== Implementation =============================================================
 namespace detail {

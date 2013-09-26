@@ -44,7 +44,7 @@ inline bool ForThisPersona(const Message& message) {
 
 PmidManagerService::PmidManagerService(const passport::Pmid& /*pmid*/, routing::Routing& routing)
     : routing_(routing),
-      asio_service_(1),
+      group_db_(),
       accumulator_mutex_(),
       accumulator_(),
       dispatcher_(routing_) {}
@@ -111,7 +111,27 @@ void PmidManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
-// void PmidManagerService::HandleMessage(const nfs::Message& message,
+template<>
+void PmidManagerService::HandleMessage(
+    const nfs::SynchroniseFromPmidManagerToPmidManager& message,
+    const typename nfs::SynchroniseFromPmidManagerToPmidManager::Sender& sender,
+    const typename nfs::SynchroniseFromPmidManagerToPmidManager::Receiver& /*receiver*/) {
+  protobuf::Sync proto_sync;
+  if (!proto_sync.ParseFromString(message.contents->content.string()))
+    ThrowError(CommonErrors::parsing_error);
+  switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
+    case ActionMaidManagerPut::kActionId: {
+      PmidManager::UnresolvedPut unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action)
+        group_db_.Commit(resolved_action->key, resolved_action->action);
+      break;
+    }
+  }
+}
+
+//void PmidManagerService::HandleMessage(const nfs::Message& message,
 //                                       const routing::ReplyFunctor& /*reply_functor*/) {
 //  ValidateGenericSender(message);
 //  nfs::Reply reply(CommonErrors::success);
