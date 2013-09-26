@@ -22,41 +22,25 @@
 namespace maidsafe {
 namespace vault {
 
-const nfs::MessageAction ActionPmidManagerPut::kActionId(nfs::MessageAction::kPutRequest);
+const nfs::MessageAction ActionPmidManagerPut::kActionId;
 
-template <typename Data>
-ActionPmidManagerPut::ActionPmidManagerPut(const typename Data::Name &data_name,
-                                           const uint32_t size)
-    : kDataName(GetDataNameVariant(data_name.type, data_name.raw_name)),
-      kSize(size) {}
+ActionPmidManagerPut::ActionPmidManagerPut(const uint32_t size) : kSize(size) {}
 
 ActionPmidManagerPut::ActionPmidManagerPut(const std::string& serialised_action)
-  : kDataName([&serialised_action]()->DataNameVariant {
-            protobuf::ActionPmidManagerPut action_put_proto;
-            action_put_proto.ParseFromString(serialised_action);
-              return GetDataNameVariant(static_cast<DataTagValue>(action_put_proto.data_type()),
-                                        Identity(action_put_proto.data_name()));
-          }()),
-    kSize([&serialised_action]()->uint32_t {
+  : kSize([&serialised_action]()->uint32_t {
             protobuf::ActionPmidManagerPut action_put_proto;
             action_put_proto.ParseFromString(serialised_action);
               return action_put_proto.size();
           }()) {}
 
 ActionPmidManagerPut::ActionPmidManagerPut(const ActionPmidManagerPut& other)
-    : kDataName(other.kDataName),
-      kSize(other.kSize) {}
+    : kSize(other.kSize) {}
 
 ActionPmidManagerPut::ActionPmidManagerPut(ActionPmidManagerPut&& other)
-    : kDataName(other.kDataName),
-      kSize(std::move(other.kSize)) {}
+    : kSize(std::move(other.kSize)) {}
 
 std::string ActionPmidManagerPut::Serialise() const {
   protobuf::ActionPmidManagerPut action_put_proto;
-  action_put_proto.set_data_type(
-    static_cast<int32_t>(boost::apply_visitor(GetTagValueVisitor(), kDataName)));
-  action_put_proto.set_data_name(
-    boost::apply_visitor(GetIdentityVisitor(), kDataName).string());
   action_put_proto.set_size(kSize);
   return action_put_proto.SerializeAsString();
 }
@@ -64,12 +48,10 @@ std::string ActionPmidManagerPut::Serialise() const {
 void ActionPmidManagerPut::operator()(boost::optional<PmidManagerValue>& value) const {
   if (!value)
     value.reset(PmidManagerValue());
-  value->Add(kDataName, kSize);
 }
 
 bool operator==(const ActionPmidManagerPut& lhs, const ActionPmidManagerPut& rhs) {
-  return lhs.kDataName == rhs.kDataName &&
-         lhs.kSize == rhs.kSize;
+  return lhs.kSize == rhs.kSize;
 }
 
 bool operator!=(const ActionPmidManagerPut& lhs, const ActionPmidManagerPut& rhs) {

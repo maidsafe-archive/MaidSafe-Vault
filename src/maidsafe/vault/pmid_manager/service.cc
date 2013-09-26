@@ -47,7 +47,8 @@ PmidManagerService::PmidManagerService(const passport::Pmid& /*pmid*/, routing::
       asio_service_(1),
       accumulator_mutex_(),
       accumulator_(),
-      dispatcher_(routing_) {}
+      dispatcher_(routing_),
+      pmid_metadata_() {}
 
 template <>
 void PmidManagerService::HandleMessage(

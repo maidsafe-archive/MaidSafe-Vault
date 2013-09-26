@@ -21,10 +21,6 @@
 
 #include <cstdint>
 #include <string>
-#include <vector>
-
-#include "maidsafe/data_types/data_name_variant.h"
-#include "boost/variant/variant.hpp"
 
 namespace maidsafe {
 namespace vault {
@@ -32,22 +28,19 @@ namespace vault {
 class PmidManagerValue {
  public:
   PmidManagerValue();
-  explicit PmidManagerValue(const std::string& serialised_pmid_manager_value);
+  explicit PmidManagerValue(const int32_t& size);
+  PmidManagerValue(const std::string& serialised_pmid_manager_value);
   PmidManagerValue(const PmidManagerValue& other);
   PmidManagerValue(PmidManagerValue&& other);
   PmidManagerValue& operator=(PmidManagerValue other);
 
   std::string Serialise() const;
-
-  void Delete(const DataNameVariant& data_name);
-  void Add(const DataNameVariant& data_name, int32_t size);
+  int32_t size() const { return size_; }
 
   friend void swap(PmidManagerValue& lhs, PmidManagerValue& rhs);
-  friend bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);
 
  private:
-  typedef std::pair<DataNameVariant, int32_t> ValueType;
-  std::set<ValueType, std::function<bool(const ValueType&, const ValueType&)>> data_elements_;
+  int32_t size_;
 };
 
 bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);
