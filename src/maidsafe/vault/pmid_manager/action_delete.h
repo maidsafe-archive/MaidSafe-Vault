@@ -24,8 +24,6 @@
 
 #include "boost/optional/optional.hpp"
 
-#include "maidsafe/data_types/data_name_variant.h"
-
 #include "maidsafe/nfs/types.h"
 
 namespace maidsafe {
@@ -34,13 +32,9 @@ namespace vault {
 class PmidManagerValue;
 
 struct ActionPmidManagerDelete {
-  template <typename Data>
-  ActionPmidManagerDelete(const typename Data::Name& data_name_in);
+  ActionPmidManagerDelete() {}
   void operator()(boost::optional<PmidManagerValue>& value) const;
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
-
- private:
-  DataNameVariant kDataName;
 };
 
 }  // namespace vault

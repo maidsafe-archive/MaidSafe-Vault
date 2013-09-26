@@ -89,7 +89,10 @@ class DataManagerService {
                              const nfs::MessageId& message_id);
 
   template <typename Data>
-  NonEmptyString GetContentFromCache(const typename Data::Name& data_name);
+  std::vector<PmidName> StoringPmidNodes(const typename Data::Name& name);
+
+  template <typename Data>
+  NonEmptyString GetContentFromCache(const typename Data::Name& name);
 
   // commented out for code to compile (may not be required anymore)
   //  template<typename Data>
@@ -249,18 +252,17 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
   dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);
 }
 
-// failure handler
 template <typename Data>
 void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
                                           const PmidName& attempted_pmid_node,
                                           const nfs::MessageId& message_id,
                                           const maidsafe_error& /*error*/) {
   // TODO(Team): Following should be done only if error is fixable by repeat
-  auto pmids_to_avoid(data_name);
+  auto pmids_to_avoid(StoringPmidNodes<Data>(data_name));
   pmids_to_avoid.push_back(attempted_pmid_node);
   auto pmid_name(PmidName(Identity(routing_.RandomConnectedNode().string())));
   while (std::find(std::begin(pmids_to_avoid), std::end(pmids_to_avoid), pmid_name) !=
-         attempted_pmid_node)
+             std::end(pmids_to_avoid))
     pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
   if (SendPutRetryRequired<Data>(data_name)) {
     try {
@@ -309,7 +311,8 @@ void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name
         [signature, pmid_node, message_id, data_name, this](
             DataManagerService::IntegrityCheckResponse response) {
           if (response == DataManagerService::IntegrityCheckResponse()) {
-            // Timer expired, sync remove pmid_node, inform PMs, drank potentially
+            // Timer expired.
+            // If PmidNode has informed Pmd
             dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
             sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
                 typename DataManager::Key(data_name.raw_name, data_name.type),

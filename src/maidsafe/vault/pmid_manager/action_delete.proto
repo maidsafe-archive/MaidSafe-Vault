@@ -18,7 +18,4 @@
 
 package maidsafe.vault.protobuf;
 
-message ActionPmidManagerPut {
-  required int32 data_type = 1;
-  required bytes data_name = 2;
-}
+message ActionPmidManagerDelete {}

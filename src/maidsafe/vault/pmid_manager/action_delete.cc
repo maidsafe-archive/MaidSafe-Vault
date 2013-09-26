@@ -18,6 +18,8 @@
 
 #include "maidsafe/vault/pmid_manager/action_delete.h"
 
+#include "maidsafe/common/error.h"
+
 #include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
@@ -25,16 +27,11 @@ namespace vault {
 
 const nfs::MessageAction ActionPmidManagerDelete::kActionId;
 
-template <typename Data>
-ActionPmidManagerDelete::ActionPmidManagerDelete(const typename Data::Name& data_name_in)
-    : kDataName(GetDataNameVariant(data_name_in.type, data_name_in.raw_name)) {}
-
 void ActionPmidManagerDelete::operator()(boost::optional<PmidManagerValue>& value) const {
   if (!value) {
     ThrowError(CommonErrors::no_such_element);
     return;
   }
-  value->Delete(kDataName);
 }
 
 }  // namespace vault
