@@ -92,8 +92,9 @@ class MaidManagerService {
   //  void CheckSenderIsConnectedMaidNode(const nfs::Message& message) const;
   //  void CheckSenderIsConnectedMaidManager(const nfs::Message& message) const;
   //  void ValidateDataSender(const nfs::Message& message) const;
-  template <typename T>
-  bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
+  template <typename MessageType>
+  bool ValidateSender(const MessageType& /*message*/,
+                      const typename MessageType::Sender& /*sender*/) const {
     return false;
   }
 
@@ -109,7 +110,7 @@ class MaidManagerService {
                          const int32_t& cost, const nfs::MessageId& message_id);
 
   template <typename Data>
-  void HandleDelete(const NodeId& account_name, const typename Data::Name& data_name,
+  void HandleDelete(const MaidName& account_name, const typename Data::Name& data_name,
                     const nfs::MessageId& message_id);
 
   MaidManagerMetadata::Status AllowPut(const MaidName& account_name, int32_t cost);
@@ -316,10 +317,11 @@ void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
 // ================================== Delete Implementation =======================================
 
 template <typename Data>
-void MaidManagerService::HandleDelete(const NodeId& /*account_name*/,
-                                      const typename Data::Name& /*data_name*/,
-                                      const nfs::MessageId& /*message_id*/) {
-  //  dispatcher_.SendDeleteRequest(MaidName(account_name), data_name, message_id);
+void MaidManagerService::HandleDelete(const MaidName& account_name,
+                                      const typename Data::Name& data_name,
+                                      const nfs::MessageId& message_id) {
+    Need to sync/ confirm data is stored here and then dispatch
+    dispatcher_.SendDeleteRequest(account_name, data_name, message_id);
 }
 
 // ===============================================================================================

@@ -20,6 +20,7 @@
 #define MAIDSAFE_VAULT_PARAMETERS_H_
 
 #include <cstddef>
+#include <chrono>
 
 namespace maidsafe {
 
@@ -37,6 +38,8 @@ struct Parameters {
   static int max_file_element_count;
   // Size of the string passed for integrity checking
   static int integrity_check_string_size;
+  // Default network timeout
+  static const std::chrono::milliseconds kDefaultTimeout;
 
  private:
   Parameters();

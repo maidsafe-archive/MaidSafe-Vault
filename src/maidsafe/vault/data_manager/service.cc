@@ -52,6 +52,7 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       accumulator_(),
       dispatcher_(routing_, pmid),
       integrity_check_timer_(asio_service_),
+      get_timer_(asio_service_),
       db_(),
       sync_puts_(),
       sync_deletes_(),
@@ -59,13 +60,6 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       sync_remove_pmids_(),
       sync_node_downs_(),
       sync_node_ups_() {}
-
-// GetRequestFromMaidNodeToDataManager
-// template<>
-// void DataManagerService::HandleMessage(
-//   const nfs::GetRequestFromMaidNodeToDataManager& /*message*/,
-//   const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& /*sender*/,
-//   const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {}
 
 // PutRequestFromMaidManagerToDataManager
 template <>
@@ -95,6 +89,53 @@ void DataManagerService::HandleMessage(
                     },
       Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
+}
+
+// GetRequestFromMaidNodeToDataManager
+template<>
+void DataManagerService::HandleMessage(
+    const nfs::GetRequestFromMaidNodeToDataManager& message,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
+  typedef nfs::GetRequestFromMaidNodeToDataManager MessageType;
+  GetRequestVisitor<DataManagerService, typename MessageType::Sender> visitor(this, sender,
+                                                                              message.message_id());
+
+     PublicMessages public_variant_message;
+    if (!nfs::GetVariant(message, public_variant_message))
+      return false;
+    boost::apply_visitor(demuxer, public_variant_message);
+    return true;
+
+  boost::apply_visitor(visitor, public_variant_message);
+
+}
+
+// GetRequestFromPmidNodeToDataManager
+template<>
+void DataManagerService::HandleMessage(
+    const nfs::GetRequestFromPmidNodeToDataManager& message,
+    const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver) {
+  typedef nfs::GetRequestFromPmidNodeToDataManager MessageType;
+}
+
+// GetRequestFromDataGetterToDataManager
+template<>
+void DataManagerService::HandleMessage(
+    const nfs::GetRequestFromDataGetterToDataManager& message,
+    const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
+  typedef nfs::GetRequestFromDataGetterToDataManager MessageType;
+}
+
+// GetResponseFromPmidNodeToDataManager
+template<>
+void DataManagerService::HandleMessage(
+    const nfs::GetResponseFromPmidNodeToDataManager& message,
+    const typename nfs::GetResponseFromPmidNodeToDataManager::Sender& sender,
+    const typename nfs::GetResponseFromPmidNodeToDataManager::Receiver& receiver) {
+  typedef nfs::GetResponseFromPmidNodeToDataManager MessageType;
 }
 
 // =============== Sync ============================================================================

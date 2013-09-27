@@ -54,6 +54,7 @@ class DataManagerService {
   typedef nfs::DataManagerServiceMessages PublicMessages;
   typedef nfs::DataManagerServiceMessages VaultMessages;  // FIXME (Check with Fraser)
   typedef nfs::IntegrityCheckResponseFromPmidNodeToDataManager::Contents IntegrityCheckResponse;
+  typedef nfs::GetResponseFromPmidNodeToDataManager::Contents GetResponseContents;
 
   DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter);
@@ -73,6 +74,10 @@ class DataManagerService {
   template <typename Data>
   void HandlePutFailure(const typename Data::Name& data_name, const PmidName& attempted_pmid_node,
                         const nfs::MessageId& message_id, const maidsafe_error& error);
+
+  template <typename Data>
+  void HandleGet(const typename Data::name& data_name, const nfs::MessageId& message_id);
+
   void DoSync();
 
   template <typename Data>
@@ -94,48 +99,19 @@ class DataManagerService {
   template <typename Data>
   NonEmptyString GetContentFromCache(const typename Data::Name& name);
 
-  // commented out for code to compile (may not be required anymore)
-  //  template<typename Data>
-  //  struct GetHandler {
-  //    GetHandler(const routing::ReplyFunctor& reply_functor_in,
-  //               size_t holder_count_in,
-  //               const nfs::MessageId& message_id_in);
-  //    routing::ReplyFunctor reply_functor;
-  //    size_t holder_count;
-  //    nfs::MessageId message_id;
-  //    std::mutex mutex;
-  //    crypto::SHA512Hash validation_result;
-  //    std::vector<protobuf::DataOrProof> pmid_node_results;
-
-  //   private:
-  //    GetHandler(const GetHandler&);
-  //    GetHandler& operator=(const GetHandler&);
-  //    GetHandler(GetHandler&&);
-  //    GetHandler& operator=(GetHandler&&);
-  //  };
-
   DataManagerService(const DataManagerService&);
   DataManagerService& operator=(const DataManagerService&);
   DataManagerService(DataManagerService&&);
   DataManagerService& operator=(DataManagerService&&);
 
-  // commented out for code to compile (may not be required anymore)
-  //  template<typename Data>
-  //  void OnHandleGet(std::shared_ptr<GetHandler<Data>> get_handler,
-  //                   const std::string& serialised_reply);
-
-  //  template<typename Data>
-  //  void IntegrityCheck(std::shared_ptr<GetHandler<Data>> get_handler);
-
-  template <typename T>
-  bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
+  template <typename MessageType>
+  bool ValidateSender(const MessageType& /*message*/,
+                      const typename MessageType::Sender& /*sender*/) const {
     return false;
   }
 
   // =============== Sync and Record transfer =====================================================
-  // Commented by Mahmoud on 3 Sep. Code need refactoring
-  //  void TransferRecord(const DataNameVariant& record_name, const NodeId& new_node);
-  //  void HandleRecordTransfer(const nfs::Message& message);
+
 
   routing::Routing& routing_;
   AsioService asio_service_;
@@ -144,6 +120,7 @@ class DataManagerService {
   Accumulator<nfs::DataManagerServiceMessages> accumulator_;
   DataManagerDispatcher dispatcher_;
   routing::Timer<IntegrityCheckResponse> integrity_check_timer_;
+  routing::Timer<GetResponseContents> get_timer_;
   Db<DataManager::Key, DataManager::Value> db_;
   Sync<DataManager::UnresolvedPut> sync_puts_;
   Sync<DataManager::UnresolvedDelete> sync_deletes_;
@@ -162,8 +139,8 @@ void DataManagerService::HandleMessage(const T&, const typename T::Sender&,
 template <>
 void DataManagerService::HandleMessage(
     const nfs::PutRequestFromMaidManagerToDataManager& message,
-    const typename nfs::PutRequestFromMaidManagerToDataManager::Sender&,
-    const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver&);
+    const typename nfs::PutRequestFromMaidManagerToDataManager::Sender& sender,
+    const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver& receiver);
 
 template <>
 void DataManagerService::HandleMessage(
@@ -171,41 +148,35 @@ void DataManagerService::HandleMessage(
     const typename nfs::PutFailureFromPmidManagerToDataManager::Sender& sender,
     const typename nfs::PutFailureFromPmidManagerToDataManager::Receiver& receiver);
 
-// template<>
-// void DataManagerService::HandleMessage(
-//   const nfs::GetRequestFromMaidNodeToDataManager& message,
-//   const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-//   const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
+template<>
+void DataManagerService::HandleMessage(
+    const nfs::GetRequestFromMaidNodeToDataManager& message,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
 
-// template<>
-// void DataManagerService::HandleMessage(
-//   const nfs::GetRequestFromPmidNodeToDataManager& message,
-//   const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
-//   const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver);
+template<>
+void DataManagerService::HandleMessage(
+    const nfs::GetRequestFromPmidNodeToDataManager& message,
+    const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver);
 
-// template<>
-// void DataManagerService::HandleMessage(
-//   const nfs::GetRequestFromDataGetterToDataManager& message,
-//   const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
-//   const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
+template<>
+void DataManagerService::HandleMessage(
+    const nfs::GetRequestFromDataGetterToDataManager& message,
+    const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
+
+template<>
+void DataManagerService::HandleMessage(
+    const nfs::GetResponseFromPmidNodeToDataManager& message,
+    const typename nfs::GetResponseFromPmidNodeToDataManager::Sender& sender,
+    const typename nfs::GetResponseFromPmidNodeToDataManager::Receiver& receiver);
 
 // template<>
 // void DataManagerService::HandleMessage(
 //   const nfs::DeleteRequestFromMaidManagerToDataManager& message,
 //   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender,
 //   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
-
-// template<>
-// void DataManagerService::HandleMessage(
-//   const nfs::StateChangeFromPmidManagerToDataManager& message,
-//   const typename nfs::StateChangeFromPmidManagerToDataManager::Sender& sender,
-//   const typename nfs::StateChangeFromPmidManagerToDataManager::Receiver& receiver);
-
-// template<>
-// void DataManagerService::HandleMessage(
-//   const nfs::GetResponseFromPmidNodeToDataManager& message,
-//   const typename nfs::GetResponseFromPmidNodeToDataManager::Sender& sender,
-//   const typename nfs::GetResponseFromPmidNodeToDataManager::Receiver& receiver);
 
 template<>
 void DataManagerService::HandleMessage(
@@ -215,6 +186,7 @@ void DataManagerService::HandleMessage(
 
 // ==================== Implementation =============================================================
 namespace detail {
+
 template <typename DataManagerSyncType>
 void IncrementAttemptsAndSendSync(DataManagerDispatcher& dispatcher,
                                   DataManagerSyncType& sync_type) {
@@ -297,6 +269,16 @@ void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
   DoSync();
 }
 
+template <typename Data, typename Requestor>
+void DataManagerService::HandleGet(const typename Data::name& data_name,
+                                   const nfs::MessageId& message_id) {
+  auto functor([sender, this](const GetResponseContents& contents) {
+    this->HandleGetResponse(sender, contents);
+  });
+  get_timer_.AddTask(kDefaultTimeout / 2, functor, 1, message.message_id());
+  dispatcher_.SendGetRequest(
+}
+
 template <typename Data>
 void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name,
                                             const PmidName& pmid_node,
@@ -351,7 +333,7 @@ void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name
 
 template <typename Data>
 bool DataManagerService::EntryExist(const typename Data::Name& /*name*/) {
-  return true;  // MUST BE FIXED
+  return true;  // TODO(Team) BEFORE_RELEASE
 }
 
 }  // namespace vault
