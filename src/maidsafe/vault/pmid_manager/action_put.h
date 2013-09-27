@@ -42,7 +42,7 @@ struct ActionPmidManagerPut {
 
   std::string Serialise() const;
 
-  static const nfs::MessageAction kActionId;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
   const uint32_t kSize;
 
  private:

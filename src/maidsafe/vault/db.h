@@ -46,7 +46,8 @@ class Db {
   ~Db();
 
   boost::optional<Value> Get(const Key& key);
-  void Commit(const Key& key, std::function<void(boost::optional<Value>& value)> functor);
+  boost::optional<Value> Commit(const Key& key,
+                                std::function<void(boost::optional<Value>& value)> functor);
   TransferInfo GetTransferInfo(std::shared_ptr<routing::MatrixChange> matrix_change);
   void HandleTransfer(const std::vector<KvPair>& contents);
 
@@ -90,8 +91,8 @@ boost::optional<Value> Db<Key, Value>::Get(const Key& key) {
 }
 
 template <typename Key, typename Value>
-void Db<Key, Value>::Commit(const Key& key,
-                            std::function<void(boost::optional<Value>& value)> functor) {
+boost::optional<Value> Db<Key, Value>::Commit(const Key& key,
+    std::function<void(boost::optional<Value>& value)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
   boost::optional<Value> value(GetValue(key));
@@ -99,8 +100,12 @@ void Db<Key, Value>::Commit(const Key& key,
   functor(value);
   if (value)
     Put(KvPair(key, Value(*value)));
-  else if (value_found_in_db)
-    Delete(key);
+  else if (value_found_in_db) {
+    boost::optional<Value> deleted_value(GetValue(key));
+    Delete(key);  // FIXME needs discussion. If this is better than copying value everytime
+    return deleted_value;
+  }
+  return boost::optional<Value>();
 }
 
 // option 1 : Fire functor here with check_holder_result.new_holder & the corresponding value
