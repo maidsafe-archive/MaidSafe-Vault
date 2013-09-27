@@ -22,7 +22,7 @@
 namespace maidsafe {
 namespace vault {
 
-const nfs::MessageAction ActionPmidManagerPut::kActionId;
+const nfs::MessageAction ActionPmidManagerPut::kActionId(nfs::MessageAction::kPutRequest);
 
 ActionPmidManagerPut::ActionPmidManagerPut(const uint32_t size) : kSize(size) {}
 

@@ -25,7 +25,7 @@
 namespace maidsafe {
 namespace vault {
 
-const nfs::MessageAction ActionPmidManagerDelete::kActionId;
+const nfs::MessageAction ActionPmidManagerDelete::kActionId(nfs::MessageAction::kDeleteRequest);
 
 void ActionPmidManagerDelete::operator()(boost::optional<PmidManagerValue>& value) const {
   if (!value) {
