@@ -104,7 +104,22 @@ void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name, const D
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
                                             routing::SingleId(routing_.kNodeId())),
-                         NfsMessage::Receiver(data.name()));
+                         NfsMessage::Receiver(routing::GroupId(data.name().string())));
+  routing_.Send(message);
+}
+
+template <typename Data>
+void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
+                                              const typename Data::Name& data_name,
+                                              const nfs::MessageId& message_id) {
+  typedef nfs::DeleteRequestFromMaidManagerToDataManager NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+
+  NfsMessage nfs_message(message_id, nfs_vault::DataName(data_name.type, data_name.raw_name));
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
+                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(routing::GroupId(NodeId(data_name()))));
   routing_.Send(message);
 }
 

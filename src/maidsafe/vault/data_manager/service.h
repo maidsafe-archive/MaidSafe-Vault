@@ -87,6 +87,8 @@ class DataManagerService {
 
   void HandleDataIntergirity(const IntegrityCheckResponse& response,
                              const nfs::MessageId& message_id);
+  template <typename Data>
+  bool HasPmidNode(const typename Data::Name& data_name, const PmidName& pmid_node);
 
   template <typename Data>
   std::vector<PmidName> StoringPmidNodes(const typename Data::Name& name);
@@ -171,6 +173,12 @@ void DataManagerService::HandleMessage(
     const typename nfs::PutFailureFromPmidManagerToDataManager::Sender& sender,
     const typename nfs::PutFailureFromPmidManagerToDataManager::Receiver& receiver);
 
+template<>
+void DataManagerService::HandleMessage(
+    const nfs::DeleteRequestFromMaidManagerToDataManager& message,
+    const typename nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender,
+    const typename nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
+
 // template<>
 // void DataManagerService::HandleMessage(
 //   const nfs::GetRequestFromMaidNodeToDataManager& message,
@@ -189,11 +197,6 @@ void DataManagerService::HandleMessage(
 //   const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
 //   const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
 
-// template<>
-// void DataManagerService::HandleMessage(
-//   const nfs::DeleteRequestFromMaidManagerToDataManager& message,
-//   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender,
-//   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
 
 // template<>
 // void DataManagerService::HandleMessage(
@@ -312,13 +315,17 @@ void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name
             DataManagerService::IntegrityCheckResponse response) {
           if (response == DataManagerService::IntegrityCheckResponse()) {
             // Timer expired.
-            // If PmidNode has informed Pmd
-            dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
-            sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
-                typename DataManager::Key(data_name.raw_name, data_name.type),
-                ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId(), message_id));
-            DoSync();
-            return;
+            // If PN has informed PMs about any failure the request from PMs should have arrived.
+            // If PN is still in DM's PNs, the PN is too slow or not honest. Therefore, should be
+            // removed from DM's PNs and deranked. Moreover the PMs must be informed.
+            if (HasPmidNode<Data>(data_name, pmid_node)) {
+              dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
+              sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
+                  typename DataManager::Key(data_name.raw_name, data_name.type),
+                  ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId(), message_id));
+              DoSync();
+              return;
+            }
           }
           if (response.return_code.value.code() != CommonErrors::success) {
             // Data not available on pmid , sync remove pmid_node, inform PMs

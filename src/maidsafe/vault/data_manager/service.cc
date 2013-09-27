@@ -97,6 +97,20 @@ void DataManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+template<>
+void DataManagerService::HandleMessage(
+    const nfs::DeleteRequestFromMaidManagerToDataManager& message,
+    const typename nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender,
+    const typename nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver) {
+  typedef nfs::DeleteRequestFromMaidManagerToDataManager MessageType;
+  OperationHandlerWrapper<DataManagerService, MessageType, nfs::DataManagerServiceMessages>(
+      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
 // =============== Sync ============================================================================
 template <>
 void DataManagerService::HandleMessage(

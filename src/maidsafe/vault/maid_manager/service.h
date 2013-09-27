@@ -109,8 +109,11 @@ class MaidManagerService {
                          const int32_t& cost, const nfs::MessageId& message_id);
 
   template <typename Data>
-  void HandleDelete(const NodeId& account_name, const typename Data::Name& data_name,
+  void HandleDelete(const MaidName& account_name, const typename Data::Name& data_name,
                     const nfs::MessageId& message_id);
+
+  template <typename Data>
+  bool DeleteAllowed(const MaidName& account_name, const typename Data::Name& data_name);
 
   MaidManagerMetadata::Status AllowPut(const MaidName& account_name, int32_t cost);
 
@@ -316,10 +319,17 @@ void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
 // ================================== Delete Implementation =======================================
 
 template <typename Data>
-void MaidManagerService::HandleDelete(const NodeId& /*account_name*/,
-                                      const typename Data::Name& /*data_name*/,
-                                      const nfs::MessageId& /*message_id*/) {
-  //  dispatcher_.SendDeleteRequest(MaidName(account_name), data_name, message_id);
+void MaidManagerService::HandleDelete(const MaidName& account_name,
+                                      const typename Data::Name& data_name,
+                                      const nfs::MessageId& message_id) {
+  if (DeleteAllowed(account_name, data_name)) {
+    dispatcher_.SendDeleteRequest(account_name, data_name, message_id);
+    typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
+                                        data_name.raw_name, data_name.type);
+    sync_deletes_.AddLocalAction(typename MaidManager::UnresolvedDelete(
+        group_key, ActionMaidManagerDelete(), routing_.kNodeId(), message_id));
+    DoSync();
+  }
 }
 
 // ===============================================================================================
