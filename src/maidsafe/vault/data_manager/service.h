@@ -62,6 +62,10 @@ class DataManagerService {
   void HandleMessage(const T&, const typename T::Sender&, const typename T::Receiver&);
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {}
 
+  template <typename Data>
+  void SendDeleteRequest(const PmidName pmid_node, const typename Data::Name& name,
+                         const nfs::MessageId& message_id);
+
  private:
   template <typename Data>
   void HandlePut(const Data& data, const MaidName& maid_name, const PmidName& pmid_name_in,
@@ -78,6 +82,9 @@ class DataManagerService {
   template <typename Data>
   void HandleGet(const typename Data::name& data_name, const nfs::MessageId& message_id);
 
+  template <typename Data>
+  void HandleDelete(const typename Data::Name& data_name, const nfs::MessageId& message_id);
+
   void DoSync();
 
   template <typename Data>
@@ -92,6 +99,11 @@ class DataManagerService {
 
   void HandleDataIntergirity(const IntegrityCheckResponse& response,
                              const nfs::MessageId& message_id);
+  template <typename Data>
+  bool HasPmidNode(const typename Data::Name& data_name, const PmidName& pmid_node);
+
+  void SendDeleteRequests(const DataManager::Key& key, const std::set<PmidName>& pmids,
+                          const nfs::MessageId& message_id);
 
   template <typename Data>
   std::vector<PmidName> StoringPmidNodes(const typename Data::Name& name);
@@ -172,11 +184,11 @@ void DataManagerService::HandleMessage(
     const typename nfs::GetResponseFromPmidNodeToDataManager::Sender& sender,
     const typename nfs::GetResponseFromPmidNodeToDataManager::Receiver& receiver);
 
-// template<>
-// void DataManagerService::HandleMessage(
-//   const nfs::DeleteRequestFromMaidManagerToDataManager& message,
-//   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender,
-//   const typename nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
+template<>
+void DataManagerService::HandleMessage(
+    const nfs::DeleteRequestFromMaidManagerToDataManager& message,
+    const typename nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender,
+    const typename nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
 
 template<>
 void DataManagerService::HandleMessage(
@@ -258,26 +270,19 @@ void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
                                            const nfs::MessageId& message_id) {
   typename DataManager::Key key(data_name.raw_name, data_name.type);
   sync_add_pmids_.AddLocalAction(DataManager::UnresolvedAddPmid(
-      key, ActionDataManagerAddPmid(
-               pmid_node, typename Data::Name(data_name),
-               [this, message_id](const DataNameVariant & data_name, const PmidName & pmid_node) {
-                 auto identity(boost::apply_visitor(GetIdentityVisitor(), data_name));
-                 return this->SendIntegrityCheck<Data>(typename Data::Name(identity), pmid_node,
-                                                       message_id);
-               }),
-      routing_.kNodeId(), message_id));
+      key, ActionDataManagerAddPmid(pmid_node), routing_.kNodeId(), message_id));
   DoSync();
 }
 
-template <typename Data, typename Requestor>
-void DataManagerService::HandleGet(const typename Data::name& data_name,
-                                   const nfs::MessageId& message_id) {
-  auto functor([sender, this](const GetResponseContents& contents) {
-    this->HandleGetResponse(sender, contents);
-  });
-  get_timer_.AddTask(kDefaultTimeout / 2, functor, 1, message.message_id());
-  dispatcher_.SendGetRequest(
-}
+//template <typename Data, typename Requestor>
+//void DataManagerService::HandleGet(const typename Data::name& data_name,
+//                                   const nfs::MessageId& message_id) {
+//  auto functor([sender, this](const GetResponseContents& contents) {
+//    this->HandleGetResponse(sender, contents);
+//  });
+//  get_timer_.AddTask(kDefaultTimeout / 2, functor, 1, message.message_id());
+//  dispatcher_.SendGetRequest(
+//}
 
 template <typename Data>
 void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name,
@@ -294,13 +299,17 @@ void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name
             DataManagerService::IntegrityCheckResponse response) {
           if (response == DataManagerService::IntegrityCheckResponse()) {
             // Timer expired.
-            // If PmidNode has informed Pmd
-            dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
-            sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
-                typename DataManager::Key(data_name.raw_name, data_name.type),
-                ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId(), message_id));
-            DoSync();
-            return;
+            // If PN has informed PMs about any failure the request from PMs should have arrived.
+            // If PN is still in DM's PNs, the PN is too slow or not honest. Therefore, should be
+            // removed from DM's PNs and deranked. Moreover the PMs must be informed.
+            if (HasPmidNode<Data>(data_name, pmid_node)) {
+              dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
+              sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
+                  typename DataManager::Key(data_name.raw_name, data_name.type),
+                  ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId(), message_id));
+              DoSync();
+              return;
+            }
           }
           if (response.return_code.value.code() != CommonErrors::success) {
             // Data not available on pmid , sync remove pmid_node, inform PMs
@@ -329,6 +338,21 @@ void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name
   catch (const std::exception& /*ex*/) {
     // handle failure to retrieve from cache
   }
+}
+
+template <typename Data>
+void DataManagerService::HandleDelete(const typename Data::Name& data_name,
+                                      const nfs::MessageId& message_id) {
+  typename DataManager::Key key(data_name.value, Data::Name::data_type::Tag::kValue);
+  sync_deletes_.AddLocalAction(DataManager::UnresolvedDelete(key, ActionDataManagerDelete(),
+                                                             routing_.kNodeId(), message_id));
+  DoSync();
+}
+
+template <typename Data>
+void DataManagerService::SendDeleteRequest(
+    const PmidName pmid_node, const typename Data::Name& name, const nfs::MessageId& message_id) {
+  dispatcher_.SendDeleteRequest<Data>(pmid_node, name, message_id);
 }
 
 template <typename Data>

@@ -31,6 +31,8 @@
 #include "leveldb/db.h"
 
 #include "maidsafe/routing/matrix_change.h"
+#include "maidsafe/vault/config.h"
+
 
 namespace maidsafe {
 
@@ -46,7 +48,9 @@ class Db {
   ~Db();
 
   boost::optional<Value> Get(const Key& key);
-  void Commit(const Key& key, std::function<void(boost::optional<Value>& value)> functor);
+  // if functor returns DbAction::kDelete, the value is deleted from db
+  boost::optional<Value> Commit(
+      const Key& key, std::function<detail::DbAction(boost::optional<Value>& value)> functor);
   TransferInfo GetTransferInfo(std::shared_ptr<routing::MatrixChange> matrix_change);
   void HandleTransfer(const std::vector<KvPair>& contents);
 
@@ -90,17 +94,19 @@ boost::optional<Value> Db<Key, Value>::Get(const Key& key) {
 }
 
 template <typename Key, typename Value>
-void Db<Key, Value>::Commit(const Key& key,
-                            std::function<void(boost::optional<Value>& value)> functor) {
+boost::optional<Value> Db<Key, Value>::Commit(const Key& key,
+    std::function<detail::DbAction(boost::optional<Value>& value)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
   boost::optional<Value> value(GetValue(key));
-  bool value_found_in_db(value);
-  functor(value);
-  if (value)
+  if (detail::DbAction::kPut == functor(value)) {
     Put(KvPair(key, Value(*value)));
-  else if (value_found_in_db)
+  } else {
+    assert(value);
     Delete(key);
+    return value;
+  }
+  return boost::optional<Value>();
 }
 
 // option 1 : Fire functor here with check_holder_result.new_holder & the corresponding value

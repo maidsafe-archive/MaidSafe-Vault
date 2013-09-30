@@ -24,6 +24,7 @@
 
 #include "boost/optional/optional.hpp"
 
+#include "maidsafe/vault/config.h"
 #include "maidsafe/vault/types.h"
 
 namespace maidsafe {
@@ -41,7 +42,7 @@ struct ActionDataManagerRemovePmid {
   ActionDataManagerRemovePmid(ActionDataManagerRemovePmid&& other);
   std::string Serialise() const;
 
-  void operator()(boost::optional<DataManagerValue>& value) const;
+  detail::DbAction operator()(boost::optional<DataManagerValue>& value) const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kUnregisterPmidRequest;
   const PmidName kPmidName;

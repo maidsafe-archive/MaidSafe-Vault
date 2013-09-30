@@ -26,6 +26,7 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
+#include "maidsafe/vault/config.h"
 #include "maidsafe/vault/types.h"
 
 namespace maidsafe {
@@ -35,9 +36,11 @@ class DataManagerValue;
 
 struct ActionDataManagerDelete {
  public:
-  void operator()(boost::optional<DataManagerValue>& value);
+  ActionDataManagerDelete();
+  explicit ActionDataManagerDelete(const std::string& serialised_action);
+  detail::DbAction operator()(boost::optional<DataManagerValue>& value);
   std::string Serialise() const;
-  static const nfs::MessageAction kActionId;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kDecrementSubscribers;
 
  private:
   ActionDataManagerDelete& operator=(ActionDataManagerDelete other);

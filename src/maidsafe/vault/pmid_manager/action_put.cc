@@ -22,8 +22,6 @@
 namespace maidsafe {
 namespace vault {
 
-const nfs::MessageAction ActionPmidManagerPut::kActionId(nfs::MessageAction::kPutRequest);
-
 ActionPmidManagerPut::ActionPmidManagerPut(const uint32_t size) : kSize(size) {}
 
 ActionPmidManagerPut::ActionPmidManagerPut(const std::string& serialised_action)
@@ -45,9 +43,10 @@ std::string ActionPmidManagerPut::Serialise() const {
   return action_put_proto.SerializeAsString();
 }
 
-void ActionPmidManagerPut::operator()(boost::optional<PmidManagerValue>& value) const {
+detail::DbAction ActionPmidManagerPut::operator()(boost::optional<PmidManagerValue>& value) const {
   if (!value)
     value.reset(PmidManagerValue());
+  return detail::DbAction::kPut;
 }
 
 bool operator==(const ActionPmidManagerPut& lhs, const ActionPmidManagerPut& rhs) {

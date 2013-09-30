@@ -29,6 +29,7 @@
 #include "maidsafe/vault/data_manager/action_remove_pmid.h"
 #include "maidsafe/vault/data_manager/action_node_down.h"
 #include "maidsafe/vault/data_manager/action_node_up.h"
+#include "maidsafe/vault/operations_visitor.h"
 
 namespace maidsafe {
 
@@ -138,6 +139,20 @@ void DataManagerService::HandleMessage(
   typedef nfs::GetResponseFromPmidNodeToDataManager MessageType;
 }
 
+template<>
+void DataManagerService::HandleMessage(
+    const nfs::DeleteRequestFromMaidManagerToDataManager& message,
+    const typename nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender,
+    const typename nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver) {
+  typedef nfs::DeleteRequestFromMaidManagerToDataManager MessageType;
+  OperationHandlerWrapper<DataManagerService, MessageType, nfs::DataManagerServiceMessages>(
+      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<nfs::DataManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
 // =============== Sync ============================================================================
 template <>
 void DataManagerService::HandleMessage(
@@ -158,6 +173,19 @@ void DataManagerService::HandleMessage(
       }
       break;
     }
+    case ActionDataManagerDelete::kActionId: {
+      DataManager::UnresolvedDelete unresolved_action(proto_sync.serialised_unresolved_action(),
+                                                      sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        auto value(db_.Commit(resolved_action->key, resolved_action->action));
+        if (value->Subscribers() == 0) {
+          SendDeleteRequests(resolved_action->key, value->Pmids(), message.message_id);
+        }
+      }
+      break;
+    }
+
     //    case ActionDataManagerDelete::kActionId: {
     //      DataManager::UnresolvedDelete unresolved_action(
     //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
@@ -202,6 +230,16 @@ void DataManagerService::HandleMessage(
       assert(false);
       LOG(kError) << "Unhandled action type";
     }
+  }
+}
+
+void DataManagerService::SendDeleteRequests(const DataManager::Key& key,
+                                            const std::set<PmidName>& pmids,
+                                            const nfs::MessageId& message_id) {
+  auto data_name(GetDataNameVariant(key.type, key.name));
+  for (auto pmid : pmids) {
+    detail::DataManagerSendDeleteVisitor<DataManagerService> delete_visitor(this, pmid, message_id);
+    boost::apply_visitor(delete_visitor, data_name);
   }
 }
 

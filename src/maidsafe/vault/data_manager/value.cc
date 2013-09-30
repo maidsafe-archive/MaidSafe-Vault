@@ -117,6 +117,13 @@ bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
          lhs.online_pmids_ == rhs.online_pmids_ && lhs.offline_pmids_ == rhs.offline_pmids_;
 }
 
+std::set<PmidName> DataManagerValue::Pmids() {
+  std::set<PmidName> pmids_union;
+  std::set_union(std::begin(online_pmids_), std::end(online_pmids_), std::begin(offline_pmids_),
+                 std::end(offline_pmids_), std::inserter(pmids_union, std::begin(pmids_union)));
+  return pmids_union;
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

@@ -150,6 +150,49 @@ void DoOperation(ServiceHandlerType* service,
   boost::apply_visitor(put_response_visitor, data_name);
 }
 
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
+                 const nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
+                 const nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+  auto data_name(detail::GetNameVariant(message.contents));
+  PmidNodeDeleteVisitor<ServiceHandlerType> delete_visitor(service);
+  boost::apply_visitor(delete_visitor, data_name);
+}
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
+                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  auto data_name(detail::GetNameVariant(message.contents));
+  MaidManagerDeleteVisitor<ServiceHandlerType> delete_visitor(
+      service, MaidName(Identity(sender.data.string())), message.message_id);
+  boost::apply_visitor(delete_visitor, data_name);
+}
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::DeleteRequestFromMaidManagerToDataManager& message,
+                 const nfs::DeleteRequestFromMaidManagerToDataManager::Sender& /*sender*/,
+                 const nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& /*receiver*/) {
+  auto data_name(detail::GetNameVariant(message.contents));
+  DataManagerDeleteVisitor<ServiceHandlerType> delete_visitor(service, message.message_id);
+  boost::apply_visitor(delete_visitor, data_name);
+}
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::DeleteRequestFromDataManagerToPmidManager& message,
+                 const nfs::DeleteRequestFromDataManagerToPmidManager::Sender& /*sender*/,
+                 const nfs::DeleteRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  auto data_name(detail::GetNameVariant(message.contents));
+  PmidManagerDeleteVisitor<ServiceHandlerType> delete_visitor(
+      service, PmidName(Identity(receiver.data.string())), message.message_id);
+  boost::apply_visitor(delete_visitor, data_name);
+
+}
+
 void InitialiseDirectory(const boost::filesystem::path& directory) {
   if (fs::exists(directory)) {
     if (!fs::is_directory(directory))

@@ -27,11 +27,12 @@ namespace vault {
 
 const nfs::MessageAction ActionPmidManagerDelete::kActionId(nfs::MessageAction::kDeleteRequest);
 
-void ActionPmidManagerDelete::operator()(boost::optional<PmidManagerValue>& value) const {
+detail::DbAction ActionPmidManagerDelete::operator()(boost::optional<PmidManagerValue>& value) const {
   if (!value) {
     ThrowError(CommonErrors::no_such_element);
-    return;
+    return detail::DbAction::kDelete;
   }
+  return detail::DbAction::kDelete; // FIXME
 }
 
 }  // namespace vault

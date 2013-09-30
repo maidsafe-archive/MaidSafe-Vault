@@ -26,6 +26,8 @@
 
 #include "maidsafe/nfs/types.h"
 
+#include "maidsafe/vault/config.h"
+
 namespace maidsafe {
 
 namespace vault {
@@ -35,7 +37,8 @@ class MaidManagerValue;
 
 struct ActionMaidManagerDelete {
   ActionMaidManagerDelete() {}
-  void operator()(MaidManagerMetadata& metadata, boost::optional<MaidManagerValue>& value) const;
+  detail::DbAction operator()(MaidManagerMetadata& metadata,
+                              boost::optional<MaidManagerValue>& value) const;
   static const nfs::MessageAction kActionId;
 };
 

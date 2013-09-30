@@ -34,12 +34,19 @@ struct ActionVersionManagerGetBranch {
   explicit ActionVersionManagerGetBranch(const std::string& serialised_action);
   explicit ActionVersionManagerGetBranch(const StructuredDataVersions::VersionName& version_name);
 
+  ActionVersionManagerGetBranch(const ActionVersionManagerGetBranch& other);
+  ActionVersionManagerGetBranch(ActionVersionManagerGetBranch&& other);
+
   void operator()(boost::optional<VersionManagerValue>& value,
                   std::vector<StructuredDataVersions::VersionName>& version_names) const;
 
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kGetBranchRequest;
+  friend bool operator==(const ActionVersionManagerGetBranch& lhs,
+                         const ActionVersionManagerGetBranch& rhs);
+  friend bool operator!=(const ActionVersionManagerGetBranch& lhs,
+                         const ActionVersionManagerGetBranch& rhs);
 
  private:
   ActionVersionManagerGetBranch();

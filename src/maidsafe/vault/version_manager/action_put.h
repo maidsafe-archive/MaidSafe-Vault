@@ -43,7 +43,7 @@ struct ActionVersionManagerPut {
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
-  const StructuredDataVersions::VersionName old_version, new_version;
+  StructuredDataVersions::VersionName old_version, new_version;
 
  private:
   ActionVersionManagerPut();

@@ -179,6 +179,9 @@ class PmidNodeService {
   }
 
   template <typename Data>
+  void HandleDelete(const typename Data::Name& data_name);
+
+  template <typename Data>
   friend class test::DataHolderTest;
 
  private:
@@ -263,17 +266,18 @@ void PmidNodeService::HandleMessage(
     const typename nfs::IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
     const typename nfs::IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver);
 
+template<>
+void PmidNodeService::HandleMessage(
+  const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
+  const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
+  const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
+
+
 // template<>
 // void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
 //    const nfs::GetRequestFromDataManagerToPmidNode& message,
 //    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
 //    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& receiver);
-
-// template<>
-// void PmidNodeService::HandleMessage<nfs::DeleteRequestFromPmidManagerToPmidNode>(
-//    const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
-//    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
-//    const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
 // template<>
 // void PmidNodeService::HandleMessage<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(
@@ -312,6 +316,17 @@ void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_
   }
   catch (const maidsafe_error& error) {
     dispatcher_.SendPutFailure(data.name(), handler_.AvailableSpace(), error, message_id);
+  }
+}
+
+template <typename Data>
+void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
+  try {
+    handler_.DeleteFromPermanentStore(GetDataNameVariant(
+                                          Data::Name::data_type::tag::kValue,
+                                          data_name.value));
+  }
+  catch (const maidsafe_error& /*error*/) {
   }
 }
 

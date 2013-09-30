@@ -182,6 +182,21 @@ void DataManagerDispatcher::SendIntegrityCheck(const typename Data::Name& name,
   routing_.Send(message);
 }
 
+template <typename Data>
+void DataManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
+                                              const typename Data::Name& name,
+                                              const nfs::MessageId& message_id) {
+  typedef nfs::DeleteRequestFromDataManagerToPmidManager NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  NfsMessage nfs_message(message_id, nfs_vault::DataName(name));
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::GroupId(NodeId(name.value.string())),
+                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(NodeId(pmid_node.value.string())));
+  routing_.Send(message);
+}
+
+
 // template<typename Data>
 // routing::GroupSource MaidManagerDispatcher::Sender(const typename Data::Name& data_name) const {
 //  return routing::GroupSource(routing::GroupId(NodeId(data_name->string())),

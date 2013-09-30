@@ -25,6 +25,7 @@
 #include "boost/optional/optional.hpp"
 
 #include "maidsafe/nfs/types.h"
+#include "maidsafe/vault/config.h"
 
 namespace maidsafe {
 
@@ -40,7 +41,7 @@ struct ActionMaidManagerPut {
   ActionMaidManagerPut(ActionMaidManagerPut&& other);
   std::string Serialise() const;
 
-  void operator()(MaidManagerMetadata& metadata, boost::optional<MaidManagerValue>& value) const;
+  detail::DbAction operator()(MaidManagerMetadata& metadata, boost::optional<MaidManagerValue>& value) const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
   const int32_t kCost;

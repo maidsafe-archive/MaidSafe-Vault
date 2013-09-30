@@ -25,6 +25,7 @@
 #include "maidsafe/common/log.h"
 
 #include "maidsafe/vault/data_manager/data_manager.h"
+#include "maidsafe/vault/config.h"
 #include "maidsafe/vault/types.h"
 
 namespace maidsafe {
@@ -36,7 +37,7 @@ struct ActionDataManagerPut {
   ActionDataManagerPut(const ActionDataManagerPut& other);
   ActionDataManagerPut(ActionDataManagerPut&& other);
 
-  void operator()(boost::optional<DataManagerValue>& value);
+  detail::DbAction operator()(boost::optional<DataManagerValue>& value);
 
   std::string Serialise() const;
 

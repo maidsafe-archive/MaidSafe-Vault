@@ -25,6 +25,7 @@
 #include "boost/optional/optional.hpp"
 
 #include "maidsafe/nfs/types.h"
+#include "maidsafe/vault/config.h"
 
 namespace maidsafe {
 namespace vault {
@@ -33,7 +34,7 @@ class PmidManagerValue;
 
 struct ActionPmidManagerDelete {
   ActionPmidManagerDelete() {}
-  void operator()(boost::optional<PmidManagerValue>& value) const;
+  detail::DbAction operator()(boost::optional<PmidManagerValue>& value) const;
   static const nfs::MessageAction kActionId;
 };
 

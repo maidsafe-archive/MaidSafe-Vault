@@ -52,12 +52,13 @@ std::string ActionMaidManagerPut::Serialise() const {
   return action_put_proto.SerializeAsString();
 }
 
-void ActionMaidManagerPut::operator()(MaidManagerMetadata& metadata,
-                                      boost::optional<MaidManagerValue>& value) const {
+detail::DbAction ActionMaidManagerPut::operator()(MaidManagerMetadata& metadata,
+                                                  boost::optional<MaidManagerValue>& value) const {
   if (!value)
     value.reset(MaidManagerValue());
   value->Put(kCost);
   metadata.PutData(kCost);
+  return detail::DbAction::kPut;
 }
 
 bool operator==(const ActionMaidManagerPut& lhs, const ActionMaidManagerPut& rhs) {

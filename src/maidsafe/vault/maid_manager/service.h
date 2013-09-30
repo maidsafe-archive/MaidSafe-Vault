@@ -113,6 +113,9 @@ class MaidManagerService {
   void HandleDelete(const MaidName& account_name, const typename Data::Name& data_name,
                     const nfs::MessageId& message_id);
 
+  template <typename Data>
+  bool DeleteAllowed(const MaidName& account_name, const typename Data::Name& data_name);
+
   MaidManagerMetadata::Status AllowPut(const MaidName& account_name, int32_t cost);
 
   // Only Maid and Anmaid can create account; for all others this is a no-op.
@@ -320,9 +323,30 @@ template <typename Data>
 void MaidManagerService::HandleDelete(const MaidName& account_name,
                                       const typename Data::Name& data_name,
                                       const nfs::MessageId& message_id) {
-    Need to sync/ confirm data is stored here and then dispatch
+  if (DeleteAllowed(account_name, data_name)) {
     dispatcher_.SendDeleteRequest(account_name, data_name, message_id);
+    typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
+                                        data_name.raw_name, data_name.type);
+    sync_deletes_.AddLocalAction(typename MaidManager::UnresolvedDelete(
+        group_key, ActionMaidManagerDelete(), routing_.kNodeId(), message_id));
+    DoSync();
+  }
 }
+
+template <typename Data>
+bool MaidManagerService::DeleteAllowed(const MaidName& account_name,
+                                       const typename Data::Name& data_name) {
+  try {
+    if (group_db_.GetValue(MaidManager::Key(account_name, data_name.value,
+                                            Data::Name::data_type::Tag::kValue)))
+      return true;
+  }
+  catch (const maidsafe_error& /*error*/) {
+    return false;
+  }
+  return false;
+}
+
 
 // ===============================================================================================
 

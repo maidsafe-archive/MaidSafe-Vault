@@ -29,7 +29,14 @@ namespace vault {
 
 typedef std::function<void(const DataNameVariant&)> IntegrityCheckFunctor;
 
-namespace detail {}  // namespace detail
+namespace detail {
+
+enum class DbAction {
+  kPut,
+  kDelete
+};
+
+}  // namespace detail
 
 }  // namespace vault
 

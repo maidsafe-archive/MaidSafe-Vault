@@ -26,6 +26,7 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
+#include "maidsafe/vault/config.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/pmid_manager/value.h"
 
@@ -38,11 +39,11 @@ struct ActionPmidManagerPut {
   ActionPmidManagerPut(const ActionPmidManagerPut& other);
   ActionPmidManagerPut(ActionPmidManagerPut&& other);
 
-  void operator()(boost::optional<PmidManagerValue>& value) const;
+  detail::DbAction operator()(boost::optional<PmidManagerValue>& value) const;
 
   std::string Serialise() const;
 
-  static const nfs::MessageAction kActionId;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
   const uint32_t kSize;
 
  private:

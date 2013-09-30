@@ -27,14 +27,17 @@ namespace vault {
 
 const nfs::MessageAction ActionMaidManagerDelete::kActionId(nfs::MessageAction::kDeleteRequest);
 
-void ActionMaidManagerDelete::operator()(MaidManagerMetadata& metadata,
-                                         boost::optional<MaidManagerValue>& value) const {
+detail::DbAction ActionMaidManagerDelete::operator()(
+    MaidManagerMetadata& metadata, boost::optional<MaidManagerValue>& value) const {
   if (!value)
-    return;
-  auto deleted_cost(value->Delete());
+    ThrowError(CommonErrors::no_such_element);
+
+  metadata.DeleteData(value->Delete());
+  assert(value->count() < 0);
   if (value->count() == 0)
-    value.reset();
-  metadata.DeleteData(deleted_cost);
+    return detail::DbAction::kDelete;
+  else
+    return detail::DbAction::kPut;
 }
 
 }  // namespace vault
