@@ -68,10 +68,10 @@ class GroupDb {
   // use only in case of leaving or unregister
   void DeleteGroup(const GroupName& group_name);
   // For atomically updating metadata only
-  void Commit(const GroupName& group_name, std::function<void(Metadata& metadata)> functor);
+  void Commit(const GroupName& group_name, std::function<detail::DbAction(Metadata& metadata)> functor);
   // For atomically updating metadata and value
   void Commit(const Key& key,
-              std::function<void(Metadata& metadata, boost::optional<Value>& value)> functor);
+              std::function<detail::DbAction(Metadata& metadata, boost::optional<Value>& value)> functor);
   TransferInfo GetTransferInfo(std::shared_ptr<routing::MatrixChange> matrix_change);
   void HandleTransfer(const std::vector<Contents>& contents);
 
@@ -143,27 +143,28 @@ void GroupDb<Persona>::DeleteGroup(const GroupName& group_name) {
 
 template <typename Persona>
 void GroupDb<Persona>::Commit(const GroupName& group_name,
-                              std::function<void(Metadata& metadata)> functor) {
+                              std::function<detail::DbAction(Metadata& metadata)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
   Metadata metadata(Get(group_name));  // throws
-  functor(metadata);
-  PutMetadata(group_name, metadata);
+  if (detail::DbAction::kPut == functor(metadata)) {
+    PutMetadata(group_name, metadata);
+  }
+  // Delete metadata required ? FIXME
 }
 
 template <typename Persona>
 void GroupDb<Persona>::Commit(
     const Key& key,
-    std::function<void(Metadata& metadata, boost::optional<Value>& value)> functor) {
+    std::function<detail::DbAction(Metadata& metadata, boost::optional<Value>& value)> functor) {
   assert(functor);
   Metadata metadata(Get(key.group_name));  // throws
   boost::optional<Value> value(GetValue(key));
-  functor(metadata, value);
-  // TODO Consider using batch operation here
-  if (value)
+  if (detail::DbAction::kPut == functor(metadata, value))
     PutValue(std::make_pair(key, *value));
   else
     DeleteValue(key);
+
   PutMetadata(key.group_name, metadata);
 }
 
