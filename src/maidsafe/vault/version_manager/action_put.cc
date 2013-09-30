@@ -29,10 +29,10 @@ ActionVersionManagerPut::ActionVersionManagerPut(const std::string& serialised_a
   protobuf::ActionPut action_put_version_proto;
   if (!action_put_version_proto.ParseFromString(serialised_action))
     ThrowError(CommonErrors::parsing_error);
-  //  old_version = StructuredDataVersions::VersionName(
-  //                    action_put_version_proto.serialised_old_version);
-  //  new_version = StructuredDataVersions::VersionName(
-  //                    action_put_version_proto.serialised_new_version);
+    old_version = StructuredDataVersions::VersionName(
+                      action_put_version_proto.serialised_old_version());
+    new_version = StructuredDataVersions::VersionName(
+                      action_put_version_proto.serialised_new_version());
 }
 
 ActionVersionManagerPut::ActionVersionManagerPut(const ActionVersionManagerPut& other)
@@ -49,9 +49,9 @@ std::string ActionVersionManagerPut::Serialise() const {
 }
 
 void ActionVersionManagerPut::operator()(boost::optional<VersionManagerValue>& value) const {
-  //  if (!value) {
-  //    value.reset(VersionManagerValue());
-  //  }
+  if (!value) {
+    value.reset();
+  }
   value->Put(old_version, new_version);
 }
 

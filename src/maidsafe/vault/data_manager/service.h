@@ -300,14 +300,7 @@ void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
                                            const nfs::MessageId& message_id) {
   typename DataManager::Key key(data_name.raw_name, data_name.type);
   sync_add_pmids_.AddLocalAction(DataManager::UnresolvedAddPmid(
-      key, ActionDataManagerAddPmid(
-               pmid_node, typename Data::Name(data_name),
-               [this, message_id](const DataNameVariant & data_name, const PmidName & pmid_node) {
-                 auto identity(boost::apply_visitor(GetIdentityVisitor(), data_name));
-                 return this->SendIntegrityCheck<Data>(typename Data::Name(identity), pmid_node,
-                                                       message_id);
-               }),
-      routing_.kNodeId(), message_id));
+      key, ActionDataManagerAddPmid(pmid_node), routing_.kNodeId(), message_id));
   DoSync();
 }
 

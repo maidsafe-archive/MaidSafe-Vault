@@ -37,11 +37,8 @@ namespace vault {
 class DataManagerValue;
 
 struct ActionDataManagerAddPmid {
-  template <typename Data>
-  ActionDataManagerAddPmid(const PmidName& pmid_name, const typename Data::Name& data_name,
-                           IntegrityCheckFunctor integrity_check);
-  ActionDataManagerAddPmid(const std::string& serialised_action,
-                           IntegrityCheckFunctor integrity_check);
+  ActionDataManagerAddPmid(const PmidName& pmid_name);
+  ActionDataManagerAddPmid(const std::string& serialised_action);
   ActionDataManagerAddPmid(const ActionDataManagerAddPmid& other);
   ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other);
   std::string Serialise() const;

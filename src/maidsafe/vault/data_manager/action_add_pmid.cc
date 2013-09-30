@@ -29,30 +29,16 @@ namespace maidsafe {
 
 namespace vault {
 
-template <typename Data>
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(const PmidName& pmid_name,
-                                                   const typename Data::Name& data_name,
-                                                   IntegrityCheckFunctor integrity_check)
-    : kPmidName(pmid_name),
-      kDataName(GetDataNameVariant(data_name.type, data_name.raw_name)),
-      integrity_check_(integrity_check) {}
+ActionDataManagerAddPmid::ActionDataManagerAddPmid(const PmidName& pmid_name)
+    : kPmidName(pmid_name) {}
 
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(const std::string& serialised_action,
-                                                   IntegrityCheckFunctor integrity_check)
+ActionDataManagerAddPmid::ActionDataManagerAddPmid(const std::string& serialised_action)
     : kPmidName([&serialised_action]()->PmidName {
         protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
         if (!action_add_pmid_proto.ParseFromString(serialised_action))
           ThrowError(CommonErrors::parsing_error);
         return PmidName(Identity(action_add_pmid_proto.pmid_name()));
-      }()),
-      kDataName([&serialised_action]()->DataNameVariant {
-        protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
-        if (!action_add_pmid_proto.ParseFromString(serialised_action))
-          ThrowError(CommonErrors::parsing_error);
-        return GetDataNameVariant(static_cast<DataTagValue>(action_add_pmid_proto.data_type()),
-                                  Identity(action_add_pmid_proto.data_name()));
-      }()),
-      integrity_check_(integrity_check) {}
+      }()) {}
 
 ActionDataManagerAddPmid::ActionDataManagerAddPmid(const ActionDataManagerAddPmid& other)
     : kPmidName(other.kPmidName) {}
