@@ -50,10 +50,14 @@ std::string ActionDataManagerNodeUp::Serialise() const {
   return action_set_pmid_online_proto.SerializeAsString();
 }
 
-void ActionDataManagerNodeUp::operator()(boost::optional<DataManagerValue>& value) {
-  if (!value)
-    ThrowError(CommonErrors::invalid_parameter);
-  value->SetPmidOnline(kPmidName);
+detail::DbAction ActionDataManagerNodeUp::operator()(boost::optional<DataManagerValue>& value) {
+  if (value) {
+    value->SetPmidOnline(kPmidName);
+    return detail::DbAction::kPut;
+  }
+
+  ThrowError(CommonErrors::no_such_element);
+  return detail::DbAction::kDelete;
 }
 
 bool operator==(const ActionDataManagerNodeUp& lhs, const ActionDataManagerNodeUp& rhs) {

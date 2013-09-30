@@ -25,6 +25,7 @@
 #include "boost/optional/optional.hpp"
 
 #include "maidsafe/nfs/types.h"
+#include "maidsafe/vault/config.h"
 #include "maidsafe/vault/types.h"
 
 namespace maidsafe {
@@ -41,7 +42,7 @@ struct ActionDataManagerNodeUp {
   ActionDataManagerNodeUp(ActionDataManagerNodeUp&& other);
   std::string Serialise() const;
 
-  void operator()(boost::optional<DataManagerValue>& value);
+  detail::DbAction operator()(boost::optional<DataManagerValue>& value);
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kSetPmidOnline;
   const PmidName kPmidName;

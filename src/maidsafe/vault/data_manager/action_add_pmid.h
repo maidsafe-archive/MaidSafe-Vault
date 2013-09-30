@@ -46,7 +46,7 @@ struct ActionDataManagerAddPmid {
   ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other);
   std::string Serialise() const;
 
-  void operator()(boost::optional<DataManagerValue>& value);
+  detail::DbAction operator()(boost::optional<DataManagerValue>& value);
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kAddPmid;
   const PmidName kPmidName;

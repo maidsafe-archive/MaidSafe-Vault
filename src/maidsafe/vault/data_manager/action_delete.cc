@@ -35,11 +35,18 @@ std::string ActionDataManagerDelete::Serialise() const {
   return action_delete_proto.SerializeAsString();
 }
 
-void ActionDataManagerDelete::operator()(boost::optional<DataManagerValue>& value) {
-  if (value)
+detail::DbAction ActionDataManagerDelete::operator()(boost::optional<DataManagerValue>& value) {
+  if (value) {
     value->DecrementSubscribers();
-  else
-    ThrowError(CommonErrors::invalid_parameter);
+    assert(value->Subscribers() < 0);
+    if (value->Subscribers() == 0)
+      return detail::DbAction::kDelete;
+    else
+      return detail::DbAction::kPut;
+  } else {
+    ThrowError(CommonErrors::no_such_element);
+    return detail::DbAction::kDelete;
+  }
 }
 
 bool operator==(const ActionDataManagerDelete& /*lhs*/, const ActionDataManagerDelete& /*rhs*/) {

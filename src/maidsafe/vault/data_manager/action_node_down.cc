@@ -50,10 +50,13 @@ std::string ActionDataManagerNodeDown::Serialise() const {
   return action_node_down_proto.SerializeAsString();
 }
 
-void ActionDataManagerNodeDown::operator()(boost::optional<DataManagerValue>& value) const {
-  if (!value)
-    ThrowError(CommonErrors::invalid_parameter);
-  value->SetPmidOffline(kPmidName);
+detail::DbAction ActionDataManagerNodeDown::operator()(boost::optional<DataManagerValue>& value) const {
+  if (value) {
+    value->SetPmidOffline(kPmidName);
+    return detail::DbAction::kPut;
+  }
+  ThrowError(CommonErrors::no_such_element);
+  return detail::DbAction::kDelete;
 }
 
 bool operator==(const ActionDataManagerNodeDown& lhs, const ActionDataManagerNodeDown& rhs) {

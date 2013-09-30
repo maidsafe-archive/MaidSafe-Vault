@@ -66,13 +66,14 @@ std::string ActionDataManagerAddPmid::Serialise() const {
   return action_add_pmid_proto.SerializeAsString();
 }
 
-void ActionDataManagerAddPmid::operator()(boost::optional<DataManagerValue>& value) {
+detail::DbAction ActionDataManagerAddPmid::operator()(boost::optional<DataManagerValue>& value) {
   if (!value)
     value.reset();
   value->AddPmid(kPmidName);
+  assert(value->Subscribers() < 0);
   if (value->Subscribers() == 0)
     value->IncrementSubscribers();
-  integrity_check_(kDataName);
+  return detail::DbAction::kPut;
 }
 
 bool operator==(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs) {

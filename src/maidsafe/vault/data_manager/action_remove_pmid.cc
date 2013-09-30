@@ -51,10 +51,13 @@ std::string ActionDataManagerRemovePmid::Serialise() const {
   return action_remove_pmid_proto.SerializeAsString();
 }
 
-void ActionDataManagerRemovePmid::operator()(boost::optional<DataManagerValue>& value) const {
-  if (!value)
-    ThrowError(CommonErrors::invalid_parameter);
-  value->RemovePmid(kPmidName);
+detail::DbAction ActionDataManagerRemovePmid::operator()(boost::optional<DataManagerValue>& value) const {
+  if (value) {
+    value->RemovePmid(kPmidName);
+    return detail::DbAction::kPut;
+  }
+  ThrowError(CommonErrors::no_such_element);
+  return detail::DbAction::kDelete;
 }
 
 bool operator==(const ActionDataManagerRemovePmid& lhs, const ActionDataManagerRemovePmid& rhs) {

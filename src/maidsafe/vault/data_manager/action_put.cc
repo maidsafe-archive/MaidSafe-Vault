@@ -35,12 +35,13 @@ std::string ActionDataManagerPut::Serialise() const {
   return action_put_proto.SerializeAsString();
 }
 
-void ActionDataManagerPut::operator()(boost::optional<DataManagerValue>& value) {
+detail::DbAction ActionDataManagerPut::operator()(boost::optional<DataManagerValue>& value) {
   if (value) {
     value->IncrementSubscribers();
-  } else {
-    ThrowError(CommonErrors::no_such_element);
+    return detail::DbAction::kPut;
   }
+  ThrowError(CommonErrors::no_such_element);
+  return detail::DbAction::kDelete;
 }
 
 bool operator==(const ActionDataManagerPut& /*lhs*/, const ActionDataManagerPut& /*rhs*/) {
