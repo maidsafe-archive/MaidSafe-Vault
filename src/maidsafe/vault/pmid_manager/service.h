@@ -83,6 +83,9 @@ class PmidManagerService {
                         const int64_t& available_space,
                         const maidsafe_error& error_code,
                         const nfs::MessageId& message_id);
+  template <typename Data>
+  void HandleDelete(const PmidName& pmid_node, const typename Data::Name& data_name,
+                    const nfs::MessageId& message_id);
   void DoSync();
 
   //  template<typename Data>
@@ -189,6 +192,19 @@ void PmidManagerService::HandlePutFailure(
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), name.raw_name, name.type);
   sync_deletes_.AddLocalAction(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(),
                                                              routing_.kNodeId(), message_id));
+  DoSync();
+}
+
+template <typename Data>
+void PmidManagerService::HandleDelete(
+    const PmidName& pmid_node, const typename Data::Name& data_name,
+    const nfs::MessageId& message_id) {
+  dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
+  PmidManager::Key group_key(PmidManager::GroupName(pmid_node), data_name.name().raw_name,
+                             data_name.name().type);
+  sync_deletes_.AddLocalAction(
+      PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(), routing_.kNodeId(),
+                                    message_id));
   DoSync();
 }
 

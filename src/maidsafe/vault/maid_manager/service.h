@@ -332,6 +332,21 @@ void MaidManagerService::HandleDelete(const MaidName& account_name,
   }
 }
 
+template <typename Data>
+bool MaidManagerService::DeleteAllowed(const MaidName& account_name,
+                                       const typename Data::Name& data_name) {
+  try {
+    if (group_db_.GetValue(MaidManager::Key(account_name, data_name.value,
+                                            Data::Name::data_type::Tag::kValue)))
+      return true;
+  }
+  catch (const maidsafe_error& /*error*/) {
+    return false;
+  }
+  return false;
+}
+
+
 // ===============================================================================================
 
 // template<>

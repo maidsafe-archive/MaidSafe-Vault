@@ -114,7 +114,6 @@ void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
                                               const nfs::MessageId& message_id) {
   typedef nfs::DeleteRequestFromMaidManagerToDataManager NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-
   NfsMessage nfs_message(message_id, nfs_vault::DataName(data_name.type, data_name.raw_name));
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),

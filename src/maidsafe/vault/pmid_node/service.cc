@@ -92,6 +92,21 @@ void PmidNodeService::HandleMessage(
       accumulator_mutex_)(message, sender, receiver);
 }
 
+template<>
+void PmidNodeService::HandleMessage(
+  const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
+  const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
+  const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver) {
+  typedef nfs::DeleteRequestFromPmidManagerToPmidNode MessageType;
+  OperationHandlerWrapper<PmidNodeService, MessageType, nfs::PmidNodeServiceMessages>(
+      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(RequiredRequests(message)), this,
+      accumulator_mutex_)(message, sender, receiver);
+}
+
+
 template <>
 void PmidNodeService::HandleMessage(
     const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& /*message*/,

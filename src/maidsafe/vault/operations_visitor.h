@@ -177,6 +177,98 @@ class MaidManagerPutResponseVisitor : public boost::static_visitor<> {
   const int32_t kCost_;
 };
 
+template<typename ServiceHandlerType>
+class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
+ public:
+
+  DataManagerSendDeleteVisitor(ServiceHandlerType* service, const PmidName& pmid_node,
+                               const nfs::MessageId& message_id)
+      : service_(service), kPmidNode(pmid_node), kMessageId(message_id) {}
+
+  template<typename Name>
+  void operator()(const Name& data_name) {
+    service_->template SendDeleteRequest<typename Name::data_type>(kPmidNode,
+                                                                   data_name,
+                                                                   kMessageId);
+  }
+
+ private:
+  ServiceHandlerType* service_;
+  const PmidName kPmidNode;
+  const nfs::MessageId& kMessageId;
+};
+
+template<typename ServiceHandlerType>
+class PmidNodeDeleteVisitor : public boost::static_visitor<> {
+ public:
+
+  PmidNodeDeleteVisitor(ServiceHandlerType* service) : service_(service) {}
+
+  template<typename Name>
+  void operator()(const Name& data_name) {
+    service_->template HandleDelete<typename Name::data_type>(data_name);
+  }
+
+ private:
+  ServiceHandlerType* service_;
+};
+
+template<typename ServiceHandlerType>
+class MaidManagerDeleteVisitor : public boost::static_visitor<> {
+ public:
+
+  MaidManagerDeleteVisitor(ServiceHandlerType* service, const MaidName& maid_name,
+      const nfs::MessageId& message_id)
+          : service_(service), kMaidName(maid_name), kMessageId(message_id) {}
+
+  template<typename Name>
+  void operator()(const Name& data_name) {
+    service_->template HandleDelete<typename Name::data_type>(kMaidName, data_name, kMessageId);
+  }
+
+ private:
+  ServiceHandlerType* service_;
+  const MaidName kMaidName;
+  const nfs::MessageId kMessageId;
+};
+
+template<typename ServiceHandlerType>
+class DataManagerDeleteVisitor : public boost::static_visitor<> {
+ public:
+
+  DataManagerDeleteVisitor(ServiceHandlerType* service, const nfs::MessageId& message_id)
+          : service_(service), kMessageId(message_id) {}
+
+  template<typename Name>
+  void operator()(const Name& data_name) {
+    service_->template HandleDelete<typename Name::data_type>(data_name, kMessageId);
+  }
+
+ private:
+  ServiceHandlerType* service_;
+  const nfs::MessageId kMessageId;
+};
+
+template<typename ServiceHandlerType>
+class PmidManagerDeleteVisitor : public boost::static_visitor<> {
+ public:
+
+  PmidManagerDeleteVisitor(ServiceHandlerType* service, const PmidName& pmid_name,
+                           const nfs::MessageId& message_id)
+      : service_(service), kPmidName(pmid_name), kMessageId(message_id) {}
+
+  template<typename Name>
+  void operator()(const Name& data_name) {
+    service_->template HandleDelete<typename Name::data_type>(kPmidName, data_name, kMessageId);
+  }
+
+ private:
+  ServiceHandlerType* service_;
+  const PmidName kPmidName;
+  const nfs::MessageId kMessageId;
+};
+
+
 }  // namespace detail
 
 }  // namespace vault

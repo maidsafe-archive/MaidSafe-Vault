@@ -177,6 +177,31 @@ void DoOperation(ServiceHandlerType* service,
                  const nfs::PutResponseFromDataManagerToMaidManager::Sender& sender,
                  const nfs::PutResponseFromDataManagerToMaidManager::Receiver& receiver);
 
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
+                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::DeleteRequestFromMaidManagerToDataManager& message,
+                 const nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender,
+                 const nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::DeleteRequestFromDataManagerToPmidManager& message,
+                 const nfs::DeleteRequestFromDataManagerToPmidManager::Sender& sender,
+                 const nfs::DeleteRequestFromDataManagerToPmidManager::Receiver& receiver);
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
+                 const nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
+                 const nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
+
+
 // ================================== Account Specialisations ====================================
 // CreateAccountRequestFromMaidNodeToMaidManager, Empty
 

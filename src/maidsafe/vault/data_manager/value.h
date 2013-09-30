@@ -47,6 +47,7 @@ class DataManagerValue {
   void SetPmidOnline(const PmidName& pmid_name);
   void SetPmidOffline(const PmidName& pmid_name);
   int64_t Subscribers() const;
+  std::set<PmidName> Pmids();
 
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
 
