@@ -37,17 +37,18 @@
 #include "maidsafe/nfs/message_types.h"
 
 #include "maidsafe/vault/accumulator.h"
-#include "maidsafe/vault/data_manager/action_put.h"
-#include "maidsafe/vault/data_manager/helpers.h"
-#include "maidsafe/vault/data_manager/value.h"
-#include "maidsafe/vault/data_manager/data_manager.h"
-#include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/message_types.h"
-#include "maidsafe/vault/types.h"
-#include "maidsafe/vault/sync.h"
-#include "maidsafe/vault/data_manager/dispatcher.h"
+#include "maidsafe/vault/operations_visitor.h"
 #include "maidsafe/vault/parameters.h"
+#include "maidsafe/vault/sync.h"
+#include "maidsafe/vault/types.h"
+#include "maidsafe/vault/data_manager/action_put.h"
+#include "maidsafe/vault/data_manager/data_manager.h"
+#include "maidsafe/vault/data_manager/data_manager.pb.h"
+#include "maidsafe/vault/data_manager/dispatcher.h"
+#include "maidsafe/vault/data_manager/helpers.h"
+#include "maidsafe/vault/data_manager/value.h"
 
 namespace maidsafe {
 
@@ -66,9 +67,10 @@ class DataManagerService {
   void HandleMessage(const T&, const typename T::Sender&, const typename T::Receiver&);
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {}
 
-  template <typename Data>
-  void SendDeleteRequest(const PmidName pmid_node, const typename Data::Name& name,
-                         const nfs::MessageId& message_id);
+  template <typename ServiceHandlerType, typename Requestor>
+  friend class detail::GetRequestVisitor;
+  template<typename ServiceHandlerType>
+  friend class detail::DataManagerSendDeleteVisitor;
 
  private:
   template <typename Data>
@@ -83,8 +85,9 @@ class DataManagerService {
   void HandlePutFailure(const typename Data::Name& data_name, const PmidName& attempted_pmid_node,
                         const nfs::MessageId& message_id, const maidsafe_error& error);
 
-  template <typename Data>
-  void HandleGet(const typename Data::name& data_name, const nfs::MessageId& message_id);
+  template <typename Data, typename Requestor>
+  void HandleGet(const typename Data::Name& data_name, const Requestor& requestor,
+                 const nfs::MessageId& message_id);
 
   template <typename Data>
   void HandleDelete(const typename Data::Name& data_name, const nfs::MessageId& message_id);
@@ -108,6 +111,10 @@ class DataManagerService {
 
   void SendDeleteRequests(const DataManager::Key& key, const std::set<PmidName>& pmids,
                           const nfs::MessageId& message_id);
+
+  template <typename Data>
+  void SendDeleteRequest(const PmidName pmid_node, const typename Data::Name& name,
+                         const nfs::MessageId& message_id);
 
   template <typename Data>
   std::vector<PmidName> StoringPmidNodes(const typename Data::Name& name);
@@ -145,7 +152,6 @@ class DataManagerService {
   std::mutex accumulator_mutex_;
   Accumulator<Messages> accumulator_;
   DataManagerDispatcher dispatcher_;
-  routing::Timer<IntegrityCheckResponse> integrity_check_timer_;
   routing::Timer<GetResponseContents> get_timer_;
   Db<DataManager::Key, DataManager::Value> db_;
   Sync<DataManager::UnresolvedPut> sync_puts_;
@@ -288,15 +294,21 @@ void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
   DoSync();
 }
 
-//template <typename Data, typename Requestor>
-//void DataManagerService::HandleGet(const typename Data::name& data_name,
-//                                   const nfs::MessageId& message_id) {
-//  auto functor([sender, this](const GetResponseContents& contents) {
-//    this->HandleGetResponse(sender, contents);
-//  });
-//  get_timer_.AddTask(kDefaultTimeout / 2, functor, 1, message.message_id());
+template <typename Data, typename Requestor>
+void DataManagerService::HandleGet(const typename Data::Name& /*data_name*/, const Requestor& requestor,
+                                   const nfs::MessageId& /*message_id*/) {
+  auto functor([requestor, this](const GetResponseContents& /*contents*/) {
+    //this->HandleGetResponse(requestor, contents);
+  });
+  //get all pmid nodes that are up
+  //choose the one we're going to ask for actual data
+  //add task (requires all to reply)
+  //send get request
+  //send integrity checks to all others
+
+  //get_timer_.AddTask(kDefaultTimeout, functor, , message.message_id());
 //  dispatcher_.SendGetRequest(
-//}
+}
 
 template <typename Data>
 void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name,
@@ -307,7 +319,7 @@ void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name
     std::string random_string(RandomString(detail::Parameters::integrity_check_string_size));
     NonEmptyString signature(
         crypto::Hash<crypto::SHA512>(NonEmptyString(data.string() + random_string)));
-    integrity_check_timer_.AddTask(
+    get_timer_.AddTask(
         std::chrono::seconds(10),
         [signature, pmid_node, message_id, data_name, this](
             DataManagerService::IntegrityCheckResponse response) {

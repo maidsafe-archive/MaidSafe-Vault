@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/parameters.h"
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/utils.h"
@@ -31,7 +32,6 @@
 #include "maidsafe/vault/data_manager/action_remove_pmid.h"
 #include "maidsafe/vault/data_manager/action_node_down.h"
 #include "maidsafe/vault/data_manager/action_node_up.h"
-#include "maidsafe/vault/operations_visitor.h"
 
 namespace maidsafe {
 
@@ -54,7 +54,6 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       accumulator_mutex_(),
       accumulator_(),
       dispatcher_(routing_, pmid),
-      integrity_check_timer_(asio_service_),
       get_timer_(asio_service_),
       db_(),
       sync_puts_(),
@@ -99,20 +98,12 @@ template<>
 void DataManagerService::HandleMessage(
     const nfs::GetRequestFromMaidNodeToDataManager& message,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
   typedef nfs::GetRequestFromMaidNodeToDataManager MessageType;
   detail::GetRequestVisitor<DataManagerService, typename MessageType::Sender> visitor(
       this, sender, message.message_id);
-
-  PublicMessages public_variant_message;
-  if (!nfs::GetVariant(message, public_variant_message))
-    return;
-
-  boost::apply_visitor(demuxer, public_variant_message);
-  return true;
-
-  boost::apply_visitor(visitor, public_variant_message);
-
+  auto data_name_variant(GetDataNameVariant(message.contents->type, message.contents->raw_name));
+  boost::apply_visitor(visitor, data_name_variant);
 }
 
 // GetRequestFromPmidNodeToDataManager
@@ -120,8 +111,12 @@ template<>
 void DataManagerService::HandleMessage(
     const GetRequestFromPmidNodeToDataManager& message,
     const typename GetRequestFromPmidNodeToDataManager::Sender& sender,
-    const typename GetRequestFromPmidNodeToDataManager::Receiver& receiver) {
+    const typename GetRequestFromPmidNodeToDataManager::Receiver& /*receiver*/) {
   typedef GetRequestFromPmidNodeToDataManager MessageType;
+  detail::GetRequestVisitor<DataManagerService, typename MessageType::Sender> visitor(
+      this, sender, message.message_id);
+  auto data_name_variant(GetDataNameVariant(message.contents->type, message.contents->raw_name));
+  boost::apply_visitor(visitor, data_name_variant);
 }
 
 // GetRequestFromDataGetterToDataManager
@@ -129,16 +124,20 @@ template<>
 void DataManagerService::HandleMessage(
     const nfs::GetRequestFromDataGetterToDataManager& message,
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
+    const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
   typedef nfs::GetRequestFromDataGetterToDataManager MessageType;
+  detail::GetRequestVisitor<DataManagerService, typename MessageType::Sender> visitor(
+      this, sender, message.message_id);
+  auto data_name_variant(GetDataNameVariant(message.contents->type, message.contents->raw_name));
+  boost::apply_visitor(visitor, data_name_variant);
 }
 
 // GetResponseFromPmidNodeToDataManager
 template<>
 void DataManagerService::HandleMessage(
-    const GetResponseFromPmidNodeToDataManager& message,
-    const typename GetResponseFromPmidNodeToDataManager::Sender& sender,
-    const typename GetResponseFromPmidNodeToDataManager::Receiver& receiver) {
+    const GetResponseFromPmidNodeToDataManager& /*message*/,
+    const typename GetResponseFromPmidNodeToDataManager::Sender& /*sender*/,
+    const typename GetResponseFromPmidNodeToDataManager::Receiver& /*receiver*/) {
   typedef GetResponseFromPmidNodeToDataManager MessageType;
 }
 
@@ -183,7 +182,7 @@ void DataManagerService::HandleMessage(
       if (resolved_action) {
         auto value(db_.Commit(resolved_action->key, resolved_action->action));
         if (value->Subscribers() == 0) {
-          SendDeleteRequests(resolved_action->key, value->Pmids(), message.message_id);
+          SendDeleteRequests(resolved_action->key, value->AllPmids(), message.message_id);
         }
       }
       break;
@@ -255,10 +254,10 @@ void DataManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_ups_);
 }
 
-void DataManagerService::HandleDataIntergirity(const IntegrityCheckResponse& response,
-                                               const nfs::MessageId& message_id) {
+void DataManagerService::HandleDataIntergirity(const IntegrityCheckResponse& /*response*/,
+                                               const nfs::MessageId& /*message_id*/) {
   try {
-    integrity_check_timer_.AddResponse(message_id.data, response);
+    //get_timer_.AddResponse(message_id.data, response);
   }
   catch (const std::exception /*ex*/) {
     // Failure to find the task

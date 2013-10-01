@@ -27,18 +27,19 @@ namespace maidsafe {
 namespace vault {
 
 DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_value)
-    : subscribers_(0), store_failures_(0), online_pmids_(), offline_pmids_() {
+    : subscribers_(0), size_(0), store_failures_(0), online_pmids_(), offline_pmids_() {
   protobuf::DataManagerValue metadata_value_proto;
-  if (!metadata_value_proto.ParseFromString(serialised_metadata_value->string()) ||
-      metadata_value_proto.subscribers() < 1) {
+  if (!metadata_value_proto.ParseFromString(serialised_metadata_value->string())) {
     LOG(kError) << "Failed to read or parse serialised metadata value";
     ThrowError(CommonErrors::parsing_error);
   } else {
-    if (metadata_value_proto.subscribers() < 1) {
-      LOG(kError) << "Invalid subscribers count";
+    if ((metadata_value_proto.subscribers() < 1) || (metadata_value_proto.size() <= 0)) {
+      LOG(kError) << "Invalid parameters";
       ThrowError(CommonErrors::invalid_parameter);
     }
     subscribers_ = metadata_value_proto.subscribers();
+    size_ = metadata_value_proto.size();
+    store_failures_ = metadata_value_proto.store_failures();
 
     for (auto& i : metadata_value_proto.online_pmid_name())
       online_pmids_.insert(PmidName(Identity(i)));
@@ -51,8 +52,10 @@ DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_va
   }
 }
 
-DataManagerValue::DataManagerValue()
-    : subscribers_(0), store_failures_(0), online_pmids_(), offline_pmids_() {}
+DataManagerValue::DataManagerValue(const PmidName& pmid_name, int32_t size)
+    : subscribers_(0), size_(size), store_failures_(0), online_pmids_(), offline_pmids_() {
+  AddPmid(pmid_name);
+}
 
 void DataManagerValue::AddPmid(const PmidName& pmid_name) {
   online_pmids_.insert(pmid_name);
@@ -67,8 +70,6 @@ void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
   online_pmids_.erase(pmid_name);
   offline_pmids_.erase(pmid_name);
 }
-
-void DataManagerValue::IncrementSubscribers() { ++subscribers_; }
 
 int64_t DataManagerValue::DecrementSubscribers() {
   --subscribers_;
@@ -95,14 +96,13 @@ void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
   }
 }
 
-int64_t DataManagerValue::Subscribers() const { return subscribers_; }
-
 DataManagerValue::serialised_type DataManagerValue::Serialise() const {
-  if (subscribers_ < 1)
+  if (subscribers_ < 1 || size_ <= 0)
     ThrowError(CommonErrors::uninitialised);  // Cannot serialise if not a complete db value
-  assert((online_pmids_.size() + offline_pmids_.size()) > 0);
+  assert(!(online_pmids_.empty() && offline_pmids_.empty()));
   protobuf::DataManagerValue metadata_value_proto;
   metadata_value_proto.set_subscribers(subscribers_);
+  metadata_value_proto.set_size(size_);
   metadata_value_proto.set_store_failures(store_failures_);
   for (const auto& i : online_pmids_)
     metadata_value_proto.add_online_pmid_name(i->string());
@@ -113,11 +113,12 @@ DataManagerValue::serialised_type DataManagerValue::Serialise() const {
 }
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
-  return lhs.subscribers_ == rhs.subscribers_ && lhs.store_failures_ == rhs.store_failures_ &&
-         lhs.online_pmids_ == rhs.online_pmids_ && lhs.offline_pmids_ == rhs.offline_pmids_;
+  return lhs.subscribers_ == rhs.subscribers_ && lhs.size_ == rhs.size_ &&
+         lhs.store_failures_ == rhs.store_failures_ && lhs.online_pmids_ == rhs.online_pmids_ &&
+         lhs.offline_pmids_ == rhs.offline_pmids_;
 }
 
-std::set<PmidName> DataManagerValue::Pmids() {
+std::set<PmidName> DataManagerValue::AllPmids() const {
   std::set<PmidName> pmids_union;
   std::set_union(std::begin(online_pmids_), std::end(online_pmids_), std::begin(offline_pmids_),
                  std::end(offline_pmids_), std::inserter(pmids_union, std::begin(pmids_union)));

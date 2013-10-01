@@ -21,12 +21,12 @@
 
 #include <cstdint>
 #include <set>
-#include <vector>
 
 #include "maidsafe/common/types.h"
+#include "maidsafe/data_types/data_name_variant.h"
+
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/data_types/data_name_variant.h"
 
 namespace maidsafe {
 
@@ -37,22 +37,25 @@ class DataManagerValue {
  public:
   typedef TaggedValue<NonEmptyString, struct SerialisedDataManagerValueTag> serialised_type;
   explicit DataManagerValue(const serialised_type& serialised_metadata_value);
-  DataManagerValue();
+  DataManagerValue(const PmidName& pmid_name, int32_t size);
   serialised_type Serialise() const;
 
   void AddPmid(const PmidName& pmid_name);
   void RemovePmid(const PmidName& pmid_name);
-  void IncrementSubscribers();
+  void IncrementSubscribers() { ++subscribers_; }
   int64_t DecrementSubscribers();
   void SetPmidOnline(const PmidName& pmid_name);
   void SetPmidOffline(const PmidName& pmid_name);
-  int64_t Subscribers() const;
-  std::set<PmidName> Pmids();
+  int64_t Subscribers() const { return subscribers_; }
+  int32_t StoreFailures() const { return store_failures_; }
+  std::set<PmidName> AllPmids() const;
+  std::set<PmidName> online_pmids() const { return online_pmids_; }
 
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
 
  private:
   int64_t subscribers_;
+  int32_t size_;
   int32_t store_failures_;
   std::set<PmidName> online_pmids_, offline_pmids_;
 };

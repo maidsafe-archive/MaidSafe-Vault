@@ -47,7 +47,7 @@ class PmidManagerDispatcher {
                          const nfs::MessageId& message_id);
   template <typename Data>
   void SendPutResponse(const Data& data, const PmidName& pmid_node,
-                       const nfs::MessageId& message_id, const maidsafe_error& error_code);
+                       const nfs::MessageId& message_id);
 
   template <typename Data>
   void SendPutFailure(const typename Data::Name& name, const PmidName& pmid_node,
@@ -100,25 +100,19 @@ void PmidManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
   routing_.Send(message);
 }
 
-// template<typename Data>
-// void PmidManagerDispatcher::SendPutResponse(const Data& data,
-//                                            const PmidName& pmid_node,
-//                                            const nfs::MessageId& message_id,
-//                                            const maidsafe_error& error_code) {
-//  typedef nfs::PutResponseFromPmidManagerToDataManager NfsMessage;
-//  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-//  NfsMessage nfs_message(message_id,
-//                         nfs_client::DataNameAndContentAndReturnCode(
-//                             data.name.type,
-//                             data.name(),
-//                             data.data(),
-//                             nfs_client::ReturnCode(error_code)));
-//  RoutingMessage message(nfs_message.Serialise(),
-//                         NfsMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
-//                                            routing::SingleId(routing_.kNodeId())),
-//                         NfsMessage::Receiver(NodeId(data.name()->string())));
-//  routing_.Send(message);
-//}
+template<typename Data>
+void PmidManagerDispatcher::SendPutResponse(const Data& data, const PmidName& pmid_node,
+                                            const nfs::MessageId& message_id) {
+  typedef PutResponseFromPmidManagerToDataManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message(message_id, nfs_vault::DataNameAndSize(data.name(),
+                                                                    data().data.string().size));
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(data.name()->string())));
+  routing_.Send(message);
+}
 
 template <typename Data>
 void PmidManagerDispatcher::SendPutFailure(const typename Data::Name& name,
