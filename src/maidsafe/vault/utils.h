@@ -168,6 +168,12 @@ void DoOperation(ServiceHandlerType* service,
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
+                 const PutResponseFromPmidManagerToDataManager& message,
+                 const PutResponseFromPmidManagerToDataManager::Sender& sender,
+                 const PutResponseFromPmidManagerToDataManager::Receiver& receiver);
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
                  const PutFailureFromPmidNodeToPmidManager& message,
                  const PutFailureFromPmidNodeToPmidManager::Sender& sender,
                  const PutFailureFromPmidNodeToPmidManager::Receiver& receiver);

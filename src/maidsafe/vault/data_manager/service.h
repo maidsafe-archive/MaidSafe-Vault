@@ -76,7 +76,7 @@ class DataManagerService {
 
   template <typename Data>
   void HandlePutResponse(const typename Data::name& data_name, const PmidName& pmid_node,
-                         const nfs::MessageId& message_id);
+                         int32_t size, const nfs::MessageId& message_id);
   // Failure case
   template <typename Data>
   void HandlePutFailure(const typename Data::Name& data_name, const PmidName& attempted_pmid_node,
@@ -88,7 +88,7 @@ class DataManagerService {
   void DoSync();
 
   template <typename Data>
-  bool EntryExist(const typename Data::Name& /*name*/);
+  bool EntryExist(const typename Data::Name& name);
 
   template <typename Data>
   bool SendPutRetryRequired(const typename Data::Name& name);
@@ -274,7 +274,7 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
     dispatcher_.SendPutRequest(pmid_name, data, message_id);
   } else {
     typename DataManager::Key key(data.name().raw_name, Data::Name::data_type);
-    sync_puts_.AddLocalAction(DataManager::UnresolvedPut(key, ActionDataManagerPut(data.name()),
+    sync_puts_.AddLocalAction(DataManager::UnresolvedPut(key, ActionDataManagerPut(),
                                                          routing_.kNodeId(), message_id));
     DoSync();
   }
@@ -311,11 +311,11 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
 // Success handler
 template <typename Data>
 void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
-                                           const PmidName& pmid_node,
+                                           const PmidName& pmid_node, int32_t size,
                                            const nfs::MessageId& message_id) {
   typename DataManager::Key key(data_name.raw_name, data_name.type);
   sync_add_pmids_.AddLocalAction(DataManager::UnresolvedAddPmid(
-      key, ActionDataManagerAddPmid(pmid_node), routing_.kNodeId(), message_id));
+      key, ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId(), message_id));
   DoSync();
 }
 
@@ -391,8 +391,30 @@ void DataManagerService::SendDeleteRequest(
 }
 
 template <typename Data>
-bool DataManagerService::EntryExist(const typename Data::Name& /*name*/) {
-  return true;  // MUST BE FIXED
+bool DataManagerService::SendPutRetryRequired(const typename Data::Name& name) {
+  try {
+    auto value(db_.Get(DataManager::Key(name.value, Data::Name::data_type::Tag::kValue)));
+    if (!value)
+      return false;
+    if (value->Pmids(true).size() < 3 && value->StoreFailures() > 2)
+      return true;
+  }
+  catch (const maidsafe_error& /*error*/) {
+    return false;
+  }
+}
+
+template <typename Data>
+bool DataManagerService::EntryExist(const typename Data::Name& name) {
+  try {
+    auto value(db_.Get(DataManager::Key(name.value, Data::Name::data_type::Tag::kValue)));
+    if (!value)
+      return false;
+  }
+  catch (const maidsafe_error& /*error*/) {
+    return false;
+  }
+  return true;
 }
 
 }  // namespace vault

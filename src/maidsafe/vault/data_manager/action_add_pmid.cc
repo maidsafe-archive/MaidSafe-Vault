@@ -29,8 +29,8 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(const PmidName& pmid_name)
-    : kPmidName(pmid_name) {}
+ActionDataManagerAddPmid::ActionDataManagerAddPmid(const PmidName& pmid_name, int32_t size)
+    : kPmidName(pmid_name), kSize(size) {}
 
 ActionDataManagerAddPmid::ActionDataManagerAddPmid(const std::string& serialised_action)
     : kPmidName([&serialised_action]()->PmidName {
@@ -38,17 +38,24 @@ ActionDataManagerAddPmid::ActionDataManagerAddPmid(const std::string& serialised
         if (!action_add_pmid_proto.ParseFromString(serialised_action))
           ThrowError(CommonErrors::parsing_error);
         return PmidName(Identity(action_add_pmid_proto.pmid_name()));
+      }()),
+      kSize([&serialised_action]()->int32_t {
+        protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
+        if (!action_add_pmid_proto.ParseFromString(serialised_action))
+          ThrowError(CommonErrors::parsing_error);
+        return action_add_pmid_proto.size();
       }()) {}
 
 ActionDataManagerAddPmid::ActionDataManagerAddPmid(const ActionDataManagerAddPmid& other)
-    : kPmidName(other.kPmidName) {}
+    : kPmidName(other.kPmidName), kSize(other.kSize) {}
 
 ActionDataManagerAddPmid::ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other)
-    : kPmidName(std::move(other.kPmidName)) {}
+    : kPmidName(std::move(other.kPmidName)), kSize(std::move(other.kSize)) {}
 
 std::string ActionDataManagerAddPmid::Serialise() const {
   protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
   action_add_pmid_proto.set_pmid_name(kPmidName->string());
+  action_add_pmid_proto.set_size(kSize);
   return action_add_pmid_proto.SerializeAsString();
 }
 
@@ -63,7 +70,8 @@ detail::DbAction ActionDataManagerAddPmid::operator()(boost::optional<DataManage
 }
 
 bool operator==(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs) {
-  return lhs.kPmidName == rhs.kPmidName;
+  return lhs.kPmidName == rhs.kPmidName &&
+         lhs.kSize == rhs.kSize;
 }
 
 bool operator!=(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs) {

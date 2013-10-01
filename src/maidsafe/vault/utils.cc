@@ -141,6 +141,18 @@ void DoOperation(ServiceHandlerType* service,
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
+                 const PutResponseFromPmidManagerToDataManager& message,
+                 const PutResponseFromPmidManagerToDataManager::Sender& sender,
+                 const PutResponseFromPmidManagerToDataManager::Receiver& /*receiver*/) {
+  auto data_name(detail::GetNameVariant(message.contents->name));
+  DataManagerPutResponseVisitor<ServiceHandlerType> put_response_visitor(
+      service, PmidName(Identity(sender.group_id.data)), message.contents->size,
+      message.message_id);
+  boost::apply_visitor(put_response_visitor, data_name);
+}
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
                  const PutResponseFromDataManagerToMaidManager& message,
                  const PutResponseFromDataManagerToMaidManager::Sender& /*sender*/,
                  const PutResponseFromDataManagerToMaidManager::Receiver& receiver) {

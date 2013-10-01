@@ -47,12 +47,14 @@ class DataManagerValue {
   void SetPmidOnline(const PmidName& pmid_name);
   void SetPmidOffline(const PmidName& pmid_name);
   int64_t Subscribers() const;
-  std::set<PmidName> Pmids();
+  int32_t StoreFailures() const;
+  std::set<PmidName> Pmids(bool onlines_only = false) const;
 
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
 
  private:
   int64_t subscribers_;
+  int32_t size_;
   int32_t store_failures_;
   std::set<PmidName> online_pmids_, offline_pmids_;
 };

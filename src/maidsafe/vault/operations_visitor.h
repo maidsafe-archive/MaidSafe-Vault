@@ -177,6 +177,27 @@ class MaidManagerPutResponseVisitor : public boost::static_visitor<> {
   const int32_t kCost_;
 };
 
+template <typename ServiceHandlerType>
+class DataManagerPutResponseVisitor : public boost::static_visitor<> {
+ public:
+  DataManagerPutResponseVisitor(ServiceHandlerType* service, const PmidName& pmid_node,
+                                int32_t size, const nfs::MessageId& message_id)
+      : service_(service), kPmidNode_(pmid_node), kSize_(size), kMessageId_(message_id) {}
+
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    service_->template HandlePutResponse<Name::data_type>(data_name, kPmidNode_, kSize_,
+                                                          kMessageId_);
+  }
+
+ private:
+  ServiceHandlerType* service_;
+  const PmidName kPmidNode_;
+  const int32_t kSize_;
+  const nfs::MessageId kMessageId_;
+};
+
+
 template<typename ServiceHandlerType>
 class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
  public:

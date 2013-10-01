@@ -37,7 +37,7 @@ namespace vault {
 class DataManagerValue;
 
 struct ActionDataManagerAddPmid {
-  ActionDataManagerAddPmid(const PmidName& pmid_name);
+  ActionDataManagerAddPmid(const PmidName& pmid_name, int32_t size);
   ActionDataManagerAddPmid(const std::string& serialised_action);
   ActionDataManagerAddPmid(const ActionDataManagerAddPmid& other);
   ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other);
@@ -47,8 +47,7 @@ struct ActionDataManagerAddPmid {
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kAddPmid;
   const PmidName kPmidName;
-  const DataNameVariant kDataName;
-  IntegrityCheckFunctor integrity_check_;
+  const int32_t kSize;
 
  private:
   ActionDataManagerAddPmid();
