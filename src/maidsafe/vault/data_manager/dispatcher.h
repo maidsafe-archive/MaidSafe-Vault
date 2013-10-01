@@ -143,8 +143,7 @@ void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name, const Data
   typedef PutRequestFromDataManagerToPmidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  VaultMessage vault_message(
-      message_id, nfs_vault::DataNameAndContent(Data::Name::data_type, data.name(), data.data()));
+  VaultMessage vault_message(message_id, nfs_vault::DataNameAndContent(data));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(data.name().string()),
                                               routing::SingleId(routing_.kNodeId())),
@@ -159,12 +158,11 @@ void DataManagerDispatcher::SendPutResponse(const MaidName& account_name,
   typedef PutResponseFromDataManagerToMaidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  VaultMessage vault_message(
-      message_id, nfs_vault::DataNameAndCost(Data::Name::data_type, data_name.name(), cost));
+  VaultMessage vault_message(message_id, nfs_vault::DataNameAndCost(data_name, cost));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(data_name().string()),
                                               routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(account_name)));
+                         VaultMessage::Receiver(NodeId(account_name.value)));
   routing_.Send(message);
 }
 
@@ -176,7 +174,7 @@ void DataManagerDispatcher::SendIntegrityCheck(const typename Data::Name& name,
   typedef IntegrityCheckRequestFromDataManagerToPmidNode VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message(
-      message_id, nfs_vault::DataNameAndRandomString(name.type, name.raw_name, random_string));
+      message_id, nfs_vault::DataNameAndRandomString(name, random_string));
   RoutingMessage message(
       vault_message.Serialise(),
       VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
