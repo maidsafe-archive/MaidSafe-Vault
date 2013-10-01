@@ -41,14 +41,14 @@ PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing) : routin
 
 // void PmidManagerDispatcher::SendSync(const PmidName& pmid_node,
 //                                     const std::string& serialised_sync) {
-//  typedef nfs::SynchroniseFromPmidManagerToPmidManager NfsMessage;
-//  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+//  typedef SynchroniseFromPmidManagerToPmidManager VaultMessage;
+//  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-//  NfsMessage nfs_message(serialised_sync); // TODO(Mahmoud): MUST BE FIXED
-//  RoutingMessage message(nfs_message.Serialise(),
-//                         NfsMessage::Sender(routing::GroupId(pmid_node),
-//                                            routing::SingleId(routing_.kNodeId())),
-//                         NfsMessage::Receiver(routing::GroupId(pmid_node)));
+//  VaultMessage vault_message(serialised_sync); // TODO(Mahmoud): MUST BE FIXED
+//  RoutingMessage message(vault_message.Serialise(),
+//                         VaultMessage::Sender(routing::GroupId(pmid_node),
+//                                              routing::SingleId(routing_.kNodeId())),
+//                         VaultMessage::Receiver(routing::GroupId(pmid_node)));
 //  routing_.Send(message);
 //}
 

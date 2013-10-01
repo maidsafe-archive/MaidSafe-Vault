@@ -25,6 +25,9 @@
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
+#include "boost/mpl/vector.hpp"
+#include "boost/mpl/insert_range.hpp"
+#include "boost/mpl/end.hpp"
 
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/api_config.h"
@@ -40,6 +43,7 @@
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/group_db.h"
+#include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/data_manager/dispatcher.h"
@@ -52,8 +56,8 @@ namespace vault {
 class DataManagerService {
  public:
   typedef nfs::DataManagerServiceMessages PublicMessages;
-  typedef nfs::DataManagerServiceMessages VaultMessages;  // FIXME (Check with Fraser)
-  typedef nfs::IntegrityCheckResponseFromPmidNodeToDataManager::Contents IntegrityCheckResponse;
+  typedef DataManagerServiceMessages VaultMessages;
+  typedef IntegrityCheckResponseFromPmidNodeToDataManager::Contents IntegrityCheckResponse;
 
   DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter);
@@ -150,11 +154,22 @@ class DataManagerService {
   //  void TransferRecord(const DataNameVariant& record_name, const NodeId& new_node);
   //  void HandleRecordTransfer(const nfs::Message& message);
 
+  typedef boost::mpl::vector<> InitialType;
+  typedef boost::mpl::insert_range<InitialType,
+                                   boost::mpl::end<InitialType>::type,
+                                   nfs::DataManagerServiceMessages::types>::type IntermediateType;
+  typedef boost::mpl::insert_range<IntermediateType,
+                                   boost::mpl::end<IntermediateType>::type,
+                                   DataManagerServiceMessages::types>::type FinalType;
+ public:
+  typedef boost::make_variant_over<FinalType>::type Messages;
+
+ private:
   routing::Routing& routing_;
   AsioService asio_service_;
   nfs_client::DataGetter& data_getter_;
   std::mutex accumulator_mutex_;
-  Accumulator<nfs::DataManagerServiceMessages> accumulator_;
+  Accumulator<Messages> accumulator_;
   DataManagerDispatcher dispatcher_;
   routing::Timer<IntegrityCheckResponse> integrity_check_timer_;
   Db<DataManager::Key, DataManager::Value> db_;
@@ -174,21 +189,21 @@ void DataManagerService::HandleMessage(const T&, const typename T::Sender&,
 
 template <>
 void DataManagerService::HandleMessage(
-    const nfs::PutRequestFromMaidManagerToDataManager& message,
-    const typename nfs::PutRequestFromMaidManagerToDataManager::Sender&,
-    const typename nfs::PutRequestFromMaidManagerToDataManager::Receiver&);
+    const PutRequestFromMaidManagerToDataManager& message,
+    const typename PutRequestFromMaidManagerToDataManager::Sender&,
+    const typename PutRequestFromMaidManagerToDataManager::Receiver&);
 
 template <>
 void DataManagerService::HandleMessage(
-    const nfs::PutFailureFromPmidManagerToDataManager& message,
-    const typename nfs::PutFailureFromPmidManagerToDataManager::Sender& sender,
-    const typename nfs::PutFailureFromPmidManagerToDataManager::Receiver& receiver);
+    const PutFailureFromPmidManagerToDataManager& message,
+    const typename PutFailureFromPmidManagerToDataManager::Sender& sender,
+    const typename PutFailureFromPmidManagerToDataManager::Receiver& receiver);
 
 template<>
 void DataManagerService::HandleMessage(
-    const nfs::DeleteRequestFromMaidManagerToDataManager& message,
-    const typename nfs::DeleteRequestFromMaidManagerToDataManager::Sender& sender,
-    const typename nfs::DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
+    const DeleteRequestFromMaidManagerToDataManager& message,
+    const typename DeleteRequestFromMaidManagerToDataManager::Sender& sender,
+    const typename DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
 
 // template<>
 // void DataManagerService::HandleMessage(
@@ -198,9 +213,9 @@ void DataManagerService::HandleMessage(
 
 // template<>
 // void DataManagerService::HandleMessage(
-//   const nfs::GetRequestFromPmidNodeToDataManager& message,
-//   const typename nfs::GetRequestFromPmidNodeToDataManager::Sender& sender,
-//   const typename nfs::GetRequestFromPmidNodeToDataManager::Receiver& receiver);
+//   const GetRequestFromPmidNodeToDataManager& message,
+//   const typename GetRequestFromPmidNodeToDataManager::Sender& sender,
+//   const typename GetRequestFromPmidNodeToDataManager::Receiver& receiver);
 
 // template<>
 // void DataManagerService::HandleMessage(
@@ -223,9 +238,9 @@ void DataManagerService::HandleMessage(
 
 template<>
 void DataManagerService::HandleMessage(
-   const nfs::SynchroniseFromDataManagerToDataManager& message,
-   const typename nfs::SynchroniseFromDataManagerToDataManager::Sender& sender,
-   const typename nfs::SynchroniseFromDataManagerToDataManager::Receiver& receiver);
+   const SynchroniseFromDataManagerToDataManager& message,
+   const typename SynchroniseFromDataManagerToDataManager::Sender& sender,
+   const typename SynchroniseFromDataManagerToDataManager::Receiver& receiver);
 
 // ==================== Implementation =============================================================
 namespace detail {

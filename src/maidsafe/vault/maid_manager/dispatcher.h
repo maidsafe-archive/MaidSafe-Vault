@@ -29,6 +29,7 @@
 
 #include "maidsafe/nfs/message_types.h"
 
+#include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
 
 namespace maidsafe {
@@ -94,17 +95,17 @@ template <typename Data>
 void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name, const Data& data,
                                            const PmidName& pmid_node_hint,
                                            const nfs::MessageId& message_id) {
-  typedef nfs::PutRequestFromMaidManagerToDataManager NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  typedef PutRequestFromMaidManagerToDataManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  NfsMessage nfs_message(
+  VaultMessage vault_message(
       message_id,
       nfs_vault::DataAndPmidHint(nfs_vault::DataName(data.name().type, data.name().raw_name),
                                  data.data(), pmid_node_hint));
-  RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
-                                            routing::SingleId(routing_.kNodeId())),
-                         NfsMessage::Receiver(routing::GroupId(data.name().string())));
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(routing::GroupId(data.name().string())));
   routing_.Send(message);
 }
 
@@ -112,13 +113,13 @@ template <typename Data>
 void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
                                               const typename Data::Name& data_name,
                                               const nfs::MessageId& message_id) {
-  typedef nfs::DeleteRequestFromMaidManagerToDataManager NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  NfsMessage nfs_message(message_id, nfs_vault::DataName(data_name.type, data_name.raw_name));
-  RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
-                                            routing::SingleId(routing_.kNodeId())),
-                         NfsMessage::Receiver(routing::GroupId(NodeId(data_name()))));
+  typedef DeleteRequestFromMaidManagerToDataManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message(message_id, nfs_vault::DataName(data_name.type, data_name.raw_name));
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(routing::GroupId(NodeId(data_name()))));
   routing_.Send(message);
 }
 
@@ -198,22 +199,6 @@ void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
 //  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
 //  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
 //                         routing::SingleId(NodeId(account_name->string())), cacheable);
-//  routing_.Send(message);
-//}
-
-// template<typename Data>
-// void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
-//                                              const typename Data::Name& data_name,
-//                                              const nfs::MessageId& message_id) {
-//  typedef nfs::DeleteRequestFromMaidManagerToDataManager NfsMessage;
-//  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-
-//  NfsMessage nfs_message(message_id, nfs_vault::DataName(data_name.type,
-//                                                         data_name.raw_name));
-//  RoutingMessage message(nfs_message.Serialise(),
-//                         NfsMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
-//                                            routing::SingleId(routing_.kNodeId())),
-//                         NfsMessage::Receiver(data_name));
 //  routing_.Send(message);
 //}
 

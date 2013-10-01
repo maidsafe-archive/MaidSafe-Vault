@@ -32,6 +32,7 @@
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/types.h"
 
+#include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
 
 namespace maidsafe {
@@ -139,15 +140,15 @@ void DataManagerDispatcher::SendGetRequest(const PmidName& /*pmid_node*/,
 template <typename Data>
 void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name, const Data& data,
                                            const nfs::MessageId& message_id) {
-  typedef nfs::PutRequestFromDataManagerToPmidManager NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  typedef PutRequestFromDataManagerToPmidManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  NfsMessage nfs_message(
+  VaultMessage vault_message(
       message_id, nfs_vault::DataNameAndContent(Data::Name::data_type, data.name(), data.data()));
-  RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(routing::GroupId(data.name().string()),
-                                            routing::SingleId(routing_.kNodeId())),
-                         NfsMessage::Receiver(NodeId(pmid_name.value.string())));
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(data.name().string()),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(pmid_name.value.string())));
   routing_.Send(message);
 }
 
@@ -155,15 +156,15 @@ template <typename Data>
 void DataManagerDispatcher::SendPutResponse(const MaidName& account_name,
                                             const typename Data::Name& data_name,
                                             const int32_t& cost, const nfs::MessageId& message_id) {
-  typedef nfs::PutResponseFromDataManagerToMaidManager NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  typedef PutResponseFromDataManagerToMaidManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  NfsMessage nfs_message(message_id,
-                         nfs_vault::DataNameAndCost(Data::Name::data_type, data_name.name(), cost));
-  RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(routing::GroupId(data_name().string()),
-                                            routing::SingleId(routing_.kNodeId())),
-                         NfsMessage::Receiver(NodeId(account_name)));
+  VaultMessage vault_message(
+      message_id, nfs_vault::DataNameAndCost(Data::Name::data_type, data_name.name(), cost));
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(data_name().string()),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(account_name)));
   routing_.Send(message);
 }
 
@@ -172,13 +173,14 @@ void DataManagerDispatcher::SendIntegrityCheck(const typename Data::Name& name,
                                                const NonEmptyString& random_string,
                                                const PmidName& pmid_node,
                                                const nfs::MessageId& message_id) {
-  typedef nfs::IntegrityCheckRequestFromDataManagerToPmidNode NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  NfsMessage nfs_message(
+  typedef IntegrityCheckRequestFromDataManagerToPmidNode VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message(
       message_id, nfs_vault::DataNameAndRandomString(name.type, name.raw_name, random_string));
-  RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
-                         NfsMessage::Receiver(routing::SingleId(NodeId(pmid_node.value.string()))));
+  RoutingMessage message(
+      vault_message.Serialise(),
+      VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
+      VaultMessage::Receiver(routing::SingleId(NodeId(pmid_node.value.string()))));
   routing_.Send(message);
 }
 
@@ -186,13 +188,13 @@ template <typename Data>
 void DataManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
                                               const typename Data::Name& name,
                                               const nfs::MessageId& message_id) {
-  typedef nfs::DeleteRequestFromDataManagerToPmidManager NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  NfsMessage nfs_message(message_id, nfs_vault::DataName(name));
-  RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(routing::GroupId(NodeId(name.value.string())),
-                                            routing::SingleId(routing_.kNodeId())),
-                         NfsMessage::Receiver(NodeId(pmid_node.value.string())));
+  typedef DeleteRequestFromDataManagerToPmidManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message(message_id, nfs_vault::DataName(name));
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(name.value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(pmid_node.value.string())));
   routing_.Send(message);
 }
 

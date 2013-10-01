@@ -1,0 +1,2 @@
+Action:PutResponse                    Source:DataManager:Group        Destination:MaidManager:Group     Contents:struct:maidsafe::nfs_vault::DataNameAndCost
+Action:Synchronise                    Source:MaidManager:Group        Destination:MaidManager:Group     Contents:struct:maidsafe::nfs_vault::DataNameAndContent

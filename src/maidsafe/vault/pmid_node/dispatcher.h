@@ -21,7 +21,9 @@
 
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message_types.h"
+
 #include "maidsafe/vault/messages.h"
+#include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
 
 namespace maidsafe {
@@ -63,16 +65,16 @@ void PmidNodeDispatcher::SendPutFailure(const typename Data::Name& name,
                                         const int64_t& available_space,
                                         const maidsafe_error& error,
                                         const nfs::MessageId& message_id) {
-  typedef nfs::PutFailureFromPmidNodeToPmidManager NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  NfsMessage nfs_message(message_id, nfs_client::DataNameAndSpaceAndReturnCode(
-                                         name.type,
-                                         name.raw_name,
-                                         available_space,
-                                         nfs_client::ReturnCode(error)));
-  RoutingMessage routing_message(nfs_message.Serialise(),
-                                 NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
-                                 NfsMessage::Receiver(routing::GroupId(routing_.kNodeId())));
+  typedef PutFailureFromPmidNodeToPmidManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message(message_id, nfs_client::DataNameAndSpaceAndReturnCode(
+                                             name.type,
+                                             name.raw_name,
+                                             available_space,
+                                             nfs_client::ReturnCode(error)));
+  RoutingMessage routing_message(vault_message.Serialise(),
+                                 VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
+                                 VaultMessage::Receiver(routing::GroupId(routing_.kNodeId())));
   routing_.Send(routing_message);
 }
 
@@ -82,23 +84,23 @@ void PmidNodeDispatcher::SendIntegrityCheckResponse(const typename Data::Name& d
                                                     const NodeId& receiver,
                                                     const maidsafe_error& error,
                                                     const nfs::MessageId& message_id) {
-  typedef nfs::IntegrityCheckResponseFromPmidNodeToDataManager NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  NfsMessage nfs_message;
+  typedef IntegrityCheckResponseFromPmidNodeToDataManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message;
   if (error.code() == CommonErrors::success)
-    nfs_message = NfsMessage(message_id, nfs_client::DataNameAndSignatureAndReturnCode(
-                                             data_name.type,
-                                             data_name.raw_name,
-                                             nfs_client::ReturnCode(error),
-                                             signature));
+    vault_message = VaultMessage(message_id, nfs_client::DataNameAndSignatureAndReturnCode(
+                                                 data_name.type,
+                                                 data_name.raw_name,
+                                                 nfs_client::ReturnCode(error),
+                                                 signature));
   else
-    nfs_message = NfsMessage(message_id, nfs_client::DataNameAndSignatureAndReturnCode(
-                                             data_name.type,
-                                             data_name.raw_name,
-                                             nfs_client::ReturnCode(error)));
-  RoutingMessage routing_message(nfs_message.Serialise(),
-                                 NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
-                                 NfsMessage::Receiver(routing::SingleId(receiver)));
+    vault_message = VaultMessage(message_id, nfs_client::DataNameAndSignatureAndReturnCode(
+                                                 data_name.type,
+                                                 data_name.raw_name,
+                                                 nfs_client::ReturnCode(error)));
+  RoutingMessage routing_message(vault_message.Serialise(),
+                                 VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
+                                 VaultMessage::Receiver(routing::SingleId(receiver)));
   routing_.Send(routing_message);
 }
 

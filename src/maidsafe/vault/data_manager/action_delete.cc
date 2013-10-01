@@ -24,8 +24,6 @@
 namespace maidsafe {
 namespace vault {
 
-const nfs::MessageAction ActionDataManagerDelete::kActionId;
-
 ActionDataManagerDelete::ActionDataManagerDelete() {}
 
 ActionDataManagerDelete::ActionDataManagerDelete(const std::string& /*serialised_action*/) {}

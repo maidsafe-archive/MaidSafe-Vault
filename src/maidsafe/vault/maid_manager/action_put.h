@@ -41,7 +41,8 @@ struct ActionMaidManagerPut {
   ActionMaidManagerPut(ActionMaidManagerPut&& other);
   std::string Serialise() const;
 
-  detail::DbAction operator()(MaidManagerMetadata& metadata, boost::optional<MaidManagerValue>& value) const;
+  detail::DbAction operator()(MaidManagerMetadata& metadata,
+                              boost::optional<MaidManagerValue>& value) const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
   const int32_t kCost;
