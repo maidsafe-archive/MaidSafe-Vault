@@ -497,25 +497,25 @@ void MaidManagerService::HandleMessage(
     const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   typedef nfs::PutRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType, nfs::MaidManagerServiceMessages>(
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
 template <>
 void MaidManagerService::HandleMessage(
-    const nfs::PutResponseFromDataManagerToMaidManager& message,
-    const typename nfs::PutResponseFromDataManagerToMaidManager::Sender& sender,
-    const typename nfs::PutResponseFromDataManagerToMaidManager::Receiver& receiver) {
-  typedef nfs::PutResponseFromDataManagerToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType, nfs::MaidManagerServiceMessages>(
+    const PutResponseFromDataManagerToMaidManager& message,
+    const typename PutResponseFromDataManagerToMaidManager::Sender& sender,
+    const typename PutResponseFromDataManagerToMaidManager::Receiver& receiver) {
+  typedef PutResponseFromDataManagerToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -525,11 +525,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   typedef nfs::DeleteRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType, nfs::MaidManagerServiceMessages>(
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -539,11 +539,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   typedef nfs::PutVersionRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType, nfs::MaidManagerServiceMessages>(
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -553,11 +553,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   typedef nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType, nfs::MaidManagerServiceMessages>(
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -567,11 +567,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   typedef nfs::CreateAccountRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType, nfs::MaidManagerServiceMessages>(
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -581,11 +581,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   typedef nfs::RemoveAccountRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType, nfs::MaidManagerServiceMessages>(
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -595,11 +595,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   typedef nfs::RegisterPmidRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType, nfs::MaidManagerServiceMessages>(
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -609,11 +609,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   typedef nfs::UnregisterPmidRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType, nfs::MaidManagerServiceMessages>(
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -623,19 +623,19 @@ void MaidManagerService::HandleMessage(
     const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   typedef nfs::GetPmidHealthRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType, nfs::MaidManagerServiceMessages>(
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
-      Accumulator<nfs::MaidManagerServiceMessages>::AddRequestChecker(RequiredRequests(message)),
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
 template <>
 void MaidManagerService::HandleMessage(
-    const nfs::SynchroniseFromMaidManagerToMaidManager& message,
-    const typename nfs::SynchroniseFromMaidManagerToMaidManager::Sender& sender,
-    const typename nfs::SynchroniseFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
+    const SynchroniseFromMaidManagerToMaidManager& message,
+    const typename SynchroniseFromMaidManagerToMaidManager::Sender& sender,
+    const typename SynchroniseFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.contents->content.string()))
     ThrowError(CommonErrors::parsing_error);

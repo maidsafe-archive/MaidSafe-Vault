@@ -1,5 +1,0 @@
-Action:GetResponse                    Source:DataManager:Group        Destination:MaidManager:Group       Contents:struct:maidsafe::nfs_client::DataNameAndContentOrReturnCode
-Action:PutResponse                    Source:DataManager:Group        Destination:MaidManager:Group       Contents:struct:maidsafe::nfs_client::DataPmidHintAndReturnCode
-Action:PutResponse                    Source:PmidNode:Single          Destination:DataManager:Group       Contents:struct:maidsafe::nfs_client::DataNameAndContentAndReturnCode
-
-

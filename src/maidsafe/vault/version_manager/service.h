@@ -29,6 +29,8 @@
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/nfs/types.h"
+#include "maidsafe/nfs/message_types.h"
+
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/sync.h"
@@ -45,7 +47,8 @@ namespace vault {
 class VersionManagerService {
  public:
   typedef nfs::VersionManagerServiceMessages PublicMessages;
-  typedef nfs::VersionManagerServiceMessages VaultMessages;  // FIXME (Check with Fraser)
+  typedef void VaultMessages;
+  typedef nfs::VersionManagerServiceMessages Messages;
 
   typedef Identity VersionManagerAccountName;
   VersionManagerService(const passport::Pmid& pmid, routing::Routing& routing);
@@ -84,7 +87,7 @@ class VersionManagerService {
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
   std::mutex sync_mutex_;
-  Accumulator<VersionManagerAccountName> accumulator_;
+  Accumulator<Messages> accumulator_;
   Db<VersionManagerKey, StructuredDataVersions> version_manager_db_;
   const NodeId kThisNodeId_;
   //  Sync<VersionManagerMergePolicy> sync_;

@@ -66,52 +66,51 @@ PmidNodeService::PmidNodeService(const passport::Pmid& /*pmid*/, routing::Routin
 
 template <>
 void PmidNodeService::HandleMessage(
-    const nfs::PutRequestFromPmidManagerToPmidNode& message,
-    const typename nfs::PutRequestFromPmidManagerToPmidNode::Sender& sender,
-    const typename nfs::PutRequestFromPmidManagerToPmidNode::Receiver& receiver) {
-  typedef nfs::PutRequestFromPmidManagerToPmidNode MessageType;
-  OperationHandlerWrapper<PmidNodeService, MessageType, nfs::PmidNodeServiceMessages>(
+    const PutRequestFromPmidManagerToPmidNode& message,
+    const typename PutRequestFromPmidManagerToPmidNode::Sender& sender,
+    const typename PutRequestFromPmidManagerToPmidNode::Receiver& receiver) {
+  typedef PutRequestFromPmidManagerToPmidNode MessageType;
+  OperationHandlerWrapper<PmidNodeService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
-      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(RequiredRequests(message)), this,
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)), this,
       accumulator_mutex_)(message, sender, receiver);
 }
 
 template <>
 void PmidNodeService::HandleMessage(
-    const nfs::IntegrityCheckRequestFromDataManagerToPmidNode& message,
-    const typename nfs::IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
-    const typename nfs::IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver) {
-  typedef nfs::IntegrityCheckRequestFromDataManagerToPmidNode MessageType;
-  OperationHandlerWrapper<PmidNodeService, MessageType, nfs::PmidNodeServiceMessages>(
+    const IntegrityCheckRequestFromDataManagerToPmidNode& message,
+    const typename IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
+    const typename IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver) {
+  typedef IntegrityCheckRequestFromDataManagerToPmidNode MessageType;
+  OperationHandlerWrapper<PmidNodeService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
-      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(RequiredRequests(message)), this,
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)), this,
       accumulator_mutex_)(message, sender, receiver);
 }
 
 template<>
 void PmidNodeService::HandleMessage(
-  const nfs::DeleteRequestFromPmidManagerToPmidNode& message,
-  const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
-  const typename nfs::DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver) {
-  typedef nfs::DeleteRequestFromPmidManagerToPmidNode MessageType;
-  OperationHandlerWrapper<PmidNodeService, MessageType, nfs::PmidNodeServiceMessages>(
+  const DeleteRequestFromPmidManagerToPmidNode& message,
+  const typename DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
+  const typename DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver) {
+  typedef DeleteRequestFromPmidManagerToPmidNode MessageType;
+  OperationHandlerWrapper<PmidNodeService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
-      Accumulator<nfs::PmidNodeServiceMessages>::AddRequestChecker(RequiredRequests(message)), this,
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)), this,
       accumulator_mutex_)(message, sender, receiver);
 }
 
-
 template <>
 void PmidNodeService::HandleMessage(
-    const nfs::GetPmidAccountResponseFromPmidManagerToPmidNode& /*message*/,
-    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& /*sender*/,
-    const typename nfs::GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+    const GetPmidAccountResponseFromPmidManagerToPmidNode& /*message*/,
+    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& /*sender*/,
+    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
   //#ifndef TESTNG
   //  ValidateSender(message, sender);
   //#endif
@@ -128,10 +127,10 @@ void PmidNodeService::HandleMessage(
   //          std::vector<protobuf::PmidAccountResponse> pmid_account_responses;
   //          protobuf::PmidAccountResponse pmid_account_response;
   //          nfs_client::protobuf::DataNameAndContentOrReturnCode data;
-  //          nfs::GetPmidAccountResponseFromPmidManagerToPmidNode response;
+  //          GetPmidAccountResponseFromPmidManagerToPmidNode response;
   //          for (auto& request : requests_in) {
   //            response =
-  // boost::get<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(request);
+  // boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(request);
   //            if (data.ParseFromString(response.contents->data->content.string())) {
   //              if (data.has_serialised_data_name_and_content()) {
   //                if (pmid_account_response.ParseFromString(
@@ -166,10 +165,10 @@ void PmidNodeService::HandleMessage(
   //    }
   //  }
   //  if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kSuccess) {
-  //    std::vector<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode> typed_responses;
+  //    std::vector<GetPmidAccountResponseFromPmidManagerToPmidNode> typed_responses;
   //    for (auto response : responses)
   //      typed_responses.push_back(
-  //          boost::get<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
+  //          boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
   //    HandleAccountResponses(typed_responses);
   //  }
   //  if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
@@ -178,7 +177,7 @@ void PmidNodeService::HandleMessage(
 }
 
 // void PmidNodeService::HandleAccountResponses(
-//  const std::vector<nfs::GetPmidAccountResponseFromPmidManagerToPmidNode>& responses) {
+//  const std::vector<GetPmidAccountResponseFromPmidManagerToPmidNode>& responses) {
 //  std::map<DataNameVariant, uint16_t> expected_chunks;
 //  std::vector<protobuf::PmidAccountResponse> pmid_account_responses;
 //  protobuf::PmidAccountResponse pmid_account_response;

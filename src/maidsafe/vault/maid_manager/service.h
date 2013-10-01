@@ -26,6 +26,10 @@
 #include <type_traits>
 #include <vector>
 
+#include "boost/mpl/vector.hpp"
+#include "boost/mpl/insert_range.hpp"
+#include "boost/mpl/end.hpp"
+
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/on_scope_exit.h"
@@ -72,7 +76,7 @@ struct GetPmidTotalsOp;
 class MaidManagerService {
  public:
   typedef nfs::MaidManagerServiceMessages PublicMessages;
-  typedef void VaultMessages;
+  typedef MaidManagerServiceMessages VaultMessages;
 
   MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing);
 
@@ -154,11 +158,22 @@ class MaidManagerService {
 
   void DoSync();
 
+  typedef boost::mpl::vector<> InitialType;
+  typedef boost::mpl::insert_range<InitialType,
+                                   boost::mpl::end<InitialType>::type,
+                                   nfs::MaidManagerServiceMessages::types>::type IntermediateType;
+  typedef boost::mpl::insert_range<IntermediateType,
+                                   boost::mpl::end<IntermediateType>::type,
+                                   MaidManagerServiceMessages::types>::type FinalType;
+ public:
+  typedef boost::make_variant_over<FinalType>::type Messages;
+
+ private:
   routing::Routing& routing_;
   //  nfs_client::DataGetter data_getter_;
   GroupDb<MaidManager> group_db_;
   std::mutex accumulator_mutex_;
-  Accumulator<nfs::MaidManagerServiceMessages> accumulator_;
+  Accumulator<Messages> accumulator_;
   MaidManagerDispatcher dispatcher_;
   Sync<MaidManager::UnresolvedCreateAccount> sync_create_accounts_;
   Sync<MaidManager::UnresolvedRemoveAccount> sync_remove_accounts_;
@@ -184,9 +199,9 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
-    const nfs::PutResponseFromDataManagerToMaidManager& message,
-    const typename nfs::PutResponseFromDataManagerToMaidManager::Sender& sender,
-    const typename nfs::PutResponseFromDataManagerToMaidManager::Receiver& receiver);
+    const PutResponseFromDataManagerToMaidManager& message,
+    const typename PutResponseFromDataManagerToMaidManager::Sender& sender,
+    const typename PutResponseFromDataManagerToMaidManager::Receiver& receiver);
 
 template <>
 void MaidManagerService::HandleMessage(
@@ -238,9 +253,9 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
-    const nfs::SynchroniseFromMaidManagerToMaidManager& message,
-    const typename nfs::SynchroniseFromMaidManagerToMaidManager::Sender& sender,
-    const typename nfs::SynchroniseFromMaidManagerToMaidManager::Receiver& receiver);
+    const SynchroniseFromMaidManagerToMaidManager& message,
+    const typename SynchroniseFromMaidManagerToMaidManager::Sender& sender,
+    const typename SynchroniseFromMaidManagerToMaidManager::Receiver& receiver);
 
 // ==================== Implementation =============================================================
 namespace detail {

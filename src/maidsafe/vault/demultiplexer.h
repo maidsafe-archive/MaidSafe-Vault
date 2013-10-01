@@ -26,6 +26,8 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message_wrapper.h"
+#include "maidsafe/nfs/message_types.h"
+#include "maidsafe/vault/message_types.h"
 #include "maidsafe/nfs/service.h"
 
 #include "maidsafe/vault/data_manager/service.h"

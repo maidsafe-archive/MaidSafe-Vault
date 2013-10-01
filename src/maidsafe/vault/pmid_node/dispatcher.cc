@@ -25,23 +25,23 @@ namespace vault {
 PmidNodeDispatcher::PmidNodeDispatcher(routing::Routing& routing) : routing_(routing) {}
 
 void PmidNodeDispatcher::SendGetRequest(const nfs_vault::DataName& data_name) {
-  typedef nfs::GetRequestFromPmidNodeToDataManager NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  typedef GetRequestFromPmidNodeToDataManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   nfs_vault::DataName data(data_name);
-  NfsMessage nfs_message(data);
-  RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
-                         NfsMessage::Receiver(NodeId(data_name.raw_name)));
+  VaultMessage vault_message(data);
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(data_name.raw_name)));
   routing_.Send(message);
 }
 
 void PmidNodeDispatcher::SendPmidAccountRequest() {
-  typedef nfs::GetPmidAccountRequestFromPmidNodeToPmidManager NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  typedef GetPmidAccountRequestFromPmidNodeToPmidManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  NfsMessage nfs_message;
-  RoutingMessage message(nfs_message.Serialise(), NfsMessage::Sender(routing_.kNodeId()),
-                         NfsMessage::Receiver(routing_.kNodeId()));
+  VaultMessage vault_message;
+  RoutingMessage message(vault_message.Serialise(), VaultMessage::Sender(routing_.kNodeId()),
+                         VaultMessage::Receiver(routing_.kNodeId()));
   routing_.Send(message);
 }
 
