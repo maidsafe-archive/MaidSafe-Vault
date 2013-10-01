@@ -291,7 +291,7 @@ struct can_create_account<passport::PublicMaid> : public std::true_type {};
 // MaidName GetMaidAccountName(const nfs::Message& message);
 
 // template<typename Data>
-// typename Data::Name GetDataName(const nfs::Message& message) {
+// typename Data::Name GetDataName(const nfs::Message& /*message*/) {
 //  // Hash the data name to obfuscate the list of chunks associated with the client.
 //  return typename Data::Name(crypto::Hash<crypto::SHA512>(message.data().name));
 //}

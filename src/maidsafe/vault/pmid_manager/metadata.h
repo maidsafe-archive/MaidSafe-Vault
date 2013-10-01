@@ -39,7 +39,8 @@ struct PmidManagerMetadata {
   PmidManagerMetadata(const PmidManagerMetadata& other);
   PmidManagerMetadata(PmidManagerMetadata&& other);
   PmidManagerMetadata& operator=(PmidManagerMetadata other);
-
+  void PutData(int32_t size);
+  void DeleteData(int32_t size);
   serialised_type Serialise() const;
 
   PmidName pmid_name;

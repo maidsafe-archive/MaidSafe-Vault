@@ -19,6 +19,9 @@
 #include "maidsafe/vault/pmid_manager/action_put.h"
 #include "maidsafe/vault/pmid_manager/action_put.pb.h"
 
+#include "maidsafe/vault/pmid_manager/value.h"
+#include "maidsafe/vault/pmid_manager/metadata.h"
+
 namespace maidsafe {
 namespace vault {
 
@@ -43,9 +46,11 @@ std::string ActionPmidManagerPut::Serialise() const {
   return action_put_proto.SerializeAsString();
 }
 
-detail::DbAction ActionPmidManagerPut::operator()(boost::optional<PmidManagerValue>& value) const {
+detail::DbAction ActionPmidManagerPut::operator()(PmidManagerMetadata& metadata,
+                                                  boost::optional<PmidManagerValue>& value) const {
   if (!value)
     value.reset(PmidManagerValue());
+  metadata.PutData(value->size());
   return detail::DbAction::kPut;
 }
 

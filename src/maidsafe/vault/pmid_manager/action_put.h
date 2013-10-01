@@ -28,10 +28,15 @@
 
 #include "maidsafe/vault/config.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
+
 #include "maidsafe/vault/pmid_manager/value.h"
+#include "maidsafe/vault/pmid_manager/metadata.h"
 
 namespace maidsafe {
 namespace vault {
+
+//class PmidManagerMetadata;
+//class PmidManagerValue;
 
 struct ActionPmidManagerPut {
   explicit ActionPmidManagerPut(const uint32_t size);
@@ -39,7 +44,8 @@ struct ActionPmidManagerPut {
   ActionPmidManagerPut(const ActionPmidManagerPut& other);
   ActionPmidManagerPut(ActionPmidManagerPut&& other);
 
-  detail::DbAction operator()(boost::optional<PmidManagerValue>& value) const;
+  detail::DbAction operator()(PmidManagerMetadata& metadata,
+                              boost::optional<PmidManagerValue>& value) const;
 
   std::string Serialise() const;
 

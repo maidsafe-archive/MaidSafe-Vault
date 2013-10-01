@@ -92,6 +92,19 @@ PmidManagerMetadata& PmidManagerMetadata::operator=(PmidManagerMetadata other) {
   return *this;
 }
 
+void PmidManagerMetadata::PutData(int32_t size) {
+  stored_total_size += size;
+  ++stored_count;
+}
+
+void PmidManagerMetadata::DeleteData(int32_t size) {
+  stored_total_size -= size;
+  --stored_count;
+
+  if ((stored_total_size < 0) || (stored_count < 0))
+    ThrowError(CommonErrors::invalid_parameter);
+}
+
 PmidManagerMetadata::serialised_type PmidManagerMetadata::Serialise() const {
   protobuf::PmidManagerMetadata proto_metadata;
   proto_metadata.set_pmid_name(pmid_name->string());

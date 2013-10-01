@@ -126,7 +126,7 @@ void PmidManagerService::HandleMessage(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action)
-//        group_db_.Commit(resolved_action->key, resolved_action->action);
+        group_db_.Commit(resolved_action->key, resolved_action->action);
       break;
     }
     default: {
