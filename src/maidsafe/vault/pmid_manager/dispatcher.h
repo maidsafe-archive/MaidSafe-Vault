@@ -77,8 +77,7 @@ void PmidManagerDispatcher::SendPutRequest(const Data& data, const PmidName& pmi
                                            const nfs::MessageId& message_id) {
   typedef PutRequestFromPmidManagerToPmidNode VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  VaultMessage vault_message(
-      message_id, nfs_vault::DataNameAndContent(Data::Name::data_type, data.name(), data.data()));
+  VaultMessage vault_message(message_id, nfs_vault::DataNameAndContent(data));
   RoutingMessage message(
       vault_message.Serialise(),
       VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
@@ -128,9 +127,10 @@ void PmidManagerDispatcher::SendPutFailure(const typename Data::Name& name,
                                            const nfs::MessageId& message_id) {
   typedef PutFailureFromPmidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  VaultMessage vault_message(message_id,
-                             nfs_client::DataNameAndReturnCode(name.type, name.raw_name,
-                                                               nfs_client::ReturnCode(error_code)));
+  VaultMessage vault_message(
+      message_id,
+      nfs_client::DataNameAndReturnCode(nfs_vault::DataName(name),
+                                        nfs_client::ReturnCode(error_code)));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
