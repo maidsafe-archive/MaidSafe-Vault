@@ -77,6 +77,11 @@ class DataManagerDispatcher {
   void SendDeleteRequest(const PmidName& pmid_name, const typename Data::Name& data_name,
                          const nfs::MessageId& message_id);
 
+  // To MaidManager
+  template <typename Data>
+  void SendPutFailure(const MaidName& maid_node, const typename Data::Name& data_name,
+                      const maidsafe_error& error, const nfs::MessageId& message_id);
+
   template <typename Data>
   void SendIntegrityCheck(const typename Data::Name& name, const NonEmptyString& random_string,
                           const PmidName& pmid_node, const nfs::MessageId& message_id);
@@ -136,6 +141,24 @@ void DataManagerDispatcher::SendGetRequest(const PmidName& /*pmid_node*/,
 //  NfsMessage::Receiver receiver(routing::SingleId(NodeId(maid_node->string())));
 //  routing_.Send(RoutingMessage(nfs_message.Serialise(), Sender(data.name), receiver, kCacheable));
 //}
+
+template <typename Data>
+void DataManagerDispatcher::SendPutFailure(
+    const MaidName& maid_node, const typename Data::Name& data_name, const maidsafe_error& error,
+    const nfs::MessageId& message_id) {
+  typedef PutFailureFromDataManagerToMaidManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message(message_id,
+                             nfs_client::DataNameAndReturnCode(data_name,
+                                                               nfs_client::ReturnCode(error)));
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(data_name.value)),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(routing::GroupId(
+                                                    NodeId(maid_node.value.string()))));
+  routing_.Send(message);
+}
+
 
 template <typename Data>
 void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name, const Data& data,

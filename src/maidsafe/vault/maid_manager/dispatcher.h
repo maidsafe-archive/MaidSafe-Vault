@@ -76,6 +76,10 @@ class MaidManagerDispatcher {
   void SendAccountTransfer(const NodeId& destination_peer, const MaidName& account_name,
                            const std::string& serialised_account);
 
+  template <typename Data>
+  void SendPutFailure(const MaidName& maid_node, const typename Data::Name& data_name,
+                      const maidsafe_error& error,  const nfs::MessageId& message_id);
+
  private:
   MaidManagerDispatcher();
   MaidManagerDispatcher(const MaidManagerDispatcher&);
@@ -121,6 +125,23 @@ void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
                          VaultMessage::Receiver(routing::GroupId(NodeId(data_name()))));
   routing_.Send(message);
 }
+
+template <typename Data>
+void MaidManagerDispatcher::SendPutFailure(
+    const MaidName& maid_node, const typename Data::Name& data_name, const maidsafe_error& error,
+    const nfs::MessageId& message_id) {
+  typedef nfs::PutFailureFromMaidManagerToMaidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  NfsMessage nfs_message(message_id,
+                         nfs_client::DataNameAndReturnCode(data_name,
+                                                           nfs_client::ReturnCode(error)));
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::GroupId(NodeId(maid_node.value.string())),
+                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(routing::SingleId(NodeId(data_name.value))));
+  routing_.Send(message);
+}
+
 
 // template<typename Data>
 // void MaidManagerDispatcher::SendGetVersionRequest(const MaidName& account_name,

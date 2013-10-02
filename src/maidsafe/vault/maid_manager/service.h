@@ -114,6 +114,10 @@ class MaidManagerService {
                          const int32_t& cost, const nfs::MessageId& message_id);
 
   template <typename Data>
+  void HandlePutFailure(const MaidName& maid_name, const typename Data::Name& data_name,
+                        const maidsafe_error& error, const nfs::MessageId& message_id);
+
+  template <typename Data>
   void HandleDelete(const MaidName& account_name, const typename Data::Name& data_name,
                     const nfs::MessageId& message_id);
 
@@ -202,6 +206,13 @@ void MaidManagerService::HandleMessage(
     const PutResponseFromDataManagerToMaidManager& message,
     const typename PutResponseFromDataManagerToMaidManager::Sender& sender,
     const typename PutResponseFromDataManagerToMaidManager::Receiver& receiver);
+
+template <>
+void MaidManagerService::HandleMessage(
+    const PutFailureFromDataManagerToMaidManager& message,
+    const typename PutFailureFromDataManagerToMaidManager::Sender& sender,
+    const typename PutFailureFromDataManagerToMaidManager::Receiver& receiver);
+
 
 template <>
 void MaidManagerService::HandleMessage(
@@ -321,7 +332,9 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
   if (metadata->AllowPut(data.data().string().size()) == MaidManagerMetadata::Status::kOk) {
     dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
   } else {
-    // dispatcher_.SendFailure(account_name, data.name());
+    dispatcher_.SendPutFailure<Data>(account_name, data.name(),
+                                     nfs_client::ReturnCode(CommonErrors::cannot_exceed_limit),
+                                     message_id);
   }
 }
 
@@ -335,6 +348,14 @@ void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
       group_key, ActionMaidManagerPut(cost), routing_.kNodeId(), message_id));
   DoSync();
 }
+
+template <typename Data>
+void MaidManagerService::HandlePutFailure(
+    const MaidName& maid_name, const typename Data::Name& data_name,
+    const maidsafe_error& error, const nfs::MessageId& message_id) {
+    dispatcher_.SendPutFailure<Data>(maid_name, data_name, error, message_id);
+}
+
 
 // ================================== Delete Implementation =======================================
 

@@ -121,12 +121,25 @@ template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const PutFailureFromPmidNodeToPmidManager& message,
                  const PutFailureFromPmidNodeToPmidManager::Sender& sender,
-                 const PutFailureFromPmidNodeToPmidManager::Receiver& /*receiver*/) {
+                 const PutFailureFromPmidNodeToPmidManager::Receiver& receiver) {
   auto data_name(detail::GetNameVariant(*message.contents));
-  PutResponseFailureVisitor<ServiceHandlerType> put_visitor(
+  PutResponseFailureVisitor<ServiceHandlerType> put_failure_visitor(
+      service, MaidName(Identity(receiver.data.string())), message.contents->return_code,
+                        message.message_id);
+  boost::apply_visitor(put_failure_visitor, data_name);
+}
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const PutFailureFromDataManagerToMaidManager& message,
+                 const PutFailureFromDataManagerToMaidManager::Sender& sender,
+                 const PutFailureFromDataManagerToMaidManager::Receiver& receiver) {
+  auto data_name(detail::GetNameVariant(*message.contents));
+  MaidManagerPutResponseFailureVisitor<ServiceHandlerType> put_visitor(
       service, sender, message.contents->return_code, message.message_id);
   boost::apply_visitor(put_visitor, data_name);
 }
+
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,

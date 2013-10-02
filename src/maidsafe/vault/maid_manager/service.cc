@@ -521,6 +521,21 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
+    const PutFailureFromDataManagerToMaidManager& message,
+    const typename PutFailureFromDataManagerToMaidManager::Sender& sender,
+    const typename PutFailureFromDataManagerToMaidManager::Receiver& receiver) {
+  typedef PutFailureFromDataManagerToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
+      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+
+template <>
+void MaidManagerService::HandleMessage(
     const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
     const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver) {

@@ -247,8 +247,9 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
       pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
     StoreInCache(data);
     dispatcher_.SendPutRequest(pmid_name, data, message_id);
-  } else if (false/* unique_data<Data>*/) {
-    //dispatcher_.SendFailure();
+  } else if (is_unique_on_network<Data>::value) {
+    dispatcher_.SendPutFailure<Data>(maid_name, data.name(),
+                                     maidsafe_error(VaultErrors::unique_data_clash), message_id);
     return;
   } else {
     typename DataManager::Key key(data.name().raw_name, Data::Name::data_type);

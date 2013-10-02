@@ -180,6 +180,12 @@ void DoOperation(ServiceHandlerType* service,
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
+                 const PutFailureFromDataManagerToMaidManager& message,
+                 const PutFailureFromDataManagerToMaidManager::Sender& sender,
+                 const PutFailureFromDataManagerToMaidManager::Receiver& receiver);
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
                  const PutResponseFromDataManagerToMaidManager& message,
                  const PutResponseFromDataManagerToMaidManager::Sender& sender,
                  const PutResponseFromDataManagerToMaidManager::Receiver& receiver);
