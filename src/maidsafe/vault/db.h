@@ -166,7 +166,7 @@ boost::optional<Value> Db<Key, Value>::GetValue(const Key& key) {
       leveldb_->Get(read_options, key.ToFixedWidthString().string(), &value_string));
   if (status.ok()) {
     assert(!value_string.empty());
-    return boost::optional<Value>(Value(typename Value::serialised_type((NonEmptyString(value_string)))));
+    return boost::optional<Value>(Value(value_string));
   } else if (status.IsNotFound()) {
     return boost::optional<Value>();
   }
@@ -178,7 +178,7 @@ template <typename Key, typename Value>
 void Db<Key, Value>::Put(const KvPair& key_value_pair) {
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
                                        key_value_pair.first.ToFixedWidthString().string(),
-                                       key_value_pair.second.Serialise()->string()));
+                                       key_value_pair.second.Serialise()));
   if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
 }

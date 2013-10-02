@@ -26,10 +26,10 @@ namespace maidsafe {
 
 namespace vault {
 
-DataManagerValue::DataManagerValue(const serialised_type& serialised_metadata_value)
+DataManagerValue::DataManagerValue(const std::string &serialised_metadata_value)
     : subscribers_(0), size_(0), store_failures_(0), online_pmids_(), offline_pmids_() {
   protobuf::DataManagerValue metadata_value_proto;
-  if (!metadata_value_proto.ParseFromString(serialised_metadata_value->string())) {
+  if (!metadata_value_proto.ParseFromString(serialised_metadata_value)) {
     LOG(kError) << "Failed to read or parse serialised metadata value";
     ThrowError(CommonErrors::parsing_error);
   } else {
@@ -96,7 +96,7 @@ void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
   }
 }
 
-DataManagerValue::serialised_type DataManagerValue::Serialise() const {
+std::string DataManagerValue::Serialise() const {
   if (subscribers_ < 1 || size_ <= 0)
     ThrowError(CommonErrors::uninitialised);  // Cannot serialise if not a complete db value
   assert(!(online_pmids_.empty() && offline_pmids_.empty()));
@@ -109,7 +109,7 @@ DataManagerValue::serialised_type DataManagerValue::Serialise() const {
   for (const auto& i : offline_pmids_)
     metadata_value_proto.add_offline_pmid_name(i->string());
   assert(metadata_value_proto.IsInitialized());
-  return serialised_type(NonEmptyString(metadata_value_proto.SerializeAsString()));
+  return metadata_value_proto.SerializeAsString();
 }
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {

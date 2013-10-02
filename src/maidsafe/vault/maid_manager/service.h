@@ -290,11 +290,11 @@ struct can_create_account<passport::PublicMaid> : public std::true_type {};
 
 // MaidName GetMaidAccountName(const nfs::Message& message);
 
-// template<typename Data>
-// typename Data::Name GetDataName(const nfs::Message& /*message*/) {
-//  // Hash the data name to obfuscate the list of chunks associated with the client.
-//  return typename Data::Name(crypto::Hash<crypto::SHA512>(message.data().name));
-//}
+ template<typename DataName>
+ DataName GetObfuscatedDataName(const DataName& data_name) {
+  // Hash the data name to obfuscate the list of chunks associated with the client.
+  return DataName(crypto::Hash<crypto::SHA512>(data_name.raw_name));
+}
 
 template <typename MaidManagerSyncType>
 void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
@@ -326,7 +326,7 @@ void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
                                            const typename Data::Name& data_name,
                                            const int32_t& cost, const nfs::MessageId& message_id) {
   typename MaidManager::Key group_key(typename MaidManager::GroupName(maid_name.value),
-                                      data_name.raw_name, data_name.type);
+                                      GetObfuscatedDataName(data_name), data_name.type);
   sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(
       group_key, ActionMaidManagerPut(cost), routing_.kNodeId(), message_id));
   DoSync();
@@ -341,7 +341,7 @@ void MaidManagerService::HandleDelete(const MaidName& account_name,
   if (DeleteAllowed(account_name, data_name)) {
     dispatcher_.SendDeleteRequest(account_name, data_name, message_id);
     typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
-                                        data_name.raw_name, data_name.type);
+                                        GetObfuscatedDataName(data_name), data_name.type);
     sync_deletes_.AddLocalAction(typename MaidManager::UnresolvedDelete(
         group_key, ActionMaidManagerDelete(), routing_.kNodeId(), message_id));
     DoSync();
@@ -352,7 +352,7 @@ template <typename Data>
 bool MaidManagerService::DeleteAllowed(const MaidName& account_name,
                                        const typename Data::Name& data_name) {
   try {
-    if (group_db_.GetValue(MaidManager::Key(account_name, data_name.value,
+    if (group_db_.GetValue(MaidManager::Key(account_name, GetObfuscatedDataName(data_name),
                                             Data::Name::data_type::Tag::kValue)))
       return true;
   }

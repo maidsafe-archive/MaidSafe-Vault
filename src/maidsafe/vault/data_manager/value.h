@@ -35,10 +35,9 @@ namespace vault {
 // not thread safe
 class DataManagerValue {
  public:
-  typedef TaggedValue<NonEmptyString, struct SerialisedDataManagerValueTag> serialised_type;
-  explicit DataManagerValue(const serialised_type& serialised_metadata_value);
+  explicit DataManagerValue(const std::string& serialised_metadata_value);
   DataManagerValue(const PmidName& pmid_name, int32_t size);
-  serialised_type Serialise() const;
+  std::string Serialise() const;
 
   void AddPmid(const PmidName& pmid_name);
   void RemovePmid(const PmidName& pmid_name);
