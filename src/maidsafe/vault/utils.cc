@@ -146,7 +146,7 @@ void DoOperation(ServiceHandlerType* service,
                  const PutResponseFromPmidManagerToDataManager::Receiver& /*receiver*/) {
   auto data_name(detail::GetNameVariant(message.contents->name));
   DataManagerPutResponseVisitor<ServiceHandlerType> put_response_visitor(
-      service, PmidName(Identity(sender.group_id.data)), message.contents->size,
+      service, PmidName(Identity(sender.group_id.data.string())), message.contents->size,
       message.message_id);
   boost::apply_visitor(put_response_visitor, data_name);
 }

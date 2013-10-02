@@ -68,8 +68,7 @@ void PmidNodeDispatcher::SendPutFailure(const typename Data::Name& name,
   typedef PutFailureFromPmidNodeToPmidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message(
-      message_id, nfs_client::DataNameAndSpaceAndReturnCode(nfs_vault::DataName(name),
-                                                            available_space,
+      message_id, nfs_client::DataNameAndSpaceAndReturnCode(name, available_space,
                                                             nfs_client::ReturnCode(error)));
   RoutingMessage routing_message(vault_message.Serialise(),
                                  VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
