@@ -58,8 +58,6 @@ class DataManagerService {
  public:
   typedef nfs::DataManagerServiceMessages PublicMessages;
   typedef DataManagerServiceMessages VaultMessages;
-  typedef IntegrityCheckResponseFromPmidNodeToDataManager::Contents IntegrityCheckResponse;
-  typedef GetResponseFromPmidNodeToDataManager::Contents GetResponseContents;
 
   DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter);
@@ -73,6 +71,8 @@ class DataManagerService {
   friend class detail::DataManagerSendDeleteVisitor;
 
  private:
+  typedef GetResponseFromPmidNodeToDataManager::Contents GetResponseContents;
+
   template <typename Data>
   void HandlePut(const Data& data, const MaidName& maid_name, const PmidName& pmid_name_in,
                  const nfs::MessageId& message_id);
@@ -104,8 +104,8 @@ class DataManagerService {
   void SendIntegrityCheck(const typename Data::name& data_name, const PmidName& pmid_node,
                           const nfs::MessageId& message_id);
 
-  void HandleDataIntergirity(const IntegrityCheckResponse& response,
-                             const nfs::MessageId& message_id);
+  void HandleDataIntegrityResponse(const GetResponseContents& response,
+                                   const nfs::MessageId& message_id);
   template <typename Data>
   bool HasPmidNode(const typename Data::Name& data_name, const PmidName& pmid_node);
 

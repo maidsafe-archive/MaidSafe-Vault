@@ -18,9 +18,9 @@
 
 #include "maidsafe/vault/data_manager/service.h"
 
-#include <string>
-#include <vector>
+#include <type_traits>
 
+#include "maidsafe/common/log.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/parameters.h"
 #include "maidsafe/nfs/message_types.h"
@@ -61,7 +61,11 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       sync_add_pmids_(),
       sync_remove_pmids_(),
       sync_node_downs_(),
-      sync_node_ups_() {}
+      sync_node_ups_() {
+  static_assert(std::is_same<IntegrityCheckResponseFromPmidNodeToDataManager::Contents,
+                             GetResponseFromPmidNodeToDataManager::Contents>::value,
+                "These must be the same type for passing to 'get_timer_.AddResponse(...)'");
+}
 
 // PutRequestFromMaidManagerToDataManager
 template <>
@@ -254,13 +258,13 @@ void DataManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_ups_);
 }
 
-void DataManagerService::HandleDataIntergirity(const IntegrityCheckResponse& /*response*/,
-                                               const nfs::MessageId& /*message_id*/) {
+void DataManagerService::HandleDataIntegrityResponse(const GetResponseContents& response,
+                                                     const nfs::MessageId& message_id) {
   try {
-    //get_timer_.AddResponse(message_id.data, response);
+    get_timer_.AddResponse(message_id.data, response);
   }
-  catch (const std::exception /*ex*/) {
-    // Failure to find the task
+  catch (const std::exception& ex) {
+    LOG(kWarning) << "Failed to find Task ID " << message_id.data << ": " << ex.what();
   }
 }
 
