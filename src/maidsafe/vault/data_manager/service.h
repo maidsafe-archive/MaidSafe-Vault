@@ -247,13 +247,16 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
       pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
     StoreInCache(data);
     dispatcher_.SendPutRequest(pmid_name, data, message_id);
+  } else if (false/* unique_data<Data>*/) {
+    //dispatcher_.SendFailure();
+    return;
   } else {
     typename DataManager::Key key(data.name().raw_name, Data::Name::data_type);
     sync_puts_.AddLocalAction(DataManager::UnresolvedPut(key, ActionDataManagerPut(),
                                                          routing_.kNodeId(), message_id));
     DoSync();
   }
-  dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);
+  dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id); // NOT IN FAILURE
 }
 
 template <typename Data>

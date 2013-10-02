@@ -39,7 +39,7 @@ namespace vault {
 //class PmidManagerValue;
 
 struct ActionPmidManagerPut {
-  explicit ActionPmidManagerPut(const uint32_t size);
+  ActionPmidManagerPut(const uint32_t size, const nfs::MessageId& message_id);
   explicit ActionPmidManagerPut(const std::string& serialised_action);
   ActionPmidManagerPut(const ActionPmidManagerPut& other);
   ActionPmidManagerPut(ActionPmidManagerPut&& other);
@@ -51,6 +51,7 @@ struct ActionPmidManagerPut {
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
   const uint32_t kSize;
+  const nfs::MessageId kMessageId;
 
  private:
   ActionPmidManagerPut();

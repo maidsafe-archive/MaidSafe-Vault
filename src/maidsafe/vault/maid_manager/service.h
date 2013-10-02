@@ -315,10 +315,14 @@ template <typename Data>
 void MaidManagerService::HandlePut(const MaidName& account_name, const Data& data,
                                    const PmidName& pmid_node_hint,
                                    const nfs::MessageId& message_id) {
-  // FIXME(Team) need to return fail/stop forwarding message to next persona here if no space
-  // available for account
-  // Needs discussion (similar to AllowPut)
-  dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
+  // If unique data / specialise/ ask data manager to see stored or not / if not then store
+  // data manager will send a message back if there is an attmept to re-store existing unique data
+  auto metadata(group_db_.GetMetadata(account_name));
+  if (metadata->AllowPut(data.data().string().size()) == MaidManagerMetadata::Status::kOk) {
+    dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
+  } else {
+    // dispatcher_.SendFailure(account_name, data.name());
+  }
 }
 
 template <typename Data>

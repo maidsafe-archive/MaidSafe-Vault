@@ -27,6 +27,7 @@
 #include "maidsafe/routing/message.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message_types.h"
+#include "maidsafe/nfs/vault/messages.h"
 
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
@@ -46,8 +47,8 @@ class PmidManagerDispatcher {
   void SendDeleteRequest(const PmidName& pmid_node, const typename Data::Name& data_name,
                          const nfs::MessageId& message_id);
   template <typename Data>
-  void SendPutResponse(const Data& data, const PmidName& pmid_node,
-                       const nfs::MessageId& message_id);
+  void SendPutResponse(const typename Data::Name& data_name, int32_t size,
+                       const PmidName& pmid_node, const nfs::MessageId& message_id);
 
   template <typename Data>
   void SendPutFailure(const typename Data::Name& name, const PmidName& pmid_node,
@@ -101,16 +102,17 @@ void PmidManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
 }
 
 template<typename Data>
-void PmidManagerDispatcher::SendPutResponse(const Data& data, const PmidName& pmid_node,
+void PmidManagerDispatcher::SendPutResponse(const typename Data::Name& data_name,
+                                            int32_t data_size,
+                                            const PmidName& pmid_node,
                                             const nfs::MessageId& message_id) {
   typedef PutResponseFromPmidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  VaultMessage vault_message(message_id, nfs_vault::DataNameAndSize(data.name(),
-                                                                    data().data.string().size));
+  VaultMessage vault_message(message_id, nfs_vault::DataNameAndSize(data_name, data_size));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(data.name()->string())));
+                         VaultMessage::Receiver(NodeId(data_name.value)));
   routing_.Send(message);
 }
 

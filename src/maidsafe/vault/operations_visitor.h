@@ -302,6 +302,28 @@ class PmidManagerDeleteVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
+template<typename ServiceHandlerType>
+class PmidManagerPutResponseVisitor : public boost::static_visitor<> {
+ public:
+  PmidManagerPutResponseVisitor(ServiceHandlerType* service, int32_t size,
+                                const PmidName& pmid_name, const nfs::MessageId& message_id)
+      : kService_(service), kPmidName_(pmid_name), kSize_(size), kMessageId_(message_id) {}
+
+  template<typename Name>
+  void operator()(const Name& data_name) {
+    kService_->template HandlePutResponse<typename Name::data_type>(data_name, kSize_, kPmidName_,
+                                                                    kMessageId_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const PmidName kPmidName_;
+  const int32_t kSize_;
+  const nfs::MessageId kMessageId_;
+};
+
+
+
 }  // namespace detail
 
 }  // namespace vault

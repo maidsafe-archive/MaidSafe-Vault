@@ -202,7 +202,6 @@ void DoOperation(ServiceHandlerType* service,
   PmidManagerDeleteVisitor<ServiceHandlerType> delete_visitor(
       service, PmidName(Identity(receiver.data.string())), message.message_id);
   boost::apply_visitor(delete_visitor, data_name);
-
 }
 
 void InitialiseDirectory(const boost::filesystem::path& directory) {

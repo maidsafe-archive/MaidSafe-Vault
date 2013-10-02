@@ -25,24 +25,31 @@
 namespace maidsafe {
 namespace vault {
 
-ActionPmidManagerPut::ActionPmidManagerPut(const uint32_t size) : kSize(size) {}
+ActionPmidManagerPut::ActionPmidManagerPut(const uint32_t size, const nfs::MessageId& message_id)
+    : kSize(size), kMessageId(message_id) {}
 
 ActionPmidManagerPut::ActionPmidManagerPut(const std::string& serialised_action)
   : kSize([&serialised_action]()->uint32_t {
             protobuf::ActionPmidManagerPut action_put_proto;
             action_put_proto.ParseFromString(serialised_action);
               return action_put_proto.size();
-          }()) {}
+          }()),
+    kMessageId([&serialised_action]()->uint32_t {
+                 protobuf::ActionPmidManagerPut action_put_proto;
+                 action_put_proto.ParseFromString(serialised_action);
+                 return action_put_proto.message_id();
+               }()) {}
 
 ActionPmidManagerPut::ActionPmidManagerPut(const ActionPmidManagerPut& other)
-    : kSize(other.kSize) {}
+    : kSize(other.kSize), kMessageId(other.kMessageId) {}
 
 ActionPmidManagerPut::ActionPmidManagerPut(ActionPmidManagerPut&& other)
-    : kSize(std::move(other.kSize)) {}
+    : kSize(std::move(other.kSize)), kMessageId(other.kMessageId) {}
 
 std::string ActionPmidManagerPut::Serialise() const {
   protobuf::ActionPmidManagerPut action_put_proto;
   action_put_proto.set_size(kSize);
+  action_put_proto.set_message_id(kMessageId);
   return action_put_proto.SerializeAsString();
 }
 

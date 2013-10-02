@@ -20,8 +20,12 @@
 
 #include "maidsafe/common/error.h"
 
+#include "maidsafe/data_types/data_name_variant.h"
+
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 #include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/operations_visitor.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/sync.pb.h"
 
 namespace fs = boost::filesystem;
@@ -127,7 +131,7 @@ template<>
 void PmidManagerService::HandleMessage(
     const SynchroniseFromPmidManagerToPmidManager& message,
     const typename SynchroniseFromPmidManagerToPmidManager::Sender& sender,
-    const typename SynchroniseFromPmidManagerToPmidManager::Receiver& /*receiver*/) {
+    const typename SynchroniseFromPmidManagerToPmidManager::Receiver& receiver) {
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.contents->content.string()))
     ThrowError(CommonErrors::parsing_error);
@@ -136,8 +140,12 @@ void PmidManagerService::HandleMessage(
       PmidManager::UnresolvedPut unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
+      if (resolved_action) {
         group_db_.Commit(resolved_action->key, resolved_action->action);
+        auto data_name(GetDataNameVariant(resolved_action->key.type, resolved_action->key.name));
+        SendPutResponse(data_name, PmidName(Identity(receiver.data.string())),
+                        message.contents->content.string().size(), message.message_id);
+      }
       break;
     }
     default: {
@@ -145,6 +153,14 @@ void PmidManagerService::HandleMessage(
       LOG(kError) << "Unhandled action type";
     }
   }
+}// =================================================================================================
+
+void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
+                                         const PmidName& pmid_node, int32_t size,
+                                         const nfs::MessageId& message_id) {
+  detail::PmidManagerPutResponseVisitor<PmidManagerService> put_response(this, size, pmid_node,
+                                                                         message_id);
+  boost::apply_visitor(put_response, data_name);
 }
 
 // =================================================================================================

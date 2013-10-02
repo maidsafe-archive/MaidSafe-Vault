@@ -61,6 +61,9 @@ class PmidManagerService {
   bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
     return false;
   }
+  template <typename Data>
+  void HandlePutResponse(const typename Data::Name& data_name, int32_t size,
+      const PmidName& pmid_node, const nfs::MessageId& message_id);
 
  private:
   PmidManagerService(const PmidManagerService&);
@@ -85,10 +88,14 @@ class PmidManagerService {
                         const int64_t& available_space,
                         const maidsafe_error& error_code,
                         const nfs::MessageId& message_id);
+
   template <typename Data>
   void HandleDelete(const PmidName& pmid_node, const typename Data::Name& data_name,
                     const nfs::MessageId& message_id);
+
   void DoSync();
+  void SendPutResponse(const DataNameVariant& data_name, const PmidName& pmid_node, int32_t size,
+                       const nfs::MessageId& message_id);
 
   //  template<typename Data>
   //  void HandlePutCallback(const std::string& reply, const nfs::Message& message);
@@ -189,7 +196,8 @@ void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), data.name().raw_name,
                              data.name().type);
   sync_puts_.AddLocalAction(
-      PmidManager::UnresolvedPut(group_key, ActionPmidManagerPut(data.data().string().size()),
+      PmidManager::UnresolvedPut(group_key, ActionPmidManagerPut(data.data().string().size(),
+                                                                 message_id),
                                  routing_.kNodeId(), message_id));
   DoSync();
 }
@@ -204,6 +212,13 @@ void PmidManagerService::HandlePutFailure(
   sync_deletes_.AddLocalAction(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(),
                                                              routing_.kNodeId(), message_id));
   DoSync();
+}
+
+template <typename Data>
+void PmidManagerService::HandlePutResponse(
+    const typename Data::Name& data_name, int32_t size, const PmidName& pmid_node,
+    const nfs::MessageId& message_id) {
+  dispatcher_.SendPutResponse<Data>(data_name, size, pmid_node, message_id);
 }
 
 template <typename Data>
