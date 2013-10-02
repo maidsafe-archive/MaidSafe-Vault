@@ -25,7 +25,6 @@ namespace maidsafe {
 
 namespace vault {
 
-const nfs::MessageAction ActionMaidManagerDelete::kActionId(nfs::MessageAction::kDeleteRequest);
 
 detail::DbAction ActionMaidManagerDelete::operator()(
     MaidManagerMetadata& metadata, boost::optional<MaidManagerValue>& value) const {

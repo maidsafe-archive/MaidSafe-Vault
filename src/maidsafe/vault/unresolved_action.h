@@ -93,7 +93,9 @@ struct UnresolvedAction {
 
   template <typename T>
   typename std::enable_if<!HasSerialise<T, std::string (T::*)() const>::value, T>::type ParseAction(
-      const std::string& /*serialised_copy*/) const {}
+      const std::string& /*serialised_copy*/) const {
+    return T();
+  }
 };
 
 // ==================== Implementation =============================================================

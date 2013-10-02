@@ -648,6 +648,15 @@ void MaidManagerService::HandleMessage(
         group_db_.Commit(resolved_action->key, resolved_action->action);
       break;
     }
+    case ActionMaidManagerDelete::kActionId: {
+      MaidManager::UnresolvedDelete unresolved_action(proto_sync.serialised_unresolved_action(),
+                                                      sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action)
+        group_db_.Commit(resolved_action->key, resolved_action->action);
+        // TODO dispatcher_.SendDeleteRequest(account_name, data_name, message_id); need message id here
+      break;
+    }
     //      case ActionCreateAccount::kActionId: {
     //        MaidManager::UnresolvedCreateAccount unresolved_action(
     //            proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());

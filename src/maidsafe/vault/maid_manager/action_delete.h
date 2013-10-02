@@ -39,7 +39,7 @@ struct ActionMaidManagerDelete {
   ActionMaidManagerDelete() {}
   detail::DbAction operator()(MaidManagerMetadata& metadata,
                               boost::optional<MaidManagerValue>& value) const;
-  static const nfs::MessageAction kActionId;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
 };
 
 }  // namespace vault
