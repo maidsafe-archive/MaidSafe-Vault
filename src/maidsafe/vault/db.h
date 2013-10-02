@@ -166,7 +166,7 @@ boost::optional<Value> Db<Key, Value>::GetValue(const Key& key) {
       leveldb_->Get(read_options, key.ToFixedWidthString().string(), &value_string));
   if (status.ok()) {
     assert(!value_string.empty());
-    return boost::optional<Value>(Value(value_string));
+    return boost::optional<Value>(value_string);
   } else if (status.IsNotFound()) {
     return boost::optional<Value>();
   }
