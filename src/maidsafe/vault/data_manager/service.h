@@ -310,61 +310,61 @@ void DataManagerService::HandleGet(const typename Data::Name& /*data_name*/, con
 //  dispatcher_.SendGetRequest(
 }
 
-template <typename Data>
-void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name,
-                                            const PmidName& pmid_node,
-                                            const nfs::MessageId& message_id) {
-  try {
-    NonEmptyString data(GetContentFromCache(data_name));
-    std::string random_string(RandomString(detail::Parameters::integrity_check_string_size));
-    NonEmptyString signature(
-        crypto::Hash<crypto::SHA512>(NonEmptyString(data.string() + random_string)));
-    get_timer_.AddTask(
-        std::chrono::seconds(10),
-        [signature, pmid_node, message_id, data_name, this](
-            DataManagerService::IntegrityCheckResponse response) {
-          if (response == DataManagerService::IntegrityCheckResponse()) {
-            // Timer expired.
-            // If PN has informed PMs about any failure the request from PMs should have arrived.
-            // If PN is still in DM's PNs, the PN is too slow or not honest. Therefore, should be
-            // removed from DM's PNs and deranked. Moreover the PMs must be informed.
-            if (HasPmidNode<Data>(data_name, pmid_node)) {
-              dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
-              sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
-                  typename DataManager::Key(data_name.raw_name, data_name.type),
-                  ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId(), message_id));
-              DoSync();
-              return;
-            }
-          }
-          if (response.return_code.value.code() != CommonErrors::success) {
-            // Data not available on pmid , sync remove pmid_node, inform PMs
-            dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
-            sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
-                typename DataManager::Key(data_name.raw_name, data_name.type),
-                ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId(), message_id));
-            DoSync();
-            return;
-          }
-          if (response.return_code.value.code() == CommonErrors::success) {
-            if (response.signature != signature) {
-              // Lieing pmid_node, sync remove pmid_node, inform PMs and drank
-              dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
-              sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
-                  typename DataManager::Key(data_name.raw_name, data_name.type),
-                  ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId(), message_id));
-              DoSync();
-              return;
-            }
-          }
-        },
-        1, message_id.data);
-    dispatcher_.SendIntegrityCheck(data_name, random_string, pmid_node, nfs::MessageId(message_id));
-  }
-  catch (const std::exception& /*ex*/) {
-    // handle failure to retrieve from cache
-  }
-}
+//template <typename Data>
+//void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name,
+//                                            const PmidName& pmid_node,
+//                                            const nfs::MessageId& message_id) {
+//  try {
+//    NonEmptyString data(GetContentFromCache(data_name));
+//    std::string random_string(RandomString(detail::Parameters::integrity_check_string_size));
+//    NonEmptyString signature(
+//        crypto::Hash<crypto::SHA512>(NonEmptyString(data.string() + random_string)));
+//    get_timer_.AddTask(
+//        std::chrono::seconds(10),
+//        [signature, pmid_node, message_id, data_name, this](
+//            DataManagerService::IntegrityCheckResponse response) {
+//          if (response == DataManagerService::IntegrityCheckResponse()) {
+//            // Timer expired.
+//            // If PN has informed PMs about any failure the request from PMs should have arrived.
+//            // If PN is still in DM's PNs, the PN is too slow or not honest. Therefore, should be
+//            // removed from DM's PNs and deranked. Moreover the PMs must be informed.
+//            if (HasPmidNode<Data>(data_name, pmid_node)) {
+//              dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
+//              sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
+//                  typename DataManager::Key(data_name.raw_name, data_name.type),
+//                  ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId(), message_id));
+//              DoSync();
+//              return;
+//            }
+//          }
+//          if (response.return_code.value.code() != CommonErrors::success) {
+//            // Data not available on pmid , sync remove pmid_node, inform PMs
+//            dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
+//            sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
+//                typename DataManager::Key(data_name.raw_name, data_name.type),
+//                ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId(), message_id));
+//            DoSync();
+//            return;
+//          }
+//          if (response.return_code.value.code() == CommonErrors::success) {
+//            if (response.signature != signature) {
+//              // Lieing pmid_node, sync remove pmid_node, inform PMs and drank
+//              dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
+//              sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
+//                  typename DataManager::Key(data_name.raw_name, data_name.type),
+//                  ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId(), message_id));
+//              DoSync();
+//              return;
+//            }
+//          }
+//        },
+//        1, message_id.data);
+//    dispatcher_.SendIntegrityCheck(data_name, random_string, pmid_node, nfs::MessageId(message_id));
+//  }
+//  catch (const std::exception& /*ex*/) {
+//    // handle failure to retrieve from cache
+//  }
+//}
 
 template <typename Data>
 void DataManagerService::HandleDelete(const typename Data::Name& data_name,

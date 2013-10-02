@@ -332,22 +332,22 @@ void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
   }
 }
 
-template <typename Data>
-void PmidNodeService::HandleIntegrityChech(const typename Data::Name& data_name,
-                                           const NonEmptyString& random_string,
-                                           const NodeId& sender,
-                                           const nfs::MessageId& message_id) {
-  try {
-    auto content(
-        handler_.GetFromPermanentStore(GetDataNameVariant(data_name.type, data_name.raw_name)));
-    NonEmptyString signature(crypto::Hash<crypto::SHA512>(NonEmptyString(content + random_string)));
-    dispatcher_.SendIntegrityCheckResponse(data_name, signature, sender, CommonErrors::success,
-                                           message_id);
-  }
-  catch (const maidsafe_error& error) {
-    dispatcher_.SendIntegrityCheckResponse(data_name, std::string(), sender, error, message_id);
-  }
-}
+//template <typename Data>
+//void PmidNodeService::HandleIntegrityChech(const typename Data::Name& data_name,
+//                                           const NonEmptyString& random_string,
+//                                           const NodeId& sender,
+//                                           const nfs::MessageId& message_id) {
+//  try {
+//    auto content(
+//        handler_.GetFromPermanentStore(GetDataNameVariant(data_name.type, data_name.raw_name)));
+//    NonEmptyString signature(crypto::Hash<crypto::SHA512>(NonEmptyString(content + random_string)));
+//    dispatcher_.SendIntegrityCheckResponse(data_name, signature, sender, CommonErrors::success,
+//                                           message_id);
+//  }
+//  catch (const maidsafe_error& error) {
+//    dispatcher_.SendIntegrityCheckResponse(data_name, std::string(), sender, error, message_id);
+//  }
+//}
 
 // template<>
 // void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(

@@ -77,28 +77,28 @@ void PmidNodeDispatcher::SendPutFailure(const typename Data::Name& name,
   routing_.Send(routing_message);
 }
 
-template <typename Data>
-void PmidNodeDispatcher::SendIntegrityCheckResponse(const typename Data::Name& data_name,
-                                                    const std::string& signature,
-                                                    const NodeId& receiver,
-                                                    const maidsafe_error& error,
-                                                    const nfs::MessageId& message_id) {
-  typedef IntegrityCheckResponseFromPmidNodeToDataManager VaultMessage;
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  VaultMessage vault_message;
-  if (error.code() == CommonErrors::success)
-    vault_message = VaultMessage(message_id, nfs_client::DataNameAndSignatureAndReturnCode(
-                                                 nfs_vault::DataName(data_name),
-                                                 nfs_client::ReturnCode(error), signature));
-  else
-    vault_message = VaultMessage(message_id, nfs_client::DataNameAndSignatureAndReturnCode(
-                                                 nfs_vault::DataName(data_name),
-                                                 nfs_client::ReturnCode(error)));
-  RoutingMessage routing_message(vault_message.Serialise(),
-                                 VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
-                                 VaultMessage::Receiver(routing::SingleId(receiver)));
-  routing_.Send(routing_message);
-}
+//template <typename Data>
+//void PmidNodeDispatcher::SendIntegrityCheckResponse(const typename Data::Name& data_name,
+//                                                    const std::string& signature,
+//                                                    const NodeId& receiver,
+//                                                    const maidsafe_error& error,
+//                                                    const nfs::MessageId& message_id) {
+//  typedef IntegrityCheckResponseFromPmidNodeToDataManager VaultMessage;
+//  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+//  VaultMessage vault_message;
+//  if (error.code() == CommonErrors::success)
+//    vault_message = VaultMessage(message_id, nfs_client::DataNameAndSignatureAndReturnCode(
+//                                                 nfs_vault::DataName(data_name),
+//                                                 nfs_client::ReturnCode(error), signature));
+//  else
+//    vault_message = VaultMessage(message_id, nfs_client::DataNameAndSignatureAndReturnCode(
+//                                                 nfs_vault::DataName(data_name),
+//                                                 nfs_client::ReturnCode(error)));
+//  RoutingMessage routing_message(vault_message.Serialise(),
+//                                 VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
+//                                 VaultMessage::Receiver(routing::SingleId(receiver)));
+//  routing_.Send(routing_message);
+//}
 
 }  // namespace vault
 
