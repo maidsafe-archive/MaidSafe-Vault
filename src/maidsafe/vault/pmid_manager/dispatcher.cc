@@ -26,6 +26,9 @@ namespace vault {
 
 PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing) : routing_(routing) {}
 
+void PmidManagerDispatcher::SendSync(const PmidName& /*pmid_node*/,
+                                     const std::string& /*serialised_sync*/) {}
+
 // void PmidManagerDispatcher::SendStateChange(const PmidName& pmid_node,
 //                                            const Data::Name &data_name) {
 //  typedef nfs::StateChangeFromPmidManagerToDataManager NfsMessage;

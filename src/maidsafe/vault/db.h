@@ -89,7 +89,7 @@ Db<Key, Value>::~Db() {
 
 template <typename Key, typename Value>
 boost::optional<Value> Db<Key, Value>::Get(const Key& key) {
-  std::lock_guard<std::mutex> lock(mutex_);
+// not locking here, as leveldb is thread safe.
   return GetValue(key);
 }
 

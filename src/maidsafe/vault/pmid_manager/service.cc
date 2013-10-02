@@ -50,6 +50,15 @@ PmidManagerService::PmidManagerService(const passport::Pmid& /*pmid*/, routing::
       dispatcher_(routing_),
       pmid_metadata_() {}
 
+// =============== Sync ============================================================================
+
+void PmidManagerService::DoSync() {
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
+}
+
+// =============== HandleMessage ===================================================================
+
 template <>
 void PmidManagerService::HandleMessage(
     const PutRequestFromDataManagerToPmidManager& message,
@@ -112,6 +121,8 @@ void PmidManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+// =============== Handle Sync Messages ============================================================
+
 template<>
 void PmidManagerService::HandleMessage(
     const SynchroniseFromPmidManagerToPmidManager& message,
@@ -135,6 +146,8 @@ void PmidManagerService::HandleMessage(
     }
   }
 }
+
+// =================================================================================================
 
 //void PmidManagerService::HandleMessage(const nfs::Message& message,
 //                                       const routing::ReplyFunctor& /*reply_functor*/) {
