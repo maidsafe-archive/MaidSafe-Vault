@@ -55,8 +55,7 @@ class MaidManagerDispatcher {
   void SendPutResponse(const MaidName& account_name, const typename Data::Name& data_name,
                        const maidsafe_error& result, nfs::MessageId message_id);
 
-  template <typename DataNameType>
-  void SendDeleteRequest(const MaidName& account_name, const DataNameType& data_name,
+  void SendDeleteRequest(const MaidName& account_name, const nfs_vault::DataName& data_name,
                          const nfs::MessageId& message_id);
 
   void SendCreateAccountResponse(const MaidName& account_name, const maidsafe_error& result,
@@ -109,20 +108,6 @@ void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name, const D
                          VaultMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
                          VaultMessage::Receiver(routing::GroupId(data.name().string())));
-  routing_.Send(message);
-}
-
-template <typename DataNameType>
-void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
-                                              const DataNameType &data_name,
-                                              const nfs::MessageId& message_id) {
-  typedef DeleteRequestFromMaidManagerToDataManager VaultMessage;
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  VaultMessage vault_message(message_id, data_name);
-  RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
-                                              routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(routing::GroupId(NodeId(data_name.raw_name))));
   routing_.Send(message);
 }
 

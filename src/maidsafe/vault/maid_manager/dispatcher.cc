@@ -28,6 +28,19 @@ MaidManagerDispatcher::MaidManagerDispatcher(routing::Routing& routing,
                                              const passport::Pmid& signing_fob)
     : routing_(routing), kSigningFob_(signing_fob) {}
 
+void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
+                                              const nfs_vault::DataName &data_name,
+                                              const nfs::MessageId& message_id) {
+  typedef DeleteRequestFromMaidManagerToDataManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message(message_id, data_name);
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(routing::GroupId(NodeId(data_name.raw_name))));
+  routing_.Send(message);
+}
+
 void MaidManagerDispatcher::SendCreateAccountResponse(const MaidName& /*account_name*/,
                                                       const maidsafe_error& /*result*/,
                                                       const nfs::MessageId& /*message_id*/) {
