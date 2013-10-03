@@ -71,6 +71,7 @@ DataNameVariant GetNameVariant(const nfs_client::DataNameAndContentOrReturnCode&
     return GetNameVariant(data.data_name_and_return_code->name);
 }
 
+//=============================== To MaidManager====================================================
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager& message,
@@ -85,48 +86,13 @@ void DoOperation(ServiceHandlerType* service,
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
-                 const PutRequestFromMaidManagerToDataManager& message,
-                 const typename PutRequestFromMaidManagerToDataManager::Sender& sender,
-                 const typename PutRequestFromMaidManagerToDataManager::Receiver&) {
-  auto data_name(detail::GetNameVariant(*message.contents));
-  DataManagerPutVisitor<ServiceHandlerType> put_visitor(
-      service, message.contents->data.content, sender.group_id, message.contents->pmid_hint,
-      message.message_id);
-  boost::apply_visitor(put_visitor, data_name);
-}
-
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
-                 const PutRequestFromDataManagerToPmidManager& message,
-                 const PutRequestFromDataManagerToPmidManager::Sender& /*sender*/,
-                 const PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
-  auto data_name(detail::GetNameVariant(*message.contents));
-  PmidManagerPutVisitor<ServiceHandlerType> put_visitor(service, message.contents->content,
-                                                        message.message_id, receiver);
-  boost::apply_visitor(put_visitor, data_name);
-}
-
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
-                 const PutRequestFromPmidManagerToPmidNode& message,
-                 const PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
-                 const PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-  auto data_name(detail::GetNameVariant(*message.contents));
-  PmidNodePutVisitor<ServiceHandlerType> put_visitor(service, message.contents->content,
-                                                     message.message_id);
-  boost::apply_visitor(put_visitor, data_name);
-}
-
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
-                 const PutFailureFromPmidNodeToPmidManager& message,
-                 const PutFailureFromPmidNodeToPmidManager::Sender& /*sender*/,
-                 const PutFailureFromPmidNodeToPmidManager::Receiver& receiver) {
-  auto data_name(detail::GetNameVariant(*message.contents));
-  PutResponseFailureVisitor<ServiceHandlerType> put_failure_visitor(
-      service, MaidName(Identity(receiver.data.string())), message.contents->return_code,
-                        message.message_id);
-  boost::apply_visitor(put_failure_visitor, data_name);
+                 const PutResponseFromDataManagerToMaidManager& message,
+                 const PutResponseFromDataManagerToMaidManager::Sender& /*sender*/,
+                 const PutResponseFromDataManagerToMaidManager::Receiver& receiver) {
+  auto data_name(detail::GetNameVariant(message.contents->name));
+  MaidManagerPutResponseVisitor<ServiceHandlerType> put_response_visitor(
+      service, receiver, message.contents->cost, message.message_id);
+  boost::apply_visitor(put_response_visitor, data_name);
 }
 
 template <typename ServiceHandlerType>
@@ -140,15 +106,27 @@ void DoOperation(ServiceHandlerType* service,
   boost::apply_visitor(put_visitor, data_name);
 }
 
-
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
-                 const PutFailureFromPmidManagerToDataManager& message,
-                 const PutFailureFromPmidManagerToDataManager::Sender& sender,
-                 const PutFailureFromPmidManagerToDataManager::Receiver& /*receiver*/) {
+                 const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
+                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  auto data_name(detail::GetNameVariant(message.contents));
+  MaidManagerDeleteVisitor<ServiceHandlerType> delete_visitor(
+      service, MaidName(Identity(sender.data.string())), message.message_id);
+  boost::apply_visitor(delete_visitor, data_name);
+}
+
+//=============================== To DataManager====================================================
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const PutRequestFromMaidManagerToDataManager& message,
+                 const typename PutRequestFromMaidManagerToDataManager::Sender& sender,
+                 const typename PutRequestFromMaidManagerToDataManager::Receiver&) {
   auto data_name(detail::GetNameVariant(*message.contents));
-  PutResponseFailureVisitor<ServiceHandlerType> put_visitor(
-      service, sender, message.contents->return_code, message.message_id);
+  DataManagerPutVisitor<ServiceHandlerType> put_visitor(
+      service, message.contents->data.content, sender.group_id, message.contents->pmid_hint,
+      message.message_id);
   boost::apply_visitor(put_visitor, data_name);
 }
 
@@ -166,14 +144,62 @@ void DoOperation(ServiceHandlerType* service,
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
-                 const PutResponseFromDataManagerToMaidManager& message,
-                 const PutResponseFromDataManagerToMaidManager::Sender& /*sender*/,
-                 const PutResponseFromDataManagerToMaidManager::Receiver& receiver) {
-  auto data_name(detail::GetNameVariant(message.contents->name));
-  MaidManagerPutResponseVisitor<ServiceHandlerType> put_response_visitor(
-      service, receiver, message.contents->cost, message.message_id);
-  boost::apply_visitor(put_response_visitor, data_name);
+                 const DeleteRequestFromMaidManagerToDataManager& message,
+                 const DeleteRequestFromMaidManagerToDataManager::Sender& /*sender*/,
+                 const DeleteRequestFromMaidManagerToDataManager::Receiver& /*receiver*/) {
+  auto data_name(detail::GetNameVariant(message.contents));
+  DataManagerDeleteVisitor<ServiceHandlerType> delete_visitor(service, message.message_id);
+  boost::apply_visitor(delete_visitor, data_name);
 }
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const PutFailureFromPmidManagerToDataManager& message,
+                 const PutFailureFromPmidManagerToDataManager::Sender& sender,
+                 const PutFailureFromPmidManagerToDataManager::Receiver& /*receiver*/) {
+  auto data_name(detail::GetNameVariant(*message.contents));
+  PutResponseFailureVisitor<ServiceHandlerType> put_visitor(
+      service, sender, message.contents->return_code, message.message_id);
+  boost::apply_visitor(put_visitor, data_name);
+}
+
+//=============================== To PmidManager====================================================
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const PutRequestFromDataManagerToPmidManager& message,
+                 const PutRequestFromDataManagerToPmidManager::Sender& /*sender*/,
+                 const PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  auto data_name(detail::GetNameVariant(*message.contents));
+  PmidManagerPutVisitor<ServiceHandlerType> put_visitor(service, message.contents->content,
+                                                        message.message_id, receiver);
+  boost::apply_visitor(put_visitor, data_name);
+}
+
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const PutFailureFromPmidNodeToPmidManager& message,
+                 const PutFailureFromPmidNodeToPmidManager::Sender& /*sender*/,
+                 const PutFailureFromPmidNodeToPmidManager::Receiver& receiver) {
+  auto data_name(detail::GetNameVariant(*message.contents));
+  PutResponseFailureVisitor<ServiceHandlerType> put_failure_visitor(
+      service, MaidName(Identity(receiver.data.string())), message.contents->return_code,
+                        message.message_id);
+  boost::apply_visitor(put_failure_visitor, data_name);
+}
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const DeleteRequestFromDataManagerToPmidManager& message,
+                 const DeleteRequestFromDataManagerToPmidManager::Sender& /*sender*/,
+                 const DeleteRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  auto data_name(detail::GetNameVariant(message.contents));
+  PmidManagerDeleteVisitor<ServiceHandlerType> delete_visitor(
+      service, PmidName(Identity(receiver.data.string())), message.message_id);
+  boost::apply_visitor(delete_visitor, data_name);
+}
+
+//=============================== To PmidNode=======================================================
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
@@ -187,35 +213,15 @@ void DoOperation(ServiceHandlerType* service,
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
-                 const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
-                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
-  auto data_name(detail::GetNameVariant(message.contents));
-  MaidManagerDeleteVisitor<ServiceHandlerType> delete_visitor(
-      service, MaidName(Identity(sender.data.string())), message.message_id);
-  boost::apply_visitor(delete_visitor, data_name);
+                 const PutRequestFromPmidManagerToPmidNode& message,
+                 const PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
+                 const PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+  auto data_name(detail::GetNameVariant(*message.contents));
+  PmidNodePutVisitor<ServiceHandlerType> put_visitor(service, message.contents->content,
+                                                     message.message_id);
+  boost::apply_visitor(put_visitor, data_name);
 }
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
-                 const DeleteRequestFromMaidManagerToDataManager& message,
-                 const DeleteRequestFromMaidManagerToDataManager::Sender& /*sender*/,
-                 const DeleteRequestFromMaidManagerToDataManager::Receiver& /*receiver*/) {
-  auto data_name(detail::GetNameVariant(message.contents));
-  DataManagerDeleteVisitor<ServiceHandlerType> delete_visitor(service, message.message_id);
-  boost::apply_visitor(delete_visitor, data_name);
-}
-
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
-                 const DeleteRequestFromDataManagerToPmidManager& message,
-                 const DeleteRequestFromDataManagerToPmidManager::Sender& /*sender*/,
-                 const DeleteRequestFromDataManagerToPmidManager::Receiver& receiver) {
-  auto data_name(detail::GetNameVariant(message.contents));
-  PmidManagerDeleteVisitor<ServiceHandlerType> delete_visitor(
-      service, PmidName(Identity(receiver.data.string())), message.message_id);
-  boost::apply_visitor(delete_visitor, data_name);
-}
 
 void InitialiseDirectory(const boost::filesystem::path& directory) {
   if (fs::exists(directory)) {

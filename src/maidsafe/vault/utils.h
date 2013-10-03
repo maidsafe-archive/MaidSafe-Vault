@@ -142,47 +142,14 @@ void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/
   //  MessageType::Invalid_function_call;
 }
 
+
+// TODO(Team) Consider moving these to respective persona
+//=============================== To MaidManager====================================================
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager& message,
                  const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
                  const typename nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
-                 const PutRequestFromMaidManagerToDataManager& message,
-                 const typename PutRequestFromMaidManagerToDataManager::Sender& sender,
-                 const typename PutRequestFromMaidManagerToDataManager::Receiver&);
-
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
-                 const PutRequestFromDataManagerToPmidManager& message,
-                 const PutRequestFromDataManagerToPmidManager::Sender& sender,
-                 const PutRequestFromDataManagerToPmidManager::Receiver& receiver);
-
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
-                 const PutRequestFromPmidManagerToPmidNode& message,
-                 const PutRequestFromPmidManagerToPmidNode::Sender& sender,
-                 const PutRequestFromPmidManagerToPmidNode::Receiver& receiver);
-
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
-                 const PutResponseFromPmidManagerToDataManager& message,
-                 const PutResponseFromPmidManagerToDataManager::Sender& sender,
-                 const PutResponseFromPmidManagerToDataManager::Receiver& receiver);
-
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
-                 const PutFailureFromPmidNodeToPmidManager& message,
-                 const PutFailureFromPmidNodeToPmidManager::Sender& sender,
-                 const PutFailureFromPmidNodeToPmidManager::Receiver& receiver);
-
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
-                 const PutFailureFromDataManagerToMaidManager& message,
-                 const PutFailureFromDataManagerToMaidManager::Sender& sender,
-                 const PutFailureFromDataManagerToMaidManager::Receiver& receiver);
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
@@ -192,21 +159,73 @@ void DoOperation(ServiceHandlerType* service,
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
+                 const PutFailureFromDataManagerToMaidManager& message,
+                 const PutFailureFromDataManagerToMaidManager::Sender& sender,
+                 const PutFailureFromDataManagerToMaidManager::Receiver& receiver);
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+
+//=============================== To DataManager====================================================
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const PutRequestFromMaidManagerToDataManager& message,
+                 const typename PutRequestFromMaidManagerToDataManager::Sender& sender,
+                 const typename PutRequestFromMaidManagerToDataManager::Receiver&);
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const PutResponseFromPmidManagerToDataManager& message,
+                 const PutResponseFromPmidManagerToDataManager::Sender& sender,
+                 const PutResponseFromPmidManagerToDataManager::Receiver& receiver);
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const DeleteRequestFromMaidManagerToDataManager& message,
                  const DeleteRequestFromMaidManagerToDataManager::Sender& sender,
                  const DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const PutFailureFromPmidManagerToDataManager& message,
+                 const PutFailureFromPmidManagerToDataManager::Sender& sender,
+                 const PutFailureFromPmidManagerToDataManager::Receiver& /*receiver*/);
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const PutFailureFromPmidManagerToDataManager& message,
+                 const PutFailureFromPmidManagerToDataManager::Sender& sender,
+                 const PutFailureFromPmidManagerToDataManager::Receiver& /*receiver*/);
+
+//=============================== To PmidManager====================================================
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const PutRequestFromDataManagerToPmidManager& message,
+                 const PutRequestFromDataManagerToPmidManager::Sender& sender,
+                 const PutRequestFromDataManagerToPmidManager::Receiver& receiver);
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const PutFailureFromPmidNodeToPmidManager& message,
+                 const PutFailureFromPmidNodeToPmidManager::Sender& sender,
+                 const PutFailureFromPmidNodeToPmidManager::Receiver& receiver);
+
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const DeleteRequestFromDataManagerToPmidManager& message,
                  const DeleteRequestFromDataManagerToPmidManager::Sender& sender,
                  const DeleteRequestFromDataManagerToPmidManager::Receiver& receiver);
+
+//=============================== To PmidNode=======================================================
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const PutRequestFromPmidManagerToPmidNode& message,
+                 const PutRequestFromPmidManagerToPmidNode::Sender& sender,
+                 const PutRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
