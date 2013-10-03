@@ -26,6 +26,8 @@
 #include "maidsafe/data_types/world_directory.h"
 #include "maidsafe/passport/types.h"
 
+#include "maidsafe/nfs/vault/messages.h"
+
 #include "maidsafe/vault/maid_manager/action_put.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/helpers.h"
@@ -667,9 +669,13 @@ void MaidManagerService::HandleMessage(
       MaidManager::UnresolvedDelete unresolved_action(proto_sync.serialised_unresolved_action(),
                                                       sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
+      if (resolved_action) {
         group_db_.Commit(resolved_action->key, resolved_action->action);
-        // TODO dispatcher_.SendDeleteRequest(account_name, data_name, message_id); need message id here
+        dispatcher_.SendDeleteRequest(resolved_action->key.group_name,
+                                      nfs_vault::DataName(resolved_action->key.type,
+                                                          resolved_action->key.name),
+                                      resolved_action->action.kMessageId);
+      }
       break;
     }
     //      case ActionCreateAccount::kActionId: {

@@ -16,40 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_ACTION_DELETE_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_ACTION_DELETE_H_
+package maidsafe.vault.protobuf;
 
-#include <cstdint>
-#include <string>
-
-#include "boost/optional/optional.hpp"
-
-#include "maidsafe/nfs/types.h"
-
-#include "maidsafe/vault/config.h"
-
-namespace maidsafe {
-
-namespace vault {
-
-class MaidManagerMetadata;
-class MaidManagerValue;
-
-struct ActionMaidManagerDelete {
-  ActionMaidManagerDelete(const nfs::MessageId& message_id);
-  explicit ActionMaidManagerDelete(const std::string& serialised_action);
-  ActionMaidManagerDelete(const ActionMaidManagerDelete& other);
-  ActionMaidManagerDelete(ActionMaidManagerDelete&& other);
-
-  std::string Serialise() const;
-  detail::DbAction operator()(MaidManagerMetadata& metadata,
-                              boost::optional<MaidManagerValue>& value) const;
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
-  const nfs::MessageId kMessageId;
-};
-
-}  // namespace vault
-
-}  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_ACTION_DELETE_H_
+message ActionMaidManagerDelete {
+  required int32 message_id = 1;
+}

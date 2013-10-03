@@ -18,6 +18,7 @@
 
 #include "maidsafe/vault/maid_manager/action_delete.h"
 
+#include "maidsafe/vault/maid_manager/action_delete.pb.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/value.h"
 
@@ -25,6 +26,29 @@ namespace maidsafe {
 
 namespace vault {
 
+
+ActionMaidManagerDelete::ActionMaidManagerDelete(const nfs::MessageId& message_id)
+    : kMessageId(message_id) {}
+
+ActionMaidManagerDelete::ActionMaidManagerDelete(const std::string& serialised_action)
+    : kMessageId([&serialised_action]()->int32_t {
+        protobuf::ActionMaidManagerDelete action_delete_proto;
+        if (!action_delete_proto.ParseFromString(serialised_action))
+          ThrowError(CommonErrors::parsing_error);
+        return action_delete_proto.message_id();
+      }()) {}
+
+ActionMaidManagerDelete::ActionMaidManagerDelete(const ActionMaidManagerDelete& other)
+    : kMessageId(other.kMessageId) {}
+
+ActionMaidManagerDelete::ActionMaidManagerDelete(ActionMaidManagerDelete&& other)
+    :kMessageId(std::move(other.kMessageId)) {}
+
+std::string ActionMaidManagerDelete::Serialise() const {
+  protobuf::ActionMaidManagerDelete action_delete_proto;
+  action_delete_proto.set_message_id(kMessageId);
+  return action_delete_proto.SerializeAsString();
+}
 
 detail::DbAction ActionMaidManagerDelete::operator()(
     MaidManagerMetadata& metadata, boost::optional<MaidManagerValue>& value) const {

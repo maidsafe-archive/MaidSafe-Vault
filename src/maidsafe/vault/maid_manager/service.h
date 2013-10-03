@@ -368,7 +368,7 @@ void MaidManagerService::HandleDelete(const MaidName& account_name,
     typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
                                         GetObfuscatedDataName(data_name), data_name.type);
     sync_deletes_.AddLocalAction(typename MaidManager::UnresolvedDelete(
-        group_key, ActionMaidManagerDelete(), routing_.kNodeId(), message_id));
+        group_key, ActionMaidManagerDelete(message_id), routing_.kNodeId(), message_id));
     DoSync();
   }
 }
