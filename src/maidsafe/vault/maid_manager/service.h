@@ -133,29 +133,10 @@ class MaidManagerService {
   void CreateAccount(const MaidName& account_name, AllowedAccountCreationType);
   template <typename Data>
   void CreateAccount(const MaidName& /*account_name*/, DisallowedAccountCreationType) {}
-
-  //  template<typename Data, nfs::MessageAction action>
-  //  void AddLocalUnresolvedActionThenSync(const nfs::Message& message, int32_t cost);
-
-  //  template<typename Data>
-  //  void HandleVersionMessage(const nfs::Message& message,
-  //                            const routing::ReplyFunctor& reply_functor);
-
-  //  // =============== Pmid registration
-  // =============================================================
-  //  void HandlePmidRegistration(const nfs::Message& message,
-  //                              const routing::ReplyFunctor& reply_functor);
-  //  template<typename PublicFobType>
-  //  void ValidatePmidRegistration(const nfs::Reply& reply,
-  //                                typename PublicFobType::Name public_fob_name,
-  //                                std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
   void FinalisePmidRegistration(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
 
-  // =============== Account transfer ==============================================================
-  //  void TransferAccount(const MaidName& account_name, const NodeId& new_node);
-  //  void HandleAccountTransfer(const nfs::Message& message);
 
-  // =============== PMID totals ===================================================================
+  // ===================================== PMID totals ============================================
   void UpdatePmidTotals(const MaidName& account_name);
   void UpdatePmidTotalsCallback(const std::string& serialised_reply,
                                 std::shared_ptr<GetPmidTotalsOp> op_data);
@@ -185,7 +166,6 @@ class MaidManagerService {
   Sync<MaidManager::UnresolvedDelete> sync_deletes_;
   Sync<MaidManager::UnresolvedRegisterPmid> sync_register_pmids_;
   Sync<MaidManager::UnresolvedUnregisterPmid> sync_unregister_pmids_;
-  static const int kPutRepliesSuccessesRequired_;
   static const int kDefaultPaymentFactor_;
 };
 
@@ -326,10 +306,8 @@ template <typename Data>
 void MaidManagerService::HandlePut(const MaidName& account_name, const Data& data,
                                    const PmidName& pmid_node_hint,
                                    const nfs::MessageId& message_id) {
-  // If unique data / specialise/ ask data manager to see stored or not / if not then store
-  // data manager will send a message back if there is an attmept to re-store existing unique data
   auto metadata(group_db_.GetMetadata(account_name));
-  if (metadata->AllowPut(data.data().string().size()) == MaidManagerMetadata::Status::kOk) {
+  if (metadata->AllowPut(data.data().string().size()) != MaidManagerMetadata::Status::kNoSpace) {
     dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
   } else {
     dispatcher_.SendPutFailure<Data>(account_name, data.name(),
@@ -353,9 +331,8 @@ template <typename Data>
 void MaidManagerService::HandlePutFailure(
     const MaidName& maid_name, const typename Data::Name& data_name,
     const maidsafe_error& error, const nfs::MessageId& message_id) {
-    dispatcher_.SendPutFailure<Data>(maid_name, data_name, error, message_id);
+  dispatcher_.SendPutFailure<Data>(maid_name, data_name, error, message_id);
 }
-
 
 // ================================== Delete Implementation =======================================
 
@@ -377,7 +354,7 @@ bool MaidManagerService::DeleteAllowed(const MaidName& account_name,
                                        const typename Data::Name& data_name) {
   try {
     if (group_db_.GetValue(MaidManager::Key(account_name, GetObfuscatedDataName(data_name),
-                                            Data::Name::data_type::Tag::kValue)))
+                                            Data::Tag::kValue)))
       return true;
   }
   catch (const maidsafe_error& /*error*/) {

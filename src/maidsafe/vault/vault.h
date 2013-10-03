@@ -99,7 +99,7 @@ bool Vault::OnGetFromCache(const T& message) {  // Need to be on routing's threa
 
 template <typename T>
 void Vault::OnStoreInCache(const T& /*message*/) {
-  //  asio_service_.service().post([=] { demux_.StoreInCache(message) });
+  //  asio_service_.service().post([=] { demux_.StoreInCache(message); });
 }
 
 }  // namespace vault
