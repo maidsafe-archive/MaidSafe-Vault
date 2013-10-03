@@ -341,11 +341,11 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
 template <typename Data>
 void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
                                            const typename Data::Name& data_name,
-                                           const int32_t& cost, const nfs::MessageId& message_id) {
+                                           const int32_t& cost, const nfs::MessageId& /*message_id*/) {
   typename MaidManager::Key group_key(typename MaidManager::GroupName(maid_name.value),
                                       GetObfuscatedDataName(data_name), data_name.type);
   sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(
-      group_key, ActionMaidManagerPut(cost), routing_.kNodeId(), message_id));
+      group_key, ActionMaidManagerPut(cost), routing_.kNodeId()));
   DoSync();
 }
 
@@ -364,11 +364,10 @@ void MaidManagerService::HandleDelete(const MaidName& account_name,
                                       const typename Data::Name& data_name,
                                       const nfs::MessageId& message_id) {
   if (DeleteAllowed(account_name, data_name)) {
-    dispatcher_.SendDeleteRequest(account_name, data_name, message_id);
     typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
                                         GetObfuscatedDataName(data_name), data_name.type);
     sync_deletes_.AddLocalAction(typename MaidManager::UnresolvedDelete(
-        group_key, ActionMaidManagerDelete(message_id), routing_.kNodeId(), message_id));
+        group_key, ActionMaidManagerDelete(message_id), routing_.kNodeId()));
     DoSync();
   }
 }

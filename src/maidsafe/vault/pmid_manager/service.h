@@ -198,7 +198,7 @@ void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
   sync_puts_.AddLocalAction(
       PmidManager::UnresolvedPut(group_key, ActionPmidManagerPut(data.data().string().size(),
                                                                  message_id),
-                                 routing_.kNodeId(), message_id));
+                                 routing_.kNodeId()));
   DoSync();
 }
 
@@ -210,7 +210,7 @@ void PmidManagerService::HandlePutFailure(
   dispatcher_.SendPutFailure<Data>(name, pmid_node, error_code, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), name.raw_name, name.type);
   sync_deletes_.AddLocalAction(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(),
-                                                             routing_.kNodeId(), message_id));
+                                                             routing_.kNodeId()));
   DoSync();
 }
 
@@ -229,8 +229,7 @@ void PmidManagerService::HandleDelete(
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), data_name.name().raw_name,
                              data_name.name().type);
   sync_deletes_.AddLocalAction(
-      PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(), routing_.kNodeId(),
-                                    message_id));
+      PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(), routing_.kNodeId()));
   DoSync();
 }
 

@@ -254,7 +254,7 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
   } else {
     typename DataManager::Key key(data.name().raw_name, Data::Name::data_type);
     sync_puts_.AddLocalAction(DataManager::UnresolvedPut(key, ActionDataManagerPut(),
-                                                         routing_.kNodeId(), message_id));
+                                                         routing_.kNodeId()));
     DoSync();
   }
   dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id); // NOT IN FAILURE
@@ -283,7 +283,7 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
   }
   typename DataManager::Key key(data_name.raw_name, data_name.type);
   sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
-      key, ActionDataManagerRemovePmid(pmid_name), routing_.kNodeId(), message_id));
+      key, ActionDataManagerRemovePmid(pmid_name), routing_.kNodeId()));
   DoSync();
 }
 
@@ -291,10 +291,10 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
 template <typename Data>
 void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
                                            const PmidName& pmid_node, int32_t size,
-                                           const nfs::MessageId& message_id) {
+                                           const nfs::MessageId& /*message_id*/) {
   typename DataManager::Key key(data_name.raw_name, data_name.type);
   sync_add_pmids_.AddLocalAction(DataManager::UnresolvedAddPmid(
-      key, ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId(), message_id));
+      key, ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId()));
   DoSync();
 }
 
@@ -372,10 +372,10 @@ void DataManagerService::HandleGet(const typename Data::Name& /*data_name*/, con
 
 template <typename Data>
 void DataManagerService::HandleDelete(const typename Data::Name& data_name,
-                                      const nfs::MessageId& message_id) {
+                                      const nfs::MessageId& /*message_id*/) {
   typename DataManager::Key key(data_name.value, Data::Name::data_type::Tag::kValue);
   sync_deletes_.AddLocalAction(DataManager::UnresolvedDelete(key, ActionDataManagerDelete(),
-                                                             routing_.kNodeId(), message_id));
+                                                             routing_.kNodeId()));
   DoSync();
 }
 

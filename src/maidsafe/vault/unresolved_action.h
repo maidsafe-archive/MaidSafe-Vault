@@ -40,11 +40,9 @@ struct UnresolvedAction {
                    const NodeId& this_node_id);
   UnresolvedAction(const UnresolvedAction& other);
   UnresolvedAction(UnresolvedAction&& other);
-  UnresolvedAction(const Key& key_in, const Action& action_in, const NodeId& this_node_id,
-                   int32_t this_entry_id);
+  UnresolvedAction(const Key& key_in, const Action& action_in, const NodeId& this_node_id);
   std::string Serialise() const;
   bool IsReadyForSync() const;
-
   Key key;
   Action action;
   std::pair<NodeId, int32_t> this_node_and_entry_id;
@@ -54,6 +52,7 @@ struct UnresolvedAction {
 
  private:
   UnresolvedAction& operator=(UnresolvedAction other);
+  static int32_t entry_id_sequence_number;
 
   // Helpers to handle Action class with/without Serialise() member function.
   template <typename T, typename Signature>
@@ -98,6 +97,9 @@ struct UnresolvedAction {
   }
 };
 
+template <typename Key, typename Action>
+int32_t UnresolvedAction<Key, Action>::entry_id_sequence_number;
+
 // ==================== Implementation =============================================================
 template <typename Key, typename Action>
 UnresolvedAction<Key, Action>::UnresolvedAction(const std::string& serialised_copy,
@@ -137,10 +139,10 @@ UnresolvedAction<Key, Action>::UnresolvedAction(UnresolvedAction&& other)
 
 template <typename Key, typename Action>
 UnresolvedAction<Key, Action>::UnresolvedAction(const Key& key_in, const Action& action_in,
-                                                const NodeId& this_node_id, int32_t this_entry_id)
+                                                const NodeId& this_node_id)
     : key(key_in),
       action(action_in),
-      this_node_and_entry_id(std::make_pair(this_node_id, this_entry_id)),
+      this_node_and_entry_id(std::make_pair(this_node_id, ++entry_id_sequence_number)),
       peer_and_entry_ids(),
       sent_to_peers(false),
       sync_counter(0) {}
