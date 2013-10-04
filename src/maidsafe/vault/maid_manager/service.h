@@ -102,7 +102,10 @@ class MaidManagerService {
     return false;
   }
 
-  void HandleCreateAccount(const MaidName& maid_name);
+  // =============== account creation ==============================================================
+  void HandleCreateMaidAccount(const passport::PublicMaid &maid,
+                               const passport::PublicAnmaid& anmaid,
+                               const nfs::MessageId& message_id);
 
   // =============== Put/Delete data ===============================================================
   template <typename Data>
@@ -365,6 +368,7 @@ bool MaidManagerService::DeleteAllowed(const MaidName& account_name,
 
 
 // ===============================================================================================
+
 
 // template<>
 // void MaidManagerService::HandleMessage<maid_manager::MaidNodePut>(

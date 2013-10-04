@@ -159,6 +159,23 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
       sync_register_pmids_(),
       sync_unregister_pmids_() {}
 
+
+void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& maid,
+                                                 const passport::PublicAnmaid& anmaid,
+                                                 const nfs::MessageId& message_id) {
+  MaidName account_name(maid.name());
+  // If Account exists
+  if (group_db_.GetMetadata(account_name)) {
+    dispatcher_.SendCreateAccountResponse(account_name,
+                                          maidsafe_error(VaultErrors::unique_data_clash),
+                                          message_id);
+    return;
+  }
+  // Add to the ongoing_account creation map
+  dispatcher_.SendPutRequest(account_name, maid, PmidName(), message_id);
+  dispatcher_.SendPutRequest(account_name, anmaid, PmidName(), message_id);
+}
+
 // void MaidManagerService::HandleMessage(const nfs::Message& message,
 //                                       const routing::ReplyFunctor& reply_functor) {
 //  ValidateGenericSender(message);

@@ -103,11 +103,11 @@ void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name, const D
 
   VaultMessage vault_message(
       message_id,
-      nfs_vault::DataAndPmidHint(nfs_vault::DataName(data.name()), data.data(), pmid_node_hint));
+      nfs_vault::DataAndPmidHint(nfs_vault::DataName(data.name()), data.Serialise(), pmid_node_hint));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(routing::GroupId(data.name().string())));
+                         VaultMessage::Receiver(routing::GroupId(NodeId(data.name()))));
   routing_.Send(message);
 }
 

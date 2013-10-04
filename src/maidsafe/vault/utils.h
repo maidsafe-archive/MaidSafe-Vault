@@ -169,6 +169,14 @@ void DoOperation(ServiceHandlerType* service,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
+// Non data
+ template<typename ServiceHandlerType, typename Sender>
+ void DoOperation(ServiceHandlerType* service,
+                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager& /*message*/,
+                 const Sender& sender,
+                 const NodeId& /*receiver*/) {
+  service->CreateAccount(MaidName(sender));
+}
 
 //=============================== To DataManager====================================================
 template <typename ServiceHandlerType>
@@ -237,13 +245,7 @@ void DoOperation(ServiceHandlerType* service,
 // ================================== Account Specialisations ====================================
 // CreateAccountRequestFromMaidNodeToMaidManager, Empty
 
-// template<typename ServiceHandlerType, typename Sender>
-// void DoOperation(ServiceHandlerType* service,
-//                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager& /*message*/,
-//                 const Sender& sender,
-//                 const NodeId& /*receiver*/) {
-//  service->CreateAccount(MaidName(sender));
-//}
+
 
 // ================================== Delete Specialisations ======================================
 //   DeleteRequestFromMaidNodeToMaidManager, DataName
