@@ -26,9 +26,7 @@ namespace {
 MemoryUsage mem_usage = MemoryUsage(524288000);  // 500Mb
 MemoryUsage perm_usage = MemoryUsage(mem_usage / 5);
 DiskUsage perm_disk_usage = DiskUsage(10000);
-MemoryUsage cache_usage = MemoryUsage(mem_usage * 2 / 5);
 
-MemoryUsage mem_only_cache_usage = MemoryUsage(100);  // size in elements
 
 // MemoryUsage mem_only_cache_usage = MemoryUsage(mem_usage * 2 / 5);
 //  fs::space_info space = fs::space("/tmp/vault_root_dir\\");  // FIXME  NOLINT
@@ -43,15 +41,12 @@ PmidNodeHandler::PmidNodeHandler(const boost::filesystem::path vault_root_dir)
     : space_info_(boost::filesystem::space(vault_root_dir)),
       disk_total_(space_info_.available),
       permanent_size_(disk_total_ * 4 / 5),
-      cache_size_(disk_total_ / 10),
       permanent_data_store_(vault_root_dir / "pmid_node" / "permanent",
-                            DiskUsage(10000)),  // TODO(Fraser) BEFORE_RELEASE need to read value
+                            DiskUsage(10000))  // TODO(Fraser) BEFORE_RELEASE need to read value
                                                 // from disk
-      cache_data_store_(cache_usage, DiskUsage(cache_size_ / 2), nullptr,
-                        vault_root_dir / "pmid_node" / "cache"),  // FIXME - DiskUsage  NOLINT
-      mem_only_cache_(mem_only_cache_usage) {}
+                                                {}
 
-boost::filesystem::path PmidNodeHandler::GetPermanentStorePath() const {
+boost::filesystem::path PmidNodeHandler::GetPath() const {
   return permanent_data_store_.GetDiskPath();
 }
 

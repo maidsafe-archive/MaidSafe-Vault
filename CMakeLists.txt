@@ -49,6 +49,7 @@ set_meta_files_custom_commands("${OutputFile}" "${InputFile}" "${MetaFiles}" "Va
 
 glob_dir(Vault ${VaultSourcesDir} Vault)
 list(REMOVE_ITEM VaultSources ${VaultSourcesDir}/vault_main.cc)
+glob_dir(CacheHandler ${VaultSourcesDir}/cache_handler "Cache Handler\\\\")
 glob_dir(DataManager ${VaultSourcesDir}/data_manager "Data Manager\\\\")
 glob_dir(MaidManager ${VaultSourcesDir}/maid_manager "Maid Manager\\\\")
 glob_dir(MpidManager ${VaultSourcesDir}/mpid_manager "Mpid Manager\\\\")
@@ -64,6 +65,7 @@ glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
 ms_add_static_library(vault ${VaultAllFiles}
+                            ${CacheHandlerAllFiles}
                             ${DataManagerAllFiles}
                             ${MaidManagerAllFiles}
                             ${MpidManagerAllFiles}

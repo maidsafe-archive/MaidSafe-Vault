@@ -16,30 +16,43 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/demultiplexer.h"
+#ifndef MAIDSAFE_VAULT_CACHE_HANDLER_SERVICE_H_
+#define MAIDSAFE_VAULT_CACHE_HANDLER_SERVICE_H_
 
-#include "maidsafe/common/log.h"
-#include "maidsafe/passport/types.h"
-#include "maidsafe/data_types/data_type_values.h"
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/data_store/data_store.h"
+#include "maidsafe/data_store/memory_buffer.h"
+
+#include "maidsafe/routing/routing_api.h"
+#include "maidsafe/nfs/message_wrapper.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-Demultiplexer::Demultiplexer(nfs::Service<MaidManagerService>& maid_manager_service,
-                             nfs::Service<VersionManagerService>& version_manager_service,
-                             nfs::Service<DataManagerService>& data_manager_service,
-                             nfs::Service<PmidManagerService>& pmid_manager_service,
-                             nfs::Service<PmidNodeService>& pmid_node_service,
-                             CacheHandlerService& cache_service)
-    : maid_manager_service_(maid_manager_service),
-      version_manager_service_(version_manager_service),
-      data_manager_service_(data_manager_service),
-      pmid_manager_service_(pmid_manager_service),
-      pmid_node_service_(pmid_node_service),
-      cache_service_(cache_service) {}
+class CacheHandlerService {
+ public:
+  CacheHandlerService(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
+
+  template <typename Sender, typename Receiver>
+  bool Get(const nfs::TypeErasedMessageWrapper& /*message*/, const Sender& /*sender*/,
+           const Receiver& /*receiver*/) {
+    return false;
+  }
+
+  template <typename Sender, typename Receiver>
+  void Store(const nfs::TypeErasedMessageWrapper& /*message*/, const Sender& /*sender*/,
+             const Receiver& /*receiver*/) {
+  }
+
+ private:
+  routing::Routing& routing_;
+  DiskUsage cache_size_;
+  data_store::DataStore<data_store::DataBuffer<DataNameVariant>> cache_data_store_;
+  data_store::MemoryBuffer mem_only_cache_;
+};
 
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_CACHE_HANDLER_SERVICE_H_

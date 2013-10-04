@@ -155,30 +155,12 @@ class PmidNodeService {
   typedef PmidNodeServiceMessages VaultMessages;
   typedef PmidNodeServiceMessages Messages;
 
-  enum : uint32_t {
-    kPutRequestsRequired = 3,
-    kDeleteRequestsRequired = 3
-  };
-
   PmidNodeService(const passport::Pmid& pmid, routing::Routing& routing,
                   const boost::filesystem::path& vault_root_dir);
 
   template <typename T>
   void HandleMessage(const T& message, const typename T::Sender& sender,
                      const typename T::Receiver& receiver);
-
-  template <typename T>
-  bool GetFromCache(const T& /*message*/, const typename T::Sender& /*sender*/,
-                    const typename T::Receiver& /*receiver*/) {
-    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
-    return false;
-  }
-
-  template <typename T>
-  void StoreInCache(const T& /*message*/, const typename T::Sender& /*sender*/,
-                    const typename T::Receiver& /*receiver*/) {
-    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
-  }
 
   template <typename Data>
   void HandleDelete(const typename Data::Name& data_name);
@@ -314,7 +296,7 @@ void PmidNodeService::HandleMessage(const T& /*message*/, const typename T::Send
 template <typename Data>
 void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_id) {
   try {
-    handler_.PutToPermanentStore(data);
+    handler_.Put(data);
   }
   catch (const maidsafe_error& error) {
     dispatcher_.SendPutFailure(data.name(), handler_.AvailableSpace(), error, message_id);
@@ -324,9 +306,7 @@ void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_
 template <typename Data>
 void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
   try {
-    handler_.DeleteFromPermanentStore(GetDataNameVariant(
-                                          Data::Name::data_type::tag::kValue,
-                                          data_name.value));
+    handler_.Delete(GetDataNameVariant(Data::tag::kValue, data_name.value));
   }
   catch (const maidsafe_error& /*error*/) {
   }
@@ -432,7 +412,7 @@ void PmidNodeService::HandleDelete(const typename Data::Name& name,
                                    const nfs::MessageId& /*message_id*/) {
   try {
     {
-      handler_.DeleteFromPermanentStore<Data>(nfs_vault::DataName(name.type, name.raw_name));
+      handler_.Delete<Data>(nfs_vault::DataName(name.type, name.raw_name));
       // accumulator_.SetHandled(message, sender); To be moved to OperationWrapper
     }
   }
