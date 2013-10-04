@@ -37,6 +37,7 @@
 #include "maidsafe/vault/data_manager/service.h"
 #include "maidsafe/vault/pmid_manager/service.h"
 #include "maidsafe/vault/version_manager/service.h"
+#include "maidsafe/vault/cache_handler/service.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/demultiplexer.h"
 
@@ -83,6 +84,7 @@ class Vault {
   nfs::Service<DataManagerService> data_manager_service_;
   nfs::Service<PmidManagerService> pmid_manager_service_;
   nfs::Service<PmidNodeService> pmid_node_service_;
+  CacheHandlerService cache_service_;
   Demultiplexer demux_;
   AsioService asio_service_;
 };
@@ -95,11 +97,12 @@ void Vault::OnMessageReceived(const T& message) {
 template <typename T>
 bool Vault::OnGetFromCache(const T& message) {  // Need to be on routing's thread
   return demux_.GetFromCache(message);
+  return true;
 }
 
 template <typename T>
-void Vault::OnStoreInCache(const T& /*message*/) {
-  //  asio_service_.service().post([=] { demux_.StoreInCache(message); });
+void Vault::OnStoreInCache(const T& message) {
+  asio_service_.service().post([=] { demux_.StoreInCache(message); });
 }
 
 }  // namespace vault

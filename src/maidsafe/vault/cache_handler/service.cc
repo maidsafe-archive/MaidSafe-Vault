@@ -16,29 +16,29 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/demultiplexer.h"
+#include "maidsafe/vault/cache_handler/service.h"
 
-#include "maidsafe/common/log.h"
-#include "maidsafe/passport/types.h"
-#include "maidsafe/data_types/data_type_values.h"
-#include "maidsafe/data_types/data_name_variant.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-Demultiplexer::Demultiplexer(nfs::Service<MaidManagerService>& maid_manager_service,
-                             nfs::Service<VersionManagerService>& version_manager_service,
-                             nfs::Service<DataManagerService>& data_manager_service,
-                             nfs::Service<PmidManagerService>& pmid_manager_service,
-                             nfs::Service<PmidNodeService>& pmid_node_service,
-                             CacheHandlerService& cache_service)
-    : maid_manager_service_(maid_manager_service),
-      version_manager_service_(version_manager_service),
-      data_manager_service_(data_manager_service),
-      pmid_manager_service_(pmid_manager_service),
-      pmid_node_service_(pmid_node_service),
-      cache_service_(cache_service) {}
+namespace {
+
+MemoryUsage mem_usage = MemoryUsage(524288000);  // 500Mb
+MemoryUsage cache_usage = MemoryUsage(mem_usage * 2 / 5);
+MemoryUsage mem_only_cache_usage = MemoryUsage(100);  // size in elements
+DiskUsage cache_size = DiskUsage(200);
+
+}
+
+CacheHandlerService::CacheHandlerService(routing::Routing& routing,
+                                         const boost::filesystem::path vault_root_dir)
+    : routing_(routing),
+      cache_size_(cache_size),
+      cache_data_store_(cache_usage, DiskUsage(cache_size_ / 2), nullptr,
+                        vault_root_dir / "cache" / "cache"),
+      mem_only_cache_(mem_only_cache_usage) {}
 
 }  // namespace vault
 
