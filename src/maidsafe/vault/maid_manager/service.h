@@ -127,7 +127,7 @@ class MaidManagerService {
   template <typename Data>
   bool DeleteAllowed(const MaidName& account_name, const typename Data::Name& data_name);
 
-  MaidManagerMetadata::Status AllowPut(const MaidName& account_name, int32_t cost);
+//  MaidManagerMetadata::Status AllowPut(const MaidName& account_name, int32_t cost);
 
   // Only Maid and Anmaid can create account; for all others this is a no-op.
   typedef std::true_type AllowedAccountCreationType;
@@ -157,6 +157,21 @@ class MaidManagerService {
   typedef boost::make_variant_over<FinalType>::type Messages;
 
  private:
+
+  struct MaidAccountCreationStatus {
+   MaidAccountCreationStatus(typename passport::PublicMaid::Name maid_name_in,
+                             typename passport::PublicAnmaid::Name anmaid_name_in)
+       : maid_name(std::move(maid_name_in)),
+         maid_stored(false),
+         anmaid_name(std::move(anmaid_name_in)),
+         anmaid_stored(false) {}
+
+   typename passport::PublicMaid::Name maid_name;
+   bool maid_stored;
+   typename passport::PublicAnmaid::Name anmaid_name;
+   bool anmaid_stored;
+  };
+
   routing::Routing& routing_;
   //  nfs_client::DataGetter data_getter_;
   GroupDb<MaidManager> group_db_;
@@ -170,6 +185,7 @@ class MaidManagerService {
   Sync<MaidManager::UnresolvedRegisterPmid> sync_register_pmids_;
   Sync<MaidManager::UnresolvedUnregisterPmid> sync_unregister_pmids_;
   static const int kDefaultPaymentFactor_;
+  std::map<nfs::MessageId, MaidAccountCreationStatus> pending_account_map_;
 };
 
 template <typename T>
@@ -251,6 +267,16 @@ void MaidManagerService::HandleMessage(
     const typename SynchroniseFromMaidManagerToMaidManager::Sender& sender,
     const typename SynchroniseFromMaidManagerToMaidManager::Receiver& receiver);
 
+template <>
+void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
+    const typename passport::PublicMaid::Name& data_name, const int32_t&,
+    const nfs::MessageId& message_id);
+
+template <>
+void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidName& maid_name,
+   const typename passport::PublicAnmaid::Name& data_name, const int32_t&,
+   const nfs::MessageId& message_id);
+
 // ==================== Implementation =============================================================
 namespace detail {
 
@@ -310,7 +336,7 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
                                    const PmidName& pmid_node_hint,
                                    const nfs::MessageId& message_id) {
   auto metadata(group_db_.GetMetadata(account_name));
-  if (metadata->AllowPut(data.data().string().size()) != MaidManagerMetadata::Status::kNoSpace) {
+  if (metadata->AllowPut(data) != MaidManagerMetadata::Status::kNoSpace) {
     dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
   } else {
     dispatcher_.SendPutFailure<Data>(account_name, data.name(),

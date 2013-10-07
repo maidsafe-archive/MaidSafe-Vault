@@ -171,9 +171,52 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& mai
                                           message_id);
     return;
   }
-  // Add to the ongoing_account creation map
+
+  pending_account_map_.insert(std::make_pair(message_id, MaidAccountCreationStatus(maid.name(),
+                                                                                   anmaid.name())));
   dispatcher_.SendPutRequest(account_name, maid, PmidName(), message_id);
   dispatcher_.SendPutRequest(account_name, anmaid, PmidName(), message_id);
+}
+
+template <>
+void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
+    const typename passport::PublicMaid::Name& data_name, const int32_t& ,
+    const nfs::MessageId& message_id) {
+  auto pending_account_itr(pending_account_map_.find(message_id));
+  if (pending_account_itr == pending_account_map_.end()) {
+    assert(false);
+    return ;
+  }
+  assert(data_name == maid_name);
+  assert(pending_account_itr->second.maid_name == data_name);
+  pending_account_itr->second.maid_stored = true;
+
+  if (pending_account_itr->second.anmaid_stored) {
+    sync_create_accounts_.AddLocalAction(
+        typename MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(),
+                                                      routing_.kNodeId()));
+    DoSync();
+  }
+}
+
+template <>
+void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidName& maid_name,
+    const typename passport::PublicAnmaid::Name& data_name, const int32_t&,
+    const nfs::MessageId& message_id) {
+  auto pending_account_itr(pending_account_map_.find(message_id));
+  if (pending_account_itr == pending_account_map_.end()) {
+    assert(false);
+    return ;
+  } // FIXME mutex needed
+  assert(pending_account_itr->second.anmaid_name == data_name);
+  pending_account_itr->second.anmaid_stored = true;
+
+  if (pending_account_itr->second.maid_stored) {
+    sync_create_accounts_.AddLocalAction(
+        typename MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(),
+                                                      routing_.kNodeId()));
+    DoSync();
+  }
 }
 
 // void MaidManagerService::HandleMessage(const nfs::Message& message,
@@ -345,7 +388,7 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& mai
 void MaidManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accounts_);
+//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accounts_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_accounts_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_register_pmids_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_);

@@ -38,7 +38,9 @@ CacheHandlerService::CacheHandlerService(routing::Routing& routing,
       cache_size_(cache_size),
       cache_data_store_(cache_usage, DiskUsage(cache_size_ / 2), nullptr,
                         vault_root_dir / "cache" / "cache"),
-      mem_only_cache_(mem_only_cache_usage) {}
+      mem_only_cache_(mem_only_cache_usage) {
+  routing_.kNodeId();
+}
 
 }  // namespace vault
 

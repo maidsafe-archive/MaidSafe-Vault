@@ -142,7 +142,7 @@ void DataManagerService::HandleMessage(
     const GetResponseFromPmidNodeToDataManager& /*message*/,
     const typename GetResponseFromPmidNodeToDataManager::Sender& /*sender*/,
     const typename GetResponseFromPmidNodeToDataManager::Receiver& /*receiver*/) {
-  typedef GetResponseFromPmidNodeToDataManager MessageType;
+//  typedef GetResponseFromPmidNodeToDataManager MessageType;
 }
 
 template<>

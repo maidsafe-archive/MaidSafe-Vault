@@ -47,8 +47,8 @@ class MaidManagerMetadata {
   explicit MaidManagerMetadata(const std::string& serialised_metadata_value);
 
   std::string Serialise() const;
-
-  Status AllowPut(int32_t cost) const;
+  template <typename Data>
+  Status AllowPut(const Data& data) const;
   void PutData(int32_t cost);
   void DeleteData(int32_t cost);
   void RegisterPmid(const nfs_vault::PmidRegistration& pmid_registration);
@@ -64,6 +64,29 @@ class MaidManagerMetadata {
   int64_t total_put_data_;
   std::vector<PmidTotals> pmid_totals_;
 };
+
+
+template <>
+MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(const passport::PublicPmid& data) const;
+template <>
+MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(const passport::PublicMaid& data) const;
+template <>
+MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(const passport::PublicAnmaid& data) const;
+
+
+template <typename Data>
+MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(const Data& data) const {
+  int64_t total_claimed_available_size_by_pmids(0);
+  for (const auto& pmid_total : pmid_totals_)
+    total_claimed_available_size_by_pmids += pmid_total.pmid_metadata.claimed_available_size;
+  auto cost(data.data().string().size());
+  if (total_claimed_available_size_by_pmids < total_put_data_ + cost)
+    return Status::kNoSpace;
+
+  return ((total_claimed_available_size_by_pmids / 100) * 3 < total_put_data_ + cost)
+             ? Status::kLowSpace
+             : Status::kOk;
+}
 
 }  // namespace vault
 
