@@ -243,6 +243,26 @@ class GetRequestVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
+template <typename ServiceHandlerType>
+class GetResponseVisitor : public boost::static_visitor<> {
+ public:
+  GetResponseVisitor(ServiceHandlerType* service, Requestor requestor, nfs::MessageId message_id)
+      : kService_(service),
+        kRequestor_(std::move(requestor)),
+        kMessageId_(std::move(message_id)) {}
+nfs_vault::DataNameAndContentOrCheckResult
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    kService_->template HandleGet<typename Name::data_type, Requestor>(data_name, kRequestor_,
+                                                                       kMessageId_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const Requestor kRequestor_;
+  const nfs::MessageId kMessageId_;
+};
+
 template<typename ServiceHandlerType>
 class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
  public:

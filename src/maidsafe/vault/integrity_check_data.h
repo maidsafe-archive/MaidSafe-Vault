@@ -16,51 +16,49 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_HELPERS_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_HELPERS_H_
+#ifndef MAIDSAFE_VAULT_INTEGRITY_CHECK_DATA_H_
+#define MAIDSAFE_VAULT_INTEGRITY_CHECK_DATA_H_
 
-#include <algorithm>
 #include <cstdint>
-#include <map>
-#include <mutex>
 #include <string>
 
+#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/config.h"
-#include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
-#include "maidsafe/nfs/vault/messages.h"
-
-#include "maidsafe/vault/integrity_check_data.h"
-#include "maidsafe/vault/types.h"
-
 
 namespace maidsafe {
 
 namespace vault {
 
-template <typename DataName, typename Requestor>
-struct GetResponseOp {
-  GetResponseOp(PmidName pmid_node_to_get_from_in,
-                std::map<PmidName, IntegrityCheckData> integrity_checks_in,
-                DataName data_name_in,
-                Requestor requestor_in)
-      : mutex(),
-        pmid_node_to_get_from(std::move(pmid_node_to_get_from_in)),
-        integrity_checks(std::move(integrity_checks_in)),
-        data_name(std::move(data_name_in)),
-        requestor(std::move(requestor_in)),
-        serialised_contents() {}
+class IntegrityCheckData {
+ public:
+  typedef crypto::SHA512Hash Result;
 
-  std::mutex mutex;
-  PmidName pmid_node_to_get_from;
-  std::map<PmidName, IntegrityCheckData> integrity_checks;
-  DataName data_name;
-  Requestor requestor;
-  typename DataName::data_type::serialised_type serialised_contents;
+  IntegrityCheckData();
+  explicit IntegrityCheckData(std::string random_input_in);
+  IntegrityCheckData(const IntegrityCheckData& other);
+  IntegrityCheckData(IntegrityCheckData&& other);
+  IntegrityCheckData& operator=(IntegrityCheckData other);
+
+  // Throws if 'random_input_' is empty or if 'result_' is not empty.
+  void SetResult(const NonEmptyString& serialised_value);
+  // Throws if 'random_input_' or 'result_' is empty.
+  bool Validate(const NonEmptyString& serialised_value) const;
+
+  std::string random_input() const { return random_input_; }
+  Result result() const { return result_; }
+
+  static std::string GetRandomInput(uint32_t min_size = 64, uint32_t max_size = 128);
+
+  friend void swap(IntegrityCheckData& lhs, IntegrityCheckData& rhs) MAIDSAFE_NOEXCEPT;
+
+ private:
+  std::string random_input_;
+  Result result_;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_HELPERS_H_
+#endif  // MAIDSAFE_VAULT_INTEGRITY_CHECK_DATA_H_

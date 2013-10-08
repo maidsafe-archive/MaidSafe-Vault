@@ -19,6 +19,7 @@
 #ifndef MAIDSAFE_VAULT_DATA_MANAGER_SERVICE_H_
 #define MAIDSAFE_VAULT_DATA_MANAGER_SERVICE_H_
 
+#include <algorithm>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -31,6 +32,7 @@
 
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/api_config.h"
+#include "maidsafe/routing/message.h"
 #include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/nfs/client/data_getter.h"
@@ -63,7 +65,7 @@ class DataManagerService {
                      nfs_client::DataGetter& data_getter);
   template <typename T>
   void HandleMessage(const T&, const typename T::Sender&, const typename T::Receiver&);
-  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {}
+  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
   template <typename ServiceHandlerType, typename Requestor>
   friend class detail::GetRequestVisitor;
@@ -89,6 +91,15 @@ class DataManagerService {
   void HandleGet(const typename Data::Name& data_name, const Requestor& requestor,
                  const nfs::MessageId& message_id);
 
+  // Removes a pmid_name from the set and returns it.
+  template <typename DataName>
+  PmidName ChoosePmidNodeToGetFrom(std::set<PmidName>& online_pmids,
+                                   const DataName& data_name) const;
+
+  template <typename Data, typename Requestor>
+  void HandleGetResponse(GetResponseContents contents,
+                         shared_ptr<GetResponseOp<typename Data::Name, Requestor>> get_response_op);
+
   template <typename Data>
   void HandleDelete(const typename Data::Name& data_name, const nfs::MessageId& message_id);
 
@@ -99,10 +110,6 @@ class DataManagerService {
 
   template <typename Data>
   bool SendPutRetryRequired(const typename Data::Name& name);
-
-  template <typename Data>
-  void SendIntegrityCheck(const typename Data::name& data_name, const PmidName& pmid_node,
-                          const nfs::MessageId& message_id);
 
   void HandleDataIntegrityResponse(const GetResponseContents& response,
                                    const nfs::MessageId& message_id);
@@ -130,10 +137,10 @@ class DataManagerService {
   template <typename MessageType>
   bool ValidateSender(const MessageType& /*message*/,
                       const typename MessageType::Sender& /*sender*/) const {
+    // Don't need to check sender or receiver type - only need to check for group sources that
+    // sender ID is appropriate (i.e. == MaidName, or == DataName).
     return false;
   }
-
-  // =============== Sync and Record transfer =====================================================
 
   typedef boost::mpl::vector<> InitialType;
   typedef boost::mpl::insert_range<InitialType,
@@ -149,8 +156,9 @@ class DataManagerService {
   routing::Routing& routing_;
   AsioService asio_service_;
   nfs_client::DataGetter& data_getter_;
-  std::mutex accumulator_mutex_;
+  std::mutex accumulator_mutex_, matrix_change_mutex_;
   Accumulator<Messages> accumulator_;
+  routing::MatrixChange matrix_change_;
   DataManagerDispatcher dispatcher_;
   routing::Timer<GetResponseContents> get_timer_;
   Db<DataManager::Key, DataManager::Value> db_;
@@ -185,12 +193,6 @@ void DataManagerService::HandleMessage(
     const nfs::GetRequestFromMaidNodeToDataManager& message,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
-
-template<>
-void DataManagerService::HandleMessage(
-    const GetRequestFromPmidNodeToDataManager& message,
-    const typename GetRequestFromPmidNodeToDataManager::Sender& sender,
-    const typename GetRequestFromPmidNodeToDataManager::Receiver& receiver);
 
 template<>
 void DataManagerService::HandleMessage(
@@ -299,20 +301,75 @@ void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
 }
 
 template <typename Data, typename Requestor>
-void DataManagerService::HandleGet(const typename Data::Name& /*data_name*/, const Requestor& requestor,
-                                   const nfs::MessageId& /*message_id*/) {
-  auto functor([requestor, this](const GetResponseContents& /*contents*/) {
-    //this->HandleGetResponse(requestor, contents);
-  });
-  //get all pmid nodes that are up
-  //choose the one we're going to ask for actual data
-  //add task (requires all to reply)
-  //send get request
-  //send integrity checks to all others
+void DataManagerService::HandleGet(const typename Data::Name& data_name, const Requestor& requestor,
+                                   const nfs::MessageId& message_id) {
+  // Get all pmid nodes that are online.
+  auto value(db_.Get(data_name));
+  if (!value) {
+    // TODO(Fraser#5#): 2013-10-03 - Request for non-existent data should possibly generate an alert
+    LOG(kWarning) << HexEncode(data_name) << " doesn't exist.";
+    return;
+  }
+  auto online_pmids(value->online_pmids());
+  int expected_response_count(static_cast<int>(online_pmids.size()));
 
-  //get_timer_.AddTask(kDefaultTimeout, functor, , message.message_id());
-//  dispatcher_.SendGetRequest(
+  // Choose the one we're going to ask for actual data, and set up the others for integrity checks.
+  auto pmid_node_to_get_from(ChoosePmidNodeToGetFrom(online_pmids, data_name));
+  std::map<PmidName, IntegrityCheckData> integrity_checks;
+  auto hint_itr(std::end(integrity_checks));
+  std::for_each(std::begin(online_pmids), std::end(online_pmids),
+                [&](PmidName&& name) {
+                  hint_itr = integrity_checks.insert(hint_itr, std::make_pair(std::move(name),
+                      IntegrityCheckData(IntegrityCheckData::GetRandomInput())));
+                });
+
+  // Create helper struct which holds the collection of responses, and add the task to the timer.
+  auto get_response_op(std::make_shared<GetResponseOp<typename Data::Name, Requestor>>(
+      pmid_node_to_get_from, integrity_checks, data_name, requestor));
+  auto functor([=](const GetResponseContents& contents) {
+    this->HandleGetResponse(contents, get_response_op);
+  });
+  get_timer_.AddTask(kDefaultTimeout, functor, expected_response_count, message_id.data);
+
+  // Send requests
+  dispatcher_.SendGetRequest(pmid_node_to_get_from, data_name, message_id);
+
+  for (const auto& integrity_check : integrity_checks) {
+    dispatcher_.SendIntegrityCheck(data_name, NonEmptyString(integrity_check.second.random_input()),
+                                   integrity_check.first, message_id);
+  }
 }
+
+template <typename DataName>
+PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_pmids,
+                                                     const DataName& data_name) const {
+  // Convert the set of PmidNames to a set of NodeIds
+  std::set<NodeId> online_node_ids;
+  auto hint_itr(std::end(online_node_ids));
+  std::for_each(std::begin(online_pmids), std::end(online_pmids),
+                [&](const PmidName& name) {
+                  hint_itr = online_node_ids.insert(hint_itr, NodeId(name->string()));
+                });
+
+  PmidName chosen;
+  {
+    std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+    chosen = PmidName(Identity(matrix_change_.ChoosePmidNode(online_node_ids,
+                                                             NodeId(data_name->string()))));
+  }
+
+  online_pmids.erase(chosen);
+  return chosen;
+}
+
+template <typename Data, typename Requestor>
+void DataManagerService::HandleGetResponse(
+    GetResponseContents contents,
+    shared_ptr<GetResponseOp<typename Data::Name, Requestor>> get_response_op) {
+
+}
+
+
 
 //template <typename Data>
 //void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name,

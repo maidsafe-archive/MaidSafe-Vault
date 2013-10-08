@@ -43,6 +43,8 @@ class Db;
 
 struct Key {
   Key();  // FIXME Prakash
+  template <typename DataName>
+  Key(const DataName& data_name) : name(data_name.raw_name), type(DataName::Tag::kValue) {}
   Key(const Identity& name_in, DataTagValue type_in);
   Key(const DataNameVariant& data_name);
   explicit Key(const std::string& serialised_key);

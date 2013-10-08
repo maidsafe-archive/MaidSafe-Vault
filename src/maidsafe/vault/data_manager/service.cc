@@ -52,7 +52,9 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       asio_service_(2),
       data_getter_(data_getter),
       accumulator_mutex_(),
+      matrix_change_mutex_(),
       accumulator_(),
+      matrix_change_(),
       dispatcher_(routing_, pmid),
       get_timer_(asio_service_),
       db_(),
@@ -61,11 +63,7 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       sync_add_pmids_(),
       sync_remove_pmids_(),
       sync_node_downs_(),
-      sync_node_ups_() {
-  static_assert(std::is_same<IntegrityCheckResponseFromPmidNodeToDataManager::Contents,
-                             GetResponseFromPmidNodeToDataManager::Contents>::value,
-                "These must be the same type for passing to 'get_timer_.AddResponse(...)'");
-}
+      sync_node_ups_() {}
 
 // PutRequestFromMaidManagerToDataManager
 template <>
@@ -75,7 +73,7 @@ void DataManagerService::HandleMessage(
     const typename PutRequestFromMaidManagerToDataManager::Receiver& receiver) {
   typedef PutRequestFromMaidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
-      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
                     },
       Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
@@ -90,7 +88,7 @@ void DataManagerService::HandleMessage(
     const typename PutFailureFromPmidManagerToDataManager::Receiver& receiver) {
   typedef PutFailureFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
-      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+      accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
                       return this->ValidateSender(message, sender);
                     },
       Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
@@ -102,25 +100,14 @@ template<>
 void DataManagerService::HandleMessage(
     const nfs::GetRequestFromMaidNodeToDataManager& message,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
   typedef nfs::GetRequestFromMaidNodeToDataManager MessageType;
-  detail::GetRequestVisitor<DataManagerService, typename MessageType::Sender> visitor(
-      this, sender, message.message_id);
-  auto data_name_variant(GetDataNameVariant(message.contents->type, message.contents->raw_name));
-  boost::apply_visitor(visitor, data_name_variant);
-}
-
-// GetRequestFromPmidNodeToDataManager
-template<>
-void DataManagerService::HandleMessage(
-    const GetRequestFromPmidNodeToDataManager& message,
-    const typename GetRequestFromPmidNodeToDataManager::Sender& sender,
-    const typename GetRequestFromPmidNodeToDataManager::Receiver& /*receiver*/) {
-  typedef GetRequestFromPmidNodeToDataManager MessageType;
-  detail::GetRequestVisitor<DataManagerService, typename MessageType::Sender> visitor(
-      this, sender, message.message_id);
-  auto data_name_variant(GetDataNameVariant(message.contents->type, message.contents->raw_name));
-  boost::apply_visitor(visitor, data_name_variant);
+  OperationHandlerWrapper<DataManagerService, MessageType>(
+      accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
 }
 
 // GetRequestFromDataGetterToDataManager
@@ -128,12 +115,14 @@ template<>
 void DataManagerService::HandleMessage(
     const nfs::GetRequestFromDataGetterToDataManager& message,
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
+    const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
   typedef nfs::GetRequestFromDataGetterToDataManager MessageType;
-  detail::GetRequestVisitor<DataManagerService, typename MessageType::Sender> visitor(
-      this, sender, message.message_id);
-  auto data_name_variant(GetDataNameVariant(message.contents->type, message.contents->raw_name));
-  boost::apply_visitor(visitor, data_name_variant);
+  OperationHandlerWrapper<DataManagerService, MessageType>(
+      accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
 }
 
 // GetResponseFromPmidNodeToDataManager
@@ -142,7 +131,7 @@ void DataManagerService::HandleMessage(
     const GetResponseFromPmidNodeToDataManager& /*message*/,
     const typename GetResponseFromPmidNodeToDataManager::Sender& /*sender*/,
     const typename GetResponseFromPmidNodeToDataManager::Receiver& /*receiver*/) {
-//  typedef GetResponseFromPmidNodeToDataManager MessageType;
+  typedef GetResponseFromPmidNodeToDataManager MessageType;
 }
 
 template<>
@@ -152,7 +141,7 @@ void DataManagerService::HandleMessage(
     const typename DeleteRequestFromMaidManagerToDataManager::Receiver& receiver) {
   typedef DeleteRequestFromMaidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
-      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
                     },
       Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
@@ -238,6 +227,11 @@ void DataManagerService::HandleMessage(
       LOG(kError) << "Unhandled action type";
     }
   }
+}
+
+void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
+  std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+  matrix_change_ = *matrix_change;
 }
 
 void DataManagerService::SendDeleteRequests(const DataManager::Key& key,

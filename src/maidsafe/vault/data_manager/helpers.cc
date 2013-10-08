@@ -18,8 +18,13 @@
 
 #include "maidsafe/vault/data_manager/helpers.h"
 
+#include "maidsafe/common/utils.h"
+
 namespace maidsafe {
 
-namespace vault {}  // namespace vault
+namespace vault {
+
+
+}  // namespace vault
 
 }  // namespace maidsafe

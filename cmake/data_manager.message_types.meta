@@ -3,7 +3,5 @@ Action:PutResponse                    Source:PmidManager:Group        Destinatio
 Action:DeleteRequest                  Source:MaidManager:Group        Destination:DataManager:Group     Contents:struct:maidsafe::nfs_vault::DataName
 Action:PutFailure                     Source:PmidManager:Group        Destination:DataManager:Group     Contents:struct:maidsafe::nfs_client::DataNameAndReturnCode
 Action:StateChange                    Source:PmidManager:Group        Destination:DataManager:Group     Contents:struct:maidsafe::nfs_vault::DataName
-Action:GetRequest                     Source:PmidNode:Single          Destination:DataManager:Group     Contents:struct:maidsafe::nfs_vault::DataName
 Action:GetResponse                    Source:PmidNode:Single          Destination:DataManager:Single    Contents:struct:maidsafe::nfs_vault::DataNameAndContentOrCheckResult
-Action:IntegrityCheckResponse         Source:PmidNode:Single          Destination:DataManager:Single    Contents:struct:maidsafe::nfs_vault::DataNameAndContentOrCheckResult
 Action:Synchronise                    Source:DataManager:Group        Destination:DataManager:Group     Contents:struct:maidsafe::nfs_vault::DataNameAndContent

@@ -24,17 +24,6 @@ namespace vault {
 
 PmidNodeDispatcher::PmidNodeDispatcher(routing::Routing& routing) : routing_(routing) {}
 
-void PmidNodeDispatcher::SendGetRequest(const nfs_vault::DataName& data_name) {
-  typedef GetRequestFromPmidNodeToDataManager VaultMessage;
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  nfs_vault::DataName data(data_name);
-  VaultMessage vault_message(data);
-  RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(data_name.raw_name)));
-  routing_.Send(message);
-}
-
 void PmidNodeDispatcher::SendPmidAccountRequest() {
   typedef GetPmidAccountRequestFromPmidNodeToPmidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;

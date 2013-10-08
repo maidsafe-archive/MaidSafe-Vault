@@ -64,7 +64,7 @@ bool operator==(const PmidTotals& lhs, const PmidTotals& rhs) {
          lhs.pmid_metadata == rhs.pmid_metadata;
 }
 
-void swap(PmidTotals& lhs, PmidTotals& rhs) {
+void swap(PmidTotals& lhs, PmidTotals& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
   swap(lhs.serialised_pmid_registration, rhs.serialised_pmid_registration);
   swap(lhs.pmid_metadata, rhs.pmid_metadata);

@@ -24,11 +24,12 @@
 #include <mutex>
 #include <vector>
 
+#include "maidsafe/common/config.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/api_config.h"
+#include "maidsafe/nfs/vault/pmid_registration.h"
 
 #include "maidsafe/vault/pmid_manager/metadata.h"
-#include "maidsafe/nfs/vault/pmid_registration.h"
 
 namespace maidsafe {
 
@@ -87,7 +88,7 @@ struct PmidTotals {
 };
 
 bool operator==(const PmidTotals& lhs, const PmidTotals& rhs);
-void swap(PmidTotals& lhs, PmidTotals& rhs);
+void swap(PmidTotals& lhs, PmidTotals& rhs) MAIDSAFE_NOEXCEPT;
 
 }  // namespace vault
 

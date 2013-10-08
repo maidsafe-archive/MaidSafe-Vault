@@ -276,12 +276,6 @@ void PmidNodeService::HandleMessage(
 //    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
 
 // template<>
-// bool PmidNodeService::GetFromCache<GetRequestFromPmidNodeToDataManager>(
-//    const GetRequestFromPmidNodeToDataManager& message,
-//    const typename GetRequestFromPmidNodeToDataManager::Sender& sender,
-//    const typename GetRequestFromPmidNodeToDataManager::Receiver& receiver);
-
-// template<>
 // void PmidNodeService::StoreInCache<nfs::GetResponseFromDataManagerToMaidNode>(
 //    const nfs::GetResponseFromDataManagerToMaidNode& message,
 //    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& sender,
@@ -427,14 +421,6 @@ void PmidNodeService::HandleDelete(const typename Data::Name& name,
 //    const nfs::GetRequestFromMaidNodeToDataManager& message,
 //    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
 //    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
-//  return DoGetFromCache(message, sender, receiver);
-//}
-
-// template<>
-// bool PmidNodeService::GetFromCache<GetRequestFromPmidNodeToDataManager>(
-//    const GetRequestFromPmidNodeToDataManager& message,
-//    const typename GetRequestFromPmidNodeToDataManager::Sender& sender,
-//    const typename GetRequestFromPmidNodeToDataManager::Receiver& receiver) {
 //  return DoGetFromCache(message, sender, receiver);
 //}
 
