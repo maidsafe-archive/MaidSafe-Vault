@@ -120,7 +120,7 @@ void GroupDb<Persona>::AddGroup(const GroupName& group_name, const Metadata& met
     ThrowError(VaultErrors::failed_to_handle_request);
   GroupId group_id(RandomInt32() % kGroupsLimit);
   while (std::any_of(std::begin(group_map_), std::end(group_map_),
-                     [&group_id](const std::pair<GroupName, GroupId> &
+                     [&group_id](const std::pair<GroupName, std::pair<GroupId, Metadata>>&
                                  element) { return group_id == element.second.first; })) {
     group_id = RandomInt32() % kGroupsLimit;
   }

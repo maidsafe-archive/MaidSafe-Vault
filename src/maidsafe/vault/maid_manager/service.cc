@@ -738,17 +738,16 @@ void MaidManagerService::HandleMessage(
       }
       break;
     }
-    //      case ActionCreateAccount::kActionId: {
-    //        MaidManager::UnresolvedCreateAccount unresolved_action(
-    //            proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-    //        auto resolved_action(sync_create_accounts_.AddUnresolvedAction(unresolved_action));
-    //        if (resolved_action) {
-    //          MaidManager::Metadata metadata;
-    //          group_db_.AddGroup(resolved_action->key.group_name, metadata);
-    //        }
-    //        break;
-    //      }
-
+    case ActionCreateAccount::kActionId: {
+      MaidManager::UnresolvedCreateAccount unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_create_accounts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        MaidManager::Metadata metadata;
+        group_db_.AddGroup(resolved_action->key.group_name(), metadata);
+      }
+      break;
+    }
     default: {
       assert(false);
       LOG(kError) << "Unhandled action type";
