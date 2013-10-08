@@ -23,6 +23,7 @@
 #include "maidsafe/passport/types.h"
 
 #include "maidsafe/vault/group_key.h"
+//#include "maidsafe/vault/group_metadata_key.h"
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/maid_manager/value.h"
@@ -56,8 +57,10 @@ struct PersonaTypes<Persona::kMaidManager> {
   typedef vault::GroupKey<GroupName> Key;
   typedef vault::MaidManagerValue Value;
   typedef vault::MaidManagerMetadata Metadata;
+//  typedef vault::GroupMetadataKey<GroupName> MetadataKey;
   typedef vault::UnresolvedAction<vault::MaidName,
                                   vault::ActionCreateAccount> UnresolvedCreateAccount;
+//  typedef vault::UnresolvedAction<MetadataKey, vault::ActionCreateAccount> UnresolvedCreateAccount;
   typedef vault::UnresolvedAction<Key, vault::ActionRemoveAccount> UnresolvedRemoveAccount;
   typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerDelete> UnresolvedDelete;
