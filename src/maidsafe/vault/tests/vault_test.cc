@@ -72,9 +72,9 @@ TEST_F(VaultTest, BEH_Constructor) {
   std::vector<boost::asio::ip::udp::endpoint> peer_endpoints;
   peer_endpoints.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(),
                                                           (RandomUint32() % 64511) + 2025));
-  EXPECT_NO_THROW(vault_.reset(new Vault(pmid_, vault_root_directory_,
-                                         on_new_bootstrap_endpoint_,
-                                         std::move(public_pmids_from_file), peer_endpoints)));
+  EXPECT_THROW(vault_.reset(new Vault(pmid_, vault_root_directory_, on_new_bootstrap_endpoint_,
+                                      public_pmids_from_file, peer_endpoints)),
+               vault_error);  // throws VaultErrors::failed_to_join_network
 }
 
 }  // namespace test
