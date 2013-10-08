@@ -731,7 +731,7 @@ void MaidManagerService::HandleMessage(
       auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         group_db_.Commit(resolved_action->key, resolved_action->action);
-        dispatcher_.SendDeleteRequest(resolved_action->key.group_name,
+        dispatcher_.SendDeleteRequest(resolved_action->key.group_name(),
                                       nfs_vault::DataName(resolved_action->key.type,
                                                           resolved_action->key.name),
                                       resolved_action->action.kMessageId);

@@ -151,7 +151,7 @@ void GroupDb<Persona>::Commit(
     std::function<detail::DbAction(Metadata& metadata, boost::optional<Value>& value)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
-  auto it(group_map_.find(key.group_name));
+  auto it(group_map_.find(key.group_name()));
   if (it == group_map_.end())
     ThrowError(CommonErrors::no_such_element);
 

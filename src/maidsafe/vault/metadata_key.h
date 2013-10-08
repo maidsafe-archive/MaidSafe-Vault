@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_GROUP_METADATA_KEY_H_
-#define MAIDSAFE_VAULT_GROUP_METADATA_KEY_H_
+#ifndef MAIDSAFE_VAULT_METADATA_KEY_H_
+#define MAIDSAFE_VAULT_METADATA_KEY_H_
 
 #include <string>
 
@@ -30,7 +30,8 @@ namespace maidsafe {
 namespace vault {
 
 template <typename GroupName>
-struct MetadataKey {
+class MetadataKey {
+ public:
   MetadataKey();
   MetadataKey(const GroupName& group_name_in);
   explicit MetadataKey(const std::string& serialised_key);
@@ -39,47 +40,54 @@ struct MetadataKey {
   MetadataKey& operator=(MetadataKey other);
   std::string Serialise() const;
 
+  GroupName group_name() const { return group_name_; }
+
   friend bool operator==(const MetadataKey<GroupName>& lhs, const MetadataKey<GroupName>& rhs) {
-    return (lhs.group_name == rhs.group_name);
+    return (lhs.group_name_ == rhs.group_name_);
   }
 
-  GroupName group_name;
+  friend void swap(MetadataKey<GroupName>& lhs, MetadataKey<GroupName>& rhs) MAIDSAFE_NOEXCEPT {
+    using std::swap;
+    swap(lhs.group_name_, rhs.group_name_);
+  }
+
+ private:
+  GroupName group_name_;
 };
 
 
 // Implementation
-
 template <typename GroupName>
-MetadataKey<GroupName>::MetadataKey() : group_name() {}
+MetadataKey<GroupName>::MetadataKey() : group_name_() {}
 
 template <typename GroupName>
 MetadataKey<GroupName>::MetadataKey(const MetadataKey& other)
-    : group_name(other.group_name) {}
+    : group_name_(other.group_name_) {}
 
 template <typename GroupName>
 MetadataKey<GroupName>::MetadataKey(const GroupName& group_name_in)
-    : group_name(group_name_in) {}
+    : group_name_(group_name_in) {}
 
 template <typename GroupName>
 MetadataKey<GroupName>::MetadataKey(const std::string& serialised_key)
-    : group_name() {
+    : group_name_() {
   protobuf::MetadataKey metadata_key_proto;
   if (!metadata_key_proto.ParseFromString(serialised_key))
     ThrowError(CommonErrors::parsing_error);
-  group_name = GroupName(Identity(metadata_key_proto.group_name()));
+  group_name_ = GroupName(Identity(metadata_key_proto.group_name()));
 }
 
 template <typename GroupName>
 std::string MetadataKey<GroupName>::Serialise() const {
   protobuf::MetadataKey metadata_key_proto;
-  metadata_key_proto.set_group_name(group_name->string());
+  metadata_key_proto.set_group_name(group_name_->string());
   return metadata_key_proto.SerializeAsString();
 }
 
 template <typename GroupName>
-void swap(MetadataKey<GroupName>& lhs, MetadataKey<GroupName>& rhs) MAIDSAFE_NOEXCEPT {
-  using std::swap;
-  swap(lhs.group_name, rhs.group_name);
+ MetadataKey<GroupName>&  MetadataKey<GroupName>::operator=(MetadataKey<GroupName> other) {
+  swap(*this, other);
+  return *this;
 }
 
 template <typename GroupName>
@@ -91,7 +99,7 @@ bool operator!=(const MetadataKey<GroupName>& lhs,
 template <typename GroupName>
 bool operator<(const MetadataKey<GroupName>& lhs,
                const MetadataKey<GroupName>& rhs) {
-  return lhs.group_name < rhs.group_name;
+  return lhs.group_name_ < rhs.group_name_;
 }
 
 template <typename GroupName>
@@ -113,4 +121,4 @@ bool operator>=(const MetadataKey<GroupName>& lhs, const MetadataKey<GroupName>&
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_GROUP_METADATA_KEY_H_
+#endif  // MAIDSAFE_VAULT_METADATA_KEY_H_

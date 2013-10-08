@@ -323,7 +323,7 @@ void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
   if (!unresolved_actions.empty()) {
     sync_type.IncrementSyncAttempts();
     for (const auto& unresolved_action : unresolved_actions)
-      dispatcher.SendSync(unresolved_action->key.group_name, unresolved_action->Serialise());
+      dispatcher.SendSync(unresolved_action->key.group_name(), unresolved_action->Serialise());
   }
 }
 
