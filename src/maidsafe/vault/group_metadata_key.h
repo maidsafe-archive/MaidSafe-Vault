@@ -39,68 +39,77 @@ struct GroupMetadataKey {
   GroupMetadataKey& operator=(GroupMetadataKey other);
   std::string Serialise() const;
 
-  GroupMetadataName group_metadata_name;
+  friend bool operator==(const GroupMetadataKey<GroupMetadataName>& lhs,
+                         const GroupMetadataKey<GroupMetadataName>& rhs) {
+    return (lhs.group_name == rhs.group_name);
+  }
+
+  GroupMetadataName group_name;
 };
 
 
 // Implementation
 
 template <typename GroupMetadataName>
-GroupMetadataKey<GroupMetadataName>::GroupMetadataKey() : group_metadata_name() {}
+GroupMetadataKey<GroupMetadataName>::GroupMetadataKey() : group_name() {}
 
 template <typename GroupMetadataName>
-GroupMetadataKey<GroupMetadataName>::GroupMetadataKey(const GroupMetadataName& group_metadata_name_in)
-    : group_metadata_name(group_metadata_name_in) {}
+GroupMetadataKey<GroupMetadataName>::GroupMetadataKey(const GroupMetadataKey& other)
+    : group_name(other.group_name) {}
+
+template <typename GroupMetadataName>
+GroupMetadataKey<GroupMetadataName>::GroupMetadataKey(const GroupMetadataName& group_name_in)
+    : group_name(group_name_in) {}
 
 template <typename GroupMetadataName>
 GroupMetadataKey<GroupMetadataName>::GroupMetadataKey(const std::string& serialised_key)
-    : group_metadata_name() {
+    : group_name() {
   protobuf::GroupMetadataKey group_metadata_key_proto;
   if (!group_metadata_key_proto.ParseFromString(serialised_key))
     ThrowError(CommonErrors::parsing_error);
-  group_metadata_name = GroupMetadataName(Identity(group_metadata_key_proto.group_metadata_name()));
+  group_name = GroupMetadataName(Identity(group_metadata_key_proto.group_name()));
 }
 
 template <typename GroupMetadataName>
 std::string GroupMetadataKey<GroupMetadataName>::Serialise() const {
   protobuf::GroupMetadataKey group_metadata_key_proto;
-  group_metadata_key_proto.set_group_metadata_name(group_metadata_name->string());
+  group_metadata_key_proto.set_group_name(group_name->string());
   return group_metadata_key_proto.SerializeAsString();
 }
 
 template <typename GroupMetadataName>
 void swap(GroupMetadataName& lhs, GroupMetadataName& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
-  swap(lhs.group_metadata_name, rhs.group_metadata_name);
+  swap(lhs.group_name, rhs.group_name);
 }
 
 template <typename GroupMetadataName>
-bool operator==(const GroupMetadataName& lhs, const GroupMetadataName& rhs) {
-  return (lhs.group_metadata_name == rhs.group_metadata_name);
-}
-
-template <typename GroupMetadataName>
-bool operator!=(const GroupMetadataName& lhs, const GroupMetadataName& rhs) {
+bool operator!=(const GroupMetadataKey<GroupMetadataName>& lhs,
+                const GroupMetadataKey<GroupMetadataName>& rhs) {
   return !operator==(lhs, rhs);
 }
 
 template <typename GroupMetadataName>
-bool operator<(const GroupMetadataName& lhs, const GroupMetadataName& rhs) {
-  return lhs.group_metadata_name < rhs.group_metadata_name;
+bool operator<(const GroupMetadataKey<GroupMetadataName>& lhs,
+               const GroupMetadataKey<GroupMetadataName>& rhs) {
+  return lhs.group_name < rhs.group_name;
 }
 
 template <typename GroupMetadataName>
-bool operator>(const GroupMetadataName& lhs, const GroupMetadataName& rhs) {
+bool operator>(const GroupMetadataKey<GroupMetadataName>& lhs,
+               const GroupMetadataKey<GroupMetadataName>& rhs) {
   return operator<(rhs, lhs);
 }
 
 template <typename GroupMetadataName>
-bool operator<=(const GroupMetadataName& lhs, const GroupMetadataName& rhs) {
+bool operator<=(const GroupMetadataKey<GroupMetadataName>& lhs,
+                const GroupMetadataKey<GroupMetadataName>& rhs) {
   return !operator>(lhs, rhs);
 }
 
 template <typename GroupMetadataName>
-bool operator>=(const GroupMetadataName& lhs, const GroupMetadataName& rhs) {
+bool operator>=(const GroupMetadataKey<GroupMetadataName>& lhs,
+                const GroupMetadataKey<GroupMetadataName>& rhs) {
   return !operator<(lhs, rhs);
 }
 

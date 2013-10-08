@@ -388,7 +388,7 @@ void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidNam
 void MaidManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
-//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accounts_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accounts_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_accounts_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_register_pmids_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_);
