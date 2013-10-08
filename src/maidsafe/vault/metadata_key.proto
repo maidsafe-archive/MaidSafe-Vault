@@ -18,6 +18,6 @@
 
 package maidsafe.vault.protobuf;
 
-message GroupMetadataKey {
-  required bytes group_metadata_name = 1;
+message MetadataKey {
+  required bytes group_name = 1;
 }
