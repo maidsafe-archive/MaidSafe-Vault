@@ -156,6 +156,7 @@ class PmidNodeService {
   typedef PmidNodeServiceMessages Messages;
 
   PmidNodeService(const passport::Pmid& pmid, routing::Routing& routing,
+                  nfs_client::DataGetter& data_getter,
                   const boost::filesystem::path& vault_root_dir);
 
   template <typename T>
@@ -235,7 +236,7 @@ class PmidNodeService {
   PmidNodeHandler handler_;
   Active active_;
   AsioService asio_service_;
-  nfs_client::DataGetter data_getter_;
+  nfs_client::DataGetter& data_getter_;
 };
 
 template <>
