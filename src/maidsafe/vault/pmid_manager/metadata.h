@@ -34,7 +34,7 @@ struct PmidManagerMetadata {
   typedef TaggedValue<NonEmptyString, struct SerialisedPmidManagerMetadataTag> serialised_type;
 
   PmidManagerMetadata();
-  explicit PmidManagerMetadata(const PmidName& pmid_name);
+  explicit PmidManagerMetadata(const PmidName& pmid_name_in);
   explicit PmidManagerMetadata(const serialised_type& serialised_metadata);
   PmidManagerMetadata(const PmidManagerMetadata& other);
   PmidManagerMetadata(PmidManagerMetadata&& other);

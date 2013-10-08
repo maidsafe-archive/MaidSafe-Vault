@@ -35,11 +35,11 @@ void PmidNodeDispatcher::SendGetRequest(const nfs_vault::DataName& data_name) {
   routing_.Send(message);
 }
 
-void PmidNodeDispatcher::SendPmidAccountRequest() {
+void PmidNodeDispatcher::SendPmidAccountRequest(const u_int64_t& available_size) {
   typedef GetPmidAccountRequestFromPmidNodeToPmidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  VaultMessage vault_message;
+  VaultMessage vault_message((nfs_vault::AvailableSize(available_size)));
   RoutingMessage message(vault_message.Serialise(), VaultMessage::Sender(routing_.kNodeId()),
                          VaultMessage::Receiver(routing_.kNodeId()));
   routing_.Send(message);

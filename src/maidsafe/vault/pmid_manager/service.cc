@@ -26,6 +26,7 @@
 #include "maidsafe/vault/pmid_manager/metadata.h"
 #include "maidsafe/vault/operations_visitor.h"
 #include "maidsafe/vault/pmid_manager/value.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/sync.pb.h"
 
 namespace fs = boost::filesystem;
@@ -47,18 +48,15 @@ inline bool ForThisPersona(const Message& message) {
 }  // namespace detail
 
 PmidManagerService::PmidManagerService(const passport::Pmid& /*pmid*/, routing::Routing& routing)
-    : routing_(routing),
-      group_db_(),
-      accumulator_mutex_(),
-      accumulator_(),
-      dispatcher_(routing_),
-      pmid_metadata_() {}
+    : routing_(routing), group_db_(), accumulator_mutex_(), accumulator_(), dispatcher_(routing_),
+      pmid_metadata_(), sync_puts_(), sync_deletes_(), sync_create_accunts_() {}
 
 // =============== Sync ============================================================================
 
 void PmidManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accunts_);
 }
 
 // =============== HandleMessage ===================================================================
@@ -125,6 +123,20 @@ void PmidManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+template <>
+void PmidManagerService::HandleMessage(
+    const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
+    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
+    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver) {
+  typedef GetPmidAccountRequestFromPmidNodeToPmidManager MessageType;
+  OperationHandlerWrapper<PmidManagerService, MessageType>(
+      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
 // =============== Handle Sync Messages ============================================================
 
 template<>
@@ -153,7 +165,9 @@ void PmidManagerService::HandleMessage(
       LOG(kError) << "Unhandled action type";
     }
   }
-}// =================================================================================================
+}
+
+//=================================================================================================
 
 void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
                                          const PmidName& pmid_node, int32_t size,
@@ -161,6 +175,22 @@ void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
   detail::PmidManagerPutResponseVisitor<PmidManagerService> put_response(this, size, pmid_node,
                                                                          message_id);
   boost::apply_visitor(put_response, data_name);
+}
+
+//=================================================================================================
+
+void PmidManagerService::HandleCreateAccount(const PmidName& pmid_node) {
+  sync_create_accunts_.AddLocalAction(PmidManager::UnresolvedCreateAccount(
+      typename PmidManager::MetadataKey(pmid_node) , ActionPmidManagerCreateAccount(),
+      routing_.kNodeId()));
+  DoSync();
+}
+
+void PmidManagerService::HandleSendPmidAccount(const PmidName& /*pmid_node*/) {
+//  auto contents(group_db_.GetContents(pmid_node));
+//  if (contents) {
+//  } else {
+//  }
 }
 
 // =================================================================================================

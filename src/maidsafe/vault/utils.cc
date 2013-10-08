@@ -199,6 +199,14 @@ void DoOperation(ServiceHandlerType* service,
   boost::apply_visitor(delete_visitor, data_name);
 }
 
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const CreateAccountRequestFromMaidManagerToPmidManager& /*message*/,
+                 const CreateAccountRequestFromMaidManagerToPmidManager::Sender& /*sender*/,
+                 const CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver) {
+  service->HandleCreateAccount(PmidName(Identity(receiver.data.string())));
+}
+
 //=============================== To PmidNode=======================================================
 
 template <typename ServiceHandlerType>

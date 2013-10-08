@@ -79,6 +79,7 @@ class GroupDb {
   boost::optional<Metadata> GetMetadata(const GroupName& group_name);
   // returns value if key exists in db
   boost::optional<Value> GetValue(const Key& key);
+  boost::optional<Contents> GetContents(const GroupName& group_name);
 
  private:
   typedef uint32_t GroupId;

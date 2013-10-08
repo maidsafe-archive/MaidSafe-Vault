@@ -26,27 +26,15 @@ namespace maidsafe {
 namespace vault {
 
 PmidManagerMetadata::PmidManagerMetadata()
-    : pmid_name(),
-      stored_count(0),
-      stored_total_size(0),
-      lost_count(0),
-      lost_total_size(0),
+    : pmid_name(), stored_count(0), stored_total_size(0), lost_count(0), lost_total_size(0),
       claimed_available_size(0) {}
 
 PmidManagerMetadata::PmidManagerMetadata(const PmidName& pmid_name_in)
-    : pmid_name(pmid_name_in),
-      stored_count(0),
-      stored_total_size(0),
-      lost_count(0),
-      lost_total_size(0),
-      claimed_available_size(0) {}
+    : pmid_name(pmid_name_in), stored_count(0), stored_total_size(0), lost_count(0),
+      lost_total_size(0), claimed_available_size(0) {}
 
 PmidManagerMetadata::PmidManagerMetadata(const serialised_type& serialised_metadata)
-    : pmid_name(),
-      stored_count(0),
-      stored_total_size(0),
-      lost_count(0),
-      lost_total_size(0),
+    : pmid_name(), stored_count(0), stored_total_size(0), lost_count(0), lost_total_size(0),
       claimed_available_size(0) {
   protobuf::PmidManagerMetadata proto_metadata;
   if (!proto_metadata.ParseFromString(serialised_metadata->string())) {

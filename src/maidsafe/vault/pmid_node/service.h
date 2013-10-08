@@ -131,22 +131,6 @@ class GetCallerVisitor : public boost::static_visitor<> {
   DataStoreFunctor store_functor_;
 };
 
-class LongTermCacheableVisitor : public boost::static_visitor<bool> {
- public:
-  template <typename Data>
-  void operator()() {
-    return is_long_term_cacheable<Data>::value;
-  }
-};
-
-class CacheableVisitor : public boost::static_visitor<bool> {
- public:
-  template <typename Data>
-  void operator()() {
-    return is_cacheable<Data>::value;
-  }
-};
-
 }  // noname namespace
 
 class PmidNodeService {
@@ -170,9 +154,6 @@ class PmidNodeService {
   friend class test::DataHolderTest;
 
  private:
-  typedef std::true_type IsCacheable, IsLongTermCacheable;
-  typedef std::false_type IsNotCacheable, IsShortTermCacheable;
-
   // ================================ Pmid Account ===============================================
   void SendAccountRequest();
 
@@ -209,20 +190,6 @@ class PmidNodeService {
   template <typename T>
   bool DoGetFromCache(const T& message, const typename T::Sender& sender,
                       const typename T::Receiver& receiver);
-
-  template <typename T>
-  bool CacheGet(const T& message, const typename T::Sender& sender,
-                const typename T::Receiver& receiver, IsShortTermCacheable);
-
-  template <typename T>
-  bool CacheGet(const T& message, const typename T::Sender& sender,
-                const typename T::Receiver& receiver, IsLongTermCacheable);
-
-  template <typename T>
-  void CacheStore(const T& message, const DataNameVariant& data_name, IsShortTermCacheable);
-
-  template <typename T>
-  void CacheStore(const T& message, const DataNameVariant& data_name, IsLongTermCacheable);
 
   template <typename T>
   void SendCachedData(const T& message, const typename T::Sender& sender,
