@@ -79,6 +79,7 @@ class GroupDb {
   boost::optional<Metadata> GetMetadata(const GroupName& group_name);
   // returns value if key exists in db
   boost::optional<Value> GetValue(const Key& key);
+  boost::optional<Contents> GetContents(const GroupName& group_name);
 
  private:
   typedef uint32_t GroupId;
@@ -120,7 +121,7 @@ void GroupDb<Persona>::AddGroup(const GroupName& group_name, const Metadata& met
     ThrowError(VaultErrors::failed_to_handle_request);
   GroupId group_id(RandomInt32() % kGroupsLimit);
   while (std::any_of(std::begin(group_map_), std::end(group_map_),
-                     [&group_id](const std::pair<GroupName, GroupId> &
+                     [&group_id](const std::pair<GroupName, std::pair<GroupId, Metadata>>&
                                  element) { return group_id == element.second.first; })) {
     group_id = RandomInt32() % kGroupsLimit;
   }
@@ -151,7 +152,7 @@ void GroupDb<Persona>::Commit(
     std::function<detail::DbAction(Metadata& metadata, boost::optional<Value>& value)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
-  auto it(group_map_.find(key.group_name));
+  auto it(group_map_.find(key.group_name()));
   if (it == group_map_.end())
     ThrowError(CommonErrors::no_such_element);
 

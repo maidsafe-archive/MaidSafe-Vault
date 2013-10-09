@@ -239,6 +239,12 @@ void DoOperation(ServiceHandlerType* service,
                  const DeleteRequestFromDataManagerToPmidManager::Sender& sender,
                  const DeleteRequestFromDataManagerToPmidManager::Receiver& receiver);
 
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const CreateAccountRequestFromMaidManagerToPmidManager& message,
+                 const CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
+                 const CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);
+
 //=============================== To PmidNode=======================================================
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,

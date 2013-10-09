@@ -97,6 +97,11 @@ class PmidManagerService {
   void SendPutResponse(const DataNameVariant& data_name, const PmidName& pmid_node, int32_t size,
                        const nfs::MessageId& message_id);
 
+  void HandleCreateAccount(const PmidName& pmid_node);
+
+  void HandleSendPmidAccount(const PmidName& pmid_node);
+
+
   //  template<typename Data>
   //  void HandlePutCallback(const std::string& reply, const nfs::Message& message);
   //  template<typename Data>
@@ -119,6 +124,7 @@ class PmidManagerService {
   std::map<PmidName, PmidManagerMetadata> pmid_metadata_;
   Sync<PmidManager::UnresolvedPut> sync_puts_;
   Sync<PmidManager::UnresolvedDelete> sync_deletes_;
+  Sync<PmidManager::UnresolvedCreateAccount> sync_create_accunts_;
 };
 
 // ============================= Handle Message Specialisations ===================================
@@ -182,7 +188,7 @@ void IncrementAttemptsAndSendSync(PmidManagerDispatcher& dispatcher,
   if (!unresolved_actions.empty()) {
     sync_type.IncrementSyncAttempts();
     for (const auto& unresolved_action : unresolved_actions)
-      dispatcher.SendSync(unresolved_action->key.group_name, unresolved_action->Serialise());
+      dispatcher.SendSync(unresolved_action->key.group_name(), unresolved_action->Serialise());
     }
   }
 }  // namespace detail

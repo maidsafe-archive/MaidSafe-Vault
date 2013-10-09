@@ -23,8 +23,10 @@
 #include "maidsafe/passport/types.h"
 
 #include "maidsafe/vault/group_key.h"
+#include "maidsafe/vault/metadata_key.h"
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/pmid_manager/action_put.h"
+#include "maidsafe/vault/pmid_manager/action_create_account.h"
 #include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
@@ -33,6 +35,7 @@ namespace vault {
 
 struct ActionPmidManagerPut;
 struct ActionPmidManagerDelete;
+struct ActionPmidManagerCreateAccount;
 struct ActionGetPmidTotals;
 
 struct PmidManagerMetadata;
@@ -48,9 +51,12 @@ struct PersonaTypes<Persona::kPmidManager> {
   typedef passport::PublicPmid::Name GroupName;
   typedef vault::PmidManagerValue Value;
   typedef vault::PmidManagerMetadata Metadata;
+  typedef vault::MetadataKey<GroupName> MetadataKey;
   typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerDelete> UnresolvedDelete;
   typedef vault::UnresolvedAction<Key, vault::ActionGetPmidTotals> UnresolvedGetPmidTotals;
+  typedef vault::UnresolvedAction<MetadataKey,
+                                  vault::ActionPmidManagerCreateAccount> UnresolvedCreateAccount;
 
   enum class Action : int32_t {
     kPut,

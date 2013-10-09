@@ -36,7 +36,7 @@ CacheHandlerService::CacheHandlerService(routing::Routing& routing,
                                          const boost::filesystem::path vault_root_dir)
     : routing_(routing),
       cache_size_(cache_size),
-      cache_data_store_(cache_usage, DiskUsage(cache_size_ / 2), nullptr,
+      cache_data_store_(cache_usage, DiskUsage(cache_usage), nullptr,
                         vault_root_dir / "cache" / "cache"),
       mem_only_cache_(mem_only_cache_usage) {
   routing_.kNodeId();

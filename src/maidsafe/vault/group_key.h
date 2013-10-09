@@ -28,6 +28,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_types/data_type_values.h"
 
+#include "maidsafe/vault/metadata_key.h"
 #include "maidsafe/vault/group_key.pb.h"
 #include "maidsafe/vault/key_utils.h"
 
@@ -40,7 +41,6 @@ class GroupDb;
 
 template <typename GroupName>
 struct GroupKey {
-  typedef GroupName GroupNameType;
   GroupKey();
   GroupKey(const GroupName& group_name_in, const Identity& name_in, DataTagValue type_in);
   explicit GroupKey(const std::string& serialised_group_key);
@@ -49,7 +49,9 @@ struct GroupKey {
   GroupKey& operator=(GroupKey other);
   std::string Serialise() const;
 
-  GroupName group_name;
+  GroupName group_name() const { return metadata_key.group_name(); }
+
+  MetadataKey<GroupName> metadata_key;
   Identity name;
   DataTagValue type;
 
@@ -67,20 +69,20 @@ struct GroupKey {
 
 template <typename GroupName>
 GroupKey<GroupName>::GroupKey()
-    : group_name(), name(), type() {}
+    : metadata_key(), name(), type() {}
 
 template <typename GroupName>
 GroupKey<GroupName>::GroupKey(const GroupName& group_name_in, const Identity& name_in,
                               DataTagValue type_in)
-    : group_name(group_name_in), name(name_in), type(type_in) {}
+    : metadata_key(group_name_in), name(name_in), type(type_in) {}
 
 template <typename GroupName>
 GroupKey<GroupName>::GroupKey(const std::string& serialised_group_key)
-    : group_name(), name(), type(DataTagValue::kOwnerDirectoryValue) {
+    : metadata_key(), name(), type(DataTagValue::kOwnerDirectoryValue) {
   protobuf::GroupKey group_key_proto;
   if (!group_key_proto.ParseFromString(serialised_group_key))
     ThrowError(CommonErrors::parsing_error);
-  group_name = GroupName(Identity(group_key_proto.group_name()));
+  metadata_key = MetadataKey<GroupName>(GroupName(Identity(group_key_proto.group_name())));
   name = Identity(group_key_proto.name());
   type = static_cast<DataTagValue>(group_key_proto.type());
 }
@@ -88,18 +90,18 @@ GroupKey<GroupName>::GroupKey(const std::string& serialised_group_key)
 template <typename GroupName>
 GroupKey<GroupName>::GroupKey(const GroupName& group_name_in,
                               const FixedWidthString& fixed_width_string)
-    : group_name(group_name_in),
+    : metadata_key(group_name_in),
       name(fixed_width_string.string().substr(0, NodeId::kSize)),
       type(static_cast<DataTagValue>(detail::FromFixedWidthString<detail::PaddedWidth::value>(
           fixed_width_string.string().substr(NodeId::kSize)))) {}
 
 template <typename GroupName>
 GroupKey<GroupName>::GroupKey(const GroupKey& other)
-    : group_name(other.group_name), name(other.name), type(other.type) {}
+    : metadata_key(other.metadata_key), name(other.name), type(other.type) {}
 
 template <typename GroupName>
 GroupKey<GroupName>::GroupKey(GroupKey&& other)
-    : group_name(std::move(other.group_name)),
+    : metadata_key(std::move(other.metadata_key)),
       name(std::move(other.name)),
       type(std::move(other.type)) {}
 
@@ -112,7 +114,7 @@ GroupKey<GroupName>& GroupKey<GroupName>::operator=(GroupKey other) {
 template <typename GroupName>
 std::string GroupKey<GroupName>::Serialise() const {
   protobuf::GroupKey group_key_proto;
-  group_key_proto.set_group_name(group_name->string());
+  group_key_proto.set_group_name(metadata_key.group_name()->string());
   group_key_proto.set_name(name.string());
   group_key_proto.set_type(static_cast<int32_t>(type));
   return group_key_proto.SerializeAsString();
@@ -127,14 +129,14 @@ typename GroupKey<GroupName>::FixedWidthString GroupKey<GroupName>::ToFixedWidth
 template <typename GroupName>
 void swap(GroupKey<GroupName>& lhs, GroupKey<GroupName>& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
-  swap(lhs.group_name, rhs.group_name);
+  swap(lhs.metadata_key, rhs.metadata_key);
   swap(lhs.name, rhs.name);
   swap(lhs.type, rhs.type);
 }
 
 template <typename GroupName>
 bool operator==(const GroupKey<GroupName>& lhs, const GroupKey<GroupName>& rhs) {
-  return lhs.group_name == rhs.group_name && lhs.name == rhs.name && lhs.type == rhs.type;
+  return lhs.metadata_key == rhs.metadata_key && lhs.name == rhs.name && lhs.type == rhs.type;
 }
 
 template <typename GroupName>
@@ -144,8 +146,8 @@ bool operator!=(const GroupKey<GroupName>& lhs, const GroupKey<GroupName>& rhs) 
 
 template <typename GroupName>
 bool operator<(const GroupKey<GroupName>& lhs, const GroupKey<GroupName>& rhs) {
-  return std::tie(lhs.group_name, lhs.name, lhs.type) <
-         std::tie(rhs.group_name, rhs.name, rhs.type);
+  return std::tie(lhs.metadata_key, lhs.name, lhs.type) <
+         std::tie(rhs.metadata_key, rhs.name, rhs.type);
 }
 
 template <typename GroupName>

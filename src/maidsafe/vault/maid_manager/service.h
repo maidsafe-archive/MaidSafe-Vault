@@ -268,6 +268,12 @@ void MaidManagerService::HandleMessage(
     const typename SynchroniseFromMaidManagerToMaidManager::Receiver& receiver);
 
 template <>
+void MaidManagerService::HandleMessage(
+    const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
+    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
+    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver);
+
+template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
     const typename passport::PublicMaid::Name& data_name, const int32_t&,
     const nfs::MessageId& message_id);
@@ -323,7 +329,7 @@ void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
   if (!unresolved_actions.empty()) {
     sync_type.IncrementSyncAttempts();
     for (const auto& unresolved_action : unresolved_actions)
-      dispatcher.SendSync(unresolved_action->key.group_name, unresolved_action->Serialise());
+      dispatcher.SendSync(unresolved_action->key.group_name(), unresolved_action->Serialise());
   }
 }
 

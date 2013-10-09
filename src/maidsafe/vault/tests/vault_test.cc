@@ -54,6 +54,11 @@ class VaultTest : public testing::Test {
 
   passport::Pmid MakePmid() { return passport::Pmid(MakeMaid()); }
 
+  passport::PublicPmid MakePublicPmid() {
+    passport::Pmid pmid(MakePmid());
+    return passport::PublicPmid(pmid);
+  }
+
   const maidsafe::test::TestPath kTestRoot_;
   boost::filesystem::path vault_root_directory_;
   passport::Pmid pmid_;
@@ -62,7 +67,14 @@ class VaultTest : public testing::Test {
 };
 
 TEST_F(VaultTest, BEH_Constructor) {
-  vault_.reset(new Vault(pmid_, vault_root_directory_, on_new_bootstrap_endpoint_));
+  std::vector<passport::PublicPmid> public_pmids_from_file;
+  public_pmids_from_file.push_back(MakePublicPmid());
+  std::vector<boost::asio::ip::udp::endpoint> peer_endpoints;
+  peer_endpoints.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(),
+                                                          (RandomUint32() % 64511) + 2025));
+  EXPECT_THROW(vault_.reset(new Vault(pmid_, vault_root_directory_, on_new_bootstrap_endpoint_,
+                                      public_pmids_from_file, peer_endpoints)),
+               vault_error);  // throws VaultErrors::failed_to_join_network
 }
 
 }  // namespace test

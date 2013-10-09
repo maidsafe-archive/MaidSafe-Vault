@@ -46,7 +46,7 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
       pmid_manager_service_(
           std::move(std::unique_ptr<PmidManagerService>(new PmidManagerService(pmid, *routing_)))),
       pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
-          new PmidNodeService(pmid, *routing_, vault_root_dir)))),  // FIXME need to specialise
+          new PmidNodeService(pmid, *routing_, data_getter_, vault_root_dir)))),  // FIXME need to specialise
       cache_service_(*routing_, vault_root_dir),
       demux_(maid_manager_service_, version_manager_service_, data_manager_service_,
              pmid_manager_service_, pmid_node_service_, cache_service_),

@@ -53,6 +53,7 @@ inline bool ForThisPersona(const Message& message) {
 }  // unnamed namespace
 
 PmidNodeService::PmidNodeService(const passport::Pmid& /*pmid*/, routing::Routing& routing,
+                                 nfs_client::DataGetter& data_getter,
                                  const fs::path& vault_root_dir)
     : routing_(routing),
       accumulator_mutex_(),
@@ -60,7 +61,7 @@ PmidNodeService::PmidNodeService(const passport::Pmid& /*pmid*/, routing::Routin
       handler_(vault_root_dir),
       active_(),
       asio_service_(1),
-      data_getter_(asio_service_, routing_) {
+      data_getter_(data_getter) {
   //  nfs_.GetElementList();  // TODO (Fraser) BEFORE_RELEASE Implementation needed
 }
 

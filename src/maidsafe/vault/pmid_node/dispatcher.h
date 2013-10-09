@@ -35,7 +35,7 @@ class PmidNodeDispatcher {
   PmidNodeDispatcher(routing::Routing& routing);
 
   void SendGetRequest(const nfs_vault::DataName& data_name);
-  void SendPmidAccountRequest();
+  void SendPmidAccountRequest(const u_int64_t &available_size);
 
   template <typename Data>
   void SendPutFailure(const typename Data::Name& name,
@@ -75,6 +75,8 @@ void PmidNodeDispatcher::SendPutFailure(const typename Data::Name& name,
                                  VaultMessage::Receiver(routing::GroupId(routing_.kNodeId())));
   routing_.Send(routing_message);
 }
+
+
 
 //template <typename Data>
 //void PmidNodeDispatcher::SendIntegrityCheckResponse(const typename Data::Name& data_name,

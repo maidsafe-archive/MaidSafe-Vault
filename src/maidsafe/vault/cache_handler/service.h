@@ -29,6 +29,26 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace {
+
+class LongTermCacheableVisitor : public boost::static_visitor<bool> {
+ public:
+  template <typename Data>
+  void operator()() {
+    return is_long_term_cacheable<Data>::value;
+  }
+};
+
+class CacheableVisitor : public boost::static_visitor<bool> {
+ public:
+  template <typename Data>
+  void operator()() {
+    return is_cacheable<Data>::value;
+  }
+};
+
+}  // noname namespace
+
 class CacheHandlerService {
  public:
   CacheHandlerService(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
@@ -45,11 +65,35 @@ class CacheHandlerService {
   }
 
  private:
+  typedef std::true_type IsCacheable, IsLongTermCacheable;
+  typedef std::false_type IsNotCacheable, IsShortTermCacheable;
+
+  template <typename Data>
+  void HandleStore(const Data& data);
+
+  template <typename T>
+  bool CacheGet(const T& message, const typename T::Sender& sender,
+                const typename T::Receiver& receiver, IsShortTermCacheable);
+
+  template <typename T>
+  bool CacheGet(const T& message, const typename T::Sender& sender,
+                const typename T::Receiver& receiver, IsLongTermCacheable);
+
+  template <typename T>
+  void CacheStore(const T& message, const DataNameVariant& data_name, IsShortTermCacheable);
+
+  template <typename T>
+  void CacheStore(const T& message, const DataNameVariant& data_name, IsLongTermCacheable);
+
   routing::Routing& routing_;
   DiskUsage cache_size_;
   data_store::DataStore<data_store::DataBuffer<DataNameVariant>> cache_data_store_;
   data_store::MemoryBuffer mem_only_cache_;
 };
+
+template <typename Data>
+void CacheHandlerService::HandleStore(const Data& /*data*/) {}
+
 
 }  // namespace vault
 

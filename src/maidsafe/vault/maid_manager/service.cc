@@ -731,24 +731,23 @@ void MaidManagerService::HandleMessage(
       auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         group_db_.Commit(resolved_action->key, resolved_action->action);
-        dispatcher_.SendDeleteRequest(resolved_action->key.group_name,
+        dispatcher_.SendDeleteRequest(resolved_action->key.group_name(),
                                       nfs_vault::DataName(resolved_action->key.type,
                                                           resolved_action->key.name),
                                       resolved_action->action.kMessageId);
       }
       break;
     }
-    //      case ActionCreateAccount::kActionId: {
-    //        MaidManager::UnresolvedCreateAccount unresolved_action(
-    //            proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-    //        auto resolved_action(sync_create_accounts_.AddUnresolvedAction(unresolved_action));
-    //        if (resolved_action) {
-    //          MaidManager::Metadata metadata;
-    //          group_db_.AddGroup(resolved_action->key.group_name, metadata);
-    //        }
-    //        break;
-    //      }
-
+    case ActionCreateAccount::kActionId: {
+      MaidManager::UnresolvedCreateAccount unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_create_accounts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        MaidManager::Metadata metadata;
+        group_db_.AddGroup(resolved_action->key.group_name(), metadata);
+      }
+      break;
+    }
     default: {
       assert(false);
       LOG(kError) << "Unhandled action type";

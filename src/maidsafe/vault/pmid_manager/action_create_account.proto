@@ -16,29 +16,6 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/pmid_node/dispatcher.h"
+package maidsafe.vault.protobuf;
 
-namespace maidsafe {
-
-namespace vault {
-
-PmidNodeDispatcher::PmidNodeDispatcher(routing::Routing& routing) : routing_(routing) {}
-
-void PmidNodeDispatcher::SendPmidAccountRequest(const u_int64_t& available_size) {
-  typedef GetPmidAccountRequestFromPmidNodeToPmidManager VaultMessage;
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-
-  VaultMessage vault_message((nfs_vault::AvailableSize(available_size)));
-  RoutingMessage message(vault_message.Serialise(), VaultMessage::Sender(routing_.kNodeId()),
-                         VaultMessage::Receiver(routing_.kNodeId()));
-  routing_.Send(message);
-}
-
-routing::GroupSource PmidNodeDispatcher::Sender(const MaidName& account_name) const {
-  return routing::GroupSource(routing::GroupId(NodeId(account_name->string())),
-                              routing::SingleId(routing_.kNodeId()));
-}
-
-}  // namespace vault
-
-}  // namespace maidsafe
+message ActionPmidManagerCreateAccount {}

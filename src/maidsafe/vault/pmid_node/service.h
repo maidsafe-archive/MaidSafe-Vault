@@ -131,22 +131,6 @@ class GetCallerVisitor : public boost::static_visitor<> {
   DataStoreFunctor store_functor_;
 };
 
-class LongTermCacheableVisitor : public boost::static_visitor<bool> {
- public:
-  template <typename Data>
-  void operator()() {
-    return is_long_term_cacheable<Data>::value;
-  }
-};
-
-class CacheableVisitor : public boost::static_visitor<bool> {
- public:
-  template <typename Data>
-  void operator()() {
-    return is_cacheable<Data>::value;
-  }
-};
-
 }  // noname namespace
 
 class PmidNodeService {
@@ -156,6 +140,7 @@ class PmidNodeService {
   typedef PmidNodeServiceMessages Messages;
 
   PmidNodeService(const passport::Pmid& pmid, routing::Routing& routing,
+                  nfs_client::DataGetter& data_getter,
                   const boost::filesystem::path& vault_root_dir);
 
   template <typename T>
@@ -169,9 +154,6 @@ class PmidNodeService {
   friend class test::DataHolderTest;
 
  private:
-  typedef std::true_type IsCacheable, IsLongTermCacheable;
-  typedef std::false_type IsNotCacheable, IsShortTermCacheable;
-
   // ================================ Pmid Account ===============================================
   void SendAccountRequest();
 
@@ -210,20 +192,6 @@ class PmidNodeService {
                       const typename T::Receiver& receiver);
 
   template <typename T>
-  bool CacheGet(const T& message, const typename T::Sender& sender,
-                const typename T::Receiver& receiver, IsShortTermCacheable);
-
-  template <typename T>
-  bool CacheGet(const T& message, const typename T::Sender& sender,
-                const typename T::Receiver& receiver, IsLongTermCacheable);
-
-  template <typename T>
-  void CacheStore(const T& message, const DataNameVariant& data_name, IsShortTermCacheable);
-
-  template <typename T>
-  void CacheStore(const T& message, const DataNameVariant& data_name, IsLongTermCacheable);
-
-  template <typename T>
   void SendCachedData(const T& message, const typename T::Sender& sender,
                       const typename T::Receiver& receiver,
                       const std::shared_ptr<NonEmptyString> content);
@@ -235,7 +203,7 @@ class PmidNodeService {
   PmidNodeHandler handler_;
   Active active_;
   AsioService asio_service_;
-  nfs_client::DataGetter data_getter_;
+  nfs_client::DataGetter& data_getter_;
 };
 
 template <>
