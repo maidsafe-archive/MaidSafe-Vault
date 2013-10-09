@@ -42,11 +42,11 @@ class MetadataKey {
 
   GroupName group_name() const { return group_name_; }
 
-  friend bool operator==(const MetadataKey<GroupName>& lhs, const MetadataKey<GroupName>& rhs) {
+  friend bool operator==(const MetadataKey& lhs, const MetadataKey& rhs) {
     return (lhs.group_name_ == rhs.group_name_);
   }
 
-  friend void swap(MetadataKey<GroupName>& lhs, MetadataKey<GroupName>& rhs) MAIDSAFE_NOEXCEPT {
+  friend void swap(MetadataKey& lhs, MetadataKey& rhs) MAIDSAFE_NOEXCEPT {
     using std::swap;
     swap(lhs.group_name_, rhs.group_name_);
   }
@@ -89,20 +89,18 @@ std::string MetadataKey<GroupName>::Serialise() const {
 }
 
 template <typename GroupName>
- MetadataKey<GroupName>&  MetadataKey<GroupName>::operator=(MetadataKey<GroupName> other) {
+MetadataKey<GroupName>& MetadataKey<GroupName>::operator=(MetadataKey other) {
   swap(*this, other);
   return *this;
 }
 
 template <typename GroupName>
-bool operator!=(const MetadataKey<GroupName>& lhs,
-                const MetadataKey<GroupName>& rhs) {
+bool operator!=(const MetadataKey<GroupName>& lhs, const MetadataKey<GroupName>& rhs) {
   return !operator==(lhs, rhs);
 }
 
 template <typename GroupName>
-bool operator<(const MetadataKey<GroupName>& lhs,
-               const MetadataKey<GroupName>& rhs) {
+bool operator<(const MetadataKey<GroupName>& lhs, const MetadataKey<GroupName>& rhs) {
   return lhs.group_name_ < rhs.group_name_;
 }
 
