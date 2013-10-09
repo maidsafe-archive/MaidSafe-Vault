@@ -65,6 +65,10 @@ MetadataKey<GroupName>::MetadataKey(const MetadataKey& other)
     : group_name_(other.group_name_) {}
 
 template <typename GroupName>
+MetadataKey<GroupName>::MetadataKey(MetadataKey&& other)
+    : group_name_(std::move(other.group_name_)) {}
+
+template <typename GroupName>
 MetadataKey<GroupName>::MetadataKey(const GroupName& group_name_in)
     : group_name_(group_name_in) {}
 

@@ -37,13 +37,13 @@
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/types.h"
-//#include "maidsafe/vault/group_key.h"
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
 namespace vault {
 
+// All public methods provide strong exception guarantee
 template <typename Persona>
 class GroupDb {
  public:
@@ -76,10 +76,10 @@ class GroupDb {
   void HandleTransfer(const std::vector<Contents>& contents);
 
   // returns metadata if group_name exists in db
-  boost::optional<Metadata> GetMetadata(const GroupName& group_name);
+  Metadata GetMetadata(const GroupName& group_name);
   // returns value if key exists in db
-  boost::optional<Value> GetValue(const Key& key);
-  boost::optional<Contents> GetContents(const GroupName& group_name);
+  Value GetValue(const Key& key);
+  Contents GetContents(const GroupName& group_name);
 
  private:
   typedef uint32_t GroupId;
@@ -88,11 +88,11 @@ class GroupDb {
   GroupDb(GroupDb&&);
   GroupDb& operator=(GroupDb&&);
 
-  boost::optional<Metadata> Get(const GroupName& group_name);
-  boost::optional<Value> Get(const Key& key);
+  Metadata Get(const GroupName& group_name);
+  Value Get(const Key& key);
   void DeleteGroupEntries(const GroupName& group_name);
-  void PutValue(const KvPair& key_value);
-  void DeleteValue(const Key& key);
+  void Put(const KvPair& key_value_pair);
+  void Delete(const Key& key);
 
   static const int kPrefixWidth_ = 2;
   const boost::filesystem::path kDbPath_;
@@ -114,11 +114,6 @@ GroupDb<Persona>::~GroupDb() {
 }
 
 template <typename Persona>
-boost::optional<typename GroupDb<Persona>::Contents> GroupDb<Persona>::GetContents(const GroupName& /*group_name*/) {
-  return boost::optional<GroupDb<Persona>::Contents>();
-}
-
-template <typename Persona>
 void GroupDb<Persona>::AddGroup(const GroupName& group_name, const Metadata& metadata) {
   std::lock_guard<std::mutex> lock(mutex_);
   static const uint64_t kGroupsLimit(static_cast<GroupId>(std::pow(256, kPrefixWidth_)));
@@ -131,7 +126,7 @@ void GroupDb<Persona>::AddGroup(const GroupName& group_name, const Metadata& met
     group_id = RandomInt32() % kGroupsLimit;
   }
   if (!(group_map_.insert(std::make_pair(group_name, std::make_pair(group_id, metadata)))).second)
-    ThrowError(VaultErrors::failed_to_handle_request);  // TODO change to account already exist!
+    ThrowError(VaultErrors::account_already_exists);
 }
 
 template <typename Persona>
@@ -147,7 +142,7 @@ void GroupDb<Persona>::Commit(const GroupName& group_name,
   std::lock_guard<std::mutex> lock(mutex_);
   auto it(group_map_.find(group_name));
   if (it == group_map_.end())
-    ThrowError(CommonErrors::no_such_element);
+    ThrowError(VaultErrors::no_such_account);
   functor(it->second.second);
 }
 
@@ -159,15 +154,52 @@ void GroupDb<Persona>::Commit(
   std::lock_guard<std::mutex> lock(mutex_);
   auto it(group_map_.find(key.group_name()));
   if (it == group_map_.end())
-    ThrowError(CommonErrors::no_such_element);
+    ThrowError(VaultErrors::no_such_account);
 
-  boost::optional<Value> value(GetValue(key));
+  boost::optional<Value> value;
+  try {
+    value = GetValue(key);
+  } catch (const common_error& error) {
+    if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
+      throw error;  // For db errors
+  }
   if (detail::DbAction::kPut == functor(it->second.second, value)) {
-    PutValue(std::make_pair(key, *value));
+    Put(std::make_pair(key, *value));
   } else {
     assert(value);
-    DeleteValue(key);
+    Delete(key);
   }
+}
+
+template <typename Persona>
+typename GroupDb<Persona>::Contents GroupDb<Persona>::GetContents(
+    const GroupName& group_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto it(group_map_.find(group_name));
+  if (it == group_map_.end())
+    ThrowError(VaultErrors::no_such_account);
+
+  Contents contents;
+  contents.group_name = it->first;
+  contents.metadata = it->second.second;
+  // get db entry
+  std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
+  auto group_id = it->second.first;
+  auto group_id_str = detail::ToFixedWidthString<kPrefixWidth_>(group_id);
+  if (++it != group_map_.end()) {
+    for (iter->Seek(detail::ToFixedWidthString<kPrefixWidth_>(group_id));
+         iter->Valid() && iter->key().ToString() < group_id_str; iter->Next())
+      contents.kv_pair.push_back(std::make_pair(Key(iter->key().ToString()),
+                                                Value(iter->value().ToString())));
+  } else {
+    for (iter->Seek(detail::ToFixedWidthString<kPrefixWidth_>(group_id)); iter->Valid();
+         iter->Next())
+      contents.kv_pair.push_back(std::make_pair(Key(iter->key().ToString()),
+                                                Value(iter->value().ToString())));
+  }
+
+  iter.reset();
+  return contents;
 }
 
 template <typename Persona>
@@ -208,25 +240,23 @@ void GroupDb<Persona>::HandleTransfer(const std::vector<Contents>& contents) {
 
 // throws
 template <typename Persona>
-boost::optional<typename GroupDb<Persona>::Metadata> GroupDb<Persona>::Get(
-    const GroupName& group_name) {
-  boost::optional<Metadata> return_value;
+typename GroupDb<Persona>::Metadata GroupDb<Persona>::Get(const GroupName& group_name) {
   auto it(group_map_.find(group_name));
-  if (it != group_map_.end())
-    return_value = it->second.second;
-  return return_value;
+  if (it == group_map_.end())
+    ThrowError(VaultErrors::no_such_account);
+
+  return it->second.second;
 }
 
 template <typename Persona>
-boost::optional<typename GroupDb<Persona>::Metadata> GroupDb<Persona>::GetMetadata(
-    const GroupName& group_name) {
+typename GroupDb<Persona>::Metadata GroupDb<Persona>::GetMetadata(const GroupName& group_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   return Get(group_name);
 }
 
 // throws
 template <typename Persona>
-boost::optional<typename GroupDb<Persona>::Value> GroupDb<Persona>::Get(const Key& key) {
+typename GroupDb<Persona>::Value GroupDb<Persona>::Get(const Key& key) {
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
   std::string value_string;
@@ -234,29 +264,29 @@ boost::optional<typename GroupDb<Persona>::Value> GroupDb<Persona>::Get(const Ke
       leveldb_->Get(read_options, key.ToFixedWidthString().string(), &value_string));
   if (status.ok()) {
     assert(!value_string.empty());
-    return boost::optional<Value>(value_string);
+    return Value(value_string);
   } else if (status.IsNotFound()) {
-    return boost::optional<Value>();
+    ThrowError(CommonErrors::no_such_element);
   }
   ThrowError(VaultErrors::failed_to_handle_request);
-  return boost::optional<Value>();
+  return Value();
 }
 
-// not locking here, as leveldb is thread safe.
 template <typename Persona>
-boost::optional<typename GroupDb<Persona>::Value> GroupDb<Persona>::GetValue(const Key& key) {
+typename GroupDb<Persona>::Value GroupDb<Persona>::GetValue(const Key& key) {
+  std::lock_guard<std::mutex> lock(mutex_);
   return Get(key);
 }
 
 template <typename Persona>
 void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
   std::vector<std::string> group_db_keys;
-  std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
   auto it(group_map_.find(group_name));
   if (it == group_map_.end())
     return;
   auto group_id = it->second.first;
   auto group_id_str = detail::ToFixedWidthString<kPrefixWidth_>(group_id);
+  std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
   if (++it != group_map_.end()) {
     for (iter->Seek(detail::ToFixedWidthString<kPrefixWidth_>(group_id));
          iter->Valid() && iter->key().ToString() < group_id_str; iter->Next())
@@ -270,8 +300,8 @@ void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
 
   iter.reset();
 
-  for (auto i : group_db_keys) {
-    leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), i));
+  for (auto key : group_db_keys) {
+    leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), key));
     if (!status.ok())
       ThrowError(VaultErrors::failed_to_handle_request);
   }
@@ -280,10 +310,21 @@ void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
 }
 
 template <typename Persona>
-void GroupDb<Persona>::PutValue(const KvPair& /*key_value*/) {}
+void GroupDb<Persona>::Put(const KvPair& key_value_pair) {
+  leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
+                                       key_value_pair.first.ToFixedWidthString().string(),
+                                       key_value_pair.second.Serialise()));
+  if (!status.ok())
+    ThrowError(VaultErrors::failed_to_handle_request);
+}
 
 template <typename Persona>
-void GroupDb<Persona>::DeleteValue(const Key& /*key*/) {}
+void GroupDb<Persona>::Delete(const Key& key) {
+  leveldb::Status status(
+      leveldb_->Delete(leveldb::WriteOptions(), key.ToFixedWidthString().string()));
+  if (status.ok())
+    ThrowError(VaultErrors::failed_to_handle_request);
+}
 
 }  // namespace vault
 
