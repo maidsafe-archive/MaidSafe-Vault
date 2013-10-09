@@ -31,7 +31,6 @@
 #include "maidsafe/nfs/vault/messages.h"
 #include "maidsafe/vault/handled_request.pb.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 

@@ -153,9 +153,11 @@ class PmidNodeService {
   template <typename Data>
   friend class test::DataHolderTest;
 
+  void SendAccountRequest() {}
+  void HandlePmidAccountResponses(std::vector<std::set<nfs_vault::DataName>>& /*responses*/) {}
+
  private:
   // ================================ Pmid Account ===============================================
-  void SendAccountRequest();
 
   // populates chunks map
   //  void ApplyAccountTransfer(const std::vector<protobuf::PmidAccountResponse>& responses,

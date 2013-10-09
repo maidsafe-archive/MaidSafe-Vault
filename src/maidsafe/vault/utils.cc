@@ -26,6 +26,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/parameters.h"
+#include "maidsafe/vault/pmid_node/service.h"
 
 #include "maidsafe/vault/operations_visitor.h"
 
@@ -74,6 +75,38 @@ DataNameVariant GetNameVariant(const nfs_vault::DataNameAndContentOrCheckResult&
   return GetNameVariant(data.name);
 }
 
+template <>
+template <>
+void OperationHandler<
+         typename ValidateSenderType<GetPmidAccountResponseFromPmidManagerToPmidNode>::type,
+         Accumulator<PmidNodeServiceMessages>,
+         typename Accumulator<PmidNodeServiceMessages>::AddCheckerFunctor,
+         PmidNodeService>::operator()(
+    const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
+    const GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
+    const GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+  if (!validate_sender(message, sender))
+    return;
+  {
+    std::lock_guard<std::mutex> lock(mutex);
+    if (accumulator.CheckHandled(message))
+      return;
+    auto result(accumulator.AddPendingRequest(message, sender, checker));
+    if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess) {
+      auto responses(accumulator.Get(message));
+      std::vector<std::set<nfs_vault::DataName>> response_vec;
+      for (const auto& response : responses) {
+        auto typed_response(boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
+        response_vec.push_back(typed_response.contents->names);
+      }
+      service->HandlePmidAccountResponses(response_vec);
+    } else if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kFailure) {
+      service->SendAccountRequest();
+    }
+  }
+}
+
+
 void InitialiseDirectory(const boost::filesystem::path& directory) {
   if (fs::exists(directory)) {
     if (!fs::is_directory(directory))
@@ -102,11 +135,6 @@ std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db
     ThrowError(CommonErrors::filesystem_io_error);
   assert(db);
   return std::move(std::unique_ptr<leveldb::DB>(db));
-}
-
-// To be moved to Routing
-bool operator==(const routing::GroupSource& lhs, const routing::GroupSource& rhs) {
-  return lhs.group_id == rhs.group_id && lhs.sender_id == rhs.sender_id;
 }
 
 }  // namespace vault

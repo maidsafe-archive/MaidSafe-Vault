@@ -41,13 +41,17 @@
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/version_manager/version_manager.h"
 #include "maidsafe/vault/accumulator.h"
+#include "maidsafe/vault/operations_visitor.h"
+//#include "maidsafe/vault/pmid_node/service.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-template <typename T>
-class Accumulator;
+//template <typename T>
+//class Accumulator;
+
+class PmidNodeService;
 
 namespace detail {
 
@@ -63,19 +67,6 @@ template <>
 struct RequiredValue<routing::GroupSource> {
   int operator()() { return routing::Parameters::node_group_size - 1; }
 };
-
-// class GetNodeId {
-// public:
-//  template<typename T>
-//  NodeId operator()(const T& node) {
-//    return node.data;
-//  }
-//};
-
-// template<>
-// NodeId GetNodeId::operator()(const routing::GroupSource& node) {
-//  return node.sender_id.data;
-//}
 
 template <typename T>
 DataNameVariant GetNameVariant(const T&);
@@ -97,6 +88,11 @@ DataNameVariant GetNameVariant(const nfs_client::DataNameAndContentOrReturnCode&
 
 template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndContentOrCheckResult& data);
+
+template <typename MessageType>
+struct ValidateSenderType {
+  typedef std::function<bool(const MessageType&, const typename MessageType::Sender&)> type;
+};
 
 template <typename ServiceHandlerType, typename MessageType>
 void DoOperation(ServiceHandlerType* service, const MessageType& message,
@@ -143,28 +139,16 @@ void OperationHandler<ValidateSender, AccumulatorType, Checker, ServiceHandlerTy
   DoOperation<ServiceHandlerType, MessageType>(service, message, sender, receiver);
 }
 
-//template <typename ValidateSender, typename AccumulatorType, typename Checker,
-//          typename ServiceHandlerType>
-//template <>
-//void OperationHandler<ValidateSender, AccumulatorType, Checker, ServiceHandlerType>::operator()(
-//    const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-//    const GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
-//    const GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-//  if (!validate_sender(message, sender))
-//    return;
-//  {
-//    std::lock_guard<std::mutex> lock(mutex);
-//    if (accumulator.CheckHandled(message))
-//      return;
-//    auto result(accumulator.AddPendingRequest(message, sender, checker));
-//    if (result == AccumulatorType::AddResult::kSuccess) {
-//      auto requests(accumulator.Get(message));
-//      service->HandlePmidAccountResponses(requests);
-//    } else if (result == AccumulatorType::AddResult::kFailure) {
-//      service->SendAccountRequest();
-//    }
-//  }
-//}
+template<>
+template<>
+void OperationHandler<
+         typename ValidateSenderType<GetPmidAccountResponseFromPmidManagerToPmidNode>::type,
+         Accumulator<PmidNodeServiceMessages>,
+         typename Accumulator<PmidNodeServiceMessages>::AddCheckerFunctor,
+         PmidNodeService>::operator()(
+    const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
+    const GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
+    const GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
 
 template <typename ServiceHandlerType, typename MessageType>
 void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/,
@@ -621,11 +605,6 @@ void DoOperation(ServiceHandlerType* service,
 
 // =============================================================================================
 
-template <typename MessageType>
-struct ValidateSenderType {
-  typedef std::function<bool(const MessageType&, const typename MessageType::Sender&)> type;
-};
-
 void InitialiseDirectory(const boost::filesystem::path& directory);
 // bool ShouldRetry(routing::Routing& routing, const nfs::Message& message);
 
@@ -644,9 +623,6 @@ typename Account::serialised_type GetSerialisedAccount(std::mutex& mutex,
 template <typename AccountSet, typename Account>
 typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
     std::mutex& mutex, const AccountSet& accounts, const typename Account::Name& account_name);
-
-// To be moved to Routing
-bool operator==(const routing::GroupSource& lhs, const routing::GroupSource& rhs);
 
 /* Commented by Mahmoud on 2 Sep -- It may be of no use any more
 // Returns true if the required successful request count has been reached

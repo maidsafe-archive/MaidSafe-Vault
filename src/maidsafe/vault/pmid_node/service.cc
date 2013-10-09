@@ -21,12 +21,12 @@
 #include <string>
 #include <chrono>
 
-#include "maidsafe/common/utils.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_store/data_buffer.h"
 #include "maidsafe/nfs/client/messages.pb.h"
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
+#include "maidsafe/vault/utils.h"
 
 namespace fs = boost::filesystem;
 

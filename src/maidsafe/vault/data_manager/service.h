@@ -332,10 +332,11 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name, const R
   auto get_response_op(std::make_shared<GetResponseOp<typename Data::Name, Requestor>>(
       pmid_node_to_get_from, integrity_checks, data_name, requestor));
   auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
-    this->DoHandleGetResponse(pmid_node_and_contents.first, pmid_node_and_contents.contents,
+    this->DoHandleGetResponse(pmid_node_and_contents.first, pmid_node_and_contents.second,
                               get_response_op);
   });
-  get_timer_.AddTask(kDefaultTimeout, functor, expected_response_count, message_id.data);
+  get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, expected_response_count,
+                     message_id.data);
 
   // Send requests
   dispatcher_.SendGetRequest(pmid_node_to_get_from, data_name, message_id);
