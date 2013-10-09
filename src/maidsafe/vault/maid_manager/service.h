@@ -342,7 +342,7 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
                                    const PmidName& pmid_node_hint,
                                    const nfs::MessageId& message_id) {
   auto metadata(group_db_.GetMetadata(account_name));
-  if (metadata->AllowPut(data) != MaidManagerMetadata::Status::kNoSpace) {
+  if (metadata.AllowPut(data) != MaidManagerMetadata::Status::kNoSpace) {
     dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
   } else {
     dispatcher_.SendPutFailure<Data>(account_name, data.name(),
@@ -388,16 +388,15 @@ template <typename Data>
 bool MaidManagerService::DeleteAllowed(const MaidName& account_name,
                                        const typename Data::Name& data_name) {
   try {
-    if (group_db_.GetValue(MaidManager::Key(account_name, GetObfuscatedDataName(data_name),
-                                            Data::Tag::kValue)))
-      return true;
-  }
-  catch (const maidsafe_error& /*error*/) {
+    group_db_.GetValue(MaidManager::Key(account_name, GetObfuscatedDataName(data_name),
+                                        Data::Tag::kValue));
+    return true;
+  } catch (const common_error& error) {
+    if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
+      throw error;  // For db errors
     return false;
   }
-  return false;
 }
-
 
 // ===============================================================================================
 

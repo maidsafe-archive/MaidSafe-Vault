@@ -44,7 +44,7 @@ class Db;
 struct Key {
   Key();  // FIXME Prakash
   Key(const Identity& name_in, DataTagValue type_in);
-  Key(const DataNameVariant& data_name);
+  explicit Key(const DataNameVariant& data_name);
   explicit Key(const std::string& serialised_key);
   Key(const Key& other);
   Key(Key&& other);

@@ -165,11 +165,16 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& mai
                                                  const nfs::MessageId& message_id) {
   MaidName account_name(maid.name());
   // If Account exists
-  if (group_db_.GetMetadata(account_name)) {
+  try {
+    group_db_.GetMetadata(account_name);
     dispatcher_.SendCreateAccountResponse(account_name,
-                                          maidsafe_error(VaultErrors::unique_data_clash),
+                                          maidsafe_error(VaultErrors::account_already_exists),
                                           message_id);
     return;
+
+  } catch (const vault_error& error) {
+    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
+      throw error;  // For db errors
   }
 
   pending_account_map_.insert(std::make_pair(message_id, MaidAccountCreationStatus(maid.name(),
