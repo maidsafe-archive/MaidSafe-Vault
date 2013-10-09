@@ -109,73 +109,105 @@ void PmidNodeService::HandleMessage(
 
 template <>
 void PmidNodeService::HandleMessage(
-    const GetPmidAccountResponseFromPmidManagerToPmidNode& /*message*/,
-    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& /*sender*/,
-    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-  //#ifndef TESTNG
-  //  ValidateSender(message, sender);
-  //#endif
-  //  Accumulator<nfs::PmidNodeServiceMessages>::AddResult result;
-  //  std::vector<nfs::PmidNodeServiceMessages> responses;
-  //  {
-  //    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-  //    if (accumulator_.CheckHandled(message))
-  //      return;
-  //    auto add_request_predicate(
-  //        [&](const std::vector<PmidNodeServiceMessages>& requests_in) {
-  //          if (requests_in.size() < 2)
-  //            return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-  //          std::vector<protobuf::PmidAccountResponse> pmid_account_responses;
-  //          protobuf::PmidAccountResponse pmid_account_response;
-  //          nfs_client::protobuf::DataNameAndContentOrReturnCode data;
-  //          GetPmidAccountResponseFromPmidManagerToPmidNode response;
-  //          for (auto& request : requests_in) {
-  //            response =
-  // boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(request);
-  //            if (data.ParseFromString(response.contents->data->content.string())) {
-  //              if (data.has_serialised_data_name_and_content()) {
-  //                if (pmid_account_response.ParseFromString(
-  //                        data.serialised_data_name_and_content())) {
-  //                  pmid_account_responses.push_back(pmid_account_response);
-  //                } else {
-  //                  LOG(kWarning) << "Failed to parse the contents";
-  //                }
-  //              }
-  //            } else {
-  //              LOG(kWarning) << "Failed to parse the contents of the response";
-  //            }
-  //          }
-  //          if ((static_cast<uint16_t>(requests_in.size()) >=
-  // (routing::Parameters::node_group_size / 2 + 1)) &&
-  //               pmid_account_responses.size() >= routing::Parameters::node_group_size / 2)
-  //            return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
-  //          if ((requests_in.size() == routing::Parameters::node_group_size) ||
-  //               (requests_in.size() - pmid_account_responses.size() >
-  //                    routing::Parameters::node_group_size / 2))
-  //            return Accumulator<PmidNodeServiceMessages>::AddResult::kFailure;
-  //          return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-  //        });
-  //    result = accumulator_.AddPendingRequest(message, sender, add_request_predicate);
-  //    if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
-  //      accumulator_.SetHandled(message, sender);
-  //      return;
-  //    }
-  //    if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kSuccess) {
-  //      responses = accumulator_.Get(message);
-  //      accumulator_.SetHandled(message, sender);
-  //    }
-  //  }
-  //  if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kSuccess) {
-  //    std::vector<GetPmidAccountResponseFromPmidManagerToPmidNode> typed_responses;
-  //    for (auto response : responses)
-  //      typed_responses.push_back(
-  //          boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
-  //    HandleAccountResponses(typed_responses);
-  //  }
-  //  if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
-  //    SendAccountRequest();
-  //  }
+    const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
+    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
+    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver) {
+  typedef GetPmidAccountResponseFromPmidManagerToPmidNode MessageType;
+  auto add_request_predicate(
+      [&](const std::vector<Messages>& requests_in) {
+        if (requests_in.size() < 2)
+          return Accumulator<Messages>::AddResult::kWaiting;
+        std::vector<nfs_client::DataNamesAndReturnCode> pmid_account_responses;
+        for (auto& request : requests_in) {
+          auto typed_request(boost::get<MessageType>(request));
+          if (typed_request.contents->return_code.value.code() == CommonErrors::success)
+            pmid_account_responses.push_back(*typed_request.contents);
+        }
+        if ((static_cast<uint16_t>(requests_in.size()) >=
+                (routing::Parameters::node_group_size / 2 + 1)) &&
+            pmid_account_responses.size() >= routing::Parameters::node_group_size / 2)
+          return Accumulator<Messages>::AddResult::kSuccess;
+          if ((requests_in.size() == routing::Parameters::node_group_size) ||
+              (requests_in.size() - pmid_account_responses.size() >
+                   routing::Parameters::node_group_size / 2))
+              return Accumulator<Messages>::AddResult::kFailure;
+            return Accumulator<Messages>::AddResult::kWaiting;
+          });
+
+  OperationHandlerWrapper<PmidNodeService, MessageType>(
+      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      add_request_predicate, this, accumulator_mutex_)(message, sender, receiver);
 }
+
+
+//template <>
+//void PmidNodeService::HandleMessage(
+//    const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
+//    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
+//    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver) {
+//    Accumulator<nfs::PmidNodeServiceMessages>::AddResult result;
+//    std::vector<nfs::PmidNodeServiceMessages> responses;
+//    {
+//      std::lock_guard<std::mutex> lock(accumulator_mutex_);
+//      if (accumulator_.CheckHandled(message))
+//        return;
+//      auto add_request_predicate(
+//          [&](const std::vector<PmidNodeServiceMessages>& requests_in) {
+//            if (requests_in.size() < 2)
+//              return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
+//            std::vector<protobuf::PmidAccountResponse> pmid_account_responses;
+//            protobuf::PmidAccountResponse pmid_account_response;
+//            nfs_client::protobuf::DataNameAndContentOrReturnCode data;
+//            GetPmidAccountResponseFromPmidManagerToPmidNode response;
+//            for (auto& request : requests_in) {
+//              response =
+//   boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(request);
+//              if (data.ParseFromString(response.contents->data->content.string())) {
+//                if (data.has_serialised_data_name_and_content()) {
+//                  if (pmid_account_response.ParseFromString(
+//                          data.serialised_data_name_and_content())) {
+//                    pmid_account_responses.push_back(pmid_account_response);
+//                  } else {
+//                    LOG(kWarning) << "Failed to parse the contents";
+//                  }
+//                }
+//              } else {
+//                LOG(kWarning) << "Failed to parse the contents of the response";
+//              }
+//            }
+//            if ((static_cast<uint16_t>(requests_in.size()) >=
+//   (routing::Parameters::node_group_size / 2 + 1)) &&
+//                 pmid_account_responses.size() >= routing::Parameters::node_group_size / 2)
+//              return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
+//            if ((requests_in.size() == routing::Parameters::node_group_size) ||
+//                 (requests_in.size() - pmid_account_responses.size() >
+//                      routing::Parameters::node_group_size / 2))
+//              return Accumulator<PmidNodeServiceMessages>::AddResult::kFailure;
+//            return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
+//          });
+//      result = accumulator_.AddPendingRequest(message, sender, add_request_predicate);
+//      if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
+//        accumulator_.SetHandled(message, sender);
+//        return;
+//      }
+//      if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kSuccess) {
+//        responses = accumulator_.Get(message);
+//        accumulator_.SetHandled(message, sender);
+//      }
+//    }
+//    if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kSuccess) {
+//      std::vector<GetPmidAccountResponseFromPmidManagerToPmidNode> typed_responses;
+//      for (auto response : responses)
+//        typed_responses.push_back(
+//            boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
+//      HandleAccountResponses(typed_responses);
+//    }
+//    if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
+//      SendAccountRequest();
+//    }
+//}
 
 // void PmidNodeService::HandleAccountResponses(
 //  const std::vector<GetPmidAccountResponseFromPmidManagerToPmidNode>& responses) {

@@ -44,7 +44,7 @@ std::string ActionPmidManagerCreateAccount::Serialise() const {
 detail::DbAction ActionPmidManagerCreateAccount::operator()(
     boost::optional<PmidManagerMetadata>& metadata) {
   if (metadata)
-    ThrowError(VaultErrors::account_already_exist);
+    ThrowError(VaultErrors::account_already_exists);
   metadata.reset(PmidManagerMetadata());
   return detail::DbAction::kPut;
 }

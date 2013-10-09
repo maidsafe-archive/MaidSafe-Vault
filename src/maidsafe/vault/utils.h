@@ -40,6 +40,7 @@
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/version_manager/version_manager.h"
+#include "maidsafe/vault/accumulator.h"
 
 namespace maidsafe {
 
@@ -111,21 +112,7 @@ struct OperationHandler {
         mutex(mutex_in) {}
 
   template <typename MessageType, typename Sender, typename Receiver>
-  void operator()(const MessageType& message, const Sender& sender, const Receiver& receiver) {
-    if (!validate_sender(message, sender))
-      return;
-    {
-      std::lock_guard<std::mutex> lock(mutex);
-      if (accumulator.CheckHandled(message))
-        return;
-      //      if ((RequiredValue<Sender>()() > 1) &&
-      //          accumulator.AddPendingRequest(message, sender, checker) !=
-      //              Accumulator<AccumulatorType>::AddResult::kSuccess)
-      //        return;
-      //      accumulator.SetHandled(message, sender);
-    }
-    DoOperation<ServiceHandlerType, MessageType>(service, message, sender, receiver);
-  }
+  void operator()(const MessageType& message, const Sender& sender, const Receiver& receiver);
 
  private:
   ValidateSender validate_sender;
@@ -134,6 +121,47 @@ struct OperationHandler {
   ServiceHandlerType* service;
   std::mutex& mutex;
 };
+
+template <typename ValidateSender, typename AccumulatorType, typename Checker,
+          typename ServiceHandlerType>
+template <typename MessageType, typename Sender, typename Receiver>
+void OperationHandler<ValidateSender, AccumulatorType, Checker, ServiceHandlerType>::operator()(
+    const MessageType& message, const Sender& sender, const Receiver& receiver) {
+  if (!validate_sender(message, sender))
+    return;
+  {
+    std::lock_guard<std::mutex> lock(mutex);
+    if (accumulator.CheckHandled(message))
+      return;
+    if (accumulator.AddPendingRequest(message, sender, checker)
+           != AccumulatorType::AddResult::kSuccess)
+      return;
+  }
+  DoOperation<ServiceHandlerType, MessageType>(service, message, sender, receiver);
+}
+
+//template <typename ValidateSender, typename AccumulatorType, typename Checker,
+//          typename ServiceHandlerType>
+//template <>
+//void OperationHandler<ValidateSender, AccumulatorType, Checker, ServiceHandlerType>::operator()(
+//    const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
+//    const GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
+//    const GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+//  if (!validate_sender(message, sender))
+//    return;
+//  {
+//    std::lock_guard<std::mutex> lock(mutex);
+//    if (accumulator.CheckHandled(message))
+//      return;
+//    auto result(accumulator.AddPendingRequest(message, sender, checker));
+//    if (result == AccumulatorType::AddResult::kSuccess) {
+//      auto requests(accumulator.Get(message));
+//      service->HandlePmidAccountResponses(requests);
+//    } else if (result == AccumulatorType::AddResult::kFailure) {
+//      service->SendAccountRequest();
+//    }
+//  }
+//}
 
 template <typename ServiceHandlerType, typename MessageType>
 void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/,

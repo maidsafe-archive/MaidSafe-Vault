@@ -186,11 +186,18 @@ void PmidManagerService::HandleCreateAccount(const PmidName& pmid_node) {
   DoSync();
 }
 
-void PmidManagerService::HandleSendPmidAccount(const PmidName& /*pmid_node*/) {
-//  auto contents(group_db_.GetContents(pmid_node));
-//  if (contents) {
-//  } else {
-//  }
+void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node) {
+  std::vector<nfs_vault::DataName> data_names;
+  auto contents(group_db_.GetContents(pmid_node));
+  if (contents) {
+    for (auto kv_pair : contents->kv_pair)
+      data_names.push_back(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
+    dispatcher_.SendPmidAccount(pmid_node, data_names,
+                                nfs_client::ReturnCode(CommonErrors::success));
+  } else {
+    dispatcher_.SendPmidAccount(pmid_node, data_names,
+                                nfs_client::ReturnCode(CommonErrors::no_such_element));
+  }
 }
 
 // =================================================================================================

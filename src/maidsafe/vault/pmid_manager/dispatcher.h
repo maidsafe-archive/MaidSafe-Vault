@@ -28,6 +28,7 @@
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/vault/messages.h"
+#include "maidsafe/nfs/client/messages.h"
 
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
@@ -58,7 +59,9 @@ class PmidManagerDispatcher {
   void SendSync(const PmidName& pmid_node, const std::string& serialised_sync);
   void SendAccountTransfer(const PmidName& destination_peer, const PmidName& pmid_node,
                            const std::string& serialised_account);
-  void SendPmidAccount(const PmidName& pmid_node, const std::string& serialised_account_response);
+  void SendPmidAccount(const PmidName& pmid_node,
+                       const std::vector<nfs_vault::DataName>& data_names,
+                       const nfs_client::ReturnCode& return_code);
 
  private:
   PmidManagerDispatcher();

@@ -69,19 +69,20 @@ void PmidManagerDispatcher::SendSync(const PmidName& /*pmid_node*/,
 //  routing_.Send(message);
 //}
 
-// void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
-//                                            const std::string& serialised_account_response) {
-//  typedef GetPmidAccountResponseFromPmidManagerToPmidNode VaultMessage;
-//  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
+                                            const std::vector<nfs_vault::DataName>& data_names,
+                                            const nfs_client::ReturnCode& return_code) {
+  typedef GetPmidAccountResponseFromPmidManagerToPmidNode VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-//  PmidAccountResponse pmid_account_response(serialised_account_response);
-//  VaultMessage vault_message(pmid_account_response);
-//  RoutingMessage message(vault_message.Serialise(),
-//                         VaultMessage::Sender(routing::SingleSource(
-//                                                  routing::SingleId(routing_.kNodeId()))),
-//                         VaultMessage::Receiver(routing::SingleId(pmid_node)));
-//  routing_.Send(message);
-//}
+  VaultMessage vault_message(nfs_client::DataNamesAndReturnCode(data_names, return_code));
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(routing::SingleId(
+                                                    NodeId(pmid_node.value.string()))));
+  routing_.Send(message);
+}
 
 routing::GroupSource PmidManagerDispatcher::Sender(const MaidName& account_name) const {
   return routing::GroupSource(routing::GroupId(NodeId(account_name->string())),
