@@ -140,7 +140,9 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
 
 template <typename T>
 typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
-    const T& /*request*/, const routing::SingleSource& /*source*/, AddCheckerFunctor /*checker*/) {}
+    const T& /*request*/, const routing::SingleSource& /*source*/, AddCheckerFunctor /*checker*/) {
+  return AddResult::kSuccess;
+}
 
 template <typename T>
 bool Accumulator<T>::CheckHandled(const T& request) {

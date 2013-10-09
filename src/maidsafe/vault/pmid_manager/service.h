@@ -155,6 +155,12 @@ void PmidManagerService::HandleMessage(
 
 template <>
 void PmidManagerService::HandleMessage(
+    const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
+    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
+    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver);
+
+template <>
+void PmidManagerService::HandleMessage(
     const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
     const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
     const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);

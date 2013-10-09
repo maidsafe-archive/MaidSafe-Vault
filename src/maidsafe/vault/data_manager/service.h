@@ -23,6 +23,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
@@ -76,20 +77,23 @@ class DataManagerService {
   typedef GetResponseFromPmidNodeToDataManager::Contents GetResponseContents;
 
   template <typename Data>
-  void HandlePut(const Data& data, const MaidName& maid_name, const PmidName& pmid_name_in,
-                 const nfs::MessageId& message_id);
+  void HandlePut(const Data& data, const MaidName& maid_name, const PmidName& pmid_name,
+                 nfs::MessageId message_id);
 
   template <typename Data>
   void HandlePutResponse(const typename Data::name& data_name, const PmidName& pmid_node,
-                         int32_t size, const nfs::MessageId& message_id);
+                         int32_t size, nfs::MessageId message_id);
   // Failure case
   template <typename Data>
   void HandlePutFailure(const typename Data::Name& data_name, const PmidName& attempted_pmid_node,
-                        const nfs::MessageId& message_id, const maidsafe_error& error);
+                        nfs::MessageId message_id, const maidsafe_error& error);
 
   template <typename Data, typename Requestor>
   void HandleGet(const typename Data::Name& data_name, const Requestor& requestor,
-                 const nfs::MessageId& message_id);
+                 nfs::MessageId message_id);
+
+  void HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
+                         const GetResponseContents& contents);
 
   // Removes a pmid_name from the set and returns it.
   template <typename DataName>
@@ -97,11 +101,12 @@ class DataManagerService {
                                    const DataName& data_name) const;
 
   template <typename Data, typename Requestor>
-  void HandleGetResponse(GetResponseContents contents,
-                         shared_ptr<GetResponseOp<typename Data::Name, Requestor>> get_response_op);
+  void DoHandleGetResponse(
+      const PmidName& pmid_node, const GetResponseContents& contents,
+      std::shared_ptr<GetResponseOp<typename Data::Name, Requestor>> get_response_op);
 
   template <typename Data>
-  void HandleDelete(const typename Data::Name& data_name, const nfs::MessageId& message_id);
+  void HandleDelete(const typename Data::Name& data_name, nfs::MessageId message_id);
 
   void DoSync();
 
@@ -112,16 +117,16 @@ class DataManagerService {
   bool SendPutRetryRequired(const typename Data::Name& name);
 
   void HandleDataIntegrityResponse(const GetResponseContents& response,
-                                   const nfs::MessageId& message_id);
+                                   nfs::MessageId message_id);
   template <typename Data>
   bool HasPmidNode(const typename Data::Name& data_name, const PmidName& pmid_node);
 
   void SendDeleteRequests(const DataManager::Key& key, const std::set<PmidName>& pmids,
-                          const nfs::MessageId& message_id);
+                          nfs::MessageId message_id);
 
   template <typename Data>
   void SendDeleteRequest(const PmidName pmid_node, const typename Data::Name& name,
-                         const nfs::MessageId& message_id);
+                         nfs::MessageId message_id);
 
   template <typename Data>
   std::vector<PmidName> StoringPmidNodes(const typename Data::Name& name);
@@ -160,7 +165,7 @@ class DataManagerService {
   Accumulator<Messages> accumulator_;
   routing::MatrixChange matrix_change_;
   DataManagerDispatcher dispatcher_;
-  routing::Timer<GetResponseContents> get_timer_;
+  routing::Timer<std::pair<PmidName, GetResponseContents>> get_timer_;
   Db<DataManager::Key, DataManager::Value> db_;
   Sync<DataManager::UnresolvedPut> sync_puts_;
   Sync<DataManager::UnresolvedDelete> sync_deletes_;
@@ -238,7 +243,7 @@ void IncrementAttemptsAndSendSync(DataManagerDispatcher& dispatcher,
 
 template <typename Data>
 void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
-                                   const PmidName& pmid_name_in, const nfs::MessageId& message_id) {
+                                   const PmidName& pmid_name_in, nfs::MessageId message_id) {
   int32_t cost(data.data().string().size());
   if (!EntryExist<Data>(data.name())) {
     cost *= routing::Parameters::node_group_size;
@@ -265,7 +270,7 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
 template <typename Data>
 void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
                                           const PmidName& attempted_pmid_node,
-                                          const nfs::MessageId& message_id,
+                                          nfs::MessageId message_id,
                                           const maidsafe_error& /*error*/) {
   // TODO(Team): Following should be done only if error is fixable by repeat
   auto pmids_to_avoid(StoringPmidNodes<Data>(data_name));
@@ -293,7 +298,7 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
 template <typename Data>
 void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
                                            const PmidName& pmid_node, int32_t size,
-                                           const nfs::MessageId& /*message_id*/) {
+                                           nfs::MessageId /*message_id*/) {
   typename DataManager::Key key(data_name.raw_name, data_name.type);
   sync_add_pmids_.AddLocalAction(DataManager::UnresolvedAddPmid(
       key, ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId()));
@@ -302,7 +307,7 @@ void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
 
 template <typename Data, typename Requestor>
 void DataManagerService::HandleGet(const typename Data::Name& data_name, const Requestor& requestor,
-                                   const nfs::MessageId& message_id) {
+                                   nfs::MessageId message_id) {
   // Get all pmid nodes that are online.
   auto value(db_.Get(data_name));
   if (!value) {
@@ -326,8 +331,9 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name, const R
   // Create helper struct which holds the collection of responses, and add the task to the timer.
   auto get_response_op(std::make_shared<GetResponseOp<typename Data::Name, Requestor>>(
       pmid_node_to_get_from, integrity_checks, data_name, requestor));
-  auto functor([=](const GetResponseContents& contents) {
-    this->HandleGetResponse(contents, get_response_op);
+  auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
+    this->DoHandleGetResponse(pmid_node_and_contents.first, pmid_node_and_contents.contents,
+                              get_response_op);
   });
   get_timer_.AddTask(kDefaultTimeout, functor, expected_response_count, message_id.data);
 
@@ -363,9 +369,9 @@ PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_
 }
 
 template <typename Data, typename Requestor>
-void DataManagerService::HandleGetResponse(
-    GetResponseContents contents,
-    shared_ptr<GetResponseOp<typename Data::Name, Requestor>> get_response_op) {
+void DataManagerService::DoHandleGetResponse(
+    const PmidName& pmid_node, const GetResponseContents& contents,
+    std::shared_ptr<GetResponseOp<typename Data::Name, Requestor>> get_response_op) {
 
 }
 
@@ -374,7 +380,7 @@ void DataManagerService::HandleGetResponse(
 //template <typename Data>
 //void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name,
 //                                            const PmidName& pmid_node,
-//                                            const nfs::MessageId& message_id) {
+//                                            nfs::MessageId message_id) {
 //  try {
 //    NonEmptyString data(GetContentFromCache(data_name));
 //    std::string random_string(RandomString(detail::Parameters::integrity_check_string_size));
@@ -429,7 +435,7 @@ void DataManagerService::HandleGetResponse(
 
 template <typename Data>
 void DataManagerService::HandleDelete(const typename Data::Name& data_name,
-                                      const nfs::MessageId& /*message_id*/) {
+                                      nfs::MessageId /*message_id*/) {
   typename DataManager::Key key(data_name.value, Data::Name::data_type::Tag::kValue);
   sync_deletes_.AddLocalAction(DataManager::UnresolvedDelete(key, ActionDataManagerDelete(),
                                                              routing_.kNodeId()));
@@ -438,7 +444,7 @@ void DataManagerService::HandleDelete(const typename Data::Name& data_name,
 
 template <typename Data>
 void DataManagerService::SendDeleteRequest(
-    const PmidName pmid_node, const typename Data::Name& name, const nfs::MessageId& message_id) {
+    const PmidName pmid_node, const typename Data::Name& name, nfs::MessageId message_id) {
   dispatcher_.SendDeleteRequest<Data>(pmid_node, name, message_id);
 }
 

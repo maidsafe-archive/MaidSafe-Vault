@@ -97,7 +97,6 @@ void Vault::OnMessageReceived(const T& message) {
 template <typename T>
 bool Vault::OnGetFromCache(const T& message) {  // Need to be on routing's thread
   return demux_.GetFromCache(message);
-  return true;
 }
 
 template <typename T>

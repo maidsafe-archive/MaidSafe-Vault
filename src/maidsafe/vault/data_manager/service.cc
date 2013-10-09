@@ -128,10 +128,16 @@ void DataManagerService::HandleMessage(
 // GetResponseFromPmidNodeToDataManager
 template<>
 void DataManagerService::HandleMessage(
-    const GetResponseFromPmidNodeToDataManager& /*message*/,
-    const typename GetResponseFromPmidNodeToDataManager::Sender& /*sender*/,
-    const typename GetResponseFromPmidNodeToDataManager::Receiver& /*receiver*/) {
+    const GetResponseFromPmidNodeToDataManager& message,
+    const typename GetResponseFromPmidNodeToDataManager::Sender& sender,
+    const typename GetResponseFromPmidNodeToDataManager::Receiver& receiver) {
   typedef GetResponseFromPmidNodeToDataManager MessageType;
+  OperationHandlerWrapper<DataManagerService, MessageType>(
+      accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
 }
 
 template<>
@@ -229,6 +235,12 @@ void DataManagerService::HandleMessage(
   }
 }
 
+
+void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
+                                           const GetResponseContents& contents) {
+  get_timer_.AddResponse(message_id.data, std::make_pair(pmid_name, contents));
+}
+
 void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
   std::lock_guard<std::mutex> lock(matrix_change_mutex_);
   matrix_change_ = *matrix_change;
@@ -236,7 +248,7 @@ void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange>
 
 void DataManagerService::SendDeleteRequests(const DataManager::Key& key,
                                             const std::set<PmidName>& pmids,
-                                            const nfs::MessageId& message_id) {
+                                            nfs::MessageId message_id) {
   auto data_name(GetDataNameVariant(key.type, key.name));
   for (auto pmid : pmids) {
     detail::DataManagerSendDeleteVisitor<DataManagerService> delete_visitor(this, pmid, message_id);
@@ -253,14 +265,14 @@ void DataManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_ups_);
 }
 
-void DataManagerService::HandleDataIntegrityResponse(const GetResponseContents& response,
-                                                     const nfs::MessageId& message_id) {
-  try {
-    get_timer_.AddResponse(message_id.data, response);
-  }
-  catch (const std::exception& ex) {
-    LOG(kWarning) << "Failed to find Task ID " << message_id.data << ": " << ex.what();
-  }
+void DataManagerService::HandleDataIntegrityResponse(const GetResponseContents& /*response*/,
+                                                     nfs::MessageId /*message_id*/) {
+  //try {
+  //  get_timer_.AddResponse(message_id.data, response);
+  //}
+  //catch (const std::exception& ex) {
+  //  LOG(kWarning) << "Failed to find Task ID " << message_id.data << ": " << ex.what();
+  //}
 }
 
 // =============== Churn ===========================================================================

@@ -114,6 +114,11 @@ GroupDb<Persona>::~GroupDb() {
 }
 
 template <typename Persona>
+boost::optional<typename GroupDb<Persona>::Contents> GroupDb<Persona>::GetContents(const GroupName& /*group_name*/) {
+  return boost::optional<GroupDb<Persona>::Contents>();
+}
+
+template <typename Persona>
 void GroupDb<Persona>::AddGroup(const GroupName& group_name, const Metadata& metadata) {
   std::lock_guard<std::mutex> lock(mutex_);
   static const uint64_t kGroupsLimit(static_cast<GroupId>(std::pow(256, kPrefixWidth_)));

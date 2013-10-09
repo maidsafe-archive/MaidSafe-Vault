@@ -185,7 +185,7 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
   auto pending_account_itr(pending_account_map_.find(message_id));
   if (pending_account_itr == pending_account_map_.end()) {
     assert(false);
-    return ;
+    return;
   }
   assert(data_name == maid_name);
   assert(pending_account_itr->second.maid_name == data_name);
@@ -193,8 +193,7 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
 
   if (pending_account_itr->second.anmaid_stored) {
     sync_create_accounts_.AddLocalAction(
-        typename MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(),
-                                                      routing_.kNodeId()));
+        MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(), routing_.kNodeId()));
     DoSync();
   }
 }
@@ -206,15 +205,14 @@ void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidNam
   auto pending_account_itr(pending_account_map_.find(message_id));
   if (pending_account_itr == pending_account_map_.end()) {
     assert(false);
-    return ;
+    return;
   } // FIXME mutex needed
   assert(pending_account_itr->second.anmaid_name == data_name);
   pending_account_itr->second.anmaid_stored = true;
 
   if (pending_account_itr->second.maid_stored) {
     sync_create_accounts_.AddLocalAction(
-        typename MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(),
-                                                      routing_.kNodeId()));
+        MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(), routing_.kNodeId()));
     DoSync();
   }
 }

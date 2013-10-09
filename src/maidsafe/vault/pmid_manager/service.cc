@@ -156,7 +156,8 @@ void PmidManagerService::HandleMessage(
         group_db_.Commit(resolved_action->key, resolved_action->action);
         auto data_name(GetDataNameVariant(resolved_action->key.type, resolved_action->key.name));
         SendPutResponse(data_name, PmidName(Identity(receiver.data.string())),
-                        message.contents->content.string().size(), message.message_id);
+                        static_cast<int32_t>(message.contents->content.string().size()),
+                        message.message_id);
       }
       break;
     }
@@ -181,16 +182,22 @@ void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
 
 void PmidManagerService::HandleCreateAccount(const PmidName& pmid_node) {
   sync_create_accunts_.AddLocalAction(PmidManager::UnresolvedCreateAccount(
-      typename PmidManager::MetadataKey(pmid_node) , ActionPmidManagerCreateAccount(),
-      routing_.kNodeId()));
+      PmidManager::MetadataKey(pmid_node) , ActionPmidManagerCreateAccount(), routing_.kNodeId()));
   DoSync();
 }
 
-void PmidManagerService::HandleSendPmidAccount(const PmidName& /*pmid_node*/) {
-//  auto contents(group_db_.GetContents(pmid_node));
-//  if (contents) {
-//  } else {
-//  }
+void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node) {
+  std::vector<nfs_vault::DataName> data_names;
+  auto contents(group_db_.GetContents(pmid_node));
+  if (contents) {
+    for (auto kv_pair : contents->kv_pair)
+      data_names.push_back(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
+    dispatcher_.SendPmidAccount(pmid_node, data_names,
+                                nfs_client::ReturnCode(CommonErrors::success));
+  } else {
+    dispatcher_.SendPmidAccount(pmid_node, data_names,
+                                nfs_client::ReturnCode(CommonErrors::no_such_element));
+  }
 }
 
 // =================================================================================================

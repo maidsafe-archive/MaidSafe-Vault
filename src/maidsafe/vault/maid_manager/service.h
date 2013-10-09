@@ -159,17 +159,16 @@ class MaidManagerService {
  private:
 
   struct MaidAccountCreationStatus {
-   MaidAccountCreationStatus(typename passport::PublicMaid::Name maid_name_in,
-                             typename passport::PublicAnmaid::Name anmaid_name_in)
-       : maid_name(std::move(maid_name_in)),
-         maid_stored(false),
-         anmaid_name(std::move(anmaid_name_in)),
-         anmaid_stored(false) {}
+    MaidAccountCreationStatus(passport::PublicMaid::Name maid_name_in,
+                              passport::PublicAnmaid::Name anmaid_name_in)
+        : maid_name(std::move(maid_name_in)),
+          anmaid_name(std::move(anmaid_name_in)),
+          maid_stored(false),
+          anmaid_stored(false) {}
 
-   typename passport::PublicMaid::Name maid_name;
-   bool maid_stored;
-   typename passport::PublicAnmaid::Name anmaid_name;
-   bool anmaid_stored;
+    passport::PublicMaid::Name maid_name;
+    passport::PublicAnmaid::Name anmaid_name;
+    bool maid_stored, anmaid_stored;
   };
 
   routing::Routing& routing_;
