@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_PMID_MANAGER_ACTION_PUT_H_
-#define MAIDSAFE_VAULT_PMID_MANAGER_ACTION_PUT_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_ACTION_SET_AVAILABLE_SIZE_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_ACTION_SET_AVAILABLE_SIZE_H_
 
 #include <string>
 
@@ -35,33 +35,31 @@
 namespace maidsafe {
 namespace vault {
 
-//class PmidManagerMetadata;
-//class PmidManagerValue;
 
-struct ActionPmidManagerPut {
-  ActionPmidManagerPut(uint32_t size, nfs::MessageId message_id);
-  explicit ActionPmidManagerPut(const std::string& serialised_action);
-  ActionPmidManagerPut(const ActionPmidManagerPut& other);
-  ActionPmidManagerPut(ActionPmidManagerPut&& other);
+struct ActionPmidManagerSetAvailableSize {
+  ActionPmidManagerSetAvailableSize(const int64_t& disk_available_size);
+  explicit ActionPmidManagerSetAvailableSize(const std::string& serialised_action);
+  ActionPmidManagerSetAvailableSize(const ActionPmidManagerSetAvailableSize& other);
+  ActionPmidManagerSetAvailableSize(ActionPmidManagerSetAvailableSize&& other);
 
-  detail::DbAction operator()(PmidManagerMetadata& metadata,
-                              boost::optional<PmidManagerValue>& value) const;
+  detail::DbAction operator()(boost::optional<PmidManagerMetadata>& metadata);
 
   std::string Serialise() const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
-  const uint32_t kSize;
-  const nfs::MessageId kMessageId;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kCreateAccountRequest;
 
  private:
-  ActionPmidManagerPut();
-  ActionPmidManagerPut& operator=(ActionPmidManagerPut other);
+  ActionPmidManagerSetAvailableSize& operator=(ActionPmidManagerSetAvailableSize other);
+
+  int64_t kDiskAvailableSize;
 };
 
-bool operator==(const ActionPmidManagerPut& lhs, const ActionPmidManagerPut& rhs);
-bool operator!=(const ActionPmidManagerPut& lhs, const ActionPmidManagerPut& rhs);
+bool operator==(const ActionPmidManagerSetAvailableSize& lhs,
+                const ActionPmidManagerSetAvailableSize& rhs);
+bool operator!=(const ActionPmidManagerSetAvailableSize& lhs,
+                const ActionPmidManagerSetAvailableSize& rhs);
 
 }  // namespace vault
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_ACTION_PUT_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_ACTION_SET_AVAILABLE_SIZE_H_

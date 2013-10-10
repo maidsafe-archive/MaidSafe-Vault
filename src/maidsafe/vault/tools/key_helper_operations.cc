@@ -348,7 +348,7 @@ void DataChunkStorer::LoadChunksFromFiles() {
   }
 }
 
-// bool ExtendedTest(const size_t& chunk_set_count,
+// bool ExtendedTest(size_t chunk_set_count,
 //                   const FobPairVector& all_keys,
 //                   const std::vector<UdpEndpoint>& peer_endpoints) {
 //   const size_t kNumClients(3);

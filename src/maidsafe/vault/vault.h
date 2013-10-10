@@ -61,8 +61,8 @@ class Vault {
   routing::Functors InitialiseRoutingCallbacks();
   template <typename T>
   void OnMessageReceived(const T& message);
-  void OnNetworkStatusChange(const int& network_health);
-  void DoOnNetworkStatusChange(const int& network_health);
+  void OnNetworkStatusChange(int network_health);
+  void DoOnNetworkStatusChange(int network_health);
   void OnPublicKeyRequested(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key);
   void DoOnPublicKeyRequested(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key);
   void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);

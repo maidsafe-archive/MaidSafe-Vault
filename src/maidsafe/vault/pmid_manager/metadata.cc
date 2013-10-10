@@ -93,6 +93,10 @@ void PmidManagerMetadata::DeleteData(int32_t size) {
     ThrowError(CommonErrors::invalid_parameter);
 }
 
+void PmidManagerMetadata::SetAvailableSize(const int64_t& available_size) {
+  claimed_available_size = available_size;
+}
+
 PmidManagerMetadata::serialised_type PmidManagerMetadata::Serialise() const {
   protobuf::PmidManagerMetadata proto_metadata;
   proto_metadata.set_pmid_name(pmid_name->string());

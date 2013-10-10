@@ -161,7 +161,7 @@ class DataManagerService {
   routing::Routing& routing_;
   AsioService asio_service_;
   nfs_client::DataGetter& data_getter_;
-  std::mutex accumulator_mutex_, matrix_change_mutex_;
+  mutable std::mutex accumulator_mutex_, matrix_change_mutex_;
   Accumulator<Messages> accumulator_;
   routing::MatrixChange matrix_change_;
   DataManagerDispatcher dispatcher_;
@@ -371,9 +371,8 @@ PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_
 
 template <typename Data, typename Requestor>
 void DataManagerService::DoHandleGetResponse(
-    const PmidName& pmid_node, const GetResponseContents& contents,
-    std::shared_ptr<GetResponseOp<typename Data::Name, Requestor>> get_response_op) {
-
+    const PmidName& /*pmid_node*/, const GetResponseContents& /*contents*/,
+    std::shared_ptr<GetResponseOp<typename Data::Name, Requestor>> /*get_response_op*/) {
 }
 
 

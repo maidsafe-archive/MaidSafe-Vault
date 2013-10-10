@@ -50,5 +50,9 @@ boost::filesystem::path PmidNodeHandler::GetPath() const {
   return permanent_data_store_.GetDiskPath();
 }
 
+DiskUsage PmidNodeHandler::AvailableSpace() const {
+  return disk_total_;
+}
+
 }  // namespace vault
 }  // namespace maidsafe

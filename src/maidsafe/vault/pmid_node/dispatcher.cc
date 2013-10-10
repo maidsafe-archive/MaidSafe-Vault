@@ -24,11 +24,11 @@ namespace vault {
 
 PmidNodeDispatcher::PmidNodeDispatcher(routing::Routing& routing) : routing_(routing) {}
 
-void PmidNodeDispatcher::SendPmidAccountRequest(const uint64_t& available_size) {
+void PmidNodeDispatcher::SendPmidAccountRequest(const DiskUsage& available_size) {
   typedef GetPmidAccountRequestFromPmidNodeToPmidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  VaultMessage vault_message((nfs_vault::AvailableSize(available_size)));
+  VaultMessage vault_message((nfs_vault::AvailableSize(available_size.data)));
   RoutingMessage message(vault_message.Serialise(), VaultMessage::Sender(routing_.kNodeId()),
                          VaultMessage::Receiver(routing_.kNodeId()));
   routing_.Send(message);

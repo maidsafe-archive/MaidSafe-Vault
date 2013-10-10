@@ -35,19 +35,19 @@ class PmidNodeDispatcher {
   PmidNodeDispatcher(routing::Routing& routing);
 
   void SendGetRequest(const nfs_vault::DataName& data_name);
-  void SendPmidAccountRequest(const uint64_t &available_size);
+  void SendPmidAccountRequest(const DiskUsage& available_size);
 
   template <typename Data>
   void SendPutFailure(const typename Data::Name& name,
-                      const int64_t& available_space,
+                      int64_t available_space,
                       const maidsafe_error& error,
-                      const nfs::MessageId& message_id);
+                      nfs::MessageId message_id);
   template <typename Data>
   void SendIntegrityCheckResponse(const typename Data::Name& data_name,
                                   const std::string& hash,
                                   const NodeId& receiver,
                                   const maidsafe_error& error,
-                                  const nfs::MessageId& message_id);
+                                  nfs::MessageId message_id);
 
  private:
   PmidNodeDispatcher();
@@ -62,9 +62,9 @@ class PmidNodeDispatcher {
 
 template <typename Data>
 void PmidNodeDispatcher::SendPutFailure(const typename Data::Name& name,
-                                        const int64_t& available_space,
+                                        int64_t available_space,
                                         const maidsafe_error& error,
-                                        const nfs::MessageId& message_id) {
+                                        nfs::MessageId message_id) {
   typedef PutFailureFromPmidNodeToPmidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message(
@@ -83,7 +83,7 @@ void PmidNodeDispatcher::SendPutFailure(const typename Data::Name& name,
 //                                                    const std::string& signature,
 //                                                    const NodeId& receiver,
 //                                                    const maidsafe_error& error,
-//                                                    const nfs::MessageId& message_id) {
+//                                                    nfs::MessageId message_id) {
 //  typedef IntegrityCheckResponseFromPmidNodeToDataManager VaultMessage;
 //  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 //  VaultMessage vault_message;

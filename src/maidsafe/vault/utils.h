@@ -48,9 +48,6 @@ namespace maidsafe {
 
 namespace vault {
 
-//template <typename T>
-//class Accumulator;
-
 class PmidNodeService;
 
 namespace detail {
@@ -245,7 +242,7 @@ template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::GetRequestFromDataGetterToDataManager& message,
                  const nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
-                 const nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
+                 const nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
   auto data_name(GetNameVariant(message.contents));
   GetRequestVisitor<
       ServiceHandlerType,
@@ -258,7 +255,7 @@ template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const GetResponseFromPmidNodeToDataManager& message,
                  const GetResponseFromPmidNodeToDataManager::Sender& sender,
-                 const GetResponseFromPmidNodeToDataManager::Receiver& receiver) {
+                 const GetResponseFromPmidNodeToDataManager::Receiver& /*receiver*/) {
   service->HandleGetResponse(PmidName(Identity(sender->string())), message.message_id,
                              message.contents);
 }
@@ -581,7 +578,7 @@ void DoOperation(ServiceHandlerType* service,
 // public:
 //  PutResponseSuccessVisitor(ServiceHandlerType* service,
 //                            const Identity& pmid_node,
-//                            const nfs::MessageId& message_id,
+//                            nfs::MessageId message_id,
 //                            const maidsafe_error& return_code)
 //      : service_(service),
 //        kPmidNode_(pmid_node),
@@ -623,17 +620,6 @@ typename Account::serialised_type GetSerialisedAccount(std::mutex& mutex,
 template <typename AccountSet, typename Account>
 typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
     std::mutex& mutex, const AccountSet& accounts, const typename Account::Name& account_name);
-
-/* Commented by Mahmoud on 2 Sep -- It may be of no use any more
-// Returns true if the required successful request count has been reached
-template<typename Accumulator>
-bool AddResult(const nfs::Message& message,
-               const routing::ReplyFunctor& reply_functor,
-               const maidsafe_error& return_code,
-               Accumulator& accumulator,
-               std::mutex& accumulator_mutex,
-               int requests_required);
-*/
 
 }  // namespace detail
 

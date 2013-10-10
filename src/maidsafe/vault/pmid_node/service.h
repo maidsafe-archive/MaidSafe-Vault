@@ -153,34 +153,33 @@ class PmidNodeService {
   template <typename Data>
   friend class test::DataHolderTest;
 
-  void SendAccountRequest() {}
-  void HandlePmidAccountResponses(std::vector<std::set<nfs_vault::DataName>>& /*responses*/) {}
+  void SendAccountRequest();
+  void HandlePmidAccountResponses(const std::vector<std::set<nfs_vault::DataName>>& responses,
+                                  int failures);
 
  private:
   // ================================ Pmid Account ===============================================
 
   // populates chunks map
-  //  void ApplyAccountTransfer(const std::vector<protobuf::PmidAccountResponse>& responses,
-  //                            const size_t& total_pmidmgrs,
-  //                            const size_t& pmidmagsr_with_account);
   //  void UpdateLocalStorage(const std::map<DataNameVariant, uint16_t>& expected_files);
-  //  void ApplyUpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
-  //                               const std::vector<DataNameVariant>& to_be_retrieved);
-  //  std::vector<DataNameVariant> StoredFileNames();
+  void UpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
+                          const std::vector<DataNameVariant>& to_be_retrieved);
+  void CheckPmidAccountResponsesStatus(const std::vector<DataNameVariant>& expected_chunks);
+  std::vector<DataNameVariant> StoredFileNames();
 
   std::future<std::unique_ptr<ImmutableData>> RetrieveFileFromNetwork(
       const DataNameVariant& file_id);
   void HandleAccountResponses(
       const std::vector<GetPmidAccountResponseFromPmidManagerToPmidNode>& responses);
   template <typename Data>
-  void HandlePut(const Data& data, const nfs::MessageId& message_id);
+  void HandlePut(const Data& data, nfs::MessageId message_id);
   template <typename Data>
-  void HandleDelete(const typename Data::Name& name, const nfs::MessageId& message_id);
+  void HandleDelete(const typename Data::Name& name, nfs::MessageId message_id);
 
   template <typename Data>
   void HandleIntegrityChech(const typename Data::Name& data_name,
                             const NonEmptyString& random_string, const NodeId& sender,
-                            const nfs::MessageId& message_id);
+                            nfs::MessageId message_id);
 
   // ================================ Sender Validation =========================================
   template <typename T>
@@ -233,24 +232,11 @@ void PmidNodeService::HandleMessage(
 //    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
 //    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& receiver);
 
-// template<>
-// void PmidNodeService::HandleMessage<GetPmidAccountResponseFromPmidManagerToPmidNode>(
-//    const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-//    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
-//    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
-
-// template<>
-// bool PmidNodeService::GetFromCache<nfs::GetRequestFromMaidNodeToDataManager>(
-//    const nfs::GetRequestFromMaidNodeToDataManager& message,
-//    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-//    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
-
-// template<>
-// void PmidNodeService::StoreInCache<nfs::GetResponseFromDataManagerToMaidNode>(
-//    const nfs::GetResponseFromDataManagerToMaidNode& message,
-//    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& sender,
-//    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& receiver);
-
+template <>
+void PmidNodeService::HandleMessage(
+    const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
+    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
+    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
 // ============================== Put implementation =============================================
 
 template <typename T>
@@ -258,7 +244,7 @@ void PmidNodeService::HandleMessage(const T& /*message*/, const typename T::Send
                                     const typename T::Receiver& /*receiver*/) {}
 
 template <typename Data>
-void PmidNodeService::HandlePut(const Data& data, const nfs::MessageId& message_id) {
+void PmidNodeService::HandlePut(const Data& data, nfs::MessageId message_id) {
   try {
     handler_.Put(data);
   }
@@ -280,7 +266,7 @@ void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
 //void PmidNodeService::HandleIntegrityChech(const typename Data::Name& data_name,
 //                                           const NonEmptyString& random_string,
 //                                           const NodeId& sender,
-//                                           const nfs::MessageId& message_id) {
+//                                           nfs::MessageId message_id) {
 //  try {
 //    auto content(
 //        handler_.GetFromPermanentStore(GetDataNameVariant(data_name.type, data_name.raw_name)));
@@ -325,12 +311,6 @@ void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
 //      accumulator_mutex_)(message, sender, receiver);
 //}
 
-template <>
-void PmidNodeService::HandleMessage(
-    const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
-    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
-
 // Commented by Mahmoud on 15 Sep. Needs refactoring
 // template<>
 // void PmidNodeService::HandleGetMessage(const nfs::GetRequestFromDataManagerToPmidNode& message,
@@ -373,16 +353,13 @@ void PmidNodeService::HandleMessage(
 
 template <typename Data>
 void PmidNodeService::HandleDelete(const typename Data::Name& name,
-                                   const nfs::MessageId& /*message_id*/) {
+                                   nfs::MessageId /*message_id*/) {
   try {
     {
       handler_.Delete<Data>(nfs_vault::DataName(name.type, name.raw_name));
-      // accumulator_.SetHandled(message, sender); To be moved to OperationWrapper
     }
   }
   catch (const std::exception& /*ex*/) {
-    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-    // accumulator_.SetHandled(message, sender); To be moved to OperationWrapper
   }
 }
 

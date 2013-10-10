@@ -43,17 +43,17 @@ class PmidManagerDispatcher {
 
   template <typename Data>
   void SendPutRequest(const Data& data, const PmidName& pmid_node,
-                      const nfs::MessageId& message_id);
+                      nfs::MessageId message_id);
   template <typename Data>
   void SendDeleteRequest(const PmidName& pmid_node, const typename Data::Name& data_name,
-                         const nfs::MessageId& message_id);
+                         nfs::MessageId message_id);
   template <typename Data>
   void SendPutResponse(const typename Data::Name& data_name, int32_t size,
-                       const PmidName& pmid_node, const nfs::MessageId& message_id);
+                       const PmidName& pmid_node, nfs::MessageId message_id);
 
   template <typename Data>
   void SendPutFailure(const typename Data::Name& name, const PmidName& pmid_node,
-                      const maidsafe_error& error_code, const nfs::MessageId& message_id);
+                      const maidsafe_error& error_code, nfs::MessageId message_id);
 
   //  void SendStateChange(const PmidName& pmid_node, const typename Data::Name& data_name);
   void SendSync(const PmidName& pmid_node, const std::string& serialised_sync);
@@ -78,7 +78,7 @@ class PmidManagerDispatcher {
 
 template <typename Data>
 void PmidManagerDispatcher::SendPutRequest(const Data& data, const PmidName& pmid_node,
-                                           const nfs::MessageId& message_id) {
+                                           nfs::MessageId message_id) {
   typedef PutRequestFromPmidManagerToPmidNode VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message(message_id, nfs_vault::DataNameAndContent(data));
@@ -93,7 +93,7 @@ void PmidManagerDispatcher::SendPutRequest(const Data& data, const PmidName& pmi
 template <typename Data>
 void PmidManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
                                               const typename Data::Name& data_name,
-                                              const nfs::MessageId& message_id) {
+                                              nfs::MessageId message_id) {
   typedef DeleteRequestFromPmidManagerToPmidNode VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message(message_id, nfs_vault::DataName(data_name));
@@ -108,7 +108,7 @@ template<typename Data>
 void PmidManagerDispatcher::SendPutResponse(const typename Data::Name& data_name,
                                             int32_t data_size,
                                             const PmidName& pmid_node,
-                                            const nfs::MessageId& message_id) {
+                                            nfs::MessageId message_id) {
   typedef PutResponseFromPmidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message(message_id, nfs_vault::DataNameAndSize(data_name, data_size));
@@ -123,7 +123,7 @@ template <typename Data>
 void PmidManagerDispatcher::SendPutFailure(const typename Data::Name& name,
                                            const PmidName& pmid_node,
                                            const maidsafe_error& error_code,
-                                           const nfs::MessageId& message_id) {
+                                           nfs::MessageId message_id) {
   typedef PutFailureFromPmidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message(

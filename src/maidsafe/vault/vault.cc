@@ -118,11 +118,11 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
   return functors;
 }
 
-void Vault::OnNetworkStatusChange(const int& network_health) {
+void Vault::OnNetworkStatusChange(int network_health) {
   asio_service_.service().post([=] { DoOnNetworkStatusChange(network_health); });
 }
 
-void Vault::DoOnNetworkStatusChange(const int& network_health) {
+void Vault::DoOnNetworkStatusChange(int network_health) {
   if (network_health >= 0) {
     if (network_health >= network_health_)
       LOG(kVerbose) << "Init - " << DebugId(routing_->kNodeId()) << " - Network health is "

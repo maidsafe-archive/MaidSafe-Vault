@@ -30,7 +30,7 @@ MaidManagerDispatcher::MaidManagerDispatcher(routing::Routing& routing,
 
 void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
                                               const nfs_vault::DataName &data_name,
-                                              const nfs::MessageId& message_id) {
+                                              nfs::MessageId message_id) {
   typedef DeleteRequestFromMaidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message(message_id, data_name);
@@ -43,7 +43,7 @@ void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
 
 void MaidManagerDispatcher::SendCreateAccountResponse(const MaidName& /*account_name*/,
                                                       const maidsafe_error& /*result*/,
-                                                      const nfs::MessageId& /*message_id*/) {
+                                                      nfs::MessageId /*message_id*/) {
   //  typedef routing::GroupToSingleMessage RoutingMessage;
   //  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
   //  static const nfs::MessageAction kAction(nfs::MessageAction::kCreateAccountResponse);
@@ -59,7 +59,7 @@ void MaidManagerDispatcher::SendCreateAccountResponse(const MaidName& /*account_
 
 void MaidManagerDispatcher::SendRemoveAccountResponse(const MaidName& /*account_name*/,
                                                       const maidsafe_error& /*result*/,
-                                                      const nfs::MessageId& /*message_id*/) {
+                                                      nfs::MessageId /*message_id*/) {
   //  typedef routing::GroupToSingleMessage RoutingMessage;
   //  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
   //  static const nfs::MessageAction kAction(nfs::MessageAction::kRemoveAccountResponse);
@@ -76,7 +76,7 @@ void MaidManagerDispatcher::SendRemoveAccountResponse(const MaidName& /*account_
 void MaidManagerDispatcher::SendRegisterPmidResponse(const MaidName& /*account_name*/,
                                                      const PmidName& /*pmid_name*/,
                                                      const maidsafe_error& /*result*/,
-                                                     const nfs::MessageId& /*message_id*/) {
+                                                     nfs::MessageId /*message_id*/) {
   //  typedef routing::GroupToSingleMessage RoutingMessage;
   //  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
   //  static const nfs::MessageAction kAction(nfs::MessageAction::kRegisterPmidResponse);
@@ -95,7 +95,7 @@ void MaidManagerDispatcher::SendRegisterPmidResponse(const MaidName& /*account_n
 void MaidManagerDispatcher::SendUnregisterPmidResponse(const MaidName& /*account_name*/,
                                                        const PmidName& /*pmid_name*/,
                                                        const maidsafe_error& /*result*/,
-                                                       const nfs::MessageId& /*message_id*/) {
+                                                       nfs::MessageId /*message_id*/) {
   //  typedef routing::GroupToSingleMessage RoutingMessage;
   //  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
   //  static const nfs::MessageAction kAction(nfs::MessageAction::kUnregisterPmidResponse);

@@ -41,7 +41,7 @@ class PmidNodeHandler {
 
   boost::filesystem::path GetPath() const;
 
-  int64_t AvailableSpace();
+  DiskUsage AvailableSpace() const;
 
  private:
   boost::filesystem::space_info space_info_;
