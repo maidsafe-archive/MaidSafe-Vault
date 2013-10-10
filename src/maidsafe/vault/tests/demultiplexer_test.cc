@@ -182,7 +182,7 @@
 //    return GenerateValidMessage(dest_type);
 //  }
 
-//  std::vector<nfs::Message> GenerateValidMessages(const uint16_t& num_messages,
+//  std::vector<nfs::Message> GenerateValidMessages(uint16_t num_messages,
 //                                                  uint16_t& expect_mah,
 //                                                  uint16_t& expect_mdm,
 //                                                  uint16_t& expect_pah,

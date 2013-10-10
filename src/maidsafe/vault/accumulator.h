@@ -73,7 +73,7 @@ class Accumulator {
   typedef std::function<AddResult(const std::vector<T>&)> AddCheckerFunctor;
   class AddRequestChecker {
    public:
-    explicit AddRequestChecker(const size_t& required_requests)
+    explicit AddRequestChecker(size_t required_requests)
         : required_requests_(required_requests) {
       assert((required_requests <= routing::Parameters::node_group_size) &&
              "Invalid number of requests");

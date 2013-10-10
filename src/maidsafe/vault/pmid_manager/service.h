@@ -63,7 +63,7 @@ class PmidManagerService {
   }
   template <typename Data>
   void HandlePutResponse(const typename Data::Name& data_name, int32_t size,
-      const PmidName& pmid_node, const nfs::MessageId& message_id);
+      const PmidName& pmid_node, nfs::MessageId message_id);
 
  private:
   PmidManagerService(const PmidManagerService&);
@@ -80,22 +80,22 @@ class PmidManagerService {
 
   // =============== Put/Delete data =============================================================
   template <typename Data>
-  void HandlePut(const Data& data, const PmidName& pmid_node, const nfs::MessageId& message_id);
+  void HandlePut(const Data& data, const PmidName& pmid_node, nfs::MessageId message_id);
 
   template <typename Data>
   void HandlePutFailure(const typename Data::Name& data,
                         const PmidName& pmid_node,
-                        const int64_t& available_space,
+                        int64_t available_space,
                         const maidsafe_error& error_code,
-                        const nfs::MessageId& message_id);
+                        nfs::MessageId message_id);
 
   template <typename Data>
   void HandleDelete(const PmidName& pmid_node, const typename Data::Name& data_name,
-                    const nfs::MessageId& message_id);
+                    nfs::MessageId message_id);
 
   void DoSync();
   void SendPutResponse(const DataNameVariant& data_name, const PmidName& pmid_node, int32_t size,
-                       const nfs::MessageId& message_id);
+                       nfs::MessageId message_id);
 
   void HandleCreateAccount(const PmidName& pmid_node);
 
@@ -203,7 +203,7 @@ void IncrementAttemptsAndSendSync(PmidManagerDispatcher& dispatcher,
 
 template <typename Data>
 void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
-                                   const nfs::MessageId& message_id) {
+                                   nfs::MessageId message_id) {
   dispatcher_.SendPutRequest(data, pmid_node, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), data.name().raw_name,
                              data.name().type);
@@ -216,8 +216,8 @@ void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
 
 template <typename Data>
 void PmidManagerService::HandlePutFailure(
-    const typename Data::Name& name, const PmidName& pmid_node, const int64_t& available_space,
-    const maidsafe_error& error_code, const nfs::MessageId& message_id) {
+    const typename Data::Name& name, const PmidName& pmid_node, int64_t available_space,
+    const maidsafe_error& error_code, nfs::MessageId message_id) {
   pmid_metadata_.at(pmid_node).claimed_available_size = available_space;
   dispatcher_.SendPutFailure<Data>(name, pmid_node, error_code, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), name.raw_name, name.type);
@@ -229,14 +229,14 @@ void PmidManagerService::HandlePutFailure(
 template <typename Data>
 void PmidManagerService::HandlePutResponse(
     const typename Data::Name& data_name, int32_t size, const PmidName& pmid_node,
-    const nfs::MessageId& message_id) {
+    nfs::MessageId message_id) {
   dispatcher_.SendPutResponse<Data>(data_name, size, pmid_node, message_id);
 }
 
 template <typename Data>
 void PmidManagerService::HandleDelete(
     const PmidName& pmid_node, const typename Data::Name& data_name,
-    const nfs::MessageId& message_id) {
+    nfs::MessageId message_id) {
   dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), data_name.name().raw_name,
                              data_name.name().type);

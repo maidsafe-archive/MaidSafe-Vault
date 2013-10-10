@@ -24,7 +24,7 @@ namespace vault {
 
 PmidNodeDispatcher::PmidNodeDispatcher(routing::Routing& routing) : routing_(routing) {}
 
-void PmidNodeDispatcher::SendPmidAccountRequest(const uint64_t& available_size) {
+void PmidNodeDispatcher::SendPmidAccountRequest(uint64_t available_size) {
   typedef GetPmidAccountRequestFromPmidNodeToPmidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 

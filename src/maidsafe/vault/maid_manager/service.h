@@ -105,24 +105,24 @@ class MaidManagerService {
   // =============== account creation ==============================================================
   void HandleCreateMaidAccount(const passport::PublicMaid &maid,
                                const passport::PublicAnmaid& anmaid,
-                               const nfs::MessageId& message_id);
+                               nfs::MessageId message_id);
 
   // =============== Put/Delete data ===============================================================
   template <typename Data>
   void HandlePut(const MaidName& account_name, const Data& data, const PmidName& pmid_node_hint,
-                 const nfs::MessageId& message_id);
+                 nfs::MessageId message_id);
 
   template <typename Data>
   void HandlePutResponse(const MaidName& maid_name, const typename Data::Name& data_name,
-                         const int32_t& cost, const nfs::MessageId& message_id);
+                         int32_t cost, nfs::MessageId message_id);
 
   template <typename Data>
   void HandlePutFailure(const MaidName& maid_name, const typename Data::Name& data_name,
-                        const maidsafe_error& error, const nfs::MessageId& message_id);
+                        const maidsafe_error& error, nfs::MessageId message_id);
 
   template <typename Data>
   void HandleDelete(const MaidName& account_name, const typename Data::Name& data_name,
-                    const nfs::MessageId& message_id);
+                    nfs::MessageId message_id);
 
   template <typename Data>
   bool DeleteAllowed(const MaidName& account_name, const typename Data::Name& data_name);
@@ -274,13 +274,13 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
-    const typename passport::PublicMaid::Name& data_name, const int32_t&,
-    const nfs::MessageId& message_id);
+    const typename passport::PublicMaid::Name& data_name, int32_t,
+    nfs::MessageId message_id);
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidName& maid_name,
-   const typename passport::PublicAnmaid::Name& data_name, const int32_t&,
-   const nfs::MessageId& message_id);
+   const typename passport::PublicAnmaid::Name& data_name, int32_t,
+   nfs::MessageId message_id);
 
 // ==================== Implementation =============================================================
 namespace detail {
@@ -339,7 +339,7 @@ void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
 template <typename Data>
 void MaidManagerService::HandlePut(const MaidName& account_name, const Data& data,
                                    const PmidName& pmid_node_hint,
-                                   const nfs::MessageId& message_id) {
+                                   nfs::MessageId message_id) {
   auto metadata(group_db_.GetMetadata(account_name));
   if (metadata.AllowPut(data) != MaidManagerMetadata::Status::kNoSpace) {
     dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
@@ -353,7 +353,7 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
 template <typename Data>
 void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
                                            const typename Data::Name& data_name,
-                                           const int32_t& cost, const nfs::MessageId& /*message_id*/) {
+                                           int32_t cost, nfs::MessageId /*message_id*/) {
   typename MaidManager::Key group_key(typename MaidManager::GroupName(maid_name.value),
                                       GetObfuscatedDataName(data_name), data_name.type);
   sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(
@@ -364,7 +364,7 @@ void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
 template <typename Data>
 void MaidManagerService::HandlePutFailure(
     const MaidName& maid_name, const typename Data::Name& data_name,
-    const maidsafe_error& error, const nfs::MessageId& message_id) {
+    const maidsafe_error& error, nfs::MessageId message_id) {
   dispatcher_.SendPutFailure<Data>(maid_name, data_name, error, message_id);
 }
 
@@ -373,7 +373,7 @@ void MaidManagerService::HandlePutFailure(
 template <typename Data>
 void MaidManagerService::HandleDelete(const MaidName& account_name,
                                       const typename Data::Name& data_name,
-                                      const nfs::MessageId& message_id) {
+                                      nfs::MessageId message_id) {
   if (DeleteAllowed(account_name, data_name)) {
     typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
                                         GetObfuscatedDataName(data_name), data_name.type);

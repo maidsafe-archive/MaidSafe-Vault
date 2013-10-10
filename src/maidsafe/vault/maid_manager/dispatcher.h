@@ -49,26 +49,26 @@ class MaidManagerDispatcher {
 
   template <typename Data>
   void SendPutRequest(const MaidName& account_name, const Data& data,
-                      const PmidName& pmid_node_hint, const nfs::MessageId& message_id);
+                      const PmidName& pmid_node_hint, nfs::MessageId message_id);
 
   template <typename Data>
   void SendPutResponse(const MaidName& account_name, const typename Data::Name& data_name,
                        const maidsafe_error& result, nfs::MessageId message_id);
 
   void SendDeleteRequest(const MaidName& account_name, const nfs_vault::DataName& data_name,
-                         const nfs::MessageId& message_id);
+                         nfs::MessageId message_id);
 
   void SendCreateAccountResponse(const MaidName& account_name, const maidsafe_error& result,
-                                 const nfs::MessageId& message_id);
+                                 nfs::MessageId message_id);
 
   void SendRemoveAccountResponse(const MaidName& account_name, const maidsafe_error& result,
-                                 const nfs::MessageId& message_id);
+                                 nfs::MessageId message_id);
 
   void SendRegisterPmidResponse(const MaidName& account_name, const PmidName& pmid_name,
-                                const maidsafe_error& result, const nfs::MessageId& message_id);
+                                const maidsafe_error& result, nfs::MessageId message_id);
 
   void SendUnregisterPmidResponse(const MaidName& account_name, const PmidName& pmid_name,
-                                  const maidsafe_error& result, const nfs::MessageId& message_id);
+                                  const maidsafe_error& result, nfs::MessageId message_id);
 
   void SendSync(const MaidName& account_name, const std::string& serialised_sync);
 
@@ -77,7 +77,7 @@ class MaidManagerDispatcher {
 
   template <typename Data>
   void SendPutFailure(const MaidName& maid_node, const typename Data::Name& data_name,
-                      const maidsafe_error& error,  const nfs::MessageId& message_id);
+                      const maidsafe_error& error,  nfs::MessageId message_id);
 
  private:
   MaidManagerDispatcher();
@@ -97,7 +97,7 @@ class MaidManagerDispatcher {
 template <typename Data>
 void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name, const Data& data,
                                            const PmidName& pmid_node_hint,
-                                           const nfs::MessageId& message_id) {
+                                           nfs::MessageId message_id) {
   typedef PutRequestFromMaidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
@@ -114,7 +114,7 @@ void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name, const D
 template <typename Data>
 void MaidManagerDispatcher::SendPutFailure(
     const MaidName& maid_node, const typename Data::Name& data_name, const maidsafe_error& error,
-    const nfs::MessageId& message_id) {
+    nfs::MessageId message_id) {
   typedef nfs::PutFailureFromMaidManagerToMaidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   NfsMessage nfs_message(message_id,
@@ -148,7 +148,7 @@ void MaidManagerDispatcher::SendPutFailure(
 // void MaidManagerDispatcher::SendPutRequest<OwnerDirectory>(const MaidName& /*account_name*/,
 //                                                           const OwnerDirectory& /*data*/,
 //                                                           const PmidName& /*pmid_node_hint*/,
-//                                                           const nfs::MessageId& /*message_id*/) {
+//                                                           nfs::MessageId /*message_id*/) {
 //  typedef routing::GroupToGroupMessage RoutingMessage;
 //  static const routing::Cacheable cacheable(is_cacheable<OwnerDirectory>::value ?
 //                                            routing::Cacheable::kGet : routing::Cacheable::kNone);
@@ -162,7 +162,7 @@ void MaidManagerDispatcher::SendPutFailure(
 // void MaidManagerDispatcher::SendPutRequest<GroupDirectory>(const MaidName& /*account_name*/,
 //                                                           const GroupDirectory& /*data*/,
 //                                                           const PmidName& /*pmid_node_hint*/,
-//                                                           const nfs::MessageId& /*message_id*/) {
+//                                                           nfs::MessageId /*message_id*/) {
 //  typedef routing::GroupToGroupMessage RoutingMessage;
 //  static const routing::Cacheable cacheable(is_cacheable<GroupDirectory>::value ?
 //                                            routing::Cacheable::kGet : routing::Cacheable::kNone);
@@ -176,7 +176,7 @@ void MaidManagerDispatcher::SendPutFailure(
 // void MaidManagerDispatcher::SendPutRequest<WorldDirectory>(const MaidName& /*account_name*/,
 //                                                           const WorldDirectory& /*data*/,
 //                                                           const PmidName& /*pmid_node_hint*/,
-//                                                           const nfs::MessageId& /*message_id*/) {
+//                                                           nfs::MessageId /*message_id*/) {
 //  typedef routing::GroupToGroupMessage RoutingMessage;
 //  static const routing::Cacheable cacheable(is_cacheable<WorldDirectory>::value ?
 //                                            routing::Cacheable::kGet : routing::Cacheable::kNone);

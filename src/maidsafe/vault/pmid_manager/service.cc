@@ -172,7 +172,7 @@ void PmidManagerService::HandleMessage(
 
 void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
                                          const PmidName& pmid_node, int32_t size,
-                                         const nfs::MessageId& message_id) {
+                                         nfs::MessageId message_id) {
   detail::PmidManagerPutResponseVisitor<PmidManagerService> put_response(this, size, pmid_node,
                                                                          message_id);
   boost::apply_visitor(put_response, data_name);

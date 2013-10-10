@@ -27,7 +27,7 @@ namespace maidsafe {
 namespace vault {
 
 
-ActionMaidManagerDelete::ActionMaidManagerDelete(const nfs::MessageId& message_id)
+ActionMaidManagerDelete::ActionMaidManagerDelete(nfs::MessageId message_id)
     : kMessageId(message_id) {}
 
 ActionMaidManagerDelete::ActionMaidManagerDelete(const std::string& serialised_action)

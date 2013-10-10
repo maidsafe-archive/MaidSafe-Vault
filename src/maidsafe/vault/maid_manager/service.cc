@@ -162,7 +162,7 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
 
 void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& maid,
                                                  const passport::PublicAnmaid& anmaid,
-                                                 const nfs::MessageId& message_id) {
+                                                 nfs::MessageId message_id) {
   MaidName account_name(maid.name());
   // If Account exists
   try {
@@ -185,8 +185,8 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& mai
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
-    const typename passport::PublicMaid::Name& data_name, const int32_t& ,
-    const nfs::MessageId& message_id) {
+    const typename passport::PublicMaid::Name& data_name, int32_t ,
+    nfs::MessageId message_id) {
   auto pending_account_itr(pending_account_map_.find(message_id));
   if (pending_account_itr == pending_account_map_.end()) {
     assert(false);
@@ -205,8 +205,8 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidName& maid_name,
-    const typename passport::PublicAnmaid::Name& data_name, const int32_t&,
-    const nfs::MessageId& message_id) {
+    const typename passport::PublicAnmaid::Name& data_name, int32_t,
+    nfs::MessageId message_id) {
   auto pending_account_itr(pending_account_map_.find(message_id));
   if (pending_account_itr == pending_account_map_.end()) {
     assert(false);

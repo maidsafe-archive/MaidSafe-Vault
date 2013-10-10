@@ -232,11 +232,11 @@ void PmidNodeService::HandleMessage(
 
 // void PmidNodeService::ApplyAccountTransfer(
 //    const std::vector<protobuf::PmidAccountResponse>& responses,
-//    const size_t& total_pmidmgrs,
-//    const size_t& pmidmgrs_with_account) {
+//    size_t total_pmidmgrs,
+//    size_t pmidmgrs_with_account) {
 //  std::map<DataNameVariant, uint16_t>& chunks;
 //  struct ChunkInfo {
-//    ChunkInfo(const DataNameVariant& file_name_in, const uint64_t& size_in) :
+//    ChunkInfo(const DataNameVariant& file_name_in, uint64_t size_in) :
 //        file_name(file_name_in), size(size_in) {}
 //    DataNameVariant file_name;
 //    uint64_t size;

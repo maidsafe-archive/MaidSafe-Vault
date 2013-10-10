@@ -36,7 +36,7 @@ class MaidManagerMetadata;
 class MaidManagerValue;
 
 struct ActionMaidManagerDelete {
-  ActionMaidManagerDelete(const nfs::MessageId& message_id);
+  explicit ActionMaidManagerDelete(nfs::MessageId message_id);
   explicit ActionMaidManagerDelete(const std::string& serialised_action);
   ActionMaidManagerDelete(const ActionMaidManagerDelete& other);
   ActionMaidManagerDelete(ActionMaidManagerDelete&& other);

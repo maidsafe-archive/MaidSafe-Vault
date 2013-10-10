@@ -25,7 +25,7 @@
 namespace maidsafe {
 namespace vault {
 
-ActionPmidManagerPut::ActionPmidManagerPut(const uint32_t size, const nfs::MessageId& message_id)
+ActionPmidManagerPut::ActionPmidManagerPut(uint32_t size, nfs::MessageId message_id)
     : kSize(size), kMessageId(message_id) {}
 
 ActionPmidManagerPut::ActionPmidManagerPut(const std::string& serialised_action)

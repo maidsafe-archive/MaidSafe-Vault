@@ -29,7 +29,7 @@ namespace vault {
 
 PmidManagerValue::PmidManagerValue() : size_(0) {}
 
-PmidManagerValue::PmidManagerValue(const int32_t& size) : size_(size) {}
+PmidManagerValue::PmidManagerValue(int32_t size) : size_(size) {}
 
 PmidManagerValue::PmidManagerValue(const std::string& serialised_pmid_manager_value)
     : size_(0) {

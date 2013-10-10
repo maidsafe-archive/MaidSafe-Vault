@@ -581,7 +581,7 @@ void DoOperation(ServiceHandlerType* service,
 // public:
 //  PutResponseSuccessVisitor(ServiceHandlerType* service,
 //                            const Identity& pmid_node,
-//                            const nfs::MessageId& message_id,
+//                            nfs::MessageId message_id,
 //                            const maidsafe_error& return_code)
 //      : service_(service),
 //        kPmidNode_(pmid_node),
