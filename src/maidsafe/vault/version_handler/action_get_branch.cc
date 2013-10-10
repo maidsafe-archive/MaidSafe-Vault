@@ -16,57 +16,57 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/version_manager/action_get_branch.h"
-#include "maidsafe/vault/version_manager/action_get_branch.pb.h"
+#include "maidsafe/vault/version_handler/action_get_branch.h"
+#include "maidsafe/vault/version_handler/action_get_branch.pb.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-const nfs::MessageAction ActionVersionManagerGetBranch::kActionId;
+const nfs::MessageAction ActionVersionHandlerGetBranch::kActionId;
 
-ActionVersionManagerGetBranch::ActionVersionManagerGetBranch(
+ActionVersionHandlerGetBranch::ActionVersionHandlerGetBranch(
     const std::string& serialised_action)
         : version_name([&serialised_action]() {
-                         protobuf::ActionVersionManagerGetBranch action_get_branch_proto;
+                         protobuf::ActionVersionHandlerGetBranch action_get_branch_proto;
                            if (!action_get_branch_proto.ParseFromString(serialised_action))
                              ThrowError(CommonErrors::parsing_error);
                          return StructuredDataVersions::VersionName(
                              action_get_branch_proto.serialised_version());
                     }())  {}
 
-ActionVersionManagerGetBranch::ActionVersionManagerGetBranch(
+ActionVersionHandlerGetBranch::ActionVersionHandlerGetBranch(
     const StructuredDataVersions::VersionName& version_name_in)
     : version_name(version_name_in) {}
 
-ActionVersionManagerGetBranch::ActionVersionManagerGetBranch(
-  const ActionVersionManagerGetBranch& other)
+ActionVersionHandlerGetBranch::ActionVersionHandlerGetBranch(
+  const ActionVersionHandlerGetBranch& other)
     : version_name(other.version_name) {}
 
-ActionVersionManagerGetBranch::ActionVersionManagerGetBranch(ActionVersionManagerGetBranch&& other)
+ActionVersionHandlerGetBranch::ActionVersionHandlerGetBranch(ActionVersionHandlerGetBranch&& other)
     : version_name(std::move(other.version_name)) {}
 
- std::string ActionVersionManagerGetBranch::Serialise() const {
-  protobuf::ActionVersionManagerGetBranch action_get_branch_proto;
+ std::string ActionVersionHandlerGetBranch::Serialise() const {
+  protobuf::ActionVersionHandlerGetBranch action_get_branch_proto;
   action_get_branch_proto.set_serialised_version(version_name.Serialise());
   return action_get_branch_proto.SerializeAsString();
 }
 
-void ActionVersionManagerGetBranch::operator()(
-    boost::optional<VersionManagerValue>& /*value*/,
+void ActionVersionHandlerGetBranch::operator()(
+    boost::optional<VersionHandlerValue>& /*value*/,
     std::vector<StructuredDataVersions::VersionName>& version_names) const {
   version_names.clear();
   //  if (value)
   //    version_names = value->GetBranch();
 }
 
-bool operator==(const ActionVersionManagerGetBranch& lhs,
-                const ActionVersionManagerGetBranch& rhs) {
+bool operator==(const ActionVersionHandlerGetBranch& lhs,
+                const ActionVersionHandlerGetBranch& rhs) {
   return lhs.version_name == rhs.version_name;
 }
 
-bool operator!=(const ActionVersionManagerGetBranch& lhs,
-                const ActionVersionManagerGetBranch& rhs) {
+bool operator!=(const ActionVersionHandlerGetBranch& lhs,
+                const ActionVersionHandlerGetBranch& rhs) {
   return !operator==(lhs, rhs);
 }
 

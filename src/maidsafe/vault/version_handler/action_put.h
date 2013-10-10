@@ -16,29 +16,29 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_H_
-#define MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_H_
+#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_PUT_H_
+#define MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_PUT_H_
 
 #include <string>
 
 #include "maidsafe/data_types/structured_data_versions.h"
 
-#include "maidsafe/vault/version_manager/version_manager.h"
-#include "maidsafe/vault/version_manager/value.h"
+#include "maidsafe/vault/version_handler/version_handler.h"
+#include "maidsafe/vault/version_handler/value.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-struct ActionVersionManagerPut {
-  ActionVersionManagerPut(const StructuredDataVersions::VersionName& old_version_in,
+struct ActionVersionHandlerPut {
+  ActionVersionHandlerPut(const StructuredDataVersions::VersionName& old_version_in,
                           const StructuredDataVersions::VersionName& new_version_in)
       : old_version(old_version_in), new_version(new_version_in) {}
-  explicit ActionVersionManagerPut(const std::string& serialised_action);
-  ActionVersionManagerPut(const ActionVersionManagerPut& other);
-  ActionVersionManagerPut(ActionVersionManagerPut&& other);
+  explicit ActionVersionHandlerPut(const std::string& serialised_action);
+  ActionVersionHandlerPut(const ActionVersionHandlerPut& other);
+  ActionVersionHandlerPut(ActionVersionHandlerPut&& other);
 
-  void operator()(boost::optional<VersionManagerValue>& value) const;
+  void operator()(boost::optional<VersionHandlerValue>& value) const;
 
   std::string Serialise() const;
 
@@ -46,15 +46,15 @@ struct ActionVersionManagerPut {
   StructuredDataVersions::VersionName old_version, new_version;
 
  private:
-  ActionVersionManagerPut();
-  ActionVersionManagerPut& operator=(ActionVersionManagerPut other);
+  ActionVersionHandlerPut();
+  ActionVersionHandlerPut& operator=(ActionVersionHandlerPut other);
 };
 
-bool operator==(const ActionVersionManagerPut& lhs, const ActionVersionManagerPut& rhs);
-bool operator!=(const ActionVersionManagerPut& lhs, const ActionVersionManagerPut& rhs);
+bool operator==(const ActionVersionHandlerPut& lhs, const ActionVersionHandlerPut& rhs);
+bool operator!=(const ActionVersionHandlerPut& lhs, const ActionVersionHandlerPut& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_PUT_VERSION_H_
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_PUT_VERSION_H_

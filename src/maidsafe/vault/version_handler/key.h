@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_KEY_H_
-#define MAIDSAFE_VAULT_VERSION_MANAGER_KEY_H_
+#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_KEY_H_
+#define MAIDSAFE_VAULT_VERSION_HANDLER_KEY_H_
 
 #include <string>
 
@@ -32,14 +32,14 @@ namespace maidsafe {
 
 namespace vault {
 
-struct VersionManagerKey {
+struct VersionHandlerKey {
   template <typename Data>
-  VersionManagerKey(const typename Data::Name& name_in, const Identity& originator_in)
+  VersionHandlerKey(const typename Data::Name& name_in, const Identity& originator_in)
       : name(name_in.data), type(Data::type_enum_value()), originator(originator_in) {}
-  explicit VersionManagerKey(const std::string& serialised_key);
-  VersionManagerKey(const VersionManagerKey& other);
-  VersionManagerKey(VersionManagerKey&& other);
-  VersionManagerKey& operator=(VersionManagerKey other);
+  explicit VersionHandlerKey(const std::string& serialised_key);
+  VersionHandlerKey(const VersionHandlerKey& other);
+  VersionHandlerKey(VersionHandlerKey&& other);
+  VersionHandlerKey& operator=(VersionHandlerKey other);
   std::string Serialise() const;
 
   Identity name;
@@ -51,20 +51,20 @@ struct VersionManagerKey {
                                           NodeId::kSize * 2 + detail::PaddedWidth::value>
       FixedWidthString;
 
-  explicit VersionManagerKey(const FixedWidthString& fixed_width_string);
+  explicit VersionHandlerKey(const FixedWidthString& fixed_width_string);
   FixedWidthString ToFixedWidthString() const;
 };
 
-void swap(VersionManagerKey& lhs, VersionManagerKey& rhs) MAIDSAFE_NOEXCEPT;
-bool operator==(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
-bool operator!=(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
-bool operator<(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
-bool operator>(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
-bool operator<=(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
-bool operator>=(const VersionManagerKey& lhs, const VersionManagerKey& rhs);
+void swap(VersionHandlerKey& lhs, VersionHandlerKey& rhs) MAIDSAFE_NOEXCEPT;
+bool operator==(const VersionHandlerKey& lhs, const VersionHandlerKey& rhs);
+bool operator!=(const VersionHandlerKey& lhs, const VersionHandlerKey& rhs);
+bool operator<(const VersionHandlerKey& lhs, const VersionHandlerKey& rhs);
+bool operator>(const VersionHandlerKey& lhs, const VersionHandlerKey& rhs);
+bool operator<=(const VersionHandlerKey& lhs, const VersionHandlerKey& rhs);
+bool operator>=(const VersionHandlerKey& lhs, const VersionHandlerKey& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_KEY_H_
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_KEY_H_

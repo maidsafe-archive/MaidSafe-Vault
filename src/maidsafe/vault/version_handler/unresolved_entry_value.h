@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_UNRESOLVED_ENTRY_VALUE_H_
-#define MAIDSAFE_VAULT_VERSION_MANAGER_UNRESOLVED_ENTRY_VALUE_H_
+#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_UNRESOLVED_ENTRY_VALUE_H_
+#define MAIDSAFE_VAULT_VERSION_HANDLER_UNRESOLVED_ENTRY_VALUE_H_
 
 #include "boost/optional.hpp"
 
@@ -28,10 +28,10 @@ namespace maidsafe {
 
 namespace vault {
 
-struct VersionManagerUnresolvedEntryValue {
-  VersionManagerUnresolvedEntryValue();
-  VersionManagerUnresolvedEntryValue(const VersionManagerUnresolvedEntryValue& other);
-  VersionManagerUnresolvedEntryValue& operator=(VersionManagerUnresolvedEntryValue other);
+struct VersionHandlerUnresolvedEntryValue {
+  VersionHandlerUnresolvedEntryValue();
+  VersionHandlerUnresolvedEntryValue(const VersionHandlerUnresolvedEntryValue& other);
+  VersionHandlerUnresolvedEntryValue& operator=(VersionHandlerUnresolvedEntryValue other);
   // TODO(Team) when we get std::optional we can have move ctr but boost prevents this just now
   boost::optional<StructuredDataVersions::VersionName> version;
   boost::optional<StructuredDataVersions::VersionName> new_version;
@@ -40,29 +40,29 @@ struct VersionManagerUnresolvedEntryValue {
 };
 
 // no move in boost::optional uncomment when std::optional is available
-// void swap(const VersionManagerUnresolvedEntryValue& lhs,
-//           const VersionManagerUnresolvedEntryValue& rhs) MAIDSAFE_NOEXCEPT;
+// void swap(const VersionHandlerUnresolvedEntryValue& lhs,
+//           const VersionHandlerUnresolvedEntryValue& rhs) MAIDSAFE_NOEXCEPT;
 
-bool operator==(const VersionManagerUnresolvedEntryValue& lhs,
-                const VersionManagerUnresolvedEntryValue& rhs);
+bool operator==(const VersionHandlerUnresolvedEntryValue& lhs,
+                const VersionHandlerUnresolvedEntryValue& rhs);
 
-bool operator!=(const VersionManagerUnresolvedEntryValue& lhs,
-                const VersionManagerUnresolvedEntryValue& rhs);
+bool operator!=(const VersionHandlerUnresolvedEntryValue& lhs,
+                const VersionHandlerUnresolvedEntryValue& rhs);
 
-bool operator<(const VersionManagerUnresolvedEntryValue& lhs,
-               const VersionManagerUnresolvedEntryValue& rhs);
+bool operator<(const VersionHandlerUnresolvedEntryValue& lhs,
+               const VersionHandlerUnresolvedEntryValue& rhs);
 
-bool operator>(const VersionManagerUnresolvedEntryValue& lhs,
-               const VersionManagerUnresolvedEntryValue& rhs);
+bool operator>(const VersionHandlerUnresolvedEntryValue& lhs,
+               const VersionHandlerUnresolvedEntryValue& rhs);
 
-bool operator<=(const VersionManagerUnresolvedEntryValue& lhs,
-                const VersionManagerUnresolvedEntryValue& rhs);
+bool operator<=(const VersionHandlerUnresolvedEntryValue& lhs,
+                const VersionHandlerUnresolvedEntryValue& rhs);
 
-bool operator>=(const VersionManagerUnresolvedEntryValue& lhs,
-                const VersionManagerUnresolvedEntryValue& rhs);
+bool operator>=(const VersionHandlerUnresolvedEntryValue& lhs,
+                const VersionHandlerUnresolvedEntryValue& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_UNRESOLVED_ENTRY_VALUE_H_
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_UNRESOLVED_ENTRY_VALUE_H_

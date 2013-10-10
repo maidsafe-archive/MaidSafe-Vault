@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_SERVICE_H_
-#define MAIDSAFE_VAULT_VERSION_MANAGER_SERVICE_H_
+#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_SERVICE_H_
+#define MAIDSAFE_VAULT_VERSION_HANDLER_SERVICE_H_
 
 #include <mutex>
 #include <string>
@@ -37,21 +37,21 @@
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/storage_merge/storage_merge.h"
-#include "maidsafe/vault/version_manager/version_manager.h"
+#include "maidsafe/vault/version_handler/version_handler.h"
 //#include "maidsafe/vault/manager_db.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-class VersionManagerService {
+class VersionHandlerService {
  public:
-  typedef nfs::VersionManagerServiceMessages PublicMessages;
+  typedef nfs::VersionHandlerServiceMessages PublicMessages;
   typedef void VaultMessages;
-  typedef nfs::VersionManagerServiceMessages Messages;
+  typedef nfs::VersionHandlerServiceMessages Messages;
 
-  typedef Identity VersionManagerAccountName;
-  VersionManagerService(const passport::Pmid& pmid, routing::Routing& routing);
+  typedef Identity VersionHandlerAccountName;
+  VersionHandlerService(const passport::Pmid& pmid, routing::Routing& routing);
   //  template<typename Data>
   //  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
   template <typename T>
@@ -59,16 +59,16 @@ class VersionManagerService {
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {}
 
  private:
-  VersionManagerService(const VersionManagerService&);
-  VersionManagerService& operator=(const VersionManagerService&);
-  VersionManagerService(VersionManagerService&&);
-  VersionManagerService& operator=(VersionManagerService&&);
+  VersionHandlerService(const VersionHandlerService&);
+  VersionHandlerService& operator=(const VersionHandlerService&);
+  VersionHandlerService(VersionHandlerService&&);
+  VersionHandlerService& operator=(VersionHandlerService&&);
 
   //  void ValidateClientSender(const nfs::Message& message) const;
   //  void ValidateSyncSender(const nfs::Message& message) const;
   //  std::vector<StructuredDataVersions::VersionName> GetVersionsFromMessage(
   //      const nfs::Message& message) const;
-  //  NonEmptyString GetSerialisedRecord(const VersionManager::DbKey& db_key);
+  //  NonEmptyString GetSerialisedRecord(const VersionHandler::DbKey& db_key);
   //  //// =============== Get data
   // ====================================================================
   //  void HandleGet(const nfs::Message& message, routing::ReplyFunctor reply_functor);
@@ -88,13 +88,13 @@ class VersionManagerService {
   std::mutex accumulator_mutex_;
   std::mutex sync_mutex_;
   Accumulator<Messages> accumulator_;
-  Db<VersionManagerKey, StructuredDataVersions> version_manager_db_;
+  Db<VersionHandlerKey, StructuredDataVersions> version_handler_db_;
   const NodeId kThisNodeId_;
-  //  Sync<VersionManagerMergePolicy> sync_;
-  //  VersionManagerNfs nfs_;
-  //  StorageMerge<VersionManagerKey,
+  //  Sync<VersionHandlerMergePolicy> sync_;
+  //  VersionHandlerNfs nfs_;
+  //  StorageMerge<VersionHandlerKey,
   //               StructuredDataVersions,
-  //               ManagerDb<VersionManagerKey,
+  //               ManagerDb<VersionHandlerKey,
   //                         StructuredDataVersions>>database_merge_;
 };
 
@@ -102,6 +102,6 @@ class VersionManagerService {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/version_manager/service-inl.h"
+#include "maidsafe/vault/version_handler/service-inl.h"
 
-#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_SERVICE_H_
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_SERVICE_H_

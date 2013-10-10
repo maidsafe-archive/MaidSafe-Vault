@@ -16,7 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/version_manager/unresolved_entry_value.h"
+#include "maidsafe/vault/version_handler/unresolved_entry_value.h"
 
 #include <tuple>
 
@@ -24,30 +24,30 @@ namespace maidsafe {
 
 namespace vault {
 
-VersionManagerUnresolvedEntryValue::VersionManagerUnresolvedEntryValue()
+VersionHandlerUnresolvedEntryValue::VersionHandlerUnresolvedEntryValue()
     : version(), new_version(), reply_functor(), serialised_db_value() {}
 
-VersionManagerUnresolvedEntryValue::VersionManagerUnresolvedEntryValue(
-    const VersionManagerUnresolvedEntryValue& other)
+VersionHandlerUnresolvedEntryValue::VersionHandlerUnresolvedEntryValue(
+    const VersionHandlerUnresolvedEntryValue& other)
     : version(other.version),
       new_version(other.new_version),
       reply_functor(other.reply_functor),
       serialised_db_value(other.serialised_db_value) {}
 
-VersionManagerUnresolvedEntryValue& VersionManagerUnresolvedEntryValue::operator=(
-    VersionManagerUnresolvedEntryValue other) {
+VersionHandlerUnresolvedEntryValue& VersionHandlerUnresolvedEntryValue::operator=(
+    VersionHandlerUnresolvedEntryValue other) {
   version = other.version;
   new_version = other.new_version;
   reply_functor = other.reply_functor;
   serialised_db_value = other.serialised_db_value;
   // TODO(dirvine) need to check that we should not parse and
-  // compare serialised VersionManagerVersions
+  // compare serialised VersionHandlerVersions
   return *this;
 }
 
 // no move in boost::optional uncomment when std::optional is available
-// void swap(const VersionManagerUnresolvedEntryValue& lhs,
-//           const VersionManagerUnresolvedEntryValue& rhs) MAIDSAFE_NOEXCEPT {
+// void swap(const VersionHandlerUnresolvedEntryValue& lhs,
+//           const VersionHandlerUnresolvedEntryValue& rhs) MAIDSAFE_NOEXCEPT {
 //  using std::swap;
 //  swap(lhs.version, rhs.version);
 //  swap(lhs.new_version, rhs.new_version);
@@ -55,35 +55,35 @@ VersionManagerUnresolvedEntryValue& VersionManagerUnresolvedEntryValue::operator
 //  swap(lhs.serialised_db_value, rhs.serialised_db_value);
 // }
 
-bool operator==(const VersionManagerUnresolvedEntryValue& lhs,
-                const VersionManagerUnresolvedEntryValue& rhs) {
+bool operator==(const VersionHandlerUnresolvedEntryValue& lhs,
+                const VersionHandlerUnresolvedEntryValue& rhs) {
   return lhs.version == rhs.version && lhs.new_version == rhs.new_version &&
          lhs.serialised_db_value == rhs.serialised_db_value;
 }
 
-bool operator!=(const VersionManagerUnresolvedEntryValue& lhs,
-                const VersionManagerUnresolvedEntryValue& rhs) {
+bool operator!=(const VersionHandlerUnresolvedEntryValue& lhs,
+                const VersionHandlerUnresolvedEntryValue& rhs) {
   return !operator==(lhs, rhs);
 }
 
-bool operator<(const VersionManagerUnresolvedEntryValue& lhs,
-               const VersionManagerUnresolvedEntryValue& rhs) {
+bool operator<(const VersionHandlerUnresolvedEntryValue& lhs,
+               const VersionHandlerUnresolvedEntryValue& rhs) {
   return std::tie(lhs.version, lhs.new_version, lhs.serialised_db_value) <
          std::tie(rhs.version, rhs.new_version, rhs.serialised_db_value);
 }
 
-bool operator>(const VersionManagerUnresolvedEntryValue& lhs,
-               const VersionManagerUnresolvedEntryValue& rhs) {
+bool operator>(const VersionHandlerUnresolvedEntryValue& lhs,
+               const VersionHandlerUnresolvedEntryValue& rhs) {
   return operator<(rhs, lhs);
 }
 
-bool operator<=(const VersionManagerUnresolvedEntryValue& lhs,
-                const VersionManagerUnresolvedEntryValue& rhs) {
+bool operator<=(const VersionHandlerUnresolvedEntryValue& lhs,
+                const VersionHandlerUnresolvedEntryValue& rhs) {
   return !operator>(lhs, rhs);
 }
 
-bool operator>=(const VersionManagerUnresolvedEntryValue& lhs,
-                const VersionManagerUnresolvedEntryValue& rhs) {
+bool operator>=(const VersionHandlerUnresolvedEntryValue& lhs,
+                const VersionHandlerUnresolvedEntryValue& rhs) {
   return !operator<(lhs, rhs);
 }
 

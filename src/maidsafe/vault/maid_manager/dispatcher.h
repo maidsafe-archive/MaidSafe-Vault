@@ -134,7 +134,7 @@ void MaidManagerDispatcher::SendPutFailure(
 //  typedef routing::GroupToGroupMessage RoutingMessage;
 //  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
 //  static const nfs::MessageAction kAction(nfs::MessageAction::kGetRequest);
-//  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
+//  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionHandler);
 //  static const DataTagValue kDataEnumValue(Data::Tag::kValue);
 
 //  nfs::Message::Data inner_data(kDataEnumValue, data_name.data, NonEmptyString(), kAction);
@@ -153,7 +153,7 @@ void MaidManagerDispatcher::SendPutFailure(
 //  static const routing::Cacheable cacheable(is_cacheable<OwnerDirectory>::value ?
 //                                            routing::Cacheable::kGet : routing::Cacheable::kNone);
 //  static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
-//  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
+//  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionHandler);
 //  static const DataTagValue kDataEnumValue(OwnerDirectory::Tag::kValue);
 // TODO(Fraser#5#): 2013-08-03 - Handle
 //}
@@ -167,7 +167,7 @@ void MaidManagerDispatcher::SendPutFailure(
 //  static const routing::Cacheable cacheable(is_cacheable<GroupDirectory>::value ?
 //                                            routing::Cacheable::kGet : routing::Cacheable::kNone);
 //  static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
-//  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
+//  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionHandler);
 //  static const DataTagValue kDataEnumValue(GroupDirectory::Tag::kValue);
 // TODO(Fraser#5#): 2013-08-03 - Handle
 //}
@@ -181,7 +181,7 @@ void MaidManagerDispatcher::SendPutFailure(
 //  static const routing::Cacheable cacheable(is_cacheable<WorldDirectory>::value ?
 //                                            routing::Cacheable::kGet : routing::Cacheable::kNone);
 //  static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
-//  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionManager);
+//  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionHandler);
 //  static const DataTagValue kDataEnumValue(WorldDirectory::Tag::kValue);
 // TODO(Fraser#5#): 2013-08-03 - Handle
 //}

@@ -36,7 +36,7 @@
 #include "maidsafe/vault/maid_manager/service.h"
 #include "maidsafe/vault/data_manager/service.h"
 #include "maidsafe/vault/pmid_manager/service.h"
-#include "maidsafe/vault/version_manager/service.h"
+#include "maidsafe/vault/version_handler/service.h"
 #include "maidsafe/vault/cache_handler/service.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/demultiplexer.h"
@@ -80,7 +80,7 @@ class Vault {
   std::unique_ptr<routing::Routing> routing_;
   nfs_client::DataGetter data_getter_;
   nfs::Service<MaidManagerService> maid_manager_service_;
-  nfs::Service<VersionManagerService> version_manager_service_;
+  nfs::Service<VersionHandlerService> version_handler_service_;
   nfs::Service<DataManagerService> data_manager_service_;
   nfs::Service<PmidManagerService> pmid_manager_service_;
   nfs::Service<PmidNodeService> pmid_node_service_;

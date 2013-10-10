@@ -39,8 +39,8 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
       data_getter_(asio_service_, *routing_, pmids_from_file),
       maid_manager_service_(
           std::move(std::unique_ptr<MaidManagerService>(new MaidManagerService(pmid, *routing_)))),
-      version_manager_service_(std::move(
-          std::unique_ptr<VersionManagerService>(new VersionManagerService(pmid, *routing_)))),
+      version_handler_service_(std::move(
+          std::unique_ptr<VersionHandlerService>(new VersionHandlerService(pmid, *routing_)))),
       data_manager_service_(std::move(std::unique_ptr<DataManagerService>(
           new DataManagerService(pmid, *routing_, data_getter_)))),
       pmid_manager_service_(
@@ -48,7 +48,7 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
       pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
           new PmidNodeService(pmid, *routing_, data_getter_, vault_root_dir)))),  // FIXME need to specialise
       cache_service_(*routing_, vault_root_dir),
-      demux_(maid_manager_service_, version_manager_service_, data_manager_service_,
+      demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
              pmid_manager_service_, pmid_node_service_, cache_service_),
       asio_service_(2) {
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
@@ -171,7 +171,7 @@ void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_clos
 
 void Vault::OnMatrixChanged(std::shared_ptr<routing::MatrixChange> matrix_change) {
   asio_service_.service().post([=] { maid_manager_service_.HandleChurnEvent(matrix_change); });
-  asio_service_.service().post([=] { version_manager_service_.HandleChurnEvent(matrix_change); });
+  asio_service_.service().post([=] { version_handler_service_.HandleChurnEvent(matrix_change); });
   asio_service_.service().post([=] { data_manager_service_.HandleChurnEvent(matrix_change); });
   asio_service_.service().post([=] { pmid_manager_service_.HandleChurnEvent(matrix_change); });
 }

@@ -16,7 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/version_manager/service.h"
+#include "maidsafe/vault/version_handler/service.h"
 
 #include <exception>
 #include <string>
@@ -33,8 +33,8 @@
 #include "maidsafe/nfs/vault/pmid_registration.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/version_manager/key.h"
-#include "maidsafe/vault/version_manager/unresolved_entry_value.h"
+#include "maidsafe/vault/version_handler/key.h"
+#include "maidsafe/vault/version_handler/unresolved_entry_value.h"
 #include "maidsafe/vault/unresolved_action.pb.h"
 #include "maidsafe/vault/db.h"
 
@@ -46,67 +46,67 @@ namespace {
 
 template <typename Message>
 inline bool ForThisPersona(const Message& message) {
-  return message.destination_persona() == nfs::Persona::kVersionManager;
+  return message.destination_persona() == nfs::Persona::kVersionHandler;
 }
 
 template <typename Message>
-inline bool FromVersionManager(const Message& message) {
-  return message.destination_persona() == nfs::Persona::kVersionManager;
+inline bool FromVersionHandler(const Message& message) {
+  return message.destination_persona() == nfs::Persona::kVersionHandler;
 }
 
 }  // unnamed namespace
 
 namespace detail {
 
-// VersionManagerUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message) {
+// VersionHandlerUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message) {
 //  // test message content is valid only
-//  protobuf::VersionManagerUnresolvedEntry entry_proto;
+//  protobuf::VersionHandlerUnresolvedEntry entry_proto;
 //  if (!entry_proto.ParseFromString(message.data().content.string()))
 //    ThrowError(CommonErrors::parsing_error);
 //  // this is the only code line really required
-//  return VersionManagerUnresolvedEntry(
-//                         VersionManagerUnresolvedEntry::serialised_type(message.data().content));
+//  return VersionHandlerUnresolvedEntry(
+//                         VersionHandlerUnresolvedEntry::serialised_type(message.data().content));
 
 //}
 
 }  // namespace detail
 
-VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
+VersionHandlerService::VersionHandlerService(const passport::Pmid& /*pmid*/,
                                              routing::Routing& routing)
     : routing_(routing),
       accumulator_mutex_(),
       sync_mutex_(),
       accumulator_(),
-      version_manager_db_(),
+      version_handler_db_(),
       kThisNodeId_(routing_.kNodeId()) {}
 
-// void VersionManagerService::ValidateClientSender(const nfs::Message& message) const {
+// void VersionHandlerService::ValidateClientSender(const nfs::Message& message) const {
 //  if (!routing_.IsConnectedClient(message.source().node_id))
 //    ThrowError(VaultErrors::permission_denied);
 //  if (!(FromClientMaid(message) || FromClientMpid(message)) || !ForThisPersona(message))
 //    ThrowError(CommonErrors::invalid_parameter);
 //}
 
-// void VersionManagerService::ValidateSyncSender(const nfs::Message& message) const {
+// void VersionHandlerService::ValidateSyncSender(const nfs::Message& message) const {
 //  if (!routing_.IsConnectedVault(message.source().node_id))
 //    ThrowError(VaultErrors::permission_denied);
-//  if (!FromVersionManager(message) || !ForThisPersona(message))
+//  if (!FromVersionHandler(message) || !ForThisPersona(message))
 //    ThrowError(CommonErrors::invalid_parameter);
 //}
 
 // std::vector<StructuredDataVersions::VersionName>
-//    VersionManagerService::GetVersionsFromMessage(const nfs::Message& msg) const {
+//    VersionHandlerService::GetVersionsFromMessage(const nfs::Message& msg) const {
 //   return
 // nfs::StructuredData(nfs::StructuredData::serialised_type(msg.data().content)).versions();
 //}
 
-// NonEmptyString VersionManagerService::GetSerialisedRecord(
-//    const VersionManager::DbKey& db_key) {
+// NonEmptyString VersionHandlerService::GetSerialisedRecord(
+//    const VersionHandler::DbKey& db_key) {
 //  protobuf::UnresolvedEntries proto_unresolved_entries;
-//  auto db_value(version_manager_db_.Get(db_key));
-//  VersionManagerKey version_manager_key;
-//  //version_manager_key.
-//  //VersionManagerUnresolvedEntry unresolved_entry_db_value(
+//  auto db_value(version_handler_db_.Get(db_key));
+//  VersionHandlerKey version_handler_key;
+//  //version_handler_key.
+//  //VersionHandlerUnresolvedEntry unresolved_entry_db_value(
 //  //    std::make_pair(data_name, nfs::MessageAction::kAccountTransfer), metadata_value,
 //  //      kThisNodeId_);
 //  //auto unresolved_data(sync_.GetUnresolvedData(data_name));
@@ -121,12 +121,12 @@ VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
 
 //// =============== Get data =================================================================
 
-// void VersionManagerService::HandleGet(const nfs::Message& message,
+// void VersionHandlerService::HandleGet(const nfs::Message& message,
 //                                      routing::ReplyFunctor reply_functor) {
 //  try {
 //    nfs::Reply reply(CommonErrors::success);
 //    StructuredDataVersions version(
-//                version_manager_db_.Get(GetKeyFromMessage<VersionManager>(message)));
+//                version_handler_db_.Get(GetKeyFromMessage<VersionHandler>(message)));
 //    reply.data() = nfs::StructuredData(version.Get()).Serialise().data;
 //    reply_functor(reply.Serialise()->string());
 //    std::lock_guard<std::mutex> lock(accumulator_mutex_);
@@ -141,13 +141,13 @@ VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
 // }
 //}
 
-// void VersionManagerService::HandleGetBranch(const nfs::Message& message,
+// void VersionHandlerService::HandleGetBranch(const nfs::Message& message,
 //                                                   routing::ReplyFunctor reply_functor) {
 
 //  try {
 //    nfs::Reply reply(CommonErrors::success);
 //    StructuredDataVersions version(
-//                version_manager_db_.Get(GetKeyFromMessage<VersionManager>(message)));
+//                version_handler_db_.Get(GetKeyFromMessage<VersionHandler>(message)));
 //    auto branch_to_get(GetVersionsFromMessage(message));
 //    reply.data() = nfs::StructuredData(version.GetBranch(branch_to_get.at(0))).Serialise().data;
 //    reply_functor(reply.Serialise()->string());
@@ -166,8 +166,8 @@ VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
 //// // =============== Sync
 ///============================================================================
 
-// void VersionManagerService::HandleSynchronise(const nfs::Message& message) {
-//  std::vector<VersionManagerMergePolicy::UnresolvedEntry> unresolved_entries;
+// void VersionHandlerService::HandleSynchronise(const nfs::Message& message) {
+//  std::vector<VersionHandlerMergePolicy::UnresolvedEntry> unresolved_entries;
 //  bool success(false);
 //  try {
 //    {
@@ -196,9 +196,9 @@ VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
 //  }
 //}
 
-// void VersionManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange>
+// void VersionHandlerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange>
 // /*matrix_change*/) {
-//  auto record_names(version_manager_db_.GetKeys());
+//  auto record_names(version_handler_db_.GetKeys());
 //  auto itr(std::begin(record_names));
 //  while (itr != std::end(record_names)) {
 //    auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), *itr));
@@ -206,7 +206,7 @@ VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
 //                                           NodeId(result.second)));
 //    // Delete records for which this node is no longer responsible.
 //    if (check_holders_result.proximity_status != routing::GroupRangeStatus::kInRange) {
-//      version_manager_db_.Delete(*itr);
+//      version_handler_db_.Delete(*itr);
 //      itr = record_names.erase(itr);
 //      continue;
 //    }
@@ -226,7 +226,7 @@ VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
 // containing record name, old_holders, new_holders.
 //}
 
-// void VersionManagerService::HandleChurnEvent(const NodeId& /*old_node*/,
+// void VersionHandlerService::HandleChurnEvent(const NodeId& /*old_node*/,
 //                                                    const NodeId& /*new_node*/) {
 //    //// for each unresolved entry replace node (only)
 //    //{
@@ -234,8 +234,8 @@ VersionManagerService::VersionManagerService(const passport::Pmid& /*pmid*/,
 //    //sync_.ReplaceNode(old_node, new_node);
 //    //}
 //    ////  carry out account transfer for new node !
-//    //std::vector<VersionManager::DbKey> db_keys;
-//    //db_keys = version_manager_db_.GetKeys();
+//    //std::vector<VersionHandler::DbKey> db_keys;
+//    //db_keys = version_handler_db_.GetKeys();
 //    //for (const auto& key: db_keys) {
 //    //  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key.first));
 //    //  if (routing_.IsNodeIdInGroupRange(NodeId(result.second.string()), new_node) ==

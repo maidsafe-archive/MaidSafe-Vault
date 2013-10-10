@@ -39,7 +39,7 @@
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
-#include "maidsafe/vault/version_manager/version_manager.h"
+#include "maidsafe/vault/version_handler/version_handler.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/operations_visitor.h"
 //#include "maidsafe/vault/pmid_node/service.h"
@@ -425,16 +425,16 @@ void DoOperation(ServiceHandlerType* service,
 
 // ================================== Get Specialisations ======================================
 //   GetCachedResponseFromPmidNodeToMaidNode, DataNameAndContentOrReturnCode
-//   GetVersionsResponseFromVersionManagerToMaidNode, StructuredDataNameAndContentOrReturnCode
-//   GetBranchResponseFromVersionManagerToMaidNode, StructuredDataNameAndContentOrReturnCode
-//   GetVersionsResponseFromVersionManagerToDataGetter, StructuredDataNameAndContentOrReturnCode
-//   GetBranchResponseFromVersionManagerToDataGetter, StructuredDataNameAndContentOrReturnCode
+//   GetVersionsResponseFromVersionHandlerToMaidNode, StructuredDataNameAndContentOrReturnCode
+//   GetBranchResponseFromVersionHandlerToMaidNode, StructuredDataNameAndContentOrReturnCode
+//   GetVersionsResponseFromVersionHandlerToDataGetter, StructuredDataNameAndContentOrReturnCode
+//   GetBranchResponseFromVersionHandlerToDataGetter, StructuredDataNameAndContentOrReturnCode
 //   GetPmidAccountRequestFromPmidNodeToPmidManager, Empty
 //   GetPmidHealthRequestFromMaidNodeToMaidManager, DataName
-//   GetVersionsRequestFromMaidNodeToVersionManager, DataName
-//   GetBranchRequestFromMaidNodeToVersionManager, DataNameAndVersion
-//   GetVersionsRequestFromDataGetterToVersionManager, DataName
-//   GetBranchRequestFromDataGetterToVersionManager, DataNameAndVersion
+//   GetVersionsRequestFromMaidNodeToVersionHandler, DataName
+//   GetBranchRequestFromMaidNodeToVersionHandler, DataNameAndVersion
+//   GetVersionsRequestFromDataGetterToVersionHandler, DataName
+//   GetBranchRequestFromDataGetterToVersionHandler, DataNameAndVersion
 //   GetPmidAccountResponseFromPmidManagerToPmidNode, DataNameAndContentOrReturnCode
 
 // ================================= Get Response Specialisations ================================
@@ -696,7 +696,7 @@ int RequiredRequests(const Message&) {
 // inline bool FromDataGetter(const Message& message);
 //
 // template<typename Message>
-// inline bool FromVersionManager(const nfs::Message& message);
+// inline bool FromVersionHandler(const nfs::Message& message);
 
 /* Commented by Mahmoud on 2 Sep -- It may be of no use any more
 template<typename Persona>

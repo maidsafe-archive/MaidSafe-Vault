@@ -16,27 +16,27 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_VALUE_H_
-#define MAIDSAFE_VAULT_VERSION_MANAGER_VALUE_H_
+#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_VALUE_H_
+#define MAIDSAFE_VAULT_VERSION_HANDLER_VALUE_H_
 
 #include <cstdint>
 #include <string>
 
 #include "maidsafe/data_types/structured_data_versions.h"
-#include "maidsafe/vault/version_manager/version_manager.h"
+#include "maidsafe/vault/version_handler/version_handler.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-class VersionManagerValue {
+class VersionHandlerValue {
  public:
-  explicit VersionManagerValue(const std::string& serialised_version_manager_value);
-  VersionManagerValue(uint32_t max_versions = 1, uint32_t max_branches = 1);
+  explicit VersionHandlerValue(const std::string& serialised_version_handler_value);
+  VersionHandlerValue(uint32_t max_versions = 1, uint32_t max_branches = 1);
   //  Commented by Mahmoud on 5 Sep. Requires fix in structureddata
-  //  VersionManagerValue(const VersionManagerValue& other);
-  //  VersionManagerValue(VersionManagerValue&& other);
-  VersionManagerValue& operator=(VersionManagerValue other);
+  //  VersionHandlerValue(const VersionHandlerValue& other);
+  //  VersionHandlerValue(VersionHandlerValue&& other);
+  VersionHandlerValue& operator=(VersionHandlerValue other);
   std::string Serialise() const;
 
   void Put(const StructuredDataVersions::VersionName& old_version,
@@ -46,15 +46,15 @@ class VersionManagerValue {
       const StructuredDataVersions::VersionName& branch_tip) const;
   void DeleteBranchUntilFork(const StructuredDataVersions::VersionName& branch_tip);
 
-  friend void swap(VersionManagerValue& lhs, VersionManagerValue& rhs);
-  friend bool operator==(const VersionManagerValue& lhs, const VersionManagerValue& rhs);
+  friend void swap(VersionHandlerValue& lhs, VersionHandlerValue& rhs);
+  friend bool operator==(const VersionHandlerValue& lhs, const VersionHandlerValue& rhs);
 
  private:
   StructuredDataVersions structured_data_versions_;
 };
 
-// bool operator==(const VersionManagerValue& lhs, const VersionManagerValue& rhs);
-void swap(VersionManagerValue& lhs, VersionManagerValue& rhs);
+// bool operator==(const VersionHandlerValue& lhs, const VersionHandlerValue& rhs);
+void swap(VersionHandlerValue& lhs, VersionHandlerValue& rhs);
 
 }  // namespace vault
 

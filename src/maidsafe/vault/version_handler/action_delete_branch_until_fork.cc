@@ -16,16 +16,16 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/version_manager/action_delete_branch_until_fork.h"
-#include "maidsafe/vault/version_manager/action_delete_branch_until_fork.pb.h"
+#include "maidsafe/vault/version_handler/action_delete_branch_until_fork.h"
+#include "maidsafe/vault/version_handler/action_delete_branch_until_fork.pb.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-const nfs::MessageAction ActionVersionManagerDeleteBranchUntilFork::kActionId;
+const nfs::MessageAction ActionVersionHandlerDeleteBranchUntilFork::kActionId;
 
-ActionVersionManagerDeleteBranchUntilFork::ActionVersionManagerDeleteBranchUntilFork(
+ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntilFork(
     const std::string& serialised_action)
     : version_name([&serialised_action]() {
         protobuf::ActionDeleteBranchUntilFork action_delete_branch_until_fork_proto;
@@ -35,38 +35,38 @@ ActionVersionManagerDeleteBranchUntilFork::ActionVersionManagerDeleteBranchUntil
             action_delete_branch_until_fork_proto.serialised_version());
       }()) {}
 
-ActionVersionManagerDeleteBranchUntilFork::ActionVersionManagerDeleteBranchUntilFork(
+ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntilFork(
     const StructuredDataVersions::VersionName& version_name_in)
     : version_name(version_name_in) {}
 
-ActionVersionManagerDeleteBranchUntilFork::ActionVersionManagerDeleteBranchUntilFork(
-    const ActionVersionManagerDeleteBranchUntilFork& other)
+ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntilFork(
+    const ActionVersionHandlerDeleteBranchUntilFork& other)
     : version_name(other.version_name) {}
 
-ActionVersionManagerDeleteBranchUntilFork::ActionVersionManagerDeleteBranchUntilFork(
-    const ActionVersionManagerDeleteBranchUntilFork&& other)
+ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntilFork(
+    const ActionVersionHandlerDeleteBranchUntilFork&& other)
     : version_name(std::move(other.version_name)) {}
 
-std::string ActionVersionManagerDeleteBranchUntilFork::Serialise() const {
+std::string ActionVersionHandlerDeleteBranchUntilFork::Serialise() const {
   protobuf::ActionDeleteBranchUntilFork action_delete_branch_until_fork_proto;
   action_delete_branch_until_fork_proto.set_serialised_version(version_name.Serialise());
   return action_delete_branch_until_fork_proto.SerializeAsString();
 }
 
-void ActionVersionManagerDeleteBranchUntilFork::operator()(
-    boost::optional<VersionManagerValue>& value) const {
+void ActionVersionHandlerDeleteBranchUntilFork::operator()(
+    boost::optional<VersionHandlerValue>& value) const {
   if (!value)
     ThrowError(CommonErrors::uninitialised);
   value->DeleteBranchUntilFork(version_name);
 }
 
-bool operator==(const ActionVersionManagerDeleteBranchUntilFork& lhs,
-                const ActionVersionManagerDeleteBranchUntilFork& rhs) {
+bool operator==(const ActionVersionHandlerDeleteBranchUntilFork& lhs,
+                const ActionVersionHandlerDeleteBranchUntilFork& rhs) {
   return lhs.version_name == rhs.version_name;
 }
 
-bool operator!=(const ActionVersionManagerDeleteBranchUntilFork& lhs,
-                const ActionVersionManagerDeleteBranchUntilFork& rhs) {
+bool operator!=(const ActionVersionHandlerDeleteBranchUntilFork& lhs,
+                const ActionVersionHandlerDeleteBranchUntilFork& rhs) {
   return !operator==(lhs, rhs);
 }
 

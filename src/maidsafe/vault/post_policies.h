@@ -191,8 +191,8 @@ typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kPmidManager>, PmidManagerMisce
 // FIXME
 typedef VaultPostPolicy<NoPolicy, PmidNodeMiscellaneousPolicy> PmidNodePostPolicy;
 
-typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kVersionManager>, NoPolicy>
-    VersionManagerPostPolicy;
+typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kVersionHandler>, NoPolicy>
+    VersionHandlerPostPolicy;
 
 }  // namespace vault
 

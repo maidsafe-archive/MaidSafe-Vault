@@ -16,18 +16,18 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/version_manager/action_get.h"
+#include "maidsafe/vault/version_handler/action_get.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-const nfs::MessageAction ActionVersionManagerGet::kActionId;
+const nfs::MessageAction ActionVersionHandlerGet::kActionId;
 
-ActionVersionManagerGet::ActionVersionManagerGet() {}
+ActionVersionHandlerGet::ActionVersionHandlerGet() {}
 
-void ActionVersionManagerGet::operator()(
-    boost::optional<VersionManagerValue>& value,
+void ActionVersionHandlerGet::operator()(
+    boost::optional<VersionHandlerValue>& value,
     std::vector<StructuredDataVersions::VersionName>& version_names) const {
   version_names.clear();
   if (value)

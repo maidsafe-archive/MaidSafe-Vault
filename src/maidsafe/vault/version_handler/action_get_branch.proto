@@ -16,34 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_GET_VERSION_H_
-#define MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_GET_VERSION_H_
+package maidsafe.vault.protobuf;
 
-#include <string>
-
-#include "maidsafe/data_types/structured_data_versions.h"
-
-#include "maidsafe/vault/version_manager/version_manager.h"
-#include "maidsafe/vault/version_manager/value.h"
-
-namespace maidsafe {
-
-namespace vault {
-
-struct ActionVersionManagerGet {
-  ActionVersionManagerGet();
-
-  void operator()(boost::optional<VersionManagerValue>& value,
-                  std::vector<StructuredDataVersions::VersionName>& version_names) const;
-
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kGetRequest;
-
- private:
-  ActionVersionManagerGet& operator=(ActionVersionManagerGet other);
-};
-
-}  // namespace vault
-
-}  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_GET_VERSION_H_
+message ActionVersionHandlerGetBranch {
+  required bytes serialised_version = 1;
+}

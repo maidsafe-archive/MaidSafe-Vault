@@ -28,13 +28,13 @@ namespace maidsafe {
 namespace vault {
 
 Demultiplexer::Demultiplexer(nfs::Service<MaidManagerService>& maid_manager_service,
-                             nfs::Service<VersionManagerService>& version_manager_service,
+                             nfs::Service<VersionHandlerService>& version_handler_service,
                              nfs::Service<DataManagerService>& data_manager_service,
                              nfs::Service<PmidManagerService>& pmid_manager_service,
                              nfs::Service<PmidNodeService>& pmid_node_service,
                              CacheHandlerService& cache_service)
     : maid_manager_service_(maid_manager_service),
-      version_manager_service_(version_manager_service),
+      version_handler_service_(version_handler_service),
       data_manager_service_(data_manager_service),
       pmid_manager_service_(pmid_manager_service),
       pmid_node_service_(pmid_node_service),

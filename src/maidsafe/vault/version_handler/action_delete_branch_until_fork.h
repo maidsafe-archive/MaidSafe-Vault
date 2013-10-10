@@ -16,52 +16,52 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_DELETE_BRANCH_UNTIL_FORK_H_
-#define MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_DELETE_BRANCH_UNTIL_FORK_H_
+#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_DELETE_BRANCH_UNTIL_FORK_H_
+#define MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_DELETE_BRANCH_UNTIL_FORK_H_
 
 #include <string>
 
 #include "maidsafe/data_types/structured_data_versions.h"
 
-#include "maidsafe/vault/version_manager/version_manager.h"
-#include "maidsafe/vault/version_manager/value.h"
+#include "maidsafe/vault/version_handler/version_handler.h"
+#include "maidsafe/vault/version_handler/value.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-struct ActionVersionManagerDeleteBranchUntilFork {
-  explicit ActionVersionManagerDeleteBranchUntilFork(const std::string& serialised_action);
-  explicit ActionVersionManagerDeleteBranchUntilFork(
-      const ActionVersionManagerDeleteBranchUntilFork& other);
-  explicit ActionVersionManagerDeleteBranchUntilFork(
-      const ActionVersionManagerDeleteBranchUntilFork&& other);
-  explicit ActionVersionManagerDeleteBranchUntilFork(
+struct ActionVersionHandlerDeleteBranchUntilFork {
+  explicit ActionVersionHandlerDeleteBranchUntilFork(const std::string& serialised_action);
+  explicit ActionVersionHandlerDeleteBranchUntilFork(
+      const ActionVersionHandlerDeleteBranchUntilFork& other);
+  explicit ActionVersionHandlerDeleteBranchUntilFork(
+      const ActionVersionHandlerDeleteBranchUntilFork&& other);
+  explicit ActionVersionHandlerDeleteBranchUntilFork(
       const StructuredDataVersions::VersionName& version_name);
 
-  void operator()(boost::optional<VersionManagerValue>& value) const;
+  void operator()(boost::optional<VersionHandlerValue>& value) const;
 
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteBranchUntilForkRequest;
 
-  friend bool operator==(const ActionVersionManagerDeleteBranchUntilFork& lhs,
-                         const ActionVersionManagerDeleteBranchUntilFork& rhs);
+  friend bool operator==(const ActionVersionHandlerDeleteBranchUntilFork& lhs,
+                         const ActionVersionHandlerDeleteBranchUntilFork& rhs);
 
  private:
-  ActionVersionManagerDeleteBranchUntilFork();
-  ActionVersionManagerDeleteBranchUntilFork& operator=(
-      ActionVersionManagerDeleteBranchUntilFork other);
+  ActionVersionHandlerDeleteBranchUntilFork();
+  ActionVersionHandlerDeleteBranchUntilFork& operator=(
+      ActionVersionHandlerDeleteBranchUntilFork other);
   StructuredDataVersions::VersionName version_name;
 };
 
-bool operator==(const ActionVersionManagerDeleteBranchUntilFork& lhs,
-                const ActionVersionManagerDeleteBranchUntilFork& rhs);
-bool operator!=(const ActionVersionManagerDeleteBranchUntilFork& lhs,
-                const ActionVersionManagerDeleteBranchUntilFork& rhs);
+bool operator==(const ActionVersionHandlerDeleteBranchUntilFork& lhs,
+                const ActionVersionHandlerDeleteBranchUntilFork& rhs);
+bool operator!=(const ActionVersionHandlerDeleteBranchUntilFork& lhs,
+                const ActionVersionHandlerDeleteBranchUntilFork& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_DELETE_BRANCH_UNTIL_FORK_H_
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_DELETE_BRANCH_UNTIL_FORK_H_

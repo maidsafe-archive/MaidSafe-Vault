@@ -16,49 +16,49 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_GET_BRANCH_H_
-#define MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_GET_BRANCH_H_
+#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_GET_BRANCH_H_
+#define MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_GET_BRANCH_H_
 
 #include <string>
 
 #include "maidsafe/data_types/structured_data_versions.h"
 
-#include "maidsafe/vault/version_manager/version_manager.h"
-#include "maidsafe/vault/version_manager/value.h"
+#include "maidsafe/vault/version_handler/version_handler.h"
+#include "maidsafe/vault/version_handler/value.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-struct ActionVersionManagerGetBranch {
-  explicit ActionVersionManagerGetBranch(const std::string& serialised_action);
-  explicit ActionVersionManagerGetBranch(const StructuredDataVersions::VersionName& version_name);
+struct ActionVersionHandlerGetBranch {
+  explicit ActionVersionHandlerGetBranch(const std::string& serialised_action);
+  explicit ActionVersionHandlerGetBranch(const StructuredDataVersions::VersionName& version_name);
 
-  ActionVersionManagerGetBranch(const ActionVersionManagerGetBranch& other);
-  ActionVersionManagerGetBranch(ActionVersionManagerGetBranch&& other);
+  ActionVersionHandlerGetBranch(const ActionVersionHandlerGetBranch& other);
+  ActionVersionHandlerGetBranch(ActionVersionHandlerGetBranch&& other);
 
-  void operator()(boost::optional<VersionManagerValue>& value,
+  void operator()(boost::optional<VersionHandlerValue>& value,
                   std::vector<StructuredDataVersions::VersionName>& version_names) const;
 
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kGetBranchRequest;
-  friend bool operator==(const ActionVersionManagerGetBranch& lhs,
-                         const ActionVersionManagerGetBranch& rhs);
-  friend bool operator!=(const ActionVersionManagerGetBranch& lhs,
-                         const ActionVersionManagerGetBranch& rhs);
+  friend bool operator==(const ActionVersionHandlerGetBranch& lhs,
+                         const ActionVersionHandlerGetBranch& rhs);
+  friend bool operator!=(const ActionVersionHandlerGetBranch& lhs,
+                         const ActionVersionHandlerGetBranch& rhs);
 
  private:
-  ActionVersionManagerGetBranch();
-  ActionVersionManagerGetBranch& operator=(ActionVersionManagerGetBranch other);
+  ActionVersionHandlerGetBranch();
+  ActionVersionHandlerGetBranch& operator=(ActionVersionHandlerGetBranch other);
   StructuredDataVersions::VersionName version_name;
 };
 
-bool operator==(const ActionVersionManagerGetBranch& lhs, const ActionVersionManagerGetBranch& rhs);
-bool operator!=(const ActionVersionManagerGetBranch& lhs, const ActionVersionManagerGetBranch& rhs);
+bool operator==(const ActionVersionHandlerGetBranch& lhs, const ActionVersionHandlerGetBranch& rhs);
+bool operator!=(const ActionVersionHandlerGetBranch& lhs, const ActionVersionHandlerGetBranch& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_ACTION_GET_BRANCH_H_
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_GET_BRANCH_H_

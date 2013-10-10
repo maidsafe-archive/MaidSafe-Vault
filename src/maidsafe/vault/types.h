@@ -56,10 +56,10 @@ enum class DataType : int32_t {
 //    DataManagerPostPolicy> DataManagerNfs;
 //
 // typedef nfs::NetworkFileSystem<
-//    nfs::VersionManagerPutPolicy,
-//    nfs::VersionManagerGetPolicy,
-//    nfs::VersionManagerDeletePolicy,
-//    VersionManagerPostPolicy> VersionManagerNfs;
+//    nfs::VersionHandlerPutPolicy,
+//    nfs::VersionHandlerGetPolicy,
+//    nfs::VersionHandlerDeletePolicy,
+//    VersionHandlerPostPolicy> VersionHandlerNfs;
 //
 // typedef nfs::NetworkFileSystem<
 //    nfs::PmidManagerPutPolicy,

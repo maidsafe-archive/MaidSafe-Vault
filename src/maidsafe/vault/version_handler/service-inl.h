@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_SERVICE_INL_H_
-#define MAIDSAFE_VAULT_VERSION_MANAGER_SERVICE_INL_H_
+#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_SERVICE_INL_H_
+#define MAIDSAFE_VAULT_VERSION_HANDLER_SERVICE_INL_H_
 
 #include <exception>
 #include <string>
@@ -38,12 +38,12 @@ namespace vault {
 
 namespace detail {
 
-// VersionManagerUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message);
+// VersionHandlerUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message);
 
 }  // namespace detail
 
 // template<typename Data>
-// void VersionManagerService::HandleMessage(const nfs::Message& message,
+// void VersionHandlerService::HandleMessage(const nfs::Message& message,
 //                                                  const routing::ReplyFunctor& reply_functor) {
 // //   ValidateSender(message);
 
@@ -86,7 +86,7 @@ namespace detail {
 ///available)
 
 // template<typename Data>
-// void VersionManagerService::Synchronise(const nfs::Message& message) {
+// void VersionHandlerService::Synchronise(const nfs::Message& message) {
 //  auto entry =  detail::UnresolvedEntryFromMessage(message);
 //  nfs_.Sync(DataNameVariant(Data::Name(message.data().name)), entry.Serialise().data);  // does
 // not include
@@ -103,4 +103,4 @@ namespace detail {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_SERVICE_INL_H_
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_SERVICE_INL_H_

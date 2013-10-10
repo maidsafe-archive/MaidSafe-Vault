@@ -64,8 +64,8 @@ namespace vault {
 //}
 //
 // template<typename Message>
-// inline bool FromVersionManager(const Message& message) {
-//  return message.source().persona == nfs::Persona::kVersionManager;
+// inline bool FromVersionHandler(const Message& message) {
+//  return message.source().persona == nfs::Persona::kVersionHandler;
 //}
 //
 // template<typename Message>
@@ -75,7 +75,7 @@ namespace vault {
 //
 // template<typename Message>
 // inline bool ValidateSyncSender(const nfs::Message& message) {
-//  return message.source().persona == nfs::Persona::kVersionManager;
+//  return message.source().persona == nfs::Persona::kVersionHandler;
 //}
 
 namespace detail {

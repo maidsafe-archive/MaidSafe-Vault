@@ -34,7 +34,7 @@
 #include "maidsafe/vault/maid_manager/service.h"
 #include "maidsafe/vault/pmid_manager/service.h"
 #include "maidsafe/vault/pmid_node/service.h"
-#include "maidsafe/vault/version_manager/service.h"
+#include "maidsafe/vault/version_handler/service.h"
 #include "maidsafe/vault/cache_handler/service.h"
 
 namespace maidsafe {
@@ -44,7 +44,7 @@ namespace vault {
 class Demultiplexer {
  public:
   Demultiplexer(nfs::Service<MaidManagerService>& maid_manager_service,
-                nfs::Service<VersionManagerService>& version_manager_service,
+                nfs::Service<VersionHandlerService>& version_handler_service,
                 nfs::Service<DataManagerService>& data_manager_service,
                 nfs::Service<PmidManagerService>& pmid_manager_service,
                 nfs::Service<PmidNodeService>& pmid_node_service,
@@ -62,7 +62,7 @@ class Demultiplexer {
   //  void HandleStoreInCache(const nfs::Message& message);
 
   nfs::Service<MaidManagerService>& maid_manager_service_;
-  nfs::Service<VersionManagerService>& version_manager_service_;
+  nfs::Service<VersionHandlerService>& version_handler_service_;
   nfs::Service<DataManagerService>& data_manager_service_;
   nfs::Service<PmidManagerService>& pmid_manager_service_;
   nfs::Service<PmidNodeService>& pmid_node_service_;
@@ -80,8 +80,8 @@ void Demultiplexer::HandleMessage(const T& routing_message) {
     case nfs::Persona::kMaidManager:
       return maid_manager_service_.HandleMessage(wrapper_tuple, routing_message.sender,
                                                  routing_message.receiver);
-    case nfs::Persona::kVersionManager:
-      return version_manager_service_.HandleMessage(wrapper_tuple, routing_message.sender,
+    case nfs::Persona::kVersionHandler:
+      return version_handler_service_.HandleMessage(wrapper_tuple, routing_message.sender,
                                                     routing_message.receiver);
     case nfs::Persona::kDataManager:
       return data_manager_service_.HandleMessage(wrapper_tuple, routing_message.sender,

@@ -16,16 +16,16 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/version_manager/action_put.h"
-#include "maidsafe/vault/version_manager/action_put.pb.h"
+#include "maidsafe/vault/version_handler/action_put.h"
+#include "maidsafe/vault/version_handler/action_put.pb.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-const nfs::MessageAction ActionVersionManagerPut::kActionId;
+const nfs::MessageAction ActionVersionHandlerPut::kActionId;
 
-ActionVersionManagerPut::ActionVersionManagerPut(const std::string& serialised_action) {
+ActionVersionHandlerPut::ActionVersionHandlerPut(const std::string& serialised_action) {
   protobuf::ActionPut action_put_version_proto;
   if (!action_put_version_proto.ParseFromString(serialised_action))
     ThrowError(CommonErrors::parsing_error);
@@ -35,31 +35,31 @@ ActionVersionManagerPut::ActionVersionManagerPut(const std::string& serialised_a
                       action_put_version_proto.serialised_new_version());
 }
 
-ActionVersionManagerPut::ActionVersionManagerPut(const ActionVersionManagerPut& other)
+ActionVersionHandlerPut::ActionVersionHandlerPut(const ActionVersionHandlerPut& other)
     : old_version(other.old_version), new_version(other.new_version) {}
 
-ActionVersionManagerPut::ActionVersionManagerPut(ActionVersionManagerPut&& other)
+ActionVersionHandlerPut::ActionVersionHandlerPut(ActionVersionHandlerPut&& other)
     : old_version(std::move(other.old_version)), new_version(std::move(other.new_version)) {}
 
-std::string ActionVersionManagerPut::Serialise() const {
+std::string ActionVersionHandlerPut::Serialise() const {
   protobuf::ActionPut action_put_version_proto;
   action_put_version_proto.set_serialised_old_version(old_version.Serialise());
   action_put_version_proto.set_serialised_new_version(new_version.Serialise());
   return action_put_version_proto.SerializeAsString();
 }
 
-void ActionVersionManagerPut::operator()(boost::optional<VersionManagerValue>& value) const {
+void ActionVersionHandlerPut::operator()(boost::optional<VersionHandlerValue>& value) const {
   if (!value) {
     value.reset();
   }
   value->Put(old_version, new_version);
 }
 
-bool operator==(const ActionVersionManagerPut& lhs, const ActionVersionManagerPut& rhs) {
+bool operator==(const ActionVersionHandlerPut& lhs, const ActionVersionHandlerPut& rhs) {
   return lhs.old_version == rhs.old_version && lhs.new_version == rhs.new_version;
 }
 
-bool operator!=(const ActionVersionManagerPut& lhs, const ActionVersionManagerPut& rhs) {
+bool operator!=(const ActionVersionHandlerPut& lhs, const ActionVersionHandlerPut& rhs) {
   return !operator==(lhs, rhs);
 }
 

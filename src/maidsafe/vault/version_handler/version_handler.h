@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_MANAGER_VERSION_MANAGER_H_
-#define MAIDSAFE_VAULT_VERSION_MANAGER_VERSION_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_VERSION_HANDLER_H_
+#define MAIDSAFE_VAULT_VERSION_HANDLER_VERSION_HANDLER_H_
 
 #include <cstdint>
 
@@ -25,7 +25,7 @@
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/unresolved_action.h"
-#include "maidsafe/vault/version_manager/key.h"
+#include "maidsafe/vault/version_handler/key.h"
 
 namespace maidsafe {
 
@@ -41,9 +41,9 @@ struct ActionDeleteBranchUntilFork;
 namespace nfs {
 
 template <>
-struct PersonaTypes<Persona::kVersionManager> {
-  static const Persona persona = Persona::kVersionManager;
-  typedef vault::VersionManagerKey Key;
+struct PersonaTypes<Persona::kVersionHandler> {
+  static const Persona persona = Persona::kVersionHandler;
+  typedef vault::VersionHandlerKey Key;
   typedef StructuredDataVersions Value;
   typedef vault::UnresolvedAction<Key, vault::ActionPutVersion> UnresolvedPutVersion;
   typedef vault::UnresolvedAction<Key, vault::ActionGetVersion> UnresolvedGetVersion;
@@ -56,10 +56,10 @@ struct PersonaTypes<Persona::kVersionManager> {
 
 namespace vault {
 
-typedef nfs::PersonaTypes<nfs::Persona::kVersionManager> VersionManager;
+typedef nfs::PersonaTypes<nfs::Persona::kVersionHandler> VersionHandler;
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VERSION_MANAGER_VERSION_MANAGER_H_
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_VERSION_HANDLER_H_
