@@ -60,7 +60,6 @@ PmidNodeService::PmidNodeService(const passport::Pmid& /*pmid*/, routing::Routin
       dispatcher_(routing_),
       handler_(vault_root_dir),
       active_(),
-      asio_service_(1),
       data_getter_(data_getter) {
   SendAccountRequest();
   //  nfs_.GetElementList();  // TODO (Fraser) BEFORE_RELEASE Implementation needed
@@ -162,7 +161,7 @@ void PmidNodeService::HandlePmidAccountResponses(
 
 void PmidNodeService::CheckPmidAccountResponsesStatus(
     const std::vector<DataNameVariant>& expected_chunks) {
-  std::vector<DataNameVariant> existing_files(StoredFileNames());
+  std::vector<DataNameVariant> existing_files(handler_.GetFileNames());
   std::vector<DataNameVariant> to_be_deleted, to_be_retrieved;
   for (auto file_name : existing_files) {
     if (std::find_if(expected_chunks.begin(),
@@ -189,48 +188,36 @@ void PmidNodeService::SendAccountRequest() {
   dispatcher_.SendPmidAccountRequest(handler_.AvailableSpace());
 }
 
-void PmidNodeService::UpdateLocalStorage(const std::vector<DataNameVariant>& /*to_be_deleted*/,
+void PmidNodeService::UpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
                                          const std::vector<DataNameVariant>& /*to_be_retrieved*/) {
-//  for (auto file : to_be_deleted) {
-//    try {
-//      Delete(file);
-//    }
-//    catch(const maidsafe_error& error) {
-//      LOG(kWarning) << "Error in deletion: " << error.code() << " - " << error.what();
-//    }
-//  }
+  for (auto file_name : to_be_deleted) {
+    try {
+      handler_.Delete(file_name);
+    }
+    catch(const maidsafe_error& error) {
+      LOG(kWarning) << "Error in deletion: " << error.code() << " - " << error.what();
+    }
+  }
 
-//  std::vector<std::future<void>> futures;
-//  for (auto file : to_be_retrieved) {
+  std::vector<std::future<void>> futures;
+//  for (auto file_name : to_be_retrieved) {
 //    GetCallerVisitor get_caller_visitor(data_getter_,
 //                                        futures,
-//                                        [this](const KeyType& key, const NonEmptyString& value) {
-//                                          this->permanent_data_store_(key, value);
+//                                        [this](const DataNameVariant& key,
+//                                               const NonEmptyString& value) {
+//                                          this->handler_.Put(key, value);
 //                                        });
-//    boost::apply_visitor(get_caller_visitor, file);
+//    boost::apply_visitor(get_caller_visitor, file_name);
 //  }
 
-//  for (auto iter(futures.begin()); iter != futures.end(); ++iter) {
-//    try {
-//      iter->wait();
-//    }
-//    catch(const maidsafe_error& error) {
-//      LOG(kWarning) << "Error in retreivel: " << error.code() << " - " << error.what();
-//    }
-//  }
-}
-
-std::vector<DataNameVariant> PmidNodeService::StoredFileNames() {
-  std::vector<DataNameVariant> chunk_names;
-//  fs::directory_iterator end_iter;
-//  auto root_path(permanent_data_store_.GetDiskPath());
-
-//  if (fs::exists(root_path) && fs::is_directory(root_path)) {
-//    for(fs::directory_iterator dir_iter(root_path); dir_iter != end_iter; ++dir_iter)
-//      if (fs::is_regular_file(dir_iter->status()))
-//        chunk_names.push_back(PmidName(Identity(dir_iter->path().string())));
-//  }
-  return chunk_names;
+  for (auto iter(futures.begin()); iter != futures.end(); ++iter) {
+    try {
+      iter->wait();
+    }
+    catch(const maidsafe_error& error) {
+      LOG(kWarning) << "Error in retreivel: " << error.code() << " - " << error.what();
+    }
+  }
 }
 
 }  // namespace vault

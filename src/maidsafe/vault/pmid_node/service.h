@@ -101,34 +101,34 @@ class ContentRetrievalVisitor : public boost::static_visitor<std::string> {
 
 class GetCallerVisitor : public boost::static_visitor<> {
  public:
-  typedef std::function<void(const DataNameVariant& key, const NonEmptyString& value)>
-      DataStoreFunctor;
-  GetCallerVisitor(nfs_client::DataGetter& data_getter, std::vector<std::future<void>>& futures,
-                   DataStoreFunctor store_functor)
-      : data_getter_(data_getter), futures_(futures), store_functor_(store_functor) {}
+//  typedef std::function<void(const DataNameVariant& key, const NonEmptyString& value)>
+//      DataStoreFunctor;
+//  GetCallerVisitor(nfs_client::DataGetter& data_getter, std::vector<std::future<void>>& futures,
+//                   DataStoreFunctor store_functor)
+//      : data_getter_(data_getter), futures_(futures), store_functor_(store_functor) {}
 
-  template <typename DataName>
-  void operator()(const DataName& data_name) {
-    auto future(std::async(std::launch::async, [&] {
-      data_getter_.Get<typename DataName::data_type>(data_name, std::chrono::seconds(10));
-    }));
-    futures_.push_back(
-        future.then([this, data_name](std::future<typename DataName::data_type> result_future) {
-          auto result(result_future.get());
-          auto content(boost::apply_visitor(ContentRetrievalVisitor(), result));
-          try {
-            if (!content.empty())
-              store_functor_(data_name, NonEmptyString(content));
-          }
-          catch (const maidsafe_error& /*error*/) {
-          }
-        }));
-  }
+//  template <typename DataName>
+//  void operator()(const DataName& data_name) {
+//    auto future(std::async(std::launch::async, [&] {
+//      data_getter_.Get<typename DataName::data_type>(data_name, std::chrono::seconds(10));
+//    }));
+//    futures_.push_back(
+//        future.then([this, data_name](std::future<typename DataName::data_type> result_future) {
+//          auto result(result_future.get());
+//          auto content(boost::apply_visitor(ContentRetrievalVisitor(), result));
+//          try {
+//            if (!content.empty())
+//              store_functor_(data_name, NonEmptyString(content));
+//          }
+//          catch (const maidsafe_error& /*error*/) {
+//          }
+//        }));
+//  }
 
- private:
-  nfs_client::DataGetter& data_getter_;
-  std::vector<std::future<void>>& futures_;
-  DataStoreFunctor store_functor_;
+// private:
+//  nfs_client::DataGetter& data_getter_;
+//  std::vector<std::future<void>>& futures_;
+//  DataStoreFunctor store_functor_;
 };
 
 }  // noname namespace
@@ -165,7 +165,6 @@ class PmidNodeService {
   void UpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
                           const std::vector<DataNameVariant>& to_be_retrieved);
   void CheckPmidAccountResponsesStatus(const std::vector<DataNameVariant>& expected_chunks);
-  std::vector<DataNameVariant> StoredFileNames();
 
   std::future<std::unique_ptr<ImmutableData>> RetrieveFileFromNetwork(
       const DataNameVariant& file_id);
@@ -203,7 +202,6 @@ class PmidNodeService {
   PmidNodeDispatcher dispatcher_;
   PmidNodeHandler handler_;
   Active active_;
-  AsioService asio_service_;
   nfs_client::DataGetter& data_getter_;
 };
 

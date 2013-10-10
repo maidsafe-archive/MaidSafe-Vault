@@ -37,10 +37,19 @@ class PmidNodeHandler {
   template <typename Data>
   void Delete(const typename Data::name& name);
 
+  // TODO(Mahmoud): Temporary workaround for the Delete<> defined above
+  // to be changed to call above.
+  void Delete(const DataNameVariant& data_name);
+
+  // TODO(Mahmoud): Temporary workaround for the Put<> defined above
+  // to be changed to call above.
+  void Put(const DataNameVariant& data_name, const NonEmptyString& data);
+
+
   NonEmptyString Get(const DataNameVariant& data_name);
 
-  boost::filesystem::path GetPath() const;
-
+  boost::filesystem::path GetDiskPath() const;
+  std::vector<DataNameVariant> GetFileNames() const;
   DiskUsage AvailableSpace() const;
 
  private:
@@ -52,8 +61,8 @@ class PmidNodeHandler {
 
 template <typename Data>
 void PmidNodeHandler::Put(const Data& data) {
-  typename Data::Name data_name(GetDataNameVariant(data.name().type, data.name().raw_name));
-  permanent_data_store_.Put(data_name, data.data());
+  permanent_data_store_.Put(GetDataNameVariant(data.name().type, data.name().raw_name),
+                            data.data());
 }
 
 template <typename Data>
