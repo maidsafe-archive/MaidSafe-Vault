@@ -245,7 +245,7 @@ template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::GetRequestFromDataGetterToDataManager& message,
                  const nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
-                 const nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
+                 const nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
   auto data_name(GetNameVariant(message.contents));
   GetRequestVisitor<
       ServiceHandlerType,
@@ -258,7 +258,7 @@ template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const GetResponseFromPmidNodeToDataManager& message,
                  const GetResponseFromPmidNodeToDataManager::Sender& sender,
-                 const GetResponseFromPmidNodeToDataManager::Receiver& receiver) {
+                 const GetResponseFromPmidNodeToDataManager::Receiver& /*receiver*/) {
   service->HandleGetResponse(PmidName(Identity(sender->string())), message.message_id,
                              message.contents);
 }
