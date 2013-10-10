@@ -48,9 +48,6 @@ namespace maidsafe {
 
 namespace vault {
 
-//template <typename T>
-//class Accumulator;
-
 class PmidNodeService;
 
 namespace detail {
@@ -623,17 +620,6 @@ typename Account::serialised_type GetSerialisedAccount(std::mutex& mutex,
 template <typename AccountSet, typename Account>
 typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
     std::mutex& mutex, const AccountSet& accounts, const typename Account::Name& account_name);
-
-/* Commented by Mahmoud on 2 Sep -- It may be of no use any more
-// Returns true if the required successful request count has been reached
-template<typename Accumulator>
-bool AddResult(const nfs::Message& message,
-               const routing::ReplyFunctor& reply_functor,
-               const maidsafe_error& return_code,
-               Accumulator& accumulator,
-               std::mutex& accumulator_mutex,
-               int requests_required);
-*/
 
 }  // namespace detail
 

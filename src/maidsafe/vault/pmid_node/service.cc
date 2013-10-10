@@ -62,6 +62,7 @@ PmidNodeService::PmidNodeService(const passport::Pmid& /*pmid*/, routing::Routin
       active_(),
       asio_service_(1),
       data_getter_(data_getter) {
+  SendAccountRequest();
   //  nfs_.GetElementList();  // TODO (Fraser) BEFORE_RELEASE Implementation needed
 }
 
@@ -117,19 +118,18 @@ void PmidNodeService::HandleMessage(
       [&](const std::vector<Messages>& requests_in) {
         if (requests_in.size() < 2)
           return Accumulator<Messages>::AddResult::kWaiting;
-        std::vector<nfs_client::DataNamesAndReturnCode> pmid_account_responses;
+        int  valid_response_size(0);
         for (auto& request : requests_in) {
           auto typed_request(boost::get<MessageType>(request));
           if (typed_request.contents->return_code.value.code() == CommonErrors::success)
-            pmid_account_responses.push_back(*typed_request.contents);
+            valid_response_size++;
         }
         if ((static_cast<uint16_t>(requests_in.size()) >=
                 (routing::Parameters::node_group_size / 2 + 1)) &&
-            pmid_account_responses.size() >= routing::Parameters::node_group_size / 2)
+            valid_response_size >= routing::Parameters::node_group_size / 2)
           return Accumulator<Messages>::AddResult::kSuccess;
           if ((requests_in.size() == routing::Parameters::node_group_size) ||
-              (requests_in.size() - pmid_account_responses.size() >
-                   routing::Parameters::node_group_size / 2))
+              (requests_in.size() - valid_response_size > routing::Parameters::node_group_size / 2))
               return Accumulator<Messages>::AddResult::kFailure;
             return Accumulator<Messages>::AddResult::kWaiting;
           });
@@ -141,174 +141,59 @@ void PmidNodeService::HandleMessage(
       add_request_predicate, this, accumulator_mutex_)(message, sender, receiver);
 }
 
+void PmidNodeService::HandlePmidAccountResponses(
+    const std::vector<std::set<nfs_vault::DataName>>& responses, int failures) {
+  const auto total_responses(responses.size() + failures);
+  std::map<nfs_vault::DataName, uint16_t> chunks_expectation;
+  std::vector<DataNameVariant> expected_chunks;
+  for (auto data_names : responses) {
+    for (const auto& data_name : data_names)
+      chunks_expectation[data_name]++;
+  }
 
-//template <>
-//void PmidNodeService::HandleMessage(
-//    const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-//    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
-//    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver) {
-//    Accumulator<nfs::PmidNodeServiceMessages>::AddResult result;
-//    std::vector<nfs::PmidNodeServiceMessages> responses;
-//    {
-//      std::lock_guard<std::mutex> lock(accumulator_mutex_);
-//      if (accumulator_.CheckHandled(message))
-//        return;
-//      auto add_request_predicate(
-//          [&](const std::vector<PmidNodeServiceMessages>& requests_in) {
-//            if (requests_in.size() < 2)
-//              return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-//            std::vector<protobuf::PmidAccountResponse> pmid_account_responses;
-//            protobuf::PmidAccountResponse pmid_account_response;
-//            nfs_client::protobuf::DataNameAndContentOrReturnCode data;
-//            GetPmidAccountResponseFromPmidManagerToPmidNode response;
-//            for (auto& request : requests_in) {
-//              response =
-//   boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(request);
-//              if (data.ParseFromString(response.contents->data->content.string())) {
-//                if (data.has_serialised_data_name_and_content()) {
-//                  if (pmid_account_response.ParseFromString(
-//                          data.serialised_data_name_and_content())) {
-//                    pmid_account_responses.push_back(pmid_account_response);
-//                  } else {
-//                    LOG(kWarning) << "Failed to parse the contents";
-//                  }
-//                }
-//              } else {
-//                LOG(kWarning) << "Failed to parse the contents of the response";
-//              }
-//            }
-//            if ((static_cast<uint16_t>(requests_in.size()) >=
-//   (routing::Parameters::node_group_size / 2 + 1)) &&
-//                 pmid_account_responses.size() >= routing::Parameters::node_group_size / 2)
-//              return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
-//            if ((requests_in.size() == routing::Parameters::node_group_size) ||
-//                 (requests_in.size() - pmid_account_responses.size() >
-//                      routing::Parameters::node_group_size / 2))
-//              return Accumulator<PmidNodeServiceMessages>::AddResult::kFailure;
-//            return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-//          });
-//      result = accumulator_.AddPendingRequest(message, sender, add_request_predicate);
-//      if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
-//        accumulator_.SetHandled(message, sender);
-//        return;
-//      }
-//      if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kSuccess) {
-//        responses = accumulator_.Get(message);
-//        accumulator_.SetHandled(message, sender);
-//      }
-//    }
-//    if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kSuccess) {
-//      std::vector<GetPmidAccountResponseFromPmidManagerToPmidNode> typed_responses;
-//      for (auto response : responses)
-//        typed_responses.push_back(
-//            boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
-//      HandleAccountResponses(typed_responses);
-//    }
-//    if (result == Accumulator<nfs::PmidNodeServiceMessages>::AddResult::kFailure) {
-//      SendAccountRequest();
-//    }
-//}
+  for (auto iter(chunks_expectation.begin()); iter != chunks_expectation.end();) {
+    if ((iter->second >= routing::Parameters::node_group_size / 2 + 1) ||
+        ((iter->second == routing::Parameters::node_group_size / 2) &&
+             (total_responses > responses.size())))
+      expected_chunks.push_back(GetDataNameVariant(iter->first.type, iter->first.raw_name));
+  }
+  CheckPmidAccountResponsesStatus(expected_chunks);
+}
 
-// void PmidNodeService::HandleAccountResponses(
-//  const std::vector<GetPmidAccountResponseFromPmidManagerToPmidNode>& responses) {
-//  std::map<DataNameVariant, uint16_t> expected_chunks;
-//  std::vector<protobuf::PmidAccountResponse> pmid_account_responses;
-//  protobuf::PmidAccountResponse pmid_account_response;
-//  size_t total_pmid_managers(responses.size()), total_pmid_managers_with_accounts(0);
-//  nfs_client::protobuf::DataNameAndContentOrReturnCode data;
-//  for (auto response : responses) {
-//    if (data.ParseFromString(response.contents)) {
-//      if (data.has_serialised_data_name_and_content() &&
-//          pmid_account_response.ParseFromString(data.serialised_data_name_and_content()))
-//        pmid_account_responses.push_back(pmid_account_response);
-//    } else {
-//      total_pmid_managers_with_accounts++;
-//    }
-//  }
-//  ApplyAccountTransfer(pmid_account_responses,
-//                        total_pmid_managers,
-//                        total_pmid_managers_with_accounts);
-//}
+void PmidNodeService::CheckPmidAccountResponsesStatus(
+    const std::vector<DataNameVariant>& expected_chunks) {
+  std::vector<DataNameVariant> existing_files(StoredFileNames());
+  std::vector<DataNameVariant> to_be_deleted, to_be_retrieved;
+  for (auto file_name : existing_files) {
+    if (std::find_if(expected_chunks.begin(),
+                     expected_chunks.end(),
+                     [&file_name](const DataNameVariant& expected) {
+                       return expected == file_name;
+                     }) == expected_chunks.end()) {
+      to_be_deleted.push_back(file_name);
+    }
+  }
+  for (auto iter(expected_chunks.begin()); iter != expected_chunks.end(); ++iter) {
+    if ((std::find_if(existing_files.begin(),
+                     existing_files.end(),
+                     [&](const DataNameVariant& existing) {
+                       return existing == *iter;
+                     }) == existing_files.end())) {
+      to_be_retrieved.push_back(*iter);
+    }
+  }
+  UpdateLocalStorage(to_be_deleted, to_be_retrieved);
+}
 
-// void PmidNodeService::ApplyAccountTransfer(
-//    const std::vector<protobuf::PmidAccountResponse>& responses,
-//    size_t total_pmidmgrs,
-//    size_t pmidmgrs_with_account) {
-//  std::map<DataNameVariant, uint16_t>& chunks;
-//  struct ChunkInfo {
-//    ChunkInfo(const DataNameVariant& file_name_in, uint64_t size_in) :
-//        file_name(file_name_in), size(size_in) {}
-//    DataNameVariant file_name;
-//    uint64_t size;
-//  };
+void PmidNodeService::SendAccountRequest() {
+  dispatcher_.SendPmidAccountRequest(handler_.AvailableSpace());
+}
 
-//  struct ChunkInfoComparison {
-//    bool operator() (const ChunkInfo& lhs, const ChunkInfo& rhs) const {
-//      return lhs.file_name < rhs.file_name;
-//    }
-//  };
-
-//  std::map<ChunkInfo, uint16_t, ChunkInfoComparison> expected_chunks;
-//  protobuf::PmidAccountDetails pmid_account_details;
-
-//  for (auto pmid_account_response : responses) {
-//    if (static_cast<nfs::MessageAction>(pmid_account_response.action()) ==
-//            nfs::MessageAction::kAccountTransfer) {
-//      if (pmid_account_response.status() == static_cast<int>(CommonErrors::success)) {
-//        pmid_account_details.ParseFromString(
-//            pmid_account_response.pmid_account().serialised_account_details());
-//        for (int index(0); index < pmid_account_details.db_entry_size(); ++index) {
-//          ChunkInfo chunk_info(
-//              ImmutableData::Name(Identity(pmid_account_details.db_entry(index).name())),
-//              pmid_account_details.db_entry(index).value().size());
-//          expected_chunks[chunk_info]++;
-//        }
-//      }
-//    }
-//  }
-//  for (auto iter(expected_chunks.begin()); iter != expected_chunks.end(); ++iter) {
-//    if ((iter->second >= routing::Parameters::node_group_size / 2 + 1) ||
-//        ((iter->second == routing::Parameters::node_group_size / 2)
-//         && (total_pmidmgrs > pmidmgrs_with_account))) {
-//      std::pair<DataNameVariant, int16_t> pair(iter->first.file_name, iter->second);
-//      chunks.insert(pair);
-//    }
-//  }
-//  UpdateLocalStorage(expected_chunks);
-//}
-
-// void PmidNodeService::UpdateLocalStorage(
-//    const std::map<DataNameVariant, uint16_t>& expected_files) {
-//  std::vector<DataNameVariant> existing_files(StoredFileNames());
-//  std::vector<DataNameVariant> to_be_deleted, to_be_retrieved;
-//  for (auto file_name : existing_files) {
-//    if (std::find_if(expected_files.begin(),
-//                     expected_files.end(),
-//                     [&file_name](const std::pair<DataNameVariant, bool>& expected) {
-//                       return expected.first == file_name;
-//                     }) == expected_files.end()) {
-//      to_be_deleted.push_back(file_name);
-//    }
-//  }
-//  for (auto iter(expected_files.begin()); iter != expected_files.end(); ++iter) {
-//    if ((std::find_if(existing_files.begin(),
-//                     existing_files.end(),
-//                     [&](const DataNameVariant& existing) {
-//                       return existing == iter->first;
-//                     }) == existing_files.end()) &&
-//        (iter->second >= routing::Parameters::node_group_size / 2 + 1)) {
-//      to_be_retrieved.push_back(iter->first);
-//    }
-//  }
-//  ApplyUpdateLocalStorage(to_be_deleted, to_be_retrieved);
-//}
-
-// void PmidNodeService::ApplyUpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
-//                                              const std::vector<DataNameVariant>& to_be_retrieved)
-// {
+void PmidNodeService::UpdateLocalStorage(const std::vector<DataNameVariant>& /*to_be_deleted*/,
+                                         const std::vector<DataNameVariant>& /*to_be_retrieved*/) {
 //  for (auto file : to_be_deleted) {
 //    try {
-//      permanent_data_store_.Delete(file);
+//      Delete(file);
 //    }
 //    catch(const maidsafe_error& error) {
 //      LOG(kWarning) << "Error in deletion: " << error.code() << " - " << error.what();
@@ -333,20 +218,20 @@ void PmidNodeService::HandleMessage(
 //      LOG(kWarning) << "Error in retreivel: " << error.code() << " - " << error.what();
 //    }
 //  }
-//}
+}
 
-// std::vector<DataNameVariant> PmidNodeService::StoredFileNames() {
-//  std::vector<DataNameVariant> file_ids;
+std::vector<DataNameVariant> PmidNodeService::StoredFileNames() {
+  std::vector<DataNameVariant> chunk_names;
 //  fs::directory_iterator end_iter;
 //  auto root_path(permanent_data_store_.GetDiskPath());
 
 //  if (fs::exists(root_path) && fs::is_directory(root_path)) {
 //    for(fs::directory_iterator dir_iter(root_path); dir_iter != end_iter; ++dir_iter)
 //      if (fs::is_regular_file(dir_iter->status()))
-//        file_ids.push_back(PmidName(Identity(dir_iter->path().string())));
+//        chunk_names.push_back(PmidName(Identity(dir_iter->path().string())));
 //  }
-//  return file_ids;
-//}
+  return chunk_names;
+}
 
 }  // namespace vault
 

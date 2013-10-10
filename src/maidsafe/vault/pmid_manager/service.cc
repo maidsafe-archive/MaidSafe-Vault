@@ -91,12 +91,6 @@ void PmidManagerService::HandleMessage(
 
 template <>
 void PmidManagerService::HandleMessage(
-    const GetPmidAccountResponseFromPmidManagerToPmidNode& /*message*/,
-    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& /*sender*/,
-    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {}
-
-template <>
-void PmidManagerService::HandleMessage(
     const CreateAccountRequestFromMaidManagerToPmidManager& message,
     const typename CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
     const typename CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver) {

@@ -373,7 +373,6 @@ template <typename Data, typename Requestor>
 void DataManagerService::DoHandleGetResponse(
     const PmidName& /*pmid_node*/, const GetResponseContents& /*contents*/,
     std::shared_ptr<GetResponseOp<typename Data::Name, Requestor>> /*get_response_op*/) {
-
 }
 
 
