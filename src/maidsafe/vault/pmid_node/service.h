@@ -153,7 +153,8 @@ class PmidNodeService {
   template <typename Data>
   friend class test::DataHolderTest;
 
-  void SendAccountRequest();
+  // Unless StartUp is called, PmidNode is not un-usable
+  void StartUp();
   void HandlePmidAccountResponses(const std::vector<std::set<nfs_vault::DataName>>& responses,
                                   int failures);
 

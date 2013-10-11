@@ -42,7 +42,7 @@
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/message_types.h"
-#include "maidsafe/vault/operations_visitor.h"
+#include "maidsafe/vault/operation_visitors.h"
 #include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"

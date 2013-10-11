@@ -38,6 +38,7 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/config.h"
 
 namespace maidsafe {
 

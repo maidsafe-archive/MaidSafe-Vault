@@ -26,6 +26,7 @@
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/utils.h"
 
+#include "maidsafe/vault/operation_handlers.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/data_manager/action_delete.h"
 #include "maidsafe/vault/data_manager/action_add_pmid.h"

@@ -28,8 +28,6 @@
 #include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/pmid_node/service.h"
 
-#include "maidsafe/vault/operations_visitor.h"
-
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
@@ -73,41 +71,6 @@ DataNameVariant GetNameVariant(const nfs_client::DataNameAndContentOrReturnCode&
 template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndContentOrCheckResult& data) {
   return GetNameVariant(data.name);
-}
-
-template <>
-template <>
-void OperationHandler<
-         typename ValidateSenderType<GetPmidAccountResponseFromPmidManagerToPmidNode>::type,
-         Accumulator<PmidNodeServiceMessages>,
-         typename Accumulator<PmidNodeServiceMessages>::AddCheckerFunctor,
-         PmidNodeService>::operator()(
-    const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-    const GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
-    const GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-  if (!validate_sender(message, sender))
-    return;
-  {
-    std::lock_guard<std::mutex> lock(mutex);
-    if (accumulator.CheckHandled(message))
-      return;
-    auto result(accumulator.AddPendingRequest(message, sender, checker));
-    if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess) {
-      int failures(0);
-      auto responses(accumulator.Get(message));
-      std::vector<std::set<nfs_vault::DataName>> response_vec;
-      for (const auto& response : responses) {
-        auto typed_response(boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
-        if (typed_response.contents->return_code.value.code() == CommonErrors::success)
-          response_vec.push_back(typed_response.contents->names);
-        else
-         failures++;
-      }
-      service->HandlePmidAccountResponses(response_vec, failures);
-    } else if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kFailure) {
-      service->SendAccountRequest();
-    }
-  }
 }
 
 void InitialiseDirectory(const boost::filesystem::path& directory) {

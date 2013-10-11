@@ -52,9 +52,9 @@ class ContentStringVisitor : public boost::static_visitor<std::string> {
   }
 };
 
-bool errors_eq(maidsafe_error l_e, maidsafe_error r_e) {
-  return l_e.code() == r_e.code();
-}
+//bool errors_eq(maidsafe_error l_e, maidsafe_error r_e) {
+//  return l_e.code() == r_e.code();
+//}
 
 // nfs::MessageAction GenerateAction() {
 //  return static_cast<nfs::MessageAction>(RandomUint32() % 3);

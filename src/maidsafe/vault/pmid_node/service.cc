@@ -26,7 +26,7 @@
 #include "maidsafe/nfs/client/messages.pb.h"
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
-#include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/operation_handlers.h"
 
 namespace fs = boost::filesystem;
 
@@ -61,7 +61,7 @@ PmidNodeService::PmidNodeService(const passport::Pmid& /*pmid*/, routing::Routin
       handler_(vault_root_dir),
       active_(),
       data_getter_(data_getter) {
-  SendAccountRequest();
+  StartUp();
   //  nfs_.GetElementList();  // TODO (Fraser) BEFORE_RELEASE Implementation needed
 }
 
@@ -180,7 +180,7 @@ void PmidNodeService::CheckPmidAccountResponsesStatus(
   UpdateLocalStorage(to_be_deleted, to_be_retrieved);
 }
 
-void PmidNodeService::SendAccountRequest() {
+void PmidNodeService::StartUp() {
   dispatcher_.SendPmidAccountRequest(handler_.AvailableSpace());
 }
 

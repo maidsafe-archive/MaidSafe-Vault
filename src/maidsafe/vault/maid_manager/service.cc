@@ -28,6 +28,7 @@
 
 #include "maidsafe/nfs/vault/messages.h"
 
+#include "maidsafe/vault/operation_handlers.h"
 #include "maidsafe/vault/maid_manager/action_put.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/helpers.h"

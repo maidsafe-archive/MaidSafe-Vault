@@ -24,7 +24,7 @@
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 #include "maidsafe/vault/pmid_manager/metadata.h"
-#include "maidsafe/vault/operations_visitor.h"
+#include "maidsafe/vault/operation_handlers.h"
 #include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/sync.pb.h"
