@@ -49,7 +49,7 @@ class PmidNodeHandler {
   NonEmptyString Get(const DataNameVariant& data_name);
 
   boost::filesystem::path GetDiskPath() const;
-  std::vector<DataNameVariant> GetFileNames() const;
+  std::vector<DataNameVariant> GetAllDataNames() const;
   DiskUsage AvailableSpace() const;
 
  private:

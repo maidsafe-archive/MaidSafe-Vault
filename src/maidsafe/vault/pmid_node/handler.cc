@@ -50,8 +50,8 @@ boost::filesystem::path PmidNodeHandler::GetDiskPath() const {
   return permanent_data_store_.GetDiskPath();
 }
 
-std::vector<DataNameVariant> PmidNodeHandler::GetFileNames() const {
-  return permanent_data_store_.GetFileNames();
+std::vector<DataNameVariant> PmidNodeHandler::GetAllDataNames() const {
+  return permanent_data_store_.GetKeys();
 }
 
 DiskUsage PmidNodeHandler::AvailableSpace() const {

@@ -161,23 +161,19 @@ void PmidNodeService::HandlePmidAccountResponses(
 
 void PmidNodeService::CheckPmidAccountResponsesStatus(
     const std::vector<DataNameVariant>& expected_chunks) {
-  std::vector<DataNameVariant> existing_files(handler_.GetFileNames());
+  std::vector<DataNameVariant> all_data_names(handler_.GetAllDataNames());
   std::vector<DataNameVariant> to_be_deleted, to_be_retrieved;
-  for (auto file_name : existing_files) {
-    if (std::find_if(expected_chunks.begin(),
-                     expected_chunks.end(),
-                     [&file_name](const DataNameVariant& expected) {
-                       return expected == file_name;
-                     }) == expected_chunks.end()) {
-      to_be_deleted.push_back(file_name);
+  for (auto data_name : all_data_names) {
+    if (std::any_of(std::begin(expected_chunks), std::end(expected_chunks),
+                    [&data_name](const DataNameVariant& expected) {
+                      return expected == data_name;
+                    })) {
+      to_be_deleted.push_back(data_name);
     }
   }
   for (auto iter(expected_chunks.begin()); iter != expected_chunks.end(); ++iter) {
-    if ((std::find_if(existing_files.begin(),
-                     existing_files.end(),
-                     [&](const DataNameVariant& existing) {
-                       return existing == *iter;
-                     }) == existing_files.end())) {
+    if (std::any_of(std::begin(all_data_names), std::end(all_data_names),
+                    [&](const DataNameVariant& existing) { return existing == *iter; })) {
       to_be_retrieved.push_back(*iter);
     }
   }
