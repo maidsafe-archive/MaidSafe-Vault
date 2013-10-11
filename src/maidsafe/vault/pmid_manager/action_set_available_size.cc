@@ -54,7 +54,7 @@ std::string ActionPmidManagerSetAvailableSize::Serialise() const {
 detail::DbAction ActionPmidManagerSetAvailableSize::operator()(
     boost::optional<PmidManagerMetadata>& metadata) {
   if (!metadata)
-    ThrowError(VaultErrors::no_such_account);
+    metadata.reset(PmidManagerMetadata());
   metadata->SetAvailableSize(kDiskAvailableSize);
   return detail::DbAction::kPut;
 }

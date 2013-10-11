@@ -30,6 +30,8 @@ namespace maidsafe {
 
 namespace vault {
 
+class PmidNodeService;
+
 namespace detail {
 
 template <typename T>
@@ -273,10 +275,19 @@ void DoOperation(ServiceHandlerType* service,
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
-                 const CreateAccountRequestFromMaidManagerToPmidManager& /*message*/,
-                 const CreateAccountRequestFromMaidManagerToPmidManager::Sender& /*sender*/,
-                 const CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver) {
-  service->HandleCreateAccount(PmidName(Identity(receiver.data.string())));
+                 const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
+                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
+                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& /*receiver*/) {
+  service->HandleSendPmidAccount(PmidName(Identity(sender.data.string())),  *message.contents);
+}
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const GetPmidHealthRequestFromMaidNodeToPmidManager& /*message*/,
+                 const GetPmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
+                 const GetPmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
+  service->HandleGetHealth(PmidName(Identity(receiver.data.string())),
+                           MaidName(Identity(sender.data.string())));
 }
 
 //=============================== To PmidNode ======================================================

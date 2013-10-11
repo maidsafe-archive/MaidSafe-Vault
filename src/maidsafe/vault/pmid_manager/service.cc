@@ -49,14 +49,14 @@ inline bool ForThisPersona(const Message& message) {
 
 PmidManagerService::PmidManagerService(const passport::Pmid& /*pmid*/, routing::Routing& routing)
     : routing_(routing), group_db_(), accumulator_mutex_(), accumulator_(), dispatcher_(routing_),
-      pmid_metadata_(), sync_puts_(), sync_deletes_(), sync_create_accunts_() {}
+      pmid_metadata_(), sync_puts_(), sync_deletes_(), sync_set_available_sizes_() {}
 
 // =============== Sync ============================================================================
 
 void PmidManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accunts_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_set_available_sizes_);
 }
 
 // =============== HandleMessage ===================================================================
@@ -91,10 +91,10 @@ void PmidManagerService::HandleMessage(
 
 template <>
 void PmidManagerService::HandleMessage(
-    const CreateAccountRequestFromMaidManagerToPmidManager& message,
-    const typename CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
-    const typename CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver) {
-  typedef CreateAccountRequestFromMaidManagerToPmidManager MessageType;
+    const GetPmidHealthRequestFromMaidNodeToPmidManager& message,
+    const typename GetPmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
+    const typename GetPmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
+  typedef GetPmidHealthRequestFromMaidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
@@ -174,13 +174,14 @@ void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
 
 //=================================================================================================
 
-void PmidManagerService::HandleCreateAccount(const PmidName& pmid_node) {
-  sync_create_accunts_.AddLocalAction(PmidManager::UnresolvedCreateAccount(
-      PmidManager::MetadataKey(pmid_node) , ActionPmidManagerCreateAccount(), routing_.kNodeId()));
-  DoSync();
-}
+// To be implemented when ranking is in place
+//void PmidManagerService::HandleCreateAccount(const PmidName& pmid_node) {
+//  sync_create_accunts_.AddLocalAction(PmidManager::UnresolvedCreateAccount(
+//      PmidManager::MetadataKey(pmid_node) , ActionPmidManagerCreateAccount(), routing_.kNodeId()));
+//  DoSync();
+//}
 
-void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node) {
+void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_t available_size) {
   std::vector<nfs_vault::DataName> data_names;
   try {
     auto contents(group_db_.GetContents(pmid_node));
@@ -188,11 +189,27 @@ void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node) {
       data_names.push_back(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
     dispatcher_.SendPmidAccount(pmid_node, data_names,
                                 nfs_client::ReturnCode(CommonErrors::success));
+    sync_set_available_sizes_.AddLocalAction(PmidManager::UnresolvedSetAvailableSize(
+        PmidManager::MetadataKey(pmid_node), ActionPmidManagerSetAvailableSize(available_size),
+        routing_.kNodeId()));
+    DoSync();
   } catch (const vault_error& error) {
     if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
       throw error;
     dispatcher_.SendPmidAccount(pmid_node, data_names,
                                 nfs_client::ReturnCode(VaultErrors::no_such_account));
+  }
+}
+
+void PmidManagerService::HandleGetHealth(const PmidName& pmid_node, const MaidName& maid_node) {
+  try {
+    dispatcher_.SendHealthResponse(maid_node, pmid_node,
+                                   pmid_metadata_.at(pmid_node).claimed_available_size,
+                                   maidsafe_error(CommonErrors::success));
+  }
+  catch(const std::exception& /*ex*/) {
+    dispatcher_.SendHealthResponse(maid_node, pmid_node, 0,
+                                   maidsafe_error(CommonErrors::no_such_element));
   }
 }
 
@@ -214,21 +231,6 @@ void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node) {
 //      return GetPmidAccount(message);
 //    default:
 //      LOG(kError) << "Unhandled Post action type";
-//  }
-//}
-
-// void PmidManagerService::CreatePmidAccount(
-//    const CreateAccountRequestFromMaidManagerToPmidManager& message,
-//    const typename CreateAccountRequestFromMaidManagerToPmidManager::Sender& /*sender*/,
-//    const typename CreateAccountRequestFromMaidManagerToPmidManager::Receiver& /*receiver*/)
-//  try {
-//    pmid_account_handler_.CreateAccount(PmidName(message.contents->raw_name));
-//  }
-//  catch(const maidsafe_error& error) {
-//    LOG(kWarning) << error.what();
-//  }
-//  catch(...) {
-//    LOG(kError) << "Unknown error.";
 //  }
 //}
 

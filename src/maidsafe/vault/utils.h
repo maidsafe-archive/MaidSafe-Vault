@@ -30,8 +30,6 @@ namespace maidsafe {
 
 namespace vault {
 
-class PmidNodeService;
-
 namespace detail {
 
 template <typename T>

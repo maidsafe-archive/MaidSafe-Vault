@@ -4,4 +4,4 @@ Action:DeleteRequest                  Source:DataManager:Group        Destinatio
 Action:Synchronise                    Source:PmidManager:Group        Destination:PmidManager:Group     Contents:struct:maidsafe::nfs_vault::DataNameAndContent
 Action:AccountTransfer                Source:PmidManager:Group        Destination:PmidManager:Single    Contents:struct:maidsafe::nfs_vault::DataNameAndContent
 Action:GetPmidAccountRequest          Source:PmidNode:Single          Destination:PmidManager:Group     Contents:struct:maidsafe::nfs_vault::AvailableSize
-Action:CreateAccountRequest           Source:MaidManager:Group        Destination:PmidManager:Group     Contents:struct:maidsafe::nfs_vault::DataName
+Action:GetPmidHealthRequest           Source:MaidNode:Single          Destination:PmidManager:Group     Contents:struct:maidsafe::nfs_vault::Empty

@@ -63,6 +63,9 @@ class PmidManagerDispatcher {
                        const std::vector<nfs_vault::DataName>& data_names,
                        const nfs_client::ReturnCode& return_code);
 
+  void SendHealthResponse(const MaidName& maid_node, const PmidName& pmid_node,
+                          int64_t available_size, const maidsafe_error& error);
+
  private:
   PmidManagerDispatcher();
   PmidManagerDispatcher(const PmidManagerDispatcher&);

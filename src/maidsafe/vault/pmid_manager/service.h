@@ -65,18 +65,13 @@ class PmidManagerService {
   void HandlePutResponse(const typename Data::Name& data_name, int32_t size,
       const PmidName& pmid_node, nfs::MessageId message_id);
 
+  void HandleGetHealth(const PmidName& pmid_node, const MaidName& maid_node);
+
  private:
   PmidManagerService(const PmidManagerService&);
   PmidManagerService& operator=(const PmidManagerService&);
   PmidManagerService(PmidManagerService&&);
   PmidManagerService& operator=(PmidManagerService&&);
-
-  void CreatePmidAccount(
-      const CreateAccountRequestFromMaidManagerToPmidManager& message,
-      const CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
-      const CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);
-  //  void GetPmidTotals(const nfs::Message& message);
-  //  void GetPmidAccount(const nfs::Message& message);
 
   // =============== Put/Delete data =============================================================
   template <typename Data>
@@ -97,24 +92,7 @@ class PmidManagerService {
   void SendPutResponse(const DataNameVariant& data_name, const PmidName& pmid_node, int32_t size,
                        nfs::MessageId message_id);
 
-  void HandleCreateAccount(const PmidName& pmid_node);
-
-  void HandleSendPmidAccount(const PmidName& pmid_node);
-
-
-  //  template<typename Data>
-  //  void HandlePutCallback(const std::string& reply, const nfs::Message& message);
-  //  template<typename Data>
-  //  void SendPutResult(const nfs::Message& message, bool result);
-
-  // =============== Account transfer ==============================================================
-  //  void TransferAccount(const PmidName& account_name, const NodeId& new_node);
-  //  void HandleAccountTransfer(const nfs::Message& message);
-
-  //  void ValidateMessage(const nfs::Message& message) const;
-
-  //  template<typename Data, nfs::MessageAction action>
-  //  void AddLocalUnresolvedEntryThenSync(const nfs::Message& message);
+  void HandleSendPmidAccount(const PmidName& pmid_node, int64_t available_size);
 
   routing::Routing& routing_;
   GroupDb<PmidManager> group_db_;
@@ -124,7 +102,7 @@ class PmidManagerService {
   std::map<PmidName, PmidManagerMetadata> pmid_metadata_;
   Sync<PmidManager::UnresolvedPut> sync_puts_;
   Sync<PmidManager::UnresolvedDelete> sync_deletes_;
-  Sync<PmidManager::UnresolvedCreateAccount> sync_create_accunts_;
+  Sync<PmidManager::UnresolvedSetAvailableSize> sync_set_available_sizes_;
 };
 
 // ============================= Handle Message Specialisations ===================================
@@ -159,17 +137,11 @@ void PmidManagerService::HandleMessage(
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver);
 
-// template<>
-// void PmidManagerService::HandleMessage(
-//    const nfs::AccountTransferFromPmidManagerToPmidManager& message,
-//    const typename nfs::AccountTransferFromPmidManagerToPmidManager::Sender& sender,
-//    const typename nfs::AccountTransferFromPmidManagerToPmidManager::Receiver& receiver);
-
-template <>
-void PmidManagerService::HandleMessage(
-    const CreateAccountRequestFromMaidManagerToPmidManager& message,
-    const typename CreateAccountRequestFromMaidManagerToPmidManager::Sender& sender,
-    const typename CreateAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);
+//template <>
+//void PmidManagerService::HandleMessage(
+//    const GetPmidHealthRequestFromMaidNodeToPmidManager& message,
+//    const typename GetPmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
+//    const typename GetPmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver);
 
 template<>
 void PmidManagerService::HandleMessage(
@@ -202,8 +174,8 @@ void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), data.name().raw_name,
                              data.name().type);
   sync_puts_.AddLocalAction(
-      PmidManager::UnresolvedPut(group_key, ActionPmidManagerPut(data.data().string().size(),
-                                                                 message_id),
+      PmidManager::UnresolvedPut(group_key,
+                                 ActionPmidManagerPut(data.data().string().size(), message_id),
                                  routing_.kNodeId()));
   DoSync();
 }
