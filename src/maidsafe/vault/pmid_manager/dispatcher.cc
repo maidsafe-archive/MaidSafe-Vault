@@ -84,19 +84,19 @@ void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
   routing_.Send(message);
 }
 
-void PmidManagerDispatcher::SendHealthResponse(const MaidName& /*maid_node*/,
-    const PmidName& /*pmid_node*/, int64_t /*available_size*/, const maidsafe_error& /*error*/) {
-//  typedef GetPmidHealthResponseFromPmidManagerToMaidManager VaultMessage;
-//  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+void PmidManagerDispatcher::SendHealthResponse(const MaidName& maid_node,
+    const PmidName& pmid_node, int64_t available_size, const maidsafe_error& error) {
+  typedef PmidHealthResponseFromPmidManagerToMaidManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-//  VaultMessage vault_message(nfs_client::AvailableSizeAndReturnCode(available_size,
-//                                                                    nfs_client::ReturnCode(error)));
-//  RoutingMessage message(vault_message.Serialise(),
-//                         VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
-//                                              routing::SingleId(routing_.kNodeId())),
-//                         VaultMessage::Receiver(routing::SingleId(
-//                                                    NodeId(maid_node.value.string()))));
-//  routing_.Send(message);
+  VaultMessage vault_message(nfs_client::AvailableSizeAndReturnCode(available_size,
+                                                                    nfs_client::ReturnCode(error)));
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(routing::SingleId(
+                                                    NodeId(maid_node.value.string()))));
+  routing_.Send(message);
 }
 
 

@@ -283,9 +283,9 @@ void DoOperation(ServiceHandlerType* service,
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
-                 const GetPmidHealthRequestFromMaidNodeToPmidManager& /*message*/,
-                 const GetPmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
-                 const GetPmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
+                 const PmidHealthRequestFromMaidNodeToPmidManager& /*message*/,
+                 const PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
+                 const PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
   service->HandleGetHealth(PmidName(Identity(receiver.data.string())),
                            MaidName(Identity(sender.data.string())));
 }

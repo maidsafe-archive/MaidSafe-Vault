@@ -700,10 +700,10 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
-    const nfs::GetPmidHealthRequestFromMaidNodeToMaidManager& message,
-    const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver) {
-  typedef nfs::GetPmidHealthRequestFromMaidNodeToMaidManager MessageType;
+    const PmidHealthResponseFromPmidManagerToMaidManager& message,
+    const typename PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
+    const typename PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver) {
+  typedef PmidHealthResponseFromPmidManagerToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);

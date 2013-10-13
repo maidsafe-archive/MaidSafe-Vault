@@ -82,7 +82,7 @@ void PmidManagerService::HandleMessage(
     const typename PutFailureFromPmidNodeToPmidManager::Receiver& receiver) {
   typedef PutFailureFromPmidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
-      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+      accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
       Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
@@ -91,12 +91,12 @@ void PmidManagerService::HandleMessage(
 
 template <>
 void PmidManagerService::HandleMessage(
-    const GetPmidHealthRequestFromMaidNodeToPmidManager& message,
-    const typename GetPmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
-    const typename GetPmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
-  typedef GetPmidHealthRequestFromMaidNodeToPmidManager MessageType;
+    const PmidHealthRequestFromMaidNodeToPmidManager& message,
+    const typename PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
+    const typename PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
+  typedef PmidHealthRequestFromMaidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
-      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+      accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
       Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
@@ -110,7 +110,7 @@ void PmidManagerService::HandleMessage(
     const typename DeleteRequestFromDataManagerToPmidManager::Receiver& receiver) {
   typedef DeleteRequestFromDataManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
-      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+      accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
       Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
@@ -124,7 +124,7 @@ void PmidManagerService::HandleMessage(
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver) {
   typedef GetPmidAccountRequestFromPmidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
-      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+      accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
                     },
       Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),

@@ -256,9 +256,9 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
-    const nfs::GetPmidHealthRequestFromMaidNodeToMaidManager& message,
-    const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::GetPmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver);
+    const PmidHealthResponseFromPmidManagerToMaidManager& message,
+    const typename PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
+    const typename PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver);
 
 template <>
 void MaidManagerService::HandleMessage(

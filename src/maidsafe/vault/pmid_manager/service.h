@@ -137,11 +137,11 @@ void PmidManagerService::HandleMessage(
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver);
 
-//template <>
-//void PmidManagerService::HandleMessage(
-//    const GetPmidHealthRequestFromMaidNodeToPmidManager& message,
-//    const typename GetPmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
-//    const typename GetPmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver);
+template <>
+void PmidManagerService::HandleMessage(
+    const PmidHealthRequestFromMaidNodeToPmidManager& message,
+    const typename PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
+    const typename PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver);
 
 template<>
 void PmidManagerService::HandleMessage(
