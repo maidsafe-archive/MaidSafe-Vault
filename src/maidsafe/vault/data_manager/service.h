@@ -451,7 +451,8 @@ void DataManagerService::SendDeleteRequest(
 template <typename Data>
 bool DataManagerService::SendPutRetryRequired(const typename Data::Name& name) {
   try {
-    auto value(db_.Get(DataManager::Key(name.value, Data::Name::data_type::Tag::kValue)));
+    // TODO(Mahmoud): mutex is required
+    auto value(db_.Get(DataManager::Key(name.value, Data::Tag::kValue)));
     if (!value)
       return false;
     if (value->AllPmids().size() < 3 && value->StoreFailures() > 2)
@@ -465,7 +466,7 @@ bool DataManagerService::SendPutRetryRequired(const typename Data::Name& name) {
 template <typename Data>
 bool DataManagerService::EntryExist(const typename Data::Name& name) {
   try {
-    auto value(db_.Get(DataManager::Key(name.value, Data::Name::data_type::Tag::kValue)));
+    auto value(db_.Get(DataManager::Key(name.value, Data::Tag::kValue)));
     if (!value)
       return false;
   }
