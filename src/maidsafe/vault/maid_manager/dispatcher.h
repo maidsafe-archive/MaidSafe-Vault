@@ -31,6 +31,7 @@
 
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/pmid_manager/metadata.h"
 
 namespace maidsafe {
 
@@ -79,6 +80,9 @@ class MaidManagerDispatcher {
   void SendPutFailure(const MaidName& maid_node, const typename Data::Name& data_name,
                       const maidsafe_error& error,  nfs::MessageId message_id);
 
+  void SendHealthResponse(const MaidName& maid_node, const PmidName& pmid_node,
+                          int64_t available_size, const nfs_client::ReturnCode& return_code,
+                          nfs::MessageId message_id);
  private:
   MaidManagerDispatcher();
   MaidManagerDispatcher(const MaidManagerDispatcher&);

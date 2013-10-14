@@ -33,11 +33,11 @@ PmidManagerMetadata::PmidManagerMetadata(const PmidName& pmid_name_in)
     : pmid_name(pmid_name_in), stored_count(0), stored_total_size(0), lost_count(0),
       lost_total_size(0), claimed_available_size(0) {}
 
-PmidManagerMetadata::PmidManagerMetadata(const serialised_type& serialised_metadata)
+PmidManagerMetadata::PmidManagerMetadata(const std::string &serialised_metadata)
     : pmid_name(), stored_count(0), stored_total_size(0), lost_count(0), lost_total_size(0),
       claimed_available_size(0) {
   protobuf::PmidManagerMetadata proto_metadata;
-  if (!proto_metadata.ParseFromString(serialised_metadata->string())) {
+  if (!proto_metadata.ParseFromString(serialised_metadata)) {
     LOG(kError) << "Failed to parse pmid metadata.";
     ThrowError(CommonErrors::parsing_error);
   }
@@ -97,7 +97,7 @@ void PmidManagerMetadata::SetAvailableSize(const int64_t& available_size) {
   claimed_available_size = available_size;
 }
 
-PmidManagerMetadata::serialised_type PmidManagerMetadata::Serialise() const {
+std::string PmidManagerMetadata::Serialise() const {
   protobuf::PmidManagerMetadata proto_metadata;
   proto_metadata.set_pmid_name(pmid_name->string());
   proto_metadata.set_stored_count(stored_count);
@@ -105,7 +105,7 @@ PmidManagerMetadata::serialised_type PmidManagerMetadata::Serialise() const {
   proto_metadata.set_lost_count(lost_count);
   proto_metadata.set_lost_total_size(lost_total_size);
   proto_metadata.set_claimed_available_size(claimed_available_size);
-  return serialised_type(NonEmptyString(proto_metadata.SerializeAsString()));
+  return proto_metadata.SerializeAsString();
 }
 
 bool operator==(const PmidManagerMetadata& lhs, const PmidManagerMetadata& rhs) {

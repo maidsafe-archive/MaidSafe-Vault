@@ -91,10 +91,10 @@ void PmidManagerService::HandleMessage(
 
 template <>
 void PmidManagerService::HandleMessage(
-    const PmidHealthRequestFromMaidNodeToPmidManager& message,
-    const typename PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
-    const typename PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
-  typedef PmidHealthRequestFromMaidNodeToPmidManager MessageType;
+    const nfs::PmidHealthRequestFromMaidNodeToPmidManager& message,
+    const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
+    const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
+  typedef nfs::PmidHealthRequestFromMaidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
@@ -201,14 +201,15 @@ void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_
   }
 }
 
-void PmidManagerService::HandleGetHealth(const PmidName& pmid_node, const MaidName& maid_node) {
+void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node,
+                                             const MaidName& maid_node,
+                                             nfs::MessageId message_id) {
   try {
-    dispatcher_.SendHealthResponse(maid_node, pmid_node,
-                                   pmid_metadata_.at(pmid_node).claimed_available_size,
-                                   maidsafe_error(CommonErrors::success));
+    dispatcher_.SendHealthResponse(maid_node, pmid_node, pmid_metadata_.at(pmid_node),
+                                   message_id, maidsafe_error(CommonErrors::success));
   }
   catch(const std::exception& /*ex*/) {
-    dispatcher_.SendHealthResponse(maid_node, pmid_node, 0,
+    dispatcher_.SendHealthResponse(maid_node, pmid_node, PmidManagerMetadata(), message_id,
                                    maidsafe_error(CommonErrors::no_such_element));
   }
 }

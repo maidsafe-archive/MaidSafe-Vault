@@ -131,6 +131,20 @@ void MaidManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer
   //  routing_.Send(message);
 }
 
+void MaidManagerDispatcher::SendHealthResponse(const MaidName& maid_node,
+    const PmidName& pmid_node, int64_t available_size,
+    const nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
+  typedef nfs::PmidHealthResponseFromMaidManagerToMaidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  NfsMessage nfs_message(message_id, nfs_client::AvailableSizeAndReturnCode(available_size,
+                                                                            return_code));
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
+                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(NodeId(maid_node.value.string())));
+  routing_.Send(message);
+}
+
 // routing::GroupSource MaidManagerDispatcher::Sender(const MaidName& account_name) const {
 //  return routing::GroupSource(routing::GroupId(NodeId(account_name->string())),
 //                              routing::SingleId(routing_.kNodeId()));

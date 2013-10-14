@@ -56,8 +56,7 @@ MaidManagerMetadata::MaidManagerMetadata(const std::string& serialised_metadata_
   for (auto index(0); index < maid_manager_metadata_proto.pmid_totals_size(); ++index) {
     pmid_totals_.emplace_back(
         maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_registration()),
-        PmidManagerMetadata(PmidManagerMetadata::serialised_type(NonEmptyString(
-            maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_metadata())));
+        PmidManagerMetadata(maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_metadata());
   }
   if (total_put_data_ < 0)
     ThrowError(CommonErrors::invalid_parameter);

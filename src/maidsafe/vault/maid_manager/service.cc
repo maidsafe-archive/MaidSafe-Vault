@@ -30,6 +30,7 @@
 
 #include "maidsafe/vault/operation_handlers.h"
 #include "maidsafe/vault/maid_manager/action_put.h"
+#include "maidsafe/vault/maid_manager/action_update_pmid_health.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/helpers.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
@@ -757,6 +758,21 @@ void MaidManagerService::HandleMessage(
       LOG(kError) << "Unhandled action type";
     }
   }
+}
+
+void MaidManagerService::HandleHealthResponse(const MaidName& maid_node,
+    const PmidName& pmid_node, const std::string& serialised_pmid_health,
+    nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
+  PmidManagerMetadata pmid_health(serialised_pmid_health);
+  if (return_code.value.code() == CommonErrors::success) {
+    sync_update_pmid_healths_.AddLocalAction(
+        MaidManager::UnresolvedUpdatePmidHealth(
+            maid_node, ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
+    DoSync();
+
+  }
+  dispatcher_.SendHealthResponse(maid_node, pmid_node, pmid_health.claimed_available_size,
+                                 return_code, message_id);
 }
 
 }  // namespace vault

@@ -158,6 +158,17 @@ void DoOperation(ServiceHandlerType* service,
   boost::apply_visitor(delete_visitor, data_name);
 }
 
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const PmidHealthResponseFromPmidManagerToMaidManager& message,
+                 const PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
+                 const PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver) {
+  service->HandleHealthResponse(MaidName(Identity(receiver.data.string())),
+                                PmidName(Identity(sender.group_id.data.string())),
+                                message.contents->pmid_health, message.contents->return_code,
+                                message.message_id);
+}
+
 //=============================== To DataManager ===================================================
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
@@ -283,11 +294,12 @@ void DoOperation(ServiceHandlerType* service,
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
-                 const PmidHealthRequestFromMaidNodeToPmidManager& /*message*/,
+                 const PmidHealthRequestFromMaidNodeToPmidManager& message,
                  const PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
                  const PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
-  service->HandleGetHealth(PmidName(Identity(receiver.data.string())),
-                           MaidName(Identity(sender.data.string())));
+  service->HandleHealthRequest(PmidName(Identity(receiver.data.string())),
+                               MaidName(Identity(sender.data.string())),
+                               message.message_id);
 }
 
 //=============================== To PmidNode ======================================================

@@ -127,6 +127,10 @@ class MaidManagerService {
   template <typename Data>
   bool DeleteAllowed(const MaidName& account_name, const typename Data::Name& data_name);
 
+  void HandleHealthResponse(const MaidName& maid_node, const PmidName& pmid_node,
+                            const std::string &serialised_pmid_health,
+                            nfs_client::ReturnCode& return_code, nfs::MessageId message_id);
+
 //  MaidManagerMetadata::Status AllowPut(const MaidName& account_name, int32_t cost);
 
   // Only Maid and Anmaid can create account; for all others this is a no-op.
@@ -183,6 +187,7 @@ class MaidManagerService {
   Sync<MaidManager::UnresolvedDelete> sync_deletes_;
   Sync<MaidManager::UnresolvedRegisterPmid> sync_register_pmids_;
   Sync<MaidManager::UnresolvedUnregisterPmid> sync_unregister_pmids_;
+  Sync<MaidManager::UnresolvedUpdatePmidHealth> sync_update_pmid_healths_;
   static const int kDefaultPaymentFactor_;
   std::map<nfs::MessageId, MaidAccountCreationStatus> pending_account_map_;
 };

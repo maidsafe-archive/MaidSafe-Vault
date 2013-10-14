@@ -65,7 +65,8 @@ class PmidManagerService {
   void HandlePutResponse(const typename Data::Name& data_name, int32_t size,
       const PmidName& pmid_node, nfs::MessageId message_id);
 
-  void HandleGetHealth(const PmidName& pmid_node, const MaidName& maid_node);
+  void HandleHealthRequest(const PmidName& pmid_node, const MaidName& maid_node,
+                           nfs::MessageId message_id);
 
  private:
   PmidManagerService(const PmidManagerService&);
@@ -139,9 +140,9 @@ void PmidManagerService::HandleMessage(
 
 template <>
 void PmidManagerService::HandleMessage(
-    const PmidHealthRequestFromMaidNodeToPmidManager& message,
-    const typename PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
-    const typename PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver);
+    const nfs::PmidHealthRequestFromMaidNodeToPmidManager& message,
+    const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
+    const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver);
 
 template<>
 void PmidManagerService::HandleMessage(

@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,43 +16,36 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_PMID_MANAGER_METADATA_H_
-#define MAIDSAFE_VAULT_PMID_MANAGER_METADATA_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_ACTION_UPDATE_PMID_HEALTH_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_ACTION_UPDATE_PMID_HEALTH_H_
 
 #include <cstdint>
+#include <string>
 
-#include "maidsafe/common/tagged_value.h"
-#include "maidsafe/common/types.h"
+#include "boost/optional/optional.hpp"
 
-#include "maidsafe/vault/types.h"
+#include "maidsafe/nfs/types.h"
+#include "maidsafe/vault/config.h"
+#include "maidsafe/vault/maid_manager/metadata.h"
 
 namespace maidsafe {
+
 namespace vault {
 
-struct PmidManagerMetadata {
- public:
-  PmidManagerMetadata();
-  explicit PmidManagerMetadata(const PmidName& pmid_name_in);
-  explicit PmidManagerMetadata(const std::string& serialised_metadata);
-  PmidManagerMetadata(const PmidManagerMetadata& other);
-  PmidManagerMetadata(PmidManagerMetadata&& other);
-  PmidManagerMetadata& operator=(PmidManagerMetadata other);
-  void PutData(int32_t size);
-  void DeleteData(int32_t size);
-  void SetAvailableSize(const int64_t& available_size);
-  std::string Serialise() const;
+struct ActionMaidManagerUpdatePmidHealth {
+  explicit ActionMaidManagerUpdatePmidHealth(const PmidManagerMetadata& pmid_health_in);
+  explicit ActionMaidManagerUpdatePmidHealth(const std::string& serialised_action);
+  ActionMaidManagerUpdatePmidHealth(const ActionMaidManagerUpdatePmidHealth& other);
+  ActionMaidManagerUpdatePmidHealth(ActionMaidManagerUpdatePmidHealth&& other);
 
-  PmidName pmid_name;
-  int64_t stored_count;
-  int64_t stored_total_size;
-  int64_t lost_count;
-  int64_t lost_total_size;
-  int64_t claimed_available_size;
+  std::string Serialise() const;
+  detail::DbAction operator()(boost::optional<MaidManagerMetadata>& pmid_health);
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kPmidHealthResponse;
+  const PmidManagerMetadata kPmidHealth;
 };
 
-bool operator==(const PmidManagerMetadata& lhs, const PmidManagerMetadata& rhs);
-
 }  // namespace vault
+
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_METADATA_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_ACTION_UPDATE_PMID_HEALTH_H_

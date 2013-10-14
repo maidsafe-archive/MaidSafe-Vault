@@ -27,6 +27,7 @@
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/maid_manager/value.h"
+#include "maidsafe/vault/maid_manager/action_update_pmid_health.h"
 
 
 namespace maidsafe {
@@ -45,6 +46,7 @@ template <bool Unregister>
 struct ActionRegisterUnregisterPmid;
 typedef ActionRegisterUnregisterPmid<false> ActionRegisterPmid;
 typedef ActionRegisterUnregisterPmid<true> ActionUnregisterPmid;
+struct ActionMaidManagerUpdatePmidHealth;
 
 }  // namespace vault
 
@@ -59,6 +61,8 @@ struct PersonaTypes<Persona::kMaidManager> {
   typedef vault::MaidManagerMetadata Metadata;
   typedef vault::MetadataKey<GroupName> MetadataKey;
   typedef vault::UnresolvedAction<MetadataKey, vault::ActionCreateAccount> UnresolvedCreateAccount;
+  typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerUpdatePmidHealth>
+              UnresolvedUpdatePmidHealth;
   typedef vault::UnresolvedAction<Key, vault::ActionRemoveAccount> UnresolvedRemoveAccount;
   typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerDelete> UnresolvedDelete;
