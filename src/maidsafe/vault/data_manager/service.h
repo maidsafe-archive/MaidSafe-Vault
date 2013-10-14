@@ -362,7 +362,7 @@ PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_
   {
     std::lock_guard<std::mutex> lock(matrix_change_mutex_);
     chosen = PmidName(Identity(matrix_change_.ChoosePmidNode(online_node_ids,
-                                                             NodeId(data_name->string()))));
+                                                             NodeId(data_name->string())).string()));
   }
 
   online_pmids.erase(chosen);
