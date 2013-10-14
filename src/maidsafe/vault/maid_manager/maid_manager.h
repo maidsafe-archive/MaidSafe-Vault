@@ -66,7 +66,7 @@ struct PersonaTypes<Persona::kMaidManager> {
   typedef vault::UnresolvedAction<Key, vault::ActionRemoveAccount> UnresolvedRemoveAccount;
   typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerDelete> UnresolvedDelete;
-  typedef vault::UnresolvedAction<Key, vault::ActionRegisterPmid> UnresolvedRegisterPmid;
+  typedef vault::UnresolvedAction<MetadataKey, vault::ActionRegisterPmid> UnresolvedRegisterPmid;
   typedef vault::UnresolvedAction<Key, vault::ActionUnregisterPmid> UnresolvedUnregisterPmid;
 };
 

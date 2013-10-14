@@ -33,6 +33,20 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace detail {
+
+template <bool Unregister>
+struct ActionRegisterUnregisterPmidType {
+  static const nfs::MessageAction kType = nfs::MessageAction::kUnregisterPmidRequest;
+};
+
+template <>
+struct ActionRegisterUnregisterPmidType<false> {
+  static const nfs::MessageAction kType = nfs::MessageAction::kRegisterPmidRequest;
+};
+
+}  // namespace detail
+
 class MaidManagerMetadata;
 
 template <bool Unregister>
@@ -45,21 +59,14 @@ struct ActionRegisterUnregisterPmid {
 
   void operator()(MaidManagerMetadata& metadata) const;
 
-  static const nfs::MessageAction kActionId;
+  static const nfs::MessageAction kActionId =
+      detail::ActionRegisterUnregisterPmidType<Unregister>::kType;
   const nfs_vault::PmidRegistration kPmidRegistration;
 
  private:
   ActionRegisterUnregisterPmid();
   ActionRegisterUnregisterPmid& operator=(ActionRegisterUnregisterPmid other);
 };
-
-// template<>
-// const nfs::MessageAction ActionRegisterUnregisterPmid<false>::kActionId =
-//    nfs::MessageAction::kRegisterPmidRequest;
-
-// template<>
-// const nfs::MessageAction ActionRegisterUnregisterPmid<true>::kActionId =
-//    nfs::MessageAction::kUnregisterPmidRequest;
 
 template <>
 void ActionRegisterUnregisterPmid<false>::operator()(MaidManagerMetadata& metadata) const;
@@ -79,6 +86,7 @@ typedef ActionRegisterUnregisterPmid<false> ActionRegisterPmid;
 typedef ActionRegisterUnregisterPmid<true> ActionUnregisterPmid;
 
 // ==================== Implementation =============================================================
+
 template <bool Unregister>
 ActionRegisterUnregisterPmid<Unregister>::ActionRegisterUnregisterPmid(
     const nfs_vault::PmidRegistration& pmid_registration_in)

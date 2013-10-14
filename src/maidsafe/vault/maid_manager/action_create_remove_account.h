@@ -25,18 +25,23 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace detail {
+
 template <bool Remove>
-struct ActionCreateRemoveAccount {
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kCreateAccountRequest;
+struct ActionCreateRemoveAccountType {
+  static const nfs::MessageAction kType = nfs::MessageAction::kRemoveAccountRequest;
 };
 
-// template<>
-// const nfs::MessageAction ActionCreateRemoveAccount<false>::kActionId =
-//    nfs::MessageAction::kCreateAccountRequest;
+template <>
+struct ActionCreateRemoveAccountType<false> {
+  static const nfs::MessageAction kType = nfs::MessageAction::kCreateAccountRequest;
+};
 
-// template<>
-// const nfs::MessageAction ActionCreateRemoveAccount<true>::kActionId =
-//    nfs::MessageAction::kRemoveAccountRequest;
+}  // namespace detail
+template <bool Remove>
+struct ActionCreateRemoveAccount {
+  static const nfs::MessageAction kActionId = detail::ActionCreateRemoveAccountType<Remove>::kType;
+};
 
 typedef ActionCreateRemoveAccount<false> ActionCreateAccount;
 typedef ActionCreateRemoveAccount<true> ActionRemoveAccount;

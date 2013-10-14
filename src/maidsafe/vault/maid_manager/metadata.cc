@@ -109,16 +109,15 @@ void MaidManagerMetadata::UpdatePmidTotals(const PmidManagerMetadata& /*pmid_met
 //  (*itr).pmid_metadata = pmid_metadata;
 }
 
-// std::string MaidManagerMetadata::Serialise() const {
-//  protobuf::MaidManagerMetadata maid_manager_metadata_proto;
-//  maid_manager_metadata_proto.set_total_put_data(total_put_data_);
-//  for (const auto& pmid_total : pmid_totals_) {
-//    auto pmid_total_proto(maid_manager_metadata_proto.add_pmid_totals());
-//    pmid_total_proto->set_serialised_pmid_registration(pmid_total.serialised_pmid_registration);
-//    pmid_total_proto->set_serialised_pmid_metadata(pmid_total.pmid_metadata.Serialise()->string());
-//  }
-//  return maid_manager_metadata_proto.SerializeAsString();
-//}
+ std::string MaidManagerMetadata::Serialise() const {
+  protobuf::MaidManagerMetadata maid_manager_metadata_proto;
+  maid_manager_metadata_proto.set_total_put_data(total_put_data_);
+  for (const auto& pmid_total : pmid_totals_) {
+    auto pmid_total_proto(maid_manager_metadata_proto.add_pmid_totals());
+    pmid_total_proto->set_serialised_pmid_registration(pmid_total.serialised_pmid_registration);
+  }
+  return maid_manager_metadata_proto.SerializeAsString();
+}
 
 std::vector<PmidTotals>::iterator MaidManagerMetadata::Find(const PmidName& pmid_name) {
   return std::find_if(std::begin(pmid_totals_), std::end(pmid_totals_),

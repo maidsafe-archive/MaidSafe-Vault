@@ -159,13 +159,16 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
       sync_puts_(),
       sync_deletes_(),
       sync_register_pmids_(),
-      sync_unregister_pmids_() {}
+      sync_unregister_pmids_(),
+      pending_account_mutex_(),
+      pending_account_map_() {}
 
 
 void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& maid,
                                                  const passport::PublicAnmaid& anmaid,
                                                  nfs::MessageId message_id) {
   MaidName account_name(maid.name());
+  std::lock_guard<std::mutex> lock(pending_account_mutex_);
   // If Account exists
   try {
     group_db_.GetMetadata(account_name);
@@ -185,10 +188,12 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& mai
   dispatcher_.SendPutRequest(account_name, anmaid, PmidName(), message_id);
 }
 
+
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
     const typename passport::PublicMaid::Name& data_name, int32_t ,
     nfs::MessageId message_id) {
+  std::lock_guard<std::mutex> lock(pending_account_mutex_);
   auto pending_account_itr(pending_account_map_.find(message_id));
   if (pending_account_itr == pending_account_map_.end()) {
     assert(false);
@@ -207,13 +212,13 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidName& maid_name,
-    const typename passport::PublicAnmaid::Name& data_name, int32_t,
-    nfs::MessageId message_id) {
+    const typename passport::PublicAnmaid::Name& data_name, int32_t, nfs::MessageId message_id) {
+  std::lock_guard<std::mutex> lock(pending_account_mutex_);
   auto pending_account_itr(pending_account_map_.find(message_id));
   if (pending_account_itr == pending_account_map_.end()) {
     assert(false);
     return;
-  } // FIXME mutex needed
+  }
   assert(pending_account_itr->second.anmaid_name == data_name);
   pending_account_itr->second.anmaid_stored = true;
 
@@ -222,6 +227,16 @@ void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidNam
         MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(), routing_.kNodeId()));
     DoSync();
   }
+}
+
+void MaidManagerService::HandlePmidRegistration(const MaidName& source_maid_name,
+    const nfs_vault::PmidRegistration& pmid_registration) {
+  if (pmid_registration.maid_name() != source_maid_name)
+    return;
+  sync_register_pmids_.AddLocalAction(
+      MaidManager::UnresolvedRegisterPmid(source_maid_name,
+          ActionRegisterUnregisterPmid<false>(pmid_registration), routing_.kNodeId()));
+  DoSync();
 }
 
 // void MaidManagerService::HandleMessage(const nfs::Message& message,
@@ -329,19 +344,19 @@ void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidNam
 
 //  auto pmid_registration_op(std::make_shared<PmidRegistrationOp>(pmid_registration,
 // reply_functor));
-////FIXME Prakash need to have utility to get public key
-////  public_key_getter_.GetKey<passport::PublicMaid>(
-////      pmid_registration.maid_name(),
-////      [this, pmid_registration_op, &pmid_registration](const nfs::Reply& reply) {
-////          ValidatePmidRegistration<passport::PublicMaid>(reply, pmid_registration.maid_name(),
-////                                                         pmid_registration_op);
-////      });
-////  public_key_getter_.GetKey<passport::PublicPmid>(
-////      pmid_registration.pmid_name(),
-////      [this, pmid_registration_op, &pmid_registration](const nfs::Reply& reply) {
-////          ValidatePmidRegistration<passport::PublicPmid>(reply, pmid_registration.pmid_name(),
-////                                                         pmid_registration_op);
-////      });
+//FIXME Prakash need to have utility to get public key
+//  public_key_getter_.GetKey<passport::PublicMaid>(
+//      pmid_registration.maid_name(),
+//      [this, pmid_registration_op, &pmid_registration](const nfs::Reply& reply) {
+//          ValidatePmidRegistration<passport::PublicMaid>(reply, pmid_registration.maid_name(),
+//                                                         pmid_registration_op);
+//      });
+//  public_key_getter_.GetKey<passport::PublicPmid>(
+//      pmid_registration.pmid_name(),
+//      [this, pmid_registration_op, &pmid_registration](const nfs::Reply& reply) {
+//          ValidatePmidRegistration<passport::PublicPmid>(reply, pmid_registration.pmid_name(),
+//                                                         pmid_registration_op);
+//      });
 //}
 
 // void MaidManagerService::FinalisePmidRegistration(
@@ -750,9 +765,20 @@ void MaidManagerService::HandleMessage(
       if (resolved_action) {
         MaidManager::Metadata metadata;
         group_db_.AddGroup(resolved_action->key.group_name(), metadata);
+        // FIXME Do we need to send Account created message to MaidNode ?
       }
       break;
     }
+    case ActionRegisterPmid::kActionId: {
+      MaidManager::UnresolvedRegisterPmid unresolved_action(
+        proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_register_pmids_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        // get pmid & maid keys
+        // validate pmid registration
+    }
+    break;
+  }
     default: {
       assert(false);
       LOG(kError) << "Unhandled action type";

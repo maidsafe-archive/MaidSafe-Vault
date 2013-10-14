@@ -107,6 +107,8 @@ class MaidManagerService {
                                const passport::PublicAnmaid& anmaid,
                                nfs::MessageId message_id);
 
+  void HandlePmidRegistration(const MaidName& source_maid_name,
+                              const nfs_vault::PmidRegistration& pmid_registration);
   // =============== Put/Delete data ===============================================================
   template <typename Data>
   void HandlePut(const MaidName& account_name, const Data& data, const PmidName& pmid_node_hint,
@@ -189,6 +191,7 @@ class MaidManagerService {
   Sync<MaidManager::UnresolvedUnregisterPmid> sync_unregister_pmids_;
   Sync<MaidManager::UnresolvedUpdatePmidHealth> sync_update_pmid_healths_;
   static const int kDefaultPaymentFactor_;
+  std::mutex pending_account_mutex_;
   std::map<nfs::MessageId, MaidAccountCreationStatus> pending_account_map_;
 };
 
