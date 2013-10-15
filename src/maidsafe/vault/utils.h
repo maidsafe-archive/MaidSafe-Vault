@@ -63,7 +63,7 @@ struct ValidateSenderType {
 
 template <typename RequestorPersona>
 struct Requestor {
-  typedef typename RequestorPersona::value PersonaValue;
+//  typedef typename RequestorPersona::value PersonaValue; // FIXME Fraser
   Requestor();
   explicit Requestor(NodeId node_id_in) : node_id(std::move(node_id_in)) {}
   Requestor(const Requestor& other) : node_id(other.node_id) {}

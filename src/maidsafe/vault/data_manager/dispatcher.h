@@ -114,13 +114,13 @@ class DataManagerDispatcher {
   void DoSendPutToCache(const Data& data, IsCacheable);
 
   template<typename Data>
-  void DoSendPutToCache(const Data& data, IsNotCacheable) {}  // No-op
+  void DoSendPutToCache(const Data& /*data*/, IsNotCacheable) {}  // No-op
 
   template<typename DataName>
   void DoSendGetFromCache(const DataName& data_name, IsCacheable);
 
   template<typename DataName>
-  void DoSendGetFromCache(const DataName& data_name, IsNotCacheable) {}  // No-op
+  void DoSendGetFromCache(const DataName& /*data_name*/, IsNotCacheable) {}  // No-op
 
   template <typename DataName>
   routing::GroupSource GroupSender(const DataName& data_name) const;
@@ -191,7 +191,7 @@ void DataManagerDispatcher::SendGetRequest(const PmidName& pmid_node,
   VaultMessage vault_message(message_id, VaultMessage::Contents(data_name));
   RoutingMessage message(
       vault_message.Serialise(),
-      VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
+      VaultMessage::Sender(GroupSender(data_name)),
       VaultMessage::Receiver(routing::SingleId(NodeId(pmid_node->string()))));
   routing_.Send(message);
 }
@@ -235,7 +235,8 @@ void DataManagerDispatcher::SendGetResponseSuccess(const RequestorIdType& reques
                                                    const Data& data, nfs::MessageId message_id) {
   typedef typename detail::GetResponseMessage<RequestorIdType>::Type NfsMessage;
   CheckSourcePersonaType<NfsMessage>();
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  typedef routing::Message<typename NfsMessage::Sender, typename NfsMessage::Receiver>
+      RoutingMessage;
 
   static const routing::Cacheable kCacheable(is_cacheable<Data>::value ? routing::Cacheable::kPut :
                                                                          routing::Cacheable::kNone);
@@ -252,11 +253,12 @@ void DataManagerDispatcher::SendGetResponseFailure(const RequestorIdType& reques
                                                    nfs::MessageId message_id) {
   typedef typename detail::GetResponseMessage<RequestorIdType>::Type NfsMessage;
   CheckSourcePersonaType<NfsMessage>();
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  typedef routing::Message<typename NfsMessage::Sender, typename NfsMessage::Receiver>
+      RoutingMessage;
 
   NfsMessage nfs_message(message_id,
                          NfsMessage::Contents(data_name, nfs_client::ReturnCode(result)));
-  RoutingMessage message(nfs_message.Serialise(), GroupSender(data.name()),
+  RoutingMessage message(nfs_message.Serialise(), GroupSender(data_name),
                          NfsMessage::Receiver(routing::SingleId(requestor_id.node_id)));
   routing_.Send(message);
 }
@@ -272,7 +274,7 @@ void DataManagerDispatcher::DoSendPutToCache(const Data& data, IsCacheable) {
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  VaultMessage vault_message(VaultMessage::Content(data));
+  VaultMessage vault_message((VaultMessage::Contents(data)));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
                          VaultMessage::Receiver(routing_.kNodeId()), routing::Cacheable::kPut);
@@ -289,7 +291,7 @@ void DataManagerDispatcher::DoSendGetFromCache(const DataName& data_name, IsCach
   typedef GetFromCacheFromDataManagerToDataManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-
+  nfs::MessageId message_id; // FIXME (Fraser)
   VaultMessage vault_message(message_id, VaultMessage::Contents(data_name));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
@@ -321,9 +323,9 @@ routing::GroupSource DataManagerDispatcher::GroupSender(const DataName& data_nam
 }
 
 template<typename Message>
-void DataManagerDispatcher::CheckSourcePersonaType() const {
-  static_assert(typename Message::SourcePersona::value == nfs::Persona::kDataManager,
-                "The source Persona must be kDataManager.");
+void DataManagerDispatcher::CheckSourcePersonaType() const {// FIXME (Fraser)
+//  static_assert(typename Message::SourcePersona::value == nfs::Persona::kDataManager),
+//                "The source Persona must be kDataManager.");
 }
 
 }  // namespace vault
