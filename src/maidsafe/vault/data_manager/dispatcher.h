@@ -87,6 +87,9 @@ class DataManagerDispatcher {
   void SendAccountTransfer(const NodeId& destination_peer, const MaidName& account_name,
                            const std::string& serialised_account);
 
+  template<typename Data>
+  void SendPutToCache(const Data& data);
+
  private:
   DataManagerDispatcher();
   DataManagerDispatcher(const DataManagerDispatcher&);

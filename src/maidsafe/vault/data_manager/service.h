@@ -340,7 +340,7 @@ template <typename DataName>
 bool DataManagerService::SendPutRetryRequired(const DataName& data_name) {
   try {
     // mutex is required
-    auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue)));
+    auto value(db_.Get(DataManager::Key(data_name.value, DataName::data_type::Tag::kValue)));
     return value && value->AllPmids().size() < 3 && value->StoreFailures() == 2;
   }
   catch (const maidsafe_error& /*error*/) {}
