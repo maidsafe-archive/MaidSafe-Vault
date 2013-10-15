@@ -205,14 +205,14 @@ void DataManagerService::HandleMessage(
     //        db_.Commit(resolved_action->key, resolved_action->action);
     //      break;
     //    }
-    //    case ActionDataManagerRemovePmid::kActionId: {
-    //      DataManager::UnresolvedRemovePmid unresolved_action(
-    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-    //      auto resolved_action(sync_remove_pmids_.AddUnresolvedAction(unresolved_action));
-    //      if (resolved_action)
-    //        db_.Commit(resolved_action->key, resolved_action->action);
-    //      break;
-    //    }
+    case ActionDataManagerRemovePmid::kActionId: {
+      DataManager::UnresolvedRemovePmid unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_remove_pmids_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action)
+        db_.Commit(resolved_action->key, resolved_action->action);
+      break;
+    }
     //    case ActionDataManagerNodeUp::kActionId: {
     //      DataManager::UnresolvedNodeUp unresolved_action(
     //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());

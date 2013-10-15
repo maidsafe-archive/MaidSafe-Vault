@@ -312,27 +312,29 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
   // TODO(Team): Following should be done only if error is fixable by repeat
 
   // Get all pmid nodes for this data.
-  std::set<PmidName> pmids_to_avoid;
-  auto value(db_.Get(data_name));
-  if (value)
-    pmids_to_avoid = value->AllPmids();
-
-  pmids_to_avoid.insert(attempted_pmid_node);
-  auto pmid_name(PmidName(Identity(routing_.RandomConnectedNode().string())));
-  while (pmids_to_avoid.find(pmid_name) != std::end(pmids_to_avoid))
-    pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
   if (SendPutRetryRequired(data_name)) {
+    std::set<PmidName> pmids_to_avoid;
+    auto value(db_.Get(data_name));
+    if (value)
+      pmids_to_avoid = value->AllPmids();
+
+    pmids_to_avoid.insert(attempted_pmid_node);
+    auto pmid_name(PmidName(Identity(routing_.RandomConnectedNode().string())));
+    while (pmids_to_avoid.find(pmid_name) != std::end(pmids_to_avoid))
+      pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
+
     try {
       NonEmptyString content(GetContentFromCache<Data>(data_name));
       dispatcher_.SendPutRequest(pmid_name, Data(data_name, content), message_id);
     }
     catch (std::exception& /*ex*/) {
-      // handle failure to retrieve content from cache
+      // handle failure to retrieve content from cache, a Get->Then->call
+      // dispatcher_.SendPutRequest(pmid_name, Data(data_name, content), message_id); )
     }
   }
   typename DataManager::Key key(data_name.raw_name, data_name.type);
   sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
-      key, ActionDataManagerRemovePmid(pmid_name), routing_.kNodeId()));
+      key, ActionDataManagerRemovePmid(attempted_pmid_node), routing_.kNodeId()));
   DoSync();
 }
 
@@ -341,7 +343,7 @@ bool DataManagerService::SendPutRetryRequired(const DataName& data_name) {
   try {
     // mutex is required
     auto value(db_.Get(DataManager::Key(data_name.value, DataName::data_type::Tag::kValue)));
-    return value && value->AllPmids().size() < 3 && value->StoreFailures() == 2;
+    return value && value->AllPmids().size() < routing::Parameters::node_group_size;
   }
   catch (const maidsafe_error& /*error*/) {}
   return false;

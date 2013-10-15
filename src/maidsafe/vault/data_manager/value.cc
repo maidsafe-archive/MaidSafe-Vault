@@ -27,7 +27,7 @@ namespace maidsafe {
 namespace vault {
 
 DataManagerValue::DataManagerValue(const std::string &serialised_metadata_value)
-    : subscribers_(0), size_(0), store_failures_(0), online_pmids_(), offline_pmids_() {
+    : subscribers_(0), size_(0), online_pmids_(), offline_pmids_() {
   protobuf::DataManagerValue metadata_value_proto;
   if (!metadata_value_proto.ParseFromString(serialised_metadata_value)) {
     LOG(kError) << "Failed to read or parse serialised metadata value";
@@ -39,7 +39,6 @@ DataManagerValue::DataManagerValue(const std::string &serialised_metadata_value)
     }
     subscribers_ = metadata_value_proto.subscribers();
     size_ = metadata_value_proto.size();
-    store_failures_ = metadata_value_proto.store_failures();
 
     for (auto& i : metadata_value_proto.online_pmid_name())
       online_pmids_.insert(PmidName(Identity(i)));
@@ -53,7 +52,7 @@ DataManagerValue::DataManagerValue(const std::string &serialised_metadata_value)
 }
 
 DataManagerValue::DataManagerValue(const PmidName& pmid_name, int32_t size)
-    : subscribers_(0), size_(size), store_failures_(0), online_pmids_(), offline_pmids_() {
+    : subscribers_(0), size_(size), online_pmids_(), offline_pmids_() {
   AddPmid(pmid_name);
 }
 
@@ -103,7 +102,6 @@ std::string DataManagerValue::Serialise() const {
   protobuf::DataManagerValue metadata_value_proto;
   metadata_value_proto.set_subscribers(subscribers_);
   metadata_value_proto.set_size(size_);
-  metadata_value_proto.set_store_failures(store_failures_);
   for (const auto& i : online_pmids_)
     metadata_value_proto.add_online_pmid_name(i->string());
   for (const auto& i : offline_pmids_)
@@ -114,8 +112,7 @@ std::string DataManagerValue::Serialise() const {
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
   return lhs.subscribers_ == rhs.subscribers_ && lhs.size_ == rhs.size_ &&
-         lhs.store_failures_ == rhs.store_failures_ && lhs.online_pmids_ == rhs.online_pmids_ &&
-         lhs.offline_pmids_ == rhs.offline_pmids_;
+         lhs.online_pmids_ == rhs.online_pmids_ && lhs.offline_pmids_ == rhs.offline_pmids_;
 }
 
 std::set<PmidName> DataManagerValue::AllPmids() const {
