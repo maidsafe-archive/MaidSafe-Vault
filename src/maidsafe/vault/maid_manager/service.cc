@@ -191,7 +191,7 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& mai
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
-    const typename passport::PublicMaid::Name& data_name, int32_t ,
+    const typename passport::PublicMaid::Name& data_name, int32_t /*cost*/,
     nfs::MessageId message_id) {
   std::lock_guard<std::mutex> lock(pending_account_mutex_);
   auto pending_account_itr(pending_account_map_.find(message_id));
@@ -201,6 +201,7 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
   }
   assert(data_name == maid_name);
   assert(pending_account_itr->second.maid_name == data_name);
+  static_cast<void>(data_name);
   pending_account_itr->second.maid_stored = true;
 
   if (pending_account_itr->second.anmaid_stored) {
@@ -211,8 +212,9 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
 }
 
 template <>
-void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidName& maid_name,
-    const typename passport::PublicAnmaid::Name& data_name, int32_t, nfs::MessageId message_id) {
+void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(
+    const MaidName& maid_name, const typename passport::PublicAnmaid::Name& data_name,
+    int32_t /*cost*/, nfs::MessageId message_id) {
   std::lock_guard<std::mutex> lock(pending_account_mutex_);
   auto pending_account_itr(pending_account_map_.find(message_id));
   if (pending_account_itr == pending_account_map_.end()) {
@@ -220,6 +222,7 @@ void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidNam
     return;
   }
   assert(pending_account_itr->second.anmaid_name == data_name);
+  static_cast<void>(data_name);
   pending_account_itr->second.anmaid_stored = true;
 
   if (pending_account_itr->second.maid_stored) {
