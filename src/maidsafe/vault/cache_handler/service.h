@@ -71,10 +71,14 @@ class CacheHandlerService {
   template <typename Data>
   void HandleStore(const Data& data);
 
+  // NB - for GetFromCacheFromDataManagerToDataManager messages, validate that the sender is "close"
+  // to the data.name() being requested.
   template <typename T>
   bool CacheGet(const T& message, const typename T::Sender& sender,
                 const typename T::Receiver& receiver, IsShortTermCacheable);
 
+  // NB - for GetFromCacheFromDataManagerToDataManager messages, validate that the sender is "close"
+  // to the data.name() being requested.
   template <typename T>
   bool CacheGet(const T& message, const typename T::Sender& sender,
                 const typename T::Receiver& receiver, IsLongTermCacheable);

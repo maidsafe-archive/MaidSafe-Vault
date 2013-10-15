@@ -200,9 +200,10 @@ void DoOperation(ServiceHandlerType* service,
                  const nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
                  const nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
   auto data_name(GetNameVariant(message.contents));
+  Requestor<nfs::GetRequestFromMaidNodeToDataManager::SourcePersona> requestor(sender.data);
   GetRequestVisitor<ServiceHandlerType,
                     typename nfs::GetRequestFromMaidNodeToDataManager::Sender> get_request_visitor(
-      service, sender, message.message_id);
+      service, requestor, message.message_id);
   boost::apply_visitor(get_request_visitor, data_name);
 }
 
@@ -212,10 +213,11 @@ void DoOperation(ServiceHandlerType* service,
                  const nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
                  const nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
   auto data_name(GetNameVariant(message.contents));
+  Requestor<nfs::GetRequestFromDataGetterToDataManager::SourcePersona> requestor(sender.data);
   GetRequestVisitor<
       ServiceHandlerType,
       typename nfs::GetRequestFromDataGetterToDataManager::Sender> get_request_visitor(
-          service, sender, message.message_id);
+          service, requestor, message.message_id);
   boost::apply_visitor(get_request_visitor, data_name);
 }
 

@@ -22,8 +22,17 @@ namespace maidsafe {
 
 namespace vault {
 
+// ==================== Sync / AccountTransfer implementation ======================================
 void DataManagerDispatcher::SendSync(const Identity& /*data_name*/,
-                                     const std::string& /*serialised_sync*/) {}
+                                     const std::string& /*serialised_sync*/) {
+  assert(0);
+}
+
+void DataManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer*/,
+                                                const MaidName& /*account_name*/,
+                                                const std::string& /*serialised_account*/) {
+  assert(0);
+}
 
 }  // namespace vault
 
