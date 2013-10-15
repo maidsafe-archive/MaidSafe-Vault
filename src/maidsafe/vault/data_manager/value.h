@@ -46,7 +46,6 @@ class DataManagerValue {
   void SetPmidOnline(const PmidName& pmid_name);
   void SetPmidOffline(const PmidName& pmid_name);
   int64_t Subscribers() const { return subscribers_; }
-  int32_t StoreFailures() const { return store_failures_; }
   std::set<PmidName> AllPmids() const;
   std::set<PmidName> online_pmids() const { return online_pmids_; }
 
@@ -55,7 +54,6 @@ class DataManagerValue {
  private:
   int64_t subscribers_;
   int32_t size_;
-  int32_t store_failures_;
   std::set<PmidName> online_pmids_, offline_pmids_;
 };
 
