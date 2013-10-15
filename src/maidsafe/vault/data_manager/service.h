@@ -107,7 +107,8 @@ class DataManagerService {
 
   template <typename Data, typename RequestorIdType>
   bool SendGetResponse(const RequestorIdType& original_requestor,
-                       const GetResponseContents& contents);
+      const GetResponseContents& contents,
+      std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
 
   template <typename Data, typename RequestorIdType>
   void AssessIntegrityCheckResults(
@@ -405,8 +406,9 @@ void DataManagerService::DoHandleGetResponse(
 }
 
 template <typename Data, typename RequestorIdType>
-bool DataManagerService::SendGetResponse(const RequestorIdType& original_requestor,
-                                         const GetResponseContents& contents) {
+bool DataManagerService::SendGetResponse(
+    const RequestorIdType& /*original_requestor*/, const GetResponseContents& contents,
+    std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
   maidsafe_error error(MakeError(CommonErrors::unknown));
   try {
     if (!contents.content)
@@ -430,7 +432,7 @@ bool DataManagerService::SendGetResponse(const RequestorIdType& original_request
 
 template <typename Data, typename RequestorIdType>
 void DataManagerService::AssessIntegrityCheckResults(
-    std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
+    std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> /*get_response_op*/) {
   // If we failed to get the serialised_contents, mark 'pmid_node_to_get_from' as down, sync this,
   // and retry the Get operation again.
 }
@@ -509,10 +511,11 @@ void DataManagerService::SendDeleteRequest(
 template <typename Data>
 bool DataManagerService::SendPutRetryRequired(const typename Data::Name& name) {
   try {
-    auto value(db_.Get(DataManager::Key(name.value, Data::Name::data_type::Tag::kValue)));
+    // mutex is required
+    auto value(db_.Get(DataManager::Key(name.value, Data::Tag::kValue)));
     if (!value)
       return false;
-    if (value->AllPmids().size() < 3 && value->StoreFailures() > 2)
+    if (value->AllPmids().size() < 3 && (value->StoreFailures() == 2))
       return true;
   }
   catch (const maidsafe_error& /*error*/) {
@@ -523,7 +526,7 @@ bool DataManagerService::SendPutRetryRequired(const typename Data::Name& name) {
 template <typename Data>
 bool DataManagerService::EntryExist(const typename Data::Name& name) {
   try {
-    auto value(db_.Get(DataManager::Key(name.value, Data::Name::data_type::Tag::kValue)));
+    auto value(db_.Get(DataManager::Key(name.value, Data::Tag::kValue)));
     if (!value)
       return false;
   }
