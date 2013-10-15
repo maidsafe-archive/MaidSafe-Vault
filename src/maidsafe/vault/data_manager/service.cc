@@ -155,7 +155,7 @@ void DataManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
-// =============== Sync ============================================================================
+// SynchroniseFromDataManagerToDataManager
 template <>
 void DataManagerService::HandleMessage(
     const SynchroniseFromDataManagerToDataManager& message,
@@ -236,27 +236,29 @@ void DataManagerService::HandleMessage(
   }
 }
 
-
-void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
-                                           const GetResponseContents& contents) {
-  get_timer_.AddResponse(message_id.data, std::make_pair(pmid_name, contents));
-}
-
 void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
   std::lock_guard<std::mutex> lock(matrix_change_mutex_);
   matrix_change_ = *matrix_change;
 }
 
+// ==================== Get / IntegrityCheck implementation ========================================
+void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
+                                           const GetResponseContents& contents) {
+  get_timer_.AddResponse(message_id.data, std::make_pair(pmid_name, contents));
+}
+
+// ==================== Delete implementation ======================================================
 void DataManagerService::SendDeleteRequests(const DataManager::Key& key,
                                             const std::set<PmidName>& pmids,
                                             nfs::MessageId message_id) {
   auto data_name(GetDataNameVariant(key.type, key.name));
-  for (auto pmid : pmids) {
+  for (const auto& pmid : pmids) {
     detail::DataManagerSendDeleteVisitor<DataManagerService> delete_visitor(this, pmid, message_id);
     boost::apply_visitor(delete_visitor, data_name);
   }
 }
 
+// ==================== Sync / AccountTransfer implementation ======================================
 void DataManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
