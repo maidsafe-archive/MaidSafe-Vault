@@ -21,6 +21,7 @@
 
 #include "leveldb/db.h"
 
+#include "maidsafe/common/node_id.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/vault/key_utils.h"
@@ -60,15 +61,30 @@ struct ValidateSenderType {
 
 // =============================================================================================
 
+template <typename RequestorPersona>
+struct Requestor {
+  typedef typename RequestorPersona::value PersonaValue;
+  Requestor();
+  explicit Requestor(NodeId node_id_in) : node_id(std::move(node_id_in)) {}
+  Requestor(const Requestor& other) : node_id(other.node_id) {}
+  Requestor(Requestor&& other) : node_id(std::move(other.node_id)) {}
+  friend void swap(Requestor& lhs, Requestor& rhs) MAIDSAFE_NOEXCEPT {
+    using std::swap;
+    swap(lhs.node_id, rhs.node_id);
+  }
+  Requestor& operator=(Requestor other) {
+    swap(*this, other);
+    return *this;
+  }
+
+  NodeId node_id;
+};
+
 void InitialiseDirectory(const boost::filesystem::path& directory);
 // bool ShouldRetry(routing::Routing& routing, const nfs::Message& message);
 
 template <typename Data>
 bool IsDataElement(const typename Data::Name& name, const DataNameVariant& data_name_variant);
-
-// void SendReply(const nfs::Message& original_message,
-//               const maidsafe_error& return_code,
-//               const routing::ReplyFunctor& reply_functor);
 
 template <typename AccountSet, typename Account>
 typename Account::serialised_type GetSerialisedAccount(std::mutex& mutex,

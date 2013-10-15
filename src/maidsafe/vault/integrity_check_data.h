@@ -35,13 +35,14 @@ class IntegrityCheckData {
   typedef crypto::SHA512Hash Result;
 
   IntegrityCheckData();
-  explicit IntegrityCheckData(std::string random_input_in);
+  explicit IntegrityCheckData(std::string random_input);
+  IntegrityCheckData(std::string random_input, const NonEmptyString& serialised_value);
   IntegrityCheckData(const IntegrityCheckData& other);
   IntegrityCheckData(IntegrityCheckData&& other);
   IntegrityCheckData& operator=(IntegrityCheckData other);
 
   // Throws if 'random_input_' is empty or if 'result_' is not empty.
-  void SetResult(const NonEmptyString& serialised_value);
+  void SetResult(const Result& result);
   // Throws if 'random_input_' or 'result_' is empty.
   bool Validate(const NonEmptyString& serialised_value) const;
 

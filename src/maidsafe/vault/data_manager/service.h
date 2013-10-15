@@ -68,7 +68,7 @@ class DataManagerService {
   void HandleMessage(const T&, const typename T::Sender&, const typename T::Receiver&);
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
-  template <typename ServiceHandlerType, typename Requestor>
+  template <typename ServiceHandlerType, typename RequestorIdType>
   friend class detail::GetRequestVisitor;
   template<typename ServiceHandlerType>
   friend class detail::DataManagerSendDeleteVisitor;
@@ -88,8 +88,8 @@ class DataManagerService {
   void HandlePutFailure(const typename Data::Name& data_name, const PmidName& attempted_pmid_node,
                         nfs::MessageId message_id, const maidsafe_error& error);
 
-  template <typename Data, typename Requestor>
-  void HandleGet(const typename Data::Name& data_name, const Requestor& requestor,
+  template <typename Data, typename RequestorIdType>
+  void HandleGet(const typename Data::Name& data_name, const RequestorIdType& requestor,
                  nfs::MessageId message_id);
 
   void HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
@@ -100,10 +100,18 @@ class DataManagerService {
   PmidName ChoosePmidNodeToGetFrom(std::set<PmidName>& online_pmids,
                                    const DataName& data_name) const;
 
-  template <typename Data, typename Requestor>
+  template <typename Data, typename RequestorIdType>
   void DoHandleGetResponse(
       const PmidName& pmid_node, const GetResponseContents& contents,
-      std::shared_ptr<GetResponseOp<typename Data::Name, Requestor>> get_response_op);
+      std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
+
+  template <typename Data, typename RequestorIdType>
+  bool SendGetResponse(const RequestorIdType& original_requestor,
+                       const GetResponseContents& contents);
+
+  template <typename Data, typename RequestorIdType>
+  void AssessIntegrityCheckResults(
+      std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
 
   template <typename Data>
   void HandleDelete(const typename Data::Name& data_name, nfs::MessageId message_id);
@@ -305,8 +313,9 @@ void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
   DoSync();
 }
 
-template <typename Data, typename Requestor>
-void DataManagerService::HandleGet(const typename Data::Name& data_name, const Requestor& requestor,
+template <typename Data, typename RequestorIdType>
+void DataManagerService::HandleGet(const typename Data::Name& data_name,
+                                   const RequestorIdType& requestor,
                                    nfs::MessageId message_id) {
   // Get all pmid nodes that are online.
   auto value(db_.Get(data_name));
@@ -329,8 +338,9 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name, const R
                 });
 
   // Create helper struct which holds the collection of responses, and add the task to the timer.
-  auto get_response_op(std::make_shared<GetResponseOp<typename Data::Name, Requestor>>(
-      pmid_node_to_get_from, integrity_checks, data_name, requestor));
+  auto get_response_op(
+      std::make_shared<detail::GetResponseOp<typename Data::Name, RequestorIdType>>(
+          pmid_node_to_get_from, integrity_checks, data_name, requestor));
   auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
     this->DoHandleGetResponse(pmid_node_and_contents.first, pmid_node_and_contents.second,
                               get_response_op);
@@ -361,21 +371,69 @@ PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_
   PmidName chosen;
   {
     std::lock_guard<std::mutex> lock(matrix_change_mutex_);
-    chosen = PmidName(Identity(matrix_change_.ChoosePmidNode(online_node_ids,
-                                                             NodeId(data_name->string())).string()));
+    chosen = PmidName(Identity(
+        matrix_change_.ChoosePmidNode(online_node_ids, NodeId(data_name->string())).string()));
   }
 
   online_pmids.erase(chosen);
   return chosen;
 }
 
-template <typename Data, typename Requestor>
+template <typename Data, typename RequestorIdType>
 void DataManagerService::DoHandleGetResponse(
-    const PmidName& /*pmid_node*/, const GetResponseContents& /*contents*/,
-    std::shared_ptr<GetResponseOp<typename Data::Name, Requestor>> /*get_response_op*/) {
+    const PmidName& pmid_node, const GetResponseContents& contents,
+    std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
+  // Note: if 'contents' is default-constructed, it's probably a result of this function being
+  // invoked by the timer after timeout.
+  int called_count(0), expected_count(0);
+  {
+    std::lock_guard<std::mutex> lock(get_response_op->mutex);
+    called_count = ++get_response_op->called_count;
+    expected_count = static_cast<int>(get_response_op->integrity_checks.size()) + 1;
+    assert(called_count <= expected_count);
+    if (pmid_node == get_response_op->pmid_node_to_get_from) {
+      if (SendGetResponse(get_response_op->requestor_id, contents))
+        get_response_op->serialised_contents = typename Data::serialised_type(contents.content);
+    } else if (contents.check_result) {
+      auto itr(get_response_op->integrity_checks.find(pmid_node));
+      if (itr != std::end(get_response_op->integrity_checks))
+        itr->second.SetResult(*contents.check_result);
+    }
+  }
+  if (called_count == expected_count)
+    AssessIntegrityCheckResults(get_response_op);
 }
 
+template <typename Data, typename RequestorIdType>
+bool DataManagerService::SendGetResponse(const RequestorIdType& original_requestor,
+                                         const GetResponseContents& contents) {
+  maidsafe_error error(MakeError(CommonErrors::unknown));
+  try {
+    if (!contents.content)
+      ThrowError(CommonErrors::unknown);
+    Data data(get_response_op->data_name, typename Data::serialised_type(contents.content));
+    dispatcher_.SendGetResponseSuccess(get_response_op->requestor_id, data,
+                                       get_response_op->message_id);
+    return true;
+  } catch(const maidsafe_error& e) {
+    error = e;
+    LOG(kError) << e.what();
+  } catch(const std::exception& e) {
+    LOG(kError) << e.what();
+  } catch(...) {
+    LOG(kError) << "Unexpected exception type.";
+  }
+  dispatcher_.SendGetResponseFailure(get_response_op->requestor_id, get_response_op->data_name,
+                                     error, get_response_op->message_id);
+  return false;
+}
 
+template <typename Data, typename RequestorIdType>
+void DataManagerService::AssessIntegrityCheckResults(
+    std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
+  // If we failed to get the serialised_contents, mark 'pmid_node_to_get_from' as down, sync this,
+  // and retry the Get operation again.
+}
 
 //template <typename Data>
 //void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name,
@@ -451,8 +509,7 @@ void DataManagerService::SendDeleteRequest(
 template <typename Data>
 bool DataManagerService::SendPutRetryRequired(const typename Data::Name& name) {
   try {
-    // TODO(Mahmoud): mutex is required
-    auto value(db_.Get(DataManager::Key(name.value, Data::Tag::kValue)));
+    auto value(db_.Get(DataManager::Key(name.value, Data::Name::data_type::Tag::kValue)));
     if (!value)
       return false;
     if (value->AllPmids().size() < 3 && value->StoreFailures() > 2)
@@ -466,7 +523,7 @@ bool DataManagerService::SendPutRetryRequired(const typename Data::Name& name) {
 template <typename Data>
 bool DataManagerService::EntryExist(const typename Data::Name& name) {
   try {
-    auto value(db_.Get(DataManager::Key(name.value, Data::Tag::kValue)));
+    auto value(db_.Get(DataManager::Key(name.value, Data::Name::data_type::Tag::kValue)));
     if (!value)
       return false;
   }

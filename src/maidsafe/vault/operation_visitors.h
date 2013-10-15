@@ -220,23 +220,24 @@ class DataManagerPutResponseVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
-template <typename ServiceHandlerType, typename Requestor>
+template <typename ServiceHandlerType, typename RequestorIdType>
 class GetRequestVisitor : public boost::static_visitor<> {
  public:
-  GetRequestVisitor(ServiceHandlerType* service, Requestor requestor, nfs::MessageId message_id)
+  GetRequestVisitor(ServiceHandlerType* service, RequestorIdType requestor_id,
+                    nfs::MessageId message_id)
       : kService_(service),
-        kRequestor_(std::move(requestor)),
+        kRequestorId_(std::move(requestor_id)),
         kMessageId_(std::move(message_id)) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandleGet<typename Name::data_type, Requestor>(data_name, kRequestor_,
-                                                                       kMessageId_);
+    kService_->template HandleGet<typename Name::data_type, RequestorIdType>(
+        data_name, kRequestorId_, kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
-  const Requestor kRequestor_;
+  const RequestorIdType kRequestorId_;
   const nfs::MessageId kMessageId_;
 };
 

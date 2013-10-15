@@ -48,24 +48,20 @@ class DataManagerDispatcher {
   template <typename Data>
   void SendGetRequest(const PmidName& pmid_node, const typename Data::Name& data_name,
                       nfs::MessageId message_id);
-  // To MaidNode
-  template <typename Data>
-  void SendGetResponse(const MaidName& maid_node, const Data& data,
-                       nfs::MessageId message_id);
-  // To MaidNode (failure)
-  template <typename Data>
-  void SendGetResponse(const MaidName& maid_node, const typename Data::Name& data_name,
-                       const maidsafe_error& result, nfs::MessageId message_id);
 
-  // To PmidNode
-  template <typename Data>
-  void SendGetResponse(const PmidName& pmid_node, const Data& data,
-                       nfs::MessageId message_id);
+  // To MaidNode or DataGetter
+  template <typename RequestorIdType, typename Data>
+  void SendGetResponseSuccess(const RequestorIdType& requestor_id, const Data& data,
+                              nfs::MessageId message_id);
+
+  // To MaidNode or DataGetter
+  template <typename RequestorIdType, typename DataName>
+  void SendGetResponseFailure(const RequestorIdType& requestor_id, const DataName& data_name,
+                              const maidsafe_error& result, nfs::MessageId message_id);
 
   // To PmidManager
   template <typename Data>
-  void SendPutRequest(const PmidName& pmid_name, const Data& data,
-                      nfs::MessageId message_id);
+  void SendPutRequest(const PmidName& pmid_name, const Data& data, nfs::MessageId message_id);
 
   // To MaidManager
   template <typename Data>

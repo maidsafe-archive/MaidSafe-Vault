@@ -26,6 +26,7 @@
 #include <string>
 
 #include "maidsafe/common/config.h"
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/vault/messages.h"
@@ -38,26 +39,34 @@ namespace maidsafe {
 
 namespace vault {
 
-template <typename DataName, typename Requestor>
+namespace detail {
+
+template <typename DataName, typename RequestorIdType>
 struct GetResponseOp {
   GetResponseOp(PmidName pmid_node_to_get_from_in,
+                nfs::MessageId message_id_in,
                 std::map<PmidName, IntegrityCheckData> integrity_checks_in,
                 DataName data_name_in,
-                Requestor requestor_in)
+                RequestorIdType requestor_id_in)
       : mutex(),
+        message_id(std::move(message_id_in)),
         pmid_node_to_get_from(std::move(pmid_node_to_get_from_in)),
         integrity_checks(std::move(integrity_checks_in)),
         data_name(std::move(data_name_in)),
-        requestor(std::move(requestor_in)),
+        requestor_id(std::move(requestor_id_in)),
         serialised_contents() {}
 
   std::mutex mutex;
+  nfs::MessageId message_id;
   PmidName pmid_node_to_get_from;
   std::map<PmidName, IntegrityCheckData> integrity_checks;
   DataName data_name;
-  Requestor requestor;
+  RequestorIdType requestor_id;
+  int called_count;
   typename DataName::data_type::serialised_type serialised_contents;
 };
+
+}  // namespace detail
 
 }  // namespace vault
 

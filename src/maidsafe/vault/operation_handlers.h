@@ -39,12 +39,12 @@ struct RequiredValue {};
 
 template <>
 struct RequiredValue<routing::SingleSource> {
-  int operator()() { return 1; }
+  int operator()() const { return 1; }
 };
 
 template <>
 struct RequiredValue<routing::GroupSource> {
-  int operator()() { return routing::Parameters::node_group_size - 1; }
+  int operator()() const { return routing::Parameters::node_group_size - 1; }
 };
 
 

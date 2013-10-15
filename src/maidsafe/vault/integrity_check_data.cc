@@ -37,8 +37,13 @@ IntegrityCheckData::Result GetResult(const NonEmptyString& serialised_value,
 
 IntegrityCheckData::IntegrityCheckData() : random_input_(), result_() {}
 
-IntegrityCheckData::IntegrityCheckData(std::string random_input_in)
-    : random_input_(std::move(random_input_in)), result_() {}
+IntegrityCheckData::IntegrityCheckData(std::string random_input)
+    : random_input_(std::move(random_input)), result_() {}
+
+IntegrityCheckData::IntegrityCheckData(std::string random_input,
+                                       const NonEmptyString& serialised_value)
+    : random_input_(std::move(random_input)),
+      result_(GetResult(serialised_value, random_input_)) {}
 
 IntegrityCheckData::IntegrityCheckData(const IntegrityCheckData& other)
     : random_input_(other.random_input_), result_(other.result_) {}
@@ -51,12 +56,12 @@ IntegrityCheckData& IntegrityCheckData::operator=(IntegrityCheckData other) {
   return *this;
 }
 
-void IntegrityCheckData::SetResult(const NonEmptyString& serialised_value) {
+void IntegrityCheckData::SetResult(const Result& result) {
   if (random_input_.empty() || result_.IsInitialised()) {
     LOG(kError) << "SetResult requires random_input_.empty() && !result_->IsInitialised()";
     ThrowError(CommonErrors::uninitialised);
   }
-  result_ = GetResult(serialised_value, random_input_);
+  result_ = result;
 }
 
 bool IntegrityCheckData::Validate(const NonEmptyString& serialised_value) const {
