@@ -193,9 +193,16 @@ bool Vault::OnGetFromCache(const routing::GroupToGroupMessage& /*message*/) {
 
 template <>
 bool Vault::OnGetFromCache(const routing::GroupToSingleMessage& /*message*/) {
+//  auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
+//  return HandleGetFromCache(wrapper_tuple, message.sender, message.receiver);
   return false;
 }
 
+template <>
+bool Vault::OnGetFromCache(const routing::SingleToGroupMessage& message) {
+  auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
+  return HandleGetFromCache(wrapper_tuple, message.sender, message.receiver);
+}
 
 
 }  // namespace vault

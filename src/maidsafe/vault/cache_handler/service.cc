@@ -32,6 +32,23 @@ DiskUsage cache_size = DiskUsage(200);
 
 }
 
+template <>
+bool CacheHandlerService::Get(
+    const GetRequestFromDataManagerToPmidNode& /*message*/,
+    const typename GetRequestFromDataManagerToPmidNode::Sender& /*sender*/,
+    const typename GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/) {
+ return false;
+}
+
+template <>
+bool CacheHandlerService::Get(
+    const nfs::GetRequestFromMaidNodeToDataManager& /*message*/,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& /*sender*/,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
+  return false;
+}
+
+
 CacheHandlerService::CacheHandlerService(routing::Routing& routing,
                                          const boost::filesystem::path vault_root_dir)
     : routing_(routing),

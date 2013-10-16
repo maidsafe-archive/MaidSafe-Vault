@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_CACHE_HANDLER_SERVICE_H_
 #define MAIDSAFE_VAULT_CACHE_HANDLER_SERVICE_H_
 
+#include <type_traits>
+
 #include "maidsafe/data_store/data_store.h"
 #include "maidsafe/data_store/memory_buffer.h"
 
@@ -82,11 +84,9 @@ class CacheHandlerService {
  public:
   CacheHandlerService(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
 
-  template <typename Sender, typename Receiver>
-  bool Get(const nfs::TypeErasedMessageWrapper& /*message*/, const Sender& /*sender*/,
-           const Receiver& /*receiver*/) {
-    return false;
-  }
+  template <typename T>
+  bool Get(const T& message, const typename T::Sender& sender,
+           const typename T::Receiver& receiver);
 
   template <typename Sender, typename Receiver>
   void Store(const nfs::TypeErasedMessageWrapper& /*message*/, const Sender& /*sender*/,
@@ -124,16 +124,31 @@ class CacheHandlerService {
   data_store::MemoryBuffer mem_only_cache_;
 };
 
+template <typename T>
+bool CacheHandlerService::Get(const T& /*message*/, const typename T::Sender& /*sender*/,
+                              const typename T::Receiver& /*receiver*/) {
+  return false;
+}
+
 template <typename Sender, typename Receiver>
-class GetFromCacheVisitor : public boost::static_visitor<> {
+class GetFromCacheVisitor : public boost::static_visitor<bool> {
  public:
   GetFromCacheVisitor(CacheHandlerService& cache_handler_service,
                       const Sender& sender, const Receiver& receiver)
       : cache_handler_service_(cache_handler_service), kSender_(sender), kReceiver_(receiver) {}
 
   template<typename GetFromCacheMessageType>
-  void operator()(const GetFromCacheMessageType& /*get_from_cache_message*/) {
-//    cache_handler_service_.CacheGet(get_from_cache_message, kSender_, kReceiver_);
+  typename std::enable_if<
+      std::is_same<typename GetFromCacheMessageType::Sender,Sender>::value, bool>::type
+  operator()(const GetFromCacheMessageType& get_from_cache_message) {
+    return cache_handler_service_.Get(get_from_cache_message, kSender_, kReceiver_);
+  }
+
+  template<typename GetFromCacheMessageType>
+  typename std::enable_if<
+      !std::is_same<typename GetFromCacheMessageType::Sender,Sender>::value, bool>::type
+  operator()(const GetFromCacheMessageType& /*get_from_cache_message*/) {
+    return false;
   }
 
  private:
