@@ -47,7 +47,7 @@ struct PmidRegistrationOp {
   template <typename PublicFobType>
   void SetPublicFob(std::unique_ptr<PublicFobType>&&);
   std::mutex mutex;
-  std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action;
+  std::unique_ptr<MaidManager::UnresolvedRegisterPmid> synced_action;
 //  nfs_vault::PmidRegistration pmid_registration;
   std::unique_ptr<passport::PublicMaid> public_maid;
   std::unique_ptr<passport::PublicPmid> public_pmid;
