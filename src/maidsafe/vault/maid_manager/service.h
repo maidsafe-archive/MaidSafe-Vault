@@ -55,6 +55,7 @@
 #include "maidsafe/vault/maid_manager/action_delete.h"
 #include "maidsafe/vault/maid_manager/action_register_unregister_pmid.h"
 #include "maidsafe/vault/maid_manager/dispatcher.h"
+#include "maidsafe/vault/maid_manager/helpers.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
@@ -113,6 +114,9 @@ class MaidManagerService {
 
   void HandleSyncedPmidRegistration(
       std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action);
+  template<typename PublicFobType>
+  void ValidatePmidRegistration(PublicFobType public_fob,
+                                std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
   // =============== Put/Delete data ===============================================================
   template <typename Data>
   void HandlePut(const MaidName& account_name, const Data& data, const PmidName& pmid_node_hint,
@@ -628,11 +632,10 @@ bool MaidManagerService::DeleteAllowed(const MaidName& account_name,
 //                                              const routing::ReplyFunctor& reply_functor) {
 //}
 
-// template<typename PublicFobType>
-// void MaidManagerService::ValidatePmidRegistration(
-//    const nfs::Reply& reply,
-//    typename PublicFobType::Name public_fob_name,
-//    std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
+ template<typename PublicFobType>
+ void MaidManagerService::ValidatePmidRegistration(
+    PublicFobType public_fob,
+    std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
 //  std::unique_ptr<PublicFobType> public_fob;
 //  try {
 //    public_fob.reset(new PublicFobType(public_fob_name,
@@ -642,15 +645,15 @@ bool MaidManagerService::DeleteAllowed(const MaidName& account_name,
 //    public_fob.reset();
 //    LOG(kError) << e.what();
 //  }
-//  bool finalise(false);
-//  {
-//    std::lock_guard<std::mutex> lock(pmid_registration_op->mutex);
-//    pmid_registration_op->SetPublicFob(std::move(public_fob));
-//    finalise = (++pmid_registration_op->count == 2);
-//  }
-//  if (finalise)
-//    FinalisePmidRegistration(pmid_registration_op);
-//}
+  bool finalise(false);
+  {
+    std::lock_guard<std::mutex> lock(pmid_registration_op->mutex);
+    pmid_registration_op->SetPublicFob(std::move(public_fob));
+    finalise = (++pmid_registration_op->count == 2);
+  }
+  if (finalise)
+    FinalisePmidRegistration(pmid_registration_op);
+}
 
 }  // namespace vault
 

@@ -28,6 +28,7 @@
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/maid_manager/value.h"
 #include "maidsafe/vault/maid_manager/action_update_pmid_health.h"
+#include "maidsafe/vault/maid_manager/action_register_unregister_pmid.h"
 
 
 namespace maidsafe {
