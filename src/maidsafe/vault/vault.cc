@@ -50,7 +50,7 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
           new PmidNodeService(pmid, *routing_, data_getter_, vault_root_dir)))),  // FIXME need to specialise
       cache_service_(*routing_, vault_root_dir),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
-             pmid_manager_service_, pmid_node_service_, cache_service_),
+             pmid_manager_service_, pmid_node_service_),
       asio_service_(2) {
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
   asio_service_.Start();
@@ -180,6 +180,23 @@ void Vault::OnMatrixChanged(std::shared_ptr<routing::MatrixChange> matrix_change
 void Vault::OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint) {
   asio_service_.service().post([=] { on_new_bootstrap_endpoint_(endpoint); });
 }
+
+template <>
+bool Vault::OnGetFromCache(const routing::SingleToSingleMessage& /*message*/) {
+  return false;
+}
+
+template <>
+bool Vault::OnGetFromCache(const routing::GroupToGroupMessage& /*message*/) {
+  return false;
+}
+
+template <>
+bool Vault::OnGetFromCache(const routing::GroupToSingleMessage& /*message*/) {
+  return false;
+}
+
+
 
 }  // namespace vault
 

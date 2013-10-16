@@ -40,6 +40,7 @@
 #include "maidsafe/vault/cache_handler/service.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/demultiplexer.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -72,6 +73,8 @@ class Vault {
   template <typename T>
   void OnStoreInCache(const T& message);
   void OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint);
+  template <typename Sender, typename Receiver>
+  bool HandleGetFromCache(const nfs::TypeErasedMessageWrapper message, const Sender& sender, const Receiver& receiver);
 
   std::mutex network_health_mutex_;
   std::condition_variable network_health_condition_variable_;
@@ -95,13 +98,41 @@ void Vault::OnMessageReceived(const T& message) {
 }
 
 template <typename T>
-bool Vault::OnGetFromCache(const T& message) {  // Need to be on routing's thread
-  return demux_.GetFromCache(message);
+bool Vault::OnGetFromCache(const T& message) {
+  auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
+  return HandleGetFromCache(wrapper_tuple, message.sender, message.receiver);
+}
+
+template <>
+bool Vault::OnGetFromCache(const routing::SingleToSingleMessage& message);
+
+template <>
+bool Vault::OnGetFromCache(const routing::GroupToGroupMessage& message);
+
+template <>
+bool Vault::OnGetFromCache(const routing::GroupToSingleMessage& message);
+
+template <typename Sender, typename Receiver>
+bool Vault::HandleGetFromCache(const nfs::TypeErasedMessageWrapper wrapper_tuple,
+                               const Sender& sender, const Receiver& receiver) {
+  auto source_persona(std::get<1>(wrapper_tuple).data);
+  GetFromCacheMessages get_from_cache_variant;
+  if (GetCacheVariant(wrapper_tuple, get_from_cache_variant)) {
+    if (source_persona == maidsafe::nfs::Persona::kMaidNode) {
+        GetFromCacheVisitor<Sender, Receiver> cache_get_visitor(cache_service_, sender, receiver);
+        boost::apply_visitor(cache_get_visitor, get_from_cache_variant);
+    }
+  }
+  return false;
 }
 
 template <typename T>
 void Vault::OnStoreInCache(const T& message) {
-  asio_service_.service().post([=] { demux_.StoreInCache(message); });
+  asio_service_.service().post([=] {
+                                 auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
+                                 cache_service_.Store(wrapper_tuple, message.sender,
+                                                      message.receiver);
+                               });
 }
 
 }  // namespace vault

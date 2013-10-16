@@ -47,8 +47,7 @@ class Demultiplexer {
                 nfs::Service<VersionHandlerService>& version_handler_service,
                 nfs::Service<DataManagerService>& data_manager_service,
                 nfs::Service<PmidManagerService>& pmid_manager_service,
-                nfs::Service<PmidNodeService>& pmid_node_service,
-                CacheHandlerService& cache_service);
+                nfs::Service<PmidNodeService>& pmid_node_service);
   template <typename T>
   void HandleMessage(const T& routing_message);
   template <typename T>
@@ -66,7 +65,6 @@ class Demultiplexer {
   nfs::Service<DataManagerService>& data_manager_service_;
   nfs::Service<PmidManagerService>& pmid_manager_service_;
   nfs::Service<PmidNodeService>& pmid_node_service_;
-  CacheHandlerService& cache_service_;
 };
 
 template <typename T>
@@ -95,18 +93,6 @@ void Demultiplexer::HandleMessage(const T& routing_message) {
     default:
       LOG(kError) << "Unhandled Persona";
   }
-}
-
- template<typename T>
- bool Demultiplexer::GetFromCache(const T& serialised_message) {
-  auto wrapper_tuple(nfs::ParseMessageWrapper(serialised_message.contents));
-  return cache_service_.Get(wrapper_tuple, serialised_message.sender, serialised_message.receiver);
-}
-
- template<typename T>
- void Demultiplexer::StoreInCache(const T& serialised_message) {
-  auto wrapper_tuple(nfs::ParseMessageWrapper(serialised_message.contents));
-  cache_service_.Store(wrapper_tuple, serialised_message.sender, serialised_message.receiver);
 }
 
 }  // namespace vault
