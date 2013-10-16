@@ -291,8 +291,7 @@ void DataManagerDispatcher::DoSendGetFromCache(const DataName& data_name, IsCach
   typedef GetFromCacheFromDataManagerToDataManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  nfs::MessageId message_id; // FIXME (Fraser)
-  VaultMessage vault_message(message_id, VaultMessage::Contents(data_name));
+  VaultMessage vault_message((VaultMessage::Contents(data_name)));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
                          VaultMessage::Receiver(routing::GroupId(NodeId(data_name->string()))),
@@ -323,7 +322,7 @@ routing::GroupSource DataManagerDispatcher::GroupSender(const DataName& data_nam
 }
 
 template<typename Message>
-void DataManagerDispatcher::CheckSourcePersonaType() const {// FIXME (Fraser)
+void DataManagerDispatcher::CheckSourcePersonaType() const {
   static_assert(Message::SourcePersona::value == nfs::Persona::kDataManager,
                 "The source Persona must be kDataManager.");
 }
