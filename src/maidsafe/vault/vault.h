@@ -98,22 +98,30 @@ void Vault::OnMessageReceived(const T& message) {
 }
 
 template <typename T>
-bool Vault::OnGetFromCache(const T& message) {  // Need to be on routing's thread
+bool Vault::OnGetFromCache(const T& message) {
   auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
   return HandleGetFromCache(wrapper_tuple, message.sender, message.receiver);
 }
 
+template <>
+bool Vault::OnGetFromCache(const routing::SingleToSingleMessage& message);
+
+template <>
+bool Vault::OnGetFromCache(const routing::GroupToGroupMessage& message);
+
+template <>
+bool Vault::OnGetFromCache(const routing::GroupToSingleMessage& message);
+
 template <typename Sender, typename Receiver>
 bool Vault::HandleGetFromCache(const nfs::TypeErasedMessageWrapper wrapper_tuple,
-                               const Sender& /*sender*/, const Receiver& /*receiver*/) {
-//  auto source_persona(std::get<1>(wrapper_tuple).data);
+                               const Sender& sender, const Receiver& receiver) {
+  auto source_persona(std::get<1>(wrapper_tuple).data);
   GetFromCacheMessages get_from_cache_variant;
   if (GetCacheVariant(wrapper_tuple, get_from_cache_variant)) {
-//    if (source_persona == maidsafe::nfs::Persona::kMaidNode) {
-//        GetFromCacheVisitor<routing::SingleSource, routing::SingleSource> cache_get_visitor(
-//            cache_service_, sender, receiver);
-//        boost::apply_visitor(cache_get_visitor, get_from_cache_variant);
-//    }
+    if (source_persona == maidsafe::nfs::Persona::kMaidNode) {
+        GetFromCacheVisitor<Sender, Receiver> cache_get_visitor(cache_service_, sender, receiver);
+        boost::apply_visitor(cache_get_visitor, get_from_cache_variant);
+    }
   }
   return false;
 }

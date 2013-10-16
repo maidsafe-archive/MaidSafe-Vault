@@ -181,6 +181,23 @@ void Vault::OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoin
   asio_service_.service().post([=] { on_new_bootstrap_endpoint_(endpoint); });
 }
 
+template <>
+bool Vault::OnGetFromCache(const routing::SingleToSingleMessage& /*message*/) {
+  return false;
+}
+
+template <>
+bool Vault::OnGetFromCache(const routing::GroupToGroupMessage& /*message*/) {
+  return false;
+}
+
+template <>
+bool Vault::OnGetFromCache(const routing::GroupToSingleMessage& /*message*/) {
+  return false;
+}
+
+
+
 }  // namespace vault
 
 }  // namespace maidsafe
