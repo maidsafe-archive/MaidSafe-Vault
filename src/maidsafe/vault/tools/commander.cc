@@ -44,6 +44,7 @@ bool SelectedOperationsContainer::InvalidOptions(
     const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
   do_create = variables_map.count("create") != 0;
   do_load = variables_map.count("load") != 0;
+  do_load = variables_map.count("key_index") != 0;
   do_delete = variables_map.count("delete") != 0;
   do_bootstrap = variables_map.count("bootstrap") != 0;
   do_store = variables_map.count("store") != 0;
@@ -61,7 +62,7 @@ bool SelectedOperationsContainer::InvalidOptions(
 
 bool SelectedOperationsContainer::ConflictedOptions(
     const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) const {
-  if (!do_create && !do_load && !do_delete && !do_generate_chunks)
+  if (!do_create && !do_load && !do_delete && !do_generate_chunks && !do_bootstrap && !do_test)
     return true;
   if (do_create && do_load)
     return true;
@@ -75,9 +76,8 @@ bool SelectedOperationsContainer::ConflictedOptions(
     return true;
   if (do_bootstrap && (do_store || do_verify || do_test || do_test_with_delete))
     return true;
-  if (do_bootstrap && (do_store || do_verify || do_test || do_test_with_delete))
-    return true;
-  if (peer_endpoints.empty() && !do_create && !do_load && !do_delete && !do_generate_chunks)
+  if (peer_endpoints.empty() &&
+      !do_create && !do_load && !do_delete && !do_generate_chunks && !do_bootstrap)
     return true;
   return false;
 }
@@ -161,7 +161,7 @@ po::options_description Commander::AddConfigurationOptions(const std::string& ti
                                  po::value<size_t>(&key_index_)->default_value(key_index_),
                                  "The index of key to be used as client during chunk store test")(
       "chunk_set_count", po::value<int>(&chunk_set_count_)->default_value(chunk_set_count_),
-      "Num of rounds for chunk store test, default is infinite")(
+      "Num of rounds for chunk store test, default is infinite; Or num of chunks to be generated")(
       "chunk_index", po::value<int>(&chunk_index_)->default_value(chunk_index_),
       "Index of the chunk to be used during tests, default is 0");
   return config_file_options;
@@ -245,6 +245,11 @@ void Commander::HandleKeys() {
 }
 
 void Commander::HandleSetupBootstraps() {
+  if (all_keychains_.size() < 2) {
+    all_keychains_.clear();
+    all_keychains_ = maidsafe::passport::detail::ReadKeyChainList(keys_path_);
+    LOG(kInfo) << "Loaded " << all_keychains_.size() << " pmids from " << keys_path_;
+  }
   assert(all_keychains_.size() >= 2);
   NetworkGenerator generator;
   generator.SetupBootstrapNodes(GetJustPmids(all_keychains_));
@@ -334,10 +339,10 @@ void Commander::HandleGenerateChunks() {
   assert(chunk_set_count_ > 0);
   for (int i(0); i < chunk_set_count_; ++i) {
     ImmutableData::serialised_type content(NonEmptyString(RandomString(1 << 18)));  // 256 KB
-    ImmutableData::Name name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
+    ImmutableData::Name name(Identity(crypto::Hash<crypto::SHA512>(content.data.string())));
     ImmutableData chunk_data(name, content);
 
-    fs::path chunk_file(store_path / Base64Encode(chunk_data.name()->string()));
+    fs::path chunk_file(store_path / HexEncode(chunk_data.name()->string()));
     if (!WriteFile(chunk_file, content->string()))
       LOG(kError) << "Can't store chunk " << HexSubstr(chunk_data.name()->string());
   }
