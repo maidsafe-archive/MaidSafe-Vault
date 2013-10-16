@@ -97,47 +97,6 @@ typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
 
 }  // namespace detail
 
-// template<typename Message>
-// inline bool FromMaidManager(const Message& message);
-//
-// template<typename Message>
-// inline bool FromDataManager(const Message& message);
-//
-// template<typename Message>
-// inline bool FromPmidManager(const Message& message);
-//
-// template<typename Message>
-// inline bool FromDataHolder(const Message& message);
-//
-// template<typename Message>
-// inline bool FromClientMaid(const Message& message);
-//
-// template<typename Message>
-// inline bool FromClientMpid(const Message& message);
-//
-// template<typename Message>
-// inline bool FromOwnerDirectoryManager(const Message& message);
-//
-// template<typename Message>
-// inline bool FromGroupDirectoryManager(const Message& message);
-//
-// template<typename Message>
-// inline bool FromWorldDirectoryManager(const Message& message);
-//
-// template<typename Message>
-// inline bool FromDataGetter(const Message& message);
-//
-// template<typename Message>
-// inline bool FromVersionHandler(const nfs::Message& message);
-
-/* Commented by Mahmoud on 2 Sep -- It may be of no use any more
-template<typename Persona>
-typename Persona::DbKey GetKeyFromMessage(const nfs::Message& message) {
-  if (!message.data().type)
-    ThrowError(CommonErrors::parsing_error);
-  return GetDataNameVariant(*message.data().type, message.data().name);
-}
-*/
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path);
 
 }  // namespace vault

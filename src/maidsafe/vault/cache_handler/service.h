@@ -24,6 +24,9 @@
 
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message_wrapper.h"
+#include "maidsafe/vault/message_types.h"
+#include "maidsafe/nfs/message_types.h"
+
 
 namespace maidsafe {
 
@@ -48,6 +51,32 @@ class CacheableVisitor : public boost::static_visitor<bool> {
 };
 
 }  // noname namespace
+
+typedef boost::variant<GetRequestFromDataManagerToPmidNode,
+                       nfs::GetRequestFromMaidNodeToDataManager> GetFromCacheMessages;
+
+inline bool GetCacheVariant(const maidsafe::nfs::TypeErasedMessageWrapper& message,
+                            GetFromCacheMessages& variant) {
+  auto action(std::get<0>(message));
+  auto source_persona(std::get<1>(message).data);
+  if (action != maidsafe::nfs::MessageAction::kGetRequest) {
+    LOG(kError) << "Invalid action type: " << static_cast<int32_t>(action);
+    maidsafe::ThrowError(maidsafe::CommonErrors::invalid_parameter);
+  }
+  switch (source_persona) {
+    case maidsafe::nfs::Persona::kMaidNode:
+      variant = GetFromCacheMessages(nfs::GetRequestFromMaidNodeToDataManager(message));
+      return true;
+      break;
+    case maidsafe::nfs::Persona::kDataManager:
+      variant = GetFromCacheMessages(GetRequestFromDataManagerToPmidNode(message));
+      return true;
+      break;
+    default:
+      break;
+  }
+  return false;
+}
 
 class CacheHandlerService {
  public:
@@ -93,6 +122,24 @@ class CacheHandlerService {
   DiskUsage cache_size_;
   data_store::DataStore<data_store::DataBuffer<DataNameVariant>> cache_data_store_;
   data_store::MemoryBuffer mem_only_cache_;
+};
+
+template <typename Sender, typename Receiver>
+class GetFromCacheVisitor : public boost::static_visitor<> {
+ public:
+  GetFromCacheVisitor(CacheHandlerService& cache_handler_service,
+                      const Sender& sender, const Receiver& receiver)
+      : cache_handler_service_(cache_handler_service), kSender_(sender), kReceiver_(receiver) {}
+
+  template<typename GetFromCacheMessageType>
+  void operator()(const GetFromCacheMessageType& /*get_from_cache_message*/) {
+//    cache_handler_service_.CacheGet(get_from_cache_message, kSender_, kReceiver_);
+  }
+
+ private:
+  CacheHandlerService& cache_handler_service_;
+  Sender kSender_;
+  Receiver kReceiver_;
 };
 
 template <typename Data>
