@@ -324,8 +324,8 @@ routing::GroupSource DataManagerDispatcher::GroupSender(const DataName& data_nam
 
 template<typename Message>
 void DataManagerDispatcher::CheckSourcePersonaType() const {// FIXME (Fraser)
-//  static_assert(typename Message::SourcePersona::value == nfs::Persona::kDataManager),
-//                "The source Persona must be kDataManager.");
+  static_assert(Message::SourcePersona::value == nfs::Persona::kDataManager,
+                "The source Persona must be kDataManager.");
 }
 
 }  // namespace vault
