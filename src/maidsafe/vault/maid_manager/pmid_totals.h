@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_HELPERS_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_HELPERS_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_PMID_TOTALS_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_PMID_TOTALS_H_
 
 #include <map>
 #include <memory>
@@ -29,41 +29,42 @@
 #include "maidsafe/routing/api_config.h"
 #include "maidsafe/nfs/vault/pmid_registration.h"
 
-#include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/pmid_manager/metadata.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-struct PmidRegistrationOp {
-  PmidRegistrationOp(std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action_in)
-      : mutex(),
-        synced_action(std::move(synced_action_in)),
-//        pmid_registration(pmid_registration_in),
-        public_maid(),
-        public_pmid(),
-        count(0) {}
-  template <typename PublicFobType>
-  void SetPublicFob(std::unique_ptr<PublicFobType>&&);
+struct GetPmidTotalsOp {
+  GetPmidTotalsOp(const MaidName& maid_account_name, const PmidName& pmid_account_name)
+      : kMaidManagerName(maid_account_name),
+        kPmidAccountName(pmid_account_name),
+        mutex(),
+        pmid_metadata() {}
+  const MaidName kMaidManagerName;
+  const PmidName kPmidAccountName;
   std::mutex mutex;
-  std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action;
-//  nfs_vault::PmidRegistration pmid_registration;
-  std::unique_ptr<passport::PublicMaid> public_maid;
-  std::unique_ptr<passport::PublicPmid> public_pmid;
-  int count;
+  std::vector<PmidManagerMetadata> pmid_metadata;
 };
 
-template <>
-void PmidRegistrationOp::SetPublicFob<passport::PublicMaid>(
-    std::unique_ptr<passport::PublicMaid>&& pub_maid);
+struct PmidTotals {
+  PmidTotals();
+  explicit PmidTotals(const std::string& serialised_pmid_registration_in);
+  PmidTotals(const std::string& serialised_pmid_registration_in,
+             const PmidManagerMetadata& pmid_metadata_in);
+  PmidTotals(const PmidTotals& other);
+  PmidTotals(PmidTotals&& other);
+  PmidTotals& operator=(PmidTotals other);
 
-template <>
-void PmidRegistrationOp::SetPublicFob<passport::PublicPmid>(
-    std::unique_ptr<passport::PublicPmid>&& pub_pmid);
+  std::string serialised_pmid_registration;
+  PmidManagerMetadata pmid_metadata;
+};
+
+bool operator==(const PmidTotals& lhs, const PmidTotals& rhs);
+void swap(PmidTotals& lhs, PmidTotals& rhs) MAIDSAFE_NOEXCEPT;
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_HELPERS_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_PMID_TOTALS_H_

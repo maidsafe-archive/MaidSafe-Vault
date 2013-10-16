@@ -38,7 +38,8 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
       routing_(new routing::Routing(pmid)),
       data_getter_(asio_service_, *routing_, pmids_from_file),
       maid_manager_service_(
-          std::move(std::unique_ptr<MaidManagerService>(new MaidManagerService(pmid, *routing_)))),
+          std::move(std::unique_ptr<MaidManagerService>(new MaidManagerService(pmid, *routing_,
+                                                                               data_getter_)))),
       version_handler_service_(std::move(
           std::unique_ptr<VersionHandlerService>(new VersionHandlerService(pmid, *routing_)))),
       data_manager_service_(std::move(std::unique_ptr<DataManagerService>(

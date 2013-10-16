@@ -36,40 +36,6 @@ void PmidRegistrationOp::SetPublicFob<passport::PublicPmid>(
   public_pmid = std::move(pub_pmid);
 }
 
-PmidTotals::PmidTotals() : serialised_pmid_registration(), pmid_metadata() {}
-
-PmidTotals::PmidTotals(const std::string& serialised_pmid_registration_in)
-    : serialised_pmid_registration(serialised_pmid_registration_in), pmid_metadata() {}
-
-PmidTotals::PmidTotals(const std::string& serialised_pmid_registration_in,
-                       const PmidManagerMetadata& pmid_metadata_in)
-    : serialised_pmid_registration(serialised_pmid_registration_in),
-      pmid_metadata(pmid_metadata_in) {}
-
-PmidTotals::PmidTotals(const PmidTotals& other)
-    : serialised_pmid_registration(other.serialised_pmid_registration),
-      pmid_metadata(other.pmid_metadata) {}
-
-PmidTotals::PmidTotals(PmidTotals&& other)
-    : serialised_pmid_registration(std::move(other.serialised_pmid_registration)),
-      pmid_metadata(std::move(other.pmid_metadata)) {}
-
-PmidTotals& PmidTotals::operator=(PmidTotals other) {
-  swap(*this, other);
-  return *this;
-}
-
-bool operator==(const PmidTotals& lhs, const PmidTotals& rhs) {
-  return lhs.serialised_pmid_registration == rhs.serialised_pmid_registration &&
-         lhs.pmid_metadata == rhs.pmid_metadata;
-}
-
-void swap(PmidTotals& lhs, PmidTotals& rhs) MAIDSAFE_NOEXCEPT {
-  using std::swap;
-  swap(lhs.serialised_pmid_registration, rhs.serialised_pmid_registration);
-  swap(lhs.pmid_metadata, rhs.pmid_metadata);
-}
-
 }  // namespace vault
 
 }  // namespace maidsafe

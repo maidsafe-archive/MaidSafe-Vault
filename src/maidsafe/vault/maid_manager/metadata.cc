@@ -20,7 +20,6 @@
 
 #include <utility>
 
-#include "maidsafe/vault/maid_manager/helpers.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 #include "maidsafe/vault/pmid_manager/metadata.h"
 
@@ -87,20 +86,20 @@ MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(const passport::Public
   return Status::kNoSpace;
 }
 
-// void MaidManagerMetadata::RegisterPmid(const nfs_vault::PmidRegistration& pmid_registration) {
-//  auto itr(Find(pmid_registration.pmid_name()));
-//  if (itr == std::end(pmid_totals_)) {
-//    auto serialised_pmid_registration(pmid_registration.Serialise());
-//    pmid_totals_.emplace_back(serialised_pmid_registration,
-//                              PmidManagerMetadata(pmid_registration.pmid_name()));
-//  }
-//}
+ void MaidManagerMetadata::RegisterPmid(const nfs_vault::PmidRegistration& pmid_registration) {
+  auto itr(Find(pmid_registration.pmid_name()));
+  if (itr == std::end(pmid_totals_)) {
+    auto serialised_pmid_registration(pmid_registration.Serialise());
+    pmid_totals_.emplace_back(serialised_pmid_registration,
+                              PmidManagerMetadata(pmid_registration.pmid_name()));
+  }
+}
 
-// void MaidManagerMetadata::UnregisterPmid(const nfs_vault::PmidRegistration& pmid_registration) {
-//  auto itr(Find(pmid_registration.pmid_name()));
-//  if (itr != std::end(pmid_totals_))
-//    pmid_totals_.erase(itr);
-//}
+ void MaidManagerMetadata::UnregisterPmid(const nfs_vault::PmidRegistration& pmid_registration) {
+  auto itr(Find(pmid_registration.pmid_name()));
+  if (itr != std::end(pmid_totals_))
+    pmid_totals_.erase(itr);
+}
 
 void MaidManagerMetadata::UpdatePmidTotals(const PmidManagerMetadata& /*pmid_metadata*/) {
 //  auto itr(Find(pmid_metadata.pmid_name));

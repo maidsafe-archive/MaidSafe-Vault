@@ -24,7 +24,7 @@
 #include <vector>
 
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/maid_manager/helpers.h"
+#include "maidsafe/vault/maid_manager/pmid_totals.h"
 
 namespace maidsafe {
 

@@ -147,9 +147,10 @@ T Merge(std::vector<T> values) {
 
 }  // unnamed namespace
 
-MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing)
+MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
+                                       nfs_client::DataGetter& data_getter)
     : routing_(routing),
-      //      data_getter_(public_key_getter),
+      data_getter_(data_getter),
       group_db_(),
       accumulator_mutex_(),
       accumulator_(),
@@ -191,7 +192,7 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& mai
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
-    const typename passport::PublicMaid::Name& data_name, int32_t /*cost*/,
+    const typename passport::PublicMaid::Name& data_name, int32_t ,
     nfs::MessageId message_id) {
   std::lock_guard<std::mutex> lock(pending_account_mutex_);
   auto pending_account_itr(pending_account_map_.find(message_id));
@@ -212,9 +213,8 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
 }
 
 template <>
-void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(
-    const MaidName& maid_name, const typename passport::PublicAnmaid::Name& data_name,
-    int32_t /*cost*/, nfs::MessageId message_id) {
+void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidName& maid_name,
+    const typename passport::PublicAnmaid::Name& data_name, int32_t, nfs::MessageId message_id) {
   std::lock_guard<std::mutex> lock(pending_account_mutex_);
   auto pending_account_itr(pending_account_map_.find(message_id));
   if (pending_account_itr == pending_account_map_.end()) {
@@ -240,6 +240,27 @@ void MaidManagerService::HandlePmidRegistration(const MaidName& source_maid_name
       MaidManager::UnresolvedRegisterPmid(source_maid_name,
           ActionRegisterUnregisterPmid<false>(pmid_registration), routing_.kNodeId()));
   DoSync();
+}
+
+void MaidManagerService::HandleSyncedPmidRegistration(
+    std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& /*synced_action*/) {
+  // Get keys
+//  auto maid_future = data_getter_.Get<passport::PublicMaid::Name>(
+//                         synced_action->value.kPmidRegistration.maid_name(),
+//                         std::chrono::seconds(10));
+//  auto anmaid_future = data_getter_.Get<passport::PublicAnmaid::Name>(
+//                           synced_action->value.kPmidRegistration.anmaid_name(),
+//                           std::chrono::seconds(10));
+
+//  auto pmid_registration_op(std::make_shared<PmidRegistrationOp>(std::move(synced_action)));
+
+
+//  if (synced_action->action.kPmidRegistration.Validate(public_maid, public_pmid)) {
+//    group_db_.Commit(synced_action->key, synced_action->action);
+//  } else {
+//    LOG(kError) << "Failed to validate PmidRegistration";
+//    // Need response message here ?
+//  }
 }
 
 // void MaidManagerService::HandleMessage(const nfs::Message& message,

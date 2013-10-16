@@ -78,7 +78,8 @@ class MaidManagerService {
   typedef nfs::MaidManagerServiceMessages PublicMessages;
   typedef MaidManagerServiceMessages VaultMessages;
 
-  MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing);
+  MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
+                     nfs_client::DataGetter& data_getter);
 
   template <typename T>
   void HandleMessage(const T&, const typename T::Sender&, const typename T::Receiver&);
@@ -109,6 +110,9 @@ class MaidManagerService {
 
   void HandlePmidRegistration(const MaidName& source_maid_name,
                               const nfs_vault::PmidRegistration& pmid_registration);
+
+  void HandleSyncedPmidRegistration(
+      std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action);
   // =============== Put/Delete data ===============================================================
   template <typename Data>
   void HandlePut(const MaidName& account_name, const Data& data, const PmidName& pmid_node_hint,
@@ -178,7 +182,7 @@ class MaidManagerService {
   };
 
   routing::Routing& routing_;
-  //  nfs_client::DataGetter data_getter_;
+  nfs_client::DataGetter& data_getter_;
   GroupDb<MaidManager> group_db_;
   std::mutex accumulator_mutex_;
   Accumulator<Messages> accumulator_;
