@@ -54,34 +54,12 @@ class CacheableVisitor : public boost::static_visitor<bool> {
 
 }  // noname namespace
 
-typedef boost::variant<GetRequestFromDataManagerToPmidNode,
-                       nfs::GetRequestFromMaidNodeToDataManager> GetFromCacheMessages;
-
-inline bool GetCacheVariant(const maidsafe::nfs::TypeErasedMessageWrapper& message,
-                            GetFromCacheMessages& variant) {
-  auto action(std::get<0>(message));
-  auto source_persona(std::get<1>(message).data);
-  if (action != maidsafe::nfs::MessageAction::kGetRequest) {
-    LOG(kError) << "Invalid action type: " << static_cast<int32_t>(action);
-    maidsafe::ThrowError(maidsafe::CommonErrors::invalid_parameter);
-  }
-  switch (source_persona) {
-    case maidsafe::nfs::Persona::kMaidNode:
-      variant = GetFromCacheMessages(nfs::GetRequestFromMaidNodeToDataManager(message));
-      return true;
-      break;
-    case maidsafe::nfs::Persona::kDataManager:
-      variant = GetFromCacheMessages(GetRequestFromDataManagerToPmidNode(message));
-      return true;
-      break;
-    default:
-      break;
-  }
-  return false;
-}
 
 class CacheHandlerService {
  public:
+  typedef nfs::DataManagerServiceMessages PublicMessages;
+  typedef DataManagerServiceMessages VaultMessages;
+  typedef bool HandleMessageReturnType;
   CacheHandlerService(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
 
   template <typename T>
@@ -129,33 +107,6 @@ bool CacheHandlerService::Get(const T& /*message*/, const typename T::Sender& /*
                               const typename T::Receiver& /*receiver*/) {
   return false;
 }
-
-template <typename Sender, typename Receiver>
-class GetFromCacheVisitor : public boost::static_visitor<bool> {
- public:
-  GetFromCacheVisitor(CacheHandlerService& cache_handler_service,
-                      const Sender& sender, const Receiver& receiver)
-      : cache_handler_service_(cache_handler_service), kSender_(sender), kReceiver_(receiver) {}
-
-  template<typename GetFromCacheMessageType>
-  typename std::enable_if<
-      std::is_same<typename GetFromCacheMessageType::Sender,Sender>::value, bool>::type
-  operator()(const GetFromCacheMessageType& get_from_cache_message) {
-    return cache_handler_service_.Get(get_from_cache_message, kSender_, kReceiver_);
-  }
-
-  template<typename GetFromCacheMessageType>
-  typename std::enable_if<
-      !std::is_same<typename GetFromCacheMessageType::Sender,Sender>::value, bool>::type
-  operator()(const GetFromCacheMessageType& /*get_from_cache_message*/) {
-    return false;
-  }
-
- private:
-  CacheHandlerService& cache_handler_service_;
-  Sender kSender_;
-  Receiver kReceiver_;
-};
 
 template <typename Data>
 void CacheHandlerService::HandleStore(const Data& /*data*/) {}

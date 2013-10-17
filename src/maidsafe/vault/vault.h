@@ -41,6 +41,7 @@
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/demultiplexer.h"
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/cache_handler/cache_service.h"
 
 namespace maidsafe {
 
@@ -116,14 +117,14 @@ template <>
 bool Vault::OnGetFromCache(const routing::GroupToSingleMessage& message);
 
 template <typename Sender, typename Receiver>
-bool Vault::HandleGetFromCache(const nfs::TypeErasedMessageWrapper wrapper_tuple,
-                               const Sender& sender, const Receiver& receiver) {
+bool Vault::HandleGetFromCache(const nfs::TypeErasedMessageWrapper /*wrapper_tuple*/,
+                               const Sender& /*sender*/, const Receiver& /*receiver*/) {
 //  auto source_persona(std::get<1>(wrapper_tuple).data);
-  GetFromCacheMessages get_from_cache_variant;
-  if (GetCacheVariant(wrapper_tuple, get_from_cache_variant)) {
-     GetFromCacheVisitor<Sender, Receiver> cache_get_visitor(cache_service_, sender, receiver);
-    return boost::apply_visitor(cache_get_visitor, get_from_cache_variant);
-  }
+//  GetFromCacheMessages get_from_cache_variant;
+//  if (GetCacheVariant(wrapper_tuple, get_from_cache_variant)) {
+//     GetFromCacheVisitor<Sender, Receiver> cache_get_visitor(cache_service_, sender, receiver);
+//    return boost::apply_visitor(cache_get_visitor, get_from_cache_variant);
+//  }
   return false;
 }
 

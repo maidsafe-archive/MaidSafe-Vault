@@ -49,6 +49,7 @@ class PmidManagerService {
   typedef void PublicMessages;
   typedef PmidManagerServiceMessages VaultMessages;
   typedef PmidManagerServiceMessages Messages;
+  typedef void HandleMessageReturnType;
 
   PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing);
 
