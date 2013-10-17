@@ -149,23 +149,17 @@ void Vault::OnPublicKeyRequested(const NodeId& node_id,
   asio_service_.service().post([=] { DoOnPublicKeyRequested(node_id, give_key); });
 }
 
-void Vault::DoOnPublicKeyRequested(const NodeId& /*node_id*/,
-                                   const routing::GivePublicKeyFunctor& /*give_key*/) {
-  //  passport::PublicPmid::Name name(Identity(node_id.string()));
-  //  public_key_getter_.GetKey<passport::PublicPmid>(
-  //      name,
-  //      [name, give_key] (nfs::Reply reply) {
-  //        try {
-  //          if (reply.IsSuccess()) {
-  //            passport::PublicPmid pmid(name,
-  // passport::PublicPmid::serialised_type(reply.data()));
-  //            give_key(pmid.public_key());
-  //          }
-  //        }
-  //        catch(const std::exception& ex) {
-  //          LOG(kError) << "Failed to get key for " << DebugId(name) << " : " << ex.what();
-  //        }
-  //      });
+void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
+                                   const routing::GivePublicKeyFunctor& give_key) {
+  passport::PublicPmid::Name name(Identity(node_id.string()));
+  auto pmid_future = data_getter_.Get<passport::PublicPmid>(name, std::chrono::seconds(10));
+//   auto pmid_future_then = pmid_future.then(
+//       [node_id, give_key, this](boost::future<passport::PublicPmid>& future) {
+//           passport::PublicPmid public_pmid(passport::PublicPmid(future.get()));
+//           give_key(public_pmid.public_key());
+//       });
+  passport::PublicPmid public_pmid(passport::PublicPmid(pmid_future.get()));
+  give_key(public_pmid.public_key());
 }
 
 void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {}
