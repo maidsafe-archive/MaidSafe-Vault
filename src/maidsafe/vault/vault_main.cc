@@ -27,6 +27,7 @@
 #include <atomic>
 
 #include "boost/filesystem/convenience.hpp"
+#include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 #include "boost/program_options.hpp"
 
@@ -104,6 +105,15 @@ void RunVault(po::variables_map& variables_map) {
   std::unique_ptr<passport::Pmid> pmid;
   std::vector<passport::PublicPmid> pmids;
 #ifdef TESTING
+  boost::system::error_code ec;
+  if (!boost::filesystem::exists(chunk_path))
+    fs::create_directories(chunk_path, ec);
+  chunk_path = chunk_path / ("vault_" +
+                             std::to_string(variables_map.at("identity_index").as<int>()));
+  if (!boost::filesystem::exists(chunk_path))
+    fs::create_directories(chunk_path, ec);
+  if (!boost::filesystem::exists(chunk_path))
+    fs::create_directories(chunk_path, ec);
   GetIdentityAndEndpoints(variables_map, pmid, peer_endpoints, pmids);
 #endif
   std::string vmid(variables_map.count("vmid") == 0 ? "test"
@@ -171,12 +181,15 @@ po::options_description PopulateVariablesMap(int argc, char* argv[],
                                                                      "Display version");
 
   po::options_description config_file_options("Configuration options");
+  boost::system::error_code error_code;
   config_file_options.add_options()
 #ifndef __APPLE__
       ("plugins_path", po::value<std::string>(), "Path to statistics plugins (enables stats)")
 #endif
-      ("chunk_path", po::value<std::string>(), "Directory to store chunks in")(
-          "vmid", po::value<std::string>(), "ID to identify to vault manager");
+      ("chunk_path", po::value<std::string>()->default_value(
+                        fs::path(fs::temp_directory_path(error_code) / "vault_chunks").string()),
+          "Directory to store chunks in")(
+       "vmid", po::value<std::string>(), "ID to identify to vault manager");
 #ifdef TESTING
   AddTestingOptions(config_file_options);
 #endif
