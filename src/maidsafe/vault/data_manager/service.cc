@@ -66,7 +66,7 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       sync_node_downs_(),
       sync_node_ups_() {}
 
-// PutRequestFromMaidManagerToDataManager
+// ==================== Put implementation =========================================================
 template <>
 void DataManagerService::HandleMessage(
     const PutRequestFromMaidManagerToDataManager& message,
@@ -81,7 +81,20 @@ void DataManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
-// PutResponseFromPmidManagerToDataManager
+template <>
+void DataManagerService::HandleMessage(
+    const PutResponseFromPmidManagerToDataManager& message,
+    const typename PutResponseFromPmidManagerToDataManager::Sender& sender,
+    const typename PutResponseFromPmidManagerToDataManager::Receiver& receiver) {
+  typedef PutResponseFromPmidManagerToDataManager MessageType;
+  OperationHandlerWrapper<DataManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
 template <>
 void DataManagerService::HandleMessage(
     const PutFailureFromPmidManagerToDataManager& message,
@@ -96,7 +109,7 @@ void DataManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
-// GetRequestFromMaidNodeToDataManager
+// ==================== Get / IntegrityCheck implementation ========================================
 template<>
 void DataManagerService::HandleMessage(
     const nfs::GetRequestFromMaidNodeToDataManager& message,
@@ -111,7 +124,6 @@ void DataManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
-// GetRequestFromDataGetterToDataManager
 template<>
 void DataManagerService::HandleMessage(
     const nfs::GetRequestFromDataGetterToDataManager& message,
@@ -126,7 +138,6 @@ void DataManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
-// GetResponseFromPmidNodeToDataManager
 template<>
 void DataManagerService::HandleMessage(
     const GetResponseFromPmidNodeToDataManager& message,
@@ -141,6 +152,32 @@ void DataManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+template <>
+void DataManagerService::HandleMessage(
+    const PutToCacheFromDataManagerToDataManager& /*message*/,
+    const typename PutToCacheFromDataManagerToDataManager::Sender& /*sender*/,
+    const typename PutToCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {}  // No-op
+
+template <>
+void DataManagerService::HandleMessage(
+    const GetFromCacheFromDataManagerToDataManager& /*message*/,
+    const typename GetFromCacheFromDataManagerToDataManager::Sender& /*sender*/,
+    const typename GetFromCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {}  // No-op
+
+template <>
+void DataManagerService::HandleMessage(
+    const GetCachedResponseFromCacheHandlerToDataManager& /*message*/,
+    const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& /*sender*/,
+    const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& /*receiver*/) {
+  assert(0);
+}
+
+void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
+                                           const GetResponseContents& contents) {
+  get_timer_.AddResponse(message_id.data, std::make_pair(pmid_name, contents));
+}
+
+// ==================== Delete implementation ======================================================
 template<>
 void DataManagerService::HandleMessage(
     const DeleteRequestFromMaidManagerToDataManager& message,
@@ -155,7 +192,17 @@ void DataManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
-// SynchroniseFromDataManagerToDataManager
+void DataManagerService::SendDeleteRequests(const DataManager::Key& key,
+                                            const std::set<PmidName>& pmids,
+                                            nfs::MessageId message_id) {
+  auto data_name(GetDataNameVariant(key.type, key.name));
+  for (const auto& pmid : pmids) {
+    detail::DataManagerSendDeleteVisitor<DataManagerService> delete_visitor(this, pmid, message_id);
+    boost::apply_visitor(delete_visitor, data_name);
+  }
+}
+
+// ==================== Sync / AccountTransfer implementation ======================================
 template <>
 void DataManagerService::HandleMessage(
     const SynchroniseFromDataManagerToDataManager& message,
@@ -236,29 +283,6 @@ void DataManagerService::HandleMessage(
   }
 }
 
-void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
-  std::lock_guard<std::mutex> lock(matrix_change_mutex_);
-  matrix_change_ = *matrix_change;
-}
-
-// ==================== Get / IntegrityCheck implementation ========================================
-void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
-                                           const GetResponseContents& contents) {
-  get_timer_.AddResponse(message_id.data, std::make_pair(pmid_name, contents));
-}
-
-// ==================== Delete implementation ======================================================
-void DataManagerService::SendDeleteRequests(const DataManager::Key& key,
-                                            const std::set<PmidName>& pmids,
-                                            nfs::MessageId message_id) {
-  auto data_name(GetDataNameVariant(key.type, key.name));
-  for (const auto& pmid : pmids) {
-    detail::DataManagerSendDeleteVisitor<DataManagerService> delete_visitor(this, pmid, message_id);
-    boost::apply_visitor(delete_visitor, data_name);
-  }
-}
-
-// ==================== Sync / AccountTransfer implementation ======================================
 void DataManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
@@ -268,17 +292,13 @@ void DataManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_ups_);
 }
 
-void DataManagerService::HandleDataIntegrityResponse(const GetResponseContents& /*response*/,
-                                                     nfs::MessageId /*message_id*/) {
-  //try {
-  //  get_timer_.AddResponse(message_id.data, response);
-  //}
-  //catch (const std::exception& ex) {
-  //  LOG(kWarning) << "Failed to find Task ID " << message_id.data << ": " << ex.what();
-  //}
+// ==================== Sync / AccountTransfer implementation ======================================
+void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
+  std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+  matrix_change_ = *matrix_change;
 }
 
-// =============== Churn ===========================================================================
+// ==================== General implementation =====================================================
 // void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
 //  auto record_names(metadata_handler_.GetRecordNames());
 //  auto itr(std::begin(record_names));

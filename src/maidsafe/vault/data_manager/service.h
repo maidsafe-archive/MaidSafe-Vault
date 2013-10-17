@@ -64,10 +64,10 @@ class DataManagerService {
 
   DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter);
-  template <typename T>
-  void HandleMessage(const T& message,
-                     const typename T::Sender& sender,
-                     const typename T::Receiver& receiver);
+  template <typename MessageType>
+  void HandleMessage(const MessageType& message,
+                     const typename MessageType::Sender& sender,
+                     const typename MessageType::Receiver& receiver);
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
   template <typename ServiceHandlerType, typename RequestorIdType>
@@ -140,6 +140,13 @@ class DataManagerService {
   void SendDeleteRequest(const PmidName pmid_node, const typename Data::Name& name,
                          nfs::MessageId message_id);
 
+  // =========================== Node up / Node down section =======================================
+  template <typename DataName>
+  void MarkNodeDown(const PmidName& pmid_node, const DataName& data_name);
+
+  template <typename DataName>
+  void MarkNodeUp(const PmidName& pmid_node, const DataName& data_name);
+
   // =========================== Sync / AccountTransfer section ====================================
   void DoSync();
 
@@ -153,8 +160,6 @@ class DataManagerService {
 
 
 
-
-  void HandleDataIntegrityResponse(const GetResponseContents& response, nfs::MessageId message_id);
 
   template <typename Data>
   NonEmptyString GetContentFromCache(const typename Data::Name& name);
@@ -196,9 +201,9 @@ class DataManagerService {
 };
 
 // =========================== Handle Message Specialisations ======================================
-template <typename T>
-void DataManagerService::HandleMessage(const T&, const typename T::Sender&,
-                                       const typename T::Receiver&) {}
+template <typename MessageType>
+void DataManagerService::HandleMessage(const MessageType&, const typename MessageType::Sender&,
+                                       const typename MessageType::Receiver&) {}
 
 template <>
 void DataManagerService::HandleMessage(
@@ -208,39 +213,69 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
+    const PutResponseFromPmidManagerToDataManager& message,
+    const typename PutResponseFromPmidManagerToDataManager::Sender&,
+    const typename PutResponseFromPmidManagerToDataManager::Receiver&);
+
+template <>
+void DataManagerService::HandleMessage(
     const PutFailureFromPmidManagerToDataManager& message,
     const typename PutFailureFromPmidManagerToDataManager::Sender& sender,
     const typename PutFailureFromPmidManagerToDataManager::Receiver& receiver);
 
-template<>
+template <>
 void DataManagerService::HandleMessage(
     const nfs::GetRequestFromMaidNodeToDataManager& message,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
 
-template<>
+template <>
 void DataManagerService::HandleMessage(
     const nfs::GetRequestFromDataGetterToDataManager& message,
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
 
-template<>
+template <>
 void DataManagerService::HandleMessage(
     const GetResponseFromPmidNodeToDataManager& message,
     const typename GetResponseFromPmidNodeToDataManager::Sender& sender,
     const typename GetResponseFromPmidNodeToDataManager::Receiver& receiver);
 
-template<>
+template <>
+void DataManagerService::HandleMessage(
+    const PutToCacheFromDataManagerToDataManager& message,
+    const typename PutToCacheFromDataManagerToDataManager::Sender& sender,
+    const typename PutToCacheFromDataManagerToDataManager::Receiver& receiver);
+
+template <>
+void DataManagerService::HandleMessage(
+    const GetFromCacheFromDataManagerToDataManager& message,
+    const typename GetFromCacheFromDataManagerToDataManager::Sender& sender,
+    const typename GetFromCacheFromDataManagerToDataManager::Receiver& receiver);
+
+template <>
+void DataManagerService::HandleMessage(
+    const GetCachedResponseFromCacheHandlerToDataManager& message,
+    const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
+    const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver);
+
+template <>
 void DataManagerService::HandleMessage(
     const DeleteRequestFromMaidManagerToDataManager& message,
     const typename DeleteRequestFromMaidManagerToDataManager::Sender& sender,
     const typename DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
 
-template<>
+template <>
 void DataManagerService::HandleMessage(
-   const SynchroniseFromDataManagerToDataManager& message,
-   const typename SynchroniseFromDataManagerToDataManager::Sender& sender,
-   const typename SynchroniseFromDataManagerToDataManager::Receiver& receiver);
+    const SynchroniseFromDataManagerToDataManager& message,
+    const typename SynchroniseFromDataManagerToDataManager::Sender& sender,
+    const typename SynchroniseFromDataManagerToDataManager::Receiver& receiver);
+
+template <>
+void DataManagerService::HandleMessage(
+    const StateChangeFromPmidManagerToDataManager& message,
+    const typename StateChangeFromPmidManagerToDataManager::Sender& sender,
+    const typename StateChangeFromPmidManagerToDataManager::Receiver& receiver);
 
 // ==================== Put implementation =========================================================
 template <typename Data>
@@ -265,7 +300,7 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
                                                          routing_.kNodeId()));
     DoSync();
   }
-  dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id); // NOT IN FAILURE
+  dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);  // NOT IN FAILURE
 }
 
 template <typename Data>
@@ -459,6 +494,8 @@ void DataManagerService::AssessIntegrityCheckResults(
   // If we failed to get the serialised_contents, mark 'pmid_node_to_get_from' as down, sync this,
   // try to Get from peer DataManagers' caches.
   if (!get_response_op->serialised_contents->IsInitialised()) {
+    MarkNodeDown(get_response_op->pmid_node_to_get_from, get_response_op->data_name);
+
   }
 }
 
@@ -534,8 +571,18 @@ void DataManagerService::SendDeleteRequest(
   dispatcher_.SendDeleteRequest<Data>(pmid_node, name, message_id);
 }
 
-// ==================== General implementation =====================================================
+// ==================== Node up / Node down implementation =========================================
+template <typename DataName>
+void DataManagerService::MarkNodeDown(const PmidName& /*pmid_node*/, const DataName& /*data_name*/) {
+  assert(0);
+}
 
+template <typename DataName>
+void DataManagerService::MarkNodeUp(const PmidName& /*pmid_node*/, const DataName& /*data_name*/) {
+  assert(0);
+}
+
+// ==================== General implementation =====================================================
 namespace detail {
 
 template <typename DataManagerSyncType>
