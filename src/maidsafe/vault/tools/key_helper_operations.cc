@@ -84,6 +84,18 @@ void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_keys) {
       NodeId node_id, const routing::GivePublicKeyFunctor & give_key) {
     DoOnPublicKeyRequested(node_id, give_key, public_key_getter);
   };
+  functors1.typed_message_and_caching.group_to_group.message_received =
+      functors2.typed_message_and_caching.group_to_group.message_received =
+      [&](const routing::GroupToGroupMessage &) {};
+  functors1.typed_message_and_caching.group_to_single.message_received =
+      functors2.typed_message_and_caching.group_to_single.message_received =
+      [&](const routing::GroupToSingleMessage &) {};
+  functors1.typed_message_and_caching.single_to_group.message_received =
+      functors2.typed_message_and_caching.single_to_group.message_received =
+      [&](const routing::SingleToGroupMessage &) {};
+  functors1.typed_message_and_caching.single_to_single.message_received =
+      functors2.typed_message_and_caching.single_to_single.message_received =
+      [&](const routing::SingleToSingleMessage &) {};
 
   endpoint1_ = UdpEndpoint(GetLocalIp(), test::GetRandomPort());
   endpoint2_ = UdpEndpoint(GetLocalIp(), test::GetRandomPort());
