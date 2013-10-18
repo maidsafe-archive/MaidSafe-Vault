@@ -233,6 +233,9 @@ void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidNam
   }
 }
 
+
+// =============== Pmid registration ===============================================================
+
 void MaidManagerService::HandlePmidRegistration(const MaidName& source_maid_name,
     const nfs_vault::PmidRegistration& pmid_registration) {
   if (pmid_registration.maid_name() != source_maid_name)
@@ -257,15 +260,60 @@ void MaidManagerService::HandleSyncedPmidRegistration(
 
   auto maid_future_then = maid_future.then(
       [pmid_registration_op, this](boost::future<passport::PublicMaid>& future) {
-          std::unique_ptr<passport::PublicMaid> public_maid(new passport::PublicMaid(future.get()));
-          ValidatePmidRegistration(std::move(public_maid), pmid_registration_op);
+          try {
+            std::unique_ptr<passport::PublicMaid> public_maid(new passport::PublicMaid(
+                                                                  future.get()));
+            ValidatePmidRegistration(std::move(public_maid), pmid_registration_op);
+          } catch(const std::exception& e) {
+            LOG(kError) << e.what();
+          }
       });
 
   auto pmid_future_then = pmid_future.then(
       [pmid_registration_op, this](boost::future<passport::PublicPmid>& future) {
-          std::unique_ptr<passport::PublicPmid> public_pmid(new passport::PublicPmid(future.get()));
-          ValidatePmidRegistration(std::move(public_pmid), pmid_registration_op);
+          try {
+            std::unique_ptr<passport::PublicPmid> public_pmid(new passport::PublicPmid(
+                                                                  future.get()));
+            ValidatePmidRegistration(std::move(public_pmid), pmid_registration_op);
+          } catch(const std::exception& e) {
+            LOG(kError) << e.what();
+          }
       });
+  boost::wait_for_all(maid_future_then, pmid_future_then);
+}
+
+
+ void MaidManagerService::FinalisePmidRegistration(
+    std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
+  assert(pmid_registration_op->count == 2);
+
+  if (!pmid_registration_op->public_maid || !pmid_registration_op->public_pmid) {
+    LOG(kWarning) << "Failed to retrieve one or both of MAID and PMID";
+    return;
+  }
+
+  try {
+    if (!pmid_registration_op->synced_action->action.kPmidRegistration.Validate(
+            *pmid_registration_op->public_maid, *pmid_registration_op->public_pmid)) {
+      LOG(kWarning) << "Failed to validate PmidRegistration";
+      return;
+    }
+
+    if (pmid_registration_op->synced_action->action.kPmidRegistration.unregister()) {
+      group_db_.Commit(pmid_registration_op->synced_action->key.group_name(),
+                       pmid_registration_op->synced_action->action);
+    } else {
+      group_db_.Commit(pmid_registration_op->synced_action->key.group_name(),
+                       pmid_registration_op->synced_action->action);
+    }
+  //FIXME(Prakash)  need UpdatePmidTotals
+  }
+  catch(const maidsafe_error& error) {
+    LOG(kWarning) << "Failed to register new PMID: " << error.what();
+  }
+  catch(const std::exception& ex) {
+    LOG(kWarning) << "Failed to register new PMID: " << ex.what();
+  }
 }
 
 // void MaidManagerService::HandleMessage(const nfs::Message& message,
@@ -357,78 +405,7 @@ void MaidManagerService::HandleSyncedPmidRegistration(
 //  return HandleVersionMessage<WorldDirectory>(message, reply_functor);
 //}
 
-// =============== Pmid registration ===============================================================
 
-// void MaidManagerService::HandlePmidRegistration(const nfs::Message& message,
-//                                                const routing::ReplyFunctor& reply_functor) {
-//  NodeId source_id(message.source().node_id);
-
-//  // TODO(Fraser#5#): 2013-04-22 - Validate Message signature.  Currently the Message does not
-// have
-//  //                  a signature applied, and the demuxer doesn't pass the signature down anyway.
-//  nfs::PmidRegistration pmid_registration(nfs::PmidRegistration::serialised_type(NonEmptyString(
-//      message.data().content.string())));
-//  if (pmid_registration.maid_name()->string() != source_id.string())
-//    return reply_functor(nfs::Reply(VaultErrors::permission_denied).Serialise()->string());
-
-//  auto pmid_registration_op(std::make_shared<PmidRegistrationOp>(pmid_registration,
-// reply_functor));
-//FIXME Prakash need to have utility to get public key
-//  public_key_getter_.GetKey<passport::PublicMaid>(
-//      pmid_registration.maid_name(),
-//      [this, pmid_registration_op, &pmid_registration](const nfs::Reply& reply) {
-//          ValidatePmidRegistration<passport::PublicMaid>(reply, pmid_registration.maid_name(),
-//                                                         pmid_registration_op);
-//      });
-//  public_key_getter_.GetKey<passport::PublicPmid>(
-//      pmid_registration.pmid_name(),
-//      [this, pmid_registration_op, &pmid_registration](const nfs::Reply& reply) {
-//          ValidatePmidRegistration<passport::PublicPmid>(reply, pmid_registration.pmid_name(),
-//                                                         pmid_registration_op);
-//      });
-//}
-
- void MaidManagerService::FinalisePmidRegistration(
-    std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
-  assert(pmid_registration_op->count == 2);
-//  auto send_reply([&](const maidsafe_error& error)->void {
-//      nfs::Reply reply(error);
-//      pmid_registration_op->reply_functor(reply.Serialise()->string());
-//  });
-
-  if (!pmid_registration_op->public_maid || !pmid_registration_op->public_pmid) {
-    LOG(kWarning) << "Failed to retrieve one or both of MAID and PMID";
-    return; // send_reply(maidsafe_error(VaultErrors::permission_denied));
-  }
-
-  try {
-    if (!pmid_registration_op->synced_action->action.kPmidRegistration.Validate(
-            *pmid_registration_op->public_maid, *pmid_registration_op->public_pmid)) {
-      LOG(kWarning) << "Failed to validate PmidRegistration";
-      return; // send_reply(maidsafe_error(VaultErrors::permission_denied));
-    }
-
-//    if (pmid_registration_op->pmid_registration.unregister()) {
-//      maid_account_handler_.UnregisterPmid(pmid_registration_op->public_maid->name(),
-//                                           pmid_registration_op->public_pmid->name());
-//    } else {
-//      maid_account_handler_.RegisterPmid(pmid_registration_op->public_maid->name(),
-//                                         pmid_registration_op->pmid_registration);
-//    }
-//    send_reply(maidsafe_error(CommonErrors::success));
-//    UpdatePmidTotals(pmid_registration_op->public_maid->name());
-  }
-  catch(const maidsafe_error& error) {
-    LOG(kWarning) << "Failed to register new PMID: " << error.what();
-  }
-  catch(const std::exception& ex) {
-    LOG(kWarning) << "Failed to register new PMID: " << ex.what();
-  }
-}
-
-// void MaidManagerService::HandleCreateAccount(const MaidName& maid_name) {
-//  CreateAccount(maid_name, can_create_account<>;
-//}
 
 // =============== Sync ============================================================================
 
@@ -801,9 +778,8 @@ void MaidManagerService::HandleMessage(
         proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_register_pmids_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
-        // get pmid & maid keys
-        // validate pmid registration
-    }
+        HandleSyncedPmidRegistration(std::move(resolved_action));
+      }
     break;
   }
     default: {
