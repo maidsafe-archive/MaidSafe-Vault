@@ -49,6 +49,7 @@ class VersionHandlerService {
   typedef nfs::VersionHandlerServiceMessages PublicMessages;
   typedef void VaultMessages;
   typedef nfs::VersionHandlerServiceMessages Messages;
+  typedef void HandleMessageReturnType;
 
   typedef Identity VersionHandlerAccountName;
   VersionHandlerService(const passport::Pmid& pmid, routing::Routing& routing);

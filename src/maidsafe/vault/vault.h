@@ -42,6 +42,7 @@
 #include "maidsafe/vault/demultiplexer.h"
 #include "maidsafe/vault/utils.h"
 
+
 namespace maidsafe {
 
 namespace vault {
@@ -87,7 +88,7 @@ class Vault {
   nfs::Service<DataManagerService> data_manager_service_;
   nfs::Service<PmidManagerService> pmid_manager_service_;
   nfs::Service<PmidNodeService> pmid_node_service_;
-  CacheHandlerService cache_service_;
+  nfs::Service<CacheHandlerService> cache_service_;
   Demultiplexer demux_;
   AsioService asio_service_;
 };
@@ -98,41 +99,17 @@ void Vault::OnMessageReceived(const T& message) {
 }
 
 template <typename T>
-bool Vault::OnGetFromCache(const T& /*message*/) {
-  T::under_construction;
-  return false;
-}
-
-template <>
-bool Vault::OnGetFromCache(const routing::SingleToGroupMessage& message);
-
-template <>
-bool Vault::OnGetFromCache(const routing::SingleToSingleMessage& message);
-
-template <>
-bool Vault::OnGetFromCache(const routing::GroupToGroupMessage& message);
-
-template <>
-bool Vault::OnGetFromCache(const routing::GroupToSingleMessage& message);
-
-template <typename Sender, typename Receiver>
-bool Vault::HandleGetFromCache(const nfs::TypeErasedMessageWrapper wrapper_tuple,
-                               const Sender& sender, const Receiver& receiver) {
-//  auto source_persona(std::get<1>(wrapper_tuple).data);
-  GetFromCacheMessages get_from_cache_variant;
-  if (GetCacheVariant(wrapper_tuple, get_from_cache_variant)) {
-     GetFromCacheVisitor<Sender, Receiver> cache_get_visitor(cache_service_, sender, receiver);
-    return boost::apply_visitor(cache_get_visitor, get_from_cache_variant);
-  }
-  return false;
+CacheHandlerService::HandleMessageReturnType Vault::OnGetFromCache(const T& message) {
+  auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
+  return cache_service_.HandleMessage(wrapper_tuple, message.sender, message.receiver);
 }
 
 template <typename T>
 void Vault::OnStoreInCache(const T& message) {
   asio_service_.service().post([=] {
                                  auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
-                                 cache_service_.Store(wrapper_tuple, message.sender,
-                                                      message.receiver);
+                                 return cache_service_.HandleMessage(
+                                            wrapper_tuple, message.sender, message.receiver);
                                });
 }
 

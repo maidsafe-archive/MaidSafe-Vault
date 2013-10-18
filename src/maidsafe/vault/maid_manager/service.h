@@ -78,6 +78,7 @@ class MaidManagerService {
  public:
   typedef nfs::MaidManagerServiceMessages PublicMessages;
   typedef MaidManagerServiceMessages VaultMessages;
+  typedef void HandleMessageReturnType;
 
   MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter);
