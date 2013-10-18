@@ -73,7 +73,7 @@ class Commander {
 
  private:
   size_t pmids_count_;
-  size_t key_index_;
+  int key_index_;
   int chunk_set_count_;
   int chunk_index_;
   KeyChainVector all_keychains_;
