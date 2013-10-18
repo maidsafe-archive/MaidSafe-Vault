@@ -57,19 +57,14 @@ class CacheableVisitor : public boost::static_visitor<bool> {
 
 class CacheHandlerService {
  public:
-  typedef nfs::DataManagerServiceMessages PublicMessages;
-  typedef DataManagerServiceMessages VaultMessages;
+  typedef nfs::CacheableMessages PublicMessages;
+  typedef CacheableMessages VaultMessages;
   typedef bool HandleMessageReturnType;
   CacheHandlerService(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
 
   template <typename T>
-  bool Get(const T& message, const typename T::Sender& sender,
-           const typename T::Receiver& receiver);
-
-  template <typename Sender, typename Receiver>
-  void Store(const nfs::TypeErasedMessageWrapper& /*message*/, const Sender& /*sender*/,
-             const Receiver& /*receiver*/) {
-  }
+  HandleMessageReturnType HandleMessage(const T& message, const typename T::Sender& sender,
+                                        const typename T::Receiver& receiver);
 
  private:
   typedef std::true_type IsCacheable, IsLongTermCacheable;
@@ -103,14 +98,54 @@ class CacheHandlerService {
 };
 
 template <typename T>
-bool CacheHandlerService::Get(const T& /*message*/, const typename T::Sender& /*sender*/,
-                              const typename T::Receiver& /*receiver*/) {
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(const T& /*message*/, const typename T::Sender& /*sender*/,
+                                   const typename T::Receiver& /*receiver*/) {
+//  T::No_General_Implementation_Available;
   return false;
 }
 
-template <typename Data>
-void CacheHandlerService::HandleStore(const Data& /*data*/) {}
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetResponseFromDataManagerToMaidNode& message,
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& sender,
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& receiver);
 
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetCachedResponseFromCacheHandlerToMaidNode& message,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Sender& sender,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& receiver);
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetResponseFromDataManagerToDataGetter& message,
+    const typename nfs::GetResponseFromDataManagerToDataGetter::Sender& sender,
+    const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& receiver);
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetCachedResponseFromCacheHandlerToDataGetter& message,
+    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Sender& sender,
+    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Receiver& receiver);
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetRequestFromMaidNodeToDataManager& message,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetRequestFromDataGetterToDataManager& message,
+    const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
 
 }  // namespace vault
 
