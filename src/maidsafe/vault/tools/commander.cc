@@ -44,7 +44,8 @@ bool SelectedOperationsContainer::InvalidOptions(
     const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
   do_create = variables_map.count("create") != 0;
   do_load = variables_map.count("load") != 0;
-  do_load = variables_map.count("key_index") != 0;
+  if (!do_create)
+    do_load = variables_map.count("key_index") != 0;
   do_delete = variables_map.count("delete") != 0;
   do_bootstrap = variables_map.count("bootstrap") != 0;
   do_store = variables_map.count("store") != 0;
@@ -90,7 +91,7 @@ bool SelectedOperationsContainer::NoOptionsSelected() const {
 
 Commander::Commander(size_t pmids_count)
     : pmids_count_(pmids_count),
-      key_index_(pmids_count_ - 1),
+      key_index_(0),
       chunk_set_count_(-1),
       chunk_index_(0),
       all_keychains_(),
@@ -157,9 +158,9 @@ po::options_description Commander::AddConfigurationOptions(const std::string& ti
       "Path to keys file")(
       "chunk_path", po::value<std::string>()->default_value(
                         fs::path(fs::temp_directory_path(error_code) / "keys_chunks").string()),
-      "Path to chunk directory")("key_index,k",
-                                 po::value<size_t>(&key_index_)->default_value(key_index_),
-                                 "The index of key to be used as client during chunk store test")(
+      "Path to chunk directory")(
+      "key_index,k", po::value<size_t>(&key_index_)->default_value(key_index_),
+      "The index of key to be used as client during chunk store test")(
       "chunk_set_count", po::value<int>(&chunk_set_count_)->default_value(chunk_set_count_),
       "Num of rounds for chunk store test, default is infinite; Or num of chunks to be generated")(
       "chunk_index", po::value<int>(&chunk_index_)->default_value(chunk_index_),
