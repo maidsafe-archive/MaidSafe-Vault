@@ -113,6 +113,25 @@ void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/
 
 // TODO(Team) Consider moving these to respective persona
 //=============================== To MaidManager ===================================================
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
+                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
+                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  service->HandleCreateMaidAccount(message.contents->public_maid(),
+                                   message.contents->public_anmaid(),
+                                   message.message_id);
+}
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
+                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
+                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  service->HandlePmidRegistration(message.contents);
+}
+
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager& message,
