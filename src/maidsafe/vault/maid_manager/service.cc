@@ -654,7 +654,7 @@ void MaidManagerService::HandleMessage(
     const typename SynchroniseFromMaidManagerToMaidManager::Sender& sender,
     const typename SynchroniseFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
   protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(message.contents->content.string()))
+  if (!proto_sync.ParseFromString(message.contents->data))
     ThrowError(CommonErrors::parsing_error);
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
     case ActionMaidManagerPut::kActionId: {
