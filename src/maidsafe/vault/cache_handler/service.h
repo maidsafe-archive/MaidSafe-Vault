@@ -50,7 +50,7 @@ class CacheHandlerService {
   typedef std::true_type IsLongTermCacheable;
   typedef std::false_type IsShortTermCacheable;
 
-  CacheHandlerService(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
+  CacheHandlerService(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
 
   template <typename T>
   HandleMessageReturnType HandleMessage(const T& message, const typename T::Sender& sender,

@@ -77,6 +77,7 @@ class Commander {
   int chunk_set_count_;
   int chunk_index_;
   KeyChainVector all_keychains_;
+  std::vector<passport::PublicPmid> pmids_from_file_;
   boost::filesystem::path keys_path_;
   std::vector<boost::asio::ip::udp::endpoint> peer_endpoints_;
   SelectedOperationsContainer selected_ops_;
