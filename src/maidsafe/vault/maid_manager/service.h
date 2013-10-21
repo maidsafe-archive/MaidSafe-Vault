@@ -105,10 +105,12 @@ class MaidManagerService {
     return false;
   }
 
-  // =============== account creation ==============================================================
+  // =============== account creation & pmid registration===========================================
   void HandleCreateMaidAccount(const passport::PublicMaid &public_maid,
                                const passport::PublicAnmaid& public_anmaid,
                                nfs::MessageId message_id);
+  void HandleSyncedCreateMaidAccount(
+      std::unique_ptr<MaidManager::UnresolvedCreateAccount>&& synced_action);
 
   void HandlePmidRegistration(const nfs_vault::PmidRegistration& pmid_registration);
 

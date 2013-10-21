@@ -65,8 +65,8 @@ class MaidManagerDispatcher {
   void SendRemoveAccountResponse(const MaidName& account_name, const maidsafe_error& result,
                                  nfs::MessageId message_id);
 
-  void SendRegisterPmidResponse(const MaidName& account_name, const PmidName& pmid_name,
-                                const maidsafe_error& result, nfs::MessageId message_id);
+//  void SendRegisterPmidResponse(const MaidName& account_name, const PmidName& pmid_name,
+//                                const maidsafe_error& result, nfs::MessageId message_id);
 
   void SendUnregisterPmidResponse(const MaidName& account_name, const PmidName& pmid_name,
                                   const maidsafe_error& result, nfs::MessageId message_id);

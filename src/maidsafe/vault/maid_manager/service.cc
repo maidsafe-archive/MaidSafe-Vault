@@ -165,6 +165,7 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
       pending_account_mutex_(),
       pending_account_map_() {}
 
+// =============== Maid Account Creation ===========================================================
 
 void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& public_maid,
                                                  const passport::PublicAnmaid& public_anmaid,
@@ -184,8 +185,9 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& pub
       throw error;  // For db errors
   }
 
-  pending_account_map_.insert(std::make_pair(message_id, MaidAccountCreationStatus(public_maid.name(),
-                                                                                   public_anmaid.name())));
+  pending_account_map_.insert(std::make_pair(message_id,
+                                             MaidAccountCreationStatus(public_maid.name(),
+                                             public_anmaid.name())));
   dispatcher_.SendPutRequest(account_name, public_maid, PmidName(), message_id);
   dispatcher_.SendPutRequest(account_name, public_anmaid, PmidName(), message_id);
 }
@@ -208,7 +210,8 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
 
   if (pending_account_itr->second.anmaid_stored) {
     sync_create_accounts_.AddLocalAction(
-        MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(), routing_.kNodeId()));
+        MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(message_id),
+                                             routing_.kNodeId()));
     DoSync();
   }
 }
@@ -228,11 +231,55 @@ void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidNam
 
   if (pending_account_itr->second.maid_stored) {
     sync_create_accounts_.AddLocalAction(
-        MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(), routing_.kNodeId()));
+        MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(message_id),
+                                             routing_.kNodeId()));
     DoSync();
   }
 }
 
+template <>
+void MaidManagerService::HandlePutFailure<passport::PublicMaid>(
+    const MaidName& maid_name, const passport::PublicMaid::Name& data_name,
+    const maidsafe_error& error, nfs::MessageId message_id) {
+  std::lock_guard<std::mutex> lock(pending_account_mutex_);
+  auto pending_account_itr(pending_account_map_.find(message_id));
+  if (pending_account_itr == pending_account_map_.end()) {
+    return;
+  }
+  assert(data_name == maid_name);
+  assert(pending_account_itr->second.maid_name == data_name);
+  static_cast<void>(data_name);
+  //TODO Consider deleting anmaid key if stored
+  pending_account_map_.erase(pending_account_itr);
+
+  dispatcher_.SendCreateAccountResponse(maid_name, error, message_id);
+}
+
+template <>
+void MaidManagerService::HandlePutFailure<passport::PublicAnmaid>(
+    const MaidName& maid_name, const passport::PublicAnmaid::Name& data_name,
+    const maidsafe_error& error, nfs::MessageId message_id) {
+  std::lock_guard<std::mutex> lock(pending_account_mutex_);
+  auto pending_account_itr(pending_account_map_.find(message_id));
+  if (pending_account_itr == pending_account_map_.end()) {
+    return;
+  }
+  assert(pending_account_itr->second.anmaid_name == data_name);
+  static_cast<void>(data_name);
+  //TODO Consider deleting anmaid key if stored
+  pending_account_map_.erase(pending_account_itr);
+
+  dispatcher_.SendCreateAccountResponse(maid_name, error, message_id);
+}
+
+void MaidManagerService::HandleSyncedCreateMaidAccount(
+    std::unique_ptr<MaidManager::UnresolvedCreateAccount>&& synced_action) {
+  MaidManager::Metadata metadata;
+  group_db_.AddGroup(synced_action->key.group_name(), metadata);
+  dispatcher_.SendCreateAccountResponse(synced_action->key.group_name(),
+                                        maidsafe_error(CommonErrors::success),
+                                        synced_action->action.kMessageId);
+}
 
 // =============== Pmid registration ===============================================================
 
@@ -765,11 +812,8 @@ void MaidManagerService::HandleMessage(
       MaidManager::UnresolvedCreateAccount unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_create_accounts_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action) {
-        MaidManager::Metadata metadata;
-        group_db_.AddGroup(resolved_action->key.group_name(), metadata);
-        // FIXME Do we need to send Account created message to MaidNode ?
-      }
+      if (resolved_action)
+        HandleSyncedCreateMaidAccount(std::move(resolved_action));
       break;
     }
     case ActionRegisterPmid::kActionId: {

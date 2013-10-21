@@ -20,6 +20,7 @@
 #define MAIDSAFE_VAULT_MAID_MANAGER_ACTION_CREATE_REMOVE_ACCOUNT_H_
 
 #include "maidsafe/nfs/types.h"
+#include "maidsafe/vault/maid_manager/action_create_remove_account.pb.h"
 
 namespace maidsafe {
 
@@ -38,10 +39,49 @@ struct ActionCreateRemoveAccountType<false> {
 };
 
 }  // namespace detail
+
 template <bool Remove>
 struct ActionCreateRemoveAccount {
+  explicit ActionCreateRemoveAccount(nfs::MessageId message_id);
+  explicit ActionCreateRemoveAccount(const std::string& serialised_action);
+  ActionCreateRemoveAccount(const ActionCreateRemoveAccount& other);
+  ActionCreateRemoveAccount(ActionCreateRemoveAccount&& other);
+
+  std::string Serialise() const;
+
   static const nfs::MessageAction kActionId = detail::ActionCreateRemoveAccountType<Remove>::kType;
+  const nfs::MessageId kMessageId;
 };
+
+
+// Implementation
+template <bool Remove>
+ActionCreateRemoveAccount<Remove>::ActionCreateRemoveAccount(nfs::MessageId message_id)
+    : kMessageId(message_id) {}
+
+template <bool Remove>
+ActionCreateRemoveAccount<Remove>::ActionCreateRemoveAccount(const std::string& serialised_action)
+    : kMessageId([&serialised_action]()->int32_t {
+        protobuf::ActionMaidManagerCreateRemoveAccount action_proto;
+        if (!action_proto.ParseFromString(serialised_action))
+          ThrowError(CommonErrors::parsing_error);
+        return action_proto.message_id();
+      }()) {}
+
+template <bool Remove>
+ActionCreateRemoveAccount<Remove>::ActionCreateRemoveAccount(const ActionCreateRemoveAccount& other)
+    : kMessageId(other.kMessageId) {}
+
+template <bool Remove>
+ActionCreateRemoveAccount<Remove>::ActionCreateRemoveAccount(ActionCreateRemoveAccount&& other)
+    :kMessageId(std::move(other.kMessageId)) {}
+
+template <bool Remove>
+std::string ActionCreateRemoveAccount<Remove>::Serialise() const {
+  protobuf::ActionMaidManagerCreateRemoveAccount action_proto;
+  action_proto.set_message_id(kMessageId);
+  return action_proto.SerializeAsString();
+}
 
 typedef ActionCreateRemoveAccount<false> ActionCreateAccount;
 typedef ActionCreateRemoveAccount<true> ActionRemoveAccount;
