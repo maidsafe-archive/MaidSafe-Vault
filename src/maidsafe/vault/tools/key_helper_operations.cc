@@ -149,6 +149,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
       functors_(),
       client_nfs_(),
       kAllPmids_(public_pmids_from_file) {
+  asio_service_.Start();
   passport::PublicPmid::Name pmid_name(Identity(key_chain.pmid.name().value));
   client_nfs_.reset(new nfs_client::MaidNodeNfs(asio_service_, client_routing_, pmid_name));
   auto future(RoutingJoin(peer_endpoints));
