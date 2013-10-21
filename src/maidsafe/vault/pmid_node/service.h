@@ -138,6 +138,7 @@ class PmidNodeService {
   typedef void PublicMessages;
   typedef PmidNodeServiceMessages VaultMessages;
   typedef PmidNodeServiceMessages Messages;
+  typedef void HandleMessageReturnType;
 
   PmidNodeService(const passport::Pmid& pmid, routing::Routing& routing,
                   nfs_client::DataGetter& data_getter,

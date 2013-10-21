@@ -32,23 +32,6 @@ DiskUsage cache_size = DiskUsage(200);
 
 }
 
-template <>
-bool CacheHandlerService::Get(
-    const GetRequestFromDataManagerToPmidNode& /*message*/,
-    const typename GetRequestFromDataManagerToPmidNode::Sender& /*sender*/,
-    const typename GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/) {
- return false;
-}
-
-template <>
-bool CacheHandlerService::Get(
-    const nfs::GetRequestFromMaidNodeToDataManager& /*message*/,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& /*sender*/,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
-  return false;
-}
-
-
 CacheHandlerService::CacheHandlerService(routing::Routing& routing,
                                          const boost::filesystem::path vault_root_dir)
     : routing_(routing),
@@ -57,6 +40,60 @@ CacheHandlerService::CacheHandlerService(routing::Routing& routing,
                         vault_root_dir / "cache" / "cache"),
       mem_only_cache_(mem_only_cache_usage) {
   routing_.kNodeId();
+}
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetResponseFromDataManagerToMaidNode& /*message*/,
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& /*sender*/,
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& /*receiver*/) {
+  return true;
+}
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetCachedResponseFromCacheHandlerToMaidNode& /*message*/,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Sender& /*sender*/,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& /*receiver*/) {
+  return true;
+}
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetResponseFromDataManagerToDataGetter& /*message*/,
+    const typename nfs::GetResponseFromDataManagerToDataGetter::Sender& /*sender*/,
+    const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& /*receiver*/) {
+  return true;
+}
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetCachedResponseFromCacheHandlerToDataGetter& /*message*/,
+    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Sender& /*sender*/,
+    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Receiver& /*receiver*/) {
+  return true;
+}
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetRequestFromMaidNodeToDataManager& /*message*/,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& /*sender*/,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
+  return true;
+}
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetRequestFromDataGetterToDataManager& /*message*/,
+    const typename nfs::GetRequestFromDataGetterToDataManager::Sender& /*sender*/,
+    const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
+  return true;
 }
 
 }  // namespace vault

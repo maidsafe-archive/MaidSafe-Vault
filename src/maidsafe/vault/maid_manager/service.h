@@ -78,6 +78,7 @@ class MaidManagerService {
  public:
   typedef nfs::MaidManagerServiceMessages PublicMessages;
   typedef MaidManagerServiceMessages VaultMessages;
+  typedef void HandleMessageReturnType;
 
   MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter);
@@ -105,12 +106,11 @@ class MaidManagerService {
   }
 
   // =============== account creation ==============================================================
-  void HandleCreateMaidAccount(const passport::PublicMaid &maid,
-                               const passport::PublicAnmaid& anmaid,
+  void HandleCreateMaidAccount(const passport::PublicMaid &public_maid,
+                               const passport::PublicAnmaid& public_anmaid,
                                nfs::MessageId message_id);
 
-  void HandlePmidRegistration(const MaidName& source_maid_name,
-                              const nfs_vault::PmidRegistration& pmid_registration);
+  void HandlePmidRegistration(const nfs_vault::PmidRegistration& pmid_registration);
 
   void HandleSyncedPmidRegistration(
       std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action);

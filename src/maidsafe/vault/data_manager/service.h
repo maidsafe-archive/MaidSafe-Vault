@@ -61,6 +61,7 @@ class DataManagerService {
  public:
   typedef nfs::DataManagerServiceMessages PublicMessages;
   typedef DataManagerServiceMessages VaultMessages;
+  typedef void HandleMessageReturnType;
 
   DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter);

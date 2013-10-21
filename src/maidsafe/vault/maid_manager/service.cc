@@ -166,10 +166,10 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
       pending_account_map_() {}
 
 
-void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& maid,
-                                                 const passport::PublicAnmaid& anmaid,
+void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& public_maid,
+                                                 const passport::PublicAnmaid& public_anmaid,
                                                  nfs::MessageId message_id) {
-  MaidName account_name(maid.name());
+  MaidName account_name(public_maid.name());
   std::lock_guard<std::mutex> lock(pending_account_mutex_);
   // If Account exists
   try {
@@ -184,10 +184,10 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& mai
       throw error;  // For db errors
   }
 
-  pending_account_map_.insert(std::make_pair(message_id, MaidAccountCreationStatus(maid.name(),
-                                                                                   anmaid.name())));
-  dispatcher_.SendPutRequest(account_name, maid, PmidName(), message_id);
-  dispatcher_.SendPutRequest(account_name, anmaid, PmidName(), message_id);
+  pending_account_map_.insert(std::make_pair(message_id, MaidAccountCreationStatus(public_maid.name(),
+                                                                                   public_anmaid.name())));
+  dispatcher_.SendPutRequest(account_name, public_maid, PmidName(), message_id);
+  dispatcher_.SendPutRequest(account_name, public_anmaid, PmidName(), message_id);
 }
 
 
@@ -236,12 +236,13 @@ void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidNam
 
 // =============== Pmid registration ===============================================================
 
-void MaidManagerService::HandlePmidRegistration(const MaidName& source_maid_name,
+void MaidManagerService::HandlePmidRegistration(
     const nfs_vault::PmidRegistration& pmid_registration) {
-  if (pmid_registration.maid_name() != source_maid_name)
-    return;
+//FIXME This should be implemented in validate method
+//  if (pmid_registration.maid_name() != source_maid_name)
+//    return;
   sync_register_pmids_.AddLocalAction(
-      MaidManager::UnresolvedRegisterPmid(source_maid_name,
+      MaidManager::UnresolvedRegisterPmid(pmid_registration.maid_name(),
           ActionRegisterUnregisterPmid<false>(pmid_registration), routing_.kNodeId()));
   DoSync();
 }
