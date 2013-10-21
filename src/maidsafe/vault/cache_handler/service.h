@@ -60,7 +60,7 @@ class CacheHandlerService {
   typedef nfs::CacheableMessages PublicMessages;
   typedef CacheableMessages VaultMessages;
   typedef bool HandleMessageReturnType;
-  CacheHandlerService(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
+  CacheHandlerService(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
 
   template <typename T>
   HandleMessageReturnType HandleMessage(const T& message, const typename T::Sender& sender,

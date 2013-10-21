@@ -132,7 +132,7 @@ void NetworkGenerator::DoOnPublicKeyRequested(const NodeId& node_id,
                                               nfs_client::DataGetter& data_getter) {
   passport::PublicPmid::Name name(Identity(node_id.string()));
   try {
-    auto future(data_getter.Get<passport::PublicPmid>(name));
+    auto future(data_getter.Get(name));
     give_key(future.get().public_key());
   }
   catch (const std::exception& ex) {
@@ -223,12 +223,9 @@ KeyVerifier::KeyVerifier(const passport::detail::AnmaidToPmid& key_chain,
 
 void KeyVerifier::Verify() {
   try {
-    auto anmaid_future(client_nfs_->Get<passport::PublicAnmaid>(
-        passport::PublicAnmaid::Name(key_chain_.anmaid.name())));
-    auto maid_future(
-        client_nfs_->Get<passport::PublicMaid>(passport::PublicMaid::Name(key_chain_.maid.name())));
-    auto pmid_future(
-        client_nfs_->Get<passport::PublicPmid>(passport::PublicPmid::Name(key_chain_.pmid.name())));
+    auto anmaid_future(client_nfs_->Get(passport::PublicAnmaid::Name(key_chain_.anmaid.name())));
+    auto maid_future(client_nfs_->Get(passport::PublicMaid::Name(key_chain_.maid.name())));
+    auto pmid_future(client_nfs_->Get(passport::PublicPmid::Name(key_chain_.pmid.name())));
 
     size_t verified_keys(0);
     if (EqualKeys<passport::PublicAnmaid>(passport::PublicAnmaid(key_chain_.anmaid),
@@ -367,14 +364,14 @@ void DataChunkStorer::StoreOneChunk(const ImmutableData& chunk_data) {
 }
 
 bool DataChunkStorer::GetOneChunk(const ImmutableData& chunk_data) {
-  auto future = client_nfs_->Get<ImmutableData>(chunk_data.name());
+  auto future = client_nfs_->Get(chunk_data.name());
   auto status(future.wait_for(boost::chrono::seconds(30)));
   return status == boost::future_status::timeout && chunk_data.data() == future.get().data();
 }
 
 bool DataChunkStorer::DeleteOneChunk(const ImmutableData& chunk_data) {
   LOG(kInfo) << "Deleting chunk " << HexSubstr(chunk_data.data()) << " ...";
-  client_nfs_->Delete<ImmutableData>(chunk_data.name());
+  client_nfs_->Delete(chunk_data.name());
   return !GetOneChunk(chunk_data);
 }
 

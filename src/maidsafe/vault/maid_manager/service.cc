@@ -250,12 +250,10 @@ void MaidManagerService::HandlePmidRegistration(
 void MaidManagerService::HandleSyncedPmidRegistration(
     std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action) {
   // Get keys
-  auto maid_future = data_getter_.Get<passport::PublicMaid>(
-                         synced_action->action.kPmidRegistration.maid_name(),
-                         std::chrono::seconds(10));
-  auto pmid_future = data_getter_.Get<passport::PublicPmid>(
-                         synced_action->action.kPmidRegistration.pmid_name(),
-                         std::chrono::seconds(10));
+  auto maid_future = data_getter_.Get(synced_action->action.kPmidRegistration.maid_name(),
+                                      std::chrono::seconds(10));
+  auto pmid_future = data_getter_.Get(synced_action->action.kPmidRegistration.pmid_name(),
+                                      std::chrono::seconds(10));
 
   auto pmid_registration_op(std::make_shared<PmidRegistrationOp>(std::move(synced_action)));
 

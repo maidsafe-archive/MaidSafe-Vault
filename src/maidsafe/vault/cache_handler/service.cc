@@ -33,7 +33,7 @@ DiskUsage cache_size = DiskUsage(200);
 }
 
 CacheHandlerService::CacheHandlerService(routing::Routing& routing,
-                                         const boost::filesystem::path vault_root_dir)
+                                         const boost::filesystem::path& vault_root_dir)
     : routing_(routing),
       cache_size_(cache_size),
       cache_data_store_(cache_usage, DiskUsage(cache_usage), nullptr,

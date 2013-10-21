@@ -153,7 +153,7 @@ void Vault::OnPublicKeyRequested(const NodeId& node_id,
 void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
                                    const routing::GivePublicKeyFunctor& give_key) {
   passport::PublicPmid::Name name(Identity(node_id.string()));
-  auto pmid_future = data_getter_.Get<passport::PublicPmid>(name, std::chrono::seconds(10));
+  auto pmid_future = data_getter_.Get(name, std::chrono::seconds(10));
 //   auto pmid_future_then = pmid_future.then(
 //       [node_id, give_key, this](boost::future<passport::PublicPmid>& future) {
 //           passport::PublicPmid public_pmid(passport::PublicPmid(future.get()));
