@@ -95,6 +95,7 @@ Commander::Commander(size_t pmids_count)
       chunk_set_count_(-1),
       chunk_index_(0),
       all_keychains_(),
+      pmids_from_file_(),
       keys_path_(),
       peer_endpoints_(),
       selected_ops_() {
@@ -233,6 +234,8 @@ void Commander::HandleKeys() {
     CreateKeys();
   } else if (selected_ops_.do_load) {
     all_keychains_ = maidsafe::passport::detail::ReadKeyChainList(keys_path_);
+    for (auto& key_chain : all_keychains_)
+      pmids_from_file_.push_back(passport::PublicPmid(key_chain.pmid));
     LOG(kInfo) << "Loaded " << all_keychains_.size() << " pmids from " << keys_path_;
   } else if (selected_ops_.do_delete) {
     HandleDeleteKeys();
@@ -262,7 +265,7 @@ void Commander::HandleStore() {
   size_t failures(0);
   for (auto& keychain : all_keychains_) {
     try {
-      KeyStorer storer(keychain, peer_endpoints_);
+      KeyStorer storer(keychain, peer_endpoints_, pmids_from_file_);
       storer.Store();
     }
     catch (const std::exception& e) {
@@ -282,7 +285,7 @@ void Commander::HandleVerify() {
   size_t failures(0);
   for (auto& keychain : all_keychains_) {
     try {
-      KeyVerifier verifier(keychain, peer_endpoints_);
+      KeyVerifier verifier(keychain, peer_endpoints_, pmids_from_file_);
       verifier.Verify();
     }
     catch (const std::exception& e) {
@@ -300,31 +303,31 @@ void Commander::HandleVerify() {
 
 void Commander::HandleDoTest(size_t client_index) {
   assert(client_index > 1);
-  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_, pmids_from_file_);
   chunk_storer.Test(chunk_set_count_);
 }
 
 void Commander::HandleDoTestWithDelete(size_t client_index) {
   assert(client_index > 1);
-  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_, pmids_from_file_);
   chunk_storer.TestWithDelete(chunk_set_count_);
 }
 
 void Commander::HandleStoreChunk(size_t client_index) {
   assert(client_index > 1);
-  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_, pmids_from_file_);
   chunk_storer.TestStoreChunk(chunk_index_);
 }
 
 void Commander::HandleFetchChunk(size_t client_index) {
   assert(client_index > 1);
-  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_, pmids_from_file_);
   chunk_storer.TestFetchChunk(chunk_index_);
 }
 
 void Commander::HandleDeleteChunk(size_t client_index) {
   assert(client_index > 1);
-  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_, pmids_from_file_);
   chunk_storer.TestDeleteChunk(chunk_index_);
 }
 

@@ -85,7 +85,8 @@ class NetworkGenerator {
 class ClientTester {
  public:
   ClientTester(const passport::detail::AnmaidToPmid& key_chain,
-               const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+               const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints,
+               const std::vector<passport::PublicPmid>& public_pmids_from_file);
 
  protected:
   // TODO(Dan): Remove the typedefs
@@ -102,12 +103,19 @@ class ClientTester {
 
   ~ClientTester();
   std::future<bool> RoutingJoin(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+
+ private:
+  void OnPublicKeyRequested(const NodeId& node_id,
+                            const routing::GivePublicKeyFunctor& give_key);
+
+  std::vector<passport::PublicPmid> kAllPmids_;
 };
 
 class KeyStorer : public ClientTester {
  public:
   KeyStorer(const passport::detail::AnmaidToPmid& key_chain,
-            const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+            const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints,
+            const std::vector<passport::PublicPmid>& public_pmids_from_file);
   void Store();
 
  private:
@@ -120,7 +128,8 @@ class KeyStorer : public ClientTester {
 class KeyVerifier : public ClientTester {
  public:
   KeyVerifier(const passport::detail::AnmaidToPmid& key_chain,
-              const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+              const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints,
+              const std::vector<passport::PublicPmid>& public_pmids_from_file);
   void Verify();
 
  private:
@@ -133,7 +142,8 @@ class KeyVerifier : public ClientTester {
 class DataChunkStorer : public ClientTester {
  public:
   DataChunkStorer(const passport::detail::AnmaidToPmid& key_chain,
-                  const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+                  const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints,
+                  const std::vector<passport::PublicPmid>& public_pmids_from_file);
 
   void StopTest();
   void Test(int32_t quantity = -1);
