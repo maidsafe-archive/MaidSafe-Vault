@@ -83,28 +83,43 @@ bool DoCacheOperation(
 
 template <>
 bool DoCacheOperation(
-    CacheHandlerService* /*service*/,
-    const nfs::GetCachedResponseFromCacheHandlerToMaidNode& /*message*/,
+    CacheHandlerService* service,
+    const nfs::GetCachedResponseFromCacheHandlerToMaidNode& message,
     const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Sender& /*sender*/,
     const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& /*receiver*/) {
-  return false;
+  if (!message.contents->data)
+    return false;
+  auto data_name(detail::GetNameVariant(*message.contents->data));
+  PutToCacheVisitor put_to_cache(service, message.contents->data->content);
+  boost::apply_visitor(put_to_cache, data_name);
+  return true;
 }
 
 template <>
 bool DoCacheOperation(
-    CacheHandlerService* /*service*/,
-    const nfs::GetResponseFromDataManagerToDataGetter& /*message*/,
+    CacheHandlerService* service,
+    const nfs::GetResponseFromDataManagerToDataGetter& message,
     const typename nfs::GetResponseFromDataManagerToDataGetter::Sender& /*sender*/,
     const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& /*receiver*/) {
-  return false;
+  if (!message.contents->data)
+    return false;
+  auto data_name(detail::GetNameVariant(*message.contents->data));
+  PutToCacheVisitor put_to_cache(service, message.contents->data->content);
+  boost::apply_visitor(put_to_cache, data_name);
+  return true;
 }
 
 template <>
 bool DoCacheOperation(
-    CacheHandlerService* /*service*/,
-    const nfs::GetCachedResponseFromCacheHandlerToDataGetter& /*message*/,
+    CacheHandlerService* service,
+    const nfs::GetCachedResponseFromCacheHandlerToDataGetter& message,
     const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Sender& /*sender*/,
     const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Receiver& /*receiver*/) {
+  if (!message.contents->data)
+    return false;
+  auto data_name(detail::GetNameVariant(*message.contents->data));
+  PutToCacheVisitor put_to_cache(service, message.contents->data->content);
+  boost::apply_visitor(put_to_cache, data_name);
   return true;
 }
 

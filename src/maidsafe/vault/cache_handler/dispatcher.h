@@ -35,8 +35,11 @@ class CacheHandlerDispatcher {
  public:
   CacheHandlerDispatcher(routing::Routing& routing);
   
-  template <typename Data, typename Receiver>
-  void SendGetResponse(const Data& data, const Receiver& receiver);
+  template <typename Data>
+  void SendGetResponse(const Data& data, const routing::SingleSource& receiver);
+
+  template <typename Data>
+  void SendGetResponse(const Data& data, const routing::GroupSource& receiver);
 
  private:
   CacheHandlerDispatcher();
@@ -47,8 +50,24 @@ class CacheHandlerDispatcher {
   routing::Routing& routing_;
 };
 
-template <typename Data, typename Receiver>
-void CacheHandlerDispatcher::SendGetResponse(const Data& /*data*/, const Receiver& /*receiver*/) {}
+template <typename Data>
+void CacheHandlerDispatcher::SendGetResponse(const Data& /*data*/,
+                                             const routing::SingleSource& /*receiver*/) {
+//  typedef nfs::GetCachedResponseFromCacheHandlerToMaidNode NfsMessage;
+//  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+//  NfsMessage nfs_message(nfs_client::DataNameAndContentOrReturnCode(Data::Tag::kValue, data.name(),
+//                                                                    data.Serialise().data));
+//  RoutingMessage message(nfs_message.Serialise(), NfsMessage::Sender(routing_.kNodeId()),
+//                         NfsMessage::Receiver(receiver));
+//  routing_.Send(message);
+}
+
+template <typename Data>
+void CacheHandlerDispatcher::SendGetResponse(const Data& /*data*/,
+                                             const routing::GroupSource& /*receiver*/) {
+ Data::receiver_may_not_be_of_group_nature;
+}
+
 
 
 }  // namespace vault
