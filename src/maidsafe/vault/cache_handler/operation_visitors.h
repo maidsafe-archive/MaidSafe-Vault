@@ -22,6 +22,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/cache_handler/service.h"
 
 namespace maidsafe {
 
@@ -33,7 +34,6 @@ namespace {
   typedef std::true_type IsCacheable;
   typedef std::false_type IsNotCacheable;
 }
-
 
 template<typename Sender>
 class GetFromCacheVisitor : public boost::static_visitor<bool> {
@@ -94,7 +94,6 @@ class PutToCacheVisitor : public boost::static_visitor<> {
   CacheHandlerService* const cache_handler_service_;
   NonEmptyString kContent_;
 };
-
 
 }  // namespace detail
 
