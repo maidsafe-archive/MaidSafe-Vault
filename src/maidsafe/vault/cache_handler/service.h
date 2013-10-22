@@ -36,10 +36,9 @@ namespace maidsafe {
 
 namespace vault {
 
-template<typename Sender>
-class GetFromCacheVisitor;
-
-class PutToCacheVisitor;
+namespace detail {
+  class PutToCacheVisitor;
+}
 
 class CacheHandlerService {
  public:
@@ -56,16 +55,8 @@ class CacheHandlerService {
   HandleMessageReturnType HandleMessage(const T& message, const typename T::Sender& sender,
                                         const typename T::Receiver& receiver);
 
-  template <typename Data>
-  boost::optional<Data> GetFromCache(const typename Data::Name& data_name);
-
   template <typename Data, typename Sender>
   void SendGetResponse(const Data& data, const Sender& sender);
-
-  template <typename Data>
-  void PutToCache(const Data& data);
-
-  friend class PutToCacheVisitor;
 
   // NB - for GetFromCacheFromDataManagerToDataManager messages, validate that the sender is "close"
   // to the data.name() being requested.
@@ -77,12 +68,18 @@ class CacheHandlerService {
   template <typename Data>
   boost::optional<Data> CacheGet(const typename Data::Name& data_name, IsLongTermCacheable);
 
+  friend class detail::PutToCacheVisitor;
+
  private:
   template <typename Data>
   void CacheStore(const Data& data, IsLongTermCacheable);
 
   template <typename Data>
   void CacheStore(const Data& data, IsShortTermCacheable);
+
+  template <typename MessageType>
+  bool ValidateSender(const MessageType& message, const typename MessageType::Sender& sender) const;
+
 
   routing::Routing& routing_;
   CacheHandlerDispatcher dispatcher_;
@@ -96,6 +93,13 @@ CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(const T& /*message*/, const typename T::Sender& /*sender*/,
                                    const typename T::Receiver& /*receiver*/) {
 //  T::No_General_Implementation_Available;
+  return false;
+}
+
+template <typename MessageType>
+bool CacheHandlerService::ValidateSender(const MessageType& /*message*/,
+                                         const typename MessageType::Sender& /*sender*/) const {
+//  MessageType::Specialisation_required;
   return false;
 }
 
