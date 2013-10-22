@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_OPERATIONS_VISITOR_H_
-#define MAIDSAFE_VAULT_OPERATIONS_VISITOR_H_
+#ifndef MAIDSAFE_VAULT_OPERATION_VISITORS_H_
+#define MAIDSAFE_VAULT_OPERATION_VISITORS_H_
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
@@ -346,8 +346,6 @@ class PmidManagerPutResponseVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
-
-
 }  // namespace detail
 
 }  // namespace vault
@@ -356,4 +354,4 @@ class PmidManagerPutResponseVisitor : public boost::static_visitor<> {
 
 #include "maidsafe/vault/utils-inl.h"
 
-#endif  // MAIDSAFE_VAULT_OPERATIONS_VISITOR_H_
+#endif  // MAIDSAFE_VAULT_OPERATION_VISITORS_H_
