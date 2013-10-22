@@ -35,6 +35,8 @@ void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
                                               nfs::MessageId message_id) {
   typedef DeleteRequestFromMaidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
+
   VaultMessage vault_message(message_id, data_name);
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
@@ -48,6 +50,8 @@ void MaidManagerDispatcher::SendCreateAccountResponse(const MaidName& account_na
                                                       nfs::MessageId message_id) {
   typedef nfs::CreateAccountResponseFromMaidManagerToMaidNode VaultMessage;
   typedef routing::GroupToSingleMessage RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
+
   VaultMessage vault_message(message_id, nfs_client::ReturnCode(result));
   RoutingMessage message(vault_message.Serialise(),
       VaultMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
@@ -114,6 +118,8 @@ void MaidManagerDispatcher::SendSync(const MaidName& account_name,
                                      const std::string& serialised_sync) {
   typedef SynchroniseFromMaidManagerToMaidManager VaultMessage;
   typedef routing::GroupToGroupMessage RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
+
   VaultMessage vault_message((nfs_vault::Content(serialised_sync)));
   RoutingMessage message(vault_message.Serialise(),
       VaultMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
@@ -144,6 +150,8 @@ void MaidManagerDispatcher::SendHealthResponse(const MaidName& maid_node,
     const nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
   typedef nfs::PmidHealthResponseFromMaidManagerToMaidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<NfsMessage>();
+
   NfsMessage nfs_message(message_id, nfs_client::AvailableSizeAndReturnCode(available_size,
                                                                             return_code));
   RoutingMessage message(nfs_message.Serialise(),
@@ -152,11 +160,6 @@ void MaidManagerDispatcher::SendHealthResponse(const MaidName& maid_node,
                          NfsMessage::Receiver(NodeId(maid_node.value.string())));
   routing_.Send(message);
 }
-
-// routing::GroupSource MaidManagerDispatcher::Sender(const MaidName& account_name) const {
-//  return routing::GroupSource(routing::GroupId(NodeId(account_name->string())),
-//                              routing::SingleId(routing_.kNodeId()));
-//}
 
 }  // namespace vault
 
