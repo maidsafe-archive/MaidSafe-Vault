@@ -16,31 +16,43 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/data_manager/dispatcher.h"
+#ifndef MAIDSAFE_VAULT_CACHE_HANDLER_DISPATCHER_H_
+#define MAIDSAFE_VAULT_CACHE_HANDLER_DISPATCHER_H_
+
+#include "maidsafe/routing/routing_api.h"
+
+#include "maidsafe/nfs/message_types.h"
+
+#include "maidsafe/vault/messages.h"
+#include "maidsafe/vault/message_types.h"
+#include "maidsafe/vault/types.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-// ==================== Sync / AccountTransfer implementation ======================================
-void DataManagerDispatcher::SendSync(const Identity& data_name,
-                                     const std::string& serialised_sync) {
-  typedef SynchroniseFromDataManagerToDataManager VaultMessage;
-    typedef routing::GroupToGroupMessage RoutingMessage;
-    VaultMessage vault_message((nfs_vault::Content(serialised_sync)));
-    RoutingMessage message(vault_message.Serialise(),
-        VaultMessage::Sender(routing::GroupId(NodeId(data_name.string())),
-        routing::SingleId(routing_.kNodeId())),
-        VaultMessage::Receiver(routing::GroupId(NodeId(data_name.string()))));
-    routing_.Send(message);
-}
+class CacheHandlerDispatcher {
+ public:
+  CacheHandlerDispatcher(routing::Routing& routing);
+  
+  template <typename Data, typename Receiver>
+  void SendGetResponse(const Data& data, const Receiver& receiver);
 
-void DataManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer*/,
-                                                const MaidName& /*account_name*/,
-                                                const std::string& /*serialised_account*/) {
-  assert(0);
-}
+ private:
+  CacheHandlerDispatcher();
+  CacheHandlerDispatcher(const CacheHandlerDispatcher&);
+  CacheHandlerDispatcher(CacheHandlerDispatcher&&);
+  CacheHandlerDispatcher& operator=(CacheHandlerDispatcher);
+
+  routing::Routing& routing_;
+};
+
+template <typename Data, typename Receiver>
+void CacheHandlerDispatcher::SendGetResponse(const Data& /*data*/, const Receiver& /*receiver*/) {}
+
 
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_CACHE_HANDLER_DISPATCHER_H_

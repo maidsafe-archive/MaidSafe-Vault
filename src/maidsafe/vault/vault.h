@@ -106,6 +106,8 @@ CacheHandlerService::HandleMessageReturnType Vault::OnGetFromCache(const T& mess
 
 template <typename T>
 void Vault::OnStoreInCache(const T& message) {
+  // TODO(Team): To investigate the cost of running in new thread (as below) versus allowing
+  //             the operation to continue on caller (routing) thread.
   asio_service_.service().post([=] {
                                  auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
                                  return cache_service_.HandleMessage(

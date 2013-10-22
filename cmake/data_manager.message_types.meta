@@ -4,6 +4,6 @@ Action:DeleteRequest     Source:MaidManager:Group      Destination:DataManager:G
 Action:PutFailure        Source:PmidManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_client::DataNameAndReturnCode
 Action:StateChange       Source:PmidManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataName
 Action:GetResponse       Source:PmidNode:Single        Destination:DataManager:Single     Contents:struct:maidsafe::nfs_vault::DataNameAndContentOrCheckResult
-Action:Synchronise       Source:DataManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataNameAndContent
+Action:Synchronise       Source:DataManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::Content
 Action:PutToCache        Source:DataManager:Single     Destination:DataManager:Single     Contents:struct:maidsafe::nfs_vault::DataNameAndContent                Cacheable
 Action:GetFromCache      Source:DataManager:Single     Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataName                          Cacheable
