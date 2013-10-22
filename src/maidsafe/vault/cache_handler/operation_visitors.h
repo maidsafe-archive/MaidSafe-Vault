@@ -45,7 +45,7 @@ class GetFromCacheVisitor : public boost::static_visitor<bool> {
   result_type operator()(const DataName& data_name) {
     auto cache_data(GetFromCache(data_name, is_cacheable<typename DataName::data_type>()));
     if (cache_data) {
-      cache_handler_service_->template SendGetResponse(cache_data, kSender);
+      cache_handler_service_->SendGetResponse(cache_data, kSender);
       return true;
     }
     return false;
