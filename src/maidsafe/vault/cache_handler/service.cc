@@ -17,6 +17,9 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/vault/cache_handler/service.h"
+#include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/cache_handler/operation_handlers.h"
+
 
 
 namespace maidsafe {
@@ -35,6 +38,7 @@ DiskUsage cache_size = DiskUsage(200);
 CacheHandlerService::CacheHandlerService(routing::Routing& routing,
                                          const boost::filesystem::path& vault_root_dir)
     : routing_(routing),
+      dispatcher_(routing),
       cache_size_(cache_size),
       cache_data_store_(cache_usage, DiskUsage(cache_usage), nullptr,
                         vault_root_dir / "cache" / "cache"),
@@ -45,9 +49,14 @@ CacheHandlerService::CacheHandlerService(routing::Routing& routing,
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const nfs::GetResponseFromDataManagerToMaidNode& /*message*/,
+    const nfs::GetResponseFromDataManagerToMaidNode& message,
     const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& /*sender*/,
     const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& /*receiver*/) {
+  if (!message.contents->data)
+    return false;
+  auto data_name(detail::GetNameVariant(*message.contents));
+  PutToCacheVisitor put_to_cache(this, message.contents->data->content);
+  boost::apply_visitor(put_to_cache, data_name);
   return true;
 }
 
@@ -81,19 +90,25 @@ CacheHandlerService::HandleMessage(
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const nfs::GetRequestFromMaidNodeToDataManager& /*message*/,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& /*sender*/,
+    const nfs::GetRequestFromMaidNodeToDataManager& message,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
-  return true;
+  auto data_name(detail::GetNameVariant(*message.contents));
+  GetFromCacheVisitor<typename nfs::GetRequestFromMaidNodeToDataManager::Sender>
+      get_from_cache(this, sender);
+  return boost::apply_visitor(get_from_cache, data_name);
 }
 
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const nfs::GetRequestFromDataGetterToDataManager& /*message*/,
-    const typename nfs::GetRequestFromDataGetterToDataManager::Sender& /*sender*/,
+    const nfs::GetRequestFromDataGetterToDataManager& message,
+    const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
-  return true;
+  auto data_name(detail::GetNameVariant(*message.contents));
+  GetFromCacheVisitor<typename nfs::GetRequestFromMaidNodeToDataManager::Sender>
+      get_from_cache(this, sender);
+  return boost::apply_visitor(get_from_cache, data_name);
 }
 
 }  // namespace vault
