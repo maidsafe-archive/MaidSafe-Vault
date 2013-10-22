@@ -352,7 +352,6 @@ void MaidManagerService::HandleSyncedPmidRegistration(
       group_db_.Commit(pmid_registration_op->synced_action->key.group_name(),
                        pmid_registration_op->synced_action->action);
     }
-  //FIXME(Prakash)  need UpdatePmidTotals
   }
   catch(const maidsafe_error& error) {
     LOG(kWarning) << "Failed to register new PMID: " << error.what();
@@ -361,66 +360,6 @@ void MaidManagerService::HandleSyncedPmidRegistration(
     LOG(kWarning) << "Failed to register new PMID: " << ex.what();
   }
 }
-
-// void MaidManagerService::HandleMessage(const nfs::Message& message,
-//                                       const routing::ReplyFunctor& reply_functor) {
-//  ValidateGenericSender(message);
-//  nfs::Reply reply(CommonErrors::success);
-//  // TODO(Fraser#5#): 2013-07-25 - Uncomment once accummulator can handle non-Data messages
-//  // {
-//  //   std::lock_guard<std::mutex> lock(accumulator_mutex_);
-//  //   if (accumulator_.CheckHandled(message, reply))
-//  //     return reply_functor(reply.Serialise()->string());
-//  // }
-
-//  nfs::MessageAction action(message.data().action);
-//  switch (action) {
-//    case nfs::MessageAction::kRegisterPmid:
-//      return HandlePmidRegistration(message, reply_functor);
-//    case nfs::MessageAction::kSynchronise:
-//      return HandleSync(message);
-//    case nfs::MessageAction::kAccountTransfer:
-//      return HandleAccountTransfer(message);
-//    default:
-//      LOG(kError) << "Unhandled Post action type";
-//  }
-
-//  reply = nfs::Reply(VaultErrors::operation_not_supported, message.Serialise().data);
-//  //SendReplyAndAddToAccumulator(message, reply_functor, reply);
-//  reply_functor(reply.Serialise()->string());
-//}
-
-// void MaidManagerService::CheckSenderIsConnectedMaidNode(const nfs::Message& message) const {
-//  if (!routing_.IsConnectedClient(message.source().node_id))
-//    ThrowError(VaultErrors::permission_denied);
-//  if (!FromClientMaid(message))
-//    ThrowError(CommonErrors::invalid_parameter);
-//}
-
-// void MaidManagerService::CheckSenderIsConnectedMaidManager(const nfs::Message& message) const {
-//  if (!routing_.IsConnectedVault(message.source().node_id))
-//    ThrowError(VaultErrors::permission_denied);
-//  if (!FromMaidManager(message))
-//    ThrowError(CommonErrors::invalid_parameter);
-//}
-
-// void MaidManagerService::ValidateDataSender(const nfs::Message& message) const {
-//  if (!ForThisPersona(message))
-//    ThrowError(CommonErrors::invalid_parameter);
-//  CheckSenderIsConnectedMaidNode(message);
-//}
-
-// void MaidManagerService::ValidateGenericSender(const nfs::Message& message) const {
-//  if (!ForThisPersona(message))
-//    ThrowError(CommonErrors::invalid_parameter);
-
-//  if (message.data().action == nfs::MessageAction::kRegisterPmid ||
-//      message.data().action == nfs::MessageAction::kUnregisterPmid) {
-//    CheckSenderIsConnectedMaidNode(message);
-//  } else {
-//    CheckSenderIsConnectedMaidManager(message);
-//  }
-//}
 
 // =============== Put/Delete data =================================================================
 
@@ -463,75 +402,6 @@ void MaidManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_register_pmids_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_);
 }
-
-// void MaidManagerService::HandleSync(const nfs::Message& /*message*/) {
-//  protobuf::Sync proto_sync;
-//  if (!proto_sync.ParseFromString(message.data().content.string()))
-//    ThrowError(CommonErrors::parsing_error);
-
-//  switch (proto_sync.action_type()) {
-//    case ActionCreateAccount::kActionId: {
-//      MaidManager::UnresolvedCreateAccount unresolved_action(
-//          proto_sync.serialised_unresolved_action(), message.source().node_id,
-// routing_.kNodeId());
-//      auto resolved_action(sync_create_accounts_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action) {
-//        MaidManager::Metadata metadata;
-//        group_db_.AddGroup(resolved_action->key.group_name, metadata);
-//      }
-//      break;
-//    }
-//    case ActionRemoveAccount::kActionId: {
-//      MaidManager::UnresolvedRemoveAccount unresolved_action(
-//          proto_sync.serialised_unresolved_action(), message.source().node_id,
-// routing_.kNodeId());
-//      auto resolved_action(sync_remove_accounts_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action)
-//        group_db_.DeleteGroup(resolved_action->key.group_name);
-//      break;
-//    }
-//    case ActionMaidManagerPut::kActionId: {
-//      MaidManager::UnresolvedPut unresolved_action(
-//          proto_sync.serialised_unresolved_action(), message.source().node_id,
-// routing_.kNodeId());
-//      auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action)
-//        group_db_.Commit(resolved_action->key, resolved_action->action);
-//      break;
-//    }
-//    case ActionMaidManagerDelete::kActionId: {
-//      MaidManager::UnresolvedDelete unresolved_action(
-//          proto_sync.serialised_unresolved_action(), message.source().node_id,
-// routing_.kNodeId());
-//      auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action)
-//        group_db_.Commit(resolved_action->key, resolved_action->action);
-//      break;
-//    }
-//    case ActionRegisterPmid::kActionId: {
-//      MaidManager::UnresolvedRegisterPmid unresolved_action(
-//          proto_sync.serialised_unresolved_action(), message.source().node_id,
-// routing_.kNodeId());
-//      auto resolved_action(sync_register_pmids_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action)
-//        group_db_.Commit(resolved_action->key.group_name, resolved_action->action);
-//      break;
-//    }
-//    case ActionUnregisterPmid::kActionId: {
-//      MaidManager::UnresolvedUnregisterPmid unresolved_action(
-//          proto_sync.serialised_unresolved_action(), message.source().node_id,
-// routing_.kNodeId());
-//      auto resolved_action(sync_unregister_pmids_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action)
-//        group_db_.Commit(resolved_action->key.group_name, resolved_action->action);
-//      break;
-//    }
-//    default: {
-//      assert(false);
-//      LOG(kError) << "Unhandled action type";
-//    }
-//  }
-//}
 
 // =============== Account transfer ================================================================
 
@@ -784,7 +654,7 @@ void MaidManagerService::HandleMessage(
     const typename SynchroniseFromMaidManagerToMaidManager::Sender& sender,
     const typename SynchroniseFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
   protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(message.contents->content.string()))
+  if (!proto_sync.ParseFromString(message.contents->data))
     ThrowError(CommonErrors::parsing_error);
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
     case ActionMaidManagerPut::kActionId: {
