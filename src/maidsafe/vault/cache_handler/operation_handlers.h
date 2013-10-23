@@ -130,7 +130,8 @@ bool DoCacheOperation(
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
   auto data_name(detail::GetNameVariant(*message.contents));
-  GetFromCacheVisitor<typename nfs::GetRequestFromMaidNodeToDataManager::Sender>
+  GetFromCacheVisitor<typename nfs::GetRequestFromMaidNodeToDataManager::Sender,
+                      typename nfs::GetRequestFromMaidNodeToDataManager::SourcePersona>
       get_from_cache(service, sender);
   return boost::apply_visitor(get_from_cache, data_name);
 }
@@ -142,7 +143,8 @@ bool DoCacheOperation(
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
   auto data_name(detail::GetNameVariant(*message.contents));
-  detail::GetFromCacheVisitor<typename nfs::GetRequestFromMaidNodeToDataManager::Sender>
+  detail::GetFromCacheVisitor<typename nfs::GetRequestFromMaidNodeToDataManager::Sender,
+                              typename nfs::GetRequestFromMaidNodeToDataManager::SourcePersona>
       get_from_cache(service, sender);
   return boost::apply_visitor(get_from_cache, data_name);
 }
