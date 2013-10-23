@@ -108,6 +108,34 @@ void DoOperation(MaidManagerService* service,
                                 message.message_id);
 }
 
+//====================================== To VersionHandler =========================================
+
+template<>
+void DoOperation(VersionHandlerService* /*service*/,
+    const nfs::GetVersionsRequestFromMaidNodeToVersionHandler& /*message*/,
+    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Sender& /*sender*/,
+    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Receiver& /*receiver*/) {}
+
+template<>
+void DoOperation(VersionHandlerService* /*service*/,
+    const nfs::GetBranchRequestFromMaidNodeToVersionHandler& /*message*/,
+    const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Sender& /*sender*/,
+    const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Receiver& /*receiver*/) {}
+
+template<>
+void DoOperation(VersionHandlerService* /*service*/,
+    const nfs::GetVersionsRequestFromDataGetterToVersionHandler& /*message*/,
+    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Sender& /*sender*/,
+    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Receiver& /*receiver*/) {}
+
+template<>
+void DoOperation(VersionHandlerService* /*service*/,
+    const nfs::GetBranchRequestFromDataGetterToVersionHandler& /*message*/,
+    const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Sender& /*sender*/,
+    const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Receiver& /*receiver*/) {}
+
+// ================================================================================================
+
 template <>
 template <>
 void OperationHandler<

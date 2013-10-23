@@ -40,7 +40,7 @@ namespace detail {
 
      template<typename Data>
      void operator()(const Data& /*data*/, const routing::SingleSource& /*receiver*/) {
-       Data::No_general_function_available_specialisation_required;
+       Data::No_general_handler_is_available__specialisation_is_required;
        return;
      }
     routing::Routing& routing_;
