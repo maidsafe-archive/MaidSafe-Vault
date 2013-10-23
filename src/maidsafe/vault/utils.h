@@ -23,6 +23,8 @@
 
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/routing/routing_api.h"
+
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/vault/key_utils.h"
 
@@ -98,6 +100,15 @@ typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
 }  // namespace detail
 
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path);
+
+// ============================ dispatcher utils ===================================================
+template<typename Persona, typename MessageType>
+typename std::enable_if<std::is_same<typename MessageType::Sender, routing::GroupSource>::value,
+  typename MessageType::Sender>::type
+GroupSender(const routing::Routing& routing, const typename Persona::GroupName& group_name) {
+  return typename MessageType::Sender(routing::GroupId(NodeId(group_name.value.string())),
+                                      routing::SingleId(routing.kNodeId()));
+}
 
 }  // namespace vault
 
