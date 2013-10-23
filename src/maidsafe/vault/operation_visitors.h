@@ -43,8 +43,10 @@ class MaidManagerPutVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePut(MaidName(kSender_), Name::data_type(data_name, kContent_),
-                                  kPmidHint_, kMessageId_);
+    kService_->template HandlePut(MaidName(Identity(kSender_.string())),
+                                  typename Name::data_type(data_name,
+                                      typename Name::data_type::serialised_type(kContent_)),
+                                  PmidName(kPmidHint_), kMessageId_);
   }
 
  private:
