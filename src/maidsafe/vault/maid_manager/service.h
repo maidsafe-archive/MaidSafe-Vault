@@ -373,7 +373,7 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
     dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
   } else {
     dispatcher_.SendPutFailure<Data>(account_name, data.name(),
-                                     nfs_client::ReturnCode(CommonErrors::cannot_exceed_limit),
+                                     nfs_client::ReturnCode(CommonErrors::cannot_exceed_limit).value,
                                      message_id);
   }
 }
