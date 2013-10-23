@@ -111,23 +111,17 @@ void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/
 // TODO(Team) Consider moving these to respective persona
 //=============================== To MaidManager ===================================================
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(MaidManagerService* service,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
-                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
-  service->HandleCreateMaidAccount(message.contents->public_maid(),
-                                   message.contents->public_anmaid(),
-                                   message.message_id);
-}
+                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/);
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(MaidManagerService* service,
                  const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
                  const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
-  service->HandlePmidRegistration(message.contents);
-}
+                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/);
 
 template <>
 void DoOperation(MaidManagerService* service,
@@ -135,49 +129,29 @@ void DoOperation(MaidManagerService* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/);
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(MaidManagerService* service,
                  const PutResponseFromDataManagerToMaidManager& message,
                  const PutResponseFromDataManagerToMaidManager::Sender& /*sender*/,
-                 const PutResponseFromDataManagerToMaidManager::Receiver& receiver) {
-  auto data_name(GetNameVariant(message.contents->name));
-  MaidManagerPutResponseVisitor<ServiceHandlerType> put_response_visitor(
-      service, receiver, message.contents->cost, message.message_id);
-  boost::apply_visitor(put_response_visitor(), data_name);
-}
+                 const PutResponseFromDataManagerToMaidManager::Receiver& receiver);
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(MaidManagerService* service,
                  const PutFailureFromDataManagerToMaidManager& message,
                  const PutFailureFromDataManagerToMaidManager::Sender& sender,
-                 const PutFailureFromDataManagerToMaidManager::Receiver& /*receiver*/) {
-  auto data_name(GetNameVariant(*message.contents));
-  MaidManagerPutResponseFailureVisitor<ServiceHandlerType> put_visitor(
-      service, sender, message.contents->return_code, message.message_id);
-  boost::apply_visitor(put_visitor(), data_name);
-}
+                 const PutFailureFromDataManagerToMaidManager::Receiver& /*receiver*/);
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <typename>
+void DoOperation(MaidManagerService* service,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
-  auto data_name(GetNameVariant(message.contents));
-  MaidManagerDeleteVisitor<ServiceHandlerType> delete_visitor(
-      service, MaidName(Identity(sender.data.string())), message.message_id);
-  boost::apply_visitor(delete_visitor(), data_name);
-}
+                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/);
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(MaidManagerService* service,
                  const PmidHealthResponseFromPmidManagerToMaidManager& message,
                  const PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
-                 const PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver) {
-  service->HandleHealthResponse(MaidName(Identity(receiver.data.string())),
-                                PmidName(Identity(sender.group_id.data.string())),
-                                message.contents->pmid_health, message.contents->return_code,
-                                message.message_id);
-}
+                 const PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver);
 
 //=============================== To DataManager ===================================================
 template <typename ServiceHandlerType>

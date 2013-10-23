@@ -28,6 +28,26 @@ namespace vault {
 
 namespace detail {
 
+//=============================== To MaidManager ===================================================
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
+                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
+                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  service->HandleCreateMaidAccount(message.contents->public_maid(),
+                                   message.contents->public_anmaid(),
+                                   message.message_id);
+}
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
+                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
+                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  service->HandlePmidRegistration(nfs_vault::PmidRegistration(message.contents->Serialise()));
+}
+
 template <>
 void DoOperation(MaidManagerService* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager& message,
@@ -39,6 +59,53 @@ std::cout << "put visitor" << std::endl;
                                                         sender.data, message.contents->pmid_hint,
                                                         message.message_id);
   boost::apply_visitor(put_visitor, data_name);
+}
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const PutResponseFromDataManagerToMaidManager& message,
+                 const PutResponseFromDataManagerToMaidManager::Sender& /*sender*/,
+                 const PutResponseFromDataManagerToMaidManager::Receiver& receiver) {
+  auto data_name(GetNameVariant(*message.contents));
+  MaidManagerPutResponseVisitor<MaidManagerService> put_response_visitor(
+      service, Identity(receiver.data.string()),
+      message.contents->cost, message.message_id);
+  boost::apply_visitor(put_response_visitor, data_name);
+}
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const PutFailureFromDataManagerToMaidManager& message,
+                 const PutFailureFromDataManagerToMaidManager::Sender& sender,
+                 const PutFailureFromDataManagerToMaidManager::Receiver& /*receiver*/) {
+  auto data_name(GetNameVariant(*message.contents));
+  MaidManagerPutResponseFailureVisitor<MaidManagerService> put_visitor(
+      service, MaidName(Identity(sender.sender_id.data.string())),
+      message.contents->return_code.value, message.message_id);
+  boost::apply_visitor(put_visitor, data_name);
+}
+
+template <typename>
+void DoOperation(MaidManagerService* service,
+                 const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
+                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  auto data_name(GetNameVariant(*message.contents));
+  MaidManagerDeleteVisitor<MaidManagerService> delete_visitor(
+      service, MaidName(Identity(sender.data.string())), message.message_id);
+  boost::apply_visitor(delete_visitor, data_name);
+}
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const PmidHealthResponseFromPmidManagerToMaidManager& message,
+                 const PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
+                 const PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver) {
+  service->HandleHealthResponse(MaidName(Identity(receiver.data.string())),
+                                PmidName(Identity(sender.group_id.data.string())),
+                                message.contents->pmid_health.serialised_pmid_health,
+                                message.contents->return_code,
+                                message.message_id);
 }
 
 template <>

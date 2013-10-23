@@ -63,6 +63,11 @@ DataNameVariant GetNameVariant(const nfs_client::DataAndReturnCode& data) {
 }
 
 template <>
+DataNameVariant GetNameVariant(const nfs_client::DataNameAndReturnCode& data) {
+  return GetNameVariant(data.name);
+}
+
+template <>
 DataNameVariant GetNameVariant(const nfs_client::DataNameAndContentOrReturnCode& data) {
   return data.data ? GetNameVariant(data.data->name) :
                      GetNameVariant(data.data_name_and_return_code->name);
@@ -70,6 +75,11 @@ DataNameVariant GetNameVariant(const nfs_client::DataNameAndContentOrReturnCode&
 
 template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndContentOrCheckResult& data) {
+  return GetNameVariant(data.name);
+}
+
+template <>
+DataNameVariant GetNameVariant(const nfs_vault::DataNameAndCost& data) {
   return GetNameVariant(data.name);
 }
 
