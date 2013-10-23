@@ -151,6 +151,12 @@ void PmidManagerService::HandleMessage(
     const typename SynchroniseFromPmidManagerToPmidManager::Sender& sender,
     const typename SynchroniseFromPmidManagerToPmidManager::Receiver& receiver);
 
+template<>
+void PmidManagerService::HandleMessage(
+    const AccountTransferFromPmidManagerToPmidManager& message,
+    const typename AccountTransferFromPmidManagerToPmidManager::Sender& sender,
+    const typename AccountTransferFromPmidManagerToPmidManager::Receiver& receiver);
+
 // ==================== Implementation =============================================================
 
 namespace detail {

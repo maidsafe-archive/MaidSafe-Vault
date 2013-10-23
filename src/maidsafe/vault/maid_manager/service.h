@@ -303,6 +303,12 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
+    const AccountTransferFromMaidManagerToMaidManager& message,
+    const typename AccountTransferFromMaidManagerToMaidManager::Sender& sender,
+    const typename AccountTransferFromMaidManagerToMaidManager::Receiver& receiver);
+
+template <>
+void MaidManagerService::HandleMessage(
     const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver);
@@ -402,6 +408,16 @@ void MaidManagerService::HandlePutFailure(
     const maidsafe_error& error, nfs::MessageId message_id) {
   dispatcher_.SendPutFailure<Data>(maid_name, data_name, error, message_id);
 }
+
+template <>
+void MaidManagerService::HandlePutFailure<passport::PublicMaid>(
+    const MaidName& maid_name, const passport::PublicMaid::Name& data_name,
+    const maidsafe_error& error, nfs::MessageId message_id);
+
+template <>
+void MaidManagerService::HandlePutFailure<passport::PublicAnmaid>(
+    const MaidName& maid_name, const passport::PublicAnmaid::Name& data_name,
+    const maidsafe_error& error, nfs::MessageId message_id);
 
 // ================================== Delete Implementation =======================================
 

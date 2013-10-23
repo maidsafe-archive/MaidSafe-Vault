@@ -152,16 +152,6 @@ class DataManagerService {
   void DoSync();
 
   // =========================== General functions =================================================
-
-
-
-
-
-
-
-
-
-
   template <typename Data>
   NonEmptyString GetContentFromCache(const typename Data::Name& name);
 
@@ -274,9 +264,21 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
-    const StateChangeFromPmidManagerToDataManager& message,
-    const typename StateChangeFromPmidManagerToDataManager::Sender& sender,
-    const typename StateChangeFromPmidManagerToDataManager::Receiver& receiver);
+    const AccountTransferFromDataManagerToDataManager& message,
+    const typename AccountTransferFromDataManagerToDataManager::Sender& sender,
+    const typename AccountTransferFromDataManagerToDataManager::Receiver& receiver);
+
+template <>
+void DataManagerService::HandleMessage(
+  const SetPmidOnlineFromPmidManagerToDataManager& message,
+    const typename SetPmidOnlineFromPmidManagerToDataManager::Sender& sender,
+    const typename SetPmidOnlineFromPmidManagerToDataManager::Receiver& receiver);
+
+template <>
+void DataManagerService::HandleMessage(
+    const SetPmidOfflineFromPmidManagerToDataManager& message,
+    const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
+    const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver);
 
 // ==================== Put implementation =========================================================
 template <typename Data>

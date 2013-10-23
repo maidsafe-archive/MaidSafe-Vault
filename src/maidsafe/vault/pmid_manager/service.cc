@@ -162,6 +162,14 @@ void PmidManagerService::HandleMessage(
   }
 }
 
+template<>
+void PmidManagerService::HandleMessage(
+    const AccountTransferFromPmidManagerToPmidManager& /*message*/,
+    const typename AccountTransferFromPmidManagerToPmidManager::Sender& /*sender*/,
+    const typename AccountTransferFromPmidManagerToPmidManager::Receiver& /*receiver*/) {
+  assert(0);
+}
+
 //=================================================================================================
 
 void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,

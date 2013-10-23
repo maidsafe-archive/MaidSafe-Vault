@@ -661,6 +661,15 @@ void MaidManagerService::HandleMessage(
   }
 }
 
+
+template <>
+void MaidManagerService::HandleMessage(
+    const AccountTransferFromMaidManagerToMaidManager& /*message*/,
+    const typename AccountTransferFromMaidManagerToMaidManager::Sender& /*sender*/,
+    const typename AccountTransferFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
+  assert(0);
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

@@ -145,8 +145,10 @@ class PmidNodeService {
                   const boost::filesystem::path& vault_root_dir);
 
   template <typename T>
-  void HandleMessage(const T& message, const typename T::Sender& sender,
-                     const typename T::Receiver& receiver);
+  void HandleMessage(const T& /*message*/, const typename T::Sender& /*sender*/,
+                     const typename T::Receiver& /*receiver*/) {
+    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
+  }
 
   template <typename Data>
   void HandleDelete(const typename Data::Name& data_name);
@@ -237,12 +239,8 @@ void PmidNodeService::HandleMessage(
     const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
     const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
     const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
+
 // ============================== Put implementation =============================================
-
-template <typename T>
-void PmidNodeService::HandleMessage(const T& /*message*/, const typename T::Sender& /*sender*/,
-                                    const typename T::Receiver& /*receiver*/) {}
-
 template <typename Data>
 void PmidNodeService::HandlePut(const Data& data, nfs::MessageId message_id) {
   try {

@@ -283,6 +283,16 @@ void DataManagerService::HandleMessage(
   }
 }
 
+
+template <>
+void DataManagerService::HandleMessage(
+    const AccountTransferFromDataManagerToDataManager& /*message*/,
+    const typename AccountTransferFromDataManagerToDataManager::Sender& /*sender*/,
+    const typename AccountTransferFromDataManagerToDataManager::Receiver& /*receiver*/) {
+  assert(0);
+}
+
+
 void DataManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
@@ -292,13 +302,29 @@ void DataManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_ups_);
 }
 
-// ==================== Sync / AccountTransfer implementation ======================================
 void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
   std::lock_guard<std::mutex> lock(matrix_change_mutex_);
   matrix_change_ = *matrix_change;
 }
 
 // ==================== General implementation =====================================================
+template <>
+void DataManagerService::HandleMessage(
+    const SetPmidOnlineFromPmidManagerToDataManager& /*message*/,
+    const typename SetPmidOnlineFromPmidManagerToDataManager::Sender& /*sender*/,
+    const typename SetPmidOnlineFromPmidManagerToDataManager::Receiver& /*receiver*/) {
+  assert(0);
+}
+
+template <>
+void DataManagerService::HandleMessage(
+    const SetPmidOfflineFromPmidManagerToDataManager& /*message*/,
+    const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& /*sender*/,
+    const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& /*receiver*/) {
+  assert(0);
+}
+
+
 // void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
 //  auto record_names(metadata_handler_.GetRecordNames());
 //  auto itr(std::begin(record_names));
