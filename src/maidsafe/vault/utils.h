@@ -113,12 +113,53 @@ void DoOperation(ServiceHandlerType* service, const MessageType& message,
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path);
 
 // ============================ dispatcher utils ===================================================
-template<typename Persona, typename MessageType>
+
+template<typename MessageType>
 typename std::enable_if<std::is_same<typename MessageType::Sender, routing::GroupSource>::value,
   typename MessageType::Sender>::type
-GroupSender(const routing::Routing& routing, const typename Persona::GroupName& group_name) {
+GroupSender(const routing::Routing& routing,
+    const typename nfs::PersonaTypes<MessageType::SourcePersona::value>::GroupName& group_name) {
   return typename MessageType::Sender(routing::GroupId(NodeId(group_name.value.string())),
                                       routing::SingleId(routing.kNodeId()));
+}
+
+//TODO Restrict this function to only DataManager like personas
+template<typename MessageType, typename DataName>
+typename std::enable_if<std::is_same<typename MessageType::Sender, routing::GroupSource>::value,
+  typename MessageType::Sender>::type
+GroupSender(const routing::Routing& routing, const DataName& data_name) {
+  return typename MessageType::Sender(routing::GroupId(NodeId(data_name->string())),
+                                      routing::SingleId(routing.kNodeId()));
+}
+
+template<typename MessageType>
+void SendSyncMessage(routing::Routing& routing, const MessageType& sync_message,
+    const typename nfs::PersonaTypes<MessageType::SourcePersona::value>::GroupName& group_name) {
+  typedef routing::Message<typename MessageType::Sender, typename MessageType::Receiver>
+      RoutingMessage;
+  static_assert(MessageType::SourcePersona::value == MessageType::DestinationPersona::value,
+                  "Sync messages must be send to same persona !!");
+
+  RoutingMessage message(sync_message.Serialise(),
+                         GroupSender<MessageType>(routing, group_name),
+                         typename MessageType::Receiver(routing::GroupId(
+                                                            NodeId(group_name.value.string()))));
+  routing.Send(message);
+}
+
+template<typename MessageType>
+void SendSyncMessage(routing::Routing& routing, const MessageType& sync_message,
+    const typename nfs::PersonaTypes<MessageType::SourcePersona::value>::Key& key) {
+  typedef routing::Message<typename MessageType::Sender, typename MessageType::Receiver>
+      RoutingMessage;
+  static_assert(MessageType::SourcePersona::value == MessageType::DestinationPersona::value,
+                  "Sync messages must be send to same persona !!");
+
+  RoutingMessage message(sync_message.Serialise(),
+  typename MessageType::Sender(routing::GroupId(NodeId(key.name.string())),
+                                                routing::SingleId(routing.kNodeId())),
+  typename MessageType::Receiver(routing::GroupId(NodeId(key.name.string()))));
+  routing.Send(message);
 }
 
 }  // namespace vault

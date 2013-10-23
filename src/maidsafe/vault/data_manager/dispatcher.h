@@ -35,6 +35,7 @@
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/data_manager/data_manager.h"
 
 namespace maidsafe {
 
@@ -96,7 +97,7 @@ class DataManagerDispatcher {
                          nfs::MessageId message_id);
 
   // =========================== Sync / AccountTransfer section ====================================
-  void SendSync(const Identity& data_name, const std::string& serialised_sync);
+  void SendSync(const DataManager::Key& key, const std::string& serialised_sync);
 
   void SendAccountTransfer(const NodeId& destination_peer, const MaidName& account_name,
                            const std::string& serialised_account);
@@ -122,9 +123,6 @@ class DataManagerDispatcher {
   template<typename DataName>
   void DoSendGetFromCache(const DataName& /*data_name*/, IsNotCacheable) {}  // No-op
 
-  template <typename DataName>
-  routing::GroupSource GroupSender(const DataName& data_name) const;
-
   template <typename Message>
   void CheckSourcePersonaType() const;
 
@@ -142,7 +140,8 @@ void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name, const Data
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
   VaultMessage vault_message(message_id, nfs_vault::DataNameAndContent(data));
-  RoutingMessage message(vault_message.Serialise(), GroupSender(data.name()),
+  RoutingMessage message(vault_message.Serialise(),
+                         GroupSender<VaultMessage, typename Data::Name>(routing_, data.name()),
                          VaultMessage::Receiver(NodeId(pmid_name->string())));
   routing_.Send(message);
 }
@@ -156,7 +155,8 @@ void DataManagerDispatcher::SendPutResponse(const MaidName& account_name,
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
   VaultMessage vault_message(message_id, nfs_vault::DataNameAndCost(data_name, cost));
-  RoutingMessage message(vault_message.Serialise(), GroupSender(data_name),
+  RoutingMessage message(vault_message.Serialise(),
+                         GroupSender<VaultMessage, typename Data::Name>(routing_, data_name),
                          VaultMessage::Receiver(NodeId(account_name->string())));
   routing_.Send(message);
 }
@@ -172,7 +172,8 @@ void DataManagerDispatcher::SendPutFailure(
   VaultMessage vault_message(message_id,
                              nfs_client::DataNameAndReturnCode(data_name,
                                                                nfs_client::ReturnCode(error)));
-  RoutingMessage message(vault_message.Serialise(), GroupSender(data_name),
+  RoutingMessage message(vault_message.Serialise(),
+                         GroupSender<VaultMessage, typename Data::Name>(routing_, data_name),
                          VaultMessage::Receiver(routing::GroupId(NodeId(maid_node->string()))));
   routing_.Send(message);
 }
@@ -191,7 +192,7 @@ void DataManagerDispatcher::SendGetRequest(const PmidName& pmid_node,
   VaultMessage vault_message(message_id, VaultMessage::Contents(data_name));
   RoutingMessage message(
       vault_message.Serialise(),
-      VaultMessage::Sender(GroupSender(data_name)),
+      GroupSender<VaultMessage, typename Data::Name>(routing_, data_name),
       VaultMessage::Receiver(routing::SingleId(NodeId(pmid_node->string()))));
   routing_.Send(message);
 }
@@ -241,14 +242,15 @@ void DataManagerDispatcher::SendGetResponseSuccess(const RequestorIdType& reques
   static const routing::Cacheable kCacheable(is_cacheable<Data>::value ? routing::Cacheable::kPut :
                                                                          routing::Cacheable::kNone);
   NfsMessage nfs_message(message_id, NfsMessage::Contents(data));
-  RoutingMessage message(nfs_message.Serialise(), GroupSender(data.name()),
+  RoutingMessage message(nfs_message.Serialise(),
+                         GroupSender<NfsMessage, typename Data::Name>(routing_, data.name()),
                          NfsMessage::Receiver(routing::SingleId(requestor_id.node_id)), kCacheable);
   routing_.Send(message);
 }
 
-template <typename RequestorIdType, typename DataName>
+template <typename RequestorIdType, typename DataNameType>
 void DataManagerDispatcher::SendGetResponseFailure(const RequestorIdType& requestor_id,
-                                                   const DataName& data_name,
+                                                   const DataNameType& data_name,
                                                    const maidsafe_error& result,
                                                    nfs::MessageId message_id) {
   typedef typename detail::GetResponseMessage<RequestorIdType>::Type NfsMessage;
@@ -258,7 +260,8 @@ void DataManagerDispatcher::SendGetResponseFailure(const RequestorIdType& reques
 
   NfsMessage nfs_message(message_id,
                          NfsMessage::Contents(data_name, nfs_client::ReturnCode(result)));
-  RoutingMessage message(nfs_message.Serialise(), GroupSender(data_name),
+  RoutingMessage message(nfs_message.Serialise(),
+                         GroupSender<NfsMessage, DataNameType>(routing_, data_name),
                          NfsMessage::Receiver(routing::SingleId(requestor_id.node_id)));
   routing_.Send(message);
 }
@@ -309,17 +312,13 @@ void DataManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
   VaultMessage vault_message(message_id, nfs_vault::DataName(data_name));
-  RoutingMessage message(vault_message.Serialise(), GroupSender(data_name),
+  RoutingMessage message(vault_message.Serialise(),
+                         GroupSender<VaultMessage, typename Data::Name>(routing_, data_name),
                          VaultMessage::Receiver(NodeId(pmid_node->string())));
   routing_.Send(message);
 }
 
 // ==================== General implementation =====================================================
-template <typename DataName>
-routing::GroupSource DataManagerDispatcher::GroupSender(const DataName& data_name) const {
-  return routing::GroupSource(routing::GroupId(NodeId(data_name->string())),
-                              routing::SingleId(routing_.kNodeId()));
-}
 
 template<typename Message>
 void DataManagerDispatcher::CheckSourcePersonaType() const {

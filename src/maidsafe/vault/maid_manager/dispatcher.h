@@ -67,9 +67,6 @@ class MaidManagerDispatcher {
   void SendRemoveAccountResponse(const MaidName& account_name, const maidsafe_error& result,
                                  nfs::MessageId message_id);
 
-//  void SendRegisterPmidResponse(const MaidName& account_name, const PmidName& pmid_name,
-//                                const maidsafe_error& result, nfs::MessageId message_id);
-
   void SendUnregisterPmidResponse(const MaidName& account_name, const PmidName& pmid_name,
                                   const maidsafe_error& result, nfs::MessageId message_id);
 
@@ -82,9 +79,8 @@ class MaidManagerDispatcher {
   void SendPutFailure(const MaidName& maid_node, const typename Data::Name& data_name,
                       const maidsafe_error& error,  nfs::MessageId message_id);
 
-  void SendHealthResponse(const MaidName& maid_node, const PmidName& pmid_node,
-                          int64_t available_size, const nfs_client::ReturnCode& return_code,
-                          nfs::MessageId message_id);
+  void SendHealthResponse(const MaidName& maid_name, int64_t available_size,
+                          const nfs_client::ReturnCode& return_code, nfs::MessageId message_id);
  private:
   MaidManagerDispatcher();
   MaidManagerDispatcher(const MaidManagerDispatcher&);
@@ -114,7 +110,7 @@ void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name, const D
       nfs_vault::DataAndPmidHint(nfs_vault::DataName(data.name()), data.Serialise(),
                                  pmid_node_hint));
   RoutingMessage message(vault_message.Serialise(),
-                         GroupSender<MaidManager, VaultMessage>(routing_, account_name),
+                         GroupSender<VaultMessage>(routing_, account_name),
                          VaultMessage::Receiver(routing::GroupId(NodeId(data.name()))));
   routing_.Send(message);
 }
@@ -131,7 +127,7 @@ void MaidManagerDispatcher::SendPutFailure(
                          nfs_client::DataNameAndReturnCode(data_name,
                                                            nfs_client::ReturnCode(error)));
   RoutingMessage message(nfs_message.Serialise(),
-                         GroupSender<MaidManager, NfsMessage>(routing_, maid_name),
+                         GroupSender<NfsMessage>(routing_, maid_name),
                          NfsMessage::Receiver(routing::SingleId(NodeId(data_name.value))));
   routing_.Send(message);
 }
