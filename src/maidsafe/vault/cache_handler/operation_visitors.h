@@ -31,27 +31,46 @@ namespace vault {
 namespace detail {
 
 namespace {
-  typedef std::true_type IsCacheable;
-  typedef std::false_type IsNotCacheable;
+  typedef std::true_type IsCacheable, IsGroupSource;
+  typedef std::false_type IsNotCacheable, IsSingleSource;
+
+  template <typename T>
+  struct is_group_source : public std::false_type {};
+
+  template <>
+  struct is_group_source<routing::GroupSource> : public std::true_type {};
 }
 
-template<typename Sender>
+template<typename Sender, typename SourcePersonaType>
 class GetFromCacheVisitor : public boost::static_visitor<bool> {
  public:
+  typedef SourcePersonaType PersonaType;
   GetFromCacheVisitor(CacheHandlerService* cache_handler_service, const Sender& sender)
       : cache_handler_service_(cache_handler_service), kSender(sender) {}
 
   template <typename DataName>
   result_type operator()(const DataName& data_name) {
+    return DoGetFromCache(data_name, is_group_source<Sender>());
+  }
+
+ private:
+  template <typename DataName>
+  bool DoGetFromCache(const DataName& data_name, IsSingleSource) {
     auto cache_data(GetFromCache(data_name, is_cacheable<typename DataName::data_type>()));
     if (cache_data) {
-      cache_handler_service_->SendGetResponse(cache_data, kSender);
+      cache_handler_service_->SendGetResponse<typename DataName::data_type,
+                                               SourcePersonaType>(*cache_data, kSender);
       return true;
     }
     return false;
   }
 
- private:
+  template <typename DataName>
+  bool DoGetFromCache(const DataName& /*data_name*/, IsGroupSource) {
+    return false;
+  }
+
+
   template<typename DataName>
   boost::optional<typename DataName::data_type>
   GetFromCache(const DataName& data_name, IsCacheable) {
