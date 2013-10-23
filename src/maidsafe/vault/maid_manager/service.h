@@ -59,6 +59,7 @@
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
+#include "maidsafe/vault/operation_visitors.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/accumulator.h"
 
@@ -102,7 +103,8 @@ class MaidManagerService {
   template <typename MessageType>
   bool ValidateSender(const MessageType& /*message*/,
                       const typename MessageType::Sender& /*sender*/) const {
-    return false;
+  // BEFORE_RELEASE missing function imeplementation
+    return true;
   }
 
   // =============== account creation & pmid registration===========================================
@@ -190,6 +192,17 @@ class MaidManagerService {
     passport::PublicAnmaid::Name anmaid_name;
     bool maid_stored, anmaid_stored;
   };
+
+  template<typename ServiceHandlerType, typename MessageType>
+  friend void detail::DoOperation(
+      ServiceHandlerType* service, const MessageType& message,
+      const typename MessageType::Sender& sender,
+      const typename MessageType::Receiver& receiver);
+
+  friend class detail::MaidManagerPutVisitor<MaidManagerService>;
+  friend class detail::MaidManagerPutResponseVisitor<MaidManagerService>;
+  friend class detail::MaidManagerPutResponseFailureVisitor<MaidManagerService>;
+  friend class detail::MaidManagerDeleteVisitor<MaidManagerService>;
 
   routing::Routing& routing_;
   nfs_client::DataGetter& data_getter_;
@@ -337,10 +350,10 @@ struct can_create_account<passport::PublicMaid> : public std::true_type {};
 
 // MaidName GetMaidAccountName(const nfs::Message& message);
 
- template<typename DataName>
- DataName GetObfuscatedDataName(const DataName& data_name) {
+template<typename DataNameType>
+DataNameType GetObfuscatedDataName(const DataNameType& data_name) {
   // Hash the data name to obfuscate the list of chunks associated with the client.
-  return DataName(crypto::Hash<crypto::SHA512>(data_name.raw_name));
+  return DataNameType(crypto::Hash<crypto::SHA512>(data_name.value));
 }
 
 template <typename MaidManagerSyncType>
@@ -367,7 +380,7 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
     dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
   } else {
     dispatcher_.SendPutFailure<Data>(account_name, data.name(),
-                                     nfs_client::ReturnCode(CommonErrors::cannot_exceed_limit),
+                                     nfs_client::ReturnCode(CommonErrors::cannot_exceed_limit).value,
                                      message_id);
   }
 }
@@ -377,7 +390,7 @@ void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
                                            const typename Data::Name& data_name,
                                            int32_t cost, nfs::MessageId /*message_id*/) {
   typename MaidManager::Key group_key(typename MaidManager::GroupName(maid_name.value),
-                                      GetObfuscatedDataName(data_name), data_name.type);
+                                      detail::GetObfuscatedDataName(data_name), Data::Tag::kValue);
   sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(
       group_key, ActionMaidManagerPut(cost), routing_.kNodeId()));
   DoSync();
@@ -398,7 +411,7 @@ void MaidManagerService::HandleDelete(const MaidName& account_name,
                                       nfs::MessageId message_id) {
   if (DeleteAllowed(account_name, data_name)) {
     typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
-                                        GetObfuscatedDataName(data_name), data_name.type);
+                                        detail::GetObfuscatedDataName(data_name), data_name.type);
     sync_deletes_.AddLocalAction(typename MaidManager::UnresolvedDelete(
         group_key, ActionMaidManagerDelete(message_id), routing_.kNodeId()));
     DoSync();

@@ -79,11 +79,11 @@ MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(const Data& data) cons
   int64_t total_claimed_available_size_by_pmids(0);
   for (const auto& pmid_total : pmid_totals_)
     total_claimed_available_size_by_pmids += pmid_total.pmid_metadata.claimed_available_size;
-  auto cost(data.data().string().size());
-  if (total_claimed_available_size_by_pmids < total_put_data_ + cost)
+  auto cost(data.Serialise()->string().size());
+  if (total_claimed_available_size_by_pmids < (total_put_data_ + cost))
     return Status::kNoSpace;
 
-  return ((total_claimed_available_size_by_pmids / 100) * 3 < total_put_data_ + cost)
+  return ((3 * total_claimed_available_size_by_pmids / 100) < (total_put_data_ + cost))
              ? Status::kLowSpace
              : Status::kOk;
 }

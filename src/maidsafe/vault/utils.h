@@ -54,7 +54,13 @@ template <>
 DataNameVariant GetNameVariant(const nfs_client::DataNameAndContentOrReturnCode& data);
 
 template <>
+DataNameVariant GetNameVariant(const nfs_client::DataNameAndReturnCode& data);
+
+template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndContentOrCheckResult& data);
+
+template <>
+DataNameVariant GetNameVariant(const nfs_vault::DataNameAndCost& data);
 
 template <typename MessageType>
 struct ValidateSenderType {
@@ -96,6 +102,11 @@ typename Account::serialised_type GetSerialisedAccount(std::mutex& mutex,
 template <typename AccountSet, typename Account>
 typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
     std::mutex& mutex, const AccountSet& accounts, const typename Account::Name& account_name);
+
+template <typename ServiceHandlerType, typename MessageType>
+void DoOperation(ServiceHandlerType* service, const MessageType& message,
+                 const typename MessageType::Sender& sender,
+                 const typename MessageType::Receiver& receiver);
 
 }  // namespace detail
 

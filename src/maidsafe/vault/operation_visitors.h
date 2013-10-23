@@ -43,8 +43,10 @@ class MaidManagerPutVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePut(MaidName(kSender_), Name::data_type(data_name, kContent_),
-                                  kPmidHint_, kMessageId_);
+    kService_->template HandlePut(MaidName(Identity(kSender_.string())),
+                                  typename Name::data_type(data_name,
+                                      typename Name::data_type::serialised_type(kContent_)),
+                                  PmidName(kPmidHint_), kMessageId_);
   }
 
  private:
@@ -153,7 +155,8 @@ class MaidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePutFailure(kMaidNode_, data_name, kReturnCode_, kMessageId_);
+    kService_->template HandlePutFailure<typename Name::data_type>(kMaidNode_, data_name,
+                                                                   kReturnCode_, kMessageId_);
   }
 
  private:
@@ -186,18 +189,20 @@ template <typename ServiceHandlerType>
 class MaidManagerPutResponseVisitor : public boost::static_visitor<> {
  public:
   MaidManagerPutResponseVisitor(ServiceHandlerType* service, const Identity& maid_node,
-                                int32_t cost)
-      : kService_(service), kMaidNode_(maid_node), kCost_(cost) {}
+                                int32_t cost, nfs::MessageId message_id)
+      : kService_(service), kMaidNode_(maid_node), kCost_(cost), kMessageId_(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePutResponse(kMaidNode_, data_name, kCost_);
+    kService_->template HandlePutResponse<typename Name::data_type>(kMaidNode_, data_name,
+                                                                    kCost_, kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
   const MaidName kMaidNode_;
   const int32_t kCost_;
+  const nfs::MessageId kMessageId_;
 };
 
 template <typename ServiceHandlerType>
