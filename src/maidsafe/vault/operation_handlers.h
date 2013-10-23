@@ -113,6 +113,25 @@ void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/
 
 // TODO(Team) Consider moving these to respective persona
 //=============================== To MaidManager ===================================================
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
+                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
+                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  service->HandleCreateMaidAccount(message.contents->public_maid(),
+                                   message.contents->public_anmaid(),
+                                   message.message_id);
+}
+
+template <typename ServiceHandlerType>
+void DoOperation(ServiceHandlerType* service,
+                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
+                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
+                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  service->HandlePmidRegistration(message.contents);
+}
+
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager& message,
@@ -122,7 +141,7 @@ void DoOperation(ServiceHandlerType* service,
   MaidManagerPutVisitor<ServiceHandlerType> put_visitor(service, message.contents->data.content,
                                                         sender.data, message.contents->pmid_hint,
                                                         message.message_id);
-  boost::apply_visitor(put_visitor, data_name);
+  boost::apply_visitor(put_visitor(), data_name);
 }
 
 template <typename ServiceHandlerType>
@@ -133,7 +152,7 @@ void DoOperation(ServiceHandlerType* service,
   auto data_name(GetNameVariant(message.contents->name));
   MaidManagerPutResponseVisitor<ServiceHandlerType> put_response_visitor(
       service, receiver, message.contents->cost, message.message_id);
-  boost::apply_visitor(put_response_visitor, data_name);
+  boost::apply_visitor(put_response_visitor(), data_name);
 }
 
 template <typename ServiceHandlerType>
@@ -144,7 +163,7 @@ void DoOperation(ServiceHandlerType* service,
   auto data_name(GetNameVariant(*message.contents));
   MaidManagerPutResponseFailureVisitor<ServiceHandlerType> put_visitor(
       service, sender, message.contents->return_code, message.message_id);
-  boost::apply_visitor(put_visitor, data_name);
+  boost::apply_visitor(put_visitor(), data_name);
 }
 
 template <typename ServiceHandlerType>
@@ -155,7 +174,7 @@ void DoOperation(ServiceHandlerType* service,
   auto data_name(GetNameVariant(message.contents));
   MaidManagerDeleteVisitor<ServiceHandlerType> delete_visitor(
       service, MaidName(Identity(sender.data.string())), message.message_id);
-  boost::apply_visitor(delete_visitor, data_name);
+  boost::apply_visitor(delete_visitor(), data_name);
 }
 
 template <typename ServiceHandlerType>
@@ -179,7 +198,7 @@ void DoOperation(ServiceHandlerType* service,
   DataManagerPutVisitor<ServiceHandlerType> put_visitor(
       service, message.contents->data.content, sender.group_id, message.contents->pmid_hint,
       message.message_id);
-  boost::apply_visitor(put_visitor, data_name);
+  boost::apply_visitor(put_visitor(), data_name);
 }
 
 template <typename ServiceHandlerType>
@@ -191,7 +210,7 @@ void DoOperation(ServiceHandlerType* service,
   DataManagerPutResponseVisitor<ServiceHandlerType> put_response_visitor(
       service, PmidName(Identity(sender.group_id.data.string())), message.contents->size,
       message.message_id);
-  boost::apply_visitor(put_response_visitor, data_name);
+  boost::apply_visitor(put_response_visitor(), data_name);
 }
 
 template <typename ServiceHandlerType>
@@ -204,7 +223,7 @@ void DoOperation(ServiceHandlerType* service,
   GetRequestVisitor<ServiceHandlerType,
                     typename nfs::GetRequestFromMaidNodeToDataManager::Sender> get_request_visitor(
       service, requestor, message.message_id);
-  boost::apply_visitor(get_request_visitor, data_name);
+  boost::apply_visitor(get_request_visitor(), data_name);
 }
 
 template <typename ServiceHandlerType>
@@ -218,7 +237,7 @@ void DoOperation(ServiceHandlerType* service,
       ServiceHandlerType,
       typename nfs::GetRequestFromDataGetterToDataManager::Sender> get_request_visitor(
           service, requestor, message.message_id);
-  boost::apply_visitor(get_request_visitor, data_name);
+  boost::apply_visitor(get_request_visitor(), data_name);
 }
 
 template <typename ServiceHandlerType>
@@ -237,7 +256,7 @@ void DoOperation(ServiceHandlerType* service,
                  const DeleteRequestFromMaidManagerToDataManager::Receiver& /*receiver*/) {
   auto data_name(GetNameVariant(message.contents));
   DataManagerDeleteVisitor<ServiceHandlerType> delete_visitor(service, message.message_id);
-  boost::apply_visitor(delete_visitor, data_name);
+  boost::apply_visitor(delete_visitor(), data_name);
 }
 
 template <typename ServiceHandlerType>
@@ -248,7 +267,7 @@ void DoOperation(ServiceHandlerType* service,
   auto data_name(GetNameVariant(*message.contents));
   PutResponseFailureVisitor<ServiceHandlerType> put_visitor(
       service, sender, message.contents->return_code, message.message_id);
-  boost::apply_visitor(put_visitor, data_name);
+  boost::apply_visitor(put_visitor(), data_name);
 }
 
 //=============================== To PmidManager ===================================================
@@ -260,7 +279,7 @@ void DoOperation(ServiceHandlerType* service,
   auto data_name(GetNameVariant(*message.contents));
   PmidManagerPutVisitor<ServiceHandlerType> put_visitor(service, message.contents->content,
                                                         message.message_id, receiver);
-  boost::apply_visitor(put_visitor, data_name);
+  boost::apply_visitor(put_visitor(), data_name);
 }
 
 template <typename ServiceHandlerType>
@@ -272,7 +291,7 @@ void DoOperation(ServiceHandlerType* service,
   PutResponseFailureVisitor<ServiceHandlerType> put_failure_visitor(
       service, MaidName(Identity(receiver.data.string())), message.contents->return_code,
                         message.message_id);
-  boost::apply_visitor(put_failure_visitor, data_name);
+  boost::apply_visitor(put_failure_visitor(), data_name);
 }
 
 template <typename ServiceHandlerType>
@@ -283,7 +302,7 @@ void DoOperation(ServiceHandlerType* service,
   auto data_name(GetNameVariant(message.contents));
   PmidManagerDeleteVisitor<ServiceHandlerType> delete_visitor(
       service, PmidName(Identity(receiver.data.string())), message.message_id);
-  boost::apply_visitor(delete_visitor, data_name);
+  boost::apply_visitor(delete_visitor(), data_name);
 }
 
 template <typename ServiceHandlerType>
@@ -312,7 +331,7 @@ void DoOperation(ServiceHandlerType* service,
                  const DeleteRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
   auto data_name(GetNameVariant(message.contents));
   PmidNodeDeleteVisitor<ServiceHandlerType> delete_visitor(service);
-  boost::apply_visitor(delete_visitor, data_name);
+  boost::apply_visitor(delete_visitor(), data_name);
 }
 
 template <typename ServiceHandlerType>
@@ -323,7 +342,7 @@ void DoOperation(ServiceHandlerType* service,
   auto data_name(GetNameVariant(*message.contents));
   PmidNodePutVisitor<ServiceHandlerType> put_visitor(service, message.contents->content,
                                                      message.message_id);
-  boost::apply_visitor(put_visitor, data_name);
+  boost::apply_visitor(put_visitor(), data_name);
 }
 
 }  // namespace detail

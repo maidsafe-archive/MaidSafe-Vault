@@ -1,3 +1,3 @@
-For full details, see https://github.com/maidsafe/MaidSafe-Vault/wiki
+For full details, see http://www.maidsafe.net/vault.html
 
-[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/e71e8682b02c9c7f17379257f8728c6b "githalytics.com")](http://githalytics.com/maidsafe/MaidSafe-Vault) 
+[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/9830f657bb2c9583dbffbcdede35ba16 "githalytics.com")](http://githalytics.com/maidsafe/MaidSafe-Vault)

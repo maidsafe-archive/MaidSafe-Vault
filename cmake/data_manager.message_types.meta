@@ -2,8 +2,8 @@ Action:PutRequest             Source:MaidManager:Group      Destination:DataMana
 Action:PutResponse            Source:PmidManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataNameAndSize
 Action:PutFailure             Source:PmidManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_client::DataNameAndReturnCode
 Action:GetResponse            Source:PmidNode:Single        Destination:DataManager:Single     Contents:struct:maidsafe::nfs_vault::DataNameAndContentOrCheckResult
-Action:PutToCache             Source:DataManager:Single     Destination:DataManager:Single     Contents:struct:maidsafe::nfs_vault::DataNameAndContent                PutCacheable
-Action:GetFromCache           Source:DataManager:Single     Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataName                          GetCacheable
+Action:PutToCache             Source:DataManager:Single     Destination:DataManager:Single     Contents:struct:maidsafe::nfs_vault::DataNameAndContent                Cacheable
+Action:GetFromCache           Source:DataManager:Single     Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataName                          Cacheable
 Action:GetCachedResponse      Source:CacheHandler:Single    Destination:DataManager:Single     Contents:struct:maidsafe::nfs_client::DataNameAndContentOrReturnCode
 Action:DeleteRequest          Source:MaidManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataName
 Action:Synchronise            Source:DataManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataNameAndContent

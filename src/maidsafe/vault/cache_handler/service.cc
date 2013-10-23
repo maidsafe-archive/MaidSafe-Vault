@@ -17,6 +17,10 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/vault/cache_handler/service.h"
+#include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/cache_handler/operation_visitors.h"
+#include "maidsafe/vault/cache_handler/operation_handlers.h"
+
 
 
 namespace maidsafe {
@@ -32,31 +36,93 @@ DiskUsage cache_size = DiskUsage(200);
 
 }
 
-template <>
-bool CacheHandlerService::Get(
-    const GetRequestFromDataManagerToPmidNode& /*message*/,
-    const typename GetRequestFromDataManagerToPmidNode::Sender& /*sender*/,
-    const typename GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/) {
- return false;
-}
-
-template <>
-bool CacheHandlerService::Get(
-    const nfs::GetRequestFromMaidNodeToDataManager& /*message*/,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& /*sender*/,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
-  return false;
-}
-
-
 CacheHandlerService::CacheHandlerService(routing::Routing& routing,
-                                         const boost::filesystem::path vault_root_dir)
+                                         const boost::filesystem::path& vault_root_dir)
     : routing_(routing),
+      dispatcher_(routing),
       cache_size_(cache_size),
       cache_data_store_(cache_usage, DiskUsage(cache_usage), nullptr,
                         vault_root_dir / "cache" / "cache"),
       mem_only_cache_(mem_only_cache_usage) {
   routing_.kNodeId();
+}
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetResponseFromDataManagerToMaidNode& message,
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& sender,
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& receiver) {
+  typedef nfs::GetResponseFromDataManagerToMaidNode MessageType;
+  return CacheOperationHandlerWrapper<MessageType>(
+             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    })(message, sender, receiver);
+}
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetCachedResponseFromCacheHandlerToMaidNode& message,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Sender& sender,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& receiver) {
+  typedef nfs::GetCachedResponseFromCacheHandlerToMaidNode MessageType;
+  return CacheOperationHandlerWrapper<MessageType>(
+             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    })(message, sender, receiver);
+}
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetResponseFromDataManagerToDataGetter& message,
+    const typename nfs::GetResponseFromDataManagerToDataGetter::Sender& sender,
+    const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& receiver) {
+  typedef nfs::GetResponseFromDataManagerToDataGetter MessageType;
+  return CacheOperationHandlerWrapper<MessageType>(
+             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    })(message, sender, receiver);
+}
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetCachedResponseFromCacheHandlerToDataGetter& message,
+    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Sender& sender,
+    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Receiver& receiver) {
+  typedef  nfs::GetCachedResponseFromCacheHandlerToDataGetter MessageType;
+  return CacheOperationHandlerWrapper<MessageType>(
+             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    })(message, sender, receiver);
+}
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetRequestFromMaidNodeToDataManager& message,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
+  typedef  nfs::GetRequestFromMaidNodeToDataManager MessageType;
+  return CacheOperationHandlerWrapper<MessageType>(
+             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    })(message, sender, receiver);
+}
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetRequestFromDataGetterToDataManager& message,
+    const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
+  typedef  nfs::GetRequestFromDataGetterToDataManager MessageType;
+  return CacheOperationHandlerWrapper<MessageType>(
+             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    })(message, sender, receiver);
 }
 
 }  // namespace vault

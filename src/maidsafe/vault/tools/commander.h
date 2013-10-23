@@ -73,10 +73,11 @@ class Commander {
 
  private:
   size_t pmids_count_;
-  size_t key_index_;
+  int key_index_;
   int chunk_set_count_;
   int chunk_index_;
   KeyChainVector all_keychains_;
+  std::vector<passport::PublicPmid> pmids_from_file_;
   boost::filesystem::path keys_path_;
   std::vector<boost::asio::ip::udp::endpoint> peer_endpoints_;
   SelectedOperationsContainer selected_ops_;

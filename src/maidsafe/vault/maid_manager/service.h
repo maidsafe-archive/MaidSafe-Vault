@@ -78,6 +78,7 @@ class MaidManagerService {
  public:
   typedef nfs::MaidManagerServiceMessages PublicMessages;
   typedef MaidManagerServiceMessages VaultMessages;
+  typedef void HandleMessageReturnType;
 
   MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter);
@@ -104,13 +105,14 @@ class MaidManagerService {
     return false;
   }
 
-  // =============== account creation ==============================================================
-  void HandleCreateMaidAccount(const passport::PublicMaid &maid,
-                               const passport::PublicAnmaid& anmaid,
+  // =============== account creation & pmid registration===========================================
+  void HandleCreateMaidAccount(const passport::PublicMaid &public_maid,
+                               const passport::PublicAnmaid& public_anmaid,
                                nfs::MessageId message_id);
+  void HandleSyncedCreateMaidAccount(
+      std::unique_ptr<MaidManager::UnresolvedCreateAccount>&& synced_action);
 
-  void HandlePmidRegistration(const MaidName& source_maid_name,
-                              const nfs_vault::PmidRegistration& pmid_registration);
+  void HandlePmidRegistration(const nfs_vault::PmidRegistration& pmid_registration);
 
   void HandleSyncedPmidRegistration(
       std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action);
@@ -130,12 +132,16 @@ class MaidManagerService {
   void HandlePutFailure(const MaidName& maid_name, const typename Data::Name& data_name,
                         const maidsafe_error& error, nfs::MessageId message_id);
 
+  void HandleSyncedPutResponse(std::unique_ptr<MaidManager::UnresolvedPut>&& synced_action_put);
+
   template <typename Data>
   void HandleDelete(const MaidName& account_name, const typename Data::Name& data_name,
                     nfs::MessageId message_id);
 
   template <typename Data>
   bool DeleteAllowed(const MaidName& account_name, const typename Data::Name& data_name);
+
+  void HandleSyncedDelete(std::unique_ptr<MaidManager::UnresolvedDelete>&& synced_action_delete);
 
   void HandleHealthResponse(const MaidName& maid_node, const PmidName& pmid_node,
                             const std::string &serialised_pmid_health,
@@ -636,15 +642,6 @@ bool MaidManagerService::DeleteAllowed(const MaidName& account_name,
  void MaidManagerService::ValidatePmidRegistration(
     PublicFobType public_fob,
     std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
-//  std::unique_ptr<PublicFobType> public_fob;
-//  try {
-//    public_fob.reset(new PublicFobType(public_fob_name,
-//                                       typename PublicFobType::serialised_type(reply.data())));
-//  }
-//  catch(const std::exception& e) {
-//    public_fob.reset();
-//    LOG(kError) << e.what();
-//  }
   bool finalise(false);
   {
     std::lock_guard<std::mutex> lock(pmid_registration_op->mutex);

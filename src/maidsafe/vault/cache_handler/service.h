@@ -29,137 +29,177 @@
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/nfs/message_types.h"
 
+#include "maidsafe/vault/cache_handler/dispatcher.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
-namespace {
+namespace detail {
+  class PutToCacheVisitor;
 
-class LongTermCacheableVisitor : public boost::static_visitor<bool> {
- public:
-  template <typename Data>
-  void operator()() {
-    return is_long_term_cacheable<Data>::value;
-  }
-};
-
-class CacheableVisitor : public boost::static_visitor<bool> {
- public:
-  template <typename Data>
-  void operator()() {
-    return is_cacheable<Data>::value;
-  }
-};
-
-}  // noname namespace
-
-typedef boost::variant<GetRequestFromDataManagerToPmidNode,
-                       nfs::GetRequestFromMaidNodeToDataManager> GetFromCacheMessages;
-
-inline bool GetCacheVariant(const maidsafe::nfs::TypeErasedMessageWrapper& message,
-                            GetFromCacheMessages& variant) {
-  auto action(std::get<0>(message));
-  auto source_persona(std::get<1>(message).data);
-  if (action != maidsafe::nfs::MessageAction::kGetRequest) {
-    LOG(kError) << "Invalid action type: " << static_cast<int32_t>(action);
-    maidsafe::ThrowError(maidsafe::CommonErrors::invalid_parameter);
-  }
-  switch (source_persona) {
-    case maidsafe::nfs::Persona::kMaidNode:
-      variant = GetFromCacheMessages(nfs::GetRequestFromMaidNodeToDataManager(message));
-      return true;
-      break;
-    case maidsafe::nfs::Persona::kDataManager:
-      variant = GetFromCacheMessages(GetRequestFromDataManagerToPmidNode(message));
-      return true;
-      break;
-    default:
-      break;
-  }
-  return false;
+  template<typename Sender>
+  class GetFromCacheVisitor;
 }
 
 class CacheHandlerService {
  public:
-  CacheHandlerService(routing::Routing& routing, const boost::filesystem::path vault_root_dir);
+  typedef nfs::CacheableMessages PublicMessages;
+  typedef CacheableMessages VaultMessages;
+  typedef bool HandleMessageReturnType;
+
+  CacheHandlerService(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
 
   template <typename T>
-  bool Get(const T& message, const typename T::Sender& sender,
-           const typename T::Receiver& receiver);
+  HandleMessageReturnType HandleMessage(const T& message, const typename T::Sender& sender,
+                                        const typename T::Receiver& receiver);
 
-  template <typename Sender, typename Receiver>
-  void Store(const nfs::TypeErasedMessageWrapper& /*message*/, const Sender& /*sender*/,
-             const Receiver& /*receiver*/) {
-  }
+  friend class detail::PutToCacheVisitor;
+  template<typename Sender> friend class detail::GetFromCacheVisitor;
 
  private:
-  typedef std::true_type IsCacheable, IsLongTermCacheable;
-  typedef std::false_type IsNotCacheable, IsShortTermCacheable;
+  typedef std::true_type IsLongTermCacheable;
+  typedef std::false_type IsShortTermCacheable;
 
   template <typename Data>
-  void HandleStore(const Data& data);
+  boost::optional<Data> CacheGet(const typename Data::Name& data_name, IsShortTermCacheable);
 
-  // NB - for GetFromCacheFromDataManagerToDataManager messages, validate that the sender is "close"
-  // to the data.name() being requested.
-  template <typename T>
-  bool CacheGet(const T& message, const typename T::Sender& sender,
-                const typename T::Receiver& receiver, IsShortTermCacheable);
+  template <typename Data>
+  boost::optional<Data> CacheGet(const typename Data::Name& data_name, IsLongTermCacheable);
 
-  // NB - for GetFromCacheFromDataManagerToDataManager messages, validate that the sender is "close"
-  // to the data.name() being requested.
-  template <typename T>
-  bool CacheGet(const T& message, const typename T::Sender& sender,
-                const typename T::Receiver& receiver, IsLongTermCacheable);
+  template <typename Data>
+  void CacheStore(const Data& data, IsLongTermCacheable);
 
-  template <typename T>
-  void CacheStore(const T& message, const DataNameVariant& data_name, IsShortTermCacheable);
+  template <typename Data>
+  void CacheStore(const Data& data, IsShortTermCacheable);
 
-  template <typename T>
-  void CacheStore(const T& message, const DataNameVariant& data_name, IsLongTermCacheable);
+  template <typename Data, typename Sender>
+  void SendGetResponse(const Data& data, const Sender& sender);
+
+  template <typename MessageType>
+  bool ValidateSender(const MessageType& message, const typename MessageType::Sender& sender) const;
 
   routing::Routing& routing_;
+  CacheHandlerDispatcher dispatcher_;
   DiskUsage cache_size_;
   data_store::DataStore<data_store::DataBuffer<DataNameVariant>> cache_data_store_;
   data_store::MemoryBuffer mem_only_cache_;
 };
 
-template <typename T>
-bool CacheHandlerService::Get(const T& /*message*/, const typename T::Sender& /*sender*/,
-                              const typename T::Receiver& /*receiver*/) {
+template <typename MessageType>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(const MessageType& /*message*/,
+                                   const typename MessageType::Sender& /*sender*/,
+                                   const typename MessageType::Receiver& /*receiver*/) {
+//  MessageType::Specialisation_required;
   return false;
 }
 
-template <typename Sender, typename Receiver>
-class GetFromCacheVisitor : public boost::static_visitor<bool> {
- public:
-  GetFromCacheVisitor(CacheHandlerService& cache_handler_service,
-                      const Sender& sender, const Receiver& receiver)
-      : cache_handler_service_(cache_handler_service), kSender_(sender), kReceiver_(receiver) {}
+template <typename MessageType>
+bool CacheHandlerService::ValidateSender(const MessageType& /*message*/,
+                                         const typename MessageType::Sender& /*sender*/) const {
+//  MessageType::Specialisation_required;
+  return false;
+}
 
-  template<typename GetFromCacheMessageType>
-  typename std::enable_if<
-      std::is_same<typename GetFromCacheMessageType::Sender,Sender>::value, bool>::type
-  operator()(const GetFromCacheMessageType& get_from_cache_message) {
-    return cache_handler_service_.Get(get_from_cache_message, kSender_, kReceiver_);
-  }
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetResponseFromDataManagerToMaidNode& message,
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& sender,
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& receiver);
 
-  template<typename GetFromCacheMessageType>
-  typename std::enable_if<
-      !std::is_same<typename GetFromCacheMessageType::Sender,Sender>::value, bool>::type
-  operator()(const GetFromCacheMessageType& /*get_from_cache_message*/) {
-    return false;
-  }
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetCachedResponseFromCacheHandlerToMaidNode& message,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Sender& sender,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& receiver);
 
- private:
-  CacheHandlerService& cache_handler_service_;
-  Sender kSender_;
-  Receiver kReceiver_;
-};
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetResponseFromDataManagerToDataGetter& message,
+    const typename nfs::GetResponseFromDataManagerToDataGetter::Sender& sender,
+    const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& receiver);
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetCachedResponseFromCacheHandlerToDataGetter& message,
+    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Sender& sender,
+    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Receiver& receiver);
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetRequestFromMaidNodeToDataManager& message,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetRequestFromDataGetterToDataManager& message,
+    const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
+
 
 template <typename Data>
-void CacheHandlerService::HandleStore(const Data& /*data*/) {}
+boost::optional<Data> CacheHandlerService::CacheGet(const typename Data::Name& data_name,
+                                                    IsShortTermCacheable) {
+  try {
+    return boost::optional<Data>(
+               Data(data_name,
+                    typename Data::serialised_type(mem_only_cache_.Get(
+                        GetDataNameVariant(Data::Tag::kValue, data_name.value)))));
+  }
+  catch (const std::exception&) {
+    return boost::optional<Data>();
+  }
+}
 
+template <typename Data>
+boost::optional<Data> CacheHandlerService::CacheGet(const typename Data::Name& data_name,
+                                                    IsLongTermCacheable) {
+  try {
+    return boost::optional<Data>(
+               Data(data_name,
+                    typename Data::serialised_type(cache_data_store_.Get(
+                        GetDataNameVariant(Data::Tag::kValue, data_name.value)))));
+  }
+  catch (const std::exception&) {
+    return boost::optional<Data>();
+  }
+}
+
+template <typename Data, typename Sender>
+void CacheHandlerService::SendGetResponse(const Data& data, const Sender& sender) {
+  dispatcher_.SendGetResponse(data, sender);
+}
+
+template <typename Data>
+void CacheHandlerService::CacheStore(const Data& data, IsLongTermCacheable) {
+  try {
+    cache_data_store_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
+                            data.Serialise().data);
+  }
+  catch (const std::exception&) {
+    LOG(kError) << "Failed to store data in to the cache";
+  }
+}
+
+template <typename Data>
+void CacheHandlerService::CacheStore(const Data& data, IsShortTermCacheable) {
+  try {
+    mem_only_cache_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
+                          data.Serialise().data);
+  }
+  catch (const std::exception&) {
+    LOG(kError) << "Failed to store data in to the cache";
+  }
+}
 
 }  // namespace vault
 

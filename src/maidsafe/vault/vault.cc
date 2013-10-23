@@ -48,7 +48,8 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
           std::move(std::unique_ptr<PmidManagerService>(new PmidManagerService(pmid, *routing_)))),
       pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
           new PmidNodeService(pmid, *routing_, data_getter_, vault_root_dir)))),  // FIXME need to specialise
-      cache_service_(*routing_, vault_root_dir),
+      cache_service_(std::move(std::unique_ptr<CacheHandlerService>(
+          new CacheHandlerService(*routing_, vault_root_dir)))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
              pmid_manager_service_, pmid_node_service_),
       asio_service_(2) {
@@ -149,23 +150,17 @@ void Vault::OnPublicKeyRequested(const NodeId& node_id,
   asio_service_.service().post([=] { DoOnPublicKeyRequested(node_id, give_key); });
 }
 
-void Vault::DoOnPublicKeyRequested(const NodeId& /*node_id*/,
-                                   const routing::GivePublicKeyFunctor& /*give_key*/) {
-  //  passport::PublicPmid::Name name(Identity(node_id.string()));
-  //  public_key_getter_.GetKey<passport::PublicPmid>(
-  //      name,
-  //      [name, give_key] (nfs::Reply reply) {
-  //        try {
-  //          if (reply.IsSuccess()) {
-  //            passport::PublicPmid pmid(name,
-  // passport::PublicPmid::serialised_type(reply.data()));
-  //            give_key(pmid.public_key());
-  //          }
-  //        }
-  //        catch(const std::exception& ex) {
-  //          LOG(kError) << "Failed to get key for " << DebugId(name) << " : " << ex.what();
-  //        }
-  //      });
+void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
+                                   const routing::GivePublicKeyFunctor& give_key) {
+  passport::PublicPmid::Name name(Identity(node_id.string()));
+  auto pmid_future = data_getter_.Get(name, std::chrono::seconds(10));
+//   auto pmid_future_then = pmid_future.then(
+//       [node_id, give_key, this](boost::future<passport::PublicPmid>& future) {
+//           passport::PublicPmid public_pmid(passport::PublicPmid(future.get()));
+//           give_key(public_pmid.public_key());
+//       });
+  passport::PublicPmid public_pmid(passport::PublicPmid(pmid_future.get()));
+  give_key(public_pmid.public_key());
 }
 
 void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {}
@@ -180,30 +175,6 @@ void Vault::OnMatrixChanged(std::shared_ptr<routing::MatrixChange> matrix_change
 void Vault::OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint) {
   asio_service_.service().post([=] { on_new_bootstrap_endpoint_(endpoint); });
 }
-
-template <>
-bool Vault::OnGetFromCache(const routing::SingleToSingleMessage& /*message*/) {
-  return false;
-}
-
-template <>
-bool Vault::OnGetFromCache(const routing::GroupToGroupMessage& /*message*/) {
-  return false;
-}
-
-template <>
-bool Vault::OnGetFromCache(const routing::GroupToSingleMessage& /*message*/) {
-//  auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
-//  return HandleGetFromCache(wrapper_tuple, message.sender, message.receiver);
-  return false;
-}
-
-template <>
-bool Vault::OnGetFromCache(const routing::SingleToGroupMessage& message) {
-  auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
-  return HandleGetFromCache(wrapper_tuple, message.sender, message.receiver);
-}
-
 
 }  // namespace vault
 
