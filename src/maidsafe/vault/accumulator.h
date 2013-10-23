@@ -215,8 +215,8 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddRequestChecker::operator()
   } else {
     auto index(0);
     while (requests.size() - index >= required_requests_) {
-      if (std::count_if(std::begin(requests), std::end(requests), [&](const T & request) {
-            return nfs::Equals(requests.at(index), request);
+      if (std::count_if(std::begin(requests), std::end(requests), [&](const T& request) {
+            return requests.at(index) == request;
           }) == static_cast<int>(required_requests_))
         return AddResult::kSuccess;
       ++index;

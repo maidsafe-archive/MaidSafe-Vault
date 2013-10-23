@@ -29,9 +29,11 @@
 
 #include "maidsafe/nfs/message_types.h"
 
+#include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -89,7 +91,8 @@ class MaidManagerDispatcher {
   MaidManagerDispatcher(MaidManagerDispatcher&&);
   MaidManagerDispatcher& operator=(MaidManagerDispatcher);
 
-  //  routing::GroupSource Sender(const MaidName& account_name) const;
+  template <typename Message>
+  void CheckSourcePersonaType() const;
 
   routing::Routing& routing_;
   const passport::Pmid kSigningFob_;
@@ -104,29 +107,31 @@ void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name, const D
                                            nfs::MessageId message_id) {
   typedef PutRequestFromMaidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
 
   VaultMessage vault_message(
       message_id,
-      nfs_vault::DataAndPmidHint(nfs_vault::DataName(data.name()), data.Serialise(), pmid_node_hint));
+      nfs_vault::DataAndPmidHint(nfs_vault::DataName(data.name()), data.Serialise(),
+                                 pmid_node_hint));
   RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
-                                              routing::SingleId(routing_.kNodeId())),
+                         GroupSender<MaidManager, VaultMessage>(routing_, account_name),
                          VaultMessage::Receiver(routing::GroupId(NodeId(data.name()))));
   routing_.Send(message);
 }
 
 template <typename Data>
 void MaidManagerDispatcher::SendPutFailure(
-    const MaidName& maid_node, const typename Data::Name& data_name, const maidsafe_error& error,
+    const MaidName& maid_name, const typename Data::Name& data_name, const maidsafe_error& error,
     nfs::MessageId message_id) {
   typedef nfs::PutFailureFromMaidManagerToMaidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<NfsMessage>();
+
   NfsMessage nfs_message(message_id,
                          nfs_client::DataNameAndReturnCode(data_name,
                                                            nfs_client::ReturnCode(error)));
   RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(routing::GroupId(NodeId(maid_node.value.string())),
-                                            routing::SingleId(routing_.kNodeId())),
+                         GroupSender<MaidManager, NfsMessage>(routing_, maid_name),
                          NfsMessage::Receiver(routing::SingleId(NodeId(data_name.value))));
   routing_.Send(message);
 }
@@ -210,6 +215,14 @@ void MaidManagerDispatcher::SendPutFailure(
 //                         routing::SingleId(NodeId(account_name->string())), cacheable);
 //  routing_.Send(message);
 //}
+
+// ==================== General implementation =====================================================
+
+template<typename Message>
+void MaidManagerDispatcher::CheckSourcePersonaType() const {
+  static_assert(Message::SourcePersona::value == nfs::Persona::kMaidManager,
+                "The source Persona must be kMaidManager.");
+}
 
 }  // namespace vault
 

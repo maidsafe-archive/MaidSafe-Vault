@@ -23,9 +23,16 @@ namespace maidsafe {
 namespace vault {
 
 // ==================== Sync / AccountTransfer implementation ======================================
-void DataManagerDispatcher::SendSync(const Identity& /*data_name*/,
-                                     const std::string& /*serialised_sync*/) {
-  assert(0);
+void DataManagerDispatcher::SendSync(const Identity& data_name,
+                                     const std::string& serialised_sync) {
+  typedef SynchroniseFromDataManagerToDataManager VaultMessage;
+    typedef routing::GroupToGroupMessage RoutingMessage;
+    VaultMessage vault_message((nfs_vault::Content(serialised_sync)));
+    RoutingMessage message(vault_message.Serialise(),
+        VaultMessage::Sender(routing::GroupId(NodeId(data_name.string())),
+        routing::SingleId(routing_.kNodeId())),
+        VaultMessage::Receiver(routing::GroupId(NodeId(data_name.string()))));
+    routing_.Send(message);
 }
 
 void DataManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer*/,

@@ -362,35 +362,20 @@ void MaidManagerService::HandleSyncedPmidRegistration(
 }
 
 // =============== Put/Delete data =================================================================
-
-// void MaidManagerService::SendReplyAndAddToAccumulator(
-//    const nfs::Message& message,
-//    const routing::ReplyFunctor& reply_functor,
-//    const nfs::Reply& reply) {
-//  reply_functor(reply.Serialise()->string());
-//  std::lock_guard<std::mutex> lock(accumulator_mutex_);
-//  accumulator_.SetHandled(message, reply);
-//}
-
-// template<>
-// void MaidManagerService::HandlePut<OwnerDirectory>(const nfs::Message& message,
-//                                                   const routing::ReplyFunctor& reply_functor) {
-//  return HandleVersionMessage<OwnerDirectory>(message, reply_functor);
-//}
-
-// template<>
-// void MaidManagerService::HandlePut<GroupDirectory>(const nfs::Message& message,
-//                                                   const routing::ReplyFunctor& reply_functor) {
-//  return HandleVersionMessage<GroupDirectory>(message, reply_functor);
-//}
-
-// template<>
-// void MaidManagerService::HandlePut<WorldDirectory>(const nfs::Message& message,
-//                                                   const routing::ReplyFunctor& reply_functor) {
-//  return HandleVersionMessage<WorldDirectory>(message, reply_functor);
-//}
+void MaidManagerService::HandleSyncedPutResponse(
+    std::unique_ptr<MaidManager::UnresolvedPut>&& synced_action_put) {
+  group_db_.Commit(synced_action_put->key, synced_action_put->action);
+}
 
 
+void MaidManagerService::HandleSyncedDelete(
+    std::unique_ptr<MaidManager::UnresolvedDelete>&& synced_action_delete) {
+  group_db_.Commit(synced_action_delete->key, synced_action_delete->action);
+  dispatcher_.SendDeleteRequest(synced_action_delete->key.group_name(),
+                                nfs_vault::DataName(synced_action_delete->key.type,
+                                                    synced_action_delete->key.name),
+                                synced_action_delete->action.kMessageId);
+}
 
 // =============== Sync ============================================================================
 
@@ -429,45 +414,20 @@ void MaidManagerService::DoSync() {
 //}
 
 // =============== PMID totals =====================================================================
+void MaidManagerService::HandleHealthResponse(const MaidName& maid_node,
+    const PmidName& pmid_node, const std::string& serialised_pmid_health,
+    nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
+  PmidManagerMetadata pmid_health(serialised_pmid_health);
+  if (return_code.value.code() == CommonErrors::success) {
+    sync_update_pmid_healths_.AddLocalAction(
+        MaidManager::UnresolvedUpdatePmidHealth(
+            maid_node, ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
+    DoSync();
 
-// void MaidManagerService::UpdatePmidTotals(const MaidName& account_name) {
-//  auto pmid_names(maid_account_handler_.GetPmidNames(account_name));
-//  for (const auto& pmid_name : pmid_names) {
-//    auto op_data(std::make_shared<GetPmidTotalsOp>(account_name, pmid_name));
-//    nfs_.RequestPmidTotals(pmid_name,
-//                           [this, op_data](std::string serialised_reply) {
-//                             UpdatePmidTotalsCallback(serialised_reply, op_data);
-//                           });
-//  }
-//}
-
-// void MaidManagerService::UpdatePmidTotalsCallback(const std::string& serialised_reply,
-//                                                        std::shared_ptr<GetPmidTotalsOp> op_data)
-// {
-//  PmidManagerMetadata pmid_record;
-//  try {
-//    nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(serialised_reply))));
-//    if (reply.IsSuccess())
-//      pmid_record = PmidManagerMetadata(PmidManagerMetadata::serialised_type(reply.data()));
-//  }
-//  catch(const std::exception& e) {
-//    LOG(kWarning) << "Error updating PMID totals: " << e.what();
-//  }
-
-//  std::lock_guard<std::mutex> lock(op_data->mutex);
-//  op_data->pmid_records.push_back(pmid_record);
-//  assert(op_data->pmid_records.size() <= routing::Parameters::node_group_size);
-//  if (op_data->pmid_records.size() != routing::Parameters::node_group_size)
-//    return;
-
-//  try {
-//    auto pmid_record(MergePmidTotals(op_data));
-//    maid_account_handler_.UpdatePmidTotals(op_data->kMaidManagerName, pmid_record);
-//  }
-//  catch(const std::exception& e) {
-//    LOG(kWarning) << "Error updating PMID totals: " << e.what();
-//  }
-//}
+  }
+  dispatcher_.SendHealthResponse(maid_node, pmid_node, pmid_health.claimed_available_size,
+                                 return_code, message_id);
+}
 
 // void MaidManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
 //  auto account_names(maid_account_handler_.GetAccountNames());
@@ -648,6 +608,10 @@ void MaidManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+// =============== Sync ============================================================================
+
+// TODO(team): Once all sync messages are implemented, consider specialising HandleSyncedAction for
+// each sync action type
 template <>
 void MaidManagerService::HandleMessage(
     const SynchroniseFromMaidManagerToMaidManager& message,
@@ -662,20 +626,15 @@ void MaidManagerService::HandleMessage(
                                                    sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action)
-        group_db_.Commit(resolved_action->key, resolved_action->action);
+        HandleSyncedPutResponse(std::move(resolved_action));
       break;
     }
     case ActionMaidManagerDelete::kActionId: {
       MaidManager::UnresolvedDelete unresolved_action(proto_sync.serialised_unresolved_action(),
                                                       sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action) {
-        group_db_.Commit(resolved_action->key, resolved_action->action);
-        dispatcher_.SendDeleteRequest(resolved_action->key.group_name(),
-                                      nfs_vault::DataName(resolved_action->key.type,
-                                                          resolved_action->key.name),
-                                      resolved_action->action.kMessageId);
-      }
+      if (resolved_action)
+        HandleSyncedDelete(std::move(resolved_action));
       break;
     }
     case ActionCreateAccount::kActionId: {
@@ -700,21 +659,6 @@ void MaidManagerService::HandleMessage(
       LOG(kError) << "Unhandled action type";
     }
   }
-}
-
-void MaidManagerService::HandleHealthResponse(const MaidName& maid_node,
-    const PmidName& pmid_node, const std::string& serialised_pmid_health,
-    nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
-  PmidManagerMetadata pmid_health(serialised_pmid_health);
-  if (return_code.value.code() == CommonErrors::success) {
-    sync_update_pmid_healths_.AddLocalAction(
-        MaidManager::UnresolvedUpdatePmidHealth(
-            maid_node, ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
-    DoSync();
-
-  }
-  dispatcher_.SendHealthResponse(maid_node, pmid_node, pmid_health.claimed_available_size,
-                                 return_code, message_id);
 }
 
 }  // namespace vault

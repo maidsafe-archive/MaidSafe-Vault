@@ -18,6 +18,7 @@
 
 #include "maidsafe/vault/cache_handler/service.h"
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/cache_handler/operation_visitors.h"
 #include "maidsafe/vault/cache_handler/operation_handlers.h"
 
 
@@ -50,41 +51,52 @@ template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
     const nfs::GetResponseFromDataManagerToMaidNode& message,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& /*sender*/,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& /*receiver*/) {
-  if (!message.contents->data)
-    return false;
-  auto data_name(detail::GetNameVariant(*message.contents));
-  PutToCacheVisitor put_to_cache(this, message.contents->data->content);
-  boost::apply_visitor(put_to_cache, data_name);
-  return true;
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& sender,
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& receiver) {
+  typedef nfs::GetResponseFromDataManagerToMaidNode MessageType;
+  return CacheOperationHandlerWrapper<MessageType>(
+             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    })(message, sender, receiver);
 }
 
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const nfs::GetCachedResponseFromCacheHandlerToMaidNode& /*message*/,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Sender& /*sender*/,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& /*receiver*/) {
-  return true;
+    const nfs::GetCachedResponseFromCacheHandlerToMaidNode& message,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Sender& sender,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& receiver) {
+  typedef nfs::GetCachedResponseFromCacheHandlerToMaidNode MessageType;
+  return CacheOperationHandlerWrapper<MessageType>(
+             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    })(message, sender, receiver);
 }
 
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const nfs::GetResponseFromDataManagerToDataGetter& /*message*/,
-    const typename nfs::GetResponseFromDataManagerToDataGetter::Sender& /*sender*/,
-    const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& /*receiver*/) {
-  return true;
+    const nfs::GetResponseFromDataManagerToDataGetter& message,
+    const typename nfs::GetResponseFromDataManagerToDataGetter::Sender& sender,
+    const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& receiver) {
+  typedef nfs::GetResponseFromDataManagerToDataGetter MessageType;
+  return CacheOperationHandlerWrapper<MessageType>(
+             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    })(message, sender, receiver);
 }
 
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const nfs::GetCachedResponseFromCacheHandlerToDataGetter& /*message*/,
-    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Sender& /*sender*/,
-    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Receiver& /*receiver*/) {
-  return true;
+    const nfs::GetCachedResponseFromCacheHandlerToDataGetter& message,
+    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Sender& sender,
+    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Receiver& receiver) {
+  typedef  nfs::GetCachedResponseFromCacheHandlerToDataGetter MessageType;
+  return CacheOperationHandlerWrapper<MessageType>(
+             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    })(message, sender, receiver);
 }
 
 template <>
@@ -92,11 +104,12 @@ CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
     const nfs::GetRequestFromMaidNodeToDataManager& message,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
-  auto data_name(detail::GetNameVariant(*message.contents));
-  GetFromCacheVisitor<typename nfs::GetRequestFromMaidNodeToDataManager::Sender>
-      get_from_cache(this, sender);
-  return boost::apply_visitor(get_from_cache, data_name);
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
+  typedef  nfs::GetRequestFromMaidNodeToDataManager MessageType;
+  return CacheOperationHandlerWrapper<MessageType>(
+             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    })(message, sender, receiver);
 }
 
 template <>
@@ -104,11 +117,12 @@ CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
     const nfs::GetRequestFromDataGetterToDataManager& message,
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
-  auto data_name(detail::GetNameVariant(*message.contents));
-  GetFromCacheVisitor<typename nfs::GetRequestFromMaidNodeToDataManager::Sender>
-      get_from_cache(this, sender);
-  return boost::apply_visitor(get_from_cache, data_name);
+    const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
+  typedef  nfs::GetRequestFromDataGetterToDataManager MessageType;
+  return CacheOperationHandlerWrapper<MessageType>(
+             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    })(message, sender, receiver);
 }
 
 }  // namespace vault

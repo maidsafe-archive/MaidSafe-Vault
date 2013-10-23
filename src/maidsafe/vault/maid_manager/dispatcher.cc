@@ -35,10 +35,11 @@ void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
                                               nfs::MessageId message_id) {
   typedef DeleteRequestFromMaidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
+
   VaultMessage vault_message(message_id, data_name);
   RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
-                                              routing::SingleId(routing_.kNodeId())),
+                         GroupSender<MaidManager, VaultMessage>(routing_, account_name),
                          VaultMessage::Receiver(routing::GroupId(NodeId(data_name.raw_name))));
   routing_.Send(message);
 }
@@ -48,10 +49,11 @@ void MaidManagerDispatcher::SendCreateAccountResponse(const MaidName& account_na
                                                       nfs::MessageId message_id) {
   typedef nfs::CreateAccountResponseFromMaidManagerToMaidNode VaultMessage;
   typedef routing::GroupToSingleMessage RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
+
   VaultMessage vault_message(message_id, nfs_client::ReturnCode(result));
   RoutingMessage message(vault_message.Serialise(),
-      VaultMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
-      routing::SingleId(routing_.kNodeId())),
+      GroupSender<MaidManager, VaultMessage>(routing_, account_name),
       VaultMessage::Receiver(routing::SingleId(NodeId(account_name.value.string()))));
   routing_.Send(message);
 }
@@ -71,25 +73,6 @@ void MaidManagerDispatcher::SendRemoveAccountResponse(const MaidName& /*account_
   //                         routing::SingleId(NodeId(account_name->string())), cacheable);
   //  routing_.Send(message);
 }
-
-//void MaidManagerDispatcher::SendRegisterPmidResponse(const MaidName& /*account_name*/,
-//                                                     const PmidName& /*pmid_name*/,
-//                                                     const maidsafe_error& /*result*/,
-//                                                     nfs::MessageId /*message_id*/) {
-  //  typedef routing::GroupToSingleMessage RoutingMessage;
-  //  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-  //  static const nfs::MessageAction kAction(nfs::MessageAction::kRegisterPmidResponse);
-  //  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
-
-  //  nfs::Message::Data inner_data(result);
-  //  inner_data.type = PmidName::data_type::Tag::kValue;
-  //  inner_data.name = pmid_name.data;
-  //  inner_data.action = kAction;
-  //  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-  //  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-  //                         routing::SingleId(NodeId(account_name->string())), cacheable);
-  //  routing_.Send(message);
-//}
 
 void MaidManagerDispatcher::SendUnregisterPmidResponse(const MaidName& /*account_name*/,
                                                        const PmidName& /*pmid_name*/,
@@ -111,13 +94,14 @@ void MaidManagerDispatcher::SendUnregisterPmidResponse(const MaidName& /*account
 }
 
 void MaidManagerDispatcher::SendSync(const MaidName& account_name,
-                                     const std::string& serialised_action) {
+                                     const std::string& serialised_sync) {
   typedef SynchroniseFromMaidManagerToMaidManager VaultMessage;
   typedef routing::GroupToGroupMessage RoutingMessage;
-  VaultMessage vault_message((nfs_vault::Content(serialised_action)));
+  CheckSourcePersonaType<VaultMessage>();
+
+  VaultMessage vault_message((nfs_vault::Content(serialised_sync)));
   RoutingMessage message(vault_message.Serialise(),
-      VaultMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
-      routing::SingleId(routing_.kNodeId())),
+      GroupSender<MaidManager, VaultMessage>(routing_, account_name),
       VaultMessage::Receiver(routing::GroupId(NodeId(account_name.value.string()))));
   routing_.Send(message);
 }
@@ -139,24 +123,23 @@ void MaidManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer
   //  routing_.Send(message);
 }
 
-void MaidManagerDispatcher::SendHealthResponse(const MaidName& maid_node,
-    const PmidName& pmid_node, int64_t available_size,
+// FIXME(Team) Discuss, do we need pmid_name here ?
+void MaidManagerDispatcher::SendHealthResponse(const MaidName& maid_name,
+    const PmidName& /*pmid_name*/, int64_t available_size,
     const nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
   typedef nfs::PmidHealthResponseFromMaidManagerToMaidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<NfsMessage>();
+
   NfsMessage nfs_message(message_id, nfs_client::AvailableSizeAndReturnCode(available_size,
                                                                             return_code));
   RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
-                                            routing::SingleId(routing_.kNodeId())),
-                         NfsMessage::Receiver(NodeId(maid_node.value.string())));
+                         GroupSender<MaidManager, NfsMessage>(routing_, maid_name),
+//                         NfsMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
+//                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(NodeId(maid_name.value.string())));
   routing_.Send(message);
 }
-
-// routing::GroupSource MaidManagerDispatcher::Sender(const MaidName& account_name) const {
-//  return routing::GroupSource(routing::GroupId(NodeId(account_name->string())),
-//                              routing::SingleId(routing_.kNodeId()));
-//}
 
 }  // namespace vault
 
