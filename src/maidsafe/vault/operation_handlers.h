@@ -24,6 +24,7 @@
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/operation_visitors.h"
 #include "maidsafe/vault/accumulator.h"
+#include "maidsafe/vault/maid_manager/service.h"
 
 
 namespace maidsafe {
@@ -31,6 +32,7 @@ namespace maidsafe {
 namespace vault {
 
 class PmidNodeService;
+class MaidManagerService;
 
 namespace detail {
 
@@ -47,11 +49,6 @@ struct RequiredValue<routing::GroupSource> {
   int operator()() const { return routing::Parameters::node_group_size - 1; }
 };
 
-
-template <typename ServiceHandlerType, typename MessageType>
-void DoOperation(ServiceHandlerType* service, const MessageType& message,
-                 const typename MessageType::Sender& sender,
-                 const typename MessageType::Receiver& receiver);
 
 template <typename ValidateSender, typename AccumulatorType, typename Checker,
           typename ServiceHandlerType>
@@ -132,17 +129,11 @@ void DoOperation(ServiceHandlerType* service,
   service->HandlePmidRegistration(message.contents);
 }
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(MaidManagerService* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager& message,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::PutRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
-  auto data_name(GetNameVariant(*message.contents));
-  MaidManagerPutVisitor<ServiceHandlerType> put_visitor(service, message.contents->data.content,
-                                                        sender.data, message.contents->pmid_hint,
-                                                        message.message_id);
-  boost::apply_visitor(put_visitor(), data_name);
-}
+                 const nfs::PutRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/);
 
 template <typename ServiceHandlerType>
 void DoOperation(ServiceHandlerType* service,

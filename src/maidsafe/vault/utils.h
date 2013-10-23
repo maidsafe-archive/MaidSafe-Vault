@@ -95,6 +95,11 @@ template <typename AccountSet, typename Account>
 typename Account::serialised_info_type GetSerialisedAccountSyncInfo(
     std::mutex& mutex, const AccountSet& accounts, const typename Account::Name& account_name);
 
+template <typename ServiceHandlerType, typename MessageType>
+void DoOperation(ServiceHandlerType* service, const MessageType& message,
+                 const typename MessageType::Sender& sender,
+                 const typename MessageType::Receiver& receiver);
+
 }  // namespace detail
 
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path);

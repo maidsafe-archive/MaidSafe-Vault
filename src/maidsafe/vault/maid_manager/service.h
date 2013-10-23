@@ -59,6 +59,7 @@
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
+#include "maidsafe/vault/operation_visitors.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/accumulator.h"
 
@@ -102,7 +103,8 @@ class MaidManagerService {
   template <typename MessageType>
   bool ValidateSender(const MessageType& /*message*/,
                       const typename MessageType::Sender& /*sender*/) const {
-    return false;
+  // BEFORE_RELEASE missing function imeplementation
+    return true;
   }
 
   // =============== account creation & pmid registration===========================================
@@ -186,6 +188,14 @@ class MaidManagerService {
     passport::PublicAnmaid::Name anmaid_name;
     bool maid_stored, anmaid_stored;
   };
+
+  template<typename ServiceHandlerType, typename MessageType>
+  friend void detail::DoOperation(
+      ServiceHandlerType* service, const MessageType& message,
+      const typename MessageType::Sender& sender,
+      const typename MessageType::Receiver& receiver);
+
+  friend class detail::MaidManagerPutVisitor<MaidManagerService>;
 
   routing::Routing& routing_;
   nfs_client::DataGetter& data_getter_;

@@ -29,6 +29,19 @@ namespace vault {
 namespace detail {
 
 template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::PutRequestFromMaidNodeToMaidManager& message,
+                 const nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::PutRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+std::cout << "put visitor" << std::endl;
+  auto data_name(GetNameVariant(*message.contents));
+  MaidManagerPutVisitor<MaidManagerService> put_visitor(service, message.contents->data.content,
+                                                        sender.data, message.contents->pmid_hint,
+                                                        message.message_id);
+  boost::apply_visitor(put_visitor, data_name);
+}
+
+template <>
 template <>
 void OperationHandler<
          typename ValidateSenderType<GetPmidAccountResponseFromPmidManagerToPmidNode>::type,
