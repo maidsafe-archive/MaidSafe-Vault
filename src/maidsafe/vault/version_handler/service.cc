@@ -78,7 +78,7 @@ VersionHandlerService::VersionHandlerService(const passport::Pmid& /*pmid*/,
       accumulator_mutex_(),
       sync_mutex_(),
       accumulator_(),
-      version_handler_db_(),
+      db_(),
       kThisNodeId_(routing_.kNodeId()) {}
 
 template<>

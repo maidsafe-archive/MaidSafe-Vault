@@ -31,30 +31,24 @@ namespace maidsafe {
 
 namespace vault {
 
-//  Commented by Mahmoud on 5 Sep. Requires fix in structureddata
-// VersionHandlerValue::VersionHandlerValue(const std::string& serialised_version_handler_value)
-//    : structured_data_versions_(
-//          [&serialised_version_handler_value](){
-//            protobuf::VersionHandlerValue version_handler_value_proto;
-//            if (!version_handler_value_proto.ParseFromString(serialised_version_handler_value)) {
-//              LOG(kError) << "Failed to read or parse serialised maid manager value.";
-//             ThrowError(CommonErrors::parsing_error);
-//            }
-//            return StructuredDataVersions(
-//                typename StructuredDataVersions::serialised_type(NonEmptyString(
-//                    version_handler_value_proto.serialised_structured_data_versions())));
-//          }()) {}
+VersionHandlerValue::VersionHandlerValue(const std::string& serialised_version_handler_value)
+    : structured_data_versions_(std::move(
+          [&serialised_version_handler_value]()->std::unique_ptr<StructuredDataVersions> {
+            protobuf::VersionHandlerValue version_handler_value_proto;
+            if (!version_handler_value_proto.ParseFromString(serialised_version_handler_value)) {
+              LOG(kError) << "Failed to read or parse serialised maid manager value.";
+             ThrowError(CommonErrors::parsing_error);
+            }
+            return std::unique_ptr<StructuredDataVersions>(new StructuredDataVersions(
+                StructuredDataVersions::serialised_type(NonEmptyString(
+                    version_handler_value_proto.serialised_structured_data_versions()))));
+          }())) {}
 
 VersionHandlerValue::VersionHandlerValue(uint32_t max_versions, uint32_t max_branches)
-    : structured_data_versions_(max_versions, max_branches) {}
+    : structured_data_versions_(new StructuredDataVersions(max_versions, max_branches)) {}
 
-//  Commented by Mahmoud on 5 Sep. Requires fix in structureddata
-// VersionHandlerValue::VersionHandlerValue(const VersionHandlerValue& other)
-//    : structured_data_versions_(other.structured_data_versions_) {}
-
-//  Commented by Mahmoud on 5 Sep. Requires fix in structureddata
-// VersionHandlerValue::VersionHandlerValue(VersionHandlerValue&& other)
-//    : structured_data_versions_(std::move(other.structured_data_versions_)) {}
+VersionHandlerValue::VersionHandlerValue(VersionHandlerValue&& other)
+    : structured_data_versions_(std::move(other.structured_data_versions_)) {}
 
 VersionHandlerValue& VersionHandlerValue::operator=(VersionHandlerValue other) {
   swap(*this, other);
@@ -64,37 +58,33 @@ VersionHandlerValue& VersionHandlerValue::operator=(VersionHandlerValue other) {
 std::string VersionHandlerValue::Serialise() const {
   protobuf::VersionHandlerValue version_handler_value_proto;
   version_handler_value_proto.set_serialised_structured_data_versions(
-      structured_data_versions_.Serialise()->string());
+      structured_data_versions_->Serialise()->string());
   return version_handler_value_proto.SerializeAsString();
 }
 
 void VersionHandlerValue::Put(const StructuredDataVersions::VersionName& old_version,
                               const StructuredDataVersions::VersionName& new_version) {
-  structured_data_versions_.Put(old_version, new_version);
+  structured_data_versions_->Put(old_version, new_version);
 }
 
 std::vector<StructuredDataVersions::VersionName> VersionHandlerValue::Get() const {
-  return structured_data_versions_.Get();
+  return structured_data_versions_->Get();
 }
 
 std::vector<StructuredDataVersions::VersionName> VersionHandlerValue::GetBranch(
     const StructuredDataVersions::VersionName& branch_tip) const {
-  return structured_data_versions_.GetBranch(branch_tip);
+  return structured_data_versions_->GetBranch(branch_tip);
 }
 
 void VersionHandlerValue::DeleteBranchUntilFork(
     const StructuredDataVersions::VersionName& branch_tip) {
-  return structured_data_versions_.DeleteBranchUntilFork(branch_tip);
+  return structured_data_versions_->DeleteBranchUntilFork(branch_tip);
 }
 
 void swap(VersionHandlerValue& lhs, VersionHandlerValue& rhs) {
   using std::swap;
   swap(lhs.structured_data_versions_, rhs.structured_data_versions_);
 }
-
-// bool operator==(const VersionHandlerValue& lhs, const VersionHandlerValue& rhs) {
-//  return lhs.structured_data_versions_ == rhs.structured_data_versions_;
-//}
 
 }  // namespace vault
 

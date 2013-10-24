@@ -45,6 +45,15 @@ template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndContent& data);
 
 template <>
+DataNameVariant GetNameVariant(const nfs_vault::DataNameAndContentOrCheckResult& data);
+
+template <>
+DataNameVariant GetNameVariant(const nfs_vault::DataNameAndCost& data);
+
+template <>
+DataNameVariant GetNameVariant(const nfs_vault::DataNameAndSize& data);
+
+template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataAndPmidHint& data);
 
 template <>
@@ -57,13 +66,8 @@ template <>
 DataNameVariant GetNameVariant(const nfs_client::DataNameAndReturnCode& data);
 
 template <>
-DataNameVariant GetNameVariant(const nfs_vault::DataNameAndContentOrCheckResult& data);
+DataNameVariant GetNameVariant(const nfs_client::DataNameAndSpaceAndReturnCode& data);
 
-template <>
-DataNameVariant GetNameVariant(const nfs_vault::DataNameAndCost& data);
-
-template <>
-DataNameVariant GetNameVariant(const nfs_vault::DataNameAndSize& data);
 
 template <typename MessageType>
 struct ValidateSenderType {
@@ -117,21 +121,11 @@ std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db
 
 // ============================ dispatcher utils ===================================================
 
-template<typename MessageType>
+template<typename MessageType, typename GroupName>
 typename std::enable_if<std::is_same<typename MessageType::Sender, routing::GroupSource>::value,
   typename MessageType::Sender>::type
-GroupSender(const routing::Routing& routing,
-    const typename nfs::PersonaTypes<MessageType::SourcePersona::value>::GroupName& group_name) {
-  return typename MessageType::Sender(routing::GroupId(NodeId(group_name.value.string())),
-                                      routing::SingleId(routing.kNodeId()));
-}
-
-//TODO Restrict this function to only DataManager like personas
-template<typename MessageType, typename DataName>
-typename std::enable_if<std::is_same<typename MessageType::Sender, routing::GroupSource>::value,
-  typename MessageType::Sender>::type
-GroupSender(const routing::Routing& routing, const DataName& data_name) {
-  return typename MessageType::Sender(routing::GroupId(NodeId(data_name->string())),
+GroupSender(const routing::Routing& routing, const GroupName& group_name) {
+  return typename MessageType::Sender(routing::GroupId(NodeId(group_name->string())),
                                       routing::SingleId(routing.kNodeId()));
 }
 

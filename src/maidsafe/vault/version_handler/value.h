@@ -33,9 +33,7 @@ class VersionHandlerValue {
  public:
   explicit VersionHandlerValue(const std::string& serialised_version_handler_value);
   VersionHandlerValue(uint32_t max_versions = 1, uint32_t max_branches = 1);
-  //  Commented by Mahmoud on 5 Sep. Requires fix in structureddata
-  //  VersionHandlerValue(const VersionHandlerValue& other);
-  //  VersionHandlerValue(VersionHandlerValue&& other);
+  VersionHandlerValue(VersionHandlerValue&& other);
   VersionHandlerValue& operator=(VersionHandlerValue other);
   std::string Serialise() const;
 
@@ -50,10 +48,10 @@ class VersionHandlerValue {
   friend bool operator==(const VersionHandlerValue& lhs, const VersionHandlerValue& rhs);
 
  private:
-  StructuredDataVersions structured_data_versions_;
+  VersionHandlerValue(const VersionHandlerValue& other);
+  std::unique_ptr<StructuredDataVersions> structured_data_versions_;
 };
 
-// bool operator==(const VersionHandlerValue& lhs, const VersionHandlerValue& rhs);
 void swap(VersionHandlerValue& lhs, VersionHandlerValue& rhs);
 
 }  // namespace vault
