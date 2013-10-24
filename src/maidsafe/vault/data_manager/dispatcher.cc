@@ -27,7 +27,7 @@ void DataManagerDispatcher::SendSync(const DataManager::Key& key,
                                      const std::string& serialised_sync) {
   typedef SynchroniseFromDataManagerToDataManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
-  SendSyncMessage<VaultMessage>(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), key);
+  SendSyncMessage(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), key);
 }
 
 void DataManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer*/,

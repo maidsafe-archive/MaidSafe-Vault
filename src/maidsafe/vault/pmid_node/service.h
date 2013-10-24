@@ -228,6 +228,12 @@ void PmidNodeService::HandleMessage(
     const typename PutRequestFromPmidManagerToPmidNode::Sender& sender,
     const typename PutRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
+template<>
+void PmidNodeService::HandleMessage(
+    const GetRequestFromDataManagerToPmidNode& message,
+    const typename GetRequestFromDataManagerToPmidNode::Sender& sender,
+    const typename GetRequestFromDataManagerToPmidNode::Receiver& receiver);
+
 template <>
 void PmidNodeService::HandleMessage(
     const IntegrityCheckRequestFromDataManagerToPmidNode& message,
@@ -236,16 +242,9 @@ void PmidNodeService::HandleMessage(
 
 template<>
 void PmidNodeService::HandleMessage(
-  const DeleteRequestFromPmidManagerToPmidNode& message,
-  const typename DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
-  const typename DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
-
-
-// template<>
-// void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
-//    const nfs::GetRequestFromDataManagerToPmidNode& message,
-//    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
-//    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& receiver);
+    const DeleteRequestFromPmidManagerToPmidNode& message,
+    const typename DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
+    const typename DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
 template <>
 void PmidNodeService::HandleMessage(

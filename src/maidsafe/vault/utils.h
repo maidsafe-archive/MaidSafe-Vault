@@ -135,7 +135,7 @@ void SendSyncMessage(routing::Routing& routing, const MessageType& sync_message,
   typedef routing::Message<typename MessageType::Sender, typename MessageType::Receiver>
       RoutingMessage;
   static_assert(MessageType::SourcePersona::value == MessageType::DestinationPersona::value,
-                  "Sync messages must be send to same persona !!");
+                  "Sync messages must be sent to same persona !!");
 
   RoutingMessage message(sync_message.Serialise(),
                          GroupSender<MessageType>(routing, group_name),
@@ -150,7 +150,7 @@ void SendSyncMessage(routing::Routing& routing, const MessageType& sync_message,
   typedef routing::Message<typename MessageType::Sender, typename MessageType::Receiver>
       RoutingMessage;
   static_assert(MessageType::SourcePersona::value == MessageType::DestinationPersona::value,
-                  "Sync messages must be send to same persona !!");
+                  "Sync messages must be sent to same persona !!");
 
   RoutingMessage message(sync_message.Serialise(),
   typename MessageType::Sender(routing::GroupId(NodeId(key.name.string())),

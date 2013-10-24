@@ -79,6 +79,15 @@ void PmidNodeService::HandleMessage(
       accumulator_mutex_)(message, sender, receiver);
 }
 
+template<>
+void PmidNodeService::HandleMessage(
+    const GetRequestFromDataManagerToPmidNode& /*message*/,
+    const typename GetRequestFromDataManagerToPmidNode::Sender& /*sender*/,
+    const typename GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/) {
+  typedef GetRequestFromDataManagerToPmidNode MessageType;
+  assert(0);
+}
+
 template <>
 void PmidNodeService::HandleMessage(
     const IntegrityCheckRequestFromDataManagerToPmidNode& message,
