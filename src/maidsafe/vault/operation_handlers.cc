@@ -191,6 +191,63 @@ void DoOperation(DataManagerService* service,
   boost::apply_visitor(put_visitor, data_name);
 }
 
+//=============================== To PmidManager ===================================================
+
+template <>
+void DoOperation(PmidManagerService* service,
+                 const PutRequestFromDataManagerToPmidManager& message,
+                 const PutRequestFromDataManagerToPmidManager::Sender& /*sender*/,
+                 const PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  // BEFORE_RELEASE the following code shall be effective
+  auto data_name(GetNameVariant(*message.contents));
+  PmidManagerPutVisitor<PmidManagerService> put_visitor(service, message.contents->content,
+                                                        Identity(receiver.data.string()),
+                                                        message.message_id);
+  boost::apply_visitor(put_visitor, data_name);
+}
+
+template <>
+void DoOperation(PmidManagerService* service,
+                 const PutFailureFromPmidNodeToPmidManager& message,
+                 const PutFailureFromPmidNodeToPmidManager::Sender& /*sender*/,
+                 const PutFailureFromPmidNodeToPmidManager::Receiver& receiver) {
+  auto data_name(GetNameVariant(*message.contents));
+  PmidManagerPutResponseFailureVisitor<PmidManagerService> put_failure_visitor(
+      service, PmidName(Identity(receiver.data.string())),
+      message.contents->available_space, message.contents->return_code.value, message.message_id);
+  boost::apply_visitor(put_failure_visitor, data_name);
+}
+
+template <>
+void DoOperation(PmidManagerService* service,
+                 const DeleteRequestFromDataManagerToPmidManager& message,
+                 const DeleteRequestFromDataManagerToPmidManager::Sender& /*sender*/,
+                 const DeleteRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  auto data_name(GetNameVariant(*message.contents));
+  PmidManagerDeleteVisitor<PmidManagerService> delete_visitor(
+      service, PmidName(Identity(receiver.data.string())), message.message_id);
+  boost::apply_visitor(delete_visitor, data_name);
+}
+
+template <>
+void DoOperation(PmidManagerService* service,
+                 const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
+                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
+                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& /*receiver*/) {
+  service->HandleSendPmidAccount(PmidName(Identity(sender.data.string())),
+                                 message.contents->available_size);
+}
+
+template <>
+void DoOperation(PmidManagerService* service,
+                 const PmidHealthRequestFromMaidNodeToPmidManager& message,
+                 const PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
+                 const PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
+  service->HandleHealthRequest(PmidName(Identity(receiver.data.string())),
+                               MaidName(Identity(sender.data.string())),
+                               message.message_id);
+}
+
 //====================================== To VersionHandler =========================================
 
 template<>

@@ -105,7 +105,7 @@ void PmidManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(data_name().string())));
+                         VaultMessage::Receiver(NodeId(data_name->string())));
   routing_.Send(message);
 }
 
@@ -138,7 +138,7 @@ void PmidManagerDispatcher::SendPutFailure(const typename Data::Name& name,
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(name.raw_name.string())));
+                         VaultMessage::Receiver(NodeId(name.value.string())));
   routing_.Send(message);
 }
 
