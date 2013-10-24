@@ -85,7 +85,7 @@ void DoOperation(MaidManagerService* service,
   boost::apply_visitor(put_visitor, data_name);
 }
 
-template <typename>
+template <>
 void DoOperation(MaidManagerService* service,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,

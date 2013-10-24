@@ -144,7 +144,7 @@ void DoOperation(MaidManagerService* service,
                  const PutFailureFromDataManagerToMaidManager::Sender& sender,
                  const PutFailureFromDataManagerToMaidManager::Receiver& /*receiver*/);
 
-template <typename>
+template <>
 void DoOperation(MaidManagerService* service,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
