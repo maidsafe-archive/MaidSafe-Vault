@@ -32,6 +32,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/active.h"
 #include "maidsafe/data_types/data_type_values.h"
+#include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/client/data_getter.h"
@@ -42,6 +43,7 @@
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 #include "maidsafe/vault/pmid_node/handler.h"
 #include "maidsafe/vault/pmid_node/dispatcher.h"
+#include "maidsafe/vault/operation_visitors.h"
 
 namespace maidsafe {
 
@@ -160,6 +162,9 @@ class PmidNodeService {
                                   int failures);
 
  private:
+  friend class detail::PmidNodeDeleteVisitor<PmidNodeService>;
+  friend class detail::PmidNodePutVisitor<PmidNodeService>;
+
   // ================================ Pmid Account ===============================================
 
   // populates chunks map
@@ -249,14 +254,14 @@ void PmidNodeService::HandlePut(const Data& data, nfs::MessageId message_id) {
     handler_.Put(data);
   }
   catch (const maidsafe_error& error) {
-    dispatcher_.SendPutFailure(data.name(), handler_.AvailableSpace(), error, message_id);
+    dispatcher_.SendPutFailure<Data>(data.name(), handler_.AvailableSpace(), error, message_id);
   }
 }
 
 template <typename Data>
 void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
   try {
-    handler_.Delete(GetDataNameVariant(Data::tag::kValue, data_name.value));
+    handler_.Delete(GetDataNameVariant(Data::Tag::kValue, data_name.value));
   }
   catch (const maidsafe_error& /*error*/) {
   }
