@@ -429,7 +429,7 @@ void MaidManagerService::HandleHealthResponse(const MaidName& maid_node,
                                  return_code, message_id);
 }
 
-// void MaidManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
+void MaidManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {
 //  auto account_names(maid_account_handler_.GetAccountNames());
 //  auto itr(std::begin(account_names));
 //  while (itr != std::end(account_names)) {
@@ -451,7 +451,8 @@ void MaidManagerService::HandleHealthResponse(const MaidName& maid_node,
 
 //    ++itr;
 //  }
-//}
+  assert(0);
+}
 
 template <>
 void MaidManagerService::HandleMessage(

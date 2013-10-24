@@ -53,10 +53,11 @@ class PmidManagerService {
 
   PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing);
 
-  template <typename T>
-  void HandleMessage(const T& message, const typename T::Sender& sender,
-                     const typename T::Receiver& receiver);
-  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {}
+  template <typename MessageType>
+  void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,
+                     const typename MessageType::Receiver& receiver);
+
+  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
   template <typename T>
   bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
@@ -108,11 +109,11 @@ class PmidManagerService {
 };
 
 // ============================= Handle Message Specialisations ===================================
-
-template <typename T>
-void PmidManagerService::HandleMessage(const T& /*message*/, const typename T::Sender& /*sender*/,
-                                       const typename T::Receiver& /*receiver*/) {
-  // T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
+template <typename MessageType>
+void PmidManagerService::HandleMessage(const MessageType& /*message*/,
+                                       const typename MessageType::Sender& /*sender*/,
+                                       const typename MessageType::Receiver& /*receiver*/) {
+  MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
 }
 
 template <>

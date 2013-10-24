@@ -84,9 +84,11 @@ class MaidManagerService {
   MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter);
 
-  template <typename T>
-  void HandleMessage(const T&, const typename T::Sender&, const typename T::Receiver&);
-  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {}
+  template <typename MessageType>
+  void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,
+                     const typename MessageType::Receiver& receiver);
+
+  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
  private:
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
@@ -222,10 +224,11 @@ class MaidManagerService {
   std::map<nfs::MessageId, MaidAccountCreationStatus> pending_account_map_;
 };
 
-template <typename T>
-void MaidManagerService::HandleMessage(const T&, const typename T::Sender&,
-                                       const typename T::Receiver&) {
-  //  T::specialisation_required;
+template <typename MessageType>
+void MaidManagerService::HandleMessage(const MessageType& /*message*/,
+                                       const typename MessageType::Sender& /*sender*/,
+                                       const typename MessageType::Receiver& /*receiver*/) {
+  MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
 }
 
 template <>

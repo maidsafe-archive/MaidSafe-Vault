@@ -65,10 +65,11 @@ class DataManagerService {
 
   DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter);
+
   template <typename MessageType>
-  void HandleMessage(const MessageType& message,
-                     const typename MessageType::Sender& sender,
+  void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,
                      const typename MessageType::Receiver& receiver);
+
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
  private:
@@ -208,8 +209,11 @@ class DataManagerService {
 
 // =========================== Handle Message Specialisations ======================================
 template <typename MessageType>
-void DataManagerService::HandleMessage(const MessageType&, const typename MessageType::Sender&,
-                                       const typename MessageType::Receiver&) {}
+void DataManagerService::HandleMessage(const MessageType& /*message*/,
+                                       const typename MessageType::Sender& /*sender*/,
+                                       const typename MessageType::Receiver& /*receiver*/) {
+  MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
+}
 
 template <>
 void DataManagerService::HandleMessage(
@@ -299,7 +303,7 @@ void DataManagerService::HandleMessage(
 template <typename Data>
 void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
                                    const PmidName& pmid_name_in, nfs::MessageId message_id) {
-  int32_t cost(data.Serialise().data.string().size());
+  int32_t cost(static_cast<int32_t>(data.Serialise().data.string().size()));
   if (!EntryExist<Data>(data.name())) {
     cost *= routing::Parameters::node_group_size;
     PmidName pmid_name;

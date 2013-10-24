@@ -36,9 +36,7 @@
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/storage_merge/storage_merge.h"
 #include "maidsafe/vault/version_handler/version_handler.h"
-//#include "maidsafe/vault/manager_db.h"
 
 namespace maidsafe {
 
@@ -53,11 +51,12 @@ class VersionHandlerService {
   typedef Identity VersionHandlerAccountName;
 
   VersionHandlerService(const passport::Pmid& pmid, routing::Routing& routing);
-  template<typename MessageType>
+
+  template <typename MessageType>
   void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,
                      const typename MessageType::Receiver& receiver);
 
-  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {}
+  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
  private:
   VersionHandlerService(const VersionHandlerService&);
@@ -100,11 +99,11 @@ class VersionHandlerService {
   //                         StructuredDataVersions>>database_merge_;
 };
 
-template<typename MessageType>
+template <typename MessageType>
 void VersionHandlerService::HandleMessage(const MessageType& /*message*/,
                                           const typename MessageType::Sender& /*sender*/,
                                           const typename MessageType::Receiver& /*receiver*/) {
-  MessageType::No_generic_handler_available__Specialisation_is_required;
+  MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
 }
 
 template <typename MessageType>

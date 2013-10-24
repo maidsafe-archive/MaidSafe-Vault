@@ -55,7 +55,6 @@ glob_dir(MaidManager ${VaultSourcesDir}/maid_manager "Maid Manager\\\\")
 glob_dir(MpidManager ${VaultSourcesDir}/mpid_manager "Mpid Manager\\\\")
 glob_dir(PmidManager ${VaultSourcesDir}/pmid_manager "Pmid Manager\\\\")
 glob_dir(PmidNode ${VaultSourcesDir}/pmid_node "Pmid Node\\\\")
-glob_dir(StorageMerge ${VaultSourcesDir}/storage_merge "Storage Merge\\\\")
 glob_dir(VersionHandler ${VaultSourcesDir}/version_handler "Version Handler\\\\")
 glob_dir(VaultTests ${VaultSourcesDir}/tests "Tests")
 glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
@@ -71,7 +70,6 @@ ms_add_static_library(vault ${VaultAllFiles}
                             ${MpidManagerAllFiles}
                             ${PmidManagerAllFiles}
                             ${PmidNodeAllFiles}
-                            ${StorageMergeAllFiles}
                             ${VersionHandlerAllFiles}
                             ${OutputFile} ${InputFile} ${MetaFiles})
 ms_add_executable(lifestuff_vault Production ${VaultSourcesDir}/vault_main.cc)

@@ -253,8 +253,7 @@ void VersionHandlerService::HandleMessage(
 //  }
 //}
 
-// void VersionHandlerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange>
-// /*matrix_change*/) {
+void VersionHandlerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
 //  auto record_names(version_handler_db_.GetKeys());
 //  auto itr(std::begin(record_names));
 //  while (itr != std::end(record_names)) {
@@ -281,7 +280,8 @@ void VersionHandlerService::HandleMessage(
 //  }
 // TODO(Prakash):  modify ReplaceNodeInSyncList to be called once with vector of tuple/struct
 // containing record name, old_holders, new_holders.
-//}
+  assert(0);
+}
 
 // void VersionHandlerService::HandleChurnEvent(const NodeId& /*old_node*/,
 //                                                    const NodeId& /*new_node*/) {

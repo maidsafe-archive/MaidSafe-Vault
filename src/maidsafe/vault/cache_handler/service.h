@@ -51,9 +51,10 @@ class CacheHandlerService {
 
   CacheHandlerService(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
 
-  template <typename T>
-  HandleMessageReturnType HandleMessage(const T& message, const typename T::Sender& sender,
-                                        const typename T::Receiver& receiver);
+  template <typename MessageType>
+  HandleMessageReturnType HandleMessage(const MessageType& message,
+                                        const typename MessageType::Sender& sender,
+                                        const typename MessageType::Receiver& receiver);
 
   friend class detail::PutToCacheVisitor;
   template<typename Sender, typename SourcePersonaType> friend class detail::GetFromCacheVisitor;
@@ -88,12 +89,11 @@ class CacheHandlerService {
 };
 
 template <typename MessageType>
-CacheHandlerService::HandleMessageReturnType
-CacheHandlerService::HandleMessage(const MessageType& /*message*/,
-                                   const typename MessageType::Sender& /*sender*/,
-                                   const typename MessageType::Receiver& /*receiver*/) {
-//  MessageType::Specialisation_required;
-  return false;
+typename CacheHandlerService::HandleMessageReturnType CacheHandlerService::HandleMessage(
+    const MessageType& /*message*/,
+    const typename MessageType::Sender& /*sender*/,
+    const typename MessageType::Receiver& /*receiver*/) {
+  MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
 }
 
 template <typename MessageType>

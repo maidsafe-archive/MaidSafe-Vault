@@ -70,9 +70,9 @@ class DataManagerPutVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePut(typename Name::data_type(data_name,
-                                      typename Name::data_type::serialised_type(kContent_)),
-                                  kMaidName_, kPmidName_, kMessageId_);
+    kService_->HandlePut(
+        typename Name::data_type(data_name, typename Name::data_type::serialised_type(kContent_)),
+        kMaidName_, kPmidName_, kMessageId_);
   }
 
  private:
@@ -92,9 +92,9 @@ class PmidManagerPutVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePut(typename Name::data_type(data_name,
-                                      typename Name::data_type::serialised_type(kContent_)),
-                                  kPmidName_, kMessageId_);
+    kService_->HandlePut(
+        typename Name::data_type(data_name, typename Name::data_type::serialised_type(kContent_)),
+        kPmidName_, kMessageId_);
   }
 
  private:
@@ -113,9 +113,9 @@ class PmidNodePutVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePut(typename Name::data_type(data_name,
-                                      typename Name::data_type::serialised_type(kContent_)),
-                                  kMessageId_);
+    kService_->HandlePut(
+        typename Name::data_type(data_name, typename Name::data_type::serialised_type(kContent_)),
+        kMessageId_);
   }
 
  private:

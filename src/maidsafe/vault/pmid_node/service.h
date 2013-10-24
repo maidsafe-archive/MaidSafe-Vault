@@ -144,11 +144,11 @@ class PmidNodeService {
                   nfs_client::DataGetter& data_getter,
                   const boost::filesystem::path& vault_root_dir);
 
-  template <typename T>
-  void HandleMessage(const T& /*message*/, const typename T::Sender& /*sender*/,
-                     const typename T::Receiver& /*receiver*/) {
-    T::invalid_message_type_passed::should_be_one_of_the_specialisations_defined_below;
-  }
+  template <typename MessageType>
+  void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,
+                     const typename MessageType::Receiver& receiver);
+
+  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {}  // No-op
 
   template <typename Data>
   void HandleDelete(const typename Data::Name& data_name);
@@ -208,6 +208,13 @@ class PmidNodeService {
   Active active_;
   nfs_client::DataGetter& data_getter_;
 };
+
+template <typename MessageType>
+void PmidNodeService::HandleMessage(const MessageType& /*message*/,
+                                    const typename MessageType::Sender& /*sender*/,
+                                    const typename MessageType::Receiver& /*receiver*/) {
+  MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
+}
 
 template <>
 void PmidNodeService::HandleMessage(

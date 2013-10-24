@@ -283,7 +283,6 @@ void DataManagerService::HandleMessage(
   }
 }
 
-
 template <>
 void DataManagerService::HandleMessage(
     const AccountTransferFromDataManagerToDataManager& /*message*/,
@@ -291,7 +290,6 @@ void DataManagerService::HandleMessage(
     const typename AccountTransferFromDataManagerToDataManager::Receiver& /*receiver*/) {
   assert(0);
 }
-
 
 void DataManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);

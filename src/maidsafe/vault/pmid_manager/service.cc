@@ -290,7 +290,7 @@ void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node,
 //  }
 //}
 
-// void PmidManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
+void PmidManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {
 //  auto account_names(pmid_account_handler_.GetAccountNames());
 //  auto itr(std::begin(account_names));
 //  while (itr != std::end(account_names)) {
@@ -311,7 +311,8 @@ void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node,
 
 //    ++itr;
 //  }
-//}
+  assert(0);
+}
 
 // void PmidManagerService::ValidateDataSender(const nfs::Message& message) const {
 //  if (!message.HasDataHolder()

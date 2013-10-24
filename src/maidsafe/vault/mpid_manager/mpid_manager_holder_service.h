@@ -34,7 +34,7 @@ class MpidAccountHolder {
  public:
   MpidAccountHolder(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
   ~MpidAccountHolder();
-  template <typename Data>
+  //  template <typename Data>
   //  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
       //  void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor&
       // /*reply_functor*/) {}
