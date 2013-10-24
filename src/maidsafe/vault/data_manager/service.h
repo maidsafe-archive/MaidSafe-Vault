@@ -71,11 +71,6 @@ class DataManagerService {
                      const typename T::Receiver& receiver);
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
-  template <typename ServiceHandlerType, typename RequestorIdType>
-  friend class detail::GetRequestVisitor;
-  template<typename ServiceHandlerType>
-  friend class detail::DataManagerSendDeleteVisitor;
-
  private:
   DataManagerService(const DataManagerService&);
   DataManagerService& operator=(const DataManagerService&);
@@ -91,7 +86,7 @@ class DataManagerService {
   bool EntryExist(const typename Data::Name& name);
 
   template <typename Data>
-  void HandlePutResponse(const typename Data::name& data_name, const PmidName& pmid_node,
+  void HandlePutResponse(const typename Data::Name& data_name, const PmidName& pmid_node,
                          int32_t size, nfs::MessageId message_id);
 
   template <typename Data>
@@ -145,20 +140,13 @@ class DataManagerService {
   void DoSync();
 
   // =========================== General functions =================================================
-
-
-
-
-
-
-
-
-
-
   void HandleDataIntegrityResponse(const GetResponseContents& response, nfs::MessageId message_id);
 
   template <typename Data>
-  NonEmptyString GetContentFromCache(const typename Data::Name& name);
+  NonEmptyString GetContentFromCache(const typename Data::Name& /*name*/) {
+    // BEFORE_RELEASE implementation missing
+    return NonEmptyString("remove me");
+  }
 
   template <typename MessageType>
   bool ValidateSender(const MessageType& /*message*/,
@@ -179,6 +167,21 @@ class DataManagerService {
   typedef boost::make_variant_over<FinalType>::type Messages;
 
  private:
+  template<typename ServiceHandlerType, typename MessageType>
+  friend void detail::DoOperation(
+      ServiceHandlerType* service, const MessageType& message,
+      const typename MessageType::Sender& sender,
+      const typename MessageType::Receiver& receiver);
+
+  template <typename ServiceHandlerType, typename RequestorIdType>
+  friend class detail::GetRequestVisitor;
+
+  friend class detail::DataManagerPutVisitor<DataManagerService>;
+  friend class detail::DataManagerPutResponseVisitor<DataManagerService>;
+  friend class detail::DataManagerDeleteVisitor<DataManagerService>;
+  friend class detail::DataManagerSendDeleteVisitor<DataManagerService>;
+  friend class detail::PutResponseFailureVisitor<DataManagerService>;
+
   routing::Routing& routing_;
   AsioService asio_service_;
   nfs_client::DataGetter& data_getter_;
@@ -247,11 +250,11 @@ void DataManagerService::HandleMessage(
 template <typename Data>
 void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
                                    const PmidName& pmid_name_in, nfs::MessageId message_id) {
-  int32_t cost(data.data().string().size());
+  int32_t cost(data.Serialise().data.string().size());
   if (!EntryExist<Data>(data.name())) {
     cost *= routing::Parameters::node_group_size;
     PmidName pmid_name;
-    if (routing_.ClosestToId(data.name()))
+    if (routing_.ClosestToId(NodeId(data.name().value)))
       pmid_name = pmid_name_in;
     else
       pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
@@ -261,7 +264,7 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
                                      maidsafe_error(VaultErrors::unique_data_clash), message_id);
     return;
   } else {
-    typename DataManager::Key key(data.name().raw_name, Data::Name::data_type);
+    typename DataManager::Key key(data.name().value, Data::Tag::kValue);
     sync_puts_.AddLocalAction(DataManager::UnresolvedPut(key, ActionDataManagerPut(),
                                                          routing_.kNodeId()));
     DoSync();
@@ -280,10 +283,10 @@ bool DataManagerService::EntryExist(const typename Data::Name& name) {
 }
 
 template <typename Data>
-void DataManagerService::HandlePutResponse(const typename Data::name& data_name,
+void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
                                            const PmidName& pmid_node, int32_t size,
                                            nfs::MessageId /*message_id*/) {
-  typename DataManager::Key key(data_name.raw_name, data_name.type);
+  typename DataManager::Key key(data_name.value, Data::Tag::kValue);
   sync_add_pmids_.AddLocalAction(DataManager::UnresolvedAddPmid(
       key, ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId()));
   DoSync();
@@ -295,11 +298,11 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
                                           nfs::MessageId message_id,
                                           const maidsafe_error& /*error*/) {
   // TODO(Team): Following should be done only if error is fixable by repeat
-
+  typename DataManager::Key key(data_name.value, Data::Tag::kValue);
   // Get all pmid nodes for this data.
   if (SendPutRetryRequired(data_name)) {
     std::set<PmidName> pmids_to_avoid;
-    auto value(db_.Get(data_name));
+    auto value(db_.Get(key));
     if (value)
       pmids_to_avoid = value->AllPmids();
 
@@ -310,14 +313,16 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
 
     try {
       NonEmptyString content(GetContentFromCache<Data>(data_name));
-      dispatcher_.SendPutRequest(pmid_name, Data(data_name, content), message_id);
+      dispatcher_.SendPutRequest<Data>(pmid_name,
+                                       Data(data_name, typename Data::serialised_type(content)),
+                                       message_id);
     }
     catch (std::exception& /*ex*/) {
       // handle failure to retrieve content from cache, a Get->Then->call
       // dispatcher_.SendPutRequest(pmid_name, Data(data_name, content), message_id); )
     }
   }
-  typename DataManager::Key key(data_name.raw_name, data_name.type);
+
   sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
       key, ActionDataManagerRemovePmid(attempted_pmid_node), routing_.kNodeId()));
   DoSync();
@@ -340,10 +345,10 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
                                    const RequestorIdType& requestor,
                                    nfs::MessageId message_id) {
   // Get all pmid nodes that are online.
-  auto value(db_.Get(data_name));
+  auto value(db_.Get(vault::Key(data_name.value, Data::Tag::kValue)));
   if (!value) {
     // TODO(Fraser#5#): 2013-10-03 - Request for non-existent data should possibly generate an alert
-    LOG(kWarning) << HexEncode(data_name) << " doesn't exist.";
+    LOG(kWarning) << HexEncode(data_name.value) << " doesn't exist.";
     return;
   }
   auto online_pmids(value->online_pmids());
@@ -364,18 +369,20 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
       std::make_shared<detail::GetResponseOp<typename Data::Name, RequestorIdType>>(
           pmid_node_to_get_from, integrity_checks, data_name, requestor));
   auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
-    this->DoHandleGetResponse(pmid_node_and_contents.first, pmid_node_and_contents.second,
-                              get_response_op);
+    this->DoHandleGetResponse<Data, RequestorIdType>(pmid_node_and_contents.first,
+                                                     pmid_node_and_contents.second,
+                                                     get_response_op);
   });
   get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, expected_response_count,
                      message_id.data);
 
   // Send requests
-  dispatcher_.SendGetRequest(pmid_node_to_get_from, data_name, message_id);
+  dispatcher_.SendGetRequest<Data>(pmid_node_to_get_from, data_name, message_id);
 
   for (const auto& integrity_check : integrity_checks) {
-    dispatcher_.SendIntegrityCheck(data_name, NonEmptyString(integrity_check.second.random_input()),
-                                   integrity_check.first, message_id);
+    dispatcher_.SendIntegrityCheck<Data>(data_name,
+                                         NonEmptyString(integrity_check.second.random_input()),
+                                         integrity_check.first, message_id);
   }
 }
 
@@ -414,8 +421,8 @@ void DataManagerService::DoHandleGetResponse(
     expected_count = static_cast<int>(get_response_op->integrity_checks.size()) + 1;
     assert(called_count <= expected_count);
     if (pmid_node == get_response_op->pmid_node_to_get_from) {
-      if (SendGetResponse(contents, get_response_op)) {
-        get_response_op->serialised_contents = typename Data::serialised_type(contents.content);
+      if (SendGetResponse<Data, RequestorIdType>(contents, get_response_op)) {
+        get_response_op->serialised_contents = typename Data::serialised_type(*contents.content);
       }
     } else if (contents.check_result) {
       auto itr(get_response_op->integrity_checks.find(pmid_node));
@@ -424,7 +431,7 @@ void DataManagerService::DoHandleGetResponse(
     }
   }
   if (called_count == expected_count)
-    AssessIntegrityCheckResults(get_response_op);
+    AssessIntegrityCheckResults<Data, RequestorIdType>(get_response_op);
 }
 
 template <typename Data, typename RequestorIdType>
@@ -435,7 +442,7 @@ bool DataManagerService::SendGetResponse(
   try {
     if (!contents.content)
       ThrowError(CommonErrors::unknown);
-    Data data(get_response_op->data_name, typename Data::serialised_type(contents.content));
+    Data data(get_response_op->data_name, typename Data::serialised_type(*contents.content));
     dispatcher_.SendGetResponseSuccess(get_response_op->requestor_id, data,
                                        get_response_op->message_id);
     // Put to the CacheHandler in this vault.

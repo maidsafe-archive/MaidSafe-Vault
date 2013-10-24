@@ -62,6 +62,9 @@ DataNameVariant GetNameVariant(const nfs_vault::DataNameAndContentOrCheckResult&
 template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndCost& data);
 
+template <>
+DataNameVariant GetNameVariant(const nfs_vault::DataNameAndSize& data);
+
 template <typename MessageType>
 struct ValidateSenderType {
   typedef std::function<bool(const MessageType&, const typename MessageType::Sender&)> type;

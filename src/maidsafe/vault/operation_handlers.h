@@ -25,6 +25,7 @@
 #include "maidsafe/vault/operation_visitors.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/maid_manager/service.h"
+#include "maidsafe/vault/data_manager/service.h"
 
 
 namespace maidsafe {
@@ -33,6 +34,7 @@ namespace vault {
 
 class PmidNodeService;
 class MaidManagerService;
+class DataManagerService;
 
 namespace detail {
 
@@ -154,86 +156,47 @@ void DoOperation(MaidManagerService* service,
                  const PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver);
 
 //=============================== To DataManager ===================================================
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(DataManagerService* service,
                  const PutRequestFromMaidManagerToDataManager& message,
                  const typename PutRequestFromMaidManagerToDataManager::Sender& sender,
-                 const typename PutRequestFromMaidManagerToDataManager::Receiver&) {
-  auto data_name(GetNameVariant(*message.contents));
-  DataManagerPutVisitor<ServiceHandlerType> put_visitor(
-      service, message.contents->data.content, sender.group_id, message.contents->pmid_hint,
-      message.message_id);
-  boost::apply_visitor(put_visitor(), data_name);
-}
+                 const typename PutRequestFromMaidManagerToDataManager::Receiver&);
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(DataManagerService* service,
                  const PutResponseFromPmidManagerToDataManager& message,
                  const PutResponseFromPmidManagerToDataManager::Sender& sender,
-                 const PutResponseFromPmidManagerToDataManager::Receiver& /*receiver*/) {
-  auto data_name(GetNameVariant(message.contents->name));
-  DataManagerPutResponseVisitor<ServiceHandlerType> put_response_visitor(
-      service, PmidName(Identity(sender.group_id.data.string())), message.contents->size,
-      message.message_id);
-  boost::apply_visitor(put_response_visitor(), data_name);
-}
+                 const PutResponseFromPmidManagerToDataManager::Receiver& /*receiver*/);
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(DataManagerService* service,
                  const nfs::GetRequestFromMaidNodeToDataManager& message,
                  const nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-                 const nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
-  auto data_name(GetNameVariant(message.contents));
-  Requestor<nfs::GetRequestFromMaidNodeToDataManager::SourcePersona> requestor(sender.data);
-  GetRequestVisitor<ServiceHandlerType,
-                    typename nfs::GetRequestFromMaidNodeToDataManager::Sender> get_request_visitor(
-      service, requestor, message.message_id);
-  boost::apply_visitor(get_request_visitor(), data_name);
-}
+                 const nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/);
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(DataManagerService* service,
                  const nfs::GetRequestFromDataGetterToDataManager& message,
                  const nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
-                 const nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
-  auto data_name(GetNameVariant(message.contents));
-  Requestor<nfs::GetRequestFromDataGetterToDataManager::SourcePersona> requestor(sender.data);
-  GetRequestVisitor<
-      ServiceHandlerType,
-      typename nfs::GetRequestFromDataGetterToDataManager::Sender> get_request_visitor(
-          service, requestor, message.message_id);
-  boost::apply_visitor(get_request_visitor(), data_name);
-}
+                 const nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/);
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(DataManagerService* service,
                  const GetResponseFromPmidNodeToDataManager& message,
                  const GetResponseFromPmidNodeToDataManager::Sender& sender,
-                 const GetResponseFromPmidNodeToDataManager::Receiver& /*receiver*/) {
-  service->HandleGetResponse(PmidName(Identity(sender->string())), message.message_id,
-                             message.contents);
-}
+                 const GetResponseFromPmidNodeToDataManager::Receiver& /*receiver*/);
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(DataManagerService* service,
                  const DeleteRequestFromMaidManagerToDataManager& message,
                  const DeleteRequestFromMaidManagerToDataManager::Sender& /*sender*/,
-                 const DeleteRequestFromMaidManagerToDataManager::Receiver& /*receiver*/) {
-  auto data_name(GetNameVariant(message.contents));
-  DataManagerDeleteVisitor<ServiceHandlerType> delete_visitor(service, message.message_id);
-  boost::apply_visitor(delete_visitor(), data_name);
-}
+                 const DeleteRequestFromMaidManagerToDataManager::Receiver& /*receiver*/);
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(DataManagerService* service,
                  const PutFailureFromPmidManagerToDataManager& message,
                  const PutFailureFromPmidManagerToDataManager::Sender& sender,
-                 const PutFailureFromPmidManagerToDataManager::Receiver& /*receiver*/) {
-  auto data_name(GetNameVariant(*message.contents));
-  PutResponseFailureVisitor<ServiceHandlerType> put_visitor(
-      service, sender, message.contents->return_code, message.message_id);
-  boost::apply_visitor(put_visitor(), data_name);
-}
+                 const PutFailureFromPmidManagerToDataManager::Receiver& /*receiver*/);
 
 //=============================== To PmidManager ===================================================
 template <typename ServiceHandlerType>

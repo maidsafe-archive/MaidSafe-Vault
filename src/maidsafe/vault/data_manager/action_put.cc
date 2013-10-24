@@ -24,6 +24,8 @@
 namespace maidsafe {
 namespace vault {
 
+ActionDataManagerPut::ActionDataManagerPut() {}
+
 ActionDataManagerPut::ActionDataManagerPut(const std::string& /*serialised_action*/) {}
 
 ActionDataManagerPut::ActionDataManagerPut(const ActionDataManagerPut& /*other*/) {}

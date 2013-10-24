@@ -216,7 +216,7 @@ void DataManagerDispatcher::SendIntegrityCheck(const typename Data::Name& data_n
 namespace detail {
 
 template <typename RequestorIdType>
-struct GetResponseMessage;
+struct GetResponseMessage {};
 
 template <>
 struct GetResponseMessage<Requestor<nfs::SourcePersona<nfs::Persona::kMaidNode>>> {
@@ -257,9 +257,9 @@ void DataManagerDispatcher::SendGetResponseFailure(const RequestorIdType& reques
       RoutingMessage;
 
   NfsMessage nfs_message(message_id,
-                         NfsMessage::Contents(data_name, nfs_client::ReturnCode(result)));
+                         typename NfsMessage::Contents(data_name, nfs_client::ReturnCode(result)));
   RoutingMessage message(nfs_message.Serialise(), GroupSender(data_name),
-                         NfsMessage::Receiver(routing::SingleId(requestor_id.node_id)));
+                         typename NfsMessage::Receiver(requestor_id));
   routing_.Send(message);
 }
 
