@@ -35,6 +35,7 @@ namespace vault {
 class PmidNodeService;
 class MaidManagerService;
 class DataManagerService;
+class VersionHandlerService;
 
 namespace detail {
 
@@ -272,6 +273,32 @@ void DoOperation(ServiceHandlerType* service,
                                                      message.message_id);
   boost::apply_visitor(put_visitor(), data_name);
 }
+
+//====================================== To VersionHandler =========================================
+
+template<>
+void DoOperation(VersionHandlerService* service,
+    const nfs::GetVersionsRequestFromMaidNodeToVersionHandler& message,
+    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Sender& sender,
+    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Receiver& receiver);
+
+template<>
+void DoOperation(VersionHandlerService* service,
+    const nfs::GetBranchRequestFromMaidNodeToVersionHandler& message,
+    const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Sender& sender,
+    const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Receiver& receiver);
+
+template<>
+void DoOperation(VersionHandlerService* service,
+    const nfs::GetVersionsRequestFromDataGetterToVersionHandler& message,
+    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Sender& sender,
+    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Receiver& receiver);
+
+template<>
+void DoOperation(VersionHandlerService* service,
+    const nfs::GetBranchRequestFromDataGetterToVersionHandler& message,
+    const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Sender& sender,
+    const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Receiver& receiver);
 
 }  // namespace detail
 

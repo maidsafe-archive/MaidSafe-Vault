@@ -50,13 +50,13 @@ class VersionHandlerService {
   typedef void VaultMessages;
   typedef nfs::VersionHandlerServiceMessages Messages;
   typedef void HandleMessageReturnType;
-
   typedef Identity VersionHandlerAccountName;
+
   VersionHandlerService(const passport::Pmid& pmid, routing::Routing& routing);
-  //  template<typename Data>
-  //  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
-  template <typename T>
-  void HandleMessage(const T&, const typename T::Sender&, const typename T::Receiver&) {}
+  template<typename MessageType>
+  void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,
+                     const typename MessageType::Receiver& receiver);
+
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {}
 
  private:
@@ -65,8 +65,9 @@ class VersionHandlerService {
   VersionHandlerService(VersionHandlerService&&);
   VersionHandlerService& operator=(VersionHandlerService&&);
 
-  //  void ValidateClientSender(const nfs::Message& message) const;
-  //  void ValidateSyncSender(const nfs::Message& message) const;
+  template <typename MessageType>
+  bool ValidateSender(const MessageType& message, const typename MessageType::Sender& sender) const;
+
   //  std::vector<StructuredDataVersions::VersionName> GetVersionsFromMessage(
   //      const nfs::Message& message) const;
   //  NonEmptyString GetSerialisedRecord(const VersionHandler::DbKey& db_key);
@@ -99,10 +100,47 @@ class VersionHandlerService {
   //                         StructuredDataVersions>>database_merge_;
 };
 
+template<typename MessageType>
+void VersionHandlerService::HandleMessage(const MessageType& /*message*/,
+                                          const typename MessageType::Sender& /*sender*/,
+                                          const typename MessageType::Receiver& /*receiver*/) {
+  MessageType::No_generic_handler_available__Specialisation_is_required;
+}
+
+template <typename MessageType>
+bool VersionHandlerService::ValidateSender(const MessageType& /*message*/,
+                                           const typename MessageType::Sender& /*sender*/) const {
+  return false;
+}
+
+template<>
+void VersionHandlerService::HandleMessage(
+    const nfs::GetVersionsRequestFromMaidNodeToVersionHandler& message,
+    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Sender& sender,
+    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Receiver& receiver);
+
+template<>
+void VersionHandlerService::HandleMessage(
+    const nfs::GetBranchRequestFromMaidNodeToVersionHandler& message,
+    const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Sender& sender,
+    const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Receiver& receiver);
+
+template<>
+void VersionHandlerService::HandleMessage(
+    const nfs::GetVersionsRequestFromDataGetterToVersionHandler& message,
+    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Sender& sender,
+    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Receiver& receiver);
+
+template<>
+void VersionHandlerService::HandleMessage(
+    const nfs::GetBranchRequestFromDataGetterToVersionHandler& message,
+    const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Sender& sender,
+    const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Receiver& receiver);
+
+
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/version_handler/service-inl.h"
 
 #endif  // MAIDSAFE_VAULT_VERSION_HANDLER_SERVICE_H_

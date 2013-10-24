@@ -39,7 +39,7 @@ void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
 
   VaultMessage vault_message(message_id, data_name);
   RoutingMessage message(vault_message.Serialise(),
-                         GroupSender<MaidManager, VaultMessage>(routing_, account_name),
+                         GroupSender<VaultMessage>(routing_, account_name),
                          VaultMessage::Receiver(routing::GroupId(NodeId(data_name.raw_name))));
   routing_.Send(message);
 }
@@ -48,12 +48,12 @@ void MaidManagerDispatcher::SendCreateAccountResponse(const MaidName& account_na
                                                       const maidsafe_error& result,
                                                       nfs::MessageId message_id) {
   typedef nfs::CreateAccountResponseFromMaidManagerToMaidNode VaultMessage;
-  typedef routing::GroupToSingleMessage RoutingMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
 
   VaultMessage vault_message(message_id, nfs_client::ReturnCode(result));
   RoutingMessage message(vault_message.Serialise(),
-      GroupSender<MaidManager, VaultMessage>(routing_, account_name),
+      GroupSender<VaultMessage>(routing_, account_name),
       VaultMessage::Receiver(routing::SingleId(NodeId(account_name.value.string()))));
   routing_.Send(message);
 }
@@ -96,14 +96,9 @@ void MaidManagerDispatcher::SendUnregisterPmidResponse(const MaidName& /*account
 void MaidManagerDispatcher::SendSync(const MaidName& account_name,
                                      const std::string& serialised_sync) {
   typedef SynchroniseFromMaidManagerToMaidManager VaultMessage;
-  typedef routing::GroupToGroupMessage RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
-
-  VaultMessage vault_message((nfs_vault::Content(serialised_sync)));
-  RoutingMessage message(vault_message.Serialise(),
-      GroupSender<MaidManager, VaultMessage>(routing_, account_name),
-      VaultMessage::Receiver(routing::GroupId(NodeId(account_name.value.string()))));
-  routing_.Send(message);
+  SendSyncMessage<VaultMessage>(routing_, VaultMessage((nfs_vault::Content(serialised_sync))),
+                                account_name);
 }
 
 void MaidManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer*/,
@@ -123,9 +118,7 @@ void MaidManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer
   //  routing_.Send(message);
 }
 
-// FIXME(Team) Discuss, do we need pmid_name here ?
-void MaidManagerDispatcher::SendHealthResponse(const MaidName& maid_name,
-    const PmidName& /*pmid_name*/, int64_t available_size,
+void MaidManagerDispatcher::SendHealthResponse(const MaidName& maid_name, int64_t available_size,
     const nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
   typedef nfs::PmidHealthResponseFromMaidManagerToMaidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
@@ -133,10 +126,7 @@ void MaidManagerDispatcher::SendHealthResponse(const MaidName& maid_name,
 
   NfsMessage nfs_message(message_id, nfs_client::AvailableSizeAndReturnCode(available_size,
                                                                             return_code));
-  RoutingMessage message(nfs_message.Serialise(),
-                         GroupSender<MaidManager, NfsMessage>(routing_, maid_name),
-//                         NfsMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
-//                                            routing::SingleId(routing_.kNodeId())),
+  RoutingMessage message(nfs_message.Serialise(), GroupSender<NfsMessage>(routing_, maid_name),
                          NfsMessage::Receiver(NodeId(maid_name.value.string())));
   routing_.Send(message);
 }

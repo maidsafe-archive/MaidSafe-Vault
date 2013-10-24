@@ -37,6 +37,7 @@
 #include "maidsafe/vault/version_handler/unresolved_entry_value.h"
 #include "maidsafe/vault/unresolved_action.pb.h"
 #include "maidsafe/vault/db.h"
+#include "maidsafe/vault/operation_handlers.h"
 
 namespace maidsafe {
 
@@ -79,6 +80,62 @@ VersionHandlerService::VersionHandlerService(const passport::Pmid& /*pmid*/,
       accumulator_(),
       version_handler_db_(),
       kThisNodeId_(routing_.kNodeId()) {}
+
+template<>
+void VersionHandlerService::HandleMessage(
+    const nfs::GetVersionsRequestFromMaidNodeToVersionHandler& message,
+    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Sender& sender,
+    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Receiver& receiver) {
+  typedef nfs::GetVersionsRequestFromMaidNodeToVersionHandler MessageType;
+  OperationHandlerWrapper<VersionHandlerService, MessageType>(
+      accumulator_, [this](const MessageType & message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)), this,
+      accumulator_mutex_)(message, sender, receiver);
+}
+
+template<>
+void VersionHandlerService::HandleMessage(
+    const nfs::GetBranchRequestFromMaidNodeToVersionHandler& message,
+    const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Sender& sender,
+    const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Receiver& receiver) {
+  typedef nfs::GetBranchRequestFromMaidNodeToVersionHandler MessageType;
+  OperationHandlerWrapper<VersionHandlerService, MessageType>(
+      accumulator_, [this](const MessageType & message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)), this,
+      accumulator_mutex_)(message, sender, receiver);
+}
+
+template<>
+void VersionHandlerService::HandleMessage(
+    const nfs::GetVersionsRequestFromDataGetterToVersionHandler& message,
+    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Sender& sender,
+    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Receiver& receiver) {
+  typedef nfs::GetVersionsRequestFromDataGetterToVersionHandler MessageType;
+  OperationHandlerWrapper<VersionHandlerService, MessageType>(
+      accumulator_, [this](const MessageType & message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)), this,
+      accumulator_mutex_)(message, sender, receiver);
+}
+
+template<>
+void VersionHandlerService::HandleMessage(
+    const nfs::GetBranchRequestFromDataGetterToVersionHandler& message,
+    const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Sender& sender,
+    const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Receiver& receiver) {
+  typedef nfs::GetBranchRequestFromDataGetterToVersionHandler MessageType;
+  OperationHandlerWrapper<VersionHandlerService, MessageType>(
+      accumulator_, [this](const MessageType & message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)), this,
+      accumulator_mutex_)(message, sender, receiver);
+}
 
 // void VersionHandlerService::ValidateClientSender(const nfs::Message& message) const {
 //  if (!routing_.IsConnectedClient(message.source().node_id))
