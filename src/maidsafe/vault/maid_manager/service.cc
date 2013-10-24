@@ -415,7 +415,7 @@ void MaidManagerService::DoSync() {
 
 // =============== PMID totals =====================================================================
 void MaidManagerService::HandleHealthResponse(const MaidName& maid_node,
-    const PmidName& pmid_node, const std::string& serialised_pmid_health,
+    const PmidName& /*pmid_node*/, const std::string& serialised_pmid_health,
     nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
   PmidManagerMetadata pmid_health(serialised_pmid_health);
   if (return_code.value.code() == CommonErrors::success) {
@@ -425,7 +425,7 @@ void MaidManagerService::HandleHealthResponse(const MaidName& maid_node,
     DoSync();
 
   }
-  dispatcher_.SendHealthResponse(maid_node, pmid_node, pmid_health.claimed_available_size,
+  dispatcher_.SendHealthResponse(maid_node, pmid_health.claimed_available_size,
                                  return_code, message_id);
 }
 

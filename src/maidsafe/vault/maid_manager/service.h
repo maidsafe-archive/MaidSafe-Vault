@@ -425,9 +425,10 @@ template <typename Data>
 void MaidManagerService::HandleDelete(const MaidName& account_name,
                                       const typename Data::Name& data_name,
                                       nfs::MessageId message_id) {
-  if (DeleteAllowed(account_name, data_name)) {
+  if (DeleteAllowed<Data>(account_name, data_name)) {
     typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
-                                        detail::GetObfuscatedDataName(data_name), data_name.type);
+                                        detail::GetObfuscatedDataName(data_name),
+                                        Data::Tag::kValue);
     sync_deletes_.AddLocalAction(typename MaidManager::UnresolvedDelete(
         group_key, ActionMaidManagerDelete(message_id), routing_.kNodeId()));
     DoSync();
@@ -438,7 +439,7 @@ template <typename Data>
 bool MaidManagerService::DeleteAllowed(const MaidName& account_name,
                                        const typename Data::Name& data_name) {
   try {
-    group_db_.GetValue(MaidManager::Key(account_name, GetObfuscatedDataName(data_name),
+    group_db_.GetValue(MaidManager::Key(account_name, detail::GetObfuscatedDataName(data_name),
                                         Data::Tag::kValue));
     return true;
   } catch (const common_error& error) {

@@ -70,8 +70,9 @@ class DataManagerPutVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePut(Name::data_type(data_name, kContent_), kMaidName_, kPmidName_,
-                                 kMessageId_);
+    kService_->template HandlePut(typename Name::data_type(data_name,
+                                      typename Name::data_type::serialised_type(kContent_)),
+                                  kMaidName_, kPmidName_, kMessageId_);
   }
 
  private:
@@ -91,7 +92,9 @@ class PmidManagerPutVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePut(Name::data_type(data_name, kContent_), kPmidName_, kMessageId_);
+    kService_->template HandlePut(typename Name::data_type(data_name,
+                                      typename Name::data_type::serialised_type(kContent_)),
+                                  kPmidName_, kMessageId_);
   }
 
  private:
@@ -110,7 +113,9 @@ class PmidNodePutVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePut(Name::data_type(data_name, kContent_), kMessageId_);
+    kService_->template HandlePut(typename Name::data_type(data_name,
+                                      typename Name::data_type::serialised_type(kContent_)),
+                                  kMessageId_);
   }
 
  private:
@@ -131,8 +136,8 @@ class PutResponseFailureVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePutFailure(data_name, kPmidNode_, kMessageId_,
-                                         maidsafe_error(kReturnCode_));
+    kService_->template HandlePutFailure<typename Name::data_type>(
+        data_name, kPmidNode_, kMessageId_, maidsafe_error(kReturnCode_));
   }
 
  private:
@@ -214,8 +219,8 @@ class DataManagerPutResponseVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePutResponse<Name::data_type>(data_name, kPmidNode_, kSize_,
-                                                           kMessageId_);
+    kService_->template HandlePutResponse<typename Name::data_type>(data_name, kPmidNode_,
+                                                                    kSize_, kMessageId_);
   }
 
  private:
@@ -235,9 +240,10 @@ class GetRequestVisitor : public boost::static_visitor<> {
         kMessageId_(std::move(message_id)) {}
 
   template <typename Name>
-  void operator()(const Name& data_name) {
-    kService_->template HandleGet<typename Name::data_type, RequestorIdType>(
-        data_name, kRequestorId_, kMessageId_);
+  void operator()(const Name& /*data_name*/) {
+    // BEFORE_RELASE this line of code needs to be effective
+//     kService_->template HandleGet<typename Name::data_type, RequestorIdType>(
+//         data_name, kRequestorId_, kMessageId_);
   }
 
  private:
