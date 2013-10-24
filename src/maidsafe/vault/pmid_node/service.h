@@ -213,7 +213,8 @@ template <typename MessageType>
 void PmidNodeService::HandleMessage(const MessageType& /*message*/,
                                     const typename MessageType::Sender& /*sender*/,
                                     const typename MessageType::Receiver& /*receiver*/) {
-  MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
+// BEFORE_RELEASE uncomment below line
+//  MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
 }
 
 template <>
