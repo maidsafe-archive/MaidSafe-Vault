@@ -242,7 +242,7 @@ void DataManagerDispatcher::SendGetResponseSuccess(const RequestorIdType& reques
                                                                          routing::Cacheable::kNone);
   NfsMessage nfs_message(message_id, NfsMessage::Contents(data));
   RoutingMessage message(nfs_message.Serialise(), GroupSender(data.name()),
-                         NfsMessage::Receiver(routing::SingleId(requestor_id.node_id)), kCacheable);
+                         NfsMessage::Receiver(requestor_id.node_id), kCacheable);
   routing_.Send(message);
 }
 
@@ -259,7 +259,7 @@ void DataManagerDispatcher::SendGetResponseFailure(const RequestorIdType& reques
   NfsMessage nfs_message(message_id,
                          NfsMessage::Contents(data_name, nfs_client::ReturnCode(result)));
   RoutingMessage message(nfs_message.Serialise(), GroupSender(data_name),
-                         NfsMessage::Receiver(routing::SingleId(requestor_id.node_id)));
+                         NfsMessage::Receiver(requestor_id.node_id));
   routing_.Send(message);
 }
 
