@@ -61,8 +61,8 @@ class PmidNodeHandler {
 
 template <typename Data>
 void PmidNodeHandler::Put(const Data& data) {
-  permanent_data_store_.Put(GetDataNameVariant(data.name().type, data.name().raw_name),
-                            data.data());
+  permanent_data_store_.Put(GetDataNameVariant(Data::Tag::kValue, data.name()),
+                            data.Serialise().data);
 }
 
 template <typename Data>

@@ -248,6 +248,29 @@ void DoOperation(PmidManagerService* service,
                                message.message_id);
 }
 
+//=============================== To PmidNode ======================================================
+
+template <>
+void DoOperation(PmidNodeService* service,
+                 const DeleteRequestFromPmidManagerToPmidNode& message,
+                 const DeleteRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
+                 const DeleteRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+  auto data_name(GetNameVariant(*message.contents));
+  PmidNodeDeleteVisitor<PmidNodeService> delete_visitor(service);
+  boost::apply_visitor(delete_visitor, data_name);
+}
+
+template <>
+void DoOperation(PmidNodeService* service,
+                 const PutRequestFromPmidManagerToPmidNode& message,
+                 const PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
+                 const PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+  auto data_name(GetNameVariant(*message.contents));
+  PmidNodePutVisitor<PmidNodeService> put_visitor(service, message.contents->content,
+                                                     message.message_id);
+  boost::apply_visitor(put_visitor, data_name);
+}
+
 //====================================== To VersionHandler =========================================
 
 template<>
