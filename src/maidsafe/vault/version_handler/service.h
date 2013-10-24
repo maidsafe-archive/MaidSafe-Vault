@@ -68,12 +68,14 @@ class VersionHandlerService {
   template <typename MessageType>
   bool ValidateSender(const MessageType& message, const typename MessageType::Sender& sender) const;
 
+  template <typename RequestorType>
+  void HandleGet(const VersionHandler::Key& key, const RequestorType& requestor_type);
+
   //  std::vector<StructuredDataVersions::VersionName> GetVersionsFromMessage(
   //      const nfs::Message& message) const;
   //  NonEmptyString GetSerialisedRecord(const VersionHandler::DbKey& db_key);
   //  //// =============== Get data
   // ====================================================================
-  //  void HandleGet(const nfs::Message& message, routing::ReplyFunctor reply_functor);
   //  void HandleGetBranch(const nfs::Message& message, routing::ReplyFunctor reply_functor);
 
   //  //// =============== Sync
@@ -90,14 +92,8 @@ class VersionHandlerService {
   std::mutex accumulator_mutex_;
   std::mutex sync_mutex_;
   Accumulator<Messages> accumulator_;
-  Db<VersionHandlerKey, StructuredDataVersions> version_handler_db_;
+  Db<VersionHandler::Key, VersionHandler::Value> db_;
   const NodeId kThisNodeId_;
-  //  Sync<VersionHandlerMergePolicy> sync_;
-  //  VersionHandlerNfs nfs_;
-  //  StorageMerge<VersionHandlerKey,
-  //               StructuredDataVersions,
-  //               ManagerDb<VersionHandlerKey,
-  //                         StructuredDataVersions>>database_merge_;
 };
 
 template<typename MessageType>
@@ -137,6 +133,18 @@ void VersionHandlerService::HandleMessage(
     const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Sender& sender,
     const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Receiver& receiver);
 
+template <typename RequestorType>
+void VersionHandlerService::HandleGet(const VersionHandler::Key& /*key*/,
+                                      const RequestorType& /*requestor_type*/) {
+// Implementing the function requires handling structured version transfer
+//  auto value(db_.Get(key));
+//  try {
+//    dispatcher_.SendGetVersionResponse(value, requestor_type);
+//  }
+//  catch (const maidsafe_error& error) {
+//    dispatcher_.SendGetVersionResponse(value, requestor_type, error);
+//  }
+}
 
 }  // namespace vault
 
