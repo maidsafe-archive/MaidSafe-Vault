@@ -357,6 +357,34 @@ class PmidManagerPutResponseVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
+template <typename ServiceHandlerType>
+class PmidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
+ public:
+  PmidManagerPutResponseFailureVisitor(ServiceHandlerType* service, const PmidName& pmid_name,
+                                       const int64_t available_size,
+                                       const maidsafe_error& return_code,
+                                       nfs::MessageId message_id)
+      : kService_(service),
+        kPmidName_(pmid_name),
+        kAvailableSize_(available_size),
+        kReturnCode_(return_code),
+        kMessageId_(message_id) {}
+
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    kService_->template HandlePutFailure<typename Name::data_type>(data_name, kPmidName_,
+                                                                   kAvailableSize_,
+                                                                   kReturnCode_, kMessageId_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const PmidName kPmidName_;
+  const int64_t kAvailableSize_;
+  const maidsafe_error kReturnCode_;
+  const nfs::MessageId kMessageId_;
+};
+
 }  // namespace detail
 
 }  // namespace vault

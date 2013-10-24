@@ -26,6 +26,7 @@
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/maid_manager/service.h"
 #include "maidsafe/vault/data_manager/service.h"
+#include "maidsafe/vault/pmid_manager/service.h"
 
 
 namespace maidsafe {
@@ -35,6 +36,7 @@ namespace vault {
 class PmidNodeService;
 class MaidManagerService;
 class DataManagerService;
+class PmidManagerService;
 class VersionHandlerService;
 
 namespace detail {
@@ -200,57 +202,35 @@ void DoOperation(DataManagerService* service,
                  const PutFailureFromPmidManagerToDataManager::Receiver& /*receiver*/);
 
 //=============================== To PmidManager ===================================================
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(PmidManagerService* service,
                  const PutRequestFromDataManagerToPmidManager& message,
                  const PutRequestFromDataManagerToPmidManager::Sender& /*sender*/,
-                 const PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
-  auto data_name(GetNameVariant(*message.contents));
-  PmidManagerPutVisitor<ServiceHandlerType> put_visitor(service, message.contents->content,
-                                                        message.message_id, receiver);
-  boost::apply_visitor(put_visitor(), data_name);
-}
+                 const PutRequestFromDataManagerToPmidManager::Receiver& receiver);
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(PmidManagerService* service,
                  const PutFailureFromPmidNodeToPmidManager& message,
                  const PutFailureFromPmidNodeToPmidManager::Sender& /*sender*/,
-                 const PutFailureFromPmidNodeToPmidManager::Receiver& receiver) {
-  auto data_name(GetNameVariant(*message.contents));
-  PutResponseFailureVisitor<ServiceHandlerType> put_failure_visitor(
-      service, MaidName(Identity(receiver.data.string())), message.contents->return_code,
-                        message.message_id);
-  boost::apply_visitor(put_failure_visitor(), data_name);
-}
+                 const PutFailureFromPmidNodeToPmidManager::Receiver& receiver);
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(PmidManagerService* service,
                  const DeleteRequestFromDataManagerToPmidManager& message,
                  const DeleteRequestFromDataManagerToPmidManager::Sender& /*sender*/,
-                 const DeleteRequestFromDataManagerToPmidManager::Receiver& receiver) {
-  auto data_name(GetNameVariant(message.contents));
-  PmidManagerDeleteVisitor<ServiceHandlerType> delete_visitor(
-      service, PmidName(Identity(receiver.data.string())), message.message_id);
-  boost::apply_visitor(delete_visitor(), data_name);
-}
+                 const DeleteRequestFromDataManagerToPmidManager::Receiver& receiver);
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(PmidManagerService* service,
                  const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
                  const GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& /*receiver*/) {
-  service->HandleSendPmidAccount(PmidName(Identity(sender.data.string())),  *message.contents);
-}
+                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& /*receiver*/);
 
-template <typename ServiceHandlerType>
-void DoOperation(ServiceHandlerType* service,
+template <>
+void DoOperation(PmidManagerService* service,
                  const PmidHealthRequestFromMaidNodeToPmidManager& message,
                  const PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
-                 const PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
-  service->HandleHealthRequest(PmidName(Identity(receiver.data.string())),
-                               MaidName(Identity(sender.data.string())),
-                               message.message_id);
-}
+                 const PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver);
 
 //=============================== To PmidNode ======================================================
 template <typename ServiceHandlerType>

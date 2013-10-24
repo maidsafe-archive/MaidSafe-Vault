@@ -53,27 +53,6 @@ DataNameVariant GetNameVariant(const nfs_vault::DataNameAndContent& data) {
 }
 
 template <>
-DataNameVariant GetNameVariant(const nfs_vault::DataAndPmidHint& data) {
-  return GetNameVariant(data.data.name);
-}
-
-template <>
-DataNameVariant GetNameVariant(const nfs_client::DataAndReturnCode& data) {
-  return GetNameVariant(data.data.name);
-}
-
-template <>
-DataNameVariant GetNameVariant(const nfs_client::DataNameAndReturnCode& data) {
-  return GetNameVariant(data.name);
-}
-
-template <>
-DataNameVariant GetNameVariant(const nfs_client::DataNameAndContentOrReturnCode& data) {
-  return data.data ? GetNameVariant(data.data->name) :
-                     GetNameVariant(data.data_name_and_return_code->name);
-}
-
-template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndContentOrCheckResult& data) {
   return GetNameVariant(data.name);
 }
@@ -87,6 +66,33 @@ template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndSize& data) {
   return GetNameVariant(data.name);
 }
+
+template <>
+DataNameVariant GetNameVariant(const nfs_vault::DataAndPmidHint& data) {
+  return GetNameVariant(data.data.name);
+}
+
+template <>
+DataNameVariant GetNameVariant(const nfs_client::DataAndReturnCode& data) {
+  return GetNameVariant(data.data.name);
+}
+
+template <>
+DataNameVariant GetNameVariant(const nfs_client::DataNameAndContentOrReturnCode& data) {
+  return data.data ? GetNameVariant(data.data->name) :
+                     GetNameVariant(data.data_name_and_return_code->name);
+}
+
+template <>
+DataNameVariant GetNameVariant(const nfs_client::DataNameAndReturnCode& data) {
+  return GetNameVariant(data.name);
+}
+
+template <>
+DataNameVariant GetNameVariant(const nfs_client::DataNameAndSpaceAndReturnCode& data) {
+  return GetNameVariant(data.name);
+}
+
 
 void InitialiseDirectory(const boost::filesystem::path& directory) {
   if (fs::exists(directory)) {
