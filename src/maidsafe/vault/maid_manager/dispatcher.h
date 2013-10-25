@@ -87,12 +87,15 @@ class MaidManagerDispatcher {
   MaidManagerDispatcher(MaidManagerDispatcher&&);
   MaidManagerDispatcher& operator=(MaidManagerDispatcher);
 
+  typedef detail::GroupOrKeyType<MaidManager> GroupOrKeyHelper;
+
   template <typename Message>
   void CheckSourcePersonaType() const;
 
   routing::Routing& routing_;
   const passport::Pmid kSigningFob_;
-  static const nfs::Persona kSourcePersona_;
+  static const nfs::Persona kSourcePersona_ = nfs::Persona::kMaidManager;
+
 };
 
 // ==================== Implementation =============================================================

@@ -24,8 +24,6 @@ namespace maidsafe {
 
 namespace vault {
 
-const nfs::Persona MaidManagerDispatcher::kSourcePersona_(nfs::Persona::kMaidManager);
-
 MaidManagerDispatcher::MaidManagerDispatcher(routing::Routing& routing,
                                              const passport::Pmid& signing_fob)
     : routing_(routing), kSigningFob_(signing_fob) {}
@@ -39,7 +37,7 @@ void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
 
   VaultMessage vault_message(message_id, data_name);
   RoutingMessage message(vault_message.Serialise(),
-                         GroupSender<VaultMessage>(routing_, account_name),
+                         GroupOrKeyHelper::GroupSender(routing_, account_name),
                          VaultMessage::Receiver(routing::GroupId(NodeId(data_name.raw_name))));
   routing_.Send(message);
 }
@@ -53,7 +51,7 @@ void MaidManagerDispatcher::SendCreateAccountResponse(const MaidName& account_na
 
   VaultMessage vault_message(message_id, nfs_client::ReturnCode(result));
   RoutingMessage message(vault_message.Serialise(),
-      GroupSender<VaultMessage>(routing_, account_name),
+      GroupOrKeyHelper::GroupSender(routing_, account_name),
       VaultMessage::Receiver(routing::SingleId(NodeId(account_name.value.string()))));
   routing_.Send(message);
 }
@@ -97,8 +95,8 @@ void MaidManagerDispatcher::SendSync(const MaidName& account_name,
                                      const std::string& serialised_sync) {
   typedef SynchroniseFromMaidManagerToMaidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
-  SendSyncMessage<VaultMessage>(routing_, VaultMessage((nfs_vault::Content(serialised_sync))),
-                                account_name);
+  SendSyncMessage<VaultMessage> sync_sender;
+  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), account_name);
 }
 
 void MaidManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer*/,
@@ -126,7 +124,8 @@ void MaidManagerDispatcher::SendHealthResponse(const MaidName& maid_name, int64_
 
   NfsMessage nfs_message(message_id, nfs_client::AvailableSizeAndReturnCode(available_size,
                                                                             return_code));
-  RoutingMessage message(nfs_message.Serialise(), GroupSender<NfsMessage>(routing_, maid_name),
+  RoutingMessage message(nfs_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
                          NfsMessage::Receiver(NodeId(maid_name.value.string())));
   routing_.Send(message);
 }

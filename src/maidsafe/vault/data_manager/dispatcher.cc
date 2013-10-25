@@ -17,6 +17,7 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/vault/data_manager/dispatcher.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -27,7 +28,8 @@ void DataManagerDispatcher::SendSync(const DataManager::Key& key,
                                      const std::string& serialised_sync) {
   typedef SynchroniseFromDataManagerToDataManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
-  SendSyncMessage(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), key);
+  SendSyncMessage<VaultMessage> sync_sender;
+  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), key);
 }
 
 void DataManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer*/,
