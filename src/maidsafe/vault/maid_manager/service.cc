@@ -188,8 +188,8 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& pub
   pending_account_map_.insert(std::make_pair(message_id,
                                              MaidAccountCreationStatus(public_maid.name(),
                                              public_anmaid.name())));
-  dispatcher_.SendPutRequest(account_name, public_maid, PmidName(), message_id);
-  dispatcher_.SendPutRequest(account_name, public_anmaid, PmidName(), message_id);
+  dispatcher_.SendPutRequest(account_name, public_maid, PmidName(Identity(NodeId().string())), message_id);
+  dispatcher_.SendPutRequest(account_name, public_anmaid, PmidName(Identity(NodeId().string())), message_id);
 }
 
 
@@ -544,6 +544,7 @@ void MaidManagerService::HandleMessage(
     const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
     const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  std::cout << "CreateAccountRequestFromMaidNodeToMaidManager" << std::endl;
   typedef nfs::CreateAccountRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
