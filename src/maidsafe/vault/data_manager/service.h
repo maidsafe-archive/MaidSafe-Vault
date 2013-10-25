@@ -161,7 +161,8 @@ class DataManagerService {
                       const typename MessageType::Sender& /*sender*/) const {
     // Don't need to check sender or receiver type - only need to check for group sources that
     // sender ID is appropriate (i.e. == MaidName, or == DataName).
-    return false;
+    // BEFORE_RELEASE implementation missing
+    return true;
   }
 
   typedef boost::mpl::vector<> InitialType;
