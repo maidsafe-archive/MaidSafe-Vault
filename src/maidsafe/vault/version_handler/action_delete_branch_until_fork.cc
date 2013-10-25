@@ -19,6 +19,8 @@
 #include "maidsafe/vault/version_handler/action_delete_branch_until_fork.h"
 #include "maidsafe/vault/version_handler/action_delete_branch_until_fork.pb.h"
 
+#include "maidsafe/vault/version_handler/value.h"
+
 namespace maidsafe {
 
 namespace vault {

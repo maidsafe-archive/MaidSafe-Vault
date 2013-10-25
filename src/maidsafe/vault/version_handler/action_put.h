@@ -21,14 +21,13 @@
 
 #include <string>
 
-#include "maidsafe/data_types/structured_data_versions.h"
-
 #include "maidsafe/vault/version_handler/version_handler.h"
-#include "maidsafe/vault/version_handler/value.h"
 
 namespace maidsafe {
 
 namespace vault {
+
+class VersionHandlerValue;
 
 struct ActionVersionHandlerPut {
   ActionVersionHandlerPut(const StructuredDataVersions::VersionName& old_version_in,
@@ -36,13 +35,13 @@ struct ActionVersionHandlerPut {
       : old_version(old_version_in), new_version(new_version_in) {}
   explicit ActionVersionHandlerPut(const std::string& serialised_action);
   ActionVersionHandlerPut(const ActionVersionHandlerPut& other);
-  ActionVersionHandlerPut(ActionVersionHandlerPut&& other);
+  ActionVersionHandlerPut(ActionVersionHandlerPut&& other); 
 
   void operator()(boost::optional<VersionHandlerValue>& value) const;
 
   std::string Serialise() const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kPutVersionRequest;
   StructuredDataVersions::VersionName old_version, new_version;
 
  private:
