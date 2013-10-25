@@ -297,6 +297,17 @@ void DoOperation(VersionHandlerService* /*service*/,
     const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Sender& /*sender*/,
     const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Receiver& /*receiver*/) {}
 
+template<>
+void DoOperation(VersionHandlerService* /*service*/,
+    const PutVersionRequestFromMaidNodeToVersionHandler& /*message*/,
+    const typename PutVersionRequestFromMaidNodeToVersionHandler::Sender& /*sender*/,
+    const typename PutVersionRequestFromMaidNodeToVersionHandler::Receiver& /*receiver*/) {}
+
+template<>
+void DoOperation(VersionHandlerService* /*service*/,
+    const DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler& /*message*/,
+    const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Sender& /*sender*/,
+    const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Receiver& /*receiver*/) {}
 
 // ================================================================================================
 

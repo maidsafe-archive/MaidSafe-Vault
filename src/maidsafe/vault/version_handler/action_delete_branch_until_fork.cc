@@ -53,12 +53,12 @@ std::string ActionVersionHandlerDeleteBranchUntilFork::Serialise() const {
   return action_delete_branch_until_fork_proto.SerializeAsString();
 }
 
-void ActionVersionHandlerDeleteBranchUntilFork::operator()(
-    boost::optional<VersionHandlerValue>& value) const {
-  if (!value)
-    ThrowError(CommonErrors::uninitialised);
-  value->DeleteBranchUntilFork(version_name);
-}
+//void ActionVersionHandlerDeleteBranchUntilFork::operator()(
+//    boost::optional<VersionHandlerValue>& value) const {
+//  if (!value)
+//    ThrowError(CommonErrors::uninitialised);
+//  value->DeleteBranchUntilFork(version_name);
+//}
 
 bool operator==(const ActionVersionHandlerDeleteBranchUntilFork& lhs,
                 const ActionVersionHandlerDeleteBranchUntilFork& rhs) {

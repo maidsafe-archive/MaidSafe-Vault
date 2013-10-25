@@ -39,7 +39,7 @@ struct ActionVersionHandlerDeleteBranchUntilFork {
   explicit ActionVersionHandlerDeleteBranchUntilFork(
       const StructuredDataVersions::VersionName& version_name);
 
-  void operator()(boost::optional<VersionHandlerValue>& value) const;
+//  void operator()(boost::optional<VersionHandlerValue>& value) const;
 
   std::string Serialise() const;
 

@@ -299,7 +299,7 @@ void DataManagerService::HandleMessage(
     const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver);
 
-// ==================== Put implementation =========================================================
+// ================================== Put implementation ===========================================
 template <typename Data>
 void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
                                    const PmidName& pmid_name_in, nfs::MessageId message_id) {

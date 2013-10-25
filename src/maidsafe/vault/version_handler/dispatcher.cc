@@ -22,8 +22,37 @@ namespace maidsafe {
 
 namespace vault {
 
-VersionHandlerDispatcher::VersionHandlerDispatcher(routing::Routing& routing) : routing_(routing) {
+VersionHandlerDispatcher::VersionHandlerDispatcher(routing::Routing& routing)
+    : routing_(routing) {
   routing_.kNodeId();
+}
+
+template <>
+void VersionHandlerDispatcher::SendGetVersionsResponse(
+    std::vector<typename VersionHandler::Value::VersionName>& /*versions*/,
+    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>& /*requestor*/,
+    const maidsafe_error& /*result*/) {
+}
+
+template <>
+void VersionHandlerDispatcher::SendGetVersionsResponse(
+    std::vector<typename VersionHandler::Value::VersionName>& /*versions*/,
+    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>& /*requestor*/,
+    const maidsafe_error& /*result*/) {
+}
+
+template <>
+void VersionHandlerDispatcher::SendGetBranchResponse(
+    std::vector<typename VersionHandler::Value::VersionName>& /*versions*/,
+    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>& /*requestor*/,
+    const maidsafe_error& /*result*/) {
+}
+
+template <>
+void VersionHandlerDispatcher::SendGetBranchResponse(
+    std::vector<typename VersionHandler::Value::VersionName>& /*versions*/,
+    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>& /*requestor*/,
+    const maidsafe_error& /*result*/) {
 }
 
 }  // namespace vault

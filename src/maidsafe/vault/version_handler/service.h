@@ -24,6 +24,10 @@
 #include <type_traits>
 #include <vector>
 
+#include "boost/mpl/vector.hpp"
+#include "boost/mpl/insert_range.hpp"
+#include "boost/mpl/end.hpp"
+
 #include "maidsafe/common/types.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
@@ -36,7 +40,9 @@
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/version_handler/version_handler.h"
+#include "maidsafe/vault/version_handler/dispatcher.h"
 
 namespace maidsafe {
 
@@ -45,8 +51,7 @@ namespace vault {
 class VersionHandlerService {
  public:
   typedef nfs::VersionHandlerServiceMessages PublicMessages;
-  typedef void VaultMessages;
-  typedef nfs::VersionHandlerServiceMessages Messages;
+  typedef VersionHandlerServiceMessages VaultMessages;
   typedef void HandleMessageReturnType;
   typedef Identity VersionHandlerAccountName;
 
@@ -64,42 +69,54 @@ class VersionHandlerService {
   VersionHandlerService(VersionHandlerService&&);
   VersionHandlerService& operator=(VersionHandlerService&&);
 
+  void DoSync();
+
   template <typename MessageType>
   bool ValidateSender(const MessageType& message, const typename MessageType::Sender& sender) const;
 
   template <typename RequestorType>
-  void HandleGet(const VersionHandler::Key& key, const RequestorType& requestor_type);
+  void HandleGetVersions(const VersionHandler::Key& key, const RequestorType& requestor_type);
 
-  //  std::vector<StructuredDataVersions::VersionName> GetVersionsFromMessage(
-  //      const nfs::Message& message) const;
-  //  NonEmptyString GetSerialisedRecord(const VersionHandler::DbKey& db_key);
-  //  //// =============== Get data
-  // ====================================================================
-  //  void HandleGetBranch(const nfs::Message& message, routing::ReplyFunctor reply_functor);
+  template <typename RequestorType>
+  void HandleGetBranch(const VersionHandler::Key& key,
+                       const typename VersionHandler::Value::VersionName version_name,
+                       const RequestorType& requestor_type);
 
-  //  //// =============== Sync
-  // ========================================================================
-  //  template<typename Data>
-  //  void Synchronise(const nfs::Message& message);
-  //  void HandleSynchronise(const nfs::Message& message);
+  void HandlePutVersion(const VersionHandler::Key& key,
+                        const VersionHandler::VersionName& old_version,
+                        const VersionHandler::VersionName& new_version);
 
-  //  //// =============== Churn
-  // =======================================================================
-  //  void HandleAccountTransfer(const nfs::Message& message);
+  void HandleDeleteBranchUntilFork(const VersionHandler::Key& key,
+                                   const VersionHandler::VersionName& branch_tip);
 
+  typedef boost::mpl::vector<> InitialType;
+  typedef boost::mpl::insert_range<InitialType,
+                                   boost::mpl::end<InitialType>::type,
+                                   nfs::VersionHandlerServiceMessages::types>::type
+                                       IntermediateType;
+  typedef boost::mpl::insert_range<IntermediateType,
+                                   boost::mpl::end<IntermediateType>::type,
+                                   VersionHandlerServiceMessages::types>::type FinalType;
+ public:
+  typedef boost::make_variant_over<FinalType>::type Messages;
+
+ private:
   routing::Routing& routing_;
+  VersionHandlerDispatcher dispatcher_;
   std::mutex accumulator_mutex_;
   std::mutex sync_mutex_;
   Accumulator<Messages> accumulator_;
   Db<VersionHandler::Key, VersionHandler::Value> db_;
   const NodeId kThisNodeId_;
+  Sync<VersionHandler::UnresolvedPutVersion> sync_put_versions_;
+  Sync<VersionHandler::UnresolvedDeleteBranchUntilFork> sync_delete_branche_until_forks_;
 };
 
 template <typename MessageType>
 void VersionHandlerService::HandleMessage(const MessageType& /*message*/,
                                           const typename MessageType::Sender& /*sender*/,
                                           const typename MessageType::Receiver& /*receiver*/) {
-  MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
+  MessageType::No_generic_handler_is_available__Specialisation_is_required;
 }
 
 template <typename MessageType>
@@ -116,15 +133,15 @@ void VersionHandlerService::HandleMessage(
 
 template<>
 void VersionHandlerService::HandleMessage(
-    const nfs::GetBranchRequestFromMaidNodeToVersionHandler& message,
-    const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Sender& sender,
-    const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Receiver& receiver);
-
-template<>
-void VersionHandlerService::HandleMessage(
     const nfs::GetVersionsRequestFromDataGetterToVersionHandler& message,
     const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Sender& sender,
     const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Receiver& receiver);
+
+template<>
+void VersionHandlerService::HandleMessage(
+    const nfs::GetBranchRequestFromMaidNodeToVersionHandler& message,
+    const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Sender& sender,
+    const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Receiver& receiver);
 
 template<>
 void VersionHandlerService::HandleMessage(
@@ -132,17 +149,44 @@ void VersionHandlerService::HandleMessage(
     const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Sender& sender,
     const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Receiver& receiver);
 
+template<>
+void VersionHandlerService::HandleMessage(
+    const PutVersionRequestFromMaidNodeToVersionHandler& message,
+    const typename PutVersionRequestFromMaidNodeToVersionHandler::Sender& sender,
+    const typename PutVersionRequestFromMaidNodeToVersionHandler::Receiver& receiver);
+
+template<>
+void VersionHandlerService::HandleMessage(
+    const DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler& message,
+    const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Sender& sender,
+    const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Receiver& receiver);
+
 template <typename RequestorType>
-void VersionHandlerService::HandleGet(const VersionHandler::Key& /*key*/,
-                                      const RequestorType& /*requestor_type*/) {
-// Implementing the function requires handling structured version transfer
-//  auto value(db_.Get(key));
-//  try {
-//    dispatcher_.SendGetVersionResponse(value, requestor_type);
-//  }
-//  catch (const maidsafe_error& error) {
-//    dispatcher_.SendGetVersionResponse(value, requestor_type, error);
-//  }
+void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& key,
+                                              const RequestorType& requestor_type) {
+  auto value(std::move(db_.Get(key)));  // WILL BE VALID ONLY IF DB RETURNS UNIQUE_PTR
+  try {
+    dispatcher_.SendGetVersionsResponse(value->Get(), requestor_type, CommonErrors::success);
+  }
+  catch (const maidsafe_error& error) {
+    dispatcher_.SendGetVersionsResponse(std::vector<typename VersionHandler::Value::VersionName>(),
+                                       requestor_type, error);
+  }
+}
+
+template <typename RequestorType>
+void VersionHandlerService::HandleGetBranch(const VersionHandler::Key& key,
+    const typename VersionHandler::Value::VersionName version_name,
+    const RequestorType& requestor_type) {
+  auto value(std::move(db_.Get(key)));  // WILL BE VALID ONLY IF DB RETURNS UNIQUE_PTR
+  try {
+    dispatcher_.SendGetBranchResponse(value->GetBranch(version_name), requestor_type,
+                                      CommonErrors::success);
+  }
+  catch (const maidsafe_error& error) {
+    dispatcher_.SendGetBranchResponse(std::vector<typename VersionHandler::Value::VersionName>(),
+                                      requestor_type, error);
+  }
 }
 
 }  // namespace vault

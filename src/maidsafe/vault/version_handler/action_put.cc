@@ -48,12 +48,12 @@ std::string ActionVersionHandlerPut::Serialise() const {
   return action_put_version_proto.SerializeAsString();
 }
 
-void ActionVersionHandlerPut::operator()(boost::optional<VersionHandlerValue>& value) const {
-  if (!value) {
-    value.reset();
-  }
-  value->Put(old_version, new_version);
-}
+//void ActionVersionHandlerPut::operator()(boost::optional<VersionHandlerValue>& value) const {
+//  if (!value) {
+//    value.reset();
+//  }
+//  value->Put(old_version, new_version);
+//}
 
 bool operator==(const ActionVersionHandlerPut& lhs, const ActionVersionHandlerPut& rhs) {
   return lhs.old_version == rhs.old_version && lhs.new_version == rhs.new_version;
