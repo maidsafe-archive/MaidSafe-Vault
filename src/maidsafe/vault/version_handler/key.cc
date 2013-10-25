@@ -38,6 +38,10 @@ VersionHandlerKey::VersionHandlerKey(const std::string& serialised_key)
   originator = Identity(key_proto.originator());
 }
 
+VersionHandlerKey::VersionHandlerKey(const Identity& name_in, const DataTagValue type_in,
+                                     const Identity& originator_in)
+    : name(name_in), type(type_in), originator(originator_in) {}
+
 VersionHandlerKey::VersionHandlerKey(const FixedWidthString& fixed_width_string)
     : name(fixed_width_string.string().substr(0, NodeId::kSize)),
       type(static_cast<DataTagValue>(detail::FromFixedWidthString<detail::PaddedWidth::value>(

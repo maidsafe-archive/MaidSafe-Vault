@@ -19,6 +19,8 @@
 #include "maidsafe/vault/version_handler/action_put.h"
 #include "maidsafe/vault/version_handler/action_put.pb.h"
 
+#include "maidsafe/vault/version_handler/value.h"
+
 namespace maidsafe {
 
 namespace vault {

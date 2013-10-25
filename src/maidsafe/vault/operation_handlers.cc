@@ -198,7 +198,6 @@ void DoOperation(PmidManagerService* service,
                  const PutRequestFromDataManagerToPmidManager& message,
                  const PutRequestFromDataManagerToPmidManager::Sender& /*sender*/,
                  const PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
-  // BEFORE_RELEASE the following code shall be effective
   auto data_name(GetNameVariant(*message.contents));
   PmidManagerPutVisitor<PmidManagerService> put_visitor(service, message.contents->content,
                                                         Identity(receiver.data.string()),
@@ -274,10 +273,16 @@ void DoOperation(PmidNodeService* service,
 //====================================== To VersionHandler =========================================
 
 template<>
-void DoOperation(VersionHandlerService* /*service*/,
-    const nfs::GetVersionsRequestFromMaidNodeToVersionHandler& /*message*/,
-    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Sender& /*sender*/,
-    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Receiver& /*receiver*/) {}
+void DoOperation(VersionHandlerService* service,
+    const nfs::GetVersionsRequestFromMaidNodeToVersionHandler& message,
+    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Sender& sender,
+    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Receiver& /*receiver*/) {
+  typedef nfs::GetVersionsRequestFromMaidNodeToVersionHandler MessageType;
+  auto data_name(GetNameVariant(*message.contents));
+  VersionManagerGetVisitor<MessageType::SourcePersona>
+      get_version_visitor(service, Identity(sender.data.string()));
+  boost::apply_visitor(get_version_visitor, data_name);
+}
 
 template<>
 void DoOperation(VersionHandlerService* /*service*/,
@@ -286,10 +291,16 @@ void DoOperation(VersionHandlerService* /*service*/,
     const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Receiver& /*receiver*/) {}
 
 template<>
-void DoOperation(VersionHandlerService* /*service*/,
-    const nfs::GetVersionsRequestFromDataGetterToVersionHandler& /*message*/,
-    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Sender& /*sender*/,
-    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Receiver& /*receiver*/) {}
+void DoOperation(VersionHandlerService* service,
+    const nfs::GetVersionsRequestFromDataGetterToVersionHandler& message,
+    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Sender& sender,
+    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Receiver& /*receiver*/) {
+  typedef nfs::GetVersionsRequestFromDataGetterToVersionHandler MessageType;
+  auto data_name(GetNameVariant(*message.contents));
+  VersionManagerGetVisitor<MessageType::SourcePersona>
+      get_version_visitor(service, Identity(sender.data.string()));
+  boost::apply_visitor(get_version_visitor, data_name);
+}
 
 template<>
 void DoOperation(VersionHandlerService* /*service*/,
@@ -297,6 +308,17 @@ void DoOperation(VersionHandlerService* /*service*/,
     const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Sender& /*sender*/,
     const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Receiver& /*receiver*/) {}
 
+template<>
+void DoOperation(VersionHandlerService* /*service*/,
+    const PutVersionRequestFromMaidNodeToVersionHandler& /*message*/,
+    const typename PutVersionRequestFromMaidNodeToVersionHandler::Sender& /*sender*/,
+    const typename PutVersionRequestFromMaidNodeToVersionHandler::Receiver& /*receiver*/) {}
+
+template<>
+void DoOperation(VersionHandlerService* /*service*/,
+    const DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler& /*message*/,
+    const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Sender& /*sender*/,
+    const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Receiver& /*receiver*/) {}
 
 // ================================================================================================
 

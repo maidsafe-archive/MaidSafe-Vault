@@ -161,7 +161,8 @@ class DataManagerService {
                       const typename MessageType::Sender& /*sender*/) const {
     // Don't need to check sender or receiver type - only need to check for group sources that
     // sender ID is appropriate (i.e. == MaidName, or == DataName).
-    return false;
+    // BEFORE_RELEASE implementation missing
+    return true;
   }
 
   typedef boost::mpl::vector<> InitialType;
@@ -299,7 +300,7 @@ void DataManagerService::HandleMessage(
     const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver);
 
-// ==================== Put implementation =========================================================
+// ================================== Put implementation ===========================================
 template <typename Data>
 void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
                                    const PmidName& pmid_name_in, nfs::MessageId message_id) {
@@ -412,7 +413,7 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   std::map<PmidName, IntegrityCheckData> integrity_checks;
   auto hint_itr(std::end(integrity_checks));
   std::for_each(std::begin(online_pmids), std::end(online_pmids),
-                [&](PmidName&& name) {
+                [&](PmidName name) {
                   hint_itr = integrity_checks.insert(hint_itr, std::make_pair(std::move(name),
                       IntegrityCheckData(IntegrityCheckData::GetRandomInput())));
                 });
@@ -420,7 +421,7 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   // Create helper struct which holds the collection of responses, and add the task to the timer.
   auto get_response_op(
       std::make_shared<detail::GetResponseOp<typename Data::Name, RequestorIdType>>(
-          pmid_node_to_get_from, integrity_checks, data_name, requestor));
+          pmid_node_to_get_from, message_id, integrity_checks, data_name, requestor));
   auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
     this->DoHandleGetResponse<Data, RequestorIdType>(pmid_node_and_contents.first,
                                                      pmid_node_and_contents.second,

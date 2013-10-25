@@ -26,15 +26,16 @@
 
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/version_handler/key.h"
+#include "maidsafe/vault/version_handler/action_delete_branch_until_fork.h"
+#include "maidsafe/vault/version_handler/action_put.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
-struct ActionPutVersion;
-struct ActionGetVersion;
-struct ActionGetBranch;
-struct ActionDeleteBranchUntilFork;
+struct ActionVersionHandlerPut;
+struct ActionVersionHandlerDeleteBranchUntilFork;
 
 }  // namespace vault
 
@@ -45,10 +46,9 @@ struct PersonaTypes<Persona::kVersionHandler> {
   static const Persona persona = Persona::kVersionHandler;
   typedef vault::VersionHandlerKey Key;
   typedef StructuredDataVersions Value;
-  typedef vault::UnresolvedAction<Key, vault::ActionPutVersion> UnresolvedPutVersion;
-  typedef vault::UnresolvedAction<Key, vault::ActionGetVersion> UnresolvedGetVersion;
-  typedef vault::UnresolvedAction<Key, vault::ActionGetBranch> UnresolvedGetBranch;
-  typedef vault::UnresolvedAction<Key, vault::ActionDeleteBranchUntilFork>
+  typedef StructuredDataVersions::VersionName VersionName;
+  typedef vault::UnresolvedAction<Key, vault::ActionVersionHandlerPut> UnresolvedPutVersion;
+  typedef vault::UnresolvedAction<Key, vault::ActionVersionHandlerDeleteBranchUntilFork>
       UnresolvedDeleteBranchUntilFork;
 };
 

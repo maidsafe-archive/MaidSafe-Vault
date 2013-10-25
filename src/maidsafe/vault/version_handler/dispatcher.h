@@ -16,7 +16,12 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#include "maidsafe/data_types/structured_data_versions.h"
+
 #include "maidsafe/routing/routing_api.h"
+
+#include "maidsafe/vault/version_handler/version_handler.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -26,9 +31,55 @@ class VersionHandlerDispatcher {
  public:
   VersionHandlerDispatcher(routing::Routing& routing);
 
+  template <typename RequestorType>
+  void SendGetVersionsResponse(std::vector<VersionHandler::VersionName>& versions,
+                               const RequestorType& requestor, const maidsafe_error& result);
+
+  template <typename RequestorType>
+  void SendGetBranchResponse(std::vector<VersionHandler::VersionName>& versions,
+                             const RequestorType& requestor, const maidsafe_error& result);
+
  private:
   routing::Routing& routing_;
 };
+
+template <typename RequestorType>
+void VersionHandlerDispatcher::SendGetVersionsResponse(
+    std::vector<VersionHandler::VersionName>& /*versions*/,
+    const RequestorType& /*requestor*/, const maidsafe_error& /*result*/) {
+  RequestorType::No_generic_handler_is_available__Specialisation_is_required;
+}
+
+template <typename RequestorType>
+void SendGetBranchResponse(std::vector<VersionHandler::VersionName>& /*versions*/,
+                           const RequestorType& /*requestor*/, const maidsafe_error& /*result*/) {
+  RequestorType::No_generic_handler_is_available__Specialisation_is_required;
+}
+
+template <>
+void VersionHandlerDispatcher::SendGetVersionsResponse(
+    std::vector<VersionHandler::VersionName>& versions,
+    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>& requestor,
+    const maidsafe_error& result);
+
+template <>
+void VersionHandlerDispatcher::SendGetVersionsResponse(
+    std::vector<VersionHandler::VersionName>& versions,
+    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>& requestor,
+    const maidsafe_error& result);
+
+template <>
+void VersionHandlerDispatcher::SendGetBranchResponse(
+    std::vector<VersionHandler::VersionName>& versions,
+    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>& requestor,
+    const maidsafe_error& result);
+
+template <>
+void VersionHandlerDispatcher::SendGetBranchResponse(
+    std::vector<VersionHandler::VersionName>& versions,
+    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>& requestor,
+    const maidsafe_error& result);
+
 
 }
 

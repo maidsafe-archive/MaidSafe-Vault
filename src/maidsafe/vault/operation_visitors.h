@@ -23,10 +23,15 @@
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/common/node_id.h"
+#include "maidsafe/vault/version_handler/key.h"
+#include"maidsafe/vault/version_handler/service.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
 namespace vault {
+
+class VersionHandlerService;
 
 namespace detail {
 
@@ -240,10 +245,9 @@ class GetRequestVisitor : public boost::static_visitor<> {
         kMessageId_(std::move(message_id)) {}
 
   template <typename Name>
-  void operator()(const Name& /*data_name*/) {
-    // BEFORE_RELASE this line of code needs to be effective
-//     kService_->template HandleGet<typename Name::data_type, RequestorIdType>(
-//         data_name, kRequestorId_, kMessageId_);
+  void operator()(const Name& data_name) {
+    kService_->template HandleGet<typename Name::data_type, RequestorIdType>(
+        data_name, kRequestorId_, kMessageId_);
   }
 
  private:
@@ -383,6 +387,27 @@ class PmidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
   const int64_t kAvailableSize_;
   const maidsafe_error kReturnCode_;
   const nfs::MessageId kMessageId_;
+};
+
+// ==================================== VersionHandler Visitors=====================================
+
+template <typename SourcePersonaType>
+class VersionManagerGetVisitor : public boost::static_visitor<> {
+ public:
+  VersionManagerGetVisitor(VersionHandlerService* service, Identity originator)
+      : kService_(service), kRequestor_(NodeId(std::move(originator.string()))) {}
+
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    kService_->HandleGetVersions(
+        VersionHandlerKey(data_name, Name::data_type::Tag::kValue,
+                          Identity(kRequestor_.node_id.string())),
+        kRequestor_);
+  }
+
+ private:
+  VersionHandlerService* const kService_;
+  detail::Requestor<SourcePersonaType> kRequestor_;
 };
 
 }  // namespace detail

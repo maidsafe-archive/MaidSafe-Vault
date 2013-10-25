@@ -152,11 +152,28 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
   asio_service_.Start();
   passport::PublicPmid::Name pmid_name(Identity(key_chain.pmid.name().value));
   client_nfs_.reset(new nfs_client::MaidNodeNfs(asio_service_, client_routing_, pmid_name));
-  auto future(RoutingJoin(peer_endpoints));
-  auto status(future.wait_for(std::chrono::seconds(10)));
-  if (status == std::future_status::timeout || !future.get())
-    ThrowError(RoutingErrors::not_connected);
-  LOG(kInfo) << "Bootstrapped anonymous node to store keys";
+  {
+    auto future(RoutingJoin(peer_endpoints));
+    auto status(future.wait_for(std::chrono::seconds(10)));
+    if (status == std::future_status::timeout || !future.get())
+      ThrowError(RoutingErrors::not_connected);
+  }
+  {
+    passport::PublicMaid public_maid(key_chain.maid);
+    passport::PublicAnmaid public_anmaid(key_chain.anmaid);
+    auto future(client_nfs_->CreateAccount(nfs_vault::AccountCreation(public_maid, public_anmaid)));
+    auto status(future.wait_for(boost::chrono::seconds(10)));
+    if (status == boost::future_status::timeout)
+      ThrowError(VaultErrors::account_already_exists);
+  }
+  {
+    client_nfs_->RegisterPmid(nfs_vault::PmidRegistration(key_chain.maid, key_chain.pmid, false));
+    auto future(client_nfs_->GetPmidHealth(pmid_name));
+    auto status(future.wait_for(boost::chrono::seconds(10)));
+    if (status == boost::future_status::timeout)
+      ThrowError(VaultErrors::permission_denied);
+  }
+  LOG(kInfo) << "Started up client node to store chunks";
 }
 
 ClientTester::~ClientTester() {}

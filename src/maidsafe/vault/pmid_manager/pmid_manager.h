@@ -58,15 +58,6 @@ struct PersonaTypes<Persona::kPmidManager> {
   typedef vault::UnresolvedAction<Key, vault::ActionGetPmidTotals> UnresolvedGetPmidTotals;
   typedef vault::UnresolvedAction<
               MetadataKey, vault::ActionPmidManagerSetAvailableSize> UnresolvedSetAvailableSize;
-
-  enum class Action : int32_t {
-    kPut,
-    kGet,
-    kDelete,
-    kGetPmidTotals,
-    kSync,
-    kAccountTransfer
-  };
 };
 
 }  // namespace nfs
