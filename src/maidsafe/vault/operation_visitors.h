@@ -398,10 +398,11 @@ class VersionManagerGetVisitor : public boost::static_visitor<> {
       : kService_(service), kRequestor_(NodeId(std::move(originator.string()))) {}
 
   template <typename Name>
-  void operator()(const Name& /*data_name*/) {
-//    kService_->HandleGetVersions(
-//        VersionHandlerKey(data_name, Name::data_type::Tag::kValue, Identity(kRequestor_.node_id)),
-//                        kRequestor_);
+  void operator()(const Name& data_name) {
+    kService_->HandleGetVersions(
+        VersionHandlerKey(data_name, Name::data_type::Tag::kValue,
+                          Identity(kRequestor_.node_id.string())),
+        kRequestor_);
   }
 
  private:

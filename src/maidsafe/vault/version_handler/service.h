@@ -48,6 +48,11 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace detail {
+
+  template <typename SourcePersonaType> class VersionManagerGetVisitor;
+}
+
 class VersionHandlerService {
  public:
   typedef nfs::VersionHandlerServiceMessages PublicMessages;
@@ -62,6 +67,8 @@ class VersionHandlerService {
                      const typename MessageType::Receiver& receiver);
 
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
+
+  template <typename SourcePersonaType> friend class detail::VersionManagerGetVisitor;
 
  private:
   VersionHandlerService(const VersionHandlerService&);
@@ -162,16 +169,16 @@ void VersionHandlerService::HandleMessage(
     const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Receiver& receiver);
 
 template <typename RequestorType>
-void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& key,
-                                              const RequestorType& requestor_type) {
-  auto value(std::move(db_.Get(key)));  // WILL BE VALID ONLY IF DB RETURNS UNIQUE_PTR
-  try {
-    dispatcher_.SendGetVersionsResponse(value->Get(), requestor_type, CommonErrors::success);
-  }
-  catch (const maidsafe_error& error) {
-    dispatcher_.SendGetVersionsResponse(std::vector<typename VersionHandler::Value::VersionName>(),
-                                       requestor_type, error);
-  }
+void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& /*key*/,
+                                              const RequestorType& /*requestor_type*/) {
+//  auto value(std::move(db_.Get(key)));  // WILL BE VALID ONLY IF DB RETURNS UNIQUE_PTR
+//  try {
+//    dispatcher_.SendGetVersionsResponse(value->Get(), requestor_type, CommonErrors::success);
+//  }
+//  catch (const maidsafe_error& error) {
+//    dispatcher_.SendGetVersionsResponse(std::vector<typename VersionHandler::Value::VersionName>(),
+//                                       requestor_type, error);
+//  }
 }
 
 template <typename RequestorType>

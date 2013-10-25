@@ -291,10 +291,16 @@ void DoOperation(VersionHandlerService* /*service*/,
     const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Receiver& /*receiver*/) {}
 
 template<>
-void DoOperation(VersionHandlerService* /*service*/,
-    const nfs::GetVersionsRequestFromDataGetterToVersionHandler& /*message*/,
-    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Sender& /*sender*/,
-    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Receiver& /*receiver*/) {}
+void DoOperation(VersionHandlerService* service,
+    const nfs::GetVersionsRequestFromDataGetterToVersionHandler& message,
+    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Sender& sender,
+    const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Receiver& /*receiver*/) {
+  typedef nfs::GetVersionsRequestFromDataGetterToVersionHandler MessageType;
+  auto data_name(GetNameVariant(*message.contents));
+  VersionManagerGetVisitor<MessageType::SourcePersona>
+      get_version_visitor(service, Identity(sender.data.string()));
+  boost::apply_visitor(get_version_visitor, data_name);
+}
 
 template<>
 void DoOperation(VersionHandlerService* /*service*/,
