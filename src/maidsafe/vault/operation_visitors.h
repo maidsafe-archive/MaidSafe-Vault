@@ -240,10 +240,9 @@ class GetRequestVisitor : public boost::static_visitor<> {
         kMessageId_(std::move(message_id)) {}
 
   template <typename Name>
-  void operator()(const Name& /*data_name*/) {
-    // BEFORE_RELASE this line of code needs to be effective
-//     kService_->template HandleGet<typename Name::data_type, RequestorIdType>(
-//         data_name, kRequestorId_, kMessageId_);
+  void operator()(const Name& data_name) {
+    kService_->template HandleGet<typename Name::data_type, RequestorIdType>(
+        data_name, kRequestorId_, kMessageId_);
   }
 
  private:

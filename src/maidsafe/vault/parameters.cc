@@ -33,7 +33,7 @@ const int Parameters::kMinNetworkHealth(12);
 size_t Parameters::max_recent_data_list_size(1000);
 int Parameters::max_file_element_count(10000);
 int Parameters::integrity_check_string_size(64);
-const std::chrono::milliseconds kDefaultTimeout(10000);
+const std::chrono::milliseconds Parameters::kDefaultTimeout(10000);
 
 }  // namespace detail
 

@@ -241,10 +241,10 @@ void DataManagerDispatcher::SendGetResponseSuccess(const RequestorIdType& reques
 
   static const routing::Cacheable kCacheable(is_cacheable<Data>::value ? routing::Cacheable::kPut :
                                                                          routing::Cacheable::kNone);
-  NfsMessage nfs_message(message_id, NfsMessage::Contents(data));
+  NfsMessage nfs_message(message_id, typename NfsMessage::Contents(data));
   RoutingMessage message(nfs_message.Serialise(),
                          GroupSender<NfsMessage, typename Data::Name>(routing_, data.name()),
-                         NfsMessage::Receiver(requestor_id.node_id), kCacheable);
+                         typename NfsMessage::Receiver(requestor_id.node_id), kCacheable);
   routing_.Send(message);
 }
 
@@ -258,11 +258,14 @@ void DataManagerDispatcher::SendGetResponseFailure(const RequestorIdType& reques
   typedef routing::Message<typename NfsMessage::Sender, typename NfsMessage::Receiver>
       RoutingMessage;
 
-  NfsMessage nfs_message(message_id,
-                         NfsMessage::Contents(data_name, nfs_client::ReturnCode(result)));
+  nfs_client::DataNameAndReturnCode dataname_returncode(data_name, nfs_client::ReturnCode(result));
+  typename NfsMessage::Contents msg_content;
+  msg_content.data_name_and_return_code = dataname_returncode;
+
+  NfsMessage nfs_message(message_id, msg_content);
   RoutingMessage message(nfs_message.Serialise(),
                          GroupSender<NfsMessage, DataNameType>(routing_, data_name),
-                         NfsMessage::Receiver(requestor_id.node_id));
+                         typename NfsMessage::Receiver(requestor_id.node_id));
   routing_.Send(message);
 }
 

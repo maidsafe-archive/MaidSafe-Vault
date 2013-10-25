@@ -198,7 +198,6 @@ void DoOperation(PmidManagerService* service,
                  const PutRequestFromDataManagerToPmidManager& message,
                  const PutRequestFromDataManagerToPmidManager::Sender& /*sender*/,
                  const PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
-  // BEFORE_RELEASE the following code shall be effective
   auto data_name(GetNameVariant(*message.contents));
   PmidManagerPutVisitor<PmidManagerService> put_visitor(service, message.contents->content,
                                                         Identity(receiver.data.string()),
