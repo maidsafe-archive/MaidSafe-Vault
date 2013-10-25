@@ -23,10 +23,15 @@
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/common/node_id.h"
+#include "maidsafe/vault/version_handler/key.h"
+#include"maidsafe/vault/version_handler/service.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
 namespace vault {
+
+class VersionHandlerService;
 
 namespace detail {
 
@@ -382,6 +387,26 @@ class PmidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
   const int64_t kAvailableSize_;
   const maidsafe_error kReturnCode_;
   const nfs::MessageId kMessageId_;
+};
+
+// ==================================== VersionHandler Visitors=====================================
+
+template <typename SourcePersonaType>
+class VersionManagerGetVisitor : public boost::static_visitor<> {
+ public:
+  VersionManagerGetVisitor(VersionHandlerService* service, Identity originator)
+      : kService_(service), kRequestor_(NodeId(std::move(originator.string()))) {}
+
+  template <typename Name>
+  void operator()(const Name& /*data_name*/) {
+//    kService_->HandleGetVersions(
+//        VersionHandlerKey(data_name, Name::data_type::Tag::kValue, Identity(kRequestor_.node_id)),
+//                        kRequestor_);
+  }
+
+ private:
+  VersionHandlerService* const kService_;
+  detail::Requestor<SourcePersonaType> kRequestor_;
 };
 
 }  // namespace detail

@@ -273,10 +273,16 @@ void DoOperation(PmidNodeService* service,
 //====================================== To VersionHandler =========================================
 
 template<>
-void DoOperation(VersionHandlerService* /*service*/,
-    const nfs::GetVersionsRequestFromMaidNodeToVersionHandler& /*message*/,
-    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Sender& /*sender*/,
-    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Receiver& /*receiver*/) {}
+void DoOperation(VersionHandlerService* service,
+    const nfs::GetVersionsRequestFromMaidNodeToVersionHandler& message,
+    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Sender& sender,
+    const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Receiver& /*receiver*/) {
+  typedef nfs::GetVersionsRequestFromMaidNodeToVersionHandler MessageType;
+  auto data_name(GetNameVariant(*message.contents));
+  VersionManagerGetVisitor<MessageType::SourcePersona>
+      get_version_visitor(service, Identity(sender.data.string()));
+  boost::apply_visitor(get_version_visitor, data_name);
+}
 
 template<>
 void DoOperation(VersionHandlerService* /*service*/,

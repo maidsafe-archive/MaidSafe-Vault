@@ -79,7 +79,7 @@ class VersionHandlerService {
 
   template <typename RequestorType>
   void HandleGetBranch(const VersionHandler::Key& key,
-                       const typename VersionHandler::Value::VersionName version_name,
+                       const typename VersionHandler::VersionName version_name,
                        const RequestorType& requestor_type);
 
   void HandlePutVersion(const VersionHandler::Key& key,
@@ -176,7 +176,7 @@ void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& key,
 
 template <typename RequestorType>
 void VersionHandlerService::HandleGetBranch(const VersionHandler::Key& key,
-    const typename VersionHandler::Value::VersionName version_name,
+    const typename VersionHandler::VersionName version_name,
     const RequestorType& requestor_type) {
   auto value(std::move(db_.Get(key)));  // WILL BE VALID ONLY IF DB RETURNS UNIQUE_PTR
   try {

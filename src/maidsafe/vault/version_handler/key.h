@@ -36,6 +36,8 @@ struct VersionHandlerKey {
   template <typename Data>
   VersionHandlerKey(const typename Data::Name& name_in, const Identity& originator_in)
       : name(name_in.data), type(Data::type_enum_value()), originator(originator_in) {}
+  VersionHandlerKey(const Identity& name_in, const DataTagValue type_in,
+                    const Identity& originator_in);
   explicit VersionHandlerKey(const std::string& serialised_key);
   VersionHandlerKey(const VersionHandlerKey& other);
   VersionHandlerKey(VersionHandlerKey&& other);

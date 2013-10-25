@@ -22,11 +22,12 @@
 #include <string>
 
 #include "maidsafe/vault/version_handler/version_handler.h"
-#include "maidsafe/vault/version_handler/value.h"
 
 namespace maidsafe {
 
 namespace vault {
+
+class VersionHandlerValue;
 
 struct ActionVersionHandlerPut {
   ActionVersionHandlerPut(const StructuredDataVersions::VersionName& old_version_in,
@@ -36,7 +37,7 @@ struct ActionVersionHandlerPut {
   ActionVersionHandlerPut(const ActionVersionHandlerPut& other);
   ActionVersionHandlerPut(ActionVersionHandlerPut&& other); 
 
-//  void operator()(boost::optional<VersionHandlerValue>& value) const;
+  void operator()(boost::optional<VersionHandlerValue>& value) const;
 
   std::string Serialise() const;
 

@@ -26,8 +26,9 @@
 
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/version_handler/key.h"
-#include "maidsafe/vault/version_handler/action_put.h"
 #include "maidsafe/vault/version_handler/action_delete_branch_until_fork.h"
+#include "maidsafe/vault/version_handler/action_put.h"
+
 
 namespace maidsafe {
 

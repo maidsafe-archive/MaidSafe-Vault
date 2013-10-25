@@ -24,11 +24,12 @@
 #include "maidsafe/data_types/structured_data_versions.h"
 
 #include "maidsafe/vault/version_handler/version_handler.h"
-#include "maidsafe/vault/version_handler/value.h"
 
 namespace maidsafe {
 
 namespace vault {
+
+class VersionHandlerValue;
 
 struct ActionVersionHandlerDeleteBranchUntilFork {
   explicit ActionVersionHandlerDeleteBranchUntilFork(const std::string& serialised_action);
@@ -39,7 +40,7 @@ struct ActionVersionHandlerDeleteBranchUntilFork {
   explicit ActionVersionHandlerDeleteBranchUntilFork(
       const StructuredDataVersions::VersionName& version_name);
 
-//  void operator()(boost::optional<VersionHandlerValue>& value) const;
+  void operator()(boost::optional<VersionHandlerValue>& value) const;
 
   std::string Serialise() const;
 
