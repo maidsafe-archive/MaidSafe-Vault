@@ -129,7 +129,7 @@ CacheHandlerService::HandleMessage(
     const PutToCacheFromDataManagerToDataManager& /*message*/,
     const typename PutToCacheFromDataManagerToDataManager::Sender& /*sender*/,
     const typename PutToCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
-  typedef PutToCacheFromDataManagerToDataManager MessageType;
+  // typedef PutToCacheFromDataManagerToDataManager MessageType;
   assert(0); return HandleMessageReturnType();
 }
 
@@ -139,7 +139,7 @@ CacheHandlerService::HandleMessage(
     const GetFromCacheFromDataManagerToDataManager& /*message*/,
     const typename GetFromCacheFromDataManagerToDataManager::Sender& /*sender*/,
     const typename GetFromCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
-  typedef GetFromCacheFromDataManagerToDataManager MessageType;
+  // typedef GetFromCacheFromDataManagerToDataManager MessageType;
   assert(0); return HandleMessageReturnType();
 }
 

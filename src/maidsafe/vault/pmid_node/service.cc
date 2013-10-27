@@ -84,7 +84,7 @@ void PmidNodeService::HandleMessage(
     const GetRequestFromDataManagerToPmidNode& /*message*/,
     const typename GetRequestFromDataManagerToPmidNode::Sender& /*sender*/,
     const typename GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/) {
-  typedef GetRequestFromDataManagerToPmidNode MessageType;
+  // typedef GetRequestFromDataManagerToPmidNode MessageType;
   assert(0);
 }
 
