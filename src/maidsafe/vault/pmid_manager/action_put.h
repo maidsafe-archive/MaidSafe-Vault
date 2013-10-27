@@ -33,6 +33,7 @@
 #include "maidsafe/vault/pmid_manager/metadata.h"
 
 namespace maidsafe {
+
 namespace vault {
 
 //class PmidManagerMetadata;
@@ -62,6 +63,7 @@ bool operator==(const ActionPmidManagerPut& lhs, const ActionPmidManagerPut& rhs
 bool operator!=(const ActionPmidManagerPut& lhs, const ActionPmidManagerPut& rhs);
 
 }  // namespace vault
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_PMID_MANAGER_ACTION_PUT_H_

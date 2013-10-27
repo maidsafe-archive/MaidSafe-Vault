@@ -156,7 +156,7 @@ void VersionHandlerService::HandleMessage(
 }
 
 template<>
-void VersionHandlerService::VersionHandlerService::HandleMessage(
+void VersionHandlerService::HandleMessage(
     const DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler& message,
     const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Sender& sender,
     const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Receiver& receiver) {

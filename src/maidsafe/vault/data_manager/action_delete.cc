@@ -22,6 +22,7 @@
 #include "maidsafe/vault/data_manager/value.h"
 
 namespace maidsafe {
+
 namespace vault {
 
 ActionDataManagerDelete::ActionDataManagerDelete() {}

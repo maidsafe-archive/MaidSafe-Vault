@@ -23,9 +23,8 @@
 #include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
-namespace vault {
 
-const nfs::MessageAction ActionPmidManagerDelete::kActionId(nfs::MessageAction::kDeleteRequest);
+namespace vault {
 
 detail::DbAction ActionPmidManagerDelete::operator()(boost::optional<PmidManagerValue>& value) const {
   if (!value) {
@@ -36,4 +35,5 @@ detail::DbAction ActionPmidManagerDelete::operator()(boost::optional<PmidManager
 }
 
 }  // namespace vault
+
 }  // namespace maidsafe

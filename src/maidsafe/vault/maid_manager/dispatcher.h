@@ -113,7 +113,7 @@ void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name, const D
       nfs_vault::DataAndPmidHint(nfs_vault::DataName(data.name()), data.Serialise(),
                                  pmid_node_hint));
   RoutingMessage message(vault_message.Serialise(),
-                         GroupSender<VaultMessage>(routing_, account_name),
+                         GroupOrKeyHelper::GroupSender(routing_, account_name),
                          VaultMessage::Receiver(routing::GroupId(NodeId(data.name()))));
   routing_.Send(message);
 }
@@ -130,7 +130,7 @@ void MaidManagerDispatcher::SendPutFailure(
                          nfs_client::DataNameAndReturnCode(data_name,
                                                            nfs_client::ReturnCode(error)));
   RoutingMessage message(nfs_message.Serialise(),
-                         GroupSender<NfsMessage>(routing_, maid_name),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
                          NfsMessage::Receiver(routing::SingleId(NodeId(data_name.value))));
   routing_.Send(message);
 }

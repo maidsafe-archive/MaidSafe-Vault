@@ -25,8 +25,6 @@ namespace maidsafe {
 
 namespace vault {
 
-const nfs::MessageAction ActionVersionHandlerDeleteBranchUntilFork::kActionId;
-
 ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntilFork(
     const std::string& serialised_action)
     : version_name([&serialised_action]() {
