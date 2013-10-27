@@ -111,7 +111,6 @@ class VersionHandlerService {
   routing::Routing& routing_;
   VersionHandlerDispatcher dispatcher_;
   std::mutex accumulator_mutex_;
-  std::mutex sync_mutex_;
   Accumulator<Messages> accumulator_;
   Db<VersionHandler::Key, VersionHandler::Value> db_;
   const NodeId kThisNodeId_;
@@ -158,15 +157,15 @@ void VersionHandlerService::HandleMessage(
 
 template<>
 void VersionHandlerService::HandleMessage(
-    const PutVersionRequestFromMaidNodeToVersionHandler& message,
-    const typename PutVersionRequestFromMaidNodeToVersionHandler::Sender& sender,
-    const typename PutVersionRequestFromMaidNodeToVersionHandler::Receiver& receiver);
+    const PutVersionRequestFromMaidManagerToVersionHandler& message,
+    const typename PutVersionRequestFromMaidManagerToVersionHandler::Sender& sender,
+    const typename PutVersionRequestFromMaidManagerToVersionHandler::Receiver& receiver);
 
 template<>
 void VersionHandlerService::HandleMessage(
-    const DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler& message,
-    const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Sender& sender,
-    const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Receiver& receiver);
+    const DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler& message,
+    const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Sender& sender,
+    const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Receiver& receiver);
 
 template <typename RequestorType>
 void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& /*key*/,

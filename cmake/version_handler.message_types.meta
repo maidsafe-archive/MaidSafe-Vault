@@ -1,2 +1,2 @@
-Action:PutVersionRequest              Source:MaidNode:Group        Destination:VersionHandler:Group      Contents:struct:maidsafe::nfs_vault::DataNameOldNewVersion
-Action:DeleteBranchUntilForkRequest   Source:MaidNode:Group        Destination:VersionHandler:Group      Contents:struct:maidsafe::nfs_vault::DataNameAndVersion
+Action:PutVersionRequest              Source:MaidManager:Group        Destination:VersionHandler:Group      Contents:struct:maidsafe::nfs_vault::DataNameOldNewVersion
+Action:DeleteBranchUntilForkRequest   Source:MaidManager:Group        Destination:VersionHandler:Group      Contents:struct:maidsafe::nfs_vault::DataNameAndVersion
