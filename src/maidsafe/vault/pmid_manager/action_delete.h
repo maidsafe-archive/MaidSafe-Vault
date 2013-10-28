@@ -35,7 +35,7 @@ class PmidManagerValue;
 struct ActionPmidManagerDelete {
   ActionPmidManagerDelete() {}
   detail::DbAction operator()(boost::optional<PmidManagerValue>& value) const;
-  static const nfs::MessageAction kActionId;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
 };
 
 }  // namespace vault

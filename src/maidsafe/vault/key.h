@@ -42,12 +42,13 @@ template <typename Key, typename Value>
 class Db;
 
 struct Key {
-  Key();  // FIXME Prakash
-  //template <typename DataNameType>
-  //Key(const DataNameType& data_name) : name(data_name.raw_name), type(DataNameType::Tag::kValue) {}
+  Key();
   Key(const Identity& name_in, DataTagValue type_in);
   explicit Key(const DataNameVariant& data_name);
   explicit Key(const std::string& serialised_key);
+  template <typename DataNameType>
+  explicit Key(const DataNameType& data_name)
+      : name(data_name.value), type(DataNameType::data_type::Tag::kValue) {}
   Key(const Key& other);
   Key(Key&& other);
   Key& operator=(Key other);

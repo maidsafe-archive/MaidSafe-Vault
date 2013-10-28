@@ -74,6 +74,8 @@ class PmidManagerDispatcher {
   PmidManagerDispatcher(PmidManagerDispatcher&&);
   PmidManagerDispatcher& operator=(PmidManagerDispatcher);
 
+  template <typename Message>
+  void CheckSourcePersonaType() const;
   routing::GroupSource Sender(const MaidName& account_name) const;
 
   routing::Routing& routing_;
@@ -86,6 +88,7 @@ void PmidManagerDispatcher::SendPutRequest(const Data& data, const PmidName& pmi
                                            nfs::MessageId message_id) {
   typedef PutRequestFromPmidManagerToPmidNode VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
   VaultMessage vault_message(message_id, nfs_vault::DataNameAndContent(data));
   RoutingMessage message(
       vault_message.Serialise(),
@@ -101,6 +104,7 @@ void PmidManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
                                               nfs::MessageId message_id) {
   typedef DeleteRequestFromPmidManagerToPmidNode VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
   VaultMessage vault_message(message_id, nfs_vault::DataName(data_name));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
@@ -117,6 +121,7 @@ void PmidManagerDispatcher::SendPutResponse(const typename Data::Name& data_name
   typedef PutResponseFromPmidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message(message_id, nfs_vault::DataNameAndSize(data_name, data_size));
+  CheckSourcePersonaType<VaultMessage>();
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
@@ -131,6 +136,7 @@ void PmidManagerDispatcher::SendPutFailure(const typename Data::Name& name,
                                            nfs::MessageId message_id) {
   typedef PutFailureFromPmidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
   VaultMessage vault_message(
       message_id,
       nfs_client::DataNameAndReturnCode(nfs_vault::DataName(name),
@@ -140,6 +146,14 @@ void PmidManagerDispatcher::SendPutFailure(const typename Data::Name& name,
                                               routing::SingleId(routing_.kNodeId())),
                          VaultMessage::Receiver(NodeId(name.value.string())));
   routing_.Send(message);
+}
+
+// ==================== General implementation =====================================================
+
+template<typename Message>
+void PmidManagerDispatcher::CheckSourcePersonaType() const {
+  static_assert(Message::SourcePersona::value == nfs::Persona::kPmidManager,
+                "The source Persona must be kMaidManager.");
 }
 
 }  // namespace vault

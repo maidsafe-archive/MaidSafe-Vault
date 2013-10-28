@@ -23,6 +23,7 @@
 #include "maidsafe/vault/pmid_manager/metadata.h"
 
 namespace maidsafe {
+
 namespace vault {
 
 ActionPmidManagerSetAvailableSize::ActionPmidManagerSetAvailableSize(
@@ -70,4 +71,5 @@ bool operator!=(const ActionPmidManagerSetAvailableSize& lhs,
 }
 
 }  // namespace vault
+
 }  // namespace maidsafe

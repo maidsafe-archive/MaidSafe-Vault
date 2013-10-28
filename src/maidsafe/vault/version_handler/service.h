@@ -48,6 +48,14 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace detail {
+
+  template <typename SourcePersonaType> class VersionHandlerGetVisitor;
+  template <typename SourcePersonaType> class VersionHandlerGetBranchVisitor;
+  class VersionHandlerPutVisitor;
+  class VersionHandlerDeleteBranchVisitor;
+}
+
 class VersionHandlerService {
  public:
   typedef nfs::VersionHandlerServiceMessages PublicMessages;
@@ -62,6 +70,11 @@ class VersionHandlerService {
                      const typename MessageType::Receiver& receiver);
 
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
+
+  template <typename SourcePersonaType> friend class detail::VersionHandlerGetVisitor;
+  template <typename SourcePersonaType> friend class detail::VersionHandlerGetBranchVisitor;
+  friend class detail::VersionHandlerPutVisitor;
+  friend class detail::VersionHandlerDeleteBranchVisitor;
 
  private:
   VersionHandlerService(const VersionHandlerService&);
@@ -84,10 +97,11 @@ class VersionHandlerService {
 
   void HandlePutVersion(const VersionHandler::Key& key,
                         const VersionHandler::VersionName& old_version,
-                        const VersionHandler::VersionName& new_version);
+                        const VersionHandler::VersionName& new_version, const NodeId& sender);
 
   void HandleDeleteBranchUntilFork(const VersionHandler::Key& key,
-                                   const VersionHandler::VersionName& branch_tip);
+                                   const VersionHandler::VersionName& branch_tip,
+                                   const NodeId& sender);
 
   typedef boost::mpl::vector<> InitialType;
   typedef boost::mpl::insert_range<InitialType,
@@ -104,7 +118,6 @@ class VersionHandlerService {
   routing::Routing& routing_;
   VersionHandlerDispatcher dispatcher_;
   std::mutex accumulator_mutex_;
-  std::mutex sync_mutex_;
   Accumulator<Messages> accumulator_;
   Db<VersionHandler::Key, VersionHandler::Value> db_;
   const NodeId kThisNodeId_;
@@ -151,41 +164,42 @@ void VersionHandlerService::HandleMessage(
 
 template<>
 void VersionHandlerService::HandleMessage(
-    const PutVersionRequestFromMaidNodeToVersionHandler& message,
-    const typename PutVersionRequestFromMaidNodeToVersionHandler::Sender& sender,
-    const typename PutVersionRequestFromMaidNodeToVersionHandler::Receiver& receiver);
+    const PutVersionRequestFromMaidManagerToVersionHandler& message,
+    const typename PutVersionRequestFromMaidManagerToVersionHandler::Sender& sender,
+    const typename PutVersionRequestFromMaidManagerToVersionHandler::Receiver& receiver);
 
 template<>
 void VersionHandlerService::HandleMessage(
-    const DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler& message,
-    const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Sender& sender,
-    const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Receiver& receiver);
+    const DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler& message,
+    const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Sender& sender,
+    const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Receiver& receiver);
 
 template <typename RequestorType>
-void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& key,
-                                              const RequestorType& requestor_type) {
-  auto value(std::move(db_.Get(key)));  // WILL BE VALID ONLY IF DB RETURNS UNIQUE_PTR
-  try {
-    dispatcher_.SendGetVersionsResponse(value->Get(), requestor_type, CommonErrors::success);
-  }
-  catch (const maidsafe_error& error) {
-    dispatcher_.SendGetVersionsResponse(std::vector<typename VersionHandler::Value::VersionName>(),
-                                       requestor_type, error);
-  }
+void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& /*key*/,
+                                              const RequestorType& /*requestor_type*/) {
+//  auto value(std::move(db_.Get(key)));  // WILL BE VALID ONLY IF DB RETURNS UNIQUE_PTR
+//  try {
+//    dispatcher_.SendGetVersionsResponse(value->Get(), requestor_type, CommonErrors::success);
+//  }
+//  catch (const maidsafe_error& error) {
+//    dispatcher_.SendGetVersionsResponse(std::vector<typename VersionHandler::Value::VersionName>(),
+//                                       requestor_type, error);
+//  }
 }
 
 template <typename RequestorType>
-void VersionHandlerService::HandleGetBranch(const VersionHandler::Key& key,
-    const typename VersionHandler::VersionName version_name,
-    const RequestorType& requestor_type) {
-  auto value(std::move(db_.Get(key)));  // WILL BE VALID ONLY IF DB RETURNS UNIQUE_PTR
+void VersionHandlerService::HandleGetBranch(const VersionHandler::Key& /*key*/,
+    const typename VersionHandler::VersionName /*version_name*/,
+    const RequestorType& /*requestor_type*/) {
+// FIXME Team . This need discussion (commented out because it doesn't compile on clang)
+//  auto value(db_.Get(key));  // WILL BE VALID ONLY IF DB RETURNS UNIQUE_PTR
   try {
-    dispatcher_.SendGetBranchResponse(value->GetBranch(version_name), requestor_type,
-                                      CommonErrors::success);
+//    dispatcher_.SendGetBranchResponse(value.GetBranch(version_name), requestor_type,
+//                                      CommonErrors::success);
   }
-  catch (const maidsafe_error& error) {
-    dispatcher_.SendGetBranchResponse(std::vector<typename VersionHandler::Value::VersionName>(),
-                                      requestor_type, error);
+  catch (const maidsafe_error& /*error*/) {
+//    dispatcher_.SendGetBranchResponse(std::vector<typename VersionHandler::Value::VersionName>(),
+//                                      requestor_type, error);
   }
 }
 

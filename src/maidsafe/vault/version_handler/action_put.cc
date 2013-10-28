@@ -25,8 +25,6 @@ namespace maidsafe {
 
 namespace vault {
 
-const nfs::MessageAction ActionVersionHandlerPut::kActionId;
-
 ActionVersionHandlerPut::ActionVersionHandlerPut(const std::string& serialised_action) {
   protobuf::ActionPut action_put_version_proto;
   if (!action_put_version_proto.ParseFromString(serialised_action))

@@ -24,7 +24,6 @@ namespace maidsafe {
 
 namespace vault {
 
-
 ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(
     const PmidManagerMetadata& pmid_health_in) : kPmidHealth(pmid_health_in) {}
 

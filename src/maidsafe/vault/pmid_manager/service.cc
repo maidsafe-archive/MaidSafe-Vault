@@ -139,7 +139,7 @@ void PmidManagerService::HandleMessage(
     const typename SynchroniseFromPmidManagerToPmidManager::Sender& sender,
     const typename SynchroniseFromPmidManagerToPmidManager::Receiver& receiver) {
   protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(message.contents->content.string()))
+  if (!proto_sync.ParseFromString(message.contents->data))
     ThrowError(CommonErrors::parsing_error);
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
     case ActionPmidManagerPut::kActionId: {
@@ -150,8 +150,7 @@ void PmidManagerService::HandleMessage(
         group_db_.Commit(resolved_action->key, resolved_action->action);
         auto data_name(GetDataNameVariant(resolved_action->key.type, resolved_action->key.name));
         SendPutResponse(data_name, PmidName(Identity(receiver.data.string())),
-                        static_cast<int32_t>(message.contents->content.string().size()),
-                        message.message_id);
+                        static_cast<int32_t>(message.contents->data.size()), message.message_id);
       }
       break;
     }

@@ -153,7 +153,7 @@ void PmidManagerService::HandleMessage(
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver);
 
 template <>
-void PmidManagerService::HandleMessage(
+void PmidManagerService::HandleMessage<nfs::PmidHealthRequestFromMaidNodeToPmidManager>(
     const nfs::PmidHealthRequestFromMaidNodeToPmidManager& message,
     const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
     const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver);
@@ -196,9 +196,8 @@ void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
                              Data::Tag::kValue);
   sync_puts_.AddLocalAction(
       PmidManager::UnresolvedPut(group_key,
-                                 ActionPmidManagerPut(data.Serialise().data.string().size(),
-                                                      message_id),
-                                 routing_.kNodeId()));
+          ActionPmidManagerPut(static_cast<uint32_t>(data.Serialise().data.string().size()),
+                               message_id), routing_.kNodeId()));
   DoSync();
 }
 

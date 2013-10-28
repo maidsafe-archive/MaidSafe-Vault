@@ -23,6 +23,7 @@
 #include "maidsafe/vault/pmid_manager/metadata.h"
 
 namespace maidsafe {
+
 namespace vault {
 
 ActionPmidManagerPut::ActionPmidManagerPut(uint32_t size, nfs::MessageId message_id)
@@ -70,4 +71,5 @@ bool operator!=(const ActionPmidManagerPut& lhs, const ActionPmidManagerPut& rhs
 }
 
 }  // namespace vault
+
 }  // namespace maidsafe

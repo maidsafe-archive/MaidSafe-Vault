@@ -108,6 +108,8 @@ class DataManagerDispatcher {
   DataManagerDispatcher(DataManagerDispatcher&&);
   DataManagerDispatcher& operator=(DataManagerDispatcher);
 
+  typedef detail::GroupOrKeyType<DataManager> GroupOrKeyHelper;
+
   typedef std::true_type IsCacheable;
   typedef std::false_type IsNotCacheable;
 
@@ -141,7 +143,7 @@ void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name, const Data
 
   VaultMessage vault_message(message_id, nfs_vault::DataNameAndContent(data));
   RoutingMessage message(vault_message.Serialise(),
-                         GroupSender<VaultMessage, typename Data::Name>(routing_, data.name()),
+                         GroupOrKeyHelper::GroupSender(routing_, Key(data.name())),
                          VaultMessage::Receiver(NodeId(pmid_name->string())));
   routing_.Send(message);
 }
@@ -156,7 +158,7 @@ void DataManagerDispatcher::SendPutResponse(const MaidName& account_name,
 
   VaultMessage vault_message(message_id, nfs_vault::DataNameAndCost(data_name, cost));
   RoutingMessage message(vault_message.Serialise(),
-                         GroupSender<VaultMessage, typename Data::Name>(routing_, data_name),
+                         GroupOrKeyHelper::GroupSender(routing_, Key(data_name)),
                          VaultMessage::Receiver(NodeId(account_name->string())));
   routing_.Send(message);
 }
@@ -173,7 +175,7 @@ void DataManagerDispatcher::SendPutFailure(
                              nfs_client::DataNameAndReturnCode(data_name,
                                                                nfs_client::ReturnCode(error)));
   RoutingMessage message(vault_message.Serialise(),
-                         GroupSender<VaultMessage, typename Data::Name>(routing_, data_name),
+                         GroupOrKeyHelper::GroupSender(routing_, Key(data_name)),
                          VaultMessage::Receiver(routing::GroupId(NodeId(maid_node->string()))));
   routing_.Send(message);
 }
@@ -192,7 +194,7 @@ void DataManagerDispatcher::SendGetRequest(const PmidName& pmid_node,
   VaultMessage vault_message(message_id, VaultMessage::Contents(data_name));
   RoutingMessage message(
       vault_message.Serialise(),
-      GroupSender<VaultMessage, typename Data::Name>(routing_, data_name),
+      GroupOrKeyHelper::GroupSender(routing_, Key(data_name)),
       VaultMessage::Receiver(routing::SingleId(NodeId(pmid_node->string()))));
   routing_.Send(message);
 }
@@ -243,7 +245,7 @@ void DataManagerDispatcher::SendGetResponseSuccess(const RequestorIdType& reques
                                                                          routing::Cacheable::kNone);
   NfsMessage nfs_message(message_id, typename NfsMessage::Contents(data));
   RoutingMessage message(nfs_message.Serialise(),
-                         GroupSender<NfsMessage, typename Data::Name>(routing_, data.name()),
+                         GroupOrKeyHelper::GroupSender(routing_, Key(data.name())),
                          typename NfsMessage::Receiver(requestor_id.node_id), kCacheable);
   routing_.Send(message);
 }
@@ -264,7 +266,7 @@ void DataManagerDispatcher::SendGetResponseFailure(const RequestorIdType& reques
 
   NfsMessage nfs_message(message_id, msg_content);
   RoutingMessage message(nfs_message.Serialise(),
-                         GroupSender<NfsMessage, DataNameType>(routing_, data_name),
+                         GroupOrKeyHelper::GroupSender(routing_, Key(data_name)),
                          typename NfsMessage::Receiver(requestor_id.node_id));
   routing_.Send(message);
 }
@@ -316,7 +318,7 @@ void DataManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
 
   VaultMessage vault_message(message_id, nfs_vault::DataName(data_name));
   RoutingMessage message(vault_message.Serialise(),
-                         GroupSender<VaultMessage, typename Data::Name>(routing_, data_name),
+                         GroupOrKeyHelper::GroupSender(routing_, Key(data_name)),
                          VaultMessage::Receiver(NodeId(pmid_node->string())));
   routing_.Send(message);
 }

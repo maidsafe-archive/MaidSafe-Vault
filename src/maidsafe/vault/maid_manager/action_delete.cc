@@ -26,7 +26,6 @@ namespace maidsafe {
 
 namespace vault {
 
-
 ActionMaidManagerDelete::ActionMaidManagerDelete(nfs::MessageId message_id)
     : kMessageId(message_id) {}
 

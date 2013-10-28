@@ -22,6 +22,7 @@
 #include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
+
 namespace vault {
 
 ActionDataManagerPut::ActionDataManagerPut() {}
@@ -55,4 +56,5 @@ bool operator!=(const ActionDataManagerPut& lhs, const ActionDataManagerPut& rhs
 }
 
 }  // namespace vault
+
 }  // namespace maidsafe

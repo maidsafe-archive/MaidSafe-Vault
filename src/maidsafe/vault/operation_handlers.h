@@ -275,15 +275,15 @@ void DoOperation(VersionHandlerService* service,
 
 template<>
 void DoOperation(VersionHandlerService* service,
-    const PutVersionRequestFromMaidNodeToVersionHandler& message,
-    const typename PutVersionRequestFromMaidNodeToVersionHandler::Sender& sender,
-    const typename PutVersionRequestFromMaidNodeToVersionHandler::Receiver& receiver);
+    const PutVersionRequestFromMaidManagerToVersionHandler& message,
+    const typename PutVersionRequestFromMaidManagerToVersionHandler::Sender& sender,
+    const typename PutVersionRequestFromMaidManagerToVersionHandler::Receiver& receiver);
 
 template<>
 void DoOperation(VersionHandlerService* service,
-    const DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler& message,
-    const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Sender& sender,
-    const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Receiver& receiver);
+    const DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler& message,
+    const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Sender& sender,
+    const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Receiver& receiver);
 
 }  // namespace detail
 

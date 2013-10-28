@@ -19,6 +19,7 @@
 #include "maidsafe/vault/pmid_manager/dispatcher.h"
 
 #include "maidsafe/vault/message_types.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -26,8 +27,9 @@ namespace vault {
 
 PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing) : routing_(routing) {}
 
-void PmidManagerDispatcher::SendSync(const PmidName& /*pmid_node*/,
-                                     const std::string& /*serialised_sync*/) {}
+void PmidManagerDispatcher::SendSync(const PmidName& /*account_name*/,
+                                     const std::string& /*serialised_sync*/) {
+}
 
 // void PmidManagerDispatcher::SendStateChange(const PmidName& pmid_node,
 //                                            const Data::Name &data_name) {
@@ -74,7 +76,7 @@ void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
                                             const nfs_client::ReturnCode& return_code) {
   typedef GetPmidAccountResponseFromPmidManagerToPmidNode VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-
+  CheckSourcePersonaType<VaultMessage>();
   VaultMessage vault_message(nfs_client::DataNamesAndReturnCode(data_names, return_code));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
@@ -89,7 +91,7 @@ void PmidManagerDispatcher::SendHealthResponse(const MaidName& maid_node,
     const maidsafe_error& error) {
   typedef PmidHealthResponseFromPmidManagerToMaidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-
+  CheckSourcePersonaType<VaultMessage>();
   VaultMessage vault_message(message_id, nfs_client::PmidHealthAndReturnCode(
                                              nfs_vault::PmidHealth(pmid_health.Serialise()),
                                              nfs_client::ReturnCode(error)));

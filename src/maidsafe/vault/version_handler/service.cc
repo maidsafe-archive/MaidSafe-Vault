@@ -78,7 +78,6 @@ VersionHandlerService::VersionHandlerService(const passport::Pmid& /*pmid*/,
     : routing_(routing),
       dispatcher_(routing),
       accumulator_mutex_(),
-      sync_mutex_(),
       accumulator_(),
       db_(),
       kThisNodeId_(routing_.kNodeId()),
@@ -143,10 +142,10 @@ void VersionHandlerService::HandleMessage(
 
 template<>
 void VersionHandlerService::HandleMessage(
-    const PutVersionRequestFromMaidNodeToVersionHandler& message,
-    const typename PutVersionRequestFromMaidNodeToVersionHandler::Sender& sender,
-    const typename PutVersionRequestFromMaidNodeToVersionHandler::Receiver& receiver) {
-  typedef PutVersionRequestFromMaidNodeToVersionHandler MessageType;
+    const PutVersionRequestFromMaidManagerToVersionHandler& message,
+    const typename PutVersionRequestFromMaidManagerToVersionHandler::Sender& sender,
+    const typename PutVersionRequestFromMaidManagerToVersionHandler::Receiver& receiver) {
+  typedef PutVersionRequestFromMaidManagerToVersionHandler MessageType;
   OperationHandlerWrapper<VersionHandlerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
@@ -156,11 +155,11 @@ void VersionHandlerService::HandleMessage(
 }
 
 template<>
-void VersionHandlerService::VersionHandlerService::HandleMessage(
-    const DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler& message,
-    const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Sender& sender,
-    const typename DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler::Receiver& receiver) {
-  typedef DeleteBranchUntilForkRequestFromMaidNodeToVersionHandler MessageType;
+void VersionHandlerService::HandleMessage(
+    const DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler& message,
+    const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Sender& sender,
+    const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Receiver& receiver) {
+  typedef DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler MessageType;
   OperationHandlerWrapper<VersionHandlerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
@@ -171,14 +170,16 @@ void VersionHandlerService::VersionHandlerService::HandleMessage(
 
 void VersionHandlerService::HandlePutVersion(const VersionHandler::Key& key,
                                              const VersionHandler::VersionName& old_version,
-                                             const VersionHandler::VersionName& new_version) {
+                                             const VersionHandler::VersionName& new_version,
+                                             const NodeId& /*sender*/) {
   sync_put_versions_.AddLocalAction(VersionHandler::UnresolvedPutVersion(
       key, ActionVersionHandlerPut(old_version, new_version), routing_.kNodeId()));
   DoSync();
 }
 
 void VersionHandlerService::HandleDeleteBranchUntilFork(
-    const VersionHandler::Key& key, const VersionHandler::VersionName& branch_tip) {
+    const VersionHandler::Key& key, const VersionHandler::VersionName& branch_tip,
+    const NodeId& /*sender*/) {
   sync_delete_branche_until_forks_.AddLocalAction(
       VersionHandler::UnresolvedDeleteBranchUntilFork(
           key, ActionVersionHandlerDeleteBranchUntilFork(branch_tip), routing_.kNodeId()));

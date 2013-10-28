@@ -33,8 +33,8 @@
 #include "maidsafe/vault/pmid_manager/metadata.h"
 
 namespace maidsafe {
-namespace vault {
 
+namespace vault {
 
 struct ActionPmidManagerSetAvailableSize {
   ActionPmidManagerSetAvailableSize(const int64_t& disk_available_size);
@@ -60,6 +60,7 @@ bool operator!=(const ActionPmidManagerSetAvailableSize& lhs,
                 const ActionPmidManagerSetAvailableSize& rhs);
 
 }  // namespace vault
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_PMID_MANAGER_ACTION_SET_AVAILABLE_SIZE_H_
