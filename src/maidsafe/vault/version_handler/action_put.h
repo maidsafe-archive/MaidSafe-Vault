@@ -30,9 +30,10 @@ namespace vault {
 class VersionHandlerValue;
 
 struct ActionVersionHandlerPut {
-  ActionVersionHandlerPut(const StructuredDataVersions::VersionName& old_version_in,
-                          const StructuredDataVersions::VersionName& new_version_in)
-      : old_version(old_version_in), new_version(new_version_in) {}
+  ActionVersionHandlerPut(const StructuredDataVersions::VersionName& old_version,
+                          const StructuredDataVersions::VersionName& new_version,
+                          const NodeId& sender);
+
   explicit ActionVersionHandlerPut(const std::string& serialised_action);
   ActionVersionHandlerPut(const ActionVersionHandlerPut& other);
   ActionVersionHandlerPut(ActionVersionHandlerPut&& other); 
@@ -43,6 +44,7 @@ struct ActionVersionHandlerPut {
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPutVersionRequest;
   StructuredDataVersions::VersionName old_version, new_version;
+  NodeId sender; // sender is required to be notified of potential failures on put
 
  private:
   ActionVersionHandlerPut();
