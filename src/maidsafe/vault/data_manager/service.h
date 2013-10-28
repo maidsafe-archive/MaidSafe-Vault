@@ -308,7 +308,8 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
   if (!EntryExist<Data>(data.name())) {
     cost *= routing::Parameters::node_group_size;
     PmidName pmid_name;
-    if (routing_.ClosestToId(NodeId(data.name().value)))
+    if (routing_.ClosestToId(NodeId(data.name().value)) &&
+        (pmid_name_in.value.string() != NodeId().string()))
       pmid_name = pmid_name_in;
     else
       pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));

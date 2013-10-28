@@ -203,7 +203,9 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
     assert(false);
     return;
   }
-  assert(data_name == maid_name);
+  // In case of a churn, drop it siliently
+  if (data_name != maid_name) 
+    return;
   assert(pending_account_itr->second.maid_name == data_name);
   static_cast<void>(data_name);
   pending_account_itr->second.maid_stored = true;
