@@ -47,7 +47,7 @@ class Db {
   Db();
   ~Db();
 
-  boost::optional<Value> Get(const Key& key);
+  Value Get(const Key& key);
   // if functor returns DbAction::kDelete, the value is deleted from db
   boost::optional<Value> Commit(
       const Key& key, std::function<detail::DbAction(boost::optional<Value>& value)> functor);
@@ -61,7 +61,6 @@ class Db {
   Db& operator=(Db&&);
   void Delete(const Key& key);
   void Put(const KvPair& key_value_pair);
-  boost::optional<Value> GetValue(const Key& key);
 
   const boost::filesystem::path kDbPath_;
   mutable std::mutex mutex_;
@@ -88,17 +87,17 @@ Db<Key, Value>::~Db() {
 }
 
 template <typename Key, typename Value>
-boost::optional<Value> Db<Key, Value>::Get(const Key& key) {
-// not locking here, as leveldb is thread safe.
-  return GetValue(key);
-}
-
-template <typename Key, typename Value>
 boost::optional<Value> Db<Key, Value>::Commit(const Key& key,
     std::function<detail::DbAction(boost::optional<Value>& value)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
-  boost::optional<Value> value(GetValue(key));
+  boost::optional<Value> value;
+  try {
+    value = Get(key);
+  } catch (const common_error& error) {
+    if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
+      throw error;  // For db errors
+  }
   if (detail::DbAction::kPut == functor(value)) {
     Put(KvPair(key, Value(*value)));
   } else {
@@ -150,15 +149,20 @@ template <typename Key, typename Value>
 void Db<Key, Value>::HandleTransfer(const std::vector<std::pair<Key, Value>>& contents) {
   std::lock_guard<std::mutex> lock(mutex_);
   for (const auto& kv_pair : contents) {
-    if (!GetValue(kv_pair.first))
-      Put(kv_pair);
+    try {
+      Get(kv_pair.first);
+    } catch (const common_error& error) {
+      if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
+        throw error;  // For db errors
+      else
+        Put(kv_pair);
+    }
   }
 }
 
-// private members
 // throws on level-db errors other than key not found
 template <typename Key, typename Value>
-boost::optional<Value> Db<Key, Value>::GetValue(const Key& key) {
+Value Db<Key, Value>::Get(const Key& key) {
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
   std::string value_string;
@@ -166,12 +170,12 @@ boost::optional<Value> Db<Key, Value>::GetValue(const Key& key) {
       leveldb_->Get(read_options, key.ToFixedWidthString().string(), &value_string));
   if (status.ok()) {
     assert(!value_string.empty());
-    return boost::optional<Value>(value_string);
+    return Value(value_string);
   } else if (status.IsNotFound()) {
-    return boost::optional<Value>();
+    ThrowError(VaultErrors::no_such_account);
   }
   ThrowError(VaultErrors::failed_to_handle_request);
-  return boost::optional<Value>();
+  return Value("");
 }
 
 template <typename Key, typename Value>

@@ -181,13 +181,14 @@ void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& /*key*/
 }
 
 template <typename RequestorType>
-void VersionHandlerService::HandleGetBranch(const VersionHandler::Key& key,
-    const typename VersionHandler::VersionName version_name,
+void VersionHandlerService::HandleGetBranch(const VersionHandler::Key& /*key*/,
+    const typename VersionHandler::VersionName /*version_name*/,
     const RequestorType& requestor_type) {
-  auto value(std::move(db_.Get(key)));  // WILL BE VALID ONLY IF DB RETURNS UNIQUE_PTR
+// FIXME Team . This need discussion (commented out because it doesn't compile on clang)
+//  auto value(db_.Get(key));  // WILL BE VALID ONLY IF DB RETURNS UNIQUE_PTR
   try {
-    dispatcher_.SendGetBranchResponse(value->GetBranch(version_name), requestor_type,
-                                      CommonErrors::success);
+//    dispatcher_.SendGetBranchResponse(value.GetBranch(version_name), requestor_type,
+//                                      CommonErrors::success);
   }
   catch (const maidsafe_error& error) {
     dispatcher_.SendGetBranchResponse(std::vector<typename VersionHandler::Value::VersionName>(),

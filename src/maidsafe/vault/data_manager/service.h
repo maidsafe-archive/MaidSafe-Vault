@@ -329,11 +329,12 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
 template <typename Data>
 bool DataManagerService::EntryExist(const typename Data::Name& name) {
   try {
-    auto value(db_.Get(DataManager::Key(name.value, Data::Tag::kValue)));
-    return value;
+    db_.Get(DataManager::Key(name.value, Data::Tag::kValue));
+    return true;
   }
-  catch (const maidsafe_error& /*error*/) {}
-  return false;
+  catch (const maidsafe_error& /*error*/) {
+    return false;
+  }
 }
 
 template <typename Data>
@@ -356,9 +357,13 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
   // Get all pmid nodes for this data.
   if (SendPutRetryRequired(data_name)) {
     std::set<PmidName> pmids_to_avoid;
-    auto value(db_.Get(key));
-    if (value)
-      pmids_to_avoid = value->AllPmids();
+    try {
+      auto value(db_.Get(key));
+      pmids_to_avoid = std::move(value.AllPmids());
+    } catch (const common_error& error) {
+      if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
+        throw error;  // For db errors
+    }
 
     pmids_to_avoid.insert(attempted_pmid_node);
     auto pmid_name(PmidName(Identity(routing_.RandomConnectedNode().string())));
@@ -387,7 +392,7 @@ bool DataManagerService::SendPutRetryRequired(const DataName& data_name) {
   try {
     // mutex is required
     auto value(db_.Get(DataManager::Key(data_name.value, DataName::data_type::Tag::kValue)));
-    return value && value->AllPmids().size() < routing::Parameters::node_group_size;
+    return value.AllPmids().size() < routing::Parameters::node_group_size;
   }
   catch (const maidsafe_error& /*error*/) {}
   return false;
@@ -399,13 +404,17 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
                                    const RequestorIdType& requestor,
                                    nfs::MessageId message_id) {
   // Get all pmid nodes that are online.
-  auto value(db_.Get(vault::Key(data_name.value, Data::Tag::kValue)));
-  if (!value) {
+  std::set<PmidName> online_pmids;
+  try {
+    auto value(db_.Get(vault::Key(data_name.value, Data::Tag::kValue)));
+    online_pmids = std::move(value.online_pmids());
+  } catch (const common_error& error) {
+      if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
+        throw error;  // For db errors
     // TODO(Fraser#5#): 2013-10-03 - Request for non-existent data should possibly generate an alert
     LOG(kWarning) << HexEncode(data_name.value) << " doesn't exist.";
-    return;
   }
-  auto online_pmids(value->online_pmids());
+
   int expected_response_count(static_cast<int>(online_pmids.size()));
 
   // Choose the one we're going to ask for actual data, and set up the others for integrity checks.
