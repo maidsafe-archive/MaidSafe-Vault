@@ -170,14 +170,16 @@ void VersionHandlerService::HandleMessage(
 
 void VersionHandlerService::HandlePutVersion(const VersionHandler::Key& key,
                                              const VersionHandler::VersionName& old_version,
-                                             const VersionHandler::VersionName& new_version) {
+                                             const VersionHandler::VersionName& new_version,
+                                             const NodeId& /*sender*/) {
   sync_put_versions_.AddLocalAction(VersionHandler::UnresolvedPutVersion(
       key, ActionVersionHandlerPut(old_version, new_version), routing_.kNodeId()));
   DoSync();
 }
 
 void VersionHandlerService::HandleDeleteBranchUntilFork(
-    const VersionHandler::Key& key, const VersionHandler::VersionName& branch_tip) {
+    const VersionHandler::Key& key, const VersionHandler::VersionName& branch_tip,
+    const NodeId& /*sender*/) {
   sync_delete_branche_until_forks_.AddLocalAction(
       VersionHandler::UnresolvedDeleteBranchUntilFork(
           key, ActionVersionHandlerDeleteBranchUntilFork(branch_tip), routing_.kNodeId()));
