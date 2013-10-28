@@ -38,7 +38,7 @@ struct ActionDataManagerDelete {
  public:
   ActionDataManagerDelete();
   explicit ActionDataManagerDelete(const std::string& serialised_action);
-  detail::DbAction operator()(boost::optional<DataManagerValue>& value);
+  detail::DbAction operator()(std::unique_ptr<DataManagerValue>& value);
   std::string Serialise() const;
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDecrementSubscribers;
 

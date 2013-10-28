@@ -36,9 +36,9 @@ struct ActionVersionHandlerPut {
 
   explicit ActionVersionHandlerPut(const std::string& serialised_action);
   ActionVersionHandlerPut(const ActionVersionHandlerPut& other);
-  ActionVersionHandlerPut(ActionVersionHandlerPut&& other); 
+  ActionVersionHandlerPut(ActionVersionHandlerPut&& other);
 
-  void operator()(boost::optional<VersionHandlerValue>& value) const;
+  void operator()(std::unique_ptr<VersionHandlerValue>& value) const;
 
   std::string Serialise() const;
 

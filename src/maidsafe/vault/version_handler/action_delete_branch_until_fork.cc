@@ -54,7 +54,7 @@ std::string ActionVersionHandlerDeleteBranchUntilFork::Serialise() const {
 }
 
 void ActionVersionHandlerDeleteBranchUntilFork::operator()(
-    boost::optional<VersionHandlerValue>& value) const {
+    std::unique_ptr<VersionHandlerValue>& value) const {
   if (!value)
     ThrowError(CommonErrors::uninitialised);
   value->DeleteBranchUntilFork(version_name);

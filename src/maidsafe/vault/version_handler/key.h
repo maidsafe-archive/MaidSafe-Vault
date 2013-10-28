@@ -48,6 +48,9 @@ struct VersionHandlerKey {
   DataTagValue type;
   Identity originator;
 
+  template <typename Key, typename Value>
+  friend class Db;
+
  private:
   typedef maidsafe::detail::BoundedString<NodeId::kSize * 2 + detail::PaddedWidth::value,
                                           NodeId::kSize * 2 + detail::PaddedWidth::value>

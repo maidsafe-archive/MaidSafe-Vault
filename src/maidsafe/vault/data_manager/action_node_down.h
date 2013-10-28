@@ -42,7 +42,7 @@ struct ActionDataManagerNodeDown {
   ActionDataManagerNodeDown(ActionDataManagerNodeDown&& other);
   std::string Serialise() const;
 
-  detail::DbAction operator()(boost::optional<DataManagerValue>& value) const;
+  detail::DbAction operator()(std::unique_ptr<DataManagerValue>& value) const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kSetPmidOffline;
   const PmidName kPmidName;

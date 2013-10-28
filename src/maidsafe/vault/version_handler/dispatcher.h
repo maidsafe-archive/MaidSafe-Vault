@@ -32,11 +32,11 @@ class VersionHandlerDispatcher {
   VersionHandlerDispatcher(routing::Routing& routing);
 
   template <typename RequestorType>
-  void SendGetVersionsResponse(std::vector<VersionHandler::VersionName>& versions,
+  void SendGetVersionsResponse(const std::vector<VersionHandler::VersionName>& versions,
                                const RequestorType& requestor, const maidsafe_error& result);
 
   template <typename RequestorType>
-  void SendGetBranchResponse(std::vector<VersionHandler::VersionName>& versions,
+  void SendGetBranchResponse(const std::vector<VersionHandler::VersionName>& versions,
                              const RequestorType& requestor, const maidsafe_error& result);
 
  private:
@@ -45,38 +45,38 @@ class VersionHandlerDispatcher {
 
 template <typename RequestorType>
 void VersionHandlerDispatcher::SendGetVersionsResponse(
-    std::vector<VersionHandler::VersionName>& /*versions*/,
-    const RequestorType& /*requestor*/, const maidsafe_error& /*result*/) {
+    const std::vector<VersionHandler::VersionName>&, const RequestorType&,
+        const maidsafe_error&) {
   RequestorType::No_generic_handler_is_available__Specialisation_is_required;
 }
 
 template <typename RequestorType>
-void SendGetBranchResponse(std::vector<VersionHandler::VersionName>& /*versions*/,
+void SendGetBranchResponse(const std::vector<VersionHandler::VersionName>& /*versions*/,
                            const RequestorType& /*requestor*/, const maidsafe_error& /*result*/) {
   RequestorType::No_generic_handler_is_available__Specialisation_is_required;
 }
 
 template <>
 void VersionHandlerDispatcher::SendGetVersionsResponse(
-    std::vector<VersionHandler::VersionName>& versions,
+    const std::vector<VersionHandler::VersionName>& versions,
     const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>& requestor,
     const maidsafe_error& result);
 
 template <>
 void VersionHandlerDispatcher::SendGetVersionsResponse(
-    std::vector<VersionHandler::VersionName>& versions,
+    const std::vector<VersionHandler::VersionName>& versions,
     const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>& requestor,
     const maidsafe_error& result);
 
 template <>
 void VersionHandlerDispatcher::SendGetBranchResponse(
-    std::vector<VersionHandler::VersionName>& versions,
+    const std::vector<VersionHandler::VersionName>& versions,
     const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>& requestor,
     const maidsafe_error& result);
 
 template <>
 void VersionHandlerDispatcher::SendGetBranchResponse(
-    std::vector<VersionHandler::VersionName>& versions,
+    const std::vector<VersionHandler::VersionName>& versions,
     const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>& requestor,
     const maidsafe_error& result);
 

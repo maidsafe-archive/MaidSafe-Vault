@@ -56,9 +56,9 @@ std::string ActionVersionHandlerPut::Serialise() const {
   return action_put_version_proto.SerializeAsString();
 }
 
-void ActionVersionHandlerPut::operator()(boost::optional<VersionHandlerValue>& value) const {
+void ActionVersionHandlerPut::operator()(std::unique_ptr<VersionHandlerValue>& value) const {
   if (!value) {
-    value.reset();
+    value.reset(new VersionHandlerValue());
   }
   value->Put(old_version, new_version);
 }

@@ -51,7 +51,7 @@ std::string ActionDataManagerRemovePmid::Serialise() const {
   return action_remove_pmid_proto.SerializeAsString();
 }
 
-detail::DbAction ActionDataManagerRemovePmid::operator()(boost::optional<DataManagerValue>& value) {
+detail::DbAction ActionDataManagerRemovePmid::operator()(std::unique_ptr<DataManagerValue>& value) {
   if (value) {
     value->RemovePmid(kPmidName);
     return detail::DbAction::kPut;

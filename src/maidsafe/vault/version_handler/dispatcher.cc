@@ -29,28 +29,28 @@ VersionHandlerDispatcher::VersionHandlerDispatcher(routing::Routing& routing)
 
 template <>
 void VersionHandlerDispatcher::SendGetVersionsResponse(
-    std::vector<typename VersionHandler::Value::VersionName>& /*versions*/,
+    const std::vector<VersionHandler::VersionName>& /*versions*/,
     const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>& /*requestor*/,
     const maidsafe_error& /*result*/) {
 }
 
 template <>
 void VersionHandlerDispatcher::SendGetVersionsResponse(
-    std::vector<typename VersionHandler::Value::VersionName>& /*versions*/,
+    const std::vector<VersionHandler::VersionName>& /*versions*/,
     const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>& /*requestor*/,
     const maidsafe_error& /*result*/) {
 }
 
 template <>
 void VersionHandlerDispatcher::SendGetBranchResponse(
-    std::vector<typename VersionHandler::Value::VersionName>& /*versions*/,
+    const std::vector<VersionHandler::VersionName>& /*versions*/,
     const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>& /*requestor*/,
     const maidsafe_error& /*result*/) {
 }
 
 template <>
 void VersionHandlerDispatcher::SendGetBranchResponse(
-    std::vector<typename VersionHandler::Value::VersionName>& /*versions*/,
+    const std::vector<VersionHandler::VersionName>& /*versions*/,
     const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>& /*requestor*/,
     const maidsafe_error& /*result*/) {
 }

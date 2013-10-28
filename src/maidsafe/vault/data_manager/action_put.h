@@ -37,7 +37,7 @@ struct ActionDataManagerPut {
   ActionDataManagerPut(const ActionDataManagerPut& other);
   ActionDataManagerPut(ActionDataManagerPut&& other);
 
-  detail::DbAction operator()(boost::optional<DataManagerValue>& value);
+  detail::DbAction operator()(std::unique_ptr<DataManagerValue>& value);
 
   std::string Serialise() const;
 
