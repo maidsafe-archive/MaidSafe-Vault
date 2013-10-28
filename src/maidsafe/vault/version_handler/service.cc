@@ -168,10 +168,9 @@ void VersionHandlerService::HandleMessage(
       accumulator_mutex_)(message, sender, receiver);
 }
 
-void VersionHandlerService::HandlePutVersion(const VersionHandler::Key& key,
-                                             const VersionHandler::VersionName& old_version,
-                                             const VersionHandler::VersionName& new_version,
-                                             const NodeId& sender) {
+void VersionHandlerService::HandlePutVersion(
+    const VersionHandler::Key& key, const VersionHandler::VersionName& old_version,
+    const VersionHandler::VersionName& new_version, const NodeId& sender) {
   sync_put_versions_.AddLocalAction(VersionHandler::UnresolvedPutVersion(
       key, ActionVersionHandlerPut(old_version, new_version, sender), routing_.kNodeId()));
   DoSync();
@@ -188,8 +187,8 @@ void VersionHandlerService::HandleDeleteBranchUntilFork(
 
 
 void VersionHandlerService::DoSync() {
- // TODO(Mahmoud): Implement me
- assert(0);
+  // TODO(Mahmoud): Implement me
+  assert(0);
 }
 
 // void VersionHandlerService::ValidateClientSender(const nfs::Message& message) const {
