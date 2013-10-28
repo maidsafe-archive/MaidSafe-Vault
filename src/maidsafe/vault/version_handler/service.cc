@@ -34,7 +34,6 @@
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/version_handler/key.h"
-#include "maidsafe/vault/version_handler/unresolved_entry_value.h"
 #include "maidsafe/vault/unresolved_action.pb.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/operation_handlers.h"
