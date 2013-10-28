@@ -62,7 +62,8 @@ class PmidManagerService {
 
   template <typename T>
   bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
-    return false;
+    // BEFORE_RELEASE implementation missing
+    return true;
   }
   template <typename Data>
   void HandlePutResponse(const typename Data::Name& data_name, int32_t size,
