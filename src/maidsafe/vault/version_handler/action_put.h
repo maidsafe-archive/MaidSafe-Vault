@@ -58,4 +58,4 @@ bool operator!=(const ActionVersionHandlerPut& lhs, const ActionVersionHandlerPu
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_PUT_VERSION_H_
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_PUT_H_

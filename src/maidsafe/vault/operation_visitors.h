@@ -394,20 +394,23 @@ class PmidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
 template <typename SourcePersonaType>
 class VersionHandlerGetVisitor : public boost::static_visitor<> {
  public:
-  VersionHandlerGetVisitor(VersionHandlerService* service, Identity originator)
-      : kService_(service), kRequestor_(NodeId(std::move(originator.string()))) {}
+  VersionHandlerGetVisitor(VersionHandlerService* service, Identity originator,
+                           nfs::MessageId message_id)
+      : kService_(service), kRequestor_(NodeId(std::move(originator.string()))),
+        kMessageId_(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->HandleGetVersions(
         VersionHandlerKey(data_name, Name::data_type::Tag::kValue,
                           Identity(kRequestor_.node_id.string())),
-        kRequestor_);
+        kRequestor_, kMessageId_);
   }
 
  private:
   VersionHandlerService* const kService_;
   detail::Requestor<SourcePersonaType> kRequestor_;
+  nfs::MessageId kMessageId_;
 };
 
 template <typename SourcePersonaType>
@@ -415,22 +418,23 @@ class VersionHandlerGetBranchVisitor : public boost::static_visitor<> {
  public:
   VersionHandlerGetBranchVisitor(VersionHandlerService* service,
                                  const StructuredDataVersions::VersionName version_name,
-                                 Identity originator)
+                                 Identity originator, nfs::MessageId message_id)
       : kService_(service), kVersionName_(std::move(version_name)),
-        kRequestor_(NodeId(std::move(originator.string()))) {}
+        kRequestor_(NodeId(std::move(originator.string()))), kMessageId_(std::move(message_id)) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->HandleGetBranch(
         VersionHandlerKey(data_name, Name::data_type::Tag::kValue,
                           Identity(kRequestor_.node_id.string())),
-        kVersionName_, kRequestor_);
+        kVersionName_, kRequestor_, kMessageId_);
   }
 
  private:
   VersionHandlerService* const kService_;
   StructuredDataVersions::VersionName kVersionName_;
   detail::Requestor<SourcePersonaType> kRequestor_;
+  nfs::MessageId kMessageId_;
 };
 
 class VersionHandlerPutVisitor : public boost::static_visitor<> {

@@ -27,25 +27,25 @@ namespace vault {
 
 ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntilFork(
     const std::string& serialised_action)
-    : version_name([&serialised_action]() {
-        protobuf::ActionDeleteBranchUntilFork action_delete_branch_until_fork_proto;
-        if (!action_delete_branch_until_fork_proto.ParseFromString(serialised_action))
-          ThrowError(CommonErrors::parsing_error);
-        return StructuredDataVersions::VersionName(
-            action_delete_branch_until_fork_proto.serialised_version());
-      }()) {}
+        : version_name([&serialised_action]() {
+            protobuf::ActionDeleteBranchUntilFork action_delete_branch_until_fork_proto;
+            if (!action_delete_branch_until_fork_proto.ParseFromString(serialised_action))
+              ThrowError(CommonErrors::parsing_error);
+            return StructuredDataVersions::VersionName(
+                       action_delete_branch_until_fork_proto.serialised_version());
+          }()) {}
 
 ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntilFork(
     const StructuredDataVersions::VersionName& version_name_in)
-    : version_name(version_name_in) {}
+        : version_name(version_name_in) {}
 
 ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntilFork(
     const ActionVersionHandlerDeleteBranchUntilFork& other)
-    : version_name(other.version_name) {}
+        : version_name(other.version_name) {}
 
 ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntilFork(
     const ActionVersionHandlerDeleteBranchUntilFork&& other)
-    : version_name(std::move(other.version_name)) {}
+        : version_name(std::move(other.version_name)) {}
 
 std::string ActionVersionHandlerDeleteBranchUntilFork::Serialise() const {
   protobuf::ActionDeleteBranchUntilFork action_delete_branch_until_fork_proto;
@@ -54,7 +54,7 @@ std::string ActionVersionHandlerDeleteBranchUntilFork::Serialise() const {
 }
 
 void ActionVersionHandlerDeleteBranchUntilFork::operator()(
-    std::unique_ptr<VersionHandlerValue>& value) const {
+    std::unique_ptr<VersionHandlerValue>& value) {
   if (!value)
     ThrowError(CommonErrors::uninitialised);
   value->DeleteBranchUntilFork(version_name);

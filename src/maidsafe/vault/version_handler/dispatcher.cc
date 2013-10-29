@@ -16,43 +16,110 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+
 #include "maidsafe/vault/version_handler/dispatcher.h"
+#include "maidsafe/vault/version_handler/version_handler.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
 namespace vault {
 
 VersionHandlerDispatcher::VersionHandlerDispatcher(routing::Routing& routing)
-    : routing_(routing) {
-  routing_.kNodeId();
+    : routing_(routing) {}
+
+template <>
+void VersionHandlerDispatcher::SendGetVersionsResponse(
+    const VersionHandler::Key& key,
+    const std::vector<VersionHandler::VersionName>& versions,
+    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>& requestor,
+    const maidsafe_error& return_code,
+    nfs::MessageId message_id) {
+  typedef nfs::GetVersionsResponseFromVersionHandlerToDataGetter NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  NfsMessage nfs_message;
+  nfs_message.message_id = message_id;
+  if (return_code.code() == CommonErrors::success) {
+    nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
+  } else {
+    nfs_message.contents->data_name_and_return_code =
+        nfs_client::DataNameAndReturnCode(nfs_vault::DataName(key.type, key.name),
+                                          nfs_client::ReturnCode(return_code));
+  }
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::GroupId(NodeId(key.name.string())),
+                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(requestor.node_id));
+  routing_.Send(message);
 }
 
 template <>
 void VersionHandlerDispatcher::SendGetVersionsResponse(
-    const std::vector<VersionHandler::VersionName>& /*versions*/,
-    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>& /*requestor*/,
-    const maidsafe_error& /*result*/) {
-}
-
-template <>
-void VersionHandlerDispatcher::SendGetVersionsResponse(
-    const std::vector<VersionHandler::VersionName>& /*versions*/,
-    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>& /*requestor*/,
-    const maidsafe_error& /*result*/) {
+    const VersionHandler::Key& key, const std::vector<VersionHandler::VersionName>& versions,
+    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>& requestor,
+    const maidsafe_error& return_code, nfs::MessageId message_id) {
+  typedef nfs::GetVersionsResponseFromVersionHandlerToMaidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  NfsMessage nfs_message;
+  nfs_message.message_id = message_id;
+  if (return_code.code() == CommonErrors::success) {
+    nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
+  } else {
+    nfs_message.contents->data_name_and_return_code =
+        nfs_client::DataNameAndReturnCode(nfs_vault::DataName(key.type, key.name),
+                                          nfs_client::ReturnCode(return_code));
+  }
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::GroupId(NodeId(key.name.string())),
+                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(requestor.node_id));
+  routing_.Send(message);
 }
 
 template <>
 void VersionHandlerDispatcher::SendGetBranchResponse(
-    const std::vector<VersionHandler::VersionName>& /*versions*/,
-    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>& /*requestor*/,
-    const maidsafe_error& /*result*/) {
+    const VersionHandler::Key& key, const std::vector<VersionHandler::VersionName>& versions,
+    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>& requestor,
+    const maidsafe_error& return_code, nfs::MessageId message_id) {
+  typedef nfs::GetBranchResponseFromVersionHandlerToDataGetter NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  NfsMessage nfs_message;
+  nfs_message.message_id = message_id;
+  if (return_code.code() == CommonErrors::success) {
+    nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
+  } else {
+    nfs_message.contents->data_name_and_return_code =
+        nfs_client::DataNameAndReturnCode(nfs_vault::DataName(key.type, key.name),
+                                          nfs_client::ReturnCode(return_code));
+  }
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::GroupId(NodeId(key.name.string())),
+                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(requestor.node_id));
+  routing_.Send(message);
 }
 
 template <>
 void VersionHandlerDispatcher::SendGetBranchResponse(
-    const std::vector<VersionHandler::VersionName>& /*versions*/,
-    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>& /*requestor*/,
-    const maidsafe_error& /*result*/) {
+    const VersionHandler::Key& key, const std::vector<VersionHandler::VersionName>& versions,
+    const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>& requestor,
+    const maidsafe_error& return_code, nfs::MessageId message_id) {
+  typedef nfs::GetBranchResponseFromVersionHandlerToMaidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  NfsMessage nfs_message;
+  nfs_message.message_id = message_id;
+  if (return_code.code() == CommonErrors::success) {
+    nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
+  } else {
+    nfs_message.contents->data_name_and_return_code =
+        nfs_client::DataNameAndReturnCode(nfs_vault::DataName(key.type, key.name),
+                                          nfs_client::ReturnCode(return_code));
+  }
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::GroupId(NodeId(key.name.string())),
+                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(requestor.node_id));
+  routing_.Send(message);
 }
 
 }  // namespace vault

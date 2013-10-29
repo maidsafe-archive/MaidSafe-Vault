@@ -282,7 +282,7 @@ void DoOperation(VersionHandlerService* service,
   typedef nfs::GetVersionsRequestFromMaidNodeToVersionHandler MessageType;
   auto data_name(GetNameVariant(*message.contents));
   VersionHandlerGetVisitor<MessageType::SourcePersona>
-      get_version_visitor(service, Identity(sender.data.string()));
+      get_version_visitor(service, Identity(sender.data.string()), message.message_id);
   boost::apply_visitor(get_version_visitor, data_name);
 }
 
@@ -294,7 +294,8 @@ void DoOperation(VersionHandlerService* service,
   typedef nfs::GetBranchRequestFromMaidNodeToVersionHandler MessageType;
   auto data_name(GetNameVariant(*message.contents));
   VersionHandlerGetBranchVisitor<MessageType::SourcePersona>
-      get_branch_visitor(service, message.contents->version_name, Identity(sender.data.string()));
+      get_branch_visitor(service, message.contents->version_name, Identity(sender.data.string()),
+                         message.message_id);
   boost::apply_visitor(get_branch_visitor, data_name);
 }
 
@@ -306,7 +307,7 @@ void DoOperation(VersionHandlerService* service,
   typedef nfs::GetVersionsRequestFromDataGetterToVersionHandler MessageType;
   auto data_name(GetNameVariant(*message.contents));
   VersionHandlerGetVisitor<MessageType::SourcePersona>
-      get_version_visitor(service, Identity(sender.data.string()));
+      get_version_visitor(service, Identity(sender.data.string()), message.message_id);
   boost::apply_visitor(get_version_visitor, data_name);
 }
 
@@ -318,7 +319,8 @@ void DoOperation(VersionHandlerService* service,
   typedef  nfs::GetBranchRequestFromDataGetterToVersionHandler MessageType;
   auto data_name(GetNameVariant(*message.contents));
   VersionHandlerGetBranchVisitor<MessageType::SourcePersona>
-      get_branch_visitor(service, message.contents->version_name, Identity(sender.data.string()));
+      get_branch_visitor(service, message.contents->version_name, Identity(sender.data.string()),
+                         message.message_id);
   boost::apply_visitor(get_branch_visitor, data_name);
 }
 

@@ -88,12 +88,13 @@ class VersionHandlerService {
   bool ValidateSender(const MessageType& message, const typename MessageType::Sender& sender) const;
 
   template <typename RequestorType>
-  void HandleGetVersions(const VersionHandler::Key& key, const RequestorType& requestor_type);
+  void HandleGetVersions(const VersionHandler::Key& key, const RequestorType& requestor_type,
+                         nfs::MessageId message_id);
 
   template <typename RequestorType>
   void HandleGetBranch(const VersionHandler::Key& key,
                        const VersionHandler::VersionName& version_name,
-                       const RequestorType& requestor_type);
+                       const RequestorType& requestor_type, nfs::MessageId message_id);
 
   void HandlePutVersion(const VersionHandler::Key& key,
                         const VersionHandler::VersionName& old_version,
@@ -176,31 +177,31 @@ void VersionHandlerService::HandleMessage(
 
 template <typename RequestorType>
 void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& key,
-                                              const RequestorType& requestor_type) {
+                                              const RequestorType& requestor_type,
+                                              nfs::MessageId message_id) {
   try {
     auto value(std::move(db_.Get(key)));
-    dispatcher_.SendGetVersionsResponse(value.Get(), requestor_type,
-                                        maidsafe_error(CommonErrors::success));
-
-    }
+    dispatcher_.SendGetVersionsResponse(key, value.Get(), requestor_type,
+                                        maidsafe_error(CommonErrors::success), message_id);
+  }
   catch (const maidsafe_error& error) {
-    dispatcher_.SendGetVersionsResponse(std::vector<StructuredDataVersions::VersionName>(),
-                                        requestor_type, error);
+    dispatcher_.SendGetVersionsResponse(key, std::vector<StructuredDataVersions::VersionName>(),
+                                        requestor_type, error, message_id);
   }
 }
 
 template <typename RequestorType>
-void VersionHandlerService::HandleGetBranch(const VersionHandler::Key& key,
-    const VersionHandler::VersionName& version_name,
-    const RequestorType& requestor_type) {
+void VersionHandlerService::HandleGetBranch(
+    const VersionHandler::Key& key, const VersionHandler::VersionName& version_name,
+    const RequestorType& requestor_type, nfs::MessageId message_id) {
   try {
     auto value(db_.Get(key));
-    dispatcher_.SendGetBranchResponse(value.GetBranch(version_name), requestor_type,
-                                      maidsafe_error(CommonErrors::success));
+    dispatcher_.SendGetBranchResponse(key, value.GetBranch(version_name), requestor_type,
+                                      maidsafe_error(CommonErrors::success), message_id);
   }
   catch (const maidsafe_error& error) {
-    dispatcher_.SendGetBranchResponse(std::vector<typename VersionHandler::VersionName>(),
-                                      requestor_type, error);
+    dispatcher_.SendGetBranchResponse(key, std::vector<typename VersionHandler::VersionName>(),
+                                      requestor_type, error, message_id);
   }
 }
 
