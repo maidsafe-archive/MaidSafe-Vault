@@ -156,7 +156,7 @@ void PmidManagerService::HandleMessage(
         group_db_.Commit(resolved_action->key, resolved_action->action);
         auto data_name(GetDataNameVariant(resolved_action->key.type, resolved_action->key.name));
         SendPutResponse(data_name, PmidName(Identity(receiver.data.string())),
-                        static_cast<int32_t>(message.contents->data.size()), message.message_id);
+                        static_cast<int32_t>(message.contents->data.size()), message.id);
       }
       break;
     }

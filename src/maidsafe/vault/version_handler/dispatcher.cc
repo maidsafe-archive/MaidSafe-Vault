@@ -38,7 +38,7 @@ void VersionHandlerDispatcher::SendGetVersionsResponse(
   typedef nfs::GetVersionsResponseFromVersionHandlerToDataGetter NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   NfsMessage nfs_message;
-  nfs_message.message_id = message_id;
+  nfs_message.id = message_id;
   if (return_code.code() == CommonErrors::success) {
     nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
   } else {
@@ -61,7 +61,7 @@ void VersionHandlerDispatcher::SendGetVersionsResponse(
   typedef nfs::GetVersionsResponseFromVersionHandlerToMaidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   NfsMessage nfs_message;
-  nfs_message.message_id = message_id;
+  nfs_message.id = message_id;
   if (return_code.code() == CommonErrors::success) {
     nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
   } else {
@@ -84,7 +84,7 @@ void VersionHandlerDispatcher::SendGetBranchResponse(
   typedef nfs::GetBranchResponseFromVersionHandlerToDataGetter NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   NfsMessage nfs_message;
-  nfs_message.message_id = message_id;
+  nfs_message.id = message_id;
   if (return_code.code() == CommonErrors::success) {
     nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
   } else {
@@ -107,7 +107,7 @@ void VersionHandlerDispatcher::SendGetBranchResponse(
   typedef nfs::GetBranchResponseFromVersionHandlerToMaidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   NfsMessage nfs_message;
-  nfs_message.message_id = message_id;
+  nfs_message.id = message_id;
   if (return_code.code() == CommonErrors::success) {
     nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
   } else {

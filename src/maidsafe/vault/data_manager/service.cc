@@ -243,7 +243,7 @@ void DataManagerService::HandleMessage(
         auto value(db_.Commit(resolved_action->key, resolved_action->action));
         assert(value->Subscribers() > 0);
         if (value->Subscribers() == 0) {
-          SendDeleteRequests(resolved_action->key, value->AllPmids(), message.message_id);
+          SendDeleteRequests(resolved_action->key, value->AllPmids(), message.id);
         }
       }
       break;

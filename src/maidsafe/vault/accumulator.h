@@ -43,7 +43,7 @@ class MessageIdRequestVisitor : public boost::static_visitor<nfs::MessageId> {
   template <typename T>
   nfs::MessageId operator()(const T& message) const {
     //    static_assert(HasMessageId<T>::value, "Input parameter must have message_id");
-    return message.message_id;
+    return message.id;
   }
 };
 
