@@ -104,6 +104,10 @@ template <typename Data>
 void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name, const Data& data,
                                            const PmidName& pmid_node_hint,
                                            nfs::MessageId message_id) {
+  LOG(kVerbose) << "MaidManagerDispatcher SendPutRequest to pmid_node_hint -- "
+                << HexSubstr(pmid_node_hint.value.string())
+                << " , with message_id -- " << message_id.data
+                << " of account " << HexSubstr(account_name.value.string());
   typedef PutRequestFromMaidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();

@@ -66,6 +66,7 @@ void PmidManagerService::HandleMessage(
     const PutRequestFromDataManagerToPmidManager& message,
     const typename PutRequestFromDataManagerToPmidManager::Sender& sender,
     const typename PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "PmidManagerService::HandleMessage PutRequestFromDataManagerToPmidManager";
   typedef PutRequestFromDataManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -80,6 +81,7 @@ void PmidManagerService::HandleMessage(
     const PutFailureFromPmidNodeToPmidManager& message,
     const typename PutFailureFromPmidNodeToPmidManager::Sender& sender,
     const typename PutFailureFromPmidNodeToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "PmidManagerService::HandleMessage PutFailureFromPmidNodeToPmidManager";
   typedef PutFailureFromPmidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
@@ -94,6 +96,7 @@ void PmidManagerService::HandleMessage(
     const nfs::PmidHealthRequestFromMaidNodeToPmidManager& message,
     const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
     const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "PmidManagerService::HandleMessage PmidHealthRequestFromMaidNodeToPmidManager";
   typedef nfs::PmidHealthRequestFromMaidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
@@ -108,6 +111,7 @@ void PmidManagerService::HandleMessage(
     const DeleteRequestFromDataManagerToPmidManager& message,
     const typename DeleteRequestFromDataManagerToPmidManager::Sender& sender,
     const typename DeleteRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "PmidManagerService::HandleMessage DeleteRequestFromDataManagerToPmidManager";
   typedef DeleteRequestFromDataManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
@@ -122,6 +126,7 @@ void PmidManagerService::HandleMessage(
     const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "PmidManagerService::HandleMessage GetPmidAccountRequestFromPmidNodeToPmidManager";
   typedef GetPmidAccountRequestFromPmidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
@@ -138,6 +143,7 @@ void PmidManagerService::HandleMessage(
     const SynchroniseFromPmidManagerToPmidManager& message,
     const typename SynchroniseFromPmidManagerToPmidManager::Sender& sender,
     const typename SynchroniseFromPmidManagerToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "PmidManagerService::HandleMessage SynchroniseFromPmidManagerToPmidManager";
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.contents->data))
     ThrowError(CommonErrors::parsing_error);
@@ -166,6 +172,7 @@ void PmidManagerService::HandleMessage(
     const AccountTransferFromPmidManagerToPmidManager& /*message*/,
     const typename AccountTransferFromPmidManagerToPmidManager::Sender& /*sender*/,
     const typename AccountTransferFromPmidManagerToPmidManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "PmidManagerService::HandleMessage AccountTransferFromPmidManagerToPmidManager";
   assert(0);
 }
 

@@ -84,15 +84,18 @@ template <typename ValidateSender, typename AccumulatorType, typename Checker,
 template <typename MessageType, typename Sender, typename Receiver>
 void OperationHandler<ValidateSender, AccumulatorType, Checker, ServiceHandlerType>::operator()(
     const MessageType& message, const Sender& sender, const Receiver& receiver) {
-  if (!validate_sender(message, sender))
+  LOG(kVerbose) << "OperationHandler::operator()";
+  if (!validate_sender(message, sender)) {
+    LOG(kError) << "invalid sender";
     return;
+  }
   {
     std::lock_guard<std::mutex> lock(mutex);
-    if (accumulator.CheckHandled(message))
-      return;
     if (accumulator.AddPendingRequest(message, sender, checker)
-           != AccumulatorType::AddResult::kSuccess)
+           != AccumulatorType::AddResult::kSuccess) {
+      LOG(kError) << "AddPendingRequest failed";
       return;
+    }
   }
   DoOperation<ServiceHandlerType, MessageType>(service, message, sender, receiver);
 }
