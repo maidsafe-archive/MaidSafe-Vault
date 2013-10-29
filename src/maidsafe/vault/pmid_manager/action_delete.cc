@@ -26,7 +26,7 @@ namespace maidsafe {
 
 namespace vault {
 
-detail::DbAction ActionPmidManagerDelete::operator()(boost::optional<PmidManagerValue>& value) const {
+detail::DbAction ActionPmidManagerDelete::operator()(std::unique_ptr<PmidManagerValue>& value) const {
   if (!value) {
     ThrowError(CommonErrors::no_such_element);
     return detail::DbAction::kDelete;

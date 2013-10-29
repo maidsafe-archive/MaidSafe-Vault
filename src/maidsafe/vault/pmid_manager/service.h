@@ -178,6 +178,8 @@ template <typename PmidManagerSyncType>
 void IncrementAttemptsAndSendSync(PmidManagerDispatcher& dispatcher,
                                   PmidManagerSyncType& sync_type) {
   auto unresolved_actions(sync_type.GetUnresolvedActions());
+  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for PmidManagerSerive, has " 
+                << unresolved_actions.size() << " unresolved_actions";
   if (!unresolved_actions.empty()) {
     sync_type.IncrementSyncAttempts();
     for (const auto& unresolved_action : unresolved_actions)
@@ -191,6 +193,9 @@ void IncrementAttemptsAndSendSync(PmidManagerDispatcher& dispatcher,
 template <typename Data>
 void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
                                    nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidManagerService::HandlePut put request to pmid_node -- "
+                << HexSubstr(pmid_node.value.string())
+                << " , with message_id -- " << message_id.data;
   dispatcher_.SendPutRequest(data, pmid_node, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), data.name().value,
                              Data::Tag::kValue);

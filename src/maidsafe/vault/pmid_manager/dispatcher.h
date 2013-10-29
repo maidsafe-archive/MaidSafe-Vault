@@ -86,6 +86,9 @@ class PmidManagerDispatcher {
 template <typename Data>
 void PmidManagerDispatcher::SendPutRequest(const Data& data, const PmidName& pmid_node,
                                            nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidManagerDispatcher SendPutRequest to pmid_node -- "
+                << HexSubstr(pmid_node.value.string())
+                << " , with message_id -- " << message_id.data;
   typedef PutRequestFromPmidManagerToPmidNode VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();

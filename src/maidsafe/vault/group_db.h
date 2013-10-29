@@ -72,7 +72,7 @@ class GroupDb {
   void Commit(const GroupName& group_name, std::function<void(Metadata& metadata)> functor);
   // For atomically updating metadata and value
   void Commit(const Key& key,
-      std::function<detail::DbAction(Metadata& metadata, boost::optional<Value>& value)> functor);
+      std::function<detail::DbAction(Metadata& metadata, std::unique_ptr<Value>& value)> functor);
   TransferInfo GetTransferInfo(std::shared_ptr<routing::MatrixChange> matrix_change);
   void HandleTransfer(const std::vector<Contents>& contents);
 
@@ -107,7 +107,14 @@ GroupDb<Persona>::GroupDb()
     : kDbPath_(boost::filesystem::unique_path()),
       mutex_(),
       leveldb_(InitialiseLevelDb(kDbPath_)),
-      group_map_() {}
+      group_map_() {
+  // Remove this assert if value needs to be copy constructible.
+  // this is just a check to avoid copy constructor unless we require it
+  static_assert(!std::is_copy_constructible<typename Persona::Value>::value,
+                "value should not be copy constructible !");
+  static_assert(std::is_move_constructible<typename Persona::Value>::value,
+                "value should be move constructible !");
+}
 
 template <typename Persona>
 GroupDb<Persona>::~GroupDb() {
@@ -150,22 +157,22 @@ void GroupDb<Persona>::Commit(const GroupName& group_name,
 template <typename Persona>
 void GroupDb<Persona>::Commit(
     const Key& key,
-    std::function<detail::DbAction(Metadata& metadata, boost::optional<Value>& value)> functor) {
+    std::function<detail::DbAction(Metadata& metadata, std::unique_ptr<Value>& value)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
   auto it(group_map_.find(key.group_name()));
   if (it == group_map_.end())
     ThrowError(VaultErrors::no_such_account);
 
-  boost::optional<Value> value;
+  std::unique_ptr<Value> value;
   try {
-    value = GetValue(key);
+    value.reset(new Value(GetValue(key)));
   } catch (const common_error& error) {
     if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
-      throw error;  // For db errors
+      throw error;  // throw only for db errors
   }
   if (detail::DbAction::kPut == functor(it->second.second, value)) {
-    Put(std::make_pair(key, *value));
+    Put(std::make_pair(key, std::move(*value)));
   } else {
     assert(value);
     Delete(key);

@@ -51,9 +51,9 @@ std::string ActionMaidManagerPut::Serialise() const {
 }
 
 detail::DbAction ActionMaidManagerPut::operator()(MaidManagerMetadata& metadata,
-                                                  boost::optional<MaidManagerValue>& value) const {
+                                                  std::unique_ptr<MaidManagerValue>& value) const {
   if (!value)
-    value.reset(MaidManagerValue());
+    value.reset(new MaidManagerValue());
   value->Put(kCost);
   metadata.PutData(kCost);
   return detail::DbAction::kPut;

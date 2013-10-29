@@ -53,9 +53,9 @@ std::string ActionPmidManagerSetAvailableSize::Serialise() const {
 }
 
 detail::DbAction ActionPmidManagerSetAvailableSize::operator()(
-    boost::optional<PmidManagerMetadata>& metadata) {
+    std::unique_ptr<PmidManagerMetadata>& metadata) {
   if (!metadata)
-    metadata.reset(PmidManagerMetadata());
+    metadata.reset(new PmidManagerMetadata());
   metadata->SetAvailableSize(kDiskAvailableSize);
   return detail::DbAction::kPut;
 }

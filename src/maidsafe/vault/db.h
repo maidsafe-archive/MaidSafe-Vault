@@ -79,6 +79,12 @@ Db<Key, Value>::Db()
     ThrowError(CommonErrors::filesystem_io_error);
   leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
   assert(leveldb_);
+  // Remove this assert if value needs to be copy constructible.
+  // this is just a check to avoid copy constructor unless we require it
+  static_assert(!std::is_copy_constructible<Value>::value,
+                "value should not be copy constructible !");
+  static_assert(std::is_move_constructible<Value>::value,
+                "value should be move constructible !");
 }
 
 template <typename Key, typename Value>
@@ -93,7 +99,7 @@ std::unique_ptr<Value> Db<Key, Value>::Commit(const Key& key,
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<Value> value;
   try {
-    value.reset(new Value(std::move(Get(key))));
+    value.reset(new Value(Get(key)));
   } catch (const common_error& error) {
     if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
       throw error;  // For db errors

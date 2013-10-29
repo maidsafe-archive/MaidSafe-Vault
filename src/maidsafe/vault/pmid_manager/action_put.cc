@@ -55,9 +55,9 @@ std::string ActionPmidManagerPut::Serialise() const {
 }
 
 detail::DbAction ActionPmidManagerPut::operator()(PmidManagerMetadata& metadata,
-                                                  boost::optional<PmidManagerValue>& value) const {
+                                                  std::unique_ptr<PmidManagerValue>& value) const {
   if (!value)
-    value.reset(PmidManagerValue());
+    value.reset(new PmidManagerValue());
   metadata.PutData(value->size());
   return detail::DbAction::kPut;
 }

@@ -72,6 +72,7 @@ void DataManagerService::HandleMessage(
     const PutRequestFromMaidManagerToDataManager& message,
     const typename PutRequestFromMaidManagerToDataManager::Sender& sender,
     const typename PutRequestFromMaidManagerToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutRequestFromMaidManagerToDataManager";
   typedef PutRequestFromMaidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -86,6 +87,7 @@ void DataManagerService::HandleMessage(
     const PutResponseFromPmidManagerToDataManager& message,
     const typename PutResponseFromPmidManagerToDataManager::Sender& sender,
     const typename PutResponseFromPmidManagerToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutResponseFromPmidManagerToDataManager";
   typedef PutResponseFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -100,6 +102,7 @@ void DataManagerService::HandleMessage(
     const PutFailureFromPmidManagerToDataManager& message,
     const typename PutFailureFromPmidManagerToDataManager::Sender& sender,
     const typename PutFailureFromPmidManagerToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutFailureFromPmidManagerToDataManager";
   typedef PutFailureFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -115,6 +118,7 @@ void DataManagerService::HandleMessage(
     const nfs::GetRequestFromMaidNodeToDataManager& message,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromMaidNodeToDataManager";
   typedef nfs::GetRequestFromMaidNodeToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -129,6 +133,7 @@ void DataManagerService::HandleMessage(
     const nfs::GetRequestFromDataGetterToDataManager& message,
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromDataGetterToDataManager";
   typedef nfs::GetRequestFromDataGetterToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -143,6 +148,7 @@ void DataManagerService::HandleMessage(
     const GetResponseFromPmidNodeToDataManager& message,
     const typename GetResponseFromPmidNodeToDataManager::Sender& sender,
     const typename GetResponseFromPmidNodeToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetResponseFromPmidNodeToDataManager";
   typedef GetResponseFromPmidNodeToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -156,19 +162,24 @@ template <>
 void DataManagerService::HandleMessage(
     const PutToCacheFromDataManagerToDataManager& /*message*/,
     const typename PutToCacheFromDataManagerToDataManager::Sender& /*sender*/,
-    const typename PutToCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {}  // No-op
+    const typename PutToCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutToCacheFromDataManagerToDataManager";
+}  // No-op
 
 template <>
 void DataManagerService::HandleMessage(
     const GetFromCacheFromDataManagerToDataManager& /*message*/,
     const typename GetFromCacheFromDataManagerToDataManager::Sender& /*sender*/,
-    const typename GetFromCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {}  // No-op
+    const typename GetFromCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetFromCacheFromDataManagerToDataManager";
+}  // No-op
 
 template <>
 void DataManagerService::HandleMessage(
     const GetCachedResponseFromCacheHandlerToDataManager& /*message*/,
     const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& /*sender*/,
     const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetCachedResponseFromCacheHandlerToDataManager";
   assert(0);
 }
 
@@ -183,6 +194,7 @@ void DataManagerService::HandleMessage(
     const DeleteRequestFromMaidManagerToDataManager& message,
     const typename DeleteRequestFromMaidManagerToDataManager::Sender& sender,
     const typename DeleteRequestFromMaidManagerToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage DeleteRequestFromMaidManagerToDataManager";
   typedef DeleteRequestFromMaidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -208,6 +220,7 @@ void DataManagerService::HandleMessage(
     const SynchroniseFromDataManagerToDataManager& message,
     const typename SynchroniseFromDataManagerToDataManager::Sender& sender,
     const typename SynchroniseFromDataManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage SynchroniseFromDataManagerToDataManager";
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.contents->data))
     ThrowError(CommonErrors::parsing_error);
@@ -288,6 +301,7 @@ void DataManagerService::HandleMessage(
     const AccountTransferFromDataManagerToDataManager& /*message*/,
     const typename AccountTransferFromDataManagerToDataManager::Sender& /*sender*/,
     const typename AccountTransferFromDataManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage AccountTransferFromDataManagerToDataManager";
   assert(0);
 }
 
@@ -311,6 +325,7 @@ void DataManagerService::HandleMessage(
     const SetPmidOnlineFromPmidManagerToDataManager& /*message*/,
     const typename SetPmidOnlineFromPmidManagerToDataManager::Sender& /*sender*/,
     const typename SetPmidOnlineFromPmidManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage SetPmidOnlineFromPmidManagerToDataManager";
   assert(0);
 }
 
@@ -319,6 +334,7 @@ void DataManagerService::HandleMessage(
     const SetPmidOfflineFromPmidManagerToDataManager& /*message*/,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& /*sender*/,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage SetPmidOfflineFromPmidManagerToDataManager";
   assert(0);
 }
 

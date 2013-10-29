@@ -126,13 +126,20 @@ Accumulator<T>::Accumulator()
 template <typename T>
 typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
     const T& request, const routing::GroupSource& source, AddCheckerFunctor checker) {
-  if (CheckHandled(request))
+  LOG(kVerbose) << "Accumulator::AddPendingRequest for GroupSource";
+  if (CheckHandled(request)) {
+    LOG(kInfo) << "Accumulator::AddPendingRequest request has been handled";
     return Accumulator<T>::AddResult::kHandled;
+  }
 
   if (!RequestExists(request, source)) {
     pending_requests_.push_back(PendingRequest(request, source));
+    LOG(kVerbose) << "Accumulator::AddPendingRequest has " << pending_requests_.size()
+                  << " pending requests, allowing " << kMaxPendingRequestsCount_ << " requests";
     if (pending_requests_.size() > kMaxPendingRequestsCount_)
       handled_requests_.pop_front();
+  } else {
+    LOG(kInfo) << "Accumulator::AddPendingRequest request already existed";
   }
   return checker(Get(request));
 }
@@ -140,6 +147,7 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
 template <typename T>
 typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
     const T& /*request*/, const routing::SingleSource& /*source*/, AddCheckerFunctor /*checker*/) {
+  LOG(kVerbose) << "Accumulator::AddPendingRequest for SingleSource -- Always return success";
   return AddResult::kSuccess;
 }
 
@@ -192,6 +200,8 @@ std::vector<T> Accumulator<T>::Get(const T& request) {
         requests.push_back(pending_request.request);
     }
   }
+  LOG(kVerbose) << requests.size() << " requests are found for the request bearing message id "
+                << request_message_id.data;
   return requests;
 }
 
@@ -209,19 +219,35 @@ bool Accumulator<T>::RequestExists(const T& request, const routing::GroupSource&
 template <typename T>
 typename Accumulator<T>::AddResult Accumulator<T>::AddRequestChecker::operator()(
     const std::vector<T>& requests) {
-  assert((requests.size() <= routing::Parameters::node_group_size) && "Invalid number of requests");
+  LOG(kVerbose) << "Accumulator<T>::AddRequestChecker operator(),  required_requests_ : "
+                << required_requests_ << " , checking against " << requests.size()
+                << " requests";
+  // BEFORE_RELEASE the following commented out code shall be reviewed
+//   if (requests.size() > routing::Parameters::node_group_size) {
+//     LOG(kError) << "Invalid number of requests, already have " << requests.size()
+//                 << " requests with a group size of " << routing::Parameters::node_group_size;
+//     return AddResult::kFailure;
+//   }
   if (requests.size() < required_requests_) {
+    LOG(kInfo) << "Accumulator<T>::AddRequestChecke::operator() not enough pending requests";
     return AddResult::kWaiting;
   } else {
     auto index(0);
-    while (requests.size() - index >= required_requests_) {
+    while ((requests.size() - index) >= required_requests_) {
       if (std::count_if(std::begin(requests), std::end(requests), [&](const T& request) {
-            return requests.at(index) == request;
+            if (requests.at(index) == request) {
+              LOG(kVerbose) << "requests match each other";
+              return true;
+            } else {
+              LOG(kVerbose) << "requests don't match each other";
+              return false;
+            }
           }) == static_cast<int>(required_requests_))
         return AddResult::kSuccess;
       ++index;
     }
   }
+  LOG(kInfo) << "Accumulator<T>::AddRequestChecke::operator() the reqeust is still waiting";
   return AddResult::kWaiting;
 }
 
