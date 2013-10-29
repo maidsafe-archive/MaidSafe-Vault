@@ -318,6 +318,10 @@ int RequiredRequests(const Message&) {
   return detail::RequiredValue<typename Message::Sender>()();
 }
 
+template <>
+int RequiredRequests<PutRequestFromDataManagerToPmidManager>(
+    const PutRequestFromDataManagerToPmidManager&);
+
 }  // namespace vault
 
 }  // namespace maidsafe

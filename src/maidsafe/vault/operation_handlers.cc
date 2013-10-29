@@ -37,6 +37,7 @@ void DoOperation(MaidManagerService* service,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation CreateAccountRequestFromMaidNodeToMaidManager";
   service->HandleCreateMaidAccount(message.contents->public_maid(),
                                    message.contents->public_anmaid(), message.id);
 }
@@ -46,6 +47,7 @@ void DoOperation(MaidManagerService* service,
                  const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
                  const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
                  const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation RegisterPmidRequestFromMaidNodeToMaidManager";
   service->HandlePmidRegistration(nfs_vault::PmidRegistration(message.contents->Serialise()));
 }
 
@@ -54,7 +56,7 @@ void DoOperation(MaidManagerService* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager& message,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
-std::cout << "put visitor" << std::endl;
+  LOG(kVerbose) << "DoOperation PutRequestFromMaidNodeToMaidManager";
   auto data_name(GetNameVariant(*message.contents));
   MaidManagerPutVisitor<MaidManagerService> put_visitor(service, message.contents->data.content,
                                                         sender.data, message.contents->pmid_hint,
@@ -67,6 +69,7 @@ void DoOperation(MaidManagerService* service,
                  const PutResponseFromDataManagerToMaidManager& message,
                  const PutResponseFromDataManagerToMaidManager::Sender& /*sender*/,
                  const PutResponseFromDataManagerToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "DoOperation PutResponseFromDataManagerToMaidManager";
   auto data_name(GetNameVariant(*message.contents));
   MaidManagerPutResponseVisitor<MaidManagerService> put_response_visitor(
       service, Identity(receiver.data.string()),
@@ -79,6 +82,7 @@ void DoOperation(MaidManagerService* service,
                  const PutFailureFromDataManagerToMaidManager& message,
                  const PutFailureFromDataManagerToMaidManager::Sender& sender,
                  const PutFailureFromDataManagerToMaidManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation PutFailureFromDataManagerToMaidManager";
   auto data_name(GetNameVariant(*message.contents));
   MaidManagerPutResponseFailureVisitor<MaidManagerService> put_visitor(
       service, MaidName(Identity(sender.sender_id.data.string())),
@@ -91,6 +95,7 @@ void DoOperation(MaidManagerService* service,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation DeleteRequestFromMaidNodeToMaidManager";
   auto data_name(GetNameVariant(*message.contents));
   MaidManagerDeleteVisitor<MaidManagerService> delete_visitor(
       service, MaidName(Identity(sender.data.string())), message.id);
@@ -102,6 +107,7 @@ void DoOperation(MaidManagerService* service,
                  const PmidHealthResponseFromPmidManagerToMaidManager& message,
                  const PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
                  const PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "DoOperation PmidHealthResponseFromPmidManagerToMaidManager";
   service->HandleHealthResponse(MaidName(Identity(receiver.data.string())),
                                 PmidName(Identity(sender.group_id.data.string())),
                                 message.contents->pmid_health.serialised_pmid_health,
@@ -116,6 +122,7 @@ void DoOperation(DataManagerService* service,
                  const PutRequestFromMaidManagerToDataManager& message,
                  const typename PutRequestFromMaidManagerToDataManager::Sender& sender,
                  const typename PutRequestFromMaidManagerToDataManager::Receiver&) {
+  LOG(kVerbose) << "DoOperation PutRequestFromMaidManagerToDataManager";
   auto data_name(GetNameVariant(*message.contents));
   DataManagerPutVisitor<DataManagerService> put_visitor(
       service, message.contents->data.content, Identity(sender.group_id.data.string()),
@@ -128,6 +135,7 @@ void DoOperation(DataManagerService* service,
                  const PutResponseFromPmidManagerToDataManager& message,
                  const PutResponseFromPmidManagerToDataManager::Sender& sender,
                  const PutResponseFromPmidManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation PutResponseFromPmidManagerToDataManager";
   auto data_name(GetNameVariant(*message.contents));
   DataManagerPutResponseVisitor<DataManagerService> put_response_visitor(
       service, PmidName(Identity(sender.group_id.data.string())), message.contents->size,
@@ -140,6 +148,7 @@ void DoOperation(DataManagerService* service,
                  const nfs::GetRequestFromMaidNodeToDataManager& message,
                  const nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
                  const nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation GetRequestFromMaidNodeToDataManager";
   auto data_name(GetNameVariant(*message.contents));
   typedef nfs::GetRequestFromMaidNodeToDataManager::SourcePersona SourceType;
   Requestor<SourceType> requestor(sender.data);
@@ -153,6 +162,7 @@ void DoOperation(DataManagerService* service,
                  const nfs::GetRequestFromDataGetterToDataManager& message,
                  const nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
                  const nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation GetRequestFromDataGetterToDataManager";
   auto data_name(GetNameVariant(*message.contents));
   typedef nfs::GetRequestFromDataGetterToDataManager::SourcePersona SourceType;
   Requestor<SourceType> requestor(sender.data);
@@ -166,6 +176,7 @@ void DoOperation(DataManagerService* service,
                  const GetResponseFromPmidNodeToDataManager& message,
                  const GetResponseFromPmidNodeToDataManager::Sender& sender,
                  const GetResponseFromPmidNodeToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation GetResponseFromPmidNodeToDataManager";
   service->HandleGetResponse(PmidName(Identity(sender.data.string())),
                              message.id, *message.contents);
 }
@@ -175,6 +186,7 @@ void DoOperation(DataManagerService* service,
                  const DeleteRequestFromMaidManagerToDataManager& message,
                  const DeleteRequestFromMaidManagerToDataManager::Sender& /*sender*/,
                  const DeleteRequestFromMaidManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation DeleteRequestFromMaidManagerToDataManager";
   auto data_name(GetNameVariant(*message.contents));
   DataManagerDeleteVisitor<DataManagerService> delete_visitor(service, message.id);
   boost::apply_visitor(delete_visitor, data_name);
@@ -185,6 +197,7 @@ void DoOperation(DataManagerService* service,
                  const PutFailureFromPmidManagerToDataManager& message,
                  const PutFailureFromPmidManagerToDataManager::Sender& sender,
                  const PutFailureFromPmidManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation PutFailureFromPmidManagerToDataManager";
   auto data_name(GetNameVariant(*message.contents));
   PutResponseFailureVisitor<DataManagerService> put_visitor(
       service, Identity(sender.sender_id.data.string()),
@@ -199,6 +212,8 @@ void DoOperation(PmidManagerService* service,
                  const PutRequestFromDataManagerToPmidManager& message,
                  const PutRequestFromDataManagerToPmidManager::Sender& /*sender*/,
                  const PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "DoOperation PutRequestFromDataManagerToPmidManager "
+                << " message shall go to " << HexSubstr(receiver->string());
   auto data_name(GetNameVariant(*message.contents));
   PmidManagerPutVisitor<PmidManagerService> put_visitor(service, message.contents->content,
                                                         Identity(receiver.data.string()),
@@ -211,6 +226,7 @@ void DoOperation(PmidManagerService* service,
                  const PutFailureFromPmidNodeToPmidManager& message,
                  const PutFailureFromPmidNodeToPmidManager::Sender& /*sender*/,
                  const PutFailureFromPmidNodeToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "DoOperation PutFailureFromPmidNodeToPmidManager";
   auto data_name(GetNameVariant(*message.contents));
   PmidManagerPutResponseFailureVisitor<PmidManagerService> put_failure_visitor(
       service, PmidName(Identity(receiver.data.string())),
@@ -223,6 +239,7 @@ void DoOperation(PmidManagerService* service,
                  const DeleteRequestFromDataManagerToPmidManager& message,
                  const DeleteRequestFromDataManagerToPmidManager::Sender& /*sender*/,
                  const DeleteRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "DoOperation DeleteRequestFromDataManagerToPmidManager";
   auto data_name(GetNameVariant(*message.contents));
   PmidManagerDeleteVisitor<PmidManagerService> delete_visitor(
       service, PmidName(Identity(receiver.data.string())), message.id);
@@ -234,6 +251,7 @@ void DoOperation(PmidManagerService* service,
                  const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
                  const GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
                  const GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation GetPmidAccountRequestFromPmidNodeToPmidManager";
   service->HandleSendPmidAccount(PmidName(Identity(sender.data.string())),
                                  message.contents->available_size);
 }
@@ -243,6 +261,7 @@ void DoOperation(PmidManagerService* service,
                  const PmidHealthRequestFromMaidNodeToPmidManager& message,
                  const PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
                  const PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "DoOperation PmidHealthRequestFromMaidNodeToPmidManager";
   service->HandleHealthRequest(PmidName(Identity(receiver.data.string())),
                                MaidName(Identity(sender.data.string())),
                                message.id);
@@ -255,6 +274,7 @@ void DoOperation(PmidNodeService* service,
                  const DeleteRequestFromPmidManagerToPmidNode& message,
                  const DeleteRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
                  const DeleteRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation DeleteRequestFromPmidManagerToPmidNode";
   auto data_name(GetNameVariant(*message.contents));
   PmidNodeDeleteVisitor<PmidNodeService> delete_visitor(service);
   boost::apply_visitor(delete_visitor, data_name);
@@ -265,6 +285,7 @@ void DoOperation(PmidNodeService* service,
                  const PutRequestFromPmidManagerToPmidNode& message,
                  const PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
                  const PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation PutRequestFromPmidManagerToPmidNode";
   auto data_name(GetNameVariant(*message.contents));
   PmidNodePutVisitor<PmidNodeService> put_visitor(service, message.contents->content,
                                                      message.id);
@@ -278,6 +299,7 @@ void DoOperation(VersionHandlerService* service,
     const nfs::GetVersionsRequestFromMaidNodeToVersionHandler& message,
     const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Sender& sender,
     const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation GetVersionsRequestFromMaidNodeToVersionHandler";
   typedef nfs::GetVersionsRequestFromMaidNodeToVersionHandler MessageType;
   auto data_name(GetNameVariant(*message.contents));
   VersionHandlerGetVisitor<MessageType::SourcePersona>
@@ -290,6 +312,7 @@ void DoOperation(VersionHandlerService* service,
     const nfs::GetBranchRequestFromMaidNodeToVersionHandler& message,
     const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Sender& sender,
     const typename nfs::GetBranchRequestFromMaidNodeToVersionHandler::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation GetBranchRequestFromMaidNodeToVersionHandler";
   typedef nfs::GetBranchRequestFromMaidNodeToVersionHandler MessageType;
   auto data_name(GetNameVariant(*message.contents));
   VersionHandlerGetBranchVisitor<MessageType::SourcePersona>
@@ -303,6 +326,7 @@ void DoOperation(VersionHandlerService* service,
     const nfs::GetVersionsRequestFromDataGetterToVersionHandler& message,
     const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Sender& sender,
     const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation GetVersionsRequestFromDataGetterToVersionHandler";
   typedef nfs::GetVersionsRequestFromDataGetterToVersionHandler MessageType;
   auto data_name(GetNameVariant(*message.contents));
   VersionHandlerGetVisitor<MessageType::SourcePersona>
@@ -315,6 +339,7 @@ void DoOperation(VersionHandlerService* service,
     const nfs::GetBranchRequestFromDataGetterToVersionHandler& message,
     const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Sender& sender,
     const typename nfs::GetBranchRequestFromDataGetterToVersionHandler::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation GetBranchRequestFromDataGetterToVersionHandler";
   typedef  nfs::GetBranchRequestFromDataGetterToVersionHandler MessageType;
   auto data_name(GetNameVariant(*message.contents));
   VersionHandlerGetBranchVisitor<MessageType::SourcePersona>
@@ -328,6 +353,7 @@ void DoOperation(VersionHandlerService* service,
     const PutVersionRequestFromMaidManagerToVersionHandler& message,
     const typename PutVersionRequestFromMaidManagerToVersionHandler::Sender& sender,
     const typename PutVersionRequestFromMaidManagerToVersionHandler::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation PutVersionRequestFromMaidManagerToVersionHandler";
   auto data_name(GetNameVariant(*message.contents));
   VersionHandlerPutVisitor put_version_visitor(service, message.contents->old_version_name,
                                                message.contents->new_version_name,
@@ -340,6 +366,7 @@ void DoOperation(VersionHandlerService* service,
     const DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler& message,
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Sender& sender,
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Receiver&) {
+  LOG(kVerbose) << "DoOperation DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler";
   auto data_name(GetNameVariant(*message.contents));
   VersionHandlerDeleteBranchVisitor delete_version_visitor(service, message.contents->version_name,
                                                      sender.group_id.data);
@@ -384,6 +411,12 @@ void OperationHandler<
 }
 
 }  // namespace detail
+
+template <>
+int RequiredRequests<PutRequestFromDataManagerToPmidManager>(
+    const PutRequestFromDataManagerToPmidManager&) {
+  return 1;
+}
 
 }  // namespace vault
 

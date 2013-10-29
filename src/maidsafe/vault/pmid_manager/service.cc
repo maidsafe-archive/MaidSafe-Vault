@@ -66,7 +66,9 @@ void PmidManagerService::HandleMessage(
     const PutRequestFromDataManagerToPmidManager& message,
     const typename PutRequestFromDataManagerToPmidManager::Sender& sender,
     const typename PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << "PmidManagerService::HandleMessage PutRequestFromDataManagerToPmidManager";
+  LOG(kVerbose) << "PmidManagerService::HandleMessage PutRequestFromDataManagerToPmidManager"
+                << " from " << HexSubstr(sender.sender_id->string())
+                << " being asked send to " << HexSubstr(receiver->string());
   typedef PutRequestFromDataManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -218,11 +220,15 @@ void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_
 void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node,
                                              const MaidName& maid_node,
                                              nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidManagerService::HandleHealthRequest from maid_node "
+                << HexSubstr(maid_node.value.string()) << " for pmid_node "
+                << HexSubstr(pmid_node.value.string()) << " with message_id" << message_id.data;
   try {
     dispatcher_.SendHealthResponse(maid_node, pmid_node, pmid_metadata_.at(pmid_node),
                                    message_id, maidsafe_error(CommonErrors::success));
   }
   catch(const std::exception& /*ex*/) {
+  LOG(kInfo) << "PmidManagerService::HandleHealthRequest no_such_element";
     dispatcher_.SendHealthResponse(maid_node, pmid_node, PmidManagerMetadata(), message_id,
                                    maidsafe_error(CommonErrors::no_such_element));
   }

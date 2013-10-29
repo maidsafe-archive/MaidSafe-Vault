@@ -137,6 +137,8 @@ class DataManagerDispatcher {
 template <typename Data>
 void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name, const Data& data,
                                            nfs::MessageId message_id) {
+  LOG(kVerbose) << "DataManager::SendPutRequest to pmid_name " << HexSubstr(pmid_name->string())
+                << " with message_id " << message_id.data;
   typedef PutRequestFromDataManagerToPmidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
