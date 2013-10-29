@@ -30,7 +30,6 @@ class MaidManagerValue {
  public:
   explicit MaidManagerValue(const std::string& serialised_maid_manager_value);
   MaidManagerValue();
-  MaidManagerValue(const MaidManagerValue& other);
   MaidManagerValue(MaidManagerValue&& other);
   MaidManagerValue& operator=(MaidManagerValue other);
   std::string Serialise() const;
@@ -44,6 +43,8 @@ class MaidManagerValue {
   friend void swap(MaidManagerValue& lhs, MaidManagerValue& rhs);
 
  private:
+  MaidManagerValue(const MaidManagerValue& other);
+
   int32_t count_;
   int64_t total_cost_;
 };

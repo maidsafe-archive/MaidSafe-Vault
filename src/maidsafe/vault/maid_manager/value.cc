@@ -46,9 +46,6 @@ MaidManagerValue::MaidManagerValue(const std::string& serialised_maid_manager_va
 
 MaidManagerValue::MaidManagerValue() : count_(0), total_cost_(0) {}
 
-MaidManagerValue::MaidManagerValue(const MaidManagerValue& other)
-    : count_(other.count_), total_cost_(other.total_cost_) {}
-
 MaidManagerValue::MaidManagerValue(MaidManagerValue&& other)
     : count_(std::move(other.count_)), total_cost_(std::move(other.total_cost_)) {}
 

@@ -48,7 +48,7 @@ std::string ActionMaidManagerUpdatePmidHealth::Serialise() const {
 }
 
 detail::DbAction ActionMaidManagerUpdatePmidHealth::operator()(
-    boost::optional<MaidManagerMetadata>& metadata) {
+    std::unique_ptr<MaidManagerMetadata>& metadata) {
   if (metadata)
     ThrowError(CommonErrors::no_such_element);
 

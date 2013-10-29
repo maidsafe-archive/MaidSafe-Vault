@@ -50,7 +50,7 @@ std::string ActionMaidManagerDelete::Serialise() const {
 }
 
 detail::DbAction ActionMaidManagerDelete::operator()(
-    MaidManagerMetadata& metadata, boost::optional<MaidManagerValue>& value) const {
+    MaidManagerMetadata& metadata, std::unique_ptr<MaidManagerValue>& value) const {
   if (!value)
     ThrowError(CommonErrors::no_such_element);
 

@@ -199,7 +199,7 @@ void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_
   std::vector<nfs_vault::DataName> data_names;
   try {
     auto contents(group_db_.GetContents(pmid_node));
-    for (auto kv_pair : contents.kv_pair)
+    for (const auto& kv_pair : contents.kv_pair)
       data_names.push_back(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
     dispatcher_.SendPmidAccount(pmid_node, data_names,
                                 nfs_client::ReturnCode(CommonErrors::success));

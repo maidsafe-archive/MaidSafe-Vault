@@ -30,7 +30,6 @@ class PmidManagerValue {
   PmidManagerValue();
   explicit PmidManagerValue(int32_t size);
   PmidManagerValue(const std::string& serialised_pmid_manager_value);
-  PmidManagerValue(const PmidManagerValue& other);
   PmidManagerValue(PmidManagerValue&& other);
   PmidManagerValue& operator=(PmidManagerValue other);
 
@@ -40,6 +39,8 @@ class PmidManagerValue {
   friend void swap(PmidManagerValue& lhs, PmidManagerValue& rhs);
 
  private:
+  PmidManagerValue(const PmidManagerValue& other);
+
   int32_t size_;
 };
 

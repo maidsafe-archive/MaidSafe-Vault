@@ -43,7 +43,7 @@ struct ActionMaidManagerDelete {
 
   std::string Serialise() const;
   detail::DbAction operator()(MaidManagerMetadata& metadata,
-                              boost::optional<MaidManagerValue>& value) const;
+                              std::unique_ptr<MaidManagerValue>& value) const;
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
   const nfs::MessageId kMessageId;
 };
