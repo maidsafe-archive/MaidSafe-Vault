@@ -62,9 +62,10 @@ std::string VersionHandlerValue::Serialise() const {
   return version_handler_value_proto.SerializeAsString();
 }
 
-void VersionHandlerValue::Put(const StructuredDataVersions::VersionName& old_version,
-                              const StructuredDataVersions::VersionName& new_version) {
-  structured_data_versions_->Put(old_version, new_version);
+boost::optional<StructuredDataVersions::VersionName> VersionHandlerValue::Put(
+    const StructuredDataVersions::VersionName& old_version,
+    const StructuredDataVersions::VersionName& new_version) {
+  return structured_data_versions_->Put(old_version, new_version);
 }
 
 std::vector<StructuredDataVersions::VersionName> VersionHandlerValue::Get() const {

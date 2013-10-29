@@ -21,7 +21,11 @@
 
 #include <string>
 
+#include "boost/optional.hpp"
+
 #include "maidsafe/vault/version_handler/version_handler.h"
+#include "maidsafe/vault/config.h"
+
 
 namespace maidsafe {
 
@@ -38,12 +42,13 @@ struct ActionVersionHandlerPut {
   ActionVersionHandlerPut(const ActionVersionHandlerPut& other);
   ActionVersionHandlerPut(ActionVersionHandlerPut&& other);
 
-  void operator()(std::unique_ptr<VersionHandlerValue>& value) const;
+  detail::DbAction operator()(std::unique_ptr<VersionHandlerValue>& value);
 
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPutVersionRequest;
   StructuredDataVersions::VersionName old_version, new_version;
+  boost::optional<StructuredDataVersions::VersionName> tip_of_tree;
   NodeId sender; // sender is required to be notified of potential failures on put
 
  private:

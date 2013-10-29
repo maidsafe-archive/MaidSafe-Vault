@@ -168,6 +168,42 @@ void VersionHandlerService::HandleMessage(
       accumulator_mutex_)(message, sender, receiver);
 }
 
+template<>
+void VersionHandlerService::HandleMessage(
+    const SynchroniseFromVersionHandlerToVersionHandler& message,
+    const typename SynchroniseFromVersionHandlerToVersionHandler::Sender& sender,
+    const typename SynchroniseFromVersionHandlerToVersionHandler::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "VersionHandler::HandleMessage SynchroniseFromVersionHandlerToVersionHandler";
+  protobuf::Sync proto_sync;
+  if (!proto_sync.ParseFromString(message.contents->data))
+    ThrowError(CommonErrors::parsing_error);
+
+  switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
+    case ActionVersionHandlerPut::kActionId: {
+      VersionHandler::UnresolvedPutVersion unresolved_action(
+                                               proto_sync.serialised_unresolved_action(),
+                                               sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_put_versions_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+          if (resolved_action->action.tip_of_tree) {
+//            dispatcher_.SendPutVersionResponse();
+          }
+        }
+        catch (const maidsafe_error& /*error*/) {
+//        dispatcher_.SendPutVersionResponse();
+        }
+      }
+      break;
+    }
+    default: {
+      assert(false);
+      LOG(kError) << "Unhandled action type";
+    }
+  }
+}
+
 void VersionHandlerService::HandlePutVersion(
     const VersionHandler::Key& key, const VersionHandler::VersionName& old_version,
     const VersionHandler::VersionName& new_version, const NodeId& sender) {

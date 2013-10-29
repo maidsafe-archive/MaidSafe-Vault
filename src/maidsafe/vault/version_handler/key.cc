@@ -28,6 +28,9 @@ namespace maidsafe {
 
 namespace vault {
 
+VersionHandlerKey::VersionHandlerKey()
+    : name(), type(), originator() {}
+
 VersionHandlerKey::VersionHandlerKey(const std::string& serialised_key)
     : name(), type(DataTagValue::kOwnerDirectoryValue), originator() {
   protobuf::VersionHandlerKey key_proto;

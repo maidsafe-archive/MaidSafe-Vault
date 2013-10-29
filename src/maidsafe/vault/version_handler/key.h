@@ -33,6 +33,7 @@ namespace maidsafe {
 namespace vault {
 
 struct VersionHandlerKey {
+  VersionHandlerKey();
   template <typename Data>
   VersionHandlerKey(const typename Data::Name& name_in, const Identity& originator_in)
       : name(name_in.data), type(Data::type_enum_value()), originator(originator_in) {}

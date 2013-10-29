@@ -175,6 +175,12 @@ void VersionHandlerService::HandleMessage(
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Sender& sender,
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Receiver& receiver);
 
+template<>
+void VersionHandlerService::HandleMessage(
+    const SynchroniseFromVersionHandlerToVersionHandler& message,
+    const typename SynchroniseFromVersionHandlerToVersionHandler::Sender& sender,
+    const typename SynchroniseFromVersionHandlerToVersionHandler::Receiver& receiver);
+
 template <typename RequestorType>
 void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& key,
                                               const RequestorType& requestor_type,

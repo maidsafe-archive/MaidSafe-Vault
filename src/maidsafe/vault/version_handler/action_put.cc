@@ -28,7 +28,8 @@ namespace vault {
 ActionVersionHandlerPut::ActionVersionHandlerPut(
     const StructuredDataVersions::VersionName& old_version_in,
     const StructuredDataVersions::VersionName& new_version_in, const NodeId& sender_in)
-        : old_version(old_version_in), new_version(new_version_in), sender(sender_in) {}
+        : old_version(old_version_in), new_version(new_version_in), tip_of_tree(),
+          sender(sender_in) {}
 
 ActionVersionHandlerPut::ActionVersionHandlerPut(const std::string& serialised_action) {
   protobuf::ActionPut action_put_version_proto;
@@ -42,11 +43,12 @@ ActionVersionHandlerPut::ActionVersionHandlerPut(const std::string& serialised_a
 }
 
 ActionVersionHandlerPut::ActionVersionHandlerPut(const ActionVersionHandlerPut& other)
-    : old_version(other.old_version), new_version(other.new_version), sender(other.sender) {}
+    : old_version(other.old_version), new_version(other.new_version),
+      tip_of_tree(other.tip_of_tree), sender(other.sender) {}
 
 ActionVersionHandlerPut::ActionVersionHandlerPut(ActionVersionHandlerPut&& other)
     : old_version(std::move(other.old_version)), new_version(std::move(other.new_version)),
-      sender(std::move(other.sender)) {}
+      tip_of_tree(std::move(other.tip_of_tree)),  sender(std::move(other.sender)) {}
 
 std::string ActionVersionHandlerPut::Serialise() const {
   protobuf::ActionPut action_put_version_proto;
@@ -56,11 +58,12 @@ std::string ActionVersionHandlerPut::Serialise() const {
   return action_put_version_proto.SerializeAsString();
 }
 
-void ActionVersionHandlerPut::operator()(std::unique_ptr<VersionHandlerValue>& value) const {
+detail::DbAction ActionVersionHandlerPut::operator()(std::unique_ptr<VersionHandlerValue>& value) {
   if (!value) {
     value.reset(new VersionHandlerValue());
   }
-  value->Put(old_version, new_version);
+  tip_of_tree = value->Put(old_version, new_version);
+  return detail::DbAction::kPut;
 }
 
 bool operator==(const ActionVersionHandlerPut& lhs, const ActionVersionHandlerPut& rhs) {
