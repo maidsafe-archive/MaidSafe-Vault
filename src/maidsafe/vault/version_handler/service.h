@@ -92,7 +92,7 @@ class VersionHandlerService {
 
   template <typename RequestorType>
   void HandleGetBranch(const VersionHandler::Key& key,
-                       const typename VersionHandler::VersionName version_name,
+                       const VersionHandler::VersionName& version_name,
                        const RequestorType& requestor_type);
 
   void HandlePutVersion(const VersionHandler::Key& key,
@@ -175,31 +175,32 @@ void VersionHandlerService::HandleMessage(
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Receiver& receiver);
 
 template <typename RequestorType>
-void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& /*key*/,
-                                              const RequestorType& /*requestor_type*/) {
-//  auto value(std::move(db_.Get(key)));  // WILL BE VALID ONLY IF DB RETURNS UNIQUE_PTR
-//  try {
-//    dispatcher_.SendGetVersionsResponse(value->Get(), requestor_type, CommonErrors::success);
-//  }
-//  catch (const maidsafe_error& error) {
-//    dispatcher_.SendGetVersionsResponse(std::vector<typename VersionHandler::Value::VersionName>(),
-//                                       requestor_type, error);
-//  }
+void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& key,
+                                              const RequestorType& requestor_type) {
+  try {
+    auto value(std::move(db_.Get(key)));
+    dispatcher_.SendGetVersionsResponse(value.Get(), requestor_type,
+                                        maidsafe_error(CommonErrors::success));
+
+    }
+  catch (const maidsafe_error& error) {
+    dispatcher_.SendGetVersionsResponse(std::vector<StructuredDataVersions::VersionName>(),
+                                        requestor_type, error);
+  }
 }
 
 template <typename RequestorType>
-void VersionHandlerService::HandleGetBranch(const VersionHandler::Key& /*key*/,
-    const typename VersionHandler::VersionName /*version_name*/,
-    const RequestorType& /*requestor_type*/) {
-// FIXME Team . This need discussion (commented out because it doesn't compile on clang)
-//  auto value(db_.Get(key));  // WILL BE VALID ONLY IF DB RETURNS UNIQUE_PTR
+void VersionHandlerService::HandleGetBranch(const VersionHandler::Key& key,
+    const VersionHandler::VersionName& version_name,
+    const RequestorType& requestor_type) {
   try {
-//    dispatcher_.SendGetBranchResponse(value.GetBranch(version_name), requestor_type,
-//                                      CommonErrors::success);
+    auto value(db_.Get(key));
+    dispatcher_.SendGetBranchResponse(value.GetBranch(version_name), requestor_type,
+                                      maidsafe_error(CommonErrors::success));
   }
-  catch (const maidsafe_error& /*error*/) {
-//    dispatcher_.SendGetBranchResponse(std::vector<typename VersionHandler::Value::VersionName>(),
-//                                      requestor_type, error);
+  catch (const maidsafe_error& error) {
+    dispatcher_.SendGetBranchResponse(std::vector<typename VersionHandler::VersionName>(),
+                                      requestor_type, error);
   }
 }
 

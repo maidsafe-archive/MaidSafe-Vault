@@ -50,7 +50,7 @@ std::string ActionDataManagerNodeUp::Serialise() const {
   return action_set_pmid_online_proto.SerializeAsString();
 }
 
-detail::DbAction ActionDataManagerNodeUp::operator()(boost::optional<DataManagerValue>& value) {
+detail::DbAction ActionDataManagerNodeUp::operator()(std::unique_ptr<DataManagerValue>& value) {
   if (value) {
     value->SetPmidOnline(kPmidName);
     return detail::DbAction::kPut;

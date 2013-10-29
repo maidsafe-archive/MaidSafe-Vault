@@ -38,7 +38,7 @@ std::string ActionDataManagerPut::Serialise() const {
   return action_put_proto.SerializeAsString();
 }
 
-detail::DbAction ActionDataManagerPut::operator()(boost::optional<DataManagerValue>& value) {
+detail::DbAction ActionDataManagerPut::operator()(std::unique_ptr<DataManagerValue>& value) {
   if (value) {
     value->IncrementSubscribers();
     return detail::DbAction::kPut;

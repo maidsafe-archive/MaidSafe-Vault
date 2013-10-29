@@ -41,16 +41,15 @@ namespace {
   struct is_group_source<routing::GroupSource> : public std::true_type {};
 }
 
-template<typename Sender, typename SourcePersonaType>
+template <typename RequestorType>
 class GetFromCacheVisitor : public boost::static_visitor<bool> {
  public:
-  typedef SourcePersonaType PersonaType;
-  GetFromCacheVisitor(CacheHandlerService* cache_handler_service, const Sender& sender)
-      : cache_handler_service_(cache_handler_service), kSender(sender) {}
+  GetFromCacheVisitor(CacheHandlerService* cache_handler_service, const RequestorType& requestor)
+      : cache_handler_service_(cache_handler_service), kRequestor_(requestor) {}
 
   template <typename DataName>
   result_type operator()(const DataName& data_name) {
-    return DoGetFromCache(data_name, is_group_source<Sender>());
+    return DoGetFromCache(data_name, is_group_source<typename RequestorType::SourcePersonaType>());
   }
 
  private:
@@ -59,7 +58,7 @@ class GetFromCacheVisitor : public boost::static_visitor<bool> {
     auto cache_data(GetFromCache(data_name, is_cacheable<typename DataName::data_type>()));
     if (cache_data) {
       cache_handler_service_->SendGetResponse<typename DataName::data_type,
-                                               SourcePersonaType>(*cache_data, kSender);
+                                               RequestorType>(*cache_data, kRequestor_);
       return true;
     }
     return false;
@@ -85,7 +84,7 @@ class GetFromCacheVisitor : public boost::static_visitor<bool> {
   }
 
   CacheHandlerService* const cache_handler_service_;
-  Sender kSender;
+  RequestorType kRequestor_;
 };
 
 class PutToCacheVisitor : public boost::static_visitor<> {

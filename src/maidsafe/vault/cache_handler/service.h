@@ -39,7 +39,7 @@ namespace vault {
 namespace detail {
   class PutToCacheVisitor;
 
-  template<typename Sender, typename SourcePersonaType>
+  template<typename RequestorType>
   class GetFromCacheVisitor;
 }
 
@@ -57,7 +57,7 @@ class CacheHandlerService {
                                         const typename MessageType::Receiver& receiver);
 
   friend class detail::PutToCacheVisitor;
-  template<typename Sender, typename SourcePersonaType> friend class detail::GetFromCacheVisitor;
+  template<typename RequestorType> friend class detail::GetFromCacheVisitor;
 
  private:
   typedef std::true_type IsLongTermCacheable;
@@ -75,8 +75,8 @@ class CacheHandlerService {
   template <typename Data>
   void CacheStore(const Data& data, IsShortTermCacheable);
 
-  template <typename Data, typename SourcePersonaType>
-  void SendGetResponse(const Data& data, const routing::SingleSource& sender);
+  template <typename Data, typename RequestorType>
+  void SendGetResponse(const Data& data, const RequestorType& requestor);
 
   template <typename MessageType>
   bool ValidateSender(const MessageType& message, const typename MessageType::Sender& sender) const;
@@ -189,9 +189,9 @@ boost::optional<Data> CacheHandlerService::CacheGet(const typename Data::Name& d
   }
 }
 
-template <typename Data, typename SourcePersonaType>
-void CacheHandlerService::SendGetResponse(const Data& data, const routing::SingleSource& sender) {
-  dispatcher_.SendGetResponse<Data, SourcePersonaType>(data, sender);
+template <typename Data, typename RequestorType>
+void CacheHandlerService::SendGetResponse(const Data& data, const RequestorType& requestor) {
+  dispatcher_.SendGetResponse(data, requestor);
 }
 
 template <typename Data>

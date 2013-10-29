@@ -34,7 +34,7 @@ std::string ActionDataManagerDelete::Serialise() const {
   return action_delete_proto.SerializeAsString();
 }
 
-detail::DbAction ActionDataManagerDelete::operator()(boost::optional<DataManagerValue>& value) {
+detail::DbAction ActionDataManagerDelete::operator()(std::unique_ptr<DataManagerValue>& value) {
   if (value) {
     value->DecrementSubscribers();
     assert(value->Subscribers() < 0);

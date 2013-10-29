@@ -49,8 +49,8 @@ class Db {
 
   Value Get(const Key& key);
   // if functor returns DbAction::kDelete, the value is deleted from db
-  boost::optional<Value> Commit(
-      const Key& key, std::function<detail::DbAction(boost::optional<Value>& value)> functor);
+  std::unique_ptr<Value> Commit(
+      const Key& key, std::function<detail::DbAction(std::unique_ptr<Value>& value)> functor);
   TransferInfo GetTransferInfo(std::shared_ptr<routing::MatrixChange> matrix_change);
   void HandleTransfer(const std::vector<KvPair>& contents);
 
@@ -87,25 +87,25 @@ Db<Key, Value>::~Db() {
 }
 
 template <typename Key, typename Value>
-boost::optional<Value> Db<Key, Value>::Commit(const Key& key,
-    std::function<detail::DbAction(boost::optional<Value>& value)> functor) {
+std::unique_ptr<Value> Db<Key, Value>::Commit(const Key& key,
+    std::function<detail::DbAction(std::unique_ptr<Value>& value)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
-  boost::optional<Value> value;
+  std::unique_ptr<Value> value;
   try {
-    value = Get(key);
+    value.reset(new Value(std::move(Get(key))));
   } catch (const common_error& error) {
     if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
       throw error;  // For db errors
   }
   if (detail::DbAction::kPut == functor(value)) {
-    Put(KvPair(key, Value(*value)));
+    Put(KvPair(key, Value(std::move(*value))));
   } else {
     assert(value);
     Delete(key);
     return value;
   }
-  return boost::optional<Value>();
+  return nullptr;
 }
 
 // option 1 : Fire functor here with check_holder_result.new_holder & the corresponding value
