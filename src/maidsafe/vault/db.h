@@ -100,8 +100,8 @@ std::unique_ptr<Value> Db<Key, Value>::Commit(const Key& key,
   std::unique_ptr<Value> value;
   try {
     value.reset(new Value(Get(key)));
-  } catch (const common_error& error) {
-    if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
+  } catch (const vault_error& error) {
+    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
       throw error;  // For db errors
   }
   if (detail::DbAction::kPut == functor(value)) {

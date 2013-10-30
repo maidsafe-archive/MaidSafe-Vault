@@ -45,9 +45,9 @@ Key::Key(const FixedWidthString& fixed_width_string)
       type(static_cast<DataTagValue>(detail::FromFixedWidthString<detail::PaddedWidth::value>(
           fixed_width_string.string().substr(NodeId::kSize)))) {}
 
-Key::Key(const Key& other) : name(other.name) {}
+Key::Key(const Key& other) : name(other.name), type(other.type) {}
 
-Key::Key(Key&& other) : name(std::move(other.name)) {}
+Key::Key(Key&& other) : name(std::move(other.name)), type(std::move(other.type)) {}
 
 Key& Key::operator=(Key other) {
   swap(*this, other);
