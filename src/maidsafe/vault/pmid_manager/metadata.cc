@@ -89,8 +89,11 @@ void PmidManagerMetadata::DeleteData(int32_t size) {
   stored_total_size -= size;
   --stored_count;
 
-  if ((stored_total_size < 0) || (stored_count < 0))
+  if ((stored_total_size < 0) || (stored_count < 0)) {
+    LOG(kError) << "invalid stored_total_size " << stored_total_size
+                << " or stored_count " << stored_count;
     ThrowError(CommonErrors::invalid_parameter);
+  }
 }
 
 void PmidManagerMetadata::SetAvailableSize(const int64_t& available_size) {

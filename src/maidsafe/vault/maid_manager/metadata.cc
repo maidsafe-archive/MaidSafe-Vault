@@ -57,16 +57,20 @@ MaidManagerMetadata::MaidManagerMetadata(const std::string& serialised_metadata_
         maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_registration()),
         PmidManagerMetadata(maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_metadata());
   }
-  if (total_put_data_ < 0)
+  if (total_put_data_ < 0) {
+    LOG(kError) << "negative total_put_data_ " << total_put_data_;
     ThrowError(CommonErrors::invalid_parameter);
+  }
 }
 
 void MaidManagerMetadata::PutData(int32_t cost) { total_put_data_ += cost; }
 
 void MaidManagerMetadata::DeleteData(int32_t cost) {
   total_put_data_ -= cost;
-  if (total_put_data_ < 0)
+  if (total_put_data_ < 0) {
+    LOG(kError) << "negative total_put_data_ " << total_put_data_;
     ThrowError(CommonErrors::invalid_parameter);
+  }
 }
 
 template <>
