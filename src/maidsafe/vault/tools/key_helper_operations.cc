@@ -172,6 +172,8 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
     auto status(future.wait_for(boost::chrono::seconds(10)));
     if (status == boost::future_status::timeout)
       ThrowError(VaultErrors::permission_denied);
+    LOG(kInfo) << "The fetched PmidHealth for pmid_name " << HexSubstr(pmid_name.value.string())
+               << " is " << future.get();
   }
   LOG(kInfo) << "Started up client node to store chunks";
 }

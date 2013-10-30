@@ -213,6 +213,10 @@ bool Accumulator<T>::RequestExists(const T& request, const routing::GroupSource&
         request_message_id ==
             boost::apply_visitor(MessageIdRequestVisitor(), pending_request.request))
       return true;
+  LOG(kInfo) << "Accumulator<T>::RequestExists,  reguest with message id "
+             << request_message_id.data << " from sender " << HexSubstr(source.sender_id->string())
+             << " with group_id " << HexSubstr(source.group_id->string())
+             << " doesn't exists in the pending requests list";
   return false;
 }
 

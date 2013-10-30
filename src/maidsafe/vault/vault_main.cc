@@ -216,8 +216,10 @@ void ActOnOptions(int argc, char* argv[]) {
   bool invalid_options(InvalidOptions(variables_map));
   if (variables_map.count("help") != 0 || invalid_options) {
     std::cout << cmdline_options << std::endl;
-    if (invalid_options)
+    if (invalid_options) {
+      std::cout << "invalid options" << std::endl;
       ThrowError(CommonErrors::invalid_parameter);
+    }
   }
 
   RunVault(variables_map);
