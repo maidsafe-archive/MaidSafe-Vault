@@ -98,7 +98,8 @@ class VersionHandlerService {
 
   void HandlePutVersion(const VersionHandler::Key& key,
                         const VersionHandler::VersionName& old_version,
-                        const VersionHandler::VersionName& new_version, const NodeId& sender);
+                        const VersionHandler::VersionName& new_version, const NodeId& sender,
+                        nfs::MessageId message_id);
 
   void HandleDeleteBranchUntilFork(const VersionHandler::Key& key,
                                    const VersionHandler::VersionName& branch_tip,

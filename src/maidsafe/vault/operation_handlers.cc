@@ -357,7 +357,7 @@ void DoOperation(VersionHandlerService* service,
   auto data_name(GetNameVariant(*message.contents));
   VersionHandlerPutVisitor put_version_visitor(service, message.contents->old_version_name,
                                                message.contents->new_version_name,
-                                               sender.group_id.data);
+                                               sender.group_id.data, message.id);
   boost::apply_visitor(put_version_visitor, data_name);
 }
 

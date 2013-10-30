@@ -441,21 +441,24 @@ class VersionHandlerPutVisitor : public boost::static_visitor<> {
  public:
   VersionHandlerPutVisitor(VersionHandlerService* service,
                            StructuredDataVersions::VersionName old_version,
-                           StructuredDataVersions::VersionName new_version, NodeId sender)
+                           StructuredDataVersions::VersionName new_version, NodeId sender,
+                           nfs::MessageId message_id)
       : kService_(service), kOldVersion_(std::move(old_version)),
-        kNewVersion_(std::move(new_version)), kSender_(std::move(sender)) {}
+        kNewVersion_(std::move(new_version)), kSender_(std::move(sender)),
+        kMessageId_(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->HandlePutVersion(VersionHandlerKey(data_name, Name::data_type::Tag::kValue,
                           Identity(kSender_.string())),
-        kOldVersion_, kNewVersion_, kSender_);
+        kOldVersion_, kNewVersion_, kSender_, kMessageId_);
   }
 
  private:
   VersionHandlerService* const kService_;
   StructuredDataVersions::VersionName kOldVersion_, kNewVersion_;
   NodeId kSender_;
+  nfs::MessageId kMessageId_;
 };
 
 class VersionHandlerDeleteBranchVisitor : public boost::static_visitor<> {

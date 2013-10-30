@@ -122,6 +122,26 @@ void VersionHandlerDispatcher::SendGetBranchResponse(
   routing_.Send(message);
 }
 
+void VersionHandlerDispatcher::SendPutVersionResponse(
+    const VersionHandler::Key& key, const VersionHandler::VersionName& tip_of_tree,
+    const maidsafe_error& return_code, nfs::MessageId message_id) {
+  typedef nfs::PutVersionResponseFromVersionHandlerToMaidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  NfsMessage nfs_message;
+  nfs_message.id = message_id;
+  nfs_message.contents->data_name = nfs_vault::DataName(key.type, key.name);
+  if (return_code.code() == CommonErrors::success) {
+    nfs_message.contents->tip_of_tree = tip_of_tree;
+  } else {
+    nfs_message.contents->return_code = nfs_client::ReturnCode(return_code);
+  }
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::GroupId(NodeId(key.name.string())),
+                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(NodeId(key.originator.string())));
+  routing_.Send(message);
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe
