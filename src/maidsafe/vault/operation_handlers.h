@@ -111,6 +111,17 @@ void OperationHandler<
     const GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
     const GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
 
+template <>
+template <>
+void OperationHandler<
+         typename ValidateSenderType<PutRequestFromDataManagerToPmidManager>::type,
+         Accumulator<PmidManagerServiceMessages>,
+         typename Accumulator<PmidManagerServiceMessages>::AddCheckerFunctor,
+         PmidManagerService>::operator()(
+    const PutRequestFromDataManagerToPmidManager& message,
+    const PutRequestFromDataManagerToPmidManager::Sender& sender,
+    const PutRequestFromDataManagerToPmidManager::Receiver& receiver);
+
 template <typename ServiceHandlerType, typename MessageType>
 void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/,
                  const typename MessageType::Sender& /*sender*/,

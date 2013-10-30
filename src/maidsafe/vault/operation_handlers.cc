@@ -410,6 +410,22 @@ void OperationHandler<
   }
 }
 
+template <>
+template <>
+void OperationHandler<
+         typename ValidateSenderType<PutRequestFromDataManagerToPmidManager>::type,
+         Accumulator<PmidManagerServiceMessages>,
+         typename Accumulator<PmidManagerServiceMessages>::AddCheckerFunctor,
+         PmidManagerService>::operator()(
+    const PutRequestFromDataManagerToPmidManager& message,
+    const PutRequestFromDataManagerToPmidManager::Sender& sender,
+    const PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  {
+    DoOperation(service, message, sender, receiver);
+  }
+}
+
+
 }  // namespace detail
 
 template <>
