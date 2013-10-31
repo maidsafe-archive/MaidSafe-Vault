@@ -210,6 +210,11 @@ template <typename Data>
 void PmidManagerService::HandlePutFailure(
     const typename Data::Name& name, const PmidName& pmid_node, int64_t available_space,
     const maidsafe_error& error_code, nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidManagerService::HandlePutFailure to pmid_node -- "
+                << HexSubstr(pmid_node.value.string())
+                << " , with message_id -- " << message_id.data
+                << " . available_space -- " << available_space << " , error_code -- "
+                << error_code.what();
   pmid_metadata_.at(pmid_node).claimed_available_size = available_space;
   dispatcher_.SendPutFailure<Data>(name, pmid_node, error_code, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), name.value, Data::Tag::kValue);
@@ -222,6 +227,10 @@ template <typename Data>
 void PmidManagerService::HandlePutResponse(
     const typename Data::Name& data_name, int32_t size, const PmidName& pmid_name,
     nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidManagerService::HandlePutResponse of pmid_name -- "
+                << HexSubstr(pmid_name.value.string())
+                << " , with message_id -- " << message_id.data
+                << " . size -- " << size;
   dispatcher_.SendPutResponse<Data>(data_name, size, pmid_name, message_id);
 }
 

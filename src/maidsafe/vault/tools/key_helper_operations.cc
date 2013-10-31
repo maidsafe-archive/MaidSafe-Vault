@@ -155,23 +155,29 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
   {
     auto future(RoutingJoin(peer_endpoints));
     auto status(future.wait_for(std::chrono::seconds(10)));
-    if (status == std::future_status::timeout || !future.get())
+    if (status == std::future_status::timeout || !future.get()) {
+      LOG(kError) << "can't join routing network";
       ThrowError(RoutingErrors::not_connected);
+    }
   }
   {
     passport::PublicMaid public_maid(key_chain.maid);
     passport::PublicAnmaid public_anmaid(key_chain.anmaid);
     auto future(client_nfs_->CreateAccount(nfs_vault::AccountCreation(public_maid, public_anmaid)));
     auto status(future.wait_for(boost::chrono::seconds(10)));
-    if (status == boost::future_status::timeout)
+    if (status == boost::future_status::timeout) {
+      LOG(kError) << "can't create account";
       ThrowError(VaultErrors::account_already_exists);
+    }
   }
   {
     client_nfs_->RegisterPmid(nfs_vault::PmidRegistration(key_chain.maid, key_chain.pmid, false));
     auto future(client_nfs_->GetPmidHealth(pmid_name));
     auto status(future.wait_for(boost::chrono::seconds(10)));
-    if (status == boost::future_status::timeout)
+    if (status == boost::future_status::timeout) {
+      LOG(kError) << "can't fetch pmid health";
       ThrowError(VaultErrors::permission_denied);
+    }
     LOG(kInfo) << "The fetched PmidHealth for pmid_name " << HexSubstr(pmid_name.value.string())
                << " is " << future.get();
   }

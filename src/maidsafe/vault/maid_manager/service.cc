@@ -175,14 +175,17 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& pub
   // If Account exists
   try {
     group_db_.GetMetadata(account_name);
+    LOG(kError) << "account already exists in group_db_";
     dispatcher_.SendCreateAccountResponse(account_name,
                                           maidsafe_error(VaultErrors::account_already_exists),
                                           message_id);
     return;
 
   } catch (const vault_error& error) {
-    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
+    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
+      LOG(kError) << "db errors";
       throw error;  // For db errors
+    }
   }
 
   pending_account_map_.insert(std::make_pair(message_id,
@@ -621,11 +624,15 @@ void MaidManagerService::HandleMessage(
     const SynchroniseFromMaidManagerToMaidManager& message,
     const typename SynchroniseFromMaidManagerToMaidManager::Sender& sender,
     const typename SynchroniseFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage SynchroniseFromMaidManagerToMaidManager";
   protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(message.contents->data))
+  if (!proto_sync.ParseFromString(message.contents->data)) {
+    LOG(kVerbose) << "can't parse the content";
     ThrowError(CommonErrors::parsing_error);
+  }
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
     case ActionMaidManagerPut::kActionId: {
+      LOG(kVerbose) << "ActionMaidManagerPut";
       MaidManager::UnresolvedPut unresolved_action(proto_sync.serialised_unresolved_action(),
                                                    sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
@@ -634,6 +641,7 @@ void MaidManagerService::HandleMessage(
       break;
     }
     case ActionMaidManagerDelete::kActionId: {
+      LOG(kVerbose) << "ActionMaidManagerDelete";
       MaidManager::UnresolvedDelete unresolved_action(proto_sync.serialised_unresolved_action(),
                                                       sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
@@ -642,6 +650,7 @@ void MaidManagerService::HandleMessage(
       break;
     }
     case ActionCreateAccount::kActionId: {
+      LOG(kVerbose) << "ActionCreateAccount";
       MaidManager::UnresolvedCreateAccount unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_create_accounts_.AddUnresolvedAction(unresolved_action));
@@ -650,6 +659,7 @@ void MaidManagerService::HandleMessage(
       break;
     }
     case ActionRegisterPmid::kActionId: {
+      LOG(kVerbose) << "ActionRegisterPmid";
       MaidManager::UnresolvedRegisterPmid unresolved_action(
         proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_register_pmids_.AddUnresolvedAction(unresolved_action));
@@ -659,8 +669,8 @@ void MaidManagerService::HandleMessage(
     break;
   }
     default: {
+      LOG(kError) << "Unhandled action type " << proto_sync.action_type();
       assert(false);
-      LOG(kError) << "Unhandled action type";
     }
   }
 }

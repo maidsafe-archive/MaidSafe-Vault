@@ -228,6 +228,7 @@ template <typename MessageType>
 void MaidManagerService::HandleMessage(const MessageType& /*message*/,
                                        const typename MessageType::Sender& /*sender*/,
                                        const typename MessageType::Receiver& /*receiver*/) {
+  LOG(kError) << "invalid function call because of un-specialised templated method";
   MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
 }
 
