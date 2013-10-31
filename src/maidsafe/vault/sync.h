@@ -73,6 +73,8 @@ class Sync {
   // also pruned here.
   void IncrementSyncAttempts();
 
+  static const nfs::MessageAction kActionId = UnresolvedAction::ActionType::kActionId;
+
  private:
   Sync(Sync&&);
   Sync(const Sync&);
