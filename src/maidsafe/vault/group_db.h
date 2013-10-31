@@ -133,8 +133,10 @@ void GroupDb<Persona>::AddGroup(const GroupName& group_name, const Metadata& met
                                  element) { return group_id == element.second.first; })) {
     group_id = RandomInt32() % kGroupsLimit;
   }
-  if (!(group_map_.insert(std::make_pair(group_name, std::make_pair(group_id, metadata)))).second)
+  if (!(group_map_.insert(std::make_pair(group_name, std::make_pair(group_id, metadata)))).second) {
+    LOG(kError) << "account already exists in the group map";
     ThrowError(VaultErrors::account_already_exists);
+  }
 }
 
 template <typename Persona>

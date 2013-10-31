@@ -228,7 +228,7 @@ void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node,
                                    message_id, maidsafe_error(CommonErrors::success));
   }
   catch(const std::exception& /*ex*/) {
-  LOG(kInfo) << "PmidManagerService::HandleHealthRequest no_such_element";
+    LOG(kInfo) << "PmidManagerService::HandleHealthRequest no_such_element";
     dispatcher_.SendHealthResponse(maid_node, pmid_node, PmidManagerMetadata(), message_id,
                                    maidsafe_error(CommonErrors::no_such_element));
   }

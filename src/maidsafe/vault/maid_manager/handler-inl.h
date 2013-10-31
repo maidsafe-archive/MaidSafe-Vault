@@ -41,6 +41,8 @@ struct AccountRequired<passport::Maid> : std::false_type {};
 
 template <typename Data>
 void MaidAccountHandler::CreateAccount(const MaidName& account_name, AllowedAccountCreationType) {
+  LOG(kVerbose) << "MaidAccountHandler::Create Account"
+                << HexSubstr(account_name.value.string());
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, db_, kThisNodeId_));
   // if account exists, this is a no-op (allow Maid and Anmaid to be stored several times)
@@ -50,6 +52,8 @@ void MaidAccountHandler::CreateAccount(const MaidName& account_name, AllowedAcco
 template <typename Data>
 void MaidAccountHandler::DeleteData(const MaidName& account_name,
                                     const typename Data::Name& data_name) {
+  LOG(kVerbose) << "MaidAccountHandler::DeleteData from maid_name "
+                << HexSubstr(account_name.value.string());
   std::lock_guard<std::mutex> lock(mutex_);
   maid_accounts_.at(account_name)->DeleteData<Data>(data_name);
 }
