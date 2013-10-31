@@ -422,16 +422,21 @@ void MaidManagerService::DoSync() {
 void MaidManagerService::HandleHealthResponse(const MaidName& maid_node,
     const PmidName& /*pmid_node*/, const std::string& serialised_pmid_health,
     nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
-  PmidManagerMetadata pmid_health(serialised_pmid_health);
-  if (return_code.value.code() == CommonErrors::success) {
-    sync_update_pmid_healths_.AddLocalAction(
-        MaidManager::UnresolvedUpdatePmidHealth(
-            maid_node, ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
-    DoSync();
+  try {
+    PmidManagerMetadata pmid_health(serialised_pmid_health);
+    if (return_code.value.code() == CommonErrors::success) {
+      sync_update_pmid_healths_.AddLocalAction(
+          MaidManager::UnresolvedUpdatePmidHealth(
+              maid_node, ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
+      DoSync();
 
+    }
+    dispatcher_.SendHealthResponse(maid_node, pmid_health.claimed_available_size,
+                                  return_code, message_id);
+  } catch(std::exception& e) {
+    LOG(kError) << "Error handling Health Response to " << HexSubstr(maid_node->string())
+                << " with exception of " << e.what();
   }
-  dispatcher_.SendHealthResponse(maid_node, pmid_health.claimed_available_size,
-                                 return_code, message_id);
 }
 
 void MaidManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {
@@ -628,7 +633,8 @@ void MaidManagerService::HandleMessage(
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.contents->data)) {
     LOG(kVerbose) << "can't parse the content";
-    ThrowError(CommonErrors::parsing_error);
+    return;
+//     ThrowError(CommonErrors::parsing_error);
   }
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
     case ActionMaidManagerPut::kActionId: {
