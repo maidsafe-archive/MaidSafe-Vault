@@ -36,6 +36,7 @@ PmidManagerMetadata::PmidManagerMetadata(const PmidName& pmid_name_in)
 PmidManagerMetadata::PmidManagerMetadata(const std::string &serialised_metadata)
     : pmid_name(), stored_count(0), stored_total_size(0), lost_count(0), lost_total_size(0),
       claimed_available_size(0) {
+  LOG(kVerbose) << "PmidManagerMetadata parsing from " << HexSubstr(serialised_metadata);
   protobuf::PmidManagerMetadata proto_metadata;
   if (!proto_metadata.ParseFromString(serialised_metadata)) {
     LOG(kError) << "Failed to parse pmid metadata.";

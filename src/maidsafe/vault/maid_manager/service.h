@@ -385,10 +385,16 @@ template <typename Data>
 void MaidManagerService::HandlePut(const MaidName& account_name, const Data& data,
                                    const PmidName& pmid_node_hint,
                                    nfs::MessageId message_id) {
+  LOG(kVerbose) << "MaidManagerService::HandlePut for account " << HexSubstr(account_name->string())
+                << " with data " << HexSubstr(data.Serialise().data)
+                << " and pmid_node_hint " << HexSubstr(pmid_node_hint->string())
+                << " message_id " << message_id.data;
   auto metadata(group_db_.GetMetadata(account_name));
   if (metadata.AllowPut(data) != MaidManagerMetadata::Status::kNoSpace) {
+    LOG(kInfo) << "MaidManagerService::HandlePut allowing put";
     dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
   } else {
+    LOG(kWarning) << "MaidManagerService::HandlePut disallowing put";
     dispatcher_.SendPutFailure<Data>(account_name, data.name(),
                                      maidsafe_error(CommonErrors::cannot_exceed_limit),
                                      message_id);
@@ -399,6 +405,10 @@ template <typename Data>
 void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
                                            const typename Data::Name& data_name,
                                            int32_t cost, nfs::MessageId /*message_id*/) {
+  LOG(kVerbose) << "MaidManagerService::HandlePutResponse to maid "
+                << HexSubstr(maid_name->string())
+                << " for data name " << HexSubstr(data_name.value)
+                << " taking cost of " << cost;
   typename MaidManager::Key group_key(typename MaidManager::GroupName(maid_name.value),
                                       detail::GetObfuscatedDataName(data_name), Data::Tag::kValue);
   sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(
