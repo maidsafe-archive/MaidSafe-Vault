@@ -188,11 +188,14 @@ void VersionHandlerService::HandleMessage(
         try {
           db_.Commit(resolved_action->key, resolved_action->action);
           if (resolved_action->action.tip_of_tree) {
-//            dispatcher_.SendPutVersionResponse();
+            dispatcher_.SendPutVersionResponse(
+                resolved_action->key, *resolved_action->action.tip_of_tree,
+                maidsafe_error(CommonErrors::success), resolved_action->action.message_id);
           }
         }
-        catch (const maidsafe_error& /*error*/) {
-//        dispatcher_.SendPutVersionResponse();
+        catch (const maidsafe_error& error) {
+          dispatcher_.SendPutVersionResponse(resolved_action->key, VersionHandler::VersionName(),
+                                             error, resolved_action->action.message_id);
         }
       }
       break;
@@ -206,9 +209,11 @@ void VersionHandlerService::HandleMessage(
 
 void VersionHandlerService::HandlePutVersion(
     const VersionHandler::Key& key, const VersionHandler::VersionName& old_version,
-    const VersionHandler::VersionName& new_version, const NodeId& sender) {
+    const VersionHandler::VersionName& new_version, const NodeId& sender,
+    nfs::MessageId message_id) {
   sync_put_versions_.AddLocalAction(VersionHandler::UnresolvedPutVersion(
-      key, ActionVersionHandlerPut(old_version, new_version, sender), routing_.kNodeId()));
+      key, ActionVersionHandlerPut(old_version, new_version, sender, message_id),
+      routing_.kNodeId()));
   DoSync();
 }
 
