@@ -172,6 +172,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
   }
   {
     client_nfs_->RegisterPmid(nfs_vault::PmidRegistration(key_chain.maid, key_chain.pmid, false));
+    boost::this_thread::sleep_for(boost::chrono::seconds(5));
     auto future(client_nfs_->GetPmidHealth(pmid_name));
     auto status(future.wait_for(boost::chrono::seconds(10)));
     if (status == boost::future_status::timeout) {
@@ -326,6 +327,7 @@ void DataChunkStorer::OneChunkRun(size_t& num_chunks, size_t& num_store, size_t&
   ++num_chunks;
 
   StoreOneChunk(chunk_data);
+  boost::this_thread::sleep_for(boost::chrono::seconds(5));
   if (GetOneChunk(chunk_data)) {
     LOG(kInfo) << "Stored chunk " << HexSubstr(name.value);
     ++num_store;
