@@ -222,12 +222,15 @@ void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node,
                                              nfs::MessageId message_id) {
   LOG(kVerbose) << "PmidManagerService::HandleHealthRequest from maid_node "
                 << HexSubstr(maid_node.value.string()) << " for pmid_node "
-                << HexSubstr(pmid_node.value.string()) << " with message_id" << message_id.data;
+                << HexSubstr(pmid_node.value.string()) << " with message_id " << message_id.data;
   try {
-    dispatcher_.SendHealthResponse(maid_node, pmid_node, pmid_metadata_.at(pmid_node),
+    // BEFORE_RELEASE shall replace dummy with pmid_metadata_.at(pmid_node)
+    PmidManagerMetadata dummy(pmid_node);
+    dummy.SetAvailableSize(100000000);
+    dispatcher_.SendHealthResponse(maid_node, pmid_node, dummy,
                                    message_id, maidsafe_error(CommonErrors::success));
   }
-  catch(const std::exception& /*ex*/) {
+  catch(...) {
     LOG(kInfo) << "PmidManagerService::HandleHealthRequest no_such_element";
     dispatcher_.SendHealthResponse(maid_node, pmid_node, PmidManagerMetadata(), message_id,
                                    maidsafe_error(CommonErrors::no_such_element));
