@@ -193,13 +193,12 @@ void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
 }
 
 //=================================================================================================
-
-// To be implemented when ranking is in place
-//void PmidManagerService::HandleCreateAccount(const PmidName& pmid_node) {
+// Created on any new vault addition. Pmid key lookup is already done by routing
+void PmidManagerService::CreatePmidAccount(const PmidName& /*pmid_node*/) {
 //  sync_create_accunts_.AddLocalAction(PmidManager::UnresolvedCreateAccount(
 //      PmidManager::MetadataKey(pmid_node) , ActionPmidManagerCreateAccount(), routing_.kNodeId()));
 //  DoSync();
-//}
+}
 
 void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_t available_size) {
   std::vector<nfs_vault::DataName> data_names;
@@ -350,32 +349,6 @@ void PmidManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange>
 
 //  if (!FromDataManager(message) || !FromPmidNode(message) || !detail::ForThisPersona(message))
 //    ThrowError(CommonErrors::invalid_parameter);
-//}
-
-// =============== Sync ===========================================================================
-
-// void PmidManagerService::Sync(const PmidName& account_name) {
-//  auto serialised_sync_data(pmid_account_handler_.GetSyncData(account_name));
-//  if (!serialised_sync_data.IsInitialised())  // Nothing to sync
-//    return;
-
-//  protobuf::Sync proto_sync;
-//  proto_sync.set_account_name(account_name->string());
-//  proto_sync.set_serialised_unresolved_entries(serialised_sync_data.string());
-
-//  nfs_.Sync(account_name, NonEmptyString(proto_sync.SerializeAsString()));
-//}
-
-// void PmidManagerService::HandleSync(const nfs::Message& message) {
-//  std::vector<PmidManagerUnresolvedEntry> resolved_entries;
-//  protobuf::Sync proto_sync;
-//  if (!proto_sync.ParseFromString(message.data().content.string())) {
-//    LOG(kError) << "Error parsing Synchronise message.";
-//    return;
-//  }
-
-//  pmid_account_handler_.ApplySyncData(PmidName(Identity(proto_sync.account_name())),
-//                                      NonEmptyString(proto_sync.serialised_unresolved_entries()));
 //}
 
 // =============== Account transfer ===============================================================
