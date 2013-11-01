@@ -147,14 +147,18 @@ void PmidManagerService::HandleMessage(
     const typename SynchroniseFromPmidManagerToPmidManager::Receiver& receiver) {
   LOG(kVerbose) << "PmidManagerService::HandleMessage SynchroniseFromPmidManagerToPmidManager";
   protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(message.contents->data))
+  if (!proto_sync.ParseFromString(message.contents->data)) {
+    LOG(kError) << "SynchroniseFromPmidManagerToPmidManager can't parse content";
     ThrowError(CommonErrors::parsing_error);
+  }
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
     case ActionPmidManagerPut::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromPmidManagerToPmidManager ActionPmidManagerPut";
       PmidManager::UnresolvedPut unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromPmidManagerToPmidManager SendPutResponse";
         group_db_.Commit(resolved_action->key, resolved_action->action);
         auto data_name(GetDataNameVariant(resolved_action->key.type, resolved_action->key.name));
         SendPutResponse(data_name, PmidName(Identity(receiver.data.string())),
@@ -163,8 +167,8 @@ void PmidManagerService::HandleMessage(
       break;
     }
     default: {
-      assert(false);
       LOG(kError) << "Unhandled action type";
+      assert(false);
     }
   }
 }
