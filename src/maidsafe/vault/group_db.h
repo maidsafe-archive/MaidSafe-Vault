@@ -133,10 +133,14 @@ void GroupDb<Persona>::AddGroup(const GroupName& group_name, const Metadata& met
                                  element) { return group_id == element.second.first; })) {
     group_id = RandomInt32() % kGroupsLimit;
   }
+  LOG(kVerbose) << "GroupDb<Persona>::AddGroup size of group_map_ " << group_map_.size()
+                << " current group_name " << HexSubstr(group_name->string());
   if (!(group_map_.insert(std::make_pair(group_name, std::make_pair(group_id, metadata)))).second) {
     LOG(kError) << "account already exists in the group map";
     ThrowError(VaultErrors::account_already_exists);
   }
+  LOG(kInfo) << "group inserting succeeded for group_name "
+             << HexSubstr(group_name->string());
 }
 
 template <typename Persona>

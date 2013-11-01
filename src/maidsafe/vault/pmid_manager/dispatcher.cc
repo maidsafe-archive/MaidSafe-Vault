@@ -97,8 +97,7 @@ void PmidManagerDispatcher::SendHealthResponse(const MaidName& maid_node,
   VaultMessage vault_message(message_id, nfs_client::PmidHealthAndReturnCode(
                                              nfs_vault::PmidHealth(pmid_health.Serialise()),
                                              nfs_client::ReturnCode(error)));
-  LOG(kVerbose) << "Serialised PmidHealthResponseFromPmidManagerToMaidManager message is "
-                << HexSubstr(vault_message.Serialise());
+  LOG(kVerbose) << "Send PmidHealthResponse to group around " << HexSubstr(maid_node.value.string());
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
                                               routing::SingleId(routing_.kNodeId())),

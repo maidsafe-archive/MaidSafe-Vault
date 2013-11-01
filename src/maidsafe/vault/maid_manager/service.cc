@@ -214,6 +214,7 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
   pending_account_itr->second.maid_stored = true;
 
   if (pending_account_itr->second.anmaid_stored) {
+    LOG(kVerbose) << "AddLocalAction create account for " << HexSubstr(maid_name->string());
     sync_create_accounts_.AddLocalAction(
         MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(message_id),
                                              routing_.kNodeId()));
@@ -235,6 +236,7 @@ void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidNam
   pending_account_itr->second.anmaid_stored = true;
 
   if (pending_account_itr->second.maid_stored) {
+    LOG(kVerbose) << "AddLocalAction create account for " << HexSubstr(maid_name->string());
     sync_create_accounts_.AddLocalAction(
         MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(message_id),
                                              routing_.kNodeId()));
@@ -471,6 +473,7 @@ void MaidManagerService::HandleMessage(
     const nfs::PutRequestFromMaidNodeToMaidManager& message,
     const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage PutRequestFromMaidNodeToMaidManager";
   typedef nfs::PutRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -485,6 +488,7 @@ void MaidManagerService::HandleMessage(
     const PutResponseFromDataManagerToMaidManager& message,
     const typename PutResponseFromDataManagerToMaidManager::Sender& sender,
     const typename PutResponseFromDataManagerToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage PutResponseFromDataManagerToMaidManager";
   typedef PutResponseFromDataManagerToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -499,6 +503,7 @@ void MaidManagerService::HandleMessage(
     const PutFailureFromDataManagerToMaidManager& message,
     const typename PutFailureFromDataManagerToMaidManager::Sender& sender,
     const typename PutFailureFromDataManagerToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage PutFailureFromDataManagerToMaidManager";
   typedef PutFailureFromDataManagerToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -514,6 +519,7 @@ void MaidManagerService::HandleMessage(
     const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
     const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage DeleteRequestFromMaidNodeToMaidManager";
   typedef nfs::DeleteRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -528,6 +534,7 @@ void MaidManagerService::HandleMessage(
     const nfs::PutVersionRequestFromMaidNodeToMaidManager& message,
     const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage PutVersionRequestFromMaidNodeToMaidManager";
   typedef nfs::PutVersionRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -542,6 +549,7 @@ void MaidManagerService::HandleMessage(
     const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager& message,
     const typename nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage DeleteBranchUntilForkRequestFromMaidNodeToMaidManager";
   typedef nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -556,7 +564,7 @@ void MaidManagerService::HandleMessage(
     const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
     const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& receiver) {
-  std::cout << "CreateAccountRequestFromMaidNodeToMaidManager" << std::endl;
+  LOG(kVerbose) << "MaidManagerService::HandleMessage CreateAccountRequestFromMaidNodeToMaidManager";
   typedef nfs::CreateAccountRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -571,6 +579,7 @@ void MaidManagerService::HandleMessage(
     const nfs::RemoveAccountRequestFromMaidNodeToMaidManager& message,
     const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage RemoveAccountRequestFromMaidNodeToMaidManager";
   typedef nfs::RemoveAccountRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -585,6 +594,7 @@ void MaidManagerService::HandleMessage(
     const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
     const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage RegisterPmidRequestFromMaidNodeToMaidManager";
   typedef nfs::RegisterPmidRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -599,6 +609,7 @@ void MaidManagerService::HandleMessage(
     const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
     const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage UnregisterPmidRequestFromMaidNodeToMaidManager";
   typedef nfs::UnregisterPmidRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -613,6 +624,7 @@ void MaidManagerService::HandleMessage(
     const PmidHealthResponseFromPmidManagerToMaidManager& message,
     const typename PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
     const typename PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage PmidHealthResponseFromPmidManagerToMaidManager";
   typedef PmidHealthResponseFromPmidManagerToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
