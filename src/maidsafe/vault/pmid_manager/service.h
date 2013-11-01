@@ -249,6 +249,7 @@ void PmidManagerService::HandleDelete(
 // ===============================================================================================
 
 }  // namespace vault
+
 }  // namespace maidsafe
 
 #include "maidsafe/vault/pmid_manager/service-inl.h"

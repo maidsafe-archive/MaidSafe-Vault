@@ -239,25 +239,6 @@ void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node,
 
 // =================================================================================================
 
-//void PmidManagerService::HandleMessage(const nfs::Message& message,
-//                                       const routing::ReplyFunctor& /*reply_functor*/) {
-//  ValidateGenericSender(message);
-//  nfs::Reply reply(CommonErrors::success);
-//  nfs::MessageAction action(message.data().action);
-//  switch (action) {
-//    case nfs::MessageAction::kSynchronise:
-//      return HandleSync(message);
-//    case nfs::MessageAction::kAccountTransfer:
-//      return HandleAccountTransfer(message);
-//    case nfs::MessageAction::kGetPmidTotals:
-//      return GetPmidTotals(message);
-//    case nfs::MessageAction::kGetPmidAccount:
-//      return GetPmidAccount(message);
-//    default:
-//      LOG(kError) << "Unhandled Post action type";
-//  }
-//}
-
 // void PmidManagerService::GetPmidTotals(const nfs::Message& message) {
 //  try {
 //    PmidManagerMetadata
