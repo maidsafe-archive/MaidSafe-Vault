@@ -80,14 +80,8 @@ detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
   }
 };
 
-TEST_CASE("Db constructor", "[Db][Unit]") {
-  Db<Key, DataManagerValue> data_manager_db;
-  Db<VersionHandlerKey, VersionHandlerValue> version_handler_db;
-}
-
-TEST_CASE("Db commit", "[Db][Unit]") {
-  Db<Key, TestDbValue> db;
-  Key key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue);
+template <typename Key, typename Value>
+void DbTests(Db<Key, Value>& db, const Key& key) {
   CHECK_THROWS_AS(db.Get(key), maidsafe_error);
   db.Commit(key, TestDbActionPutValue());
   CHECK(db.Get(key).value == "new_value");
@@ -99,6 +93,20 @@ TEST_CASE("Db commit", "[Db][Unit]") {
   CHECK_THROWS_AS(db.Get(key), maidsafe_error);
   CHECK_THROWS_AS(db.Commit(key, TestDbActionModifyValue()), maidsafe_error);
   CHECK_THROWS_AS(db.Get(key), maidsafe_error);
+}
+
+TEST_CASE("Db constructor", "[Db][Unit]") {
+  Db<Key, DataManagerValue> data_manager_db;
+  Db<VersionHandlerKey, VersionHandlerValue> version_handler_db;
+}
+
+TEST_CASE("Db commit", "[Db][Unit]") {
+  Db<Key, TestDbValue> db;
+  Key key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue);
+  for (auto i(0); i != 100; ++i)
+    DbTests(db, key);
+
+  // TODO (Prakash) Extend to all data types
 }
 
 
