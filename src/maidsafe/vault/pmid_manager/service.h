@@ -182,10 +182,17 @@ void IncrementAttemptsAndSendSync(PmidManagerDispatcher& dispatcher,
                 << unresolved_actions.size() << " unresolved_actions";
   if (!unresolved_actions.empty()) {
     sync_type.IncrementSyncAttempts();
-    for (const auto& unresolved_action : unresolved_actions)
-      dispatcher.SendSync(unresolved_action->key.group_name(), unresolved_action->Serialise());
+    protobuf::Sync proto_sync;
+    for (const auto& unresolved_action : unresolved_actions) {
+      proto_sync.Clear();
+      proto_sync.set_serialised_unresolved_action(unresolved_action->Serialise());
+      proto_sync.set_action_type(static_cast<int32_t>(PmidManagerSyncType::kActionId));
+      LOG(kInfo) << "PmidManager send sync action " << proto_sync.action_type();
+      dispatcher.SendSync(unresolved_action->key.group_name(), proto_sync.SerializeAsString());
     }
   }
+}
+
 }  // namespace detail
 
 // ================================= Put Implementation ===========================================

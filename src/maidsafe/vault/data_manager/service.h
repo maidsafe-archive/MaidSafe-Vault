@@ -404,16 +404,22 @@ template <typename Data, typename RequestorIdType>
 void DataManagerService::HandleGet(const typename Data::Name& data_name,
                                    const RequestorIdType& requestor,
                                    nfs::MessageId message_id) {
+  LOG(kVerbose) << "Handle Get " << HexSubstr(data_name.value);
   // Get all pmid nodes that are online.
   std::set<PmidName> online_pmids;
   try {
     auto value(db_.Get(vault::Key(data_name.value, Data::Tag::kValue)));
     online_pmids = std::move(value.online_pmids());
-  } catch (const common_error& error) {
-      if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
-        throw error;  // For db errors
+  } catch (const maidsafe_error& error) {
+    LOG(kWarning) << "Getting " << HexEncode(data_name.value)
+                  << " causes a maidsafe_error " << error.code().value();
+    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
+      LOG(kError) << "db error";
+      throw error;  // For db errors
+    }
     // TODO(Fraser#5#): 2013-10-03 - Request for non-existent data should possibly generate an alert
-    LOG(kWarning) << HexEncode(data_name.value) << " doesn't exist.";
+    LOG(kWarning) << "Account for " << HexEncode(data_name.value) << " doesn't exist.";
+    return;
   }
 
   int expected_response_count(static_cast<int>(online_pmids.size()));
@@ -626,10 +632,18 @@ template <typename DataManagerSyncType>
 void IncrementAttemptsAndSendSync(DataManagerDispatcher& dispatcher,
                                   DataManagerSyncType& sync_type) {
   auto unresolved_actions(sync_type.GetUnresolvedActions());
+  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for DataManagerSerive, has " 
+                << unresolved_actions.size() << " unresolved_actions";
   if (!unresolved_actions.empty()) {
     sync_type.IncrementSyncAttempts();
-    for (const auto& unresolved_action : unresolved_actions)
-      dispatcher.SendSync(unresolved_action->key, unresolved_action->Serialise());
+    protobuf::Sync proto_sync;
+    for (const auto& unresolved_action : unresolved_actions) {
+      proto_sync.Clear();
+      proto_sync.set_serialised_unresolved_action(unresolved_action->Serialise());
+      proto_sync.set_action_type(static_cast<int32_t>(DataManagerSyncType::kActionId));
+      LOG(kInfo) << "DataManager send sync action " << proto_sync.action_type();
+      dispatcher.SendSync(unresolved_action->key, proto_sync.SerializeAsString());
+    }
   }
 }
 
