@@ -33,6 +33,7 @@
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.h"
 
 namespace maidsafe {
 

@@ -370,6 +370,8 @@ template <typename MaidManagerSyncType>
 void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
                                   MaidManagerSyncType& sync_type) {
   auto unresolved_actions(sync_type.GetUnresolvedActions());
+  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has " 
+                << unresolved_actions.size() << " unresolved_actions";
   if (!unresolved_actions.empty()) {
     sync_type.IncrementSyncAttempts();
     protobuf::Sync proto_sync;
@@ -377,6 +379,7 @@ void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
       proto_sync.Clear();
       proto_sync.set_serialised_unresolved_action(unresolved_action->Serialise());
       proto_sync.set_action_type(static_cast<int32_t>(MaidManagerSyncType::kActionId));
+      LOG(kInfo) << "MaidManager send sync action " << proto_sync.action_type();
       dispatcher.SendSync(unresolved_action->key.group_name(), proto_sync.SerializeAsString());
     }
   }

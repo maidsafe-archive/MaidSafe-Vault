@@ -49,23 +49,34 @@ struct TestDbValue {
   TestDbValue(const TestDbValue&);
 };
 
-struct TestDbActionThrowOnEmptyValue {
+// change value
+struct TestDbActionModifyValue {
 detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
   if (value) {
     value->value = "modified_value";
     return detail::DbAction::kPut;
   }
-    ThrowError(CommonErrors::compression_error);
+    ThrowError(CommonErrors::no_such_element);
     return detail::DbAction::kDelete;
   }
 };
 
-struct TestDbActionNoThrowOnEmptyValue {
+// put value
+struct TestDbActionPutValue {
   detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
     if (!value)
       value.reset(new TestDbValue());
     value->value = "new_value";
     return detail::DbAction::kPut;
+  }
+};
+
+// delete value
+struct TestDbActionDeleteValue {
+detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
+  if (!value)
+    ThrowError(CommonErrors::no_such_element);
+   return detail::DbAction::kDelete;
   }
 };
 
@@ -78,77 +89,85 @@ TEST_CASE("Db commit", "[Db][Unit]") {
   Db<Key, TestDbValue> db;
   Key key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue);
   CHECK_THROWS_AS(db.Get(key), maidsafe_error);
-  db.Commit(key, TestDbActionNoThrowOnEmptyValue());
+  db.Commit(key, TestDbActionPutValue());
   CHECK(db.Get(key).value == "new_value");
+  db.Commit(key, TestDbActionModifyValue());
+  CHECK(db.Get(key).value == "modified_value");
+  db.Commit(key, TestDbActionPutValue());
+  CHECK(db.Get(key).value == "new_value");
+  db.Commit(key, TestDbActionDeleteValue());
+  CHECK_THROWS_AS(db.Get(key), maidsafe_error);
+  CHECK_THROWS_AS(db.Commit(key, TestDbActionModifyValue()), maidsafe_error);
+  CHECK_THROWS_AS(db.Get(key), maidsafe_error);
 }
 
 
-TEST_CASE("Db Poc", "[Db][Unit]") {
-  const maidsafe::test::TestPath kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
-  boost::filesystem::path vault_root_directory_(*kTestRoot_ / RandomAlphaNumericString(8));
-  leveldb::DB* db;
-  leveldb::Options options;
-  options.create_if_missing = true;
-  options.error_if_exists = true;
-  leveldb::Status status(leveldb::DB::Open(options, vault_root_directory_.string(), &db));
-  if (!status.ok())
-    ThrowError(VaultErrors::failed_to_handle_request);
-  std::unique_ptr<leveldb::DB> leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
-  assert(leveldb_);
-  std::vector<std::string> nodes1, nodes2, nodes3;
-  for (auto i(0U); i != 10000; ++i) {
-    nodes1.push_back("1" + NodeId(NodeId::kRandomId).string());
-    nodes2.push_back("2" + NodeId(NodeId::kRandomId).string());
-    nodes3.push_back("3" + NodeId(NodeId::kRandomId).string());
+//TEST_CASE("Db Poc", "[Db][Unit]") {
+//  const maidsafe::test::TestPath kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
+//  boost::filesystem::path vault_root_directory_(*kTestRoot_ / RandomAlphaNumericString(8));
+//  leveldb::DB* db;
+//  leveldb::Options options;
+//  options.create_if_missing = true;
+//  options.error_if_exists = true;
+//  leveldb::Status status(leveldb::DB::Open(options, vault_root_directory_.string(), &db));
+//  if (!status.ok())
+//    ThrowError(VaultErrors::failed_to_handle_request);
+//  std::unique_ptr<leveldb::DB> leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
+//  assert(leveldb_);
+//  std::vector<std::string> nodes1, nodes2, nodes3;
+//  for (auto i(0U); i != 10000; ++i) {
+//    nodes1.push_back("1" + NodeId(NodeId::kRandomId).string());
+//    nodes2.push_back("2" + NodeId(NodeId::kRandomId).string());
+//    nodes3.push_back("3" + NodeId(NodeId::kRandomId).string());
 
-    leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(), nodes1.back(), nodes1.back()));
-    if (!status.ok())
-      ThrowError(VaultErrors::failed_to_handle_request);
-    status = leveldb_->Put(leveldb::WriteOptions(), nodes2.back(), nodes2.back());
-    if (!status.ok())
-      ThrowError(VaultErrors::failed_to_handle_request);
-    status = leveldb_->Put(leveldb::WriteOptions(), nodes3.back(), nodes3.back());
-    if (!status.ok())
-      ThrowError(VaultErrors::failed_to_handle_request);
-  }
+//    leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(), nodes1.back(), nodes1.back()));
+//    if (!status.ok())
+//      ThrowError(VaultErrors::failed_to_handle_request);
+//    status = leveldb_->Put(leveldb::WriteOptions(), nodes2.back(), nodes2.back());
+//    if (!status.ok())
+//      ThrowError(VaultErrors::failed_to_handle_request);
+//    status = leveldb_->Put(leveldb::WriteOptions(), nodes3.back(), nodes3.back());
+//    if (!status.ok())
+//      ThrowError(VaultErrors::failed_to_handle_request);
+//  }
 
-  {
-    leveldb::Iterator* iter = leveldb_->NewIterator(leveldb::ReadOptions());
-    uint32_t count(0);
-    for (iter->Seek("1");
-         iter->Valid() && iter->key().ToString() < "2";
-         iter->Next()) {
-        REQUIRE(std::find(nodes1.begin(), nodes1.end(), iter->value().ToString()) != nodes1.end());
-        ++count;
-    }
-    REQUIRE(10000 == count);
-    delete iter;
-  }
-  {
-    leveldb::Iterator* iter = leveldb_->NewIterator(leveldb::ReadOptions());
-    uint32_t count(0);
-    for (iter->Seek("2");
-         iter->Valid() && iter->key().ToString() < "3";
-         iter->Next()) {
-        REQUIRE(std::find(nodes2.begin(), nodes2.end(), iter->value().ToString()) != nodes2.end());
-        ++count;
-    }
-    REQUIRE(10000 == count);
-    delete iter;
-  }
-  {
-    leveldb::Iterator* iter = leveldb_->NewIterator(leveldb::ReadOptions());
-    uint32_t count(0);
-    for (iter->Seek("3");
-         iter->Valid();
-         iter->Next()) {
-        REQUIRE(std::find(nodes3.begin(), nodes3.end(), iter->value().ToString()) != nodes3.end());
-        ++count;
-    }
-    REQUIRE(10000 == count);
-    delete iter;
-  }
-}
+//  {
+//    leveldb::Iterator* iter = leveldb_->NewIterator(leveldb::ReadOptions());
+//    uint32_t count(0);
+//    for (iter->Seek("1");
+//         iter->Valid() && iter->key().ToString() < "2";
+//         iter->Next()) {
+//        REQUIRE(std::find(nodes1.begin(), nodes1.end(), iter->value().ToString()) != nodes1.end());
+//        ++count;
+//    }
+//    REQUIRE(10000 == count);
+//    delete iter;
+//  }
+//  {
+//    leveldb::Iterator* iter = leveldb_->NewIterator(leveldb::ReadOptions());
+//    uint32_t count(0);
+//    for (iter->Seek("2");
+//         iter->Valid() && iter->key().ToString() < "3";
+//         iter->Next()) {
+//        REQUIRE(std::find(nodes2.begin(), nodes2.end(), iter->value().ToString()) != nodes2.end());
+//        ++count;
+//    }
+//    REQUIRE(10000 == count);
+//    delete iter;
+//  }
+//  {
+//    leveldb::Iterator* iter = leveldb_->NewIterator(leveldb::ReadOptions());
+//    uint32_t count(0);
+//    for (iter->Seek("3");
+//         iter->Valid();
+//         iter->Next()) {
+//        REQUIRE(std::find(nodes3.begin(), nodes3.end(), iter->value().ToString()) != nodes3.end());
+//        ++count;
+//    }
+//    REQUIRE(10000 == count);
+//    delete iter;
+//  }
+//}
 
 }  // test
 

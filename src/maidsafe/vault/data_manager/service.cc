@@ -222,20 +222,25 @@ void DataManagerService::HandleMessage(
     const typename SynchroniseFromDataManagerToDataManager::Receiver& /*receiver*/) {
   LOG(kVerbose) << "DataManagerService::HandleMessage SynchroniseFromDataManagerToDataManager";
   protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(message.contents->data))
+  if (!proto_sync.ParseFromString(message.contents->data)) {
+    LOG(kError) << "SynchroniseFromDataManagerToDataManager can't parse content";
     ThrowError(CommonErrors::parsing_error);
+  }
 
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
     case ActionDataManagerPut::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerPut";
       DataManager::UnresolvedPut unresolved_action(proto_sync.serialised_unresolved_action(),
                                                    sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit put to db";
         db_.Commit(resolved_action->key, resolved_action->action);
       }
       break;
     }
     case ActionDataManagerDelete::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete";
       DataManager::UnresolvedDelete unresolved_action(proto_sync.serialised_unresolved_action(),
                                                       sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
@@ -243,6 +248,7 @@ void DataManagerService::HandleMessage(
         auto value(db_.Commit(resolved_action->key, resolved_action->action));
         assert(value->Subscribers() > 0);
         if (value->Subscribers() == 0) {
+          LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
           SendDeleteRequests(resolved_action->key, value->AllPmids(), message.id);
         }
       }
@@ -266,11 +272,14 @@ void DataManagerService::HandleMessage(
     //      break;
     //    }
     case ActionDataManagerRemovePmid::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerRemovePmid";
       DataManager::UnresolvedRemovePmid unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_remove_pmids_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit remove to db";
         db_.Commit(resolved_action->key, resolved_action->action);
+      }
       break;
     }
     //    case ActionDataManagerNodeUp::kActionId: {
@@ -290,8 +299,8 @@ void DataManagerService::HandleMessage(
     //      break;
     //    }
     default: {
+      LOG(kError) << "SynchroniseFromDataManagerToDataManager Unhandled action type";
       assert(false);
-      LOG(kError) << "Unhandled action type";
     }
   }
 }

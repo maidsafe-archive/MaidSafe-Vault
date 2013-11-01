@@ -422,8 +422,10 @@ void MaidManagerService::DoSync() {
 void MaidManagerService::HandleHealthResponse(const MaidName& maid_node,
     const PmidName& /*pmid_node*/, const std::string& serialised_pmid_health,
     nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
+  LOG(kVerbose) << "MaidManagerService::HandleHealthResponse to " << HexSubstr(maid_node->string());
   try {
     PmidManagerMetadata pmid_health(serialised_pmid_health);
+    LOG(kVerbose) << "PmidManagerMetadata available size " << pmid_health.claimed_available_size;
     if (return_code.value.code() == CommonErrors::success) {
       sync_update_pmid_healths_.AddLocalAction(
           MaidManager::UnresolvedUpdatePmidHealth(
@@ -632,44 +634,51 @@ void MaidManagerService::HandleMessage(
   LOG(kVerbose) << "MaidManagerService::HandleMessage SynchroniseFromMaidManagerToMaidManager";
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.contents->data)) {
-    LOG(kVerbose) << "can't parse the content";
+    LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager can't parse the content";
     return;
 //     ThrowError(CommonErrors::parsing_error);
   }
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
     case ActionMaidManagerPut::kActionId: {
-      LOG(kVerbose) << "ActionMaidManagerPut";
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionMaidManagerPut";
       MaidManager::UnresolvedPut unresolved_action(proto_sync.serialised_unresolved_action(),
                                                    sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedPutResponse";
         HandleSyncedPutResponse(std::move(resolved_action));
+      }
       break;
     }
     case ActionMaidManagerDelete::kActionId: {
-      LOG(kVerbose) << "ActionMaidManagerDelete";
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionMaidManagerDelete";
       MaidManager::UnresolvedDelete unresolved_action(proto_sync.serialised_unresolved_action(),
                                                       sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedDelete";
         HandleSyncedDelete(std::move(resolved_action));
+      }
       break;
     }
     case ActionCreateAccount::kActionId: {
-      LOG(kVerbose) << "ActionCreateAccount";
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionCreateAccount";
       MaidManager::UnresolvedCreateAccount unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_create_accounts_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedCreateMaidAccount";
         HandleSyncedCreateMaidAccount(std::move(resolved_action));
+      }
       break;
     }
     case ActionRegisterPmid::kActionId: {
-      LOG(kVerbose) << "ActionRegisterPmid";
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionRegisterPmid";
       MaidManager::UnresolvedRegisterPmid unresolved_action(
         proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_register_pmids_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedPmidRegistration";
         HandleSyncedPmidRegistration(std::move(resolved_action));
       }
     break;
