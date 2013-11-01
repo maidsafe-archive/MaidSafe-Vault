@@ -197,7 +197,7 @@ template <typename Key, typename Value>
 void Db<Key, Value>::Delete(const Key& key) {
   leveldb::Status status(
       leveldb_->Delete(leveldb::WriteOptions(), key.ToFixedWidthString().string()));
-  if (status.ok())
+  if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
 }
 
