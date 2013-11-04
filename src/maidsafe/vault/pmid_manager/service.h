@@ -88,6 +88,8 @@ class PmidManagerService {
   friend class detail::PmidManagerPutResponseFailureVisitor<PmidManagerService>;
   friend class detail::PmidManagerDeleteVisitor<PmidManagerService>;
 
+  void CreatePmidAccount(const PmidName& pmid_node);  // triggered by churn event
+
   // =============== Put/Delete data =============================================================
   template <typename Data>
   void HandlePut(const Data& data, const PmidName& pmid_node, nfs::MessageId message_id);
@@ -178,7 +180,7 @@ template <typename PmidManagerSyncType>
 void IncrementAttemptsAndSendSync(PmidManagerDispatcher& dispatcher,
                                   PmidManagerSyncType& sync_type) {
   auto unresolved_actions(sync_type.GetUnresolvedActions());
-  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for PmidManagerSerive, has " 
+  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for PmidManagerSerive, has "
                 << unresolved_actions.size() << " unresolved_actions";
   if (!unresolved_actions.empty()) {
     sync_type.IncrementSyncAttempts();
@@ -256,6 +258,7 @@ void PmidManagerService::HandleDelete(
 // ===============================================================================================
 
 }  // namespace vault
+
 }  // namespace maidsafe
 
 #include "maidsafe/vault/pmid_manager/service-inl.h"

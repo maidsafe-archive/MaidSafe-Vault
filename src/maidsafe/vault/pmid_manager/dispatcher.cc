@@ -18,7 +18,6 @@
 
 #include "maidsafe/vault/pmid_manager/dispatcher.h"
 
-#include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
@@ -27,8 +26,12 @@ namespace vault {
 
 PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing) : routing_(routing) {}
 
-void PmidManagerDispatcher::SendSync(const PmidName& /*account_name*/,
-                                     const std::string& /*serialised_sync*/) {
+void PmidManagerDispatcher::SendSync(const PmidName& account_name,
+                                     const std::string& serialised_sync) {
+  typedef SynchroniseFromPmidManagerToPmidManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  SendSyncMessage<VaultMessage> sync_sender;
+  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), account_name);
 }
 
 // void PmidManagerDispatcher::SendStateChange(const PmidName& pmid_node,

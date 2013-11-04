@@ -61,7 +61,8 @@ glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
 set(TestsMain ${VaultSourcesDir}/tests/tests_main.cc)
 
 set(VaultGTestsAllFiles ${VaultTestsAllFiles})
-set(VaultTestsAllFiles ${VaultSourcesDir}/tests/db_test.cc)
+set(VaultTestsAllFiles ${VaultSourcesDir}/tests/db_test.cc
+                       ${VaultSourcesDir}/tests/group_db_test.cc)
 list(REMOVE_ITEM VaultGTestsAllFiles ${VaultTestsAllFiles})
 list(APPEND VaultTestsAllFiles ${TestsMain})
 
