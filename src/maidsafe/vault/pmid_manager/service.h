@@ -45,6 +45,13 @@
 namespace maidsafe {
 namespace vault {
 
+namespace test {
+
+class PmidManagerServiceTest_BEH_PutSync_Test;
+
+}
+
+
 class PmidManagerService {
  public:
   typedef void PublicMessages;
@@ -87,6 +94,7 @@ class PmidManagerService {
   friend class detail::PmidManagerPutVisitor<PmidManagerService>;
   friend class detail::PmidManagerPutResponseFailureVisitor<PmidManagerService>;
   friend class detail::PmidManagerDeleteVisitor<PmidManagerService>;
+  friend class test::PmidManagerServiceTest_BEH_PutSync_Test;
 
   void CreatePmidAccount(const PmidName& pmid_node);  // triggered by churn event
 

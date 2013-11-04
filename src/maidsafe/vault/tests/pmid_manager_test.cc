@@ -62,19 +62,27 @@ TEST_F(PmidManagerServiceTest, BEH_PutSync) {
                        ImmutableData::Tag::kValue);
   NodeId group_id(NodeId::kRandomId);
   std::vector<routing::GroupSource> group_sources;
-  group_sources.push_back(routing::GroupSource(routing::GroupId(group_id), routing::SingleId(this->routing_.kNodeId())));
+  group_sources.push_back(routing::GroupSource(routing::GroupId(group_id),
+                                               routing::SingleId(this->routing_.kNodeId())));
   for (int index = 1; index < routing::Parameters::node_group_size; ++index)
-    group_sources.push_back(routing::GroupSource(routing::GroupId(group_id), routing::SingleId(NodeId(NodeId::kRandomId))));
+    group_sources.push_back(routing::GroupSource(routing::GroupId(group_id),
+                                                 routing::SingleId(NodeId(NodeId::kRandomId))));
 
   nfs::MessageId message_id(RandomUint32());
   int32_t size(1024);
-  ActionPmidManagerPut action_put(size, message_id);
-  PmidManager::UnresolvedPut unresolved_action(group_key, action_put, this->routing_.kNodeId());
-  protobuf::Sync proto_sync;
-  proto_sync.set_action_type(static_cast<int>(ActionPmidManagerPut::kActionId));
-  proto_sync.set_serialised_unresolved_action(unresolved_action.Serialise());
-  SynchroniseFromPmidManagerToPmidManager message(message_id, nfs_vault::Content(proto_sync.SerializeAsString()));
-  this->pmid_manager_service_.HandleMessage(message, group_sources.at(0), routing::GroupId(group_id));
+  for (int index = 0; index < 2; ++index) {
+    ActionPmidManagerPut action_put(size, message_id);
+    PmidManager::UnresolvedPut unresolved_action(group_key, action_put,
+                                                 group_sources.at(index).sender_id.data);
+    protobuf::Sync proto_sync;
+    proto_sync.set_action_type(static_cast<int>(ActionPmidManagerPut::kActionId));
+    proto_sync.set_serialised_unresolved_action(unresolved_action.Serialise());
+    SynchroniseFromPmidManagerToPmidManager message(
+        message_id, nfs_vault::Content(proto_sync.SerializeAsString()));
+    this->pmid_manager_service_.HandleMessage(message, group_sources.at(index),
+                                              routing::GroupId(group_id));
+    EXPECT_EQ(this->pmid_manager_service_.sync_puts_.GetUnresolvedActions().size(), index + 1);
+  }
 }
 
 }  //  namespace test
