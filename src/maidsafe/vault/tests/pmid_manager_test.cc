@@ -70,7 +70,8 @@ TEST_F(PmidManagerServiceTest, BEH_PutSync) {
 
   nfs::MessageId message_id(RandomUint32());
   int32_t size(1024);
-  for (int index = 0; index < 2; ++index) {
+  this->pmid_manager_service_.group_db_.AddGroup(group_key.group_name(), PmidManagerMetadata());
+  for (int index = 0; index < 4; ++index) {
     ActionPmidManagerPut action_put(size, message_id);
     PmidManager::UnresolvedPut unresolved_action(group_key, action_put,
                                                  group_sources.at(index).sender_id.data);
@@ -79,9 +80,22 @@ TEST_F(PmidManagerServiceTest, BEH_PutSync) {
     proto_sync.set_serialised_unresolved_action(unresolved_action.Serialise());
     SynchroniseFromPmidManagerToPmidManager message(
         message_id, nfs_vault::Content(proto_sync.SerializeAsString()));
-    this->pmid_manager_service_.HandleMessage(message, group_sources.at(index),
-                                              routing::GroupId(group_id));
-    EXPECT_EQ(this->pmid_manager_service_.sync_puts_.GetUnresolvedActions().size(), index + 1);
+    if (index == 0) {
+      this->pmid_manager_service_.sync_puts_.AddLocalAction(unresolved_action);
+    } else {
+      this->pmid_manager_service_.HandleMessage(message, group_sources.at(index),
+                                                routing::GroupId(group_id));
+    }
+
+    if (index == routing::Parameters::node_group_size - 1) {
+      EXPECT_EQ(this->pmid_manager_service_.sync_puts_.GetUnresolvedActions().size(), 0);
+      return;
+    }
+
+    EXPECT_EQ(this->pmid_manager_service_.sync_puts_.GetUnresolvedActions().size(), 1);
+    EXPECT_EQ(
+        this->pmid_manager_service_.sync_puts_.GetUnresolvedActions()[0]->peer_and_entry_ids.size(),
+        index);
   }
 }
 

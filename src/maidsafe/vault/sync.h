@@ -181,7 +181,7 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
         LOG(kVerbose) << "AddAction " << kActionId << " syncs from peer before local";
         unresolved_action_ptr->peer_and_entry_ids.push_back(
             unresolved_action.this_node_and_entry_id);
-        unresolved_action_ptr->this_node_and_entry_id.first == NodeId();
+        unresolved_action_ptr->this_node_and_entry_id.first = NodeId();
       }
       unresolved_actions_.push_back(std::move(unresolved_action_ptr));
       break;
