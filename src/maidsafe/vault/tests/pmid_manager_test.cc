@@ -34,6 +34,8 @@ namespace test {
 typedef PutRequestFromDataManagerToPmidManager PutRequest;
 typedef PutFailureFromPmidNodeToPmidManager PutFailure;
 typedef DeleteRequestFromDataManagerToPmidManager DeleteRequest;
+typedef GetPmidAccountRequestFromPmidNodeToPmidManager GetPmidAccount;
+typedef PmidHealthRequestFromMaidNodeToPmidManager PmidHealthRequest;
 
 namespace {
 
@@ -61,6 +63,16 @@ namespace {
   nfs_vault::DataName CreateContent<nfs_vault::DataName>() {
     ImmutableData data(NonEmptyString(RandomString(128)));
     return nfs_vault::DataName(ImmutableData::Name(data.name()));
+  }
+
+  template <>
+  nfs_vault::AvailableSize CreateContent<nfs_vault::AvailableSize>() {
+    return nfs_vault::AvailableSize(2^20);
+  }
+
+  template <>
+  nfs_vault::Empty CreateContent<nfs_vault::Empty>() {
+    return nfs_vault::Empty();
   }
 
 
@@ -178,6 +190,24 @@ TEST_F(PmidManagerServiceTest, BEH_DeleterequestFromDataManager) {
                                               routing::GroupId(pmid_node));
   }
   EXPECT_EQ(this->pmid_manager_service_.sync_deletes_.GetUnresolvedActions().size(), 1);
+}
+
+TEST_F(PmidManagerServiceTest, BEH_GetPmidAccountRequestFromPmidNode) {
+  auto content(CreateContent<GetPmidAccount::Contents>());
+  auto get_pmid_account_request(CreateMessage<GetPmidAccount>(content));
+  NodeId pmid_node(NodeId::kRandomId);
+  this->pmid_manager_service_.HandleMessage(get_pmid_account_request,
+                                            routing::SingleSource(pmid_node),
+                                            routing::GroupId(pmid_node));
+}
+
+TEST_F(PmidManagerServiceTest, BEH_PmidHealthRequestFromMaidNode) {
+  auto content(CreateContent<PmidHealthRequest::Contents>());
+  auto get_pmid_account_request(CreateMessage<PmidHealthRequest>(content));
+  NodeId pmid_node(NodeId::kRandomId), maid_node(NodeId::kRandomId);
+  this->pmid_manager_service_.HandleMessage(get_pmid_account_request,
+                                            routing::SingleSource(maid_node),
+                                            routing::GroupId(pmid_node));
 }
 
 }  //  namespace test
