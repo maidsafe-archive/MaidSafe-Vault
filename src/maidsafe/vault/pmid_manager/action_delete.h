@@ -35,6 +35,7 @@ class PmidManagerValue;
 struct ActionPmidManagerDelete {
   ActionPmidManagerDelete() {}
   detail::DbAction operator()(std::unique_ptr<PmidManagerValue>& value) const;
+  std::string Serialise() const;
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
 };
 

@@ -34,6 +34,10 @@ detail::DbAction ActionPmidManagerDelete::operator()(std::unique_ptr<PmidManager
   return detail::DbAction::kDelete; // FIXME
 }
 
+std::string ActionPmidManagerDelete::Serialise() const {
+  return std::string();
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

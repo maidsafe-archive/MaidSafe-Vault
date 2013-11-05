@@ -48,6 +48,9 @@ namespace vault {
 namespace test {
 
 class PmidManagerServiceTest_BEH_PutSync_Test;
+class PmidManagerServiceTest_BEH_PutRequestFromDataManager_Test;
+class PmidManagerServiceTest_BEH_PutFailureFromPmidNode_Test;
+class PmidManagerServiceTest_BEH_DeleterequestFromDataManager_Test;
 
 }
 
@@ -95,6 +98,9 @@ class PmidManagerService {
   friend class detail::PmidManagerPutResponseFailureVisitor<PmidManagerService>;
   friend class detail::PmidManagerDeleteVisitor<PmidManagerService>;
   friend class test::PmidManagerServiceTest_BEH_PutSync_Test;
+  friend class test::PmidManagerServiceTest_BEH_PutRequestFromDataManager_Test;
+  friend class test::PmidManagerServiceTest_BEH_PutFailureFromPmidNode_Test;
+  friend class test::PmidManagerServiceTest_BEH_DeleterequestFromDataManager_Test;
 
   void CreatePmidAccount(const PmidName& pmid_node);  // triggered by churn event
 
@@ -135,7 +141,7 @@ template <typename MessageType>
 void PmidManagerService::HandleMessage(const MessageType& /*message*/,
                                        const typename MessageType::Sender& /*sender*/,
                                        const typename MessageType::Receiver& /*receiver*/) {
-  MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
+  MessageType::No_genereic_handler_is_available__Specialisation_is_required;
 }
 
 template <>

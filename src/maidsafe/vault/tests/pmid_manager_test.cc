@@ -31,6 +31,54 @@ namespace vault {
 
 namespace test {
 
+typedef PutRequestFromDataManagerToPmidManager PutRequest;
+typedef PutFailureFromPmidNodeToPmidManager PutFailure;
+typedef DeleteRequestFromDataManagerToPmidManager DeleteRequest;
+
+namespace {
+
+  template <typename ContentType>
+  ContentType CreateContent() {
+    ContentType::No_genereic_handler_is_available__Specialisation_is_required;
+    return ContentType();
+  }
+
+  template <>
+  nfs_vault::DataNameAndContent CreateContent<nfs_vault::DataNameAndContent>() {
+    ImmutableData data(NonEmptyString(RandomString(128)));
+    return nfs_vault::DataNameAndContent(data);
+  }
+
+  template <>
+  nfs_client::DataNameAndSpaceAndReturnCode
+  CreateContent<nfs_client::DataNameAndSpaceAndReturnCode>() {
+    ImmutableData data(NonEmptyString(RandomString(128)));
+    nfs_client::ReturnCode return_code(VaultErrors::not_enough_space);
+    return nfs_client::DataNameAndSpaceAndReturnCode(data.name(), 100, return_code);
+  }
+
+  template <>
+  nfs_vault::DataName CreateContent<nfs_vault::DataName>() {
+    ImmutableData data(NonEmptyString(RandomString(128)));
+    return nfs_vault::DataName(ImmutableData::Name(data.name()));
+  }
+
+
+  template <typename MessageType>
+  MessageType CreateMessage(const typename MessageType::Contents& contents) {
+    nfs::MessageId message_id(RandomUint32());
+    return MessageType(message_id, contents);
+  }
+
+  std::vector<routing::GroupSource> CreateGroupSource(const NodeId& group_id) {
+    std::vector<routing::GroupSource> group_source;
+    for (auto index(0); index < routing::Parameters::node_group_size; ++index)
+      group_source.push_back(routing::GroupSource(routing::GroupId(group_id),
+                                                  routing::SingleId(NodeId(NodeId::kRandomId))));
+    return group_source;
+  }
+}
+
 class PmidManagerServiceTest  : public testing::Test {
  public:
   PmidManagerServiceTest() :
@@ -71,7 +119,7 @@ TEST_F(PmidManagerServiceTest, BEH_PutSync) {
   nfs::MessageId message_id(RandomUint32());
   int32_t size(1024);
   this->pmid_manager_service_.group_db_.AddGroup(group_key.group_name(), PmidManagerMetadata());
-  for (int index = 0; index < 4; ++index) {
+  for (int index = 0; index < routing::Parameters::node_group_size; ++index) {
     ActionPmidManagerPut action_put(size, message_id);
     PmidManager::UnresolvedPut unresolved_action(group_key, action_put,
                                                  group_sources.at(index).sender_id.data);
@@ -97,6 +145,39 @@ TEST_F(PmidManagerServiceTest, BEH_PutSync) {
         this->pmid_manager_service_.sync_puts_.GetUnresolvedActions()[0]->peer_and_entry_ids.size(),
         index);
   }
+}
+
+TEST_F(PmidManagerServiceTest, BEH_PutRequestFromDataManager) {
+  auto content(CreateContent<PutRequest::Contents>());
+  auto put_request(CreateMessage<PutRequest>(content));
+  routing::GroupSource group_source(
+      routing::GroupId(NodeId(put_request.contents->name.raw_name.string())),
+      routing::SingleId(NodeId(NodeId::kRandomId)));
+  this->pmid_manager_service_.HandleMessage(put_request, group_source,
+                                            routing::GroupId(this->routing_.kNodeId()));
+  EXPECT_EQ(this->pmid_manager_service_.sync_puts_.GetUnresolvedActions().size(), 1);
+}
+
+TEST_F(PmidManagerServiceTest, BEH_PutFailureFromPmidNode) {
+  auto content(CreateContent<PutFailure::Contents>());
+  auto put_failure(CreateMessage<PutFailure>(content));
+  this->pmid_manager_service_.HandleMessage(put_failure,
+                                            routing::SingleSource(NodeId(NodeId::kRandomId)),
+                                            routing::GroupId(this->routing_.kNodeId()));
+  EXPECT_EQ(this->pmid_manager_service_.sync_deletes_.GetUnresolvedActions().size(), 1);
+
+}
+
+TEST_F(PmidManagerServiceTest, BEH_DeleterequestFromDataManager) {
+  auto content(CreateContent<DeleteRequest::Contents>());
+  auto delete_request(CreateMessage<DeleteRequest>(content));
+  auto group_source(CreateGroupSource(NodeId(content.raw_name.string())));
+  NodeId pmid_node(NodeId::kRandomId);
+  for (u_int32_t index(0); index < group_source.size(); ++index) {
+    this->pmid_manager_service_.HandleMessage(delete_request, group_source[index],
+                                              routing::GroupId(pmid_node));
+  }
+  EXPECT_EQ(this->pmid_manager_service_.sync_deletes_.GetUnresolvedActions().size(), 1);
 }
 
 }  //  namespace test
