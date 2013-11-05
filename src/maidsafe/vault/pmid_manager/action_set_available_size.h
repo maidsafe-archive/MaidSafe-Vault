@@ -42,7 +42,7 @@ struct ActionPmidManagerSetAvailableSize {
   ActionPmidManagerSetAvailableSize(const ActionPmidManagerSetAvailableSize& other);
   ActionPmidManagerSetAvailableSize(ActionPmidManagerSetAvailableSize&& other);
 
-  detail::DbAction operator()(std::unique_ptr<PmidManagerMetadata>& metadata);
+  detail::DbAction operator()(PmidManagerMetadata& metadata);
 
   std::string Serialise() const;
 

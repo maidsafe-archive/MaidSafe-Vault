@@ -271,13 +271,24 @@ void DataManagerService::HandleMessage(
     //        db_.Commit(resolved_action->key, resolved_action->action);
     //      break;
     //    }
+    case ActionDataManagerAddPmid::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerAddPmid";
+      DataManager::UnresolvedAddPmid unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit add pmid to db";
+        db_.Commit(resolved_action->key, resolved_action->action);
+      }
+      break;
+    }
     case ActionDataManagerRemovePmid::kActionId: {
       LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerRemovePmid";
       DataManager::UnresolvedRemovePmid unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_remove_pmids_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
-        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit remove to db";
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit remove pmid to db";
         db_.Commit(resolved_action->key, resolved_action->action);
       }
       break;

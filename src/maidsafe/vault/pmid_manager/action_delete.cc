@@ -26,12 +26,14 @@ namespace maidsafe {
 
 namespace vault {
 
-detail::DbAction ActionPmidManagerDelete::operator()(std::unique_ptr<PmidManagerValue>& value) const {
+detail::DbAction ActionPmidManagerDelete::operator()(PmidManagerMetadata& metadata,
+    std::unique_ptr<PmidManagerValue>& value) const {
   if (!value) {
     ThrowError(CommonErrors::no_such_element);
     return detail::DbAction::kDelete;
   }
-  return detail::DbAction::kDelete; // FIXME
+  metadata.DeleteData(value->size());
+  return detail::DbAction::kDelete;
 }
 
 std::string ActionPmidManagerDelete::Serialise() const {

@@ -26,6 +26,7 @@
 
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/config.h"
+#include "maidsafe/vault/pmid_manager/metadata.h"
 
 namespace maidsafe {
 namespace vault {
@@ -34,8 +35,10 @@ class PmidManagerValue;
 
 struct ActionPmidManagerDelete {
   ActionPmidManagerDelete() {}
-  detail::DbAction operator()(std::unique_ptr<PmidManagerValue>& value) const;
+  detail::DbAction operator()(PmidManagerMetadata& metadata,
+                              std::unique_ptr<PmidManagerValue>& value) const;
   std::string Serialise() const;
+
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
 };
 

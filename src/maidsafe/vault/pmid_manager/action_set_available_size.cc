@@ -52,11 +52,8 @@ std::string ActionPmidManagerSetAvailableSize::Serialise() const {
   return action_disk_size_proto.SerializeAsString();
 }
 
-detail::DbAction ActionPmidManagerSetAvailableSize::operator()(
-    std::unique_ptr<PmidManagerMetadata>& metadata) {
-  if (!metadata)
-    metadata.reset(new PmidManagerMetadata());
-  metadata->SetAvailableSize(kDiskAvailableSize);
+detail::DbAction ActionPmidManagerSetAvailableSize::operator()(PmidManagerMetadata& metadata) {
+  metadata.SetAvailableSize(kDiskAvailableSize);
   return detail::DbAction::kPut;
 }
 

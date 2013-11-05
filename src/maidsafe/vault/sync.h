@@ -191,12 +191,16 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
     if (!merge) {
       LOG(kVerbose) << "AddAction " << kActionId << " add local happened after syncs from peer";
       // Add Local, however after received syncs from peer
-      if ((*found)->this_node_and_entry_id.second == unresolved_action.this_node_and_entry_id.second)
+      if ((*found)->this_node_and_entry_id.second ==
+          unresolved_action.this_node_and_entry_id.second) {
         (*found)->this_node_and_entry_id.first = unresolved_action.this_node_and_entry_id.first;
+        break;
+      }
       ++found;
       continue;
     }
 
+    // Drop the sync silently if it is already recorded
     if (!detail::IsRecorded(unresolved_action, (**found))) {
       LOG(kVerbose) << "AddAction " << kActionId << " not recorded from the sender";
       if (detail::IsFromThisNode(unresolved_action)) {
@@ -204,18 +208,14 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
       } else {
         (*found)->peer_and_entry_ids.push_back(unresolved_action.peer_and_entry_ids.front());
       }
-    } else {
-      // it's a recorded entry, drop it silently
-      break;
+
+      if (detail::IsResolved(**found)) {
+        LOG(kVerbose) << "AddAction " << kActionId << " is resolved";
+        resolved_action.reset(new UnresolvedAction(**found));
+      }
     }
 
-    if (detail::IsResolved(**found)) {
-      LOG(kVerbose) << "AddAction " << kActionId << " is resolved";
-      resolved_action.reset(new UnresolvedAction(**found));
-      break;
-    }
-
-    ++found;
+    break;
   } while (found != std::end(unresolved_actions_));
 
   return std::move(resolved_action);
