@@ -125,7 +125,7 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
   {
     std::unique_ptr<leveldb::Iterator> db_iter(leveldb_->NewIterator(leveldb::ReadOptions()));
     for (db_iter->SeekToFirst(); db_iter->Valid(); db_iter->Next()) {
-      Key key(Key::FixedWidthString(db_iter->key()));
+      Key key(Key::FixedWidthString(db_iter->key().ToString()));
       auto check_holder_result = matrix_change->CheckHolders(NodeId(key->string()));
       if (check_holder_result.proximity_status != routing::GroupRangeStatus::kInRange) {
         if (check_holder_result.new_holders.size() != 0) {

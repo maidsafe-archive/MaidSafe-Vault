@@ -55,7 +55,7 @@ detail::DbAction ActionMaidManagerDelete::operator()(
     ThrowError(CommonErrors::no_such_element);
 
   metadata.DeleteData(value->Delete());
-  assert(value->count() < 0);
+  assert(value->count() >= 0);
   if (value->count() == 0)
     return detail::DbAction::kDelete;
   else
