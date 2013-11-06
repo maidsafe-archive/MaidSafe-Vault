@@ -67,6 +67,13 @@ nfs_vault::DataNameAndSize CreateContent<nfs_vault::DataNameAndSize>();
 template <>
 nfs_client::DataNameAndReturnCode CreateContent<nfs_client::DataNameAndReturnCode>();
 
+template <>
+nfs_vault::DataNameAndContentOrCheckResult
+CreateContent<nfs_vault::DataNameAndContentOrCheckResult>();
+
+template <>
+nfs_client::DataNameAndContentOrReturnCode
+CreateContent<nfs_client::DataNameAndContentOrReturnCode>();
 
 template <typename MessageType>
 MessageType CreateMessage(const typename MessageType::Contents& contents) {

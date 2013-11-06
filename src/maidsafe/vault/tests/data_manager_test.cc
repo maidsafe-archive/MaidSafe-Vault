@@ -85,19 +85,72 @@ TEST_F(DataManagerServiceTest, BEH_PutFailureFromPmidManager) {
   EXPECT_EQ(this->data_manager_service_.sync_remove_pmids_.GetUnresolvedActions().size(), 1);
 }
 
-TEST_F(DataManagerServiceTest, BEH_GetRequestFromMaidNode) {}
+TEST_F(DataManagerServiceTest, BEH_GetRequestFromMaidNode) {
+  NodeId data_name_id, maid_node_id(NodeId::kRandomId);
+  auto content(CreateContent<nfs::GetRequestFromMaidNodeToDataManager::Contents>());
+  data_name_id = NodeId(content.raw_name.string());
+  auto get_request(CreateMessage<nfs::GetRequestFromMaidNodeToDataManager>(content));
+  this->data_manager_service_.HandleMessage(get_request, routing::SingleSource(maid_node_id),
+                                            routing::GroupId(data_name_id));
+  // TO BE CONTINUED
+}
 
-TEST_F(DataManagerServiceTest, BEH_GetRequestFromDataGetter) {}
+TEST_F(DataManagerServiceTest, BEH_GetRequestFromDataGetter) {
+  NodeId data_name_id, maid_node_id(NodeId::kRandomId);
+  auto content(CreateContent<nfs::GetRequestFromDataGetterToDataManager::Contents>());
+  data_name_id = NodeId(content.raw_name.string());
+  auto get_request(CreateMessage<nfs::GetRequestFromDataGetterToDataManager>(content));
+  this->data_manager_service_.HandleMessage(get_request, routing::SingleSource(maid_node_id),
+                                            routing::GroupId(data_name_id));
+  // TO BE CONTINUED
+}
 
-TEST_F(DataManagerServiceTest, BEH_GetResponseFromPmidNode) {}
+TEST_F(DataManagerServiceTest, BEH_GetResponseFromPmidNode) {
+  NodeId pmid_node_id(NodeId::kRandomId);
+  auto content(CreateContent<GetResponseFromPmidNodeToDataManager::Contents>());
+  auto get_response(CreateMessage<GetResponseFromPmidNodeToDataManager>(content));
+  this->data_manager_service_.HandleMessage(get_response, routing::SingleSource(pmid_node_id),
+                                            routing::SingleId(routing_.kNodeId()));
+  // TO BE CONTINUED
+}
 
-TEST_F(DataManagerServiceTest, BEH_PutToCacheFromDataManager) {}
+TEST_F(DataManagerServiceTest, BEH_PutToCacheFromDataManager) {
+  NodeId data_manager_id(NodeId::kRandomId);
+  auto content(CreateContent<PutToCacheFromDataManagerToDataManager::Contents>());
+  auto put_to_cache(CreateMessage<PutToCacheFromDataManagerToDataManager>(content));
+  this->data_manager_service_.HandleMessage(put_to_cache,routing::SingleSource(data_manager_id),
+                                            routing::SingleId(routing_.kNodeId()));
+  // TO BE CONTINUED
+}
 
-TEST_F(DataManagerServiceTest, BEH_GetFromCacheFromDataManager) {}
+TEST_F(DataManagerServiceTest, BEH_GetFromCacheFromDataManager) {
+  NodeId data_manager_id(NodeId::kRandomId);
+  auto content(CreateContent<GetFromCacheFromDataManagerToDataManager::Contents>());
+  auto get_from_cache(CreateMessage<GetFromCacheFromDataManagerToDataManager>(content));
+  this->data_manager_service_.HandleMessage(get_from_cache, routing::SingleSource(data_manager_id),
+                                            routing::GroupId(NodeId(content.raw_name.string())));
+  // TO BE CONTINUED
+}
 
-TEST_F(DataManagerServiceTest, BEH_GetCachedResponseFromCacheHandler) {}
+TEST_F(DataManagerServiceTest, BEH_GetCachedResponseFromCacheHandler) {
+  NodeId cache_handler_id(NodeId::kRandomId);
+  auto content(CreateContent<GetCachedResponseFromCacheHandlerToDataManager::Contents>());
+  auto get_cache_response(CreateMessage<GetCachedResponseFromCacheHandlerToDataManager>(content));
+  this->data_manager_service_.HandleMessage(get_cache_response,
+                                            routing::SingleSource(cache_handler_id),
+                                            routing::SingleId(routing_.kNodeId()));
+  // TO BE CONTINUED
+}
 
-TEST_F(DataManagerServiceTest, BEH_DeleteRequestFromMaidManager) {}
+TEST_F(DataManagerServiceTest, BEH_DeleteRequestFromMaidManager) {
+  NodeId maid_node_id(NodeId::kRandomId);
+  auto content(CreateContent<DeleteRequestFromMaidManagerToDataManager::Contents>());
+  auto delete_request(CreateMessage<DeleteRequestFromMaidManagerToDataManager>(content));
+  auto group_source(CreateGroupSource(maid_node_id));
+  GroupSendToGroup(&data_manager_service_, delete_request, group_source,
+                   routing::GroupId(NodeId(content.raw_name.string())));
+  EXPECT_EQ(this->data_manager_service_.sync_deletes_.GetUnresolvedActions().size(), 1);
+}
 
 TEST_F(DataManagerServiceTest, BEH_SynchroniseFromDataManager) {}
 

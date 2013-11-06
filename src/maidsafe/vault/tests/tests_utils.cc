@@ -88,6 +88,22 @@ nfs_client::DataNameAndReturnCode CreateContent<nfs_client::DataNameAndReturnCod
                                                CommonErrors::unable_to_handle_request));
 }
 
+template <>
+nfs_client::DataNameAndContentOrReturnCode
+CreateContent<nfs_client::DataNameAndContentOrReturnCode>() {
+  return nfs_client::DataNameAndContentOrReturnCode(
+             ImmutableData(NonEmptyString(RandomString(2^10))));
+}
+
+
+template <>
+nfs_vault::DataNameAndContentOrCheckResult
+CreateContent<nfs_vault::DataNameAndContentOrCheckResult>() {
+  ImmutableData data(NonEmptyString(RandomString(2^10)));
+  return nfs_vault::DataNameAndContentOrCheckResult(data.name(), data.data());
+}
+
+
 std::vector<routing::GroupSource> CreateGroupSource(const NodeId& group_id) {
   std::vector<routing::GroupSource> group_source;
   for (auto index(0); index < routing::Parameters::node_group_size; ++index)

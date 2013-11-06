@@ -61,6 +61,7 @@ namespace test {
   class DataManagerServiceTest_BEH_PutRequestFromMaidManager_Test;
   class DataManagerServiceTest_BEH_PutResponseFromPmidManager_Test;
   class DataManagerServiceTest_BEH_PutFailureFromPmidManager_Test;
+  class DataManagerServiceTest_BEH_DeleteRequestFromMaidManager_Test;
 }
 
 class DataManagerService {
@@ -199,6 +200,8 @@ class DataManagerService {
   friend class test::DataManagerServiceTest_BEH_PutRequestFromMaidManager_Test;
   friend class test::DataManagerServiceTest_BEH_PutResponseFromPmidManager_Test;
   friend class test::DataManagerServiceTest_BEH_PutFailureFromPmidManager_Test;
+  friend class test::DataManagerServiceTest_BEH_DeleteRequestFromMaidManager_Test;
+
 
   routing::Routing& routing_;
   AsioService asio_service_;
