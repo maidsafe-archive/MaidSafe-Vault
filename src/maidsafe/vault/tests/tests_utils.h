@@ -25,6 +25,7 @@
 #include "maidsafe/nfs/vault/messages.h"
 #include "maidsafe/nfs/client/messages.h"
 
+#include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
 
 
@@ -115,6 +116,21 @@ std::vector<UnresolvedActionType> CreateGroupUnresolvedAction(
     unresolved_actions.push_back(UnresolvedActionType(key, action,
                                                       group_sources.at(index).sender_id.data));
   return unresolved_actions;
+}
+
+template <typename ServiceType, typename UnresolvedActionType, typename PersonaSyncType>
+void AddLocalActionAndSendGroupActions(
+    ServiceType* service, Sync<UnresolvedActionType>& sync,
+    const std::vector<UnresolvedActionType>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
+  sync.AddLocalAction(unresolved_actions[0]);
+  for (uint32_t index(1); index < unresolved_actions.size(); ++index) {
+    auto proto_sync(CreateProtoSync(UnresolvedActionType::ActionType::kActionId,
+                                    unresolved_actions[index].Serialise()));
+    auto sync_message(CreateMessage<PersonaSyncType>(
+                          nfs_vault::Content(proto_sync.SerializeAsString())));
+    service->HandleMessage(sync_message, group_source[index], group_source[index].group_id);
+  }
 }
 
 }  // namespace test
