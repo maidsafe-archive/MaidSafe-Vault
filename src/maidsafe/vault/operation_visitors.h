@@ -277,6 +277,26 @@ class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
 };
 
 template<typename ServiceHandlerType>
+class PmidNodeGetVisitor : public boost::static_visitor<> {
+ public:
+  PmidNodeGetVisitor(ServiceHandlerType* service, const routing::SingleId& data_manager_node_id,
+                     nfs::MessageId message_id)
+      : kService_(service), kDataManagerNodeId_(data_manager_node_id.data),
+        kMessageId_(message_id) {}
+
+  template<typename Name>
+  void operator()(const Name& data_name) {
+    kService_->template HandleGet<typename Name::data_type>(data_name, kDataManagerNodeId_,
+                                                            kMessageId_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const NodeId kDataManagerNodeId_;
+  const nfs::MessageId kMessageId_;
+};
+
+template<typename ServiceHandlerType>
 class PmidNodeDeleteVisitor : public boost::static_visitor<> {
  public:
   PmidNodeDeleteVisitor(ServiceHandlerType* service) : kService_(service) {}

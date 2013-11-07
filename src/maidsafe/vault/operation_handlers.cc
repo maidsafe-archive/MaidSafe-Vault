@@ -296,6 +296,17 @@ void DoOperation(PmidNodeService* service,
   boost::apply_visitor(put_visitor, data_name);
 }
 
+template <>
+void DoOperation(PmidNodeService* service,
+                 const GetRequestFromDataManagerToPmidNode& message,
+                 const GetRequestFromDataManagerToPmidNode::Sender& sender,
+                 const GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation GetRequestFromDataManagerToPmidNode";
+  auto data_name(GetNameVariant(*message.contents));
+  PmidNodeGetVisitor<PmidNodeService> get_visitor(service, sender.sender_id, message.id);
+  boost::apply_visitor(get_visitor, data_name);
+}
+
 //====================================== To VersionHandler =========================================
 
 template<>
@@ -429,14 +440,22 @@ void OperationHandler<
   }
 }
 
+template <>
+template <>
+void OperationHandler<
+         typename ValidateSenderType<GetRequestFromDataManagerToPmidNode>::type,
+         Accumulator<PmidNodeServiceMessages>,
+         typename Accumulator<PmidNodeServiceMessages>::AddCheckerFunctor,
+         PmidNodeService>::operator()(
+    const GetRequestFromDataManagerToPmidNode& message,
+    const GetRequestFromDataManagerToPmidNode::Sender& sender,
+    const GetRequestFromDataManagerToPmidNode::Receiver& receiver) {
+  {
+    DoOperation(service, message, sender, receiver);
+  }
+}
 
 }  // namespace detail
-
-template <>
-int RequiredRequests<PutRequestFromDataManagerToPmidManager>(
-    const PutRequestFromDataManagerToPmidManager&) {
-  return 1;
-}
 
 }  // namespace vault
 

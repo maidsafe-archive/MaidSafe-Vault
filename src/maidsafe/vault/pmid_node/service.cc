@@ -81,11 +81,16 @@ void PmidNodeService::HandleMessage(
 
 template<>
 void PmidNodeService::HandleMessage(
-    const GetRequestFromDataManagerToPmidNode& /*message*/,
-    const typename GetRequestFromDataManagerToPmidNode::Sender& /*sender*/,
-    const typename GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/) {
-  // typedef GetRequestFromDataManagerToPmidNode MessageType;
-  assert(0);
+    const GetRequestFromDataManagerToPmidNode& message,
+    const typename GetRequestFromDataManagerToPmidNode::Sender& sender,
+    const typename GetRequestFromDataManagerToPmidNode::Receiver& receiver) {
+  typedef GetRequestFromDataManagerToPmidNode MessageType;
+  OperationHandlerWrapper<PmidNodeService, MessageType>(
+      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+                        return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)), this,
+      accumulator_mutex_)(message, sender, receiver);
 }
 
 template <>

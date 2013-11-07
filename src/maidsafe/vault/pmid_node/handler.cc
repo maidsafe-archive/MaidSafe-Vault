@@ -58,13 +58,5 @@ DiskUsage PmidNodeHandler::AvailableSpace() const {
   return disk_total_;
 }
 
-void PmidNodeHandler::Delete(const DataNameVariant& data_name) {
-  permanent_data_store_.Delete(data_name);
-}
-
-void PmidNodeHandler::Put(const DataNameVariant& data_name, const NonEmptyString& data) {
-  permanent_data_store_.Put(data_name, data);
-}
-
 }  // namespace vault
 }  // namespace maidsafe
