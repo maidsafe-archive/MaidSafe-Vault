@@ -304,6 +304,42 @@ void MaidManagerService::HandlePmidRegistration(
 void MaidManagerService::HandleSyncedPmidRegistration(
     std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action) {
   // Get keys
+  // BEFORE_RELEASE future.then still have confirmed bug :
+  // http://stackoverflow.com/questions/14829881/bad-access-in-boostfuture-then-after-accessing-given-future
+  // The following commented out code doesn't work as expected,
+  // Have to use two individual blocking calling, which may hang if Get() doesn't return
+  // May be able to use future.then before release
+
+//   auto maid_future = data_getter_.Get(synced_action->action.kPmidRegistration.maid_name(),
+//                                       std::chrono::seconds(10));
+//   auto pmid_future = data_getter_.Get(synced_action->action.kPmidRegistration.pmid_name(),
+//                                       std::chrono::seconds(10));
+// 
+//   auto pmid_registration_op(std::make_shared<PmidRegistrationOp>(std::move(synced_action)));
+// 
+//   auto maid_future_then = maid_future.then(
+//       [pmid_registration_op, this](boost::future<passport::PublicMaid>& future) {
+//           try {
+//             std::unique_ptr<passport::PublicMaid> public_maid(new passport::PublicMaid(
+//                                                                   future.get()));
+//             ValidatePmidRegistration(std::move(public_maid), pmid_registration_op);
+//           } catch(const std::exception& e) {
+//             LOG(kError) << e.what();
+//           }
+//       });
+// 
+//   auto pmid_future_then = pmid_future.then(
+//       [pmid_registration_op, this](boost::future<passport::PublicPmid>& future) {
+//           try {
+//             std::unique_ptr<passport::PublicPmid> public_pmid(new passport::PublicPmid(
+//                                                                   future.get()));
+//             ValidatePmidRegistration(std::move(public_pmid), pmid_registration_op);
+//           } catch(const std::exception& e) {
+//             LOG(kError) << e.what();
+//           }
+//       });
+//   boost::wait_for_all(maid_future_then, pmid_future_then);
+
   auto maid_future = data_getter_.Get(synced_action->action.kPmidRegistration.maid_name(),
                                       std::chrono::seconds(10));
   auto pmid_future = data_getter_.Get(synced_action->action.kPmidRegistration.pmid_name(),
@@ -311,28 +347,14 @@ void MaidManagerService::HandleSyncedPmidRegistration(
 
   auto pmid_registration_op(std::make_shared<PmidRegistrationOp>(std::move(synced_action)));
 
-  auto maid_future_then = maid_future.then(
-      [pmid_registration_op, this](boost::future<passport::PublicMaid>& future) {
-          try {
-            std::unique_ptr<passport::PublicMaid> public_maid(new passport::PublicMaid(
-                                                                  future.get()));
-            ValidatePmidRegistration(std::move(public_maid), pmid_registration_op);
-          } catch(const std::exception& e) {
-            LOG(kError) << e.what();
-          }
-      });
-
-  auto pmid_future_then = pmid_future.then(
-      [pmid_registration_op, this](boost::future<passport::PublicPmid>& future) {
-          try {
-            std::unique_ptr<passport::PublicPmid> public_pmid(new passport::PublicPmid(
-                                                                  future.get()));
-            ValidatePmidRegistration(std::move(public_pmid), pmid_registration_op);
-          } catch(const std::exception& e) {
-            LOG(kError) << e.what();
-          }
-      });
-  boost::wait_for_all(maid_future_then, pmid_future_then);
+  try {
+    std::unique_ptr<passport::PublicPmid> public_pmid(new passport::PublicPmid(pmid_future.get()));
+    ValidatePmidRegistration(std::move(public_pmid), pmid_registration_op);
+    std::unique_ptr<passport::PublicMaid> public_maid(new passport::PublicMaid(maid_future.get()));
+    ValidatePmidRegistration(std::move(public_maid), pmid_registration_op);
+  } catch(const std::exception& e) {
+    LOG(kError) << e.what();
+  }
 }
 
 
@@ -366,6 +388,7 @@ void MaidManagerService::HandleSyncedPmidRegistration(
   catch(const std::exception& ex) {
     LOG(kWarning) << "Failed to register new PMID: " << ex.what();
   }
+  LOG(kInfo) << "PmidRegistration Finalised";
 }
 
 // =============== Put/Delete data =================================================================
