@@ -24,6 +24,7 @@
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/unresolved_action.pb.h"
 #include "maidsafe/vault/pmid_manager/service.h"
+#include "maidsafe/vault/tests/tests_utils.h"
 
 namespace maidsafe {
 
@@ -37,59 +38,6 @@ typedef DeleteRequestFromDataManagerToPmidManager DeleteRequest;
 typedef GetPmidAccountRequestFromPmidNodeToPmidManager GetPmidAccount;
 typedef PmidHealthRequestFromMaidNodeToPmidManager PmidHealthRequest;
 
-namespace {
-
-  template <typename ContentType>
-  ContentType CreateContent() {
-    ContentType::No_genereic_handler_is_available__Specialisation_is_required;
-    return ContentType();
-  }
-
-  template <>
-  nfs_vault::DataNameAndContent CreateContent<nfs_vault::DataNameAndContent>() {
-    ImmutableData data(NonEmptyString(RandomString(128)));
-    return nfs_vault::DataNameAndContent(data);
-  }
-
-  template <>
-  nfs_client::DataNameAndSpaceAndReturnCode
-  CreateContent<nfs_client::DataNameAndSpaceAndReturnCode>() {
-    ImmutableData data(NonEmptyString(RandomString(128)));
-    nfs_client::ReturnCode return_code(VaultErrors::not_enough_space);
-    return nfs_client::DataNameAndSpaceAndReturnCode(data.name(), 100, return_code);
-  }
-
-  template <>
-  nfs_vault::DataName CreateContent<nfs_vault::DataName>() {
-    ImmutableData data(NonEmptyString(RandomString(128)));
-    return nfs_vault::DataName(ImmutableData::Name(data.name()));
-  }
-
-  template <>
-  nfs_vault::AvailableSize CreateContent<nfs_vault::AvailableSize>() {
-    return nfs_vault::AvailableSize(2^20);
-  }
-
-  template <>
-  nfs_vault::Empty CreateContent<nfs_vault::Empty>() {
-    return nfs_vault::Empty();
-  }
-
-
-  template <typename MessageType>
-  MessageType CreateMessage(const typename MessageType::Contents& contents) {
-    nfs::MessageId message_id(RandomUint32());
-    return MessageType(message_id, contents);
-  }
-
-  std::vector<routing::GroupSource> CreateGroupSource(const NodeId& group_id) {
-    std::vector<routing::GroupSource> group_source;
-    for (auto index(0); index < routing::Parameters::node_group_size; ++index)
-      group_source.push_back(routing::GroupSource(routing::GroupId(group_id),
-                                                  routing::SingleId(NodeId(NodeId::kRandomId))));
-    return group_source;
-  }
-}
 
 class PmidManagerServiceTest  : public testing::Test {
  public:
