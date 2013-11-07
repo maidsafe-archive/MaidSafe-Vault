@@ -122,6 +122,17 @@ void OperationHandler<
     const PutRequestFromDataManagerToPmidManager::Sender& sender,
     const PutRequestFromDataManagerToPmidManager::Receiver& receiver);
 
+template <>
+template <>
+void OperationHandler<
+         typename ValidateSenderType<GetRequestFromDataManagerToPmidNode>::type,
+         Accumulator<PmidNodeServiceMessages>,
+         typename Accumulator<PmidNodeServiceMessages>::AddCheckerFunctor,
+         PmidNodeService>::operator()(
+    const GetRequestFromDataManagerToPmidNode& message,
+    const GetRequestFromDataManagerToPmidNode::Sender& sender,
+    const GetRequestFromDataManagerToPmidNode::Receiver& receiver);
+
 template <typename ServiceHandlerType, typename MessageType>
 void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/,
                  const typename MessageType::Sender& /*sender*/,
@@ -261,6 +272,12 @@ void DoOperation(PmidNodeService* service,
                  const PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
                  const PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/);
 
+template <>
+void DoOperation(PmidNodeService* service,
+                 const GetRequestFromDataManagerToPmidNode& message,
+                 const GetRequestFromDataManagerToPmidNode::Sender& sender,
+                 const GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/);
+
 //====================================== To VersionHandler =========================================
 
 template<>
@@ -329,9 +346,6 @@ int RequiredRequests(const Message&) {
   return detail::RequiredValue<typename Message::Sender>()();
 }
 
-template <>
-int RequiredRequests<PutRequestFromDataManagerToPmidManager>(
-    const PutRequestFromDataManagerToPmidManager&);
 
 }  // namespace vault
 
