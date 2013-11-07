@@ -137,7 +137,9 @@ void DoOperation(DataManagerService* service,
                  const PutResponseFromPmidManagerToDataManager& message,
                  const PutResponseFromPmidManagerToDataManager::Sender& sender,
                  const PutResponseFromPmidManagerToDataManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation PutResponseFromPmidManagerToDataManager";
+  LOG(kVerbose) << "DoOperation PutResponseFromPmidManagerToDataManager recieved from sender "
+                << HexSubstr(sender.sender_id.data.string()) << " regarding the group of "
+                << HexSubstr(sender.group_id.data.string());
   auto data_name(GetNameVariant(*message.contents));
   DataManagerPutResponseVisitor<DataManagerService> put_response_visitor(
       service, PmidName(Identity(sender.group_id.data.string())), message.contents->size,
