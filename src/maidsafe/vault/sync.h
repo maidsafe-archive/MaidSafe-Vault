@@ -163,6 +163,11 @@ void Sync<UnresolvedAction>::AddLocalAction(const UnresolvedAction& unresolved_a
 template <typename UnresolvedAction>
 std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
     const UnresolvedAction& unresolved_action, bool merge) {
+  if (detail::IsFromThisNode(unresolved_action))
+    LOG(kVerbose) << "AddAction " << kActionId << " from own node";
+  else
+    LOG(kVerbose) << "AddAction " << kActionId << " from peer : " << HexSubstr(
+        unresolved_action.peer_and_entry_ids.front().first.string());
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<UnresolvedAction> resolved_action;
   auto found(std::begin(unresolved_actions_));
@@ -213,6 +218,8 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
         LOG(kVerbose) << "AddAction " << kActionId << " is resolved";
         resolved_action.reset(new UnresolvedAction(**found));
       }
+    } else {
+      LOG(kVerbose) << "AddAction " << kActionId << " dropped silently as it was recorded";
     }
 
     break;

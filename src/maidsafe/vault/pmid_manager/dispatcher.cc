@@ -92,8 +92,10 @@ void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
 void PmidManagerDispatcher::SendHealthResponse(const MaidName& maid_node,
     const PmidName& pmid_node, const PmidManagerMetadata& pmid_health,  nfs::MessageId message_id,
     const maidsafe_error& error) {
-  LOG(kVerbose) << "PmidManagerDispatcher::SendHealthResponse PmidManagerMetadata "
-                << HexSubstr(pmid_health.Serialise()) << " return code : " << error.what();
+  LOG(kVerbose) << "PmidManagerDispatcher::SendHealthResponse for maid "
+                << HexSubstr(maid_node->string()) << " and pmid " << HexSubstr(pmid_node->string())
+                << " . PmidManagerMetadata serialised as " << HexSubstr(pmid_health.Serialise())
+                << " and return code : " << error.what();
   typedef PmidHealthResponseFromPmidManagerToMaidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();

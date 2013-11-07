@@ -694,11 +694,15 @@ bool MaidManagerService::DeleteAllowed(const MaidName& account_name,
  void MaidManagerService::ValidatePmidRegistration(
     PublicFobType public_fob,
     std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
+  LOG(kVerbose) << "MaidManagerService::ValidatePmidRegistration";
   bool finalise(false);
   {
     std::lock_guard<std::mutex> lock(pmid_registration_op->mutex);
     pmid_registration_op->SetPublicFob(std::move(public_fob));
     finalise = (++pmid_registration_op->count == 2);
+    LOG(kVerbose) << "MaidManagerService::ValidatePmidRegistration "
+                  << " pmid_registration_op->count " << pmid_registration_op->count
+                  << " finalised " << finalise;
   }
   if (finalise)
     FinalisePmidRegistration(pmid_registration_op);
