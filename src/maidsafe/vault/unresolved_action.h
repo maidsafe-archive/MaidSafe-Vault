@@ -37,6 +37,7 @@ namespace vault {
 template <typename Key, typename Action>
 struct UnresolvedAction {
   typedef Action ActionType;
+  typedef Key KeyType;
   UnresolvedAction(const std::string& serialised_copy, const NodeId& sender_id,
                    const NodeId& this_node_id);
   UnresolvedAction(const UnresolvedAction& other);

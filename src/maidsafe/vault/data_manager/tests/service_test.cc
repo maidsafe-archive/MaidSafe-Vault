@@ -152,7 +152,37 @@ TEST_F(DataManagerServiceTest, BEH_DeleteRequestFromMaidManager) {
   EXPECT_EQ(this->data_manager_service_.sync_deletes_.GetUnresolvedActions().size(), 1);
 }
 
-TEST_F(DataManagerServiceTest, BEH_SynchroniseFromDataManager) {}
+TEST_F(DataManagerServiceTest, BEH_PutSynchroniseFromDataManager) {
+  PmidName pmid_name(Identity(RandomString(64)));
+  ActionDataManagerPut action_put;
+  ImmutableData data(NonEmptyString(RandomString(TEST_CHUNK_SIZE)));
+  auto group_source(CreateGroupSource(data.name()));
+  DataManager::Key key(data.name());
+  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name, TEST_CHUNK_SIZE));
+  EXPECT_EQ(data_manager_service_.db_.Get(key).Subscribers(), 1);
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<DataManager::UnresolvedPut>(key, action_put, group_source));
+  data_manager_service_.sync_puts_.AddLocalAction(group_unresolved_action[0]);
+  for (uint32_t index(1); index < group_unresolved_action.size(); ++index) {
+    auto proto_sync(CreateProtoSync(ActionDataManagerPut::kActionId,
+                                    group_unresolved_action[index].Serialise()));
+    auto put_sync(CreateMessage<SynchroniseFromDataManagerToDataManager>(
+                      nfs_vault::Content(proto_sync.SerializeAsString())));
+    data_manager_service_.HandleMessage(put_sync, group_source[index],
+                                        routing::GroupId(NodeId(data.name()->string())));
+  }
+  EXPECT_EQ(data_manager_service_.db_.Get(key).Subscribers(), 2);
+}
+
+TEST_F(DataManagerServiceTest, BEH_DeleteSynchroniseFromDataManager) {}
+
+TEST_F(DataManagerServiceTest, BEH_AddPmidSynchroniseFromDataManager) {}
+
+TEST_F(DataManagerServiceTest, BEH_RemovePmidSynchroniseFromDataManager) {}
+
+TEST_F(DataManagerServiceTest, BEH_NodeDownSynchroniseFromDataManager) {}
+
+TEST_F(DataManagerServiceTest, BEH_NodeUpSynchroniseFromDataManager) {}
 
 TEST_F(DataManagerServiceTest, BEH_SetPmidOnlineFromPmidManager) {}
 

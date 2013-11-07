@@ -25,12 +25,16 @@
 #include "maidsafe/nfs/vault/messages.h"
 #include "maidsafe/nfs/client/messages.h"
 
+#include "maidsafe/vault/sync.pb.h"
+
 
 namespace maidsafe {
 
 namespace vault {
 
 namespace test {
+
+static const int TEST_CHUNK_SIZE = 2^10;
 
 passport::Maid MakeMaid();
 passport::Pmid MakePmid();
@@ -89,7 +93,29 @@ void GroupSendToGroup(ServiceType* service, const MessageType& message,
     service->HandleMessage(message, group_sources[index], group_id);
 }
 
+template <typename DataNameType>
+std::vector<routing::GroupSource> CreateGroupSource(const DataNameType& data_name) {
+  return CreateGroupSource(NodeId(data_name.value.string()));
+}
+
+template <>
 std::vector<routing::GroupSource> CreateGroupSource(const NodeId& group_id);
+
+
+protobuf::Sync CreateProtoSync(nfs::MessageAction action_type,
+                               const std::string& serialised_action);
+
+template <typename UnresolvedActionType>
+std::vector<UnresolvedActionType> CreateGroupUnresolvedAction(
+    const typename UnresolvedActionType::KeyType& key,
+    const typename UnresolvedActionType::ActionType& action,
+    const std::vector<routing::GroupSource>& group_sources) {
+  std::vector<UnresolvedActionType> unresolved_actions;
+  for (uint32_t index(0); index < group_sources.size(); ++index)
+    unresolved_actions.push_back(UnresolvedActionType(key, action,
+                                                      group_sources.at(index).sender_id.data));
+  return unresolved_actions;
+}
 
 }  // namespace test
 
