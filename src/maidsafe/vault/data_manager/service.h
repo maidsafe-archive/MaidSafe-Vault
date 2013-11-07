@@ -65,6 +65,7 @@ namespace test {
   class DataManagerServiceTest_BEH_PutSynchroniseFromDataManager_Test;
   class DataManagerServiceTest_BEH_DeleteSynchroniseFromDataManager_Test;
   class DataManagerServiceTest_BEH_AddPmidSynchroniseFromDataManager_Test;
+  class DataManagerServiceTest_BEH_RemovePmidSynchroniseFromDataManager_Test;
 }
 
 class DataManagerService {
@@ -207,6 +208,7 @@ class DataManagerService {
   friend class test::DataManagerServiceTest_BEH_PutSynchroniseFromDataManager_Test;
   friend class test::DataManagerServiceTest_BEH_DeleteSynchroniseFromDataManager_Test;
   friend class test::DataManagerServiceTest_BEH_AddPmidSynchroniseFromDataManager_Test;
+  friend class test::DataManagerServiceTest_BEH_RemovePmidSynchroniseFromDataManager_Test;
 
   routing::Routing& routing_;
   AsioService asio_service_;
