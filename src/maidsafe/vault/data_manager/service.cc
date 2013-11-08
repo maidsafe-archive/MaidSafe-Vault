@@ -293,22 +293,26 @@ void DataManagerService::HandleMessage(
       }
       break;
     }
-    //    case ActionDataManagerNodeUp::kActionId: {
-    //      DataManager::UnresolvedNodeUp unresolved_action(
-    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-    //      auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
-    //      if (resolved_action)
-    //        db_.Commit(resolved_action->key, resolved_action->action);
-    //      break;
-    //    }
-    //    case ActionDataManagerNodeDown::kActionId: {
-    //      DataManager::UnresolvedNodeDown unresolved_action(
-    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-    //      auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
-    //      if (resolved_action)
-    //        db_.Commit(resolved_action->key, resolved_action->action);
-    //      break;
-    //    }
+    case ActionDataManagerNodeUp::kActionId: {
+      DataManager::UnresolvedNodeUp unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit pmid goes online";
+        db_.Commit(resolved_action->key, resolved_action->action);
+      }
+      break;
+    }
+    case ActionDataManagerNodeDown::kActionId: {
+      DataManager::UnresolvedNodeDown unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit pmid goes offline";
+        db_.Commit(resolved_action->key, resolved_action->action);
+      }
+      break;
+    }
     default: {
       LOG(kError) << "SynchroniseFromDataManagerToDataManager Unhandled action type";
       assert(false);
