@@ -133,6 +133,18 @@ void OperationHandler<
     const GetRequestFromDataManagerToPmidNode::Sender& sender,
     const GetRequestFromDataManagerToPmidNode::Receiver& receiver);
 
+template <>
+template <>
+void OperationHandler<
+         typename ValidateSenderType<IntegrityCheckRequestFromDataManagerToPmidNode>::type,
+         Accumulator<PmidNodeServiceMessages>,
+         typename Accumulator<PmidNodeServiceMessages>::AddCheckerFunctor,
+         PmidNodeService>::operator()(
+    const IntegrityCheckRequestFromDataManagerToPmidNode& message,
+    const IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
+    const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver);
+
+
 template <typename ServiceHandlerType, typename MessageType>
 void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/,
                  const typename MessageType::Sender& /*sender*/,
@@ -277,6 +289,11 @@ void DoOperation(PmidNodeService* service,
                  const GetRequestFromDataManagerToPmidNode& message,
                  const GetRequestFromDataManagerToPmidNode::Sender& sender,
                  const GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/);
+template <>
+void DoOperation(PmidNodeService* service,
+                 const IntegrityCheckRequestFromDataManagerToPmidNode& message,
+                 const IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
+                 const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& /*receiver*/);
 
 //====================================== To VersionHandler =========================================
 
