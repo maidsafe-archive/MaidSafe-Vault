@@ -300,19 +300,23 @@ template<typename ServiceHandlerType>
 class PmidNodeIntegrityCheckVisitor : public boost::static_visitor<> {
  public:
   PmidNodeIntegrityCheckVisitor(ServiceHandlerType* service,
+                                const NonEmptyString& random_string,
                                 const routing::SingleSource& data_manager_node_id,
                                 nfs::MessageId message_id)
-      : kService_(service), kDataManagerNodeId_(data_manager_node_id.data),
+      : kService_(service),
+        kRandomString_(random_string),
+        kDataManagerNodeId_(data_manager_node_id.data),
         kMessageId_(message_id) {}
 
   template<typename Name>
-  void operator()(const Name& /*data_name*/) {
-//    kService_->template HandleIntegrityCheck<typename Name::data_type>(data_name, kDataManagerNodeId_,
-//                                                                       kMessageId_);
+  void operator()(const Name& data_name) {
+    kService_->template HandleIntegrityCheck(data_name, kRandomString_, kDataManagerNodeId_,
+                                             kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
+  const NonEmptyString& kRandomString_;
   const NodeId kDataManagerNodeId_;
   const nfs::MessageId kMessageId_;
 };

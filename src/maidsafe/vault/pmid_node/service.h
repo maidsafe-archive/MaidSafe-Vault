@@ -167,6 +167,7 @@ class PmidNodeService {
   friend class detail::PmidNodeDeleteVisitor<PmidNodeService>;
   friend class detail::PmidNodePutVisitor<PmidNodeService>;
   friend class detail::PmidNodeGetVisitor<PmidNodeService>;
+  friend class detail::PmidNodeIntegrityCheckVisitor<PmidNodeService>;
 
   // ================================ Pmid Account ===============================================
 
@@ -183,12 +184,10 @@ class PmidNodeService {
   template <typename Data>
   void HandlePut(const Data& data, nfs::MessageId message_id);
   template <typename Data>
-  void HandleDelete(const typename Data::Name& name, nfs::MessageId message_id);
-  template <typename Data>
   void HandleGet(const typename Data::Name& data_name, const NodeId& data_manager_node_id,
                  nfs::MessageId message_id);
-  template <typename Data>
-  void HandleIntegrityChech(const typename Data::Name& data_name,
+  template <typename Name>
+  void HandleIntegrityCheck(const Name& data_name,
                             const NonEmptyString& random_string, const NodeId& sender,
                             nfs::MessageId message_id);
 
@@ -291,8 +290,16 @@ void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
   }
 }
 
+template <typename Name>
+void PmidNodeService::HandleIntegrityCheck(const Name& /*data_name*/,
+                                           const NonEmptyString& /*random_string*/,
+                                           const NodeId& /*data_manager_node_id*/,
+                                           nfs::MessageId /*message_id*/) {
+
+}
+
 //template <typename Data>
-//void PmidNodeService::HandleIntegrityChech(const typename Data::Name& data_name,
+//void PmidNodeService::HandleIntegrityCheck(const typename Data::Name& data_name,
 //                                           const NonEmptyString& random_string,
 //                                           const NodeId& sender,
 //                                           nfs::MessageId message_id) {
@@ -307,50 +314,6 @@ void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
 //    dispatcher_.SendIntegrityCheckResponse(data_name, std::string(), sender, error, message_id);
 //  }
 //}
-
-// template<>
-// void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
-//    const nfs::GetRequestFromDataManagerToPmidNode& message,
-//    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
-//    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& receiver) {
-//  typedef nfs::GetRequestFromDataManagerToPmidNode MessageType;
-//  OperationHandlerWrapper<PmidNodeService, MessageType>(
-//      accumulator_,
-//      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-//        return this->ValidateSender(message, sender);
-//      },
-//      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-//      this,
-//      accumulator_mutex_)(message, sender, receiver);
-//}
-
-// template<>
-// void PmidNodeService::HandleMessage<DeleteRequestFromPmidManagerToPmidNode>(
-//    const DeleteRequestFromPmidManagerToPmidNode& message,
-//    const typename DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
-//    const typename DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver) {
-//  typedef DeleteRequestFromPmidManagerToPmidNode MessageType;
-//  OperationHandlerWrapper<PmidNodeService, MessageType>(
-//      accumulator_,
-//      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-//        return this->ValidateSender(message, sender);
-//      },
-//      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-//      this,
-//      accumulator_mutex_)(message, sender, receiver);
-//}
-
-template <typename Data>
-void PmidNodeService::HandleDelete(const typename Data::Name& name,
-                                   nfs::MessageId /*message_id*/) {
-  try {
-    {
-      handler_.Delete<Data>(nfs_vault::DataName(name.type, name.raw_name));
-    }
-  }
-  catch (const std::exception& /*ex*/) {
-  }
-}
 
 // template<>
 // bool PmidNodeService::GetFromCache<nfs::GetRequestFromMaidNodeToDataManager>(
