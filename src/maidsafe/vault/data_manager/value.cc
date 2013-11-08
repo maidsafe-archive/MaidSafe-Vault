@@ -51,8 +51,10 @@ DataManagerValue::DataManagerValue(const std::string &serialised_metadata_value)
   }
 }
 
-DataManagerValue::DataManagerValue(int32_t size)
-    : subscribers_(0), size_(size), online_pmids_(), offline_pmids_() {}
+DataManagerValue::DataManagerValue(const PmidName& pmid_name, int32_t size)
+    : subscribers_(0), size_(size), online_pmids_(), offline_pmids_() {
+  AddPmid(pmid_name);
+}
 
 DataManagerValue::DataManagerValue(DataManagerValue&& other)
     : subscribers_(std::move(other.subscribers_)),

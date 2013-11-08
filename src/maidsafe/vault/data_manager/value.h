@@ -37,7 +37,7 @@ class DataManagerValue {
  public:
   explicit DataManagerValue(const std::string& serialised_metadata_value);
   DataManagerValue(DataManagerValue&& other);
-  DataManagerValue(int32_t size);
+  DataManagerValue(const PmidName& pmid_name, int32_t size);
   std::string Serialise() const;
 
   void AddPmid(const PmidName& pmid_name);
