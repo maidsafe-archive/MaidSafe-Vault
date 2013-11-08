@@ -77,7 +77,7 @@ nfs_vault::DataAndPmidHint CreateContent<nfs_vault::DataAndPmidHint>() {
 template <>
 nfs_vault::DataNameAndSize CreateContent<nfs_vault::DataNameAndSize>() {
   return nfs_vault::DataNameAndSize(DataTagValue::kImmutableDataValue, Identity(RandomString(64)),
-                                    2^10);
+                                    TEST_CHUNK_SIZE);
 }
 
 template <>
@@ -103,7 +103,7 @@ CreateContent<nfs_vault::DataNameAndContentOrCheckResult>() {
   return nfs_vault::DataNameAndContentOrCheckResult(data.name(), data.data());
 }
 
-
+template <>
 std::vector<routing::GroupSource> CreateGroupSource(const NodeId& group_id) {
   std::vector<routing::GroupSource> group_source;
   for (auto index(0); index < routing::Parameters::node_group_size; ++index)
@@ -111,6 +111,15 @@ std::vector<routing::GroupSource> CreateGroupSource(const NodeId& group_id) {
                                                 routing::SingleId(NodeId(NodeId::kRandomId))));
   return group_source;
 }
+
+protobuf::Sync CreateProtoSync(nfs::MessageAction action_type,
+                               const std::string& serialised_action) {
+  protobuf::Sync proto_sync;
+  proto_sync.set_action_type(static_cast<int>(action_type));
+  proto_sync.set_serialised_unresolved_action(serialised_action);
+  return proto_sync;
+}
+
 
 }  // namespace test
 

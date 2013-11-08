@@ -152,7 +152,102 @@ TEST_F(DataManagerServiceTest, BEH_DeleteRequestFromMaidManager) {
   EXPECT_EQ(this->data_manager_service_.sync_deletes_.GetUnresolvedActions().size(), 1);
 }
 
-TEST_F(DataManagerServiceTest, BEH_SynchroniseFromDataManager) {}
+TEST_F(DataManagerServiceTest, BEH_PutSynchroniseFromDataManager) {
+  PmidName pmid_name(Identity(RandomString(64)));
+  ActionDataManagerPut action_put;
+  ImmutableData data(NonEmptyString(RandomString(TEST_CHUNK_SIZE)));
+  auto group_source(CreateGroupSource(data.name()));
+  DataManager::Key key(data.name());
+  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name, TEST_CHUNK_SIZE));
+  EXPECT_EQ(data_manager_service_.db_.Get(key).Subscribers(), 1);
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<DataManager::UnresolvedPut>(key, action_put, group_source));
+  AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedPut,
+                                    SynchroniseFromDataManagerToDataManager>(
+      &data_manager_service_, data_manager_service_.sync_puts_, group_unresolved_action,
+      group_source);
+  EXPECT_EQ(data_manager_service_.db_.Get(key).Subscribers(), 2);
+}
+
+TEST_F(DataManagerServiceTest, BEH_DeleteSynchroniseFromDataManager) {
+  // store key value in db
+  PmidName pmid_name(Identity(RandomString(64)));
+  ImmutableData data(NonEmptyString(RandomString(TEST_CHUNK_SIZE)));
+  DataManager::Key key(data.name());
+  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name, TEST_CHUNK_SIZE));
+  EXPECT_EQ(data_manager_service_.db_.Get(key).Subscribers(), 1);
+  // key value is in db
+  ActionDataManagerDelete action_delete;
+  auto group_source(CreateGroupSource(data.name()));
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<DataManager::UnresolvedDelete>(key, action_delete,
+                                                                      group_source));
+  AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedDelete,
+                                    SynchroniseFromDataManagerToDataManager>(
+      &data_manager_service_, data_manager_service_.sync_deletes_, group_unresolved_action,
+      group_source);
+  try {
+    data_manager_service_.db_.Get(key);
+    EXPECT_TRUE(false);
+  }
+  catch (const maidsafe_error& /*error*/) {
+    EXPECT_TRUE(true);
+  }
+}
+
+TEST_F(DataManagerServiceTest, BEH_AddPmidSynchroniseFromDataManager) {
+  // check key value is not in db
+  PmidName pmid_name(Identity(RandomString(64)));
+  ImmutableData data(NonEmptyString(RandomString(TEST_CHUNK_SIZE)));
+  DataManager::Key key(data.name());
+  try {
+    data_manager_service_.db_.Get(key);
+    EXPECT_TRUE(false);
+  }
+  catch (const maidsafe_error& /*error*/) {
+    EXPECT_TRUE(true);
+  }
+
+  // Sync AddPmid
+  ActionDataManagerAddPmid action_add_pmid(pmid_name, TEST_CHUNK_SIZE);
+  auto group_source(CreateGroupSource(data.name()));
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<DataManager::UnresolvedAddPmid>(key, action_add_pmid,
+                                                                       group_source));
+  AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedAddPmid,
+                                    SynchroniseFromDataManagerToDataManager>(
+      &data_manager_service_, data_manager_service_.sync_add_pmids_, group_unresolved_action,
+      group_source);
+  EXPECT_EQ(data_manager_service_.db_.Get(key).Subscribers(), 1);
+}
+
+TEST_F(DataManagerServiceTest, BEH_RemovePmidSynchroniseFromDataManager) {
+  // store key value in db
+  PmidName pmid_name_one(Identity(RandomString(64))), pmid_name_two(Identity(RandomString(64)));
+  ImmutableData data(NonEmptyString(RandomString(TEST_CHUNK_SIZE)));
+  DataManager::Key key(data.name());
+  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name_one, TEST_CHUNK_SIZE));
+  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name_two, TEST_CHUNK_SIZE));
+  auto value(data_manager_service_.db_.Get(key));
+  EXPECT_EQ(value.Subscribers(), 1);
+  EXPECT_EQ(value.AllPmids().size(), 2);
+
+  // Sync remove pmid
+  ActionDataManagerRemovePmid action_remove_pmid(pmid_name_two);
+  auto group_source(CreateGroupSource(data.name()));
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<DataManager::UnresolvedRemovePmid>(key, action_remove_pmid,
+                                                                          group_source));
+  AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedRemovePmid,
+                                    SynchroniseFromDataManagerToDataManager>(
+      &data_manager_service_, data_manager_service_.sync_remove_pmids_, group_unresolved_action,
+      group_source);
+  EXPECT_EQ(data_manager_service_.db_.Get(key).AllPmids().size(), 1);
+}
+
+TEST_F(DataManagerServiceTest, BEH_NodeDownSynchroniseFromDataManager) {}
+
+TEST_F(DataManagerServiceTest, BEH_NodeUpSynchroniseFromDataManager) {}
 
 TEST_F(DataManagerServiceTest, BEH_SetPmidOnlineFromPmidManager) {}
 

@@ -51,10 +51,8 @@ DataManagerValue::DataManagerValue(const std::string &serialised_metadata_value)
   }
 }
 
-DataManagerValue::DataManagerValue(const PmidName& pmid_name, int32_t size)
-    : subscribers_(0), size_(size), online_pmids_(), offline_pmids_() {
-  AddPmid(pmid_name);
-}
+DataManagerValue::DataManagerValue(int32_t size)
+    : subscribers_(0), size_(size), online_pmids_(), offline_pmids_() {}
 
 DataManagerValue::DataManagerValue(DataManagerValue&& other)
     : subscribers_(std::move(other.subscribers_)),
@@ -72,10 +70,10 @@ void DataManagerValue::AddPmid(const PmidName& pmid_name) {
 }
 
 void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
-  if (online_pmids_.size() + offline_pmids_.size() < 4) {
-    LOG(kError) << "RemovePmid not allowed";
-    ThrowError(CommonErrors::invalid_parameter);  // TODO add error - not_allowed
-  }
+//  if (online_pmids_.size() + offline_pmids_.size() < 4) {
+//    LOG(kError) << "RemovePmid not allowed";
+//    ThrowError(CommonErrors::invalid_parameter);  // TODO add error - not_allowed
+//  }
   online_pmids_.erase(pmid_name);
   offline_pmids_.erase(pmid_name);
 }

@@ -125,7 +125,6 @@ TEST_F(PmidManagerServiceTest, BEH_PutFailureFromPmidNode) {
                                             routing::SingleSource(NodeId(NodeId::kRandomId)),
                                             routing::GroupId(this->routing_.kNodeId()));
   EXPECT_EQ(this->pmid_manager_service_.sync_deletes_.GetUnresolvedActions().size(), 1);
-
 }
 
 TEST_F(PmidManagerServiceTest, BEH_DeleterequestFromDataManager) {

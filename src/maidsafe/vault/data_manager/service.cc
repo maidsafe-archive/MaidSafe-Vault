@@ -246,7 +246,7 @@ void DataManagerService::HandleMessage(
       auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         auto value(db_.Commit(resolved_action->key, resolved_action->action));
-        assert(value->Subscribers() > 0);
+        assert(value->Subscribers() >= 0);
         if (value->Subscribers() == 0) {
           LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
           SendDeleteRequests(resolved_action->key, value->AllPmids(), message.id);

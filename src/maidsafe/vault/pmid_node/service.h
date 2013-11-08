@@ -166,6 +166,7 @@ class PmidNodeService {
  private:
   friend class detail::PmidNodeDeleteVisitor<PmidNodeService>;
   friend class detail::PmidNodePutVisitor<PmidNodeService>;
+  friend class detail::PmidNodeGetVisitor<PmidNodeService>;
 
   // ================================ Pmid Account ===============================================
 
@@ -183,7 +184,9 @@ class PmidNodeService {
   void HandlePut(const Data& data, nfs::MessageId message_id);
   template <typename Data>
   void HandleDelete(const typename Data::Name& name, nfs::MessageId message_id);
-
+  template <typename Data>
+  void HandleGet(const typename Data::Name& data_name, const NodeId& data_manager_node_id,
+                 nfs::MessageId message_id);
   template <typename Data>
   void HandleIntegrityChech(const typename Data::Name& data_name,
                             const NonEmptyString& random_string, const NodeId& sender,
@@ -252,6 +255,22 @@ void PmidNodeService::HandleMessage(
     const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
     const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
 
+// ============================== Get implementation =============================================
+template <typename Data>
+void PmidNodeService::HandleGet(const typename Data::Name& data_name,
+                                const NodeId& data_manager_node_id,
+                                nfs::MessageId message_id) {
+  try {
+    auto data(handler_.Get<Data>(data_name));
+    dispatcher_.SendGetResponse(data, data_manager_node_id, message_id);
+  } catch (const maidsafe_error& error) {
+    // Not sending error here as timeout will happen anyway at Datamanager.
+    // This case should be least frequent.
+    LOG(kError) << "Failed to get data : " << DebugId(data_name.value) << " , "
+                << error.what();
+  }
+}
+
 // ============================== Put implementation =============================================
 template <typename Data>
 void PmidNodeService::HandlePut(const Data& data, nfs::MessageId message_id) {
@@ -319,46 +338,6 @@ void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
 //      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
 //      this,
 //      accumulator_mutex_)(message, sender, receiver);
-//}
-
-// Commented by Mahmoud on 15 Sep. Needs refactoring
-// template<>
-// void PmidNodeService::HandleGetMessage(const nfs::GetRequestFromDataManagerToPmidNode& message,
-//    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
-//    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/) {
-//  typedef nfs::GetResponseFromPmidNodeToDataManager NfsMessage;
-//  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-//  nfs_vault::DataName data_name(message.contents->type, message.contents->raw_name);
-//  try {
-//    auto content(permanent_data_store_.Get(data_name));
-//    NfsMessage nfs_message(nfs_client::DataNameAndContentOrReturnCode(
-//        nfs_vault::DataNameAndContent(DataTagValue(message.contents->type),
-//                                      message.contents->raw_name,
-//                                      content)));
-//    RoutingMessage routing_message(nfs_message.Serialise(),
-//                                   NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
-//                                   NfsMessage::Receiver(
-//                                       NodeId(message.contents->raw_name.string())));
-//    routing_.Send(routing_message);
-//    {
-//      std::lock_guard<std::mutex> lock(accumulator_mutex_);
-//      accumulator_.SetHandled(message, sender);
-//    }
-//  } catch (const maidsafe_error& error) {
-//    NfsMessage nfs_message(
-//        nfs_client::DataNameAndContentOrReturnCode(
-//            nfs_client::DataNameAndReturnCode(data_name, nfs_client::ReturnCode(error))));
-//    RoutingMessage routing_message(nfs_message.Serialise(),
-//                                   NfsMessage::Sender(routing::SingleId(routing_.kNodeId())),
-//                                   NfsMessage::Receiver(
-//                                       NodeId(message.contents->raw_name.string())));
-//    routing_.Send(routing_message);
-//    {
-//      std::lock_guard<std::mutex> lock(accumulator_mutex_);
-//      accumulator_.SetHandled(message, sender);
-//    }
-//  } catch(const std::exception& /*ex*/) {
-//  }
 //}
 
 template <typename Data>

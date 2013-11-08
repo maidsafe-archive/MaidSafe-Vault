@@ -296,6 +296,30 @@ void DoOperation(PmidNodeService* service,
   boost::apply_visitor(put_visitor, data_name);
 }
 
+template <>
+void DoOperation(PmidNodeService* service,
+                 const GetRequestFromDataManagerToPmidNode& message,
+                 const GetRequestFromDataManagerToPmidNode::Sender& sender,
+                 const GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation GetRequestFromDataManagerToPmidNode";
+  auto data_name(GetNameVariant(*message.contents));
+  PmidNodeGetVisitor<PmidNodeService> get_visitor(service, sender.sender_id, message.id);
+  boost::apply_visitor(get_visitor, data_name);
+}
+
+template <>
+void DoOperation(PmidNodeService* service,
+                 const IntegrityCheckRequestFromDataManagerToPmidNode& message,
+                 const IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
+                 const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation IntegrityCheckRequestFromDataManagerToPmidNode";
+  auto data_name(GetNameVariant(*message.contents));
+  PmidNodeIntegrityCheckVisitor<PmidNodeService> integrity_check_visitor(service, sender,
+                                                                         message.id);
+  integrity_check_visitor(data_name);
+  boost::apply_visitor(integrity_check_visitor, data_name);
+}
+
 //====================================== To VersionHandler =========================================
 
 template<>
@@ -424,19 +448,36 @@ void OperationHandler<
     const PutRequestFromDataManagerToPmidManager& message,
     const PutRequestFromDataManagerToPmidManager::Sender& sender,
     const PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
-  {
-    DoOperation(service, message, sender, receiver);
-  }
+  DoOperation(service, message, sender, receiver);
 }
-
-
-}  // namespace detail
 
 template <>
-int RequiredRequests<PutRequestFromDataManagerToPmidManager>(
-    const PutRequestFromDataManagerToPmidManager&) {
-  return 1;
+template <>
+void OperationHandler<
+         typename ValidateSenderType<GetRequestFromDataManagerToPmidNode>::type,
+         Accumulator<PmidNodeServiceMessages>,
+         typename Accumulator<PmidNodeServiceMessages>::AddCheckerFunctor,
+         PmidNodeService>::operator()(
+    const GetRequestFromDataManagerToPmidNode& message,
+    const GetRequestFromDataManagerToPmidNode::Sender& sender,
+    const GetRequestFromDataManagerToPmidNode::Receiver& receiver) {
+  DoOperation(service, message, sender, receiver);
 }
+
+template <>
+template <>
+void OperationHandler<
+         typename ValidateSenderType<IntegrityCheckRequestFromDataManagerToPmidNode>::type,
+         Accumulator<PmidNodeServiceMessages>,
+         typename Accumulator<PmidNodeServiceMessages>::AddCheckerFunctor,
+         PmidNodeService>::operator()(
+    const IntegrityCheckRequestFromDataManagerToPmidNode& message,
+    const IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
+    const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver) {
+  DoOperation(service, message, sender, receiver);
+}
+
+}  // namespace detail
 
 }  // namespace vault
 

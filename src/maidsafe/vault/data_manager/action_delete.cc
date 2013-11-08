@@ -37,7 +37,7 @@ std::string ActionDataManagerDelete::Serialise() const {
 detail::DbAction ActionDataManagerDelete::operator()(std::unique_ptr<DataManagerValue>& value) {
   if (value) {
     value->DecrementSubscribers();
-    assert(value->Subscribers() < 0);
+    assert(value->Subscribers() >= 0);
     if (value->Subscribers() == 0)
       return detail::DbAction::kDelete;
     else

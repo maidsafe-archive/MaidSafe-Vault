@@ -27,6 +27,8 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
+#include "maidsafe/passport/types.h"
+
 #include "maidsafe/vault/data_manager/value.h"
 #include "maidsafe/vault/key.h"
 #include "maidsafe/vault/version_handler/key.h"
@@ -37,6 +39,33 @@ namespace maidsafe {
 namespace vault {
 
 namespace test {
+
+//DataNameVariant GetRandomKey() {
+//  // Currently 15 types are defined, but...
+//  uint32_t number_of_types = boost::mpl::size<typename DataNameVariant::types>::type::value,
+//           type_number;
+//  std::cout << number_of_types;
+//  type_number = RandomUint32() % number_of_types;
+//  switch (type_number) {
+//    case  0: return passport::Anmid::Name();
+////    case  1: return passport::Ansmid::Name();
+////    case  2: return passport::Antmid::Name();
+////    case  3: return passport::Anmaid::Name();
+////    case  4: return passport::Maid::Name();
+////    case  5: return passport::Pmid::Name();
+////    case  6: return passport::Mid::Name();
+////    case  7: return passport::Smid::Name();
+////    case  8: return passport::Tmid::Name();
+////    case  9: return passport::Anmpid::Name();
+////    case 10: return passport::Mpid::Name();
+////    case 11: return ImmutableData::Name();
+////    case 12: return OwnerDirectory::Name();
+////    case 13: return GroupDirectory::Name();
+////    case 14: return WorldDirectory::Name();
+//    default:
+//      return DataNameVariant();
+//  }
+//}
 
 struct TestDbValue {
   TestDbValue() : value("original_value") {}
@@ -51,24 +80,28 @@ struct TestDbValue {
 
 // change value
 struct TestDbActionModifyValue {
-detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
-  if (value) {
-    value->value = "modified_value";
-    return detail::DbAction::kPut;
-  }
+  TestDbActionModifyValue(const std::string& value) : kValue(value) {}
+  detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
+    if (value) {
+      value->value = "modified_value";
+      return detail::DbAction::kPut;
+    }
     ThrowError(CommonErrors::no_such_element);
     return detail::DbAction::kDelete;
   }
+  const std::string kValue;
 };
 
 // put value
 struct TestDbActionPutValue {
+  TestDbActionPutValue(const std::string& value) : kValue(value) {}
   detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
     if (!value)
       value.reset(new TestDbValue());
-    value->value = "new_value";
+    value->value = kValue;
     return detail::DbAction::kPut;
   }
+  const std::string kValue;
 };
 
 // delete value
@@ -81,17 +114,26 @@ detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
 };
 
 template <typename Key, typename Value>
+void PopulateDbValues(Db<Key, Value>& db, const int& count) {
+  for (auto i(0); i != count; ++i) {
+    Key key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue); // need Random type
+    db.Commit(key, TestDbActionPutValue("new_value"));
+    CHECK(db.Get(key).value == "new_value");
+  }
+}
+
+template <typename Key, typename Value>
 void DbTests(Db<Key, Value>& db, const Key& key) {
   CHECK_THROWS_AS(db.Get(key), maidsafe_error);
-  db.Commit(key, TestDbActionPutValue());
+  db.Commit(key, TestDbActionPutValue("new_value"));
   CHECK(db.Get(key).value == "new_value");
-  db.Commit(key, TestDbActionModifyValue());
+  db.Commit(key, TestDbActionModifyValue("modified_value"));
   CHECK(db.Get(key).value == "modified_value");
-  db.Commit(key, TestDbActionPutValue());
+  db.Commit(key, TestDbActionPutValue("new_value"));
   CHECK(db.Get(key).value == "new_value");
   db.Commit(key, TestDbActionDeleteValue());
   CHECK_THROWS_AS(db.Get(key), maidsafe_error);
-  CHECK_THROWS_AS(db.Commit(key, TestDbActionModifyValue()), maidsafe_error);
+  CHECK_THROWS_AS(db.Commit(key, TestDbActionModifyValue("modified_value")), maidsafe_error);
   CHECK_THROWS_AS(db.Get(key), maidsafe_error);
 }
 
@@ -105,9 +147,15 @@ TEST_CASE("Db commit", "[Db][Unit]") {
   Key key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue);
   for (auto i(0); i != 100; ++i)
     DbTests(db, key);
-
   // TODO (Prakash) Extend to all data types
+  PopulateDbValues(db, 10000);
+  for (auto i(0); i != 100; ++i) {
+    DbTests(db, Key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue));
+  }
 }
+
+// parallel test
+
 
 
 //TEST_CASE("Db Poc", "[Db][Unit]") {
