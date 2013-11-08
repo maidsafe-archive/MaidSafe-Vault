@@ -37,6 +37,7 @@ class PmidManagerValue {
   int32_t size() const { return size_; }
 
   friend void swap(PmidManagerValue& lhs, PmidManagerValue& rhs);
+  friend bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);
 
  private:
   PmidManagerValue(const PmidManagerValue& other);
