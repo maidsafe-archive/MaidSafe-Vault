@@ -65,6 +65,10 @@ DataManagerValue::DataManagerValue(DataManagerValue&& other)
 void DataManagerValue::AddPmid(const PmidName& pmid_name) {
   online_pmids_.insert(pmid_name);
   offline_pmids_.erase(pmid_name);
+  LOG(kVerbose) << "online_pmids_ now having : ";
+  for (auto pmid : online_pmids_) {
+    LOG(kVerbose) << "     ----     " << HexSubstr(pmid.value.string());
+  }
 }
 
 void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
