@@ -59,8 +59,10 @@ DataManagerValue& DataManagerValue::operator=(const DataManagerValue& other) {
   return *this;
 }
 
-DataManagerValue::DataManagerValue(int32_t size)
-    : subscribers_(0), size_(size), online_pmids_(), offline_pmids_() {}
+DataManagerValue::DataManagerValue(const PmidName& pmid_name, int32_t size)
+    : subscribers_(0), size_(size), online_pmids_(), offline_pmids_() {
+  AddPmid(pmid_name);
+}
 
 DataManagerValue::DataManagerValue(DataManagerValue&& other)
     : subscribers_(std::move(other.subscribers_)),
@@ -71,6 +73,10 @@ DataManagerValue::DataManagerValue(DataManagerValue&& other)
 void DataManagerValue::AddPmid(const PmidName& pmid_name) {
   online_pmids_.insert(pmid_name);
   offline_pmids_.erase(pmid_name);
+  LOG(kVerbose) << "online_pmids_ now having : ";
+  for (auto pmid : online_pmids_) {
+    LOG(kVerbose) << "     ----     " << HexSubstr(pmid.value.string());
+  }
 }
 
 void DataManagerValue::RemovePmid(const PmidName& pmid_name) {

@@ -108,8 +108,6 @@ class DataManagerDispatcher {
   DataManagerDispatcher(DataManagerDispatcher&&);
   DataManagerDispatcher& operator=(DataManagerDispatcher);
 
-  typedef detail::GroupOrKeyType<DataManager> GroupOrKeyHelper;
-
   typedef std::true_type IsCacheable;
   typedef std::false_type IsNotCacheable;
 
@@ -137,7 +135,7 @@ class DataManagerDispatcher {
 template <typename Data>
 void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name, const Data& data,
                                            nfs::MessageId message_id) {
-  LOG(kVerbose) << "DataManager::SendPutRequest to pmid_name " << HexSubstr(pmid_name->string())
+  LOG(kVerbose) << "DataManager::SendPutRequest to pmid_name " << HexSubstr(pmid_name.value.string())
                 << " with message_id " << message_id.data;
   typedef PutRequestFromDataManagerToPmidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
@@ -145,8 +143,9 @@ void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name, const Data
 
   VaultMessage vault_message(message_id, nfs_vault::DataNameAndContent(data));
   RoutingMessage message(vault_message.Serialise(),
-                         GroupOrKeyHelper::GroupSender(routing_, Key(data.name())),
-                         VaultMessage::Receiver(NodeId(pmid_name->string())));
+                         routing::GroupSource(routing::GroupId(NodeId(data.name().value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(pmid_name.value.string())));
   routing_.Send(message);
 }
 
@@ -160,8 +159,9 @@ void DataManagerDispatcher::SendPutResponse(const MaidName& account_name,
 
   VaultMessage vault_message(message_id, nfs_vault::DataNameAndCost(data_name, cost));
   RoutingMessage message(vault_message.Serialise(),
-                         GroupOrKeyHelper::GroupSender(routing_, Key(data_name)),
-                         VaultMessage::Receiver(NodeId(account_name->string())));
+                         routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(account_name.value.string())));
   routing_.Send(message);
 }
 
@@ -177,8 +177,9 @@ void DataManagerDispatcher::SendPutFailure(
                              nfs_client::DataNameAndReturnCode(data_name,
                                                                nfs_client::ReturnCode(error)));
   RoutingMessage message(vault_message.Serialise(),
-                         GroupOrKeyHelper::GroupSender(routing_, Key(data_name)),
-                         VaultMessage::Receiver(routing::GroupId(NodeId(maid_node->string()))));
+                         routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(routing::GroupId(NodeId(maid_node.value.string()))));
   routing_.Send(message);
 }
 
@@ -196,8 +197,9 @@ void DataManagerDispatcher::SendGetRequest(const PmidName& pmid_node,
   VaultMessage vault_message(message_id, VaultMessage::Contents(data_name));
   RoutingMessage message(
       vault_message.Serialise(),
-      GroupOrKeyHelper::GroupSender(routing_, Key(data_name)),
-      VaultMessage::Receiver(routing::SingleId(NodeId(pmid_node->string()))));
+      routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
+                           routing::SingleId(routing_.kNodeId())),
+      VaultMessage::Receiver(routing::SingleId(NodeId(pmid_node.value.string()))));
   routing_.Send(message);
 }
 
@@ -214,7 +216,7 @@ void DataManagerDispatcher::SendIntegrityCheck(const typename Data::Name& data_n
   RoutingMessage message(
       vault_message.Serialise(),
       VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
-      VaultMessage::Receiver(routing::SingleId(NodeId(pmid_node->string()))));
+      VaultMessage::Receiver(routing::SingleId(NodeId(pmid_node.value.string()))));
   routing_.Send(message);
 }
 
@@ -247,7 +249,8 @@ void DataManagerDispatcher::SendGetResponseSuccess(const RequestorIdType& reques
                                                                          routing::Cacheable::kNone);
   NfsMessage nfs_message(message_id, typename NfsMessage::Contents(data));
   RoutingMessage message(nfs_message.Serialise(),
-                         GroupOrKeyHelper::GroupSender(routing_, Key(data.name())),
+                         routing::GroupSource(routing::GroupId(NodeId(data.name().value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
                          typename NfsMessage::Receiver(requestor_id.node_id), kCacheable);
   routing_.Send(message);
 }
@@ -268,7 +271,8 @@ void DataManagerDispatcher::SendGetResponseFailure(const RequestorIdType& reques
 
   NfsMessage nfs_message(message_id, msg_content);
   RoutingMessage message(nfs_message.Serialise(),
-                         GroupOrKeyHelper::GroupSender(routing_, Key(data_name)),
+                         routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
                          typename NfsMessage::Receiver(requestor_id.node_id));
   routing_.Send(message);
 }
@@ -320,8 +324,9 @@ void DataManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
 
   VaultMessage vault_message(message_id, nfs_vault::DataName(data_name));
   RoutingMessage message(vault_message.Serialise(),
-                         GroupOrKeyHelper::GroupSender(routing_, Key(data_name)),
-                         VaultMessage::Receiver(NodeId(pmid_node->string())));
+                         routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(pmid_node.value.string())));
   routing_.Send(message);
 }
 

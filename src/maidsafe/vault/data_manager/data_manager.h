@@ -25,6 +25,7 @@
 
 #include "maidsafe/vault/key.h"
 #include "maidsafe/vault/unresolved_action.h"
+#include "maidsafe/vault/data_manager/key.h"
 #include "maidsafe/vault/data_manager/value.h"
 #include "maidsafe/vault/data_manager/action_add_pmid.h"
 #include "maidsafe/vault/data_manager/action_delete.h"
@@ -49,7 +50,7 @@ namespace nfs {
 template <>
 struct PersonaTypes<Persona::kDataManager> {
   static const Persona persona = Persona::kDataManager;
-  typedef vault::Key Key;
+  typedef vault::DataManagerKey Key;
   typedef vault::DataManagerValue Value;
   typedef vault::Metadata Metadata;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerPut> UnresolvedPut;

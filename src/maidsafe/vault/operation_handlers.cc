@@ -183,6 +183,7 @@ void DoOperation(DataManagerService* service,
   LOG(kVerbose) << "DoOperation GetResponseFromPmidNodeToDataManager";
   service->HandleGetResponse(PmidName(Identity(sender.data.string())),
                              message.id, *message.contents);
+  LOG(kVerbose) << "Done Operation GetResponseFromPmidNodeToDataManager";
 }
 
 template <>

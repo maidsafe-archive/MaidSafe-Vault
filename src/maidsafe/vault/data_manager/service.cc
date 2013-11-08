@@ -64,7 +64,9 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       sync_add_pmids_(),
       sync_remove_pmids_(),
       sync_node_downs_(),
-      sync_node_ups_() {}
+      sync_node_ups_() {
+  asio_service_.Start();
+}
 
 // ==================== Put implementation =========================================================
 template <>
@@ -254,23 +256,6 @@ void DataManagerService::HandleMessage(
       }
       break;
     }
-
-    //    case ActionDataManagerDelete::kActionId: {
-    //      DataManager::UnresolvedDelete unresolved_action(
-    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-    //      auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
-    //      if (resolved_action)
-    //        db_.Commit(resolved_action->key, resolved_action->action);
-    //      break;
-    //    }
-    //    case ActionDataManagerAddPmid::kActionId: {
-    //      DataManager::UnresolvedAddPmid unresolved_action(
-    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-    //      auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
-    //      if (resolved_action)
-    //        db_.Commit(resolved_action->key, resolved_action->action);
-    //      break;
-    //    }
     case ActionDataManagerAddPmid::kActionId: {
       LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerAddPmid";
       DataManager::UnresolvedAddPmid unresolved_action(
@@ -278,6 +263,7 @@ void DataManagerService::HandleMessage(
       auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit add pmid to db";
+        resolved_action->key.CleanUpOriginator();
         db_.Commit(resolved_action->key, resolved_action->action);
       }
       break;
@@ -289,6 +275,7 @@ void DataManagerService::HandleMessage(
       auto resolved_action(sync_remove_pmids_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit remove pmid to db";
+        resolved_action->key.CleanUpOriginator();
         db_.Commit(resolved_action->key, resolved_action->action);
       }
       break;
