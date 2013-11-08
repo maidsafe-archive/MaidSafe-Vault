@@ -57,6 +57,13 @@ class GroupDb {
   typedef std::map<NodeId, std::vector<Contents>> TransferInfo;
 
   struct Contents {
+    Contents() : group_name(), metadata(), kv_pair() {}
+
+    Contents(Contents&& other)
+        : group_name(std::move(other.group_name)),
+          metadata(std::move(other.metadata)),
+          kv_pair(std::move(other.kv_pair))  {}
+
     GroupName group_name;
     Metadata metadata;
     std::vector<KvPair> kv_pair;
@@ -112,12 +119,14 @@ GroupDb<Persona>::GroupDb()
       mutex_(),
       leveldb_(InitialiseLevelDb(kDbPath_)),
       group_map_() {
+#ifndef _MSC_VER
   // Remove this assert if value needs to be copy constructible.
   // this is just a check to avoid copy constructor unless we require it
   static_assert(!std::is_copy_constructible<typename Persona::Value>::value,
                 "value should not be copy constructible !");
   static_assert(std::is_move_constructible<typename Persona::Value>::value,
                 "value should be move constructible !");
+#endif
 }
 
 template <typename Persona>

@@ -129,7 +129,7 @@ bool DoCacheOperation(
     const nfs::GetRequestFromDataGetterToDataManager& message,
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
-  typedef typename nfs::GetRequestFromMaidNodeToDataManager::SourcePersona SourcePersonaType;
+  typedef nfs::GetRequestFromMaidNodeToDataManager::SourcePersona SourcePersonaType;
   auto data_name(detail::GetNameVariant(*message.contents));
   detail::Requestor<SourcePersonaType> requestor(sender.data);
   GetFromCacheVisitor<detail::Requestor<SourcePersonaType>> get_from_cache(service, requestor);
@@ -142,7 +142,7 @@ bool DoCacheOperation(
     const nfs::GetRequestFromMaidNodeToDataManager& message,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
-  typedef typename nfs::GetRequestFromMaidNodeToDataManager::SourcePersona SourcePersonaType;
+  typedef nfs::GetRequestFromMaidNodeToDataManager::SourcePersona SourcePersonaType;
   auto data_name(detail::GetNameVariant(*message.contents));
   detail::Requestor<SourcePersonaType> requestor(sender.data);
   detail::GetFromCacheVisitor<detail::Requestor<SourcePersonaType>> get_from_cache(service,
