@@ -182,7 +182,7 @@ void DataManagerService::HandleMessage(
     const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& /*sender*/,
     const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& /*receiver*/) {
   LOG(kVerbose) << "DataManagerService::HandleMessage GetCachedResponseFromCacheHandlerToDataManager";
-  assert(0);
+//  assert(0);
 }
 
 void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,

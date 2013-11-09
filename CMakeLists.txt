@@ -62,12 +62,14 @@ glob_dir(DataManagerTests ${VaultSourcesDir}/data_manager/tests "Tests")
 #glob_dir(MaidManagerTests ${VaultSourcesDir}/maid_manager/tests "Tests")
 #glob_dir(MpidManagerTests ${VaultSourcesDir}/mpid_manager/tests "Tests")
 glob_dir(PmidManagerTests ${VaultSourcesDir}/pmid_manager/tests "Tests")
-#glob_dir(PmidNodeTests ${VaultSourcesDir}/pmid_node/tests "Tests")
+glob_dir(PmidNodeTests ${VaultSourcesDir}/pmid_node/tests "Tests")
 #glob_dir(VersionHandler ${VaultSourcesDir}/version_handler "Version Handler\\\\")
 glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
 set(TestsMain ${VaultSourcesDir}/tests/tests_main.cc)
 
-set(VaultGTestsAllFiles ${VaultTestsAllFiles} ${DataManagerTestsAllFiles} ${PmidManagerTestsAllFiles})
+set(VaultGTestsAllFiles ${VaultTestsAllFiles} ${DataManagerTestsAllFiles}
+                        ${PmidManagerTestsAllFiles}
+                        ${PmidNodeTestsAllFiles})
 set(VaultTestsAllFiles ${VaultSourcesDir}/tests/db_test.cc
                        ${VaultSourcesDir}/tests/group_db_test.cc)
 list(REMOVE_ITEM VaultGTestsAllFiles ${VaultTestsAllFiles})
