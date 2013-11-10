@@ -56,16 +56,58 @@ class PmidNodeServiceTest  : public testing::Test {
   AsioService asio_service_;
 };
 
-TEST_F(PmidNodeServiceTest, BEH_PutRequestFromPmidManager) {}
+TEST_F(PmidNodeServiceTest, BEH_PutRequestFromPmidManager) {
+  auto content(CreateContent<PutRequestFromPmidManagerToPmidNode::Contents>());
+  auto put_request(CreateMessage<PutRequestFromPmidManagerToPmidNode>(content));
+  auto group_source(CreateGroupSource(routing_.kNodeId()));
+  GroupSendToSingle(&pmid_node_service_, put_request, group_source,
+                    routing::SingleId(routing_.kNodeId()));
+  // TO BE CONTINUED CHECK exists
+}
 
-TEST_F(PmidNodeServiceTest, BEH_GetRequestFromDataManager) {}
+TEST_F(PmidNodeServiceTest, BEH_GetRequestFromDataManager) {
+  auto content(CreateContent<GetRequestFromDataManagerToPmidNode::Contents>());
+  auto get_request(CreateMessage<GetRequestFromDataManagerToPmidNode>(content));
+  auto group_source(CreateGroupSource(NodeId(content.raw_name.string())));
+  GroupSendToSingle(&pmid_node_service_, get_request, group_source,
+                    routing::SingleId(routing_.kNodeId()));
+  // TO BE CONTINUED
+}
 
-TEST_F(PmidNodeServiceTest, BEH_IntegrityCheckRequestFromDataManager) {}
+TEST_F(PmidNodeServiceTest, BEH_IntegrityCheckRequestFromDataManager) {
+  ImmutableData data(NonEmptyString(RandomString(TEST_CHUNK_SIZE)));
+  NonEmptyString random_string(RandomString(64));
+  nfs_vault::DataNameAndRandomString content(data.name(), random_string);
+  auto integrity_check_request(
+           CreateMessage<IntegrityCheckRequestFromDataManagerToPmidNode>(content));
+  SingleSendsToSingle(&pmid_node_service_, integrity_check_request,
+                      routing::SingleSource(NodeId(NodeId::kRandomId)),
+                      routing::SingleId(routing_.kNodeId()));
+  // TO BE CONTINUED
+}
 
-TEST_F(PmidNodeServiceTest, BEH_DeleteRequestFromPmidManager) {}
+TEST_F(PmidNodeServiceTest, BEH_DeleteRequestFromPmidManager) {
+  auto content(CreateContent<DeleteRequestFromPmidManagerToPmidNode::Contents>());
+  auto delete_request(CreateMessage<DeleteRequestFromPmidManagerToPmidNode>(content));
+  auto group_source(CreateGroupSource(routing_.kNodeId()));
+  GroupSendToSingle(&pmid_node_service_, delete_request, group_source,
+                    routing::SingleId(routing_.kNodeId()));
+  // TO BE CONTINUED CHECK not exists
+}
 
-TEST_F(PmidNodeServiceTest, BEH_GetPmidAccountResponseFromPmidManager) {}
+TEST_F(PmidNodeServiceTest, BEH_GetPmidAccountResponseFromPmidManager) {
+  nfs_client::ReturnCode return_code(CommonErrors::success);
+  nfs_client::DataNamesAndReturnCode content(return_code);
+  // ADD DATA BEFORE TEST TO PERMANENT DATA STORES
+  // ADD DATA NAME TO CONTENTS
+  auto pmid_account_response(
+           CreateMessage<GetPmidAccountResponseFromPmidManagerToPmidNode>(content));
+  auto group_source(CreateGroupSource(routing_.kNodeId()));
+  GroupSendToSingle(&pmid_node_service_, pmid_account_response, group_source,
+                    routing::SingleId(routing_.kNodeId()));
+  // TO BE CONTINUED CHECK exists
 
+}
 
 }  //  namespace test
 
