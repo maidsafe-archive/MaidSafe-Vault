@@ -317,7 +317,6 @@ void DoOperation(PmidNodeService* service,
   auto data_name(GetNameVariant(*message.contents));
   PmidNodeIntegrityCheckVisitor<PmidNodeService> integrity_check_visitor(service,
       message.contents->random_string, sender, message.id);
-  integrity_check_visitor(data_name);
   boost::apply_visitor(integrity_check_visitor, data_name);
 }
 
