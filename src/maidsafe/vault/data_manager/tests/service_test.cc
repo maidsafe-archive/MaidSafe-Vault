@@ -217,6 +217,7 @@ TEST_F(DataManagerServiceTest, BEH_AddPmidSynchroniseFromDataManager) {
 
   // Sync AddPmid
   ActionDataManagerAddPmid action_add_pmid(pmid_name, TEST_CHUNK_SIZE);
+//  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name, TEST_CHUNK_SIZE));
   auto group_source(CreateGroupSource(data.name()));
   auto group_unresolved_action(
            CreateGroupUnresolvedAction<DataManager::UnresolvedAddPmid>(key, action_add_pmid,

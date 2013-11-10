@@ -94,6 +94,21 @@ void GroupSendToGroup(ServiceType* service, const MessageType& message,
     service->HandleMessage(message, group_sources[index], group_id);
 }
 
+template <typename ServiceType, typename MessageType>
+void GroupSendToSingle(ServiceType* service, const MessageType& message,
+                       const std::vector<routing::GroupSource>& group_sources,
+                       const routing::SingleId& single_id) {
+  for (u_int32_t index(0); index < group_sources.size(); ++index)
+    service->HandleMessage(message, group_sources[index], single_id);
+}
+
+template <typename ServiceType, typename MessageType>
+void SingleSendsToSingle(ServiceType* service, const MessageType& message,
+                         const routing::SingleSource& single_source,
+                         const routing::SingleId& single_id) {
+  service->HandleMessage(message, single_source, single_id);
+}
+
 template <typename DataNameType>
 std::vector<routing::GroupSource> CreateGroupSource(const DataNameType& data_name) {
   return CreateGroupSource(NodeId(data_name.value.string()));
