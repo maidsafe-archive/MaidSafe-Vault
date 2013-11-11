@@ -460,12 +460,9 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   // Choose the one we're going to ask for actual data, and set up the others for integrity checks.
   auto pmid_node_to_get_from(ChoosePmidNodeToGetFrom(online_pmids, data_name));
   std::map<PmidName, IntegrityCheckData> integrity_checks;
-  auto hint_itr(std::end(integrity_checks));
-  std::for_each(std::begin(online_pmids), std::end(online_pmids),
-                [&](PmidName name) {
-                  hint_itr = integrity_checks.insert(hint_itr, std::make_pair(std::move(name),
-                      IntegrityCheckData(IntegrityCheckData::GetRandomInput())));
-                });
+  for (const auto& iter : online_pmids)
+    integrity_checks.insert(
+        std::make_pair(iter, IntegrityCheckData(IntegrityCheckData::GetRandomInput())));
 
   // Create helper struct which holds the collection of responses, and add the task to the timer.
   auto get_response_op(
