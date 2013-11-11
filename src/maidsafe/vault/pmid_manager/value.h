@@ -39,9 +39,14 @@ class PmidManagerValue {
   friend void swap(PmidManagerValue& lhs, PmidManagerValue& rhs);
   friend bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);
 
+#ifdef MAIDSAFE_APPLE  // BEFORE_RELEASE This copy constructor defination is to allow building
+                       // on mac with clang 3.3, should be removed if clang is updated on mac.
+  PmidManagerValue(const PmidManagerValue& other) : size_(other.size_) {}
+#else
  private:
   PmidManagerValue(const PmidManagerValue& other);
-
+#endif
+ private:
   int32_t size_;
 };
 
