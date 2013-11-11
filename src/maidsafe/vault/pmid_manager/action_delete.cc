@@ -21,10 +21,22 @@
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/pmid_manager/value.h"
+#include "maidsafe/vault/pmid_manager/action_delete.pb.h"
 
 namespace maidsafe {
 
 namespace vault {
+
+ActionPmidManagerDelete::ActionPmidManagerDelete(bool pmid_node_available_in )
+    : pmid_node_available(pmid_node_available_in) {}
+
+ActionPmidManagerDelete::ActionPmidManagerDelete(const std::string& serialised_action)
+  : pmid_node_available([&serialised_action]()->bool {
+                          protobuf::ActionPmidManagerDelete action_delete_proto;
+                          if (!action_delete_proto.ParseFromString(serialised_action))
+                            ThrowError(CommonErrors::parsing_error);
+                          return action_delete_proto.pmid_node_available();
+                        }()) {}
 
 detail::DbAction ActionPmidManagerDelete::operator()(PmidManagerMetadata& metadata,
     std::unique_ptr<PmidManagerValue>& value) const {
@@ -33,11 +45,15 @@ detail::DbAction ActionPmidManagerDelete::operator()(PmidManagerMetadata& metada
     return detail::DbAction::kDelete;
   }
   metadata.DeleteData(value->size());
+  if (!pmid_node_available)
+    metadata.SetAvailableSize(0);
   return detail::DbAction::kDelete;
 }
 
 std::string ActionPmidManagerDelete::Serialise() const {
-  return std::string();
+  protobuf::ActionPmidManagerDelete action_delete_proto;
+  action_delete_proto.set_pmid_node_available(pmid_node_available);
+  return action_delete_proto.SerializeAsString();
 }
 
 }  // namespace vault

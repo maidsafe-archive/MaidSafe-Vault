@@ -49,7 +49,7 @@ inline bool ForThisPersona(const Message& message) {
 
 PmidManagerService::PmidManagerService(const passport::Pmid& /*pmid*/, routing::Routing& routing)
     : routing_(routing), group_db_(), accumulator_mutex_(), accumulator_(), dispatcher_(routing_),
-      pmid_metadata_(), sync_puts_(), sync_deletes_(), sync_set_available_sizes_() {}
+      sync_puts_(), sync_deletes_(), sync_set_available_sizes_() {}
 
 // =============== Sync ============================================================================
 
@@ -163,6 +163,17 @@ void PmidManagerService::HandleMessage(
         auto data_name(GetDataNameVariant(resolved_action->key.type, resolved_action->key.name));
         SendPutResponse(data_name, PmidName(Identity(receiver.data.string())),
                         static_cast<int32_t>(message.contents->data.size()), message.id);
+      }
+      break;
+    }
+    case ActionPmidManagerDelete::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromPmidManagerToPmidManager ActionPmidManagerDelete";
+      PmidManager::UnresolvedDelete unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromPmidManagerToPmidManager SendDeleteRequest";
+        group_db_.Commit(resolved_action->key, resolved_action->action);
       }
       break;
     }

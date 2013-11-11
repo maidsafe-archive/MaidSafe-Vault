@@ -35,7 +35,7 @@ namespace vault {
 
 namespace test {
 
-static const int TEST_CHUNK_SIZE = 2^10;
+static const int TEST_CHUNK_SIZE = std::pow(2, 10);
 
 passport::Maid MakeMaid();
 passport::Pmid MakePmid();
@@ -90,16 +90,16 @@ template <typename ServiceType, typename MessageType>
 void GroupSendToGroup(ServiceType* service, const MessageType& message,
                       const std::vector<routing::GroupSource>& group_sources,
                       const routing::GroupId& group_id) {
-  for (uint32_t index(0); index < group_sources.size(); ++index)
-    service->HandleMessage(message, group_sources[index], group_id);
+  for (const auto& group_source : group_sources)
+    service->HandleMessage(message, group_source, group_id);
 }
 
 template <typename ServiceType, typename MessageType>
 void GroupSendToSingle(ServiceType* service, const MessageType& message,
                        const std::vector<routing::GroupSource>& group_sources,
                        const routing::SingleId& single_id) {
-  for (uint32_t index(0); index < group_sources.size(); ++index)
-    service->HandleMessage(message, group_sources[index], single_id);
+  for (const auto& group_source : group_sources)
+    service->HandleMessage(message, group_source, single_id);
 }
 
 template <typename ServiceType, typename MessageType>
@@ -107,6 +107,13 @@ void SingleSendsToSingle(ServiceType* service, const MessageType& message,
                          const routing::SingleSource& single_source,
                          const routing::SingleId& single_id) {
   service->HandleMessage(message, single_source, single_id);
+}
+
+template <typename ServiceType, typename MessageType>
+void SingleSendsToGroup(ServiceType* service, const MessageType& message,
+                        const routing::SingleSource& single_source,
+                        const routing::GroupId& group_id) {
+  service->HandleMessage(message, single_source, group_id);
 }
 
 template <typename DataNameType>
