@@ -57,6 +57,20 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace test {
+  class DataManagerServiceTest_BEH_PutRequestFromMaidManager_Test;
+  class DataManagerServiceTest_BEH_PutResponseFromPmidManager_Test;
+  class DataManagerServiceTest_BEH_PutFailureFromPmidManager_Test;
+  class DataManagerServiceTest_BEH_DeleteRequestFromMaidManager_Test;
+  class DataManagerServiceTest_BEH_PutSynchroniseFromDataManager_Test;
+  class DataManagerServiceTest_BEH_DeleteSynchroniseFromDataManager_Test;
+  class DataManagerServiceTest_BEH_AddPmidSynchroniseFromDataManager_Test;
+  class DataManagerServiceTest_BEH_RemovePmidSynchroniseFromDataManager_Test;
+  class DataManagerServiceTest_BEH_NodeDownSynchroniseFromDataManager_Test;
+  class DataManagerServiceTest_BEH_NodeUpSynchroniseFromDataManager_Test;
+  class DataManagerServiceTest_BEH_GetResponseFromPmidNode_Test;
+}
+
 class DataManagerService {
  public:
   typedef nfs::DataManagerServiceMessages PublicMessages;
@@ -190,6 +204,17 @@ class DataManagerService {
   friend class detail::DataManagerDeleteVisitor<DataManagerService>;
   friend class detail::DataManagerSendDeleteVisitor<DataManagerService>;
   friend class detail::PutResponseFailureVisitor<DataManagerService>;
+  friend class test::DataManagerServiceTest_BEH_PutRequestFromMaidManager_Test;
+  friend class test::DataManagerServiceTest_BEH_PutResponseFromPmidManager_Test;
+  friend class test::DataManagerServiceTest_BEH_PutFailureFromPmidManager_Test;
+  friend class test::DataManagerServiceTest_BEH_DeleteRequestFromMaidManager_Test;
+  friend class test::DataManagerServiceTest_BEH_PutSynchroniseFromDataManager_Test;
+  friend class test::DataManagerServiceTest_BEH_DeleteSynchroniseFromDataManager_Test;
+  friend class test::DataManagerServiceTest_BEH_AddPmidSynchroniseFromDataManager_Test;
+  friend class test::DataManagerServiceTest_BEH_RemovePmidSynchroniseFromDataManager_Test;
+  friend class test::DataManagerServiceTest_BEH_NodeDownSynchroniseFromDataManager_Test;
+  friend class test::DataManagerServiceTest_BEH_NodeUpSynchroniseFromDataManager_Test;
+  friend class test::DataManagerServiceTest_BEH_GetResponseFromPmidNode_Test;
 
   routing::Routing& routing_;
   AsioService asio_service_;
@@ -308,7 +333,8 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
   if (!EntryExist<Data>(data.name())) {
     cost *= routing::Parameters::node_group_size;
     PmidName pmid_name;
-    if (routing_.ClosestToId(NodeId(data.name().value)))
+    if (routing_.ClosestToId(NodeId(data.name().value)) &&
+        (pmid_name_in.value.string() != NodeId().string()))
       pmid_name = pmid_name_in;
     else
       pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
@@ -318,7 +344,8 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
                                      maidsafe_error(VaultErrors::unique_data_clash), message_id);
     return;
   } else {
-    typename DataManager::Key key(data.name().value, Data::Tag::kValue);
+    typename DataManager::Key key(data.name().value, Data::Tag::kValue,
+                                  Identity(pmid_name_in->string()));
     sync_puts_.AddLocalAction(DataManager::UnresolvedPut(key, ActionDataManagerPut(),
                                                          routing_.kNodeId()));
     DoSync();
@@ -329,7 +356,7 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
 template <typename Data>
 bool DataManagerService::EntryExist(const typename Data::Name& name) {
   try {
-    db_.Get(DataManager::Key(name.value, Data::Tag::kValue));
+    db_.Get(DataManager::Key(name.value, Data::Tag::kValue, Identity(NodeId().string())));
     return true;
   }
   catch (const maidsafe_error& /*error*/) {
@@ -341,7 +368,10 @@ template <typename Data>
 void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
                                            const PmidName& pmid_node, int32_t size,
                                            nfs::MessageId /*message_id*/) {
-  typename DataManager::Key key(data_name.value, Data::Tag::kValue);
+  LOG(kVerbose) << "DataManagerService::HandlePutResponse for chunk "
+                << HexSubstr(data_name.value.string()) << " storing on pmid_node "
+                << HexSubstr(pmid_node.value.string());
+  typename DataManager::Key key(data_name.value, Data::Tag::kValue, Identity(pmid_node->string()));
   sync_add_pmids_.AddLocalAction(DataManager::UnresolvedAddPmid(
       key, ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId()));
   DoSync();
@@ -353,7 +383,8 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
                                           nfs::MessageId message_id,
                                           const maidsafe_error& /*error*/) {
   // TODO(Team): Following should be done only if error is fixable by repeat
-  typename DataManager::Key key(data_name.value, Data::Tag::kValue);
+  typename DataManager::Key key(data_name.value, Data::Tag::kValue,
+                                Identity(attempted_pmid_node->string()));
   // Get all pmid nodes for this data.
   if (SendPutRetryRequired(data_name)) {
     std::set<PmidName> pmids_to_avoid;
@@ -362,6 +393,7 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
       pmids_to_avoid = std::move(value.AllPmids());
     } catch (const common_error& error) {
       if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
+        LOG(kError) << "HandlePutFailure db error";
         throw error;  // For db errors
     }
 
@@ -391,7 +423,8 @@ template <typename DataName>
 bool DataManagerService::SendPutRetryRequired(const DataName& data_name) {
   try {
     // mutex is required
-    auto value(db_.Get(DataManager::Key(data_name.value, DataName::data_type::Tag::kValue)));
+    auto value(db_.Get(DataManager::Key(data_name.value, DataName::data_type::Tag::kValue,
+                                        Identity(NodeId().string()))));
     return value.AllPmids().size() < routing::Parameters::node_group_size;
   }
   catch (const maidsafe_error& /*error*/) {}
@@ -403,16 +436,23 @@ template <typename Data, typename RequestorIdType>
 void DataManagerService::HandleGet(const typename Data::Name& data_name,
                                    const RequestorIdType& requestor,
                                    nfs::MessageId message_id) {
+  LOG(kVerbose) << "Handle Get " << HexSubstr(data_name.value);
   // Get all pmid nodes that are online.
   std::set<PmidName> online_pmids;
   try {
-    auto value(db_.Get(vault::Key(data_name.value, Data::Tag::kValue)));
+    auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue,
+                                        Identity(NodeId().string()))));
     online_pmids = std::move(value.online_pmids());
-  } catch (const common_error& error) {
-      if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
-        throw error;  // For db errors
+  } catch (const maidsafe_error& error) {
+    LOG(kWarning) << "Getting " << HexEncode(data_name.value)
+                  << " causes a maidsafe_error " << error.code().value();
+    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
+      LOG(kError) << "db error";
+      throw error;  // For db errors
+    }
     // TODO(Fraser#5#): 2013-10-03 - Request for non-existent data should possibly generate an alert
-    LOG(kWarning) << HexEncode(data_name.value) << " doesn't exist.";
+    LOG(kWarning) << "Account for " << HexEncode(data_name.value) << " doesn't exist.";
+    return;
   }
 
   int expected_response_count(static_cast<int>(online_pmids.size()));
@@ -420,12 +460,9 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   // Choose the one we're going to ask for actual data, and set up the others for integrity checks.
   auto pmid_node_to_get_from(ChoosePmidNodeToGetFrom(online_pmids, data_name));
   std::map<PmidName, IntegrityCheckData> integrity_checks;
-  auto hint_itr(std::end(integrity_checks));
-  std::for_each(std::begin(online_pmids), std::end(online_pmids),
-                [&](PmidName name) {
-                  hint_itr = integrity_checks.insert(hint_itr, std::make_pair(std::move(name),
-                      IntegrityCheckData(IntegrityCheckData::GetRandomInput())));
-                });
+  for (const auto& iter : online_pmids)
+    integrity_checks.insert(
+        std::make_pair(iter, IntegrityCheckData(IntegrityCheckData::GetRandomInput())));
 
   // Create helper struct which holds the collection of responses, and add the task to the timer.
   auto get_response_op(
@@ -452,6 +489,9 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
 template <typename DataName>
 PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_pmids,
                                                      const DataName& data_name) const {
+  LOG(kVerbose) << "ChoosePmidNodeToGetFrom having following online_pmids : ";
+  for (auto pmid : online_pmids)
+    LOG(kVerbose) << "       online_pmids       ---     " << HexSubstr(pmid->string());
   // Convert the set of PmidNames to a set of NodeIds
   std::set<NodeId> online_node_ids;
   auto hint_itr(std::end(online_node_ids));
@@ -468,6 +508,7 @@ PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_
   }
 
   online_pmids.erase(chosen);
+  LOG(kVerbose) << "PmidNode : " << HexSubstr(chosen->string()) << " is chosen by this DataManager";
   return chosen;
 }
 
@@ -595,7 +636,8 @@ void DataManagerService::AssessIntegrityCheckResults(
 template <typename Data>
 void DataManagerService::HandleDelete(const typename Data::Name& data_name,
                                       nfs::MessageId /*message_id*/) {
-  typename DataManager::Key key(data_name.value, Data::Name::data_type::Tag::kValue);
+  typename DataManager::Key key(data_name.value, Data::Name::data_type::Tag::kValue,
+                                Identity(NodeId().string()));
   sync_deletes_.AddLocalAction(DataManager::UnresolvedDelete(key, ActionDataManagerDelete(),
                                                              routing_.kNodeId()));
   DoSync();
@@ -625,10 +667,18 @@ template <typename DataManagerSyncType>
 void IncrementAttemptsAndSendSync(DataManagerDispatcher& dispatcher,
                                   DataManagerSyncType& sync_type) {
   auto unresolved_actions(sync_type.GetUnresolvedActions());
+  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for DataManagerSerive, has " 
+                << unresolved_actions.size() << " unresolved_actions";
   if (!unresolved_actions.empty()) {
     sync_type.IncrementSyncAttempts();
-    for (const auto& unresolved_action : unresolved_actions)
-      dispatcher.SendSync(unresolved_action->key, unresolved_action->Serialise());
+    protobuf::Sync proto_sync;
+    for (const auto& unresolved_action : unresolved_actions) {
+      proto_sync.Clear();
+      proto_sync.set_serialised_unresolved_action(unresolved_action->Serialise());
+      proto_sync.set_action_type(static_cast<int32_t>(DataManagerSyncType::kActionId));
+      LOG(kInfo) << "DataManager send sync action " << proto_sync.action_type();
+      dispatcher.SendSync(unresolved_action->key, proto_sync.SerializeAsString());
+    }
   }
 }
 

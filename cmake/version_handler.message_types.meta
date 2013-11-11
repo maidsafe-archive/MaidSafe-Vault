@@ -1,2 +1,3 @@
 Action:PutVersionRequest              Source:MaidManager:Group        Destination:VersionHandler:Group      Contents:struct:maidsafe::nfs_vault::DataNameOldNewVersion
 Action:DeleteBranchUntilForkRequest   Source:MaidManager:Group        Destination:VersionHandler:Group      Contents:struct:maidsafe::nfs_vault::DataNameAndVersion
+Action:Synchronise                    Source:VersionHandler:Group     Destination:VersionHandler:Group      Contents:struct:maidsafe::nfs_vault::Content

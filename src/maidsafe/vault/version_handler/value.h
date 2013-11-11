@@ -37,8 +37,9 @@ class VersionHandlerValue {
   VersionHandlerValue& operator=(VersionHandlerValue other);
   std::string Serialise() const;
 
-  void Put(const StructuredDataVersions::VersionName& old_version,
-           const StructuredDataVersions::VersionName& new_version);
+  boost::optional<StructuredDataVersions::VersionName> Put(
+      const StructuredDataVersions::VersionName& old_version,
+      const StructuredDataVersions::VersionName& new_version);
   std::vector<StructuredDataVersions::VersionName> Get() const;
   std::vector<StructuredDataVersions::VersionName> GetBranch(
       const StructuredDataVersions::VersionName& branch_tip) const;

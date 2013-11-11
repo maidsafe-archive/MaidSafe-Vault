@@ -84,15 +84,18 @@ template <typename ValidateSender, typename AccumulatorType, typename Checker,
 template <typename MessageType, typename Sender, typename Receiver>
 void OperationHandler<ValidateSender, AccumulatorType, Checker, ServiceHandlerType>::operator()(
     const MessageType& message, const Sender& sender, const Receiver& receiver) {
-  if (!validate_sender(message, sender))
+  LOG(kVerbose) << "OperationHandler::operator()";
+  if (!validate_sender(message, sender)) {
+    LOG(kError) << "invalid sender";
     return;
+  }
   {
     std::lock_guard<std::mutex> lock(mutex);
-    if (accumulator.CheckHandled(message))
-      return;
     if (accumulator.AddPendingRequest(message, sender, checker)
-           != AccumulatorType::AddResult::kSuccess)
+           != AccumulatorType::AddResult::kSuccess) {
+      LOG(kError) << "AddPendingRequest failed";
       return;
+    }
   }
   DoOperation<ServiceHandlerType, MessageType>(service, message, sender, receiver);
 }
@@ -107,6 +110,40 @@ void OperationHandler<
     const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
     const GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
     const GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
+
+template <>
+template <>
+void OperationHandler<
+         typename ValidateSenderType<PutRequestFromDataManagerToPmidManager>::type,
+         Accumulator<PmidManagerServiceMessages>,
+         typename Accumulator<PmidManagerServiceMessages>::AddCheckerFunctor,
+         PmidManagerService>::operator()(
+    const PutRequestFromDataManagerToPmidManager& message,
+    const PutRequestFromDataManagerToPmidManager::Sender& sender,
+    const PutRequestFromDataManagerToPmidManager::Receiver& receiver);
+
+template <>
+template <>
+void OperationHandler<
+         typename ValidateSenderType<GetRequestFromDataManagerToPmidNode>::type,
+         Accumulator<PmidNodeServiceMessages>,
+         typename Accumulator<PmidNodeServiceMessages>::AddCheckerFunctor,
+         PmidNodeService>::operator()(
+    const GetRequestFromDataManagerToPmidNode& message,
+    const GetRequestFromDataManagerToPmidNode::Sender& sender,
+    const GetRequestFromDataManagerToPmidNode::Receiver& receiver);
+
+template <>
+template <>
+void OperationHandler<
+         typename ValidateSenderType<IntegrityCheckRequestFromDataManagerToPmidNode>::type,
+         Accumulator<PmidNodeServiceMessages>,
+         typename Accumulator<PmidNodeServiceMessages>::AddCheckerFunctor,
+         PmidNodeService>::operator()(
+    const IntegrityCheckRequestFromDataManagerToPmidNode& message,
+    const IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
+    const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver);
+
 
 template <typename ServiceHandlerType, typename MessageType>
 void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/,
@@ -247,6 +284,17 @@ void DoOperation(PmidNodeService* service,
                  const PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
                  const PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/);
 
+template <>
+void DoOperation(PmidNodeService* service,
+                 const GetRequestFromDataManagerToPmidNode& message,
+                 const GetRequestFromDataManagerToPmidNode::Sender& sender,
+                 const GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/);
+template <>
+void DoOperation(PmidNodeService* service,
+                 const IntegrityCheckRequestFromDataManagerToPmidNode& message,
+                 const IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
+                 const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& /*receiver*/);
+
 //====================================== To VersionHandler =========================================
 
 template<>
@@ -314,6 +362,7 @@ template <typename Message>
 int RequiredRequests(const Message&) {
   return detail::RequiredValue<typename Message::Sender>()();
 }
+
 
 }  // namespace vault
 

@@ -46,7 +46,7 @@ struct ActionPmidManagerPut {
   ActionPmidManagerPut(ActionPmidManagerPut&& other);
 
   detail::DbAction operator()(PmidManagerMetadata& metadata,
-                              boost::optional<PmidManagerValue>& value) const;
+                              std::unique_ptr<PmidManagerValue>& value) const;
 
   std::string Serialise() const;
 

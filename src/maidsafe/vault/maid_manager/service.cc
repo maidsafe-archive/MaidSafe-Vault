@@ -175,14 +175,17 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& pub
   // If Account exists
   try {
     group_db_.GetMetadata(account_name);
+    LOG(kError) << "account already exists in group_db_";
     dispatcher_.SendCreateAccountResponse(account_name,
                                           maidsafe_error(VaultErrors::account_already_exists),
                                           message_id);
     return;
 
   } catch (const vault_error& error) {
-    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
+    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
+      LOG(kError) << "db errors";
       throw error;  // For db errors
+    }
   }
 
   pending_account_map_.insert(std::make_pair(message_id,
@@ -203,12 +206,15 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
     assert(false);
     return;
   }
-  assert(data_name == maid_name);
+  // In case of a churn, drop it siliently
+  if (data_name != maid_name) 
+    return;
   assert(pending_account_itr->second.maid_name == data_name);
   static_cast<void>(data_name);
   pending_account_itr->second.maid_stored = true;
 
   if (pending_account_itr->second.anmaid_stored) {
+    LOG(kVerbose) << "AddLocalAction create account for " << HexSubstr(maid_name->string());
     sync_create_accounts_.AddLocalAction(
         MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(message_id),
                                              routing_.kNodeId()));
@@ -230,6 +236,7 @@ void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidNam
   pending_account_itr->second.anmaid_stored = true;
 
   if (pending_account_itr->second.maid_stored) {
+    LOG(kVerbose) << "AddLocalAction create account for " << HexSubstr(maid_name->string());
     sync_create_accounts_.AddLocalAction(
         MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(message_id),
                                              routing_.kNodeId()));
@@ -297,6 +304,42 @@ void MaidManagerService::HandlePmidRegistration(
 void MaidManagerService::HandleSyncedPmidRegistration(
     std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action) {
   // Get keys
+  // BEFORE_RELEASE future.then still have confirmed bug :
+  // http://stackoverflow.com/questions/14829881/bad-access-in-boostfuture-then-after-accessing-given-future
+  // The following commented out code doesn't work as expected,
+  // Have to use two individual blocking calling, which may hang if Get() doesn't return
+  // May be able to use future.then before release
+
+//   auto maid_future = data_getter_.Get(synced_action->action.kPmidRegistration.maid_name(),
+//                                       std::chrono::seconds(10));
+//   auto pmid_future = data_getter_.Get(synced_action->action.kPmidRegistration.pmid_name(),
+//                                       std::chrono::seconds(10));
+// 
+//   auto pmid_registration_op(std::make_shared<PmidRegistrationOp>(std::move(synced_action)));
+// 
+//   auto maid_future_then = maid_future.then(
+//       [pmid_registration_op, this](boost::future<passport::PublicMaid>& future) {
+//           try {
+//             std::unique_ptr<passport::PublicMaid> public_maid(new passport::PublicMaid(
+//                                                                   future.get()));
+//             ValidatePmidRegistration(std::move(public_maid), pmid_registration_op);
+//           } catch(const std::exception& e) {
+//             LOG(kError) << e.what();
+//           }
+//       });
+// 
+//   auto pmid_future_then = pmid_future.then(
+//       [pmid_registration_op, this](boost::future<passport::PublicPmid>& future) {
+//           try {
+//             std::unique_ptr<passport::PublicPmid> public_pmid(new passport::PublicPmid(
+//                                                                   future.get()));
+//             ValidatePmidRegistration(std::move(public_pmid), pmid_registration_op);
+//           } catch(const std::exception& e) {
+//             LOG(kError) << e.what();
+//           }
+//       });
+//   boost::wait_for_all(maid_future_then, pmid_future_then);
+
   auto maid_future = data_getter_.Get(synced_action->action.kPmidRegistration.maid_name(),
                                       std::chrono::seconds(10));
   auto pmid_future = data_getter_.Get(synced_action->action.kPmidRegistration.pmid_name(),
@@ -304,28 +347,14 @@ void MaidManagerService::HandleSyncedPmidRegistration(
 
   auto pmid_registration_op(std::make_shared<PmidRegistrationOp>(std::move(synced_action)));
 
-  auto maid_future_then = maid_future.then(
-      [pmid_registration_op, this](boost::future<passport::PublicMaid>& future) {
-          try {
-            std::unique_ptr<passport::PublicMaid> public_maid(new passport::PublicMaid(
-                                                                  future.get()));
-            ValidatePmidRegistration(std::move(public_maid), pmid_registration_op);
-          } catch(const std::exception& e) {
-            LOG(kError) << e.what();
-          }
-      });
-
-  auto pmid_future_then = pmid_future.then(
-      [pmid_registration_op, this](boost::future<passport::PublicPmid>& future) {
-          try {
-            std::unique_ptr<passport::PublicPmid> public_pmid(new passport::PublicPmid(
-                                                                  future.get()));
-            ValidatePmidRegistration(std::move(public_pmid), pmid_registration_op);
-          } catch(const std::exception& e) {
-            LOG(kError) << e.what();
-          }
-      });
-  boost::wait_for_all(maid_future_then, pmid_future_then);
+  try {
+    std::unique_ptr<passport::PublicPmid> public_pmid(new passport::PublicPmid(pmid_future.get()));
+    ValidatePmidRegistration(std::move(public_pmid), pmid_registration_op);
+    std::unique_ptr<passport::PublicMaid> public_maid(new passport::PublicMaid(maid_future.get()));
+    ValidatePmidRegistration(std::move(public_maid), pmid_registration_op);
+  } catch(const std::exception& e) {
+    LOG(kError) << e.what();
+  }
 }
 
 
@@ -359,6 +388,7 @@ void MaidManagerService::HandleSyncedPmidRegistration(
   catch(const std::exception& ex) {
     LOG(kWarning) << "Failed to register new PMID: " << ex.what();
   }
+  LOG(kInfo) << "PmidRegistration Finalised";
 }
 
 // =============== Put/Delete data =================================================================
@@ -417,16 +447,23 @@ void MaidManagerService::DoSync() {
 void MaidManagerService::HandleHealthResponse(const MaidName& maid_node,
     const PmidName& /*pmid_node*/, const std::string& serialised_pmid_health,
     nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
-  PmidManagerMetadata pmid_health(serialised_pmid_health);
-  if (return_code.value.code() == CommonErrors::success) {
-    sync_update_pmid_healths_.AddLocalAction(
-        MaidManager::UnresolvedUpdatePmidHealth(
-            maid_node, ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
-    DoSync();
+  LOG(kVerbose) << "MaidManagerService::HandleHealthResponse to " << HexSubstr(maid_node->string());
+  try {
+    PmidManagerMetadata pmid_health(serialised_pmid_health);
+    LOG(kVerbose) << "PmidManagerMetadata available size " << pmid_health.claimed_available_size;
+    if (return_code.value.code() == CommonErrors::success) {
+      sync_update_pmid_healths_.AddLocalAction(
+          MaidManager::UnresolvedUpdatePmidHealth(
+              maid_node, ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
+      DoSync();
 
+    }
+    dispatcher_.SendHealthResponse(maid_node, pmid_health.claimed_available_size,
+                                  return_code, message_id);
+  } catch(std::exception& e) {
+    LOG(kError) << "Error handling Health Response to " << HexSubstr(maid_node->string())
+                << " with exception of " << e.what();
   }
-  dispatcher_.SendHealthResponse(maid_node, pmid_health.claimed_available_size,
-                                 return_code, message_id);
 }
 
 void MaidManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {
@@ -459,6 +496,7 @@ void MaidManagerService::HandleMessage(
     const nfs::PutRequestFromMaidNodeToMaidManager& message,
     const typename nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage PutRequestFromMaidNodeToMaidManager";
   typedef nfs::PutRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -473,6 +511,7 @@ void MaidManagerService::HandleMessage(
     const PutResponseFromDataManagerToMaidManager& message,
     const typename PutResponseFromDataManagerToMaidManager::Sender& sender,
     const typename PutResponseFromDataManagerToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage PutResponseFromDataManagerToMaidManager";
   typedef PutResponseFromDataManagerToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -487,6 +526,7 @@ void MaidManagerService::HandleMessage(
     const PutFailureFromDataManagerToMaidManager& message,
     const typename PutFailureFromDataManagerToMaidManager::Sender& sender,
     const typename PutFailureFromDataManagerToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage PutFailureFromDataManagerToMaidManager";
   typedef PutFailureFromDataManagerToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -502,6 +542,7 @@ void MaidManagerService::HandleMessage(
     const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
     const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage DeleteRequestFromMaidNodeToMaidManager";
   typedef nfs::DeleteRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -516,6 +557,7 @@ void MaidManagerService::HandleMessage(
     const nfs::PutVersionRequestFromMaidNodeToMaidManager& message,
     const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage PutVersionRequestFromMaidNodeToMaidManager";
   typedef nfs::PutVersionRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -530,6 +572,7 @@ void MaidManagerService::HandleMessage(
     const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager& message,
     const typename nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage DeleteBranchUntilForkRequestFromMaidNodeToMaidManager";
   typedef nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -544,7 +587,7 @@ void MaidManagerService::HandleMessage(
     const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
     const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& receiver) {
-  std::cout << "CreateAccountRequestFromMaidNodeToMaidManager" << std::endl;
+  LOG(kVerbose) << "MaidManagerService::HandleMessage CreateAccountRequestFromMaidNodeToMaidManager";
   typedef nfs::CreateAccountRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -559,6 +602,7 @@ void MaidManagerService::HandleMessage(
     const nfs::RemoveAccountRequestFromMaidNodeToMaidManager& message,
     const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage RemoveAccountRequestFromMaidNodeToMaidManager";
   typedef nfs::RemoveAccountRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -573,6 +617,7 @@ void MaidManagerService::HandleMessage(
     const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
     const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage RegisterPmidRequestFromMaidNodeToMaidManager";
   typedef nfs::RegisterPmidRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -587,6 +632,7 @@ void MaidManagerService::HandleMessage(
     const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
     const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage UnregisterPmidRequestFromMaidNodeToMaidManager";
   typedef nfs::UnregisterPmidRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -601,6 +647,7 @@ void MaidManagerService::HandleMessage(
     const PmidHealthResponseFromPmidManagerToMaidManager& message,
     const typename PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
     const typename PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage PmidHealthResponseFromPmidManagerToMaidManager";
   typedef PmidHealthResponseFromPmidManagerToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -619,46 +666,61 @@ void MaidManagerService::HandleMessage(
     const SynchroniseFromMaidManagerToMaidManager& message,
     const typename SynchroniseFromMaidManagerToMaidManager::Sender& sender,
     const typename SynchroniseFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "MaidManagerService::HandleMessage SynchroniseFromMaidManagerToMaidManager";
   protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(message.contents->data))
-    ThrowError(CommonErrors::parsing_error);
+  if (!proto_sync.ParseFromString(message.contents->data)) {
+    LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager can't parse the content";
+    return;
+//     ThrowError(CommonErrors::parsing_error);
+  }
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
     case ActionMaidManagerPut::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionMaidManagerPut";
       MaidManager::UnresolvedPut unresolved_action(proto_sync.serialised_unresolved_action(),
                                                    sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedPutResponse";
         HandleSyncedPutResponse(std::move(resolved_action));
+      }
       break;
     }
     case ActionMaidManagerDelete::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionMaidManagerDelete";
       MaidManager::UnresolvedDelete unresolved_action(proto_sync.serialised_unresolved_action(),
                                                       sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedDelete";
         HandleSyncedDelete(std::move(resolved_action));
+      }
       break;
     }
     case ActionCreateAccount::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionCreateAccount";
       MaidManager::UnresolvedCreateAccount unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_create_accounts_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedCreateMaidAccount";
         HandleSyncedCreateMaidAccount(std::move(resolved_action));
+      }
       break;
     }
     case ActionRegisterPmid::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionRegisterPmid";
       MaidManager::UnresolvedRegisterPmid unresolved_action(
         proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_register_pmids_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedPmidRegistration";
         HandleSyncedPmidRegistration(std::move(resolved_action));
       }
     break;
   }
     default: {
+      LOG(kError) << "Unhandled action type " << proto_sync.action_type();
       assert(false);
-      LOG(kError) << "Unhandled action type";
     }
   }
 }

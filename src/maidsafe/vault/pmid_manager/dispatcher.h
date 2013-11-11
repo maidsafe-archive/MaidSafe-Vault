@@ -33,6 +33,7 @@
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.h"
 
 namespace maidsafe {
 
@@ -86,6 +87,9 @@ class PmidManagerDispatcher {
 template <typename Data>
 void PmidManagerDispatcher::SendPutRequest(const Data& data, const PmidName& pmid_node,
                                            nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidManagerDispatcher SendPutRequest to pmid_node -- "
+                << HexSubstr(pmid_node.value.string())
+                << " , with message_id -- " << message_id.data;
   typedef PutRequestFromPmidManagerToPmidNode VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();

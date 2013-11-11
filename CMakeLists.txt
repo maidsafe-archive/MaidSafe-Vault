@@ -48,7 +48,7 @@ file(GLOB_RECURSE MetaFiles "${CMAKE_CURRENT_SOURCE_DIR}/cmake/*.message_types.m
 set_meta_files_custom_commands("${OutputFile}" "${InputFile}" "${MetaFiles}" "Vault Header Files" "Vault CMake Files")
 
 glob_dir(Vault ${VaultSourcesDir} Vault)
-list(REMOVE_ITEM VaultSources ${VaultSourcesDir}/vault_main.cc)
+list(REMOVE_ITEM VaultAllFiles ${VaultSourcesDir}/vault_main.cc)
 glob_dir(CacheHandler ${VaultSourcesDir}/cache_handler "Cache Handler\\\\")
 glob_dir(DataManager ${VaultSourcesDir}/data_manager "Data Manager\\\\")
 glob_dir(MaidManager ${VaultSourcesDir}/maid_manager "Maid Manager\\\\")
@@ -57,8 +57,23 @@ glob_dir(PmidManager ${VaultSourcesDir}/pmid_manager "Pmid Manager\\\\")
 glob_dir(PmidNode ${VaultSourcesDir}/pmid_node "Pmid Node\\\\")
 glob_dir(VersionHandler ${VaultSourcesDir}/version_handler "Version Handler\\\\")
 glob_dir(VaultTests ${VaultSourcesDir}/tests "Tests")
+#glob_dir(CacheHandlerTests ${VaultSourcesDir}/cache_handler/tests "Tests")
+glob_dir(DataManagerTests ${VaultSourcesDir}/data_manager/tests "Tests")
+#glob_dir(MaidManagerTests ${VaultSourcesDir}/maid_manager/tests "Tests")
+#glob_dir(MpidManagerTests ${VaultSourcesDir}/mpid_manager/tests "Tests")
+glob_dir(PmidManagerTests ${VaultSourcesDir}/pmid_manager/tests "Tests")
+glob_dir(PmidNodeTests ${VaultSourcesDir}/pmid_node/tests "Tests")
+#glob_dir(VersionHandler ${VaultSourcesDir}/version_handler "Version Handler\\\\")
 glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
+set(TestsMain ${VaultSourcesDir}/tests/tests_main.cc)
 
+set(VaultGTestsAllFiles ${VaultTestsAllFiles} ${DataManagerTestsAllFiles}
+                        ${PmidManagerTestsAllFiles}
+                        ${PmidNodeTestsAllFiles})
+set(VaultTestsAllFiles ${VaultSourcesDir}/tests/db_test.cc
+                       ${VaultSourcesDir}/tests/group_db_test.cc)
+list(REMOVE_ITEM VaultGTestsAllFiles ${VaultTestsAllFiles})
+list(APPEND VaultTestsAllFiles ${TestsMain})
 
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
@@ -76,10 +91,11 @@ ms_add_executable(lifestuff_vault Production ${VaultSourcesDir}/vault_main.cc)
 
 target_link_libraries(maidsafe_vault maidsafe_nfs_vault maidsafe_routing maidsafe_common maidsafe_private leveldb)
 target_link_libraries(lifestuff_vault maidsafe_vault maidsafe_lifestuff_manager)
-
 if(MaidsafeTesting)
-  ms_add_executable(TESTvault "Tests/Vault" ${VaultTestsAllFiles})
+  ms_add_executable(TESTvault "Tests/Vault" ${VaultGTestsAllFiles})
   target_link_libraries(TESTvault maidsafe_vault)
+  ms_add_executable(test_vault "Tests/Vault" ${VaultTestsAllFiles})
+  target_link_libraries(test_vault maidsafe_vault)
   ms_add_executable(vault_key_helper Tools ${VaultToolsAllFiles})
   target_link_libraries(vault_key_helper maidsafe_routing maidsafe_nfs_vault maidsafe_private)
 endif()
@@ -103,6 +119,7 @@ endif()
 if(MaidsafeTesting)
   add_style_test()
   add_gtests(TESTvault)
+  add_catch_tests(test_vault)
   add_project_experimental()
   test_summary_output()
 endif()

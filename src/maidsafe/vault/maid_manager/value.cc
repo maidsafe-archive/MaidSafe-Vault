@@ -40,14 +40,13 @@ MaidManagerValue::MaidManagerValue(const std::string& serialised_maid_manager_va
   }
   count_ = maid_manager_value_proto.count();
   total_cost_ = maid_manager_value_proto.total_cost();
-  if (count_ < 0 || total_cost_ < 0)
+  if (count_ < 0 || total_cost_ < 0) {
+    LOG(kError) << "invalid count_ " << count_ << " or total_cost_ " << total_cost_;
     ThrowError(CommonErrors::invalid_parameter);
+  }
 }
 
 MaidManagerValue::MaidManagerValue() : count_(0), total_cost_(0) {}
-
-MaidManagerValue::MaidManagerValue(const MaidManagerValue& other)
-    : count_(other.count_), total_cost_(other.total_cost_) {}
 
 MaidManagerValue::MaidManagerValue(MaidManagerValue&& other)
     : count_(std::move(other.count_)), total_cost_(std::move(other.total_cost_)) {}

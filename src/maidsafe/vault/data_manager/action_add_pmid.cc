@@ -59,10 +59,12 @@ std::string ActionDataManagerAddPmid::Serialise() const {
   return action_add_pmid_proto.SerializeAsString();
 }
 
-detail::DbAction ActionDataManagerAddPmid::operator()(boost::optional<DataManagerValue>& value) {
+detail::DbAction ActionDataManagerAddPmid::operator()(std::unique_ptr<DataManagerValue>& value) {
   if (!value)
-    value.reset(DataManagerValue(kPmidName, kSize));
-  assert(value->Subscribers() < 0);
+    value.reset(new DataManagerValue(kPmidName, kSize));
+  else
+    value->AddPmid(kPmidName);
+
   if (value->Subscribers() == 0)
     value->IncrementSubscribers();
   return detail::DbAction::kPut;

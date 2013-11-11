@@ -42,9 +42,6 @@ PmidManagerValue::PmidManagerValue(const std::string& serialised_pmid_manager_va
   }
 }
 
-PmidManagerValue::PmidManagerValue(const PmidManagerValue& other)
-    : size_(other.size_) {}
-
 PmidManagerValue::PmidManagerValue(PmidManagerValue&& other)
     : size_(std::move(other.size_)) {}
 

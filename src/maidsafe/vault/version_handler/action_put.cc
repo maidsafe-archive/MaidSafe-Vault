@@ -25,6 +25,13 @@ namespace maidsafe {
 
 namespace vault {
 
+ActionVersionHandlerPut::ActionVersionHandlerPut(
+    const StructuredDataVersions::VersionName& old_version_in,
+    const StructuredDataVersions::VersionName& new_version_in, const NodeId& sender_in,
+    nfs::MessageId message_id_in)
+        : old_version(old_version_in), new_version(new_version_in), tip_of_tree(),
+          sender(sender_in), message_id(message_id_in) {}
+
 ActionVersionHandlerPut::ActionVersionHandlerPut(const std::string& serialised_action) {
   protobuf::ActionPut action_put_version_proto;
   if (!action_put_version_proto.ParseFromString(serialised_action))
@@ -33,30 +40,39 @@ ActionVersionHandlerPut::ActionVersionHandlerPut(const std::string& serialised_a
                       action_put_version_proto.serialised_old_version());
     new_version = StructuredDataVersions::VersionName(
                       action_put_version_proto.serialised_new_version());
+    sender = NodeId(action_put_version_proto.sender_id());
+    message_id = nfs::MessageId(action_put_version_proto.message_id());
 }
 
 ActionVersionHandlerPut::ActionVersionHandlerPut(const ActionVersionHandlerPut& other)
-    : old_version(other.old_version), new_version(other.new_version) {}
+    : old_version(other.old_version), new_version(other.new_version),
+      tip_of_tree(other.tip_of_tree), sender(other.sender), message_id(other.message_id) {}
 
 ActionVersionHandlerPut::ActionVersionHandlerPut(ActionVersionHandlerPut&& other)
-    : old_version(std::move(other.old_version)), new_version(std::move(other.new_version)) {}
+    : old_version(std::move(other.old_version)), new_version(std::move(other.new_version)),
+      tip_of_tree(std::move(other.tip_of_tree)),  sender(std::move(other.sender)),
+      message_id(std::move(other.message_id)) {}
 
 std::string ActionVersionHandlerPut::Serialise() const {
   protobuf::ActionPut action_put_version_proto;
   action_put_version_proto.set_serialised_old_version(old_version.Serialise());
   action_put_version_proto.set_serialised_new_version(new_version.Serialise());
+  action_put_version_proto.set_sender_id(sender.string());
+  action_put_version_proto.set_message_id(message_id.data);
   return action_put_version_proto.SerializeAsString();
 }
 
-void ActionVersionHandlerPut::operator()(boost::optional<VersionHandlerValue>& value) const {
+detail::DbAction ActionVersionHandlerPut::operator()(std::unique_ptr<VersionHandlerValue>& value) {
   if (!value) {
-    value.reset();
+    value.reset(new VersionHandlerValue());
   }
-  value->Put(old_version, new_version);
+  tip_of_tree = value->Put(old_version, new_version);
+  return detail::DbAction::kPut;
 }
 
 bool operator==(const ActionVersionHandlerPut& lhs, const ActionVersionHandlerPut& rhs) {
-  return lhs.old_version == rhs.old_version && lhs.new_version == rhs.new_version;
+  return lhs.old_version == rhs.old_version && lhs.new_version == rhs.new_version &&
+         lhs.sender == rhs.sender && lhs.message_id == rhs.message_id;
 }
 
 bool operator!=(const ActionVersionHandlerPut& lhs, const ActionVersionHandlerPut& rhs) {

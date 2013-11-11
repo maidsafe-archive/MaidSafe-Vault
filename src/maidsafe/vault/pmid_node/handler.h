@@ -32,21 +32,13 @@ class PmidNodeHandler {
   PmidNodeHandler(const boost::filesystem::path vault_root_dir);
 
   template <typename Data>
-  void Put(const Data& data);
+  Data Get(const typename Data::Name& data_name);
 
   template <typename Data>
-  void Delete(const typename Data::name& name);
+  void Put(const Data& data);
 
-  // TODO(Mahmoud): Temporary workaround for the Delete<> defined above
-  // to be changed to call above.
-  void Delete(const DataNameVariant& data_name);
-
-  // TODO(Mahmoud): Temporary workaround for the Put<> defined above
-  // to be changed to call above.
-  void Put(const DataNameVariant& data_name, const NonEmptyString& data);
-
-
-  NonEmptyString Get(const DataNameVariant& data_name);
+  template <typename DataName>
+  void Delete(const DataName& data_name);
 
   boost::filesystem::path GetDiskPath() const;
   std::vector<DataNameVariant> GetAllDataNames() const;
@@ -60,14 +52,24 @@ class PmidNodeHandler {
 };
 
 template <typename Data>
-void PmidNodeHandler::Put(const Data& data) {
-  permanent_data_store_.Put(GetDataNameVariant(Data::Tag::kValue, data.name()),
-                            data.Serialise().data);
+Data PmidNodeHandler::Get(const typename Data::Name& data_name) {
+  DataNameVariant data_name_variant(data_name);
+  Data data(data_name,
+            typename Data::serialised_type(permanent_data_store_.Get(data_name_variant)));
+  return data;
 }
 
+
 template <typename Data>
-void PmidNodeHandler::Delete(const typename Data::name& name) {
-  permanent_data_store_.Delete(name);
+void PmidNodeHandler::Put(const Data& data) {
+  LOG(kVerbose) << "PmidNode storing chunk " << HexSubstr(data.name().value.string())
+                << " with content " << HexSubstr(data.Serialise().data);
+  permanent_data_store_.Put(DataNameVariant(data.name()), data.Serialise().data);
+}
+
+template <typename DataName>
+void PmidNodeHandler::Delete(const DataName& data_name) {
+  permanent_data_store_.Delete(DataNameVariant(data_name));
 }
 
 }  // namespace vault

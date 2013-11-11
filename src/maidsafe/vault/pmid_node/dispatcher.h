@@ -35,6 +35,10 @@ class PmidNodeDispatcher {
   PmidNodeDispatcher(routing::Routing& routing);
 
   void SendGetRequest(const nfs_vault::DataName& data_name);
+  void SendGetOrIntegrityCheckResponse(
+      const nfs_vault::DataNameAndContentOrCheckResult& data_or_check_result,
+      const NodeId& data_manager_node_id,
+      nfs::MessageId message_id);
   void SendPmidAccountRequest(const DiskUsage& available_size);
 
   template <typename Data>
@@ -55,7 +59,8 @@ class PmidNodeDispatcher {
   PmidNodeDispatcher(PmidNodeDispatcher&&);
   PmidNodeDispatcher& operator=(PmidNodeDispatcher);
 
-  routing::GroupSource Sender(const MaidName& account_name) const;
+  template <typename Message>
+  void CheckSourcePersonaType() const;
 
   routing::Routing& routing_;
 };
@@ -66,6 +71,7 @@ void PmidNodeDispatcher::SendPutFailure(const typename Data::Name& name,
                                         const maidsafe_error& error,
                                         nfs::MessageId message_id) {
   typedef PutFailureFromPmidNodeToPmidManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message(
       message_id, nfs_client::DataNameAndSpaceAndReturnCode(name, available_space,
@@ -76,30 +82,13 @@ void PmidNodeDispatcher::SendPutFailure(const typename Data::Name& name,
   routing_.Send(routing_message);
 }
 
+// ==================== General implementation =====================================================
 
-
-//template <typename Data>
-//void PmidNodeDispatcher::SendIntegrityCheckResponse(const typename Data::Name& data_name,
-//                                                    const std::string& signature,
-//                                                    const NodeId& receiver,
-//                                                    const maidsafe_error& error,
-//                                                    nfs::MessageId message_id) {
-//  typedef IntegrityCheckResponseFromPmidNodeToDataManager VaultMessage;
-//  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-//  VaultMessage vault_message;
-//  if (error.code() == CommonErrors::success)
-//    vault_message = VaultMessage(message_id, nfs_client::DataNameAndSignatureAndReturnCode(
-//                                                 nfs_vault::DataName(data_name),
-//                                                 nfs_client::ReturnCode(error), signature));
-//  else
-//    vault_message = VaultMessage(message_id, nfs_client::DataNameAndSignatureAndReturnCode(
-//                                                 nfs_vault::DataName(data_name),
-//                                                 nfs_client::ReturnCode(error)));
-//  RoutingMessage routing_message(vault_message.Serialise(),
-//                                 VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
-//                                 VaultMessage::Receiver(routing::SingleId(receiver)));
-//  routing_.Send(routing_message);
-//}
+template<typename Message>
+void PmidNodeDispatcher::CheckSourcePersonaType() const {
+  static_assert(Message::SourcePersona::value == nfs::Persona::kPmidNode,
+                "The source Persona must be kPmidNode.");
+}
 
 }  // namespace vault
 

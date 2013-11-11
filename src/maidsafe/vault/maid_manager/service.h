@@ -228,6 +228,7 @@ template <typename MessageType>
 void MaidManagerService::HandleMessage(const MessageType& /*message*/,
                                        const typename MessageType::Sender& /*sender*/,
                                        const typename MessageType::Receiver& /*receiver*/) {
+  LOG(kError) << "invalid function call because of un-specialised templated method";
   MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
 }
 
@@ -369,10 +370,18 @@ template <typename MaidManagerSyncType>
 void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
                                   MaidManagerSyncType& sync_type) {
   auto unresolved_actions(sync_type.GetUnresolvedActions());
+  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has " 
+                << unresolved_actions.size() << " unresolved_actions";
   if (!unresolved_actions.empty()) {
     sync_type.IncrementSyncAttempts();
-    for (const auto& unresolved_action : unresolved_actions)
-      dispatcher.SendSync(unresolved_action->key.group_name(), unresolved_action->Serialise());
+    protobuf::Sync proto_sync;
+    for (const auto& unresolved_action : unresolved_actions) {
+      proto_sync.Clear();
+      proto_sync.set_serialised_unresolved_action(unresolved_action->Serialise());
+      proto_sync.set_action_type(static_cast<int32_t>(MaidManagerSyncType::kActionId));
+      LOG(kInfo) << "MaidManager send sync action " << proto_sync.action_type();
+      dispatcher.SendSync(unresolved_action->key.group_name(), proto_sync.SerializeAsString());
+    }
   }
 }
 
@@ -384,12 +393,18 @@ template <typename Data>
 void MaidManagerService::HandlePut(const MaidName& account_name, const Data& data,
                                    const PmidName& pmid_node_hint,
                                    nfs::MessageId message_id) {
+  LOG(kVerbose) << "MaidManagerService::HandlePut for account " << HexSubstr(account_name->string())
+                << " with data " << HexSubstr(data.Serialise().data)
+                << " and pmid_node_hint " << HexSubstr(pmid_node_hint->string())
+                << " message_id " << message_id.data;
   auto metadata(group_db_.GetMetadata(account_name));
   if (metadata.AllowPut(data) != MaidManagerMetadata::Status::kNoSpace) {
+    LOG(kInfo) << "MaidManagerService::HandlePut allowing put";
     dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
   } else {
+    LOG(kWarning) << "MaidManagerService::HandlePut disallowing put";
     dispatcher_.SendPutFailure<Data>(account_name, data.name(),
-                                     nfs_client::ReturnCode(CommonErrors::cannot_exceed_limit).value,
+                                     maidsafe_error(CommonErrors::cannot_exceed_limit),
                                      message_id);
   }
 }
@@ -398,6 +413,10 @@ template <typename Data>
 void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
                                            const typename Data::Name& data_name,
                                            int32_t cost, nfs::MessageId /*message_id*/) {
+  LOG(kVerbose) << "MaidManagerService::HandlePutResponse to maid "
+                << HexSubstr(maid_name->string())
+                << " for data name " << HexSubstr(data_name.value)
+                << " taking cost of " << cost;
   typename MaidManager::Key group_key(typename MaidManager::GroupName(maid_name.value),
                                       detail::GetObfuscatedDataName(data_name), Data::Tag::kValue);
   sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(
@@ -675,11 +694,15 @@ bool MaidManagerService::DeleteAllowed(const MaidName& account_name,
  void MaidManagerService::ValidatePmidRegistration(
     PublicFobType public_fob,
     std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
+  LOG(kVerbose) << "MaidManagerService::ValidatePmidRegistration";
   bool finalise(false);
   {
     std::lock_guard<std::mutex> lock(pmid_registration_op->mutex);
     pmid_registration_op->SetPublicFob(std::move(public_fob));
     finalise = (++pmid_registration_op->count == 2);
+    LOG(kVerbose) << "MaidManagerService::ValidatePmidRegistration "
+                  << " pmid_registration_op->count " << pmid_registration_op->count
+                  << " finalised " << finalise;
   }
   if (finalise)
     FinalisePmidRegistration(pmid_registration_op);

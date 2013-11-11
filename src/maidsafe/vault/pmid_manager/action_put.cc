@@ -32,8 +32,9 @@ ActionPmidManagerPut::ActionPmidManagerPut(uint32_t size, nfs::MessageId message
 ActionPmidManagerPut::ActionPmidManagerPut(const std::string& serialised_action)
   : kSize([&serialised_action]()->uint32_t {
             protobuf::ActionPmidManagerPut action_put_proto;
-            action_put_proto.ParseFromString(serialised_action);
-              return action_put_proto.size();
+            if (!action_put_proto.ParseFromString(serialised_action))
+              ThrowError(CommonErrors::parsing_error);
+            return action_put_proto.size();
           }()),
     kMessageId([&serialised_action]()->uint32_t {
                  protobuf::ActionPmidManagerPut action_put_proto;
@@ -55,9 +56,9 @@ std::string ActionPmidManagerPut::Serialise() const {
 }
 
 detail::DbAction ActionPmidManagerPut::operator()(PmidManagerMetadata& metadata,
-                                                  boost::optional<PmidManagerValue>& value) const {
+                                                  std::unique_ptr<PmidManagerValue>& value) const {
   if (!value)
-    value.reset(PmidManagerValue());
+    value.reset(new PmidManagerValue(kSize));
   metadata.PutData(value->size());
   return detail::DbAction::kPut;
 }

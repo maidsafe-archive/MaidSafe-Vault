@@ -68,6 +68,14 @@ DataNameVariant GetNameVariant(const nfs_client::DataNameAndReturnCode& data);
 template <>
 DataNameVariant GetNameVariant(const nfs_client::DataNameAndSpaceAndReturnCode& data);
 
+template <>
+DataNameVariant GetNameVariant(const nfs_vault::DataNameAndVersion& data);
+
+template <>
+DataNameVariant GetNameVariant(const nfs_vault::DataNameOldNewVersion& data);
+
+template <>
+DataNameVariant GetNameVariant(const nfs_vault::DataNameAndRandomString& data);
 
 template <typename MessageType>
 struct ValidateSenderType {

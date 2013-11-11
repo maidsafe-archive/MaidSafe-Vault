@@ -49,8 +49,8 @@ class Db {
 
   Value Get(const Key& key);
   // if functor returns DbAction::kDelete, the value is deleted from db
-  boost::optional<Value> Commit(
-      const Key& key, std::function<detail::DbAction(boost::optional<Value>& value)> functor);
+  std::unique_ptr<Value> Commit(
+      const Key& key, std::function<detail::DbAction(std::unique_ptr<Value>& value)> functor);
   TransferInfo GetTransferInfo(std::shared_ptr<routing::MatrixChange> matrix_change);
   void HandleTransfer(const std::vector<KvPair>& contents);
 
@@ -79,6 +79,14 @@ Db<Key, Value>::Db()
     ThrowError(CommonErrors::filesystem_io_error);
   leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
   assert(leveldb_);
+#ifndef _MSC_VER
+  // Remove this assert if value needs to be copy constructible.
+  // this is just a check to avoid copy constructor unless we require it
+  static_assert(!std::is_copy_constructible<Value>::value,
+                "value should not be copy constructible !");
+  static_assert(std::is_move_constructible<Value>::value,
+                "value should be move constructible !");
+#endif
 }
 
 template <typename Key, typename Value>
@@ -87,25 +95,25 @@ Db<Key, Value>::~Db() {
 }
 
 template <typename Key, typename Value>
-boost::optional<Value> Db<Key, Value>::Commit(const Key& key,
-    std::function<detail::DbAction(boost::optional<Value>& value)> functor) {
+std::unique_ptr<Value> Db<Key, Value>::Commit(const Key& key,
+    std::function<detail::DbAction(std::unique_ptr<Value>& value)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
-  boost::optional<Value> value;
+  std::unique_ptr<Value> value;
   try {
-    value = Get(key);
-  } catch (const common_error& error) {
-    if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
+    value.reset(new Value(Get(key)));
+  } catch (const vault_error& error) {
+    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
       throw error;  // For db errors
   }
   if (detail::DbAction::kPut == functor(value)) {
-    Put(KvPair(key, Value(*value)));
+    Put(KvPair(key, Value(std::move(*value))));
   } else {
     assert(value);
     Delete(key);
     return value;
   }
-  return boost::optional<Value>();
+  return nullptr;
 }
 
 // option 1 : Fire functor here with check_holder_result.new_holder & the corresponding value
@@ -119,7 +127,7 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
   {
     std::unique_ptr<leveldb::Iterator> db_iter(leveldb_->NewIterator(leveldb::ReadOptions()));
     for (db_iter->SeekToFirst(); db_iter->Valid(); db_iter->Next()) {
-      Key key(Key::FixedWidthString(db_iter->key()));
+      Key key(Key::FixedWidthString(db_iter->key().ToString()));
       auto check_holder_result = matrix_change->CheckHolders(NodeId(key->string()));
       if (check_holder_result.proximity_status != routing::GroupRangeStatus::kInRange) {
         if (check_holder_result.new_holders.size() != 0) {
@@ -191,7 +199,7 @@ template <typename Key, typename Value>
 void Db<Key, Value>::Delete(const Key& key) {
   leveldb::Status status(
       leveldb_->Delete(leveldb::WriteOptions(), key.ToFixedWidthString().string()));
-  if (status.ok())
+  if (!status.ok())
     ThrowError(VaultErrors::failed_to_handle_request);
 }
 

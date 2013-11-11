@@ -50,7 +50,7 @@ std::string ActionDataManagerNodeDown::Serialise() const {
   return action_node_down_proto.SerializeAsString();
 }
 
-detail::DbAction ActionDataManagerNodeDown::operator()(boost::optional<DataManagerValue>& value) const {
+detail::DbAction ActionDataManagerNodeDown::operator()(std::unique_ptr<DataManagerValue>& value) const {
   if (value) {
     value->SetPmidOffline(kPmidName);
     return detail::DbAction::kPut;

@@ -48,6 +48,7 @@ class MaidManagerPutVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
+    LOG(kVerbose) << "MaidManagerPutVisitor HandlePut";
     kService_->HandlePut(MaidName(Identity(kSender_.string())),
                                   typename Name::data_type(data_name,
                                       typename Name::data_type::serialised_type(kContent_)),
@@ -276,6 +277,52 @@ class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
 };
 
 template<typename ServiceHandlerType>
+class PmidNodeGetVisitor : public boost::static_visitor<> {
+ public:
+  PmidNodeGetVisitor(ServiceHandlerType* service, const routing::SingleId& data_manager_node_id,
+                     nfs::MessageId message_id)
+      : kService_(service), kDataManagerNodeId_(data_manager_node_id.data),
+        kMessageId_(message_id) {}
+
+  template<typename Name>
+  void operator()(const Name& data_name) {
+    kService_->template HandleGet<typename Name::data_type>(data_name, kDataManagerNodeId_,
+                                                            kMessageId_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const NodeId kDataManagerNodeId_;
+  const nfs::MessageId kMessageId_;
+};
+
+template<typename ServiceHandlerType>
+class PmidNodeIntegrityCheckVisitor : public boost::static_visitor<> {
+ public:
+  PmidNodeIntegrityCheckVisitor(ServiceHandlerType* service,
+                                const NonEmptyString& random_string,
+                                const routing::SingleSource& data_manager_node_id,
+                                nfs::MessageId message_id)
+      : kService_(service),
+        kRandomString_(random_string),
+        kDataManagerNodeId_(data_manager_node_id.data),
+        kMessageId_(message_id) {}
+
+  template<typename Name>
+  void operator()(const Name& data_name) {
+    kService_->template HandleIntegrityCheck<typename Name::data_type>(data_name, kRandomString_,
+                                                                       kDataManagerNodeId_,
+                                                                       kMessageId_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const NonEmptyString& kRandomString_;
+  const NodeId kDataManagerNodeId_;
+  const nfs::MessageId kMessageId_;
+};
+
+template<typename ServiceHandlerType>
 class PmidNodeDeleteVisitor : public boost::static_visitor<> {
  public:
   PmidNodeDeleteVisitor(ServiceHandlerType* service) : kService_(service) {}
@@ -392,22 +439,94 @@ class PmidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
 // ==================================== VersionHandler Visitors=====================================
 
 template <typename SourcePersonaType>
-class VersionManagerGetVisitor : public boost::static_visitor<> {
+class VersionHandlerGetVisitor : public boost::static_visitor<> {
  public:
-  VersionManagerGetVisitor(VersionHandlerService* service, Identity originator)
-      : kService_(service), kRequestor_(NodeId(std::move(originator.string()))) {}
+  VersionHandlerGetVisitor(VersionHandlerService* service, Identity originator,
+                           nfs::MessageId message_id)
+      : kService_(service), kRequestor_(NodeId(std::move(originator.string()))),
+        kMessageId_(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->HandleGetVersions(
         VersionHandlerKey(data_name, Name::data_type::Tag::kValue,
                           Identity(kRequestor_.node_id.string())),
-        kRequestor_);
+        kRequestor_, kMessageId_);
   }
 
  private:
   VersionHandlerService* const kService_;
   detail::Requestor<SourcePersonaType> kRequestor_;
+  nfs::MessageId kMessageId_;
+};
+
+template <typename SourcePersonaType>
+class VersionHandlerGetBranchVisitor : public boost::static_visitor<> {
+ public:
+  VersionHandlerGetBranchVisitor(VersionHandlerService* service,
+                                 const StructuredDataVersions::VersionName version_name,
+                                 Identity originator, nfs::MessageId message_id)
+      : kService_(service), kVersionName_(std::move(version_name)),
+        kRequestor_(NodeId(std::move(originator.string()))), kMessageId_(std::move(message_id)) {}
+
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    kService_->HandleGetBranch(
+        VersionHandlerKey(data_name, Name::data_type::Tag::kValue,
+                          Identity(kRequestor_.node_id.string())),
+        kVersionName_, kRequestor_, kMessageId_);
+  }
+
+ private:
+  VersionHandlerService* const kService_;
+  StructuredDataVersions::VersionName kVersionName_;
+  detail::Requestor<SourcePersonaType> kRequestor_;
+  nfs::MessageId kMessageId_;
+};
+
+class VersionHandlerPutVisitor : public boost::static_visitor<> {
+ public:
+  VersionHandlerPutVisitor(VersionHandlerService* service,
+                           StructuredDataVersions::VersionName old_version,
+                           StructuredDataVersions::VersionName new_version, NodeId sender,
+                           nfs::MessageId message_id)
+      : kService_(service), kOldVersion_(std::move(old_version)),
+        kNewVersion_(std::move(new_version)), kSender_(std::move(sender)),
+        kMessageId_(message_id) {}
+
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    kService_->HandlePutVersion(VersionHandlerKey(data_name, Name::data_type::Tag::kValue,
+                          Identity(kSender_.string())),
+        kOldVersion_, kNewVersion_, kSender_, kMessageId_);
+  }
+
+ private:
+  VersionHandlerService* const kService_;
+  StructuredDataVersions::VersionName kOldVersion_, kNewVersion_;
+  NodeId kSender_;
+  nfs::MessageId kMessageId_;
+};
+
+class VersionHandlerDeleteBranchVisitor : public boost::static_visitor<> {
+ public:
+  VersionHandlerDeleteBranchVisitor(VersionHandlerService* service,
+                                    const StructuredDataVersions::VersionName version_name,
+                                    NodeId sender)
+      : kService_(service), kVersionName_(std::move(version_name)),
+        kSender_(std::move(sender)) {}
+
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    kService_->HandleDeleteBranchUntilFork(
+        VersionHandlerKey(data_name, Name::data_type::Tag::kValue, Identity(kSender_.string())),
+        kVersionName_, kSender_);
+  }
+
+ private:
+  VersionHandlerService* const kService_;
+  StructuredDataVersions::VersionName kVersionName_;
+  NodeId kSender_;
 };
 
 }  // namespace detail

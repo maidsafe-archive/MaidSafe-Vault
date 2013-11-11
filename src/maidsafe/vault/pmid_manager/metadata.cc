@@ -36,6 +36,7 @@ PmidManagerMetadata::PmidManagerMetadata(const PmidName& pmid_name_in)
 PmidManagerMetadata::PmidManagerMetadata(const std::string &serialised_metadata)
     : pmid_name(), stored_count(0), stored_total_size(0), lost_count(0), lost_total_size(0),
       claimed_available_size(0) {
+  LOG(kVerbose) << "PmidManagerMetadata parsing from " << HexSubstr(serialised_metadata);
   protobuf::PmidManagerMetadata proto_metadata;
   if (!proto_metadata.ParseFromString(serialised_metadata)) {
     LOG(kError) << "Failed to parse pmid metadata.";
@@ -89,8 +90,11 @@ void PmidManagerMetadata::DeleteData(int32_t size) {
   stored_total_size -= size;
   --stored_count;
 
-  if ((stored_total_size < 0) || (stored_count < 0))
+  if ((stored_total_size < 0) || (stored_count < 0)) {
+    LOG(kError) << "invalid stored_total_size " << stored_total_size
+                << " or stored_count " << stored_count;
     ThrowError(CommonErrors::invalid_parameter);
+  }
 }
 
 void PmidManagerMetadata::SetAvailableSize(const int64_t& available_size) {

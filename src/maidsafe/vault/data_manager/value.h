@@ -36,8 +36,11 @@ namespace vault {
 class DataManagerValue {
  public:
   explicit DataManagerValue(const std::string& serialised_metadata_value);
+  DataManagerValue(DataManagerValue&& other);
   DataManagerValue(const PmidName& pmid_name, int32_t size);
   std::string Serialise() const;
+
+  DataManagerValue& operator=(const DataManagerValue& other);
 
   void AddPmid(const PmidName& pmid_name);
   void RemovePmid(const PmidName& pmid_name);
@@ -52,6 +55,7 @@ class DataManagerValue {
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
 
  private:
+  DataManagerValue(const DataManagerValue&);
   int64_t subscribers_;
   int32_t size_;
   std::set<PmidName> online_pmids_, offline_pmids_;

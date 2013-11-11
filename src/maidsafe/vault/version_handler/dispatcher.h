@@ -16,6 +16,9 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_DISPATCHER_H_
+#define MAIDSAFE_VAULT_VERSION_HANDLER_DISPATCHER_H_
+
 #include "maidsafe/data_types/structured_data_versions.h"
 
 #include "maidsafe/routing/routing_api.h"
@@ -32,12 +35,18 @@ class VersionHandlerDispatcher {
   VersionHandlerDispatcher(routing::Routing& routing);
 
   template <typename RequestorType>
-  void SendGetVersionsResponse(std::vector<VersionHandler::VersionName>& versions,
-                               const RequestorType& requestor, const maidsafe_error& result);
+  void SendGetVersionsResponse(
+      const VersionHandler::Key& key, const std::vector<VersionHandler::VersionName>& versions,
+      const RequestorType& requestor, const maidsafe_error& result, nfs::MessageId message_id);
 
   template <typename RequestorType>
-  void SendGetBranchResponse(std::vector<VersionHandler::VersionName>& versions,
-                             const RequestorType& requestor, const maidsafe_error& result);
+  void SendGetBranchResponse(
+      const VersionHandler::Key& key, const std::vector<VersionHandler::VersionName>& versions,
+      const RequestorType& requestor, const maidsafe_error& result, nfs::MessageId message_id);
+
+  void SendPutVersionResponse(const VersionHandler::Key& key,
+                              const VersionHandler::VersionName& tip_of_tree,
+                              const maidsafe_error& return_code, nfs::MessageId message_id);
 
  private:
   routing::Routing& routing_;
@@ -45,43 +54,43 @@ class VersionHandlerDispatcher {
 
 template <typename RequestorType>
 void VersionHandlerDispatcher::SendGetVersionsResponse(
-    std::vector<VersionHandler::VersionName>& /*versions*/,
-    const RequestorType& /*requestor*/, const maidsafe_error& /*result*/) {
+    const VersionHandler::Key&, const std::vector<VersionHandler::VersionName>&,
+    const RequestorType&, const maidsafe_error&, nfs::MessageId) {
   RequestorType::No_generic_handler_is_available__Specialisation_is_required;
 }
 
 template <typename RequestorType>
-void SendGetBranchResponse(std::vector<VersionHandler::VersionName>& /*versions*/,
+void SendGetBranchResponse(const std::vector<VersionHandler::VersionName>& /*versions*/,
                            const RequestorType& /*requestor*/, const maidsafe_error& /*result*/) {
   RequestorType::No_generic_handler_is_available__Specialisation_is_required;
 }
 
 template <>
 void VersionHandlerDispatcher::SendGetVersionsResponse(
-    std::vector<VersionHandler::VersionName>& versions,
+    const VersionHandler::Key& key, const std::vector<VersionHandler::VersionName>& versions,
     const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>& requestor,
-    const maidsafe_error& result);
+    const maidsafe_error& result, nfs::MessageId message_id);
 
 template <>
 void VersionHandlerDispatcher::SendGetVersionsResponse(
-    std::vector<VersionHandler::VersionName>& versions,
+    const VersionHandler::Key& key,  const std::vector<VersionHandler::VersionName>& versions,
     const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>& requestor,
-    const maidsafe_error& result);
+    const maidsafe_error& result, nfs::MessageId message_id);
 
 template <>
 void VersionHandlerDispatcher::SendGetBranchResponse(
-    std::vector<VersionHandler::VersionName>& versions,
+    const VersionHandler::Key& key, const std::vector<VersionHandler::VersionName>& versions,
     const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>& requestor,
-    const maidsafe_error& result);
+    const maidsafe_error& result, nfs::MessageId message_id);
 
 template <>
 void VersionHandlerDispatcher::SendGetBranchResponse(
-    std::vector<VersionHandler::VersionName>& versions,
+    const VersionHandler::Key& key, const std::vector<VersionHandler::VersionName>& versions,
     const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>& requestor,
-    const maidsafe_error& result);
-
-
-}
+    const maidsafe_error& result, nfs::MessageId message_id);
 
 }  // namespace vault
 
+}  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_DISPATCHER_H_

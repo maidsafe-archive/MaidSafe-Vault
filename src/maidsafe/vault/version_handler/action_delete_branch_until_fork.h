@@ -33,14 +33,13 @@ class VersionHandlerValue;
 
 struct ActionVersionHandlerDeleteBranchUntilFork {
   explicit ActionVersionHandlerDeleteBranchUntilFork(const std::string& serialised_action);
-  explicit ActionVersionHandlerDeleteBranchUntilFork(
-      const ActionVersionHandlerDeleteBranchUntilFork& other);
-  explicit ActionVersionHandlerDeleteBranchUntilFork(
+  ActionVersionHandlerDeleteBranchUntilFork(const ActionVersionHandlerDeleteBranchUntilFork& other);
+  ActionVersionHandlerDeleteBranchUntilFork(
       const ActionVersionHandlerDeleteBranchUntilFork&& other);
-  explicit ActionVersionHandlerDeleteBranchUntilFork(
+  ActionVersionHandlerDeleteBranchUntilFork(
       const StructuredDataVersions::VersionName& version_name);
 
-  void operator()(boost::optional<VersionHandlerValue>& value) const;
+  void operator()(std::unique_ptr<VersionHandlerValue>& value);
 
   std::string Serialise() const;
 

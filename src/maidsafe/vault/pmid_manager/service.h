@@ -45,6 +45,17 @@
 namespace maidsafe {
 namespace vault {
 
+namespace test {
+
+class PmidManagerServiceTest_BEH_PutSynchroniseFromPmidManager_Test;
+class PmidManagerServiceTest_BEH_DeleteSynchroniseFromPmidManager_Test;
+class PmidManagerServiceTest_BEH_PutRequestFromDataManager_Test;
+class PmidManagerServiceTest_BEH_PutFailureFromPmidNode_Test;
+class PmidManagerServiceTest_BEH_DeleterequestFromDataManager_Test;
+
+}
+
+
 class PmidManagerService {
  public:
   typedef void PublicMessages;
@@ -62,7 +73,8 @@ class PmidManagerService {
 
   template <typename T>
   bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
-    return false;
+    // BEFORE_RELEASE implementation missing
+    return true;
   }
   template <typename Data>
   void HandlePutResponse(const typename Data::Name& data_name, int32_t size,
@@ -86,6 +98,13 @@ class PmidManagerService {
   friend class detail::PmidManagerPutVisitor<PmidManagerService>;
   friend class detail::PmidManagerPutResponseFailureVisitor<PmidManagerService>;
   friend class detail::PmidManagerDeleteVisitor<PmidManagerService>;
+  friend class test::PmidManagerServiceTest_BEH_PutSynchroniseFromPmidManager_Test;
+  friend class test::PmidManagerServiceTest_BEH_DeleteSynchroniseFromPmidManager_Test;
+  friend class test::PmidManagerServiceTest_BEH_PutRequestFromDataManager_Test;
+  friend class test::PmidManagerServiceTest_BEH_PutFailureFromPmidNode_Test;
+  friend class test::PmidManagerServiceTest_BEH_DeleterequestFromDataManager_Test;
+
+  void CreatePmidAccount(const PmidName& pmid_node);  // triggered by churn event
 
   // =============== Put/Delete data =============================================================
   template <typename Data>
@@ -113,7 +132,6 @@ class PmidManagerService {
   std::mutex accumulator_mutex_;
   Accumulator<Messages> accumulator_;
   PmidManagerDispatcher dispatcher_;
-  std::map<PmidName, PmidManagerMetadata> pmid_metadata_;
   Sync<PmidManager::UnresolvedPut> sync_puts_;
   Sync<PmidManager::UnresolvedDelete> sync_deletes_;
   Sync<PmidManager::UnresolvedSetAvailableSize> sync_set_available_sizes_;
@@ -124,7 +142,7 @@ template <typename MessageType>
 void PmidManagerService::HandleMessage(const MessageType& /*message*/,
                                        const typename MessageType::Sender& /*sender*/,
                                        const typename MessageType::Receiver& /*receiver*/) {
-  MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
+  MessageType::No_genereic_handler_is_available__Specialisation_is_required;
 }
 
 template <>
@@ -177,12 +195,21 @@ template <typename PmidManagerSyncType>
 void IncrementAttemptsAndSendSync(PmidManagerDispatcher& dispatcher,
                                   PmidManagerSyncType& sync_type) {
   auto unresolved_actions(sync_type.GetUnresolvedActions());
+  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for PmidManagerSerive, has "
+                << unresolved_actions.size() << " unresolved_actions";
   if (!unresolved_actions.empty()) {
     sync_type.IncrementSyncAttempts();
-    for (const auto& unresolved_action : unresolved_actions)
-      dispatcher.SendSync(unresolved_action->key.group_name(), unresolved_action->Serialise());
+    protobuf::Sync proto_sync;
+    for (const auto& unresolved_action : unresolved_actions) {
+      proto_sync.Clear();
+      proto_sync.set_serialised_unresolved_action(unresolved_action->Serialise());
+      proto_sync.set_action_type(static_cast<int32_t>(PmidManagerSyncType::kActionId));
+      LOG(kInfo) << "PmidManager send sync action " << proto_sync.action_type();
+      dispatcher.SendSync(unresolved_action->key.group_name(), proto_sync.SerializeAsString());
     }
   }
+}
+
 }  // namespace detail
 
 // ================================= Put Implementation ===========================================
@@ -190,6 +217,9 @@ void IncrementAttemptsAndSendSync(PmidManagerDispatcher& dispatcher,
 template <typename Data>
 void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
                                    nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidManagerService::HandlePut put request to pmid_node -- "
+                << HexSubstr(pmid_node.value.string())
+                << " , with message_id -- " << message_id.data;
   dispatcher_.SendPutRequest(data, pmid_node, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), data.name().value,
                              Data::Tag::kValue);
@@ -204,7 +234,11 @@ template <typename Data>
 void PmidManagerService::HandlePutFailure(
     const typename Data::Name& name, const PmidName& pmid_node, int64_t available_space,
     const maidsafe_error& error_code, nfs::MessageId message_id) {
-  pmid_metadata_.at(pmid_node).claimed_available_size = available_space;
+  LOG(kVerbose) << "PmidManagerService::HandlePutFailure to pmid_node -- "
+                << HexSubstr(pmid_node.value.string())
+                << " , with message_id -- " << message_id.data
+                << " . available_space -- " << available_space << " , error_code -- "
+                << error_code.what();
   dispatcher_.SendPutFailure<Data>(name, pmid_node, error_code, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), name.value, Data::Tag::kValue);
   sync_deletes_.AddLocalAction(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(),
@@ -216,6 +250,10 @@ template <typename Data>
 void PmidManagerService::HandlePutResponse(
     const typename Data::Name& data_name, int32_t size, const PmidName& pmid_name,
     nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidManagerService::HandlePutResponse of pmid_name -- "
+                << HexSubstr(pmid_name.value.string())
+                << " , with message_id -- " << message_id.data
+                << " . size -- " << size;
   dispatcher_.SendPutResponse<Data>(data_name, size, pmid_name, message_id);
 }
 
@@ -234,6 +272,7 @@ void PmidManagerService::HandleDelete(
 // ===============================================================================================
 
 }  // namespace vault
+
 }  // namespace maidsafe
 
 #include "maidsafe/vault/pmid_manager/service-inl.h"

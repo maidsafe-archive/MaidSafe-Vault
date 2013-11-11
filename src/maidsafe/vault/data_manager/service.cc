@@ -64,7 +64,9 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       sync_add_pmids_(),
       sync_remove_pmids_(),
       sync_node_downs_(),
-      sync_node_ups_() {}
+      sync_node_ups_() {
+  asio_service_.Start();
+}
 
 // ==================== Put implementation =========================================================
 template <>
@@ -72,6 +74,7 @@ void DataManagerService::HandleMessage(
     const PutRequestFromMaidManagerToDataManager& message,
     const typename PutRequestFromMaidManagerToDataManager::Sender& sender,
     const typename PutRequestFromMaidManagerToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutRequestFromMaidManagerToDataManager";
   typedef PutRequestFromMaidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -86,6 +89,7 @@ void DataManagerService::HandleMessage(
     const PutResponseFromPmidManagerToDataManager& message,
     const typename PutResponseFromPmidManagerToDataManager::Sender& sender,
     const typename PutResponseFromPmidManagerToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutResponseFromPmidManagerToDataManager";
   typedef PutResponseFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -100,6 +104,7 @@ void DataManagerService::HandleMessage(
     const PutFailureFromPmidManagerToDataManager& message,
     const typename PutFailureFromPmidManagerToDataManager::Sender& sender,
     const typename PutFailureFromPmidManagerToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutFailureFromPmidManagerToDataManager";
   typedef PutFailureFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -115,6 +120,7 @@ void DataManagerService::HandleMessage(
     const nfs::GetRequestFromMaidNodeToDataManager& message,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromMaidNodeToDataManager";
   typedef nfs::GetRequestFromMaidNodeToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -129,6 +135,7 @@ void DataManagerService::HandleMessage(
     const nfs::GetRequestFromDataGetterToDataManager& message,
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromDataGetterToDataManager";
   typedef nfs::GetRequestFromDataGetterToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -143,6 +150,7 @@ void DataManagerService::HandleMessage(
     const GetResponseFromPmidNodeToDataManager& message,
     const typename GetResponseFromPmidNodeToDataManager::Sender& sender,
     const typename GetResponseFromPmidNodeToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetResponseFromPmidNodeToDataManager";
   typedef GetResponseFromPmidNodeToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -156,20 +164,25 @@ template <>
 void DataManagerService::HandleMessage(
     const PutToCacheFromDataManagerToDataManager& /*message*/,
     const typename PutToCacheFromDataManagerToDataManager::Sender& /*sender*/,
-    const typename PutToCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {}  // No-op
+    const typename PutToCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutToCacheFromDataManagerToDataManager";
+}  // No-op
 
 template <>
 void DataManagerService::HandleMessage(
     const GetFromCacheFromDataManagerToDataManager& /*message*/,
     const typename GetFromCacheFromDataManagerToDataManager::Sender& /*sender*/,
-    const typename GetFromCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {}  // No-op
+    const typename GetFromCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetFromCacheFromDataManagerToDataManager";
+}  // No-op
 
 template <>
 void DataManagerService::HandleMessage(
     const GetCachedResponseFromCacheHandlerToDataManager& /*message*/,
     const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& /*sender*/,
     const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& /*receiver*/) {
-  assert(0);
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetCachedResponseFromCacheHandlerToDataManager";
+//  assert(0);
 }
 
 void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
@@ -183,6 +196,7 @@ void DataManagerService::HandleMessage(
     const DeleteRequestFromMaidManagerToDataManager& message,
     const typename DeleteRequestFromMaidManagerToDataManager::Sender& sender,
     const typename DeleteRequestFromMaidManagerToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage DeleteRequestFromMaidManagerToDataManager";
   typedef DeleteRequestFromMaidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -208,77 +222,87 @@ void DataManagerService::HandleMessage(
     const SynchroniseFromDataManagerToDataManager& message,
     const typename SynchroniseFromDataManagerToDataManager::Sender& sender,
     const typename SynchroniseFromDataManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage SynchroniseFromDataManagerToDataManager";
   protobuf::Sync proto_sync;
-  if (!proto_sync.ParseFromString(message.contents->data))
+  if (!proto_sync.ParseFromString(message.contents->data)) {
+    LOG(kError) << "SynchroniseFromDataManagerToDataManager can't parse content";
     ThrowError(CommonErrors::parsing_error);
+  }
 
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
     case ActionDataManagerPut::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerPut";
       DataManager::UnresolvedPut unresolved_action(proto_sync.serialised_unresolved_action(),
                                                    sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit put to db";
         db_.Commit(resolved_action->key, resolved_action->action);
       }
       break;
     }
     case ActionDataManagerDelete::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete";
       DataManager::UnresolvedDelete unresolved_action(proto_sync.serialised_unresolved_action(),
                                                       sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         auto value(db_.Commit(resolved_action->key, resolved_action->action));
-        assert(value->Subscribers() > 0);
+        assert(value->Subscribers() >= 0);
         if (value->Subscribers() == 0) {
-          SendDeleteRequests(resolved_action->key, value->AllPmids(), message.message_id);
+          LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
+          SendDeleteRequests(resolved_action->key, value->AllPmids(), message.id);
         }
       }
       break;
     }
-
-    //    case ActionDataManagerDelete::kActionId: {
-    //      DataManager::UnresolvedDelete unresolved_action(
-    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-    //      auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
-    //      if (resolved_action)
-    //        db_.Commit(resolved_action->key, resolved_action->action);
-    //      break;
-    //    }
-    //    case ActionDataManagerAddPmid::kActionId: {
-    //      DataManager::UnresolvedAddPmid unresolved_action(
-    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-    //      auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
-    //      if (resolved_action)
-    //        db_.Commit(resolved_action->key, resolved_action->action);
-    //      break;
-    //    }
+    case ActionDataManagerAddPmid::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerAddPmid";
+      DataManager::UnresolvedAddPmid unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit add pmid to db";
+        resolved_action->key.CleanUpOriginator();
+        db_.Commit(resolved_action->key, resolved_action->action);
+      }
+      break;
+    }
     case ActionDataManagerRemovePmid::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerRemovePmid";
       DataManager::UnresolvedRemovePmid unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_remove_pmids_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action)
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit remove pmid to db";
+        resolved_action->key.CleanUpOriginator();
         db_.Commit(resolved_action->key, resolved_action->action);
+      }
       break;
     }
-    //    case ActionDataManagerNodeUp::kActionId: {
-    //      DataManager::UnresolvedNodeUp unresolved_action(
-    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-    //      auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
-    //      if (resolved_action)
-    //        db_.Commit(resolved_action->key, resolved_action->action);
-    //      break;
-    //    }
-    //    case ActionDataManagerNodeDown::kActionId: {
-    //      DataManager::UnresolvedNodeDown unresolved_action(
-    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-    //      auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
-    //      if (resolved_action)
-    //        db_.Commit(resolved_action->key, resolved_action->action);
-    //      break;
-    //    }
+    case ActionDataManagerNodeUp::kActionId: {
+      DataManager::UnresolvedNodeUp unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit pmid goes online";
+        db_.Commit(resolved_action->key, resolved_action->action);
+      }
+      break;
+    }
+    case ActionDataManagerNodeDown::kActionId: {
+      DataManager::UnresolvedNodeDown unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit pmid goes offline";
+        db_.Commit(resolved_action->key, resolved_action->action);
+      }
+      break;
+    }
     default: {
+      LOG(kError) << "SynchroniseFromDataManagerToDataManager Unhandled action type";
       assert(false);
-      LOG(kError) << "Unhandled action type";
     }
   }
 }
@@ -288,6 +312,7 @@ void DataManagerService::HandleMessage(
     const AccountTransferFromDataManagerToDataManager& /*message*/,
     const typename AccountTransferFromDataManagerToDataManager::Sender& /*sender*/,
     const typename AccountTransferFromDataManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage AccountTransferFromDataManagerToDataManager";
   assert(0);
 }
 
@@ -311,6 +336,7 @@ void DataManagerService::HandleMessage(
     const SetPmidOnlineFromPmidManagerToDataManager& /*message*/,
     const typename SetPmidOnlineFromPmidManagerToDataManager::Sender& /*sender*/,
     const typename SetPmidOnlineFromPmidManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage SetPmidOnlineFromPmidManagerToDataManager";
   assert(0);
 }
 
@@ -319,6 +345,7 @@ void DataManagerService::HandleMessage(
     const SetPmidOfflineFromPmidManagerToDataManager& /*message*/,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& /*sender*/,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage SetPmidOfflineFromPmidManagerToDataManager";
   assert(0);
 }
 

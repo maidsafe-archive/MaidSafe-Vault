@@ -51,21 +51,39 @@ DataManagerValue::DataManagerValue(const std::string &serialised_metadata_value)
   }
 }
 
+DataManagerValue& DataManagerValue::operator=(const DataManagerValue& other) {
+  subscribers_ = other.subscribers_;
+  size_ = other.size_;
+  online_pmids_ = other.online_pmids_;
+  offline_pmids_ = other.offline_pmids_;
+  return *this;
+}
+
 DataManagerValue::DataManagerValue(const PmidName& pmid_name, int32_t size)
     : subscribers_(0), size_(size), online_pmids_(), offline_pmids_() {
   AddPmid(pmid_name);
 }
 
+DataManagerValue::DataManagerValue(DataManagerValue&& other)
+    : subscribers_(std::move(other.subscribers_)),
+      size_(std::move(other.size_)),
+      online_pmids_(std::move(other.online_pmids_)),
+      offline_pmids_(std::move(other.offline_pmids_)) {}
+
 void DataManagerValue::AddPmid(const PmidName& pmid_name) {
   online_pmids_.insert(pmid_name);
   offline_pmids_.erase(pmid_name);
+  LOG(kVerbose) << "online_pmids_ now having : ";
+  for (auto pmid : online_pmids_) {
+    LOG(kVerbose) << "     ----     " << HexSubstr(pmid.value.string());
+  }
 }
 
 void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
-  if (online_pmids_.size() + offline_pmids_.size() < 4) {
-    LOG(kError) << "RemovePmid not allowed";
-    ThrowError(CommonErrors::invalid_parameter);  // TODO add error - not_allowed
-  }
+//  if (online_pmids_.size() + offline_pmids_.size() < 4) {
+//    LOG(kError) << "RemovePmid not allowed";
+//    ThrowError(CommonErrors::invalid_parameter);  // TODO add error - not_allowed
+//  }
   online_pmids_.erase(pmid_name);
   offline_pmids_.erase(pmid_name);
 }

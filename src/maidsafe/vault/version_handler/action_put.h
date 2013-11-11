@@ -21,7 +21,11 @@
 
 #include <string>
 
+#include "boost/optional.hpp"
+
 #include "maidsafe/vault/version_handler/version_handler.h"
+#include "maidsafe/vault/config.h"
+
 
 namespace maidsafe {
 
@@ -30,19 +34,23 @@ namespace vault {
 class VersionHandlerValue;
 
 struct ActionVersionHandlerPut {
-  ActionVersionHandlerPut(const StructuredDataVersions::VersionName& old_version_in,
-                          const StructuredDataVersions::VersionName& new_version_in)
-      : old_version(old_version_in), new_version(new_version_in) {}
+  ActionVersionHandlerPut(const StructuredDataVersions::VersionName& old_version,
+                          const StructuredDataVersions::VersionName& new_version,
+                          const NodeId& sender, nfs::MessageId message_id_in);
+
   explicit ActionVersionHandlerPut(const std::string& serialised_action);
   ActionVersionHandlerPut(const ActionVersionHandlerPut& other);
-  ActionVersionHandlerPut(ActionVersionHandlerPut&& other); 
+  ActionVersionHandlerPut(ActionVersionHandlerPut&& other);
 
-  void operator()(boost::optional<VersionHandlerValue>& value) const;
+  detail::DbAction operator()(std::unique_ptr<VersionHandlerValue>& value);
 
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPutVersionRequest;
   StructuredDataVersions::VersionName old_version, new_version;
+  boost::optional<StructuredDataVersions::VersionName> tip_of_tree;
+  NodeId sender; // sender is required to be notified of potential failures on put
+  nfs::MessageId message_id;
 
  private:
   ActionVersionHandlerPut();
@@ -56,4 +64,4 @@ bool operator!=(const ActionVersionHandlerPut& lhs, const ActionVersionHandlerPu
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_PUT_VERSION_H_
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_PUT_H_

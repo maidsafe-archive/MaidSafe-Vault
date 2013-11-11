@@ -50,7 +50,10 @@ namespace vault {
 
 namespace detail {
 
-  template <typename SourcePersonaType> class VersionManagerGetVisitor;
+  template <typename SourcePersonaType> class VersionHandlerGetVisitor;
+  template <typename SourcePersonaType> class VersionHandlerGetBranchVisitor;
+  class VersionHandlerPutVisitor;
+  class VersionHandlerDeleteBranchVisitor;
 }
 
 class VersionHandlerService {
@@ -68,7 +71,10 @@ class VersionHandlerService {
 
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
-  template <typename SourcePersonaType> friend class detail::VersionManagerGetVisitor;
+  template <typename SourcePersonaType> friend class detail::VersionHandlerGetVisitor;
+  template <typename SourcePersonaType> friend class detail::VersionHandlerGetBranchVisitor;
+  friend class detail::VersionHandlerPutVisitor;
+  friend class detail::VersionHandlerDeleteBranchVisitor;
 
  private:
   VersionHandlerService(const VersionHandlerService&);
@@ -82,19 +88,22 @@ class VersionHandlerService {
   bool ValidateSender(const MessageType& message, const typename MessageType::Sender& sender) const;
 
   template <typename RequestorType>
-  void HandleGetVersions(const VersionHandler::Key& key, const RequestorType& requestor_type);
+  void HandleGetVersions(const VersionHandler::Key& key, const RequestorType& requestor_type,
+                         nfs::MessageId message_id);
 
   template <typename RequestorType>
   void HandleGetBranch(const VersionHandler::Key& key,
-                       const typename VersionHandler::VersionName version_name,
-                       const RequestorType& requestor_type);
+                       const VersionHandler::VersionName& version_name,
+                       const RequestorType& requestor_type, nfs::MessageId message_id);
 
   void HandlePutVersion(const VersionHandler::Key& key,
                         const VersionHandler::VersionName& old_version,
-                        const VersionHandler::VersionName& new_version);
+                        const VersionHandler::VersionName& new_version, const NodeId& sender,
+                        nfs::MessageId message_id);
 
   void HandleDeleteBranchUntilFork(const VersionHandler::Key& key,
-                                   const VersionHandler::VersionName& branch_tip);
+                                   const VersionHandler::VersionName& branch_tip,
+                                   const NodeId& sender);
 
   typedef boost::mpl::vector<> InitialType;
   typedef boost::mpl::insert_range<InitialType,
@@ -167,32 +176,39 @@ void VersionHandlerService::HandleMessage(
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Sender& sender,
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Receiver& receiver);
 
+template<>
+void VersionHandlerService::HandleMessage(
+    const SynchroniseFromVersionHandlerToVersionHandler& message,
+    const typename SynchroniseFromVersionHandlerToVersionHandler::Sender& sender,
+    const typename SynchroniseFromVersionHandlerToVersionHandler::Receiver& receiver);
+
 template <typename RequestorType>
-void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& /*key*/,
-                                              const RequestorType& /*requestor_type*/) {
-//  auto value(std::move(db_.Get(key)));  // WILL BE VALID ONLY IF DB RETURNS UNIQUE_PTR
-//  try {
-//    dispatcher_.SendGetVersionsResponse(value->Get(), requestor_type, CommonErrors::success);
-//  }
-//  catch (const maidsafe_error& error) {
-//    dispatcher_.SendGetVersionsResponse(std::vector<typename VersionHandler::Value::VersionName>(),
-//                                       requestor_type, error);
-//  }
+void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& key,
+                                              const RequestorType& requestor_type,
+                                              nfs::MessageId message_id) {
+  try {
+    auto value(std::move(db_.Get(key)));
+    dispatcher_.SendGetVersionsResponse(key, value.Get(), requestor_type,
+                                        maidsafe_error(CommonErrors::success), message_id);
+  }
+  catch (const maidsafe_error& error) {
+    dispatcher_.SendGetVersionsResponse(key, std::vector<StructuredDataVersions::VersionName>(),
+                                        requestor_type, error, message_id);
+  }
 }
 
 template <typename RequestorType>
-void VersionHandlerService::HandleGetBranch(const VersionHandler::Key& /*key*/,
-    const typename VersionHandler::VersionName /*version_name*/,
-    const RequestorType& requestor_type) {
-// FIXME Team . This need discussion (commented out because it doesn't compile on clang)
-//  auto value(db_.Get(key));  // WILL BE VALID ONLY IF DB RETURNS UNIQUE_PTR
+void VersionHandlerService::HandleGetBranch(
+    const VersionHandler::Key& key, const VersionHandler::VersionName& version_name,
+    const RequestorType& requestor_type, nfs::MessageId message_id) {
   try {
-//    dispatcher_.SendGetBranchResponse(value.GetBranch(version_name), requestor_type,
-//                                      CommonErrors::success);
+    auto value(db_.Get(key));
+    dispatcher_.SendGetBranchResponse(key, value.GetBranch(version_name), requestor_type,
+                                      maidsafe_error(CommonErrors::success), message_id);
   }
   catch (const maidsafe_error& error) {
-    dispatcher_.SendGetBranchResponse(std::vector<typename VersionHandler::Value::VersionName>(),
-                                      requestor_type, error);
+    dispatcher_.SendGetBranchResponse(key, std::vector<typename VersionHandler::VersionName>(),
+                                      requestor_type, error, message_id);
   }
 }
 

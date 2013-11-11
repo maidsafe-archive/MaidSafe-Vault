@@ -18,7 +18,6 @@
 
 #include "maidsafe/vault/pmid_manager/dispatcher.h"
 
-#include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
@@ -27,8 +26,12 @@ namespace vault {
 
 PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing) : routing_(routing) {}
 
-void PmidManagerDispatcher::SendSync(const PmidName& /*account_name*/,
-                                     const std::string& /*serialised_sync*/) {
+void PmidManagerDispatcher::SendSync(const PmidName& account_name,
+                                     const std::string& serialised_sync) {
+  typedef SynchroniseFromPmidManagerToPmidManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  SendSyncMessage<VaultMessage> sync_sender;
+  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), account_name);
 }
 
 // void PmidManagerDispatcher::SendStateChange(const PmidName& pmid_node,
@@ -89,12 +92,17 @@ void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
 void PmidManagerDispatcher::SendHealthResponse(const MaidName& maid_node,
     const PmidName& pmid_node, const PmidManagerMetadata& pmid_health,  nfs::MessageId message_id,
     const maidsafe_error& error) {
+  LOG(kVerbose) << "PmidManagerDispatcher::SendHealthResponse for maid "
+                << HexSubstr(maid_node->string()) << " and pmid " << HexSubstr(pmid_node->string())
+                << " . PmidManagerMetadata serialised as " << HexSubstr(pmid_health.Serialise())
+                << " and return code : " << error.what();
   typedef PmidHealthResponseFromPmidManagerToMaidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
   VaultMessage vault_message(message_id, nfs_client::PmidHealthAndReturnCode(
                                              nfs_vault::PmidHealth(pmid_health.Serialise()),
                                              nfs_client::ReturnCode(error)));
+  LOG(kVerbose) << "Send PmidHealthResponse to group around " << HexSubstr(maid_node.value.string());
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
