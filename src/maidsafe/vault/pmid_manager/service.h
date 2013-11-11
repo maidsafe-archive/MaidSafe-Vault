@@ -47,7 +47,8 @@ namespace vault {
 
 namespace test {
 
-class PmidManagerServiceTest_BEH_PutSync_Test;
+class PmidManagerServiceTest_BEH_PutSynchroniseFromPmidManager_Test;
+class PmidManagerServiceTest_BEH_DeleteSynchroniseFromPmidManager_Test;
 class PmidManagerServiceTest_BEH_PutRequestFromDataManager_Test;
 class PmidManagerServiceTest_BEH_PutFailureFromPmidNode_Test;
 class PmidManagerServiceTest_BEH_DeleterequestFromDataManager_Test;
@@ -97,7 +98,8 @@ class PmidManagerService {
   friend class detail::PmidManagerPutVisitor<PmidManagerService>;
   friend class detail::PmidManagerPutResponseFailureVisitor<PmidManagerService>;
   friend class detail::PmidManagerDeleteVisitor<PmidManagerService>;
-  friend class test::PmidManagerServiceTest_BEH_PutSync_Test;
+  friend class test::PmidManagerServiceTest_BEH_PutSynchroniseFromPmidManager_Test;
+  friend class test::PmidManagerServiceTest_BEH_DeleteSynchroniseFromPmidManager_Test;
   friend class test::PmidManagerServiceTest_BEH_PutRequestFromDataManager_Test;
   friend class test::PmidManagerServiceTest_BEH_PutFailureFromPmidNode_Test;
   friend class test::PmidManagerServiceTest_BEH_DeleterequestFromDataManager_Test;
@@ -130,7 +132,6 @@ class PmidManagerService {
   std::mutex accumulator_mutex_;
   Accumulator<Messages> accumulator_;
   PmidManagerDispatcher dispatcher_;
-  std::map<PmidName, PmidManagerMetadata> pmid_metadata_;
   Sync<PmidManager::UnresolvedPut> sync_puts_;
   Sync<PmidManager::UnresolvedDelete> sync_deletes_;
   Sync<PmidManager::UnresolvedSetAvailableSize> sync_set_available_sizes_;
@@ -238,7 +239,6 @@ void PmidManagerService::HandlePutFailure(
                 << " , with message_id -- " << message_id.data
                 << " . available_space -- " << available_space << " , error_code -- "
                 << error_code.what();
-  pmid_metadata_.at(pmid_node).claimed_available_size = available_space;
   dispatcher_.SendPutFailure<Data>(name, pmid_node, error_code, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), name.value, Data::Tag::kValue);
   sync_deletes_.AddLocalAction(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(),

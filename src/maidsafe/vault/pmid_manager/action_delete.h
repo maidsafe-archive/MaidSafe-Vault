@@ -34,12 +34,14 @@ namespace vault {
 class PmidManagerValue;
 
 struct ActionPmidManagerDelete {
-  ActionPmidManagerDelete() {}
+  ActionPmidManagerDelete(bool pmid_node_available_in = true);
+  ActionPmidManagerDelete(const std::string& serialised_action);
   detail::DbAction operator()(PmidManagerMetadata& metadata,
                               std::unique_ptr<PmidManagerValue>& value) const;
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
+  bool pmid_node_available;
 };
 
 }  // namespace vault

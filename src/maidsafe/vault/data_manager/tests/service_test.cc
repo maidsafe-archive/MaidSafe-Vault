@@ -256,7 +256,7 @@ TEST_F(DataManagerServiceTest, BEH_NodeDownSynchroniseFromDataManager) {
   // store key value in db
   PmidName pmid_name_one(Identity(RandomString(64))), pmid_name_two(Identity(RandomString(64)));
   ImmutableData data(NonEmptyString(RandomString(TEST_CHUNK_SIZE)));
-  DataManager::Key key(data.name(), pmid_name_one.value);
+  DataManager::Key key(data.name(), Identity(NodeId().string()));
   data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name_one, TEST_CHUNK_SIZE));
   data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name_two, TEST_CHUNK_SIZE));
   auto value(data_manager_service_.db_.Get(key));
@@ -284,7 +284,7 @@ TEST_F(DataManagerServiceTest, BEH_NodeUpSynchroniseFromDataManager) {
   // store key value in db
   PmidName pmid_name_one(Identity(RandomString(64))), pmid_name_two(Identity(RandomString(64)));
   ImmutableData data(NonEmptyString(RandomString(TEST_CHUNK_SIZE)));
-  DataManager::Key key(data.name(), pmid_name_one.value);
+  DataManager::Key key(data.name(), Identity(NodeId().string()));
   data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name_one, TEST_CHUNK_SIZE));
   data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name_two, TEST_CHUNK_SIZE));
   auto value(data_manager_service_.db_.Get(key));
