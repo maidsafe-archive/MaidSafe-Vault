@@ -75,7 +75,7 @@ TEST_F(PmidNodeServiceTest, BEH_GetRequestFromDataManager) {
 }
 
 TEST_F(PmidNodeServiceTest, BEH_IntegrityCheckRequestFromDataManager) {
-  ImmutableData data(NonEmptyString(RandomString(TEST_CHUNK_SIZE)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   NonEmptyString random_string(RandomString(64));
   nfs_vault::DataNameAndRandomString content(data.name(), random_string);
   auto integrity_check_request(

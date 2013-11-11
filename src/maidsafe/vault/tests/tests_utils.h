@@ -35,7 +35,7 @@ namespace vault {
 
 namespace test {
 
-static const int TEST_CHUNK_SIZE = std::pow(2, 10);
+static const size_t kTestChunkSize = 2U << 10;
 
 passport::Maid MakeMaid();
 passport::Pmid MakePmid();

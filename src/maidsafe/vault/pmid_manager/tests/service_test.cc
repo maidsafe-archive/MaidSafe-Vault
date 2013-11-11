@@ -59,8 +59,8 @@ class PmidManagerServiceTest  : public testing::Test {
 
 TEST_F(PmidManagerServiceTest, BEH_PutSynchroniseFromPmidManager) {
   PmidName pmid_name(Identity(RandomString(64)));
-  ActionPmidManagerPut action_put(TEST_CHUNK_SIZE, nfs::MessageId(RandomInt32()));
-  ImmutableData data(NonEmptyString(RandomString(TEST_CHUNK_SIZE)));
+  ActionPmidManagerPut action_put(kTestChunkSize, nfs::MessageId(RandomInt32()));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   auto group_source(CreateGroupSource(NodeId(pmid_name.value.string())));
   PmidManager::Key key(pmid_name, data.name(), ImmutableData::Tag::kValue);
   pmid_manager_service_.group_db_.AddGroup(pmid_name, PmidManagerMetadata());
@@ -73,8 +73,8 @@ TEST_F(PmidManagerServiceTest, BEH_PutSynchroniseFromPmidManager) {
   try {
     auto value(pmid_manager_service_.group_db_.GetValue(key));
     auto metadata(pmid_manager_service_.group_db_.GetMetadata(pmid_name));
-    EXPECT_EQ(value.size(), TEST_CHUNK_SIZE);
-    EXPECT_EQ(metadata.stored_total_size, TEST_CHUNK_SIZE);
+    EXPECT_EQ(value.size(), kTestChunkSize);
+    EXPECT_EQ(metadata.stored_total_size, kTestChunkSize);
     EXPECT_EQ(metadata.stored_count, 1);
   }
   catch (const maidsafe_error& /*error*/) {
@@ -85,12 +85,12 @@ TEST_F(PmidManagerServiceTest, BEH_PutSynchroniseFromPmidManager) {
 TEST_F(PmidManagerServiceTest, BEH_DeleteSynchroniseFromPmidManager) {
   PmidName pmid_name(Identity(RandomString(64)));
   ActionPmidManagerDelete action_delete;
-  ImmutableData data(NonEmptyString(RandomString(TEST_CHUNK_SIZE)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   auto group_source(CreateGroupSource(NodeId(pmid_name.value.string())));
   PmidManager::Key key(pmid_name, data.name(), ImmutableData::Tag::kValue);
   pmid_manager_service_.group_db_.AddGroup(pmid_name, PmidManagerMetadata());
   pmid_manager_service_.group_db_.Commit(
-      key, ActionPmidManagerPut(TEST_CHUNK_SIZE, nfs::MessageId(RandomInt32())));
+      key, ActionPmidManagerPut(kTestChunkSize, nfs::MessageId(RandomInt32())));
   auto group_unresolved_action(
            CreateGroupUnresolvedAction<PmidManager::UnresolvedDelete>(key, action_delete,
                                                                       group_source));
@@ -129,7 +129,7 @@ TEST_F(PmidManagerServiceTest, BEH_PutRequestFromDataManager) {
 TEST_F(PmidManagerServiceTest, BEH_PutFailureFromPmidNode) {
   PmidName pmid_name(Identity(RandomString(64)));
   PmidManagerMetadata metadata(pmid_name);
-  metadata.claimed_available_size = TEST_CHUNK_SIZE * 100;
+  metadata.claimed_available_size = kTestChunkSize * 100;
   pmid_manager_service_.group_db_.AddGroup(pmid_name, PmidManagerMetadata());
   auto content(CreateContent<PutFailureFromPmidNodeToPmidManager::Contents>());
   auto put_failure(CreateMessage<PutFailureFromPmidNodeToPmidManager>(content));

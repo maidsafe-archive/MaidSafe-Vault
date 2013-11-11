@@ -77,7 +77,7 @@ nfs_vault::DataAndPmidHint CreateContent<nfs_vault::DataAndPmidHint>() {
 template <>
 nfs_vault::DataNameAndSize CreateContent<nfs_vault::DataNameAndSize>() {
   return nfs_vault::DataNameAndSize(DataTagValue::kImmutableDataValue, Identity(RandomString(64)),
-                                    TEST_CHUNK_SIZE);
+                                    kTestChunkSize);
 }
 
 template <>
