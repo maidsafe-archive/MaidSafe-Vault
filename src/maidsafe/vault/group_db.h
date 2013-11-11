@@ -283,7 +283,8 @@ void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
   try {
     it = FindGroup(group_name);
   } catch (const vault_error& error) {
-    LOG(kInfo) << "account doesn't exist for group " << DebugId(group_name);
+    LOG(kInfo) << "account doesn't exist for group "
+               << DebugId(group_name) << ", error : " << error.what();
     return;
   }
   auto group_id = it->second.first;

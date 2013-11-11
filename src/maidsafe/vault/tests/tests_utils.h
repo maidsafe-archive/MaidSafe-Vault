@@ -90,7 +90,7 @@ template <typename ServiceType, typename MessageType>
 void GroupSendToGroup(ServiceType* service, const MessageType& message,
                       const std::vector<routing::GroupSource>& group_sources,
                       const routing::GroupId& group_id) {
-  for (u_int32_t index(0); index < group_sources.size(); ++index)
+  for (uint32_t index(0); index < group_sources.size(); ++index)
     service->HandleMessage(message, group_sources[index], group_id);
 }
 
@@ -98,7 +98,7 @@ template <typename ServiceType, typename MessageType>
 void GroupSendToSingle(ServiceType* service, const MessageType& message,
                        const std::vector<routing::GroupSource>& group_sources,
                        const routing::SingleId& single_id) {
-  for (u_int32_t index(0); index < group_sources.size(); ++index)
+  for (uint32_t index(0); index < group_sources.size(); ++index)
     service->HandleMessage(message, group_sources[index], single_id);
 }
 

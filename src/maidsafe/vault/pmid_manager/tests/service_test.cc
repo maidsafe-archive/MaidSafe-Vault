@@ -132,7 +132,7 @@ TEST_F(PmidManagerServiceTest, BEH_DeleterequestFromDataManager) {
   auto delete_request(CreateMessage<DeleteRequest>(content));
   auto group_source(CreateGroupSource(NodeId(content.raw_name.string())));
   NodeId pmid_node(NodeId::kRandomId);
-  for (u_int32_t index(0); index < group_source.size(); ++index) {
+  for (uint32_t index(0); index < group_source.size(); ++index) {
     this->pmid_manager_service_.HandleMessage(delete_request, group_source[index],
                                               routing::GroupId(pmid_node));
   }
