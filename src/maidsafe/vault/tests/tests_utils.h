@@ -141,9 +141,8 @@ std::vector<UnresolvedActionType> CreateGroupUnresolvedAction(
     const typename UnresolvedActionType::ActionType& action,
     const std::vector<routing::GroupSource>& group_sources) {
   std::vector<UnresolvedActionType> unresolved_actions;
-  for (uint32_t index(0); index < group_sources.size(); ++index)
-    unresolved_actions.push_back(UnresolvedActionType(key, action,
-                                                      group_sources.at(index).sender_id.data));
+  for (const auto& group_source : group_sources)
+    unresolved_actions.push_back(UnresolvedActionType(key, action, group_source.sender_id.data));
   return unresolved_actions;
 }
 
