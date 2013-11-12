@@ -36,6 +36,7 @@ namespace vault {
 namespace test {
 
 static const size_t kTestChunkSize = 2U << 10;
+static const size_t kAverageChunksStored = 1000;
 
 passport::Maid MakeMaid();
 passport::Pmid MakePmid();
@@ -79,6 +80,12 @@ CreateContent<nfs_vault::DataNameAndContentOrCheckResult>();
 template <>
 nfs_client::DataNameAndContentOrReturnCode
 CreateContent<nfs_client::DataNameAndContentOrReturnCode>();
+
+template <>
+nfs_vault::DataNameAndCost CreateContent<nfs_vault::DataNameAndCost>();
+
+template <>
+nfs_vault::DataNameAndVersion CreateContent<nfs_vault::DataNameAndVersion>();
 
 template <typename MessageType>
 MessageType CreateMessage(const typename MessageType::Contents& contents) {

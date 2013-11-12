@@ -71,6 +71,12 @@ class WorldDirectory;
 
 namespace vault {
 
+namespace test {
+
+class MaidManagerServiceTest;
+
+}
+
 class AccountDb;
 struct PmidRegistrationOp;
 struct GetPmidTotalsOp;
@@ -205,6 +211,7 @@ class MaidManagerService {
   friend class detail::MaidManagerPutResponseVisitor<MaidManagerService>;
   friend class detail::MaidManagerPutResponseFailureVisitor<MaidManagerService>;
   friend class detail::MaidManagerDeleteVisitor<MaidManagerService>;
+  friend class test::MaidManagerServiceTest;
 
   routing::Routing& routing_;
   nfs_client::DataGetter& data_getter_;
@@ -310,12 +317,6 @@ void MaidManagerService::HandleMessage(
     const AccountTransferFromMaidManagerToMaidManager& message,
     const typename AccountTransferFromMaidManagerToMaidManager::Sender& sender,
     const typename AccountTransferFromMaidManagerToMaidManager::Receiver& receiver);
-
-template <>
-void MaidManagerService::HandleMessage(
-    const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
-    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
-    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver);
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
