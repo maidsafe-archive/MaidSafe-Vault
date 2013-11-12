@@ -91,7 +91,12 @@ Db<Key, Value>::Db()
 
 template <typename Key, typename Value>
 Db<Key, Value>::~Db() {
-  leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
+  try {
+    leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
+    boost::filesystem::remove_all(kDbPath_);
+  } catch (const std::exception& e) {
+    LOG (kError) << "Failed to remove db : " << e.what();
+  }
 }
 
 template <typename Key, typename Value>

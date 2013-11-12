@@ -136,7 +136,12 @@ GroupDb<Persona>::GroupDb()
 
 template <typename Persona>
 GroupDb<Persona>::~GroupDb() {
-  leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
+  try {
+    leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
+    boost::filesystem::remove_all(kDbPath_);
+  } catch (const std::exception& e) {
+    LOG (kError) << "Failed to remove db : " << e.what();
+  }
 }
 
 template <typename Persona>
