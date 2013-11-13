@@ -225,6 +225,9 @@ class DataManagerService {
   Sync<DataManager::UnresolvedRemovePmid> sync_remove_pmids_;
   Sync<DataManager::UnresolvedNodeDown> sync_node_downs_;
   Sync<DataManager::UnresolvedNodeUp> sync_node_ups_;
+
+ protected:
+  std::mutex lock_guard;
 };
 
 // =========================== Handle Message Specialisations ======================================
@@ -323,6 +326,8 @@ void DataManagerService::HandleMessage(
 template <typename Data>
 void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
                                    const PmidName& pmid_name_in, nfs::MessageId message_id) {
+  LOG(kVerbose) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
+                << " from maid_node " << HexSubstr(maid_name->string());
   int32_t cost(static_cast<int32_t>(data.Serialise().data.string().size()));
   if (!EntryExist<Data>(data.name())) {
     cost *= routing::Parameters::node_group_size;
@@ -332,18 +337,29 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
       pmid_name = pmid_name_in;
     else
       pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
+    LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
+               << " from maid_node " << HexSubstr(maid_name->string())
+               << " . SendPutRequest with message_id " << message_id.data;
     dispatcher_.SendPutRequest(pmid_name, data, message_id);
   } else if (is_unique_on_network<Data>::value) {
+    LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
+               << " from maid_node " << HexSubstr(maid_name->string())
+               << " . SendPutFailure with message_id " << message_id.data;
     dispatcher_.SendPutFailure<Data>(maid_name, data.name(),
                                      maidsafe_error(VaultErrors::unique_data_clash), message_id);
     return;
   } else {
+    LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
+               << " from maid_node " << HexSubstr(maid_name->string()) << " syncing";
     typename DataManager::Key key(data.name().value, Data::Tag::kValue,
                                   Identity(pmid_name_in->string()));
     sync_puts_.AddLocalAction(DataManager::UnresolvedPut(key, ActionDataManagerPut(),
                                                          routing_.kNodeId()));
     DoSync();
   }
+  LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
+              << " from maid_node " << HexSubstr(maid_name->string())
+              << " . SendPutResponse with message_id " << message_id.data;
   dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);  // NOT IN FAILURE
 }
 
@@ -376,6 +392,8 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
                                           const PmidName& attempted_pmid_node,
                                           nfs::MessageId message_id,
                                           const maidsafe_error& /*error*/) {
+  LOG(kVerbose) << "DataManagerService::HandlePutFailure " << HexSubstr(data_name.value)
+                << " from attempted_pmid_node " << HexSubstr(attempted_pmid_node->string());
   // TODO(Team): Following should be done only if error is fixable by repeat
   typename DataManager::Key key(data_name.value, Data::Tag::kValue,
                                 Identity(attempted_pmid_node->string()));
@@ -430,7 +448,7 @@ template <typename Data, typename RequestorIdType>
 void DataManagerService::HandleGet(const typename Data::Name& data_name,
                                    const RequestorIdType& requestor,
                                    nfs::MessageId message_id) {
-  LOG(kVerbose) << "Handle Get " << HexSubstr(data_name.value);
+  LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value);
   // Get all pmid nodes that are online.
   std::set<PmidName> online_pmids;
   try {
@@ -438,14 +456,14 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
                                         Identity(NodeId().string()))));
     online_pmids = std::move(value.online_pmids());
   } catch (const maidsafe_error& error) {
-    LOG(kWarning) << "Getting " << HexEncode(data_name.value)
-                  << " causes a maidsafe_error " << error.code().value();
+    LOG(kWarning) << "Getting " << HexSubstr(data_name.value)
+                  << " causes a maidsafe_error " << error.what();
     if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
       LOG(kError) << "db error";
       throw error;  // For db errors
     }
     // TODO(Fraser#5#): 2013-10-03 - Request for non-existent data should possibly generate an alert
-    LOG(kWarning) << "Account for " << HexEncode(data_name.value) << " doesn't exist.";
+    LOG(kWarning) << "Entry for " << HexSubstr(data_name.value) << " doesn't exist.";
     return;
   }
 
@@ -466,13 +484,16 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
       std::make_shared<detail::GetResponseOp<typename Data::Name, RequestorIdType>>(
           pmid_node_to_get_from, message_id, integrity_checks, data_name, requestor));
   auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
+    LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value)
+                  << " task called from timer to DoHandleGetResponse";
     this->DoHandleGetResponse<Data, RequestorIdType>(pmid_node_and_contents.first,
                                                      pmid_node_and_contents.second,
                                                      get_response_op);
   });
   get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, expected_response_count,
                      message_id.data);
-
+  LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value)
+                << " SendGetRequest with message_id " << message_id.data;
   // Send requests
   dispatcher_.SendGetRequest<Data>(pmid_node_to_get_from, data_name, message_id);
 
@@ -500,6 +521,8 @@ PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_
   PmidName chosen;
   {
     std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+//     LOG(kVerbose) << "ChoosePmidNodeToGetFrom matrix containing following info : ";
+//     matrix_change_.Print();
     chosen = PmidName(Identity(
         matrix_change_.ChoosePmidNode(online_node_ids, NodeId(data_name->string())).string()));
   }
@@ -513,6 +536,10 @@ template <typename Data, typename RequestorIdType>
 void DataManagerService::DoHandleGetResponse(
     const PmidName& pmid_node, const GetResponseContents& contents,
     std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
+  LOG(kVerbose) << "DataManagerService::DoHandleGetResponse received "
+                << HexSubstr(contents.name.raw_name) << " with content "
+                << HexSubstr(contents.content->string()) << " from "
+                << HexSubstr(pmid_node->string());
   // Note: if 'contents' is default-constructed, it's probably a result of this function being
   // invoked by the timer after timeout.
   int called_count(0), expected_count(0);
@@ -522,10 +549,12 @@ void DataManagerService::DoHandleGetResponse(
     expected_count = static_cast<int>(get_response_op->integrity_checks.size()) + 1;
     assert(called_count <= expected_count);
     if (pmid_node == get_response_op->pmid_node_to_get_from) {
+      LOG(kVerbose) << "DataManagerService::DoHandleGetResponse send response ";
       if (SendGetResponse<Data, RequestorIdType>(contents, get_response_op)) {
         get_response_op->serialised_contents = typename Data::serialised_type(*contents.content);
       }
     } else if (contents.check_result) {
+      LOG(kVerbose) << "DataManagerService::DoHandleGetResponse starts integrity check";
       auto itr(get_response_op->integrity_checks.find(pmid_node));
       if (itr != std::end(get_response_op->integrity_checks))
         itr->second.SetResult(*contents.check_result);

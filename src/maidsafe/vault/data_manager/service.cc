@@ -64,7 +64,9 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       sync_add_pmids_(),
       sync_remove_pmids_(),
       sync_node_downs_(),
-      sync_node_ups_() {}
+      sync_node_ups_() {
+  asio_service_.Start();
+}
 
 // ==================== Put implementation =========================================================
 template <>
@@ -118,7 +120,9 @@ void DataManagerService::HandleMessage(
     const nfs::GetRequestFromMaidNodeToDataManager& message,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromMaidNodeToDataManager";
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromMaidNodeToDataManager"
+                << " from " << HexSubstr(sender.data.string())
+                << " for chunk " << HexSubstr(message.contents->raw_name.string());
   typedef nfs::GetRequestFromMaidNodeToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -133,7 +137,9 @@ void DataManagerService::HandleMessage(
     const nfs::GetRequestFromDataGetterToDataManager& message,
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromDataGetterToDataManager";
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromDataGetterToDataManager"
+                << " from " << HexSubstr(sender.data.string())
+                << " for chunk " << HexSubstr(message.contents->raw_name.string());
   typedef nfs::GetRequestFromDataGetterToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -148,7 +154,9 @@ void DataManagerService::HandleMessage(
     const GetResponseFromPmidNodeToDataManager& message,
     const typename GetResponseFromPmidNodeToDataManager::Sender& sender,
     const typename GetResponseFromPmidNodeToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage GetResponseFromPmidNodeToDataManager";
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetResponseFromPmidNodeToDataManager"
+                << " from " << HexSubstr(sender.data.string())
+                << " for chunk " << HexSubstr(message.contents->name.raw_name.string());
   typedef GetResponseFromPmidNodeToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -185,6 +193,9 @@ void DataManagerService::HandleMessage(
 
 void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
                                            const GetResponseContents& contents) {
+  LOG(kVerbose) << "Get content for " << HexSubstr(contents.name.raw_name)
+                << " from pmid_name " << HexSubstr(pmid_name.value)
+                << " with message_id " << message_id.data;
   get_timer_.AddResponse(message_id.data, std::make_pair(pmid_name, contents));
 }
 
@@ -337,8 +348,14 @@ void DataManagerService::DoSync() {
 }
 
 void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
+//   LOG(kVerbose) << "HandleChurnEvent matrix_change_ containing following info before : ";
+//   matrix_change_.Print();
   std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+  LOG(kVerbose) << "HandleChurnEvent matrix_change containing following info : ";
+//   matrix_change->Print();
   matrix_change_ = *matrix_change;
+  LOG(kVerbose) << "HandleChurnEvent matrix_change_ containing following info after : ";
+//   matrix_change_.Print();
 }
 
 // ==================== General implementation =====================================================
