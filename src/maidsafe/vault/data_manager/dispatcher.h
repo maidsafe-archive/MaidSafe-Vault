@@ -252,6 +252,9 @@ void DataManagerDispatcher::SendGetResponseSuccess(const RequestorIdType& reques
                          routing::GroupSource(routing::GroupId(NodeId(data.name().value.string())),
                                               routing::SingleId(routing_.kNodeId())),
                          typename NfsMessage::Receiver(requestor_id.node_id), kCacheable);
+  LOG(kVerbose) << "DataManagerDispatcher::SendGetResponseSuccess routing send msg to "
+                << HexSubstr(requestor_id.node_id.string()) << " regarding chunk of "
+                << HexSubstr(data.name().value.string());
   routing_.Send(message);
 }
 
@@ -274,6 +277,9 @@ void DataManagerDispatcher::SendGetResponseFailure(const RequestorIdType& reques
                          routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
                          typename NfsMessage::Receiver(requestor_id.node_id));
+  LOG(kVerbose) << "DataManagerDispatcher::SendGetResponseFailure routing send msg to "
+                << HexSubstr(requestor_id.node_id.string()) << " regarding chunk of "
+                << HexSubstr(data_name.value.string());
   routing_.Send(message);
 }
 

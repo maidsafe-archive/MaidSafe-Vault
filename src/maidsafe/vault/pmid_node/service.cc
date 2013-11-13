@@ -84,6 +84,9 @@ void PmidNodeService::HandleMessage(
     const GetRequestFromDataManagerToPmidNode& message,
     const typename GetRequestFromDataManagerToPmidNode::Sender& sender,
     const typename GetRequestFromDataManagerToPmidNode::Receiver& receiver) {
+  LOG(kVerbose) << "PmidNodeService::HandleMessage GetRequestFromDataManagerToPmidNode "
+                << " from " << HexSubstr(sender.sender_id.data.string())
+                << " for chunk " << HexSubstr(message.contents->raw_name.string());
   typedef GetRequestFromDataManagerToPmidNode MessageType;
   OperationHandlerWrapper<PmidNodeService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {

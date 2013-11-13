@@ -302,7 +302,9 @@ void DoOperation(PmidNodeService* service,
                  const GetRequestFromDataManagerToPmidNode& message,
                  const GetRequestFromDataManagerToPmidNode::Sender& sender,
                  const GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation GetRequestFromDataManagerToPmidNode";
+  LOG(kVerbose) << "DoOperation GetRequestFromDataManagerToPmidNode"
+                << " from " << HexSubstr(sender.sender_id.data.string())
+                << " for chunk " << HexSubstr(message.contents->raw_name.string());
   auto data_name(GetNameVariant(*message.contents));
   PmidNodeGetVisitor<PmidNodeService> get_visitor(service, sender.sender_id, message.id);
   boost::apply_visitor(get_visitor, data_name);
