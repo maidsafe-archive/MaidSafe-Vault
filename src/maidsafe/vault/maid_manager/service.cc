@@ -191,8 +191,10 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& pub
   pending_account_map_.insert(std::make_pair(message_id,
                                              MaidAccountCreationStatus(public_maid.name(),
                                              public_anmaid.name())));
-  dispatcher_.SendPutRequest(account_name, public_maid, PmidName(Identity(NodeId().string())), message_id);
-  dispatcher_.SendPutRequest(account_name, public_anmaid, PmidName(Identity(NodeId().string())), message_id);
+  dispatcher_.SendPutRequest(account_name, public_maid, PmidName(Identity(NodeId().string())),
+                             message_id);
+  dispatcher_.SendPutRequest(account_name, public_anmaid, PmidName(Identity(NodeId().string())),
+                             message_id);
 }
 
 
@@ -288,6 +290,15 @@ void MaidManagerService::HandleSyncedCreateMaidAccount(
                                         synced_action->action.kMessageId);
 }
 
+void MaidManagerService::HandleSyncedRemoveMaidAccount(
+    std::unique_ptr<MaidManager::UnresolvedRemoveAccount>&& synced_action) {
+  group_db_.DeleteGroup(synced_action->key.group_name());
+  dispatcher_.SendRemoveAccountResponse(synced_action->key.group_name(),
+                                        maidsafe_error(CommonErrors::success),
+                                        synced_action->action.kMessageId);
+}
+
+
 // =============== Pmid registration ===============================================================
 
 void MaidManagerService::HandlePmidRegistration(
@@ -297,7 +308,7 @@ void MaidManagerService::HandlePmidRegistration(
 //    return;
   sync_register_pmids_.AddLocalAction(
       MaidManager::UnresolvedRegisterPmid(pmid_registration.maid_name(),
-          ActionRegisterUnregisterPmid<false>(pmid_registration), routing_.kNodeId()));
+          ActionMaidManagerRegisterUnregisterPmid<false>(pmid_registration), routing_.kNodeId()));
   DoSync();
 }
 
@@ -357,8 +368,7 @@ void MaidManagerService::HandleSyncedPmidRegistration(
   }
 }
 
-
- void MaidManagerService::FinalisePmidRegistration(
+void MaidManagerService::FinalisePmidRegistration(
     std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
   assert(pmid_registration_op->count == 2);
 
@@ -707,7 +717,18 @@ void MaidManagerService::HandleMessage(
       }
       break;
     }
-    case ActionRegisterPmid::kActionId: {
+    case ActionRemoveAccount::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionRemoveAccount";
+      MaidManager::UnresolvedRemoveAccount unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_remove_accounts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedRemoveMaidAccount";
+        HandleSyncedRemoveMaidAccount(std::move(resolved_action));
+      }
+      break;
+    }
+    case ActionMaidManagerRegisterPmid::kActionId: {
       LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionRegisterPmid";
       MaidManager::UnresolvedRegisterPmid unresolved_action(
         proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
@@ -716,8 +737,19 @@ void MaidManagerService::HandleMessage(
         LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedPmidRegistration";
         HandleSyncedPmidRegistration(std::move(resolved_action));
       }
-    break;
-  }
+      break;
+    }
+    case ActionMaidManagerUpdatePmidHealth::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionUpdatePmidHealth";
+      MaidManager::UnresolvedUpdatePmidHealth unresolved_action(
+        proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_update_pmid_healths_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedUpdatePmidHealth";
+//        HandleSyncedUpdatePmidHealth(std::move(resolved_action));
+      }
+      break;
+    }
     default: {
       LOG(kError) << "Unhandled action type " << proto_sync.action_type();
       assert(false);

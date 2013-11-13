@@ -45,8 +45,8 @@ struct ActionMaidManagerPut;
 struct ActionMaidManagerDelete;
 template <bool Unregister>
 struct ActionRegisterUnregisterPmid;
-typedef ActionRegisterUnregisterPmid<false> ActionRegisterPmid;
-typedef ActionRegisterUnregisterPmid<true> ActionUnregisterPmid;
+typedef ActionMaidManagerRegisterUnregisterPmid<false> ActionMaidManagerRegisterPmid;
+typedef ActionMaidManagerRegisterUnregisterPmid<true> ActionMaidManagerUnregisterPmid;
 struct ActionMaidManagerUpdatePmidHealth;
 
 }  // namespace vault
@@ -62,13 +62,14 @@ struct PersonaTypes<Persona::kMaidManager> {
   typedef vault::MaidManagerMetadata Metadata;
   typedef vault::MetadataKey<GroupName> MetadataKey;
   typedef vault::UnresolvedAction<MetadataKey, vault::ActionCreateAccount> UnresolvedCreateAccount;
+  typedef vault::UnresolvedAction<MetadataKey, vault::ActionRemoveAccount> UnresolvedRemoveAccount;
   typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerUpdatePmidHealth>
               UnresolvedUpdatePmidHealth;
-  typedef vault::UnresolvedAction<Key, vault::ActionRemoveAccount> UnresolvedRemoveAccount;
   typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerDelete> UnresolvedDelete;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionRegisterPmid> UnresolvedRegisterPmid;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionUnregisterPmid>
+  typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerRegisterPmid>
+              UnresolvedRegisterPmid;
+  typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerUnregisterPmid>
               UnresolvedUnregisterPmid;
 };
 

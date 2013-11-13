@@ -50,9 +50,33 @@ class MaidManagerServiceTest {
     return NodeId(maid_.name()->string());
   }
 
+  MaidManager::Metadata GetMetadata(const MaidManager::GroupName& group_name) {
+    return maid_manager_service_.group_db_.GetMetadata(group_name);
+  }
+
+  void AddMetadata(const MaidManager::GroupName& group_name,
+                   const MaidManager::Metadata& metadata) {
+    maid_manager_service_.group_db_.AddGroup(group_name, metadata);
+  }
+
+  void CreateAccount() {
+    MaidManager::MetadataKey metadata_key(public_maid_.name());
+    MaidManager::Metadata metadata(100, std::vector<PmidTotals>());
+    AddMetadata(public_maid_.name(), metadata);
+  }
+
+  template <typename ActionType>
+  void Commit(const MaidManager::Key& key, const ActionType& action) {
+    maid_manager_service_.group_db_.Commit(key, action);
+  }
+
+  MaidManager::Value Get(const MaidManager::Key& key) {
+    return maid_manager_service_.group_db_.GetValue(key);
+  }
+
   template <typename UnresilvedActionType>
-  void Sync(const std::vector<UnresilvedActionType>& unresolved_actions,
-            const std::vector<routing::GroupSource>& group_source);
+  void SendSync(const std::vector<UnresilvedActionType>& unresolved_actions,
+                const std::vector<routing::GroupSource>& group_source);
 
  protected:
   passport::Anmaid anmaid_;
@@ -66,13 +90,13 @@ class MaidManagerServiceTest {
 };
 
 template <typename UnresilvedActionType>
-void Sync(const std::vector<UnresilvedActionType>& /*unresolved_actions*/,
-          const std::vector<routing::GroupSource>& /*group_source*/) {
+void  SendSync(const std::vector<UnresilvedActionType>& /*unresolved_actions*/,
+               const std::vector<routing::GroupSource>& /*group_source*/) {
   UnresilvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
 }
 
 template <>
-void MaidManagerServiceTest::Sync<MaidManager::UnresolvedCreateAccount>(
+void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedCreateAccount>(
          const std::vector<MaidManager::UnresolvedCreateAccount>& unresolved_actions,
          const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedCreateAccount,
@@ -81,7 +105,68 @@ void MaidManagerServiceTest::Sync<MaidManager::UnresolvedCreateAccount>(
       group_source);
 }
 
+template <>
+void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedRemoveAccount>(
+         const std::vector<MaidManager::UnresolvedRemoveAccount>& unresolved_actions,
+         const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedRemoveAccount,
+                                    SynchroniseFromMaidManagerToMaidManager>(
+      &maid_manager_service_, maid_manager_service_.sync_remove_accounts_, unresolved_actions,
+      group_source);
+}
+
+template <>
+void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedPut>(
+         const std::vector<MaidManager::UnresolvedPut>& unresolved_actions,
+         const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedPut,
+                                    SynchroniseFromMaidManagerToMaidManager>(
+      &maid_manager_service_, maid_manager_service_.sync_puts_, unresolved_actions,
+      group_source);
+}
+
+template <>
+void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedDelete>(
+         const std::vector<MaidManager::UnresolvedDelete>& unresolved_actions,
+         const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedDelete,
+                                    SynchroniseFromMaidManagerToMaidManager>(
+      &maid_manager_service_, maid_manager_service_.sync_deletes_, unresolved_actions,
+      group_source);
+}
+
+template <>
+void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedRegisterPmid>(
+         const std::vector<MaidManager::UnresolvedRegisterPmid>& unresolved_actions,
+         const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedRegisterPmid,
+                                    SynchroniseFromMaidManagerToMaidManager>(
+      &maid_manager_service_, maid_manager_service_.sync_register_pmids_, unresolved_actions,
+      group_source);
+}
+
+template <>
+void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedUnregisterPmid>(
+         const std::vector<MaidManager::UnresolvedUnregisterPmid>& unresolved_actions,
+         const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedUnregisterPmid,
+                                    SynchroniseFromMaidManagerToMaidManager>(
+      &maid_manager_service_, maid_manager_service_.sync_unregister_pmids_, unresolved_actions,
+      group_source);
+}
+
+template <>
+void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedUpdatePmidHealth>(
+         const std::vector<MaidManager::UnresolvedUpdatePmidHealth>& unresolved_actions,
+         const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedUpdatePmidHealth,
+                                    SynchroniseFromMaidManagerToMaidManager>(
+      &maid_manager_service_, maid_manager_service_.sync_update_pmid_healths_, unresolved_actions,
+      group_source);
+}
+
 TEST_CASE_METHOD(MaidManagerServiceTest, "put request from maid node", "[PutRequestFromMaidNode]") {
+  CreateAccount();
   auto content(CreateContent<nfs::PutRequestFromMaidNodeToMaidManager::Contents>());
   auto put_request(CreateMessage<nfs::PutRequestFromMaidNodeToMaidManager>(content));
   SingleSendsToGroup(&maid_manager_service_, put_request, routing::SingleSource(MaidNodeId()),
@@ -192,30 +277,104 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "creat account request sync from maid m
   auto group_unresolved_action(
            CreateGroupUnresolvedAction<MaidManager::UnresolvedCreateAccount>(
                metadata_key, action_create_account, group_source));
-  Sync<MaidManager::UnresolvedCreateAccount>(group_unresolved_action, group_source);
+  SendSync<MaidManager::UnresolvedCreateAccount>(group_unresolved_action, group_source);
+  REQUIRE_NOTHROW(GetMetadata(public_maid_.name()));
 }
 
-
 TEST_CASE_METHOD(MaidManagerServiceTest, "remove account sync from maid manager"
-                 "[RemoveAccountSynchroniseFromMaidManager]") {}
+                 "[RemoveAccountSynchroniseFromMaidManager]") {
+  CreateAccount();
+  ActionRemoveAccount action_remove_account((nfs::MessageId(RandomUint32())));
+  MaidManager::MetadataKey metadata_key(public_maid_.name());
+  auto group_source(CreateGroupSource(MaidNodeId()));
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<MaidManager::UnresolvedRemoveAccount>(
+               metadata_key, action_remove_account, group_source));
+  SendSync<MaidManager::UnresolvedRemoveAccount>(group_unresolved_action, group_source);
+  REQUIRE_THROWS(GetMetadata(public_maid_.name()));
+}
 
 TEST_CASE_METHOD(MaidManagerServiceTest, "put sync from maid manager",
-                 "[PutSynchroniseFromMaidManager]") {}
+                 "[PutSynchroniseFromMaidManager]") {
+  CreateAccount();
+  ActionMaidManagerPut action_put(kTestChunkSize);
+  MaidManager::Key key(public_maid_.name(), Identity(RandomString(64)), ImmutableData::Tag::kValue);
+  auto group_source(CreateGroupSource(MaidNodeId()));
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<MaidManager::UnresolvedPut>(key, action_put, group_source));
+  SendSync<MaidManager::UnresolvedPut>(group_unresolved_action, group_source);
+}
 
 TEST_CASE_METHOD(MaidManagerServiceTest, "delete sync from maid manager",
-                 "[DeleteSynchroniseFromMaidManager]") {}
+                 "[DeleteSynchroniseFromMaidManager]") {
+  CreateAccount();
+  ActionMaidManagerDelete action_delete((nfs::MessageId(RandomInt32())));
+  Identity data_name_id(RandomString(64));
+  MaidManager::Key key(public_maid_.name(), data_name_id, ImmutableData::Tag::kValue);
+  Commit(key, ActionMaidManagerPut(kTestChunkSize));
+  REQUIRE_NOTHROW(Get(key));
+  auto group_source(CreateGroupSource(MaidNodeId()));
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<MaidManager::UnresolvedDelete>(key, action_delete,
+                                                                      group_source));
+  SendSync<MaidManager::UnresolvedDelete>(group_unresolved_action, group_source);
+  REQUIRE_THROWS(Get(key));
+}
 
 TEST_CASE_METHOD(MaidManagerServiceTest, "register pmid sync from maid manager",
-                 "[RegistedPmidSynchroniseFromMaidManager]") {}
+                 "[RegistedPmidSynchroniseFromMaidManager]") {
+  nfs_vault::PmidRegistration pmid_registration(maid_, pmid_, false);
+  ActionMaidManagerRegisterPmid action_register_pmid(pmid_registration);
+  MaidManager::MetadataKey metadata_key(public_maid_.name());
+  auto group_source(CreateGroupSource(MaidNodeId()));
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<MaidManager::UnresolvedRegisterPmid>(
+               metadata_key, action_register_pmid, group_source));
+//  SendSync<MaidManager::UnresolvedRegisterPmid>(group_unresolved_action, group_source);
+// Incomplete test internally requires data_getter Get some info from network.
+}
 
 TEST_CASE_METHOD(MaidManagerServiceTest, "unregister pmid sync from maid manager",
-                 "[UnregistedPmidSynchroniseFromMaidManager]") {}
+                 "[UnregistedPmidSynchroniseFromMaidManager]") {
+  // Not implemented yet
+}
 
 TEST_CASE_METHOD(MaidManagerServiceTest, "update pmid sync form maid manager",
-                 "[UpdatePmidSynchroniseFromMaidManager]") {}
+                 "[UpdatePmidSynchroniseFromMaidManager]") {
+  PmidManagerMetadata pmid_manager_metadata(PmidName(Identity(pmid_.name()->string())));
+  pmid_manager_metadata.stored_count = 1;
+  pmid_manager_metadata.stored_total_size = kTestChunkSize;
+  pmid_manager_metadata.lost_count = 2;
+  pmid_manager_metadata.lost_total_size =  2 * kTestChunkSize;
+  pmid_manager_metadata.claimed_available_size = 2 << 20;
+  PmidTotals pmid_totals(std::string(), pmid_manager_metadata);
+  MaidManager::Metadata metadata(100, std::vector<PmidTotals>({ pmid_totals }));
+  AddMetadata(public_maid_.name(), metadata);
+  pmid_manager_metadata.stored_count = 4;
+  pmid_manager_metadata.stored_total_size = kTestChunkSize * 4;
+  pmid_manager_metadata.lost_count = 6;
+  pmid_manager_metadata.lost_total_size =  6 * kTestChunkSize;
+  pmid_manager_metadata.claimed_available_size = 2 << 10;
+  ActionMaidManagerUpdatePmidHealth action_update_pmid_health(pmid_manager_metadata);
+  MaidManager::MetadataKey metadata_key(public_maid_.name());
+  auto group_source(CreateGroupSource(MaidNodeId()));
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<MaidManager::UnresolvedUpdatePmidHealth>(
+               metadata_key, action_update_pmid_health, group_source));
+  SendSync<MaidManager::UnresolvedUpdatePmidHealth>(group_unresolved_action, group_source);
+  try {
+    MaidManager::Metadata stored_metadata(GetMetadata(public_maid_.name()));
+    CHECK(stored_metadata == metadata);
+  }
+  catch (...) {
+    CHECK_FALSE(true);
+  }
+}
 
 TEST_CASE_METHOD(MaidManagerServiceTest, "account transfer from maid manager",
-                 "[AccountTransferFromMaidManager]") {}
+                 "[AccountTransferFromMaidManager]") {
+  // Not implemented yet
+}
 
 }  //  namespace test
 

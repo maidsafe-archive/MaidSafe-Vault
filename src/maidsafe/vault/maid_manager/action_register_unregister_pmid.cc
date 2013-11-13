@@ -28,12 +28,14 @@ namespace maidsafe {
 namespace vault {
 
 template <>
-void ActionRegisterUnregisterPmid<false>::operator()(MaidManagerMetadata& metadata) const {
+void ActionMaidManagerRegisterUnregisterPmid<false>::operator()(
+    MaidManagerMetadata& metadata) const {
   metadata.RegisterPmid(kPmidRegistration);
 }
 
 template <>
-void ActionRegisterUnregisterPmid<true>::operator()(MaidManagerMetadata& metadata) const {
+void ActionMaidManagerRegisterUnregisterPmid<true>::operator()(
+    MaidManagerMetadata& metadata) const {
   metadata.UnregisterPmid(kPmidRegistration);
 }
 

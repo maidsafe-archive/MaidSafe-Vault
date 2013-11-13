@@ -105,11 +105,11 @@ MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(const passport::Public
     pmid_totals_.erase(itr);
 }
 
-void MaidManagerMetadata::UpdatePmidTotals(const PmidManagerMetadata& /*pmid_metadata*/) {
-//  auto itr(Find(pmid_metadata.pmid_name));
-//  if (itr == std::end(pmid_totals_))
-//    ThrowError(CommonErrors::no_such_element);
-//  (*itr).pmid_metadata = pmid_metadata;
+void MaidManagerMetadata::UpdatePmidTotals(const PmidManagerMetadata& pmid_metadata) {
+  auto itr(Find(pmid_metadata.pmid_name));
+  if (itr == std::end(pmid_totals_))
+    ThrowError(CommonErrors::no_such_element);
+  (*itr).pmid_metadata = pmid_metadata;
 }
 
  std::string MaidManagerMetadata::Serialise() const {

@@ -122,10 +122,14 @@ class MaidManagerService {
   void HandleSyncedCreateMaidAccount(
       std::unique_ptr<MaidManager::UnresolvedCreateAccount>&& synced_action);
 
+  void HandleSyncedRemoveMaidAccount(
+      std::unique_ptr<MaidManager::UnresolvedRemoveAccount>&& synced_action);
+
   void HandlePmidRegistration(const nfs_vault::PmidRegistration& pmid_registration);
 
   void HandleSyncedPmidRegistration(
       std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action);
+
   template<typename PublicFobType>
   void ValidatePmidRegistration(PublicFobType public_fob,
                                 std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
