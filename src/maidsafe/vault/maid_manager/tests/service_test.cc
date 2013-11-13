@@ -198,6 +198,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "put failure from data manager",
 
 TEST_CASE_METHOD(MaidManagerServiceTest, "delete request from maid node",
                  "[DeleteRequestFromMaidNode]") {
+  CreateAccount();
   auto content(CreateContent<nfs::DeleteRequestFromMaidNodeToMaidManager::Contents>());
   auto delete_request(CreateMessage<nfs::DeleteRequestFromMaidNodeToMaidManager>(content));
   SingleSendsToGroup(&maid_manager_service_, delete_request, routing::SingleSource(MaidNodeId()),
