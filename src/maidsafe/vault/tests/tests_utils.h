@@ -35,7 +35,8 @@ namespace vault {
 
 namespace test {
 
-static const int TEST_CHUNK_SIZE = 2^10;
+static const size_t kTestChunkSize = 2U << 10;
+static const size_t kAverageChunksStored = 1000;
 
 passport::Maid MakeMaid();
 passport::Pmid MakePmid();
@@ -80,6 +81,12 @@ template <>
 nfs_client::DataNameAndContentOrReturnCode
 CreateContent<nfs_client::DataNameAndContentOrReturnCode>();
 
+template <>
+nfs_vault::DataNameAndCost CreateContent<nfs_vault::DataNameAndCost>();
+
+template <>
+nfs_vault::DataNameAndVersion CreateContent<nfs_vault::DataNameAndVersion>();
+
 template <typename MessageType>
 MessageType CreateMessage(const typename MessageType::Contents& contents) {
   nfs::MessageId message_id(RandomUint32());
@@ -90,8 +97,30 @@ template <typename ServiceType, typename MessageType>
 void GroupSendToGroup(ServiceType* service, const MessageType& message,
                       const std::vector<routing::GroupSource>& group_sources,
                       const routing::GroupId& group_id) {
-  for (u_int32_t index(0); index < group_sources.size(); ++index)
-    service->HandleMessage(message, group_sources[index], group_id);
+  for (const auto& group_source : group_sources)
+    service->HandleMessage(message, group_source, group_id);
+}
+
+template <typename ServiceType, typename MessageType>
+void GroupSendToSingle(ServiceType* service, const MessageType& message,
+                       const std::vector<routing::GroupSource>& group_sources,
+                       const routing::SingleId& single_id) {
+  for (const auto& group_source : group_sources)
+    service->HandleMessage(message, group_source, single_id);
+}
+
+template <typename ServiceType, typename MessageType>
+void SingleSendsToSingle(ServiceType* service, const MessageType& message,
+                         const routing::SingleSource& single_source,
+                         const routing::SingleId& single_id) {
+  service->HandleMessage(message, single_source, single_id);
+}
+
+template <typename ServiceType, typename MessageType>
+void SingleSendsToGroup(ServiceType* service, const MessageType& message,
+                        const routing::SingleSource& single_source,
+                        const routing::GroupId& group_id) {
+  service->HandleMessage(message, single_source, group_id);
 }
 
 template <typename DataNameType>
@@ -112,9 +141,8 @@ std::vector<UnresolvedActionType> CreateGroupUnresolvedAction(
     const typename UnresolvedActionType::ActionType& action,
     const std::vector<routing::GroupSource>& group_sources) {
   std::vector<UnresolvedActionType> unresolved_actions;
-  for (uint32_t index(0); index < group_sources.size(); ++index)
-    unresolved_actions.push_back(UnresolvedActionType(key, action,
-                                                      group_sources.at(index).sender_id.data));
+  for (const auto& group_source : group_sources)
+    unresolved_actions.push_back(UnresolvedActionType(key, action, group_source.sender_id.data));
   return unresolved_actions;
 }
 

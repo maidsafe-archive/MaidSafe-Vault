@@ -65,7 +65,8 @@ detail::DbAction ActionDataManagerAddPmid::operator()(std::unique_ptr<DataManage
   else
     value->AddPmid(kPmidName);
 
-  value->IncrementSubscribers();
+  if (value->Subscribers() == 0)
+    value->IncrementSubscribers();
   return detail::DbAction::kPut;
 }
 

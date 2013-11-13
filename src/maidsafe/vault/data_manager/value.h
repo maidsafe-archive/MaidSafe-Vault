@@ -40,6 +40,8 @@ class DataManagerValue {
   DataManagerValue(const PmidName& pmid_name, int32_t size);
   std::string Serialise() const;
 
+  DataManagerValue& operator=(const DataManagerValue& other);
+
   void AddPmid(const PmidName& pmid_name);
   void RemovePmid(const PmidName& pmid_name);
   void IncrementSubscribers() { ++subscribers_; }

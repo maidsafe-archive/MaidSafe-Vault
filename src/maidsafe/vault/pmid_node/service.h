@@ -40,6 +40,7 @@
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/integrity_check_data.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 #include "maidsafe/vault/pmid_node/handler.h"
 #include "maidsafe/vault/pmid_node/dispatcher.h"
@@ -167,6 +168,7 @@ class PmidNodeService {
   friend class detail::PmidNodeDeleteVisitor<PmidNodeService>;
   friend class detail::PmidNodePutVisitor<PmidNodeService>;
   friend class detail::PmidNodeGetVisitor<PmidNodeService>;
+  friend class detail::PmidNodeIntegrityCheckVisitor<PmidNodeService>;
 
   // ================================ Pmid Account ===============================================
 
@@ -183,12 +185,10 @@ class PmidNodeService {
   template <typename Data>
   void HandlePut(const Data& data, nfs::MessageId message_id);
   template <typename Data>
-  void HandleDelete(const typename Data::Name& name, nfs::MessageId message_id);
-  template <typename Data>
   void HandleGet(const typename Data::Name& data_name, const NodeId& data_manager_node_id,
                  nfs::MessageId message_id);
   template <typename Data>
-  void HandleIntegrityChech(const typename Data::Name& data_name,
+  void HandleIntegrityCheck(const typename Data::Name& data_name,
                             const NonEmptyString& random_string, const NodeId& sender,
                             nfs::MessageId message_id);
 
@@ -262,7 +262,11 @@ void PmidNodeService::HandleGet(const typename Data::Name& data_name,
                                 nfs::MessageId message_id) {
   try {
     auto data(handler_.Get<Data>(data_name));
-    dispatcher_.SendGetResponse(data, data_manager_node_id, message_id);
+    nfs_vault::DataNameAndContentOrCheckResult
+        data_or_check_result(Data::Name::data_type::Tag::kValue,
+                             data.name().value, data.Serialise());
+    dispatcher_.SendGetOrIntegrityCheckResponse(data_or_check_result, data_manager_node_id,
+                                                message_id);
   } catch (const maidsafe_error& error) {
     // Not sending error here as timeout will happen anyway at Datamanager.
     // This case should be least frequent.
@@ -291,8 +295,29 @@ void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
   }
 }
 
+template <typename Data>
+void PmidNodeService::HandleIntegrityCheck(const typename Data::Name& data_name,
+                                           const NonEmptyString& random_string,
+                                           const NodeId& data_manager_node_id,
+                                           nfs::MessageId message_id) {
+  try {
+    auto data(handler_.Get<Data>(data_name));
+    IntegrityCheckData integrity_check_data(random_string.string(), data.Serialise());
+    nfs_vault::DataNameAndContentOrCheckResult
+        data_or_check_result(Data::Name::data_type::Tag::kValue, data.name().value,
+                                 integrity_check_data.result());
+    dispatcher_.SendGetOrIntegrityCheckResponse(data_or_check_result, data_manager_node_id,
+                                                message_id);
+  } catch (const maidsafe_error& error) {
+    // Not sending error here as timeout will happen anyway at Datamanager.
+    // This case should be least frequent.
+    LOG(kError) << "Failed to do integrity check for data : " << DebugId(data_name.value) << " , "
+                << error.what();
+  }
+}
+
 //template <typename Data>
-//void PmidNodeService::HandleIntegrityChech(const typename Data::Name& data_name,
+//void PmidNodeService::HandleIntegrityCheck(const typename Data::Name& data_name,
 //                                           const NonEmptyString& random_string,
 //                                           const NodeId& sender,
 //                                           nfs::MessageId message_id) {
@@ -307,50 +332,6 @@ void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
 //    dispatcher_.SendIntegrityCheckResponse(data_name, std::string(), sender, error, message_id);
 //  }
 //}
-
-// template<>
-// void PmidNodeService::HandleMessage<nfs::GetRequestFromDataManagerToPmidNode>(
-//    const nfs::GetRequestFromDataManagerToPmidNode& message,
-//    const typename nfs::GetRequestFromDataManagerToPmidNode::Sender& sender,
-//    const typename nfs::GetRequestFromDataManagerToPmidNode::Receiver& receiver) {
-//  typedef nfs::GetRequestFromDataManagerToPmidNode MessageType;
-//  OperationHandlerWrapper<PmidNodeService, MessageType>(
-//      accumulator_,
-//      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-//        return this->ValidateSender(message, sender);
-//      },
-//      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-//      this,
-//      accumulator_mutex_)(message, sender, receiver);
-//}
-
-// template<>
-// void PmidNodeService::HandleMessage<DeleteRequestFromPmidManagerToPmidNode>(
-//    const DeleteRequestFromPmidManagerToPmidNode& message,
-//    const typename DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
-//    const typename DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver) {
-//  typedef DeleteRequestFromPmidManagerToPmidNode MessageType;
-//  OperationHandlerWrapper<PmidNodeService, MessageType>(
-//      accumulator_,
-//      [this](const MessageType& message, const typename MessageType::Sender& sender) {
-//        return this->ValidateSender(message, sender);
-//      },
-//      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-//      this,
-//      accumulator_mutex_)(message, sender, receiver);
-//}
-
-template <typename Data>
-void PmidNodeService::HandleDelete(const typename Data::Name& name,
-                                   nfs::MessageId /*message_id*/) {
-  try {
-    {
-      handler_.Delete<Data>(nfs_vault::DataName(name.type, name.raw_name));
-    }
-  }
-  catch (const std::exception& /*ex*/) {
-  }
-}
 
 // template<>
 // bool PmidNodeService::GetFromCache<nfs::GetRequestFromMaidNodeToDataManager>(

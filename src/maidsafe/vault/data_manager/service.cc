@@ -188,7 +188,7 @@ void DataManagerService::HandleMessage(
     const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& /*sender*/,
     const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& /*receiver*/) {
   LOG(kVerbose) << "DataManagerService::HandleMessage GetCachedResponseFromCacheHandlerToDataManager";
-  assert(0);
+//  assert(0);
 }
 
 void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
@@ -265,23 +265,6 @@ void DataManagerService::HandleMessage(
       }
       break;
     }
-
-    //    case ActionDataManagerDelete::kActionId: {
-    //      DataManager::UnresolvedDelete unresolved_action(
-    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-    //      auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
-    //      if (resolved_action)
-    //        db_.Commit(resolved_action->key, resolved_action->action);
-    //      break;
-    //    }
-    //    case ActionDataManagerAddPmid::kActionId: {
-    //      DataManager::UnresolvedAddPmid unresolved_action(
-    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-    //      auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
-    //      if (resolved_action)
-    //        db_.Commit(resolved_action->key, resolved_action->action);
-    //      break;
-    //    }
     case ActionDataManagerAddPmid::kActionId: {
       LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerAddPmid";
       DataManager::UnresolvedAddPmid unresolved_action(
@@ -306,22 +289,26 @@ void DataManagerService::HandleMessage(
       }
       break;
     }
-    //    case ActionDataManagerNodeUp::kActionId: {
-    //      DataManager::UnresolvedNodeUp unresolved_action(
-    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-    //      auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
-    //      if (resolved_action)
-    //        db_.Commit(resolved_action->key, resolved_action->action);
-    //      break;
-    //    }
-    //    case ActionDataManagerNodeDown::kActionId: {
-    //      DataManager::UnresolvedNodeDown unresolved_action(
-    //          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-    //      auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
-    //      if (resolved_action)
-    //        db_.Commit(resolved_action->key, resolved_action->action);
-    //      break;
-    //    }
+    case ActionDataManagerNodeUp::kActionId: {
+      DataManager::UnresolvedNodeUp unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit pmid goes online";
+        db_.Commit(resolved_action->key, resolved_action->action);
+      }
+      break;
+    }
+    case ActionDataManagerNodeDown::kActionId: {
+      DataManager::UnresolvedNodeDown unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit pmid goes offline";
+        db_.Commit(resolved_action->key, resolved_action->action);
+      }
+      break;
+    }
     default: {
       LOG(kError) << "SynchroniseFromDataManagerToDataManager Unhandled action type";
       assert(false);

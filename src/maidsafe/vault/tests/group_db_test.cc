@@ -39,22 +39,13 @@
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/version_handler/key.h"
 #include "maidsafe/vault/version_handler/value.h"
+#include "maidsafe/vault/tests/tests_utils.h"
 
 namespace maidsafe {
 
 namespace vault {
 
 namespace test {
-
-//TODO(Prakash) to be moved to test utility
-passport::Maid MakeMaid() {
-  passport::Anmaid anmaid;
-  return passport::Maid(anmaid);
-}
-
-passport::Pmid MakePmid() {
-  return passport::Pmid(MakeMaid());
-}
 
 PmidManagerMetadata CreatePmidManagerMetadata(const PmidName& pmid_name) {
   PmidManagerMetadata metadata(pmid_name);

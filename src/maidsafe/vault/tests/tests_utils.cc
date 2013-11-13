@@ -30,7 +30,9 @@ passport::Maid MakeMaid() {
   return passport::Maid(anmaid);
 }
 
-passport::Pmid MakePmid() { return passport::Pmid(MakeMaid()); }
+passport::Pmid MakePmid() {
+ return passport::Pmid(MakeMaid());
+}
 
 passport::PublicPmid MakePublicPmid() {
   passport::Pmid pmid(MakePmid());
@@ -70,14 +72,14 @@ nfs_vault::Empty CreateContent<nfs_vault::Empty>() {
 template <>
 nfs_vault::DataAndPmidHint CreateContent<nfs_vault::DataAndPmidHint>() {
   ImmutableData data(NonEmptyString(RandomString(128)));
-  return nfs_vault::DataAndPmidHint(nfs_vault::DataName(ImmutableData::Name(data.name())),
-                                    data.data(), Identity(NodeId(NodeId::kRandomId).string()));
+  return nfs_vault::DataAndPmidHint(nfs_vault::DataName(data.name()), data.data(),
+                                    Identity(RandomString(64)));
 }
 
 template <>
 nfs_vault::DataNameAndSize CreateContent<nfs_vault::DataNameAndSize>() {
   return nfs_vault::DataNameAndSize(DataTagValue::kImmutableDataValue, Identity(RandomString(64)),
-                                    TEST_CHUNK_SIZE);
+                                    kTestChunkSize);
 }
 
 template <>
@@ -95,12 +97,25 @@ CreateContent<nfs_client::DataNameAndContentOrReturnCode>() {
              ImmutableData(NonEmptyString(RandomString(2^10))));
 }
 
-
 template <>
 nfs_vault::DataNameAndContentOrCheckResult
 CreateContent<nfs_vault::DataNameAndContentOrCheckResult>() {
-  ImmutableData data(NonEmptyString(RandomString(2^10)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   return nfs_vault::DataNameAndContentOrCheckResult(data.name(), data.data());
+}
+
+template <>
+nfs_vault::DataNameAndCost CreateContent<nfs_vault::DataNameAndCost>() {
+  return nfs_vault::DataNameAndCost(ImmutableData::Tag::kValue, Identity(RandomString(64)),
+                                    kTestChunkSize);
+}
+
+template <>
+nfs_vault::DataNameAndVersion CreateContent<nfs_vault::DataNameAndVersion>() {
+  return nfs_vault::DataNameAndVersion(
+             nfs_vault::DataName(ImmutableData::Tag::kValue, Identity(RandomString(64))),
+             StructuredDataVersions::VersionName(RandomInt32(),
+                                                 ImmutableData::Name(Identity(RandomString(64)))));
 }
 
 template <>

@@ -57,9 +57,18 @@ class GroupDb {
   typedef std::map<NodeId, std::vector<Contents>> TransferInfo;
 
   struct Contents {
+    Contents() : group_name(), metadata(), kv_pair() {}
+
+    Contents(Contents&& other)
+        : group_name(std::move(other.group_name)),
+          metadata(std::move(other.metadata)),
+          kv_pair(std::move(other.kv_pair))  {}
+
     GroupName group_name;
     Metadata metadata;
     std::vector<KvPair> kv_pair;
+   private:
+    Contents(const Contents& other);
   };
 
   GroupDb();
@@ -112,17 +121,27 @@ GroupDb<Persona>::GroupDb()
       mutex_(),
       leveldb_(InitialiseLevelDb(kDbPath_)),
       group_map_() {
+#if defined(__GNUC__) && !defined(MAIDSAFE_APPLE) && !defined(_MSC_VER)
   // Remove this assert if value needs to be copy constructible.
   // this is just a check to avoid copy constructor unless we require it
   static_assert(!std::is_copy_constructible<typename Persona::Value>::value,
                 "value should not be copy constructible !");
+#endif
+
+#ifndef _MSC_VER
   static_assert(std::is_move_constructible<typename Persona::Value>::value,
                 "value should be move constructible !");
+#endif
 }
 
 template <typename Persona>
 GroupDb<Persona>::~GroupDb() {
-  leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
+  try {
+    leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
+    boost::filesystem::remove_all(kDbPath_);
+  } catch (const std::exception& e) {
+    LOG (kError) << "Failed to remove db : " << e.what();
+  }
 }
 
 template <typename Persona>
@@ -274,7 +293,8 @@ void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
   try {
     it = FindGroup(group_name);
   } catch (const vault_error& error) {
-    LOG(kInfo) << "account doesn't exist for group " << DebugId(group_name);
+    LOG(kInfo) << "account doesn't exist for group "
+               << DebugId(group_name) << ", error : " << error.what();
     return;
   }
   auto group_id = it->second.first;

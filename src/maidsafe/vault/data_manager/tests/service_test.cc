@@ -27,7 +27,6 @@
 #include "maidsafe/vault/data_manager/service.h"
 #include "maidsafe/vault/tests/tests_utils.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -65,10 +64,10 @@ TEST_F(DataManagerServiceTest, BEH_PutRequestFromMaidManager) {
 
 TEST_F(DataManagerServiceTest, BEH_PutResponseFromPmidManager) {
   NodeId data_name_id, pmid_node_id(NodeId::kRandomId);
-  auto content(CreateContent<PutRequestFromMaidManagerToDataManager::Contents>());
-  data_name_id = NodeId(content.data.name.raw_name.string());
+  auto content(CreateContent<PutResponseFromPmidManagerToDataManager::Contents>());
+  data_name_id = NodeId(content.name.raw_name.string());
   auto group_source(CreateGroupSource(pmid_node_id));
-  auto put_response(CreateMessage<PutRequestFromMaidManagerToDataManager>(content));
+  auto put_response(CreateMessage<PutResponseFromPmidManagerToDataManager>(content));
   GroupSendToGroup(&data_manager_service_, put_response, group_source,
                    routing::GroupId(data_name_id));
   EXPECT_EQ(this->data_manager_service_.sync_add_pmids_.GetUnresolvedActions().size(), 1);
@@ -109,8 +108,15 @@ TEST_F(DataManagerServiceTest, BEH_GetResponseFromPmidNode) {
   NodeId pmid_node_id(NodeId::kRandomId);
   auto content(CreateContent<GetResponseFromPmidNodeToDataManager::Contents>());
   auto get_response(CreateMessage<GetResponseFromPmidNodeToDataManager>(content));
+  auto functor([=](const std::pair<PmidName, GetResponseFromPmidNodeToDataManager::Contents>& ) {
+                 LOG(kVerbose) << "functor called";
+               });
+
+  data_manager_service_.get_timer_.AddTask(
+      detail::Parameters::kDefaultTimeout, functor, 1, get_response.id.data);
   this->data_manager_service_.HandleMessage(get_response, routing::SingleSource(pmid_node_id),
                                             routing::SingleId(routing_.kNodeId()));
+  Sleep(std::chrono::seconds(1));
   // TO BE CONTINUED
 }
 
@@ -155,10 +161,10 @@ TEST_F(DataManagerServiceTest, BEH_DeleteRequestFromMaidManager) {
 TEST_F(DataManagerServiceTest, BEH_PutSynchroniseFromDataManager) {
   PmidName pmid_name(Identity(RandomString(64)));
   ActionDataManagerPut action_put;
-  ImmutableData data(NonEmptyString(RandomString(TEST_CHUNK_SIZE)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   auto group_source(CreateGroupSource(data.name()));
-  DataManager::Key key(data.name());
-  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name, TEST_CHUNK_SIZE));
+  DataManager::Key key(data.name(), pmid_name.value);
+  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
   EXPECT_EQ(data_manager_service_.db_.Get(key).Subscribers(), 1);
   auto group_unresolved_action(
            CreateGroupUnresolvedAction<DataManager::UnresolvedPut>(key, action_put, group_source));
@@ -172,9 +178,9 @@ TEST_F(DataManagerServiceTest, BEH_PutSynchroniseFromDataManager) {
 TEST_F(DataManagerServiceTest, BEH_DeleteSynchroniseFromDataManager) {
   // store key value in db
   PmidName pmid_name(Identity(RandomString(64)));
-  ImmutableData data(NonEmptyString(RandomString(TEST_CHUNK_SIZE)));
-  DataManager::Key key(data.name());
-  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name, TEST_CHUNK_SIZE));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name(), Identity(NodeId().string()));
+  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
   EXPECT_EQ(data_manager_service_.db_.Get(key).Subscribers(), 1);
   // key value is in db
   ActionDataManagerDelete action_delete;
@@ -198,8 +204,8 @@ TEST_F(DataManagerServiceTest, BEH_DeleteSynchroniseFromDataManager) {
 TEST_F(DataManagerServiceTest, BEH_AddPmidSynchroniseFromDataManager) {
   // check key value is not in db
   PmidName pmid_name(Identity(RandomString(64)));
-  ImmutableData data(NonEmptyString(RandomString(TEST_CHUNK_SIZE)));
-  DataManager::Key key(data.name());
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name(), pmid_name.value);
   try {
     data_manager_service_.db_.Get(key);
     EXPECT_TRUE(false);
@@ -209,7 +215,7 @@ TEST_F(DataManagerServiceTest, BEH_AddPmidSynchroniseFromDataManager) {
   }
 
   // Sync AddPmid
-  ActionDataManagerAddPmid action_add_pmid(pmid_name, TEST_CHUNK_SIZE);
+  ActionDataManagerAddPmid action_add_pmid(pmid_name, kTestChunkSize);
   auto group_source(CreateGroupSource(data.name()));
   auto group_unresolved_action(
            CreateGroupUnresolvedAction<DataManager::UnresolvedAddPmid>(key, action_add_pmid,
@@ -218,16 +224,17 @@ TEST_F(DataManagerServiceTest, BEH_AddPmidSynchroniseFromDataManager) {
                                     SynchroniseFromDataManagerToDataManager>(
       &data_manager_service_, data_manager_service_.sync_add_pmids_, group_unresolved_action,
       group_source);
+  key.CleanUpOriginator();
   EXPECT_EQ(data_manager_service_.db_.Get(key).Subscribers(), 1);
 }
 
 TEST_F(DataManagerServiceTest, BEH_RemovePmidSynchroniseFromDataManager) {
   // store key value in db
   PmidName pmid_name_one(Identity(RandomString(64))), pmid_name_two(Identity(RandomString(64)));
-  ImmutableData data(NonEmptyString(RandomString(TEST_CHUNK_SIZE)));
-  DataManager::Key key(data.name());
-  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name_one, TEST_CHUNK_SIZE));
-  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name_two, TEST_CHUNK_SIZE));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name(), Identity(NodeId().string()));
+  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name_one, kTestChunkSize));
+  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name_two, kTestChunkSize));
   auto value(data_manager_service_.db_.Get(key));
   EXPECT_EQ(value.Subscribers(), 1);
   EXPECT_EQ(value.AllPmids().size(), 2);
@@ -245,9 +252,67 @@ TEST_F(DataManagerServiceTest, BEH_RemovePmidSynchroniseFromDataManager) {
   EXPECT_EQ(data_manager_service_.db_.Get(key).AllPmids().size(), 1);
 }
 
-TEST_F(DataManagerServiceTest, BEH_NodeDownSynchroniseFromDataManager) {}
+TEST_F(DataManagerServiceTest, BEH_NodeDownSynchroniseFromDataManager) {
+  // store key value in db
+  PmidName pmid_name_one(Identity(RandomString(64))), pmid_name_two(Identity(RandomString(64)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name(), Identity(NodeId().string()));
+  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name_one, kTestChunkSize));
+  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name_two, kTestChunkSize));
+  auto value(data_manager_service_.db_.Get(key));
+  EXPECT_EQ(value.Subscribers(), 1);
+  EXPECT_EQ(value.AllPmids().size(), 2);
 
-TEST_F(DataManagerServiceTest, BEH_NodeUpSynchroniseFromDataManager) {}
+  // Sync node down
+  ActionDataManagerNodeDown action_node_down(pmid_name_two);
+  auto group_source(CreateGroupSource(data.name()));
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<DataManager::UnresolvedNodeDown>(key, action_node_down,
+                                                                        group_source));
+  AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedNodeDown,
+                                    SynchroniseFromDataManagerToDataManager>(
+      &data_manager_service_, data_manager_service_.sync_node_downs_, group_unresolved_action,
+      group_source);
+
+  value = data_manager_service_.db_.Get(key);
+  EXPECT_EQ(value.Subscribers(), 1);
+  EXPECT_EQ(value.AllPmids().size(), 2);
+  EXPECT_EQ(value.online_pmids().size(), 1);
+}
+
+TEST_F(DataManagerServiceTest, BEH_NodeUpSynchroniseFromDataManager) {
+  // store key value in db
+  PmidName pmid_name_one(Identity(RandomString(64))), pmid_name_two(Identity(RandomString(64)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name(), Identity(NodeId().string()));
+  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name_one, kTestChunkSize));
+  data_manager_service_.db_.Commit(key, ActionDataManagerAddPmid(pmid_name_two, kTestChunkSize));
+  auto value(data_manager_service_.db_.Get(key));
+  EXPECT_EQ(value.Subscribers(), 1);
+  EXPECT_EQ(value.AllPmids().size(), 2);
+
+  data_manager_service_.db_.Commit(key, ActionDataManagerNodeDown(pmid_name_two));
+  value = data_manager_service_.db_.Get(key);
+  EXPECT_EQ(value.Subscribers(), 1);
+  EXPECT_EQ(value.AllPmids().size(), 2);
+  EXPECT_EQ(value.online_pmids().size(), 1);
+
+  // Sync node up
+  ActionDataManagerNodeUp action_node_up(pmid_name_two);
+  auto group_source(CreateGroupSource(data.name()));
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<DataManager::UnresolvedNodeUp>(key, action_node_up,
+                                                                      group_source));
+  AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedNodeUp,
+                                    SynchroniseFromDataManagerToDataManager>(
+      &data_manager_service_, data_manager_service_.sync_node_ups_, group_unresolved_action,
+      group_source);
+
+  value = data_manager_service_.db_.Get(key);
+  EXPECT_EQ(value.Subscribers(), 1);
+  EXPECT_EQ(value.AllPmids().size(), 2);
+  EXPECT_EQ(value.online_pmids().size(), 2);
+}
 
 TEST_F(DataManagerServiceTest, BEH_SetPmidOnlineFromPmidManager) {}
 

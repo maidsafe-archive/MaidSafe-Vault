@@ -32,13 +32,6 @@ namespace vault {
 
 namespace test {
 
-typedef PutRequestFromDataManagerToPmidManager PutRequest;
-typedef PutFailureFromPmidNodeToPmidManager PutFailure;
-typedef DeleteRequestFromDataManagerToPmidManager DeleteRequest;
-typedef GetPmidAccountRequestFromPmidNodeToPmidManager GetPmidAccount;
-typedef PmidHealthRequestFromMaidNodeToPmidManager PmidHealthRequest;
-
-
 class PmidManagerServiceTest  : public testing::Test {
  public:
   PmidManagerServiceTest() :
@@ -64,52 +57,67 @@ class PmidManagerServiceTest  : public testing::Test {
   PmidManagerService pmid_manager_service_;
 };
 
-TEST_F(PmidManagerServiceTest, BEH_PutSync) {
-  PmidManager::Key group_key(PmidManager::GroupName(Identity(NodeId(NodeId::kRandomId).string())),
-                       Identity(NodeId(NodeId::kRandomId).string()),
-                       ImmutableData::Tag::kValue);
-  NodeId group_id(NodeId::kRandomId);
-  std::vector<routing::GroupSource> group_sources;
-  group_sources.push_back(routing::GroupSource(routing::GroupId(group_id),
-                                               routing::SingleId(this->routing_.kNodeId())));
-  for (int index = 1; index < routing::Parameters::node_group_size; ++index)
-    group_sources.push_back(routing::GroupSource(routing::GroupId(group_id),
-                                                 routing::SingleId(NodeId(NodeId::kRandomId))));
+TEST_F(PmidManagerServiceTest, BEH_PutSynchroniseFromPmidManager) {
+  PmidName pmid_name(Identity(RandomString(64)));
+  ActionPmidManagerPut action_put(kTestChunkSize, nfs::MessageId(RandomInt32()));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  auto group_source(CreateGroupSource(NodeId(pmid_name.value.string())));
+  PmidManager::Key key(pmid_name, data.name(), ImmutableData::Tag::kValue);
+  pmid_manager_service_.group_db_.AddGroup(pmid_name, PmidManagerMetadata());
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<PmidManager::UnresolvedPut>(key, action_put, group_source));
+  AddLocalActionAndSendGroupActions<PmidManagerService, PmidManager::UnresolvedPut,
+                                    SynchroniseFromPmidManagerToPmidManager>(
+      &pmid_manager_service_, pmid_manager_service_.sync_puts_, group_unresolved_action,
+      group_source);
+  try {
+    auto value(pmid_manager_service_.group_db_.GetValue(key));
+    auto metadata(pmid_manager_service_.group_db_.GetMetadata(pmid_name));
+    EXPECT_EQ(value.size(), kTestChunkSize);
+    EXPECT_EQ(metadata.stored_total_size, kTestChunkSize);
+    EXPECT_EQ(metadata.stored_count, 1);
+  }
+  catch (const maidsafe_error& /*error*/) {
+    EXPECT_TRUE(false);
+  }
+}
 
-  nfs::MessageId message_id(RandomUint32());
-  int32_t size(1024);
-  this->pmid_manager_service_.group_db_.AddGroup(group_key.group_name(), PmidManagerMetadata());
-  for (int index = 0; index < routing::Parameters::node_group_size; ++index) {
-    ActionPmidManagerPut action_put(size, message_id);
-    PmidManager::UnresolvedPut unresolved_action(group_key, action_put,
-                                                 group_sources.at(index).sender_id.data);
-    protobuf::Sync proto_sync;
-    proto_sync.set_action_type(static_cast<int>(ActionPmidManagerPut::kActionId));
-    proto_sync.set_serialised_unresolved_action(unresolved_action.Serialise());
-    SynchroniseFromPmidManagerToPmidManager message(
-        message_id, nfs_vault::Content(proto_sync.SerializeAsString()));
-    if (index == 0) {
-      this->pmid_manager_service_.sync_puts_.AddLocalAction(unresolved_action);
-    } else {
-      this->pmid_manager_service_.HandleMessage(message, group_sources.at(index),
-                                                routing::GroupId(group_id));
-    }
+TEST_F(PmidManagerServiceTest, BEH_DeleteSynchroniseFromPmidManager) {
+  PmidName pmid_name(Identity(RandomString(64)));
+  ActionPmidManagerDelete action_delete;
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  auto group_source(CreateGroupSource(NodeId(pmid_name.value.string())));
+  PmidManager::Key key(pmid_name, data.name(), ImmutableData::Tag::kValue);
+  pmid_manager_service_.group_db_.AddGroup(pmid_name, PmidManagerMetadata());
+  pmid_manager_service_.group_db_.Commit(
+      key, ActionPmidManagerPut(kTestChunkSize, nfs::MessageId(RandomInt32())));
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<PmidManager::UnresolvedDelete>(key, action_delete,
+                                                                      group_source));
+  AddLocalActionAndSendGroupActions<PmidManagerService, PmidManager::UnresolvedDelete,
+                                    SynchroniseFromPmidManagerToPmidManager>(
+      &pmid_manager_service_, pmid_manager_service_.sync_deletes_, group_unresolved_action,
+      group_source);
+  try {
+    pmid_manager_service_.group_db_.GetValue(key);
+    EXPECT_TRUE(false);
+  }
+  catch (const maidsafe_error& /*error*/) {
+    EXPECT_TRUE(true);
+  }
 
-    if (index == routing::Parameters::node_group_size - 1) {
-      EXPECT_EQ(this->pmid_manager_service_.sync_puts_.GetUnresolvedActions().size(), 0);
-      return;
-    }
-
-    EXPECT_EQ(this->pmid_manager_service_.sync_puts_.GetUnresolvedActions().size(), 1);
-    EXPECT_EQ(
-        this->pmid_manager_service_.sync_puts_.GetUnresolvedActions()[0]->peer_and_entry_ids.size(),
-        index);
+  try {
+    pmid_manager_service_.group_db_.GetMetadata(pmid_name);
+    EXPECT_TRUE(false);
+  }
+  catch (const maidsafe_error& /*error*/) {
+    EXPECT_TRUE(true);
   }
 }
 
 TEST_F(PmidManagerServiceTest, BEH_PutRequestFromDataManager) {
-  auto content(CreateContent<PutRequest::Contents>());
-  auto put_request(CreateMessage<PutRequest>(content));
+  auto content(CreateContent<PutRequestFromDataManagerToPmidManager::Contents>());
+  auto put_request(CreateMessage<PutRequestFromDataManagerToPmidManager>(content));
   routing::GroupSource group_source(
       routing::GroupId(NodeId(put_request.contents->name.raw_name.string())),
       routing::SingleId(NodeId(NodeId::kRandomId)));
@@ -119,29 +127,41 @@ TEST_F(PmidManagerServiceTest, BEH_PutRequestFromDataManager) {
 }
 
 TEST_F(PmidManagerServiceTest, BEH_PutFailureFromPmidNode) {
-  auto content(CreateContent<PutFailure::Contents>());
-  auto put_failure(CreateMessage<PutFailure>(content));
-  this->pmid_manager_service_.HandleMessage(put_failure,
-                                            routing::SingleSource(NodeId(NodeId::kRandomId)),
-                                            routing::GroupId(this->routing_.kNodeId()));
-  EXPECT_EQ(this->pmid_manager_service_.sync_deletes_.GetUnresolvedActions().size(), 1);
+  PmidName pmid_name(Identity(RandomString(64)));
+  PmidManagerMetadata metadata(pmid_name);
+  metadata.claimed_available_size = kTestChunkSize * 100;
+  pmid_manager_service_.group_db_.AddGroup(pmid_name, PmidManagerMetadata());
+  auto content(CreateContent<PutFailureFromPmidNodeToPmidManager::Contents>());
+  auto put_failure(CreateMessage<PutFailureFromPmidNodeToPmidManager>(content));
+  SingleSendsToGroup(&pmid_manager_service_, put_failure,
+                     routing::SingleSource(NodeId(NodeId::kRandomId)),
+                     routing::GroupId(NodeId(pmid_name->string())));
+  EXPECT_EQ(pmid_manager_service_.sync_deletes_.GetUnresolvedActions().size(), 1);
+  try {
+    auto metadata(pmid_manager_service_.group_db_.GetMetadata(pmid_name));
+    EXPECT_EQ(metadata.claimed_available_size, 0);
+  }
+  catch (const maidsafe_error& /*error*/) {
+    EXPECT_TRUE(false);
+  }
 }
 
 TEST_F(PmidManagerServiceTest, BEH_DeleterequestFromDataManager) {
-  auto content(CreateContent<DeleteRequest::Contents>());
-  auto delete_request(CreateMessage<DeleteRequest>(content));
-  auto group_source(CreateGroupSource(NodeId(content.raw_name.string())));
+  auto content(CreateContent<DeleteRequestFromDataManagerToPmidManager::Contents>());
+  auto delete_request(CreateMessage<DeleteRequestFromDataManagerToPmidManager>(content));
+  auto group_sources(CreateGroupSource(NodeId(content.raw_name.string())));
   NodeId pmid_node(NodeId::kRandomId);
-  for (u_int32_t index(0); index < group_source.size(); ++index) {
-    this->pmid_manager_service_.HandleMessage(delete_request, group_source[index],
+  for (const auto& group_source : group_sources) {
+    this->pmid_manager_service_.HandleMessage(delete_request, group_source,
                                               routing::GroupId(pmid_node));
   }
   EXPECT_EQ(this->pmid_manager_service_.sync_deletes_.GetUnresolvedActions().size(), 1);
 }
 
 TEST_F(PmidManagerServiceTest, BEH_GetPmidAccountRequestFromPmidNode) {
-  auto content(CreateContent<GetPmidAccount::Contents>());
-  auto get_pmid_account_request(CreateMessage<GetPmidAccount>(content));
+  auto content(CreateContent<GetPmidAccountRequestFromPmidNodeToPmidManager::Contents>());
+  auto get_pmid_account_request(CreateMessage<GetPmidAccountRequestFromPmidNodeToPmidManager>(
+                                    content));
   NodeId pmid_node(NodeId::kRandomId);
   this->pmid_manager_service_.HandleMessage(get_pmid_account_request,
                                             routing::SingleSource(pmid_node),
@@ -149,8 +169,8 @@ TEST_F(PmidManagerServiceTest, BEH_GetPmidAccountRequestFromPmidNode) {
 }
 
 TEST_F(PmidManagerServiceTest, BEH_PmidHealthRequestFromMaidNode) {
-  auto content(CreateContent<PmidHealthRequest::Contents>());
-  auto get_pmid_account_request(CreateMessage<PmidHealthRequest>(content));
+  auto content(CreateContent<PmidHealthRequestFromMaidNodeToPmidManager::Contents>());
+  auto get_pmid_account_request(CreateMessage<PmidHealthRequestFromMaidNodeToPmidManager>(content));
   NodeId pmid_node(NodeId::kRandomId), maid_node(NodeId::kRandomId);
   this->pmid_manager_service_.HandleMessage(get_pmid_account_request,
                                             routing::SingleSource(maid_node),

@@ -34,9 +34,10 @@ namespace vault {
 
 struct DataManagerKey {
   DataManagerKey();
-  template <typename Data>
-  DataManagerKey(const typename Data::Name& name_in, const Identity& originator_in)
-      : name(name_in.data), type(Data::type_enum_value()), originator(originator_in) {}
+  template <typename DataNameType>
+  DataManagerKey(const DataNameType& name_in, const Identity& originator_in)
+      : name(name_in.value), type(DataNameType::data_type::Tag::kValue),
+        originator(originator_in) {}
   DataManagerKey(const Identity& name_in, const DataTagValue type_in,
                  const Identity& originator_in);
   explicit DataManagerKey(const std::string& serialised_key);

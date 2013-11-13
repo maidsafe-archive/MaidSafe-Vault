@@ -24,6 +24,20 @@ namespace vault {
 
 PmidNodeDispatcher::PmidNodeDispatcher(routing::Routing& routing) : routing_(routing) {}
 
+void PmidNodeDispatcher::SendGetOrIntegrityCheckResponse(
+    const nfs_vault::DataNameAndContentOrCheckResult& data_or_check_result,
+    const NodeId& data_manager_node_id,
+    nfs::MessageId message_id) {
+  typedef GetResponseFromPmidNodeToDataManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message(message_id,data_or_check_result);
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(routing::SingleId(data_manager_node_id)));
+  routing_.Send(message);
+}
+
 void PmidNodeDispatcher::SendPmidAccountRequest(const DiskUsage& available_size) {
   typedef GetPmidAccountRequestFromPmidNodeToPmidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();

@@ -79,17 +79,24 @@ Db<Key, Value>::Db()
     ThrowError(CommonErrors::filesystem_io_error);
   leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
   assert(leveldb_);
+#ifndef _MSC_VER
   // Remove this assert if value needs to be copy constructible.
   // this is just a check to avoid copy constructor unless we require it
   static_assert(!std::is_copy_constructible<Value>::value,
                 "value should not be copy constructible !");
   static_assert(std::is_move_constructible<Value>::value,
                 "value should be move constructible !");
+#endif
 }
 
 template <typename Key, typename Value>
 Db<Key, Value>::~Db() {
-  leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
+  try {
+    leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
+    boost::filesystem::remove_all(kDbPath_);
+  } catch (const std::exception& e) {
+    LOG (kError) << "Failed to remove db : " << e.what();
+  }
 }
 
 template <typename Key, typename Value>

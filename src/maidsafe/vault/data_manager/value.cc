@@ -51,6 +51,14 @@ DataManagerValue::DataManagerValue(const std::string &serialised_metadata_value)
   }
 }
 
+DataManagerValue& DataManagerValue::operator=(const DataManagerValue& other) {
+  subscribers_ = other.subscribers_;
+  size_ = other.size_;
+  online_pmids_ = other.online_pmids_;
+  offline_pmids_ = other.offline_pmids_;
+  return *this;
+}
+
 DataManagerValue::DataManagerValue(const PmidName& pmid_name, int32_t size)
     : subscribers_(0), size_(size), online_pmids_(), offline_pmids_() {
   AddPmid(pmid_name);
