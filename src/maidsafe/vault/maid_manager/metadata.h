@@ -30,6 +30,10 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace test {
+class MaidManagerServiceTest;
+}
+
 struct PmidManagerMetadata;
 
 class MaidManagerMetadata {
@@ -57,6 +61,7 @@ class MaidManagerMetadata {
 
   friend void swap(MaidManagerMetadata& lhs, MaidManagerMetadata& rhs);
   friend bool operator==(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs);
+  friend class test::MaidManagerServiceTest;
 
  private:
   std::vector<PmidTotals>::iterator Find(const PmidName& pmid_name);

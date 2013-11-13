@@ -90,7 +90,7 @@ MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(const passport::Public
   return Status::kNoSpace;
 }
 
- void MaidManagerMetadata::RegisterPmid(const nfs_vault::PmidRegistration& pmid_registration) {
+void MaidManagerMetadata::RegisterPmid(const nfs_vault::PmidRegistration& pmid_registration) {
   auto itr(Find(pmid_registration.pmid_name()));
   if (itr == std::end(pmid_totals_)) {
     auto serialised_pmid_registration(pmid_registration.Serialise());
@@ -99,7 +99,7 @@ MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(const passport::Public
   }
 }
 
- void MaidManagerMetadata::UnregisterPmid(const nfs_vault::PmidRegistration& pmid_registration) {
+void MaidManagerMetadata::UnregisterPmid(const nfs_vault::PmidRegistration& pmid_registration) {
   auto itr(Find(pmid_registration.pmid_name()));
   if (itr != std::end(pmid_totals_))
     pmid_totals_.erase(itr);
@@ -112,7 +112,7 @@ void MaidManagerMetadata::UpdatePmidTotals(const PmidManagerMetadata& pmid_metad
   (*itr).pmid_metadata = pmid_metadata;
 }
 
- std::string MaidManagerMetadata::Serialise() const {
+std::string MaidManagerMetadata::Serialise() const {
   protobuf::MaidManagerMetadata maid_manager_metadata_proto;
   maid_manager_metadata_proto.set_total_put_data(total_put_data_);
   for (const auto& pmid_total : pmid_totals_) {

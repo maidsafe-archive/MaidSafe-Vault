@@ -44,7 +44,9 @@ class MaidManagerServiceTest {
       routing_(pmid_),
       data_getter_(asio_service_, routing_, std::vector<passport::PublicPmid>()),
       maid_manager_service_(pmid_, routing_, data_getter_),
-      asio_service_(2) {}
+      asio_service_(2) {
+    asio_service_.Start();
+  }
 
   NodeId MaidNodeId() {
     return NodeId(maid_.name()->string());
@@ -72,6 +74,10 @@ class MaidManagerServiceTest {
 
   MaidManager::Value Get(const MaidManager::Key& key) {
     return maid_manager_service_.group_db_.GetValue(key);
+  }
+
+  std::vector<PmidTotals> MetadataPmidTotals(const MaidManager::Metadata& metadata) {
+    return metadata.pmid_totals_;
   }
 
   template <typename UnresilvedActionType>
@@ -324,6 +330,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "delete sync from maid manager",
 
 TEST_CASE_METHOD(MaidManagerServiceTest, "register pmid sync from maid manager",
                  "[RegistedPmidSynchroniseFromMaidManager]") {
+  CreateAccount();
   nfs_vault::PmidRegistration pmid_registration(maid_, pmid_, false);
   ActionMaidManagerRegisterPmid action_register_pmid(pmid_registration);
   MaidManager::MetadataKey metadata_key(public_maid_.name());
@@ -331,8 +338,9 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "register pmid sync from maid manager",
   auto group_unresolved_action(
            CreateGroupUnresolvedAction<MaidManager::UnresolvedRegisterPmid>(
                metadata_key, action_register_pmid, group_source));
-//  SendSync<MaidManager::UnresolvedRegisterPmid>(group_unresolved_action, group_source);
-// Incomplete test internally requires data_getter Get some info from network.
+  SendSync<MaidManager::UnresolvedRegisterPmid>(group_unresolved_action, group_source);
+  MaidManager::Metadata metadata(GetMetadata(public_maid_.name()));
+  CHECK(MetadataPmidTotals(metadata).size() == 1);
 }
 
 TEST_CASE_METHOD(MaidManagerServiceTest, "unregister pmid sync from maid manager",
