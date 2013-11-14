@@ -27,19 +27,22 @@ namespace vault {
 ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(
     const PmidManagerMetadata& pmid_health_in) : kPmidHealth(pmid_health_in) {}
 
-ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(const std::string& serialised_action)
-    : kPmidHealth([&serialised_action]()->PmidManagerMetadata {
-        protobuf::ActionMaidManagerUpdatePmidHealth action_proto;
-        if (!action_proto.ParseFromString(serialised_action))
-          ThrowError(CommonErrors::parsing_error);
-        return PmidManagerMetadata(action_proto.serialised_pmid_health());
-      }()) {}
+ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(
+    const std::string& serialised_action)
+        : kPmidHealth([&serialised_action]()->PmidManagerMetadata {
+            protobuf::ActionMaidManagerUpdatePmidHealth action_proto;
+            if (!action_proto.ParseFromString(serialised_action))
+              ThrowError(CommonErrors::parsing_error);
+            return PmidManagerMetadata(action_proto.serialised_pmid_health());
+          }()) {}
 
-ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(const ActionMaidManagerUpdatePmidHealth& other)
-    : kPmidHealth(other.kPmidHealth) {}
+ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(
+    const ActionMaidManagerUpdatePmidHealth& other)
+        : kPmidHealth(other.kPmidHealth) {}
 
-ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(ActionMaidManagerUpdatePmidHealth&& other)
-    :kPmidHealth(std::move(other.kPmidHealth)) {}
+ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(
+    ActionMaidManagerUpdatePmidHealth&& other)
+        :kPmidHealth(std::move(other.kPmidHealth)) {}
 
 std::string ActionMaidManagerUpdatePmidHealth::Serialise() const {
   protobuf::ActionMaidManagerUpdatePmidHealth action_proto;
@@ -47,12 +50,8 @@ std::string ActionMaidManagerUpdatePmidHealth::Serialise() const {
   return action_proto.SerializeAsString();
 }
 
-detail::DbAction ActionMaidManagerUpdatePmidHealth::operator()(
-    std::unique_ptr<MaidManagerMetadata>& metadata) {
-  if (metadata)
-    ThrowError(CommonErrors::no_such_element);
-
-  metadata->UpdatePmidTotals(kPmidHealth);
+detail::DbAction ActionMaidManagerUpdatePmidHealth::operator()(MaidManagerMetadata& metadata) {
+  metadata.UpdatePmidTotals(kPmidHealth);
   return detail::DbAction::kPut;
 }
 

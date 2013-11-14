@@ -130,6 +130,9 @@ class MaidManagerService {
   void HandleSyncedPmidRegistration(
       std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action);
 
+  void HandleSyncedPmidUnregistration(
+      std::unique_ptr<MaidManager::UnresolvedUnregisterPmid>&& synced_action);
+
   template<typename PublicFobType>
   void ValidatePmidRegistration(PublicFobType public_fob,
                                 std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
@@ -156,6 +159,9 @@ class MaidManagerService {
   bool DeleteAllowed(const MaidName& account_name, const typename Data::Name& data_name);
 
   void HandleSyncedDelete(std::unique_ptr<MaidManager::UnresolvedDelete>&& synced_action_delete);
+
+  void HandleSyncedUpdatePmidHealth(std::unique_ptr<MaidManager::UnresolvedUpdatePmidHealth>&&
+                                        synced_action_update_pmid_health);
 
   void HandleHealthResponse(const MaidName& maid_node, const PmidName& pmid_node,
                             const std::string &serialised_pmid_health,

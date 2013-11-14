@@ -368,6 +368,13 @@ void MaidManagerService::HandleSyncedPmidRegistration(
   }
 }
 
+void MaidManagerService::HandleSyncedPmidUnregistration(
+    std::unique_ptr<MaidManager::UnresolvedUnregisterPmid>&& synced_action) {
+// BEFORE_RELEASE : This may require more actions to complete (unregister pmidnode from pmidmanager)
+  group_db_.Commit(synced_action->key.group_name(), synced_action->action);
+}
+
+
 void MaidManagerService::FinalisePmidRegistration(
     std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
   assert(pmid_registration_op->count == 2);
@@ -401,12 +408,17 @@ void MaidManagerService::FinalisePmidRegistration(
   LOG(kInfo) << "PmidRegistration Finalised";
 }
 
+void MaidManagerService::HandleSyncedUpdatePmidHealth(
+    std::unique_ptr<MaidManager::UnresolvedUpdatePmidHealth>&& synced_action_update_pmid_health) {
+  group_db_.Commit(synced_action_update_pmid_health->key.group_name(),
+                   synced_action_update_pmid_health->action);
+}
+
 // =============== Put/Delete data =================================================================
 void MaidManagerService::HandleSyncedPutResponse(
     std::unique_ptr<MaidManager::UnresolvedPut>&& synced_action_put) {
   group_db_.Commit(synced_action_put->key, synced_action_put->action);
 }
-
 
 void MaidManagerService::HandleSyncedDelete(
     std::unique_ptr<MaidManager::UnresolvedDelete>&& synced_action_delete) {
@@ -739,6 +751,17 @@ void MaidManagerService::HandleMessage(
       }
       break;
     }
+    case ActionMaidManagerUnregisterPmid::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionUnregisterPmid";
+      MaidManager::UnresolvedUnregisterPmid unresolved_action(
+        proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_unregister_pmids_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedPmidUnegistration";
+        HandleSyncedPmidUnregistration(std::move(resolved_action));
+      }
+      break;
+    }
     case ActionMaidManagerUpdatePmidHealth::kActionId: {
       LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionUpdatePmidHealth";
       MaidManager::UnresolvedUpdatePmidHealth unresolved_action(
@@ -746,7 +769,7 @@ void MaidManagerService::HandleMessage(
       auto resolved_action(sync_update_pmid_healths_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedUpdatePmidHealth";
-//        HandleSyncedUpdatePmidHealth(std::move(resolved_action));
+        HandleSyncedUpdatePmidHealth(std::move(resolved_action));
       }
       break;
     }
@@ -756,7 +779,6 @@ void MaidManagerService::HandleMessage(
     }
   }
 }
-
 
 template <>
 void MaidManagerService::HandleMessage(

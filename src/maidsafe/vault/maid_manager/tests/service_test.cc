@@ -80,9 +80,33 @@ class MaidManagerServiceTest {
     return metadata.pmid_totals_;
   }
 
+  void RegisterPmid() {
+    nfs_vault::PmidRegistration pmid_registration(maid_, pmid_, false);
+    maid_manager_service_.group_db_.Commit(public_maid_.name(),
+                                           ActionMaidManagerRegisterPmid(pmid_registration));
+  }
+
   template <typename UnresilvedActionType>
   void SendSync(const std::vector<UnresilvedActionType>& unresolved_actions,
                 const std::vector<routing::GroupSource>& group_source);
+
+  bool Equal(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs) {
+    if (lhs.total_put_data_ != rhs.total_put_data_)
+      return false;
+
+    if (lhs.pmid_totals_.size() != rhs.pmid_totals_.size())
+      return false;
+
+    for (const auto& pmid_total : lhs.pmid_totals_) {
+      auto found(std::find_if(std::begin(rhs.pmid_totals_), std::end(rhs.pmid_totals_),
+                              [&](const PmidTotals& rhs_pmid_total) {
+                                return pmid_total == rhs_pmid_total;
+                              }));
+       if (found == std::end(rhs.pmid_totals_))
+         return false;
+    }
+    return true;
+  }
 
  protected:
   passport::Anmaid anmaid_;
@@ -340,12 +364,25 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "register pmid sync from maid manager",
                metadata_key, action_register_pmid, group_source));
   SendSync<MaidManager::UnresolvedRegisterPmid>(group_unresolved_action, group_source);
   MaidManager::Metadata metadata(GetMetadata(public_maid_.name()));
-  CHECK(MetadataPmidTotals(metadata).size() == 1);
+  CHECK(MetadataPmidTotals(metadata).size() == 1); // FAILS BECAUSE DATAGETTER GET NEVER SUCCEEDS
 }
 
 TEST_CASE_METHOD(MaidManagerServiceTest, "unregister pmid sync from maid manager",
                  "[UnregistedPmidSynchroniseFromMaidManager]") {
-  // Not implemented yet
+  CreateAccount();
+  RegisterPmid();
+  MaidManager::Metadata metadata(GetMetadata(public_maid_.name()));
+  CHECK(MetadataPmidTotals(metadata).size() == 1);
+  nfs_vault::PmidRegistration pmid_unregistration(maid_, pmid_, true);
+  ActionMaidManagerUnregisterPmid action_unregister_pmid(pmid_unregistration);
+  MaidManager::MetadataKey metadata_key(public_maid_.name());
+  auto group_source(CreateGroupSource(MaidNodeId()));
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<MaidManager::UnresolvedUnregisterPmid>(
+               metadata_key, action_unregister_pmid, group_source));
+  SendSync<MaidManager::UnresolvedUnregisterPmid>(group_unresolved_action, group_source);
+  metadata = GetMetadata(public_maid_.name());
+  CHECK(MetadataPmidTotals(metadata).size() == 0);
 }
 
 TEST_CASE_METHOD(MaidManagerServiceTest, "update pmid sync form maid manager",
@@ -364,6 +401,8 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "update pmid sync form maid manager",
   pmid_manager_metadata.lost_count = 6;
   pmid_manager_metadata.lost_total_size =  6 * kTestChunkSize;
   pmid_manager_metadata.claimed_available_size = 2 << 10;
+  PmidTotals updated_pmid_totals(std::string(), pmid_manager_metadata);
+  MaidManager::Metadata updated_metadata(100, std::vector<PmidTotals>({ updated_pmid_totals }));
   ActionMaidManagerUpdatePmidHealth action_update_pmid_health(pmid_manager_metadata);
   MaidManager::MetadataKey metadata_key(public_maid_.name());
   auto group_source(CreateGroupSource(MaidNodeId()));
@@ -373,7 +412,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "update pmid sync form maid manager",
   SendSync<MaidManager::UnresolvedUpdatePmidHealth>(group_unresolved_action, group_source);
   try {
     MaidManager::Metadata stored_metadata(GetMetadata(public_maid_.name()));
-    CHECK(stored_metadata == metadata);
+    CHECK(Equal(stored_metadata, updated_metadata));
   }
   catch (...) {
     CHECK_FALSE(true);
