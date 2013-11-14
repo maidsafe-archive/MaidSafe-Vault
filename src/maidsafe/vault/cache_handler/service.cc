@@ -53,7 +53,7 @@ CacheHandlerService::HandleMessage(
     const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& receiver) {
   typedef nfs::GetResponseFromDataManagerToMaidNode MessageType;
   return CacheOperationHandlerWrapper<MessageType>(
-             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+             this, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
                     })(message, sender, receiver);
 }
@@ -66,7 +66,7 @@ CacheHandlerService::HandleMessage(
     const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& receiver) {
   typedef nfs::GetCachedResponseFromCacheHandlerToMaidNode MessageType;
   return CacheOperationHandlerWrapper<MessageType>(
-             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+             this, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
                     })(message, sender, receiver);
 }
@@ -79,7 +79,7 @@ CacheHandlerService::HandleMessage(
     const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& receiver) {
   typedef nfs::GetResponseFromDataManagerToDataGetter MessageType;
   return CacheOperationHandlerWrapper<MessageType>(
-             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+             this, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
                     })(message, sender, receiver);
 }
@@ -92,7 +92,7 @@ CacheHandlerService::HandleMessage(
     const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Receiver& receiver) {
   typedef nfs::GetCachedResponseFromCacheHandlerToDataGetter MessageType;
   return CacheOperationHandlerWrapper<MessageType>(
-             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+             this, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
                     })(message, sender, receiver);
 }
@@ -105,7 +105,7 @@ CacheHandlerService::HandleMessage(
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
   typedef nfs::GetRequestFromMaidNodeToDataManager MessageType;
   return CacheOperationHandlerWrapper<MessageType>(
-             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+             this, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
                     })(message, sender, receiver);
 }
@@ -118,7 +118,7 @@ CacheHandlerService::HandleMessage(
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
   typedef nfs::GetRequestFromDataGetterToDataManager MessageType;
   return CacheOperationHandlerWrapper<MessageType>(
-             this, [this](const MessageType & message, const MessageType::Sender & sender) {
+             this, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
                     })(message, sender, receiver);
 }

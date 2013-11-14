@@ -62,7 +62,7 @@ template <typename MessageType>
 bool DoCacheOperation(CacheHandlerService* /*service*/, const MessageType& /*message*/,
                       const typename MessageType::Sender& /*sender*/,
                       const typename MessageType::Receiver& /*receiver*/) {
-  MessageType::Specialisation_Required;
+  MessageType::No_genereic_handler_is_available__Specialisation_is_required;;
   return false;
 }
 
@@ -109,6 +109,25 @@ bool DoCacheOperation(
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
 
 }  // detail
+
+template <typename MessageType>
+struct CacheOperationHandlerWrapper {
+  typedef detail::CacheOperationHandler<typename detail::ValidateSenderType<MessageType>::type>
+              TypedCacheOperationHandler;
+
+  CacheOperationHandlerWrapper(
+      CacheHandlerService* service,
+      typename detail::ValidateSenderType<MessageType>::type validate_sender)
+          : typed_cache_operation_handler(service, validate_sender) {}
+
+  bool operator()(const MessageType& message, const typename MessageType::Sender& sender,
+                  const typename MessageType::Receiver& receiver) {
+    return typed_cache_operation_handler(message, sender, receiver);
+  }
+
+ private:
+  TypedCacheOperationHandler typed_cache_operation_handler;
+};
 
 }  // namespace vault
 

@@ -37,10 +37,17 @@ namespace maidsafe {
 namespace vault {
 
 namespace detail {
-  class PutToCacheVisitor;
 
-  template<typename RequestorType>
-  class GetFromCacheVisitor;
+class PutToCacheVisitor;
+
+template<typename RequestorType>
+class GetFromCacheVisitor;
+
+}
+
+namespace test {
+
+  class CacheHandlerServiceTest;
 }
 
 class CacheHandlerService {
@@ -58,6 +65,7 @@ class CacheHandlerService {
 
   friend class detail::PutToCacheVisitor;
   template<typename RequestorType> friend class detail::GetFromCacheVisitor;
+  friend class test::CacheHandlerServiceTest;
 
  private:
   typedef std::true_type IsLongTermCacheable;
@@ -101,8 +109,9 @@ typename CacheHandlerService::HandleMessageReturnType CacheHandlerService::Handl
 template <typename MessageType>
 bool CacheHandlerService::ValidateSender(const MessageType& /*message*/,
                                          const typename MessageType::Sender& /*sender*/) const {
-//  MessageType::Specialisation_required;
-  return false;
+//  MessageType::No_genereic_handler_is_available__Specialisation_is_required;
+// BEFORE_RELEASE
+  return true;
 }
 
 template <>

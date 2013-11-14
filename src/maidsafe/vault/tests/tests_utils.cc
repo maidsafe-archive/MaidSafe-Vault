@@ -41,7 +41,7 @@ passport::PublicPmid MakePublicPmid() {
 
 template <>
 nfs_vault::DataNameAndContent CreateContent<nfs_vault::DataNameAndContent>() {
-  ImmutableData data(NonEmptyString(RandomString(128)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   return nfs_vault::DataNameAndContent(data);
 }
 

@@ -115,25 +115,6 @@ bool DoCacheOperation(
 
 }  // detail
 
-template <typename MessageType>
-struct CacheOperationHandlerWrapper {
-  typedef detail::CacheOperationHandler<typename detail::ValidateSenderType<MessageType>::type>
-              TypedCacheOperationHandler;
-
-  CacheOperationHandlerWrapper(
-      CacheHandlerService* service,
-      typename detail::ValidateSenderType<MessageType>::type validate_sender)
-          : typed_cache_operation_handler(service, validate_sender) {}
-
-  bool operator()(const MessageType& message, const typename MessageType::Sender& sender,
-                  const typename MessageType::Receiver& receiver) {
-    return typed_cache_operation_handler(message, sender, receiver);
-  }
-
- private:
-  TypedCacheOperationHandler typed_cache_operation_handler;
-};
-
 }  // namespace vault
 
 }  // namespace maidsafe
