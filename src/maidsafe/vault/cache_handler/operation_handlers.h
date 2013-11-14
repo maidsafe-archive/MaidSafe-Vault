@@ -21,7 +21,6 @@
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/cache_handler/operation_visitors.h"
 
 namespace maidsafe {
 
@@ -71,105 +70,45 @@ template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
     const nfs::GetResponseFromDataManagerToMaidNode& message,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& /*sender*/,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& /*receiver*/) {
-  if (!message.contents->data)
-    return false;
-  auto data_name(detail::GetNameVariant(*message.contents));
-  detail::PutToCacheVisitor put_to_cache(service, message.contents->data->content);
-  boost::apply_visitor(put_to_cache, data_name);
-  return true;
-}
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& sender,
+    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& receiver);
 
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
     const nfs::GetCachedResponseFromCacheHandlerToMaidNode& message,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Sender& /*sender*/,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& /*receiver*/) {
-  if (!message.contents->data)
-    return false;
-  auto data_name(detail::GetNameVariant(*message.contents->data));
-  PutToCacheVisitor put_to_cache(service, message.contents->data->content);
-  boost::apply_visitor(put_to_cache, data_name);
-  return true;
-}
+    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Sender& sender,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& receiver);
 
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
     const nfs::GetResponseFromDataManagerToDataGetter& message,
-    const typename nfs::GetResponseFromDataManagerToDataGetter::Sender& /*sender*/,
-    const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& /*receiver*/) {
-  if (!message.contents->data)
-    return false;
-  auto data_name(detail::GetNameVariant(*message.contents->data));
-  PutToCacheVisitor put_to_cache(service, message.contents->data->content);
-  boost::apply_visitor(put_to_cache, data_name);
-  return true;
-}
+    const typename nfs::GetResponseFromDataManagerToDataGetter::Sender& sender,
+    const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& receiver);
 
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
     const nfs::GetCachedResponseFromCacheHandlerToDataGetter& message,
-    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Sender& /*sender*/,
-    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Receiver& /*receiver*/) {
-  if (!message.contents->data)
-    return false;
-  auto data_name(detail::GetNameVariant(*message.contents->data));
-  PutToCacheVisitor put_to_cache(service, message.contents->data->content);
-  boost::apply_visitor(put_to_cache, data_name);
-  return true;
-}
+    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Sender& sender,
+    const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Receiver& receiver);
 
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
     const nfs::GetRequestFromDataGetterToDataManager& message,
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
-  typedef nfs::GetRequestFromMaidNodeToDataManager::SourcePersona SourcePersonaType;
-  auto data_name(detail::GetNameVariant(*message.contents));
-  detail::Requestor<SourcePersonaType> requestor(sender.data);
-  GetFromCacheVisitor<detail::Requestor<SourcePersonaType>> get_from_cache(service, requestor);
-  return boost::apply_visitor(get_from_cache, data_name);
-}
+    const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
 
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
     const nfs::GetRequestFromMaidNodeToDataManager& message,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
-  typedef nfs::GetRequestFromMaidNodeToDataManager::SourcePersona SourcePersonaType;
-  auto data_name(detail::GetNameVariant(*message.contents));
-  detail::Requestor<SourcePersonaType> requestor(sender.data);
-  detail::GetFromCacheVisitor<detail::Requestor<SourcePersonaType>> get_from_cache(service,
-                                                                                   requestor);
-  return boost::apply_visitor(get_from_cache, data_name);
-}
+    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
 
 }  // detail
-
-template <typename MessageType>
-struct CacheOperationHandlerWrapper {
-  typedef detail::CacheOperationHandler<typename detail::ValidateSenderType<MessageType>::type>
-              TypedCacheOperationHandler;
-
-  CacheOperationHandlerWrapper(
-      CacheHandlerService* service,
-      typename detail::ValidateSenderType<MessageType>::type validate_sender)
-          : typed_cache_operation_handler(service, validate_sender) {}
-
-  bool operator()(const MessageType& message, const typename MessageType::Sender& sender,
-                  const typename MessageType::Receiver& receiver) {
-    return typed_cache_operation_handler(message, sender, receiver);
-  }
-
- private:
-  TypedCacheOperationHandler typed_cache_operation_handler;
-};
 
 }  // namespace vault
 
