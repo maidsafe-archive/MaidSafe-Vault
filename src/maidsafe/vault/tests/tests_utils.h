@@ -87,6 +87,9 @@ nfs_vault::DataNameAndCost CreateContent<nfs_vault::DataNameAndCost>();
 template <>
 nfs_vault::DataNameAndVersion CreateContent<nfs_vault::DataNameAndVersion>();
 
+template <>
+nfs_vault::DataNameOldNewVersion CreateContent<nfs_vault::DataNameOldNewVersion>();
+
 template <typename MessageType>
 MessageType CreateMessage(const typename MessageType::Contents& contents) {
   nfs::MessageId message_id(RandomUint32());

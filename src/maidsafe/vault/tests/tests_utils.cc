@@ -119,6 +119,14 @@ nfs_vault::DataNameAndVersion CreateContent<nfs_vault::DataNameAndVersion>() {
 }
 
 template <>
+nfs_vault::DataNameOldNewVersion CreateContent<nfs_vault::DataNameOldNewVersion>() {
+  ImmutableData::Name name(Identity(RandomString(64)));
+  return nfs_vault::DataNameOldNewVersion(nfs_vault::DataName(name),
+                                          StructuredDataVersions::VersionName(1, name),
+                                          StructuredDataVersions::VersionName(2, name));
+}
+
+template <>
 std::vector<routing::GroupSource> CreateGroupSource(const NodeId& group_id) {
   std::vector<routing::GroupSource> group_source;
   for (auto index(0); index < routing::Parameters::node_group_size; ++index)
@@ -134,7 +142,6 @@ protobuf::Sync CreateProtoSync(nfs::MessageAction action_type,
   proto_sync.set_serialised_unresolved_action(serialised_action);
   return proto_sync;
 }
-
 
 }  // namespace test
 

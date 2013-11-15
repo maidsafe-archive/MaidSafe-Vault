@@ -216,5 +216,4 @@ void VersionHandlerService::HandleGetBranch(
 
 }  // namespace maidsafe
 
-
 #endif  // MAIDSAFE_VAULT_VERSION_HANDLER_SERVICE_H_
