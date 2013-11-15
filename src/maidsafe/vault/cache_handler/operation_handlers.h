@@ -20,6 +20,7 @@
 #define MAIDSAFE_VAULT_CACHE_HANDLER_OPERATION_HANDLERS_H_
 
 #include "maidsafe/common/types.h"
+#include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
@@ -107,6 +108,20 @@ bool DoCacheOperation(
     const nfs::GetRequestFromMaidNodeToDataManager& message,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
+
+template <>
+bool DoCacheOperation(
+    CacheHandlerService* service,
+    const PutToCacheFromDataManagerToDataManager& message,
+    const typename PutToCacheFromDataManagerToDataManager::Sender& sender,
+    const typename PutToCacheFromDataManagerToDataManager::Receiver& receiver);
+
+template <>
+bool DoCacheOperation(
+    CacheHandlerService* service,
+    const GetFromCacheFromDataManagerToDataManager& message,
+    const typename GetFromCacheFromDataManagerToDataManager::Sender& sender,
+    const typename GetFromCacheFromDataManagerToDataManager::Receiver& receiver);
 
 }  // detail
 

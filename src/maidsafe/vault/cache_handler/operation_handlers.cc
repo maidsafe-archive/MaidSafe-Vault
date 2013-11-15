@@ -92,7 +92,7 @@ bool DoCacheOperation(
     const nfs::GetRequestFromDataGetterToDataManager& message,
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
-  typedef nfs::GetRequestFromMaidNodeToDataManager::SourcePersona SourcePersonaType;
+  typedef nfs::GetRequestFromDataGetterToDataManager::SourcePersona SourcePersonaType;
   auto data_name(detail::GetNameVariant(*message.contents));
   detail::Requestor<SourcePersonaType> requestor(sender.data);
   GetFromCacheVisitor<detail::Requestor<SourcePersonaType>> get_from_cache(service, requestor);
@@ -112,6 +112,33 @@ bool DoCacheOperation(
                                                                                    requestor);
   return boost::apply_visitor(get_from_cache, data_name);
 }
+
+template <>
+bool DoCacheOperation(
+    CacheHandlerService* service,
+    const PutToCacheFromDataManagerToDataManager& message,
+    const typename PutToCacheFromDataManagerToDataManager::Sender& /*sender*/,
+    const typename PutToCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
+  auto data_name(detail::GetNameVariant(*message.contents));
+  PutToCacheVisitor put_to_cache(service, message.contents->content);
+  boost::apply_visitor(put_to_cache, data_name);
+  return true;
+}
+
+template <>
+bool DoCacheOperation(
+    CacheHandlerService* service,
+    const GetFromCacheFromDataManagerToDataManager& message,
+    const typename GetFromCacheFromDataManagerToDataManager::Sender& sender,
+    const typename GetFromCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
+  typedef GetFromCacheFromDataManagerToDataManager::SourcePersona SourcePersonaType;
+  auto data_name(detail::GetNameVariant(*message.contents));
+  detail::Requestor<SourcePersonaType> requestor(sender.data);
+  detail::GetFromCacheVisitor<detail::Requestor<SourcePersonaType>> get_from_cache(service,
+                                                                                   requestor);
+  return boost::apply_visitor(get_from_cache, data_name);
+}
+
 
 }  // detail
 

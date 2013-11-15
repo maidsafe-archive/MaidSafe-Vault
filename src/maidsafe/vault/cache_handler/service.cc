@@ -126,23 +126,28 @@ CacheHandlerService::HandleMessage(
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const PutToCacheFromDataManagerToDataManager& /*message*/,
-    const typename PutToCacheFromDataManagerToDataManager::Sender& /*sender*/,
-    const typename PutToCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
-  // typedef PutToCacheFromDataManagerToDataManager MessageType;
-  assert(0); return HandleMessageReturnType();
+    const PutToCacheFromDataManagerToDataManager& message,
+    const typename PutToCacheFromDataManagerToDataManager::Sender& sender,
+    const typename PutToCacheFromDataManagerToDataManager::Receiver& receiver) {
+  typedef PutToCacheFromDataManagerToDataManager MessageType;
+  return CacheOperationHandlerWrapper<MessageType>(
+             this, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    })(message, sender, receiver);
 }
 
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const GetFromCacheFromDataManagerToDataManager& /*message*/,
-    const typename GetFromCacheFromDataManagerToDataManager::Sender& /*sender*/,
-    const typename GetFromCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
-  // typedef GetFromCacheFromDataManagerToDataManager MessageType;
-  assert(0); return HandleMessageReturnType();
+    const GetFromCacheFromDataManagerToDataManager& message,
+    const typename GetFromCacheFromDataManagerToDataManager::Sender& sender,
+    const typename GetFromCacheFromDataManagerToDataManager::Receiver& receiver) {
+  typedef GetFromCacheFromDataManagerToDataManager MessageType;
+  return CacheOperationHandlerWrapper<MessageType>(
+             this, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    })(message, sender, receiver);
 }
-
 
 }  // namespace vault
 

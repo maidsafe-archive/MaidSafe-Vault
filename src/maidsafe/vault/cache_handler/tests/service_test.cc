@@ -36,10 +36,9 @@ namespace test {
 class CacheHandlerServiceTest {
  public:
   CacheHandlerServiceTest() :
-      pmid_(MakePmid()),
       kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
       vault_root_dir_(*kTestRoot_ / RandomAlphaNumericString(8)),
-      routing_(pmid_),
+      routing_(MakePmid()),
       cache_handler_service_(routing_, vault_root_dir_),
       asio_service_(2) {
     boost::filesystem::create_directory(vault_root_dir_);
@@ -60,7 +59,6 @@ class CacheHandlerServiceTest {
   }
 
  protected:
-  passport::Pmid pmid_;
   const maidsafe::test::TestPath kTestRoot_;
   boost::filesystem::path vault_root_dir_;
   routing::Routing routing_;
@@ -68,7 +66,7 @@ class CacheHandlerServiceTest {
   AsioService asio_service_;
 };
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "short term cache put/get", "[ShortTermCachePutGet]") {
+TEST_CASE_METHOD(CacheHandlerServiceTest, "cache: short term put/get", "[ShortTermCachePutGet]") {
   passport::Anmaid anmaid;
   passport::PublicAnmaid public_anmaid(anmaid);
   REQUIRE_THROWS(Get<passport::PublicAnmaid>(public_anmaid.name()));
@@ -76,20 +74,21 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "short term cache put/get", "[ShortTer
   REQUIRE_NOTHROW(Get<passport::PublicAnmaid>(public_anmaid.name()));
 }
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "long term cache put/get", "[LongTermCachePutGet]") {
+TEST_CASE_METHOD(CacheHandlerServiceTest, "cache: long term put/get", "[LongTermCachePutGet]") {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   REQUIRE_THROWS(Get<ImmutableData>(data.name()));
   Store(data);
   REQUIRE_NOTHROW(Get<ImmutableData>(data.name()));
 }
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "operations storing to cache", "[PutInCache]") {
+TEST_CASE_METHOD(CacheHandlerServiceTest, "cache: operations involving put", "[PutInCache]") {
   routing::SingleId maid_node((NodeId(NodeId::kRandomId)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   nfs_client::DataNameAndContentOrReturnCode content(data);
 
   SECTION("GetCachedResponseFromCacheHandlerToDataGetter") {
-    auto cached_response(CreateMessage<nfs::GetCachedResponseFromCacheHandlerToDataGetter>(content));
+    auto cached_response(
+             CreateMessage<nfs::GetCachedResponseFromCacheHandlerToDataGetter>(content));
     routing::SingleSource source((NodeId(NodeId::kRandomId)));
     CHECK(cache_handler_service_.HandleMessage(cached_response, source, maid_node));
     REQUIRE_NOTHROW(Get<ImmutableData>(data.name()));
@@ -114,6 +113,43 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "operations storing to cache", "[PutIn
     routing::SingleSource source((NodeId(NodeId::kRandomId)));
     CHECK(cache_handler_service_.HandleMessage(cached_response, source, maid_node));
     REQUIRE_NOTHROW(Get<ImmutableData>(data.name()));
+  }
+
+  SECTION("PutToCacheFromDataManagerToDataManager") {
+    auto cache_put(CreateMessage<PutToCacheFromDataManagerToDataManager>(*content.data));
+    routing::SingleSource source((NodeId(NodeId::kRandomId)));
+    CHECK(cache_handler_service_.HandleMessage(cache_put, source,
+                                               routing::SingleId(routing_.kNodeId())));
+    REQUIRE_NOTHROW(Get<ImmutableData>(data.name()));
+  }
+}
+
+TEST_CASE_METHOD(CacheHandlerServiceTest, "cache: operations involving get",
+                 "[GetFromCache]") {
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  routing::SingleSource source_node((NodeId(NodeId::kRandomId)));
+  routing::GroupId group_id(NodeId(data.name()->string()));
+  nfs_vault::DataName content(data.name());
+
+  SECTION("GetRequestFromMaidNodeToDataManager") {
+    auto get_request(CreateMessage<nfs::GetRequestFromMaidNodeToDataManager>(content));
+    CHECK_FALSE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
+    Store(data);
+    CHECK(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
+  }
+
+  SECTION("GetRequestFromDataGetterToDataManager") {
+    auto get_request(CreateMessage<nfs::GetRequestFromDataGetterToDataManager>(content));
+    CHECK_FALSE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
+    Store(data);
+    CHECK(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
+  }
+
+  SECTION("GetFromCacheFromDataManagerToDataManager") {
+    auto get_request(CreateMessage<GetFromCacheFromDataManagerToDataManager>(content));
+    CHECK_FALSE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
+    Store(data);
+    CHECK(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
   }
 }
 

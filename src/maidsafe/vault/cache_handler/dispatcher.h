@@ -34,60 +34,88 @@ namespace vault {
 
 namespace detail {
 
-  template <typename RequestorType>
-  class SendResponse {
-   public:
-     SendResponse(routing::Routing& routing, const RequestorType& requestor)
-         : routing_(routing), requestor_(requestor) {}
+template <typename RequestorType>
+class SendResponse {
+ public:
+  SendResponse(routing::Routing& routing, const RequestorType& requestor)
+     : routing_(routing), requestor_(requestor) {}
 
-     template<typename Data>
-     void operator()(const Data& /*data*/) {
-       Data::No_generic_handler_is_available__Specialisation_is_required;
-       return;
-     }
-    routing::Routing& routing_;
-    RequestorType requestor_;
-  };
+  template<typename Data>
+  void operator()(const Data& /*data*/) {
+    Data::No_generic_handler_is_available__Specialisation_is_required;
+    return;
+  }
 
-  template <>
-  class SendResponse <detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>> {
-    public:
-     typedef detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>> Requestor;
-     SendResponse(routing::Routing& routing, const Requestor& requestor)
-         : routing_(routing), requestor_(requestor) {}
+ private:
+  routing::Routing& routing_;
+  RequestorType requestor_;
+};
 
-     template<typename Data>
-     void operator()(const Data& data) {
-       typedef nfs::GetCachedResponseFromCacheHandlerToMaidNode NfsMessage;
-       typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-       NfsMessage nfs_message((nfs_client::DataNameAndContentOrReturnCode(data)));
-       RoutingMessage message(nfs_message.Serialise(), NfsMessage::Sender(routing_.kNodeId()),
-                              NfsMessage::Receiver(requestor_.node_id));
-       routing_.Send(message);
-     }
-    routing::Routing& routing_;
-    Requestor requestor_;
-  };
+template <>
+class SendResponse <detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>> {
+ public:
+  typedef detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>> Requestor;
+  SendResponse(routing::Routing& routing, const Requestor& requestor)
+      : routing_(routing), requestor_(requestor) {}
 
-  template <>
-  class SendResponse <detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>> {
-    public:
-     typedef detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>> Requestor;
-     SendResponse(routing::Routing& routing, const Requestor& requestor)
-         : routing_(routing), requestor_(requestor) {}
+  template<typename Data>
+  void operator()(const Data& data) {
+    typedef nfs::GetCachedResponseFromCacheHandlerToMaidNode NfsMessage;
+    typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+    NfsMessage nfs_message((nfs_client::DataNameAndContentOrReturnCode(data)));
+    RoutingMessage message(nfs_message.Serialise(), NfsMessage::Sender(routing_.kNodeId()),
+                           NfsMessage::Receiver(requestor_.node_id));
+    routing_.Send(message);
+  }
 
-     template<typename Data>
-     void operator()(const Data& data) {
-       typedef nfs::GetCachedResponseFromCacheHandlerToDataGetter NfsMessage;
-       typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-       NfsMessage nfs_message((nfs_client::DataNameAndContentOrReturnCode(data)));
-       RoutingMessage message(nfs_message.Serialise(), NfsMessage::Sender(routing_.kNodeId()),
-                              NfsMessage::Receiver(requestor_.node_id));
-       routing_.Send(message);
-     }
-    routing::Routing& routing_;
-    Requestor requestor_;
-  };
+ private:
+  routing::Routing& routing_;
+  Requestor requestor_;
+};
+
+template <>
+class SendResponse <detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>>> {
+ public:
+  typedef detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataGetter>> Requestor;
+  SendResponse(routing::Routing& routing, const Requestor& requestor)
+      : routing_(routing), requestor_(requestor) {}
+
+  template<typename Data>
+  void operator()(const Data& data) {
+    typedef nfs::GetCachedResponseFromCacheHandlerToDataGetter NfsMessage;
+    typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+    NfsMessage nfs_message((nfs_client::DataNameAndContentOrReturnCode(data)));
+    RoutingMessage message(nfs_message.Serialise(), NfsMessage::Sender(routing_.kNodeId()),
+                            NfsMessage::Receiver(requestor_.node_id));
+    routing_.Send(message);
+  }
+
+ private:
+  routing::Routing& routing_;
+  Requestor requestor_;
+};
+
+template <>
+class SendResponse <detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataManager>>> {
+ public:
+  typedef detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kDataManager>> Requestor;
+  SendResponse(routing::Routing& routing, const Requestor& requestor)
+      : routing_(routing), requestor_(requestor) {}
+
+  template<typename Data>
+  void operator()(const Data& data) {
+    typedef GetCachedResponseFromCacheHandlerToDataManager VaultMessage;
+    typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+    VaultMessage nfs_message((nfs_client::DataNameAndContentOrReturnCode(data)));
+    RoutingMessage message(nfs_message.Serialise(), VaultMessage::Sender(routing_.kNodeId()),
+                           VaultMessage::Receiver(requestor_.node_id));
+    routing_.Send(message);
+  }
+
+ private:
+  routing::Routing& routing_;
+  Requestor requestor_;
+};
 
 }   // namespace detail
 
