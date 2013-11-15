@@ -32,7 +32,7 @@ namespace vault {
 class VersionHandlerValue {
  public:
   explicit VersionHandlerValue(const std::string& serialised_version_handler_value);
-  VersionHandlerValue(uint32_t max_versions = 1, uint32_t max_branches = 1);
+  VersionHandlerValue(uint32_t max_versions = 10, uint32_t max_branches = 10);
   VersionHandlerValue(VersionHandlerValue&& other);
   VersionHandlerValue& operator=(VersionHandlerValue other);
   std::string Serialise() const;

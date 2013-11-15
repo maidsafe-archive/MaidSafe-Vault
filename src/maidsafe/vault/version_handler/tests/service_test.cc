@@ -43,12 +43,41 @@ class VersionHandlerServiceTest {
     asio_service_.Start();
   }
 
+  VersionHandler::Value Get(const VersionHandler::Key& key) {
+    return version_handler_service_.db_.Get(key);
+  }
+
+  void Store(const VersionHandler::Key& key, const ActionVersionHandlerPut& action) {
+    version_handler_service_.db_.Commit(key, action);
+  }
+
+  template <typename UnresilvedActionType>
+  void SendSync(const std::vector<UnresilvedActionType>& unresolved_actions,
+                const std::vector<routing::GroupSource>& group_source);
+
  protected:
   passport::Pmid pmid_;
   routing::Routing routing_;
   VersionHandlerService version_handler_service_;
   AsioService asio_service_;
 };
+
+template <typename UnresilvedActionType>
+void VersionHandlerServiceTest::SendSync(
+    const std::vector<UnresilvedActionType>& /*unresolved_actions*/,
+    const std::vector<routing::GroupSource>& /*group_source*/) {
+  UnresilvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
+}
+
+template <>
+void VersionHandlerServiceTest::SendSync<VersionHandler::UnresolvedPutVersion>(
+         const std::vector<VersionHandler::UnresolvedPutVersion>& unresolved_actions,
+         const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<VersionHandlerService, VersionHandler::UnresolvedPutVersion,
+                                    SynchroniseFromVersionHandlerToVersionHandler>(
+      &version_handler_service_, version_handler_service_.sync_put_versions_, unresolved_actions,
+      group_source);
+}
 
 TEST_CASE_METHOD(VersionHandlerServiceTest,
                  "version handler: checking handler is available for all message types",
@@ -108,10 +137,32 @@ TEST_CASE_METHOD(VersionHandlerServiceTest,
     auto group_source(CreateGroupSource(group_id));
     routing::GroupId version_group_id(group_id);
     SynchroniseFromVersionHandlerToVersionHandler::Contents content((std::string()));
-    auto put_version(CreateMessage<SynchroniseFromVersionHandlerToVersionHandler>(content));
-    REQUIRE_THROWS(GroupSendToGroup(&version_handler_service_, put_version, group_source,
-                                     version_group_id));
+    auto sync(CreateMessage<SynchroniseFromVersionHandlerToVersionHandler>(content));
+    REQUIRE_THROWS(GroupSendToGroup(&version_handler_service_, sync, group_source,
+                                    version_group_id));
   }
+}
+
+TEST_CASE_METHOD(VersionHandlerServiceTest,
+                 "version handler: checking all sync message types are handled",
+                 "[CheckSync]") {
+  SECTION("PutVersion") {
+    NodeId sender_id(NodeId::kRandomId), originator(NodeId::kRandomId);
+    auto content(CreateContent<nfs_vault::DataNameOldNewVersion>());
+    nfs::MessageId message_id(RandomInt32());
+    VersionHandler::Key key(content.data_name.raw_name, ImmutableData::Tag::kValue,
+                            Identity(originator.string()));
+    ActionVersionHandlerPut action_put_version(content.old_version_name, content.new_version_name,
+                                               sender_id, message_id);
+    auto group_source(CreateGroupSource(NodeId(content.data_name.raw_name.string())));
+    auto group_unresolved_action(
+             CreateGroupUnresolvedAction<VersionHandler::UnresolvedPutVersion>(
+                 key, action_put_version, group_source));
+    SendSync<VersionHandler::UnresolvedPutVersion>(group_unresolved_action, group_source);
+    REQUIRE_NOTHROW(Get(key));
+  }
+
+  SECTION("DeleteBranchUntilFork") {}
 }
 
 }  //  namespace test

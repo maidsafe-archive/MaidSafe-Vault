@@ -56,6 +56,12 @@ namespace detail {
   class VersionHandlerDeleteBranchVisitor;
 }
 
+namespace test {
+
+class VersionHandlerServiceTest;
+
+}
+
 class VersionHandlerService {
  public:
   typedef nfs::VersionHandlerServiceMessages PublicMessages;
@@ -75,6 +81,7 @@ class VersionHandlerService {
   template <typename SourcePersonaType> friend class detail::VersionHandlerGetBranchVisitor;
   friend class detail::VersionHandlerPutVisitor;
   friend class detail::VersionHandlerDeleteBranchVisitor;
+  friend test::VersionHandlerServiceTest;
 
  private:
   VersionHandlerService(const VersionHandlerService&);

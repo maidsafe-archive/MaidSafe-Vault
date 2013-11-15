@@ -120,13 +120,14 @@ class MaidManagerServiceTest {
 };
 
 template <typename UnresilvedActionType>
-void  SendSync(const std::vector<UnresilvedActionType>& /*unresolved_actions*/,
-               const std::vector<routing::GroupSource>& /*group_source*/) {
+void  MaidManagerServiceTest::SendSync(
+    const std::vector<UnresilvedActionType>& /*unresolved_actions*/,
+    const std::vector<routing::GroupSource>& /*group_source*/) {
   UnresilvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
 }
 
 template <>
-void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedCreateAccount>(
+void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedCreateAccount>(
          const std::vector<MaidManager::UnresolvedCreateAccount>& unresolved_actions,
          const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedCreateAccount,
@@ -136,7 +137,7 @@ void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedCreateAccount>(
 }
 
 template <>
-void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedRemoveAccount>(
+void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedRemoveAccount>(
          const std::vector<MaidManager::UnresolvedRemoveAccount>& unresolved_actions,
          const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedRemoveAccount,
@@ -146,7 +147,7 @@ void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedRemoveAccount>(
 }
 
 template <>
-void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedPut>(
+void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedPut>(
          const std::vector<MaidManager::UnresolvedPut>& unresolved_actions,
          const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedPut,
@@ -156,7 +157,7 @@ void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedPut>(
 }
 
 template <>
-void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedDelete>(
+void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedDelete>(
          const std::vector<MaidManager::UnresolvedDelete>& unresolved_actions,
          const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedDelete,
@@ -166,7 +167,7 @@ void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedDelete>(
 }
 
 template <>
-void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedRegisterPmid>(
+void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedRegisterPmid>(
          const std::vector<MaidManager::UnresolvedRegisterPmid>& unresolved_actions,
          const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedRegisterPmid,
@@ -176,7 +177,7 @@ void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedRegisterPmid>(
 }
 
 template <>
-void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedUnregisterPmid>(
+void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedUnregisterPmid>(
          const std::vector<MaidManager::UnresolvedUnregisterPmid>& unresolved_actions,
          const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedUnregisterPmid,
@@ -186,7 +187,7 @@ void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedUnregisterPmid>(
 }
 
 template <>
-void MaidManagerServiceTest:: SendSync<MaidManager::UnresolvedUpdatePmidHealth>(
+void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedUpdatePmidHealth>(
          const std::vector<MaidManager::UnresolvedUpdatePmidHealth>& unresolved_actions,
          const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedUpdatePmidHealth,
