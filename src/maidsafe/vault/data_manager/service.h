@@ -58,17 +58,9 @@ namespace maidsafe {
 namespace vault {
 
 namespace test {
-  class DataManagerServiceTest_BEH_PutRequestFromMaidManager_Test;
-  class DataManagerServiceTest_BEH_PutResponseFromPmidManager_Test;
-  class DataManagerServiceTest_BEH_PutFailureFromPmidManager_Test;
-  class DataManagerServiceTest_BEH_DeleteRequestFromMaidManager_Test;
-  class DataManagerServiceTest_BEH_PutSynchroniseFromDataManager_Test;
-  class DataManagerServiceTest_BEH_DeleteSynchroniseFromDataManager_Test;
-  class DataManagerServiceTest_BEH_AddPmidSynchroniseFromDataManager_Test;
-  class DataManagerServiceTest_BEH_RemovePmidSynchroniseFromDataManager_Test;
-  class DataManagerServiceTest_BEH_NodeDownSynchroniseFromDataManager_Test;
-  class DataManagerServiceTest_BEH_NodeUpSynchroniseFromDataManager_Test;
-  class DataManagerServiceTest_BEH_GetResponseFromPmidNode_Test;
+
+  class DataManagerServiceTest;
+
 }
 
 class DataManagerService {
@@ -204,17 +196,7 @@ class DataManagerService {
   friend class detail::DataManagerDeleteVisitor<DataManagerService>;
   friend class detail::DataManagerSendDeleteVisitor<DataManagerService>;
   friend class detail::PutResponseFailureVisitor<DataManagerService>;
-  friend class test::DataManagerServiceTest_BEH_PutRequestFromMaidManager_Test;
-  friend class test::DataManagerServiceTest_BEH_PutResponseFromPmidManager_Test;
-  friend class test::DataManagerServiceTest_BEH_PutFailureFromPmidManager_Test;
-  friend class test::DataManagerServiceTest_BEH_DeleteRequestFromMaidManager_Test;
-  friend class test::DataManagerServiceTest_BEH_PutSynchroniseFromDataManager_Test;
-  friend class test::DataManagerServiceTest_BEH_DeleteSynchroniseFromDataManager_Test;
-  friend class test::DataManagerServiceTest_BEH_AddPmidSynchroniseFromDataManager_Test;
-  friend class test::DataManagerServiceTest_BEH_RemovePmidSynchroniseFromDataManager_Test;
-  friend class test::DataManagerServiceTest_BEH_NodeDownSynchroniseFromDataManager_Test;
-  friend class test::DataManagerServiceTest_BEH_NodeUpSynchroniseFromDataManager_Test;
-  friend class test::DataManagerServiceTest_BEH_GetResponseFromPmidNode_Test;
+  friend class test::DataManagerServiceTest;
 
   routing::Routing& routing_;
   AsioService asio_service_;

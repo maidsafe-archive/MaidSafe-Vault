@@ -86,8 +86,8 @@ class MaidManagerServiceTest {
                                            ActionMaidManagerRegisterPmid(pmid_registration));
   }
 
-  template <typename UnresilvedActionType>
-  void SendSync(const std::vector<UnresilvedActionType>& unresolved_actions,
+  template <typename UnresolvedActionType>
+  void SendSync(const std::vector<UnresolvedActionType>& unresolved_actions,
                 const std::vector<routing::GroupSource>& group_source);
 
   bool Equal(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs) {
@@ -119,11 +119,11 @@ class MaidManagerServiceTest {
   AsioService asio_service_;
 };
 
-template <typename UnresilvedActionType>
+template <typename UnresolvedActionType>
 void  MaidManagerServiceTest::SendSync(
-    const std::vector<UnresilvedActionType>& /*unresolved_actions*/,
+    const std::vector<UnresolvedActionType>& /*unresolved_actions*/,
     const std::vector<routing::GroupSource>& /*group_source*/) {
-  UnresilvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
+  UnresolvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
 }
 
 template <>

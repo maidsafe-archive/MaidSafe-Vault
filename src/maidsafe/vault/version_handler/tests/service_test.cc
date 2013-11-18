@@ -96,8 +96,8 @@ void VersionHandlerServiceTest::SendSync<VersionHandler::UnresolvedDeleteBranchU
 }
 
 TEST_CASE_METHOD(VersionHandlerServiceTest,
-                 "version handler: checking handler is available for all message types",
-                 "[CheckHandler]") {
+                 "checking handler is available for all message types",
+                 "[Handler][VersionHandler]") {
   SECTION("GetVersionsRequestFromMaidNodeToVersionHandler") {
     routing::SingleSource maid_node((NodeId(NodeId::kRandomId)));
     routing::GroupId version_group_id((NodeId(NodeId::kRandomId)));
@@ -159,9 +159,8 @@ TEST_CASE_METHOD(VersionHandlerServiceTest,
   }
 }
 
-TEST_CASE_METHOD(VersionHandlerServiceTest,
-                 "version handler: checking all sync message types are handled",
-                 "[CheckSync][VersionHandler]") {
+TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are handled",
+                 "[Sync][VersionHandler]") {
   SECTION("PutVersion") {
     NodeId sender_id(NodeId::kRandomId), originator(NodeId::kRandomId);
     auto content(CreateContent<nfs_vault::DataNameOldNewVersion>());
