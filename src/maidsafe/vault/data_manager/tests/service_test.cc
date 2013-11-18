@@ -281,12 +281,14 @@ TEST_CASE_METHOD(DataManagerServiceTest, "checking that handler is available for
 TEST_CASE_METHOD(DataManagerServiceTest,
                  "data manager: checking all sync message types are handled",
                  "[Sync][DataManager]") {
+  PmidName pmid_name(Identity(RandomString(64)));
+  ActionDataManagerPut action_put;
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name(), pmid_name.value);
+  auto group_source(CreateGroupSource(data.name()));
+
+
   SECTION("Put") {
-    PmidName pmid_name(Identity(RandomString(64)));
-    ActionDataManagerPut action_put;
-    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-    auto group_source(CreateGroupSource(data.name()));
-    DataManager::Key key(data.name(), pmid_name.value);
     Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
     CHECK(Get(key).Subscribers() == 1);
     auto group_unresolved_action(
@@ -298,14 +300,10 @@ TEST_CASE_METHOD(DataManagerServiceTest,
 
   SECTION("Delete") {
     // store key value in db
-    PmidName pmid_name(Identity(RandomString(64)));
-    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-    DataManager::Key key(data.name(), Identity(NodeId().string()));
     Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
     CHECK(Get(key).Subscribers() == 1);
     // key value is in db
     ActionDataManagerDelete action_delete;
-    auto group_source(CreateGroupSource(data.name()));
     auto group_unresolved_action(
              CreateGroupUnresolvedAction<DataManager::UnresolvedDelete>(key, action_delete,
                                                                       group_source));
@@ -315,13 +313,9 @@ TEST_CASE_METHOD(DataManagerServiceTest,
 
   SECTION("AddPmid") {
     // check key value is not in db
-    PmidName pmid_name(Identity(RandomString(64)));
-    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-    DataManager::Key key(data.name(), pmid_name.value);
     CHECK_THROWS(Get(key));
     // Sync AddPmid
     ActionDataManagerAddPmid action_add_pmid(pmid_name, kTestChunkSize);
-    auto group_source(CreateGroupSource(data.name()));
     auto group_unresolved_action(
              CreateGroupUnresolvedAction<DataManager::UnresolvedAddPmid>(key, action_add_pmid,
                                                                          group_source));
@@ -331,11 +325,8 @@ TEST_CASE_METHOD(DataManagerServiceTest,
   }
 
   SECTION("RemovePmid") {
-    // store key value in db
-    PmidName pmid_name_one(Identity(RandomString(64))), pmid_name_two(Identity(RandomString(64)));
-    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-    DataManager::Key key(data.name(), Identity(NodeId().string()));
-    Commit(key, ActionDataManagerAddPmid(pmid_name_one, kTestChunkSize));
+    PmidName pmid_name_two(Identity(RandomString(64)));
+    Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
     Commit(key, ActionDataManagerAddPmid(pmid_name_two, kTestChunkSize));
     auto value(Get(key));
     CHECK(value.Subscribers() == 1);
@@ -343,7 +334,6 @@ TEST_CASE_METHOD(DataManagerServiceTest,
 
     // Sync remove pmid
     ActionDataManagerRemovePmid action_remove_pmid(pmid_name_two);
-    auto group_source(CreateGroupSource(data.name()));
     auto group_unresolved_action(
              CreateGroupUnresolvedAction<DataManager::UnresolvedRemovePmid>(key, action_remove_pmid,
                                                                             group_source));
@@ -352,11 +342,8 @@ TEST_CASE_METHOD(DataManagerServiceTest,
 }
 
   SECTION("NodeDown") {
-  // store key value in db
-    PmidName pmid_name_one(Identity(RandomString(64))), pmid_name_two(Identity(RandomString(64)));
-    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-    DataManager::Key key(data.name(), Identity(NodeId().string()));
-    Commit(key, ActionDataManagerAddPmid(pmid_name_one, kTestChunkSize));
+    PmidName pmid_name_two(Identity(RandomString(64)));
+    Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
     Commit(key, ActionDataManagerAddPmid(pmid_name_two, kTestChunkSize));
     auto value(Get(key));
     CHECK(value.Subscribers() == 1);
@@ -364,7 +351,6 @@ TEST_CASE_METHOD(DataManagerServiceTest,
 
     // Sync node down
     ActionDataManagerNodeDown action_node_down(pmid_name_two);
-    auto group_source(CreateGroupSource(data.name()));
     auto group_unresolved_action(
              CreateGroupUnresolvedAction<DataManager::UnresolvedNodeDown>(key, action_node_down,
                                                                           group_source));
@@ -378,10 +364,8 @@ TEST_CASE_METHOD(DataManagerServiceTest,
 
   SECTION("NodeUp") {
     // store key value in db
-    PmidName pmid_name_one(Identity(RandomString(64))), pmid_name_two(Identity(RandomString(64)));
-    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-    DataManager::Key key(data.name(), Identity(NodeId().string()));
-    Commit(key, ActionDataManagerAddPmid(pmid_name_one, kTestChunkSize));
+    PmidName pmid_name_two(Identity(RandomString(64)));
+    Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
     Commit(key, ActionDataManagerAddPmid(pmid_name_two, kTestChunkSize));
     auto value(Get(key));
     CHECK(value.Subscribers() == 1);
