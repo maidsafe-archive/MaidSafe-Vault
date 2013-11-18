@@ -66,7 +66,7 @@ class CacheHandlerServiceTest {
   AsioService asio_service_;
 };
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "cache: short term put/get", "[ShortTermCachePutGet]") {
+TEST_CASE_METHOD(CacheHandlerServiceTest, "short term put/get", "[Cache]") {
   passport::Anmaid anmaid;
   passport::PublicAnmaid public_anmaid(anmaid);
   REQUIRE_THROWS(Get<passport::PublicAnmaid>(public_anmaid.name()));
@@ -74,14 +74,14 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "cache: short term put/get", "[ShortTe
   REQUIRE_NOTHROW(Get<passport::PublicAnmaid>(public_anmaid.name()));
 }
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "cache: long term put/get", "[LongTermCachePutGet]") {
+TEST_CASE_METHOD(CacheHandlerServiceTest, "long term put/get", "[Cache]") {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   REQUIRE_THROWS(Get<ImmutableData>(data.name()));
   Store(data);
   REQUIRE_NOTHROW(Get<ImmutableData>(data.name()));
 }
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "cache: operations involving put", "[PutInCache]") {
+TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put", "[Cache]") {
   routing::SingleId maid_node((NodeId(NodeId::kRandomId)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   nfs_client::DataNameAndContentOrReturnCode content(data);
@@ -124,8 +124,7 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "cache: operations involving put", "[P
   }
 }
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "cache: operations involving get",
-                 "[GetFromCache]") {
+TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving get", "[Cache]") {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   routing::SingleSource source_node((NodeId(NodeId::kRandomId)));
   routing::GroupId group_id(NodeId(data.name()->string()));

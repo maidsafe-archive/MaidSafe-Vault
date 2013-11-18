@@ -32,6 +32,11 @@ namespace vault {
 
 namespace test {
 
+namespace {
+
+typedef StructuredDataVersions::VersionName VersionName;
+
+}
 
 class VersionHandlerServiceTest {
  public:
@@ -62,11 +67,11 @@ class VersionHandlerServiceTest {
   AsioService asio_service_;
 };
 
-template <typename UnresilvedActionType>
+template <typename UnresolvedActionType>
 void VersionHandlerServiceTest::SendSync(
-    const std::vector<UnresilvedActionType>& /*unresolved_actions*/,
+    const std::vector<UnresolvedActionType>& /*unresolved_actions*/,
     const std::vector<routing::GroupSource>& /*group_source*/) {
-  UnresilvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
+  UnresolvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
 }
 
 template <>
@@ -77,6 +82,17 @@ void VersionHandlerServiceTest::SendSync<VersionHandler::UnresolvedPutVersion>(
                                     SynchroniseFromVersionHandlerToVersionHandler>(
       &version_handler_service_, version_handler_service_.sync_put_versions_, unresolved_actions,
       group_source);
+}
+
+template <>
+void VersionHandlerServiceTest::SendSync<VersionHandler::UnresolvedDeleteBranchUntilFork>(
+         const std::vector<VersionHandler::UnresolvedDeleteBranchUntilFork>& unresolved_actions,
+         const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<VersionHandlerService,
+                                    VersionHandler::UnresolvedDeleteBranchUntilFork,
+                                    SynchroniseFromVersionHandlerToVersionHandler>(
+      &version_handler_service_, version_handler_service_.sync_delete_branche_until_forks_,
+      unresolved_actions, group_source);
 }
 
 TEST_CASE_METHOD(VersionHandlerServiceTest,
@@ -145,7 +161,7 @@ TEST_CASE_METHOD(VersionHandlerServiceTest,
 
 TEST_CASE_METHOD(VersionHandlerServiceTest,
                  "version handler: checking all sync message types are handled",
-                 "[CheckSync]") {
+                 "[CheckSync][VersionHandler]") {
   SECTION("PutVersion") {
     NodeId sender_id(NodeId::kRandomId), originator(NodeId::kRandomId);
     auto content(CreateContent<nfs_vault::DataNameOldNewVersion>());
@@ -162,7 +178,43 @@ TEST_CASE_METHOD(VersionHandlerServiceTest,
     REQUIRE_NOTHROW(Get(key));
   }
 
-  SECTION("DeleteBranchUntilFork") {}
+  SECTION("DeleteBranchUntilFork") {
+    NodeId sender_id(NodeId::kRandomId), originator(NodeId::kRandomId);
+    VersionHandler::Key key(Identity(RandomString(64)), ImmutableData::Tag::kValue,
+                            Identity(originator.string()));
+    nfs::MessageId message_id;
+    VersionName v0_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
+    VersionName v1_bbb(1, ImmutableData::Name(Identity(std::string(64, 'b'))));
+    VersionName v2_ccc(2, ImmutableData::Name(Identity(std::string(64, 'c'))));
+    VersionName v2_ddd(2, ImmutableData::Name(Identity(std::string(64, 'd'))));
+    VersionName v3_fff(3, ImmutableData::Name(Identity(std::string(64, 'f'))));
+    VersionName v4_iii(4, ImmutableData::Name(Identity(std::string(64, 'i'))));
+
+    std::vector<std::pair<VersionName, VersionName>> puts;
+    puts.push_back(std::make_pair(VersionName(), v0_aaa));
+    puts.push_back(std::make_pair(v0_aaa, v1_bbb));
+    puts.push_back(std::make_pair(v1_bbb, v2_ccc));
+    puts.push_back(std::make_pair(v2_ccc, v3_fff));
+    puts.push_back(std::make_pair(v1_bbb, v2_ddd));
+    puts.push_back(std::make_pair(v3_fff, v4_iii));
+
+    for (const auto& put : puts) {
+      message_id = nfs::MessageId(RandomUint32());
+      Store(key, ActionVersionHandlerPut(put.first, put.second, sender_id, message_id));
+    }
+
+   REQUIRE_NOTHROW(Get(key).GetBranch(v4_iii));
+
+    ActionVersionHandlerDeleteBranchUntilFork action_delete_branch(v4_iii);
+    auto group_source(CreateGroupSource(NodeId(NodeId::kRandomId)));
+    auto group_unresolved_action(
+             CreateGroupUnresolvedAction<VersionHandler::UnresolvedDeleteBranchUntilFork>(
+                 key, action_delete_branch, group_source));
+    SendSync<VersionHandler::UnresolvedDeleteBranchUntilFork>(group_unresolved_action,
+                                                              group_source);
+    REQUIRE_THROWS(Get(key).GetBranch(v4_iii));
+    REQUIRE_NOTHROW(Get(key).GetBranch(v2_ddd));
+  }
 }
 
 }  //  namespace test

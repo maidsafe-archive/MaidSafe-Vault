@@ -53,11 +53,12 @@ std::string ActionVersionHandlerDeleteBranchUntilFork::Serialise() const {
   return action_delete_branch_until_fork_proto.SerializeAsString();
 }
 
-void ActionVersionHandlerDeleteBranchUntilFork::operator()(
+detail::DbAction ActionVersionHandlerDeleteBranchUntilFork::operator()(
     std::unique_ptr<VersionHandlerValue>& value) {
   if (!value)
     ThrowError(CommonErrors::uninitialised);
   value->DeleteBranchUntilFork(version_name);
+  return detail::DbAction::kDelete;
 }
 
 bool operator==(const ActionVersionHandlerDeleteBranchUntilFork& lhs,

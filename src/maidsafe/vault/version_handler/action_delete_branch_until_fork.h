@@ -24,6 +24,7 @@
 #include "maidsafe/data_types/structured_data_versions.h"
 
 #include "maidsafe/vault/version_handler/version_handler.h"
+#include "maidsafe/vault/config.h"
 
 namespace maidsafe {
 
@@ -38,8 +39,7 @@ struct ActionVersionHandlerDeleteBranchUntilFork {
       const ActionVersionHandlerDeleteBranchUntilFork&& other);
   ActionVersionHandlerDeleteBranchUntilFork(
       const StructuredDataVersions::VersionName& version_name);
-
-  void operator()(std::unique_ptr<VersionHandlerValue>& value);
+  detail::DbAction operator()(std::unique_ptr<VersionHandlerValue>& value);
 
   std::string Serialise() const;
 

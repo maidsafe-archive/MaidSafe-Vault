@@ -200,6 +200,21 @@ void VersionHandlerService::HandleMessage(
       }
       break;
     }
+    case ActionVersionHandlerDeleteBranchUntilFork::kActionId: {
+      VersionHandler::UnresolvedDeleteBranchUntilFork unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_delete_branche_until_forks_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+          // BEFORE_RELEASE DOES IT NEED RESPONSE?
+        }
+        catch (const maidsafe_error& /*error*/) {
+          // BEFORE_RELEASE DOES IT NEED REPONSE?
+        }
+      }
+      break;
+    }
     default: {
       assert(false);
       LOG(kError) << "Unhandled action type";
