@@ -325,7 +325,9 @@ TEST_CASE_METHOD(DataManagerServiceTest,
   }
 
   SECTION("RemovePmid") {
+    // store key value in db
     PmidName pmid_name_two(Identity(RandomString(64)));
+    DataManager::Key key(data.name(), Identity(NodeId().string()));
     Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
     Commit(key, ActionDataManagerAddPmid(pmid_name_two, kTestChunkSize));
     auto value(Get(key));
@@ -339,7 +341,7 @@ TEST_CASE_METHOD(DataManagerServiceTest,
                                                                             group_source));
     SendSync<DataManager::UnresolvedRemovePmid>(group_unresolved_action, group_source);
     CHECK(Get(key).AllPmids().size() == 1);
-}
+  }
 
   SECTION("NodeDown") {
     PmidName pmid_name_two(Identity(RandomString(64)));
