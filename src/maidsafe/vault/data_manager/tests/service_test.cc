@@ -284,7 +284,7 @@ TEST_CASE_METHOD(DataManagerServiceTest,
   PmidName pmid_name(Identity(RandomString(64)));
   ActionDataManagerPut action_put;
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-  DataManager::Key key(data.name(), pmid_name.value);
+  DataManager::Key key(data.name());
   auto group_source(CreateGroupSource(data.name()));
 
 
@@ -320,14 +320,13 @@ TEST_CASE_METHOD(DataManagerServiceTest,
              CreateGroupUnresolvedAction<DataManager::UnresolvedAddPmid>(key, action_add_pmid,
                                                                          group_source));
     SendSync<DataManager::UnresolvedAddPmid>(group_unresolved_action, group_source);
-    key.CleanUpOriginator();
     CHECK(Get(key).Subscribers() == 1);
   }
 
   SECTION("RemovePmid") {
     // store key value in db
     PmidName pmid_name_two(Identity(RandomString(64)));
-    DataManager::Key key(data.name(), Identity(NodeId().string()));
+    DataManager::Key key(data.name());
     Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
     Commit(key, ActionDataManagerAddPmid(pmid_name_two, kTestChunkSize));
     auto value(Get(key));

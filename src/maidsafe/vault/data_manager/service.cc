@@ -272,7 +272,6 @@ void DataManagerService::HandleMessage(
       auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit add pmid to db";
-        resolved_action->key.CleanUpOriginator();
         db_.Commit(resolved_action->key, resolved_action->action);
       }
       break;
@@ -284,7 +283,6 @@ void DataManagerService::HandleMessage(
       auto resolved_action(sync_remove_pmids_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit remove pmid to db";
-        resolved_action->key.CleanUpOriginator();
         db_.Commit(resolved_action->key, resolved_action->action);
       }
       break;

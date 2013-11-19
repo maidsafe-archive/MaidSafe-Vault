@@ -339,8 +339,7 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
   } else {
     LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
                << " from maid_node " << HexSubstr(maid_name->string()) << " syncing";
-    typename DataManager::Key key(data.name().value, Data::Tag::kValue,
-                                  Identity(pmid_name_in->string()));
+    typename DataManager::Key key(data.name().value, Data::Tag::kValue);
     sync_puts_.AddLocalAction(DataManager::UnresolvedPut(key, ActionDataManagerPut(),
                                                          routing_.kNodeId()));
     DoSync();
@@ -354,7 +353,7 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
 template <typename Data>
 bool DataManagerService::EntryExist(const typename Data::Name& name) {
   try {
-    db_.Get(DataManager::Key(name.value, Data::Tag::kValue, Identity(NodeId().string())));
+    db_.Get(DataManager::Key(name.value, Data::Tag::kValue));
     return true;
   }
   catch (const maidsafe_error& /*error*/) {
@@ -369,7 +368,7 @@ void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
   LOG(kVerbose) << "DataManagerService::HandlePutResponse for chunk "
                 << HexSubstr(data_name.value.string()) << " storing on pmid_node "
                 << HexSubstr(pmid_node.value.string());
-  typename DataManager::Key key(data_name.value, Data::Tag::kValue, Identity(pmid_node->string()));
+  typename DataManager::Key key(data_name.value, Data::Tag::kValue);
   sync_add_pmids_.AddLocalAction(DataManager::UnresolvedAddPmid(
       key, ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId()));
   DoSync();
@@ -383,8 +382,7 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
   LOG(kVerbose) << "DataManagerService::HandlePutFailure " << HexSubstr(data_name.value)
                 << " from attempted_pmid_node " << HexSubstr(attempted_pmid_node->string());
   // TODO(Team): Following should be done only if error is fixable by repeat
-  typename DataManager::Key key(data_name.value, Data::Tag::kValue,
-                                Identity(attempted_pmid_node->string()));
+  typename DataManager::Key key(data_name.value, Data::Tag::kValue);
   // Get all pmid nodes for this data.
   if (SendPutRetryRequired(data_name)) {
     std::set<PmidName> pmids_to_avoid;
@@ -423,8 +421,7 @@ template <typename DataName>
 bool DataManagerService::SendPutRetryRequired(const DataName& data_name) {
   try {
     // mutex is required
-    auto value(db_.Get(DataManager::Key(data_name.value, DataName::data_type::Tag::kValue,
-                                        Identity(NodeId().string()))));
+    auto value(db_.Get(DataManager::Key(data_name.value, DataName::data_type::Tag::kValue)));
     return value.AllPmids().size() < routing::Parameters::node_group_size;
   }
   catch (const maidsafe_error& /*error*/) {}
@@ -440,8 +437,7 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   // Get all pmid nodes that are online.
   std::set<PmidName> online_pmids;
   try {
-    auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue,
-                                        Identity(NodeId().string()))));
+    auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue)));
     online_pmids = std::move(value.online_pmids());
   } catch (const maidsafe_error& error) {
     LOG(kWarning) << "Getting " << HexSubstr(data_name.value)
@@ -647,8 +643,7 @@ void DataManagerService::AssessIntegrityCheckResults(
 template <typename Data>
 void DataManagerService::HandleDelete(const typename Data::Name& data_name,
                                       nfs::MessageId /*message_id*/) {
-  typename DataManager::Key key(data_name.value, Data::Name::data_type::Tag::kValue,
-                                Identity(NodeId().string()));
+  typename DataManager::Key key(data_name.value, Data::Name::data_type::Tag::kValue);
   sync_deletes_.AddLocalAction(DataManager::UnresolvedDelete(key, ActionDataManagerDelete(),
                                                              routing_.kNodeId()));
   DoSync();
@@ -678,7 +673,7 @@ template <typename DataManagerSyncType>
 void IncrementAttemptsAndSendSync(DataManagerDispatcher& dispatcher,
                                   DataManagerSyncType& sync_type) {
   auto unresolved_actions(sync_type.GetUnresolvedActions());
-  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for DataManagerSerive, has " 
+  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for DataManagerSerive, has "
                 << unresolved_actions.size() << " unresolved_actions";
   if (!unresolved_actions.empty()) {
     sync_type.IncrementSyncAttempts();
