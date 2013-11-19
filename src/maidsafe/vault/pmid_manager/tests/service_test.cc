@@ -116,7 +116,7 @@ PmidManagerServiceTest::GetUnresolvedActions<PmidManager::UnresolvedDelete>() {
 
 TEST_CASE_METHOD(PmidManagerServiceTest,
                  "pmid manager: check handlers for all messages are available",
-                 "[Handler][PmidManager]") {
+                 "[Handler][PmidManager][Service]") {
   SECTION("PutRequestFromDataManagerToPmidManager") {
     auto content(CreateContent<PutRequestFromDataManagerToPmidManager::Contents>());
     auto put_request(CreateMessage<PutRequestFromDataManagerToPmidManager>(content));
@@ -170,8 +170,7 @@ TEST_CASE_METHOD(PmidManagerServiceTest,
 }
 
 TEST_CASE_METHOD(PmidManagerServiceTest,
-                 "pmid manager: checking all sync message types are handled",
-                 "[Sync][PmidManager]") {
+                 "pmid manager: check handlers availability", "[Sync][PmidManager][Service]") {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   auto group_source(CreateGroupSource(NodeId(pmid_.name()->string())));
   PmidManager::Key key(PmidName(pmid_.name()), data.name(), ImmutableData::Tag::kValue);

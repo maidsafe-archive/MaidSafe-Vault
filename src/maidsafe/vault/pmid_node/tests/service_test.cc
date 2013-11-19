@@ -66,8 +66,8 @@ class PmidNodeServiceTest {
   AsioService asio_service_;
 };
 
-TEST_CASE_METHOD(PmidNodeServiceTest, "pmid node: checking handler availablity",
-                 "[Handler][PmidNode]") {
+TEST_CASE_METHOD(PmidNodeServiceTest, "pmid node: checking handlers availablity",
+                 "[Handler][PmidNode][Service]") {
   SECTION("PutRequestFromPmidManagerToPmidNode") {
     auto content(CreateContent<PutRequestFromPmidManagerToPmidNode::Contents>());
     auto put_request(CreateMessage<PutRequestFromPmidManagerToPmidNode>(content));

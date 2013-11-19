@@ -196,8 +196,8 @@ void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedUpdatePmidHealth>(
       group_source);
 }
 
-TEST_CASE_METHOD(MaidManagerServiceTest, "check handlers for all messages are available",
-                "[Handler][MaidManager]") {
+TEST_CASE_METHOD(MaidManagerServiceTest, "maid manager: check handlers availability",
+                "[Handler][MaidManager][Service]") {
 
   SECTION("PutRequestFromMaidNodeToMaidManager") {
     CreateAccount();
@@ -293,7 +293,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "check handlers for all messages are av
 
 TEST_CASE_METHOD(MaidManagerServiceTest,
                  "maid manager: checking all sync message types are handled",
-                 "[Sync][MaidManager]") {
+                 "[Sync][MaidManager][Service]") {
   SECTION("CreateAccount") {
     nfs::MessageId message_id(RandomInt32());
     ActionCreateAccount action_create_account(message_id);
@@ -406,7 +406,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
 }
 
 TEST_CASE_METHOD(MaidManagerServiceTest, "maid manager: account transfer",
-                 "[AccountTransfer][MaidManager]") {
+                 "[AccountTransfer][MaidManager][Service]") {
   CHECK(false);
   // Not implemented yet
 }
