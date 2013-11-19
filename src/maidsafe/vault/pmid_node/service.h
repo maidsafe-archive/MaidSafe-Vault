@@ -265,6 +265,8 @@ void PmidNodeService::HandleGet(const typename Data::Name& data_name,
     nfs_vault::DataNameAndContentOrCheckResult
         data_or_check_result(Data::Name::data_type::Tag::kValue,
                              data.name().value, data.Serialise());
+    LOG(kVerbose) << "PmidNodeService::HandleGet got " << HexSubstr(data.name().value) 
+                  << " with content " << HexSubstr(data.Serialise().data);
     dispatcher_.SendGetOrIntegrityCheckResponse(data_or_check_result, data_manager_node_id,
                                                 message_id);
   } catch (const maidsafe_error& error) {
@@ -306,6 +308,8 @@ void PmidNodeService::HandleIntegrityCheck(const typename Data::Name& data_name,
     nfs_vault::DataNameAndContentOrCheckResult
         data_or_check_result(Data::Name::data_type::Tag::kValue, data.name().value,
                                  integrity_check_data.result());
+    LOG(kVerbose) << "PmidNodeService::HandleIntegrityCheck send back integrity_check_data for "
+                  << HexSubstr(data.name().value);
     dispatcher_.SendGetOrIntegrityCheckResponse(data_or_check_result, data_manager_node_id,
                                                 message_id);
   } catch (const maidsafe_error& error) {
