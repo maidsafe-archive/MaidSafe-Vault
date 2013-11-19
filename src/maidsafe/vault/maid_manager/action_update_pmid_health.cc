@@ -55,6 +55,16 @@ detail::DbAction ActionMaidManagerUpdatePmidHealth::operator()(MaidManagerMetada
   return detail::DbAction::kPut;
 }
 
+bool operator==(const ActionMaidManagerUpdatePmidHealth& lhs,
+                const ActionMaidManagerUpdatePmidHealth& rhs) {
+  return (lhs.kPmidHealth == rhs.kPmidHealth);
+}
+
+bool operator!=(const ActionMaidManagerUpdatePmidHealth& lhs,
+                const ActionMaidManagerUpdatePmidHealth& rhs) {
+  return !operator==(lhs, rhs);
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

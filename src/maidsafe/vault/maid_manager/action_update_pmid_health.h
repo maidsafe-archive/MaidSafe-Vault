@@ -44,6 +44,12 @@ struct ActionMaidManagerUpdatePmidHealth {
   const PmidManagerMetadata kPmidHealth;
 };
 
+bool operator==(const ActionMaidManagerUpdatePmidHealth& lhs,
+                const ActionMaidManagerUpdatePmidHealth& rhs);
+
+bool operator!=(const ActionMaidManagerUpdatePmidHealth& lhs,
+                const ActionMaidManagerUpdatePmidHealth& rhs);
+
 }  // namespace vault
 
 }  // namespace maidsafe

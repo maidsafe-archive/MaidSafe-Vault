@@ -56,6 +56,14 @@ std::string ActionPmidManagerDelete::Serialise() const {
   return action_delete_proto.SerializeAsString();
 }
 
+bool operator==(const ActionPmidManagerDelete& lhs, const ActionPmidManagerDelete& rhs) {
+  return (lhs.pmid_node_available ==  rhs.pmid_node_available);
+}
+
+bool operator!=(const ActionPmidManagerDelete& lhs, const ActionPmidManagerDelete& rhs) {
+  return !operator==(lhs, rhs);
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe
