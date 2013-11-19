@@ -81,7 +81,7 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "long term put/get", "[Cache]") {
   REQUIRE_NOTHROW(Get<ImmutableData>(data.name()));
 }
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put", "[Cache]") {
+TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put", "[CacheHandler][Put]") {
   routing::SingleId maid_node((NodeId(NodeId::kRandomId)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   nfs_client::DataNameAndContentOrReturnCode content(data);
@@ -124,7 +124,7 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put", "[Cache]")
   }
 }
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving get", "[Cache]") {
+TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving get", "[CacheHandler][Get]") {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   routing::SingleSource source_node((NodeId(NodeId::kRandomId)));
   routing::GroupId group_id(NodeId(data.name()->string()));

@@ -59,8 +59,9 @@ glob_dir(VersionHandlerTests ${VaultSourcesDir}/version_handler/tests "Tests")
 glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
 set(TestsMain ${VaultSourcesDir}/tests/tests_main.cc)
 
-set(VaultGTestsAllFiles ${VaultTestsAllFiles} ${PmidManagerTestsAllFiles} ${PmidNodeTestsAllFiles})
-set(VaultTestsAllFiles ${DataManagerTestsAllFiles}
+set(VaultGTestsAllFiles ${VaultTestsAllFiles} ${PmidNodeTestsAllFiles})
+set(VaultTestsAllFiles ${PmidManagerTestsAllFiles}
+                       ${DataManagerTestsAllFiles}
                        ${VersionHandlerTestsAllFiles}
                        ${CacheHandlerTestsAllFiles}
                        ${MaidManagerTestsAllFiles}
