@@ -31,12 +31,14 @@ Demultiplexer::Demultiplexer(nfs::Service<MaidManagerService>& maid_manager_serv
                              nfs::Service<VersionHandlerService>& version_handler_service,
                              nfs::Service<DataManagerService>& data_manager_service,
                              nfs::Service<PmidManagerService>& pmid_manager_service,
-                             nfs::Service<PmidNodeService>& pmid_node_service)
+                             nfs::Service<PmidNodeService>& pmid_node_service,
+                             nfs_client::DataGetter& data_getter)
     : maid_manager_service_(maid_manager_service),
       version_handler_service_(version_handler_service),
       data_manager_service_(data_manager_service),
       pmid_manager_service_(pmid_manager_service),
-      pmid_node_service_(pmid_node_service) {}
+      pmid_node_service_(pmid_node_service),
+      data_getter_(data_getter) {}
 
 }  // namespace vault
 

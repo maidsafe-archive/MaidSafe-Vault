@@ -47,7 +47,8 @@ class Demultiplexer {
                 nfs::Service<VersionHandlerService>& version_handler_service,
                 nfs::Service<DataManagerService>& data_manager_service,
                 nfs::Service<PmidManagerService>& pmid_manager_service,
-                nfs::Service<PmidNodeService>& pmid_node_service);
+                nfs::Service<PmidNodeService>& pmid_node_service,
+                nfs_client::DataGetter& data_getter);
   template <typename T>
   void HandleMessage(const T& routing_message);
   template <typename T>
@@ -65,6 +66,7 @@ class Demultiplexer {
   nfs::Service<DataManagerService>& data_manager_service_;
   nfs::Service<PmidManagerService>& pmid_manager_service_;
   nfs::Service<PmidNodeService>& pmid_node_service_;
+  nfs_client::DataGetter& data_getter_;
 };
 
 template <typename T>
@@ -90,8 +92,11 @@ void Demultiplexer::HandleMessage(const T& routing_message) {
     case nfs::Persona::kPmidNode:
       return pmid_node_service_.HandleMessage(wrapper_tuple, routing_message.sender,
                                               routing_message.receiver);
+    case nfs::Persona::kDataGetter:
+      return data_getter_.HandleMessage(wrapper_tuple, routing_message.sender,
+                                        routing_message.receiver);
     default:
-      LOG(kError) << "Unhandled Persona";
+      LOG(kError) << "Persona data : " << destination_persona.data << " is an Unhandled Persona ";
   }
 }
 

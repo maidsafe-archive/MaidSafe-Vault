@@ -51,7 +51,7 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
       cache_service_(std::move(std::unique_ptr<CacheHandlerService>(
           new CacheHandlerService(*routing_, vault_root_dir)))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
-             pmid_manager_service_, pmid_node_service_),
+             pmid_manager_service_, pmid_node_service_, data_getter_),
       asio_service_(2) {
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
   asio_service_.Start();
@@ -167,10 +167,13 @@ void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
 void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {}
 
 void Vault::OnMatrixChanged(std::shared_ptr<routing::MatrixChange> matrix_change) {
-  asio_service_.service().post([=] { maid_manager_service_.HandleChurnEvent(matrix_change); });
-  asio_service_.service().post([=] { version_handler_service_.HandleChurnEvent(matrix_change); });
+//   LOG(kVerbose) << "OnMatrixChanged ";
+//   matrix_change->Print();
+//   data_manager_service_.HandleChurnEvent(matrix_change);
+//   asio_service_.service().post([=] { maid_manager_service_.HandleChurnEvent(matrix_change); });
+//   asio_service_.service().post([=] { version_handler_service_.HandleChurnEvent(matrix_change); });
   asio_service_.service().post([=] { data_manager_service_.HandleChurnEvent(matrix_change); });
-  asio_service_.service().post([=] { pmid_manager_service_.HandleChurnEvent(matrix_change); });
+//   asio_service_.service().post([=] { pmid_manager_service_.HandleChurnEvent(matrix_change); });
 }
 
 void Vault::OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint) {
