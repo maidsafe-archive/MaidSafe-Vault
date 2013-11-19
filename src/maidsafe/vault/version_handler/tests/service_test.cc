@@ -160,7 +160,7 @@ TEST_CASE_METHOD(VersionHandlerServiceTest,
     routing::GroupId version_group_id(group_id);
     SynchroniseFromVersionHandlerToVersionHandler::Contents content((std::string()));
     auto sync(CreateMessage<SynchroniseFromVersionHandlerToVersionHandler>(content));
-    REQUIRE_THROWS(GroupSendToGroup(&version_handler_service_, sync, group_source,
+    CHECK_THROWS(GroupSendToGroup(&version_handler_service_, sync, group_source,
                                     version_group_id));
   }
 }
@@ -180,7 +180,7 @@ TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are
              CreateGroupUnresolvedAction<VersionHandler::UnresolvedPutVersion>(
                  key, action_put_version, group_source));
     SendSync<VersionHandler::UnresolvedPutVersion>(group_unresolved_action, group_source);
-    REQUIRE_NOTHROW(Get(key));
+    CHECK_NOTHROW(Get(key));
   }
 
   SECTION("DeleteBranchUntilFork") {
@@ -208,7 +208,7 @@ TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are
       Store(key, ActionVersionHandlerPut(put.first, put.second, sender_id, message_id));
     }
 
-   REQUIRE_NOTHROW(Get(key).GetBranch(v4_iii));
+   CHECK_NOTHROW(Get(key).GetBranch(v4_iii));
 
     ActionVersionHandlerDeleteBranchUntilFork action_delete_branch(v4_iii);
     auto group_source(CreateGroupSource(NodeId(NodeId::kRandomId)));
@@ -217,8 +217,8 @@ TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are
                  key, action_delete_branch, group_source));
     SendSync<VersionHandler::UnresolvedDeleteBranchUntilFork>(group_unresolved_action,
                                                               group_source);
-    REQUIRE_THROWS(Get(key).GetBranch(v4_iii));
-    REQUIRE_NOTHROW(Get(key).GetBranch(v2_ddd));
+    CHECK_THROWS(Get(key).GetBranch(v4_iii));
+    CHECK_NOTHROW(Get(key).GetBranch(v2_ddd));
   }
 }
 

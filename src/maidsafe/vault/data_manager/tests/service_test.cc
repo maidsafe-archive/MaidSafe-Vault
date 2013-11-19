@@ -179,7 +179,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
     data_name_id = NodeId(content.data.name.raw_name.string());
     auto put_request(CreateMessage<PutRequestFromMaidManagerToDataManager>(content));
     auto group_source(CreateGroupSource(maid_node_id));
-    REQUIRE_NOTHROW(GroupSendToGroup(&data_manager_service_, put_request, group_source,
+    CHECK_NOTHROW(GroupSendToGroup(&data_manager_service_, put_request, group_source,
                                      routing::GroupId(data_name_id)));
     CHECK(GetUnresolvedActions<DataManager::UnresolvedPut>().size() == 0);
   }
@@ -190,7 +190,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
     data_name_id = NodeId(content.name.raw_name.string());
     auto group_source(CreateGroupSource(pmid_node_id));
     auto put_response(CreateMessage<PutResponseFromPmidManagerToDataManager>(content));
-    REQUIRE_NOTHROW(GroupSendToGroup(&data_manager_service_, put_response, group_source,
+    CHECK_NOTHROW(GroupSendToGroup(&data_manager_service_, put_response, group_source,
                                      routing::GroupId(data_name_id)));
     CHECK(GetUnresolvedActions<DataManager::UnresolvedAddPmid>().size() == 1);
   }
@@ -201,7 +201,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
     data_name_id = NodeId(content.name.raw_name.string());
     auto group_source(CreateGroupSource(pmid_node_id));
     auto put_failure(CreateMessage<PutFailureFromPmidManagerToDataManager>(content));
-    REQUIRE_NOTHROW(GroupSendToGroup(&data_manager_service_, put_failure, group_source,
+    CHECK_NOTHROW(GroupSendToGroup(&data_manager_service_, put_failure, group_source,
                                      routing::GroupId(data_name_id)));
     CHECK(GetUnresolvedActions<DataManager::UnresolvedRemovePmid>().size() == 1);
   }
@@ -211,7 +211,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
     auto content(CreateContent<nfs::GetRequestFromMaidNodeToDataManager::Contents>());
     data_name_id = NodeId(content.raw_name.string());
     auto get_request(CreateMessage<nfs::GetRequestFromMaidNodeToDataManager>(content));
-    REQUIRE_NOTHROW(SingleSendsToGroup(&data_manager_service_, get_request,
+    CHECK_NOTHROW(SingleSendsToGroup(&data_manager_service_, get_request,
                                        routing::SingleSource(maid_node_id),
                                        routing::GroupId(data_name_id)));
   }
@@ -221,7 +221,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
     auto content(CreateContent<nfs::GetRequestFromDataGetterToDataManager::Contents>());
     data_name_id = NodeId(content.raw_name.string());
     auto get_request(CreateMessage<nfs::GetRequestFromDataGetterToDataManager>(content));
-    REQUIRE_NOTHROW(SingleSendsToGroup(&data_manager_service_, get_request,
+    CHECK_NOTHROW(SingleSendsToGroup(&data_manager_service_, get_request,
                                        routing::SingleSource(maid_node_id),
                                        routing::GroupId(data_name_id)));
   }
@@ -235,7 +235,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
                  });
 
     AddTask(functor, 1, get_response.id.data);
-    REQUIRE_NOTHROW(SingleSendsToSingle(&data_manager_service_, get_response,
+    CHECK_NOTHROW(SingleSendsToSingle(&data_manager_service_, get_response,
                                         routing::SingleSource(pmid_node_id),
                                         routing::SingleId(routing_.kNodeId())));
   }
@@ -244,7 +244,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
     NodeId data_manager_id(NodeId::kRandomId);
     auto content(CreateContent<PutToCacheFromDataManagerToDataManager::Contents>());
     auto put_to_cache(CreateMessage<PutToCacheFromDataManagerToDataManager>(content));
-    REQUIRE_NOTHROW(SingleSendsToSingle(&data_manager_service_, put_to_cache,
+    CHECK_NOTHROW(SingleSendsToSingle(&data_manager_service_, put_to_cache,
                                         routing::SingleSource(data_manager_id),
                                         routing::SingleId(routing_.kNodeId())));
   }
@@ -253,7 +253,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
     NodeId data_manager_id(NodeId::kRandomId);
     auto content(CreateContent<GetFromCacheFromDataManagerToDataManager::Contents>());
     auto get_from_cache(CreateMessage<GetFromCacheFromDataManagerToDataManager>(content));
-    REQUIRE_NOTHROW(SingleSendsToGroup(&data_manager_service_, get_from_cache,
+    CHECK_NOTHROW(SingleSendsToGroup(&data_manager_service_, get_from_cache,
                                        routing::SingleSource(data_manager_id),
                                        routing::GroupId(NodeId(content.raw_name.string()))));
   }
@@ -262,7 +262,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
     NodeId cache_handler_id(NodeId::kRandomId);
     auto content(CreateContent<GetCachedResponseFromCacheHandlerToDataManager::Contents>());
     auto get_cache_response(CreateMessage<GetCachedResponseFromCacheHandlerToDataManager>(content));
-    REQUIRE_NOTHROW(SingleSendsToSingle(&data_manager_service_, get_cache_response,
+    CHECK_NOTHROW(SingleSendsToSingle(&data_manager_service_, get_cache_response,
                                         routing::SingleSource(cache_handler_id),
                                         routing::SingleId(routing_.kNodeId())));
   }
