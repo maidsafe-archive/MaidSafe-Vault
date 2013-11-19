@@ -103,7 +103,8 @@ TEST_CASE_METHOD(VersionHandlerServiceTest,
     routing::GroupId version_group_id((NodeId(NodeId::kRandomId)));
     auto content(CreateContent<nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Contents>());
     auto get_version(CreateMessage<nfs::GetVersionsRequestFromMaidNodeToVersionHandler>(content));
-    SingleSendsToGroup(&version_handler_service_, get_version, maid_node, version_group_id);
+    CHECK_NOTHROW(SingleSendsToGroup(&version_handler_service_, get_version, maid_node,
+                                     version_group_id));
   }
 
   SECTION("GetVersionsRequestFromDataGetterToVersionHandler") {
@@ -111,7 +112,8 @@ TEST_CASE_METHOD(VersionHandlerServiceTest,
     routing::GroupId version_group_id((NodeId(NodeId::kRandomId)));
     auto content(CreateContent<nfs::GetVersionsRequestFromDataGetterToVersionHandler::Contents>());
     auto get_version(CreateMessage<nfs::GetVersionsRequestFromDataGetterToVersionHandler>(content));
-    SingleSendsToGroup(&version_handler_service_, get_version, data_getter_id, version_group_id);
+    CHECK_NOTHROW(SingleSendsToGroup(&version_handler_service_, get_version, data_getter_id,
+                                     version_group_id));
   }
 
   SECTION("GetBranchRequestFromMaidNodeToVersionHandler") {
@@ -119,7 +121,8 @@ TEST_CASE_METHOD(VersionHandlerServiceTest,
     routing::GroupId version_group_id((NodeId(NodeId::kRandomId)));
     auto content(CreateContent<nfs::GetBranchRequestFromMaidNodeToVersionHandler::Contents>());
     auto get_branch(CreateMessage<nfs::GetBranchRequestFromMaidNodeToVersionHandler>(content));
-    SingleSendsToGroup(&version_handler_service_, get_branch, maid_node, version_group_id);
+    CHECK_NOTHROW(SingleSendsToGroup(&version_handler_service_, get_branch, maid_node,
+                                     version_group_id));
   }
 
   SECTION("GetBranchRequestFromDataGetterToVersionHandler") {
@@ -127,7 +130,8 @@ TEST_CASE_METHOD(VersionHandlerServiceTest,
     routing::GroupId version_group_id((NodeId(NodeId::kRandomId)));
     auto content(CreateContent<nfs::GetBranchRequestFromDataGetterToVersionHandler::Contents>());
     auto get_branch(CreateMessage<nfs::GetBranchRequestFromDataGetterToVersionHandler>(content));
-    SingleSendsToGroup(&version_handler_service_, get_branch, data_getter_id, version_group_id);
+    CHECK_NOTHROW(SingleSendsToGroup(&version_handler_service_, get_branch, data_getter_id,
+                                     version_group_id));
   }
 
   SECTION("PutVersionRequestFromMaidManagerToVersionHandler") {
@@ -135,7 +139,8 @@ TEST_CASE_METHOD(VersionHandlerServiceTest,
     routing::GroupId version_group_id((NodeId(NodeId::kRandomId)));
     auto content(CreateContent<PutVersionRequestFromMaidManagerToVersionHandler::Contents>());
     auto put_version(CreateMessage<PutVersionRequestFromMaidManagerToVersionHandler>(content));
-    GroupSendToGroup(&version_handler_service_, put_version, group_source, version_group_id);
+    CHECK_NOTHROW(GroupSendToGroup(&version_handler_service_, put_version, group_source,
+                                   version_group_id));
   }
 
   SECTION("DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler") {
@@ -145,7 +150,8 @@ TEST_CASE_METHOD(VersionHandlerServiceTest,
         CreateContent<DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Contents>());
     auto delete_branch(
         CreateMessage<DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler>(content));
-    GroupSendToGroup(&version_handler_service_, delete_branch, group_source, version_group_id);
+    CHECK_NOTHROW(GroupSendToGroup(&version_handler_service_, delete_branch, group_source,
+                                   version_group_id));
   }
 
   SECTION("SynchroniseFromVersionHandlerToVersionHandler") {
