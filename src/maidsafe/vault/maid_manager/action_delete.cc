@@ -62,6 +62,14 @@ detail::DbAction ActionMaidManagerDelete::operator()(
     return detail::DbAction::kPut;
 }
 
+bool operator==(const ActionMaidManagerDelete& lhs, const ActionMaidManagerDelete& rhs) {
+  return (lhs.kMessageId == rhs.kMessageId);
+}
+
+bool operator!=(const ActionMaidManagerDelete& lhs, const ActionMaidManagerDelete& rhs) {
+  return !operator==(lhs, rhs);
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

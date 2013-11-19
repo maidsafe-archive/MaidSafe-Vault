@@ -44,6 +44,9 @@ struct ActionPmidManagerDelete {
   bool pmid_node_available;
 };
 
+bool operator==(const ActionPmidManagerDelete& lhs, const ActionPmidManagerDelete& rhs);
+bool operator!=(const ActionPmidManagerDelete& lhs, const ActionPmidManagerDelete& rhs);
+
 }  // namespace vault
 }  // namespace maidsafe
 
