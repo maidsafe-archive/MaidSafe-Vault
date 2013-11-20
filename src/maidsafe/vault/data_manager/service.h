@@ -521,10 +521,11 @@ template <typename Data, typename RequestorIdType>
 void DataManagerService::DoHandleGetResponse(
     const PmidName& pmid_node, const GetResponseContents& contents,
     std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
-  LOG(kVerbose) << "DataManagerService::DoHandleGetResponse received "
-                << HexSubstr(contents.name.raw_name) << " with content "
-                << HexSubstr(contents.content->string()) << " from "
+  LOG(kVerbose) << "DataManagerService::DoHandleGetResponse received response from "
                 << HexSubstr(pmid_node->string());
+//   if (contents)
+//     LOG(kVerbose) << HexSubstr(contents.name.raw_name) << " with content "
+//                   << HexSubstr(contents.content->string());
   // Note: if 'contents' is default-constructed, it's probably a result of this function being
   // invoked by the timer after timeout.
   int called_count(0), expected_count(0);
@@ -534,17 +535,22 @@ void DataManagerService::DoHandleGetResponse(
     expected_count = static_cast<int>(get_response_op->integrity_checks.size()) + 1;
     assert(called_count <= expected_count);
     if (pmid_node == get_response_op->pmid_node_to_get_from) {
-      LOG(kVerbose) << "DataManagerService::DoHandleGetResponse send response ";
+      LOG(kVerbose) << "DataManagerService::DoHandleGetResponse send response to requester";
       if (SendGetResponse<Data, RequestorIdType>(contents, get_response_op)) {
         get_response_op->serialised_contents = typename Data::serialised_type(*contents.content);
       }
     } else if (contents.check_result) {
-      LOG(kVerbose) << "DataManagerService::DoHandleGetResponse starts integrity check";
+      LOG(kVerbose) << "DataManagerService::DoHandleGetResponse set integrity check_result "
+                    << "for pmid_node " << HexSubstr(pmid_node->string());
       auto itr(get_response_op->integrity_checks.find(pmid_node));
       if (itr != std::end(get_response_op->integrity_checks))
         itr->second.SetResult(*contents.check_result);
+    } else {
+      LOG(kError) << "DataManagerService::DoHandleGetResponse reaching unexpected-branch";
     }
   }
+  LOG(kVerbose) << "DataManagerService::DoHandleGetResponse called_count "
+                << called_count << " expected_count " << expected_count;
   if (called_count == expected_count)
     AssessIntegrityCheckResults<Data, RequestorIdType>(get_response_op);
 }
@@ -555,8 +561,12 @@ bool DataManagerService::SendGetResponse(
     std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
   maidsafe_error error(MakeError(CommonErrors::unknown));
   try {
-    if (!contents.content)
+    if (!contents.content) {
+      LOG(kError) << "DataManagerService::SendGetResponse no contents for "
+                  << HexSubstr(get_response_op->data_name.value);
       ThrowError(CommonErrors::unknown);
+    }
+    LOG(kInfo) << "DataManagerService::SendGetResponse SendGetResponseSuccess and put to cache";
     Data data(get_response_op->data_name, typename Data::serialised_type(*contents.content));
     dispatcher_.SendGetResponseSuccess(get_response_op->requestor_id, data,
                                        get_response_op->message_id);
@@ -565,12 +575,13 @@ bool DataManagerService::SendGetResponse(
     return true;
   } catch(const maidsafe_error& e) {
     error = e;
-    LOG(kError) << e.what();
+    LOG(kError) << "DataManagerService::SendGetResponse " << e.what();
   } catch(const std::exception& e) {
-    LOG(kError) << e.what();
+    LOG(kError) << "DataManagerService::SendGetResponse " << e.what();
   } catch(...) {
-    LOG(kError) << "Unexpected exception type.";
+    LOG(kError) << "DataManagerService::SendGetResponse Unexpected exception type.";
   }
+  LOG(kWarning) << "DataManagerService::SendGetResponse SendGetResponseFailure";
   dispatcher_.SendGetResponseFailure(get_response_op->requestor_id, get_response_op->data_name,
                                      error, get_response_op->message_id);
   return false;
@@ -582,9 +593,26 @@ void DataManagerService::AssessIntegrityCheckResults(
   // If we failed to get the serialised_contents, mark 'pmid_node_to_get_from' as down, sync this,
   // try to Get from peer DataManagers' caches.
   if (!get_response_op->serialised_contents->IsInitialised()) {
+    LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults marking node "
+                  << HexSubstr(get_response_op->pmid_node_to_get_from->string())
+                  << " down for data " << HexSubstr(get_response_op->data_name.value.string());
     MarkNodeDown(get_response_op->pmid_node_to_get_from, get_response_op->data_name);
-
+    // BEFORE_RELEASE If no data got, then try to get from peer's cache
+    //                and the integrity_check results shall be discarded
+    return;
   }
+  for (auto itr : get_response_op->integrity_checks)
+    if (!itr.second.Validate(get_response_op->serialised_contents)) {
+      // In case the pmid_node_to_get_from returned with a false content, which in-validated
+      // all the others, as the PmidNode side has to accumulate enough delete requests before
+      // deploy the action, send out false delete request won't cause problem as long as no more
+      // than half PmidNodes containing false data.
+      LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
+                    << HexSubstr(itr.first->string()) << " returned invalid data for "
+                    << HexSubstr(get_response_op->data_name.value.string());
+      SendDeleteRequest<Data>(itr.first, get_response_op->data_name,
+                              get_response_op->message_id);
+    }
 }
 
 //template <typename Data>
