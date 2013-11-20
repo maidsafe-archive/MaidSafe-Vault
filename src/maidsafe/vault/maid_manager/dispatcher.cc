@@ -118,6 +118,9 @@ void MaidManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer
 
 void MaidManagerDispatcher::SendHealthResponse(const MaidName& maid_name, int64_t available_size,
     const nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
+  LOG(kVerbose) << "MaidManagerDispatcher::SendHealthResponse for maid "
+                << HexSubstr(maid_name->string()) << " . available_size " << available_size
+                << " and return code : " << return_code.value.what();
   typedef nfs::PmidHealthResponseFromMaidManagerToMaidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<NfsMessage>();
