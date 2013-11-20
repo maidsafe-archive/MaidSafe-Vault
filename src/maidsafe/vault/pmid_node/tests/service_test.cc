@@ -33,7 +33,7 @@ namespace vault {
 namespace test {
 
 
-class PmidNodeServiceTest  : public testing::Test {
+class PmidNodeServiceTest {
  public:
   PmidNodeServiceTest() :
       pmid_(MakePmid()),
@@ -46,6 +46,16 @@ class PmidNodeServiceTest  : public testing::Test {
     boost::filesystem::create_directory(vault_root_dir_);
   }
 
+  template <typename Data>
+  Data Get(const typename Data::Name& data_name) {
+    return pmid_node_service_.handler_.Get<Data>(data_name);
+  }
+
+  template <typename Data>
+  void Store(const Data& data) {
+    pmid_node_service_.handler_.Put(data);
+  }
+
  protected:
   passport::Pmid pmid_;
   const maidsafe::test::TestPath kTestRoot_;
@@ -56,56 +66,58 @@ class PmidNodeServiceTest  : public testing::Test {
   AsioService asio_service_;
 };
 
-TEST_F(PmidNodeServiceTest, BEH_PutRequestFromPmidManager) {
-  auto content(CreateContent<PutRequestFromPmidManagerToPmidNode::Contents>());
-  auto put_request(CreateMessage<PutRequestFromPmidManagerToPmidNode>(content));
-  auto group_source(CreateGroupSource(routing_.kNodeId()));
-  GroupSendToSingle(&pmid_node_service_, put_request, group_source,
-                    routing::SingleId(routing_.kNodeId()));
-  // TO BE CONTINUED CHECK exists
-}
+TEST_CASE_METHOD(PmidNodeServiceTest, "pmid node: checking handlers availablity",
+                 "[Handler][PmidNode][Service]") {
+  SECTION("PutRequestFromPmidManagerToPmidNode") {
+    auto content(CreateContent<PutRequestFromPmidManagerToPmidNode::Contents>());
+    auto put_request(CreateMessage<PutRequestFromPmidManagerToPmidNode>(content));
+    auto group_source(CreateGroupSource(routing_.kNodeId()));
+    CHECK_NOTHROW(GroupSendToSingle(&pmid_node_service_, put_request, group_source,
+                                    routing::SingleId(routing_.kNodeId())));
+    CHECK_NOTHROW(Get<ImmutableData>(typename ImmutableData::Name(content.name.raw_name)));
+  }
 
-TEST_F(PmidNodeServiceTest, BEH_GetRequestFromDataManager) {
-  auto content(CreateContent<GetRequestFromDataManagerToPmidNode::Contents>());
-  auto get_request(CreateMessage<GetRequestFromDataManagerToPmidNode>(content));
-  auto group_source(CreateGroupSource(NodeId(content.raw_name.string())));
-  GroupSendToSingle(&pmid_node_service_, get_request, group_source,
-                    routing::SingleId(routing_.kNodeId()));
-  // TO BE CONTINUED
-}
+  SECTION("GetRequestFromDataManagerToPmidNode") {
+    auto content(CreateContent<GetRequestFromDataManagerToPmidNode::Contents>());
+    auto get_request(CreateMessage<GetRequestFromDataManagerToPmidNode>(content));
+    auto group_source(CreateGroupSource(NodeId(content.raw_name.string())));
+    CHECK_NOTHROW(GroupSendToSingle(&pmid_node_service_, get_request, group_source,
+                                    routing::SingleId(routing_.kNodeId())));
+  }
 
-TEST_F(PmidNodeServiceTest, BEH_IntegrityCheckRequestFromDataManager) {
-  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-  NonEmptyString random_string(RandomString(64));
-  nfs_vault::DataNameAndRandomString content(data.name(), random_string);
-  auto integrity_check_request(
-           CreateMessage<IntegrityCheckRequestFromDataManagerToPmidNode>(content));
-  SingleSendsToSingle(&pmid_node_service_, integrity_check_request,
-                      routing::SingleSource(NodeId(NodeId::kRandomId)),
-                      routing::SingleId(routing_.kNodeId()));
-  // TO BE CONTINUED
-}
+  SECTION("IntegrityCheckRequestFromDataManagerToPmidNode") {
+    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+    NonEmptyString random_string(RandomString(64));
+    nfs_vault::DataNameAndRandomString content(data.name(), random_string);
+    auto integrity_check_request(
+             CreateMessage<IntegrityCheckRequestFromDataManagerToPmidNode>(content));
+    CHECK_NOTHROW(SingleSendsToSingle(&pmid_node_service_, integrity_check_request,
+                                      routing::SingleSource(NodeId(NodeId::kRandomId)),
+                                      routing::SingleId(routing_.kNodeId())));
+  }
 
-TEST_F(PmidNodeServiceTest, BEH_DeleteRequestFromPmidManager) {
-  auto content(CreateContent<DeleteRequestFromPmidManagerToPmidNode::Contents>());
-  auto delete_request(CreateMessage<DeleteRequestFromPmidManagerToPmidNode>(content));
-  auto group_source(CreateGroupSource(routing_.kNodeId()));
-  GroupSendToSingle(&pmid_node_service_, delete_request, group_source,
-                    routing::SingleId(routing_.kNodeId()));
-  // TO BE CONTINUED CHECK not exists
-}
+  SECTION("DeleteRequestFromPmidManagerToPmidNode") {
+    auto content(CreateContent<DeleteRequestFromPmidManagerToPmidNode::Contents>());
+    auto delete_request(CreateMessage<DeleteRequestFromPmidManagerToPmidNode>(content));
+    auto group_source(CreateGroupSource(routing_.kNodeId()));
+    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+    Store(data);
+    CHECK_NOTHROW(GroupSendToSingle(&pmid_node_service_, delete_request, group_source,
+                                    routing::SingleId(routing_.kNodeId())));
+    CHECK_NOTHROW(Get<ImmutableData>(data.name()));
+  }
 
-TEST_F(PmidNodeServiceTest, BEH_GetPmidAccountResponseFromPmidManager) {
-  nfs_client::ReturnCode return_code(CommonErrors::success);
-  nfs_client::DataNamesAndReturnCode content(return_code);
-  // ADD DATA BEFORE TEST TO PERMANENT DATA STORES
-  // ADD DATA NAME TO CONTENTS
-  auto pmid_account_response(
-           CreateMessage<GetPmidAccountResponseFromPmidManagerToPmidNode>(content));
-  auto group_source(CreateGroupSource(routing_.kNodeId()));
-  GroupSendToSingle(&pmid_node_service_, pmid_account_response, group_source,
-                    routing::SingleId(routing_.kNodeId()));
-  // TO BE CONTINUED CHECK exists
+  SECTION("GetPmidAccountResponseFromPmidManagerToPmidNode") {
+    nfs_client::ReturnCode return_code(CommonErrors::success);
+    nfs_client::DataNamesAndReturnCode content(return_code);
+    // ADD DATA BEFORE TEST TO PERMANENT DATA STORES
+    // ADD DATA NAME TO CONTENTS
+    auto pmid_account_response(
+             CreateMessage<GetPmidAccountResponseFromPmidManagerToPmidNode>(content));
+    auto group_source(CreateGroupSource(routing_.kNodeId()));
+    CHECK_NOTHROW(GroupSendToSingle(&pmid_node_service_, pmid_account_response, group_source,
+                                    routing::SingleId(routing_.kNodeId())));
+  }
 
 }
 

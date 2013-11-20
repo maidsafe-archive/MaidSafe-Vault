@@ -53,6 +53,17 @@ struct ActionCreateRemoveAccount {
   const nfs::MessageId kMessageId;
 };
 
+template <bool Remove>
+bool operator==(const ActionCreateRemoveAccount<Remove>& lhs,
+                const ActionCreateRemoveAccount<Remove>& rhs) {
+  return (lhs.kMessageId == rhs.kMessageId);
+}
+
+template <bool Remove>
+bool operator!=(const ActionCreateRemoveAccount<Remove>& lhs,
+                const ActionCreateRemoveAccount<Remove>& rhs) {
+  return !operator==(lhs, rhs);
+}
 
 // Implementation
 template <bool Remove>

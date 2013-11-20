@@ -66,22 +66,23 @@ class CacheHandlerServiceTest {
   AsioService asio_service_;
 };
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "short term put/get", "[Cache]") {
+TEST_CASE_METHOD(CacheHandlerServiceTest, "short term put/get", "[CacheHandler][Service]") {
   passport::Anmaid anmaid;
   passport::PublicAnmaid public_anmaid(anmaid);
-  REQUIRE_THROWS(Get<passport::PublicAnmaid>(public_anmaid.name()));
+  CHECK_THROWS(Get<passport::PublicAnmaid>(public_anmaid.name()));
   Store(public_anmaid);
-  REQUIRE_NOTHROW(Get<passport::PublicAnmaid>(public_anmaid.name()));
+  CHECK_NOTHROW(Get<passport::PublicAnmaid>(public_anmaid.name()));
 }
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "long term put/get", "[Cache]") {
+TEST_CASE_METHOD(CacheHandlerServiceTest, "long term put/get", "[CacheHandler][Service]") {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-  REQUIRE_THROWS(Get<ImmutableData>(data.name()));
+  CHECK_THROWS(Get<ImmutableData>(data.name()));
   Store(data);
-  REQUIRE_NOTHROW(Get<ImmutableData>(data.name()));
+  CHECK_NOTHROW(Get<ImmutableData>(data.name()));
 }
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put", "[CacheHandler][Put]") {
+TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put",
+                                          "[CacheHandler][Put][Service]") {
   routing::SingleId maid_node((NodeId(NodeId::kRandomId)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   nfs_client::DataNameAndContentOrReturnCode content(data);
@@ -91,28 +92,28 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put", "[CacheHan
              CreateMessage<nfs::GetCachedResponseFromCacheHandlerToDataGetter>(content));
     routing::SingleSource source((NodeId(NodeId::kRandomId)));
     CHECK(cache_handler_service_.HandleMessage(cached_response, source, maid_node));
-    REQUIRE_NOTHROW(Get<ImmutableData>(data.name()));
+    CHECK_NOTHROW(Get<ImmutableData>(data.name()));
   }
 
   SECTION("GetResponseFromDataManagerToDataGetter") {
     auto response(CreateMessage<nfs::GetResponseFromDataManagerToDataGetter>(content));
     auto group_source(CreateGroupSource(data.name()));
     CHECK(cache_handler_service_.HandleMessage(response, *group_source.begin(), maid_node));
-    REQUIRE_NOTHROW(Get<ImmutableData>(data.name()));
+    CHECK_NOTHROW(Get<ImmutableData>(data.name()));
   }
 
   SECTION("GetResponseFromDataManagerToMaidNode") {
     auto response(CreateMessage<nfs::GetResponseFromDataManagerToMaidNode>(content));
     auto group_source(CreateGroupSource(data.name()));
     CHECK(cache_handler_service_.HandleMessage(response, *group_source.begin(), maid_node));
-    REQUIRE_NOTHROW(Get<ImmutableData>(data.name()));
+    CHECK_NOTHROW(Get<ImmutableData>(data.name()));
   }
 
   SECTION("GetCachedResponseFromCacheHandlerToMaidNode") {
     auto cached_response(CreateMessage<nfs::GetCachedResponseFromCacheHandlerToMaidNode>(content));
     routing::SingleSource source((NodeId(NodeId::kRandomId)));
     CHECK(cache_handler_service_.HandleMessage(cached_response, source, maid_node));
-    REQUIRE_NOTHROW(Get<ImmutableData>(data.name()));
+    CHECK_NOTHROW(Get<ImmutableData>(data.name()));
   }
 
   SECTION("PutToCacheFromDataManagerToDataManager") {
@@ -120,11 +121,12 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put", "[CacheHan
     routing::SingleSource source((NodeId(NodeId::kRandomId)));
     CHECK(cache_handler_service_.HandleMessage(cache_put, source,
                                                routing::SingleId(routing_.kNodeId())));
-    REQUIRE_NOTHROW(Get<ImmutableData>(data.name()));
+    CHECK_NOTHROW(Get<ImmutableData>(data.name()));
   }
 }
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving get", "[CacheHandler][Get]") {
+TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving get",
+                                          "[Handler][Get][Service]") {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   routing::SingleSource source_node((NodeId(NodeId::kRandomId)));
   routing::GroupId group_id(NodeId(data.name()->string()));

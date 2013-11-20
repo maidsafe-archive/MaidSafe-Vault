@@ -196,14 +196,14 @@ void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedUpdatePmidHealth>(
       group_source);
 }
 
-TEST_CASE_METHOD(MaidManagerServiceTest, "check handlers for all messages are available",
-                "[Handler][MaidManager]") {
+TEST_CASE_METHOD(MaidManagerServiceTest, "maid manager: check handlers availability",
+                "[Handler][MaidManager][Service]") {
 
   SECTION("PutRequestFromMaidNodeToMaidManager") {
     CreateAccount();
     auto content(CreateContent<nfs::PutRequestFromMaidNodeToMaidManager::Contents>());
     auto put_request(CreateMessage<nfs::PutRequestFromMaidNodeToMaidManager>(content));
-    REQUIRE_NOTHROW(SingleSendsToGroup(&maid_manager_service_, put_request,
+    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, put_request,
                                        routing::SingleSource(MaidNodeId()),
                                        routing::GroupId(MaidNodeId())));
   }
@@ -213,7 +213,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "check handlers for all messages are av
     NodeId data_name_id(content.name.raw_name.string());
     auto put_response(CreateMessage<PutResponseFromDataManagerToMaidManager>(content));
     auto group_source(CreateGroupSource(data_name_id));
-    REQUIRE_NOTHROW(GroupSendToGroup(&maid_manager_service_, put_response, group_source,
+    CHECK_NOTHROW(GroupSendToGroup(&maid_manager_service_, put_response, group_source,
                                      routing::GroupId(MaidNodeId())));
   }
 
@@ -222,7 +222,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "check handlers for all messages are av
     NodeId data_name_id(content.name.raw_name.string()), maid_node_id(NodeId::kRandomId);
     auto put_failure(CreateMessage<PutFailureFromDataManagerToMaidManager>(content));
     auto group_source(CreateGroupSource(data_name_id));
-    REQUIRE_NOTHROW(GroupSendToGroup(&maid_manager_service_, put_failure, group_source,
+    CHECK_NOTHROW(GroupSendToGroup(&maid_manager_service_, put_failure, group_source,
                                      routing::GroupId(maid_node_id)));
   }
 
@@ -230,7 +230,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "check handlers for all messages are av
     CreateAccount();
     auto content(CreateContent<nfs::DeleteRequestFromMaidNodeToMaidManager::Contents>());
     auto delete_request(CreateMessage<nfs::DeleteRequestFromMaidNodeToMaidManager>(content));
-    REQUIRE_NOTHROW(SingleSendsToGroup(&maid_manager_service_, delete_request,
+    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, delete_request,
                                        routing::SingleSource(MaidNodeId()),
                                        routing::GroupId(MaidNodeId())));
   }
@@ -240,7 +240,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "check handlers for all messages are av
              CreateContent<nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Contents>());
     auto delete_branch(
              CreateMessage<nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager>(content));
-    REQUIRE_NOTHROW(SingleSendsToGroup(&maid_manager_service_, delete_branch,
+    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, delete_branch,
                                        routing::SingleSource(MaidNodeId()),
                                        routing::GroupId(MaidNodeId())));
   }
@@ -249,7 +249,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "check handlers for all messages are av
     nfs::CreateAccountRequestFromMaidNodeToMaidManager::Contents content(
         (passport::PublicMaid(maid_)), (passport::PublicAnmaid(anmaid_)));
     auto create_account(CreateMessage<nfs::CreateAccountRequestFromMaidNodeToMaidManager>(content));
-    REQUIRE_NOTHROW(SingleSendsToGroup(&maid_manager_service_, create_account,
+    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, create_account,
                                        routing::SingleSource(MaidNodeId()),
                                        routing::GroupId(MaidNodeId())));
   }
@@ -257,21 +257,21 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "check handlers for all messages are av
   SECTION("nfs::RemoveAccountRequestFromMaidNodeToMaidManager") {
     nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Contents content(anmaid_);
     auto remove_account(CreateMessage<nfs::RemoveAccountRequestFromMaidNodeToMaidManager>(content));
-    REQUIRE_NOTHROW(SingleSendsToGroup(&maid_manager_service_, remove_account,
+    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, remove_account,
                     routing::SingleSource(MaidNodeId()), routing::GroupId(MaidNodeId())));
   }
 
   SECTION("nfs::RegisterPmidRequestFromMaidNodeToMaidManager") {
     nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Contents content(maid_, pmid_, true);
     auto register_pmid(CreateMessage<nfs::RegisterPmidRequestFromMaidNodeToMaidManager>(content));
-    REQUIRE_NOTHROW(SingleSendsToGroup(&maid_manager_service_, register_pmid,
+    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, register_pmid,
                     routing::SingleSource(MaidNodeId()), routing::GroupId(MaidNodeId())));
  }
 
   SECTION("nfs::UnregisterPmidRequestFromMaidNodeToMaidManager") {
     nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Contents content(maid_, pmid_, false);
     auto unregister_pmid(CreateMessage<nfs::UnregisterPmidRequestFromMaidNodeToMaidManager>(content));
-    REQUIRE_NOTHROW(SingleSendsToGroup(&maid_manager_service_, unregister_pmid,
+    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, unregister_pmid,
                     routing::SingleSource(MaidNodeId()), routing::GroupId(MaidNodeId())));
   }
 
@@ -286,14 +286,14 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "check handlers for all messages are av
     auto pmid_health_response(
              CreateMessage<PmidHealthResponseFromPmidManagerToMaidManager>(content));
     auto group_source(CreateGroupSource(NodeId(pmid_name->string())));
-    REQUIRE_NOTHROW(GroupSendToGroup(&maid_manager_service_, pmid_health_response, group_source,
+    CHECK_NOTHROW(GroupSendToGroup(&maid_manager_service_, pmid_health_response, group_source,
                                      routing::GroupId(MaidNodeId())));
   }
 }
 
 TEST_CASE_METHOD(MaidManagerServiceTest,
                  "maid manager: checking all sync message types are handled",
-                 "[Sync][MaidManager]") {
+                 "[Sync][MaidManager][Service]") {
   SECTION("CreateAccount") {
     nfs::MessageId message_id(RandomInt32());
     ActionCreateAccount action_create_account(message_id);
@@ -303,7 +303,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
              CreateGroupUnresolvedAction<MaidManager::UnresolvedCreateAccount>(
                  metadata_key, action_create_account, group_source));
     SendSync<MaidManager::UnresolvedCreateAccount>(group_unresolved_action, group_source);
-    REQUIRE_NOTHROW(GetMetadata(public_maid_.name()));
+    CHECK_NOTHROW(GetMetadata(public_maid_.name()));
   }
 
   SECTION("RemoveAccount") {
@@ -315,7 +315,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
              CreateGroupUnresolvedAction<MaidManager::UnresolvedRemoveAccount>(
                  metadata_key, action_remove_account, group_source));
     SendSync<MaidManager::UnresolvedRemoveAccount>(group_unresolved_action, group_source);
-    REQUIRE_THROWS(GetMetadata(public_maid_.name()));
+    CHECK_THROWS(GetMetadata(public_maid_.name()));
   }
 
   SECTION("Put") {
@@ -336,13 +336,13 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
     Identity data_name_id(RandomString(64));
     MaidManager::Key key(public_maid_.name(), data_name_id, ImmutableData::Tag::kValue);
     Commit(key, ActionMaidManagerPut(kTestChunkSize));
-    REQUIRE_NOTHROW(Get(key));
+    CHECK_NOTHROW(Get(key));
     auto group_source(CreateGroupSource(MaidNodeId()));
     auto group_unresolved_action(
              CreateGroupUnresolvedAction<MaidManager::UnresolvedDelete>(key, action_delete,
                                                                         group_source));
     SendSync<MaidManager::UnresolvedDelete>(group_unresolved_action, group_source);
-    REQUIRE_THROWS(Get(key));
+    CHECK_THROWS(Get(key));
   }
 
   SECTION("RegistedPmid") {
@@ -406,7 +406,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
 }
 
 TEST_CASE_METHOD(MaidManagerServiceTest, "maid manager: account transfer",
-                 "[AccountTransfer][MaidManager]") {
+                 "[AccountTransfer][MaidManager][Service]") {
   CHECK(false);
   // Not implemented yet
 }

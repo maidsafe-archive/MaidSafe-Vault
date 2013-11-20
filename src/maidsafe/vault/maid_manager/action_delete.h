@@ -48,6 +48,9 @@ struct ActionMaidManagerDelete {
   const nfs::MessageId kMessageId;
 };
 
+bool operator==(const ActionMaidManagerDelete& lhs, const ActionMaidManagerDelete& rhs);
+bool operator!=(const ActionMaidManagerDelete& lhs, const ActionMaidManagerDelete& rhs);
+
 }  // namespace vault
 
 }  // namespace maidsafe

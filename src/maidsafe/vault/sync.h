@@ -173,8 +173,10 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
   auto found(std::begin(unresolved_actions_));
   do {
     found = std::find_if(found, std::end(unresolved_actions_),
-                         [&unresolved_action](const std::unique_ptr<UnresolvedAction> &
-                                              test) { return test->key == unresolved_action.key; });
+                         [&unresolved_action](const std::unique_ptr<UnresolvedAction>& test) {
+                             return ((test->key == unresolved_action.key) &&
+                                     (test->action == unresolved_action.action));
+                         });
 
     if (found == std::end(unresolved_actions_)) {
       LOG(kVerbose) << "AddAction " << kActionId << " doesn't find record";

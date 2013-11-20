@@ -56,8 +56,7 @@ class PmidAccountResponse;
 
 namespace test {
 
-template <typename Data>
-class DataHolderTest;
+class PmidNodeServiceTest;
 
 }  // namespace test
 
@@ -156,9 +155,6 @@ class PmidNodeService {
   template <typename Data>
   void HandleDelete(const typename Data::Name& data_name);
 
-  template <typename Data>
-  friend class test::DataHolderTest;
-
   // Unless StartUp is called, PmidNode is not un-usable
   void StartUp();
   void HandlePmidAccountResponses(const std::vector<std::set<nfs_vault::DataName>>& responses,
@@ -169,6 +165,7 @@ class PmidNodeService {
   friend class detail::PmidNodePutVisitor<PmidNodeService>;
   friend class detail::PmidNodeGetVisitor<PmidNodeService>;
   friend class detail::PmidNodeIntegrityCheckVisitor<PmidNodeService>;
+  friend class test::PmidNodeServiceTest;
 
   // ================================ Pmid Account ===============================================
 
