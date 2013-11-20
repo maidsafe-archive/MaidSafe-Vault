@@ -108,12 +108,16 @@ std::unique_ptr<Value> Db<Key, Value>::Commit(const Key& key,
   try {
     value.reset(new Value(Get(key)));
   } catch (const vault_error& error) {
-    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
+    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
+      LOG(kError) << "Db<Key, Value>::Commit unknown db error " << error.what();
       throw error;  // For db errors
+    }
   }
   if (detail::DbAction::kPut == functor(value)) {
+    LOG(kInfo) << "Db<Key, Value>::Commit putting entry";
     Put(KvPair(key, Value(std::move(*value))));
   } else {
+    LOG(kInfo) << "Db<Key, Value>::Commit deleting entry";
     assert(value);
     Delete(key);
     return value;
@@ -196,16 +200,20 @@ void Db<Key, Value>::Put(const KvPair& key_value_pair) {
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
                                        key_value_pair.first.ToFixedWidthString().string(),
                                        key_value_pair.second.Serialise()));
-  if (!status.ok())
+  if (!status.ok()) {
+    LOG(kError) << "Db<Key, Value>::Put incorrect leveldb::Status";
     ThrowError(VaultErrors::failed_to_handle_request);
+  }
 }
 
 template <typename Key, typename Value>
 void Db<Key, Value>::Delete(const Key& key) {
   leveldb::Status status(
       leveldb_->Delete(leveldb::WriteOptions(), key.ToFixedWidthString().string()));
-  if (!status.ok())
+  if (!status.ok()) {
+    LOG(kError) << "Db<Key, Value>::Delete incorrect leveldb::Status";
     ThrowError(VaultErrors::failed_to_handle_request);
+  }
 }
 
 }  // namespace vault
