@@ -350,7 +350,7 @@ void MaidManagerService::HandleSyncedPmidRegistration(
 //           }
 //       });
 //   boost::wait_for_all(maid_future_then, pmid_future_then);
-
+  LOG(kVerbose) << "MaidManagerService::HandleSyncedPmidRegistration";
   auto maid_future = data_getter_.Get(synced_action->action.kPmidRegistration.maid_name(),
                                       std::chrono::seconds(10));
   auto pmid_future = data_getter_.Get(synced_action->action.kPmidRegistration.pmid_name(),
@@ -360,11 +360,13 @@ void MaidManagerService::HandleSyncedPmidRegistration(
 
   try {
     std::unique_ptr<passport::PublicPmid> public_pmid(new passport::PublicPmid(pmid_future.get()));
+    LOG(kVerbose) << "MaidManagerService::HandleSyncedPmidRegistration got public_pmid";
     ValidatePmidRegistration(std::move(public_pmid), pmid_registration_op);
     std::unique_ptr<passport::PublicMaid> public_maid(new passport::PublicMaid(maid_future.get()));
+    LOG(kVerbose) << "MaidManagerService::HandleSyncedPmidRegistration got public_maid";
     ValidatePmidRegistration(std::move(public_maid), pmid_registration_op);
   } catch(const std::exception& e) {
-    LOG(kError) << e.what();
+    LOG(kError) << "MaidManagerService::HandleSyncedPmidRegistration raised exception " << e.what();
   }
 }
 
@@ -438,6 +440,7 @@ void MaidManagerService::DoSync() {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_accounts_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_register_pmids_);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_update_pmid_healths_);
 }
 
 // =============== Account transfer ================================================================
@@ -691,7 +694,7 @@ void MaidManagerService::HandleMessage(
   LOG(kVerbose) << "MaidManagerService::HandleMessage SynchroniseFromMaidManagerToMaidManager";
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.contents->data)) {
-    LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager can't parse the content";
+    LOG(kError) << "SynchroniseFromMaidManagerToMaidManager can't parse the content";
     return;
 //     ThrowError(CommonErrors::parsing_error);
   }
