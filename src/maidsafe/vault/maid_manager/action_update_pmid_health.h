@@ -39,7 +39,7 @@ struct ActionMaidManagerUpdatePmidHealth {
   ActionMaidManagerUpdatePmidHealth(ActionMaidManagerUpdatePmidHealth&& other);
 
   std::string Serialise() const;
-  detail::DbAction operator()(MaidManagerMetadata& metadata);
+  void operator()(MaidManagerMetadata& metadata);
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPmidHealthResponse;
   const PmidManagerMetadata kPmidHealth;
 };

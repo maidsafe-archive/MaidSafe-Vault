@@ -50,9 +50,8 @@ std::string ActionMaidManagerUpdatePmidHealth::Serialise() const {
   return action_proto.SerializeAsString();
 }
 
-detail::DbAction ActionMaidManagerUpdatePmidHealth::operator()(MaidManagerMetadata& metadata) {
+void ActionMaidManagerUpdatePmidHealth::operator()(MaidManagerMetadata& metadata) {
   metadata.UpdatePmidTotals(kPmidHealth);
-  return detail::DbAction::kPut;
 }
 
 bool operator==(const ActionMaidManagerUpdatePmidHealth& lhs,

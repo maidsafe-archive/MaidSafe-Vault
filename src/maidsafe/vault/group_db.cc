@@ -16,35 +16,33 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_CONFIG_H_
-#define MAIDSAFE_VAULT_CONFIG_H_
-
-#include <functional>
-
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/vault/group_db.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-typedef std::function<void(const DataNameVariant&)> IntegrityCheckFunctor;
+template <>
+GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup(
+    const GroupName& group_name) {
+  try {
+    return FindGroup(group_name);
+  } catch (const vault_error& error) {
+    LOG(kInfo) << "Account doesn't exist for group "
+               << DebugId(group_name) << ", error : " << error.what()
+               << ". -- Creating Account --";
+    return AddGroupToMap(group_name, Metadata());
+  }
+}
 
-namespace detail {
-
-enum class DbAction {
-  kPut,
-  kDelete
-};
-
-enum class GroupDbMetaDataStatus {
-  kGroupEmpty,
-  kGroupNonEmpty
-};
-
-}  // namespace detail
+// Deletes group if no further entry left in group
+template <>
+void GroupDb<PmidManager>::UpdateGroup(typename GroupMap::iterator it) {
+  if (it->second.second.GroupStatus() == detail::GroupDbMetaDataStatus::kGroupEmpty) {
+    DeleteGroupEntries(it);
+  }
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_CONFIG_H_
