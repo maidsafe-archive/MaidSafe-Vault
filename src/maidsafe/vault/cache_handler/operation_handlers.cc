@@ -128,10 +128,10 @@ bool DoCacheOperation(
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
-    const GetFromCacheFromDataManagerToDataManager& message,
-    const typename GetFromCacheFromDataManagerToDataManager::Sender& sender,
-    const typename GetFromCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
-  typedef GetFromCacheFromDataManagerToDataManager::SourcePersona SourcePersonaType;
+    const GetFromCacheFromDataManagerToCacheHandler& message,
+    const typename GetFromCacheFromDataManagerToCacheHandler::Sender& sender,
+    const typename GetFromCacheFromDataManagerToCacheHandler::Receiver& /*receiver*/) {
+  typedef GetFromCacheFromDataManagerToCacheHandler::SourcePersona SourcePersonaType;
   auto data_name(detail::GetNameVariant(*message.contents));
   detail::Requestor<SourcePersonaType> requestor(sender.data);
   detail::GetFromCacheVisitor<detail::Requestor<SourcePersonaType>> get_from_cache(service,

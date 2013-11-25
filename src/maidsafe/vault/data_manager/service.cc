@@ -58,6 +58,7 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       matrix_change_(),
       dispatcher_(routing_, pmid),
       get_timer_(asio_service_),
+      get_cached_response_timer_(asio_service_),
       db_(),
       sync_puts_(),
       sync_deletes_(),
@@ -176,18 +177,11 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
-    const GetFromCacheFromDataManagerToDataManager& /*message*/,
-    const typename GetFromCacheFromDataManagerToDataManager::Sender& /*sender*/,
-    const typename GetFromCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage GetFromCacheFromDataManagerToDataManager";
-}  // No-op
-
-template <>
-void DataManagerService::HandleMessage(
     const GetCachedResponseFromCacheHandlerToDataManager& /*message*/,
     const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& /*sender*/,
     const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage GetCachedResponseFromCacheHandlerToDataManager";
+  LOG(kVerbose) <<
+      "DataManagerService::HandleMessage GetCachedResponseFromCacheHandlerToDataManager";
 //  assert(0);
 }
 

@@ -105,6 +105,7 @@ class DataManagerService {
 
   // =========================== Get section (includes integrity checks) ===========================
   typedef GetResponseFromPmidNodeToDataManager::Contents GetResponseContents;
+  typedef GetCachedResponseFromCacheHandlerToDataManager::Contents GetCachedResponseContents;
 
   template <typename Data, typename RequestorIdType>
   void HandleGet(const typename Data::Name& data_name, const RequestorIdType& requestor,
@@ -121,6 +122,11 @@ class DataManagerService {
   template <typename Data, typename RequestorIdType>
   void DoHandleGetResponse(
       const PmidName& pmid_node, const GetResponseContents& contents,
+      std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
+
+  template <typename Data, typename RequestorIdType>
+  void DoHandleGetCachedResponse(
+      GetCachedResponseContents& contents,
       std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
 
   template <typename Data, typename RequestorIdType>
@@ -206,6 +212,7 @@ class DataManagerService {
   routing::MatrixChange matrix_change_;
   DataManagerDispatcher dispatcher_;
   routing::Timer<std::pair<PmidName, GetResponseContents>> get_timer_;
+  routing::Timer<GetCachedResponseContents> get_cached_response_timer_;
   Db<DataManager::Key, DataManager::Value> db_;
   Sync<DataManager::UnresolvedPut> sync_puts_;
   Sync<DataManager::UnresolvedDelete> sync_deletes_;
@@ -223,7 +230,7 @@ template <typename MessageType>
 void DataManagerService::HandleMessage(const MessageType& /*message*/,
                                        const typename MessageType::Sender& /*sender*/,
                                        const typename MessageType::Receiver& /*receiver*/) {
-  MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
+  MessageType::No_genereic_handler_is_available__Specialisation_is_required;
 }
 
 template <>
@@ -267,12 +274,6 @@ void DataManagerService::HandleMessage(
     const PutToCacheFromDataManagerToDataManager& message,
     const typename PutToCacheFromDataManagerToDataManager::Sender& sender,
     const typename PutToCacheFromDataManagerToDataManager::Receiver& receiver);
-
-template <>
-void DataManagerService::HandleMessage(
-    const GetFromCacheFromDataManagerToDataManager& message,
-    const typename GetFromCacheFromDataManagerToDataManager::Sender& sender,
-    const typename GetFromCacheFromDataManagerToDataManager::Receiver& receiver);
 
 template <>
 void DataManagerService::HandleMessage(
@@ -552,6 +553,19 @@ void DataManagerService::DoHandleGetResponse(
 }
 
 template <typename Data, typename RequestorIdType>
+void DataManagerService::DoHandleGetCachedResponse(
+    GetCachedResponseContents& /*contents*/,
+    std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> /*get_response_op*/) {
+//  if (contents == GetCachedResponseContents()) {
+//    // BEFORE_RELEASE Handle time out
+//  }
+//  if (contents.data) {
+//    // BEFORE_RELEASE Check integrity check results
+//    SendGetResponse<Data, RequestorIdType>
+//  }
+}
+
+template <typename Data, typename RequestorIdType>
 bool DataManagerService::SendGetResponse(
     const GetResponseContents& contents,
     std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
@@ -595,9 +609,17 @@ void DataManagerService::AssessIntegrityCheckResults(
     MarkNodeDown(get_response_op->pmid_node_to_get_from, get_response_op->data_name);
     // BEFORE_RELEASE If no data got, then try to get from peer's cache
     //                and the integrity_check results shall be discarded
+    auto functor([=](const GetCachedResponseContents& /*contents*/) {
+      //DoHandleGetCachedResponse<Data, RequestorIdType>(contents, get_response_op);
+    });
+
+    get_cached_response_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor,
+                                       routing::Parameters::node_group_size,
+                                       get_response_op->message_id);
+    dispatcher_.SendGetFromCache(get_response_op->data_name);
     return;
   }
-  for (auto itr : get_response_op->integrity_checks)
+  for (const auto& itr : get_response_op->integrity_checks)
     if (!itr.second.Validate(get_response_op->serialised_contents)) {
       // In case the pmid_node_to_get_from returned with a false content, which in-validated
       // all the others, as the PmidNode side has to accumulate enough delete requests before
@@ -610,62 +632,6 @@ void DataManagerService::AssessIntegrityCheckResults(
                               get_response_op->message_id);
     }
 }
-
-//template <typename Data>
-//void DataManagerService::SendIntegrityCheck(const typename Data::name& data_name,
-//                                            const PmidName& pmid_node,
-//                                            nfs::MessageId message_id) {
-//  try {
-//    NonEmptyString data(GetContentFromCache(data_name));
-//    std::string random_string(RandomString(detail::Parameters::integrity_check_string_size));
-//    NonEmptyString signature(
-//        crypto::Hash<crypto::SHA512>(NonEmptyString(data.string() + random_string)));
-//    get_timer_.AddTask(
-//        std::chrono::seconds(10),
-//        [signature, pmid_node, message_id, data_name, this](
-//            DataManagerService::IntegrityCheckResponse response) {
-//          if (response == DataManagerService::IntegrityCheckResponse()) {
-//            // Timer expired.
-//            // If PN has informed PMs about any failure the request from PMs should have arrived.
-//            // If PN is still in DM's PNs, the PN is too slow or not honest. Therefore, should be
-//            // removed from DM's PNs and deranked. Moreover the PMs must be informed.
-//            if (HasPmidNode<Data>(data_name, pmid_node)) {
-//              dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
-//              sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
-//                  typename DataManager::Key(data_name.raw_name, data_name.type),
-//                  ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId(), message_id));
-//              DoSync();
-//              return;
-//            }
-//          }
-//          if (response.return_code.value.code() != CommonErrors::success) {
-//            // Data not available on pmid , sync remove pmid_node, inform PMs
-//            dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
-//            sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
-//                typename DataManager::Key(data_name.raw_name, data_name.type),
-//                ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId(), message_id));
-//            DoSync();
-//            return;
-//          }
-//          if (response.return_code.value.code() == CommonErrors::success) {
-//            if (response.signature != signature) {
-//              // Lieing pmid_node, sync remove pmid_node, inform PMs and drank
-//              dispatcher_.SendDeleteRequest(pmid_node, data_name, message_id);
-//              sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
-//                  typename DataManager::Key(data_name.raw_name, data_name.type),
-//                  ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId(), message_id));
-//              DoSync();
-//              return;
-//            }
-//          }
-//        },
-//        1, message_id.data);
-//    dispatcher_.SendIntegrityCheck(data_name, random_string, pmid_node, nfs::MessageId(message_id));
-//  }
-//  catch (const std::exception& /*ex*/) {
-//    // handle failure to retrieve from cache
-//  }
-//}
 
 // ==================== Delete implementation ======================================================
 template <typename Data>

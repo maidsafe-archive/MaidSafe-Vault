@@ -249,15 +249,6 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
                                         routing::SingleId(routing_.kNodeId())));
   }
 
-  SECTION("GetFromCacheFromDataManagerToDataManager") {
-    NodeId data_manager_id(NodeId::kRandomId);
-    auto content(CreateContent<GetFromCacheFromDataManagerToDataManager::Contents>());
-    auto get_from_cache(CreateMessage<GetFromCacheFromDataManagerToDataManager>(content));
-    CHECK_NOTHROW(SingleSendsToGroup(&data_manager_service_, get_from_cache,
-                                       routing::SingleSource(data_manager_id),
-                                       routing::GroupId(NodeId(content.raw_name.string()))));
-  }
-
   SECTION("GetCachedResponseFromCacheHandlerToDataManager") {
     NodeId cache_handler_id(NodeId::kRandomId);
     auto content(CreateContent<GetCachedResponseFromCacheHandlerToDataManager::Contents>());

@@ -146,8 +146,8 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving get",
     CHECK(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
   }
 
-  SECTION("GetFromCacheFromDataManagerToDataManager") {
-    auto get_request(CreateMessage<GetFromCacheFromDataManagerToDataManager>(content));
+  SECTION("GetFromCacheFromDataManagerToCacheHandler") {
+    auto get_request(CreateMessage<GetFromCacheFromDataManagerToCacheHandler>(content));
     CHECK_FALSE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
     Store(data);
     CHECK(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
