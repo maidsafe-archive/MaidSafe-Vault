@@ -57,8 +57,10 @@ MaidManagerValue& MaidManagerValue::operator=(MaidManagerValue other) {
 }
 
 std::string MaidManagerValue::Serialise() const {
-  if (count_ == 0 || total_cost_ == 0)
+  if (count_ == 0 || total_cost_ == 0) {
+    LOG(kError) << "MaidManagerValue::Serialise Cannot serialise if not a complete db value";
     ThrowError(CommonErrors::uninitialised);
+  }
 
   protobuf::MaidManagerValue maid_manager_value_proto;
   maid_manager_value_proto.set_count(count_);

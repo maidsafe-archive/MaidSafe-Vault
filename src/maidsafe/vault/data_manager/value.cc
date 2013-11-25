@@ -114,8 +114,10 @@ void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
 }
 
 std::string DataManagerValue::Serialise() const {
-  if (subscribers_ < 1 || size_ <= 0)
+  if (subscribers_ < 1 || size_ <= 0) {
+    LOG(kError) << "DataManagerValue::Serialise Cannot serialise if not a complete db value";
     ThrowError(CommonErrors::uninitialised);  // Cannot serialise if not a complete db value
+  }
   assert(!(online_pmids_.empty() && offline_pmids_.empty()));
   protobuf::DataManagerValue metadata_value_proto;
   metadata_value_proto.set_subscribers(subscribers_);

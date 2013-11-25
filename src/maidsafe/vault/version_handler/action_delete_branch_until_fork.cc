@@ -55,8 +55,10 @@ std::string ActionVersionHandlerDeleteBranchUntilFork::Serialise() const {
 
 detail::DbAction ActionVersionHandlerDeleteBranchUntilFork::operator()(
     std::unique_ptr<VersionHandlerValue>& value) {
-  if (!value)
+  if (!value) {
+    LOG(kError) << "ActionVersionHandlerDeleteBranchUntilFork::operator() value uninitialised";
     ThrowError(CommonErrors::uninitialised);
+  }
   value->DeleteBranchUntilFork(version_name);
   return detail::DbAction::kDelete;
 }
