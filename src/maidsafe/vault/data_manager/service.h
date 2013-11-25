@@ -517,16 +517,15 @@ template <typename Data, typename RequestorIdType>
 void DataManagerService::DoHandleGetResponse(
     const PmidName& pmid_node, const GetResponseContents& contents,
     std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
-  LOG(kVerbose) << "DataManagerService::DoHandleGetResponse received response from "
-                << HexSubstr(pmid_node->string());
-//   if (contents)
-//     LOG(kVerbose) << HexSubstr(contents.name.raw_name) << " with content "
-//                   << HexSubstr(contents.content->string());
-  // Note: if 'contents' is default-constructed, it's probably a result of this function being
-  // invoked by the timer after timeout.
   int called_count(0), expected_count(0);
   {
     std::lock_guard<std::mutex> lock(get_response_op->mutex);
+    if (contents.content && pmid_node.value.IsInitialised())
+      LOG(kVerbose) << "DataManagerService::DoHandleGetResponse received response from "
+                    << HexSubstr(pmid_node->string()) << " for chunk "
+                    << HexSubstr(contents.name.raw_name) << " with content "
+                    << HexSubstr(contents.content->string());
+
     called_count = ++get_response_op->called_count;
     expected_count = static_cast<int>(get_response_op->integrity_checks.size()) + 1;
     assert(called_count <= expected_count);
@@ -542,7 +541,9 @@ void DataManagerService::DoHandleGetResponse(
       if (itr != std::end(get_response_op->integrity_checks))
         itr->second.SetResult(*contents.check_result);
     } else {
-      LOG(kError) << "DataManagerService::DoHandleGetResponse reaching unexpected-branch";
+      // In case of timer timeout, the pmid_node and contents will be constructed using default.
+      LOG(kWarning) << "DataManagerService::DoHandleGetResponse reached timed out branch";
+      SendGetResponse<Data, RequestorIdType>(contents, get_response_op);
     }
   }
   LOG(kVerbose) << "DataManagerService::DoHandleGetResponse called_count "
@@ -598,16 +599,24 @@ void DataManagerService::AssessIntegrityCheckResults(
     return;
   }
   for (auto itr : get_response_op->integrity_checks)
-    if (!itr.second.Validate(get_response_op->serialised_contents)) {
-      // In case the pmid_node_to_get_from returned with a false content, which in-validated
-      // all the others, as the PmidNode side has to accumulate enough delete requests before
-      // deploy the action, send out false delete request won't cause problem as long as no more
-      // than half PmidNodes containing false data.
-      LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
-                    << HexSubstr(itr.first->string()) << " returned invalid data for "
-                    << HexSubstr(get_response_op->data_name.value.string());
-      SendDeleteRequest<Data>(itr.first, get_response_op->data_name,
-                              get_response_op->message_id);
+    try {
+      if (!itr.second.Validate(get_response_op->serialised_contents)) {
+        // In case the pmid_node_to_get_from returned with a false content, which in-validated
+        // all the others, as the PmidNode side has to accumulate enough delete requests before
+        // deploy the action, send out false delete request won't cause problem as long as no more
+        // than half PmidNodes containing false data.
+        LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
+                      << HexSubstr(itr.first->string()) << " returned invalid data for "
+                      << HexSubstr(get_response_op->data_name.value.string());
+        SendDeleteRequest<Data>(itr.first, get_response_op->data_name,
+                                get_response_op->message_id);
+      }
+    } catch (...) {
+      // Any exception raised handling peer (normally no response from peer causing un-initialized
+      // error), mark peer down
+      LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected no response from "
+                    << "pmid_node " << HexSubstr(itr.first->string());
+      MarkNodeDown(itr.first, get_response_op->data_name);
     }
 }
 
