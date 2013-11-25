@@ -57,8 +57,13 @@ std::string ActionPmidManagerPut::Serialise() const {
 
 detail::DbAction ActionPmidManagerPut::operator()(PmidManagerMetadata& metadata,
                                                   std::unique_ptr<PmidManagerValue>& value) const {
-  if (!value)
+  if (!value) {
     value.reset(new PmidManagerValue(kSize));
+  } else {
+    LOG(kError) << "data already exists in the group";
+    ThrowError(VaultErrors::data_already_exists);
+  }
+
   metadata.PutData(value->size());
   return detail::DbAction::kPut;
 }

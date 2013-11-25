@@ -29,7 +29,7 @@ GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup
     return FindGroup(group_name);
   } catch (const vault_error& error) {
     LOG(kInfo) << "Account doesn't exist for group "
-               << DebugId(group_name) << ", error : " << error.what()
+               << HexSubstr(group_name->string()) << ", error : " << error.what()
                << ". -- Creating Account --";
     return AddGroupToMap(group_name, Metadata());
   }
@@ -39,6 +39,8 @@ GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup
 template <>
 void GroupDb<PmidManager>::UpdateGroup(typename GroupMap::iterator it) {
   if (it->second.second.GroupStatus() == detail::GroupDbMetaDataStatus::kGroupEmpty) {
+    LOG(kInfo) << "Account empty for group " << HexSubstr(it->first->string())
+               << ". -- Deleteing Account --";
     DeleteGroupEntries(it);
   }
 }

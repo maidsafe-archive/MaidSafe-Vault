@@ -36,6 +36,7 @@
 #include "leveldb/db.h"
 
 #include "maidsafe/common/error.h"
+#include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/config.h"
@@ -197,9 +198,9 @@ void GroupDb<Persona>::Commit(const GroupName& group_name,
                               std::function<void(Metadata& metadata)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
-  auto it(FindOrCreateGroup(group_name));
+  const auto it(FindOrCreateGroup(group_name));
+  on_scope_exit update_group([it, this]() { UpdateGroup(it); });
   functor(it->second.second);
-  UpdateGroup(it);  // FIXME discuss if this is needed here
 }
 
 template <typename Persona>
@@ -208,7 +209,8 @@ void GroupDb<Persona>::Commit(
     std::function<detail::DbAction(Metadata& metadata, std::unique_ptr<Value>& value)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
-  auto it(FindOrCreateGroup(key.group_name()));
+  const auto it(FindOrCreateGroup(key.group_name()));
+  on_scope_exit update_group([it, this]() { UpdateGroup(it); });
   std::unique_ptr<Value> value;
   try {
     value.reset(new Value(Get(key, it->second.first)));
@@ -216,12 +218,12 @@ void GroupDb<Persona>::Commit(
     if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
       throw error;  // throw only for db errors
   }
+
   if (detail::DbAction::kPut == functor(it->second.second, value)) {
     Put(std::make_pair(key, std::move(*value)), it->second.first);
   } else {
     assert(value);
     Delete(key, it->second.first);
-    UpdateGroup(it); // only delete empty group for PmidManager
   }
 }
 
@@ -314,7 +316,7 @@ void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
     DeleteGroupEntries(FindGroup(group_name));
   } catch (const vault_error& error) {
     LOG(kInfo) << "account doesn't exist for group "
-               << DebugId(group_name) << ", error : " << error.what();
+               << HexSubstr(group_name->string()) << ", error : " << error.what();
   }
 }
 
