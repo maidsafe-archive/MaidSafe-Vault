@@ -39,6 +39,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/config.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.h"
 
 namespace maidsafe {
 
@@ -99,7 +100,11 @@ class GroupDb {
   GroupDb(GroupDb&&);
   GroupDb& operator=(GroupDb&&);
 
+  typename GroupMap::iterator AddGroupToMap(const GroupName& group_name, const Metadata& metadata);
+  void UpdateGroup(typename GroupMap::iterator itr);
+
   void DeleteGroupEntries(const GroupName& group_name);
+  void DeleteGroupEntries(typename GroupMap::iterator itr);
   Value Get(const Key& key, const GroupId& group_id);
   void Put(const KvPair& key_value_pair, const GroupId& group_id);
   void Delete(const Key& key, const GroupId& group_id);
@@ -107,6 +112,7 @@ class GroupDb {
   Key MakeKey(const GroupName group_name, const leveldb::Slice& level_db_key);
   uint32_t GetGroupId(const leveldb::Slice& level_db_key);
   typename GroupMap::iterator FindGroup(const GroupName& group_name);
+  typename GroupMap::iterator FindOrCreateGroup(const GroupName& group_name);
 
   static const int kPrefixWidth_ = 2;
   const boost::filesystem::path kDbPath_;
@@ -114,6 +120,12 @@ class GroupDb {
   std::unique_ptr<leveldb::DB> leveldb_;
   GroupMap group_map_;
 };
+
+template <>
+GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup(
+    const GroupName& group_name);
+template <>
+void GroupDb<PmidManager>::UpdateGroup(typename GroupMap::iterator itr);
 
 template <typename Persona>
 GroupDb<Persona>::GroupDb()
@@ -147,6 +159,12 @@ GroupDb<Persona>::~GroupDb() {
 template <typename Persona>
 void GroupDb<Persona>::AddGroup(const GroupName& group_name, const Metadata& metadata) {
   std::lock_guard<std::mutex> lock(mutex_);
+  AddGroupToMap(group_name, metadata);
+}
+
+template <typename Persona>
+typename GroupDb<Persona>::GroupMap::iterator GroupDb<Persona>::AddGroupToMap(
+    const GroupName& group_name, const Metadata& metadata) {
   static const uint64_t kGroupsLimit(static_cast<GroupId>(std::pow(256, kPrefixWidth_)));
   if (group_map_.size() == kGroupsLimit - 1)
     ThrowError(VaultErrors::failed_to_handle_request);
@@ -156,14 +174,16 @@ void GroupDb<Persona>::AddGroup(const GroupName& group_name, const Metadata& met
                                  element) { return group_id == element.second.first; })) {
     group_id = RandomInt32() % kGroupsLimit;
   }
-  LOG(kVerbose) << "GroupDb<Persona>::AddGroup size of group_map_ " << group_map_.size()
+  LOG(kVerbose) << "GroupDb<Persona>::AddGroupToMap size of group_map_ " << group_map_.size()
                 << " current group_name " << HexSubstr(group_name->string());
-  if (!(group_map_.insert(std::make_pair(group_name, std::make_pair(group_id, metadata)))).second) {
+  auto ret_val = group_map_.insert(std::make_pair(group_name, std::make_pair(group_id, metadata)));
+  if (!ret_val.second) {
     LOG(kError) << "account already exists in the group map";
     ThrowError(VaultErrors::account_already_exists);
   }
   LOG(kInfo) << "group inserting succeeded for group_name "
              << HexSubstr(group_name->string());
+  return ret_val.first;
 }
 
 template <typename Persona>
@@ -177,8 +197,9 @@ void GroupDb<Persona>::Commit(const GroupName& group_name,
                               std::function<void(Metadata& metadata)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
-  auto it(FindGroup(group_name));
+  auto it(FindOrCreateGroup(group_name));
   functor(it->second.second);
+  UpdateGroup(it);  // FIXME discuss if this is needed here
 }
 
 template <typename Persona>
@@ -187,7 +208,7 @@ void GroupDb<Persona>::Commit(
     std::function<detail::DbAction(Metadata& metadata, std::unique_ptr<Value>& value)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
-  auto it(FindGroup(key.group_name()));
+  auto it(FindOrCreateGroup(key.group_name()));
   std::unique_ptr<Value> value;
   try {
     value.reset(new Value(Get(key, it->second.first)));
@@ -200,6 +221,7 @@ void GroupDb<Persona>::Commit(
   } else {
     assert(value);
     Delete(key, it->second.first);
+    UpdateGroup(it); // only delete empty group for PmidManager
   }
 }
 
@@ -214,7 +236,7 @@ typename GroupDb<Persona>::Contents GroupDb<Persona>::GetContents(const GroupNam
   std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
   auto group_id = it->second.first;
   auto group_id_str = detail::ToFixedWidthString<kPrefixWidth_>(group_id);
-  if (++it != group_map_.end()) {
+  if (std::next(it, 1) != group_map_.end()) {
     for (iter->Seek(group_id_str);
          (iter->Valid() && (GetGroupId(iter->key()) < group_id));
          iter->Next()) {
@@ -288,19 +310,22 @@ typename GroupDb<Persona>::Value GroupDb<Persona>::GetValue(const Key& key) {
 
 template <typename Persona>
 void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
-  std::vector<std::string> group_db_keys;
-  typename GroupMap::iterator it;
   try {
-    it = FindGroup(group_name);
+    DeleteGroupEntries(FindGroup(group_name));
   } catch (const vault_error& error) {
     LOG(kInfo) << "account doesn't exist for group "
                << DebugId(group_name) << ", error : " << error.what();
-    return;
   }
+}
+
+template <typename Persona>
+void GroupDb<Persona>::DeleteGroupEntries(typename GroupMap::iterator it) {
+  assert(it != group_map_.end());
+  std::vector<std::string> group_db_keys;
   auto group_id = it->second.first;
   auto group_id_str = detail::ToFixedWidthString<kPrefixWidth_>(group_id);
   std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
-  if (++it != group_map_.end()) {
+  if (std::next(it, 1) != group_map_.end()) {
     for (iter->Seek(group_id_str);
          (iter->Valid() && (GetGroupId(iter->key()) < group_id));
          iter->Next())
@@ -318,7 +343,7 @@ void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
     if (!status.ok())
       ThrowError(VaultErrors::failed_to_handle_request);
   }
-  group_map_.erase(group_name);
+  group_map_.erase(it);
   leveldb_->CompactRange(nullptr, nullptr);
 }
 
@@ -359,7 +384,7 @@ void GroupDb<Persona>::Delete(const Key& key, const GroupId& group_id) {
 
 template <typename Persona>
 std::string GroupDb<Persona>::MakeLevelDbKey(const GroupId& group_id, const Key& key) {
-    return detail::ToFixedWidthString<kPrefixWidth_>(group_id) + key.ToFixedWidthString().string();
+  return detail::ToFixedWidthString<kPrefixWidth_>(group_id) + key.ToFixedWidthString().string();
 }
 
 template <typename Persona>
@@ -384,6 +409,16 @@ typename GroupDb<Persona>::GroupMap::iterator GroupDb<Persona>::FindGroup(
     ThrowError(VaultErrors::no_such_account);
   return it;
 }
+
+template <typename Persona>
+typename GroupDb<Persona>::GroupMap::iterator GroupDb<Persona>::FindOrCreateGroup(
+    const GroupName& group_name) {
+  return FindGroup(group_name);
+}
+
+// FIXME need more readable name
+template <typename Persona>
+void GroupDb<Persona>::UpdateGroup(typename GroupMap::iterator /*itr*/) {}  // Do Nothing
 
 }  // namespace vault
 

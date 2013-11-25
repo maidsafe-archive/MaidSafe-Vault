@@ -101,6 +101,11 @@ void PmidManagerMetadata::SetAvailableSize(const int64_t& available_size) {
   claimed_available_size = available_size;
 }
 
+detail::GroupDbMetaDataStatus PmidManagerMetadata::GroupStatus() {
+  return ((stored_count <= 0) ? detail::GroupDbMetaDataStatus::kGroupEmpty :
+                                detail::GroupDbMetaDataStatus::kGroupNonEmpty);
+}
+
 std::string PmidManagerMetadata::Serialise() const {
   protobuf::PmidManagerMetadata proto_metadata;
   proto_metadata.set_pmid_name(pmid_name->string());

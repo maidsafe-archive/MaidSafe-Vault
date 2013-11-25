@@ -24,6 +24,7 @@
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 
+#include "maidsafe/vault/config.h"
 #include "maidsafe/vault/types.h"
 
 namespace maidsafe {
@@ -41,6 +42,7 @@ struct PmidManagerMetadata {
   void DeleteData(int32_t size);
   void SetAvailableSize(const int64_t& available_size);
   std::string Serialise() const;
+  detail::GroupDbMetaDataStatus GroupStatus();
 
   PmidName pmid_name;
   int64_t stored_count;
