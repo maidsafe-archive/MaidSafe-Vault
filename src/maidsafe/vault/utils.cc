@@ -79,7 +79,7 @@ DataNameVariant GetNameVariant(const nfs_client::DataAndReturnCode& data) {
 
 template <>
 DataNameVariant GetNameVariant(const nfs_client::DataNameAndContentOrReturnCode& data) {
-  return data.data_name;
+  return GetNameVariant(data.data_name);
 }
 
 template <>

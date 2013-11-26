@@ -126,12 +126,12 @@ class DataManagerService {
 
   template <typename Data, typename RequestorIdType>
   void DoHandleGetCachedResponse(
-      GetCachedResponseContents& contents,
+      const GetCachedResponseContents& contents,
       std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
 
   template <typename Data, typename RequestorIdType>
   bool SendGetResponse(
-      const GetResponseContents& contents,
+      const Data& data,
       std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
 
   template <typename Data, typename RequestorIdType>
@@ -533,7 +533,10 @@ void DataManagerService::DoHandleGetResponse(
     assert(called_count <= expected_count);
     if (pmid_node == get_response_op->pmid_node_to_get_from) {
       LOG(kVerbose) << "DataManagerService::DoHandleGetResponse send response to requester";
-      if (SendGetResponse<Data, RequestorIdType>(contents, get_response_op)) {
+      if (contents.content)
+        if (SendGetResponse<Data, RequestorIdType>(
+                Data(get_response_op->data_name, typename Data::serialised_type(*contents.content)),
+                get_response_op)) {
         get_response_op->serialised_contents = typename Data::serialised_type(*contents.content);
       }
     } else if (contents.check_result) {
@@ -554,30 +557,29 @@ void DataManagerService::DoHandleGetResponse(
 
 template <typename Data, typename RequestorIdType>
 void DataManagerService::DoHandleGetCachedResponse(
-    GetCachedResponseContents& /*contents*/,
-    std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> /*get_response_op*/) {
-//  if (contents == GetCachedResponseContents()) {
-//    // BEFORE_RELEASE Handle time out
-//  }
-//  if (contents.data) {
-//    // BEFORE_RELEASE Check integrity check results
-//    SendGetResponse<Data, RequestorIdType>
-//  }
+    const GetCachedResponseContents& contents,
+    std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
+  if (contents == GetCachedResponseContents()) {
+    // BEFORE_RELEASE Handle time out
+  }
+  if (contents.content) {
+    // BEFORE_RELEASE Check integrity check results
+    if (SendGetResponse<Data, RequestorIdType>(
+            Data(get_response_op->data_name,
+                 typename Data::serialised_type(NonEmptyString(contents.content->data))),
+            get_response_op)) {
+        get_response_op->serialised_contents =
+            typename Data::serialised_type(NonEmptyString(contents.content->data));
+      }
+  }
 }
 
 template <typename Data, typename RequestorIdType>
 bool DataManagerService::SendGetResponse(
-    const GetResponseContents& contents,
+    const Data& data,
     std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
   maidsafe_error error(MakeError(CommonErrors::unknown));
   try {
-    if (!contents.content) {
-      LOG(kError) << "DataManagerService::SendGetResponse no contents for "
-                  << HexSubstr(get_response_op->data_name.value);
-      ThrowError(CommonErrors::unknown);
-    }
-    LOG(kInfo) << "DataManagerService::SendGetResponse SendGetResponseSuccess and put to cache";
-    Data data(get_response_op->data_name, typename Data::serialised_type(*contents.content));
     dispatcher_.SendGetResponseSuccess(get_response_op->requestor_id, data,
                                        get_response_op->message_id);
     // Put to the CacheHandler in this vault.
@@ -609,8 +611,8 @@ void DataManagerService::AssessIntegrityCheckResults(
     MarkNodeDown(get_response_op->pmid_node_to_get_from, get_response_op->data_name);
     // BEFORE_RELEASE If no data got, then try to get from peer's cache
     //                and the integrity_check results shall be discarded
-    auto functor([=](const GetCachedResponseContents& /*contents*/) {
-      //DoHandleGetCachedResponse<Data, RequestorIdType>(contents, get_response_op);
+    auto functor([=](const GetCachedResponseContents& contents) {
+      DoHandleGetCachedResponse<Data, RequestorIdType>(contents, get_response_op);
     });
 
     get_cached_response_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor,

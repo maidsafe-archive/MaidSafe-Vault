@@ -117,7 +117,9 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put",
   }
 
   SECTION("PutToCacheFromDataManagerToDataManager") {
-    auto cache_put(CreateMessage<PutToCacheFromDataManagerToDataManager>(*content.data));
+    auto cache_put(CreateMessage<PutToCacheFromDataManagerToDataManager>(
+      nfs_vault::DataNameAndContent(content.data_name.type, content.data_name.raw_name,
+                                    NonEmptyString(content.content->data))));
     routing::SingleSource source((NodeId(NodeId::kRandomId)));
     CHECK(cache_handler_service_.HandleMessage(cache_put, source,
                                                routing::SingleId(routing_.kNodeId())));
