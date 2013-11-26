@@ -114,6 +114,9 @@ class DataManagerService {
   void HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
                          const GetResponseContents& contents);
 
+  void HandleGetCachedResponse(nfs::MessageId message_id,
+                               const GetCachedResponseContents& contents);
+
   // Removes a pmid_name from the set and returns it.
   template <typename DataName>
   PmidName ChoosePmidNodeToGetFrom(std::set<PmidName>& online_pmids,
@@ -560,7 +563,7 @@ void DataManagerService::DoHandleGetCachedResponse(
     const GetCachedResponseContents& contents,
     std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
   if (contents == GetCachedResponseContents()) {
-    // BEFORE_RELEASE Handle time out
+    // BEFORE_RELEASE: Handle time out
   }
   if (contents.content) {
     // BEFORE_RELEASE Check integrity check results
@@ -615,8 +618,7 @@ void DataManagerService::AssessIntegrityCheckResults(
       DoHandleGetCachedResponse<Data, RequestorIdType>(contents, get_response_op);
     });
 
-    get_cached_response_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor,
-                                       routing::Parameters::node_group_size,
+    get_cached_response_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, 1,
                                        get_response_op->message_id);
     dispatcher_.SendGetFromCache(get_response_op->data_name);
     return;

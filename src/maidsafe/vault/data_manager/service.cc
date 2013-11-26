@@ -177,12 +177,18 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
-    const GetCachedResponseFromCacheHandlerToDataManager& /*message*/,
-    const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& /*sender*/,
-    const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& /*receiver*/) {
+    const GetCachedResponseFromCacheHandlerToDataManager& message,
+    const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
+    const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver) {
   LOG(kVerbose) <<
       "DataManagerService::HandleMessage GetCachedResponseFromCacheHandlerToDataManager";
-//  assert(0);
+  typedef GetCachedResponseFromCacheHandlerToDataManager MessageType;
+  OperationHandlerWrapper<DataManagerService, MessageType>(
+      accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
 }
 
 void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
@@ -190,7 +196,24 @@ void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::Messa
   LOG(kVerbose) << "Get content for " << HexSubstr(contents.name.raw_name)
                 << " from pmid_name " << HexSubstr(pmid_name.value)
                 << " with message_id " << message_id.data;
-  get_timer_.AddResponse(message_id.data, std::make_pair(pmid_name, contents));
+  try {
+    get_timer_.AddResponse(message_id.data, std::make_pair(pmid_name, contents));
+  }
+  catch (...) {
+    // BEFORE_RELEASE handle
+  }
+}
+
+void DataManagerService::HandleGetCachedResponse(nfs::MessageId message_id,
+                                                 const GetCachedResponseContents& contents) {
+  LOG(kVerbose) << "Get content for " << HexSubstr(contents.name.raw_name)
+                << " with message_id " << message_id.data;
+  try {
+    get_cached_response_timer_.AddResponse(message_id.data, contents);
+  }
+  catch (...) {
+    // BEFORE_RELEASE handle
+  }
 }
 
 // ==================== Delete implementation ======================================================
