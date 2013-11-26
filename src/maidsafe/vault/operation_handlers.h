@@ -144,6 +144,16 @@ void OperationHandler<
     const IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
     const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver);
 
+template <>
+template <>
+void OperationHandler<
+         typename ValidateSenderType<GetCachedResponseFromCacheHandlerToDataManager>::type,
+         Accumulator<DataManagerServiceMessages>,
+         typename Accumulator<DataManagerServiceMessages>::AddCheckerFunctor,
+         DataManagerService>::operator()(
+    const GetCachedResponseFromCacheHandlerToDataManager& message,
+    const GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
+    const GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver);
 
 template <typename ServiceHandlerType, typename MessageType>
 void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/,
@@ -208,62 +218,68 @@ template <>
 void DoOperation(DataManagerService* service,
                  const PutResponseFromPmidManagerToDataManager& message,
                  const PutResponseFromPmidManagerToDataManager::Sender& sender,
-                 const PutResponseFromPmidManagerToDataManager::Receiver& /*receiver*/);
+                 const PutResponseFromPmidManagerToDataManager::Receiver& receiver);
 
 template <>
 void DoOperation(DataManagerService* service,
                  const nfs::GetRequestFromMaidNodeToDataManager& message,
                  const nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-                 const nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/);
+                 const nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
 
 template <>
 void DoOperation(DataManagerService* service,
                  const nfs::GetRequestFromDataGetterToDataManager& message,
                  const nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
-                 const nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/);
+                 const nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
 
 template <>
 void DoOperation(DataManagerService* service,
                  const GetResponseFromPmidNodeToDataManager& message,
                  const GetResponseFromPmidNodeToDataManager::Sender& sender,
-                 const GetResponseFromPmidNodeToDataManager::Receiver& /*receiver*/);
+                 const GetResponseFromPmidNodeToDataManager::Receiver& receiver);
 
 template <>
 void DoOperation(DataManagerService* service,
                  const DeleteRequestFromMaidManagerToDataManager& message,
-                 const DeleteRequestFromMaidManagerToDataManager::Sender& /*sender*/,
-                 const DeleteRequestFromMaidManagerToDataManager::Receiver& /*receiver*/);
+                 const DeleteRequestFromMaidManagerToDataManager::Sender& sender,
+                 const DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
 
 template <>
 void DoOperation(DataManagerService* service,
                  const PutFailureFromPmidManagerToDataManager& message,
                  const PutFailureFromPmidManagerToDataManager::Sender& sender,
-                 const PutFailureFromPmidManagerToDataManager::Receiver& /*receiver*/);
+                 const PutFailureFromPmidManagerToDataManager::Receiver& receiver);
+
+template <>
+void DoOperation(DataManagerService* service,
+                 const GetCachedResponseFromCacheHandlerToDataManager& message,
+                 const GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
+                 const GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver);
 
 //=============================== To PmidManager ===================================================
 template <>
 void DoOperation(PmidManagerService* service,
                  const PutRequestFromDataManagerToPmidManager& message,
-                 const PutRequestFromDataManagerToPmidManager::Sender& /*sender*/,
+                 const PutRequestFromDataManagerToPmidManager::Sender& sender,
                  const PutRequestFromDataManagerToPmidManager::Receiver& receiver);
 
 template <>
 void DoOperation(PmidManagerService* service,
                  const PutFailureFromPmidNodeToPmidManager& message,
-                 const PutFailureFromPmidNodeToPmidManager::Sender& /*sender*/,
+                 const PutFailureFromPmidNodeToPmidManager::Sender& sender,
                  const PutFailureFromPmidNodeToPmidManager::Receiver& receiver);
 
 template <>
 void DoOperation(PmidManagerService* service,
                  const DeleteRequestFromDataManagerToPmidManager& message,
-                 const DeleteRequestFromDataManagerToPmidManager::Sender& /*sender*/,
+                 const DeleteRequestFromDataManagerToPmidManager::Sender& sender,
                  const DeleteRequestFromDataManagerToPmidManager::Receiver& receiver);
 
 template <>
 void DoOperation(PmidManagerService* service,
                  const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
                  const GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& /*receiver*/);
+                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver);
 
 template <>
 void DoOperation(PmidManagerService* service,
@@ -275,25 +291,25 @@ void DoOperation(PmidManagerService* service,
 template <>
 void DoOperation(PmidNodeService* service,
                  const DeleteRequestFromPmidManagerToPmidNode& message,
-                 const DeleteRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
-                 const DeleteRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/);
+                 const DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
+                 const DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
 template <>
 void DoOperation(PmidNodeService* service,
                  const PutRequestFromPmidManagerToPmidNode& message,
-                 const PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
-                 const PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/);
+                 const PutRequestFromPmidManagerToPmidNode::Sender& sender,
+                 const PutRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
 template <>
 void DoOperation(PmidNodeService* service,
                  const GetRequestFromDataManagerToPmidNode& message,
                  const GetRequestFromDataManagerToPmidNode::Sender& sender,
-                 const GetRequestFromDataManagerToPmidNode::Receiver& /*receiver*/);
+                 const GetRequestFromDataManagerToPmidNode::Receiver& receiver);
 template <>
 void DoOperation(PmidNodeService* service,
                  const IntegrityCheckRequestFromDataManagerToPmidNode& message,
                  const IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
-                 const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& /*receiver*/);
+                 const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver);
 
 //====================================== To VersionHandler =========================================
 

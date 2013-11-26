@@ -529,6 +529,28 @@ class VersionHandlerDeleteBranchVisitor : public boost::static_visitor<> {
   NodeId kSender_;
 };
 
+class CheckDataNameVisitor : public boost::static_visitor<bool> {
+ public:
+  CheckDataNameVisitor(const NonEmptyString& content)
+      : kContent_(content) {}
+
+  template <typename DataNameType>
+  result_type operator()(const DataNameType& data_name) {
+    try {
+      return (typename DataNameType::data_type(
+                  data_name, typename DataNameType::data_type::serialised_type(kContent_)).name() ==
+                                  data_name);
+    }
+    catch (const maidsafe_error& error) {
+      LOG(kWarning) << "Failed to deserialise data" << error.code();
+      return false;
+    }
+  }
+
+ private:
+  NonEmptyString kContent_;
+};
+
 }  // namespace detail
 
 }  // namespace vault

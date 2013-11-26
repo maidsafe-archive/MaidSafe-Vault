@@ -268,9 +268,7 @@ void DataManagerDispatcher::SendGetResponseFailure(const RequestorIdType& reques
   typedef routing::Message<typename NfsMessage::Sender, typename NfsMessage::Receiver>
       RoutingMessage;
 
-  nfs_client::DataNameAndReturnCode dataname_returncode(data_name, nfs_client::ReturnCode(result));
-  typename NfsMessage::Contents msg_content;
-  msg_content.data_name_and_return_code = dataname_returncode;
+  typename NfsMessage::Contents msg_content(data_name, nfs_client::ReturnCode(result));
 
   NfsMessage nfs_message(message_id, msg_content);
   RoutingMessage message(nfs_message.Serialise(),
@@ -308,7 +306,7 @@ void DataManagerDispatcher::SendGetFromCache(const DataName& data_name) {
 
 template<typename DataName>
 void DataManagerDispatcher::DoSendGetFromCache(const DataName& data_name, IsCacheable) {
-  typedef GetFromCacheFromDataManagerToDataManager VaultMessage;
+  typedef GetFromCacheFromDataManagerToCacheHandler VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message((VaultMessage::Contents(data_name)));
