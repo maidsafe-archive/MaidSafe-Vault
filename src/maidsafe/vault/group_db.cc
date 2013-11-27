@@ -31,7 +31,7 @@ GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup
     LOG(kInfo) << "Account doesn't exist for group "
                << HexSubstr(group_name->string()) << ", error : " << error.what()
                << ". -- Creating Account --";
-    return AddGroupToMap(group_name, Metadata());
+    return AddGroupToMap(group_name, Metadata(group_name));
   }
 }
 
