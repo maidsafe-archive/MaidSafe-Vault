@@ -711,8 +711,11 @@ void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName&
 }
 
 template <typename DataName>
-void DataManagerService::MarkNodeUp(const PmidName& /*pmid_node*/, const DataName& /*data_name*/) {
-  assert(0);
+void DataManagerService::MarkNodeUp(const PmidName& pmid_node, const DataName& name) {
+  typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
+  sync_node_ups_.AddLocalAction(DataManager::UnresolvedNodeUp(
+      key, ActionDataManagerNodeUp(pmid_node), routing_.kNodeId()));
+  DoSync();
 }
 
 // ==================== General implementation =====================================================
