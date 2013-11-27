@@ -397,8 +397,8 @@ class PmidManagerPutResponseVisitor : public boost::static_visitor<> {
 
   template<typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePutResponse<typename Name::data_type>(data_name, kSize_, kPmidName_,
-                                                                    kMessageId_);
+    kService_->template SendPutResponse<typename Name::data_type>(data_name, kSize_, kPmidName_,
+                                                                  kMessageId_);
   }
 
  private:

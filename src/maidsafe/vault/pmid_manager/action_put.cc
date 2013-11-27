@@ -26,17 +26,17 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionPmidManagerPut::ActionPmidManagerPut(uint32_t size, nfs::MessageId message_id)
+ActionPmidManagerPut::ActionPmidManagerPut(int32_t size, nfs::MessageId message_id)
     : kSize(size), kMessageId(message_id) {}
 
 ActionPmidManagerPut::ActionPmidManagerPut(const std::string& serialised_action)
-  : kSize([&serialised_action]()->uint32_t {
+  : kSize([&serialised_action]()->int32_t {
             protobuf::ActionPmidManagerPut action_put_proto;
             if (!action_put_proto.ParseFromString(serialised_action))
               ThrowError(CommonErrors::parsing_error);
             return action_put_proto.size();
           }()),
-    kMessageId([&serialised_action]()->uint32_t {
+    kMessageId([&serialised_action]()->int32_t {
                  protobuf::ActionPmidManagerPut action_put_proto;
                  action_put_proto.ParseFromString(serialised_action);
                  return action_put_proto.message_id();

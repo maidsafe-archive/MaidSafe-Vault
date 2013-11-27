@@ -51,6 +51,22 @@ PmidManagerService::PmidManagerService(const passport::Pmid& /*pmid*/, routing::
     : routing_(routing), group_db_(), accumulator_mutex_(), accumulator_(), dispatcher_(routing_),
       sync_puts_(), sync_deletes_(), sync_set_available_sizes_() {}
 
+
+void PmidManagerService::HandleSyncedPut(
+    std::unique_ptr<PmidManager::UnresolvedPut>&& synced_action) {
+  group_db_.Commit(synced_action->key, synced_action->action);
+  auto data_name(GetDataNameVariant(synced_action->key.type, synced_action->key.name));
+  SendPutResponse(data_name, synced_action->key.group_name(),
+                  synced_action->action.kSize,
+                  synced_action->action.kMessageId);
+}
+
+
+void PmidManagerService::HandleSyncedDelete(
+    std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action) {
+  group_db_.Commit(synced_action->key, synced_action->action);
+}
+
 // =============== Sync ============================================================================
 
 void PmidManagerService::DoSync() {
@@ -144,7 +160,7 @@ template<>
 void PmidManagerService::HandleMessage(
     const SynchroniseFromPmidManagerToPmidManager& message,
     const typename SynchroniseFromPmidManagerToPmidManager::Sender& sender,
-    const typename SynchroniseFromPmidManagerToPmidManager::Receiver& receiver) {
+    const typename SynchroniseFromPmidManagerToPmidManager::Receiver& /*receiver*/) {
   LOG(kVerbose) << "PmidManagerService::HandleMessage SynchroniseFromPmidManagerToPmidManager";
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.contents->data)) {
@@ -159,10 +175,7 @@ void PmidManagerService::HandleMessage(
       auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         LOG(kInfo) << "SynchroniseFromPmidManagerToPmidManager SendPutResponse";
-        group_db_.Commit(resolved_action->key, resolved_action->action);
-        auto data_name(GetDataNameVariant(resolved_action->key.type, resolved_action->key.name));
-        SendPutResponse(data_name, PmidName(Identity(receiver.data.string())),
-                        static_cast<int32_t>(message.contents->data.size()), message.id);
+        HandleSyncedPut(std::move(resolved_action));
       }
       break;
     }
@@ -173,7 +186,7 @@ void PmidManagerService::HandleMessage(
       auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         LOG(kInfo) << "SynchroniseFromPmidManagerToPmidManager SendDeleteRequest";
-        group_db_.Commit(resolved_action->key, resolved_action->action);
+        HandleSyncedDelete(std::move(resolved_action));
       }
       break;
     }
@@ -204,12 +217,6 @@ void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
 }
 
 //=================================================================================================
-// Created on any new vault addition. Pmid key lookup is already done by routing
-void PmidManagerService::CreatePmidAccount(const PmidName& /*pmid_node*/) {
-//  sync_create_accunts_.AddLocalAction(PmidManager::UnresolvedCreateAccount(
-//      PmidManager::MetadataKey(pmid_node) , ActionPmidManagerCreateAccount(), routing_.kNodeId()));
-//  DoSync();
-}
 
 void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_t available_size) {
   std::vector<nfs_vault::DataName> data_names;
