@@ -141,6 +141,18 @@ class DataManagerService {
   void AssessIntegrityCheckResults(
       std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
 
+  template <typename Data, typename RequestorIdType>
+  void AssessGetContentRequestedPmidNode(
+      std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
+
+  template <typename Data>
+  void DerankPmidNode(const PmidName pmid_node, const typename Data::Name& name,
+                      nfs::MessageId message_id);
+
+  template <typename Data>
+  void DeletePmidNodeAsHolder(const PmidName pmid_node, const typename Data::Name& name,
+                              nfs::MessageId message_id);
+
   // =========================== Delete section ====================================================
   template <typename Data>
   void HandleDelete(const typename Data::Name& data_name, nfs::MessageId message_id);
@@ -554,13 +566,13 @@ void DataManagerService::DoHandleGetResponse(
     } else {
       // In case of timer timeout, the pmid_node and contents will be constructed using default.
       LOG(kWarning) << "DataManagerService::DoHandleGetResponse reached timed out branch";
-//      SendGetResponse<Data, RequestorIdType>(contents, get_response_op);
+      AssessGetContentRequestedPmidNode<Data, RequestorIdType>(get_response_op);
     }
   }
   LOG(kVerbose) << "DataManagerService::DoHandleGetResponse called_count "
                 << called_count << " expected_count " << expected_count;
   if (called_count == expected_count)
-    AssessIntegrityCheckResults<Data, RequestorIdType>(get_response_op);
+    AssessGetContentRequestedPmidNode<Data, RequestorIdType>(get_response_op);
 }
 
 template <typename Data, typename RequestorIdType>
@@ -568,17 +580,16 @@ void DataManagerService::DoHandleGetCachedResponse(
     const GetCachedResponseContents& contents,
     std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
   if (contents == GetCachedResponseContents()) {
-    // BEFORE_RELEASE: Handle time out
+    LOG(kError) << "Failure to retrieve data from network";
+    return;
   }
-  if (contents.content) {
-    // BEFORE_RELEASE Check integrity check results
-    if (SendGetResponse<Data, RequestorIdType>(
-            Data(get_response_op->data_name,
-                 typename Data::serialised_type(NonEmptyString(contents.content->data))),
-            get_response_op)) {
-        get_response_op->serialised_contents =
-            typename Data::serialised_type(NonEmptyString(contents.content->data));
-      }
+  if (SendGetResponse<Data, RequestorIdType>(
+          Data(get_response_op->data_name,
+               typename Data::serialised_type(NonEmptyString(contents.content->data))),
+          get_response_op)) {
+    get_response_op->serialised_contents =
+        typename Data::serialised_type(NonEmptyString(contents.content->data));
+    AssessIntegrityCheckResults<Data, RequestorIdType>(get_response_op);
   }
 }
 
@@ -609,7 +620,7 @@ bool DataManagerService::SendGetResponse(
 }
 
 template <typename Data, typename RequestorIdType>
-void DataManagerService::AssessIntegrityCheckResults(
+void DataManagerService::AssessGetContentRequestedPmidNode(
     std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
   // If we failed to get the serialised_contents, mark 'pmid_node_to_get_from' as down, sync this,
   // try to Get from peer DataManagers' caches.
@@ -618,8 +629,6 @@ void DataManagerService::AssessIntegrityCheckResults(
                   << HexSubstr(get_response_op->pmid_node_to_get_from->string())
                   << " down for data " << HexSubstr(get_response_op->data_name.value.string());
     MarkNodeDown(get_response_op->pmid_node_to_get_from, get_response_op->data_name);
-    // BEFORE_RELEASE If no data got, then try to get from peer's cache
-    //                and the integrity_check results shall be discarded
     auto functor([=](const GetCachedResponseContents& contents) {
       DoHandleGetCachedResponse<Data, RequestorIdType>(contents, get_response_op);
     });
@@ -627,22 +636,53 @@ void DataManagerService::AssessIntegrityCheckResults(
     get_cached_response_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, 1,
                                        get_response_op->message_id);
     dispatcher_.SendGetFromCache(get_response_op->data_name);
-    return;
+  } else {
+    AssessIntegrityCheckResults<Data, RequestorIdType>(get_response_op);
   }
-  for (const auto& itr : get_response_op->integrity_checks)
+}
+
+template <typename Data, typename RequestorIdType>
+void DataManagerService::AssessIntegrityCheckResults(
+    std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
+  for (const auto& itr : get_response_op->integrity_checks) {
     if (!itr.second.Validate(get_response_op->serialised_contents)) {
       // In case the pmid_node_to_get_from returned with a false content, which in-validated
       // all the others, as the PmidNode side has to accumulate enough delete requests before
       // deploy the action, send out false delete request won't cause problem as long as no more
       // than half PmidNodes containing false data.
-      LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
-                    << HexSubstr(itr.first->string()) << " returned invalid data for "
-                    << HexSubstr(get_response_op->data_name.value.string());
-      SendDeleteRequest<Data>(itr.first, get_response_op->data_name,
-                              get_response_op->message_id);
+      if (itr.second.result() != IntegrityCheckData::Result()) {
+        LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
+                      << HexSubstr(itr.first->string()) << " returned invalid data for "
+                      << HexSubstr(get_response_op->data_name.value.string());
+        DerankPmidNode<Data>(itr.first, get_response_op->data_name, get_response_op->message_id);
+        DeletePmidNodeAsHolder<Data>(itr.first, get_response_op->data_name,
+                                     get_response_op->message_id);
+      } else {
+        MarkNodeDown(itr.first, get_response_op->data_name);
+      }
     }
+  }
 }
-// ==================== Delete implementation ======================================================
+
+template <typename Data>
+void DataManagerService::DerankPmidNode(const PmidName /*pmid_node*/,
+                                        const typename Data::Name& /*name*/,
+                                        nfs::MessageId /*message_id*/) {
+  // BEFORE_RELEASE: to be implemented
+}
+
+template <typename Data>
+void DataManagerService::DeletePmidNodeAsHolder(const PmidName pmid_node,
+                                                const typename Data::Name& name,
+                                                nfs::MessageId message_id) {
+  typename DataManager::Key key(name.value, Data::Tag::kValue);
+  sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
+      key, ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId()));
+  DoSync();
+  SendDeleteRequest<Data>(pmid_node, name, message_id);
+}
+
+// =================== Delete implementation ======================================================
 template <typename Data>
 void DataManagerService::HandleDelete(const typename Data::Name& data_name,
                                       nfs::MessageId /*message_id*/) {
@@ -660,17 +700,19 @@ void DataManagerService::SendDeleteRequest(
 
 // ==================== Node up / Node down implementation =========================================
 template <typename DataName>
-void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName& data_name) {
-  LOG(kWarning) << "DataManagerService::MarkNodeDown marking node " << HexSubstr(pmid_node->string())
-                << " down for chunk " << HexSubstr(data_name.value.string());
-  assert(0);
+void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName& name) {
+  typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
+  sync_node_downs_.AddLocalAction(DataManager::UnresolvedNodeDown(
+      key, ActionDataManagerNodeDown(pmid_node), routing_.kNodeId()));
+  DoSync();
 }
 
 template <typename DataName>
-void DataManagerService::MarkNodeUp(const PmidName& pmid_node, const DataName& data_name) {
-  LOG(kInfo) << "DataManagerService::MarkNodeUp marking node " << HexSubstr(pmid_node->string())
-             << " up for chunk " << HexSubstr(data_name.value.string());
-  assert(0);
+void DataManagerService::MarkNodeUp(const PmidName& pmid_node, const DataName& name) {
+  typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
+  sync_node_ups_.AddLocalAction(DataManager::UnresolvedNodeUp(
+      key, ActionDataManagerNodeUp(pmid_node), routing_.kNodeId()));
+  DoSync();
 }
 
 // ==================== General implementation =====================================================
