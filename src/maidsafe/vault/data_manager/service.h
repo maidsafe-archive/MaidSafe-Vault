@@ -343,7 +343,8 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
       pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
     LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
                << " from maid_node " << HexSubstr(maid_name->string())
-               << " . SendPutRequest with message_id " << message_id.data;
+               << " . SendPutRequest with message_id " << message_id.data
+               << " to picked up pmid_node " << HexSubstr(pmid_name->string());
     dispatcher_.SendPutRequest(pmid_name, data, message_id);
   } else if (is_unique_on_network<Data>::value) {
     LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
@@ -490,7 +491,8 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, expected_response_count,
                      message_id.data);
   LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value)
-                << " SendGetRequest with message_id " << message_id.data;
+                << " SendGetRequest with message_id " << message_id.data
+                << " to picked up pmid_node " << HexSubstr(pmid_node_to_get_from->string());
   // Send requests
   dispatcher_.SendGetRequest<Data>(pmid_node_to_get_from, data_name, message_id);
 
@@ -533,13 +535,8 @@ template <typename Data, typename RequestorIdType>
 void DataManagerService::DoHandleGetResponse(
     const PmidName& pmid_node, const GetResponseContents& contents,
     std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
-  LOG(kVerbose) << "DataManagerService::DoHandleGetResponse received response from "
-                << HexSubstr(pmid_node->string());
-//   if (contents)
-//     LOG(kVerbose) << HexSubstr(contents.name.raw_name) << " with content "
-//                   << HexSubstr(contents.content->string());
-  // Note: if 'contents' is default-constructed, it's probably a result of this function being
-  // invoked by the timer after timeout.
+  // Note: if 'pmid_node' and 'contents' is default-constructed, it's probably a result of this
+  // function being invoked by the timer after timeout.
   int called_count(0), expected_count(0);
   {
     std::lock_guard<std::mutex> lock(get_response_op->mutex);

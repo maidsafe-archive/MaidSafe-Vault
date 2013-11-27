@@ -126,7 +126,9 @@ Accumulator<T>::Accumulator()
 template <typename T>
 typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
     const T& request, const routing::GroupSource& source, AddCheckerFunctor checker) {
-  LOG(kVerbose) << "Accumulator::AddPendingRequest for GroupSource";
+  LOG(kVerbose) << "Accumulator::AddPendingRequest for GroupSource "
+                << HexSubstr(source.group_id.data.string()) << " sent from "
+                << HexSubstr(source.sender_id->string());
   if (CheckHandled(request)) {
     LOG(kInfo) << "Accumulator::AddPendingRequest request has been handled";
     return Accumulator<T>::AddResult::kHandled;
@@ -209,10 +211,16 @@ template <typename T>
 bool Accumulator<T>::RequestExists(const T& request, const routing::GroupSource& source) {
   auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
   for (auto pending_request : pending_requests_)
-    if (pending_request.request.which() == request.which() && source == pending_request.source &&
-        request_message_id ==
-            boost::apply_visitor(MessageIdRequestVisitor(), pending_request.request))
+    if (request_message_id ==
+            boost::apply_visitor(MessageIdRequestVisitor(), pending_request.request)
+        && source == pending_request.source && pending_request.request == request) {
+      LOG(kWarning) << "Accumulator<T>::RequestExists,  reguest with message id "
+                    << request_message_id.data << " from sender "
+                    << HexSubstr(source.sender_id->string())
+                    << " with group_id " << HexSubstr(source.group_id->string())
+                    << " already exists in the pending requests list";
       return true;
+    }
   LOG(kInfo) << "Accumulator<T>::RequestExists,  reguest with message id "
              << request_message_id.data << " from sender " << HexSubstr(source.sender_id->string())
              << " with group_id " << HexSubstr(source.group_id->string())

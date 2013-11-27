@@ -291,9 +291,11 @@ void DoOperation(PmidManagerService* service,
 template <>
 void DoOperation(PmidNodeService* service,
                  const DeleteRequestFromPmidManagerToPmidNode& message,
-                 const DeleteRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
+                 const DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
                  const DeleteRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation DeleteRequestFromPmidManagerToPmidNode";
+  LOG(kVerbose) << "DoOperation DeleteRequestFromPmidManagerToPmidNode from "
+                << HexSubstr(sender.sender_id.data.string()) << " for chunk "
+                << HexSubstr(message.contents->raw_name.string());
   auto data_name(GetNameVariant(*message.contents));
   PmidNodeDeleteVisitor<PmidNodeService> delete_visitor(service);
   boost::apply_visitor(delete_visitor, data_name);
@@ -302,12 +304,13 @@ void DoOperation(PmidNodeService* service,
 template <>
 void DoOperation(PmidNodeService* service,
                  const PutRequestFromPmidManagerToPmidNode& message,
-                 const PutRequestFromPmidManagerToPmidNode::Sender& /*sender*/,
+                 const PutRequestFromPmidManagerToPmidNode::Sender& sender,
                  const PutRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation PutRequestFromPmidManagerToPmidNode";
   auto data_name(GetNameVariant(*message.contents));
-  PmidNodePutVisitor<PmidNodeService> put_visitor(service, message.contents->content,
-                                                     message.id);
+  LOG(kVerbose) << "DoOperation PutRequestFromPmidManagerToPmidNode from "
+                << HexSubstr(sender.sender_id.data.string()) << " for chunk "
+                << HexSubstr(message.contents->name.raw_name.string());
+  PmidNodePutVisitor<PmidNodeService> put_visitor(service, message.contents->content, message.id);
   boost::apply_visitor(put_visitor, data_name);
 }
 
