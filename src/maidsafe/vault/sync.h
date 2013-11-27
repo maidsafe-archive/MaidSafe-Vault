@@ -185,7 +185,12 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
           new UnresolvedAction(unresolved_action));
       if (merge) {
         // Shall not received a sync from itself before add local
-        assert(!detail::IsFromThisNode(unresolved_action));
+        if (detail::IsFromThisNode(unresolved_action)) {
+          LOG(kError) << "AddAction " << kActionId
+                      << " received a sync from itself before adding local";
+          break;
+        }
+//         assert(!detail::IsFromThisNode(unresolved_action));
         LOG(kVerbose) << "AddAction " << kActionId << " syncs from peer arrived before add local";
         unresolved_action_ptr->peer_and_entry_ids.push_back(
             unresolved_action.this_node_and_entry_id);
@@ -199,12 +204,9 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
       LOG(kVerbose) << "AddAction " << kActionId << " add local happened after syncs from peer";
       // Add Local, however after received syncs from peer
       if ((*found)->this_node_and_entry_id.second ==
-          unresolved_action.this_node_and_entry_id.second) {
+          unresolved_action.this_node_and_entry_id.second)
         (*found)->this_node_and_entry_id.first = unresolved_action.this_node_and_entry_id.first;
-        break;
-      }
-      ++found;
-      continue;
+      break;
     }
 
     // Drop the sync silently if it is already recorded
