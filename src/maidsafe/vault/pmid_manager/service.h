@@ -209,8 +209,9 @@ void IncrementAttemptsAndSendSync(PmidManagerDispatcher& dispatcher,
 template <typename Data>
 void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
                                    nfs::MessageId message_id) {
-  LOG(kVerbose) << "PmidManagerService::HandlePut put request to pmid_node -- "
-                << HexSubstr(pmid_node.value.string())
+  LOG(kVerbose) << "PmidManagerService::HandlePut put request for chunk "
+                <<  HexSubstr(data.name().value)
+                << " to pmid_node -- " << HexSubstr(pmid_node.value.string())
                 << " , with message_id -- " << message_id.data;
   dispatcher_.SendPutRequest(data, pmid_node, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), data.name().value,
