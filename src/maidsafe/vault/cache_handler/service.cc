@@ -139,10 +139,10 @@ CacheHandlerService::HandleMessage(
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const GetFromCacheFromDataManagerToDataManager& message,
-    const typename GetFromCacheFromDataManagerToDataManager::Sender& sender,
-    const typename GetFromCacheFromDataManagerToDataManager::Receiver& receiver) {
-  typedef GetFromCacheFromDataManagerToDataManager MessageType;
+    const GetFromCacheFromDataManagerToCacheHandler& message,
+    const typename GetFromCacheFromDataManagerToCacheHandler::Sender& sender,
+    const typename GetFromCacheFromDataManagerToCacheHandler::Receiver& receiver) {
+  typedef GetFromCacheFromDataManagerToCacheHandler MessageType;
   return CacheOperationHandlerWrapper<MessageType>(
              this, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);

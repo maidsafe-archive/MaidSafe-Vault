@@ -166,9 +166,9 @@ CacheHandlerService::HandleMessage(
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const GetFromCacheFromDataManagerToDataManager& message,
-    const typename GetFromCacheFromDataManagerToDataManager::Sender& sender,
-    const typename GetFromCacheFromDataManagerToDataManager::Receiver& receiver);
+    const GetFromCacheFromDataManagerToCacheHandler& message,
+    const typename GetFromCacheFromDataManagerToCacheHandler::Sender& sender,
+    const typename GetFromCacheFromDataManagerToCacheHandler::Receiver& receiver);
 
 template <typename Data>
 boost::optional<Data> CacheHandlerService::CacheGet(const typename Data::Name& data_name,

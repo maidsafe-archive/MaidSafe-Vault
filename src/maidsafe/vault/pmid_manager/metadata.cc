@@ -101,6 +101,8 @@ void PmidManagerMetadata::SetAvailableSize(const int64_t& available_size) {
   claimed_available_size = available_size;
 }
 
+
+// BEFORE_RELEASE check if group can be deleted with below check
 detail::GroupDbMetaDataStatus PmidManagerMetadata::GroupStatus() {
   return ((stored_count <= 0) ? detail::GroupDbMetaDataStatus::kGroupEmpty :
                                 detail::GroupDbMetaDataStatus::kGroupNonEmpty);

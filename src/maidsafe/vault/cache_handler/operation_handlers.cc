@@ -36,10 +36,10 @@ bool DoCacheOperation(
     const nfs::GetResponseFromDataManagerToMaidNode& message,
     const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& /*sender*/,
     const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& /*receiver*/) {
-  if (!message.contents->data)
+  if (!message.contents->content)
     return false;
-  auto data_name(detail::GetNameVariant(*message.contents));
-  detail::PutToCacheVisitor put_to_cache(service, message.contents->data->content);
+  auto data_name(detail::GetNameVariant(message.contents->name));
+  detail::PutToCacheVisitor put_to_cache(service, NonEmptyString(message.contents->content->data));
   boost::apply_visitor(put_to_cache, data_name);
   return true;
 }
@@ -50,10 +50,10 @@ bool DoCacheOperation(
     const nfs::GetCachedResponseFromCacheHandlerToMaidNode& message,
     const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Sender& /*sender*/,
     const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& /*receiver*/) {
-  if (!message.contents->data)
+  if (!message.contents->content)
     return false;
-  auto data_name(detail::GetNameVariant(*message.contents->data));
-  PutToCacheVisitor put_to_cache(service, message.contents->data->content);
+  auto data_name(detail::GetNameVariant(message.contents->name));
+  PutToCacheVisitor put_to_cache(service, NonEmptyString(message.contents->content->data));
   boost::apply_visitor(put_to_cache, data_name);
   return true;
 }
@@ -64,10 +64,10 @@ bool DoCacheOperation(
     const nfs::GetResponseFromDataManagerToDataGetter& message,
     const typename nfs::GetResponseFromDataManagerToDataGetter::Sender& /*sender*/,
     const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& /*receiver*/) {
-  if (!message.contents->data)
+  if (!message.contents->content)
     return false;
-  auto data_name(detail::GetNameVariant(*message.contents->data));
-  PutToCacheVisitor put_to_cache(service, message.contents->data->content);
+  auto data_name(detail::GetNameVariant(message.contents->name));
+  PutToCacheVisitor put_to_cache(service, NonEmptyString(message.contents->content->data));
   boost::apply_visitor(put_to_cache, data_name);
   return true;
 }
@@ -78,10 +78,10 @@ bool DoCacheOperation(
     const nfs::GetCachedResponseFromCacheHandlerToDataGetter& message,
     const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Sender& /*sender*/,
     const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Receiver& /*receiver*/) {
-  if (!message.contents->data)
+  if (!message.contents->content)
     return false;
-  auto data_name(detail::GetNameVariant(*message.contents->data));
-  PutToCacheVisitor put_to_cache(service, message.contents->data->content);
+  auto data_name(detail::GetNameVariant(message.contents->name));
+  PutToCacheVisitor put_to_cache(service, NonEmptyString(message.contents->content->data));
   boost::apply_visitor(put_to_cache, data_name);
   return true;
 }
@@ -128,10 +128,10 @@ bool DoCacheOperation(
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
-    const GetFromCacheFromDataManagerToDataManager& message,
-    const typename GetFromCacheFromDataManagerToDataManager::Sender& sender,
-    const typename GetFromCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
-  typedef GetFromCacheFromDataManagerToDataManager::SourcePersona SourcePersonaType;
+    const GetFromCacheFromDataManagerToCacheHandler& message,
+    const typename GetFromCacheFromDataManagerToCacheHandler::Sender& sender,
+    const typename GetFromCacheFromDataManagerToCacheHandler::Receiver& /*receiver*/) {
+  typedef GetFromCacheFromDataManagerToCacheHandler::SourcePersona SourcePersonaType;
   auto data_name(detail::GetNameVariant(*message.contents));
   detail::Requestor<SourcePersonaType> requestor(sender.data);
   detail::GetFromCacheVisitor<detail::Requestor<SourcePersonaType>> get_from_cache(service,

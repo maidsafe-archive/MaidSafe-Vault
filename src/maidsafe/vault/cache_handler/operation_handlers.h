@@ -63,7 +63,7 @@ template <typename MessageType>
 bool DoCacheOperation(CacheHandlerService* /*service*/, const MessageType& /*message*/,
                       const typename MessageType::Sender& /*sender*/,
                       const typename MessageType::Receiver& /*receiver*/) {
-  MessageType::No_genereic_handler_is_available__Specialisation_is_required;;
+  MessageType::No_genereic_handler_is_available__Specialisation_is_required;
   return false;
 }
 
@@ -119,9 +119,9 @@ bool DoCacheOperation(
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
-    const GetFromCacheFromDataManagerToDataManager& message,
-    const typename GetFromCacheFromDataManagerToDataManager::Sender& sender,
-    const typename GetFromCacheFromDataManagerToDataManager::Receiver& receiver);
+    const GetFromCacheFromDataManagerToCacheHandler& message,
+    const typename GetFromCacheFromDataManagerToCacheHandler::Sender& sender,
+    const typename GetFromCacheFromDataManagerToCacheHandler::Receiver& receiver);
 
 }  // detail
 

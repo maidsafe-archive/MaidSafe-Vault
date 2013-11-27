@@ -37,6 +37,7 @@
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/version_handler/key.h"
 #include "maidsafe/vault/version_handler/value.h"
 #include "maidsafe/vault/tests/tests_utils.h"
@@ -49,12 +50,11 @@ namespace test {
 
 PmidManagerMetadata CreatePmidManagerMetadata(const PmidName& pmid_name) {
   PmidManagerMetadata metadata(pmid_name);
-  metadata.SetAvailableSize(1000000);
+  metadata.SetAvailableSize(0);
   return metadata;
 }
 
 MaidManagerMetadata CreateMaidManagerMetadata(const passport::Maid& maid) {
-
   std::vector<PmidTotals> pmid_totals_vector;
   for (auto i(0); i != 1; ++i) {
     auto pmid(MakePmid());
@@ -110,12 +110,47 @@ struct TestGroupDbActionDeleteValue {
   }
 };
 
+// pmid manager
+
+// update metadata only
+
+// put value
+struct TestPmidGroupDbActionPutValue {
+  detail::DbAction operator()(PmidManagerMetadata& metadata,
+                              std::unique_ptr<PmidManagerValue>& value) {
+    if (!value) {
+      value.reset(new PmidManagerValue(100));
+    } else {
+      LOG(kError) << "data already exists";
+      ThrowError(VaultErrors::data_already_exists);
+    }
+
+    metadata.PutData(value->size());
+    return detail::DbAction::kPut;
+  }
+ };
+
+// delete value
+struct TestPmidGroupDbActionDeleteValue {
+  detail::DbAction operator()(PmidManagerMetadata& metadata,
+                              std::unique_ptr<PmidManagerValue>& value) {
+    if (!value) {
+      ThrowError(CommonErrors::no_such_element);
+      return detail::DbAction::kDelete;
+    }
+    metadata.DeleteData(value->size());
+//    if (!pmid_node_available)
+//      metadata.SetAvailableSize(0);
+    return detail::DbAction::kDelete;
+  }
+};
+
 TEST_CASE("GroupDb constructor", "[GroupDb][Unit]") {
   GroupDb<MaidManager> maid_group_db;
   GroupDb<PmidManager> pmid_group_db;
 }
 
-TEST_CASE("GroupDb commit", "[GroupDb][Unit]") {
+TEST_CASE("GroupDb MaidManager", "[GroupDb][Unit]") {
   GroupDb<MaidManager> maid_group_db;
   auto maid(MakeMaid());
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
@@ -173,6 +208,67 @@ TEST_CASE("GroupDb commit", "[GroupDb][Unit]") {
   maid_group_db.DeleteGroup(maid_name);
   CHECK_THROWS_AS(maid_group_db.GetMetadata(maid_name), maidsafe_error);
   CHECK_THROWS_AS(maid_group_db.GetContents(maid_name), maidsafe_error);
+}
+
+TEST_CASE("GroupDb PmidManager", "[GroupDb][Unit]") {
+  GroupDb<PmidManager> pmid_group_db;
+  auto pmid(MakePmid());
+  passport::PublicPmid::Name pmid_name(PmidName(pmid.name()));
+  CHECK_THROWS_AS(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
+  pmid_group_db.DeleteGroup(pmid_name);
+  auto metadata = CreatePmidManagerMetadata(pmid_name);
+  GroupKey<PmidName> key1(pmid_name, Identity(NodeId(NodeId::kRandomId).string()),
+                          DataTagValue::kPmidValue);
+  GroupKey<PmidName> key2(pmid_name, Identity(NodeId(NodeId::kRandomId).string()),
+                          DataTagValue::kPmidValue);
+  CHECK_THROWS_AS(pmid_group_db.Commit(key1, TestPmidGroupDbActionDeleteValue()), maidsafe_error);
+  CHECK_THROWS_AS(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
+
+  pmid_group_db.AddGroup(pmid_name, metadata);
+  CHECK(pmid_group_db.GetMetadata(pmid_name) == metadata);
+  CHECK_THROWS_AS(pmid_group_db.AddGroup(pmid_name, metadata), maidsafe_error);
+  CHECK(pmid_group_db.GetContents(pmid_name).kv_pair.size() == 0U);
+  pmid_group_db.DeleteGroup(pmid_name);
+  CHECK_THROWS_AS(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
+  pmid_group_db.AddGroup(pmid_name, metadata);
+  CHECK(pmid_group_db.GetMetadata(pmid_name) == metadata);
+  CHECK_THROWS_AS(pmid_group_db.AddGroup(pmid_name, metadata), maidsafe_error);
+  CHECK(pmid_group_db.GetContents(pmid_name).kv_pair.size() == 0U);
+  GroupKey<PmidName> unknown_key(PmidName(Identity(NodeId(NodeId::kRandomId).string())),
+                                 Identity(NodeId(NodeId::kRandomId).string()),
+                                 DataTagValue::kPmidValue);
+  CHECK_THROWS_AS(pmid_group_db.GetValue(unknown_key), maidsafe_error);
+  CHECK_THROWS_AS(pmid_group_db.GetValue(key1), maidsafe_error);
+  CHECK_THROWS_AS(pmid_group_db.Commit(key1, TestPmidGroupDbActionDeleteValue()), maidsafe_error);
+  pmid_group_db.Commit(key1, TestPmidGroupDbActionPutValue());
+  pmid_group_db.Commit(key1, TestPmidGroupDbActionDeleteValue());
+  // Put
+  PmidManagerMetadata expected_metadata(metadata);
+  expected_metadata.PutData(100);
+  PmidManagerValue expected_value(100);
+  pmid_group_db.Commit(key1, TestPmidGroupDbActionPutValue());
+  CHECK(pmid_group_db.GetMetadata(pmid_name) == expected_metadata);
+  CHECK(pmid_group_db.GetValue(key1) == expected_value);
+  pmid_group_db.GetContents(pmid_name);
+  CHECK((pmid_group_db.GetContents(pmid_name)).kv_pair.size() == 1U);
+  // Put
+  expected_metadata.PutData(100);
+  expected_value = PmidManagerValue(100);
+  pmid_group_db.Commit(key2, TestPmidGroupDbActionPutValue());
+  CHECK(pmid_group_db.GetMetadata(pmid_name) == expected_metadata);
+  CHECK(pmid_group_db.GetValue(key2) == expected_value);
+  pmid_group_db.GetContents(pmid_name);
+  CHECK((pmid_group_db.GetContents(pmid_name)).kv_pair.size() == 2U);
+
+  // Delete
+  expected_metadata.DeleteData(100);
+  pmid_group_db.Commit(key1, TestPmidGroupDbActionDeleteValue());
+  CHECK(pmid_group_db.GetMetadata(pmid_name) == expected_metadata);
+  CHECK(pmid_group_db.GetContents(pmid_name).kv_pair.size() == 1U);
+  CHECK_THROWS_AS(pmid_group_db.GetValue(key1), maidsafe_error);
+  pmid_group_db.DeleteGroup(pmid_name);
+  CHECK_THROWS_AS(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
+  CHECK_THROWS_AS(pmid_group_db.GetContents(pmid_name), maidsafe_error);
 }
 
 }  // test
