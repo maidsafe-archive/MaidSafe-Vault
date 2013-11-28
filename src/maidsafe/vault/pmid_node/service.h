@@ -278,6 +278,8 @@ void PmidNodeService::HandleGet(const typename Data::Name& data_name,
 template <typename Data>
 void PmidNodeService::HandlePut(const Data& data, nfs::MessageId message_id) {
   try {
+    LOG(kVerbose) << "PmidNodeService::HandlePut put " << HexSubstr(data.name().value)
+                  << " with message_id " << message_id.data;
     handler_.Put(data);
   }
   catch (const maidsafe_error& error) {
@@ -288,6 +290,7 @@ void PmidNodeService::HandlePut(const Data& data, nfs::MessageId message_id) {
 template <typename Data>
 void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
   try {
+    LOG(kVerbose) << "PmidNodeService::HandleDelete delete " << HexSubstr(data_name.value);
     handler_.Delete(GetDataNameVariant(Data::Tag::kValue, data_name.value));
   }
   catch (const maidsafe_error& /*error*/) {

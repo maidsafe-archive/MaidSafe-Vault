@@ -266,6 +266,10 @@ class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
 
   template<typename Name>
   void operator()(const Name& data_name) {
+    LOG(kWarning) << "DataManagerSendDeleteVisitor::operator() send delete request to node "
+                  << HexSubstr(kPmidNode_->string()) << " for chunk "
+                  << HexSubstr(data_name.value.string())
+                  << " bearing message id " << kMessageId_.data;
     kService_->template SendDeleteRequest<typename Name::data_type>(kPmidNode_, data_name,
                                                                     kMessageId_);
   }
@@ -420,8 +424,8 @@ class PmidManagerPutResponseVisitor : public boost::static_visitor<> {
 
   template<typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePutResponse<typename Name::data_type>(data_name, kSize_, kPmidName_,
-                                                                    kMessageId_);
+    kService_->template SendPutResponse<typename Name::data_type>(data_name, kSize_, kPmidName_,
+                                                                  kMessageId_);
   }
 
  private:

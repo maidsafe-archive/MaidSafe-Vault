@@ -93,7 +93,7 @@ void OperationHandler<ValidateSender, AccumulatorType, Checker, ServiceHandlerTy
     std::lock_guard<std::mutex> lock(mutex);
     if (accumulator.AddPendingRequest(message, sender, checker)
            != AccumulatorType::AddResult::kSuccess) {
-      LOG(kError) << "AddPendingRequest failed";
+      LOG(kInfo) << "AddPendingRequest unsuccessful";
       return;
     }
   }

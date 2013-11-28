@@ -303,7 +303,9 @@ void Commander::HandleVerify() {
 
 void Commander::HandleDoTest(size_t client_index) {
   assert(client_index > 1);
+  LOG(kVerbose) << "constructing chunk_storer ......";
   DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_, pmids_from_file_);
+  LOG(kVerbose) << "testing store " << chunk_set_count_ << " chunks ......";
   chunk_storer.Test(chunk_set_count_);
 }
 

@@ -19,6 +19,6 @@
 package maidsafe.vault.protobuf;
 
 message ActionPmidManagerPut {
-  required uint32 size = 1;
+  required int32 size = 1;
   required int32 message_id = 2;
 }

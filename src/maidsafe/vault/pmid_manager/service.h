@@ -73,8 +73,8 @@ class PmidManagerService {
     return true;
   }
   template <typename Data>
-  void HandlePutResponse(const typename Data::Name& data_name, int32_t size,
-      const PmidName& pmid_node, nfs::MessageId message_id);
+  void SendPutResponse(const typename Data::Name& data_name, int32_t size,
+                       const PmidName& pmid_node, nfs::MessageId message_id);
 
   void HandleHealthRequest(const PmidName& pmid_node, const MaidName& maid_node,
                            nfs::MessageId message_id);
@@ -96,8 +96,6 @@ class PmidManagerService {
   friend class detail::PmidManagerDeleteVisitor<PmidManagerService>;
   friend class test::PmidManagerServiceTest;
 
-  void CreatePmidAccount(const PmidName& pmid_node);  // triggered by churn event
-
   // =============== Put/Delete data =============================================================
   template <typename Data>
   void HandlePut(const Data& data, const PmidName& pmid_node, nfs::MessageId message_id);
@@ -118,6 +116,9 @@ class PmidManagerService {
                        nfs::MessageId message_id);
 
   void HandleSendPmidAccount(const PmidName& pmid_node, int64_t available_size);
+
+  void HandleSyncedPut(std::unique_ptr<PmidManager::UnresolvedPut>&& synced_action);
+  void HandleSyncedDelete(std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action);
 
   routing::Routing& routing_;
   GroupDb<PmidManager> group_db_;
@@ -209,8 +210,9 @@ void IncrementAttemptsAndSendSync(PmidManagerDispatcher& dispatcher,
 template <typename Data>
 void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
                                    nfs::MessageId message_id) {
-  LOG(kVerbose) << "PmidManagerService::HandlePut put request to pmid_node -- "
-                << HexSubstr(pmid_node.value.string())
+  LOG(kVerbose) << "PmidManagerService::HandlePut put request for chunk "
+                <<  HexSubstr(data.name().value)
+                << " to pmid_node -- " << HexSubstr(pmid_node.value.string())
                 << " , with message_id -- " << message_id.data;
   dispatcher_.SendPutRequest(data, pmid_node, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), data.name().value,
@@ -239,10 +241,10 @@ void PmidManagerService::HandlePutFailure(
 }
 
 template <typename Data>
-void PmidManagerService::HandlePutResponse(
+void PmidManagerService::SendPutResponse(
     const typename Data::Name& data_name, int32_t size, const PmidName& pmid_name,
     nfs::MessageId message_id) {
-  LOG(kVerbose) << "PmidManagerService::HandlePutResponse of pmid_name -- "
+  LOG(kVerbose) << "PmidManagerService::SendPutResponse of pmid_name -- "
                 << HexSubstr(pmid_name.value.string())
                 << " , with message_id -- " << message_id.data
                 << " . size -- " << size;
