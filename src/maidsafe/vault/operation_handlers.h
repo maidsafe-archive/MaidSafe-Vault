@@ -159,7 +159,7 @@ template <typename ServiceHandlerType, typename MessageType>
 void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/,
                  const typename MessageType::Sender& /*sender*/,
                  const typename MessageType::Receiver& /*receiver*/) {
-  //  MessageType::Invalid_function_call;
+//  MessageType::No_genereic_handler_is_available__Specialisation_is_required;
 }
 
 // TODO(Team) Consider moving these to respective persona
@@ -206,6 +206,12 @@ void DoOperation(MaidManagerService* service,
                  const PmidHealthResponseFromPmidManagerToMaidManager& message,
                  const PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
                  const PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver);
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::PutVersionRequestFromMaidNodeToMaidManager& message,
+                 const nfs::PutVersionRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::PutVersionRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
 //=============================== To DataManager ===================================================
 template <>

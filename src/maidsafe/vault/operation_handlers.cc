@@ -117,6 +117,19 @@ void DoOperation(MaidManagerService* service,
                                 message.id);
 }
 
+template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::PutVersionRequestFromMaidNodeToMaidManager& message,
+                 const nfs::PutVersionRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::PutVersionRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation PutVersionRequestFromMaidNodeToMaidManager";
+  auto data_name(GetNameVariant(*message.contents));
+  MaidManagerPutVersionVisitor<MaidManagerService> put_version_visitor(
+      service, MaidName(Identity(sender.data.string())), message.contents->old_version_name,
+      message.contents->new_version_name, message.id);
+  boost::apply_visitor(put_version_visitor, data_name);
+}
+
 //=============================== To DataManager ===================================================
 
 template <>
