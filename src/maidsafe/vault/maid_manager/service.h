@@ -149,12 +149,6 @@ class MaidManagerService {
   void HandlePutFailure(const MaidName& maid_name, const typename Data::Name& data_name,
                         const maidsafe_error& error, nfs::MessageId message_id);
 
-  template <typename DataNameType>
-  void HandlePutVersion(const MaidName& maid_name, const DataNameType& data_name,
-                        const StructuredDataVersions::VersionName& old_version,
-                        const StructuredDataVersions::VersionName& new_version,
-                        nfs::MessageId message_id);
-
   void HandleSyncedPutResponse(std::unique_ptr<MaidManager::UnresolvedPut>&& synced_action_put);
 
   template <typename Data>
@@ -165,6 +159,21 @@ class MaidManagerService {
   bool DeleteAllowed(const MaidName& account_name, const typename Data::Name& data_name);
 
   void HandleSyncedDelete(std::unique_ptr<MaidManager::UnresolvedDelete>&& synced_action_delete);
+
+  // ================================== Version Handlers ===========================================
+
+  template <typename DataNameType>
+  void HandlePutVersion(const MaidName& maid_name, const DataNameType& data_name,
+                        const StructuredDataVersions::VersionName& old_version,
+                        const StructuredDataVersions::VersionName& new_version,
+                        nfs::MessageId message_id);
+
+  template <typename DataNameType>
+  void HandleDeleteBranchUntilFork(const MaidName& maid_name, const DataNameType& data_name,
+                                   const StructuredDataVersions::VersionName& version,
+                                   nfs::MessageId message_id);
+
+  // ===============================================================================================
 
   void HandleSyncedUpdatePmidHealth(std::unique_ptr<MaidManager::UnresolvedUpdatePmidHealth>&&
                                         synced_action_update_pmid_health);
@@ -228,6 +237,7 @@ class MaidManagerService {
   friend class detail::MaidManagerPutResponseFailureVisitor<MaidManagerService>;
   friend class detail::MaidManagerDeleteVisitor<MaidManagerService>;
   friend class detail::MaidManagerPutVersionVisitor<MaidManagerService>;
+  friend class detail::MaidManagerDeleteBranchUntilForkVisitor<MaidManagerService>;
   friend class test::MaidManagerServiceTest;
 
   routing::Routing& routing_;
@@ -457,6 +467,12 @@ void MaidManagerService::HandlePutVersion(
   dispatcher_.SendPutVersion(maid_name, data_name, old_version, new_version, message_id);
 }
 
+template <typename DataNameType>
+void MaidManagerService::HandleDeleteBranchUntilFork(
+    const MaidName& maid_name, const DataNameType& data_name,
+    const StructuredDataVersions::VersionName& version, nfs::MessageId message_id) {
+  dispatcher_.SendDeleteBranchUntilFork(maid_name, data_name, version, message_id);
+}
 
 template <>
 void MaidManagerService::HandlePutFailure<passport::PublicMaid>(

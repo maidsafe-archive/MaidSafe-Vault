@@ -130,6 +130,20 @@ void DoOperation(MaidManagerService* service,
   boost::apply_visitor(put_version_visitor, data_name);
 }
 
+template <>
+void DoOperation(
+    MaidManagerService* service,
+    const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager& message,
+    const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Sender& sender,
+    const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation PutVersionRequestFromMaidNodeToMaidManager";
+  auto data_name(GetNameVariant(*message.contents));
+  MaidManagerDeleteBranchUntilForkVisitor<MaidManagerService> delete_version_visitor(
+      service, MaidName(Identity(sender.data.string())), message.contents->version_name,
+      message.id);
+  boost::apply_visitor(delete_version_visitor, data_name);
+}
+
 //=============================== To DataManager ===================================================
 
 template <>

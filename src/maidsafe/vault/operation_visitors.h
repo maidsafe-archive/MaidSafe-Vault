@@ -380,6 +380,26 @@ class MaidManagerPutVersionVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
+template<typename ServiceHandlerType>
+class MaidManagerDeleteBranchUntilForkVisitor : public boost::static_visitor<> {
+ public:
+  MaidManagerDeleteBranchUntilForkVisitor(ServiceHandlerType* service, const MaidName& maid_name,
+                                          StructuredDataVersions::VersionName version,
+                                          nfs::MessageId message_id)
+      : kService_(service), kMaidName_(maid_name), kVersion_(std::move(version)),
+        kMessageId_(message_id) {}
+
+  template<typename DataNameType>
+  void operator()(const DataNameType& data_name) {
+    kService_->HandleDeleteBranchUntilFork(kMaidName_, data_name, kVersion_, kMessageId_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const MaidName kMaidName_;
+  const StructuredDataVersions::VersionName kVersion_;
+  const nfs::MessageId kMessageId_;
+};
 
 template<typename ServiceHandlerType>
 class DataManagerDeleteVisitor : public boost::static_visitor<> {

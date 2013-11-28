@@ -213,6 +213,13 @@ void DoOperation(MaidManagerService* service,
                  const nfs::PutVersionRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::PutVersionRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
+template <>
+void DoOperation(
+    MaidManagerService* service,
+    const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager& message,
+    const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Sender& sender,
+    const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
 //=============================== To DataManager ===================================================
 template <>
 void DoOperation(DataManagerService* service,
