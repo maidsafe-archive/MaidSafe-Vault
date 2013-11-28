@@ -701,6 +701,8 @@ void DataManagerService::SendDeleteRequest(
 // ==================== Node up / Node down implementation =========================================
 template <typename DataName>
 void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName& name) {
+  LOG(kWarning) << "DataManagerService::MarkNodeDown marking node " << HexSubstr(pmid_node->string())
+                << " down for chunk " << HexSubstr(name.value.string());
   typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
   sync_node_downs_.AddLocalAction(DataManager::UnresolvedNodeDown(
       key, ActionDataManagerNodeDown(pmid_node), routing_.kNodeId()));
@@ -709,6 +711,8 @@ void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName&
 
 template <typename DataName>
 void DataManagerService::MarkNodeUp(const PmidName& pmid_node, const DataName& name) {
+  LOG(kInfo) << "DataManagerService::MarkNodeUp marking node " << HexSubstr(pmid_node->string())
+             << " up for chunk " << HexSubstr(name.value.string());
   typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
   sync_node_ups_.AddLocalAction(DataManager::UnresolvedNodeUp(
       key, ActionDataManagerNodeUp(pmid_node), routing_.kNodeId()));
