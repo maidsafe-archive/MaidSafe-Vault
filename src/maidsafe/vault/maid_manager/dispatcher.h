@@ -61,6 +61,17 @@ class MaidManagerDispatcher {
   void SendDeleteRequest(const MaidName& account_name, const nfs_vault::DataName& data_name,
                          nfs::MessageId message_id);
 
+  template <typename DataNameType>
+  void SendPutVersion(const MaidName& maid_name, const DataNameType& data_name,
+                      const StructuredDataVersions::VersionName&  old_name,
+                      const StructuredDataVersions::VersionName&  new_name,
+                      nfs::MessageId message_id);
+
+  template <typename DataNameType>
+  void SendDeleteBranchUntilFork(const MaidName& maid_name, const DataNameType& data_name,
+                                 const StructuredDataVersions::VersionName& version,
+                                 nfs::MessageId message_id);
+
   void SendCreateAccountResponse(const MaidName& account_name, const maidsafe_error& result,
                                  nfs::MessageId message_id);
 
@@ -139,22 +150,35 @@ void MaidManagerDispatcher::SendPutFailure(
   routing_.Send(message);
 }
 
+template <typename DataNameType>
+void MaidManagerDispatcher::SendPutVersion(const MaidName& maid_name, const DataNameType& data_name,
+                                           const StructuredDataVersions::VersionName& old_version,
+                                           const StructuredDataVersions::VersionName& new_version,
+                                           nfs::MessageId message_id) {
+  typedef PutVersionRequestFromMaidManagerToVersionHandler VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  VaultMessage valut_message(message_id, nfs_vault::DataNameOldNewVersion(data_name, old_version,
+                                                                          new_version));
+  RoutingMessage message(valut_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
+                         VaultMessage::Receiver(NodeId(data_name->string())));
+  routing_.Send(message);
+}
 
-// template<typename Data>
-// void MaidManagerDispatcher::SendGetVersionRequest(const MaidName& account_name,
-//                                                  const typename Data::Name& data_name) {
-//  typedef routing::GroupToGroupMessage RoutingMessage;
-//  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-//  static const nfs::MessageAction kAction(nfs::MessageAction::kGetRequest);
-//  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionHandler);
-//  static const DataTagValue kDataEnumValue(Data::Tag::kValue);
-
-//  nfs::Message::Data inner_data(kDataEnumValue, data_name.data, NonEmptyString(), kAction);
-//  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-//  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-//                         routing::GroupId(NodeId(data_name->string())), cacheable);
-//  routing_.Send(message);
-//}
+template <typename DataNameType>
+void MaidManagerDispatcher::SendDeleteBranchUntilFork(
+    const MaidName& maid_name, const DataNameType& data_name,
+    const StructuredDataVersions::VersionName& version, nfs::MessageId message_id) {
+  typedef DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  VaultMessage valut_message(message_id, nfs_vault::DataNameAndVersion(data_name, version));
+  RoutingMessage message(valut_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
+                         VaultMessage::Receiver(NodeId(data_name->string())));
+  routing_.Send(message);
+}
 
 // template<>
 // void MaidManagerDispatcher::SendPutRequest<OwnerDirectory>(const MaidName& /*account_name*/,
