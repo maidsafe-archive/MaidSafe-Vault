@@ -113,7 +113,7 @@ void PmidManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(data_name->string())));
+                         VaultMessage::Receiver(NodeId(pmid_node.value.string())));
   routing_.Send(message);
 }
 
@@ -157,7 +157,7 @@ void PmidManagerDispatcher::SendPutFailure(const typename Data::Name& name,
 template<typename Message>
 void PmidManagerDispatcher::CheckSourcePersonaType() const {
   static_assert(Message::SourcePersona::value == nfs::Persona::kPmidManager,
-                "The source Persona must be kMaidManager.");
+                "The source Persona must be kPmidManager.");
 }
 
 }  // namespace vault
