@@ -208,6 +208,9 @@ void DataManagerDispatcher::SendIntegrityCheck(const typename Data::Name& data_n
                                                const NonEmptyString& random_string,
                                                const PmidName& pmid_node,
                                                nfs::MessageId message_id) {
+  LOG(kVerbose) << "DataManagerDispatcher::SendIntegrityCheck send integrity_check request to "
+                << HexSubstr(pmid_node->string()) << " for data " << HexSubstr(data_name.value)
+                << " with message_id " << message_id.data;
   typedef IntegrityCheckRequestFromDataManagerToPmidNode VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;

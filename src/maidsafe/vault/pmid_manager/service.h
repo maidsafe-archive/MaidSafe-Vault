@@ -255,6 +255,9 @@ template <typename Data>
 void PmidManagerService::HandleDelete(
     const PmidName& pmid_name, const typename Data::Name& data_name,
     nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidManagerService::HandleDelete of " << HexSubstr(data_name.value)
+                << " on pmid_node " << HexSubstr(pmid_name.value.string())
+                << " , with message_id -- " << message_id.data;
   dispatcher_.SendDeleteRequest<Data>(pmid_name, data_name, message_id);
   PmidManager::Key group_key(typename PmidManager::GroupName(pmid_name),
                              data_name.value, Data::Tag::kValue);

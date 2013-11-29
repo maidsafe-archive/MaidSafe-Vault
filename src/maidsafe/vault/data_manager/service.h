@@ -496,6 +496,9 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   // Send requests
   dispatcher_.SendGetRequest<Data>(pmid_node_to_get_from, data_name, message_id);
 
+  LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value)
+                << " has " << integrity_checks.size() << " entries to check integrity";
+
   for (const auto& integrity_check : integrity_checks) {
     dispatcher_.SendIntegrityCheck<Data>(data_name,
                                          NonEmptyString(integrity_check.second.random_input()),
