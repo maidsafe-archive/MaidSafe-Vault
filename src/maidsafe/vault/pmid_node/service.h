@@ -207,6 +207,9 @@ class PmidNodeService {
 
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
+#ifdef TESTING
+  uint32_t malfunc_behaviour_seed_;
+#endif
   Accumulator<Messages> accumulator_;
   PmidNodeDispatcher dispatcher_;
   PmidNodeHandler handler_;
@@ -304,7 +307,16 @@ void PmidNodeService::HandleIntegrityCheck(const typename Data::Name& data_name,
                                            nfs::MessageId message_id) {
   try {
     auto data(handler_.Get<Data>(data_name));
-    IntegrityCheckData integrity_check_data(random_string.string(), data.Serialise());
+    std::string random_seed(random_string.string());
+#ifdef TESTING
+    LOG(kVerbose) << "PmidNodeService::HandleIntegrityCheck malfunc_behaviour_seed_ is "
+                  << malfunc_behaviour_seed_;
+    if ((malfunc_behaviour_seed_ % 3) == 0) {
+      LOG(kVerbose) << "PmidNodeService::HandleIntegrityCheck generating an incorrect response";
+      random_seed = RandomString(64);
+    }
+#endif
+    IntegrityCheckData integrity_check_data(random_seed, data.Serialise());
     nfs_vault::DataNameAndContentOrCheckResult
         data_or_check_result(Data::Name::data_type::Tag::kValue, data.name().value,
                                  integrity_check_data.result());
