@@ -310,6 +310,15 @@ void MaidManagerService::HandlePmidRegistration(
   DoSync();
 }
 
+void MaidManagerService::HandlePmidUnregistration(const MaidName& maid_name,
+                                                  const PmidName& pmid_name) {
+  // BEFORE_RELEASE: further action may be required
+  sync_unregister_pmids_.AddLocalAction(
+      MaidManager::UnresolvedUnregisterPmid(maid_name,
+          ActionMaidManagerUnregisterPmid(pmid_name), routing_.kNodeId()));
+  DoSync();
+}
+
 void MaidManagerService::HandleSyncedPmidRegistration(
     std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action) {
   // Get keys

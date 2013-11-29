@@ -127,6 +127,7 @@ class MaidManagerService {
       std::unique_ptr<MaidManager::UnresolvedRemoveAccount>&& synced_action);
 
   void HandlePmidRegistration(const nfs_vault::PmidRegistration& pmid_registration);
+  void HandlePmidUnregistration(const MaidName& maid_name, const PmidName& pmid_name);
 
   void HandleSyncedPmidRegistration(
       std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action);

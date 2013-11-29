@@ -269,7 +269,8 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "maid manager: check handlers availabil
  }
 
   SECTION("nfs::UnregisterPmidRequestFromMaidNodeToMaidManager") {
-    nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Contents content(maid_, pmid_, false);
+    nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Contents content(
+      nfs_vault::DataName(DataTagValue::kPmidValue, Identity(pmid_.name()->string())));
     auto unregister_pmid(CreateMessage<nfs::UnregisterPmidRequestFromMaidNodeToMaidManager>(content));
     CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, unregister_pmid,
                     routing::SingleSource(MaidNodeId()), routing::GroupId(MaidNodeId())));
