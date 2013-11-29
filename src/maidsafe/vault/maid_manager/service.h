@@ -157,9 +157,6 @@ class MaidManagerService {
   void HandleDelete(const MaidName& account_name, const typename Data::Name& data_name,
                     nfs::MessageId message_id);
 
-  template <typename Data>
-  bool DeleteAllowed(const MaidName& account_name, const typename Data::Name& data_name);
-
   void HandleSyncedDelete(std::unique_ptr<MaidManager::UnresolvedDelete>&& synced_action_delete);
 
   // ================================== Version Handlers ===========================================
@@ -401,7 +398,7 @@ template <typename MaidManagerSyncType>
 void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
                                   MaidManagerSyncType& sync_type) {
   auto unresolved_actions(sync_type.GetUnresolvedActions());
-  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has " 
+  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has "
                 << unresolved_actions.size() << " unresolved_actions";
   if (!unresolved_actions.empty()) {
     sync_type.IncrementSyncAttempts();
@@ -493,28 +490,16 @@ template <typename Data>
 void MaidManagerService::HandleDelete(const MaidName& account_name,
                                       const typename Data::Name& data_name,
                                       nfs::MessageId message_id) {
-  if (DeleteAllowed<Data>(account_name, data_name)) {
-    typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
-                                        detail::GetObfuscatedDataName(data_name),
-                                        Data::Tag::kValue);
-    sync_deletes_.AddLocalAction(typename MaidManager::UnresolvedDelete(
-        group_key, ActionMaidManagerDelete(message_id), routing_.kNodeId()));
-    DoSync();
-  }
-}
-
-template <typename Data>
-bool MaidManagerService::DeleteAllowed(const MaidName& account_name,
-                                       const typename Data::Name& data_name) {
-  try {
-    group_db_.GetValue(MaidManager::Key(account_name, detail::GetObfuscatedDataName(data_name),
-                                        Data::Tag::kValue));
-    return true;
-  } catch (const common_error& error) {
-    if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
-      throw error;  // For db errors
-    return false;
-  }
+  // Only need to ensure that account exist in db. Data name availability in db is not guaranteed
+  // because related put data action may be still syncing
+  group_db_.GetMetadata(account_name);  // throws
+  typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
+                                      detail::GetObfuscatedDataName(data_name),
+                                      Data::Tag::kValue);
+  sync_deletes_.AddLocalAction(typename MaidManager::UnresolvedDelete(
+                                   group_key, ActionMaidManagerDelete(message_id),
+                                   routing_.kNodeId()));
+  DoSync();
 }
 
 // ===============================================================================================
