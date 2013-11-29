@@ -305,6 +305,7 @@ void DataManagerService::HandleMessage(
       break;
     }
     case ActionDataManagerNodeUp::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerNodeUp";
       DataManager::UnresolvedNodeUp unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
@@ -315,6 +316,7 @@ void DataManagerService::HandleMessage(
       break;
     }
     case ActionDataManagerNodeDown::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerNodeDown";
       DataManager::UnresolvedNodeDown unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));

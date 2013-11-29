@@ -111,7 +111,7 @@ class GroupDb {
   void Delete(const Key& key, const GroupId& group_id);
   std::string MakeLevelDbKey(const GroupId& group_id, const Key& key);
   Key MakeKey(const GroupName group_name, const leveldb::Slice& level_db_key);
-  uint32_t GetGroupId(const leveldb::Slice& level_db_key);
+  uint32_t GetGroupId(const leveldb::Slice& level_db_key) const;
   typename GroupMap::iterator FindGroup(const GroupName& group_name);
   typename GroupMap::iterator FindOrCreateGroup(const GroupName& group_name);
 
@@ -236,22 +236,13 @@ typename GroupDb<Persona>::Contents GroupDb<Persona>::GetContents(const GroupNam
   contents.metadata = it->second.second;
   // get db entry
   std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
-  auto group_id = it->second.first;
-  auto group_id_str = detail::ToFixedWidthString<kPrefixWidth_>(group_id);
-  if (std::next(it, 1) != group_map_.end()) {
-    for (iter->Seek(group_id_str);
-         (iter->Valid() && (GetGroupId(iter->key()) < group_id));
-         iter->Next()) {
-      contents.kv_pair.push_back(std::make_pair(MakeKey(contents.group_name, iter->key()),
-                                                Value(iter->value().ToString())));
-    }
-  } else {
-    for (iter->Seek(group_id_str); iter->Valid(); iter->Next()) {
-      contents.kv_pair.push_back(std::make_pair(MakeKey(contents.group_name, iter->key()),
-                                                Value(iter->value().ToString())));
-    }
+  const auto group_id = it->second.first;
+  const auto group_id_str = detail::ToFixedWidthString<kPrefixWidth_>(group_id);
+  for (iter->Seek(group_id_str); (iter->Valid() && (GetGroupId(iter->key()) == group_id));
+       iter->Next()) {
+    contents.kv_pair.push_back(std::make_pair(MakeKey(contents.group_name, iter->key()),
+                                              Value(iter->value().ToString())));
   }
-
   iter.reset();
   return contents;
 }
@@ -324,19 +315,13 @@ template <typename Persona>
 void GroupDb<Persona>::DeleteGroupEntries(typename GroupMap::iterator it) {
   assert(it != group_map_.end());
   std::vector<std::string> group_db_keys;
-  auto group_id = it->second.first;
-  auto group_id_str = detail::ToFixedWidthString<kPrefixWidth_>(group_id);
+  const auto group_id = it->second.first;
+  const auto group_id_str = detail::ToFixedWidthString<kPrefixWidth_>(group_id);
   std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
-  if (std::next(it, 1) != group_map_.end()) {
-    for (iter->Seek(group_id_str);
-         (iter->Valid() && (GetGroupId(iter->key()) < group_id));
-         iter->Next())
-      group_db_keys.push_back(iter->key().ToString());
-  } else {
-    for (iter->Seek(group_id_str); iter->Valid(); iter->Next()) {
-      group_db_keys.push_back(iter->key().ToString());
-    }
-  }
+  for (iter->Seek(group_id_str);
+       (iter->Valid() && (GetGroupId(iter->key()) == group_id));
+       iter->Next())
+    group_db_keys.push_back(iter->key().ToString());
 
   iter.reset();
 
@@ -397,7 +382,7 @@ typename Persona::Key GroupDb<Persona>::MakeKey(const GroupName group_name,
 }
 
 template <typename Persona>
-uint32_t GroupDb<Persona>::GetGroupId(const leveldb::Slice& level_db_key) {
+uint32_t GroupDb<Persona>::GetGroupId(const leveldb::Slice& level_db_key) const {
   return detail::FromFixedWidthString<kPrefixWidth_>(
       (level_db_key.ToString()).substr(0, kPrefixWidth_));
 }
@@ -418,7 +403,6 @@ typename GroupDb<Persona>::GroupMap::iterator GroupDb<Persona>::FindOrCreateGrou
   return FindGroup(group_name);
 }
 
-// FIXME need more readable name
 template <typename Persona>
 void GroupDb<Persona>::UpdateGroup(typename GroupMap::iterator /*itr*/) {}  // Do Nothing
 

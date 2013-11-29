@@ -71,21 +71,21 @@ DataManagerValue::DataManagerValue(DataManagerValue&& other)
       offline_pmids_(std::move(other.offline_pmids_)) {}
 
 void DataManagerValue::AddPmid(const PmidName& pmid_name) {
+  LOG(kVerbose) << "DataManagerValue::AddPmid adding " << HexSubstr(pmid_name->string());
   online_pmids_.insert(pmid_name);
   offline_pmids_.erase(pmid_name);
-  LOG(kVerbose) << "online_pmids_ now having : ";
-  for (auto pmid : online_pmids_) {
-    LOG(kVerbose) << "     ----     " << HexSubstr(pmid.value.string());
-  }
+  PrintRecords();
 }
 
 void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
+  LOG(kVerbose) << "DataManagerValue::RemovePmid removing " << HexSubstr(pmid_name->string());
 //  if (online_pmids_.size() + offline_pmids_.size() < 4) {
 //    LOG(kError) << "RemovePmid not allowed";
 //    ThrowError(CommonErrors::invalid_parameter);  // TODO add error - not_allowed
 //  }
   online_pmids_.erase(pmid_name);
   offline_pmids_.erase(pmid_name);
+  PrintRecords();
 }
 
 int64_t DataManagerValue::DecrementSubscribers() {
@@ -94,6 +94,7 @@ int64_t DataManagerValue::DecrementSubscribers() {
 }
 
 void DataManagerValue::SetPmidOnline(const PmidName& pmid_name) {
+  LOG(kVerbose) << "DataManagerValue::SetPmidOnline " << HexSubstr(pmid_name->string());
   auto deleted = offline_pmids_.erase(pmid_name);
   if (deleted == 1) {
     online_pmids_.insert(pmid_name);
@@ -101,9 +102,11 @@ void DataManagerValue::SetPmidOnline(const PmidName& pmid_name) {
     LOG(kError) << "Invalid Pmid reported";
     ThrowError(CommonErrors::invalid_parameter);
   }
+  PrintRecords();
 }
 
 void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
+  LOG(kVerbose) << "DataManagerValue::SetPmidOffline " << HexSubstr(pmid_name->string());
   auto deleted = online_pmids_.erase(pmid_name);
   if (deleted == 1) {
     offline_pmids_.insert(pmid_name);
@@ -111,6 +114,7 @@ void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
     LOG(kError) << "Invalid Pmid reported";
     ThrowError(CommonErrors::invalid_parameter);
   }
+  PrintRecords();
 }
 
 std::string DataManagerValue::Serialise() const {
@@ -140,6 +144,17 @@ std::set<PmidName> DataManagerValue::AllPmids() const {
   std::set_union(std::begin(online_pmids_), std::end(online_pmids_), std::begin(offline_pmids_),
                  std::end(offline_pmids_), std::inserter(pmids_union, std::begin(pmids_union)));
   return pmids_union;
+}
+
+void DataManagerValue::PrintRecords() {
+  LOG(kVerbose) << " online_pmids_ now having : ";
+  for (auto pmid : online_pmids_) {
+    LOG(kVerbose) << "     ----     " << HexSubstr(pmid.value.string());
+  }
+  LOG(kVerbose) << " offline_pmids_ now having : ";
+  for (auto pmid : offline_pmids_) {
+    LOG(kVerbose) << "     ----     " << HexSubstr(pmid.value.string());
+  }
 }
 
 }  // namespace vault

@@ -484,7 +484,7 @@ void OperationHandler<
     auto result(accumulator.AddPendingRequest(message, sender, checker));
     if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess) {
       int failures(0);
-      auto responses(accumulator.Get(message));
+      auto responses(accumulator.Get(message, sender));
       std::vector<std::set<nfs_vault::DataName>> response_vec;
       for (const auto& response : responses) {
         auto typed_response(boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(response));

@@ -56,6 +56,7 @@ class DataManagerValue {
 
  private:
   DataManagerValue(const DataManagerValue&);
+  void PrintRecords();
   int64_t subscribers_;
   int32_t size_;
   std::set<PmidName> online_pmids_, offline_pmids_;
