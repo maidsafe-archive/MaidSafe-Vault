@@ -197,7 +197,6 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& pub
                              message_id);
 }
 
-
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
     const typename passport::PublicMaid::Name& data_name, int32_t ,
@@ -298,7 +297,6 @@ void MaidManagerService::HandleSyncedRemoveMaidAccount(
                                         synced_action->action.kMessageId);
 }
 
-
 // =============== Pmid registration ===============================================================
 
 void MaidManagerService::HandlePmidRegistration(
@@ -308,7 +306,7 @@ void MaidManagerService::HandlePmidRegistration(
 //    return;
   sync_register_pmids_.AddLocalAction(
       MaidManager::UnresolvedRegisterPmid(pmid_registration.maid_name(),
-          ActionMaidManagerRegisterUnregisterPmid<false>(pmid_registration), routing_.kNodeId()));
+          ActionMaidManagerRegisterPmid(pmid_registration), routing_.kNodeId()));
   DoSync();
 }
 
@@ -781,6 +779,13 @@ void MaidManagerService::HandleMessage(
       assert(false);
     }
   }
+}
+
+void MaidManagerService::HandleRemoveAccount(const MaidName& maid_name, nfs::MessageId mesage_id) {
+  sync_remove_accounts_.AddLocalAction(
+      MaidManager::UnresolvedRemoveAccount(maid_name, ActionRemoveAccount(mesage_id),
+                                           routing_.kNodeId()));
+  DoSync();
 }
 
 template <>

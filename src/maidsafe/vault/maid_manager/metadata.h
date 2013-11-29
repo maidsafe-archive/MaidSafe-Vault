@@ -56,7 +56,7 @@ class MaidManagerMetadata {
   void PutData(int32_t cost);
   void DeleteData(int32_t cost);
   void RegisterPmid(const nfs_vault::PmidRegistration& pmid_registration);
-  void UnregisterPmid(const nfs_vault::PmidRegistration& pmid_registration);
+  void UnregisterPmid(const PmidName& pmid_name);
   void UpdatePmidTotals(const PmidManagerMetadata& pmid_metadata);
 
   friend void swap(MaidManagerMetadata& lhs, MaidManagerMetadata& rhs);
