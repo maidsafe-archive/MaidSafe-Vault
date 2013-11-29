@@ -101,7 +101,7 @@ class Accumulator {
 
   bool CheckHandled(const T& request);
   //  void SetHandled(const T& request, const routing::GroupSource& source);
-  std::vector<T> Get(const T& request);
+  std::vector<T> Get(const T& request, const routing::GroupSource& source);
 
  private:
   Accumulator(const Accumulator&);
@@ -143,7 +143,7 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
   } else {
     LOG(kInfo) << "Accumulator::AddPendingRequest request already existed";
   }
-  return checker(Get(request));
+  return checker(Get(request, source));
 }
 
 template <typename T>
@@ -191,14 +191,15 @@ bool Accumulator<T>::CheckHandled(const T& request) {
 //}
 
 template <typename T>
-std::vector<T> Accumulator<T>::Get(const T& request) {
+std::vector<T> Accumulator<T>::Get(const T& request, const routing::GroupSource& source) {
   std::vector<T> requests;
   nfs::MessageId message_id;
   auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
   for (auto pending_request : pending_requests_) {
     if (pending_request.request.which() == request.which()) {
       message_id = boost::apply_visitor(MessageIdRequestVisitor(), pending_request.request);
-      if ((message_id == request_message_id))
+      if (((message_id == request_message_id)) &&
+          (source.group_id == pending_request.source.group_id))
         requests.push_back(pending_request.request);
     }
   }
