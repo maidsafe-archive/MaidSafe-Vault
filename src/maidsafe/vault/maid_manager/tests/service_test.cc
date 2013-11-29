@@ -364,8 +364,8 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
     RegisterPmid();
     MaidManager::Metadata metadata(GetMetadata(public_maid_.name()));
     CHECK(MetadataPmidTotals(metadata).size() == 1);
-    nfs_vault::PmidRegistration pmid_unregistration(maid_, pmid_, true);
-    ActionMaidManagerUnregisterPmid action_unregister_pmid(pmid_unregistration);
+    ActionMaidManagerUnregisterPmid action_unregister_pmid(
+        PmidName(Identity(pmid_.name()->string())));
     MaidManager::MetadataKey metadata_key(public_maid_.name());
     auto group_source(CreateGroupSource(MaidNodeId()));
     auto group_unresolved_action(
