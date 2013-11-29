@@ -16,29 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/maid_manager/action_register_unregister_pmid.h"
+package maidsafe.vault.protobuf;
 
-#include "maidsafe/common/error.h"
-
-#include "maidsafe/vault/maid_manager/action_register_unregister_pmid.pb.h"
-#include "maidsafe/vault/maid_manager/metadata.h"
-
-namespace maidsafe {
-
-namespace vault {
-
-template <>
-void ActionMaidManagerRegisterUnregisterPmid<false>::operator()(
-    MaidManagerMetadata& metadata) const {
-  metadata.RegisterPmid(kPmidRegistration);
+message ActionMaidManagerUnregisterPmid {
+  required bytes pmid_name = 1;
 }
-
-template <>
-void ActionMaidManagerRegisterUnregisterPmid<true>::operator()(
-    MaidManagerMetadata& metadata) const {
-  metadata.UnregisterPmid(kPmidRegistration);
-}
-
-}  // namespace vault
-
-}  // namespace maidsafe

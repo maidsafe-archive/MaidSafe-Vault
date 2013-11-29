@@ -28,7 +28,8 @@
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/maid_manager/value.h"
 #include "maidsafe/vault/maid_manager/action_update_pmid_health.h"
-#include "maidsafe/vault/maid_manager/action_register_unregister_pmid.h"
+#include "maidsafe/vault/maid_manager/action_register_pmid.h"
+#include "maidsafe/vault/maid_manager/action_unregister_pmid.h"
 
 
 namespace maidsafe {
@@ -43,11 +44,8 @@ typedef ActionCreateRemoveAccount<false> ActionCreateAccount;
 typedef ActionCreateRemoveAccount<true> ActionRemoveAccount;
 struct ActionMaidManagerPut;
 struct ActionMaidManagerDelete;
-template <bool Unregister>
 struct ActionRegisterUnregisterPmid;
-typedef ActionMaidManagerRegisterUnregisterPmid<false> ActionMaidManagerRegisterPmid;
-typedef ActionMaidManagerRegisterUnregisterPmid<true> ActionMaidManagerUnregisterPmid;
-struct ActionMaidManagerUpdatePmidHealth;
+struct ActionMaidManagerRegisterPmid;
 
 }  // namespace vault
 

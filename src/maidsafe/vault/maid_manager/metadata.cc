@@ -99,8 +99,8 @@ void MaidManagerMetadata::RegisterPmid(const nfs_vault::PmidRegistration& pmid_r
   }
 }
 
-void MaidManagerMetadata::UnregisterPmid(const nfs_vault::PmidRegistration& pmid_registration) {
-  auto itr(Find(pmid_registration.pmid_name()));
+void MaidManagerMetadata::UnregisterPmid(const PmidName& pmid_name) {
+  auto itr(Find(pmid_name));
   if (itr != std::end(pmid_totals_))
     pmid_totals_.erase(itr);
 }

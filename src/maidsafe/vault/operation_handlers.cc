@@ -144,6 +144,21 @@ void DoOperation(
   boost::apply_visitor(delete_version_visitor, data_name);
 }
 
+template <>
+void DoOperation(MaidManagerService* /* service*/,
+                 const nfs::RemoveAccountRequestFromMaidNodeToMaidManager& /*message*/,
+                 const nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
+                 const nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+//  service->HandleRemoveAccount(MaidName(Identity(sender.data.string())));
+}
+
+template <>
+void DoOperation(MaidManagerService* /*service*/,
+                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& /*message*/,
+                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
+                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  // BEFORE_RELEASE still not sure
+}
 //=============================== To DataManager ===================================================
 
 template <>

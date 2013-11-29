@@ -53,7 +53,8 @@
 #include "maidsafe/vault/maid_manager/action_create_remove_account.h"
 #include "maidsafe/vault/maid_manager/action_put.h"
 #include "maidsafe/vault/maid_manager/action_delete.h"
-#include "maidsafe/vault/maid_manager/action_register_unregister_pmid.h"
+#include "maidsafe/vault/maid_manager/action_register_pmid.h"
+#include "maidsafe/vault/maid_manager/action_unregister_pmid.h"
 #include "maidsafe/vault/maid_manager/dispatcher.h"
 #include "maidsafe/vault/maid_manager/helpers.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
@@ -193,6 +194,7 @@ class MaidManagerService {
   void CreateAccount(const MaidName& /*account_name*/, DisallowedAccountCreationType) {}
   void FinalisePmidRegistration(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
 
+  void HandleRemoveAccount(const MaidName& maid_name, nfs::MessageId mesage_id);
 
   // ===================================== PMID totals ============================================
   void UpdatePmidTotals(const MaidName& account_name);

@@ -33,7 +33,8 @@
 #include "maidsafe/vault/maid_manager/action_create_remove_account.h"
 #include "maidsafe/vault/maid_manager/action_delete.h"
 #include "maidsafe/vault/maid_manager/action_put.h"
-#include "maidsafe/vault/maid_manager/action_register_unregister_pmid.h"
+#include "maidsafe/vault/maid_manager/action_register_pmid.h"
+#include "maidsafe/vault/maid_manager/action_unregister_pmid.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 
