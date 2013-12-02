@@ -262,6 +262,19 @@ void PmidNodeService::HandleGet(const typename Data::Name& data_name,
                                 nfs::MessageId message_id) {
   try {
     auto data(handler_.Get<Data>(data_name));
+#ifdef TESTING
+    LOG(kVerbose) << "PmidNodeService::HandleGet malfunc_behaviour_seed_ is "
+                  << malfunc_behaviour_seed_;
+    if ((malfunc_behaviour_seed_ % 4) == 0) {
+      LOG(kVerbose) << "PmidNodeService::HandleGet generating an incorrect get response";
+      IntegrityCheckData integrity_check_data(RandomString(64), data.Serialise());
+      nfs_vault::DataNameAndContentOrCheckResult data_or_check_result(
+          Data::Name::data_type::Tag::kValue, data.name().value, integrity_check_data.result());
+      dispatcher_.SendGetOrIntegrityCheckResponse(data_or_check_result, data_manager_node_id,
+                                                  message_id);
+      return;
+    }
+#else
     nfs_vault::DataNameAndContentOrCheckResult
         data_or_check_result(Data::Name::data_type::Tag::kValue,
                              data.name().value, data.Serialise());
@@ -269,6 +282,7 @@ void PmidNodeService::HandleGet(const typename Data::Name& data_name,
                   << " with content " << HexSubstr(data.Serialise().data);
     dispatcher_.SendGetOrIntegrityCheckResponse(data_or_check_result, data_manager_node_id,
                                                 message_id);
+#endif
   } catch (const maidsafe_error& error) {
     // Not sending error here as timeout will happen anyway at Datamanager.
     // This case should be least frequent.
@@ -311,7 +325,7 @@ void PmidNodeService::HandleIntegrityCheck(const typename Data::Name& data_name,
 #ifdef TESTING
     LOG(kVerbose) << "PmidNodeService::HandleIntegrityCheck malfunc_behaviour_seed_ is "
                   << malfunc_behaviour_seed_;
-    if ((malfunc_behaviour_seed_ % 3) == 0) {
+    if ((malfunc_behaviour_seed_ % 4) == 0) {
       LOG(kVerbose) << "PmidNodeService::HandleIntegrityCheck generating an incorrect response";
       random_seed = RandomString(64);
     }
