@@ -153,11 +153,12 @@ void DoOperation(MaidManagerService* /* service*/,
 }
 
 template <>
-void DoOperation(MaidManagerService* /*service*/,
-                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& /*message*/,
-                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
-                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
-  // BEFORE_RELEASE still not sure
+void DoOperation(MaidManagerService* service,
+                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
+                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver&) {
+  service->HandlePmidUnregistration(MaidName(Identity(sender.data.string())),
+                                    PmidName(message.contents->raw_name));
 }
 //=============================== To DataManager ===================================================
 
