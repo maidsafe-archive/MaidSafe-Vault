@@ -109,7 +109,7 @@ rename_outdated_built_exes()
 include(standard_flags)
 
 if(MSVC AND MaidsafeTesting)
-  set_target_properties(maidsafe_vault TESTvault PROPERTIES COMPILE_FLAGS "/bigobj")
+  set_property(TARGET maidsafe_vault TESTvault APPEND PROPERTY COMPILE_FLAGS "/bigobj")
 endif()
 
 
