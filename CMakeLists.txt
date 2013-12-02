@@ -66,8 +66,7 @@ set(VaultTestsAllFiles ${PmidNodeTestsAllFiles}
                        ${VersionHandlerTestsAllFiles}
                        ${CacheHandlerTestsAllFiles}
                        ${MaidManagerTestsAllFiles}
-                       ${VaultSourcesDir}/tests/db_test.cc
-                       ${VaultSourcesDir}/tests/group_db_test.cc)
+                       ${VaultSourcesDir}/tests/db_test.cc)
 
 list(REMOVE_ITEM VaultGTestsAllFiles ${VaultTestsAllFiles})
 list(APPEND VaultTestsAllFiles ${TestsMain}  ${VaultSourcesDir}/tests/tests_utils.h

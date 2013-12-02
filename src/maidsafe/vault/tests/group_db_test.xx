@@ -48,7 +48,6 @@ namespace vault {
 
 namespace test {
 
-
 PmidManagerMetadata CreatePmidManagerMetadata(const PmidName& pmid_name) {
   PmidManagerMetadata metadata(pmid_name);
   metadata.SetAvailableSize(0);
@@ -129,7 +128,7 @@ struct TestPmidGroupDbActionPutValue {
     metadata.PutData(value->size());
     return detail::DbAction::kPut;
   }
-};
+ };
 
 // delete value
 struct TestPmidGroupDbActionDeleteValue {
@@ -156,134 +155,43 @@ void RunDbTestInParallel(int thread_count, std::function<void()> functor) {
     thread.join();
 }
 
-void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
-  auto maid(MakeMaid());
-  passport::PublicMaid::Name maid_name(MaidName(maid.name()));
-  EXPECT_THROW(maid_group_db.GetMetadata(maid_name), maidsafe_error);
-  maid_group_db.DeleteGroup(maid_name);
-  auto metadata = CreateMaidManagerMetadata(maid);
-  GroupKey<MaidName> key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
-                         DataTagValue::kMaidValue);
-
-  EXPECT_THROW(maid_group_db.GetMetadata(maid_name), maidsafe_error);
-  EXPECT_THROW(maid_group_db.Commit(key, TestGroupDbActionPutValue()), maidsafe_error);
-
-  maid_group_db.AddGroup(maid_name, metadata);
-  EXPECT_TRUE(maid_group_db.GetMetadata(maid_name) == metadata);
-  EXPECT_THROW(maid_group_db.AddGroup(maid_name, metadata), maidsafe_error);
-  EXPECT_TRUE(maid_group_db.GetContents(maid_name).kv_pair.size() == 0U);
-  maid_group_db.DeleteGroup(maid_name);
-  EXPECT_THROW(maid_group_db.GetMetadata(maid_name), maidsafe_error);
-
-  maid_group_db.AddGroup(maid_name, metadata);
-  EXPECT_TRUE(maid_group_db.GetMetadata(maid_name) == metadata);
-  EXPECT_THROW(maid_group_db.AddGroup(maid_name, metadata), maidsafe_error);
-  EXPECT_TRUE(maid_group_db.GetContents(maid_name).kv_pair.size() == 0U);
-
-  GroupKey<MaidName> unknown_key(MaidName(Identity(NodeId(NodeId::kRandomId).string())),
-                                 Identity(NodeId(NodeId::kRandomId).string()),
-                                 DataTagValue::kMaidValue);
-  EXPECT_THROW(maid_group_db.GetValue(unknown_key), maidsafe_error);
-
-  EXPECT_THROW(maid_group_db.GetValue(key), maidsafe_error);
-  EXPECT_THROW(maid_group_db.Commit(key, TestGroupDbActionModifyValue()), maidsafe_error);
-  EXPECT_THROW(maid_group_db.Commit(key, TestGroupDbActionDeleteValue()), maidsafe_error);
-  // Put
-  MaidManagerMetadata expected_metadata(metadata);
-  expected_metadata.PutData(100);
-  MaidManagerValue expected_value;
-  expected_value.Put(100);
-  maid_group_db.Commit(key, TestGroupDbActionPutValue());
-  EXPECT_TRUE(maid_group_db.GetMetadata(maid_name) == expected_metadata);
-  EXPECT_TRUE(maid_group_db.GetValue(key) == expected_value);
-  EXPECT_TRUE((maid_group_db.GetContents(maid_name)).kv_pair.size() == 1U);
-
-  // Modify and delete
-  expected_metadata.PutData(100);
-  expected_value.Put(100);
-  maid_group_db.Commit(key, TestGroupDbActionModifyValue());
-  EXPECT_TRUE(maid_group_db.GetMetadata(maid_name) == expected_metadata);
-  EXPECT_TRUE(maid_group_db.GetValue(key) == expected_value);
-  EXPECT_TRUE((maid_group_db.GetContents(maid_name)).kv_pair.size() == 1U);
-  expected_metadata.DeleteData(expected_value.Delete());
-  maid_group_db.Commit(key, TestGroupDbActionDeleteValue());
-  EXPECT_TRUE(maid_group_db.GetMetadata(maid_name) == expected_metadata);
-  EXPECT_TRUE(maid_group_db.GetValue(key) == expected_value);
-  EXPECT_TRUE((maid_group_db.GetContents(maid_name)).kv_pair.size() == 1U);
-
-  // Put many
-  std::vector<GroupKey<MaidName>> key_vector;
-  for (auto i(0); i < 1000; ++i)
-    key_vector.push_back(GroupKey<MaidName>(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
-                                            DataTagValue::kMaidValue));
-  for (const auto& key_n: key_vector) {
-    expected_metadata.PutData(100);
-    maid_group_db.Commit(key_n, TestGroupDbActionPutValue());
-  }
-
-  EXPECT_TRUE(maid_group_db.GetMetadata(maid_name) == expected_metadata);
-
-  for (const auto& key_n: key_vector) {
-    EXPECT_TRUE(maid_group_db.GetValue(key_n) == expected_value);
-  }
-
-  auto contents(maid_group_db.GetContents(maid_name));
-  for (const auto& key_n: key_vector) {
-    auto itr = std::find_if(contents.kv_pair.begin(),
-                             contents.kv_pair.end(),
-                             [&key_n](const GroupDb<MaidManager>::KvPair& kv_pair) {
-                                 return (kv_pair.first == key_n);
-                              });
-    EXPECT_TRUE(itr != contents.kv_pair.end());
-  }
-
-  // Delete
-  expected_metadata.DeleteData(100);
-  maid_group_db.Commit(key, TestGroupDbActionDeleteValue());
-  EXPECT_TRUE(maid_group_db.GetMetadata(maid_name) == expected_metadata);
-  EXPECT_THROW(maid_group_db.GetValue(key), maidsafe_error);
-  maid_group_db.DeleteGroup(maid_name);
-  EXPECT_THROW(maid_group_db.GetMetadata(maid_name), maidsafe_error);
-  EXPECT_THROW(maid_group_db.GetContents(maid_name), maidsafe_error);
-}
-
 void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
   auto pmid(MakePmid());
   passport::PublicPmid::Name pmid_name(PmidName(pmid.name()));
-  EXPECT_THROW(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
+  CHECK_THROWS_AS(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
   pmid_group_db.DeleteGroup(pmid_name);
   auto metadata = CreatePmidManagerMetadata(pmid_name);
-  GroupKey<PmidName> key(pmid_name, Identity(NodeId(NodeId::kRandomId).string()),
-                         DataTagValue::kPmidValue);
-  EXPECT_THROW(pmid_group_db.Commit(key, TestPmidGroupDbActionDeleteValue()), maidsafe_error);
-  EXPECT_THROW(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
+  GroupKey<PmidName> key1(pmid_name, Identity(NodeId(NodeId::kRandomId).string()),
+                          DataTagValue::kPmidValue);
+  CHECK_THROWS_AS(pmid_group_db.Commit(key1, TestPmidGroupDbActionDeleteValue()), maidsafe_error);
+  CHECK_THROWS_AS(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
 
   pmid_group_db.AddGroup(pmid_name, metadata);
-  EXPECT_TRUE(pmid_group_db.GetMetadata(pmid_name) == metadata);
-  EXPECT_THROW(pmid_group_db.AddGroup(pmid_name, metadata), maidsafe_error);
-  EXPECT_TRUE(pmid_group_db.GetContents(pmid_name).kv_pair.size() == 0U);
+  CHECK(pmid_group_db.GetMetadata(pmid_name) == metadata);
+  CHECK_THROWS_AS(pmid_group_db.AddGroup(pmid_name, metadata), maidsafe_error);
+  CHECK(pmid_group_db.GetContents(pmid_name).kv_pair.size() == 0U);
   pmid_group_db.DeleteGroup(pmid_name);
-  EXPECT_THROW(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
+  CHECK_THROWS_AS(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
   pmid_group_db.AddGroup(pmid_name, metadata);
-  EXPECT_TRUE(pmid_group_db.GetMetadata(pmid_name) == metadata);
-  EXPECT_THROW(pmid_group_db.AddGroup(pmid_name, metadata), maidsafe_error);
-  EXPECT_TRUE(pmid_group_db.GetContents(pmid_name).kv_pair.size() == 0U);
+  CHECK(pmid_group_db.GetMetadata(pmid_name) == metadata);
+  CHECK_THROWS_AS(pmid_group_db.AddGroup(pmid_name, metadata), maidsafe_error);
+  CHECK(pmid_group_db.GetContents(pmid_name).kv_pair.size() == 0U);
   GroupKey<PmidName> unknown_key(PmidName(Identity(NodeId(NodeId::kRandomId).string())),
                                  Identity(NodeId(NodeId::kRandomId).string()),
                                  DataTagValue::kPmidValue);
-  EXPECT_THROW(pmid_group_db.GetValue(unknown_key), maidsafe_error);
-  EXPECT_THROW(pmid_group_db.GetValue(key), maidsafe_error);
-  EXPECT_THROW(pmid_group_db.Commit(key, TestPmidGroupDbActionDeleteValue()), maidsafe_error);
-  pmid_group_db.Commit(key, TestPmidGroupDbActionPutValue());
-  pmid_group_db.Commit(key, TestPmidGroupDbActionDeleteValue());
+  CHECK_THROWS_AS(pmid_group_db.GetValue(unknown_key), maidsafe_error);
+  CHECK_THROWS_AS(pmid_group_db.GetValue(key1), maidsafe_error);
+  CHECK_THROWS_AS(pmid_group_db.Commit(key1, TestPmidGroupDbActionDeleteValue()), maidsafe_error);
+  pmid_group_db.Commit(key1, TestPmidGroupDbActionPutValue());
+  pmid_group_db.Commit(key1, TestPmidGroupDbActionDeleteValue());
   // Put
   PmidManagerMetadata expected_metadata(metadata);
   expected_metadata.PutData(100);
   PmidManagerValue expected_value(100);
-  pmid_group_db.Commit(key, TestPmidGroupDbActionPutValue());
-  EXPECT_TRUE(pmid_group_db.GetMetadata(pmid_name) == expected_metadata);
-  EXPECT_TRUE(pmid_group_db.GetValue(key) == expected_value);
-  EXPECT_TRUE((pmid_group_db.GetContents(pmid_name)).kv_pair.size() == 1U);
+  pmid_group_db.Commit(key1, TestPmidGroupDbActionPutValue());
+  CHECK(pmid_group_db.GetMetadata(pmid_name) == expected_metadata);
+  CHECK(pmid_group_db.GetValue(key1) == expected_value);
+  CHECK((pmid_group_db.GetContents(pmid_name)).kv_pair.size() == 1U);
 
   // Put many
   std::vector<GroupKey<PmidName>> key_vector;
@@ -292,13 +200,14 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
                                             DataTagValue::kPmidValue));
   for (const auto& key_n: key_vector) {
     expected_metadata.PutData(100);
+    expected_value = PmidManagerValue(100);
     pmid_group_db.Commit(key_n, TestPmidGroupDbActionPutValue());
   }
 
-  EXPECT_TRUE(pmid_group_db.GetMetadata(pmid_name) == expected_metadata);
+  CHECK(pmid_group_db.GetMetadata(pmid_name) == expected_metadata);
 
   for (const auto& key_n: key_vector) {
-    EXPECT_TRUE(pmid_group_db.GetValue(key_n) == expected_value);
+    CHECK(pmid_group_db.GetValue(key_n) == expected_value);
   }
   auto contents(pmid_group_db.GetContents(pmid_name));
   for (const auto& key_n: key_vector) {
@@ -307,47 +216,95 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
                              [&key_n](const GroupDb<PmidManager>::KvPair& kv_pair) {
                                  return (kv_pair.first == key_n);
                               });
-    EXPECT_TRUE(itr != contents.kv_pair.end());
+    CHECK(itr != contents.kv_pair.end());
   }
 
   // Delete
   expected_metadata.DeleteData(100);
-  pmid_group_db.Commit(key, TestPmidGroupDbActionDeleteValue());
-  EXPECT_TRUE(pmid_group_db.GetMetadata(pmid_name) == expected_metadata);
-  EXPECT_THROW(pmid_group_db.GetValue(key), maidsafe_error);
+  pmid_group_db.Commit(key1, TestPmidGroupDbActionDeleteValue());
+  CHECK(pmid_group_db.GetMetadata(pmid_name) == expected_metadata);
+  CHECK_THROWS_AS(pmid_group_db.GetValue(key1), maidsafe_error);
 
   // Delete group
   pmid_group_db.DeleteGroup(pmid_name);
-  EXPECT_THROW(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
-  EXPECT_THROW(pmid_group_db.GetContents(pmid_name), maidsafe_error);
+  CHECK_THROWS_AS(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
+  CHECK_THROWS_AS(pmid_group_db.GetContents(pmid_name), maidsafe_error);
 }
 
 
-TEST(GroupDbTest, BEH_Constructor) {
+TEST_CASE("GroupDb constructor", "[GroupDb][Unit]") {
   GroupDb<MaidManager> maid_group_db;
   GroupDb<PmidManager> pmid_group_db;
 }
 
-TEST(GroupDbTest, FUNC_MaidManagerGroupDb) {
+TEST_CASE("GroupDb MaidManager", "[GroupDb][Unit]") {
+
   GroupDb<MaidManager> maid_group_db;
-  for (auto i(0); i < 5 ; ++i)
-    RunMaidManagerGroupDbTest(maid_group_db);
+  auto maid(MakeMaid());
+  passport::PublicMaid::Name maid_name(MaidName(maid.name()));
+  CHECK_THROWS_AS(maid_group_db.GetMetadata(maid_name), maidsafe_error);
+  maid_group_db.DeleteGroup(maid_name);
+  auto metadata = CreateMaidManagerMetadata(maid);
+  maid_group_db.AddGroup(maid_name, metadata);
+  CHECK(maid_group_db.GetMetadata(maid_name) == metadata);
+  CHECK_THROWS_AS(maid_group_db.AddGroup(maid_name, metadata), maidsafe_error);
+  CHECK(maid_group_db.GetContents(maid_name).kv_pair.size() == 0U);
+  maid_group_db.DeleteGroup(maid_name);
+  CHECK_THROWS_AS(maid_group_db.GetMetadata(maid_name), maidsafe_error);
 
-  RunDbTestInParallel(10, [&] {
-    RunMaidManagerGroupDbTest(maid_group_db);
-  });
+  maid_group_db.AddGroup(maid_name, metadata);
+  CHECK(maid_group_db.GetMetadata(maid_name) == metadata);
+  CHECK_THROWS_AS(maid_group_db.AddGroup(maid_name, metadata), maidsafe_error);
+  CHECK(maid_group_db.GetContents(maid_name).kv_pair.size() == 0U);
 
+  GroupKey<MaidName> unknown_key(MaidName(Identity(NodeId(NodeId::kRandomId).string())),
+                                 Identity(NodeId(NodeId::kRandomId).string()),
+                                 DataTagValue::kMaidValue);
+  CHECK_THROWS_AS(maid_group_db.GetValue(unknown_key), maidsafe_error);
+
+  GroupKey<MaidName> key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
+                         DataTagValue::kMaidValue);
+  CHECK_THROWS_AS(maid_group_db.GetValue(key), maidsafe_error);
+  CHECK_THROWS_AS(maid_group_db.Commit(key, TestGroupDbActionModifyValue()), maidsafe_error);
+  CHECK_THROWS_AS(maid_group_db.Commit(key, TestGroupDbActionDeleteValue()), maidsafe_error);
+
+  MaidManagerMetadata expected_metadata(metadata);
+  expected_metadata.PutData(100);
+  MaidManagerValue expected_value;
+  expected_value.Put(100);
+  maid_group_db.Commit(key, TestGroupDbActionPutValue());
+  CHECK(maid_group_db.GetMetadata(maid_name) == expected_metadata);
+  CHECK(maid_group_db.GetValue(key) == expected_value);
+  maid_group_db.GetContents(maid_name);
+  CHECK((maid_group_db.GetContents(maid_name)).kv_pair.size() == 1U);
+  expected_metadata.PutData(100);
+  expected_value.Put(100);
+  maid_group_db.Commit(key, TestGroupDbActionModifyValue());
+  CHECK(maid_group_db.GetMetadata(maid_name) == expected_metadata);
+  CHECK(maid_group_db.GetValue(key) == expected_value);
+  CHECK((maid_group_db.GetContents(maid_name)).kv_pair.size() == 1U);
+  expected_metadata.DeleteData(expected_value.Delete());
+  maid_group_db.Commit(key, TestGroupDbActionDeleteValue());
+  CHECK(maid_group_db.GetMetadata(maid_name) == expected_metadata);
+  CHECK(maid_group_db.GetValue(key) == expected_value);
+  CHECK((maid_group_db.GetContents(maid_name)).kv_pair.size() == 1U);
+  expected_metadata.DeleteData(100);
+  maid_group_db.Commit(key, TestGroupDbActionDeleteValue());
+  CHECK(maid_group_db.GetMetadata(maid_name) == expected_metadata);
+  CHECK(maid_group_db.GetContents(maid_name).kv_pair.size() == 0U);
+  CHECK_THROWS_AS(maid_group_db.GetValue(key), maidsafe_error);
+  maid_group_db.DeleteGroup(maid_name);
+  CHECK_THROWS_AS(maid_group_db.GetMetadata(maid_name), maidsafe_error);
+  CHECK_THROWS_AS(maid_group_db.GetContents(maid_name), maidsafe_error);
 }
 
-TEST(GroupDbTest, FUNC_PmidManagerGroupDb) {
+TEST_CASE("GroupDb PmidManager", "[GroupDb][Unit]") {
   GroupDb<PmidManager> pmid_group_db;
-  for (auto i(0); i < 5 ; ++i)
-    RunPmidManagerGroupDbTest(pmid_group_db);
-
-  RunDbTestInParallel(10, [&] {
-    RunPmidManagerGroupDbTest(pmid_group_db);
-  });
-
+  for (auto i(0); i < 1 ; ++i) {
+    RunDbTestInParallel(1, [&] {
+      RunPmidManagerGroupDbTest(pmid_group_db);
+    });
+  }
 }
 
 }  // test
