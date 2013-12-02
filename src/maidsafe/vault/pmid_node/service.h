@@ -207,7 +207,7 @@ class PmidNodeService {
 
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
-#ifdef TESTING
+#ifdef USE_MAL_BEHAVIOUR
   uint32_t malfunc_behaviour_seed_;
 #endif
   Accumulator<Messages> accumulator_;
@@ -262,7 +262,7 @@ void PmidNodeService::HandleGet(const typename Data::Name& data_name,
                                 nfs::MessageId message_id) {
   try {
     auto data(handler_.Get<Data>(data_name));
-#ifdef TESTING
+#ifdef USE_MAL_BEHAVIOUR
     LOG(kVerbose) << "PmidNodeService::HandleGet malfunc_behaviour_seed_ is "
                   << malfunc_behaviour_seed_;
     if ((malfunc_behaviour_seed_ % 4) == 0) {
@@ -322,7 +322,7 @@ void PmidNodeService::HandleIntegrityCheck(const typename Data::Name& data_name,
   try {
     auto data(handler_.Get<Data>(data_name));
     std::string random_seed(random_string.string());
-#ifdef TESTING
+#ifdef USE_MAL_BEHAVIOUR
     LOG(kVerbose) << "PmidNodeService::HandleIntegrityCheck malfunc_behaviour_seed_ is "
                   << malfunc_behaviour_seed_;
     if ((malfunc_behaviour_seed_ % 4) == 0) {

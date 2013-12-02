@@ -57,7 +57,7 @@ PmidNodeService::PmidNodeService(const passport::Pmid& /*pmid*/, routing::Routin
                                  const fs::path& vault_root_dir)
     : routing_(routing),
       accumulator_mutex_(),
-#ifdef TESTING
+#ifdef USE_MAL_BEHAVIOUR
       malfunc_behaviour_seed_(RandomUint32()),
 #endif
       dispatcher_(routing_),

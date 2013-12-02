@@ -94,6 +94,25 @@ target_include_directories(lifestuff_vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${P
 target_link_libraries(maidsafe_vault maidsafe_nfs_vault maidsafe_routing maidsafe_common maidsafe_private leveldb)
 target_link_libraries(lifestuff_vault maidsafe_vault maidsafe_lifestuff_manager)
 if(MaidsafeTesting)
+  ms_add_static_library(vault_mal ${VaultAllFiles}
+                                  ${CacheHandlerAllFiles}
+                                  ${DataManagerAllFiles}
+                                  ${MaidManagerAllFiles}
+                                  ${MpidManagerAllFiles}
+                                  ${PmidManagerAllFiles}
+                                  ${PmidNodeAllFiles}
+                                  ${VersionHandlerAllFiles}
+                                  ${OutputFile} ${InputFile} ${MetaFiles})
+  target_include_directories(maidsafe_vault_mal
+    PUBLIC ${PROJECT_SOURCE_DIR}/include
+    PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
+  target_link_libraries(maidsafe_vault_mal maidsafe_nfs_vault maidsafe_routing maidsafe_common maidsafe_private leveldb)
+  target_compile_definitions(maidsafe_vault_mal PRIVATE USE_MAL_BEHAVIOUR)
+  ms_add_executable(lifestuff_vault_mal Production ${VaultSourcesDir}/vault_main.cc)
+  target_include_directories(lifestuff_vault_mal PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
+  target_link_libraries(lifestuff_vault_mal maidsafe_vault_mal maidsafe_lifestuff_manager)
+  target_compile_definitions(lifestuff_vault_mal PRIVATE USE_MAL_BEHAVIOUR)
+
   ms_add_executable(test_vault "Tests/Vault" ${VaultTestsAllFiles})
   target_include_directories(test_vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
   target_link_libraries(test_vault maidsafe_vault)
@@ -115,6 +134,7 @@ include(standard_flags)
 
 if(MSVC AND MaidsafeTesting)
   set_target_properties(maidsafe_vault TESTvault PROPERTIES COMPILE_FLAGS "/bigobj")
+  set_target_properties(maidsafe_vault_mal TESTvault PROPERTIES COMPILE_FLAGS "/bigobj")
 endif()
 
 
