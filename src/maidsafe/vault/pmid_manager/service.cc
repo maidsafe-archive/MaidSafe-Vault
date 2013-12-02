@@ -54,6 +54,9 @@ PmidManagerService::PmidManagerService(const passport::Pmid& /*pmid*/, routing::
 
 void PmidManagerService::HandleSyncedPut(
     std::unique_ptr<PmidManager::UnresolvedPut>&& synced_action) {
+  LOG(kVerbose) << "PmidManagerService::HandleSyncedPut commit put for chunk "
+                << HexSubstr(synced_action->key.name.string())
+                << " to group_db_ and send_put_response";
   group_db_.Commit(synced_action->key, synced_action->action);
   auto data_name(GetDataNameVariant(synced_action->key.type, synced_action->key.name));
   SendPutResponse(data_name, synced_action->key.group_name(),
@@ -64,6 +67,8 @@ void PmidManagerService::HandleSyncedPut(
 
 void PmidManagerService::HandleSyncedDelete(
     std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action) {
+  LOG(kVerbose) << "PmidManagerService::HandleSyncedDelete commit delete for chunk "
+                << HexSubstr(synced_action->key.name.string()) << " to group_db_ ";
   group_db_.Commit(synced_action->key, synced_action->action);
 }
 
@@ -174,7 +179,6 @@ void PmidManagerService::HandleMessage(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
-        LOG(kInfo) << "SynchroniseFromPmidManagerToPmidManager SendPutResponse";
         HandleSyncedPut(std::move(resolved_action));
       }
       break;
@@ -211,6 +215,7 @@ void PmidManagerService::HandleMessage(
 void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
                                          const PmidName& pmid_node, int32_t size,
                                          nfs::MessageId message_id) {
+  LOG(kInfo) << "PmidManagerService::SendPutResponse";
   detail::PmidManagerPutResponseVisitor<PmidManagerService> put_response(this, size, pmid_node,
                                                                          message_id);
   boost::apply_visitor(put_response, data_name);

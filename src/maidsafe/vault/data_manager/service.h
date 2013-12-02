@@ -628,7 +628,7 @@ void DataManagerService::AssessGetContentRequestedPmidNode(
   // If we failed to get the serialised_contents, mark 'pmid_node_to_get_from' as down, sync this,
   // try to Get from peer DataManagers' caches.
   if (!get_response_op->serialised_contents->IsInitialised()) {
-    LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults marking node "
+    LOG(kWarning) << "DataManagerService::AssessGetContentRequestedPmidNode marking node "
                   << HexSubstr(get_response_op->pmid_node_to_get_from->string())
                   << " down for data " << HexSubstr(get_response_op->data_name.value.string());
     MarkNodeDown(get_response_op->pmid_node_to_get_from, get_response_op->data_name);
