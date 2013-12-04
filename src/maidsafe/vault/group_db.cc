@@ -23,17 +23,39 @@ namespace maidsafe {
 namespace vault {
 
 template <>
-GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup(
-    const GroupName& group_name) {
+void GroupDb<PmidManager>::Commit(const PmidManager::GroupName& group_name,
+                                  std::function<void(PmidManager::Metadata& metadata)> functor) {
+  // If no account exists, then create an account
+  // If has account, and asked to set to 0, delete the account
+  // If has account, and asked to set to non-zero, update the size
+  // BEFORE_RELEASE double check if there will be case :
+  //                existing account is 0, shall be kept, but received an update to 0
+  assert(functor);
+  std::lock_guard<std::mutex> lock(mutex_);
   try {
-    return FindGroup(group_name);
+    const auto it(FindGroup(group_name));
+    on_scope_exit update_group([it, this]() { UpdateGroup(it); });
+    functor(it->second.second);
   } catch (const vault_error& error) {
     LOG(kInfo) << "Account doesn't exist for group "
                << HexSubstr(group_name->string()) << ", error : " << error.what()
                << ". -- Creating Account --";
-    return AddGroupToMap(group_name, Metadata(group_name));
+    AddGroupToMap(group_name, Metadata(group_name));
   }
 }
+
+// template <>
+// GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup(
+//     const GroupName& group_name) {
+//   try {
+//     return FindGroup(group_name);
+//   } catch (const vault_error& error) {
+//     LOG(kInfo) << "Account doesn't exist for group "
+//                << HexSubstr(group_name->string()) << ", error : " << error.what()
+//                << ". -- Creating Account --";
+//     return AddGroupToMap(group_name, Metadata(group_name));
+//   }
+// }
 
 // Deletes group if no further entry left in group
 template <>

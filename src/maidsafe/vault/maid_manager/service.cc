@@ -406,6 +406,8 @@ void MaidManagerService::FinalisePmidRegistration(
     } else {
       group_db_.Commit(pmid_registration_op->synced_action->key.group_name(),
                        pmid_registration_op->synced_action->action);
+      dispatcher_.SendCreatePmidAccountRequest(*pmid_registration_op->public_maid,
+                                               *pmid_registration_op->public_pmid);
     }
   }
   catch(const maidsafe_error& error) {

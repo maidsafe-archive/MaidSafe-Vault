@@ -133,6 +133,22 @@ void MaidManagerDispatcher::SendHealthResponse(const MaidName& maid_name, int64_
   routing_.Send(message);
 }
 
+void MaidManagerDispatcher::SendCreatePmidAccountRequest(const passport::PublicMaid& account_name,
+    const passport::PublicPmid& pmid_name) {
+  LOG(kVerbose) << "MaidManagerDispatcher::SendCreatePmidAccountRequest for maid "
+                << HexSubstr(account_name.name()->string()) << " create PmidAccount for "
+                << HexSubstr(pmid_name.name()->string());
+  typedef CreatePmidAccountRequestFromMaidManagerToPmidManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
+
+  VaultMessage vault_message(nfs_vault::DataName(pmid_name.name()->string()));
+  RoutingMessage message(vault_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, account_name.name()),
+                         VaultMessage::Receiver(NodeId(pmid_name.name()->string())));
+  routing_.Send(message);
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

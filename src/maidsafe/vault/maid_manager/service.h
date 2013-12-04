@@ -422,7 +422,7 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
                                    const PmidName& pmid_node_hint,
                                    nfs::MessageId message_id) {
   LOG(kVerbose) << "MaidManagerService::HandlePut for account " << HexSubstr(account_name->string())
-                << " with data " << HexSubstr(data.Serialise().data)
+                << " with data " << HexSubstr(data.name().value)
                 << " and pmid_node_hint " << HexSubstr(pmid_node_hint->string())
                 << " message_id " << message_id.data;
   auto metadata(group_db_.GetMetadata(account_name));

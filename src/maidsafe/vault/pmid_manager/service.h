@@ -79,6 +79,9 @@ class PmidManagerService {
   void HandleHealthRequest(const PmidName& pmid_node, const MaidName& maid_node,
                            nfs::MessageId message_id);
 
+  void HandleCreatePmidAccountRequest(const PmidName& pmid_node, const MaidName& maid_node,
+                                      nfs::MessageId message_id);
+
  private:
   PmidManagerService(const PmidManagerService&);
   PmidManagerService& operator=(const PmidManagerService&);
@@ -119,6 +122,7 @@ class PmidManagerService {
 
   void HandleSyncedPut(std::unique_ptr<PmidManager::UnresolvedPut>&& synced_action);
   void HandleSyncedDelete(std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action);
+  void HandleSyncedSetAvailableSize(std::unique_ptr<PmidManager::UnresolvedSetAvailableSize>&& synced_action);
 
   routing::Routing& routing_;
   GroupDb<PmidManager> group_db_;
@@ -167,6 +171,12 @@ void PmidManagerService::HandleMessage<nfs::PmidHealthRequestFromMaidNodeToPmidM
     const nfs::PmidHealthRequestFromMaidNodeToPmidManager& message,
     const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
     const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver);
+
+template <>
+void PmidManagerService::HandleMessage(
+    const CreatePmidAccountRequestFromMaidManagerToPmidManager& message,
+    const typename CreatePmidAccountRequestFromMaidManagerToPmidManager::Sender& sender,
+    const typename CreatePmidAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);
 
 template<>
 void PmidManagerService::HandleMessage(

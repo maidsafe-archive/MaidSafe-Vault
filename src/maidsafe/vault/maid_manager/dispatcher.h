@@ -92,6 +92,9 @@ class MaidManagerDispatcher {
 
   void SendHealthResponse(const MaidName& maid_name, int64_t available_size,
                           const nfs_client::ReturnCode& return_code, nfs::MessageId message_id);
+
+  void SendCreatePmidAccountRequest(const passport::PublicMaid& account_name,
+                                    const passport::PublicPmid& pmid_name);
  private:
   MaidManagerDispatcher();
   MaidManagerDispatcher(const MaidManagerDispatcher&);

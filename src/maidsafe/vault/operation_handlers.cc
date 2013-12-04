@@ -329,6 +329,17 @@ void DoOperation(PmidManagerService* service,
                                message.id);
 }
 
+template <>
+void DoOperation(PmidManagerService* service,
+                 const CreatePmidAccountRequestFromMaidManagerToPmidManager& message,
+                 const CreatePmidAccountRequestFromMaidManagerToPmidManager::Sender& sender,
+                 const CreatePmidAccountRequestFromMaidManagerToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "DoOperation CreatePmidAccountRequestFromMaidManagerToPmidManager";
+  service->HandleCreatePmidAccountRequest(PmidName(Identity(receiver.data.string())),
+                                          MaidName(Identity(sender.group_id->string())),
+                                          message.id);
+}
+
 //=============================== To PmidNode ======================================================
 
 template <>

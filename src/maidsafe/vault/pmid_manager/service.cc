@@ -72,6 +72,16 @@ void PmidManagerService::HandleSyncedDelete(
   group_db_.Commit(synced_action->key, synced_action->action);
 }
 
+void PmidManagerService::HandleSyncedSetAvailableSize(
+    std::unique_ptr<PmidManager::UnresolvedSetAvailableSize>&& synced_action) {
+  LOG(kVerbose) << "PmidManagerService::HandleSyncedSetAvailableSize for pmid_node "
+                << HexSubstr(synced_action->key.group_name()->string()) << " to group_db_ ";
+  // If no account exists, then create an account
+  // If has account, and asked to set to 0, delete the account
+  // If has account, and asked to set to non-zero, update the size
+  group_db_.Commit(synced_action->key.group_name(), synced_action->action);
+}
+
 // =============== Sync ============================================================================
 
 void PmidManagerService::DoSync() {
@@ -159,6 +169,22 @@ void PmidManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+template <>
+void PmidManagerService::HandleMessage(
+    const CreatePmidAccountRequestFromMaidManagerToPmidManager& message,
+    const typename CreatePmidAccountRequestFromMaidManagerToPmidManager::Sender& sender,
+    const typename CreatePmidAccountRequestFromMaidManagerToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "PmidManagerService::HandleMessage "
+                << "CreatePmidAccountRequestFromMaidManagerToPmidManager";
+  typedef CreatePmidAccountRequestFromMaidManagerToPmidManager MessageType;
+  OperationHandlerWrapper<PmidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
 // =============== Handle Sync Messages ============================================================
 
 template<>
@@ -191,6 +217,17 @@ void PmidManagerService::HandleMessage(
       if (resolved_action) {
         LOG(kInfo) << "SynchroniseFromPmidManagerToPmidManager SendDeleteRequest";
         HandleSyncedDelete(std::move(resolved_action));
+      }
+      break;
+    }
+    case ActionPmidManagerSetAvailableSize::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromPmidManagerToPmidManager ActionPmidManagerSetAvailableSize";
+      PmidManager::UnresolvedSetAvailableSize unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_set_available_sizes_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromPmidManagerToPmidManager HandleSyncedSetAvailableSize";
+        HandleSyncedSetAvailableSize(std::move(resolved_action));
       }
       break;
     }
@@ -260,6 +297,32 @@ void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node,
     LOG(kInfo) << "PmidManagerService::HandleHealthRequest no_such_element";
     dispatcher_.SendHealthResponse(maid_node, pmid_node, PmidManagerMetadata(), message_id,
                                    maidsafe_error(CommonErrors::no_such_element));
+  }
+}
+
+void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_node,
+                                                        const MaidName& maid_node,
+                                                        nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidManagerService::HandleCreatePmidAccountRequest from maid_node "
+                << HexSubstr(maid_node.value.string()) << " for pmid_node "
+                << HexSubstr(pmid_node.value.string()) << " with message_id " << message_id.data;
+  try {
+    auto contents(group_db_.GetContents(pmid_node));
+    LOG(kInfo) << "The current PmidManager already have account record with "
+               << contents.kv_pair.size() << " kv_pair entries";
+  } catch(const vault_error& error) {
+    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
+      LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest vault error : "
+                  << error.what();
+      throw error;
+    }
+    LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest no_such_element";
+    // Once synced, check whether account exists or not, if not exist then shall create an account
+    // If exist, decide whether to update or delete depending on account status and targeting size
+    sync_set_available_sizes_.AddLocalAction(PmidManager::UnresolvedSetAvailableSize(
+        PmidManager::MetadataKey(pmid_node), ActionPmidManagerSetAvailableSize(0),
+        routing_.kNodeId()));
+    DoSync();
   }
 }
 
