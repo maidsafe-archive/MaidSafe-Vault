@@ -39,7 +39,7 @@
 #include "maidsafe/routing/parameters.h"
 #include "maidsafe/routing/return_codes.h"
 
-#include "maidsafe/lifestuff_manager/vault_controller.h"
+#include "maidsafe/client_manager/vault_controller.h"
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/vault.h"
@@ -118,7 +118,7 @@ void RunVault(po::variables_map& variables_map) {
 #endif
   std::string vmid(variables_map.count("vmid") == 0 ? "test"
                                                     : variables_map.at("vmid").as<std::string>());
-  lifestuff_manager::VaultController vault_controller(vmid, [] {
+  client_manager::VaultController vault_controller(vmid, [] {
     g_ctrlc_pressed.store(true);
     g_cond_var.notify_one();
   });
@@ -209,7 +209,7 @@ void ActOnOptions(int argc, char* argv[]) {
   po::options_description cmdline_options(PopulateVariablesMap(argc, argv, variables_map));
 
   if (variables_map.count("version") != 0) {
-    std::cout << "Lifestuff Vault " + kApplicationVersion() << std::endl;
+    std::cout << "Client Vault " + kApplicationVersion() << std::endl;
     return;
   }
 
