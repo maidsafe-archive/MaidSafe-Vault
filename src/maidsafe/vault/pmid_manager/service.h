@@ -237,6 +237,16 @@ void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
                 <<  HexSubstr(data.name().value)
                 << " to pmid_node -- " << HexSubstr(pmid_node.value.string())
                 << " , with message_id -- " << message_id.data;
+  try {
+    PmidManagerMetadata reply(group_db_.GetContents(pmid_node).metadata);
+    if (reply.claimed_available_size <
+        static_cast<uint32_t>(data.Serialise().data.string().size())) {
+      dispatcher_.SendPutFailure<Data>(data.name(), pmid_node,
+                                       maidsafe_error(VaultErrors::not_enough_space), message_id);
+      return;
+    }
+  } catch(...) {
+  }
   dispatcher_.SendPutRequest(data, pmid_node, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), data.name().value,
                              Data::Tag::kValue);
@@ -258,7 +268,7 @@ void PmidManagerService::HandlePutFailure(
                 << error_code.what();
   dispatcher_.SendPutFailure<Data>(name, pmid_node, error_code, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), name.value, Data::Tag::kValue);
-  sync_deletes_.AddLocalAction(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(),
+  sync_deletes_.AddLocalAction(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(false),
                                                              routing_.kNodeId()));
   DoSync();
 }
@@ -285,7 +295,7 @@ void PmidManagerService::HandleDelete(
   PmidManager::Key group_key(typename PmidManager::GroupName(pmid_name),
                              data_name.value, Data::Tag::kValue);
   sync_deletes_.AddLocalAction(
-      PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(), routing_.kNodeId()));
+      PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(true), routing_.kNodeId()));
   DoSync();
 }
 

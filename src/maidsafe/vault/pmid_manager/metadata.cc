@@ -97,6 +97,17 @@ void PmidManagerMetadata::DeleteData(int32_t size) {
   }
 }
 
+void PmidManagerMetadata::HandleLostData(int32_t size) {
+  DeleteData(size);
+  lost_total_size += size;
+  ++lost_count;
+}
+
+void PmidManagerMetadata::HandleFailure(int32_t size) {
+  HandleLostData(size);
+  claimed_available_size = 0;
+}
+
 void PmidManagerMetadata::SetAvailableSize(const int64_t& available_size) {
   claimed_available_size = available_size;
 }

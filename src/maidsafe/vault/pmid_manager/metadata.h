@@ -40,6 +40,8 @@ struct PmidManagerMetadata {
   PmidManagerMetadata& operator=(PmidManagerMetadata other);
   void PutData(int32_t size);
   void DeleteData(int32_t size);
+  void HandleLostData(int32_t size);
+  void HandleFailure(int32_t size);
   void SetAvailableSize(const int64_t& available_size);
   std::string Serialise() const;
   detail::GroupDbMetaDataStatus GroupStatus();

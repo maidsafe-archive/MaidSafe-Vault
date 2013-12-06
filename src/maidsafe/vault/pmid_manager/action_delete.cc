@@ -44,9 +44,11 @@ detail::DbAction ActionPmidManagerDelete::operator()(PmidManagerMetadata& metada
     ThrowError(CommonErrors::no_such_element);
     return detail::DbAction::kDelete;
   }
-  metadata.DeleteData(value->size());
-  if (!pmid_node_available)
-    metadata.SetAvailableSize(0);
+  if (pmid_node_available) {
+    metadata.HandleFailure(value->size());
+  } else {
+    metadata.DeleteData(value->size());
+  }
   return detail::DbAction::kDelete;
 }
 

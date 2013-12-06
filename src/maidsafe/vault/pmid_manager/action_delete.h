@@ -34,7 +34,7 @@ namespace vault {
 class PmidManagerValue;
 
 struct ActionPmidManagerDelete {
-  ActionPmidManagerDelete(bool pmid_node_available_in = true);
+  ActionPmidManagerDelete(bool pmid_node_available_in);
   ActionPmidManagerDelete(const std::string& serialised_action);
   detail::DbAction operator()(PmidManagerMetadata& metadata,
                               std::unique_ptr<PmidManagerValue>& value) const;

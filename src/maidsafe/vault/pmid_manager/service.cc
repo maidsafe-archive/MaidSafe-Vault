@@ -223,6 +223,7 @@ void PmidManagerService::HandleMessage(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromPmidManagerToPmidManager HandleSyncedPut";
         HandleSyncedPut(std::move(resolved_action));
       }
       break;
@@ -233,7 +234,7 @@ void PmidManagerService::HandleMessage(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
-        LOG(kInfo) << "SynchroniseFromPmidManagerToPmidManager SendDeleteRequest";
+        LOG(kInfo) << "SynchroniseFromPmidManagerToPmidManager HandleSyncedDelete";
         HandleSyncedDelete(std::move(resolved_action));
       }
       break;
