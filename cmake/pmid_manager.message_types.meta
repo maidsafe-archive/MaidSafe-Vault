@@ -6,3 +6,4 @@ Action:AccountTransfer             Source:PmidManager:Group      Destination:Pmi
 Action:GetPmidAccountRequest       Source:PmidNode:Single        Destination:PmidManager:Group      Contents:struct:maidsafe::nfs_vault::AvailableSize
 Action:PmidHealthRequest           Source:MaidNode:Single        Destination:PmidManager:Group      Contents:struct:maidsafe::nfs_vault::Empty
 Action:CreatePmidAccountRequest    Source:MaidManager:Group      Destination:PmidManager:Group      Contents:struct:maidsafe::nfs_vault::DataName
+Action:PmidHealthResponse          Source:PmidNode:Single        Destination:PmidManager:Group      Contents:struct:maidsafe::nfs_vault::AvailableSize

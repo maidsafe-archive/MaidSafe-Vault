@@ -255,6 +255,12 @@ void PmidNodeService::HandleMessage(
     const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
     const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
 
+template <>
+void PmidNodeService::HandleMessage(
+    const PmidHealthRequestFromPmidManagerToPmidNode& message,
+    const typename PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
+    const typename PmidHealthRequestFromPmidManagerToPmidNode::Receiver& receiver);
+
 // ============================== Get implementation =============================================
 template <typename Data>
 void PmidNodeService::HandleGet(const typename Data::Name& data_name,

@@ -331,6 +331,18 @@ void DoOperation(PmidManagerService* service,
 
 template <>
 void DoOperation(PmidManagerService* service,
+                 const PmidHealthResponseFromPmidNodeToPmidManager& message,
+                 const PmidHealthResponseFromPmidNodeToPmidManager::Sender& sender,
+                 const PmidHealthResponseFromPmidNodeToPmidManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation PmidHealthResponseFromPmidNodeToPmidManager "
+                << "available_size : " << message.contents->available_size;
+  service->HandleHealthResponse(PmidName(Identity(sender.data.string())),
+                                message.contents->available_size,
+                                message.id);
+}
+
+template <>
+void DoOperation(PmidManagerService* service,
                  const CreatePmidAccountRequestFromMaidManagerToPmidManager& message,
                  const CreatePmidAccountRequestFromMaidManagerToPmidManager::Sender& sender,
                  const CreatePmidAccountRequestFromMaidManagerToPmidManager::Receiver& receiver) {

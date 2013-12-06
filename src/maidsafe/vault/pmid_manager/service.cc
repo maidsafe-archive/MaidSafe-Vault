@@ -49,7 +49,10 @@ inline bool ForThisPersona(const Message& message) {
 
 PmidManagerService::PmidManagerService(const passport::Pmid& /*pmid*/, routing::Routing& routing)
     : routing_(routing), group_db_(), accumulator_mutex_(), accumulator_(), dispatcher_(routing_),
-      sync_puts_(), sync_deletes_(), sync_set_available_sizes_() {}
+      asio_service_(2), get_health_timer_(asio_service_), sync_puts_(), sync_deletes_(), 
+      sync_set_available_sizes_() {
+  asio_service_.Start();
+}
 
 
 void PmidManagerService::HandleSyncedPut(
@@ -131,6 +134,21 @@ void PmidManagerService::HandleMessage(
     const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
   LOG(kVerbose) << "PmidManagerService::HandleMessage PmidHealthRequestFromMaidNodeToPmidManager";
   typedef nfs::PmidHealthRequestFromMaidNodeToPmidManager MessageType;
+  OperationHandlerWrapper<PmidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template <>
+void PmidManagerService::HandleMessage(
+    const PmidHealthResponseFromPmidNodeToPmidManager& message,
+    const typename PmidHealthResponseFromPmidNodeToPmidManager::Sender& sender,
+    const typename PmidHealthResponseFromPmidNodeToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "PmidManagerService::HandleMessage PmidHealthResponseFromPmidNodeToPmidManager";
+  typedef PmidHealthResponseFromPmidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
@@ -286,15 +304,54 @@ void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node,
   LOG(kVerbose) << "PmidManagerService::HandleHealthRequest from maid_node "
                 << HexSubstr(maid_node.value.string()) << " for pmid_node "
                 << HexSubstr(pmid_node.value.string()) << " with message_id " << message_id.data;
+  auto functor([=](const PmidManagerMetadata& pmid_health) {
+    LOG(kVerbose) << "PmidManagerService::HandleHealthRequest "
+                  << HexSubstr(pmid_node.value.string())
+                  << " task called from timer to DoHandleGetHealthResponse";
+    this->DoHandleHealthResponse(pmid_node, maid_node, pmid_health, message_id);
+  });
+  get_health_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, 1,
+                            message_id.data);
+  dispatcher_.SendHealthRequest(pmid_node, message_id);
+}
+
+void PmidManagerService::HandleHealthResponse(const PmidName& pmid_name,
+                                              uint64_t available_size,
+                                              nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidManagerService::HandleHealthResponse Get pmid_health for "
+                << HexSubstr(pmid_name.value) << " with message_id " << message_id.data;
   try {
-    // BEFORE_RELEASE shall replace dummy with pmid_metadata_.at(pmid_node)
-    PmidManagerMetadata dummy(pmid_node);
-    dummy.SetAvailableSize(100000000);
-    dispatcher_.SendHealthResponse(maid_node, pmid_node, dummy,
+    PmidManagerMetadata pmid_health(pmid_name);
+    pmid_health.SetAvailableSize(available_size);
+    get_health_timer_.AddResponse(message_id.data, pmid_health);
+  }
+  catch (...) {
+    // BEFORE_RELEASE handle
+  }
+}
+
+void PmidManagerService::DoHandleHealthResponse(const PmidName& pmid_node,
+    const MaidName& maid_node, const PmidManagerMetadata& pmid_health, nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidManagerService::DoHandleHealthResponse regarding maid_node "
+                << HexSubstr(maid_node.value.string()) << " for pmid_node "
+                << HexSubstr(pmid_node.value.string()) << " with message_id " << message_id.data;
+  try {
+    PmidManagerMetadata reply(pmid_health);
+    if (pmid_health == PmidManagerMetadata()) {
+      LOG(kInfo) << "PmidManagerService::DoHandleHealthResponse reply with local record";
+      reply = group_db_.GetContents(pmid_node).metadata;
+    } else {
+      sync_set_available_sizes_.AddLocalAction(PmidManager::UnresolvedSetAvailableSize(
+          PmidManager::MetadataKey(pmid_node),
+          ActionPmidManagerSetAvailableSize(pmid_health.claimed_available_size),
+          routing_.kNodeId()));
+      DoSync();
+    }
+    dispatcher_.SendHealthResponse(maid_node, pmid_node, reply,
                                    message_id, maidsafe_error(CommonErrors::success));
   }
   catch(...) {
-    LOG(kInfo) << "PmidManagerService::HandleHealthRequest no_such_element";
+    LOG(kInfo) << "PmidManagerService::DoHandleHealthResponse no_such_element";
     dispatcher_.SendHealthResponse(maid_node, pmid_node, PmidManagerMetadata(), message_id,
                                    maidsafe_error(CommonErrors::no_such_element));
   }

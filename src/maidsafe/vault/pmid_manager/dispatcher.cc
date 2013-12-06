@@ -110,6 +110,20 @@ void PmidManagerDispatcher::SendHealthResponse(const MaidName& maid_node,
   routing_.Send(message);
 }
 
+void PmidManagerDispatcher::SendHealthRequest(const PmidName& pmid_node,
+                                              nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidManagerDispatcher::SendHealthRequest to pmid "
+                << HexSubstr(pmid_node->string()) << " with message_id " << message_id.data;
+  typedef PmidHealthRequestFromPmidManagerToPmidNode VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  VaultMessage vault_message(message_id, nfs_vault::DataName(pmid_node->string()));
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing_.kNodeId()),
+                         VaultMessage::Receiver(NodeId(pmid_node->string())));
+  routing_.Send(message);
+}
+
 
 routing::GroupSource PmidManagerDispatcher::Sender(const MaidName& account_name) const {
   return routing::GroupSource(routing::GroupId(NodeId(account_name->string())),

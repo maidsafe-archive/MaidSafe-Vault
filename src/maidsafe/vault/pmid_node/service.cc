@@ -171,6 +171,16 @@ void PmidNodeService::HandleMessage(
       add_request_predicate, this, accumulator_mutex_)(message, sender, receiver);
 }
 
+template <>
+void PmidNodeService::HandleMessage(
+    const PmidHealthRequestFromPmidManagerToPmidNode& message,
+    const typename PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
+    const typename PmidHealthRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "PmidNodeService::HandleMessage GetPmidHealthFromPmidManagerToPmidNode "
+                << " from " << HexSubstr(sender.data.string());
+  dispatcher_.SendHealthResponse(handler_.AvailableSpace(), message.id);
+}
+
 void PmidNodeService::HandlePmidAccountResponses(
     const std::vector<std::set<nfs_vault::DataName>>& responses, int failures) {
   const auto total_responses(responses.size() + failures);

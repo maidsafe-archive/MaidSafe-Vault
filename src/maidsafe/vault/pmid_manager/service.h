@@ -28,6 +28,7 @@
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
+#include "maidsafe/routing/timer.h"
 
 #include "maidsafe/nfs/types.h"
 
@@ -76,11 +77,12 @@ class PmidManagerService {
   void SendPutResponse(const typename Data::Name& data_name, int32_t size,
                        const PmidName& pmid_node, nfs::MessageId message_id);
 
-  void HandleHealthRequest(const PmidName& pmid_node, const MaidName& maid_node,
-                           nfs::MessageId message_id);
-
   void HandleCreatePmidAccountRequest(const PmidName& pmid_node, const MaidName& maid_node,
                                       nfs::MessageId message_id);
+  void HandleHealthRequest(const PmidName& pmid_node, const MaidName& maid_node,
+                           nfs::MessageId message_id);
+  void HandleHealthResponse(const PmidName& pmid_node, uint64_t available_size,
+                            nfs::MessageId message_id);
 
  private:
   PmidManagerService(const PmidManagerService&);
@@ -124,11 +126,16 @@ class PmidManagerService {
   void HandleSyncedDelete(std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action);
   void HandleSyncedSetAvailableSize(std::unique_ptr<PmidManager::UnresolvedSetAvailableSize>&& synced_action);
 
+  void DoHandleHealthResponse(const PmidName& pmid_node,
+      const MaidName& maid_node, const PmidManagerMetadata& pmid_health, nfs::MessageId message_id);
+
   routing::Routing& routing_;
   GroupDb<PmidManager> group_db_;
   std::mutex accumulator_mutex_;
   Accumulator<Messages> accumulator_;
   PmidManagerDispatcher dispatcher_;
+  AsioService asio_service_;
+  routing::Timer<PmidManagerMetadata> get_health_timer_;
   Sync<PmidManager::UnresolvedPut> sync_puts_;
   Sync<PmidManager::UnresolvedDelete> sync_deletes_;
   Sync<PmidManager::UnresolvedSetAvailableSize> sync_set_available_sizes_;
@@ -171,6 +178,12 @@ void PmidManagerService::HandleMessage<nfs::PmidHealthRequestFromMaidNodeToPmidM
     const nfs::PmidHealthRequestFromMaidNodeToPmidManager& message,
     const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
     const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver);
+
+template <>
+void PmidManagerService::HandleMessage(
+    const PmidHealthResponseFromPmidNodeToPmidManager& message,
+    const typename PmidHealthResponseFromPmidNodeToPmidManager::Sender& sender,
+    const typename PmidHealthResponseFromPmidNodeToPmidManager::Receiver& receiver);
 
 template <>
 void PmidManagerService::HandleMessage(

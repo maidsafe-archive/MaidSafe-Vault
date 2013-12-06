@@ -68,6 +68,7 @@ class PmidManagerDispatcher {
   void SendHealthResponse(const MaidName& maid_node, const PmidName& pmid_node,
                           const PmidManagerMetadata& pmid_health, nfs::MessageId message_id,
                           const maidsafe_error& error);
+  void SendHealthRequest(const PmidName& pmid_node, nfs::MessageId message_id);
 
  private:
   PmidManagerDispatcher();
