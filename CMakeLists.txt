@@ -83,11 +83,11 @@ target_include_directories(maidsafe_vault
   PUBLIC ${PROJECT_SOURCE_DIR}/include
   PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
 
-ms_add_executable(client_vault Production ${VaultSourcesDir}/vault_main.cc)
-target_include_directories(client_vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
+ms_add_executable(vault Production ${VaultSourcesDir}/vault_main.cc)
+target_include_directories(vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
 
 target_link_libraries(maidsafe_vault maidsafe_nfs_vault maidsafe_routing maidsafe_common maidsafe_private leveldb)
-target_link_libraries(client_vault maidsafe_vault maidsafe_client_manager)
+target_link_libraries(vault maidsafe_vault maidsafe_client_manager)
 if(MaidsafeTesting)
   ms_add_executable(test_vault "Tests/Vault" ${VaultTestsAllFiles})
   target_include_directories(test_vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
