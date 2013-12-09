@@ -87,11 +87,11 @@ target_include_directories(maidsafe_vault
   PUBLIC ${PROJECT_SOURCE_DIR}/include
   PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
 
-ms_add_executable(lifestuff_vault Production ${VaultSourcesDir}/vault_main.cc)
-target_include_directories(lifestuff_vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
+ms_add_executable(client_vault Production ${VaultSourcesDir}/vault_main.cc)
+target_include_directories(client_vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
 
 target_link_libraries(maidsafe_vault maidsafe_nfs_vault maidsafe_routing maidsafe_common maidsafe_private leveldb)
-target_link_libraries(lifestuff_vault maidsafe_vault maidsafe_lifestuff_manager)
+target_link_libraries(client_vault maidsafe_vault maidsafe_client_manager)
 if(MaidsafeTesting)
   ms_add_static_library(vault_mal ${VaultAllFiles}
                                   ${CacheHandlerAllFiles}
@@ -132,8 +132,7 @@ rename_outdated_built_exes()
 include(standard_flags)
 
 if(MSVC AND MaidsafeTesting)
-  set_target_properties(maidsafe_vault TESTvault PROPERTIES COMPILE_FLAGS "/bigobj")
-  set_target_properties(maidsafe_vault_mal TESTvault PROPERTIES COMPILE_FLAGS "/bigobj")
+  set_property(TARGET maidsafe_vault TESTvault maidsafe_vault_mal APPEND PROPERTY COMPILE_FLAGS "/bigobj")
 endif()
 
 
