@@ -40,7 +40,9 @@ void GroupDb<PmidManager>::Commit(const PmidManager::GroupName& group_name,
     LOG(kInfo) << "Account doesn't exist for group "
                << HexSubstr(group_name->string()) << ", error : " << error.what()
                << ". -- Creating Account --";
-    AddGroupToMap(group_name, Metadata(group_name));
+    Metadata temp(group_name);
+    functor(temp);
+    AddGroupToMap(group_name, temp);
   }
 }
 
