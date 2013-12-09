@@ -352,6 +352,21 @@ void DoOperation(PmidManagerService* service,
                                           message.id);
 }
 
+template <>
+void DoOperation(PmidManagerService* service,
+                 const IntegrityCheckRequestFromDataManagerToPmidManager& message,
+                 const IntegrityCheckRequestFromDataManagerToPmidManager::Sender& sender,
+                 const IntegrityCheckRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "DoOperation IntegrityCheckRequestFromDataManagerToPmidManager from "
+                << HexSubstr(sender.sender_id.data.string()) << " for chunk "
+                << HexSubstr(message.contents->raw_name.string())
+                << " on pmid_node " << HexSubstr(receiver.data.string());
+  auto data_name(GetNameVariant(*message.contents));
+  PmidManagerFalseNotificationVisitor<PmidManagerService> false_notification_visitor(service,
+      PmidName(Identity(receiver.data.string())), message.id);
+  boost::apply_visitor(false_notification_visitor, data_name);
+}
+
 //=============================== To PmidNode ======================================================
 
 template <>

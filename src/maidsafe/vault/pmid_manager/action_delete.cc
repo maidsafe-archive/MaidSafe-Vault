@@ -27,16 +27,20 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionPmidManagerDelete::ActionPmidManagerDelete(bool pmid_node_available_in )
-    : pmid_node_available(pmid_node_available_in) {}
+ActionPmidManagerDelete::ActionPmidManagerDelete(bool pmid_node_available_in , bool data_failure_in)
+    : pmid_node_available(pmid_node_available_in),
+      data_failure(data_failure_in) {}
 
 ActionPmidManagerDelete::ActionPmidManagerDelete(const std::string& serialised_action)
-  : pmid_node_available([&serialised_action]()->bool {
-                          protobuf::ActionPmidManagerDelete action_delete_proto;
-                          if (!action_delete_proto.ParseFromString(serialised_action))
-                            ThrowError(CommonErrors::parsing_error);
-                          return action_delete_proto.pmid_node_available();
-                        }()) {}
+    : pmid_node_available(true), data_failure(false) {
+  protobuf::ActionPmidManagerDelete action_delete_proto;
+  if (!action_delete_proto.ParseFromString(serialised_action)) {
+    LOG(kError) << "Can't parse ActionPmidManagerDelete from serialised string";
+    ThrowError(CommonErrors::parsing_error);
+  }
+  pmid_node_available = action_delete_proto.pmid_node_available();
+  data_failure = action_delete_proto.data_failure();
+}
 
 detail::DbAction ActionPmidManagerDelete::operator()(PmidManagerMetadata& metadata,
     std::unique_ptr<PmidManagerValue>& value) const {
@@ -45,9 +49,12 @@ detail::DbAction ActionPmidManagerDelete::operator()(PmidManagerMetadata& metada
     return detail::DbAction::kDelete;
   }
   if (pmid_node_available) {
-    metadata.HandleFailure(value->size());
+    if (data_failure)
+      metadata.HandleLostData(value->size());
+    else
+      metadata.DeleteData(value->size());
   } else {
-    metadata.DeleteData(value->size());
+    metadata.HandleFailure(value->size());
   }
   return detail::DbAction::kDelete;
 }
@@ -55,11 +62,13 @@ detail::DbAction ActionPmidManagerDelete::operator()(PmidManagerMetadata& metada
 std::string ActionPmidManagerDelete::Serialise() const {
   protobuf::ActionPmidManagerDelete action_delete_proto;
   action_delete_proto.set_pmid_node_available(pmid_node_available);
+  action_delete_proto.set_data_failure(data_failure);
   return action_delete_proto.SerializeAsString();
 }
 
 bool operator==(const ActionPmidManagerDelete& lhs, const ActionPmidManagerDelete& rhs) {
-  return (lhs.pmid_node_available ==  rhs.pmid_node_available);
+  return (lhs.pmid_node_available ==  rhs.pmid_node_available) &&
+         (lhs.data_failure ==  rhs.data_failure);
 }
 
 bool operator!=(const ActionPmidManagerDelete& lhs, const ActionPmidManagerDelete& rhs) {

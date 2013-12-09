@@ -203,6 +203,24 @@ void PmidManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+template <>
+void PmidManagerService::HandleMessage(
+    const IntegrityCheckRequestFromDataManagerToPmidManager& message,
+    const typename IntegrityCheckRequestFromDataManagerToPmidManager::Sender& sender,
+    const typename IntegrityCheckRequestFromDataManagerToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "PmidManagerService IntegrityCheckRequestFromDataManagerToPmidManager "
+                << " received false data notification for chunk "
+                << HexSubstr(message.contents->raw_name.string())
+                << " from " << HexSubstr(sender.sender_id.data.string());
+  typedef IntegrityCheckRequestFromDataManagerToPmidManager MessageType;
+  OperationHandlerWrapper<PmidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
 // =============== Handle Sync Messages ============================================================
 
 template<>

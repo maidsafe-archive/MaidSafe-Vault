@@ -164,6 +164,10 @@ class DataManagerService {
   void SendDeleteRequest(const PmidName pmid_node, const typename Data::Name& name,
                          nfs::MessageId message_id);
 
+  template <typename Data>
+  void SendFalseDataNotification(const PmidName pmid_node, const typename Data::Name& name,
+                                 nfs::MessageId message_id);
+
   // =========================== Node up / Node down section =======================================
   template <typename DataName>
   void MarkNodeDown(const PmidName& pmid_node, const DataName& data_name);
@@ -660,6 +664,8 @@ void DataManagerService::AssessIntegrityCheckResults(
         DerankPmidNode<Data>(itr.first, get_response_op->data_name, get_response_op->message_id);
         DeletePmidNodeAsHolder<Data>(itr.first, get_response_op->data_name,
                                      get_response_op->message_id);
+        SendFalseDataNotification<Data>(itr.first, get_response_op->data_name,
+                                        get_response_op->message_id);
       } else {
         MarkNodeDown(itr.first, get_response_op->data_name);
       }
@@ -699,6 +705,12 @@ template <typename Data>
 void DataManagerService::SendDeleteRequest(
     const PmidName pmid_node, const typename Data::Name& name, nfs::MessageId message_id) {
   dispatcher_.SendDeleteRequest<Data>(pmid_node, name, message_id);
+}
+
+template <typename Data>
+void DataManagerService::SendFalseDataNotification(
+    const PmidName pmid_node, const typename Data::Name& name, nfs::MessageId message_id) {
+  dispatcher_.SendFalseDataNotification<Data>(pmid_node, name, message_id);
 }
 
 // ==================== Node up / Node down implementation =========================================

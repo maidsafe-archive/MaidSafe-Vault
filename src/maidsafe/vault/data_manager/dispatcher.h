@@ -95,6 +95,10 @@ class DataManagerDispatcher {
   template <typename Data>
   void SendDeleteRequest(const PmidName& pmid_name, const typename Data::Name& data_name,
                          nfs::MessageId message_id);
+  template <typename Data>
+  void SendFalseDataNotification(const PmidName& pmid_node,
+                                 const typename Data::Name& data_name,
+                                 nfs::MessageId message_id);
 
   // =========================== Sync / AccountTransfer section ====================================
   void SendSync(const DataManager::Key& key, const std::string& serialised_sync);
@@ -326,6 +330,22 @@ void DataManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
                                               const typename Data::Name& data_name,
                                               nfs::MessageId message_id) {
   typedef DeleteRequestFromDataManagerToPmidManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+
+  VaultMessage vault_message(message_id, nfs_vault::DataName(data_name));
+  RoutingMessage message(vault_message.Serialise(),
+                         routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(pmid_node.value.string())));
+  routing_.Send(message);
+}
+
+template <typename Data>
+void DataManagerDispatcher::SendFalseDataNotification(const PmidName& pmid_node,
+                                                      const typename Data::Name& data_name,
+                                                      nfs::MessageId message_id) {
+  typedef IntegrityCheckRequestFromDataManagerToPmidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 

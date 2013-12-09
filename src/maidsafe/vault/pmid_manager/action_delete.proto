@@ -20,4 +20,5 @@ package maidsafe.vault.protobuf;
 
 message ActionPmidManagerDelete {
   required bool pmid_node_available = 1;
+  required bool data_failure = 2;
 }

@@ -320,6 +320,12 @@ void DoOperation(PmidManagerService* service,
 
 template <>
 void DoOperation(PmidManagerService* service,
+                 const IntegrityCheckRequestFromDataManagerToPmidManager& message,
+                 const IntegrityCheckRequestFromDataManagerToPmidManager::Sender& sender,
+                 const IntegrityCheckRequestFromDataManagerToPmidManager::Receiver& receiver);
+
+template <>
+void DoOperation(PmidManagerService* service,
                  const CreatePmidAccountRequestFromMaidManagerToPmidManager& message,
                  const CreatePmidAccountRequestFromMaidManagerToPmidManager::Sender& sender,
                  const CreatePmidAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);

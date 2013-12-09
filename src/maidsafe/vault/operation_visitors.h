@@ -483,6 +483,25 @@ class PmidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
+template<typename ServiceHandlerType>
+class PmidManagerFalseNotificationVisitor : public boost::static_visitor<> {
+ public:
+  PmidManagerFalseNotificationVisitor(ServiceHandlerType* service, const PmidName& pmid_name,
+                                      nfs::MessageId message_id)
+      : kService_(service), kPmidName_(pmid_name), kMessageId_(message_id) {}
+
+  template<typename Name>
+  void operator()(const Name& data_name) {
+    kService_->template HandleFalseNotification<typename Name::data_type>(
+        data_name, kPmidName_, kMessageId_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const PmidName kPmidName_;
+  const nfs::MessageId kMessageId_;
+};
+
 // ==================================== VersionHandler Visitors=====================================
 
 template <typename SourcePersonaType>

@@ -84,6 +84,10 @@ class PmidManagerService {
   void HandleHealthResponse(const PmidName& pmid_node, uint64_t available_size,
                             nfs::MessageId message_id);
 
+  template <typename Data>
+  void HandleFalseNotification(
+      const typename Data::Name& name, const PmidName& pmid_node, nfs::MessageId message_id); 
+
  private:
   PmidManagerService(const PmidManagerService&);
   PmidManagerService& operator=(const PmidManagerService&);
@@ -191,6 +195,12 @@ void PmidManagerService::HandleMessage(
     const typename CreatePmidAccountRequestFromMaidManagerToPmidManager::Sender& sender,
     const typename CreatePmidAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);
 
+template <>
+void PmidManagerService::HandleMessage(
+    const IntegrityCheckRequestFromDataManagerToPmidManager& message,
+    const typename IntegrityCheckRequestFromDataManagerToPmidManager::Sender& sender,
+    const typename IntegrityCheckRequestFromDataManagerToPmidManager::Receiver& receiver);
+
 template<>
 void PmidManagerService::HandleMessage(
     const SynchroniseFromPmidManagerToPmidManager& message,
@@ -268,7 +278,21 @@ void PmidManagerService::HandlePutFailure(
                 << error_code.what();
   dispatcher_.SendPutFailure<Data>(name, pmid_node, error_code, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), name.value, Data::Tag::kValue);
-  sync_deletes_.AddLocalAction(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(false),
+  sync_deletes_.AddLocalAction(PmidManager::UnresolvedDelete(group_key,
+                                                             ActionPmidManagerDelete(false, true),
+                                                             routing_.kNodeId()));
+  DoSync();
+}
+
+template <typename Data>
+void PmidManagerService::HandleFalseNotification(
+    const typename Data::Name& name, const PmidName& pmid_node, nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidManagerService::HandleFlaseNotification regarding pmid_node -- "
+                << HexSubstr(pmid_node.value.string())
+                << " , with message_id -- " << message_id.data;
+  PmidManager::Key group_key(PmidManager::GroupName(pmid_node), name.value, Data::Tag::kValue);
+  sync_deletes_.AddLocalAction(PmidManager::UnresolvedDelete(group_key,
+                                                             ActionPmidManagerDelete(true, true),
                                                              routing_.kNodeId()));
   DoSync();
 }
@@ -294,8 +318,9 @@ void PmidManagerService::HandleDelete(
   dispatcher_.SendDeleteRequest<Data>(pmid_name, data_name, message_id);
   PmidManager::Key group_key(typename PmidManager::GroupName(pmid_name),
                              data_name.value, Data::Tag::kValue);
-  sync_deletes_.AddLocalAction(
-      PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(true), routing_.kNodeId()));
+  sync_deletes_.AddLocalAction(PmidManager::UnresolvedDelete(group_key,
+                                                             ActionPmidManagerDelete(true, false),
+                                                             routing_.kNodeId()));
   DoSync();
 }
 
