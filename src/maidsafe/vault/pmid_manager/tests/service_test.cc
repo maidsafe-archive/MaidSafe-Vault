@@ -190,7 +190,7 @@ TEST_CASE_METHOD(PmidManagerServiceTest,
   }
 
   SECTION("Delete") {
-    ActionPmidManagerDelete action_delete(false);
+    ActionPmidManagerDelete action_delete(false, false);
     Commit(key, ActionPmidManagerPut(kTestChunkSize, nfs::MessageId(RandomInt32())));
     auto group_unresolved_action(
              CreateGroupUnresolvedAction<PmidManager::UnresolvedDelete>(key, action_delete,
