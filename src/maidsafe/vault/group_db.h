@@ -125,6 +125,9 @@ class GroupDb {
 template <>
 void GroupDb<PmidManager>::Commit(const PmidManager::GroupName& group_name,
                                   std::function<void(PmidManager::Metadata& metadata)> functor);
+template <>
+void GroupDb<PmidManager>::Commit(const Key& key,
+    std::function<detail::DbAction(Metadata& metadata, std::unique_ptr<Value>& value)> functor);
 // template <>
 // GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup(
 //     const GroupName& group_name);
@@ -199,6 +202,8 @@ void GroupDb<Persona>::DeleteGroup(const GroupName& group_name) {
 template <typename Persona>
 void GroupDb<Persona>::Commit(const GroupName& group_name,
                               std::function<void(Metadata& metadata)> functor) {
+  LOG(kVerbose) << "GroupDb<Persona>::Commit update metadata for account "
+                << HexSubstr(group_name->string());
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
   const auto it(FindOrCreateGroup(group_name));
@@ -210,6 +215,8 @@ template <typename Persona>
 void GroupDb<Persona>::Commit(
     const Key& key,
     std::function<detail::DbAction(Metadata& metadata, std::unique_ptr<Value>& value)> functor) {
+  LOG(kVerbose) << "GroupDb<Persona>::Commit update metadata and value for account "
+                << HexSubstr(key.group_name()->string());
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
   const auto it(FindOrCreateGroup(key.group_name()));

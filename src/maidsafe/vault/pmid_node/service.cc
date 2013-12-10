@@ -176,7 +176,7 @@ void PmidNodeService::HandleMessage(
     const PmidHealthRequestFromPmidManagerToPmidNode& message,
     const typename PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
     const typename PmidHealthRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "PmidNodeService::HandleMessage GetPmidHealthFromPmidManagerToPmidNode "
+  LOG(kVerbose) << "PmidNodeService::HandleMessage PmidHealthRequestFromPmidManagerToPmidNode "
                 << " from " << HexSubstr(sender.data.string());
   dispatcher_.SendHealthResponse(handler_.AvailableSpace(), message.id);
 }

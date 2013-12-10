@@ -421,6 +421,7 @@ void MaidManagerService::FinalisePmidRegistration(
 
 void MaidManagerService::HandleSyncedUpdatePmidHealth(
     std::unique_ptr<MaidManager::UnresolvedUpdatePmidHealth>&& synced_action_update_pmid_health) {
+  LOG(kVerbose) << "MaidManagerService::HandleSyncedUpdatePmidHealth";
   group_db_.Commit(synced_action_update_pmid_health->key.group_name(),
                    synced_action_update_pmid_health->action);
 }

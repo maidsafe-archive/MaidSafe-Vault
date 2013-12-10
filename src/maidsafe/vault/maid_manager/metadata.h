@@ -85,6 +85,9 @@ MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(const Data& data) cons
   for (const auto& pmid_total : pmid_totals_)
     total_claimed_available_size_by_pmids += pmid_total.pmid_metadata.claimed_available_size;
   auto cost(data.Serialise()->string().size());
+  LOG(kVerbose) << "MaidManagerMetadata::AllowPut data " << HexSubstr(data.name().value)
+                << " has size of " << cost << " trying to put into account provding "
+                << total_claimed_available_size_by_pmids << " total available_size by far";
   if (total_claimed_available_size_by_pmids < (static_cast<int64_t>(total_put_data_ + cost)))
     return Status::kNoSpace;
 
