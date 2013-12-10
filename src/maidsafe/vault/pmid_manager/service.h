@@ -86,7 +86,7 @@ class PmidManagerService {
 
   template <typename Data>
   void HandleFalseNotification(
-      const typename Data::Name& name, const PmidName& pmid_node, nfs::MessageId message_id); 
+      const typename Data::Name& name, const PmidName& pmid_node, nfs::MessageId message_id);
 
  private:
   PmidManagerService(const PmidManagerService&);
@@ -128,7 +128,8 @@ class PmidManagerService {
 
   void HandleSyncedPut(std::unique_ptr<PmidManager::UnresolvedPut>&& synced_action);
   void HandleSyncedDelete(std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action);
-  void HandleSyncedSetAvailableSize(std::unique_ptr<PmidManager::UnresolvedSetAvailableSize>&& synced_action);
+  void HandleSyncedSetPmidHealth(std::unique_ptr<PmidManager::UnresolvedSetPmidHealth>&& synced_action);
+  void HandleSyncedCreatePmidAccount(std::unique_ptr<PmidManager::UnresolvedCreateAccount>&& synced_action);
 
   void DoHandleHealthResponse(const PmidName& pmid_node,
       const MaidName& maid_node, const PmidManagerMetadata& pmid_health, nfs::MessageId message_id);
@@ -142,7 +143,8 @@ class PmidManagerService {
   routing::Timer<PmidManagerMetadata> get_health_timer_;
   Sync<PmidManager::UnresolvedPut> sync_puts_;
   Sync<PmidManager::UnresolvedDelete> sync_deletes_;
-  Sync<PmidManager::UnresolvedSetAvailableSize> sync_set_available_sizes_;
+  Sync<PmidManager::UnresolvedSetPmidHealth> sync_set_pmid_health_;
+  Sync<PmidManager::UnresolvedCreateAccount> sync_create_account_;
 };
 
 // ============================= Handle Message Specialisations ===================================

@@ -27,6 +27,7 @@
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/pmid_manager/action_put.h"
 #include "maidsafe/vault/pmid_manager/action_set_available_size.h"
+#include "maidsafe/vault/pmid_manager/action_create_account.h"
 #include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
@@ -38,8 +39,8 @@ struct ActionPmidManagerDelete;
 struct ActionPmidManagerCreateAccount;
 struct ActionGetPmidTotals;
 struct ActionPmidManagerSetAvailableSize;
-
 struct PmidManagerMetadata;
+struct ActionCreatePmidAccount;
 
 }  // namespace vault
 
@@ -57,7 +58,9 @@ struct PersonaTypes<Persona::kPmidManager> {
   typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerDelete> UnresolvedDelete;
   typedef vault::UnresolvedAction<Key, vault::ActionGetPmidTotals> UnresolvedGetPmidTotals;
   typedef vault::UnresolvedAction<
-              MetadataKey, vault::ActionPmidManagerSetAvailableSize> UnresolvedSetAvailableSize;
+              MetadataKey, vault::ActionPmidManagerSetAvailableSize> UnresolvedSetPmidHealth;
+  typedef vault::UnresolvedAction<MetadataKey, vault::ActionCreatePmidAccount>
+              UnresolvedCreateAccount;
 };
 
 }  // namespace nfs
