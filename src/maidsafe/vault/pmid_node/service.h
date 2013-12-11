@@ -306,6 +306,9 @@ void PmidNodeService::HandlePut(const Data& data, nfs::MessageId message_id) {
     handler_.Put(data);
   }
   catch (const maidsafe_error& error) {
+    LOG(kVerbose) << "PmidNodeService::HandlePut send put failure " << HexSubstr(data.name().value)
+                  << " with AvailableSpace " << handler_.AvailableSpace()
+                  << " and error " << error.what();
     dispatcher_.SendPutFailure<Data>(data.name(), handler_.AvailableSpace(), error, message_id);
   }
 }

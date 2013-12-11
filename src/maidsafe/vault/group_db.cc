@@ -74,9 +74,11 @@ void GroupDb<PmidManager>::Commit(
     }
 
     if (detail::DbAction::kPut == functor(it->second.second, value)) {
+      LOG(kInfo) << "putting into group_db";
       Put(std::make_pair(key, std::move(*value)), it->second.first);
     } else {
       assert(value);
+      LOG(kInfo) << "deleting from group_db";
       Delete(key, it->second.first);
     }
   } catch (const maidsafe_error& error) {

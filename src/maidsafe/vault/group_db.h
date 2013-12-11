@@ -414,7 +414,10 @@ typename GroupDb<Persona>::GroupMap::iterator GroupDb<Persona>::FindOrCreateGrou
 }
 
 template <typename Persona>
-void GroupDb<Persona>::UpdateGroup(typename GroupMap::iterator /*itr*/) {}  // Do Nothing
+void GroupDb<Persona>::UpdateGroup(typename GroupMap::iterator itr) {
+  LOG(kInfo) << "GroupDb<Persona>::UpdateGroup updating " << HexSubstr(itr->first->string())
+             << ". -- Do Nothing --";
+}  // Do Nothing
 
 }  // namespace vault
 

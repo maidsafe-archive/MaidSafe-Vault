@@ -300,7 +300,17 @@ void DataManagerService::HandleMessage(
       auto resolved_action(sync_remove_pmids_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit remove pmid to db";
-        db_.Commit(resolved_action->key, resolved_action->action);
+        // The PmidManager pass down the PutFailure from PmidNode immediately after received it
+        // This may cause the sync_remove_pmid got resolved before the sync_add_pmid
+        // In that case, the commit will raise an error of no_such_account
+        // BEFORE_RELEASE double check whether the "mute" solution is enough
+        //                as the pmid_node will get added eventually and may cause problem for get
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+        } catch(maidsafe_error& error) {
+          LOG(kWarning) << "having error when trying to commit remove pmid to db : "
+                        << error.what();
+        }
       }
       break;
     }
