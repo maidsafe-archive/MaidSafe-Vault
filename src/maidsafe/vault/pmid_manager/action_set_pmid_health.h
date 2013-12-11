@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_PMID_MANAGER_ACTION_SET_AVAILABLE_SIZE_H_
-#define MAIDSAFE_VAULT_PMID_MANAGER_ACTION_SET_AVAILABLE_SIZE_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_ACTION_SET_PMID_HEALTH_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_ACTION_SET_PMID_HEALTH_H_
 
 #include <string>
 
@@ -36,11 +36,11 @@ namespace maidsafe {
 
 namespace vault {
 
-struct ActionPmidManagerSetAvailableSize {
-  ActionPmidManagerSetAvailableSize(const int64_t& disk_available_size);
-  explicit ActionPmidManagerSetAvailableSize(const std::string& serialised_action);
-  ActionPmidManagerSetAvailableSize(const ActionPmidManagerSetAvailableSize& other);
-  ActionPmidManagerSetAvailableSize(ActionPmidManagerSetAvailableSize&& other);
+struct ActionPmidManagerSetPmidHealth {
+  ActionPmidManagerSetPmidHealth(const int64_t& disk_available_size);
+  explicit ActionPmidManagerSetPmidHealth(const std::string& serialised_action);
+  ActionPmidManagerSetPmidHealth(const ActionPmidManagerSetPmidHealth& other);
+  ActionPmidManagerSetPmidHealth(ActionPmidManagerSetPmidHealth&& other);
 
   void operator()(PmidManagerMetadata& metadata);
 
@@ -49,15 +49,15 @@ struct ActionPmidManagerSetAvailableSize {
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPmidHealthResponse;
 
  private:
-  ActionPmidManagerSetAvailableSize& operator=(ActionPmidManagerSetAvailableSize other);
+  ActionPmidManagerSetPmidHealth& operator=(ActionPmidManagerSetPmidHealth other);
 
   int64_t kDiskAvailableSize;
 };
 
-bool operator==(const ActionPmidManagerSetAvailableSize& lhs,
-                const ActionPmidManagerSetAvailableSize& rhs);
-bool operator!=(const ActionPmidManagerSetAvailableSize& lhs,
-                const ActionPmidManagerSetAvailableSize& rhs);
+bool operator==(const ActionPmidManagerSetPmidHealth& lhs,
+                const ActionPmidManagerSetPmidHealth& rhs);
+bool operator!=(const ActionPmidManagerSetPmidHealth& lhs,
+                const ActionPmidManagerSetPmidHealth& rhs);
 
 }  // namespace vault
 

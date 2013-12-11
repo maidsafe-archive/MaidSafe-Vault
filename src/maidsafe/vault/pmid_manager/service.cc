@@ -269,7 +269,7 @@ void PmidManagerService::HandleMessage(
       }
       break;
     }
-    case ActionPmidManagerSetAvailableSize::kActionId: {
+    case ActionPmidManagerSetPmidHealth::kActionId: {
       LOG(kVerbose) << "SynchroniseFromPmidManagerToPmidManager ActionPmidManagerSetAvailableSize";
       PmidManager::UnresolvedSetPmidHealth unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
@@ -329,7 +329,7 @@ void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_
     dispatcher_.SendPmidAccount(pmid_node, data_names,
                                 nfs_client::ReturnCode(CommonErrors::success));
     sync_set_pmid_health_.AddLocalAction(PmidManager::UnresolvedSetPmidHealth(
-        PmidManager::MetadataKey(pmid_node), ActionPmidManagerSetAvailableSize(available_size),
+        PmidManager::MetadataKey(pmid_node), ActionPmidManagerSetPmidHealth(available_size),
         routing_.kNodeId()));
     DoSync();
   } catch (const vault_error& error) {
@@ -385,7 +385,7 @@ void PmidManagerService::DoHandleHealthResponse(const PmidName& pmid_node,
     } else {
       sync_set_pmid_health_.AddLocalAction(PmidManager::UnresolvedSetPmidHealth(
           PmidManager::MetadataKey(pmid_node),
-          ActionPmidManagerSetAvailableSize(pmid_health.claimed_available_size),
+          ActionPmidManagerSetPmidHealth(pmid_health.claimed_available_size),
           routing_.kNodeId()));
       DoSync();
     }

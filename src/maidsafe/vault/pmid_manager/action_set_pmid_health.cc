@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/pmid_manager/action_set_available_size.h"
-#include "maidsafe/vault/pmid_manager/action_set_available_size.pb.h"
+#include "maidsafe/vault/pmid_manager/action_set_pmid_health.h"
+#include "maidsafe/vault/pmid_manager/action_set_pmid_health.pb.h"
 
 #include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/pmid_manager/metadata.h"
@@ -26,43 +26,43 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionPmidManagerSetAvailableSize::ActionPmidManagerSetAvailableSize(
+ActionPmidManagerSetPmidHealth::ActionPmidManagerSetPmidHealth(
     const int64_t& disk_available_size) : kDiskAvailableSize(disk_available_size) {}
 
-ActionPmidManagerSetAvailableSize::ActionPmidManagerSetAvailableSize(
+ActionPmidManagerSetPmidHealth::ActionPmidManagerSetPmidHealth(
     const std::string& serialised_action)
         : kDiskAvailableSize([&serialised_action]() {
-                               protobuf::ActionPmidManagerSetAvailableSize action_disk_size_proto;
+                               protobuf::ActionPmidManagerSetPmidHealth action_disk_size_proto;
                                if (!action_disk_size_proto.ParseFromString(serialised_action))
                                  ThrowError(CommonErrors::parsing_error);
                                return action_disk_size_proto.disk_available_size();
                              }()) {}
 
-ActionPmidManagerSetAvailableSize::ActionPmidManagerSetAvailableSize(
-    const ActionPmidManagerSetAvailableSize& other)
+ActionPmidManagerSetPmidHealth::ActionPmidManagerSetPmidHealth(
+    const ActionPmidManagerSetPmidHealth& other)
         : kDiskAvailableSize(other.kDiskAvailableSize) {}
 
-ActionPmidManagerSetAvailableSize::ActionPmidManagerSetAvailableSize(
-    ActionPmidManagerSetAvailableSize&& other)
+ActionPmidManagerSetPmidHealth::ActionPmidManagerSetPmidHealth(
+    ActionPmidManagerSetPmidHealth&& other)
         : kDiskAvailableSize(std::move(other.kDiskAvailableSize)) {}
 
-std::string ActionPmidManagerSetAvailableSize::Serialise() const {
-  protobuf::ActionPmidManagerSetAvailableSize action_disk_size_proto;
+std::string ActionPmidManagerSetPmidHealth::Serialise() const {
+  protobuf::ActionPmidManagerSetPmidHealth action_disk_size_proto;
   action_disk_size_proto.set_disk_available_size(kDiskAvailableSize);
   return action_disk_size_proto.SerializeAsString();
 }
 
-void ActionPmidManagerSetAvailableSize::operator()(PmidManagerMetadata& metadata) {
+void ActionPmidManagerSetPmidHealth::operator()(PmidManagerMetadata& metadata) {
   metadata.SetAvailableSize(kDiskAvailableSize);
 }
 
-bool operator==(const ActionPmidManagerSetAvailableSize& /*lhs*/,
-                const ActionPmidManagerSetAvailableSize& /*rhs*/) {
+bool operator==(const ActionPmidManagerSetPmidHealth& /*lhs*/,
+                const ActionPmidManagerSetPmidHealth& /*rhs*/) {
   return true;
 }
 
-bool operator!=(const ActionPmidManagerSetAvailableSize& lhs,
-                const ActionPmidManagerSetAvailableSize& rhs) {
+bool operator!=(const ActionPmidManagerSetPmidHealth& lhs,
+                const ActionPmidManagerSetPmidHealth& rhs) {
   return !operator==(lhs, rhs);
 }
 

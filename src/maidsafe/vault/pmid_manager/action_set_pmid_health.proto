@@ -18,6 +18,6 @@
 
 package maidsafe.vault.protobuf;
 
-message ActionPmidManagerSetAvailableSize {
+message ActionPmidManagerSetPmidHealth {
   required int64 disk_available_size = 1;
 }
