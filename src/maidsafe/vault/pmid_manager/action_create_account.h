@@ -16,12 +16,10 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_PMID_MANAGER_ACTION_SET_AVAILABLE_SIZE_H_
-#define MAIDSAFE_VAULT_PMID_MANAGER_ACTION_SET_AVAILABLE_SIZE_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_ACTION_CREATE_ACCOUNT_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_ACTION_CREATE_ACCOUNT_H_
 
 #include <string>
-
-#include "boost/optional/optional.hpp"
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
@@ -36,31 +34,28 @@ namespace maidsafe {
 
 namespace vault {
 
-struct ActionPmidManagerSetAvailableSize {
-  ActionPmidManagerSetAvailableSize(const int64_t& disk_available_size);
-  explicit ActionPmidManagerSetAvailableSize(const std::string& serialised_action);
-  ActionPmidManagerSetAvailableSize(const ActionPmidManagerSetAvailableSize& other);
-  ActionPmidManagerSetAvailableSize(ActionPmidManagerSetAvailableSize&& other);
-
-  void operator()(PmidManagerMetadata& metadata);
+struct ActionCreatePmidAccount {
+  ActionCreatePmidAccount();
+  explicit ActionCreatePmidAccount(const std::string& serialised_action);
+  ActionCreatePmidAccount(const ActionCreatePmidAccount& other);
+  ActionCreatePmidAccount(ActionCreatePmidAccount&& other);
 
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kCreateAccountRequest;
 
  private:
-  ActionPmidManagerSetAvailableSize& operator=(ActionPmidManagerSetAvailableSize other);
+  ActionCreatePmidAccount& operator=(ActionCreatePmidAccount other);
 
-  int64_t kDiskAvailableSize;
 };
 
-bool operator==(const ActionPmidManagerSetAvailableSize& lhs,
-                const ActionPmidManagerSetAvailableSize& rhs);
-bool operator!=(const ActionPmidManagerSetAvailableSize& lhs,
-                const ActionPmidManagerSetAvailableSize& rhs);
+bool operator==(const ActionCreatePmidAccount& lhs,
+                const ActionCreatePmidAccount& rhs);
+bool operator!=(const ActionCreatePmidAccount& lhs,
+                const ActionCreatePmidAccount& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_ACTION_SET_AVAILABLE_SIZE_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_ACTION_CREATE_ACCOUNT_H_
