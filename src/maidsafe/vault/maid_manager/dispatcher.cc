@@ -142,7 +142,7 @@ void MaidManagerDispatcher::SendCreatePmidAccountRequest(const passport::PublicM
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
 
-  VaultMessage vault_message(nfs_vault::DataName(pmid_name.name()->string()));
+  VaultMessage vault_message(nfs_vault::DataName(DataTagValue::kPmidValue, pmid_name.name().value));
   RoutingMessage message(vault_message.Serialise(),
                          GroupOrKeyHelper::GroupSender(routing_, account_name.name()),
                          VaultMessage::Receiver(NodeId(pmid_name.name()->string())));

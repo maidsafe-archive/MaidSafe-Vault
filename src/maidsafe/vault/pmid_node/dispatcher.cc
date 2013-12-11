@@ -50,6 +50,7 @@ void PmidNodeDispatcher::SendPmidAccountRequest(const DiskUsage& available_size)
 }
 
 void PmidNodeDispatcher::SendHealthResponse(const DiskUsage& available_size,
+                                            const NodeId& pmid_manager_node_id,
                                             nfs::MessageId message_id) {
   LOG(kVerbose) << "PmidNodeDispatcher::SendHealthResponse from pmid "
                 << HexSubstr(routing_.kNodeId().string()) << " . available_size : "
@@ -59,8 +60,8 @@ void PmidNodeDispatcher::SendHealthResponse(const DiskUsage& available_size,
   CheckSourcePersonaType<VaultMessage>();
   VaultMessage vault_message(message_id, nfs_vault::AvailableSize(available_size.data));
   RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing_.kNodeId()),
-                         VaultMessage::Receiver(routing_.kNodeId()));
+                         VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(routing::SingleId(pmid_manager_node_id)));
   routing_.Send(message);
 }
 

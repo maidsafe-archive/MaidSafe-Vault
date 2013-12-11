@@ -108,7 +108,7 @@ void MaidManagerMetadata::UnregisterPmid(const PmidName& pmid_name) {
 void MaidManagerMetadata::UpdatePmidTotals(const PmidManagerMetadata& pmid_metadata) {
   auto itr(Find(pmid_metadata.pmid_name));
   if (itr == std::end(pmid_totals_)) {
-    LOG(kError) << "MaidManagerMetadata::UpdatePmidTotals can't find record for"
+    LOG(kError) << "MaidManagerMetadata::UpdatePmidTotals can't find record for "
                 << HexSubstr(pmid_metadata.pmid_name->string());
     ThrowError(CommonErrors::no_such_element);
   }

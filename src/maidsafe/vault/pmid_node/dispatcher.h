@@ -52,7 +52,9 @@ class PmidNodeDispatcher {
                                   const NodeId& receiver,
                                   const maidsafe_error& error,
                                   nfs::MessageId message_id);
-  void SendHealthResponse(const DiskUsage& available_size, nfs::MessageId message_id);
+  void SendHealthResponse(const DiskUsage& available_size,
+                          const NodeId& pmid_manager_node_id,
+                          nfs::MessageId message_id);
 
  private:
   PmidNodeDispatcher();

@@ -294,6 +294,9 @@ void PmidNodeService::HandleGet(const typename Data::Name& data_name,
     // This case should be least frequent.
     LOG(kError) << "Failed to get data : " << DebugId(data_name.value) << " , "
                 << error.what();
+  } catch (const std::exception& e) {
+    LOG(kError) << "Failed to get data : " << DebugId(data_name.value) << " , "
+                << e.what();
   }
 }
 
