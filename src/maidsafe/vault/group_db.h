@@ -123,14 +123,9 @@ class GroupDb {
 };
 
 template <>
-void GroupDb<PmidManager>::Commit(const PmidManager::GroupName& group_name,
-                                  std::function<void(PmidManager::Metadata& metadata)> functor);
-template <>
-void GroupDb<PmidManager>::Commit(const Key& key,
-    std::function<detail::DbAction(Metadata& metadata, std::unique_ptr<Value>& value)> functor);
-// template <>
-// GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup(
-//     const GroupName& group_name);
+GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup(
+    const GroupName& group_name);
+
 template <>
 void GroupDb<PmidManager>::UpdateGroup(typename GroupMap::iterator itr);
 
