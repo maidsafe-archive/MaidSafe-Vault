@@ -273,20 +273,26 @@ DataChunkStorer::DataChunkStorer(const passport::detail::AnmaidToPmid& key_chain
                                  const std::vector<passport::PublicPmid>& public_pmids_from_file)
     : ClientTester(key_chain, peer_endpoints, public_pmids_from_file),
       run_(false), chunk_list_() {
+  LOG(kVerbose) << "loading pre-generated chunks from file when constructing chunk_storer ......";
   LoadChunksFromFiles();
 }
 
 void DataChunkStorer::StopTest() { run_ = false; }
 
 void DataChunkStorer::Test(int32_t quantity) {
+  LOG(kVerbose) << "testing ......";
   int32_t rounds(0);
   size_t num_chunks(0), num_store(0), num_get(0);
   while (!Done(quantity, rounds)) {
     OneChunkRun(num_chunks, num_store, num_get);
     ++rounds;
   }
-  if (num_chunks != num_get)
+  if (num_chunks != num_get) {
+    LOG(kError) << "Error during storing or getting chunk. num_chunks : " << num_chunks
+                << " num_stored : " << num_store << " num_get : " << num_get;
     ThrowError(CommonErrors::invalid_parameter);
+  }
+  boost::this_thread::sleep_for(boost::chrono::seconds(3));
 }
 
 void DataChunkStorer::TestWithDelete(int32_t quantity) {
@@ -323,27 +329,31 @@ bool DataChunkStorer::Done(int32_t quantity, int32_t rounds) const {
 void DataChunkStorer::OneChunkRun(size_t& num_chunks, size_t& num_store, size_t& num_get) {
   ImmutableData::serialised_type content(NonEmptyString(RandomString(1 << 18)));  // 256 KB
   ImmutableData::Name name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
+  std::cout << "Generated chunk name : " << HexSubstr(name.value) << " with content : "
+            << HexSubstr(content->string()) << std::endl;
   ImmutableData chunk_data(name, content);
   ++num_chunks;
 
   StoreOneChunk(chunk_data);
-  boost::this_thread::sleep_for(boost::chrono::seconds(5));
+  LOG(kInfo) << "Sleeping ... " << HexSubstr(name.value);
+  boost::this_thread::sleep_for(boost::chrono::seconds(10));
   if (GetOneChunk(chunk_data)) {
-    LOG(kInfo) << "Stored chunk " << HexSubstr(name.value);
+    std::cout << "Stored chunk " << HexSubstr(name.value) << std::endl;
     ++num_store;
+    ++num_get;
   } else {
     LOG(kError) << "Failed to store chunk " << HexSubstr(name.value);
     return;
   }
 
-  // The current client is anonymous, which incurs a 10 mins faded out for stored data
-  LOG(kInfo) << "Going to retrieve the stored chunk";
-  if (GetOneChunk(chunk_data)) {
-    LOG(kInfo) << "Got chunk " << HexSubstr(name.value);
-    ++num_get;
-  } else {
-    LOG(kError) << "Failed to store chunk " << HexSubstr(name.value);
-  }
+//  // The current client is anonymous, which incurs a 10 mins faded out for stored data
+//  LOG(kInfo) << "Going to retrieve the stored chunk";
+//  if (GetOneChunk(chunk_data)) {
+//    LOG(kInfo) << "Got chunk " << HexSubstr(name.value);
+//    ++num_get;
+//  } else {
+//    LOG(kError) << "Failed to store chunk " << HexSubstr(name.value);
+//  }
 }
 
 void DataChunkStorer::OneChunkRunWithDelete(size_t& num_chunks, size_t& num_store,
