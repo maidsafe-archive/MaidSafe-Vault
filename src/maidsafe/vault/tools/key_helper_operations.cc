@@ -167,8 +167,10 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
     auto status(future.wait_for(boost::chrono::seconds(10)));
     if (status == boost::future_status::timeout) {
       LOG(kError) << "can't create account";
-      ThrowError(VaultErrors::account_already_exists);
+      ThrowError(VaultErrors::failed_to_handle_request);
     }
+    std::cout << "Account created for maid " << HexSubstr(public_maid.name()->string())
+              << std::endl;
   }
   {
     client_nfs_->RegisterPmid(nfs_vault::PmidRegistration(key_chain.maid, key_chain.pmid, false));
@@ -177,10 +179,10 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
     auto status(future.wait_for(boost::chrono::seconds(10)));
     if (status == boost::future_status::timeout) {
       LOG(kError) << "can't fetch pmid health";
-      ThrowError(VaultErrors::permission_denied);
+      ThrowError(VaultErrors::failed_to_handle_request);
     }
-    LOG(kInfo) << "The fetched PmidHealth for pmid_name " << HexSubstr(pmid_name.value.string())
-               << " is " << future.get();
+    std::cout << "The fetched PmidHealth for pmid_name " << HexSubstr(pmid_name.value.string())
+               << " is " << future.get() << std::endl;
   }
   LOG(kInfo) << "Started up client node to store chunks";
 }
@@ -403,7 +405,11 @@ void DataChunkStorer::StoreOneChunk(const ImmutableData& chunk_data) {
 bool DataChunkStorer::GetOneChunk(const ImmutableData& chunk_data) {
   auto future = client_nfs_->Get(chunk_data.name());
   auto status(future.wait_for(boost::chrono::seconds(30)));
-  return status == boost::future_status::timeout && chunk_data.data() == future.get().data();
+  if (status == boost::future_status::timeout) {
+    LOG(kWarning) << "Failed when trying to get chunk " << HexSubstr(chunk_data.name().value);
+    return false;
+  }
+  return chunk_data.data() == future.get().data();
 }
 
 bool DataChunkStorer::DeleteOneChunk(const ImmutableData& chunk_data) {
@@ -638,3 +644,4 @@ void DataChunkStorer::LoadChunksFromFiles() {
 }  // namespace vault
 
 }  // namespace maidsafe
+
