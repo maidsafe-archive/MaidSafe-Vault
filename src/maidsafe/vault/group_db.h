@@ -106,6 +106,7 @@ class GroupDb {
 
   void DeleteGroupEntries(const GroupName& group_name);
   void DeleteGroupEntries(typename GroupMap::iterator itr);
+  Contents GetContents(typename GroupMap::iterator it);
   Value Get(const Key& key, const GroupId& group_id);
   void Put(const KvPair& key_value_pair, const GroupId& group_id);
   void Delete(const Key& key, const GroupId& group_id);
@@ -236,6 +237,11 @@ template <typename Persona>
 typename GroupDb<Persona>::Contents GroupDb<Persona>::GetContents(const GroupName& group_name) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto it(FindGroup(group_name));
+  return GetContents(it);
+}
+
+template <typename Persona>
+typename GroupDb<Persona>::Contents GroupDb<Persona>::GetContents(typename GroupMap::iterator it) {
   Contents contents;
   contents.group_name = it->first;
   contents.metadata = it->second.second;
