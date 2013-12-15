@@ -28,11 +28,10 @@ namespace maidsafe {
 
 namespace vault {
 
-DataManagerKey::DataManagerKey()
-    : name(), type(), originator() {}
+DataManagerKey::DataManagerKey() : name(), type(), originator() {}
 
 DataManagerKey::DataManagerKey(const std::string& serialised_key)
-    : name(), type(DataTagValue::kOwnerDirectoryValue), originator() {
+    : name(), type(DataTagValue::kMutableDataValue), originator() {
   protobuf::DataManagerKey key_proto;
   if (!key_proto.ParseFromString(serialised_key))
     ThrowError(CommonErrors::parsing_error);
