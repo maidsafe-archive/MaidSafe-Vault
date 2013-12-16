@@ -695,6 +695,7 @@ void DataManagerService::DeletePmidNodeAsHolder(const PmidName pmid_node,
 template <typename Data>
 void DataManagerService::HandleDelete(const typename Data::Name& data_name,
                                       nfs::MessageId /*message_id*/) {
+  LOG(kVerbose) << "DataManagerService::HandleDelete " << HexSubstr(data_name.value);
   typename DataManager::Key key(data_name.value, Data::Name::data_type::Tag::kValue);
   sync_deletes_.AddLocalAction(DataManager::UnresolvedDelete(key, ActionDataManagerDelete(),
                                                              routing_.kNodeId()));

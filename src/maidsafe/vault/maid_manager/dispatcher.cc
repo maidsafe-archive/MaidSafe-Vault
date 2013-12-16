@@ -34,7 +34,9 @@ void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
   typedef DeleteRequestFromMaidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
-
+  LOG(kVerbose) << "MaidManagerDispatcher::SendDeleteRequest for account "
+                << HexSubstr(account_name->string()) << " of chunk "
+                << HexSubstr(data_name.raw_name.string());
   VaultMessage vault_message(message_id, data_name);
   RoutingMessage message(vault_message.Serialise(),
                          GroupOrKeyHelper::GroupSender(routing_, account_name),

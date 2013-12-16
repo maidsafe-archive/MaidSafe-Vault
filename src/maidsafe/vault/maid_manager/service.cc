@@ -429,15 +429,20 @@ void MaidManagerService::HandleSyncedUpdatePmidHealth(
 // =============== Put/Delete data =================================================================
 void MaidManagerService::HandleSyncedPutResponse(
     std::unique_ptr<MaidManager::UnresolvedPut>&& synced_action_put) {
+  // BEFORE_RELEASE difference process for account_transfer (avoiding double hash)
+  ObfuscateKey(synced_action_put->key);
   group_db_.Commit(synced_action_put->key, synced_action_put->action);
 }
 
 void MaidManagerService::HandleSyncedDelete(
     std::unique_ptr<MaidManager::UnresolvedDelete>&& synced_action_delete) {
+  // BEFORE_RELEASE difference process for account_transfer (avoiding double hash)
+  nfs_vault::DataName data_name(synced_action_delete->key.type,
+                                synced_action_delete->key.name);
+  ObfuscateKey(synced_action_delete->key);
   group_db_.Commit(synced_action_delete->key, synced_action_delete->action);
   dispatcher_.SendDeleteRequest(synced_action_delete->key.group_name(),
-                                nfs_vault::DataName(synced_action_delete->key.type,
-                                                    synced_action_delete->key.name),
+                                data_name,
                                 synced_action_delete->action.kMessageId);
 }
 

@@ -273,7 +273,12 @@ void DataManagerService::HandleMessage(
                                                       sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete "
+                   << "resolved for chunk " << HexSubstr(resolved_action->key.name.string());
         auto value(db_.Commit(resolved_action->key, resolved_action->action));
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete "
+                   << "the chunk " << HexSubstr(resolved_action->key.name.string())
+                   << " has " << value->Subscribers() << " Subscribers";
         assert(value->Subscribers() >= 0);
         if (value->Subscribers() == 0) {
           LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";

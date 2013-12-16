@@ -184,6 +184,8 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
     std::cout << "The fetched PmidHealth for pmid_name " << HexSubstr(pmid_name.value.string())
                << " is " << future.get() << std::endl;
   }
+  // waiting for the GetPmidHealth updating corresponding accounts
+  boost::this_thread::sleep_for(boost::chrono::seconds(5));
   LOG(kInfo) << "Started up client node to store chunks";
 }
 
@@ -304,8 +306,11 @@ void DataChunkStorer::TestWithDelete(int32_t quantity) {
     OneChunkRunWithDelete(num_chunks, num_store, num_get);
     ++rounds;
   }
-  if (num_chunks != num_get)
+  if (num_chunks != num_get) {
+    LOG(kError) << "Error during storing or getting chunk. num_chunks : " << num_chunks
+                << " num_stored : " << num_store << " num_get : " << num_get;
     ThrowError(CommonErrors::invalid_parameter);
+  }
 }
 
 void DataChunkStorer::TestStoreChunk(int chunk_index) {
@@ -337,8 +342,8 @@ void DataChunkStorer::OneChunkRun(size_t& num_chunks, size_t& num_store, size_t&
   ++num_chunks;
 
   StoreOneChunk(chunk_data);
-  LOG(kInfo) << "Sleeping ... " << HexSubstr(name.value);
-  boost::this_thread::sleep_for(boost::chrono::seconds(10));
+  LOG(kInfo) << "Sleeping for network handling storing ... " << HexSubstr(name.value);
+  boost::this_thread::sleep_for(boost::chrono::seconds(5));
   if (GetOneChunk(chunk_data)) {
     std::cout << "Stored chunk " << HexSubstr(name.value) << std::endl;
     ++num_store;
@@ -362,39 +367,30 @@ void DataChunkStorer::OneChunkRunWithDelete(size_t& num_chunks, size_t& num_stor
                                             size_t& num_get) {
   ImmutableData::serialised_type content(NonEmptyString(RandomString(1 << 18)));  // 256 KB
   ImmutableData::Name name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
+  std::cout << "Generated chunk name : " << HexSubstr(name.value) << " with content : "
+            << HexSubstr(content->string()) << std::endl;
   ImmutableData chunk_data(name, content);
   ++num_chunks;
 
   StoreOneChunk(chunk_data);
+  LOG(kInfo) << "Sleeping for network handling storing ... " << HexSubstr(name.value);
+  boost::this_thread::sleep_for(boost::chrono::seconds(5));
   if (GetOneChunk(chunk_data)) {
-    LOG(kInfo) << "Stored chunk " << HexSubstr(name.value);
+    std::cout << "Stored chunk " << HexSubstr(name.value) << std::endl;
     ++num_store;
+    ++num_get;
   } else {
     LOG(kError) << "Failed to store chunk " << HexSubstr(name.value);
     return;
   }
-
-  // The current client is anonymous, which incurs a 10 mins faded out for stored data
-  LOG(kInfo) << "Going to retrieve the stored chunk";
-  if (GetOneChunk(chunk_data)) {
-    LOG(kInfo) << "Got chunk " << HexSubstr(name.value);
-    ++num_get;
-  } else {
-    LOG(kError) << "Failed to get chunk " << HexSubstr(name.value);
-  }
-
+  LOG(kInfo) << "Sleeping for network finalise getting ... " << HexSubstr(name.value);
+  boost::this_thread::sleep_for(boost::chrono::seconds(5));
   LOG(kInfo) << "Going to delete the stored chunk";
   if (DeleteOneChunk(chunk_data)) {
-    LOG(kInfo) << "Delete chunk " << HexSubstr(name.value);
+    std::cout << "Delete chunk " << HexSubstr(name.value) << std::endl;
   } else {
     LOG(kError) << "Failed to delete chunk " << HexSubstr(name.value);
-  }
-
-  LOG(kInfo) << "Going to retrieve the deleted chunk";
-  if (GetOneChunk(chunk_data)) {
-    LOG(kError) << "Chunk " << HexSubstr(name.value) << " still exists on network";
-  } else {
-    LOG(kInfo) << "chunk " << HexSubstr(name.value) << " get deleted, disappear on network";
+    ThrowError(VaultErrors::failed_to_handle_request);
   }
 }
 
@@ -404,17 +400,27 @@ void DataChunkStorer::StoreOneChunk(const ImmutableData& chunk_data) {
 
 bool DataChunkStorer::GetOneChunk(const ImmutableData& chunk_data) {
   auto future = client_nfs_->Get(chunk_data.name());
-  auto status(future.wait_for(boost::chrono::seconds(30)));
+  auto status(future.wait_for(boost::chrono::seconds(15)));
   if (status == boost::future_status::timeout) {
     LOG(kWarning) << "Failed when trying to get chunk " << HexSubstr(chunk_data.name().value);
     return false;
   }
-  return chunk_data.data() == future.get().data();
+  LOG(kVerbose) << "Compare fetched data";
+  bool result(false);
+  try {
+    result = chunk_data.data() == future.get().data();
+  } catch (const maidsafe_error& error) {
+    LOG(kError) << "Encounter error when getting chunk : " << error.what();
+  }
+  return result;
 }
 
 bool DataChunkStorer::DeleteOneChunk(const ImmutableData& chunk_data) {
-  LOG(kInfo) << "Deleting chunk " << HexSubstr(chunk_data.data()) << " ...";
+  LOG(kInfo) << "Deleting chunk " << HexSubstr(chunk_data.name().value) << " ...";
   client_nfs_->Delete(chunk_data.name());
+  LOG(kInfo) << "Sleeping for network handling deleting ... " << HexSubstr(chunk_data.name().value);
+  boost::this_thread::sleep_for(boost::chrono::seconds(5));
+  LOG(kInfo) << "Going to retrieve the deleted chunk";
   return !GetOneChunk(chunk_data);
 }
 

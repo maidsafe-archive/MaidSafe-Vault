@@ -107,7 +107,7 @@ std::unique_ptr<Value> Db<Key, Value>::Commit(const Key& key,
   std::unique_ptr<Value> value;
   try {
     value.reset(new Value(Get(key)));
-  } catch (const vault_error& error) {
+  } catch (const maidsafe_error& error) {
     if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
       LOG(kError) << "Db<Key, Value>::Commit unknown db error " << error.what();
       throw error;  // For db errors

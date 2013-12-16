@@ -212,6 +212,10 @@ class MaidManagerService {
   typedef boost::make_variant_over<FinalType>::type Messages;
 
  private:
+  void ObfuscateKey(MaidManager::Key& key) {
+    // Hash the data name to obfuscate the list of chunks associated with the client.
+    key.name = Identity(crypto::Hash<crypto::SHA512>(key.name));
+  }
 
   struct MaidAccountCreationStatus {
     MaidAccountCreationStatus(passport::PublicMaid::Name maid_name_in,
@@ -386,12 +390,6 @@ struct can_create_account<passport::PublicMaid> : public std::true_type {};
 // template<>
 // int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&);
 
-template<typename DataNameType>
-DataNameType GetObfuscatedDataName(const DataNameType& data_name) {
-  // Hash the data name to obfuscate the list of chunks associated with the client.
-  return DataNameType(crypto::Hash<crypto::SHA512>(data_name.value));
-}
-
 template <typename MaidManagerSyncType>
 void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
                                   MaidManagerSyncType& sync_type) {
@@ -444,7 +442,7 @@ void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
                 << " for data name " << HexSubstr(data_name.value)
                 << " taking cost of " << cost;
   typename MaidManager::Key group_key(typename MaidManager::GroupName(maid_name.value),
-                                      detail::GetObfuscatedDataName(data_name), Data::Tag::kValue);
+                                      data_name, Data::Tag::kValue);
   sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(
       group_key, ActionMaidManagerPut(cost), routing_.kNodeId()));
   DoSync();
@@ -490,10 +488,11 @@ void MaidManagerService::HandleDelete(const MaidName& account_name,
                                       nfs::MessageId message_id) {
   // Only need to ensure that account exist in db. Data name availability in db is not guaranteed
   // because related put data action may be still syncing
+  LOG(kVerbose) << "MaidManagerService::HandleDelete for account " << HexSubstr(account_name->string())
+                << " of chunk " << HexSubstr(data_name.value);
   group_db_.GetMetadata(account_name);  // throws
   typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
-                                      detail::GetObfuscatedDataName(data_name),
-                                      Data::Tag::kValue);
+                                      data_name, Data::Tag::kValue);
   sync_deletes_.AddLocalAction(typename MaidManager::UnresolvedDelete(
                                    group_key, ActionMaidManagerDelete(message_id),
                                    routing_.kNodeId()));

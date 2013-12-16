@@ -307,12 +307,14 @@ void PmidNodeService::HandlePut(const Data& data, nfs::MessageId message_id) {
     LOG(kVerbose) << "PmidNodeService::HandlePut put " << HexSubstr(data.name().value)
                   << " with message_id " << message_id.data;
     handler_.Put(data);
-  }
-  catch (const maidsafe_error& error) {
-    LOG(kVerbose) << "PmidNodeService::HandlePut send put failure " << HexSubstr(data.name().value)
+  } catch (const maidsafe_error& error) {
+    LOG(kWarning) << "PmidNodeService::HandlePut send put failure " << HexSubstr(data.name().value)
                   << " with AvailableSpace " << handler_.AvailableSpace()
                   << " and error " << error.what();
     dispatcher_.SendPutFailure<Data>(data.name(), handler_.AvailableSpace(), error, message_id);
+  } catch (const std::exception& e) {
+    LOG(kError) << "Failed to put data : " << HexSubstr(data.name().value) << " , "
+                << e.what();
   }
 }
 
@@ -321,9 +323,13 @@ void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
   try {
     LOG(kVerbose) << "PmidNodeService::HandleDelete delete " << HexSubstr(data_name.value);
     handler_.Delete(GetDataNameVariant(Data::Tag::kValue, data_name.value));
-  }
-  catch (const maidsafe_error& /*error*/) {
-  }
+  } catch (const maidsafe_error& error) {
+    LOG(kError) << "Failed to delete data : " << HexSubstr(data_name.value) << " , "
+                << error.what();
+  } catch (const std::exception& e) {
+    LOG(kError) << "Failed to delete data : " << HexSubstr(data_name.value) << " , "
+                << e.what();
+  } 
 }
 
 template <typename Data>

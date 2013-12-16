@@ -25,57 +25,14 @@ namespace vault {
 template <>
 GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup(
     const GroupName& group_name) {
+  LOG(kVerbose) << "GroupDb<PmidManager>::FindOrCreateGroup " << HexSubstr(group_name->string());
   try {
     return FindGroup(group_name);
-  } catch (const vault_error& error) {
+  } catch (const maidsafe_error& error) {
     LOG(kInfo) << "Account doesn't exist for group "
                << HexSubstr(group_name->string()) << ", error : " << error.what()
                << ". -- Creating Account --";
     return AddGroupToMap(group_name, Metadata(group_name));
-  }
-}
-
-template <>
-void GroupDb<PmidManager>::Commit(
-    const Key& key,
-    std::function<detail::DbAction(Metadata& metadata, std::unique_ptr<Value>& value)> functor) {
-  LOG(kVerbose) << "GroupDb<PmidManager>::Commit update metadata and value for account "
-                << HexSubstr(key.group_name()->string());
-  assert(functor);
-  std::lock_guard<std::mutex> lock(mutex_);
-  try {
-    const auto it(FindGroup(key.group_name()));
-    on_scope_exit update_group([it, this]() { UpdateGroup(it); });
-    std::unique_ptr<Value> value;
-    try {
-      value.reset(new Value(Get(key, it->second.first)));
-    } catch (const common_error& error) {
-      if (error.code().value() != static_cast<int>(CommonErrors::no_such_element)) {
-        LOG(kError) << "error when trying to get value, error code is " << error.what();
-        throw error;  // throw only for db errors
-      }
-    }
-
-    if (detail::DbAction::kPut == functor(it->second.second, value)) {
-      LOG(kInfo) << "putting into group_db";
-      Put(std::make_pair(key, std::move(*value)), it->second.first);
-    } else {
-      assert(value);
-      LOG(kInfo) << "deleting from group_db";
-      Delete(key, it->second.first);
-    }
-  } catch (const maidsafe_error& error) {
-    LOG(kInfo) << "Account doesn't exist for group "
-               << HexSubstr(key.group_name()->string()) << ", error : " << error.what()
-               << ". -- Creating Account --";
-    if (error.code() == VaultErrors::no_such_account) {
-      Metadata temp(key.group_name());
-      std::unique_ptr<Value> value;
-      functor(temp, value);
-      AddGroupToMap(key.group_name(), temp);
-    } else {
-      throw error;
-    }
   }
 }
 
@@ -95,6 +52,7 @@ void GroupDb<PmidManager>::Commit(
 // Deletes group if no further entry left in group
 template <>
 void GroupDb<PmidManager>::UpdateGroup(typename GroupMap::iterator it) {
+  LOG(kVerbose) << "GroupDb<PmidManager>::UpdateGroup " << HexSubstr(it->first->string());
   if (it->second.second.GroupStatus() == detail::GroupDbMetaDataStatus::kGroupEmpty) {
     LOG(kInfo) << "Account empty for group " << HexSubstr(it->first->string())
                << ". -- Deleteing Account --";

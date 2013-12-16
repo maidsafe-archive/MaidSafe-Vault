@@ -219,16 +219,21 @@ void GroupDb<Persona>::Commit(
   std::unique_ptr<Value> value;
   try {
     value.reset(new Value(Get(key, it->second.first)));
-  } catch (const common_error& error) {
+  } catch (const maidsafe_error& error) {
+    LOG(kError) << "GroupDb<Persona>::Commit encountered error " << error.what();
     if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
       throw error;  // throw only for db errors
   }
 
   if (detail::DbAction::kPut == functor(it->second.second, value)) {
+    LOG(kInfo) << "detail::DbAction::kPut";
     Put(std::make_pair(key, std::move(*value)), it->second.first);
   } else {
-    assert(value);
-    Delete(key, it->second.first);
+    LOG(kInfo) << "detail::DbAction::kDelete";
+    if (value)
+      Delete(key, it->second.first);
+    else
+      LOG(kError) << "value is not initialised";
   }
 }
 
@@ -351,8 +356,10 @@ typename GroupDb<Persona>::Value GroupDb<Persona>::Get(const Key& key, const Gro
     assert(!value_string.empty());
     return Value(value_string);
   } else if (status.IsNotFound()) {
+    LOG(kWarning) << "cann't find such element for get, throwing error";
     ThrowError(CommonErrors::no_such_element);
   }
+  LOG(kError) << "unknown error";
   ThrowError(VaultErrors::failed_to_handle_request);
   return Value();
 }
@@ -405,6 +412,7 @@ typename GroupDb<Persona>::GroupMap::iterator GroupDb<Persona>::FindGroup(
 template <typename Persona>
 typename GroupDb<Persona>::GroupMap::iterator GroupDb<Persona>::FindOrCreateGroup(
     const GroupName& group_name) {
+  LOG(kInfo) << "GroupDb<Persona>::FindOrCreateGroup generic -- Don't Do Creation --";
   return FindGroup(group_name);
 }
 
