@@ -350,6 +350,14 @@ TEST(GroupDbTest, FUNC_PmidManagerGroupDb) {
 
 }
 
+TEST(GroupDbTest, BEH_TransferInfo) {
+  GroupDb<MaidManager> maid_group_db;
+  GroupDb<PmidManager> pmid_group_db;
+  std::shared_ptr<routing::MatrixChange> matrix_change;
+  maid_group_db.GetTransferInfo(matrix_change);
+  pmid_group_db.GetTransferInfo(matrix_change);
+}
+
 }  // test
 
 }  // namespace vault

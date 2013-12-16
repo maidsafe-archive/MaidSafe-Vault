@@ -107,6 +107,7 @@ class GroupDb {
   void DeleteGroupEntries(const GroupName& group_name);
   void DeleteGroupEntries(typename GroupMap::iterator itr);
   Contents GetContents(typename GroupMap::iterator it);
+  void ApplyTransfer(const Contents& /*contents*/);
   Value Get(const Key& key, const GroupId& group_id);
   void Put(const KvPair& key_value_pair, const GroupId& group_id);
   void Delete(const Key& key, const GroupId& group_id);
@@ -258,28 +259,28 @@ typename GroupDb<Persona>::Contents GroupDb<Persona>::GetContents(typename Group
   return contents;
 }
 
-
-// FIXME (Prakash)
 template <typename Persona>
 typename GroupDb<Persona>::TransferInfo GroupDb<Persona>::GetTransferInfo(
     std::shared_ptr<routing::MatrixChange> matrix_change) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<GroupName> prune_vector;
   TransferInfo transfer_info;
-  for (const auto& group : group_map_) {
-    auto check_holder_result = matrix_change->CheckHolders(NodeId(group.first->string()));
+  for (auto group_itr(group_map_.begin()); group_itr != group_map_.end(); ++group_itr) {
+    auto check_holder_result = matrix_change->CheckHolders(NodeId(group_itr->first->string()));
     if (check_holder_result.proximity_status != routing::GroupRangeStatus::kInRange) {
       if (check_holder_result.new_holders.size() != 0) {
         assert(check_holder_result.new_holders.size() == 1);
         auto found_itr = transfer_info.find(check_holder_result.new_holders.at(0));
-        if (found_itr != transfer_info.end()) {
-          // Add to map
-        } else {  // create contents
-                  // Add to map
+        if (found_itr != transfer_info.end()) {  // Add to map
+          found_itr->second.push_back(GetContents(group_itr));
+        } else {  // create contents add to map
+          std::vector<Contents>  contents_vector;
+          contents_vector.push_back(std::move(GetContents(group_itr)));
+          transfer_info[check_holder_result.new_holders.at(0)] = std::move(contents_vector);
         }
       }
     } else {  // Prune group
-      prune_vector.push_back(group);
+      prune_vector.push_back(group_itr->first);
     }
   }
 
@@ -289,12 +290,20 @@ typename GroupDb<Persona>::TransferInfo GroupDb<Persona>::GetTransferInfo(
 }
 
 // FIXME (Prakash)
-// Ignores values which are already in db
 template <typename Persona>
-void GroupDb<Persona>::HandleTransfer(const std::vector<Contents>& contents) {
+void GroupDb<Persona>::HandleTransfer(const std::vector<Contents>& contents_vector) {
   std::lock_guard<std::mutex> lock(mutex_);
-  for (const auto& kv_pair : contents) {
+  for (const auto& contents : contents_vector) {
+    ApplyTransfer(contents);
   }
+}
+
+// Ignores values which are already in db ?
+// Need discussion related to pmid account creation case. Pmid account will be created on
+// put action. This means a valid account transfer will be ignored.
+template <typename Persona>
+void GroupDb<Persona>::ApplyTransfer(const Contents& /*contents*/) {
+
 }
 
 template <typename Persona>
