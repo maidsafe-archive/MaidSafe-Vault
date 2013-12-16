@@ -171,14 +171,14 @@ void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
   maid_group_db.AddGroup(maid_name, metadata);
   EXPECT_TRUE(maid_group_db.GetMetadata(maid_name) == metadata);
   EXPECT_THROW(maid_group_db.AddGroup(maid_name, metadata), maidsafe_error);
-  EXPECT_TRUE(maid_group_db.GetContents(maid_name).kv_pair.size() == 0U);
+  EXPECT_TRUE(maid_group_db.GetContents(maid_name).kv_pairs.size() == 0U);
   maid_group_db.DeleteGroup(maid_name);
   EXPECT_THROW(maid_group_db.GetMetadata(maid_name), maidsafe_error);
 
   maid_group_db.AddGroup(maid_name, metadata);
   EXPECT_TRUE(maid_group_db.GetMetadata(maid_name) == metadata);
   EXPECT_THROW(maid_group_db.AddGroup(maid_name, metadata), maidsafe_error);
-  EXPECT_TRUE(maid_group_db.GetContents(maid_name).kv_pair.size() == 0U);
+  EXPECT_TRUE(maid_group_db.GetContents(maid_name).kv_pairs.size() == 0U);
 
   GroupKey<MaidName> unknown_key(MaidName(Identity(NodeId(NodeId::kRandomId).string())),
                                  Identity(NodeId(NodeId::kRandomId).string()),
@@ -196,7 +196,7 @@ void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
   maid_group_db.Commit(key, TestGroupDbActionPutValue());
   EXPECT_TRUE(maid_group_db.GetMetadata(maid_name) == expected_metadata);
   EXPECT_TRUE(maid_group_db.GetValue(key) == expected_value);
-  EXPECT_TRUE((maid_group_db.GetContents(maid_name)).kv_pair.size() == 1U);
+  EXPECT_TRUE((maid_group_db.GetContents(maid_name)).kv_pairs.size() == 1U);
 
   // Modify and delete
   expected_metadata.PutData(100);
@@ -204,12 +204,12 @@ void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
   maid_group_db.Commit(key, TestGroupDbActionModifyValue());
   EXPECT_TRUE(maid_group_db.GetMetadata(maid_name) == expected_metadata);
   EXPECT_TRUE(maid_group_db.GetValue(key) == expected_value);
-  EXPECT_TRUE((maid_group_db.GetContents(maid_name)).kv_pair.size() == 1U);
+  EXPECT_TRUE((maid_group_db.GetContents(maid_name)).kv_pairs.size() == 1U);
   expected_metadata.DeleteData(expected_value.Delete());
   maid_group_db.Commit(key, TestGroupDbActionDeleteValue());
   EXPECT_TRUE(maid_group_db.GetMetadata(maid_name) == expected_metadata);
   EXPECT_TRUE(maid_group_db.GetValue(key) == expected_value);
-  EXPECT_TRUE((maid_group_db.GetContents(maid_name)).kv_pair.size() == 1U);
+  EXPECT_TRUE((maid_group_db.GetContents(maid_name)).kv_pairs.size() == 1U);
 
   // Put many
   std::vector<GroupKey<MaidName>> key_vector;
@@ -229,12 +229,12 @@ void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
 
   auto contents(maid_group_db.GetContents(maid_name));
   for (const auto& key_n: key_vector) {
-    auto itr = std::find_if(contents.kv_pair.begin(),
-                             contents.kv_pair.end(),
+    auto itr = std::find_if(contents.kv_pairs.begin(),
+                             contents.kv_pairs.end(),
                              [&key_n](const GroupDb<MaidManager>::KvPair& kv_pair) {
                                  return (kv_pair.first == key_n);
                               });
-    EXPECT_TRUE(itr != contents.kv_pair.end());
+    EXPECT_TRUE(itr != contents.kv_pairs.end());
   }
 
   // Delete
@@ -261,13 +261,13 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
   pmid_group_db.AddGroup(pmid_name, metadata);
   EXPECT_TRUE(pmid_group_db.GetMetadata(pmid_name) == metadata);
   EXPECT_THROW(pmid_group_db.AddGroup(pmid_name, metadata), maidsafe_error);
-  EXPECT_TRUE(pmid_group_db.GetContents(pmid_name).kv_pair.size() == 0U);
+  EXPECT_TRUE(pmid_group_db.GetContents(pmid_name).kv_pairs.size() == 0U);
   pmid_group_db.DeleteGroup(pmid_name);
   EXPECT_THROW(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
   pmid_group_db.AddGroup(pmid_name, metadata);
   EXPECT_TRUE(pmid_group_db.GetMetadata(pmid_name) == metadata);
   EXPECT_THROW(pmid_group_db.AddGroup(pmid_name, metadata), maidsafe_error);
-  EXPECT_TRUE(pmid_group_db.GetContents(pmid_name).kv_pair.size() == 0U);
+  EXPECT_TRUE(pmid_group_db.GetContents(pmid_name).kv_pairs.size() == 0U);
   GroupKey<PmidName> unknown_key(PmidName(Identity(NodeId(NodeId::kRandomId).string())),
                                  Identity(NodeId(NodeId::kRandomId).string()),
                                  DataTagValue::kPmidValue);
@@ -283,7 +283,7 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
   pmid_group_db.Commit(key, TestPmidGroupDbActionPutValue());
   EXPECT_TRUE(pmid_group_db.GetMetadata(pmid_name) == expected_metadata);
   EXPECT_TRUE(pmid_group_db.GetValue(key) == expected_value);
-  EXPECT_TRUE((pmid_group_db.GetContents(pmid_name)).kv_pair.size() == 1U);
+  EXPECT_TRUE((pmid_group_db.GetContents(pmid_name)).kv_pairs.size() == 1U);
 
   // Put many
   std::vector<GroupKey<PmidName>> key_vector;
@@ -302,12 +302,12 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
   }
   auto contents(pmid_group_db.GetContents(pmid_name));
   for (const auto& key_n: key_vector) {
-    auto itr = std::find_if(contents.kv_pair.begin(),
-                             contents.kv_pair.end(),
+    auto itr = std::find_if(contents.kv_pairs.begin(),
+                             contents.kv_pairs.end(),
                              [&key_n](const GroupDb<PmidManager>::KvPair& kv_pair) {
                                  return (kv_pair.first == key_n);
                               });
-    EXPECT_TRUE(itr != contents.kv_pair.end());
+    EXPECT_TRUE(itr != contents.kv_pairs.end());
   }
 
   // Delete

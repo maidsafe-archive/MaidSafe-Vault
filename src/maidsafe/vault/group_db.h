@@ -59,16 +59,16 @@ class GroupDb {
   typedef std::map<NodeId, std::vector<Contents>> TransferInfo;
 
   struct Contents {
-    Contents() : group_name(), metadata(), kv_pair() {}
+    Contents() : group_name(), metadata(), kv_pairs() {}
 
     Contents(Contents&& other)
         : group_name(std::move(other.group_name)),
           metadata(std::move(other.metadata)),
-          kv_pair(std::move(other.kv_pair))  {}
+          kv_pairs(std::move(other.kv_pairs))  {}
 
     GroupName group_name;
     Metadata metadata;
-    std::vector<KvPair> kv_pair;
+    std::vector<KvPair> kv_pairs;
    private:
     Contents(const Contents& other);
   };
@@ -252,8 +252,8 @@ typename GroupDb<Persona>::Contents GroupDb<Persona>::GetContents(typename Group
   const auto group_id_str = detail::ToFixedWidthString<kPrefixWidth_>(group_id);
   for (iter->Seek(group_id_str); (iter->Valid() && (GetGroupId(iter->key()) == group_id));
        iter->Next()) {
-    contents.kv_pair.push_back(std::make_pair(MakeKey(contents.group_name, iter->key()),
-                                              Value(iter->value().ToString())));
+    contents.kv_pairs.push_back(std::make_pair(MakeKey(contents.group_name, iter->key()),
+                                               Value(iter->value().ToString())));
   }
   iter.reset();
   return contents;
@@ -302,8 +302,10 @@ void GroupDb<Persona>::HandleTransfer(const std::vector<Contents>& contents_vect
 // Need discussion related to pmid account creation case. Pmid account will be created on
 // put action. This means a valid account transfer will be ignored.
 template <typename Persona>
-void GroupDb<Persona>::ApplyTransfer(const Contents& /*contents*/) {
-
+void GroupDb<Persona>::ApplyTransfer(const Contents& contents) {
+  auto itr = AddGroupToMap(contents.group_name, contents.metadata);
+  for (const auto& kv_pair : contents.kv_pairs)
+    Put(kv_pair, itr->second.first);
 }
 
 template <typename Persona>
