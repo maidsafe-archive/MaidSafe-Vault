@@ -114,6 +114,10 @@ std::unique_ptr<Value> Db<Key, Value>::Commit(const Key& key,
     }
   }
   if (detail::DbAction::kPut == functor(value)) {
+    assert(value);
+    if (!value)
+      ThrowError(CommonErrors::null_pointer);
+
     LOG(kInfo) << "Db<Key, Value>::Commit putting entry";
     Put(KvPair(key, Value(std::move(*value))));
   } else {
@@ -136,18 +140,19 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
   {
     std::unique_ptr<leveldb::Iterator> db_iter(leveldb_->NewIterator(leveldb::ReadOptions()));
     for (db_iter->SeekToFirst(); db_iter->Valid(); db_iter->Next()) {
-      Key key(Key::FixedWidthString(db_iter->key().ToString()));
-      auto check_holder_result = matrix_change->CheckHolders(NodeId(key->string()));
+      Key key(typename Key::FixedWidthString(db_iter->key().ToString()));
+      auto check_holder_result = matrix_change->CheckHolders(NodeId(key.name.string()));
       if (check_holder_result.proximity_status != routing::GroupRangeStatus::kInRange) {
         if (check_holder_result.new_holders.size() != 0) {
           assert(check_holder_result.new_holders.size() == 1);
           auto found_itr = transfer_info.find(check_holder_result.new_holders.at(0));
           if (found_itr != transfer_info.end()) {
-            found_itr->second.push_back(std::make_pair(key, Value(db_iter->value)));
+            found_itr->second.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
           } else {  // create
             std::vector<KvPair> kv_pair;
-            kv_pair.push_back(std::make_pair(key, Value(db_iter->value)));
-            transfer_info.insert(std::make_pair(check_holder_result.new_holders.at(0), kv_pair));
+            kv_pair.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
+            transfer_info.insert(std::make_pair(check_holder_result.new_holders.at(0),
+                                                std::move(kv_pair)));
           }
         }
       } else {

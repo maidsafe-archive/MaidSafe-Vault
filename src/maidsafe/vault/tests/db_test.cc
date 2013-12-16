@@ -154,6 +154,14 @@ TEST_CASE("Db commit", "[Db][Unit]") {
   }
 }
 
+TEST_CASE("Db transfer info", "[Db][Unit]") {
+  Db<Key, DataManagerValue> data_manager_db;
+  Db<VersionHandlerKey, VersionHandlerValue> version_handler_db;
+  std::shared_ptr<routing::MatrixChange> matrix_change;
+  data_manager_db.GetTransferInfo(matrix_change);
+  version_handler_db.GetTransferInfo(matrix_change);
+}
+
 // parallel test
 
 

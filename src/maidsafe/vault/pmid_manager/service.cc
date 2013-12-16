@@ -324,7 +324,7 @@ void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_
   std::vector<nfs_vault::DataName> data_names;
   try {
     auto contents(group_db_.GetContents(pmid_node));
-    for (const auto& kv_pair : contents.kv_pair)
+    for (const auto& kv_pair : contents.kv_pairs)
       data_names.push_back(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
     dispatcher_.SendPmidAccount(pmid_node, data_names,
                                 nfs_client::ReturnCode(CommonErrors::success));
@@ -411,7 +411,7 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
     // GetContents is a costly call to db, enabled only for testing code
     auto contents(group_db_.GetContents(pmid_node));
     LOG(kInfo) << "The current PmidManager already have account record with "
-               << contents.kv_pair.size() << " kv_pair entries";
+               << contents.kv_pairs.size() << " kv_pair entries";
 #endif
   } catch(const vault_error& error) {
     if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
