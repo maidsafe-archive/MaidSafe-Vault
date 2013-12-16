@@ -227,6 +227,9 @@ void GroupDb<Persona>::Commit(
   }
 
   if (detail::DbAction::kPut == functor(it->second.second, value)) {
+    assert(value);
+    if (!value)
+      ThrowError(CommonErrors::null_pointer);
     Put(std::make_pair(key, std::move(*value)), it->second.first);
   } else {
     assert(value);
