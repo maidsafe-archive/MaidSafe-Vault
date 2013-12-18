@@ -78,7 +78,7 @@ GroupKey<GroupName>::GroupKey(const GroupName& group_name_in, const Identity& na
 
 template <typename GroupName>
 GroupKey<GroupName>::GroupKey(const std::string& serialised_group_key)
-    : metadata_key(), name(), type(DataTagValue::kOwnerDirectoryValue) {
+    : metadata_key(), name(), type(DataTagValue::kMutableDataValue) {
   protobuf::GroupKey group_key_proto;
   if (!group_key_proto.ParseFromString(serialised_group_key))
     ThrowError(CommonErrors::parsing_error);
