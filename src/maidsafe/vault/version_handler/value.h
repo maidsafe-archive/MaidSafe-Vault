@@ -48,9 +48,20 @@ class VersionHandlerValue {
   friend void swap(VersionHandlerValue& lhs, VersionHandlerValue& rhs);
   friend bool operator==(const VersionHandlerValue& lhs, const VersionHandlerValue& rhs);
 
+#ifdef MAIDSAFE_APPLE  // BEFORE_RELEASE This copy constructor definition is to allow building
+                       // on mac with clang 3.3, should be removed if clang is updated on mac.
+  VersionHandlerValue(const VersionHandlerValue& other)
+      : structured_data_versions_(other.structured_data_versions_) {}
+
  private:
-  VersionHandlerValue(const VersionHandlerValue& other);
-  std::unique_ptr<StructuredDataVersions> structured_data_versions_;
+  typedef std::shared_ptr<StructuredDataVersions> StructuredDataVersionsPtr;
+#else
+ private:
+  typedef std::unique_ptr<StructuredDataVersions> StructuredDataVersionsPtr;
+  VersionHandlerValue(const VersionHandlerValue&);
+#endif
+
+  StructuredDataVersionsPtr structured_data_versions_;
 };
 
 void swap(VersionHandlerValue& lhs, VersionHandlerValue& rhs);

@@ -33,13 +33,13 @@ namespace vault {
 
 VersionHandlerValue::VersionHandlerValue(const std::string& serialised_version_handler_value)
     : structured_data_versions_(std::move(
-          [&serialised_version_handler_value]()->std::unique_ptr<StructuredDataVersions> {
+          [&serialised_version_handler_value]()->StructuredDataVersionsPtr {
             protobuf::VersionHandlerValue version_handler_value_proto;
             if (!version_handler_value_proto.ParseFromString(serialised_version_handler_value)) {
               LOG(kError) << "Failed to read or parse serialised maid manager value.";
              ThrowError(CommonErrors::parsing_error);
             }
-            return std::unique_ptr<StructuredDataVersions>(new StructuredDataVersions(
+            return StructuredDataVersionsPtr(new StructuredDataVersions(
                 StructuredDataVersions::serialised_type(NonEmptyString(
                     version_handler_value_proto.serialised_structured_data_versions()))));
           }())) {}
