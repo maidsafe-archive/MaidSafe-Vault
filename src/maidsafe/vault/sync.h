@@ -227,7 +227,8 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
       LOG(kVerbose) << "AddAction " << kActionId << " dropped silently as it was recorded";
     }
 
-    break;
+    // TODO(Prakash) BEFORE_RELEASE  Evaluate original reason for break.  Makes 'while' unreachable.
+    //break;
   } while (found != std::end(unresolved_actions_));
 
   return std::move(resolved_action);
