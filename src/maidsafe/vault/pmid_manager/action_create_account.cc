@@ -28,6 +28,7 @@ ActionCreatePmidAccount::ActionCreatePmidAccount() {}
 ActionCreatePmidAccount::ActionCreatePmidAccount(
     const std::string& serialised_action) {
   assert(serialised_action.size() == 0);
+  static_cast<void>(serialised_action);
 }
 
 ActionCreatePmidAccount::ActionCreatePmidAccount(
