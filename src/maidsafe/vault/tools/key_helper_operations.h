@@ -78,8 +78,6 @@ class NetworkGenerator {
     }
   };
 
-  void DoOnPublicKeyRequested(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key,
-                              nfs_client::DataGetter& data_getter);
 };
 
 class ClientTester {
@@ -108,6 +106,7 @@ class ClientTester {
   void OnPublicKeyRequested(const NodeId& node_id,
                             const routing::GivePublicKeyFunctor& give_key);
 
+  nfs_client::DataGetter data_getter_;
   std::vector<passport::PublicPmid> kAllPmids_;
 };
 
@@ -115,7 +114,8 @@ class KeyStorer : public ClientTester {
  public:
   KeyStorer(const passport::detail::AnmaidToPmid& key_chain,
             const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints,
-            const std::vector<passport::PublicPmid>& public_pmids_from_file);
+            const std::vector<passport::PublicPmid>& public_pmids_from_file,
+            const KeyChainVector& key_chain_list_in);
   void Store();
 
  private:
@@ -123,6 +123,7 @@ class KeyStorer : public ClientTester {
   void StoreKey(const Data& key) {
     client_nfs_->Put(key);
   }
+  KeyChainVector key_chain_list;
 };
 
 class KeyVerifier : public ClientTester {

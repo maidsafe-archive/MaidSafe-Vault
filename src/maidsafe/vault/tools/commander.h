@@ -91,7 +91,7 @@ class Commander {
   void ChooseOperations();
   void HandleKeys();
   void HandleSetupBootstraps();
-  void HandleStore();
+  void HandleStore(size_t client_index);
   void HandleVerify();
   void HandleDoTest(size_t client_index);
   void HandleDoTestWithDelete(size_t client_index);

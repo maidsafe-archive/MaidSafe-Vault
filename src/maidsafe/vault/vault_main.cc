@@ -84,18 +84,25 @@ void GetIdentityAndEndpoints(po::variables_map& variables_map,
     std::cout << "No identity selected\n";
     ThrowError(CommonErrors::invalid_parameter);
   }
-
-  auto keys_path(maidsafe::GetPathFromProgramOptions("keys_path", variables_map, false, false));
-  std::vector<passport::detail::AnmaidToPmid> key_chains(
-      passport::detail::ReadKeyChainList(keys_path));
-  size_t identity_index(variables_map.at("identity_index").as<int>());
-  if (identity_index >= key_chains.size()) {
-    std::cout << "Identity selected out of bounds\n";
-    ThrowError(CommonErrors::invalid_parameter);
+  {
+    auto keys_path(maidsafe::GetPathFromProgramOptions("keys_path", variables_map, false, false));
+    std::vector<passport::detail::AnmaidToPmid> key_chains(
+        passport::detail::ReadKeyChainList(keys_path));
+    size_t identity_index(variables_map.at("identity_index").as<int>());
+    if (identity_index >= key_chains.size()) {
+      std::cout << "Identity selected out of bounds\n";
+      ThrowError(CommonErrors::invalid_parameter);
+    }
+    pmid.reset(new passport::Pmid(key_chains.at(identity_index).pmid));
   }
-  pmid.reset(new passport::Pmid(key_chains.at(identity_index).pmid));
-  for (auto& key_chain : key_chains)
-    pmids.push_back(passport::PublicPmid(key_chain.pmid));
+  {
+    auto keys_path(maidsafe::GetPathFromProgramOptions("bootstrap_keys_path", variables_map,
+                                                       false, false));
+    std::vector<passport::detail::AnmaidToPmid> key_chains(
+        passport::detail::ReadKeyChainList(keys_path));
+    for (auto& key_chain : key_chains)
+      pmids.push_back(passport::PublicPmid(key_chain.pmid));
+  }
 }
 #endif
 
@@ -150,20 +157,24 @@ void RunVault(po::variables_map& variables_map) {
 
 #ifdef TESTING
 void AddTestingOptions(po::options_description& config_file_options) {
-  config_file_options.add_options()("peer", po::value<std::string>(), "Endpoint of bootstrap node")(
-      "keys_path", po::value<std::string>()->default_value(
+  config_file_options.add_options()
+      ("peer", po::value<std::string>(), "Endpoint of bootstrap node")
+      ("keys_path", po::value<std::string>()->default_value(
                        fs::path(fs::temp_directory_path() / "key_directory.dat").string()),
-      "Path to keys file for bootstrapping")("identity_index", po::value<int>(),
-                                             "Entry from keys file to use as ID")(
-      "disable_ctrl_c", po::value<bool>()->default_value(false), "disable ctrl+c");
+                    "Path to keys file using as ID")
+      ("identity_index", po::value<int>(), "Entry from keys file to use as ID")
+      ("bootstrap_keys_path", po::value<std::string>()->default_value(
+                              fs::path(fs::temp_directory_path() / "key_directory.dat").string()),
+                              "Path to keys file for bootstrapping")
+      ("disable_ctrl_c", po::value<bool>()->default_value(false), "disable ctrl+c");
 }
 #endif
 
 bool InvalidOptions(po::variables_map& variables_map) {
 #ifdef TESTING
-  if (variables_map.count("identity_index") == 0 ||
-      variables_map.at("identity_index").as<int>() < 2)
-    return true;
+//   if (variables_map.count("identity_index") == 0 ||
+//       variables_map.at("identity_index").as<int>() < 2)
+//     return true;
 #else
   if (variables_map.count("vmid") == 0)
     return true;

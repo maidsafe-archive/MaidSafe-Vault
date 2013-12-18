@@ -195,7 +195,7 @@ void Commander::ChooseOperations() {
   if (selected_ops_.do_bootstrap)
     HandleSetupBootstraps();
   if (selected_ops_.do_store)
-    HandleStore();
+    HandleStore(key_index_);
   if (selected_ops_.do_verify)
     HandleVerify();
   if (selected_ops_.do_test)
@@ -261,22 +261,20 @@ void Commander::HandleSetupBootstraps() {
   generator.SetupBootstrapNodes(GetJustPmids(all_keychains_));
 }
 
-void Commander::HandleStore() {
-  size_t failures(0);
-  for (auto& keychain : all_keychains_) {
-    try {
-      KeyStorer storer(keychain, peer_endpoints_, pmids_from_file_);
-      storer.Store();
-    }
-    catch (const std::exception& e) {
-      std::cout << "Failed storing key chain with PMID " << HexSubstr(keychain.pmid.name().value)
-                << ": " << e.what() << '\n';
-      ++failures;
-    }
-  }
-  if (failures) {
-    std::cout << "Could not store " << std::to_string(failures) << " out of "
-              << std::to_string(all_keychains_.size()) << '\n';
+void Commander::HandleStore(size_t client_index) {
+  boost::system::error_code error_code;
+  fs::path target_key_file(fs::current_path(error_code) / keys_path_.filename());
+  KeyChainVector keys_to_store = maidsafe::passport::detail::ReadKeyChainList(target_key_file);
+//   std::vector<passport::PublicPmid> extra_pmids;
+//   for (auto& key_chain : key_chain_list)
+//     extra_pmids.push_back(passport::PublicPmid(key_chain.pmid));
+
+  try {
+    KeyStorer storer(all_keychains_.at(client_index)/*keys_to_store.at(0)*/, peer_endpoints_,
+                     pmids_from_file_, keys_to_store);
+    storer.Store();
+  } catch (const std::exception& e) {
+    std::cout << "Failed storing key chain : " << e.what() << std::endl;
     ThrowError(CommonErrors::invalid_parameter);
   }
 }

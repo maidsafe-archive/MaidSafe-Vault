@@ -65,6 +65,18 @@ void CtrlCHandler(int /*signum*/) {
   g_cond_var.notify_one();
 }
 
+void DoOnPublicKeyRequested(const NodeId& node_id,
+                            const routing::GivePublicKeyFunctor& give_key,
+                            nfs_client::DataGetter& data_getter) {
+  passport::PublicPmid::Name name(Identity(node_id.string()));
+  try {
+    auto future(data_getter.Get(name));
+    give_key(future.get().public_key());
+  } catch (const std::exception& ex) {
+    LOG(kError) << "Failed to get key for " << DebugId(name) << " : " << ex.what();
+  }
+}
+
 }  // namespace
 
 NetworkGenerator::NetworkGenerator() : asio_service_(1) {}
@@ -127,19 +139,6 @@ std::vector<boost::asio::ip::udp::endpoint> NetworkGenerator::BootstrapEndpoints
   return std::move(endpoints);
 }
 
-void NetworkGenerator::DoOnPublicKeyRequested(const NodeId& node_id,
-                                              const routing::GivePublicKeyFunctor& give_key,
-                                              nfs_client::DataGetter& data_getter) {
-  passport::PublicPmid::Name name(Identity(node_id.string()));
-  try {
-    auto future(data_getter.Get(name));
-    give_key(future.get().public_key());
-  }
-  catch (const std::exception& ex) {
-    LOG(kError) << "Failed to get key for " << DebugId(name) << " : " << ex.what();
-  }
-}
-
 ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
                            const std::vector<UdpEndpoint>& peer_endpoints,
                            const std::vector<passport::PublicPmid>& public_pmids_from_file)
@@ -148,6 +147,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
       client_routing_(key_chain.maid),
       functors_(),
       client_nfs_(),
+      data_getter_(asio_service_, client_routing_, public_pmids_from_file),
       kAllPmids_(public_pmids_from_file) {
   asio_service_.Start();
   passport::PublicPmid::Name pmid_name(Identity(key_chain.pmid.name().value));
@@ -220,30 +220,42 @@ std::future<bool> ClientTester::RoutingJoin(const std::vector<UdpEndpoint>& peer
 
 void ClientTester::OnPublicKeyRequested(const NodeId& node_id,
                                         const routing::GivePublicKeyFunctor& give_key) {
-  passport::PublicPmid::Name name(Identity(node_id.string()));
-  auto itr(std::find_if(
-      std::begin(kAllPmids_), std::end(kAllPmids_),
-      [&name](const passport::PublicPmid & pmid) { return pmid.name() == name; }));
-  if (itr == kAllPmids_.end())
-    ThrowError(NfsErrors::failed_to_get_data);
-  give_key((*itr).public_key());
+  asio_service_.service().post([=] { DoOnPublicKeyRequested(node_id, give_key, data_getter_); });
+//   passport::PublicPmid::Name name(Identity(node_id.string()));
+//   auto itr(std::find_if(
+//       std::begin(kAllPmids_), std::end(kAllPmids_),
+//       [&name](const passport::PublicPmid & pmid) { return pmid.name() == name; }));
+//   if (itr == kAllPmids_.end())
+//     ThrowError(NfsErrors::failed_to_get_data);
+//   give_key((*itr).public_key());
 }
 
 KeyStorer::KeyStorer(const passport::detail::AnmaidToPmid& key_chain,
                      const std::vector<UdpEndpoint>& peer_endpoints,
-                     const std::vector<passport::PublicPmid>& public_pmids_from_file)
-    : ClientTester(key_chain, peer_endpoints, public_pmids_from_file) {}
+                     const std::vector<passport::PublicPmid>& public_pmids_from_file,
+                     const KeyChainVector& key_chain_list_in)
+    : ClientTester(key_chain, peer_endpoints, public_pmids_from_file),
+      key_chain_list(key_chain_list_in) {}
 
 void KeyStorer::Store() {
-  std::vector<BoolPromise> bool_promises(key_chain_.chain_size);
-  std::vector<BoolFuture> bool_futures;
-  for (auto& promise : bool_promises)
-    bool_futures.push_back(promise.get_future());
-  StoreKey(passport::PublicAnmaid(key_chain_.anmaid));
-  StoreKey(passport::PublicMaid(key_chain_.maid));
-  StoreKey(passport::PublicPmid(key_chain_.pmid));
+  size_t failures(0);
+  for (auto& keychain : key_chain_list) {
+    try {
+      StoreKey(passport::PublicPmid(keychain.pmid));
+      boost::this_thread::sleep_for(boost::chrono::seconds(1));
+    } catch (const std::exception& e) {
+      std::cout << "Failed storing key chain of PMID " << HexSubstr(keychain.pmid.name().value)
+                << ": " << e.what() << std::endl;
+      ++failures;
+    }
+  }
+  if (failures) {
+    std::cout << "Could not store " << std::to_string(failures) << " out of "
+              << std::to_string(key_chain_list.size()) << std::endl;
+    ThrowError(VaultErrors::failed_to_handle_request);
+  }
 
-  boost::this_thread::sleep_for(boost::chrono::seconds(3));
+  boost::this_thread::sleep_for(boost::chrono::seconds(5));
 }
 
 KeyVerifier::KeyVerifier(const passport::detail::AnmaidToPmid& key_chain,
@@ -385,7 +397,7 @@ void DataChunkStorer::OneChunkRunWithDelete(size_t& num_chunks, size_t& num_stor
   }
   LOG(kInfo) << "Sleeping for network finalise getting ... " << HexSubstr(name.value);
   boost::this_thread::sleep_for(boost::chrono::seconds(5));
-  LOG(kInfo) << "Going to delete the stored chunk";
+  std::cout << "Going to delete the stored chunk" << std::endl;
   if (DeleteOneChunk(chunk_data)) {
     std::cout << "Delete chunk " << HexSubstr(name.value) << std::endl;
   } else {
