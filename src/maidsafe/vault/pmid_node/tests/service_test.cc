@@ -74,7 +74,7 @@ TEST_CASE_METHOD(PmidNodeServiceTest, "pmid node: checking handlers availablity"
     auto group_source(CreateGroupSource(routing_.kNodeId()));
     CHECK_NOTHROW(GroupSendToSingle(&pmid_node_service_, put_request, group_source,
                                     routing::SingleId(routing_.kNodeId())));
-    CHECK_NOTHROW(Get<ImmutableData>(typename ImmutableData::Name(content.name.raw_name)));
+    CHECK_NOTHROW(Get<ImmutableData>(ImmutableData::Name(content.name.raw_name)));
   }
 
   SECTION("GetRequestFromDataManagerToPmidNode") {

@@ -32,7 +32,7 @@ VersionHandlerKey::VersionHandlerKey()
     : name(), type(), originator() {}
 
 VersionHandlerKey::VersionHandlerKey(const std::string& serialised_key)
-    : name(), type(DataTagValue::kOwnerDirectoryValue), originator() {
+    : name(), type(DataTagValue::kMutableDataValue), originator() {
   protobuf::VersionHandlerKey key_proto;
   if (!key_proto.ParseFromString(serialised_key))
     ThrowError(CommonErrors::parsing_error);

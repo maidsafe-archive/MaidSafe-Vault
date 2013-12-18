@@ -41,8 +41,11 @@ class MaidManagerValue {
   int64_t total_cost() const { return total_cost_; }
 
   friend void swap(MaidManagerValue& lhs, MaidManagerValue& rhs);
-#ifdef MAIDSAFE_APPLE  // BEFORE_RELEASE This copy constructor defination is to allow building
+#ifdef MAIDSAFE_APPLE  // BEFORE_RELEASE This copy constructor definition is to allow building
                        // on mac with clang 3.3, should be removed if clang is updated on mac.
+  MaidManagerValue(const MaidManagerValue& other)
+      : count_(other.count_), total_cost_(other.total_cost_) {}
+#elif defined _MSC_VER  // This copy constructor definition is to allow building with VC 2012.
   MaidManagerValue(const MaidManagerValue& other)
       : count_(other.count_), total_cost_(other.total_cost_) {}
 #else

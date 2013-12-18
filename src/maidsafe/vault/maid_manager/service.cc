@@ -22,9 +22,7 @@
 #include <boost/thread/future.hpp>
 
 #include "maidsafe/nfs/vault/pmid_registration.h"
-#include "maidsafe/data_types/owner_directory.h"
-#include "maidsafe/data_types/group_directory.h"
-#include "maidsafe/data_types/world_directory.h"
+#include "maidsafe/data_types/mutable_data.h"
 #include "maidsafe/passport/types.h"
 
 #include "maidsafe/nfs/vault/messages.h"

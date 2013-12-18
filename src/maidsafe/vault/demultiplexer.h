@@ -93,8 +93,8 @@ void Demultiplexer::HandleMessage(const T& routing_message) {
       return pmid_node_service_.HandleMessage(wrapper_tuple, routing_message.sender,
                                               routing_message.receiver);
     case nfs::Persona::kDataGetter:
-      return data_getter_.HandleMessage(wrapper_tuple, routing_message.sender,
-                                        routing_message.receiver);
+      return data_getter_.service().HandleMessage(wrapper_tuple, routing_message.sender,
+                                                  routing_message.receiver);
     default:
       LOG(kError) << "Persona data : " << destination_persona.data << " is an Unhandled Persona ";
   }

@@ -385,7 +385,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
     pmid_manager_metadata.lost_total_size =  2 * kTestChunkSize;
     pmid_manager_metadata.claimed_available_size = 2 << 20;
     PmidTotals pmid_totals(std::string(), pmid_manager_metadata);
-    MaidManager::Metadata metadata(100, std::vector<PmidTotals>({ pmid_totals }));
+    MaidManager::Metadata metadata(100, std::vector<PmidTotals>(1, pmid_totals));
     AddMetadata(public_maid_.name(), metadata);
     pmid_manager_metadata.stored_count = 4;
     pmid_manager_metadata.stored_total_size = kTestChunkSize * 4;
@@ -393,7 +393,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
     pmid_manager_metadata.lost_total_size =  6 * kTestChunkSize;
     pmid_manager_metadata.claimed_available_size = 2 << 10;
     PmidTotals updated_pmid_totals(std::string(), pmid_manager_metadata);
-    MaidManager::Metadata updated_metadata(100, std::vector<PmidTotals>({ updated_pmid_totals }));
+    MaidManager::Metadata updated_metadata(100, std::vector<PmidTotals>(1, updated_pmid_totals));
     ActionMaidManagerUpdatePmidHealth action_update_pmid_health(pmid_manager_metadata);
     MaidManager::MetadataKey metadata_key(public_maid_.name());
     auto group_source(CreateGroupSource(MaidNodeId()));
