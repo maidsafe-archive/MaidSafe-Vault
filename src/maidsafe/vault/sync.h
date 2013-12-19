@@ -28,16 +28,6 @@
 
 #include "maidsafe/common/node_id.h"
 
-#include "maidsafe/vault/db.h"
-#include "maidsafe/vault/group_db.h"
-#include "maidsafe/vault/maid_manager/action_create_remove_account.h"
-#include "maidsafe/vault/maid_manager/action_delete.h"
-#include "maidsafe/vault/maid_manager/action_put.h"
-#include "maidsafe/vault/maid_manager/action_register_pmid.h"
-#include "maidsafe/vault/maid_manager/action_unregister_pmid.h"
-#include "maidsafe/vault/maid_manager/maid_manager.h"
-#include "maidsafe/vault/pmid_manager/pmid_manager.h"
-
 namespace maidsafe {
 
 namespace vault {
@@ -178,7 +168,7 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
                              return ((test->key == unresolved_action.key) &&
                                      (test->action == unresolved_action.action));
                          });
-
+    // not found
     if (found == std::end(unresolved_actions_)) {
       LOG(kVerbose) << "AddAction " << kActionId << " doesn't find record";
       // Syncs from other peers may arrive first before local has been added
@@ -189,24 +179,28 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
         if (detail::IsFromThisNode(unresolved_action)) {
           LOG(kError) << "AddAction " << kActionId
                       << " received a sync from itself before adding local";
+          assert(!detail::IsFromThisNode(unresolved_action));
           break;
         }
-//         assert(!detail::IsFromThisNode(unresolved_action));
         LOG(kVerbose) << "AddAction " << kActionId << " syncs from peer arrived before add local";
         unresolved_action_ptr->peer_and_entry_ids.push_back(
             unresolved_action.this_node_and_entry_id);
-        unresolved_action_ptr->this_node_and_entry_id.first = NodeId();
+        unresolved_action_ptr->this_node_and_entry_id.first = NodeId(); // will be set by add local
       }
       unresolved_actions_.push_back(std::move(unresolved_action_ptr));
       break;
     }
 
+    // found
     if (!merge) {
       LOG(kVerbose) << "AddAction " << kActionId << " add local happened after syncs from peer";
       // Add Local, however after received syncs from peer
       if ((*found)->this_node_and_entry_id.second ==
-          unresolved_action.this_node_and_entry_id.second)
+          unresolved_action.this_node_and_entry_id.second) {
+        assert(((*found)->this_node_and_entry_id.first == NodeId()) &&
+               " add local called multiple times");
         (*found)->this_node_and_entry_id.first = unresolved_action.this_node_and_entry_id.first;
+      }
       break;
     }
 
@@ -214,8 +208,10 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
     if (!detail::IsRecorded(unresolved_action, (**found))) {
       LOG(kVerbose) << "AddAction " << kActionId << " not recorded from the sender";
       if (detail::IsFromThisNode(unresolved_action)) {
+        //FIXME need to handle the case of repeated action of same key
         (*found)->peer_and_entry_ids.push_back(unresolved_action.this_node_and_entry_id);
       } else {
+        //FIXME need to handle the case of repeated action of same key
         (*found)->peer_and_entry_ids.push_back(unresolved_action.peer_and_entry_ids.front());
       }
 
@@ -225,11 +221,10 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
       }
     } else {
       LOG(kVerbose) << "AddAction " << kActionId << " dropped silently as it was recorded";
+      break;
     }
-
-    // TODO(Prakash) BEFORE_RELEASE  Evaluate original reason for break.  Makes 'while' unreachable.
-    //break;
-  } while (found != std::end(unresolved_actions_));
+    ++found;
+  } while (found != std::end(unresolved_actions_));  // loop only if not acted on action
 
   return std::move(resolved_action);
 }

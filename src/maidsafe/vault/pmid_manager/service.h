@@ -33,13 +33,14 @@
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/accumulator.h"
+#include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/pmid_manager/action_delete.h"
 #include "maidsafe/vault/pmid_manager/dispatcher.h"
 #include "maidsafe/vault/pmid_manager/handler.h"
-#include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/sync.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/pmid_manager/metadata.h"
 #include "maidsafe/vault/operation_visitors.h"
 
