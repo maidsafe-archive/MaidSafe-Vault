@@ -335,16 +335,23 @@ template <typename Data>
 void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
                                    const PmidName& pmid_name_in, nfs::MessageId message_id) {
   LOG(kVerbose) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-                << " from maid_node " << HexSubstr(maid_name->string());
+                << " from maid_node " << HexSubstr(maid_name->string())
+                << " with pmid_name_in " << HexSubstr(pmid_name_in->string());
   int32_t cost(static_cast<int32_t>(data.Serialise().data.string().size()));
   if (!EntryExist<Data>(data.name())) {
     cost *= routing::Parameters::node_group_size;
     PmidName pmid_name;
     if (routing_.ClosestToId(NodeId(data.name().value)) &&
-        (pmid_name_in.value.string() != NodeId().string()))
+        (pmid_name_in.value.string() != NodeId().string()) &&
+        (pmid_name_in.value.string() != data.name().value.string())) {
+      LOG(kInfo) << "using the pmid_name_in";
       pmid_name = pmid_name_in;
-    else
-      pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
+    } else {
+      do {
+        LOG(kInfo) << "pick from routing_.RandomConnectedNode()";
+        pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
+      } while (pmid_name->string() == data.name().value.string());
+    }
     LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
                << " from maid_node " << HexSubstr(maid_name->string())
                << " . SendPutRequest with message_id " << message_id.data
