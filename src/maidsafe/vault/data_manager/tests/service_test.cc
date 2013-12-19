@@ -172,7 +172,7 @@ DataManagerServiceTest::GetUnresolvedActions<DataManager::UnresolvedRemovePmid>(
 }
 
 TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availability",
-                 "[Handler][DataManager][Service]") {
+                 "[Handler][DataManager][Service][Behavioural]") {
   SECTION("PutRequestFromMaidManagerToDataManager") {
     NodeId maid_node_id(NodeId::kRandomId), data_name_id;
     auto content(CreateContent<PutRequestFromMaidManagerToDataManager::Contents>());
@@ -271,7 +271,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
 
 TEST_CASE_METHOD(DataManagerServiceTest,
                  "data manager: checking all sync message types are handled",
-                 "[Sync][DataManager][Service]") {
+                 "[Sync][DataManager][Service][Behavioural]") {
   PmidName pmid_name(Identity(RandomString(64)));
   ActionDataManagerPut action_put;
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));

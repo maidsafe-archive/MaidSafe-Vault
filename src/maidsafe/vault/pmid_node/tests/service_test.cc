@@ -67,7 +67,7 @@ class PmidNodeServiceTest {
 };
 
 TEST_CASE_METHOD(PmidNodeServiceTest, "pmid node: checking handlers availablity",
-                 "[Handler][PmidNode][Service]") {
+                 "[Handler][PmidNode][Service][Behavioural]") {
   SECTION("PutRequestFromPmidManagerToPmidNode") {
     auto content(CreateContent<PutRequestFromPmidManagerToPmidNode::Contents>());
     auto put_request(CreateMessage<PutRequestFromPmidManagerToPmidNode>(content));
