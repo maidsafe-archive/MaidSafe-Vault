@@ -45,7 +45,7 @@ class MaidManagerValue {
                        // on mac with clang 3.3, should be removed if clang is updated on mac.
   MaidManagerValue(const MaidManagerValue& other)
       : count_(other.count_), total_cost_(other.total_cost_) {}
-#elif _MSC_VER == 1700  // This copy constructor definition is to allow building with VC 2012.
+elif (defined(_MSC_VER) && _MSC_VER == 1700)  // This copy constructor definition is to allow building with VC 2012.
   MaidManagerValue(const MaidManagerValue& other)
       : count_(other.count_), total_cost_(other.total_cost_) {}
 #else

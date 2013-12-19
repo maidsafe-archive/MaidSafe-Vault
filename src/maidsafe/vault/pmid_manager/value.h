@@ -42,7 +42,7 @@ class PmidManagerValue {
 #ifdef MAIDSAFE_APPLE  // BEFORE_RELEASE This copy constructor definition is to allow building
                        // on mac with clang 3.3, should be removed if clang is updated on mac.
   PmidManagerValue(const PmidManagerValue& other) : size_(other.size_) {}
-#elif _MSC_VER == 1700  // This copy constructor definition is to allow building with VC 2012.
+#elif (defined(_MSC_VER) && _MSC_VER == 1700)  // This copy constructor definition is to allow building with VC 2012.
   PmidManagerValue(const PmidManagerValue& other) : size_(other.size_) {}
 #else
  private:
