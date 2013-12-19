@@ -84,7 +84,8 @@ class ClientTester {
  public:
   ClientTester(const passport::detail::AnmaidToPmid& key_chain,
                const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints,
-               const std::vector<passport::PublicPmid>& public_pmids_from_file);
+               const std::vector<passport::PublicPmid>& public_pmids_from_file,
+               bool register_pmid_for_client);
 
  protected:
   // TODO(Dan): Remove the typedefs

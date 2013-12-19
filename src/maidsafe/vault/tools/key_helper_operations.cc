@@ -141,7 +141,8 @@ std::vector<boost::asio::ip::udp::endpoint> NetworkGenerator::BootstrapEndpoints
 
 ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
                            const std::vector<UdpEndpoint>& peer_endpoints,
-                           const std::vector<passport::PublicPmid>& public_pmids_from_file)
+                           const std::vector<passport::PublicPmid>& public_pmids_from_file,
+                           bool register_pmid_for_client)
     : asio_service_(2),
       key_chain_(key_chain),
       client_routing_(key_chain.maid),
@@ -159,34 +160,40 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
       LOG(kError) << "can't join routing network";
       ThrowError(RoutingErrors::not_connected);
     }
+    LOG(kInfo) << "Client node joined routing network";
   }
   {
     passport::PublicMaid public_maid(key_chain.maid);
     passport::PublicAnmaid public_anmaid(key_chain.anmaid);
-    auto future(client_nfs_->CreateAccount(nfs_vault::AccountCreation(public_maid, public_anmaid)));
+    auto future(client_nfs_->CreateAccount(nfs_vault::AccountCreation(public_maid,
+                                                                      public_anmaid)));
     auto status(future.wait_for(boost::chrono::seconds(10)));
     if (status == boost::future_status::timeout) {
       LOG(kError) << "can't create account";
       ThrowError(VaultErrors::failed_to_handle_request);
     }
+    // waiting for syncs resolved
+    boost::this_thread::sleep_for(boost::chrono::seconds(2));
     std::cout << "Account created for maid " << HexSubstr(public_maid.name()->string())
               << std::endl;
   }
-  {
-    client_nfs_->RegisterPmid(nfs_vault::PmidRegistration(key_chain.maid, key_chain.pmid, false));
-    boost::this_thread::sleep_for(boost::chrono::seconds(5));
-    auto future(client_nfs_->GetPmidHealth(pmid_name));
-    auto status(future.wait_for(boost::chrono::seconds(10)));
-    if (status == boost::future_status::timeout) {
-      LOG(kError) << "can't fetch pmid health";
-      ThrowError(VaultErrors::failed_to_handle_request);
+  if (register_pmid_for_client) {
+    {
+      client_nfs_->RegisterPmid(nfs_vault::PmidRegistration(key_chain.maid, key_chain.pmid, false));
+      boost::this_thread::sleep_for(boost::chrono::seconds(5));
+      auto future(client_nfs_->GetPmidHealth(pmid_name));
+      auto status(future.wait_for(boost::chrono::seconds(10)));
+      if (status == boost::future_status::timeout) {
+        LOG(kError) << "can't fetch pmid health";
+        ThrowError(VaultErrors::failed_to_handle_request);
+      }
+      std::cout << "The fetched PmidHealth for pmid_name " << HexSubstr(pmid_name.value.string())
+                << " is " << future.get() << std::endl;
     }
-    std::cout << "The fetched PmidHealth for pmid_name " << HexSubstr(pmid_name.value.string())
-               << " is " << future.get() << std::endl;
+    // waiting for the GetPmidHealth updating corresponding accounts
+    boost::this_thread::sleep_for(boost::chrono::seconds(5));
+    LOG(kInfo) << "Pmid Registered created for the client node to store chunks";
   }
-  // waiting for the GetPmidHealth updating corresponding accounts
-  boost::this_thread::sleep_for(boost::chrono::seconds(5));
-  LOG(kInfo) << "Started up client node to store chunks";
 }
 
 ClientTester::~ClientTester() {}
@@ -234,7 +241,7 @@ KeyStorer::KeyStorer(const passport::detail::AnmaidToPmid& key_chain,
                      const std::vector<UdpEndpoint>& peer_endpoints,
                      const std::vector<passport::PublicPmid>& public_pmids_from_file,
                      const KeyChainVector& key_chain_list_in)
-    : ClientTester(key_chain, peer_endpoints, public_pmids_from_file),
+    : ClientTester(key_chain, peer_endpoints, public_pmids_from_file, false),
       key_chain_list(key_chain_list_in) {}
 
 void KeyStorer::Store() {
@@ -261,7 +268,7 @@ void KeyStorer::Store() {
 KeyVerifier::KeyVerifier(const passport::detail::AnmaidToPmid& key_chain,
                          const std::vector<UdpEndpoint>& peer_endpoints,
                          const std::vector<passport::PublicPmid>& public_pmids_from_file)
-    : ClientTester(key_chain, peer_endpoints, public_pmids_from_file) {}
+    : ClientTester(key_chain, peer_endpoints, public_pmids_from_file, false) {}
 
 void KeyVerifier::Verify() {
   try {
@@ -287,7 +294,7 @@ void KeyVerifier::Verify() {
 DataChunkStorer::DataChunkStorer(const passport::detail::AnmaidToPmid& key_chain,
                                  const std::vector<UdpEndpoint>& peer_endpoints,
                                  const std::vector<passport::PublicPmid>& public_pmids_from_file)
-    : ClientTester(key_chain, peer_endpoints, public_pmids_from_file),
+    : ClientTester(key_chain, peer_endpoints, public_pmids_from_file, true),
       run_(false), chunk_list_() {
   LOG(kVerbose) << "loading pre-generated chunks from file when constructing chunk_storer ......";
   LoadChunksFromFiles();

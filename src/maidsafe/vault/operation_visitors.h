@@ -48,7 +48,9 @@ class MaidManagerPutVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    LOG(kVerbose) << "MaidManagerPutVisitor HandlePut";
+    LOG(kVerbose) << "MaidManagerPutVisitor HandlePut for chunk "
+                  << HexSubstr(data_name.value.string())
+                  << " to PmidHint " << HexSubstr(kPmidHint_.string());
     kService_->HandlePut(MaidName(Identity(kSender_.string())),
                                   typename Name::data_type(data_name,
                                       typename Name::data_type::serialised_type(kContent_)),
