@@ -249,16 +249,16 @@ void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
                 <<  HexSubstr(data.name().value)
                 << " to pmid_node -- " << HexSubstr(pmid_node.value.string())
                 << " , with message_id -- " << message_id.data;
-  try {
-    PmidManagerMetadata reply(group_db_.GetContents(pmid_node).metadata);
-    if (reply.claimed_available_size <
-        static_cast<uint32_t>(data.Serialise().data.string().size())) {
-      dispatcher_.SendPutFailure<Data>(data.name(), pmid_node,
-                                       maidsafe_error(VaultErrors::not_enough_space), message_id);
-      return;
-    }
-  } catch(...) {
-  }
+//   try {
+//     PmidManagerMetadata reply(group_db_.GetContents(pmid_node).metadata);
+//     if (reply.claimed_available_size <
+//         static_cast<uint32_t>(data.Serialise().data.string().size())) {
+//       dispatcher_.SendPutFailure<Data>(data.name(), pmid_node,
+//                                        maidsafe_error(VaultErrors::not_enough_space), message_id);
+//       return;
+//     }
+//   } catch(...) {
+//   }
   dispatcher_.SendPutRequest(data, pmid_node, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), data.name().value,
                              Data::Tag::kValue);
