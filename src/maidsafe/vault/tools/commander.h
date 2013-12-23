@@ -87,23 +87,24 @@ class Commander {
   boost::program_options::options_description AddConfigurationOptions(const std::string& title);
   void CheckOptionValidity(boost::program_options::options_description& cmdline_options, int argc,
                            char* argv[]);
-
   void ChooseOperations();
-  void HandleKeys();
+
+  void HandleKeyOperations();
+  void HandleDeleteKeyFile();
+  void CreateKeys();
+
   void HandleSetupBootstraps();
-  void HandleStore(size_t client_index);
-  void HandleVerify();
+
   void HandleDoTest(size_t client_index);
   void HandleDoTestWithDelete(size_t client_index);
+
   void HandleStoreChunk(size_t client_index);
   void HandleFetchChunk(size_t client_index);
   void HandleDeleteChunk(size_t client_index);
   void HandleGenerateChunks();
-  void HandleDeleteKeys();
 
-  void CreateKeys();
-  void GetPathFromProgramOption(const std::string& option_name,
-                                boost::program_options::variables_map& variables_map);
+  void HandleStorePublicKeys(size_t client_index);
+  void HandleVerifyStoredPublicKeys(size_t client_index);
 };
 
 }  // namespace tools

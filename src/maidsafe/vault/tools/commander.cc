@@ -110,20 +110,6 @@ void Commander::AnalyseCommandLineOptions(int argc, char* argv[]) {
   ChooseOperations();
 }
 
-void Commander::GetPathFromProgramOption(const std::string& option_name,
-                                         po::variables_map& variables_map) {
-  if (variables_map.count(option_name) == 0)
-    return;
-
-  keys_path_ = variables_map.at(option_name).as<std::string>();
-  if (keys_path_.empty()) {
-    std::cout << "Incorrect information in parameter " << option_name << '\n';
-    ThrowError(CommonErrors::invalid_parameter);
-  }
-
-  LOG(kInfo) << "GetPathFromProgramOption - " << option_name << " is " << keys_path_;
-}
-
 boost::asio::ip::udp::endpoint Commander::GetBootstrapEndpoint(const std::string& peer) {
   size_t delim = peer.rfind(':');
   boost::asio::ip::udp::endpoint ep;
@@ -177,7 +163,7 @@ void Commander::CheckOptionValidity(po::options_description& cmdline_options, in
   po::variables_map variables_map;
   po::store(parser.options(cmdline_options).allow_unregistered().run(), variables_map);
   po::notify(variables_map);
-  GetPathFromProgramOption("keys_path", variables_map);
+  keys_path_ = maidsafe::GetPathFromProgramOptions("keys_path", variables_map, false, false);
   if (variables_map.count("peer"))
     peer_endpoints_.push_back(GetBootstrapEndpoint(variables_map.at("peer").as<std::string>()));
 
@@ -191,13 +177,13 @@ void Commander::CheckOptionValidity(po::options_description& cmdline_options, in
 }
 
 void Commander::ChooseOperations() {
-  HandleKeys();
+  HandleKeyOperations();
   if (selected_ops_.do_bootstrap)
     HandleSetupBootstraps();
   if (selected_ops_.do_store)
-    HandleStore(key_index_);
+    HandleStorePublicKeys(key_index_);
   if (selected_ops_.do_verify)
-    HandleVerify();
+    HandleVerifyStoredPublicKeys(key_index_);
   if (selected_ops_.do_test)
     HandleDoTest(key_index_);
   if (selected_ops_.do_test_with_delete)
@@ -229,7 +215,7 @@ void Commander::CreateKeys() {
   }
 }
 
-void Commander::HandleKeys() {
+void Commander::HandleKeyOperations() {
   if (selected_ops_.do_create) {
     CreateKeys();
   } else if (selected_ops_.do_load) {
@@ -238,7 +224,7 @@ void Commander::HandleKeys() {
       pmids_from_file_.push_back(passport::PublicPmid(key_chain.pmid));
     LOG(kInfo) << "Loaded " << all_keychains_.size() << " pmids from " << keys_path_;
   } else if (selected_ops_.do_delete) {
-    HandleDeleteKeys();
+    HandleDeleteKeyFile();
   }
 
   if (selected_ops_.do_print) {
@@ -261,16 +247,12 @@ void Commander::HandleSetupBootstraps() {
   generator.SetupBootstrapNodes(GetJustPmids(all_keychains_));
 }
 
-void Commander::HandleStore(size_t client_index) {
-  boost::system::error_code error_code;
-  fs::path target_key_file(fs::current_path(error_code) / keys_path_.filename());
-  KeyChainVector keys_to_store = maidsafe::passport::detail::ReadKeyChainList(target_key_file);
-//   std::vector<passport::PublicPmid> extra_pmids;
-//   for (auto& key_chain : key_chain_list)
-//     extra_pmids.push_back(passport::PublicPmid(key_chain.pmid));
-
+void Commander::HandleStorePublicKeys(size_t client_index) {
   try {
-    KeyStorer storer(all_keychains_.at(client_index)/*keys_to_store.at(0)*/, peer_endpoints_,
+    boost::system::error_code error_code;
+    fs::path target_key_file(fs::current_path(error_code) / keys_path_.filename());
+    KeyChainVector keys_to_store = maidsafe::passport::detail::ReadKeyChainList(target_key_file);
+    KeyStorer storer(all_keychains_.at(client_index), peer_endpoints_,
                      pmids_from_file_, keys_to_store);
     storer.Store();
   } catch (const std::exception& e) {
@@ -279,7 +261,7 @@ void Commander::HandleStore(size_t client_index) {
   }
 }
 
-void Commander::HandleVerify() {
+void Commander::HandleVerifyStoredPublicKeys(size_t /*client_index*/) {
   size_t failures(0);
   for (auto& keychain : all_keychains_) {
     try {
@@ -354,7 +336,7 @@ void Commander::HandleGenerateChunks() {
   }
 }
 
-void Commander::HandleDeleteKeys() {
+void Commander::HandleDeleteKeyFile() {
   if (fs::remove(keys_path_))
     std::cout << "Deleted " << keys_path_ << std::endl;
 }
