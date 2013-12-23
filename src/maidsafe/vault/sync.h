@@ -192,7 +192,11 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
           break;
         }
 //         assert(!detail::IsFromThisNode(unresolved_action));
-        LOG(kVerbose) << "AddAction " << kActionId << " syncs from peer arrived before add local";
+        LOG(kVerbose) << "AddAction " << kActionId << " syncs from peer arrived before add local "
+                      << "merging unresolved_action having "
+                      << unresolved_action.peer_and_entry_ids.size()
+                      << " entries in peer_and_entry_ids";
+        unresolved_action_ptr->peer_and_entry_ids.clear();
         unresolved_action_ptr->peer_and_entry_ids.push_back(
             unresolved_action.this_node_and_entry_id);
         unresolved_action_ptr->this_node_and_entry_id.first = NodeId();
