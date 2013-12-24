@@ -250,15 +250,16 @@ void Commander::HandleSetupBootstraps() {
 void Commander::HandleStorePublicKeys(size_t client_index) {
   try {
     boost::system::error_code error_code;
-    fs::path target_key_file(fs::current_path(error_code) / keys_path_.filename());
-    KeyChainVector keys_to_store = maidsafe::passport::detail::ReadKeyChainList(target_key_file);
+//     fs::path target_key_file(fs::current_path(error_code) / keys_path_.filename());
+//     KeyChainVector keys_to_store = maidsafe::passport::detail::ReadKeyChainList(target_key_file);
     KeyStorer storer(all_keychains_.at(client_index), peer_endpoints_,
-                     pmids_from_file_, keys_to_store);
+                     pmids_from_file_, all_keychains_);
     storer.Store();
   } catch (const std::exception& e) {
     std::cout << "Failed storing key chain : " << e.what() << std::endl;
     ThrowError(CommonErrors::invalid_parameter);
   }
+  std::cout << "Keys Stored" << std::endl;
 }
 
 void Commander::HandleVerifyStoredPublicKeys(size_t /*client_index*/) {

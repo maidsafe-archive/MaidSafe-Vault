@@ -249,7 +249,11 @@ void KeyStorer::Store() {
   for (auto& keychain : key_chain_list) {
     try {
       StoreKey(passport::PublicPmid(keychain.pmid));
-      boost::this_thread::sleep_for(boost::chrono::seconds(1));
+      boost::this_thread::sleep_for(boost::chrono::seconds(2));
+      auto pmid_future(client_nfs_->Get(passport::PublicPmid::Name(keychain.pmid.name())));
+      if (EqualKeys<passport::PublicPmid>(passport::PublicPmid(keychain.pmid), pmid_future.get()))
+        std::cout << "Pmid " << HexSubstr(keychain.pmid.name().value)
+                  << " PublicPmidKey stored and verified " << std::endl;
     } catch (const std::exception& e) {
       std::cout << "Failed storing key chain of PMID " << HexSubstr(keychain.pmid.name().value)
                 << ": " << e.what() << std::endl;

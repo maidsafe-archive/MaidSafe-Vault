@@ -94,6 +94,11 @@ class ClientTester {
   typedef std::promise<bool> BoolPromise;
   typedef std::future<bool> BoolFuture;
 
+  template <typename SigningData>
+  bool EqualKeys(const SigningData& lhs, const SigningData& rhs) {
+    return lhs.name() == rhs.name() && asymm::MatchingKeys(lhs.public_key(), rhs.public_key());
+  }
+
   AsioService asio_service_;
   passport::detail::AnmaidToPmid key_chain_;
   routing::Routing client_routing_;
@@ -133,12 +138,6 @@ class KeyVerifier : public ClientTester {
               const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints,
               const std::vector<passport::PublicPmid>& public_pmids_from_file);
   void Verify();
-
- private:
-  template <typename SigningData>
-  bool EqualKeys(const SigningData& lhs, const SigningData& rhs) {
-    return lhs.name() == rhs.name() && asymm::MatchingKeys(lhs.public_key(), rhs.public_key());
-  }
 };
 
 class DataChunkStorer : public ClientTester {
