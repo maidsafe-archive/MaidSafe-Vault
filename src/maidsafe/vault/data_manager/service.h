@@ -643,13 +643,14 @@ void DataManagerService::AssessGetContentRequestedPmidNode(
                   << HexSubstr(get_response_op->pmid_node_to_get_from->string())
                   << " down for data " << HexSubstr(get_response_op->data_name.value.string());
     MarkNodeDown(get_response_op->pmid_node_to_get_from, get_response_op->data_name);
-    auto functor([=](const GetCachedResponseContents& contents) {
-      DoHandleGetCachedResponse<Data, RequestorIdType>(contents, get_response_op);
-    });
-
-    get_cached_response_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, 1,
-                                       get_response_op->message_id);
-    dispatcher_.SendGetFromCache(get_response_op->data_name);
+//     auto functor([=](const GetCachedResponseContents& contents) {
+//       DoHandleGetCachedResponse<Data, RequestorIdType>(contents, get_response_op);
+//     });
+//     // BEFORE_RELEASE The following line of code will try to AddTask with same task_id
+//     //                if marking two_nodes down at the same time, which will fail the assertion
+//     get_cached_response_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, 1,
+//                                        get_response_op->message_id);
+//     dispatcher_.SendGetFromCache(get_response_op->data_name);
   } else {
     AssessIntegrityCheckResults<Data, RequestorIdType>(get_response_op);
   }
