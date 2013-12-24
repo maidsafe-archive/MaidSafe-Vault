@@ -227,18 +227,23 @@ void GroupDb<Persona>::Commit(
       throw error;  // throw only for db errors
   }
 
-  if (detail::DbAction::kPut == functor(it->second.second, value)) {
-    LOG(kInfo) << "detail::DbAction::kPut";
-    assert(value);
-    if (!value)
-      ThrowError(CommonErrors::null_pointer);
-    Put(std::make_pair(key, std::move(*value)), it->second.first);
-  } else {
-    LOG(kInfo) << "detail::DbAction::kDelete";
-    if (value)
-      Delete(key, it->second.first);
-    else
-      LOG(kError) << "value is not initialised";
+  try {
+    if (detail::DbAction::kPut == functor(it->second.second, value)) {
+      LOG(kInfo) << "detail::DbAction::kPut";
+      assert(value);
+      if (!value)
+        ThrowError(CommonErrors::null_pointer);
+      Put(std::make_pair(key, std::move(*value)), it->second.first);
+    } else {
+      LOG(kInfo) << "detail::DbAction::kDelete";
+      if (value)
+        Delete(key, it->second.first);
+      else
+        LOG(kError) << "value is not initialised";
+    }
+  } catch (const maidsafe_error& error) {
+    LOG(kError) << "GroupDb<Persona>::Commit encountered error " << error.what();
+    throw error;
   }
 }
 

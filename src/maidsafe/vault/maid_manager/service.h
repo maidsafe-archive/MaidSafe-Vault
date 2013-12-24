@@ -421,15 +421,20 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
                 << " with data " << HexSubstr(data.name().value)
                 << " and pmid_node_hint " << HexSubstr(pmid_node_hint->string())
                 << " message_id " << message_id.data;
-  auto metadata(group_db_.GetMetadata(account_name));
-  if (metadata.AllowPut(data) != MaidManagerMetadata::Status::kNoSpace) {
-    LOG(kInfo) << "MaidManagerService::HandlePut allowing put";
-    dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
-  } else {
-    LOG(kWarning) << "MaidManagerService::HandlePut disallowing put";
-    dispatcher_.SendPutFailure<Data>(account_name, data.name(),
-                                     maidsafe_error(CommonErrors::cannot_exceed_limit),
-                                     message_id);
+  try {
+    auto metadata(group_db_.GetMetadata(account_name));
+    if (metadata.AllowPut(data) != MaidManagerMetadata::Status::kNoSpace) {
+      LOG(kInfo) << "MaidManagerService::HandlePut allowing put";
+      dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
+    } else {
+      LOG(kWarning) << "MaidManagerService::HandlePut disallowing put";
+      dispatcher_.SendPutFailure<Data>(account_name, data.name(),
+                                      maidsafe_error(CommonErrors::cannot_exceed_limit),
+                                      message_id);
+    }
+  } catch(const maidsafe_error& error) {
+    LOG(kError) << "MaidManagerService::HandlePut getting metadata has error : " << error.what();
+    throw error;
   }
 }
 

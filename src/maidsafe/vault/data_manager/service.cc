@@ -288,9 +288,11 @@ void DataManagerService::HandleMessage(
       break;
     }
     case ActionDataManagerAddPmid::kActionId: {
-      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerAddPmid";
       DataManager::UnresolvedAddPmid unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerAddPmid "
+                    << " for chunk " << HexSubstr(unresolved_action.key.name.string())
+                    << " and pmid_node " << HexSubstr(unresolved_action.action.kPmidName->string());
       auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit add pmid to db";
