@@ -37,26 +37,26 @@ set(VaultSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/vault)
 set(OutputFile ${PROJECT_BINARY_DIR}/generated_message_types/maidsafe/vault/message_types.h)
 set(InputFile ${PROJECT_SOURCE_DIR}/cmake/message_types.h.in)
 file(GLOB_RECURSE MetaFiles "${CMAKE_CURRENT_SOURCE_DIR}/cmake/*.message_types.meta")
-set_meta_files_custom_commands("${OutputFile}" "${InputFile}" "${MetaFiles}" "Vault Header Files" "Vault CMake Files")
+ms_set_meta_files_custom_commands("${OutputFile}" "${InputFile}" "${MetaFiles}" "Vault Header Files" "Vault CMake Files")
 
-glob_dir(Vault ${VaultSourcesDir} Vault)
+ms_glob_dir(Vault ${VaultSourcesDir} Vault)
 list(REMOVE_ITEM VaultAllFiles ${VaultSourcesDir}/vault_main.cc)
-glob_dir(CacheHandler ${VaultSourcesDir}/cache_handler "Cache Handler\\\\")
-glob_dir(DataManager ${VaultSourcesDir}/data_manager "Data Manager\\\\")
-glob_dir(MaidManager ${VaultSourcesDir}/maid_manager "Maid Manager\\\\")
-glob_dir(MpidManager ${VaultSourcesDir}/mpid_manager "Mpid Manager\\\\")
-glob_dir(PmidManager ${VaultSourcesDir}/pmid_manager "Pmid Manager\\\\")
-glob_dir(PmidNode ${VaultSourcesDir}/pmid_node "Pmid Node\\\\")
-glob_dir(VersionHandler ${VaultSourcesDir}/version_handler "Version Handler\\\\")
-glob_dir(VaultTests ${VaultSourcesDir}/tests "Tests")
-glob_dir(CacheHandlerTests ${VaultSourcesDir}/cache_handler/tests "Tests")
-glob_dir(DataManagerTests ${VaultSourcesDir}/data_manager/tests "Tests")
-glob_dir(MaidManagerTests ${VaultSourcesDir}/maid_manager/tests "Tests")
-#glob_dir(MpidManagerTests ${VaultSourcesDir}/mpid_manager/tests "Tests")
-glob_dir(PmidManagerTests ${VaultSourcesDir}/pmid_manager/tests "Tests")
-glob_dir(PmidNodeTests ${VaultSourcesDir}/pmid_node/tests "Tests")
-glob_dir(VersionHandlerTests ${VaultSourcesDir}/version_handler/tests "Tests")
-glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
+ms_glob_dir(CacheHandler ${VaultSourcesDir}/cache_handler "Cache Handler\\\\")
+ms_glob_dir(DataManager ${VaultSourcesDir}/data_manager "Data Manager\\\\")
+ms_glob_dir(MaidManager ${VaultSourcesDir}/maid_manager "Maid Manager\\\\")
+ms_glob_dir(MpidManager ${VaultSourcesDir}/mpid_manager "Mpid Manager\\\\")
+ms_glob_dir(PmidManager ${VaultSourcesDir}/pmid_manager "Pmid Manager\\\\")
+ms_glob_dir(PmidNode ${VaultSourcesDir}/pmid_node "Pmid Node\\\\")
+ms_glob_dir(VersionHandler ${VaultSourcesDir}/version_handler "Version Handler\\\\")
+ms_glob_dir(VaultTests ${VaultSourcesDir}/tests "Tests")
+ms_glob_dir(CacheHandlerTests ${VaultSourcesDir}/cache_handler/tests "Tests")
+ms_glob_dir(DataManagerTests ${VaultSourcesDir}/data_manager/tests "Tests")
+ms_glob_dir(MaidManagerTests ${VaultSourcesDir}/maid_manager/tests "Tests")
+#ms_glob_dir(MpidManagerTests ${VaultSourcesDir}/mpid_manager/tests "Tests")
+ms_glob_dir(PmidManagerTests ${VaultSourcesDir}/pmid_manager/tests "Tests")
+ms_glob_dir(PmidNodeTests ${VaultSourcesDir}/pmid_node/tests "Tests")
+ms_glob_dir(VersionHandlerTests ${VaultSourcesDir}/version_handler/tests "Tests")
+ms_glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
 set(TestsMain ${VaultSourcesDir}/tests/tests_main.cc)
 
 set(VaultGTestsAllFiles ${VaultTestsAllFiles})
@@ -71,18 +71,20 @@ set(VaultTestsAllFiles ${PmidNodeTestsAllFiles}
 list(REMOVE_ITEM VaultGTestsAllFiles ${VaultTestsAllFiles})
 list(APPEND VaultTestsAllFiles ${TestsMain}  ${VaultSourcesDir}/tests/tests_utils.h
                                              ${VaultSourcesDir}/tests/tests_utils.cc )
+
+
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
-ms_add_static_library(vault ${VaultAllFiles}
-                            ${CacheHandlerAllFiles}
-                            ${DataManagerAllFiles}
-                            ${MaidManagerAllFiles}
-                            ${MpidManagerAllFiles}
-                            ${PmidManagerAllFiles}
-                            ${PmidNodeAllFiles}
-                            ${VersionHandlerAllFiles}
-                            ${OutputFile} ${InputFile} ${MetaFiles})
+ms_add_static_library(maidsafe_vault ${VaultAllFiles}
+                                     ${CacheHandlerAllFiles}
+                                     ${DataManagerAllFiles}
+                                     ${MaidManagerAllFiles}
+                                     ${MpidManagerAllFiles}
+                                     ${PmidManagerAllFiles}
+                                     ${PmidNodeAllFiles}
+                                     ${VersionHandlerAllFiles}
+                                     ${OutputFile} ${InputFile} ${MetaFiles})
 target_include_directories(maidsafe_vault
   PUBLIC ${PROJECT_SOURCE_DIR}/include
   PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
@@ -93,15 +95,15 @@ target_include_directories(vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BIN
 target_link_libraries(maidsafe_vault maidsafe_nfs_vault maidsafe_routing maidsafe_common maidsafe_private leveldb)
 target_link_libraries(vault maidsafe_vault maidsafe_client_manager)
 if(MaidsafeTesting)
-  ms_add_static_library(vault_mal ${VaultAllFiles}
-                                  ${CacheHandlerAllFiles}
-                                  ${DataManagerAllFiles}
-                                  ${MaidManagerAllFiles}
-                                  ${MpidManagerAllFiles}
-                                  ${PmidManagerAllFiles}
-                                  ${PmidNodeAllFiles}
-                                  ${VersionHandlerAllFiles}
-                                  ${OutputFile} ${InputFile} ${MetaFiles})
+  ms_add_static_library(maidsafe_vault_mal ${VaultAllFiles}
+                                           ${CacheHandlerAllFiles}
+                                           ${DataManagerAllFiles}
+                                           ${MaidManagerAllFiles}
+                                           ${MpidManagerAllFiles}
+                                           ${PmidManagerAllFiles}
+                                           ${PmidNodeAllFiles}
+                                           ${VersionHandlerAllFiles}
+                                           ${OutputFile} ${InputFile} ${MetaFiles})
   target_include_directories(maidsafe_vault_mal
     PUBLIC ${PROJECT_SOURCE_DIR}/include
     PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
@@ -123,7 +125,7 @@ if(MaidsafeTesting)
   target_link_libraries(vault_key_helper maidsafe_routing maidsafe_nfs_vault maidsafe_private)
 endif()
 
-rename_outdated_built_exes()
+ms_rename_outdated_built_exes()
 
 
 #==================================================================================================#
@@ -140,9 +142,9 @@ endif()
 # Tests                                                                                            #
 #==================================================================================================#
 if(MaidsafeTesting)
-  add_style_test()
-  add_catch_tests(test_vault)
-  add_gtests(TESTvault)
-  add_project_experimental()
-  test_summary_output()
+  ms_add_style_test()
+  ms_add_catch_tests(test_vault)
+  ms_add_gtests(TESTvault)
+  ms_add_project_experimental()
+  ms_test_summary_output()
 endif()
