@@ -47,9 +47,8 @@ struct UnresolvedAction {
   bool IsReadyForSync() const;
   Key key;
   Action action;
-  std::pair<NodeId, int32_t> this_node_and_entry_id;
+  std::shared_ptr<std::pair<NodeId, int32_t>> this_node_and_entry_id;
   std::vector<std::pair<NodeId, int32_t>> peer_and_entry_ids;
-  bool sent_to_peers;
   int sync_counter;
 
  private:
@@ -110,13 +109,13 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const std::string& serialised_co
       action(ParseAction<Action>(serialised_copy)),
       this_node_and_entry_id(),
       peer_and_entry_ids(),
-      sent_to_peers(false),
       sync_counter(0) {
   protobuf::UnresolvedAction proto_unresolved_action;
   proto_unresolved_action.ParseFromString(serialised_copy);
   key = Key(proto_unresolved_action.serialised_key());
   if (sender_id == this_node_id)
-    this_node_and_entry_id = std::make_pair(this_node_id, proto_unresolved_action.entry_id());
+    this_node_and_entry_id = std::make_shared<std::pair<NodeId,
+        int32_t>>(this_node_id, proto_unresolved_action.entry_id());
   else
     peer_and_entry_ids.push_back(std::make_pair(sender_id, proto_unresolved_action.entry_id()));
 }
@@ -127,7 +126,6 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const UnresolvedAction& other)
       action(other.action),
       this_node_and_entry_id(other.this_node_and_entry_id),
       peer_and_entry_ids(other.peer_and_entry_ids),
-      sent_to_peers(other.sent_to_peers),
       sync_counter(other.sync_counter) {}
 
 template <typename Key, typename Action>
@@ -136,7 +134,6 @@ UnresolvedAction<Key, Action>::UnresolvedAction(UnresolvedAction&& other)
       action(std::move(other.action)),
       this_node_and_entry_id(std::move(other.this_node_and_entry_id)),
       peer_and_entry_ids(std::move(other.peer_and_entry_ids)),
-      sent_to_peers(std::move(other.sent_to_peers)),
       sync_counter(std::move(other.sync_counter)) {}
 
 template <typename Key, typename Action>
@@ -144,9 +141,9 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const Key& key_in, const Action&
                                                 const NodeId& this_node_id)
     : key(key_in),
       action(action_in),
-      this_node_and_entry_id(std::make_pair(this_node_id, ++entry_id_sequence_number)),
+      this_node_and_entry_id(std::make_shared<std::pair<NodeId, int32_t>>(this_node_id,
+                                                                          ++entry_id_sequence_number)),
       peer_and_entry_ids(),
-      sent_to_peers(false),
       sync_counter(0) {}
 
 template <typename Key, typename Action>
@@ -154,14 +151,14 @@ std::string UnresolvedAction<Key, Action>::Serialise() const {
   protobuf::UnresolvedAction proto_unresolved_action;
   proto_unresolved_action.set_serialised_key(key.Serialise());
   SerialiseAction<Action>(proto_unresolved_action);
-  proto_unresolved_action.set_entry_id(this_node_and_entry_id.second);
+  proto_unresolved_action.set_entry_id(this_node_and_entry_id->second);
   return proto_unresolved_action.SerializeAsString();
 }
 
 template <typename Key, typename Action>
 bool UnresolvedAction<Key, Action>::IsReadyForSync() const {
   // TODO(Fraser#5#): 2013-07-22 - Confirm sync_counter limit and remove magic number
-  return !this_node_and_entry_id.first.IsZero() && sync_counter < 10;
+  return this_node_and_entry_id && sync_counter < 10;
 }
 
 }  // namespace vault
