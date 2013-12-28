@@ -214,10 +214,10 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
 
   if (pending_account_itr->second.anmaid_stored) {
     LOG(kVerbose) << "AddLocalAction create account for " << HexSubstr(maid_name->string());
-    sync_create_accounts_.AddLocalAction(
-        MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(message_id),
-                                             routing_.kNodeId()));
-    DoSync();
+//    sync_create_accounts_.AddLocalAction(
+//        MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(message_id),
+//                                             routing_.kNodeId()));
+//    DoSync();
   }
 }
 
@@ -236,10 +236,11 @@ void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidNam
 
   if (pending_account_itr->second.maid_stored) {
     LOG(kVerbose) << "AddLocalAction create account for " << HexSubstr(maid_name->string());
-    sync_create_accounts_.AddLocalAction(
-        MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(message_id),
-                                             routing_.kNodeId()));
-    DoSync();
+//    sync_create_accounts_.AddLocalAction(
+//        MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(message_id),
+//                                             routing_.kNodeId()));
+    DoSync(MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(message_id),
+                                                routing_.kNodeId()));
   }
 }
 
@@ -302,19 +303,21 @@ void MaidManagerService::HandlePmidRegistration(
 //FIXME This should be implemented in validate method
 //  if (pmid_registration.maid_name() != source_maid_name)
 //    return;
-  sync_register_pmids_.AddLocalAction(
-      MaidManager::UnresolvedRegisterPmid(pmid_registration.maid_name(),
-          ActionMaidManagerRegisterPmid(pmid_registration), routing_.kNodeId()));
-  DoSync();
+//  sync_register_pmids_.AddLocalAction(
+//      MaidManager::UnresolvedRegisterPmid(pmid_registration.maid_name(),
+//          ActionMaidManagerRegisterPmid(pmid_registration), routing_.kNodeId()));
+  DoSync(MaidManager::UnresolvedRegisterPmid(pmid_registration.maid_name(),
+      ActionMaidManagerRegisterPmid(pmid_registration), routing_.kNodeId()));
 }
 
 void MaidManagerService::HandlePmidUnregistration(const MaidName& maid_name,
                                                   const PmidName& pmid_name) {
   // BEFORE_RELEASE: further action may be required
-  sync_unregister_pmids_.AddLocalAction(
-      MaidManager::UnresolvedUnregisterPmid(maid_name,
-          ActionMaidManagerUnregisterPmid(pmid_name), routing_.kNodeId()));
-  DoSync();
+//  sync_unregister_pmids_.AddLocalAction(
+//      MaidManager::UnresolvedUnregisterPmid(maid_name,
+//          ActionMaidManagerUnregisterPmid(pmid_name), routing_.kNodeId()));
+  DoSync(MaidManager::UnresolvedUnregisterPmid(maid_name,
+             ActionMaidManagerUnregisterPmid(pmid_name), routing_.kNodeId()));
 }
 
 void MaidManagerService::HandleSyncedPmidRegistration(
@@ -446,15 +449,15 @@ void MaidManagerService::HandleSyncedDelete(
 
 // =============== Sync ============================================================================
 
-void MaidManagerService::DoSync() {
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accounts_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_accounts_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_register_pmids_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_update_pmid_healths_);
-}
+//void MaidManagerService::DoSync() {
+//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
+//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
+//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accounts_);
+//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_accounts_);
+//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_register_pmids_);
+//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_);
+//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_update_pmid_healths_);
+//}
 
 // =============== Account transfer ================================================================
 
@@ -490,11 +493,11 @@ void MaidManagerService::HandleHealthResponse(const MaidName& maid_node,
     PmidManagerMetadata pmid_health(serialised_pmid_health);
     LOG(kVerbose) << "PmidManagerMetadata available size " << pmid_health.claimed_available_size;
     if (return_code.value.code() == CommonErrors::success) {
-      sync_update_pmid_healths_.AddLocalAction(
-          MaidManager::UnresolvedUpdatePmidHealth(
-              maid_node, ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
-      DoSync();
-
+//      sync_update_pmid_healths_.AddLocalAction(
+//          MaidManager::UnresolvedUpdatePmidHealth(
+//              maid_node, ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
+      DoSync(MaidManager::UnresolvedUpdatePmidHealth(
+                 maid_node, ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
     }
     dispatcher_.SendHealthResponse(maid_node, pmid_health.claimed_available_size,
                                   return_code, message_id);
@@ -797,10 +800,11 @@ void MaidManagerService::HandleMessage(
 }
 
 void MaidManagerService::HandleRemoveAccount(const MaidName& maid_name, nfs::MessageId mesage_id) {
-  sync_remove_accounts_.AddLocalAction(
-      MaidManager::UnresolvedRemoveAccount(maid_name, ActionRemoveAccount(mesage_id),
-                                           routing_.kNodeId()));
-  DoSync();
+//  sync_remove_accounts_.AddLocalAction(
+//      MaidManager::UnresolvedRemoveAccount(maid_name, ActionRemoveAccount(mesage_id),
+//                                           routing_.kNodeId()));
+  DoSync(MaidManager::UnresolvedRemoveAccount(maid_name, ActionRemoveAccount(mesage_id),
+                                              routing_.kNodeId()));
 }
 
 template <>

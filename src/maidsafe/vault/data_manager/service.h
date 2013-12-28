@@ -360,9 +360,9 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
   } else {
     LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
                << " from maid_node " << HexSubstr(maid_name->string()) << " syncing";
-    typename DataManager::Key key(data.name().value, Data::Tag::kValue);
-    sync_puts_.AddLocalAction(DataManager::UnresolvedPut(key, ActionDataManagerPut(),
-                                                         routing_.kNodeId()));
+//    typename DataManager::Key key(data.name().value, Data::Tag::kValue);
+//    sync_puts_.AddLocalAction(DataManager::UnresolvedPut(key, ActionDataManagerPut(),
+//                                                         routing_.kNodeId()));
     DoSync();
   }
   LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
@@ -384,14 +384,14 @@ bool DataManagerService::EntryExist(const typename Data::Name& name) {
 
 template <typename Data>
 void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
-                                           const PmidName& pmid_node, int32_t size,
+                                           const PmidName& pmid_node, int32_t /*size*/,
                                            nfs::MessageId /*message_id*/) {
   LOG(kVerbose) << "DataManagerService::HandlePutResponse for chunk "
                 << HexSubstr(data_name.value.string()) << " storing on pmid_node "
                 << HexSubstr(pmid_node.value.string());
-  typename DataManager::Key key(data_name.value, Data::Tag::kValue);
-  sync_add_pmids_.AddLocalAction(DataManager::UnresolvedAddPmid(
-      key, ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId()));
+//  typename DataManager::Key key(data_name.value, Data::Tag::kValue);
+//  sync_add_pmids_.AddLocalAction(DataManager::UnresolvedAddPmid(
+//      key, ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId()));
   DoSync();
 }
 
@@ -433,8 +433,8 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
     }
   }
 
-  sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
-      key, ActionDataManagerRemovePmid(attempted_pmid_node), routing_.kNodeId()));
+//  sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
+//      key, ActionDataManagerRemovePmid(attempted_pmid_node), routing_.kNodeId()));
   DoSync();
 }
 
@@ -684,9 +684,9 @@ template <typename Data>
 void DataManagerService::DeletePmidNodeAsHolder(const PmidName pmid_node,
                                                 const typename Data::Name& name,
                                                 nfs::MessageId message_id) {
-  typename DataManager::Key key(name.value, Data::Tag::kValue);
-  sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
-      key, ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId()));
+//  typename DataManager::Key key(name.value, Data::Tag::kValue);
+//  sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
+//      key, ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId()));
   DoSync();
   SendDeleteRequest<Data>(pmid_node, name, message_id);
 }
@@ -696,9 +696,9 @@ template <typename Data>
 void DataManagerService::HandleDelete(const typename Data::Name& data_name,
                                       nfs::MessageId /*message_id*/) {
   LOG(kVerbose) << "DataManagerService::HandleDelete " << HexSubstr(data_name.value);
-  typename DataManager::Key key(data_name.value, Data::Name::data_type::Tag::kValue);
-  sync_deletes_.AddLocalAction(DataManager::UnresolvedDelete(key, ActionDataManagerDelete(),
-                                                             routing_.kNodeId()));
+//  typename DataManager::Key key(data_name.value, Data::Name::data_type::Tag::kValue);
+//  sync_deletes_.AddLocalAction(DataManager::UnresolvedDelete(key, ActionDataManagerDelete(),
+//                                                             routing_.kNodeId()));
   DoSync();
 }
 
@@ -719,9 +719,9 @@ template <typename DataName>
 void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName& name) {
   LOG(kWarning) << "DataManagerService::MarkNodeDown marking node " << HexSubstr(pmid_node->string())
                 << " down for chunk " << HexSubstr(name.value.string());
-  typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
-  sync_node_downs_.AddLocalAction(DataManager::UnresolvedNodeDown(
-      key, ActionDataManagerNodeDown(pmid_node), routing_.kNodeId()));
+//  typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
+//  sync_node_downs_.AddLocalAction(DataManager::UnresolvedNodeDown(
+//      key, ActionDataManagerNodeDown(pmid_node), routing_.kNodeId()));
   DoSync();
 }
 
@@ -729,9 +729,9 @@ template <typename DataName>
 void DataManagerService::MarkNodeUp(const PmidName& pmid_node, const DataName& name) {
   LOG(kInfo) << "DataManagerService::MarkNodeUp marking node " << HexSubstr(pmid_node->string())
              << " up for chunk " << HexSubstr(name.value.string());
-  typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
-  sync_node_ups_.AddLocalAction(DataManager::UnresolvedNodeUp(
-      key, ActionDataManagerNodeUp(pmid_node), routing_.kNodeId()));
+//  typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
+//  sync_node_ups_.AddLocalAction(DataManager::UnresolvedNodeUp(
+//      key, ActionDataManagerNodeUp(pmid_node), routing_.kNodeId()));
   DoSync();
 }
 

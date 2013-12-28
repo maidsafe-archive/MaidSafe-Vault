@@ -320,7 +320,7 @@ void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
 
 //=================================================================================================
 
-void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_t available_size) {
+void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_t /*available_size*/) {
   std::vector<nfs_vault::DataName> data_names;
   try {
     auto contents(group_db_.GetContents(pmid_node));
@@ -328,9 +328,9 @@ void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_
       data_names.push_back(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
     dispatcher_.SendPmidAccount(pmid_node, data_names,
                                 nfs_client::ReturnCode(CommonErrors::success));
-    sync_set_pmid_health_.AddLocalAction(PmidManager::UnresolvedSetPmidHealth(
-        PmidManager::MetadataKey(pmid_node), ActionPmidManagerSetPmidHealth(available_size),
-        routing_.kNodeId()));
+//    sync_set_pmid_health_.AddLocalAction(PmidManager::UnresolvedSetPmidHealth(
+//        PmidManager::MetadataKey(pmid_node), ActionPmidManagerSetPmidHealth(available_size),
+//        routing_.kNodeId()));
     DoSync();
   } catch (const vault_error& error) {
     if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
@@ -383,10 +383,10 @@ void PmidManagerService::DoHandleHealthResponse(const PmidName& pmid_node,
       LOG(kInfo) << "PmidManagerService::DoHandleHealthResponse reply with local record";
       reply = group_db_.GetContents(pmid_node).metadata;
     } else {
-      sync_set_pmid_health_.AddLocalAction(PmidManager::UnresolvedSetPmidHealth(
-          PmidManager::MetadataKey(pmid_node),
-          ActionPmidManagerSetPmidHealth(pmid_health.claimed_available_size),
-          routing_.kNodeId()));
+//      sync_set_pmid_health_.AddLocalAction(PmidManager::UnresolvedSetPmidHealth(
+//          PmidManager::MetadataKey(pmid_node),
+//          ActionPmidManagerSetPmidHealth(pmid_health.claimed_available_size),
+//          routing_.kNodeId()));
       DoSync();
     }
     dispatcher_.SendHealthResponse(maid_node, pmid_node, reply,
@@ -422,9 +422,9 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
     LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest no_such_element";
     // Once synced, check whether account exists or not, if not exist then shall create an account
     // If exist, decide whether to update or delete depending on account status and targeting size
-    sync_create_account_.AddLocalAction(PmidManager::UnresolvedCreateAccount(
-        PmidManager::MetadataKey(pmid_node), ActionCreatePmidAccount(),
-        routing_.kNodeId()));
+//    sync_create_account_.AddLocalAction(PmidManager::UnresolvedCreateAccount(
+//        PmidManager::MetadataKey(pmid_node), ActionCreatePmidAccount(),
+//        routing_.kNodeId()));
     DoSync();
   }
 }

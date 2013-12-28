@@ -151,10 +151,10 @@ std::vector<UnresolvedActionType> CreateGroupUnresolvedAction(
 
 template <typename ServiceType, typename UnresolvedActionType, typename PersonaSyncType>
 void AddLocalActionAndSendGroupActions(
-    ServiceType* service, Sync<UnresolvedActionType>& sync,
+    ServiceType* service, Sync<UnresolvedActionType>& /*sync*/,
     const std::vector<UnresolvedActionType>& unresolved_actions,
     const std::vector<routing::GroupSource>& group_source) {
-  sync.AddLocalAction(unresolved_actions[0]);
+//  sync.AddLocalAction(unresolved_actions[0]);
   for (uint32_t index(1); index < unresolved_actions.size(); ++index) {
     auto proto_sync(CreateProtoSync(UnresolvedActionType::ActionType::kActionId,
                                     unresolved_actions[index].Serialise()));

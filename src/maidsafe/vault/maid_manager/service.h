@@ -198,8 +198,8 @@ class MaidManagerService {
   void UpdatePmidTotals(const MaidName& account_name);
   void UpdatePmidTotalsCallback(const std::string& serialised_reply,
                                 std::shared_ptr<GetPmidTotalsOp> op_data);
-
-  void DoSync();
+  template <typename UnresolvedAction>
+  void DoSync(const UnresolvedAction& unresolved_action);
 
   typedef boost::mpl::vector<> InitialType;
   typedef boost::mpl::insert_range<InitialType,
@@ -443,9 +443,10 @@ void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
                 << " taking cost of " << cost;
   typename MaidManager::Key group_key(typename MaidManager::GroupName(maid_name.value),
                                       data_name, Data::Tag::kValue);
-  sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(
-      group_key, ActionMaidManagerPut(cost), routing_.kNodeId()));
-  DoSync();
+//  sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(
+//      group_key, ActionMaidManagerPut(cost), routing_.kNodeId()));
+  DoSync(typename MaidManager::UnresolvedPut(group_key,
+                                             ActionMaidManagerPut(cost), routing_.kNodeId()));
 }
 
 template <typename Data>
@@ -493,10 +494,11 @@ void MaidManagerService::HandleDelete(const MaidName& account_name,
   group_db_.GetMetadata(account_name);  // throws
   typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
                                       data_name, Data::Tag::kValue);
-  sync_deletes_.AddLocalAction(typename MaidManager::UnresolvedDelete(
-                                   group_key, ActionMaidManagerDelete(message_id),
-                                   routing_.kNodeId()));
-  DoSync();
+//  sync_deletes_.AddLocalAction(typename MaidManager::UnresolvedDelete(
+//                                   group_key, ActionMaidManagerDelete(message_id),
+//                                   routing_.kNodeId()));
+  DoSync(typename MaidManager::UnresolvedDelete(group_key, ActionMaidManagerDelete(message_id),
+                                                routing_.kNodeId()));
 }
 
 // ===============================================================================================
@@ -517,6 +519,18 @@ void MaidManagerService::ValidatePmidRegistration(
   }
   if (finalise)
     FinalisePmidRegistration(pmid_registration_op);
+}
+
+// FIXME BEFORE_RELEASE sync unresolved_action
+template <typename UnresolvedAction>
+void MaidManagerService::DoSync(const UnresolvedAction& /*unresolved_action*/) {
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accounts_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_accounts_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_register_pmids_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_update_pmid_healths_);
 }
 
 }  // namespace vault
