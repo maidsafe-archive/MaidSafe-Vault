@@ -371,42 +371,46 @@ struct can_create_account<passport::PublicAnmaid> : public std::true_type {};
 template <>
 struct can_create_account<passport::PublicMaid> : public std::true_type {};
 
-// template<typename Data>
-// int32_t EstimateCost(const Data& data) {
-//  static_assert(!std::is_same<Data, passport::PublicAnmaid>::value, "Cost of Anmaid should be
-// 0.");
-//  static_assert(!std::is_same<Data, passport::PublicMaid>::value, "Cost of Maid should be 0.");
-//  static_assert(!std::is_same<Data, passport::PublicPmid>::value, "Cost of Pmid should be 0.");
-//  return static_cast<int32_t>(MaidManagerService::DefaultPaymentFactor() *
-//                              data.content.string().size());
-//}
+template <typename UnresolvedAction>
+void SendSync(MaidManagerDispatcher& dispatcher,
+              const std::vector<UnresolvedAction>& unresolved_actions) {
+  protobuf::Sync proto_sync;
+  for (const auto& unresolved_action : unresolved_actions) {
+    proto_sync.Clear();
+    proto_sync.set_serialised_unresolved_action(unresolved_action->Serialise());
+    proto_sync.set_action_type(static_cast<int32_t>(unresolved_action->action.kActionId));
+    LOG(kInfo) << "MaidManager send sync action " << proto_sync.action_type();
+    dispatcher.SendSync(unresolved_action->key.group_name(), proto_sync.SerializeAsString());
+  }
+}
 
-// template<>
-// int32_t EstimateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&);
-
-// template<>
-// int32_t EstimateCost<passport::PublicMaid>(const passport::PublicMaid&);
-
-// template<>
-// int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&);
-
-template <typename MaidManagerSyncType>
+template <typename UnresolvedAction, typename NewUnresolvedAction>
 void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
-                                  MaidManagerSyncType& sync_type) {
+                                  Sync<UnresolvedAction>& sync_type,
+                                  const NewUnresolvedAction& unresolved_action,
+                                  typename std::enable_if<std::is_same<UnresolvedAction,
+                                  NewUnresolvedAction>::value >::type* = 0) {
+  auto unresolved_actions(sync_type.GetUnresolvedActions());
+  std::unique_ptr<UnresolvedAction> unresolved_action_ptr(new UnresolvedAction(unresolved_action));
+  unresolved_actions.push_back(std::move(unresolved_action_ptr));
+  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has "
+                << unresolved_actions.size() << " unresolved_actions";
+  sync_type.IncrementSyncAttempts();
+  SendSync(dispatcher, unresolved_actions);
+}
+
+
+template <typename UnresolvedAction, typename NewUnresolvedAction>
+void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
+                                  Sync<UnresolvedAction>& sync_type,
+                                  const NewUnresolvedAction& /*unresolved_action*/,
+                                  typename std::enable_if<!std::is_same<UnresolvedAction,
+                                  NewUnresolvedAction>::value >::type* = 0) {
   auto unresolved_actions(sync_type.GetUnresolvedActions());
   LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has "
                 << unresolved_actions.size() << " unresolved_actions";
-  if (!unresolved_actions.empty()) {
-    sync_type.IncrementSyncAttempts();
-    protobuf::Sync proto_sync;
-    for (const auto& unresolved_action : unresolved_actions) {
-      proto_sync.Clear();
-      proto_sync.set_serialised_unresolved_action(unresolved_action->Serialise());
-      proto_sync.set_action_type(static_cast<int32_t>(MaidManagerSyncType::kActionId));
-      LOG(kInfo) << "MaidManager send sync action " << proto_sync.action_type();
-      dispatcher.SendSync(unresolved_action->key.group_name(), proto_sync.SerializeAsString());
-    }
-  }
+  sync_type.IncrementSyncAttempts();
+  SendSync(dispatcher, unresolved_actions);
 }
 
 }  // namespace detail
@@ -523,14 +527,14 @@ void MaidManagerService::ValidatePmidRegistration(
 
 // FIXME BEFORE_RELEASE sync unresolved_action
 template <typename UnresolvedAction>
-void MaidManagerService::DoSync(const UnresolvedAction& /*unresolved_action*/) {
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accounts_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_accounts_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_register_pmids_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_update_pmid_healths_);
+void MaidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accounts_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_accounts_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_register_pmids_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_update_pmid_healths_, unresolved_action);
 }
 
 }  // namespace vault
