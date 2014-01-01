@@ -357,14 +357,6 @@ void DataManagerService::HandleMessage(
   assert(0);
 }
 
-void DataManagerService::DoSync() {
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_add_pmids_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_pmids_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_downs_);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_ups_);
-}
 
 void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
 //   LOG(kVerbose) << "HandleChurnEvent matrix_change_ containing following info before : ";

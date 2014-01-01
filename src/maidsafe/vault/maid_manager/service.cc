@@ -214,10 +214,9 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
 
   if (pending_account_itr->second.anmaid_stored) {
     LOG(kVerbose) << "AddLocalAction create account for " << HexSubstr(maid_name->string());
-//    sync_create_accounts_.AddLocalAction(
-//        MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(message_id),
-//                                             routing_.kNodeId()));
-//    DoSync();
+    DoSync(
+        MaidManager::UnresolvedCreateAccount(maid_name, ActionCreateAccount(message_id),
+                                             routing_.kNodeId()));
   }
 }
 
@@ -446,18 +445,6 @@ void MaidManagerService::HandleSyncedDelete(
                                 data_name,
                                 synced_action_delete->action.kMessageId);
 }
-
-// =============== Sync ============================================================================
-
-//void MaidManagerService::DoSync() {
-//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_);
-//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_);
-//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accounts_);
-//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_accounts_);
-//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_register_pmids_);
-//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_);
-//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_update_pmid_healths_);
-//}
 
 // =============== Account transfer ================================================================
 
@@ -800,9 +787,6 @@ void MaidManagerService::HandleMessage(
 }
 
 void MaidManagerService::HandleRemoveAccount(const MaidName& maid_name, nfs::MessageId mesage_id) {
-//  sync_remove_accounts_.AddLocalAction(
-//      MaidManager::UnresolvedRemoveAccount(maid_name, ActionRemoveAccount(mesage_id),
-//                                           routing_.kNodeId()));
   DoSync(MaidManager::UnresolvedRemoveAccount(maid_name, ActionRemoveAccount(mesage_id),
                                               routing_.kNodeId()));
 }

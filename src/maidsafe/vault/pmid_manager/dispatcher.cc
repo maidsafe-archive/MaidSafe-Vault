@@ -18,21 +18,12 @@
 
 #include "maidsafe/vault/pmid_manager/dispatcher.h"
 
-#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
 namespace vault {
 
 PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing) : routing_(routing) {}
-
-void PmidManagerDispatcher::SendSync(const PmidName& account_name,
-                                     const std::string& serialised_sync) {
-  typedef SynchroniseFromPmidManagerToPmidManager VaultMessage;
-  CheckSourcePersonaType<VaultMessage>();
-  SendSyncMessage<VaultMessage> sync_sender;
-  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), account_name);
-}
 
 // void PmidManagerDispatcher::SendStateChange(const PmidName& pmid_node,
 //                                            const Data::Name &data_name) {
@@ -44,19 +35,6 @@ void PmidManagerDispatcher::SendSync(const PmidName& account_name,
 //                         NfsMessage::Sender(routing::GroupId(pmid_node),
 //                                            routing::SingleId(routing_.kNodeId())),
 //                         NfsMessage::Receiver(NodeId(data_name->string())));
-//  routing_.Send(message);
-//}
-
-// void PmidManagerDispatcher::SendSync(const PmidName& pmid_node,
-//                                     const std::string& serialised_sync) {
-//  typedef SynchroniseFromPmidManagerToPmidManager VaultMessage;
-//  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-
-//  VaultMessage vault_message(serialised_sync); // TODO(Mahmoud): MUST BE FIXED
-//  RoutingMessage message(vault_message.Serialise(),
-//                         VaultMessage::Sender(routing::GroupId(pmid_node),
-//                                              routing::SingleId(routing_.kNodeId())),
-//                         VaultMessage::Receiver(routing::GroupId(pmid_node)));
 //  routing_.Send(message);
 //}
 

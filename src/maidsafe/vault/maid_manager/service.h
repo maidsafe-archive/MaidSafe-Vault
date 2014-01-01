@@ -371,48 +371,6 @@ struct can_create_account<passport::PublicAnmaid> : public std::true_type {};
 template <>
 struct can_create_account<passport::PublicMaid> : public std::true_type {};
 
-template <typename UnresolvedAction>
-void SendSync(MaidManagerDispatcher& dispatcher,
-              const std::vector<UnresolvedAction>& unresolved_actions) {
-  protobuf::Sync proto_sync;
-  for (const auto& unresolved_action : unresolved_actions) {
-    proto_sync.Clear();
-    proto_sync.set_serialised_unresolved_action(unresolved_action->Serialise());
-    proto_sync.set_action_type(static_cast<int32_t>(unresolved_action->action.kActionId));
-    LOG(kInfo) << "MaidManager send sync action " << proto_sync.action_type();
-    dispatcher.SendSync(unresolved_action->key.group_name(), proto_sync.SerializeAsString());
-  }
-}
-
-template <typename UnresolvedAction, typename NewUnresolvedAction>
-void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
-                                  Sync<UnresolvedAction>& sync_type,
-                                  const NewUnresolvedAction& unresolved_action,
-                                  typename std::enable_if<std::is_same<UnresolvedAction,
-                                  NewUnresolvedAction>::value >::type* = 0) {
-  auto unresolved_actions(sync_type.GetUnresolvedActions());
-  std::unique_ptr<UnresolvedAction> unresolved_action_ptr(new UnresolvedAction(unresolved_action));
-  unresolved_actions.push_back(std::move(unresolved_action_ptr));
-  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has "
-                << unresolved_actions.size() << " unresolved_actions";
-  sync_type.IncrementSyncAttempts();
-  SendSync(dispatcher, unresolved_actions);
-}
-
-
-template <typename UnresolvedAction, typename NewUnresolvedAction>
-void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
-                                  Sync<UnresolvedAction>& sync_type,
-                                  const NewUnresolvedAction& /*unresolved_action*/,
-                                  typename std::enable_if<!std::is_same<UnresolvedAction,
-                                  NewUnresolvedAction>::value >::type* = 0) {
-  auto unresolved_actions(sync_type.GetUnresolvedActions());
-  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has "
-                << unresolved_actions.size() << " unresolved_actions";
-  sync_type.IncrementSyncAttempts();
-  SendSync(dispatcher, unresolved_actions);
-}
-
 }  // namespace detail
 
 // ================================== Put Implementation ========================================
@@ -447,8 +405,6 @@ void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
                 << " taking cost of " << cost;
   typename MaidManager::Key group_key(typename MaidManager::GroupName(maid_name.value),
                                       data_name, Data::Tag::kValue);
-//  sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(
-//      group_key, ActionMaidManagerPut(cost), routing_.kNodeId()));
   DoSync(typename MaidManager::UnresolvedPut(group_key,
                                              ActionMaidManagerPut(cost), routing_.kNodeId()));
 }
@@ -498,9 +454,6 @@ void MaidManagerService::HandleDelete(const MaidName& account_name,
   group_db_.GetMetadata(account_name);  // throws
   typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
                                       data_name, Data::Tag::kValue);
-//  sync_deletes_.AddLocalAction(typename MaidManager::UnresolvedDelete(
-//                                   group_key, ActionMaidManagerDelete(message_id),
-//                                   routing_.kNodeId()));
   DoSync(typename MaidManager::UnresolvedDelete(group_key, ActionMaidManagerDelete(message_id),
                                                 routing_.kNodeId()));
 }
@@ -525,7 +478,6 @@ void MaidManagerService::ValidatePmidRegistration(
     FinalisePmidRegistration(pmid_registration_op);
 }
 
-// FIXME BEFORE_RELEASE sync unresolved_action
 template <typename UnresolvedAction>
 void MaidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_, unresolved_action);

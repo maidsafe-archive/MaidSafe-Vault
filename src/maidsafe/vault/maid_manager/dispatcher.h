@@ -80,8 +80,8 @@ class MaidManagerDispatcher {
 
   void SendUnregisterPmidResponse(const MaidName& account_name, const PmidName& pmid_name,
                                   const maidsafe_error& result, nfs::MessageId message_id);
-
-  void SendSync(const MaidName& account_name, const std::string& serialised_sync);
+  template <typename KeyType>
+  void SendSync(const KeyType& key, const std::string& serialised_sync);
 
   void SendAccountTransfer(const NodeId& destination_peer, const MaidName& account_name,
                            const std::string& serialised_account);
@@ -245,6 +245,15 @@ void MaidManagerDispatcher::SendDeleteBranchUntilFork(
 //                         routing::SingleId(NodeId(account_name->string())), cacheable);
 //  routing_.Send(message);
 //}
+
+
+template <typename KeyType>
+void MaidManagerDispatcher::SendSync(const KeyType& key, const std::string& serialised_sync) {
+  typedef SynchroniseFromMaidManagerToMaidManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  SendSyncMessage<VaultMessage> sync_sender;
+  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), key.group_name());
+}
 
 // ==================== General implementation =====================================================
 
