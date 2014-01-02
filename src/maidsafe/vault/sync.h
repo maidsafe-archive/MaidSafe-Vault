@@ -70,8 +70,6 @@ class Sync {
   Sync(Sync&&);
   Sync(const Sync&);
   Sync& operator=(Sync other);
-  std::unique_ptr<UnresolvedAction> AddAction(const UnresolvedAction& unresolved_action,
-                                              bool merge);
   bool CanBeErased(const UnresolvedAction& unresolved_action) const;
 
   mutable std::mutex mutex_;
