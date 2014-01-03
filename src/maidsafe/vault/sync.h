@@ -150,6 +150,17 @@ void AddNewUnresolvedAction(const UnresolvedAction& new_action,
   unresolved_actions.push_back(std::move(unresolved_action_ptr));
 }
 
+template <typename UnresolvedAction>
+bool HaveEntryFromPeer(const UnresolvedAction& new_action,
+                       const UnresolvedAction& existing_action) {
+  assert(!new_action.this_node_and_entry_id && "to be used only for assessing action from peers");
+  for (const auto& i : existing_action.peer_and_entry_ids) {
+    if (i.first == new_action.peer_and_entry_ids.front().first)
+      return true;
+  }
+  return false;
+}
+
 }  // namespace detail
 
 template <typename UnresolvedAction>
@@ -165,7 +176,7 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddUnresolvedAction(
   std::unique_ptr<UnresolvedAction> resolved_action;
   auto found(std::begin(unresolved_actions_));
   std::lock_guard<std::mutex> lock(mutex_);
-  do {
+  for (;;) {
     found = std::find_if(found, std::end(unresolved_actions_),
                          [&unresolved_action](const std::unique_ptr<UnresolvedAction>& test) {
                              return ((test->key == unresolved_action.key) &&
@@ -187,8 +198,8 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddUnresolvedAction(
     if (detail::IsFromThisNode(unresolved_action)) {
       if (!(*found)->this_node_and_entry_id) {
         detail::AppendUnresolvedActionEntry(unresolved_action, **found, resolved_action);
-        break;
-      } else {
+        break;  // done here
+      } else {  // It must be different entry id so add seprate unresolved entry
         assert((*found)->this_node_and_entry_id != unresolved_action.this_node_and_entry_id);
         ++found;
         continue;
@@ -196,13 +207,14 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddUnresolvedAction(
     }
 
     // check if already recieved 3 entry from other nodes if not then add or else continue
-    if ((*found)->peer_and_entry_ids.size() < (routing::Parameters::node_group_size - 1U)) {
+    if (((*found)->peer_and_entry_ids.size() < (routing::Parameters::node_group_size - 1U)) &&
+            !detail::HaveEntryFromPeer(unresolved_action, **found)) {
       detail::AppendUnresolvedActionEntry(unresolved_action, **found, resolved_action);
       break;
     }
 
     ++found;
-  } while (found != std::end(unresolved_actions_));  // loop only if not acted on action
+  }  // loop only if not acted on action
   return std::move(resolved_action);
 }
 

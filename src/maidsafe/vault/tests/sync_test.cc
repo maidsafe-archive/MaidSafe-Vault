@@ -136,7 +136,6 @@ TEST(SyncTest, BEH_SingleActionRepeatedMessages) {
         EXPECT_TRUE(unresolved_list.size() == 1U) << "i = " << i << " , j = " << j;
         // Add repeated messages
         for (auto k(0U); k <= j; ++k) {
-          std::cout << "Adding repeated : " << "i = " << i << " , j = " << j << ", k= " << k << std::endl;
           auto resolved = persona_nodes[i].RecieveUnresolvedAction(unresolved_actions[k]);
           EXPECT_TRUE(resolved == nullptr);
         }
@@ -166,12 +165,10 @@ TEST(SyncTest, BEH_TwoActionSameKey) {
       auto resolved1 = persona_nodes[i].RecieveUnresolvedAction(unresolved_actions_1[j]);
       if (resolved1) {
         resolved_vector.push_back(std::move(resolved1));
-        std::cout << "resolved 1 added j : " << j << std::endl;
        }
       auto resolved2 = persona_nodes[i].RecieveUnresolvedAction(unresolved_actions_2[j]);
       if (resolved2) {
         resolved_vector.push_back(std::move(resolved2));
-        std::cout << "resolved 2 added j : " << j << std::endl;
       }
     }
     EXPECT_TRUE(resolved_vector.size() == 2) << " resolved_vector.size() : "<< resolved_vector.size();
@@ -210,13 +207,14 @@ TEST(SyncTest, BEH_MultipleSequentialAction) {
 }
 
 TEST(SyncTest, BEH_MultipleRandomAction) {
+  const int kActionCount(500);
   auto maid(MakeMaid());
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
   std::vector<PersonaNode<MaidManager::UnresolvedPut>> persona_nodes(routing::Parameters::node_group_size);
 
   std::vector<MaidManager::Key> keys;
   std::vector<MaidManager::UnresolvedPut> unresolved_actions;
-  for(auto count(0U); count != 100; ++count) { // FIXME add random DataTagValue types
+  for(auto count(0); count != kActionCount; ++count) { // FIXME add random DataTagValue types
     keys.push_back(MaidManager::Key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
                                     DataTagValue::kMaidValue));
     for (const auto& persona_node : persona_nodes) {
@@ -232,7 +230,9 @@ TEST(SyncTest, BEH_MultipleRandomAction) {
           resolved_vector.push_back(std::move(resolved));
     }
   }
-  EXPECT_TRUE(resolved_vector.size() == 400) << resolved_vector.size();
+  EXPECT_TRUE(resolved_vector.size() ==
+                  (kActionCount * routing::Parameters::node_group_size)) << resolved_vector.size();
+
 }
 
 }  // test
