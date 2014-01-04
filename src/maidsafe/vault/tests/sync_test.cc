@@ -55,7 +55,7 @@ namespace test {
 
 template <typename UnresolvedActionType>
 struct PersonaNode {
-  PersonaNode() : sync(), node_id(NodeId::kRandomId) {}
+  PersonaNode() : sync(), node_id(NodeId::kRandomId), resolved_count(0) {}
 
   UnresolvedActionType CreateUnresolvedAction(const typename UnresolvedActionType::KeyType& key) const {
     typename UnresolvedActionType::ActionType action(100);
@@ -66,12 +66,35 @@ struct PersonaNode {
       const UnresolvedActionType& unresolved_action) {
     auto recieved_unresolved_action = UnresolvedActionType(unresolved_action.Serialise(),
         unresolved_action.this_node_and_entry_id->first, node_id);
-    return std::move(sync.AddUnresolvedAction(recieved_unresolved_action));
+    auto resolved(sync.AddUnresolvedAction(recieved_unresolved_action));
+    if (resolved)
+      ++resolved_count;
+    return std::move(resolved);
   }
 
   Sync<UnresolvedActionType> sync;
   NodeId node_id;
+  std::atomic<int> resolved_count;
 };
+
+
+std::vector<MaidManager::Key> CreateKeys(int count, int group_count = 20) {
+  std::vector<passport::PublicMaid::Name> group_vector;
+  for (auto i(0); i < group_count; ++i) {
+    auto maid(MakeMaid());
+    passport::PublicMaid::Name maid_name(MaidName(maid.name()));
+    group_vector.push_back(maid_name);
+  }
+  std::vector<MaidManager::Key> keys;
+  for (auto i(0); i < count; ++i) {
+    typename MaidManager::Key key(group_vector[i % group_count],
+                                  Identity(NodeId(NodeId::kRandomId).string()),
+                                  DataTagValue::kMaidValue);
+    keys.push_back(key);
+  }
+  return keys;
+}
+
 
 TEST(SyncTest, BEH_Constructor) {
   Sync<MaidManager::UnresolvedPut> maid_manager_sync_puts;
@@ -181,11 +204,11 @@ TEST(SyncTest, BEH_MultipleSequentialAction) {
   std::vector<PersonaNode<MaidManager::UnresolvedPut>> persona_nodes(routing::Parameters::node_group_size);
 
   for(auto count(0U); count != 100; ++count) {
-  typename MaidManager::Key key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
-                                DataTagValue::kMaidValue);
-  std::vector<MaidManager::UnresolvedPut> unresolved_actions;
-  for (const auto& persona_node : persona_nodes)
-    unresolved_actions.push_back(persona_node.CreateUnresolvedAction(key));
+    typename MaidManager::Key key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
+                                  DataTagValue::kMaidValue);
+    std::vector<MaidManager::UnresolvedPut> unresolved_actions;
+    for (const auto& persona_node : persona_nodes)
+      unresolved_actions.push_back(persona_node.CreateUnresolvedAction(key));
     for (auto i(0U); i != routing::Parameters::node_group_size; ++i) {
       int resolved_count(0);
       for (auto j(0U); j != routing::Parameters::node_group_size; ++j) {
@@ -198,7 +221,7 @@ TEST(SyncTest, BEH_MultipleSequentialAction) {
         }
         auto unresolved_list = persona_nodes[i].sync.GetUnresolvedActions();
         if ((j >= i) && (j < (routing::Parameters::node_group_size -1U)))
-          EXPECT_TRUE(unresolved_list.size() == 1U) << "i = " << i << " , j = " << j;;
+          EXPECT_TRUE(unresolved_list.size() == 1U) << "i = " << i << " , j = " << j;
       }
       EXPECT_TRUE(resolved_count == 1);
       EXPECT_TRUE(persona_nodes[i].sync.GetUnresolvedActions().size() == 0U);
@@ -213,26 +236,70 @@ TEST(SyncTest, BEH_MultipleRandomAction) {
   std::vector<PersonaNode<MaidManager::UnresolvedPut>> persona_nodes(routing::Parameters::node_group_size);
 
   std::vector<MaidManager::Key> keys;
-  std::vector<MaidManager::UnresolvedPut> unresolved_actions;
+  std::vector<std::unique_ptr<MaidManager::UnresolvedPut>> unresolved_actions;
   for(auto count(0); count != kActionCount; ++count) { // FIXME add random DataTagValue types
     keys.push_back(MaidManager::Key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
                                     DataTagValue::kMaidValue));
     for (const auto& persona_node : persona_nodes) {
-      unresolved_actions.push_back(persona_node.CreateUnresolvedAction(keys.back()));
+      std::unique_ptr<MaidManager::UnresolvedPut> action(
+                  new MaidManager::UnresolvedPut(persona_node.CreateUnresolvedAction(keys.back())));
+      unresolved_actions.push_back(std::move(action));
     }
   }
+
+  std::random_shuffle(unresolved_actions.begin(), unresolved_actions.end());
 
   std::vector<std::unique_ptr<MaidManager::UnresolvedPut>> resolved_vector;
   for (const auto& unresolved_action : unresolved_actions) {
     for (auto& persona_node : persona_nodes) {
-      auto resolved = persona_node.RecieveUnresolvedAction(unresolved_action);
+      auto resolved = persona_node.RecieveUnresolvedAction(*unresolved_action);
       if (resolved)
-          resolved_vector.push_back(std::move(resolved));
+        resolved_vector.push_back(std::move(resolved));
     }
   }
   EXPECT_TRUE(resolved_vector.size() ==
                   (kActionCount * routing::Parameters::node_group_size)) << resolved_vector.size();
+  int count(0);
+  for (auto& key : keys) {
+    int matches(0);
+    for (const auto& resolved : resolved_vector) {
+      if (resolved->key == key)
+        ++matches;
+    }
+    EXPECT_TRUE(matches == routing::Parameters::node_group_size) << matches;
+    ++count;
+  }
+  EXPECT_TRUE(count == kActionCount) << count;
+  for (auto& persona_node : persona_nodes) {
+    EXPECT_TRUE(persona_node.resolved_count == kActionCount);
+  }
+}
 
+
+// different group
+// repeated keys
+// mixed keys
+template <typename Persona, typename KeyType>
+void ApplySyncToPersona(Persona& persona_node, std::vector<KeyType> keys) {
+  for (auto& key : keys) {
+    auto unresolved_action = persona_node.CreateUnresolvedAction(key);
+    persona_node.RecieveUnresolvedAction(unresolved_action);
+  }
+}
+
+TEST(SyncTest, BEH_MultipleParallelRandomAction) {
+  const int kActionCount(1000);
+  auto keys = CreateKeys(kActionCount);
+//  auto itr = std::begin(keys);
+//  std::vector<MaidManager::Key> keys_thread_1(itr, itr + (kActionCount / 4));
+//  std::advance(itr, (kActionCount / 4));
+//  std::vector<MaidManager::Key> keys_thread_2(itr, itr + (kActionCount / 4));
+//  std::advance(itr, (kActionCount / 4));
+//  std::vector<MaidManager::Key> keys_thread_3(itr, itr + (kActionCount / 4));
+//  std::advance(itr, (kActionCount / 4));
+//  std::vector<MaidManager::Key> keys_thread_4(itr, itr + (kActionCount / 4));
+  PersonaNode<MaidManager::UnresolvedPut> persona_node;
+  ApplySyncToPersona(persona_node, keys);
 }
 
 }  // test
