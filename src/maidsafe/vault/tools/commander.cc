@@ -163,7 +163,7 @@ void Commander::CheckOptionValidity(po::options_description& cmdline_options, in
   po::variables_map variables_map;
   po::store(parser.options(cmdline_options).allow_unregistered().run(), variables_map);
   po::notify(variables_map);
-  keys_path_ = maidsafe::GetPathFromProgramOptions("keys_path", variables_map, false, false);
+  keys_path_ = maidsafe::GetPathFromProgramOptions("keys_path", variables_map, false, true);
   if (variables_map.count("peer"))
     peer_endpoints_.push_back(GetBootstrapEndpoint(variables_map.at("peer").as<std::string>()));
 
@@ -285,32 +285,37 @@ void Commander::HandleVerifyStoredPublicKeys(size_t /*client_index*/) {
 void Commander::HandleDoTest(size_t client_index) {
   assert(client_index > 1);
   LOG(kVerbose) << "constructing chunk_storer ......";
-  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_, pmids_from_file_);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_,
+                               pmids_from_file_, false);
   LOG(kVerbose) << "testing store " << chunk_set_count_ << " chunks ......";
   chunk_storer.Test(chunk_set_count_);
 }
 
 void Commander::HandleDoTestWithDelete(size_t client_index) {
   assert(client_index > 1);
-  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_, pmids_from_file_);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_,
+                               pmids_from_file_, false);
   chunk_storer.TestWithDelete(chunk_set_count_);
 }
 
 void Commander::HandleStoreChunk(size_t client_index) {
   assert(client_index > 1);
-  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_, pmids_from_file_);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_,
+                               pmids_from_file_, true);
   chunk_storer.TestStoreChunk(chunk_index_);
 }
 
 void Commander::HandleFetchChunk(size_t client_index) {
   assert(client_index > 1);
-  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_, pmids_from_file_);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_,
+                               pmids_from_file_, true);
   chunk_storer.TestFetchChunk(chunk_index_);
 }
 
 void Commander::HandleDeleteChunk(size_t client_index) {
   assert(client_index > 1);
-  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_, pmids_from_file_);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_,
+                               pmids_from_file_, true);
   chunk_storer.TestDeleteChunk(chunk_index_);
 }
 

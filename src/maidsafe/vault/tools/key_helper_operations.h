@@ -144,7 +144,8 @@ class DataChunkStorer : public ClientTester {
  public:
   DataChunkStorer(const passport::detail::AnmaidToPmid& key_chain,
                   const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints,
-                  const std::vector<passport::PublicPmid>& public_pmids_from_file);
+                  const std::vector<passport::PublicPmid>& public_pmids_from_file,
+                  bool load_chunk_from_file);
 
   void StopTest();
   void Test(int32_t quantity = -1);

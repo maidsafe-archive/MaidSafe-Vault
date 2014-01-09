@@ -297,11 +297,14 @@ void KeyVerifier::Verify() {
 
 DataChunkStorer::DataChunkStorer(const passport::detail::AnmaidToPmid& key_chain,
                                  const std::vector<UdpEndpoint>& peer_endpoints,
-                                 const std::vector<passport::PublicPmid>& public_pmids_from_file)
+                                 const std::vector<passport::PublicPmid>& public_pmids_from_file,
+                                 bool load_chunk_from_file)
     : ClientTester(key_chain, peer_endpoints, public_pmids_from_file, true),
       run_(false), chunk_list_() {
-  LOG(kVerbose) << "loading pre-generated chunks from file when constructing chunk_storer ......";
-  LoadChunksFromFiles();
+  if (load_chunk_from_file) {
+    LOG(kVerbose) << "loading pre-generated chunks from file when constructing chunk_storer ......";
+    LoadChunksFromFiles();
+  }
 }
 
 void DataChunkStorer::StopTest() { run_ = false; }
