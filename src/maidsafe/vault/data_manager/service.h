@@ -176,7 +176,8 @@ class DataManagerService {
   void MarkNodeUp(const PmidName& pmid_node, const DataName& data_name);
 
   // =========================== Sync / AccountTransfer section ====================================
-  void DoSync();
+  template <typename UnresolvedAction>
+  void DoSync(const UnresolvedAction& unresolved_action);
 
   // =========================== General functions =================================================
   void HandleDataIntegrityResponse(const GetResponseContents& response, nfs::MessageId message_id);
@@ -368,9 +369,7 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
     LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
                << " from maid_node " << HexSubstr(maid_name->string()) << " syncing";
     typename DataManager::Key key(data.name().value, Data::Tag::kValue);
-    sync_puts_.AddLocalAction(DataManager::UnresolvedPut(key, ActionDataManagerPut(),
-                                                         routing_.kNodeId()));
-    DoSync();
+    DoSync(DataManager::UnresolvedPut(key, ActionDataManagerPut(), routing_.kNodeId()));
   }
   LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
               << " from maid_node " << HexSubstr(maid_name->string())
@@ -397,9 +396,8 @@ void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
                 << HexSubstr(data_name.value.string()) << " storing on pmid_node "
                 << HexSubstr(pmid_node.value.string());
   typename DataManager::Key key(data_name.value, Data::Tag::kValue);
-  sync_add_pmids_.AddLocalAction(DataManager::UnresolvedAddPmid(
-      key, ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId()));
-  DoSync();
+  DoSync(DataManager::UnresolvedAddPmid(key,
+             ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId()));
 }
 
 template <typename Data>
@@ -440,9 +438,8 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
     }
   }
 
-  sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
+  DoSync(DataManager::UnresolvedRemovePmid(
       key, ActionDataManagerRemovePmid(attempted_pmid_node), routing_.kNodeId()));
-  DoSync();
 }
 
 template <typename DataName>
@@ -693,9 +690,8 @@ void DataManagerService::DeletePmidNodeAsHolder(const PmidName pmid_node,
                                                 const typename Data::Name& name,
                                                 nfs::MessageId message_id) {
   typename DataManager::Key key(name.value, Data::Tag::kValue);
-  sync_remove_pmids_.AddLocalAction(DataManager::UnresolvedRemovePmid(
-      key, ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId()));
-  DoSync();
+  DoSync(DataManager::UnresolvedRemovePmid(key,
+             ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId()));
   SendDeleteRequest<Data>(pmid_node, name, message_id);
 }
 
@@ -705,9 +701,8 @@ void DataManagerService::HandleDelete(const typename Data::Name& data_name,
                                       nfs::MessageId /*message_id*/) {
   LOG(kVerbose) << "DataManagerService::HandleDelete " << HexSubstr(data_name.value);
   typename DataManager::Key key(data_name.value, Data::Name::data_type::Tag::kValue);
-  sync_deletes_.AddLocalAction(DataManager::UnresolvedDelete(key, ActionDataManagerDelete(),
-                                                             routing_.kNodeId()));
-  DoSync();
+  DoSync(DataManager::UnresolvedDelete(key, ActionDataManagerDelete(),
+                                       routing_.kNodeId()));
 }
 
 template <typename Data>
@@ -728,9 +723,8 @@ void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName&
   LOG(kWarning) << "DataManagerService::MarkNodeDown marking node " << HexSubstr(pmid_node->string())
                 << " down for chunk " << HexSubstr(name.value.string());
   typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
-  sync_node_downs_.AddLocalAction(DataManager::UnresolvedNodeDown(
-      key, ActionDataManagerNodeDown(pmid_node), routing_.kNodeId()));
-  DoSync();
+  DoSync(DataManager::UnresolvedNodeDown(key,
+             ActionDataManagerNodeDown(pmid_node), routing_.kNodeId()));
 }
 
 template <typename DataName>
@@ -738,34 +732,21 @@ void DataManagerService::MarkNodeUp(const PmidName& pmid_node, const DataName& n
   LOG(kInfo) << "DataManagerService::MarkNodeUp marking node " << HexSubstr(pmid_node->string())
              << " up for chunk " << HexSubstr(name.value.string());
   typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
-  sync_node_ups_.AddLocalAction(DataManager::UnresolvedNodeUp(
-      key, ActionDataManagerNodeUp(pmid_node), routing_.kNodeId()));
-  DoSync();
+  DoSync(DataManager::UnresolvedNodeUp(key,
+             ActionDataManagerNodeUp(pmid_node), routing_.kNodeId()));
 }
 
-// ==================== General implementation =====================================================
-namespace detail {
+// ==================== Sync =======================================================================
 
-template <typename DataManagerSyncType>
-void IncrementAttemptsAndSendSync(DataManagerDispatcher& dispatcher,
-                                  DataManagerSyncType& sync_type) {
-  auto unresolved_actions(sync_type.GetUnresolvedActions());
-  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for DataManagerSerive, has "
-                << unresolved_actions.size() << " unresolved_actions";
-  if (!unresolved_actions.empty()) {
-    sync_type.IncrementSyncAttempts();
-    protobuf::Sync proto_sync;
-    for (const auto& unresolved_action : unresolved_actions) {
-      proto_sync.Clear();
-      proto_sync.set_serialised_unresolved_action(unresolved_action->Serialise());
-      proto_sync.set_action_type(static_cast<int32_t>(DataManagerSyncType::kActionId));
-      LOG(kInfo) << "DataManager send sync action " << proto_sync.action_type();
-      dispatcher.SendSync(unresolved_action->key, proto_sync.SerializeAsString());
-    }
-  }
+template <typename UnresolvedAction>
+void DataManagerService::DoSync(const UnresolvedAction& unresolved_action) {
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_add_pmids_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_pmids_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_downs_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_ups_, unresolved_action);
 }
-
-}  // namespace detail
 
 }  // namespace vault
 

@@ -28,16 +28,6 @@
 
 #include "maidsafe/common/node_id.h"
 
-#include "maidsafe/vault/db.h"
-#include "maidsafe/vault/group_db.h"
-#include "maidsafe/vault/maid_manager/action_create_remove_account.h"
-#include "maidsafe/vault/maid_manager/action_delete.h"
-#include "maidsafe/vault/maid_manager/action_put.h"
-#include "maidsafe/vault/maid_manager/action_register_pmid.h"
-#include "maidsafe/vault/maid_manager/action_unregister_pmid.h"
-#include "maidsafe/vault/maid_manager/maid_manager.h"
-#include "maidsafe/vault/pmid_manager/pmid_manager.h"
-
 namespace maidsafe {
 
 namespace vault {
@@ -59,7 +49,7 @@ class Sync {
   // unresolved_action (even if it's the
   // last one we're waiting for) so that 'GetUnresolvedActions()' will return this one, allowing us
   // to then sync it to our peers.
-  void AddLocalAction(const UnresolvedAction& unresolved_action);
+//  void AddLocalAction(const UnresolvedAction& unresolved_action);
   // This is called if, during an ongoing account transfer, another churn event occurs.  The
   // old node's ID is replaced throughout the list of unresolved actions with the new node's ID.
   // The new node's ID is also applied to any actions which didn't contain the old one, in the
@@ -68,7 +58,7 @@ class Sync {
   // This returns all unresoved actions containing this node's ID.  Each returned unresolved_action
   // is provided
   // with just this node's ID inserted, even if the master copy has several other peers' IDs.
-  std::vector<std::unique_ptr<UnresolvedAction>> GetUnresolvedActions();
+  std::vector<std::unique_ptr<UnresolvedAction>> GetUnresolvedActions() const;
   // Calling this will increment the sync counter and delete actions that reach the
   // 'kSyncCounterMax_' limit.  Actions which are resolved by all peers (i.e. have 4 messages) are
   // also pruned here.
@@ -80,11 +70,9 @@ class Sync {
   Sync(Sync&&);
   Sync(const Sync&);
   Sync& operator=(Sync other);
-  std::unique_ptr<UnresolvedAction> AddAction(const UnresolvedAction& unresolved_action,
-                                              bool merge);
   bool CanBeErased(const UnresolvedAction& unresolved_action) const;
 
-  std::mutex mutex_;
+  mutable std::mutex mutex_;
   std::vector<std::unique_ptr<UnresolvedAction>> unresolved_actions_;
   static const int32_t kSyncCounterMax_ = 10;  // TODO(dirvine) decide how to decide on this number.
 };
@@ -94,19 +82,23 @@ namespace detail {
 
 template <typename UnresolvedAction>
 bool IsFromThisNode(const UnresolvedAction& unresolved_action) {
-  return !unresolved_action.this_node_and_entry_id.first.IsZero();
+  return (unresolved_action.this_node_and_entry_id != nullptr);
 }
 
 template <typename UnresolvedAction>
 bool IsRecorded(const UnresolvedAction& new_action, const UnresolvedAction& existing_action) {
   assert(IsFromThisNode(new_action) ? new_action.peer_and_entry_ids.empty()
                                     : new_action.peer_and_entry_ids.size() == 1U);
-  std::pair<NodeId, int32_t> new_coming;
-  if (IsFromThisNode(new_action))
-    new_coming = new_action.this_node_and_entry_id;
-  else
-    new_coming = new_action.peer_and_entry_ids.front();
+  if (IsFromThisNode(new_action)) {
+    if (!existing_action.this_node_and_entry_id)
+      return false;
+    assert(new_action.this_node_and_entry_id->first ==
+           existing_action.this_node_and_entry_id->first);
+    return (new_action.this_node_and_entry_id->second ==
+              existing_action.this_node_and_entry_id->second);
+  }
 
+  auto new_coming(new_action.peer_and_entry_ids.front());
   return std::any_of(std::begin(existing_action.peer_and_entry_ids),
                      std::end(existing_action.peer_and_entry_ids),
                      [&new_coming](const std::pair<NodeId, int32_t> &
@@ -118,21 +110,55 @@ bool IsResolved(const UnresolvedAction& unresolved_action) {
   // Received syncs from at least majority of peers(including itself)
   // Shall have tri-state : unresolved, resolved, already-resolved
   // However, as IsResolved get called only once, here use strict "==" to differentiate
-  bool result((unresolved_action.peer_and_entry_ids.size()) ==
-                  (static_cast<uint32_t>(routing::Parameters::node_group_size / 2) + 1U));
-  LOG(kVerbose) << "IsResolved " << result << " unresolved_action.peer_and_entry_ids.size() : "
-                << unresolved_action.peer_and_entry_ids.size();
-  return result;
+  uint16_t total_recieved = static_cast<uint32_t>(unresolved_action.peer_and_entry_ids.size() +
+           (unresolved_action.this_node_and_entry_id ? 1U : 0U));
+  LOG(kVerbose) << "IsResolved  total_recieved : " << total_recieved;
+  return (total_recieved == ((routing::Parameters::node_group_size / 2) + 1U));
 }
 
 template <typename UnresolvedAction>
 bool IsResolvedOnAllPeers(const UnresolvedAction& unresolved_action) {
-  bool result((unresolved_action.this_node_and_entry_id.first != NodeId()) &&
-              unresolved_action.sent_to_peers &&
+  bool result(unresolved_action.this_node_and_entry_id &&
               (unresolved_action.peer_and_entry_ids.size() ==
-                  routing::Parameters::node_group_size));
+                 (routing::Parameters::node_group_size - 1U)));
   LOG(kVerbose) << "IsResolvedOnAllPeers " << result;
   return result;
+}
+
+template <typename UnresolvedAction>
+void AppendUnresolvedActionEntry(const UnresolvedAction& new_action,
+                                 UnresolvedAction& existing_action,
+                                 std::unique_ptr<UnresolvedAction>& resolved_action) {
+  assert(IsFromThisNode(new_action)
+         ? !existing_action.this_node_and_entry_id
+         : existing_action.peer_and_entry_ids.size() < (routing::Parameters::node_group_size -1U));
+
+  if (IsFromThisNode(new_action)) {
+    existing_action.this_node_and_entry_id =
+        std::make_shared<std::pair<NodeId, int32_t>>(*new_action.this_node_and_entry_id);
+  } else {
+    existing_action.peer_and_entry_ids.push_back(new_action.peer_and_entry_ids.front());
+  }
+  if (IsResolved(existing_action))
+    resolved_action.reset(new UnresolvedAction(existing_action));
+}
+
+template <typename UnresolvedAction>
+void AddNewUnresolvedAction(const UnresolvedAction& new_action,
+    std::vector<std::unique_ptr<UnresolvedAction>>& unresolved_actions) {
+  std::unique_ptr<UnresolvedAction> unresolved_action_ptr(new UnresolvedAction(new_action));
+  unresolved_actions.push_back(std::move(unresolved_action_ptr));
+}
+
+template <typename UnresolvedAction>
+bool HaveEntryFromPeer(const UnresolvedAction& new_action,
+                       const UnresolvedAction& existing_action) {
+  assert(!new_action.this_node_and_entry_id && "to be used only for assessing action from peers");
+  for (const auto& i : existing_action.peer_and_entry_ids) {
+    if (i.first == new_action.peer_and_entry_ids.front().first)
+      return true;
+  }
+  return false;
 }
 
 }  // namespace detail
@@ -147,122 +173,64 @@ Sync<UnresolvedAction>::Sync()
 template <typename UnresolvedAction>
 std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddUnresolvedAction(
     const UnresolvedAction& unresolved_action) {
-  if (detail::IsFromThisNode(unresolved_action))
-    LOG(kVerbose) << "AddUnresolvedAction " << kActionId << " from itself";
-  else
-    LOG(kVerbose) << "AddUnresolvedAction " << kActionId << " from peer "
-                  << HexSubstr(unresolved_action.peer_and_entry_ids.front().first.string());
-  return AddAction(unresolved_action, true);
-}
-
-template <typename UnresolvedAction>
-void Sync<UnresolvedAction>::AddLocalAction(const UnresolvedAction& unresolved_action) {
-  LOG(kVerbose) << "AddLocalAction " << kActionId;
-  AddAction(unresolved_action, false);
-}
-
-template <typename UnresolvedAction>
-std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddAction(
-    const UnresolvedAction& unresolved_action, bool merge) {
-  if (detail::IsFromThisNode(unresolved_action))
-    LOG(kVerbose) << "AddAction " << kActionId << " from own node";
-  else
-    LOG(kVerbose) << "AddAction " << kActionId << " from peer : " << HexSubstr(
-        unresolved_action.peer_and_entry_ids.front().first.string());
-  std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<UnresolvedAction> resolved_action;
   auto found(std::begin(unresolved_actions_));
-  do {
+  std::lock_guard<std::mutex> lock(mutex_);
+  for (;;) {
     found = std::find_if(found, std::end(unresolved_actions_),
                          [&unresolved_action](const std::unique_ptr<UnresolvedAction>& test) {
                              return ((test->key == unresolved_action.key) &&
                                      (test->action == unresolved_action.action));
                          });
-
-    if (found == std::end(unresolved_actions_)) {
-      LOG(kVerbose) << "AddAction " << kActionId << " doesn't find record";
-      // Syncs from other peers may arrive first before local has been added
-      std::unique_ptr<UnresolvedAction> unresolved_action_ptr(
-          new UnresolvedAction(unresolved_action));
-      if (merge) {
-        // Shall not received a sync from itself before add local
-        if (detail::IsFromThisNode(unresolved_action)) {
-          LOG(kError) << "AddAction " << kActionId
-                      << " received a sync from itself before adding local";
-          break;
-        }
-//         assert(!detail::IsFromThisNode(unresolved_action));
-        LOG(kVerbose) << "AddAction " << kActionId << " syncs from peer arrived before add local "
-                      << "merging unresolved_action having "
-                      << unresolved_action.peer_and_entry_ids.size()
-                      << " entries in peer_and_entry_ids";
-        unresolved_action_ptr->peer_and_entry_ids.clear();
-        unresolved_action_ptr->peer_and_entry_ids.push_back(
-            unresolved_action.this_node_and_entry_id);
-        unresolved_action_ptr->this_node_and_entry_id.first = NodeId();
-      }
-      unresolved_actions_.push_back(std::move(unresolved_action_ptr));
-      break;
+    if (found == std::end(unresolved_actions_)) {  // not found
+      detail::AddNewUnresolvedAction(unresolved_action, unresolved_actions_);
+      break;  // done here
     }
 
-    if (!merge) {
-      LOG(kVerbose) << "AddAction " << kActionId << " add local happened after syncs from peer";
-      // Add Local, however after received syncs from peer
-      if ((*found)->this_node_and_entry_id.second ==
-          unresolved_action.this_node_and_entry_id.second)
-        (*found)->this_node_and_entry_id.first = unresolved_action.this_node_and_entry_id.first;
-      break;
-    }
-
-    // Drop the sync silently if it is already recorded
-    if (!detail::IsRecorded(unresolved_action, (**found))) {
-      LOG(kVerbose) << "AddAction " << kActionId << " not recorded from the sender";
-      if (detail::IsFromThisNode(unresolved_action)) {
-        (*found)->peer_and_entry_ids.push_back(unresolved_action.this_node_and_entry_id);
-      } else {
-        (*found)->peer_and_entry_ids.push_back(unresolved_action.peer_and_entry_ids.front());
-      }
-
-      if (detail::IsResolved(**found)) {
-        LOG(kVerbose) << "AddAction " << kActionId << " is resolved";
-        resolved_action.reset(new UnresolvedAction(**found));
-      }
-    } else {
+    // found same action and key
+    if (detail::IsRecorded(unresolved_action, (**found))) {
       LOG(kVerbose) << "AddAction " << kActionId << " dropped silently as it was recorded";
+      break;  // done here
+    }
+    LOG(kVerbose) << "AddAction " << kActionId << " not recorded from the sender";
+
+    // check if already recieved from self and add
+    if (detail::IsFromThisNode(unresolved_action)) {
+      if (!(*found)->this_node_and_entry_id) {
+        detail::AppendUnresolvedActionEntry(unresolved_action, **found, resolved_action);
+        break;  // done here
+      } else {  // It must be different entry id so add seprate unresolved entry
+        assert((*found)->this_node_and_entry_id != unresolved_action.this_node_and_entry_id);
+        ++found;
+        continue;
+      }
     }
 
-    // TODO(Prakash) BEFORE_RELEASE  Evaluate original reason for break.  Makes 'while' unreachable.
-    //break;
-  } while (found != std::end(unresolved_actions_));
+    // check if already recieved 3 entry from other nodes if not then add or else continue
+    if (((*found)->peer_and_entry_ids.size() < (routing::Parameters::node_group_size - 1U)) &&
+            !detail::HaveEntryFromPeer(unresolved_action, **found)) {
+      detail::AppendUnresolvedActionEntry(unresolved_action, **found, resolved_action);
+      break;
+    }
 
+    ++found;
+  }  // loop only if not acted on action
   return std::move(resolved_action);
 }
 
 template <typename UnresolvedAction>
-std::vector<std::unique_ptr<UnresolvedAction>> Sync<UnresolvedAction>::GetUnresolvedActions() {
+std::vector<std::unique_ptr<UnresolvedAction>> Sync<UnresolvedAction>::GetUnresolvedActions() const {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<std::unique_ptr<UnresolvedAction>> result;
-  for (auto& unresolved_action : unresolved_actions_) {
+  for (const auto& unresolved_action : unresolved_actions_) {
     if (detail::IsResolvedOnAllPeers(*unresolved_action))
       continue;
     if (detail::IsFromThisNode(*unresolved_action)) {
       LOG(kVerbose) << "GetUnresolvedActions " << kActionId << " found one unresolved record";
-      unresolved_action->sent_to_peers = true;
-      std::unique_ptr<UnresolvedAction> unresolved_action_ptr(
-          new UnresolvedAction(*unresolved_action));
-      result.push_back(std::move(unresolved_action_ptr));
+      std::unique_ptr<UnresolvedAction> action_ptr(new UnresolvedAction(*unresolved_action));
+      result.push_back(std::move(action_ptr));
     }
   }
-//  for (auto& unresolved_action : unresolved_actions_) {
-//    if (detail::IsResolvedOnAllPeers(*unresolved_action))
-//      continue;
-//    if (detail::IsResolved(*unresolved_action)) {
-//      unresolved_action->sent_to_peers = true;
-//    } else {
-//      std::unique_ptr<UnresolvedAction> unresolved_action_ptr(
-//          new UnresolvedAction(*unresolved_action));
-//      result.push_back(std::move(unresolved_action_ptr));
-//    }
   return result;
 }
 
@@ -279,7 +247,7 @@ void Sync<UnresolvedAction>::IncrementSyncAttempts() {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr = std::begin(unresolved_actions_);
   while (itr != std::end(unresolved_actions_)) {
-    assert((*itr)->peer_and_entry_ids.size() <= routing::Parameters::node_group_size);
+    assert((*itr)->peer_and_entry_ids.size() <= routing::Parameters::node_group_size - 1U);
     ++(*itr)->sync_counter;
     if (CanBeErased(**itr))
       itr = unresolved_actions_.erase(itr);

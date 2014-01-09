@@ -25,7 +25,10 @@
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
 
+#include "maidsafe/vault/key.h"
 #include "maidsafe/nfs/message_types.h"
+#include "maidsafe/vault/sync.h"
+#include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/key_utils.h"
 
 
@@ -157,7 +160,52 @@ struct GroupOrKeyType<PersonaType, typename ToVoid<typename PersonaType::GroupNa
 }  // namespace detail
 
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path);
+// ============================ sync utils =========================================================
 
+namespace detail {
+template <typename Dispatcher, typename UnresolvedAction>
+void SendSync(Dispatcher& dispatcher,
+              const std::vector<UnresolvedAction>& unresolved_actions) {
+  protobuf::Sync proto_sync;
+  for (const auto& unresolved_action : unresolved_actions) {
+    proto_sync.Clear();
+    proto_sync.set_serialised_unresolved_action(unresolved_action->Serialise());
+    proto_sync.set_action_type(static_cast<int32_t>(unresolved_action->action.kActionId));
+//    LOG(kInfo) << "MaidManager send sync action " << proto_sync.action_type();
+    dispatcher.SendSync(unresolved_action->key, proto_sync.SerializeAsString());
+  }
+}
+
+template <typename Dispatcher, typename UnresolvedAction, typename NewUnresolvedAction>
+void IncrementAttemptsAndSendSync(Dispatcher& dispatcher,
+                                  Sync<UnresolvedAction>& sync_type,
+                                  const NewUnresolvedAction& unresolved_action,
+                                  typename std::enable_if<std::is_same<UnresolvedAction,
+                                  NewUnresolvedAction>::value >::type* = 0) {
+  auto unresolved_actions(sync_type.GetUnresolvedActions());
+  std::unique_ptr<UnresolvedAction> unresolved_action_ptr(new UnresolvedAction(unresolved_action));
+  unresolved_actions.push_back(std::move(unresolved_action_ptr));
+//  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has "
+//                << unresolved_actions.size() << " unresolved_actions";
+  sync_type.IncrementSyncAttempts();
+  SendSync(dispatcher, unresolved_actions);
+}
+
+
+template <typename Dispatcher, typename UnresolvedAction, typename NewUnresolvedAction>
+void IncrementAttemptsAndSendSync(Dispatcher& dispatcher,
+                                  Sync<UnresolvedAction>& sync_type,
+                                  const NewUnresolvedAction& /*unresolved_action*/,
+                                  typename std::enable_if<!std::is_same<UnresolvedAction,
+                                  NewUnresolvedAction>::value >::type* = 0) {
+  auto unresolved_actions(sync_type.GetUnresolvedActions());
+//  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has "
+//                << unresolved_actions.size() << " unresolved_actions";
+  sync_type.IncrementSyncAttempts();
+  SendSync(dispatcher, unresolved_actions);
+}
+
+}  // namespace detail
 // ============================ dispatcher utils ===================================================
 template <typename MessageType>
 struct SendSyncMessage {

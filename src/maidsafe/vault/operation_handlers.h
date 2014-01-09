@@ -21,7 +21,6 @@
 
 
 #include "maidsafe/vault/message_types.h"
-#include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/operation_visitors.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/maid_manager/service.h"

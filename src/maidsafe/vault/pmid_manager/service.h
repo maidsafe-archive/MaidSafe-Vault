@@ -33,13 +33,14 @@
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/accumulator.h"
+#include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/pmid_manager/action_delete.h"
 #include "maidsafe/vault/pmid_manager/dispatcher.h"
 #include "maidsafe/vault/pmid_manager/handler.h"
-#include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/sync.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/pmid_manager/metadata.h"
 #include "maidsafe/vault/operation_visitors.h"
 
@@ -120,7 +121,8 @@ class PmidManagerService {
   void HandleDelete(const PmidName& pmid_node, const typename Data::Name& data_name,
                     nfs::MessageId message_id);
 
-  void DoSync();
+  template <typename UnresolvedAction>
+  void DoSync(const UnresolvedAction& unresolved_action);
   void SendPutResponse(const DataNameVariant& data_name, const PmidName& pmid_node, int32_t size,
                        nfs::MessageId message_id);
 
@@ -217,28 +219,6 @@ void PmidManagerService::HandleMessage(
 
 // ==================== Implementation =============================================================
 
-namespace detail {
-
-template <typename PmidManagerSyncType>
-void IncrementAttemptsAndSendSync(PmidManagerDispatcher& dispatcher,
-                                  PmidManagerSyncType& sync_type) {
-  auto unresolved_actions(sync_type.GetUnresolvedActions());
-  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for PmidManagerSerive, has "
-                << unresolved_actions.size() << " unresolved_actions";
-  if (!unresolved_actions.empty()) {
-    sync_type.IncrementSyncAttempts();
-    protobuf::Sync proto_sync;
-    for (const auto& unresolved_action : unresolved_actions) {
-      proto_sync.Clear();
-      proto_sync.set_serialised_unresolved_action(unresolved_action->Serialise());
-      proto_sync.set_action_type(static_cast<int32_t>(PmidManagerSyncType::kActionId));
-      LOG(kInfo) << "PmidManager send sync action " << proto_sync.action_type();
-      dispatcher.SendSync(unresolved_action->key.group_name(), proto_sync.SerializeAsString());
-    }
-  }
-}
-
-}  // namespace detail
 
 // ================================= Put Implementation ===========================================
 
@@ -262,11 +242,9 @@ void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
   dispatcher_.SendPutRequest(data, pmid_node, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), data.name().value,
                              Data::Tag::kValue);
-  sync_puts_.AddLocalAction(
-      PmidManager::UnresolvedPut(group_key,
-          ActionPmidManagerPut(static_cast<uint32_t>(data.Serialise().data.string().size()),
-                               message_id), routing_.kNodeId()));
-  DoSync();
+  DoSync(PmidManager::UnresolvedPut(group_key,
+      ActionPmidManagerPut(static_cast<uint32_t>(data.Serialise().data.string().size()),
+          message_id), routing_.kNodeId()));
 }
 
 template <typename Data>
@@ -280,10 +258,8 @@ void PmidManagerService::HandlePutFailure(
                 << error_code.what();
   dispatcher_.SendPutFailure<Data>(name, pmid_node, error_code, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), name.value, Data::Tag::kValue);
-  sync_deletes_.AddLocalAction(PmidManager::UnresolvedDelete(group_key,
-                                                             ActionPmidManagerDelete(false, true),
-                                                             routing_.kNodeId()));
-  DoSync();
+  DoSync(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(false, true),
+                                       routing_.kNodeId()));
 }
 
 template <typename Data>
@@ -293,10 +269,8 @@ void PmidManagerService::HandleFalseNotification(
                 << HexSubstr(pmid_node.value.string())
                 << " , with message_id -- " << message_id.data;
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), name.value, Data::Tag::kValue);
-  sync_deletes_.AddLocalAction(PmidManager::UnresolvedDelete(group_key,
-                                                             ActionPmidManagerDelete(true, true),
-                                                             routing_.kNodeId()));
-  DoSync();
+  DoSync(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(true, true),
+                                       routing_.kNodeId()));
 }
 
 template <typename Data>
@@ -320,10 +294,18 @@ void PmidManagerService::HandleDelete(
   dispatcher_.SendDeleteRequest<Data>(pmid_name, data_name, message_id);
   PmidManager::Key group_key(typename PmidManager::GroupName(pmid_name),
                              data_name.value, Data::Tag::kValue);
-  sync_deletes_.AddLocalAction(PmidManager::UnresolvedDelete(group_key,
-                                                             ActionPmidManagerDelete(true, false),
-                                                             routing_.kNodeId()));
-  DoSync();
+  DoSync(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(true, false),
+                                       routing_.kNodeId()));
+}
+
+// =============== Sync ============================================================================
+
+template <typename UnresolvedAction>
+void PmidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_set_pmid_health_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_account_, unresolved_action);
 }
 
 // ===============================================================================================

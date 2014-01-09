@@ -34,6 +34,7 @@
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/pmid_manager/metadata.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -58,7 +59,8 @@ class PmidManagerDispatcher {
                       const maidsafe_error& error_code, nfs::MessageId message_id);
 
   //  void SendStateChange(const PmidName& pmid_node, const typename Data::Name& data_name);
-  void SendSync(const PmidName& pmid_node, const std::string& serialised_sync);
+  template <typename KeyType>
+  void SendSync(const KeyType& key, const std::string& serialised_sync);
   void SendAccountTransfer(const PmidName& destination_peer, const PmidName& pmid_node,
                            const std::string& serialised_account);
   void SendPmidAccount(const PmidName& pmid_node,
@@ -151,6 +153,15 @@ void PmidManagerDispatcher::SendPutFailure(const typename Data::Name& name,
                                               routing::SingleId(routing_.kNodeId())),
                          VaultMessage::Receiver(NodeId(name.value.string())));
   routing_.Send(message);
+}
+
+
+template <typename KeyType>
+void PmidManagerDispatcher::SendSync(const KeyType& key, const std::string& serialised_sync) {
+  typedef SynchroniseFromPmidManagerToPmidManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  SendSyncMessage<VaultMessage> sync_sender;
+  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), key.group_name());
 }
 
 // ==================== General implementation =====================================================

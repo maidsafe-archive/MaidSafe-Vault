@@ -93,14 +93,6 @@ void MaidManagerDispatcher::SendUnregisterPmidResponse(const MaidName& /*account
   //  routing_.Send(message);
 }
 
-void MaidManagerDispatcher::SendSync(const MaidName& account_name,
-                                     const std::string& serialised_sync) {
-  typedef SynchroniseFromMaidManagerToMaidManager VaultMessage;
-  CheckSourcePersonaType<VaultMessage>();
-  SendSyncMessage<VaultMessage> sync_sender;
-  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), account_name);
-}
-
 void MaidManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer*/,
                                                 const MaidName& /*account_name*/,
                                                 const std::string& /*serialised_account*/) {

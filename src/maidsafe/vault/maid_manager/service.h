@@ -198,8 +198,8 @@ class MaidManagerService {
   void UpdatePmidTotals(const MaidName& account_name);
   void UpdatePmidTotalsCallback(const std::string& serialised_reply,
                                 std::shared_ptr<GetPmidTotalsOp> op_data);
-
-  void DoSync();
+  template <typename UnresolvedAction>
+  void DoSync(const UnresolvedAction& unresolved_action);
 
   typedef boost::mpl::vector<> InitialType;
   typedef boost::mpl::insert_range<InitialType,
@@ -371,44 +371,6 @@ struct can_create_account<passport::PublicAnmaid> : public std::true_type {};
 template <>
 struct can_create_account<passport::PublicMaid> : public std::true_type {};
 
-// template<typename Data>
-// int32_t EstimateCost(const Data& data) {
-//  static_assert(!std::is_same<Data, passport::PublicAnmaid>::value, "Cost of Anmaid should be
-// 0.");
-//  static_assert(!std::is_same<Data, passport::PublicMaid>::value, "Cost of Maid should be 0.");
-//  static_assert(!std::is_same<Data, passport::PublicPmid>::value, "Cost of Pmid should be 0.");
-//  return static_cast<int32_t>(MaidManagerService::DefaultPaymentFactor() *
-//                              data.content.string().size());
-//}
-
-// template<>
-// int32_t EstimateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&);
-
-// template<>
-// int32_t EstimateCost<passport::PublicMaid>(const passport::PublicMaid&);
-
-// template<>
-// int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&);
-
-template <typename MaidManagerSyncType>
-void IncrementAttemptsAndSendSync(MaidManagerDispatcher& dispatcher,
-                                  MaidManagerSyncType& sync_type) {
-  auto unresolved_actions(sync_type.GetUnresolvedActions());
-  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has "
-                << unresolved_actions.size() << " unresolved_actions";
-  if (!unresolved_actions.empty()) {
-    sync_type.IncrementSyncAttempts();
-    protobuf::Sync proto_sync;
-    for (const auto& unresolved_action : unresolved_actions) {
-      proto_sync.Clear();
-      proto_sync.set_serialised_unresolved_action(unresolved_action->Serialise());
-      proto_sync.set_action_type(static_cast<int32_t>(MaidManagerSyncType::kActionId));
-      LOG(kInfo) << "MaidManager send sync action " << proto_sync.action_type();
-      dispatcher.SendSync(unresolved_action->key.group_name(), proto_sync.SerializeAsString());
-    }
-  }
-}
-
 }  // namespace detail
 
 // ================================== Put Implementation ========================================
@@ -448,9 +410,8 @@ void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
                 << " taking cost of " << cost;
   typename MaidManager::Key group_key(typename MaidManager::GroupName(maid_name.value),
                                       data_name, Data::Tag::kValue);
-  sync_puts_.AddLocalAction(typename MaidManager::UnresolvedPut(
-      group_key, ActionMaidManagerPut(cost), routing_.kNodeId()));
-  DoSync();
+  DoSync(typename MaidManager::UnresolvedPut(group_key,
+                                             ActionMaidManagerPut(cost), routing_.kNodeId()));
 }
 
 template <typename Data>
@@ -498,10 +459,8 @@ void MaidManagerService::HandleDelete(const MaidName& account_name,
   group_db_.GetMetadata(account_name);  // throws
   typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
                                       data_name, Data::Tag::kValue);
-  sync_deletes_.AddLocalAction(typename MaidManager::UnresolvedDelete(
-                                   group_key, ActionMaidManagerDelete(message_id),
-                                   routing_.kNodeId()));
-  DoSync();
+  DoSync(typename MaidManager::UnresolvedDelete(group_key, ActionMaidManagerDelete(message_id),
+                                                routing_.kNodeId()));
 }
 
 // ===============================================================================================
@@ -522,6 +481,17 @@ void MaidManagerService::ValidatePmidRegistration(
   }
   if (finalise)
     FinalisePmidRegistration(pmid_registration_op);
+}
+
+template <typename UnresolvedAction>
+void MaidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accounts_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_accounts_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_register_pmids_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_update_pmid_healths_, unresolved_action);
 }
 
 }  // namespace vault
