@@ -60,7 +60,18 @@ void PmidManagerService::HandleSyncedPut(
   LOG(kVerbose) << "PmidManagerService::HandleSyncedPut commit put for chunk "
                 << HexSubstr(synced_action->key.name.string())
                 << " to group_db_ and send_put_response";
-  group_db_.Commit(synced_action->key, synced_action->action);
+  // When different DM choose same PN for the same chunk, PM will receive same Put requests twice
+  // from different DM. This will trigger two different sync_put actions and will eventually
+  // got two resolved action, and committing same entry to group_db.
+  // BEFORE_RELEASE check whether a failure response shall be sent instead
+  try {
+    group_db_.Commit(synced_action->key, synced_action->action);
+  } catch (const maidsafe_error& error) {
+    if (error.code().value() == static_cast<int>(VaultErrors::data_already_exists))
+      LOG(kWarning) << "Possibly different DM chose same pmid_node for the same chunk";
+    else
+      throw error;
+  }
   auto data_name(GetDataNameVariant(synced_action->key.type, synced_action->key.name));
   SendPutResponse(data_name, synced_action->key.group_name(),
                   synced_action->action.kSize,
