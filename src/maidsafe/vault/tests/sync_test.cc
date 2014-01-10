@@ -18,6 +18,7 @@
 
 #include "maidsafe/vault/group_db.h"
 
+#include <atomic>
 #include "boost/progress.hpp"
 
 #include "leveldb/db.h"
@@ -87,9 +88,9 @@ std::vector<MaidManager::Key> CreateKeys(int count, int group_count = 20) {
   }
   std::vector<MaidManager::Key> keys;
   for (auto i(0); i < count; ++i) {
-    typename MaidManager::Key key(group_vector[i % group_count],
-                                  Identity(NodeId(NodeId::kRandomId).string()),
-                                  DataTagValue::kMaidValue);
+    MaidManager::Key key(group_vector[i % group_count],
+                         Identity(NodeId(NodeId::kRandomId).string()),
+                         DataTagValue::kMaidValue);
     keys.push_back(key);
   }
   return keys;
@@ -109,8 +110,8 @@ TEST(SyncTest, BEH_SingleAction) {
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
   std::vector<PersonaNode<MaidManager::UnresolvedPut>> persona_nodes(routing::Parameters::node_group_size);
 
-  typename MaidManager::Key key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
-                                DataTagValue::kMaidValue);
+  MaidManager::Key key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
+      DataTagValue::kMaidValue);
   std::vector<MaidManager::UnresolvedPut> unresolved_actions;
   for (const auto& persona_node : persona_nodes)
     unresolved_actions.push_back(persona_node.CreateUnresolvedAction(key));
@@ -139,8 +140,8 @@ TEST(SyncTest, BEH_SingleActionRepeatedMessages) {
   std::vector<PersonaNode<MaidManager::UnresolvedPut>> persona_nodes(
                                                            routing::Parameters::node_group_size);
 
-  typename MaidManager::Key key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
-                                DataTagValue::kMaidValue);
+  MaidManager::Key key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
+                           DataTagValue::kMaidValue);
   std::vector<MaidManager::UnresolvedPut> unresolved_actions;
   for (const auto& persona_node : persona_nodes)
     unresolved_actions.push_back(persona_node.CreateUnresolvedAction(key));
@@ -174,8 +175,8 @@ TEST(SyncTest, BEH_TwoActionSameKey) {
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
   std::vector<PersonaNode<MaidManager::UnresolvedPut>> persona_nodes(routing::Parameters::node_group_size);
 
-  typename MaidManager::Key key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
-                                DataTagValue::kMaidValue);
+  MaidManager::Key key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
+                           DataTagValue::kMaidValue);
   std::vector<MaidManager::UnresolvedPut> unresolved_actions_1, unresolved_actions_2;
   for (const auto& persona_node : persona_nodes) {
     unresolved_actions_1.push_back(persona_node.CreateUnresolvedAction(key));
@@ -204,8 +205,8 @@ TEST(SyncTest, BEH_MultipleSequentialAction) {
   std::vector<PersonaNode<MaidManager::UnresolvedPut>> persona_nodes(routing::Parameters::node_group_size);
 
   for(auto count(0U); count != 100; ++count) {
-    typename MaidManager::Key key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
-                                  DataTagValue::kMaidValue);
+    MaidManager::Key key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
+                             DataTagValue::kMaidValue);
     std::vector<MaidManager::UnresolvedPut> unresolved_actions;
     for (const auto& persona_node : persona_nodes)
       unresolved_actions.push_back(persona_node.CreateUnresolvedAction(key));
