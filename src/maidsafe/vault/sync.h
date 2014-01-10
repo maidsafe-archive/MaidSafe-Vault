@@ -173,9 +173,9 @@ Sync<UnresolvedAction>::Sync()
 template <typename UnresolvedAction>
 std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddUnresolvedAction(
     const UnresolvedAction& unresolved_action) {
+  std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<UnresolvedAction> resolved_action;
   auto found(std::begin(unresolved_actions_));
-  std::lock_guard<std::mutex> lock(mutex_);
   for (;;) {
     found = std::find_if(found, std::end(unresolved_actions_),
                          [&unresolved_action](const std::unique_ptr<UnresolvedAction>& test) {
@@ -183,6 +183,7 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddUnresolvedAction(
                                      (test->action == unresolved_action.action));
                          });
     if (found == std::end(unresolved_actions_)) {  // not found
+      LOG(kVerbose) << "AddAction " << kActionId << " inserted as first entry of unresolved";
       detail::AddNewUnresolvedAction(unresolved_action, unresolved_actions_);
       break;  // done here
     }
@@ -197,18 +198,20 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddUnresolvedAction(
     // check if already recieved from self and add
     if (detail::IsFromThisNode(unresolved_action)) {
       if (!(*found)->this_node_and_entry_id) {
+        LOG(kVerbose) << "AddAction " << kActionId << " appended to unresolved";
         detail::AppendUnresolvedActionEntry(unresolved_action, **found, resolved_action);
         break;  // done here
-      } else {  // It must be different entry id so add seprate unresolved entry
+      } else {  // It must be different entry id so add separate unresolved entry
         assert((*found)->this_node_and_entry_id != unresolved_action.this_node_and_entry_id);
         ++found;
         continue;
       }
     }
 
-    // check if already recieved 3 entry from other nodes if not then add or else continue
+    // check if already received 3 entries from other nodes if not then add or else continue
     if (((*found)->peer_and_entry_ids.size() < (routing::Parameters::node_group_size - 1U)) &&
             !detail::HaveEntryFromPeer(unresolved_action, **found)) {
+      LOG(kVerbose) << "AddAction " << kActionId << " appended to unresolved";
       detail::AppendUnresolvedActionEntry(unresolved_action, **found, resolved_action);
       break;
     }
