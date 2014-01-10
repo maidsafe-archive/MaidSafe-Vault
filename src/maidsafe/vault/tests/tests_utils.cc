@@ -39,6 +39,13 @@ passport::PublicPmid MakePublicPmid() {
   return passport::PublicPmid(pmid);
 }
 
+routing::NodeInfo MakeNodeInfo(const passport::Pmid& pmid) {
+  routing::NodeInfo node;
+  node.node_id = NodeId(pmid.name()->string());
+  node.public_key = pmid.public_key();
+  return node;
+}
+
 template <>
 nfs_vault::DataNameAndContent CreateContent<nfs_vault::DataNameAndContent>() {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
