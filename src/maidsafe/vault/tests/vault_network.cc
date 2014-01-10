@@ -28,10 +28,8 @@ namespace vault {
 namespace test {
 
 VaultNetwork::VaultNetwork()
-    : asio_service_(4),
-      mutex_(),
-      vaults_(),
-      endpoints_() {}
+    : asio_service_(4), mutex_(), vaults_(), endpoints_(),
+      chunk_store_path_(fs::unique_path((fs::temp_directory_path()))) {}
 
 void VaultNetwork::SetUp() {
   std::cout << "Creating zero state routing network..." << std::endl;
@@ -97,6 +95,16 @@ void VaultNetwork::SetUp() {
 }
 
 void VaultNetwork::TearDown() {}
+
+void VaultNetwork::Create(size_t number_of_vaults) {
+  std::vector<passport::PublicPmid> pmids;
+  while (number_of_vaults-- > 0) {
+//    auto pmid(MakePmid());
+//    Vault vault(*pmid, chunk_path, [](const boost::asio::ip::udp::endpoint&) {}, pmids,
+//                peer_endpoints);
+//    vaults_.push_back(vault);
+  }
+}
 
 TEST_F(VaultNetwork, FUNC_SimplestTest) {}
 

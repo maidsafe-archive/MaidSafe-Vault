@@ -21,8 +21,12 @@
 
 #include <vector>
 
+#include "boost/filesystem/path.hpp"
+
 #include "maidsafe/common/test.h"
 #include "maidsafe/vault/vault.h"
+
+namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
@@ -36,13 +40,14 @@ class VaultNetwork : public testing::Test{
 
   virtual void SetUp();
   virtual void TearDown();
-  void SetUp(size_t number_of_vaults);
+  void Create(size_t number_of_vaults);
 
  private:
   AsioService asio_service_;
   std::mutex mutex_;
   std::vector<Vault> vaults_;
   std::vector<boost::asio::ip::udp::endpoint> endpoints_;
+  fs::path chunk_store_path_;
 };
 
 }  // namespace test
