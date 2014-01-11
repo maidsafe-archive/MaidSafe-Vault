@@ -20,6 +20,7 @@
 #define MAIDSAFE_VAULT_TESTS_TESTS_UTILS_H_
 
 #include "maidsafe/routing/message.h"
+#include "maidsafe/routing/node_info.h"
 
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/nfs/vault/messages.h"
@@ -41,6 +42,8 @@ static const size_t kAverageChunksStored = 1000;
 passport::Maid MakeMaid();
 passport::Pmid MakePmid();
 passport::PublicPmid MakePublicPmid();
+routing::NodeInfo MakeNodeInfo(const passport::Pmid& pmid);
+
 
 template <typename ContentType>
 ContentType CreateContent() {
