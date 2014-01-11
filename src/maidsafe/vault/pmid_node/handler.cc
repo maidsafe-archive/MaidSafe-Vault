@@ -25,7 +25,7 @@ namespace {
 
 MemoryUsage mem_usage = MemoryUsage(524288000);  // 500Mb
 MemoryUsage perm_usage = MemoryUsage(mem_usage / 5);
-DiskUsage perm_disk_usage = DiskUsage(10000);
+DiskUsage perm_disk_usage = DiskUsage(10000000000);
 
 
 // MemoryUsage mem_only_cache_usage = MemoryUsage(mem_usage * 2 / 5);
@@ -42,8 +42,8 @@ PmidNodeHandler::PmidNodeHandler(const boost::filesystem::path vault_root_dir)
       disk_total_(space_info_.available),
       permanent_size_(disk_total_ * 4 / 5),
       permanent_data_store_(vault_root_dir / "pmid_node" / "permanent",
-                            DiskUsage(10000))  // TODO(Fraser) BEFORE_RELEASE need to read value
-                                                // from disk
+                            DiskUsage(10000000000))  // TODO(Fraser) BEFORE_RELEASE need to read
+                                                     //              value from disk
                                                 {}
 
 boost::filesystem::path PmidNodeHandler::GetDiskPath() const {
