@@ -28,10 +28,10 @@ namespace vault {
 namespace test {
 
 VaultNetwork::VaultNetwork()
-    : asio_service_(4), mutex_(), vaults_(), endpoints_(),
-      chunk_store_path_(fs::unique_path((fs::temp_directory_path()))) {}
+    : asio_service_(4), mutex_(), bootstrap_wait_(), bootstrap_done_(false), vaults_(),
+      endpoints_(), chunk_store_path_(fs::unique_path((fs::temp_directory_path()))) {}
 
-void VaultNetwork::SetUp() {
+void VaultNetwork::Bootstrap() {
   std::cout << "Creating zero state routing network..." << std::endl;
   passport::Pmid bootstrap1_pmid(MakePmid()), bootstrap2_pmid(MakePmid());
   routing::NodeInfo node_info1(MakeNodeInfo(bootstrap1_pmid)),
@@ -79,6 +79,7 @@ void VaultNetwork::SetUp() {
     LOG(kError) << "SetupNetwork - Could not start bootstrap nodes.";
     ThrowError(RoutingErrors::not_connected);
   }
+  bootstrap_wait_.notify_one();
   // just wait till process receives termination signal
   LOG(kInfo) << "Bootstrap nodes are running"  << "Endpoints: " << endpoints_[0]
              << " and " << endpoints_[1];
@@ -99,14 +100,33 @@ void VaultNetwork::TearDown() {}
 void VaultNetwork::Create(size_t number_of_vaults) {
   std::vector<passport::PublicPmid> pmids;
   while (number_of_vaults-- > 0) {
-//    auto pmid(MakePmid());
-//    Vault vault(*pmid, chunk_path, [](const boost::asio::ip::udp::endpoint&) {}, pmids,
-//                peer_endpoints);
-//    vaults_.push_back(vault);
+    auto pmid(MakePmid());
+    std::string path_str("vault" + std::to_string(number_of_vaults));
+    auto path(chunk_store_path_/path_str);
+    LOG(kVerbose) << path.string();
+    vaults_.emplace_back(new Vault(pmid, path, [](const boost::asio::ip::udp::endpoint&) {}, pmids,
+                                   endpoints_));
+    Sleep(std::chrono::seconds(3));
+    LOG(kVerbose) << "vault joined: " << number_of_vaults;
   }
 }
 
-TEST_F(VaultNetwork, FUNC_SimplestTest) {}
+TEST_F(VaultNetwork, FUNC_SimplestTest) {
+  auto bootstrap = std::async(std::launch::async, [&, this] {
+    this->Bootstrap();
+  });
+  std::mutex mutex;
+  std::unique_lock<std::mutex> lock(mutex);
+  this->bootstrap_wait_.wait_for(lock, std::chrono::seconds(5), [this]() {
+                                                                  return this->bootstrap_done_;
+                                                                });
+
+  auto vaults = std::async(std::launch::async, [&, this] {
+    this->Create(5);
+  });
+  bootstrap.get();
+  vaults.get();
+}
 
 }  // namespace test
 

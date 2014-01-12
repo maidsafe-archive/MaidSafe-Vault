@@ -36,16 +36,19 @@ namespace test {
 
 class VaultNetwork : public testing::Test{
  public:
-  VaultNetwork();
+  typedef std::shared_ptr<Vault> VaultPtr;
 
-  virtual void SetUp();
+  VaultNetwork();
+  void Bootstrap();
   virtual void TearDown();
   void Create(size_t number_of_vaults);
 
- private:
+ protected:
   AsioService asio_service_;
-  std::mutex mutex_;
-  std::vector<Vault> vaults_;
+  std::mutex mutex_;  
+  std::condition_variable bootstrap_wait_;
+  bool bootstrap_done_;
+  std::vector<VaultPtr> vaults_;
   std::vector<boost::asio::ip::udp::endpoint> endpoints_;
   fs::path chunk_store_path_;
 };
