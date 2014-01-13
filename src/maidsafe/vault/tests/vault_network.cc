@@ -29,25 +29,30 @@ namespace test {
 
 VaultNetwork::VaultNetwork()
     : asio_service_(4), mutex_(), bootstrap_wait_(), bootstrap_done_(false), vaults_(),
-      endpoints_(), chunk_store_path_(fs::unique_path((fs::temp_directory_path()))) {}
+      endpoints_(), public_pmids_(), pmids_(),
+      chunk_store_path_(fs::unique_path((fs::temp_directory_path()))), network_size_(40) {
+      asio_service_.Start();
+  for (size_t index(0); index < network_size_ + 2; ++index) {
+    auto pmid(MakePmid());
+    pmids_.push_back(pmid);
+    public_pmids_.push_back(passport::PublicPmid(pmid));
+  }
+}
 
 void VaultNetwork::Bootstrap() {
   std::cout << "Creating zero state routing network..." << std::endl;
-  passport::Pmid bootstrap1_pmid(MakePmid()), bootstrap2_pmid(MakePmid());
-  routing::NodeInfo node_info1(MakeNodeInfo(bootstrap1_pmid)),
-                    node_info2(MakeNodeInfo(bootstrap2_pmid));
-  std::vector<passport::PublicPmid> public_pmids;
-  public_pmids.push_back(passport::PublicPmid(bootstrap1_pmid));
-  public_pmids.push_back(passport::PublicPmid(bootstrap2_pmid));
+  routing::NodeInfo node_info1(MakeNodeInfo(pmids_[0])),
+                    node_info2(MakeNodeInfo(pmids_[1]));
   routing::Functors functors1, functors2;
-  functors1.request_public_key = [&public_pmids, this](
-      NodeId /*node_id*/, const routing::GivePublicKeyFunctor& give_key) {
-    give_key(public_pmids[1].public_key());
-  };
-
-  functors2.request_public_key = [&public_pmids, this](
-      NodeId /*node_id*/, const routing::GivePublicKeyFunctor& give_key) {
-    give_key(public_pmids[0].public_key());
+  functors1.request_public_key = functors2.request_public_key  = [&, this](
+      NodeId node_id, const routing::GivePublicKeyFunctor& give_key) {
+    std::lock_guard<std::mutex> lock(this->mutex_);
+    auto itr(std::find_if(std::begin(this->public_pmids_), std::end(this->public_pmids_),
+                          [node_id](const passport::PublicPmid& pmid) {
+                            return pmid.name()->string() == node_id.string();
+                          }));
+    assert(itr != std::end(this->public_pmids_));
+    give_key(itr->public_key());
   };
 
   functors1.typed_message_and_caching.group_to_group.message_received =
@@ -67,7 +72,7 @@ void VaultNetwork::Bootstrap() {
                        maidsafe::test::GetRandomPort()));
   endpoints_.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(),
                        maidsafe::test::GetRandomPort()));
-  routing::Routing routing1(bootstrap1_pmid), routing2(bootstrap2_pmid);
+  routing::Routing routing1(pmids_[0]), routing2(pmids_[1]);
 
   auto a1 = std::async(std::launch::async, [&, this] {
     return routing1.ZeroStateJoin(functors1, endpoints_[0], endpoints_[1], node_info2);
@@ -79,6 +84,7 @@ void VaultNetwork::Bootstrap() {
     LOG(kError) << "SetupNetwork - Could not start bootstrap nodes.";
     ThrowError(RoutingErrors::not_connected);
   }
+  bootstrap_done_ = true;
   bootstrap_wait_.notify_one();
   // just wait till process receives termination signal
   LOG(kInfo) << "Bootstrap nodes are running"  << "Endpoints: " << endpoints_[0]
@@ -87,7 +93,7 @@ void VaultNetwork::Bootstrap() {
     std::condition_variable wait;
     std::mutex mutex;
     std::unique_lock<std::mutex> lock(mutex);
-    wait.wait_for(lock, std::chrono::seconds(30), []() { return false; });
+    wait.wait_for(lock, std::chrono::seconds(300), []() { return false; });
   }
   {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -97,18 +103,14 @@ void VaultNetwork::Bootstrap() {
 
 void VaultNetwork::TearDown() {}
 
-void VaultNetwork::Create(size_t number_of_vaults) {
-  std::vector<passport::PublicPmid> pmids;
-  while (number_of_vaults-- > 0) {
-    auto pmid(MakePmid());
-    std::string path_str("vault" + std::to_string(number_of_vaults));
-    auto path(chunk_store_path_/path_str);
-    LOG(kVerbose) << path.string();
-    vaults_.emplace_back(new Vault(pmid, path, [](const boost::asio::ip::udp::endpoint&) {}, pmids,
-                                   endpoints_));
-    Sleep(std::chrono::seconds(3));
-    LOG(kVerbose) << "vault joined: " << number_of_vaults;
-  }
+void VaultNetwork::Create(size_t index) {
+  std::string path_str("vault" + RandomAlphaNumericString(6));
+  auto path(chunk_store_path_/path_str);
+  LOG(kVerbose) << path.string();
+  fs::create_directory(path);
+  vaults_.emplace_back(new Vault(pmids_[index], path, [](const boost::asio::ip::udp::endpoint&) {},
+                                 public_pmids_, endpoints_));
+  LOG(kVerbose) << "vault joined: " << index;
 }
 
 TEST_F(VaultNetwork, FUNC_SimplestTest) {
@@ -120,12 +122,19 @@ TEST_F(VaultNetwork, FUNC_SimplestTest) {
   this->bootstrap_wait_.wait_for(lock, std::chrono::seconds(5), [this]() {
                                                                   return this->bootstrap_done_;
                                                                 });
-
-  auto vaults = std::async(std::launch::async, [&, this] {
-    this->Create(5);
-  });
+  LOG(kVerbose) << "Starting vaults...";
+  std::vector<std::future<void>> vaults;
+  for (size_t index(2); index < network_size_ + 2; ++index) {
+    LOG(kVerbose) << "pre next one " << index;
+    vaults.push_back(std::async(std::launch::async, [index, this] { this->Create(index); }));
+    Sleep(std::chrono::seconds(3));
+    LOG(kVerbose) << "post next one " << index;
+  }
   bootstrap.get();
-  vaults.get();
+  for (size_t index(0); index < network_size_; ++index) {
+    vaults[index].get();
+    LOG(kVerbose) << index << "returns ";
+  }
 }
 
 }  // namespace test

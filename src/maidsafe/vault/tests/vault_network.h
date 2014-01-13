@@ -41,7 +41,7 @@ class VaultNetwork : public testing::Test{
   VaultNetwork();
   void Bootstrap();
   virtual void TearDown();
-  void Create(size_t number_of_vaults);
+  void Create(size_t index);
 
  protected:
   AsioService asio_service_;
@@ -50,7 +50,10 @@ class VaultNetwork : public testing::Test{
   bool bootstrap_done_;
   std::vector<VaultPtr> vaults_;
   std::vector<boost::asio::ip::udp::endpoint> endpoints_;
+  std::vector<passport::PublicPmid> public_pmids_;
+  std::vector<passport::Pmid> pmids_;
   fs::path chunk_store_path_;
+  size_t network_size_;
 };
 
 }  // namespace test
