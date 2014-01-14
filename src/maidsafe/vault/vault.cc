@@ -59,7 +59,8 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
 }
 
 Vault::~Vault() {
-  // call stop on all component
+  // call stop on all components
+  routing_.reset();
 }
 
 void Vault::InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
@@ -68,7 +69,7 @@ void Vault::InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_
 
   std::unique_lock<std::mutex> lock(network_health_mutex_);
 #ifdef TESTING
-  if (!network_health_condition_variable_.wait_for(lock, std::chrono::minutes(1), [this] {
+  if (!network_health_condition_variable_.wait_for(lock, std::chrono::minutes(5), [this] {
          return network_health_ >= detail::Parameters::kMinNetworkHealth;
        }))
     ThrowError(VaultErrors::failed_to_join_network);

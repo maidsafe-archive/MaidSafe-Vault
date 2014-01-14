@@ -180,7 +180,7 @@ void DoOperation(DataManagerService* service,
                  const PutResponseFromPmidManagerToDataManager& message,
                  const PutResponseFromPmidManagerToDataManager::Sender& sender,
                  const PutResponseFromPmidManagerToDataManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation PutResponseFromPmidManagerToDataManager recieved from sender "
+  LOG(kVerbose) << "DoOperation PutResponseFromPmidManagerToDataManager received from sender "
                 << HexSubstr(sender.sender_id.data.string()) << " regarding the group of "
                 << HexSubstr(sender.group_id.data.string());
   auto data_name(GetNameVariant(*message.contents));

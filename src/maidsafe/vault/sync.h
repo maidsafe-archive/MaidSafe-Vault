@@ -110,10 +110,10 @@ bool IsResolved(const UnresolvedAction& unresolved_action) {
   // Received syncs from at least majority of peers(including itself)
   // Shall have tri-state : unresolved, resolved, already-resolved
   // However, as IsResolved get called only once, here use strict "==" to differentiate
-  uint16_t total_recieved = static_cast<uint16_t>(unresolved_action.peer_and_entry_ids.size() +
+  uint16_t total_received = static_cast<uint16_t>(unresolved_action.peer_and_entry_ids.size() +
            (unresolved_action.this_node_and_entry_id ? 1U : 0U));
-  LOG(kVerbose) << "IsResolved  total_recieved : " << total_recieved;
-  return (total_recieved == ((routing::Parameters::node_group_size / 2) + 1U));
+  LOG(kVerbose) << "IsResolved  total_received : " << total_received;
+  return (total_received == ((routing::Parameters::node_group_size / 2) + 1U));
 }
 
 template <typename UnresolvedAction>
@@ -195,7 +195,7 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddUnresolvedAction(
     }
     LOG(kVerbose) << "AddAction " << kActionId << " not recorded from the sender";
 
-    // check if already recieved from self and add
+    // check if already received from self and add
     if (detail::IsFromThisNode(unresolved_action)) {
       if (!(*found)->this_node_and_entry_id) {
         LOG(kVerbose) << "AddAction " << kActionId << " appended to unresolved";
