@@ -199,8 +199,13 @@ void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::Messa
   try {
     get_timer_.AddResponse(message_id.data, std::make_pair(pmid_name, contents));
   }
-  catch (...) {
+  catch (maidsafe_error& error) {
+    // There is scenario that during the procedure of Get, the request side will get timed out
+    // earlier than the response side (when they use same time out parameter).
+    // So the task will be cleaned out before the time-out response from responder
+    // arrived. The policy shall change to keep timer muted instead of throwing.
     // BEFORE_RELEASE handle
+    LOG(kError) << "Caught an error when received a get response " << error.what();
   }
 }
 
