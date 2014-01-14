@@ -110,7 +110,7 @@ void VaultNetwork::Create(size_t index) {
   fs::create_directory(path);
   vaults_.emplace_back(new Vault(pmids_[index], path, [](const boost::asio::ip::udp::endpoint&) {},
                                  public_pmids_, endpoints_));
-  LOG(kVerbose) << "vault joined: " << index;
+  LOG(kSuccess) << "vault joined: " << index;
 }
 
 TEST_F(VaultNetwork, FUNC_SimplestTest) {
@@ -132,8 +132,13 @@ TEST_F(VaultNetwork, FUNC_SimplestTest) {
   }
   bootstrap.get();
   for (size_t index(0); index < network_size_; ++index) {
-    vaults[index].get();
-    LOG(kVerbose) << index << "returns ";
+    try {
+      vaults[index].get();
+    }
+    catch (const std::exception& e) {
+      LOG(kError) << "Exception getting future from creating vault " << index << ": " << e.what();
+    }
+    LOG(kVerbose) << index << " returns.";
   }
 }
 

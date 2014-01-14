@@ -19,6 +19,8 @@
 #include "maidsafe/vault/group_db.h"
 
 #include <atomic>
+#include <algorithm>
+
 #include "boost/progress.hpp"
 
 #include "leveldb/db.h"
@@ -63,11 +65,11 @@ struct PersonaNode {
     return UnresolvedActionType(key, action, node_id);
   }
 
-  std::unique_ptr<UnresolvedActionType> RecieveUnresolvedAction(
+  std::unique_ptr<UnresolvedActionType> ReceiveUnresolvedAction(
       const UnresolvedActionType& unresolved_action) {
-    auto recieved_unresolved_action = UnresolvedActionType(unresolved_action.Serialise(),
+    auto received_unresolved_action = UnresolvedActionType(unresolved_action.Serialise(),
         unresolved_action.this_node_and_entry_id->first, node_id);
-    auto resolved(sync.AddUnresolvedAction(recieved_unresolved_action));
+    auto resolved(sync.AddUnresolvedAction(received_unresolved_action));
     if (resolved)
       ++resolved_count;
     return std::move(resolved);
@@ -76,6 +78,11 @@ struct PersonaNode {
   Sync<UnresolvedActionType> sync;
   NodeId node_id;
   std::atomic<int> resolved_count;
+
+ private:
+  PersonaNode(PersonaNode&&);
+  PersonaNode(const PersonaNode&);
+  PersonaNode& operator=(PersonaNode other);
 };
 
 
@@ -106,126 +113,138 @@ TEST(SyncTest, BEH_Constructor) {
 }
 
 TEST(SyncTest, BEH_SingleAction) {
+  typedef std::unique_ptr<PersonaNode<MaidManager::UnresolvedPut>> PersonaNodePtr;
   auto maid(MakeMaid());
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
-  std::vector<PersonaNode<MaidManager::UnresolvedPut>> persona_nodes(routing::Parameters::node_group_size);
+  std::vector<PersonaNodePtr> persona_nodes(routing::Parameters::node_group_size);
+  std::generate(std::begin(persona_nodes), std::end(persona_nodes),
+                [] { return PersonaNodePtr(new PersonaNodePtr::element_type); });
 
   MaidManager::Key key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
       DataTagValue::kMaidValue);
   std::vector<MaidManager::UnresolvedPut> unresolved_actions;
   for (const auto& persona_node : persona_nodes)
-    unresolved_actions.push_back(persona_node.CreateUnresolvedAction(key));
+    unresolved_actions.push_back(persona_node->CreateUnresolvedAction(key));
+
   for (auto i(0U); i != routing::Parameters::node_group_size; ++i) {
     int resolved_count(0);
     for (auto j(0U); j != routing::Parameters::node_group_size; ++j) {
-      auto resolved = persona_nodes[i].RecieveUnresolvedAction(unresolved_actions[j]);
+      auto resolved = persona_nodes[i]->ReceiveUnresolvedAction(unresolved_actions[j]);
       if (resolved) {
         ++resolved_count;
         EXPECT_TRUE(j >= routing::Parameters::node_group_size -2U) << "i = " << i << " , j = " << j;
         EXPECT_TRUE(resolved->key == key);
         EXPECT_TRUE(resolved->action == unresolved_actions[0].action);
       }
-      auto unresolved_list = persona_nodes[i].sync.GetUnresolvedActions();
+      auto unresolved_list = persona_nodes[i]->sync.GetUnresolvedActions();
       if ((j >= i) && (j < (routing::Parameters::node_group_size -1U)))
         EXPECT_TRUE(unresolved_list.size() == 1U) << "i = " << i << " , j = " << j;;
     }
     EXPECT_TRUE(resolved_count == 1);
-    EXPECT_TRUE(persona_nodes[i].sync.GetUnresolvedActions().size() == 0U);
+    EXPECT_TRUE(persona_nodes[i]->sync.GetUnresolvedActions().empty());
   }
 }
 
 TEST(SyncTest, BEH_SingleActionRepeatedMessages) {
   auto maid(MakeMaid());
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
-  std::vector<PersonaNode<MaidManager::UnresolvedPut>> persona_nodes(
-                                                           routing::Parameters::node_group_size);
+  typedef std::unique_ptr<PersonaNode<MaidManager::UnresolvedPut>> PersonaNodePtr;
+  std::vector<PersonaNodePtr> persona_nodes(routing::Parameters::node_group_size);
+  std::generate(std::begin(persona_nodes), std::end(persona_nodes),
+                [] { return PersonaNodePtr(new PersonaNodePtr::element_type); });
 
   MaidManager::Key key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
                            DataTagValue::kMaidValue);
   std::vector<MaidManager::UnresolvedPut> unresolved_actions;
   for (const auto& persona_node : persona_nodes)
-    unresolved_actions.push_back(persona_node.CreateUnresolvedAction(key));
+    unresolved_actions.push_back(persona_node->CreateUnresolvedAction(key));
   for (auto i(0U); i != routing::Parameters::node_group_size; ++i) {
     int resolved_count(0);
     for (auto j(0U); j != routing::Parameters::node_group_size; ++j) {
-      auto resolved_action = persona_nodes[i].RecieveUnresolvedAction(unresolved_actions[j]);
+      auto resolved_action = persona_nodes[i]->ReceiveUnresolvedAction(unresolved_actions[j]);
       if (resolved_action) {
         ++resolved_count;
         EXPECT_TRUE(j >= routing::Parameters::node_group_size -2U) << "i = " << i << " , j = " << j;
         EXPECT_TRUE(resolved_action->key == key);
         EXPECT_TRUE(resolved_action->action == unresolved_actions[0].action);
       }
-      auto unresolved_list = persona_nodes[i].sync.GetUnresolvedActions();
+      auto unresolved_list = persona_nodes[i]->sync.GetUnresolvedActions();
       if ((j >= i) && (j < (routing::Parameters::node_group_size -1U))) {
         EXPECT_TRUE(unresolved_list.size() == 1U) << "i = " << i << " , j = " << j;
         // Add repeated messages
         for (auto k(0U); k <= j; ++k) {
-          auto resolved = persona_nodes[i].RecieveUnresolvedAction(unresolved_actions[k]);
+          auto resolved = persona_nodes[i]->ReceiveUnresolvedAction(unresolved_actions[k]);
           EXPECT_TRUE(resolved == nullptr);
         }
       }
     }
     EXPECT_TRUE(resolved_count == 1);
-    EXPECT_TRUE(persona_nodes[i].sync.GetUnresolvedActions().size() == 0U);
+    EXPECT_TRUE(persona_nodes[i]->sync.GetUnresolvedActions().empty());
   }
 }
 
 TEST(SyncTest, BEH_TwoActionSameKey) {
   auto maid(MakeMaid());
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
-  std::vector<PersonaNode<MaidManager::UnresolvedPut>> persona_nodes(routing::Parameters::node_group_size);
+  typedef std::unique_ptr<PersonaNode<MaidManager::UnresolvedPut>> PersonaNodePtr;
+  std::vector<PersonaNodePtr> persona_nodes(routing::Parameters::node_group_size);
+  std::generate(std::begin(persona_nodes), std::end(persona_nodes),
+                [] { return PersonaNodePtr(new PersonaNodePtr::element_type); });
 
   MaidManager::Key key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
                            DataTagValue::kMaidValue);
   std::vector<MaidManager::UnresolvedPut> unresolved_actions_1, unresolved_actions_2;
   for (const auto& persona_node : persona_nodes) {
-    unresolved_actions_1.push_back(persona_node.CreateUnresolvedAction(key));
-    unresolved_actions_2.push_back(persona_node.CreateUnresolvedAction(key));
+    unresolved_actions_1.push_back(persona_node->CreateUnresolvedAction(key));
+    unresolved_actions_2.push_back(persona_node->CreateUnresolvedAction(key));
   }
 
   for (auto i(0U); i != routing::Parameters::node_group_size; ++i) {
     std::vector<std::unique_ptr<MaidManager::UnresolvedPut>> resolved_vector;
     for (auto j(0U); j != routing::Parameters::node_group_size; ++j) {
-      auto resolved1 = persona_nodes[i].RecieveUnresolvedAction(unresolved_actions_1[j]);
+      auto resolved1 = persona_nodes[i]->ReceiveUnresolvedAction(unresolved_actions_1[j]);
       if (resolved1) {
         resolved_vector.push_back(std::move(resolved1));
        }
-      auto resolved2 = persona_nodes[i].RecieveUnresolvedAction(unresolved_actions_2[j]);
+      auto resolved2 = persona_nodes[i]->ReceiveUnresolvedAction(unresolved_actions_2[j]);
       if (resolved2) {
         resolved_vector.push_back(std::move(resolved2));
       }
     }
-    EXPECT_TRUE(resolved_vector.size() == 2) << " resolved_vector.size() : "<< resolved_vector.size();
+    EXPECT_TRUE(resolved_vector.size() == 2) << "resolved_vector.size(): "<< resolved_vector.size();
   }
 }
 
 TEST(SyncTest, BEH_MultipleSequentialAction) {
   auto maid(MakeMaid());
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
-  std::vector<PersonaNode<MaidManager::UnresolvedPut>> persona_nodes(routing::Parameters::node_group_size);
+  typedef std::unique_ptr<PersonaNode<MaidManager::UnresolvedPut>> PersonaNodePtr;
+  std::vector<PersonaNodePtr> persona_nodes(routing::Parameters::node_group_size);
+  std::generate(std::begin(persona_nodes), std::end(persona_nodes),
+                [] { return PersonaNodePtr(new PersonaNodePtr::element_type); });
 
   for(auto count(0U); count != 100; ++count) {
     MaidManager::Key key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
                              DataTagValue::kMaidValue);
     std::vector<MaidManager::UnresolvedPut> unresolved_actions;
     for (const auto& persona_node : persona_nodes)
-      unresolved_actions.push_back(persona_node.CreateUnresolvedAction(key));
+      unresolved_actions.push_back(persona_node->CreateUnresolvedAction(key));
     for (auto i(0U); i != routing::Parameters::node_group_size; ++i) {
       int resolved_count(0);
       for (auto j(0U); j != routing::Parameters::node_group_size; ++j) {
-        auto resolved = persona_nodes[i].RecieveUnresolvedAction(unresolved_actions[j]);
+        auto resolved = persona_nodes[i]->ReceiveUnresolvedAction(unresolved_actions[j]);
         if (resolved) {
           ++resolved_count;
           EXPECT_TRUE(j >= routing::Parameters::node_group_size -2U) << "i = " << i << " , j = " << j;
           EXPECT_TRUE(resolved->key == key);
           EXPECT_TRUE(resolved->action == unresolved_actions[0].action);
         }
-        auto unresolved_list = persona_nodes[i].sync.GetUnresolvedActions();
+        auto unresolved_list = persona_nodes[i]->sync.GetUnresolvedActions();
         if ((j >= i) && (j < (routing::Parameters::node_group_size -1U)))
           EXPECT_TRUE(unresolved_list.size() == 1U) << "i = " << i << " , j = " << j;
       }
       EXPECT_TRUE(resolved_count == 1);
-      EXPECT_TRUE(persona_nodes[i].sync.GetUnresolvedActions().size() == 0U);
+      EXPECT_TRUE(persona_nodes[i]->sync.GetUnresolvedActions().empty());
     }
   }
 }
@@ -234,7 +253,10 @@ TEST(SyncTest, BEH_MultipleRandomAction) {
   const int kActionCount(500);
   auto maid(MakeMaid());
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
-  std::vector<PersonaNode<MaidManager::UnresolvedPut>> persona_nodes(routing::Parameters::node_group_size);
+  typedef std::unique_ptr<PersonaNode<MaidManager::UnresolvedPut>> PersonaNodePtr;
+  std::vector<PersonaNodePtr> persona_nodes(routing::Parameters::node_group_size);
+  std::generate(std::begin(persona_nodes), std::end(persona_nodes),
+                [] { return PersonaNodePtr(new PersonaNodePtr::element_type); });
 
   std::vector<MaidManager::Key> keys;
   std::vector<std::unique_ptr<MaidManager::UnresolvedPut>> unresolved_actions;
@@ -243,7 +265,7 @@ TEST(SyncTest, BEH_MultipleRandomAction) {
                                     DataTagValue::kMaidValue));
     for (const auto& persona_node : persona_nodes) {
       std::unique_ptr<MaidManager::UnresolvedPut> action(
-                  new MaidManager::UnresolvedPut(persona_node.CreateUnresolvedAction(keys.back())));
+          new MaidManager::UnresolvedPut(persona_node->CreateUnresolvedAction(keys.back())));
       unresolved_actions.push_back(std::move(action));
     }
   }
@@ -253,7 +275,7 @@ TEST(SyncTest, BEH_MultipleRandomAction) {
   std::vector<std::unique_ptr<MaidManager::UnresolvedPut>> resolved_vector;
   for (const auto& unresolved_action : unresolved_actions) {
     for (auto& persona_node : persona_nodes) {
-      auto resolved = persona_node.RecieveUnresolvedAction(*unresolved_action);
+      auto resolved = persona_node->ReceiveUnresolvedAction(*unresolved_action);
       if (resolved)
         resolved_vector.push_back(std::move(resolved));
     }
@@ -272,7 +294,7 @@ TEST(SyncTest, BEH_MultipleRandomAction) {
   }
   EXPECT_TRUE(count == kActionCount) << count;
   for (auto& persona_node : persona_nodes) {
-    EXPECT_TRUE(persona_node.resolved_count == kActionCount);
+    EXPECT_TRUE(persona_node->resolved_count == kActionCount);
   }
 }
 
@@ -284,7 +306,7 @@ template <typename Persona, typename KeyType>
 void ApplySyncToPersona(Persona& persona_node, std::vector<KeyType> keys) {
   for (auto& key : keys) {
     auto unresolved_action = persona_node.CreateUnresolvedAction(key);
-    persona_node.RecieveUnresolvedAction(unresolved_action);
+    persona_node.ReceiveUnresolvedAction(unresolved_action);
   }
 }
 
