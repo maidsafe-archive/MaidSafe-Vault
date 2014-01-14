@@ -34,6 +34,8 @@ namespace vault {
 
 namespace test {
 
+const int kNetworkSize(50);
+
 class VaultNetwork : public testing::Test{
  public:
   typedef std::shared_ptr<Vault> VaultPtr;
@@ -46,8 +48,8 @@ class VaultNetwork : public testing::Test{
  protected:
   AsioService asio_service_;
   std::mutex mutex_;  
-  std::condition_variable bootstrap_wait_;
-  bool bootstrap_done_;
+  std::condition_variable bootstrap_condition_, network_up_condition_;
+  bool bootstrap_done_, network_up_;
   std::vector<VaultPtr> vaults_;
   std::vector<boost::asio::ip::udp::endpoint> endpoints_;
   std::vector<passport::PublicPmid> public_pmids_;

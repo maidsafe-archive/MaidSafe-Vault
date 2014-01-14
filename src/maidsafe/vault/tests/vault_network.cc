@@ -28,10 +28,11 @@ namespace vault {
 namespace test {
 
 VaultNetwork::VaultNetwork()
-    : asio_service_(4), mutex_(), bootstrap_wait_(), bootstrap_done_(false), vaults_(),
-      endpoints_(), public_pmids_(), pmids_(),
-      chunk_store_path_(fs::unique_path((fs::temp_directory_path()))), network_size_(40) {
-      asio_service_.Start();
+    : asio_service_(4), mutex_(), bootstrap_condition_(), network_up_condition_(),
+      bootstrap_done_(false), network_up_(false), vaults_(), endpoints_(), public_pmids_(),
+      pmids_(), chunk_store_path_(fs::unique_path((fs::temp_directory_path()))),
+      network_size_(kNetworkSize) {
+  asio_service_.Start();
   for (size_t index(0); index < network_size_ + 2; ++index) {
     auto pmid(MakePmid());
     pmids_.push_back(pmid);
@@ -85,15 +86,17 @@ void VaultNetwork::Bootstrap() {
     ThrowError(RoutingErrors::not_connected);
   }
   bootstrap_done_ = true;
-  bootstrap_wait_.notify_one();
+  bootstrap_condition_.notify_one();
   // just wait till process receives termination signal
   LOG(kInfo) << "Bootstrap nodes are running"  << "Endpoints: " << endpoints_[0]
              << " and " << endpoints_[1];
   {
-    std::condition_variable wait;
     std::mutex mutex;
     std::unique_lock<std::mutex> lock(mutex);
-    wait.wait_for(lock, std::chrono::seconds(300), []() { return false; });
+    assert(!network_up_condition_.wait_for(lock, std::chrono::seconds(300),
+                                           [this]() {
+                                             return this->network_up_;
+                                           }));
   }
   {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -108,9 +111,17 @@ void VaultNetwork::Create(size_t index) {
   auto path(chunk_store_path_/path_str);
   LOG(kVerbose) << path.string();
   fs::create_directory(path);
-  vaults_.emplace_back(new Vault(pmids_[index], path, [](const boost::asio::ip::udp::endpoint&) {},
-                                 public_pmids_, endpoints_));
-  LOG(kSuccess) << "vault joined: " << index;
+  if (index == 40) {
+    LOG(kVerbose) << "The failing vault";
+  }
+  try {
+    vaults_.emplace_back(new Vault(pmids_[index], path, [](const boost::asio::ip::udp::endpoint&) {},
+                                   public_pmids_, endpoints_));
+    LOG(kSuccess) << "vault joined: " << index;
+  }
+  catch (const std::exception& ex) {
+    LOG(kError) << "Failed to start vault: " << index << ex.what();
+  }
 }
 
 TEST_F(VaultNetwork, FUNC_SimplestTest) {
@@ -119,17 +130,21 @@ TEST_F(VaultNetwork, FUNC_SimplestTest) {
   });
   std::mutex mutex;
   std::unique_lock<std::mutex> lock(mutex);
-  this->bootstrap_wait_.wait_for(lock, std::chrono::seconds(5), [this]() {
-                                                                  return this->bootstrap_done_;
-                                                                });
+  assert(!this->bootstrap_condition_.wait_for(lock, std::chrono::seconds(5),
+                                              [this]() {
+                                                return this->bootstrap_done_;
+                                              }));
   LOG(kVerbose) << "Starting vaults...";
   std::vector<std::future<void>> vaults;
   for (size_t index(2); index < network_size_ + 2; ++index) {
-    LOG(kVerbose) << "pre next one " << index;
-    vaults.push_back(std::async(std::launch::async, [index, this] { this->Create(index); }));
-    Sleep(std::chrono::seconds(3));
-    LOG(kVerbose) << "post next one " << index;
+    LOG(kVerbose) << "pre join: " << index;
+    vaults.push_back(std::async(std::launch::async, [index, this] { this->Create(index); }));    
+    Sleep(std::chrono::seconds(index / 10 + 1));
+    LOG(kVerbose) << "post join: " << index;
   }
+
+  this->network_up_ = true;
+  this->network_up_condition_.notify_one();
   bootstrap.get();
   for (size_t index(0); index < network_size_; ++index) {
     try {
