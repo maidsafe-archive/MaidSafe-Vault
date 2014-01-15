@@ -16,17 +16,12 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_TESTS_VAULT_NETWORK_H_
-#define MAIDSAFE_VAULT_TESTS_VAULT_NETWORK_H_
+#include "maidsafe/vault/tests/vault_network.h"
 
-#include <vector>
-
-#include "boost/filesystem/path.hpp"
+#include <algorithm>
 
 #include "maidsafe/common/test.h"
-#include "maidsafe/vault/vault.h"
-
-namespace fs = boost::filesystem;
+#include "maidsafe/vault/tests/tests_utils.h"
 
 namespace maidsafe {
 
@@ -34,30 +29,13 @@ namespace vault {
 
 namespace test {
 
-const int kNetworkSize(50);
-
-class VaultNetwork {
+class VaultNetworkTest : public VaultNetwork, public testing::Test {
  public:
-  typedef std::shared_ptr<Vault> VaultPtr;
-
-  VaultNetwork();
-  virtual void SetUp();
-  virtual void TearDown();
-  void Bootstrap();
-  void Create(size_t index);
-
- protected:
-  AsioService asio_service_;
-  std::mutex mutex_;  
-  std::condition_variable bootstrap_condition_, network_up_condition_;
-  bool bootstrap_done_, network_up_;
-  std::vector<VaultPtr> vaults_;
-  std::vector<boost::asio::ip::udp::endpoint> endpoints_;
-  std::vector<passport::PublicPmid> public_pmids_;
-  std::vector<passport::Pmid> pmids_;
-  fs::path chunk_store_path_;
-  size_t network_size_;
+  VaultNetworkTest() {}
 };
+
+TEST_F(VaultNetworkTest, FUNC_BasicSetup) {
+}
 
 }  // namespace test
 
@@ -65,4 +43,3 @@ class VaultNetwork {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_TESTS_VAULT_NETWORK_H_

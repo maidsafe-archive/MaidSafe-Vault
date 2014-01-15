@@ -18,6 +18,8 @@
 
 #include "maidsafe/vault/tests/vault_network.h"
 
+#include <algorithm>
+
 #include "maidsafe/common/test.h"
 #include "maidsafe/vault/tests/tests_utils.h"
 
@@ -93,10 +95,10 @@ void VaultNetwork::Bootstrap() {
   {
     std::mutex mutex;
     std::unique_lock<std::mutex> lock(mutex);
-    assert(!network_up_condition_.wait_for(lock, std::chrono::seconds(300),
-                                           [this]() {
-                                             return this->network_up_;
-                                           }));
+    assert(network_up_condition_.wait_for(lock, std::chrono::seconds(300),
+                                          [this]() {
+                                            return this->network_up_;
+                                          }));
   }
   {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -104,43 +106,21 @@ void VaultNetwork::Bootstrap() {
   }
 }
 
-void VaultNetwork::TearDown() {}
-
-void VaultNetwork::Create(size_t index) {
-  std::string path_str("vault" + RandomAlphaNumericString(6));
-  auto path(chunk_store_path_/path_str);
-  LOG(kVerbose) << path.string();
-  fs::create_directory(path);
-  if (index == 40) {
-    LOG(kVerbose) << "The failing vault";
-  }
-  try {
-    vaults_.emplace_back(new Vault(pmids_[index], path, [](const boost::asio::ip::udp::endpoint&) {},
-                                   public_pmids_, endpoints_));
-    LOG(kSuccess) << "vault joined: " << index;
-  }
-  catch (const std::exception& ex) {
-    LOG(kError) << "Failed to start vault: " << index << ex.what();
-  }
-}
-
-TEST_F(VaultNetwork, FUNC_SimplestTest) {
+void VaultNetwork::SetUp() {
   auto bootstrap = std::async(std::launch::async, [&, this] {
     this->Bootstrap();
   });
   std::mutex mutex;
   std::unique_lock<std::mutex> lock(mutex);
-  assert(!this->bootstrap_condition_.wait_for(lock, std::chrono::seconds(5),
-                                              [this]() {
-                                                return this->bootstrap_done_;
-                                              }));
+  assert(this->bootstrap_condition_.wait_for(lock, std::chrono::seconds(5),
+                                             [this]() {
+                                               return this->bootstrap_done_;
+                                             }));
   LOG(kVerbose) << "Starting vaults...";
   std::vector<std::future<void>> vaults;
   for (size_t index(2); index < network_size_ + 2; ++index) {
-    LOG(kVerbose) << "pre join: " << index;
-    vaults.push_back(std::async(std::launch::async, [index, this] { this->Create(index); }));    
-    Sleep(std::chrono::seconds(index / 10 + 1));
-    LOG(kVerbose) << "post join: " << index;
+    vaults.push_back(std::async(std::launch::async, [index, this] { this->Create(index); }));
+    Sleep(std::chrono::seconds(std::min(index / 10 + 1, size_t(3))));
   }
 
   this->network_up_ = true;
@@ -154,6 +134,28 @@ TEST_F(VaultNetwork, FUNC_SimplestTest) {
       LOG(kError) << "Exception getting future from creating vault " << index << ": " << e.what();
     }
     LOG(kVerbose) << index << " returns.";
+  }
+  LOG(kVerbose) << "Network is up...";
+}
+
+void VaultNetwork::TearDown() {
+  while (vaults_.size() > 0) {
+    vaults_.erase(vaults_.begin());
+    Sleep(std::chrono::milliseconds(200));
+  }
+}
+
+void VaultNetwork::Create(size_t index) {
+  std::string path_str("vault" + RandomAlphaNumericString(6));
+  auto path(chunk_store_path_/path_str);
+  fs::create_directory(path);
+  try {
+    vaults_.emplace_back(new Vault(pmids_[index], path, [](const boost::asio::ip::udp::endpoint&) {},
+                                   public_pmids_, endpoints_));
+    LOG(kSuccess) << "vault joined: " << index;
+  }
+  catch (const std::exception& ex) {
+    LOG(kError) << "Failed to start vault: " << index << ex.what();
   }
 }
 
