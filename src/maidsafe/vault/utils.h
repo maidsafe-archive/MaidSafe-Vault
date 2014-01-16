@@ -182,12 +182,12 @@ void IncrementAttemptsAndSendSync(Dispatcher& dispatcher,
                                   const NewUnresolvedAction& unresolved_action,
                                   typename std::enable_if<std::is_same<UnresolvedAction,
                                   NewUnresolvedAction>::value >::type* = 0) {
+  sync_type.IncrementSyncAttempts();
   auto unresolved_actions(sync_type.GetUnresolvedActions());
   std::unique_ptr<UnresolvedAction> unresolved_action_ptr(new UnresolvedAction(unresolved_action));
   unresolved_actions.push_back(std::move(unresolved_action_ptr));
 //  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has "
 //                << unresolved_actions.size() << " unresolved_actions";
-  sync_type.IncrementSyncAttempts();
   SendSync(dispatcher, unresolved_actions);
 }
 
@@ -198,10 +198,10 @@ void IncrementAttemptsAndSendSync(Dispatcher& dispatcher,
                                   const NewUnresolvedAction& /*unresolved_action*/,
                                   typename std::enable_if<!std::is_same<UnresolvedAction,
                                   NewUnresolvedAction>::value >::type* = 0) {
+  sync_type.IncrementSyncAttempts();
   auto unresolved_actions(sync_type.GetUnresolvedActions());
 //  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has "
 //                << unresolved_actions.size() << " unresolved_actions";
-  sync_type.IncrementSyncAttempts();
   SendSync(dispatcher, unresolved_actions);
 }
 
