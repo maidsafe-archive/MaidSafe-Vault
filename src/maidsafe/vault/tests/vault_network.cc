@@ -32,20 +32,17 @@ namespace test {
 VaultNetwork::VaultNetwork()
     : asio_service_(4), mutex_(), bootstrap_condition_(), network_up_condition_(),
       bootstrap_done_(false), network_up_(false), vaults_(), endpoints_(), public_pmids_(),
-      pmids_(), chunk_store_path_(fs::unique_path((fs::temp_directory_path()))),
-      network_size_(kNetworkSize) {
+      key_chanins_(kNetworkSize + 2),
+      chunk_store_path_(fs::unique_path((fs::temp_directory_path()))), network_size_(kNetworkSize) {
   asio_service_.Start();
-  for (size_t index(0); index < network_size_ + 2; ++index) {
-    auto pmid(MakePmid());
-    pmids_.push_back(pmid);
-    public_pmids_.push_back(passport::PublicPmid(pmid));
-  }
+  for (const auto& key : key_chanins_.keys)
+    public_pmids_.push_back(passport::PublicPmid(key.pmid));
 }
 
 void VaultNetwork::Bootstrap() {
   std::cout << "Creating zero state routing network..." << std::endl;
-  routing::NodeInfo node_info1(MakeNodeInfo(pmids_[0])),
-                    node_info2(MakeNodeInfo(pmids_[1]));
+  routing::NodeInfo node_info1(MakeNodeInfo(key_chanins_.keys[0].pmid)),
+                    node_info2(MakeNodeInfo(key_chanins_.keys[1].pmid));
   routing::Functors functors1, functors2;
   functors1.request_public_key = functors2.request_public_key  = [&, this](
       NodeId node_id, const routing::GivePublicKeyFunctor& give_key) {
@@ -75,7 +72,7 @@ void VaultNetwork::Bootstrap() {
                        maidsafe::test::GetRandomPort()));
   endpoints_.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(),
                        maidsafe::test::GetRandomPort()));
-  routing::Routing routing1(pmids_[0]), routing2(pmids_[1]);
+  routing::Routing routing1(key_chanins_.keys[0].pmid), routing2(key_chanins_.keys[1].pmid);
 
   auto a1 = std::async(std::launch::async, [&, this] {
     return routing1.ZeroStateJoin(functors1, endpoints_[0], endpoints_[1], node_info2);
@@ -102,7 +99,11 @@ void VaultNetwork::Bootstrap() {
   }
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    endpoints_.erase(std::begin(endpoints_), std::begin(endpoints_) + 1);
+    endpoints_.clear();
+    boost::asio::ip::udp::endpoint live;
+    live.address(maidsafe::GetLocalIp());
+    live.port(5483);
+    endpoints_.push_back(live);
   }
 }
 
@@ -150,13 +151,115 @@ void VaultNetwork::Create(size_t index) {
   auto path(chunk_store_path_/path_str);
   fs::create_directory(path);
   try {
-    vaults_.emplace_back(new Vault(pmids_[index], path, [](const boost::asio::ip::udp::endpoint&) {},
-                                   public_pmids_, endpoints_));
+    vaults_.emplace_back(new Vault(key_chanins_.keys[index].pmid, path,
+                                   [](const boost::asio::ip::udp::endpoint&) {}, public_pmids_,
+                                   endpoints_));
     LOG(kSuccess) << "vault joined: " << index;
   }
   catch (const std::exception& ex) {
     LOG(kError) << "Failed to start vault: " << index << ex.what();
   }
+}
+
+Client::Client(const passport::detail::AnmaidToPmid& keys,
+               const std::vector<UdpEndpoint>& endpoints,
+               const std::vector<passport::PublicPmid>& public_pmids)
+    : asio_service_(2), functors_(), routing_(keys.maid), nfs_(),
+      data_getter_(asio_service_, routing_, public_pmids) {
+  nfs_.reset(new nfs_client::MaidNodeNfs(
+      asio_service_, routing_, passport::PublicPmid::Name(Identity(keys.pmid.name().value))));
+  {
+    auto future(RoutingJoin(endpoints));
+    auto status(future.wait_for(std::chrono::seconds(10)));
+    if (status == std::future_status::timeout || !future.get()) {
+      LOG(kError) << "can't join routing network";
+      ThrowError(RoutingErrors::not_connected);
+    }
+    LOG(kInfo) << "Client node joined routing network";
+  }
+  {
+    passport::PublicMaid public_maid(keys.maid);
+    passport::PublicAnmaid public_anmaid(keys.anmaid);
+    auto future(nfs_->CreateAccount(nfs_vault::AccountCreation(public_maid, public_anmaid)));
+    auto status(future.wait_for(boost::chrono::seconds(10)));
+    if (status == boost::future_status::timeout) {
+      LOG(kError) << "can't create account";
+      ThrowError(VaultErrors::failed_to_handle_request);
+    }
+    // waiting for syncs resolved
+    boost::this_thread::sleep_for(boost::chrono::seconds(2));
+    LOG(kVerbose) << "Account created for maid " << HexSubstr(public_maid.name()->string());
+  }
+//  if (register_pmid_for_client) {
+//    {
+//      client_nfs_->RegisterPmid(nfs_vault::PmidRegistration(key_chain.maid, key_chain.pmid, false));
+//      boost::this_thread::sleep_for(boost::chrono::seconds(5));
+//      auto future(client_nfs_->GetPmidHealth(pmid_name));
+//      auto status(future.wait_for(boost::chrono::seconds(10)));
+//      if (status == boost::future_status::timeout) {
+//        LOG(kError) << "can't fetch pmid health";
+//        ThrowError(VaultErrors::failed_to_handle_request);
+//      }
+//      std::cout << "The fetched PmidHealth for pmid_name " << HexSubstr(pmid_name.value.string())
+//                << " is " << future.get() << std::endl;
+//    }
+//    // waiting for the GetPmidHealth updating corresponding accounts
+//    boost::this_thread::sleep_for(boost::chrono::seconds(5));
+//    LOG(kInfo) << "Pmid Registered created for the client node to store chunks";
+//  }
+}
+
+std::future<bool> Client::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints) {
+  std::once_flag join_promise_set_flag;
+  std::shared_ptr<std::promise<bool>> join_promise(std::make_shared<std::promise<bool>>());
+  functors_.network_status = [&join_promise_set_flag, join_promise](int result) {
+    std::cout << "Network health: " << result << std::endl;
+    std::call_once(join_promise_set_flag, [join_promise, &result] {
+      try {
+        join_promise->set_value(result > -1);
+      } catch (...) {
+      }
+    });
+  };
+  functors_.typed_message_and_caching.group_to_group.message_received =
+      [&](const routing::GroupToGroupMessage &msg) { nfs_->HandleMessage(msg); };
+  functors_.typed_message_and_caching.group_to_single.message_received =
+      [&](const routing::GroupToSingleMessage &msg) { nfs_->HandleMessage(msg); };
+  functors_.typed_message_and_caching.single_to_group.message_received =
+      [&](const routing::SingleToGroupMessage &msg) { nfs_->HandleMessage(msg); };
+  functors_.typed_message_and_caching.single_to_single.message_received =
+      [&](const routing::SingleToSingleMessage &msg) { nfs_->HandleMessage(msg); };
+  functors_.request_public_key =
+      [&](const NodeId & node_id, const routing::GivePublicKeyFunctor& give_key) {
+        OnPublicKeyRequested(node_id, give_key); };
+  routing_.Join(functors_, peer_endpoints);
+  return std::move(join_promise->get_future());
+}
+
+void Client::OnPublicKeyRequested(const NodeId& node_id,
+                                  const routing::GivePublicKeyFunctor& give_key) {
+  asio_service_.service().post([=] {
+                                 passport::PublicPmid::Name name(Identity(node_id.string()));
+                                 try {
+                                   auto future(data_getter_.Get(name));
+                                   give_key(future.get().public_key());
+                                 } catch (const std::exception& ex) {
+                                   LOG(kError) << "Failed to get key for " << DebugId(name)
+                                               << " : " << ex.what();
+                                 }
+                               });
+}
+
+KeyChain::KeyChain(size_t size) {
+  while (size-- > 0)
+    Add();
+}
+
+void KeyChain::Add() {
+  passport::Anmaid anmaid;
+  passport::Maid maid(anmaid);
+  passport::Pmid pmid(maid);
+  keys.push_back(passport::detail::AnmaidToPmid(anmaid, maid, pmid));
 }
 
 }  // namespace test

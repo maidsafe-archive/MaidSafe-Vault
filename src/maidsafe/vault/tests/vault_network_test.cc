@@ -29,12 +29,19 @@ namespace vault {
 
 namespace test {
 
-class VaultNetworkTest : public VaultNetwork, public testing::Test {
+class VaultNetworkTest : public VaultNetwork  {
  public:
   VaultNetworkTest() {}
 };
 
+
 TEST_F(VaultNetworkTest, FUNC_BasicSetup) {
+}
+
+TEST_F(VaultNetworkTest, FUNC_Store) {
+  this->key_chanins_.Add();
+  Client client(this->key_chanins_.keys[this->key_chanins_.keys.size() - 1], endpoints_,
+                public_pmids_);
 }
 
 }  // namespace test
