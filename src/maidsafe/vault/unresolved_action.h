@@ -45,6 +45,7 @@ struct UnresolvedAction {
   UnresolvedAction(const Key& key_in, const Action& action_in, const NodeId& this_node_id);
   std::string Serialise() const;
   bool IsReadyForSync() const;
+  bool WasSeen(const NodeId& node_id) const;
   Key key;
   Action action;
   std::shared_ptr<std::pair<NodeId, int32_t>> this_node_and_entry_id;
@@ -53,6 +54,7 @@ struct UnresolvedAction {
 
  private:
   UnresolvedAction& operator=(UnresolvedAction other);
+  std::vector<NodeId> seen_list;
   static int32_t entry_id_sequence_number;
 
   // Helpers to handle Action class with/without Serialise() member function.
@@ -109,7 +111,8 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const std::string& serialised_co
       action(ParseAction<Action>(serialised_copy)),
       this_node_and_entry_id(),
       peer_and_entry_ids(),
-      sync_counter(0) {
+      sync_counter(0),
+      seen_list() {
   protobuf::UnresolvedAction proto_unresolved_action;
   proto_unresolved_action.ParseFromString(serialised_copy);
   key = Key(proto_unresolved_action.serialised_key());
@@ -118,6 +121,8 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const std::string& serialised_co
         int32_t>>(this_node_id, proto_unresolved_action.entry_id());
   else
     peer_and_entry_ids.push_back(std::make_pair(sender_id, proto_unresolved_action.entry_id()));
+  for (auto& i : proto_unresolved_action.seen_list())
+    seen_list.push_back(NodeId(Identity(i)));
 }
 
 template <typename Key, typename Action>
@@ -126,7 +131,8 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const UnresolvedAction& other)
       action(other.action),
       this_node_and_entry_id(other.this_node_and_entry_id),
       peer_and_entry_ids(other.peer_and_entry_ids),
-      sync_counter(other.sync_counter) {}
+      sync_counter(other.sync_counter),
+      seen_list(other.seen_list) {}
 
 template <typename Key, typename Action>
 UnresolvedAction<Key, Action>::UnresolvedAction(UnresolvedAction&& other)
@@ -134,7 +140,8 @@ UnresolvedAction<Key, Action>::UnresolvedAction(UnresolvedAction&& other)
       action(std::move(other.action)),
       this_node_and_entry_id(std::move(other.this_node_and_entry_id)),
       peer_and_entry_ids(std::move(other.peer_and_entry_ids)),
-      sync_counter(std::move(other.sync_counter)) {}
+      sync_counter(std::move(other.sync_counter)),
+      seen_list(std::move(other.seen_list)) {}
 
 template <typename Key, typename Action>
 UnresolvedAction<Key, Action>::UnresolvedAction(const Key& key_in, const Action& action_in,
@@ -144,7 +151,8 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const Key& key_in, const Action&
       this_node_and_entry_id(std::make_shared<std::pair<NodeId, int32_t>>(this_node_id,
                                                                           ++entry_id_sequence_number)),
       peer_and_entry_ids(),
-      sync_counter(0) {}
+      sync_counter(0),
+      seen_list() {}
 
 template <typename Key, typename Action>
 std::string UnresolvedAction<Key, Action>::Serialise() const {
@@ -152,6 +160,10 @@ std::string UnresolvedAction<Key, Action>::Serialise() const {
   proto_unresolved_action.set_serialised_key(key.Serialise());
   SerialiseAction<Action>(proto_unresolved_action);
   proto_unresolved_action.set_entry_id(this_node_and_entry_id->second);
+  if (this_node_and_entry_id)
+    proto_unresolved_action.add_seen_list(this_node_and_entry_id->first.string());
+  for (const auto& peer : peer_and_entry_ids)
+    proto_unresolved_action.add_seen_list(peer.first.string());
   return proto_unresolved_action.SerializeAsString();
 }
 
@@ -159,6 +171,14 @@ template <typename Key, typename Action>
 bool UnresolvedAction<Key, Action>::IsReadyForSync() const {
   // TODO(Fraser#5#): 2013-07-22 - Confirm sync_counter limit and remove magic number
   return this_node_and_entry_id && sync_counter < 10;
+}
+
+template <typename Key, typename Action>
+bool UnresolvedAction<Key, Action>::WasSeen(const NodeId& node_id) const {
+  if (this_node_and_entry_id && (node_id == this_node_and_entry_id->first))
+    return seen_list.size() != 1;
+  auto found(std::find(seen_list.begin(), seen_list.end(), node_id));
+  return found != seen_list.end();
 }
 
 }  // namespace vault

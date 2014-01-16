@@ -60,12 +60,12 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       get_timer_(asio_service_),
       get_cached_response_timer_(asio_service_),
       db_(),
-      sync_puts_(),
-      sync_deletes_(),
-      sync_add_pmids_(),
-      sync_remove_pmids_(),
-      sync_node_downs_(),
-      sync_node_ups_() {
+      sync_puts_(NodeId(pmid.name()->string())),
+      sync_deletes_(NodeId(pmid.name()->string())),
+      sync_add_pmids_(NodeId(pmid.name()->string())),
+      sync_remove_pmids_(NodeId(pmid.name()->string())),
+      sync_node_downs_(NodeId(pmid.name()->string())),
+      sync_node_ups_(NodeId(pmid.name()->string())) {
   asio_service_.Start();
 }
 
