@@ -157,9 +157,15 @@ void VaultNetwork::Create(size_t index) {
     LOG(kSuccess) << "vault joined: " << index;
   }
   catch (const std::exception& ex) {
-    LOG(kError) << "Failed to start vault: " << index << ex.what();
+    EXPECT_TRUE(false) << "Failed to start vault: " << index << ex.what();
   }
 }
+
+void VaultNetwork::Add() {
+  key_chanins_.Add();
+  Create(key_chanins_.keys.size() - 1);
+}
+
 
 Client::Client(const passport::detail::AnmaidToPmid& keys,
                const std::vector<UdpEndpoint>& endpoints,

@@ -38,7 +38,7 @@ class VaultNetworkTest : public VaultNetwork  {
 TEST_F(VaultNetworkTest, FUNC_BasicSetup) {
 }
 
-TEST_F(VaultNetworkTest, FUNC_Store) {
+TEST_F(VaultNetworkTest, FUNC_ClientJoins) {
   this->key_chanins_.Add();
   Client client(this->key_chanins_.keys[this->key_chanins_.keys.size() - 1], endpoints_,
                 public_pmids_);

@@ -51,10 +51,12 @@ class VaultNetwork : public testing::Test {
   VaultNetwork();
   virtual void SetUp();
   virtual void TearDown();
+  void Add();
+
+ protected:
   void Bootstrap();
   void Create(size_t index);
 
- protected:
   AsioService asio_service_;
   std::mutex mutex_;  
   std::condition_variable bootstrap_condition_, network_up_condition_;
