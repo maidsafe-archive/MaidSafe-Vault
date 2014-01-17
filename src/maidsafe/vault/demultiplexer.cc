@@ -27,6 +27,25 @@ namespace maidsafe {
 
 namespace vault {
 
+template <>
+void Demultiplexer::HandleMessage(const routing::SingleToGroupRelayMessage& routing_message) {
+  auto wrapper_tuple(nfs::ParseMessageWrapper(routing_message.contents));
+  const auto& destination_persona(std::get<2>(wrapper_tuple));
+  static_assert(std::is_same<decltype(destination_persona),
+                             const nfs::detail::DestinationTaggedValue&>::value,
+                "The value retrieved from the tuple isn't the destination type, but should be.");
+  switch (destination_persona.data) {
+    case nfs::Persona::kVersionHandler:
+      return version_handler_service_.HandleMessage(wrapper_tuple, routing_message.sender,
+                                                    routing_message.receiver);
+    case nfs::Persona::kDataManager:
+      return data_manager_service_.HandleMessage(wrapper_tuple, routing_message.sender,
+                                                 routing_message.receiver);
+    default:
+      LOG(kError) << "Persona data : " << destination_persona.data << " is an Unhandled Persona ";
+  }
+}
+
 Demultiplexer::Demultiplexer(nfs::Service<MaidManagerService>& maid_manager_service,
                              nfs::Service<VersionHandlerService>& version_handler_service,
                              nfs::Service<DataManagerService>& data_manager_service,
