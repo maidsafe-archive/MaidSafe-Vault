@@ -47,14 +47,15 @@ void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
 void MaidManagerDispatcher::SendCreateAccountResponse(const MaidName& account_name,
                                                       const maidsafe_error& result,
                                                       nfs::MessageId message_id) {
-  typedef nfs::CreateAccountResponseFromMaidManagerToMaidNode VaultMessage;
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  CheckSourcePersonaType<VaultMessage>();
+  typedef nfs::CreateAccountResponseFromMaidManagerToMaidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<NfsMessage>();
 
-  VaultMessage vault_message(message_id, nfs_client::ReturnCode(result));
-  RoutingMessage message(vault_message.Serialise(),
+  NfsMessage nfs_message(message_id, nfs_client::ReturnCode(result));
+  RoutingMessage message(nfs_message.Serialise(),
       GroupOrKeyHelper::GroupSender(routing_, account_name),
-      VaultMessage::Receiver(routing::SingleId(NodeId(account_name.value.string()))));
+      NfsMessage::Receiver(routing::SingleId(NodeId(account_name.value.string()))));
+  LOG(kVerbose) << "SendCreateAccountResponse: " << message_id << " result: " << result.code();
   routing_.Send(message);
 }
 

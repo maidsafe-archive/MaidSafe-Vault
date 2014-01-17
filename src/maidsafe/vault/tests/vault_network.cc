@@ -31,18 +31,18 @@ namespace test {
 
 VaultNetwork::VaultNetwork()
     : asio_service_(4), mutex_(), bootstrap_condition_(), network_up_condition_(),
-      bootstrap_done_(false), network_up_(false), vaults_(), endpoints_(), public_pmids_(),
-      key_chanins_(kNetworkSize + 2),
+      bootstrap_done_(false), network_up_(false), vaults_(), clients_(), endpoints_(),
+      public_pmids_(), key_chains_(kNetworkSize + 2),
       chunk_store_path_(fs::unique_path((fs::temp_directory_path()))), network_size_(kNetworkSize) {
   asio_service_.Start();
-  for (const auto& key : key_chanins_.keys)
+  for (const auto& key : key_chains_.keys)
     public_pmids_.push_back(passport::PublicPmid(key.pmid));
 }
 
 void VaultNetwork::Bootstrap() {
   std::cout << "Creating zero state routing network..." << std::endl;
-  routing::NodeInfo node_info1(MakeNodeInfo(key_chanins_.keys[0].pmid)),
-                    node_info2(MakeNodeInfo(key_chanins_.keys[1].pmid));
+  routing::NodeInfo node_info1(MakeNodeInfo(key_chains_.keys[0].pmid)),
+                    node_info2(MakeNodeInfo(key_chains_.keys[1].pmid));
   routing::Functors functors1, functors2;
   functors1.request_public_key = functors2.request_public_key  = [&, this](
       NodeId node_id, const routing::GivePublicKeyFunctor& give_key) {
@@ -72,7 +72,7 @@ void VaultNetwork::Bootstrap() {
                        maidsafe::test::GetRandomPort()));
   endpoints_.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(),
                        maidsafe::test::GetRandomPort()));
-  routing::Routing routing1(key_chanins_.keys[0].pmid), routing2(key_chanins_.keys[1].pmid);
+  routing::Routing routing1(key_chains_.keys[0].pmid), routing2(key_chains_.keys[1].pmid);
 
   auto a1 = std::async(std::launch::async, [&, this] {
     return routing1.ZeroStateJoin(functors1, endpoints_[0], endpoints_[1], node_info2);
@@ -151,7 +151,7 @@ void VaultNetwork::Create(size_t index) {
   auto path(chunk_store_path_/path_str);
   fs::create_directory(path);
   try {
-    vaults_.emplace_back(new Vault(key_chanins_.keys[index].pmid, path,
+    vaults_.emplace_back(new Vault(key_chains_.keys[index].pmid, path,
                                    [](const boost::asio::ip::udp::endpoint&) {}, public_pmids_,
                                    endpoints_));
     LOG(kSuccess) << "vault joined: " << index;
@@ -162,10 +162,19 @@ void VaultNetwork::Create(size_t index) {
 }
 
 void VaultNetwork::Add() {
-  key_chanins_.Add();
-  Create(key_chanins_.keys.size() - 1);
+  key_chains_.Add();
+  this->public_pmids_.push_back(
+      passport::PublicPmid(this->key_chains_.keys[this->key_chains_.keys.size() - 1].pmid));
+  Create(key_chains_.keys.size() - 1);
 }
 
+void VaultNetwork::AddClient() {
+  this->key_chains_.Add();
+  this->public_pmids_.push_back(
+      passport::PublicPmid(this->key_chains_.keys[this->key_chains_.keys.size() - 1].pmid));
+  clients_.emplace_back(new Client(this->key_chains_.keys[this->key_chains_.keys.size() - 1],
+                                   endpoints_, public_pmids_));
+}
 
 Client::Client(const passport::detail::AnmaidToPmid& keys,
                const std::vector<UdpEndpoint>& endpoints,
@@ -175,6 +184,7 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
   nfs_.reset(new nfs_client::MaidNodeNfs(
       asio_service_, routing_, passport::PublicPmid::Name(Identity(keys.pmid.name().value))));
   {
+    asio_service_.Start();
     auto future(RoutingJoin(endpoints));
     auto status(future.wait_for(std::chrono::seconds(10)));
     if (status == std::future_status::timeout || !future.get()) {
@@ -236,8 +246,8 @@ std::future<bool> Client::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpo
   functors_.typed_message_and_caching.single_to_single.message_received =
       [&](const routing::SingleToSingleMessage &msg) { nfs_->HandleMessage(msg); };
   functors_.request_public_key =
-      [&](const NodeId & node_id, const routing::GivePublicKeyFunctor& give_key) {
-        OnPublicKeyRequested(node_id, give_key); };
+      [&, this](const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key) {
+        this->OnPublicKeyRequested(node_id, give_key); };
   routing_.Join(functors_, peer_endpoints);
   return std::move(join_promise->get_future());
 }

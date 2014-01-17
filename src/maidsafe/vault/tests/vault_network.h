@@ -44,31 +44,6 @@ struct KeyChain {
   void Add();
 };
 
-class VaultNetwork : public testing::Test {
- public:
-  typedef std::shared_ptr<Vault> VaultPtr;
-
-  VaultNetwork();
-  virtual void SetUp();
-  virtual void TearDown();
-  void Add();
-
- protected:
-  void Bootstrap();
-  void Create(size_t index);
-
-  AsioService asio_service_;
-  std::mutex mutex_;  
-  std::condition_variable bootstrap_condition_, network_up_condition_;
-  bool bootstrap_done_, network_up_;
-  std::vector<VaultPtr> vaults_;
-  std::vector<UdpEndpoint> endpoints_;
-  std::vector<passport::PublicPmid> public_pmids_;
-  KeyChain key_chanins_;
-  fs::path chunk_store_path_;
-  size_t network_size_;
-};
-
 class Client {
  public:
   Client(const passport::detail::AnmaidToPmid& keys, const std::vector<UdpEndpoint>& endpoints,
@@ -83,6 +58,34 @@ class Client {
   routing::Routing routing_;
   std::unique_ptr<nfs_client::MaidNodeNfs> nfs_;
   nfs_client::DataGetter data_getter_;
+};
+
+class VaultNetwork : public testing::Test {
+ public:
+  typedef std::shared_ptr<Vault> VaultPtr;
+  typedef std::shared_ptr<Client> ClientPtr;
+
+  VaultNetwork();
+  virtual void SetUp();
+  virtual void TearDown();
+  void Add();
+  void AddClient();
+
+ protected:
+  void Bootstrap();
+  void Create(size_t index);
+
+  AsioService asio_service_;
+  std::mutex mutex_;  
+  std::condition_variable bootstrap_condition_, network_up_condition_;
+  bool bootstrap_done_, network_up_;
+  std::vector<VaultPtr> vaults_;
+  std::vector<ClientPtr> clients_;
+  std::vector<UdpEndpoint> endpoints_;
+  std::vector<passport::PublicPmid> public_pmids_;
+  KeyChain key_chains_;
+  fs::path chunk_store_path_;
+  size_t network_size_;
 };
 
 }  // namespace test
