@@ -40,7 +40,7 @@ VaultNetwork::VaultNetwork()
 }
 
 void VaultNetwork::Bootstrap() {
-  std::cout << "Creating zero state routing network..." << std::endl;
+  LOG(kVerbose) << "Creating zero state routing network..." << std::endl;
   routing::NodeInfo node_info1(MakeNodeInfo(key_chains_.keys[0].pmid)),
                     node_info2(MakeNodeInfo(key_chains_.keys[1].pmid));
   routing::Functors functors1, functors2;
@@ -168,11 +168,11 @@ bool VaultNetwork::Add() {
   return Create(key_chains_.keys.size() - 1);
 }
 
-bool VaultNetwork::AddClient() {
+bool VaultNetwork::AddClient(bool register_pmid) {
   auto node_keys(key_chains_.Add());
   public_pmids_.push_back(passport::PublicPmid(node_keys.pmid));
   try {
-    clients_.emplace_back(new Client(node_keys, endpoints_, public_pmids_));
+    clients_.emplace_back(new Client(node_keys, endpoints_, public_pmids_, register_pmid));
     return true;
   }
   catch (...) {
@@ -182,7 +182,8 @@ bool VaultNetwork::AddClient() {
 
 Client::Client(const passport::detail::AnmaidToPmid& keys,
                const std::vector<UdpEndpoint>& endpoints,
-               const std::vector<passport::PublicPmid>& public_pmids)
+               const std::vector<passport::PublicPmid>& public_pmids,
+               bool register_pmid_for_client)
     : asio_service_(2), functors_(), routing_(keys.maid), nfs_(),
       data_getter_(asio_service_, routing_, public_pmids) {
   nfs_.reset(new nfs_client::MaidNodeNfs(
@@ -210,24 +211,33 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
     boost::this_thread::sleep_for(boost::chrono::seconds(2));
     LOG(kInfo) << "Account created for maid " << HexSubstr(public_maid.name()->string());
   }
-//  if (register_pmid_for_client) {
-//    {
-//      client_nfs_->RegisterPmid(nfs_vault::PmidRegistration(key_chain.maid, key_chain.pmid,
-//                                  false));
-//      boost::this_thread::sleep_for(boost::chrono::seconds(5));
-//      auto future(client_nfs_->GetPmidHealth(pmid_name));
-//      auto status(future.wait_for(boost::chrono::seconds(10)));
-//      if (status == boost::future_status::timeout) {
-//        LOG(kError) << "can't fetch pmid health";
-//        ThrowError(VaultErrors::failed_to_handle_request);
-//      }
-//      std::cout << "The fetched PmidHealth for pmid_name " << HexSubstr(pmid_name.value.string())
-//                << " is " << future.get() << std::endl;
-//    }
-//    // waiting for the GetPmidHealth updating corresponding accounts
-//    boost::this_thread::sleep_for(boost::chrono::seconds(5));
-//    LOG(kInfo) << "Pmid Registered created for the client node to store chunks";
-//  }
+  {
+    try {
+      nfs_->Put(passport::PublicPmid(keys.pmid));
+    }
+    catch (...) {
+      ThrowError(CommonErrors::unknown);
+    }
+    Sleep(std::chrono::seconds(2));
+  }
+  if (register_pmid_for_client) {
+    {
+      nfs_->RegisterPmid(nfs_vault::PmidRegistration(keys.maid, keys.pmid, false));
+      boost::this_thread::sleep_for(boost::chrono::seconds(5));
+      passport::PublicPmid::Name pmid_name(Identity(keys.pmid.name().value));
+      auto future(nfs_->GetPmidHealth(pmid_name));
+      auto status(future.wait_for(boost::chrono::seconds(10)));
+      if (status == boost::future_status::timeout) {
+        LOG(kError) << "can't fetch pmid health";
+        ThrowError(VaultErrors::failed_to_handle_request);
+      }
+      LOG(kVerbose) << "The fetched PmidHealth for pmid_name "
+                    << HexSubstr(pmid_name.value.string()) << " is " << future.get();
+    }
+    // waiting for the GetPmidHealth updating corresponding accounts
+    boost::this_thread::sleep_for(boost::chrono::seconds(5));
+    LOG(kInfo) << "Pmid Registered created for the client node to store chunks";
+  }
 }
 
 std::future<bool> Client::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints) {

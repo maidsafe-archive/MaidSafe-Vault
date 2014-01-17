@@ -47,10 +47,11 @@ struct KeyChain {
 class Client {
  public:
   Client(const passport::detail::AnmaidToPmid& keys, const std::vector<UdpEndpoint>& endpoints,
-         const std::vector<passport::PublicPmid>& public_pmids);
+         const std::vector<passport::PublicPmid>& public_pmids,
+         bool register_pmid_for_client = true);
   std::future<bool> RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints);
 
- protected:
+ public:
   void OnPublicKeyRequested(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key);
 
   AsioService asio_service_;
@@ -69,7 +70,7 @@ class VaultNetwork : public testing::Test {
   virtual void SetUp();
   virtual void TearDown();
   bool Add();
-  bool AddClient();
+  bool AddClient(bool register_pmid = true);
 
  protected:
   void Bootstrap();

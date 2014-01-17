@@ -38,12 +38,31 @@ TEST_F(VaultNetworkTest, FUNC_BasicSetup) {
 }
 
 TEST_F(VaultNetworkTest, FUNC_ClientJoins) {
-  AddClient();
+  EXPECT_TRUE(AddClient(false));
+}
+
+TEST_F(VaultNetworkTest, FUNC_RegisteringPmidClientJoins) {
+  EXPECT_TRUE(AddClient(true));
 }
 
 TEST_F(VaultNetworkTest, FUNC_MultipleClientsJoin) {
   for (int index(0); index < 5; ++index)
-    EXPECT_TRUE(AddClient());
+    EXPECT_TRUE(AddClient(false));
+}
+
+TEST_F(VaultNetworkTest, FUNC_StoreLoadDelete) {
+  EXPECT_TRUE(AddClient());
+  ImmutableData data(NonEmptyString(RandomString(1024)));
+  clients_[0]->nfs_->Put(data);
+  Sleep(std::chrono::seconds(2));
+  auto future(clients_[0]->nfs_->Get<ImmutableData::Name>(data.name(), std::chrono::seconds(5)));
+  try {
+    auto retrieved(future.get());
+    EXPECT_EQ(retrieved.data(), data.data());
+  }
+  catch (...) {
+    EXPECT_TRUE(false) << "Failed to retrieve: " << DebugId(NodeId(data.name()->string()));
+  }
 }
 
 }  // namespace test
