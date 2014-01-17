@@ -208,7 +208,8 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
   }
 //  if (register_pmid_for_client) {
 //    {
-//      client_nfs_->RegisterPmid(nfs_vault::PmidRegistration(key_chain.maid, key_chain.pmid, false));
+//      client_nfs_->RegisterPmid(nfs_vault::PmidRegistration(key_chain.maid, key_chain.pmid,
+//                                  false));
 //      boost::this_thread::sleep_for(boost::chrono::seconds(5));
 //      auto future(client_nfs_->GetPmidHealth(pmid_name));
 //      auto status(future.wait_for(boost::chrono::seconds(10)));

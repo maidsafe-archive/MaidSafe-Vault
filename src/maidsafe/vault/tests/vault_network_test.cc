@@ -34,7 +34,6 @@ class VaultNetworkTest : public VaultNetwork  {
   VaultNetworkTest() {}
 };
 
-
 TEST_F(VaultNetworkTest, FUNC_BasicSetup) {
 }
 
