@@ -24,6 +24,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <map>
 
 #include "boost/filesystem.hpp"
 #include "boost/optional/optional.hpp"

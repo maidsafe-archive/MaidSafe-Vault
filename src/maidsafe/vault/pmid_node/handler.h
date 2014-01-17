@@ -19,6 +19,9 @@
 #ifndef MAIDSAFE_VAULT_PMID_NODE_HANDLER_H_
 #define MAIDSAFE_VAULT_PMID_NODE_HANDLER_H_
 
+#include <string>
+#include <vector>
+
 #include "maidsafe/data_store/data_store.h"
 #include "maidsafe/data_store/permanent_store.h"
 #include "maidsafe/data_store/data_buffer.h"
@@ -29,7 +32,7 @@ namespace vault {
 
 class PmidNodeHandler {
  public:
-  PmidNodeHandler(const boost::filesystem::path vault_root_dir);
+  explicit PmidNodeHandler(const boost::filesystem::path vault_root_dir);
 
   template <typename Data>
   Data Get(const typename Data::Name& data_name);

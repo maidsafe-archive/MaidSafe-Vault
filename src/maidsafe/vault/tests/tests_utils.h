@@ -19,6 +19,9 @@
 #ifndef MAIDSAFE_VAULT_TESTS_TESTS_UTILS_H_
 #define MAIDSAFE_VAULT_TESTS_TESTS_UTILS_H_
 
+#include <string>
+#include <vector>
+
 #include "maidsafe/routing/message.h"
 #include "maidsafe/routing/node_info.h"
 

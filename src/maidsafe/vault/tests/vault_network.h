@@ -39,7 +39,7 @@ typedef boost::asio::ip::udp::endpoint UdpEndpoint;
 const int kNetworkSize(40);
 
 struct KeyChain {
-  KeyChain(size_t size = 1);
+  explicit KeyChain(size_t size = 1);
   std::vector<passport::detail::AnmaidToPmid> keys;
   void Add();
 };
@@ -76,7 +76,7 @@ class VaultNetwork : public testing::Test {
   void Create(size_t index);
 
   AsioService asio_service_;
-  std::mutex mutex_;  
+  std::mutex mutex_;
   std::condition_variable bootstrap_condition_, network_up_condition_;
   bool bootstrap_done_, network_up_;
   std::vector<VaultPtr> vaults_;
