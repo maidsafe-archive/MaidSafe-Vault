@@ -41,7 +41,7 @@ const int kNetworkSize(40);
 struct KeyChain {
   explicit KeyChain(size_t size = 1);
   std::vector<passport::detail::AnmaidToPmid> keys;
-  void Add();
+  passport::detail::AnmaidToPmid Add();
 };
 
 class Client {
@@ -68,12 +68,12 @@ class VaultNetwork : public testing::Test {
   VaultNetwork();
   virtual void SetUp();
   virtual void TearDown();
-  void Add();
-  void AddClient();
+  bool Add();
+  bool AddClient();
 
  protected:
   void Bootstrap();
-  void Create(size_t index);
+  bool Create(size_t index);
 
   AsioService asio_service_;
   std::mutex mutex_;

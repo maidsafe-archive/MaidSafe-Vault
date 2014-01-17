@@ -41,6 +41,11 @@ TEST_F(VaultNetworkTest, FUNC_ClientJoins) {
   AddClient();
 }
 
+TEST_F(VaultNetworkTest, FUNC_MultipleClientsJoin) {
+  for (int index(0); index < 5; ++index)
+    EXPECT_TRUE(AddClient());
+}
+
 }  // namespace test
 
 }  // namespace vault

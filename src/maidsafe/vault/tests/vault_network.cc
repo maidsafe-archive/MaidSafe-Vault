@@ -146,7 +146,7 @@ void VaultNetwork::TearDown() {
   }
 }
 
-void VaultNetwork::Create(size_t index) {
+bool VaultNetwork::Create(size_t index) {
   std::string path_str("vault" + RandomAlphaNumericString(6));
   auto path(chunk_store_path_/path_str);
   fs::create_directory(path);
@@ -155,25 +155,29 @@ void VaultNetwork::Create(size_t index) {
                                    [](const boost::asio::ip::udp::endpoint&) {}, public_pmids_,
                                    endpoints_));
     LOG(kSuccess) << "vault joined: " << index;
+    return true;
   }
   catch (const std::exception& ex) {
-    EXPECT_TRUE(false) << "Failed to start vault: " << index << ex.what();
+    return false;
   }
 }
 
-void VaultNetwork::Add() {
-  key_chains_.Add();
-  this->public_pmids_.push_back(
-      passport::PublicPmid(this->key_chains_.keys[this->key_chains_.keys.size() - 1].pmid));
-  Create(key_chains_.keys.size() - 1);
+bool VaultNetwork::Add() {
+  auto node_keys(key_chains_.Add());
+  public_pmids_.push_back(passport::PublicPmid(node_keys.pmid));
+  return Create(key_chains_.keys.size() - 1);
 }
 
-void VaultNetwork::AddClient() {
-  this->key_chains_.Add();
-  this->public_pmids_.push_back(
-      passport::PublicPmid(this->key_chains_.keys[this->key_chains_.keys.size() - 1].pmid));
-  clients_.emplace_back(new Client(this->key_chains_.keys[this->key_chains_.keys.size() - 1],
-                                   endpoints_, public_pmids_));
+bool VaultNetwork::AddClient() {
+  auto node_keys(key_chains_.Add());
+  public_pmids_.push_back(passport::PublicPmid(node_keys.pmid));
+  try {
+    clients_.emplace_back(new Client(node_keys, endpoints_, public_pmids_));
+    return true;
+  }
+  catch (...) {
+    return false;
+  }
 }
 
 Client::Client(const passport::detail::AnmaidToPmid& keys,
@@ -204,7 +208,7 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
     }
     // waiting for syncs resolved
     boost::this_thread::sleep_for(boost::chrono::seconds(2));
-    LOG(kVerbose) << "Account created for maid " << HexSubstr(public_maid.name()->string());
+    LOG(kInfo) << "Account created for maid " << HexSubstr(public_maid.name()->string());
   }
 //  if (register_pmid_for_client) {
 //    {
@@ -272,11 +276,13 @@ KeyChain::KeyChain(size_t size) {
     Add();
 }
 
-void KeyChain::Add() {
+passport::detail::AnmaidToPmid KeyChain::Add() {
   passport::Anmaid anmaid;
   passport::Maid maid(anmaid);
   passport::Pmid pmid(maid);
-  keys.push_back(passport::detail::AnmaidToPmid(anmaid, maid, pmid));
+  passport::detail::AnmaidToPmid node_keys(anmaid, maid, pmid);
+  keys.push_back(node_keys);
+  return node_keys;
 }
 
 }  // namespace test
