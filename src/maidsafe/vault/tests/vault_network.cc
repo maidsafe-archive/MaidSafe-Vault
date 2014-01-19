@@ -118,9 +118,9 @@ void VaultNetwork::SetUp() {
                                                return this->bootstrap_done_;
                                              }));
   LOG(kVerbose) << "Starting vaults...";
-  std::vector<std::future<void>> vaults;
+  std::vector<std::future<bool>> vaults;
   for (size_t index(2); index < network_size_ + 2; ++index) {
-    vaults.push_back(std::async(std::launch::async, [index, this] { this->Create(index); }));
+    vaults.push_back(std::async(std::launch::async, [index, this] { return this->Create(index); }));
     Sleep(std::chrono::seconds(std::min(index / 10 + 1, size_t(3))));
   }
 
@@ -165,12 +165,32 @@ bool VaultNetwork::Create(size_t index) {
 bool VaultNetwork::Add() {
   auto node_keys(key_chains_.Add());
   public_pmids_.push_back(passport::PublicPmid(node_keys.pmid));
-  return Create(key_chains_.keys.size() - 1);
+  for (size_t index(0); index < vaults_.size(); ++index) {
+    vaults_[index]->data_getter_.AddPublicPmid(passport::PublicPmid(node_keys.pmid));
+  }
+  auto future(std::async(std::launch::async,
+                         [this] {
+                           return this->Create(this->key_chains_.keys.size() -1);
+                         }));
+  Sleep(std::chrono::seconds(std::min(vaults_.size() / 10 + 1, size_t(3))));
+  try {
+    return future.get();
+  }
+  catch (const std::exception& e) {
+    LOG(kError) << "Exception getting future from creating vault " << e.what();
+    return false;
+  }
 }
 
 bool VaultNetwork::AddClient(bool register_pmid) {
-  auto node_keys(key_chains_.Add());
-  public_pmids_.push_back(passport::PublicPmid(node_keys.pmid));
+  passport::detail::AnmaidToPmid node_keys;
+  if (register_pmid) {
+    Add();
+    node_keys = *key_chains_.keys.rbegin();
+  } else {
+    node_keys = key_chains_.Add();
+    public_pmids_.push_back(passport::PublicPmid(node_keys.pmid));
+  }
   try {
     clients_.emplace_back(new Client(node_keys, endpoints_, public_pmids_, register_pmid));
     return true;

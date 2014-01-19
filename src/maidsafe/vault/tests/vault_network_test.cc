@@ -37,11 +37,16 @@ class VaultNetworkTest : public VaultNetwork  {
 TEST_F(VaultNetworkTest, FUNC_BasicSetup) {
 }
 
+TEST_F(VaultNetworkTest, FUNC_VaultJoins) {
+  LOG(kVerbose) << "Adding a vault";
+  EXPECT_TRUE(Add());
+}
+
 TEST_F(VaultNetworkTest, FUNC_ClientJoins) {
   EXPECT_TRUE(AddClient(false));
 }
 
-TEST_F(VaultNetworkTest, FUNC_RegisteringPmidClientJoins) {
+TEST_F(VaultNetworkTest, FUNC_PmidRegisteringClientJoins) {
   EXPECT_TRUE(AddClient(true));
 }
 
@@ -51,10 +56,11 @@ TEST_F(VaultNetworkTest, FUNC_MultipleClientsJoin) {
 }
 
 TEST_F(VaultNetworkTest, FUNC_StoreLoadDelete) {
-  EXPECT_TRUE(AddClient());
+  EXPECT_TRUE(AddClient(true));
   ImmutableData data(NonEmptyString(RandomString(1024)));
   clients_[0]->nfs_->Put(data);
   Sleep(std::chrono::seconds(2));
+
   auto future(clients_[0]->nfs_->Get<ImmutableData::Name>(data.name(), std::chrono::seconds(5)));
   try {
     auto retrieved(future.get());
@@ -62,6 +68,19 @@ TEST_F(VaultNetworkTest, FUNC_StoreLoadDelete) {
   }
   catch (...) {
     EXPECT_TRUE(false) << "Failed to retrieve: " << DebugId(NodeId(data.name()->string()));
+  }
+
+  clients_[0]->nfs_->Delete<ImmutableData::Name>(data.name());
+  Sleep(std::chrono::seconds(2));
+
+  future = clients_[0]->nfs_->Get<ImmutableData::Name>(data.name(), std::chrono::seconds(5));
+  try {
+    future.get();
+    EXPECT_TRUE(false) << "should have failed retreiveing data: "
+                       << DebugId(NodeId(data.name()->string()));
+  }
+  catch (...) {
+    LOG(kVerbose) << DebugId(NodeId(data.name()->string())) << " Deleted ";
   }
 }
 

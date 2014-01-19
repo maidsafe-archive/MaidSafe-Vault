@@ -300,7 +300,9 @@ void DataManagerService::HandleMessage(
                     << " and pmid_node " << HexSubstr(unresolved_action.action.kPmidName->string());
       auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
-        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit add pmid to db";
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit add pmid to db"
+                   << " for chunk " << HexSubstr(unresolved_action.key.name.string())
+                   << " and pmid_node " << HexSubstr(unresolved_action.action.kPmidName->string());
         db_.Commit(resolved_action->key, resolved_action->action);
       }
       break;
