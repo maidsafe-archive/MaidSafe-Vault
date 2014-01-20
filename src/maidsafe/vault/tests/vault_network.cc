@@ -18,6 +18,7 @@
 
 #include "maidsafe/vault/tests/vault_network.h"
 
+#include <ulimit.h>
 #include <algorithm>
 
 #include "maidsafe/common/test.h"
@@ -33,7 +34,16 @@ VaultNetwork::VaultNetwork()
     : asio_service_(4), mutex_(), bootstrap_condition_(), network_up_condition_(),
       bootstrap_done_(false), network_up_(false), vaults_(), clients_(), endpoints_(),
       public_pmids_(), key_chains_(kNetworkSize + 2),
-      chunk_store_path_(fs::unique_path((fs::temp_directory_path()))), network_size_(kNetworkSize) {
+      chunk_store_path_(fs::unique_path((fs::temp_directory_path()))), network_size_(kNetworkSize)
+#ifndef MAIDSAFE_WIN32
+      , kUlimitFileSize([]()->long {
+                          long current_size(ulimit(UL_GETFSIZE));
+                          if (current_size < kLimitsFiles)
+                            ulimit(UL_SETFSIZE, kLimitsFiles);
+                          return current_size;
+                        }())
+#endif
+       {
   asio_service_.Start();
   for (const auto& key : key_chains_.keys)
     public_pmids_.push_back(passport::PublicPmid(key.pmid));
@@ -147,6 +157,9 @@ void VaultNetwork::TearDown() {
     vaults_.erase(vaults_.begin());
     Sleep(std::chrono::milliseconds(200));
   }
+#ifndef MAIDSAFE_WIN32
+  ulimit(UL_SETFSIZE, kUlimitFileSize);
+#endif
 }
 
 bool VaultNetwork::Create(size_t index) {
@@ -161,6 +174,7 @@ bool VaultNetwork::Create(size_t index) {
     return true;
   }
   catch (const std::exception& ex) {
+    LOG(kError) << "vault failed to join: " << index << " because: " << ex.what();
     return false;
   }
 }

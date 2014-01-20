@@ -37,6 +37,7 @@ namespace test {
 
 typedef boost::asio::ip::udp::endpoint UdpEndpoint;
 const int kNetworkSize(40);
+const int kLimitsFiles(2048);
 
 struct KeyChain {
   explicit KeyChain(size_t size = 1);
@@ -87,6 +88,9 @@ class VaultNetwork : public testing::Test {
   KeyChain key_chains_;
   fs::path chunk_store_path_;
   size_t network_size_;
+#ifndef MAIDSAFE_WIN32
+  long kUlimitFileSize;
+#endif
 };
 
 }  // namespace test
