@@ -118,9 +118,12 @@ void VaultNetwork::SetUp() {
                                                return this->bootstrap_done_;
                                              }));
   LOG(kVerbose) << "Starting vaults...";
-  std::vector<std::future<bool>> vaults;
+  std::vector<std::future<bool>> futures;
   for (size_t index(2); index < network_size_ + 2; ++index) {
-    vaults.push_back(std::async(std::launch::async, [index, this] { return this->Create(index); }));
+    futures.push_back(std::async(std::launch::async,
+                      [index, this] {
+                        return this->Create(index);
+                      }));
     Sleep(std::chrono::seconds(std::min(index / 10 + 1, size_t(3))));
   }
 
@@ -129,7 +132,7 @@ void VaultNetwork::SetUp() {
   bootstrap.get();
   for (size_t index(0); index < network_size_; ++index) {
     try {
-      vaults[index].get();
+      futures[index].get();
     }
     catch (const std::exception& e) {
       LOG(kError) << "Exception getting future from creating vault " << index << ": " << e.what();
