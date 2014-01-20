@@ -38,6 +38,7 @@
 
 #include "maidsafe/nfs/client/data_getter.h"
 #include "maidsafe/nfs/message_types.h"
+#include "maidsafe/nfs/message_types_partial.h"
 
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/group_db.h"
@@ -282,6 +283,12 @@ void DataManagerService::HandleMessage(
     const nfs::GetRequestFromDataGetterToDataManager& message,
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
+
+template <>
+void DataManagerService::HandleMessage(
+    const nfs::GetRequestFromDataGetterPartialToDataManager& message,
+    const typename nfs::GetRequestFromDataGetterPartialToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromDataGetterPartialToDataManager::Receiver& receiver);
 
 template <>
 void DataManagerService::HandleMessage(

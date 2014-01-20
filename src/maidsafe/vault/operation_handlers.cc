@@ -220,6 +220,20 @@ void DoOperation(DataManagerService* service,
 
 template <>
 void DoOperation(DataManagerService* service,
+                 const nfs::GetRequestFromDataGetterPartialToDataManager& message,
+                 const nfs::GetRequestFromDataGetterPartialToDataManager::Sender& sender,
+                 const nfs::GetRequestFromDataGetterPartialToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation GetRequestFromDataGetterPartialToDataManager";
+  auto data_name(GetNameVariant(*message.contents));
+  typedef nfs::GetRequestFromDataGetterPartialToDataManager::SourcePersona SourceType;
+  Requestor<SourceType> requestor(sender.data);
+  GetRequestVisitor<DataManagerService, Requestor<SourceType>> get_request_visitor(
+          service, requestor, message.id);
+  boost::apply_visitor(get_request_visitor, data_name);
+}
+
+template <>
+void DoOperation(DataManagerService* service,
                  const GetResponseFromPmidNodeToDataManager& message,
                  const GetResponseFromPmidNodeToDataManager::Sender& sender,
                  const GetResponseFromPmidNodeToDataManager::Receiver& /*receiver*/) {

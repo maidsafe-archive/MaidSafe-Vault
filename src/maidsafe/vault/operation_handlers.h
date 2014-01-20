@@ -258,6 +258,12 @@ void DoOperation(DataManagerService* service,
 
 template <>
 void DoOperation(DataManagerService* service,
+                 const nfs::GetRequestFromDataGetterPartialToDataManager& message,
+                 const nfs::GetRequestFromDataGetterPartialToDataManager::Sender& sender,
+                 const nfs::GetRequestFromDataGetterPartialToDataManager::Receiver& receiver);
+
+template <>
+void DoOperation(DataManagerService* service,
                  const GetResponseFromPmidNodeToDataManager& message,
                  const GetResponseFromPmidNodeToDataManager::Sender& sender,
                  const GetResponseFromPmidNodeToDataManager::Receiver& receiver);

@@ -152,6 +152,23 @@ void DataManagerService::HandleMessage(
 
 template<>
 void DataManagerService::HandleMessage(
+    const nfs::GetRequestFromDataGetterPartialToDataManager& message,
+    const typename nfs::GetRequestFromDataGetterPartialToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromDataGetterPartialToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromDataGetterPartialToDataManager"
+                << " from " << HexSubstr(sender.data.string())
+                << " for chunk " << HexSubstr(message.contents->raw_name.string());
+  typedef nfs::GetRequestFromDataGetterPartialToDataManager MessageType;
+  OperationHandlerWrapper<DataManagerService, MessageType>(
+      accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template<>
+void DataManagerService::HandleMessage(
     const GetResponseFromPmidNodeToDataManager& message,
     const typename GetResponseFromPmidNodeToDataManager::Sender& sender,
     const typename GetResponseFromPmidNodeToDataManager::Receiver& receiver) {
