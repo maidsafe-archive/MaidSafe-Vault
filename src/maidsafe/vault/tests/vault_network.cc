@@ -34,7 +34,6 @@ VaultNetwork::VaultNetwork()
       bootstrap_done_(false), network_up_(false), vaults_(), clients_(), endpoints_(),
       public_pmids_(), key_chains_(kNetworkSize + 2),
       chunk_store_path_(fs::unique_path((fs::temp_directory_path()))), network_size_(kNetworkSize) {
-  asio_service_.Start();
   for (const auto& key : key_chains_.keys)
     public_pmids_.push_back(passport::PublicPmid(key.pmid));
 }
@@ -161,6 +160,7 @@ bool VaultNetwork::Create(size_t index) {
     return true;
   }
   catch (const std::exception& ex) {
+    LOG(kError) << "Failed to join: " << ex.what();
     return false;
   }
 }
@@ -212,7 +212,6 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
   nfs_.reset(new nfs_client::MaidNodeNfs(
       asio_service_, routing_, passport::PublicPmid::Name(Identity(keys.pmid.name().value))));
   {
-    asio_service_.Start();
     auto future(RoutingJoin(endpoints));
     auto status(future.wait_for(std::chrono::seconds(10)));
     if (status == std::future_status::timeout || !future.get()) {

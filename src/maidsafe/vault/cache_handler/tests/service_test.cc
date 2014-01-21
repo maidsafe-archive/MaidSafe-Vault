@@ -35,14 +35,13 @@ namespace test {
 
 class CacheHandlerServiceTest {
  public:
-  CacheHandlerServiceTest() :
-      kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
-      vault_root_dir_(*kTestRoot_ / RandomAlphaNumericString(8)),
-      routing_(MakePmid()),
-      cache_handler_service_(routing_, vault_root_dir_),
-      asio_service_(2) {
+  CacheHandlerServiceTest()
+      : kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
+        vault_root_dir_(*kTestRoot_ / RandomAlphaNumericString(8)),
+        routing_(MakePmid()),
+        cache_handler_service_(routing_, vault_root_dir_),
+        asio_service_(2) {
     boost::filesystem::create_directory(vault_root_dir_);
-    asio_service_.Start();
   }
 
   template <typename Data>

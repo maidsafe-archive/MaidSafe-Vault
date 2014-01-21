@@ -65,9 +65,7 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       sync_add_pmids_(),
       sync_remove_pmids_(),
       sync_node_downs_(),
-      sync_node_ups_() {
-  asio_service_.Start();
-}
+      sync_node_ups_() {}
 
 // ==================== Put implementation =========================================================
 template <>

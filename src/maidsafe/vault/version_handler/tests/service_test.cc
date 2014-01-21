@@ -44,9 +44,7 @@ class VersionHandlerServiceTest {
       pmid_(MakePmid()),
       routing_(pmid_),
       version_handler_service_(pmid_, routing_),
-      asio_service_(2) {
-    asio_service_.Start();
-  }
+      asio_service_(2) {}
 
   VersionHandler::Value Get(const VersionHandler::Key& key) {
     return version_handler_service_.db_.Get(key);
