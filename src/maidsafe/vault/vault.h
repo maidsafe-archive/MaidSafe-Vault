@@ -47,6 +47,15 @@ namespace maidsafe {
 
 namespace vault {
 
+#ifdef TESTING
+namespace test {
+
+class VaultNetwork;
+
+}
+
+#endif
+
 class Vault {
  public:
   // pmids_from_file must only be non-empty for zero-state network.
@@ -59,6 +68,9 @@ class Vault {
   ~Vault();  // must issue StopSending() to all identity objects (MM etc.)
              // Then ensure routing is destroyed next then all others in any order at this time
  private:
+#ifdef TESTING
+  friend class test::VaultNetwork;
+#endif
   void InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
   routing::Functors InitialiseRoutingCallbacks();
   template <typename T>
@@ -75,7 +87,8 @@ class Vault {
   void OnStoreInCache(const T& message);
   void OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint);
   template <typename Sender, typename Receiver>
-  bool HandleGetFromCache(const nfs::TypeErasedMessageWrapper message, const Sender& sender, const Receiver& receiver);
+  bool HandleGetFromCache(const nfs::TypeErasedMessageWrapper message, const Sender& sender,
+                          const Receiver& receiver);
 
   std::mutex network_health_mutex_;
   std::condition_variable network_health_condition_variable_;

@@ -54,7 +54,6 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
              pmid_manager_service_, pmid_node_service_, data_getter_),
       asio_service_(2) {
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
-  asio_service_.Start();
   InitRouting(peer_endpoints);
 }
 
