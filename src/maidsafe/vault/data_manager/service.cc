@@ -148,6 +148,27 @@ void DataManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+
+// Special case to handle relay messages from partially joined nodes
+template<>
+void DataManagerService::HandleMessage(
+    const nfs::GetRequestFromDataGetterPartialToDataManager& message,
+    const typename nfs::GetRequestFromDataGetterPartialToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromDataGetterPartialToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromDataGetterPartialToDataManager"
+                << " from " << HexSubstr(sender.node_id->string())
+                << " relayed via : " << HexSubstr(sender.relay_node->string())
+                << " for chunk " << HexSubstr(message.contents->raw_name.string());
+  if (!this->ValidateSender(message, sender))
+    return;
+  auto data_name(detail::GetNameVariant(*message.contents));
+  typedef nfs::GetRequestFromDataGetterPartialToDataManager::SourcePersona SourceType;
+  detail::PartialRequestor<SourceType> requestor(sender);
+  detail::GetRequestVisitor<DataManagerService, detail::PartialRequestor<SourceType>>
+      get_request_visitor(this, requestor, message.id);
+  boost::apply_visitor(get_request_visitor, data_name);
+}
+
 template<>
 void DataManagerService::HandleMessage(
     const GetResponseFromPmidNodeToDataManager& message,

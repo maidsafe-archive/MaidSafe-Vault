@@ -100,6 +100,9 @@ void Demultiplexer::HandleMessage(const T& routing_message) {
   }
 }
 
+template <>
+void Demultiplexer::HandleMessage(const routing::SingleToGroupRelayMessage& routing_message);
+
 }  // namespace vault
 
 }  // namespace maidsafe

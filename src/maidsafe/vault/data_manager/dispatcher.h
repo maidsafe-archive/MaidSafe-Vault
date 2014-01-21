@@ -30,6 +30,7 @@
 #include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/nfs/message_types.h"
+#include "maidsafe/nfs/message_types_partial.h"
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/message_types.h"
@@ -242,6 +243,21 @@ struct GetResponseMessage<Requestor<nfs::SourcePersona<nfs::Persona::kDataGetter
   typedef nfs::GetResponseFromDataManagerToDataGetter Type;
 };
 
+template <>
+struct GetResponseMessage<PartialRequestor<nfs::SourcePersona<nfs::Persona::kDataGetter>>> {
+  typedef nfs::GetResponseFromDataManagerToDataGetterPartial Type;
+};
+
+routing::SingleIdRelay GetDestination(
+        const PartialRequestor<nfs::SourcePersona<nfs::Persona::kDataGetter>> &requestor);
+
+// FIXME after changing requestor in vaults to hold exact sender type
+routing::SingleId GetDestination(
+        const Requestor<nfs::SourcePersona<nfs::Persona::kMaidNode>>& requestor);
+
+routing::SingleId GetDestination(
+        const Requestor<nfs::SourcePersona<nfs::Persona::kDataGetter>>& requestor);
+
 }  // namespace detail
 
 template <typename RequestorIdType, typename Data>
@@ -258,9 +274,10 @@ void DataManagerDispatcher::SendGetResponseSuccess(const RequestorIdType& reques
   RoutingMessage message(nfs_message.Serialise(),
                          routing::GroupSource(routing::GroupId(NodeId(data.name().value.string())),
                                               routing::SingleId(routing_.kNodeId())),
-                         typename NfsMessage::Receiver(requestor_id.node_id), kCacheable);
+                         typename NfsMessage::Receiver(detail::GetDestination(requestor_id)), kCacheable);
   LOG(kVerbose) << "DataManagerDispatcher::SendGetResponseSuccess routing send msg to "
-                << HexSubstr(requestor_id.node_id.string()) << " regarding chunk of "
+//                << HexSubstr(requestor_id.node_id.string())
+                << " regarding chunk of "
                 << HexSubstr(data.name().value.string());
   routing_.Send(message);
 }
@@ -281,9 +298,10 @@ void DataManagerDispatcher::SendGetResponseFailure(const RequestorIdType& reques
   RoutingMessage message(nfs_message.Serialise(),
                          routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
-                         typename NfsMessage::Receiver(requestor_id.node_id));
+                         typename NfsMessage::Receiver(detail::GetDestination(requestor_id)));
   LOG(kVerbose) << "DataManagerDispatcher::SendGetResponseFailure routing send msg to "
-                << HexSubstr(requestor_id.node_id.string()) << " regarding chunk of "
+//                << HexSubstr(requestor_id.node_id.string())
+                << " regarding chunk of "
                 << HexSubstr(data_name.value.string());
   routing_.Send(message);
 }

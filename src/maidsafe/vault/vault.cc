@@ -88,6 +88,8 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
       const routing::GroupToSingleMessage& message) { OnMessageReceived(message); };
   functors.typed_message_and_caching.group_to_group.message_received = [this](
       const routing::GroupToGroupMessage& message) { OnMessageReceived(message); };
+  functors.typed_message_and_caching.single_to_group_relay.message_received = [this](
+      const routing::SingleToGroupRelayMessage& message) { OnMessageReceived(message); };
   functors.typed_message_and_caching.single_to_single.get_cache_data = [this](
       const routing::SingleToSingleMessage& message) { return OnGetFromCache(message); };
   functors.typed_message_and_caching.single_to_group.get_cache_data = [this](
