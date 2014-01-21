@@ -21,6 +21,7 @@
 #include <algorithm>
 
 #include "maidsafe/common/test.h"
+#include "maidsafe/common/log.h"
 #include "maidsafe/vault/tests/tests_utils.h"
 
 namespace maidsafe {
@@ -39,7 +40,7 @@ VaultNetwork::VaultNetwork()
 }
 
 void VaultNetwork::Bootstrap() {
-  LOG(kVerbose) << "Creating zero state routing network..." << std::endl;
+  LOG(kVerbose) << "Creating zero state routing network...\n";
   routing::NodeInfo node_info1(MakeNodeInfo(key_chains_.keys[0].pmid)),
                     node_info2(MakeNodeInfo(key_chains_.keys[1].pmid));
   routing::Functors functors1, functors2;
