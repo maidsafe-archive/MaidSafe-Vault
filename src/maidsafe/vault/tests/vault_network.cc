@@ -18,10 +18,14 @@
 
 #include "maidsafe/vault/tests/vault_network.h"
 
+#ifndef MAIDSAFE_WIN32
 #include <ulimit.h>
+#endif
+
 #include <algorithm>
 
 #include "maidsafe/common/test.h"
+#include "maidsafe/common/log.h"
 #include "maidsafe/vault/tests/tests_utils.h"
 
 namespace maidsafe {
