@@ -55,6 +55,10 @@ struct RequiredValue<routing::GroupSource> {
   int operator()() const { return routing::Parameters::node_group_size - 1; }
 };
 
+template <>
+struct RequiredValue<routing::SingleRelaySource> {
+  int operator()() const { return 1; }
+};
 
 template <typename ValidateSender, typename AccumulatorType, typename Checker,
           typename ServiceHandlerType>

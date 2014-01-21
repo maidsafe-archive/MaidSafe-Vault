@@ -35,9 +35,6 @@ void Demultiplexer::HandleMessage(const routing::SingleToGroupRelayMessage& rout
                              const nfs::detail::DestinationTaggedValue&>::value,
                 "The value retrieved from the tuple isn't the destination type, but should be.");
   switch (destination_persona.data) {
-    case nfs::Persona::kVersionHandler:
-      return version_handler_service_.HandleMessage(wrapper_tuple, routing_message.sender,
-                                                    routing_message.receiver);
     case nfs::Persona::kDataManager:
       return data_manager_service_.HandleMessage(wrapper_tuple, routing_message.sender,
                                                  routing_message.receiver);

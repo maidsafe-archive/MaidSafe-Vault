@@ -154,7 +154,8 @@ void DataManagerService::HandleMessage(
     const typename nfs::GetRequestFromDataGetterPartialToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterPartialToDataManager::Receiver& receiver) {
   LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromDataGetterPartialToDataManager"
-                << " from " << HexSubstr(sender.data.string())
+                << " from " << HexSubstr(sender.node_id->string())
+                << " relayed via : " << HexSubstr(sender.relay_node->string())
                 << " for chunk " << HexSubstr(message.contents->raw_name.string());
   typedef nfs::GetRequestFromDataGetterPartialToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(

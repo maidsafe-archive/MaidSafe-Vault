@@ -98,6 +98,8 @@ class Accumulator {
                               AddCheckerFunctor checker);
   AddResult AddPendingRequest(const T& request, const routing::SingleSource& source,
                               AddCheckerFunctor checker);
+  AddResult AddPendingRequest(const T& request, const routing::SingleRelaySource& source,
+                              AddCheckerFunctor checker);
 
   bool CheckHandled(const T& request);
   //  void SetHandled(const T& request, const routing::GroupSource& source);
@@ -150,6 +152,14 @@ template <typename T>
 typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
     const T& /*request*/, const routing::SingleSource& /*source*/, AddCheckerFunctor /*checker*/) {
   LOG(kVerbose) << "Accumulator::AddPendingRequest for SingleSource -- Always return success";
+  return AddResult::kSuccess;
+}
+
+template <typename T>
+typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
+    const T& /*request*/, const routing::SingleRelaySource& /*source*/,
+        AddCheckerFunctor /*checker*/) {
+  LOG(kVerbose) << "Accumulator::AddPendingRequest for SinglerelaySource -- Always return success";
   return AddResult::kSuccess;
 }
 
