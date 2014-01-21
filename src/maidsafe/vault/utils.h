@@ -107,6 +107,27 @@ struct Requestor {
   static const nfs::Persona persona_value = RequestorPersona::value;
 };
 
+template <typename RequestorPersona>
+struct PartialRequestor {
+  typedef RequestorPersona SourcePersonaType;
+  PartialRequestor();
+  explicit PartialRequestor(routing::SingleRelaySource relay_source_in)
+      : relay_source(std::move(relay_source_in)) {}
+  PartialRequestor(const PartialRequestor& other) : relay_source(other.relay_source) {}
+  PartialRequestor(PartialRequestor&& other) : relay_source(std::move(other.relay_source)) {}
+  friend void swap(PartialRequestor& lhs, PartialRequestor& rhs) MAIDSAFE_NOEXCEPT {
+    using std::swap;
+    swap(lhs.relay_source, rhs.relay_source);
+  }
+  PartialRequestor& operator=(PartialRequestor other) {
+    swap(*this, other);
+    return *this;
+  }
+
+  routing::SingleRelaySource relay_source;
+  static const nfs::Persona persona_value = RequestorPersona::value;
+};
+
 void InitialiseDirectory(const boost::filesystem::path& directory);
 // bool ShouldRetry(routing::Routing& routing, const nfs::Message& message);
 
