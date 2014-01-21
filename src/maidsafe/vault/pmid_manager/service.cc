@@ -51,7 +51,6 @@ PmidManagerService::PmidManagerService(const passport::Pmid& /*pmid*/, routing::
     : routing_(routing), group_db_(), accumulator_mutex_(), accumulator_(), dispatcher_(routing_),
       asio_service_(2), get_health_timer_(asio_service_), sync_puts_(), sync_deletes_(),
       sync_set_pmid_health_(), sync_create_account_() {
-  asio_service_.Start();
 }
 
 

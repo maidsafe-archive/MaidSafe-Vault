@@ -66,7 +66,6 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       sync_remove_pmids_(),
       sync_node_downs_(),
       sync_node_ups_() {
-  asio_service_.Start();
 }
 
 // ==================== Put implementation =========================================================
@@ -282,8 +281,7 @@ void DataManagerService::HandleMessage(
                    << "resolved for chunk " << HexSubstr(resolved_action->key.name.string());
         auto value(db_.Commit(resolved_action->key, resolved_action->action));
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete "
-                   << "the chunk " << HexSubstr(resolved_action->key.name.string())
-                   << " has " << value->Subscribers() << " Subscribers";
+                   << "the chunk " << HexSubstr(resolved_action->key.name.string());
         assert(value->Subscribers() >= 0);
         if (value->Subscribers() == 0) {
           LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";

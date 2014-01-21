@@ -44,7 +44,6 @@ VaultNetwork::VaultNetwork()
                         }())
 #endif
        {
-  asio_service_.Start();
   for (const auto& key : key_chains_.keys)
     public_pmids_.push_back(passport::PublicPmid(key.pmid));
 }
@@ -226,7 +225,6 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
   nfs_.reset(new nfs_client::MaidNodeNfs(
       asio_service_, routing_, passport::PublicPmid::Name(Identity(keys.pmid.name().value))));
   {
-    asio_service_.Start();
     auto future(RoutingJoin(endpoints));
     auto status(future.wait_for(std::chrono::seconds(10)));
     if (status == std::future_status::timeout || !future.get()) {
