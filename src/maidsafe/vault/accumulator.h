@@ -98,8 +98,6 @@ class Accumulator {
                               AddCheckerFunctor checker);
   AddResult AddPendingRequest(const T& request, const routing::SingleSource& source,
                               AddCheckerFunctor checker);
-  AddResult AddPendingRequest(const T& request, const routing::SingleRelaySource& source,
-                              AddCheckerFunctor checker);
 
   bool CheckHandled(const T& request);
   //  void SetHandled(const T& request, const routing::GroupSource& source);
