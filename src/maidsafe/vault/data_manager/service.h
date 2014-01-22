@@ -669,6 +669,8 @@ void DataManagerService::AssessIntegrityCheckResults(
       // all the others, as the PmidNode side has to accumulate enough delete requests before
       // deploy the action, send out false delete request won't cause problem as long as no more
       // than half PmidNodes containing false data.
+      LOG(kVerbose) << DebugId(NodeId(itr.second.result().string())) << " and total: "
+                    << DebugId(NodeId(IntegrityCheckData::Result().string()));
       if (itr.second.result() != IntegrityCheckData::Result()) {
         LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
                       << HexSubstr(itr.first->string()) << " returned invalid data for "
