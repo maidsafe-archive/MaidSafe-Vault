@@ -156,14 +156,6 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
 }
 
 template <typename T>
-typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
-    const T& /*request*/, const routing::SingleRelaySource& /*source*/,
-        AddCheckerFunctor /*checker*/) {
-  LOG(kVerbose) << "Accumulator::AddPendingRequest for SinglerelaySource -- Always return success";
-  return AddResult::kSuccess;
-}
-
-template <typename T>
 bool Accumulator<T>::CheckHandled(const T& request) {
   auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
   nfs::MessageId message_id;
