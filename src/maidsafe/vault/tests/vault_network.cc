@@ -80,6 +80,9 @@ void VaultNetwork::Bootstrap() {
   functors1.typed_message_and_caching.single_to_single.message_received =
       functors2.typed_message_and_caching.single_to_single.message_received =
       [&](const routing::SingleToSingleMessage&) {};
+  functors1.typed_message_and_caching.single_to_group_relay.message_received =
+      functors2.typed_message_and_caching.single_to_group_relay.message_received =
+      [&](const routing::SingleToGroupRelayMessage&) {};
 
   endpoints_.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(),
                        maidsafe::test::GetRandomPort()));
@@ -284,12 +287,14 @@ std::future<bool> Client::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpo
   std::shared_ptr<std::promise<bool>> join_promise(std::make_shared<std::promise<bool>>());
   functors_.network_status = [&join_promise_set_flag, join_promise](int result) {
     std::cout << "Network health: " << result << std::endl;
-    std::call_once(join_promise_set_flag, [join_promise, &result] {
-      try {
-        join_promise->set_value(result > -1);
-      } catch (...) {
-      }
-    });
+    if (result == 100) {
+      std::call_once(join_promise_set_flag, [join_promise, &result] {
+        try {
+          join_promise->set_value(result > -1);
+        } catch (...) {
+        }
+      });
+    }
   };
   functors_.typed_message_and_caching.group_to_group.message_received =
       [&](const routing::GroupToGroupMessage &msg) { nfs_->HandleMessage(msg); };
@@ -299,6 +304,8 @@ std::future<bool> Client::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpo
       [&](const routing::SingleToGroupMessage &msg) { nfs_->HandleMessage(msg); };
   functors_.typed_message_and_caching.single_to_single.message_received =
       [&](const routing::SingleToSingleMessage &msg) { nfs_->HandleMessage(msg); };
+//  functors_.typed_message_and_caching.single_to_group_relay.message_received =
+//      [&](const routing::SingleToGroupRelayMessage &msg) { nfs_->HandleMessage(msg); };
   functors_.request_public_key =
       [&, this](const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key) {
         this->OnPublicKeyRequested(node_id, give_key); };
