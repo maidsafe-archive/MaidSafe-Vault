@@ -123,6 +123,7 @@ if(MaidsafeTesting)
   ms_add_executable(vault_key_helper "Tools/Vault" ${VaultToolsAllFiles})
   target_include_directories(vault_key_helper PRIVATE ${PROJECT_SOURCE_DIR}/src)
   target_link_libraries(vault_key_helper maidsafe_routing maidsafe_nfs_vault maidsafe_private)
+  set_target_properties(maidsafe_vault_mal vault_mal PROPERTIES EXCLUDE_FROM_ALL ON EXCLUDE_FROM_DEFAULT_BUILD ON)
 endif()
 
 ms_rename_outdated_built_exes()
