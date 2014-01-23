@@ -73,7 +73,8 @@ void DataManagerService::HandleMessage(
     const PutRequestFromMaidManagerToDataManager& message,
     const typename PutRequestFromMaidManagerToDataManager::Sender& sender,
     const typename PutRequestFromMaidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage PutRequestFromMaidManagerToDataManager";
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutRequestFromMaidManagerToDataManager"
+                << message.id;
   typedef PutRequestFromMaidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -88,7 +89,8 @@ void DataManagerService::HandleMessage(
     const PutResponseFromPmidManagerToDataManager& message,
     const typename PutResponseFromPmidManagerToDataManager::Sender& sender,
     const typename PutResponseFromPmidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage PutResponseFromPmidManagerToDataManager";
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutResponseFromPmidManagerToDataManager"
+                <<  message.id;
   typedef PutResponseFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -103,7 +105,8 @@ void DataManagerService::HandleMessage(
     const PutFailureFromPmidManagerToDataManager& message,
     const typename PutFailureFromPmidManagerToDataManager::Sender& sender,
     const typename PutFailureFromPmidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage PutFailureFromPmidManagerToDataManager";
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutFailureFromPmidManagerToDataManager"
+                <<  message.id;
   typedef PutFailureFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -121,7 +124,8 @@ void DataManagerService::HandleMessage(
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
   LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromMaidNodeToDataManager"
                 << " from " << HexSubstr(sender.data.string())
-                << " for chunk " << HexSubstr(message.contents->raw_name.string());
+                << " for chunk " << HexSubstr(message.contents->raw_name.string())
+                <<  message.id;
   typedef nfs::GetRequestFromMaidNodeToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -138,7 +142,8 @@ void DataManagerService::HandleMessage(
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
   LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromDataGetterToDataManager"
                 << " from " << HexSubstr(sender.data.string())
-                << " for chunk " << HexSubstr(message.contents->raw_name.string());
+                << " for chunk " << HexSubstr(message.contents->raw_name.string())
+                <<  message.id;
   typedef nfs::GetRequestFromDataGetterToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -155,7 +160,8 @@ void DataManagerService::HandleMessage(
     const typename GetResponseFromPmidNodeToDataManager::Receiver& receiver) {
   LOG(kVerbose) << "DataManagerService::HandleMessage GetResponseFromPmidNodeToDataManager"
                 << " from " << HexSubstr(sender.data.string())
-                << " for chunk " << HexSubstr(message.contents->name.raw_name.string());
+                << " for chunk " << HexSubstr(message.contents->name.raw_name.string())
+                <<  message.id;
   typedef GetResponseFromPmidNodeToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -225,7 +231,8 @@ void DataManagerService::HandleMessage(
     const DeleteRequestFromMaidManagerToDataManager& message,
     const typename DeleteRequestFromMaidManagerToDataManager::Sender& sender,
     const typename DeleteRequestFromMaidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage DeleteRequestFromMaidManagerToDataManager";
+  LOG(kVerbose) << "DataManagerService::HandleMessage DeleteRequestFromMaidManagerToDataManager"
+                <<  message.id;
   typedef DeleteRequestFromMaidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -351,7 +358,7 @@ void DataManagerService::HandleMessage(
     }
     default: {
       LOG(kError) << "SynchroniseFromDataManagerToDataManager Unhandled action type";
-      assert(false);
+      assert(false && "Unhandled action type");
     }
   }
 }

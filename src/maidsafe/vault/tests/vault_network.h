@@ -36,8 +36,11 @@ namespace vault {
 namespace test {
 
 typedef boost::asio::ip::udp::endpoint UdpEndpoint;
-const int kNetworkSize(40);
+const int kNetworkSize(25);
+
+#ifndef MAIDSAFE_WIN32
 const int kLimitsFiles(2048);
+#endif
 
 struct KeyChain {
   explicit KeyChain(size_t size = 1);
@@ -73,6 +76,9 @@ class VaultNetwork : public testing::Test {
   bool Add();
   bool AddClient(bool register_pmid = true);
 
+  template <typename Data>
+  Data Get(const typename Data::Name& data_name);
+
  protected:
   void Bootstrap();
   bool Create(size_t index);
@@ -92,6 +98,19 @@ class VaultNetwork : public testing::Test {
   long kUlimitFileSize;
 #endif
 };
+
+template <typename Data>
+Data VaultNetwork::Get(const typename Data::Name& data_name) {
+  assert(!clients_.empty() && "At least one client should exist to perform get operation");
+  size_t index(RandomUint32() % clients_.size());
+  auto future(clients_[index]->nfs_->Get<ImmutableData::Name>(data_name));
+  try {
+    return future.get();
+  }
+  catch (const std::exception& error) {
+    throw error;
+  }
+}
 
 }  // namespace test
 
