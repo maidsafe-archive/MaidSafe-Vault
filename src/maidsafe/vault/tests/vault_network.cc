@@ -53,7 +53,7 @@ VaultNetwork::VaultNetwork()
 }
 
 void VaultNetwork::Bootstrap() {
-  LOG(kVerbose) << "Creating zero state routing network..." << std::endl;
+  LOG(kVerbose) << "Creating zero state routing network...";
   routing::NodeInfo node_info1(MakeNodeInfo(key_chains_.keys[0].pmid)),
                     node_info2(MakeNodeInfo(key_chains_.keys[1].pmid));
   routing::Functors functors1, functors2;
@@ -283,13 +283,14 @@ std::future<bool> Client::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpo
   std::once_flag join_promise_set_flag;
   std::shared_ptr<std::promise<bool>> join_promise(std::make_shared<std::promise<bool>>());
   functors_.network_status = [&join_promise_set_flag, join_promise](int result) {
-    std::cout << "Network health: " << result << std::endl;
-    std::call_once(join_promise_set_flag, [join_promise, &result] {
-      try {
-        join_promise->set_value(result > -1);
-      } catch (...) {
-      }
-    });
+    LOG(kVerbose) << "Network health: " << result;
+    if (result == 100)
+      std::call_once(join_promise_set_flag, [join_promise, &result] {
+                                              try {
+                                                join_promise->set_value(result > -1);
+                                              } catch (...) {
+                                              }
+                                            });
   };
   functors_.typed_message_and_caching.group_to_group.message_received =
       [&](const routing::GroupToGroupMessage &msg) { nfs_->HandleMessage(msg); };

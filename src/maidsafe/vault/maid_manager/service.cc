@@ -178,11 +178,10 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& pub
                                           maidsafe_error(VaultErrors::account_already_exists),
                                           message_id);
     return;
-
-  } catch (const vault_error& error) {
+  } catch (const maidsafe_error& error) {
     if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
-      LOG(kError) << "db errors";
-      throw error;  // For db errors
+      LOG(kError) << "db errors" << error.what();
+      throw error;
     }
   }
 
