@@ -281,10 +281,12 @@ void DataManagerService::HandleMessage(
         auto value(db_.Commit(resolved_action->key, resolved_action->action));
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete "
                    << "the chunk " << HexSubstr(resolved_action->key.name.string());
-        assert(value->Subscribers() >= 0);
-        if (value->Subscribers() == 0) {
-          LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
-          SendDeleteRequests(resolved_action->key, value->AllPmids(), message.id);
+        if (value) {
+          assert(value->Subscribers() >= 0);
+          if (value->Subscribers() == 0) {
+            LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
+            SendDeleteRequests(resolved_action->key, value->AllPmids(), message.id);
+          }
         }
       }
       break;
