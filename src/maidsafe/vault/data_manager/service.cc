@@ -131,6 +131,14 @@ void DataManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+template <>
+void DataManagerService::HandleMessage(
+    const nfs::GetRequestFromMaidNodePartialToDataManager& /*message*/,
+    const typename nfs::GetRequestFromMaidNodePartialToDataManager::Sender& /*sender*/,
+    const typename nfs::GetRequestFromMaidNodePartialToDataManager::Receiver& /*receiver*/) {
+
+}
+
 template<>
 void DataManagerService::HandleMessage(
     const nfs::GetRequestFromDataGetterToDataManager& message,

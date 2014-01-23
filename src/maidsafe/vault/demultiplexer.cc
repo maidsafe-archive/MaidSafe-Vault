@@ -31,14 +31,22 @@ template <>
 void Demultiplexer::HandleMessage(const routing::SingleToGroupRelayMessage& routing_message) {
   auto wrapper_tuple(nfs::ParseMessageWrapper(routing_message.contents));
   const auto& destination_persona(std::get<2>(wrapper_tuple));
+//  const auto& source_persona(std::get<4>(wrapper_tuple));
   static_assert(std::is_same<decltype(destination_persona),
                              const nfs::detail::DestinationTaggedValue&>::value,
                 "The value retrieved from the tuple isn't the destination type, but should be.");
   switch (destination_persona.data) {
     case nfs::Persona::kDataManager:
-      return data_manager_service_.
-              HandleMessage(nfs::GetRequestFromDataGetterPartialToDataManager(wrapper_tuple),
-                            routing_message.sender, routing_message.receiver);
+//      if (source_persona == nfs::Persona::kDataGetter) {
+//        return data_manager_service_.
+//                HandleMessage(nfs::GetRequestFromDataGetterPartialToDataManager(wrapper_tuple),
+//                              routing_message.sender, routing_message.receiver);
+//      } else if (source_persona == nfs::Persona::kMaidNode) {
+        return data_manager_service_.
+                HandleMessage(nfs::GetRequestFromMaidNodePartialToDataManager(wrapper_tuple),
+                                  routing_message.sender, routing_message.receiver);
+//      }
+      assert(false);
     default:
       LOG(kError) << "Persona data : " << destination_persona.data << " is an Unhandled Persona ";
   }
