@@ -36,8 +36,9 @@ void Demultiplexer::HandleMessage(const routing::SingleToGroupRelayMessage& rout
                 "The value retrieved from the tuple isn't the destination type, but should be.");
   switch (destination_persona.data) {
     case nfs::Persona::kDataManager:
-      return data_manager_service_.HandleMessage(wrapper_tuple, routing_message.sender,
-                                                 routing_message.receiver);
+      return data_manager_service_.
+              HandleMessage(nfs::GetRequestFromDataGetterPartialToDataManager(wrapper_tuple),
+                            routing_message.sender, routing_message.receiver);
     default:
       LOG(kError) << "Persona data : " << destination_persona.data << " is an Unhandled Persona ";
   }
