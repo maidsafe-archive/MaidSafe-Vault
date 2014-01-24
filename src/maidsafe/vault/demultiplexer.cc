@@ -31,22 +31,25 @@ template <>
 void Demultiplexer::HandleMessage(const routing::SingleToGroupRelayMessage& routing_message) {
   auto wrapper_tuple(nfs::ParseMessageWrapper(routing_message.contents));
   const auto& destination_persona(std::get<2>(wrapper_tuple));
-//  const auto& source_persona(std::get<4>(wrapper_tuple));
+  const auto& source_persona(std::get<1>(wrapper_tuple));
   static_assert(std::is_same<decltype(destination_persona),
                              const nfs::detail::DestinationTaggedValue&>::value,
                 "The value retrieved from the tuple isn't the destination type, but should be.");
   switch (destination_persona.data) {
     case nfs::Persona::kDataManager:
-//      if (source_persona == nfs::Persona::kDataGetter) {
-//        return data_manager_service_.
-//                HandleMessage(nfs::GetRequestFromDataGetterPartialToDataManager(wrapper_tuple),
-//                              routing_message.sender, routing_message.receiver);
-//      } else if (source_persona == nfs::Persona::kMaidNode) {
+      if (source_persona.data == nfs::Persona::kDataGetter) {
+        return data_manager_service_.
+                HandleMessage(nfs::GetRequestFromDataGetterPartialToDataManager(wrapper_tuple),
+                              routing_message.sender, routing_message.receiver);
+      } else if (source_persona.data == nfs::Persona::kMaidNode) {
         return data_manager_service_.
                 HandleMessage(nfs::GetRequestFromMaidNodePartialToDataManager(wrapper_tuple),
                                   routing_message.sender, routing_message.receiver);
-//      }
-      assert(false);
+      }
+      // This assert will happen if vault starts sending messages except Get() triggred
+      // by routing's request for public key before having positive health.
+      // Vault should ensure positive network health while sending messages
+      assert(false && "vault should ensure positive network health before sending messages");
     default:
       LOG(kError) << "Persona data : " << destination_persona.data << " is an Unhandled Persona ";
   }

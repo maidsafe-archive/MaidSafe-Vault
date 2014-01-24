@@ -133,10 +133,18 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
-    const nfs::GetRequestFromMaidNodePartialToDataManager& /*message*/,
-    const typename nfs::GetRequestFromMaidNodePartialToDataManager::Sender& /*sender*/,
+    const nfs::GetRequestFromMaidNodePartialToDataManager& message,
+    const typename nfs::GetRequestFromMaidNodePartialToDataManager::Sender& sender,
     const typename nfs::GetRequestFromMaidNodePartialToDataManager::Receiver& /*receiver*/) {
-
+  LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromMaidNodePartialToDataManager"
+                << " from " << HexSubstr(sender.node_id->string())
+                << " for chunk " << HexSubstr(message.contents->raw_name.string());
+  auto data_name(detail::GetNameVariant(*message.contents));
+  typedef nfs::GetRequestFromMaidNodePartialToDataManager::SourcePersona SourceType;
+  detail::PartialRequestor<SourceType> requestor(sender);
+  detail::GetRequestVisitor<DataManagerService, detail::PartialRequestor<SourceType>>
+          get_request_visitor(this, requestor, message.id);
+  boost::apply_visitor(get_request_visitor, data_name);
 }
 
 template<>
