@@ -332,7 +332,7 @@ void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_
     DoSync(PmidManager::UnresolvedSetPmidHealth(
         PmidManager::MetadataKey(pmid_node), ActionPmidManagerSetPmidHealth(available_size),
         routing_.kNodeId()));
-  } catch (const vault_error& error) {
+  } catch (const maidsafe_error& error) {
     if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
       throw error;
     dispatcher_.SendPmidAccount(pmid_node, data_names,
@@ -412,7 +412,7 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
     LOG(kInfo) << "The current PmidManager already have account record with "
                << contents.kv_pairs.size() << " kv_pair entries";
 #endif
-  } catch(const vault_error& error) {
+  } catch(const maidsafe_error& error) {
     if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
       LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest vault error : "
                   << error.what();
