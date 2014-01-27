@@ -36,7 +36,8 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
       network_health_(-1),
       on_new_bootstrap_endpoint_(on_new_bootstrap_endpoint),
       routing_(new routing::Routing(pmid)),
-      data_getter_(asio_service_, *routing_, pmids_from_file),
+      pmids_from_file_(pmids_from_file),
+      data_getter_(asio_service_, *routing_),
       maid_manager_service_(
           std::move(std::unique_ptr<MaidManagerService>(new MaidManagerService(pmid, *routing_,
                                                                                data_getter_)))),
@@ -52,7 +53,8 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
           new CacheHandlerService(*routing_, vault_root_dir)))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
              pmid_manager_service_, pmid_node_service_, data_getter_),
-      asio_service_(2) {
+      asio_service_(2),
+      getting_keys_() {
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
   InitRouting(peer_endpoints);
 }
@@ -115,8 +117,10 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
     OnMatrixChanged(matrix_change);
   };
   functors.request_public_key = [this](
-      const NodeId& node_id,
-      const routing::GivePublicKeyFunctor& give_key) { OnPublicKeyRequested(node_id, give_key); };
+    const NodeId& node_id,
+    const routing::GivePublicKeyFunctor& give_key) {
+      nfs::DoGetPublicKey(data_getter_, node_id, give_key, pmids_from_file_, getting_keys_);
+    };
   functors.new_bootstrap_endpoint = [this](const boost::asio::ip::udp::endpoint& endpoint) {
                                         OnNewBootstrapEndpoint(endpoint);
                                     };
@@ -146,24 +150,6 @@ void Vault::DoOnNetworkStatusChange(int network_health) {
     network_health_condition_variable_.notify_one();
   }
   // TODO(Team) : actions when network is down/up per persona
-}
-
-void Vault::OnPublicKeyRequested(const NodeId& node_id,
-                                 const routing::GivePublicKeyFunctor& give_key) {
-  asio_service_.service().post([=] { DoOnPublicKeyRequested(node_id, give_key); });
-}
-
-void Vault::DoOnPublicKeyRequested(const NodeId& node_id,
-                                   const routing::GivePublicKeyFunctor& give_key) {
-  passport::PublicPmid::Name name(Identity(node_id.string()));
-  auto pmid_future = data_getter_.Get(name, std::chrono::seconds(10));
-//   auto pmid_future_then = pmid_future.then(
-//       [node_id, give_key, this](boost::future<passport::PublicPmid>& future) {
-//           passport::PublicPmid public_pmid(passport::PublicPmid(future.get()));
-//           give_key(public_pmid.public_key());
-//       });
-  passport::PublicPmid public_pmid(passport::PublicPmid(pmid_future.get()));
-  give_key(public_pmid.public_key());
 }
 
 void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {}

@@ -84,8 +84,8 @@ void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_keys) {
   functors1.request_public_key = functors2.request_public_key =
       [&public_key_getter, &all_public_pmids, &getting_keys](NodeId node_id,
            const routing::GivePublicKeyFunctor & give_key) {
-        DoGetPublicKey(public_key_getter, node_id, give_key,
-                       all_public_pmids, getting_keys);
+        nfs::DoGetPublicKey(public_key_getter, node_id, give_key,
+                            all_public_pmids, getting_keys);
       };
   functors1.typed_message_and_caching.group_to_group.message_received =
       functors2.typed_message_and_caching.group_to_group.message_received =
@@ -212,7 +212,7 @@ std::future<bool> ClientTester::RoutingJoin(const std::vector<UdpEndpoint>& peer
       [&](const routing::SingleToSingleMessage &msg) { client_nfs_->HandleMessage(msg); };
   functors_.request_public_key =
       [&](const NodeId & node_id, const routing::GivePublicKeyFunctor & give_key) {
-        DoGetPublicKey(*client_nfs_, node_id, give_key, kAllPmids_, getting_keys_); };
+        nfs::DoGetPublicKey(*client_nfs_, node_id, give_key, kAllPmids_, getting_keys_); };
   client_routing_.Join(functors_, peer_endpoints);
   return std::move(join_promise->get_future());
 }

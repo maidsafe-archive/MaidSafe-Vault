@@ -49,43 +49,6 @@ namespace vault {
 
 namespace tools {
 
-template <typename T>
-void DoGetPublicKey(T& persona, const NodeId& node_id,
-                    const routing::GivePublicKeyFunctor& give_key,
-                    std::vector<passport::PublicPmid>& public_pmids_from_file,
-                    std::vector<std::future<void>>& getting_keys) {
-  passport::PublicPmid::Name name(Identity(node_id.string()));
-  if (!public_pmids_from_file.empty()) {
-    LOG(kVerbose) << "fetch from local list containing "
-                  << public_pmids_from_file.size() << " pmids";
-    try {
-      auto itr(std::find_if(
-          std::begin(public_pmids_from_file), std::end(public_pmids_from_file),
-          [&name](const passport::PublicPmid & pmid) { return pmid.name() == name; }));
-      if (itr == public_pmids_from_file.end()) {
-        LOG(kWarning) << "can't Get PublicPmid " << HexSubstr(name.value)
-                      << " from local";
-      } else {
-        LOG(kVerbose) << "DataGetter Get PublicPmid " << HexSubstr(name.value);
-        give_key((*itr).public_key());
-        return;
-      }
-    } catch (...) {
-      LOG(kError) << "Having problem when tring to Get PublicPmid "
-                  << HexSubstr(name.value) << " from local";
-    }
-  }
-
-  try {
-    getting_keys.push_back(std::async(std::launch::async, [&persona, name, give_key]() {
-         auto future(persona.Get(name));
-         give_key(future.get().public_key());
-        }));
-  } catch (const std::exception& ex) {
-    LOG(kError) << "Failed to get key for " << DebugId(name) << " : " << ex.what();
-  }
-}
-
 typedef std::vector<passport::detail::AnmaidToPmid> KeyChainVector;
 typedef std::vector<passport::Pmid> PmidVector;
 
