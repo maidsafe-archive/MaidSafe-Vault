@@ -65,18 +65,6 @@ void CtrlCHandler(int /*signum*/) {
   g_cond_var.notify_one();
 }
 
-void DoOnPublicKeyRequested(const NodeId& node_id,
-                            const routing::GivePublicKeyFunctor& give_key,
-                            nfs_client::DataGetter& data_getter) {
-  passport::PublicPmid::Name name(Identity(node_id.string()));
-  try {
-    auto future(data_getter.Get(name));
-    give_key(future.get().public_key());
-  } catch (const std::exception& ex) {
-    LOG(kError) << "Failed to get key for " << DebugId(name) << " : " << ex.what();
-  }
-}
-
 }  // namespace
 
 NetworkGenerator::NetworkGenerator() : asio_service_(1) {}
@@ -92,10 +80,13 @@ void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_keys) {
   nfs_client::DataGetter public_key_getter(asio_service_, *bootstrap_data.routing1,
                                            all_public_pmids);
   routing::Functors functors1, functors2;
-  functors1.request_public_key = functors2.request_public_key = [&public_key_getter, this](
-      NodeId node_id, const routing::GivePublicKeyFunctor & give_key) {
-    DoOnPublicKeyRequested(node_id, give_key, public_key_getter);
-  };
+  std::vector<std::future<void>> getting_keys;
+  functors1.request_public_key = functors2.request_public_key =
+      [&public_key_getter, &all_public_pmids, &getting_keys](NodeId node_id,
+           const routing::GivePublicKeyFunctor & give_key) {
+        DoGetPublicKey(public_key_getter, node_id, give_key,
+                       all_public_pmids, getting_keys);
+      };
   functors1.typed_message_and_caching.group_to_group.message_received =
       functors2.typed_message_and_caching.group_to_group.message_received =
       [&](const routing::GroupToGroupMessage &) {};
@@ -151,8 +142,9 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
       client_routing_(key_chain.maid),
       functors_(),
       client_nfs_(),
-      data_getter_(asio_service_, client_routing_, public_pmids_from_file),
-      kAllPmids_(public_pmids_from_file) {
+      kAllPmids_(public_pmids_from_file),
+      getting_keys_(),
+      call_once_(false) {
   passport::PublicPmid::Name pmid_name(Identity(key_chain.pmid.name().value));
   client_nfs_.reset(new nfs_client::MaidNodeNfs(asio_service_, client_routing_, pmid_name));
   {
@@ -203,15 +195,12 @@ ClientTester::~ClientTester() {}
 std::future<bool> ClientTester::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints) {
   std::once_flag join_promise_set_flag;
   std::shared_ptr<std::promise<bool>> join_promise(std::make_shared<std::promise<bool>>());
-  functors_.network_status = [&join_promise_set_flag, join_promise](int result) {
+  functors_.network_status = [&join_promise_set_flag, join_promise, this](int result) {
     std::cout << "Network health: " << result << std::endl;
-    if (result == 100)
-      std::call_once(join_promise_set_flag, [join_promise, &result] {
-        try {
-          join_promise->set_value(result > -1);
-        } catch (...) {
-        }
-      });
+    if ((result == 100) && (!call_once_)) {
+          call_once_ = true;
+          join_promise->set_value(true);
+    }
   };
   functors_.typed_message_and_caching.group_to_group.message_received =
       [&](const routing::GroupToGroupMessage &msg) { client_nfs_->HandleMessage(msg); };
@@ -223,21 +212,9 @@ std::future<bool> ClientTester::RoutingJoin(const std::vector<UdpEndpoint>& peer
       [&](const routing::SingleToSingleMessage &msg) { client_nfs_->HandleMessage(msg); };
   functors_.request_public_key =
       [&](const NodeId & node_id, const routing::GivePublicKeyFunctor & give_key) {
-        OnPublicKeyRequested(node_id, give_key); };
+        DoGetPublicKey(*client_nfs_, node_id, give_key, kAllPmids_, getting_keys_); };
   client_routing_.Join(functors_, peer_endpoints);
   return std::move(join_promise->get_future());
-}
-
-void ClientTester::OnPublicKeyRequested(const NodeId& node_id,
-                                        const routing::GivePublicKeyFunctor& give_key) {
-  asio_service_.service().post([=] { DoOnPublicKeyRequested(node_id, give_key, data_getter_); });
-//   passport::PublicPmid::Name name(Identity(node_id.string()));
-//   auto itr(std::find_if(
-//       std::begin(kAllPmids_), std::end(kAllPmids_),
-//       [&name](const passport::PublicPmid & pmid) { return pmid.name() == name; }));
-//   if (itr == kAllPmids_.end())
-//     ThrowError(NfsErrors::failed_to_get_data);
-//   give_key((*itr).public_key());
 }
 
 KeyStorer::KeyStorer(const passport::detail::AnmaidToPmid& key_chain,
