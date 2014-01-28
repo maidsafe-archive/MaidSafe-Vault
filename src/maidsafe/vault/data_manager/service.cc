@@ -321,7 +321,8 @@ void DataManagerService::HandleMessage(
         assert(value->Subscribers() >= 0);
         if (value->Subscribers() == 0) {
           LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
-          SendDeleteRequests(resolved_action->key, value->AllPmids(), message.id);
+          SendDeleteRequests(resolved_action->key, value->AllPmids(),
+                             resolved_action->action.MessageId());
         }
       }
       break;

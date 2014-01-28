@@ -36,14 +36,17 @@ class DataManagerValue;
 
 struct ActionDataManagerDelete {
  public:
-  ActionDataManagerDelete();
+  ActionDataManagerDelete(nfs::MessageId message_id);
   explicit ActionDataManagerDelete(const std::string& serialised_action);
   detail::DbAction operator()(std::unique_ptr<DataManagerValue>& value);
   std::string Serialise() const;
+  nfs::MessageId MessageId() { return message_id_; }
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDecrementSubscribers;
 
  private:
   ActionDataManagerDelete& operator=(ActionDataManagerDelete other);
+
+  nfs::MessageId message_id_;
 };
 
 bool operator==(const ActionDataManagerDelete& lhs, const ActionDataManagerDelete& rhs);

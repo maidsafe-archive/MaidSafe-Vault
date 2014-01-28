@@ -25,17 +25,24 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionDataManagerDelete::ActionDataManagerDelete() {}
+ActionDataManagerDelete::ActionDataManagerDelete(nfs::MessageId message_id)
+  : message_id_(message_id) {}
 
-ActionDataManagerDelete::ActionDataManagerDelete(const std::string& /*serialised_action*/) {}
+ActionDataManagerDelete::ActionDataManagerDelete(const std::string& serialised_action) {
+  protobuf::ActionDataManagerDelete action_delete_proto;
+  action_delete_proto.ParseFromString(serialised_action);
+  message_id_ = nfs::MessageId(action_delete_proto.message_id());
+}
 
 std::string ActionDataManagerDelete::Serialise() const {
   protobuf::ActionDataManagerDelete action_delete_proto;
+  action_delete_proto.set_message_id(message_id_);
   return action_delete_proto.SerializeAsString();
 }
 
 detail::DbAction ActionDataManagerDelete::operator()(std::unique_ptr<DataManagerValue>& value) {
   if (value) {
+    LOG(kWarning) << "ActionDataManagerDelete::operator() value->DecrementSubscribers()";
     value->DecrementSubscribers();
     assert(value->Subscribers() >= 0);
     if (value->Subscribers() == 0)
@@ -43,6 +50,7 @@ detail::DbAction ActionDataManagerDelete::operator()(std::unique_ptr<DataManager
     else
       return detail::DbAction::kPut;
   } else {
+    LOG(kWarning) << "ActionDataManagerDelete::operator() no_such_element";
     ThrowError(CommonErrors::no_such_element);
     return detail::DbAction::kDelete;
   }
