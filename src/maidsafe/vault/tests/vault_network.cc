@@ -285,9 +285,9 @@ std::future<bool> Client::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpo
   functors_.network_status = [&join_promise_set_flag, join_promise](int result) {
     LOG(kVerbose) << "Network health: " << result;
     if (result == 100)
-      std::call_once(join_promise_set_flag, [join_promise, &result] {
+      std::call_once(join_promise_set_flag, [join_promise] {
                                               try {
-                                                join_promise->set_value(result > -1);
+                                                join_promise->set_value(true);
                                               } catch (...) {
                                               }
                                             });
