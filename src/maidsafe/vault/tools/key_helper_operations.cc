@@ -171,6 +171,10 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
     std::cout << "Account created for maid " << HexSubstr(public_maid.name()->string())
               << std::endl;
   }
+  // before register pmid, need to store pmid to network first
+  client_nfs_->Put(passport::PublicPmid(key_chain.pmid));
+  boost::this_thread::sleep_for(boost::chrono::seconds(2));
+
   if (register_pmid_for_client) {
     {
       client_nfs_->RegisterPmid(nfs_vault::PmidRegistration(key_chain.maid, key_chain.pmid, false));
@@ -220,13 +224,13 @@ std::future<bool> ClientTester::RoutingJoin(const std::vector<UdpEndpoint>& peer
 KeyStorer::KeyStorer(const passport::detail::AnmaidToPmid& key_chain,
                      const std::vector<UdpEndpoint>& peer_endpoints,
                      const std::vector<passport::PublicPmid>& public_pmids_from_file,
-                     const KeyChainVector& key_chain_list_in)
+                     const KeyChainVector& key_chain_list)
     : ClientTester(key_chain, peer_endpoints, public_pmids_from_file, false),
-      key_chain_list(key_chain_list_in) {}
+      key_chain_list_(key_chain_list) {}
 
 void KeyStorer::Store() {
   size_t failures(0);
-  for (auto& keychain : key_chain_list) {
+  for (auto& keychain : key_chain_list_) {
     try {
       StoreKey(passport::PublicPmid(keychain.pmid));
       boost::this_thread::sleep_for(boost::chrono::seconds(2));
@@ -242,7 +246,7 @@ void KeyStorer::Store() {
   }
   if (failures) {
     std::cout << "Could not store " << std::to_string(failures) << " out of "
-              << std::to_string(key_chain_list.size()) << std::endl;
+              << std::to_string(key_chain_list_.size()) << std::endl;
     ThrowError(VaultErrors::failed_to_handle_request);
   }
 
@@ -321,8 +325,13 @@ void DataChunkStorer::TestWithDelete(int32_t quantity) {
 
 void DataChunkStorer::TestStoreChunk(int chunk_index) {
   StoreOneChunk(chunk_list_[chunk_index]);
+  LOG(kInfo) << "Sleeping for network handling storing ... "
+             << HexSubstr(chunk_list_[chunk_index].name().value);
+  boost::this_thread::sleep_for(boost::chrono::seconds(5));
   if (!GetOneChunk(chunk_list_[chunk_index]))
     ThrowError(CommonErrors::invalid_parameter);
+  std::cout << "Chunk "<< HexSubstr(chunk_list_[chunk_index].name().value)
+            << " stored and verified" << std::endl;
 }
 
 void DataChunkStorer::TestFetchChunk(int chunk_index) {
@@ -333,6 +342,8 @@ void DataChunkStorer::TestFetchChunk(int chunk_index) {
 void DataChunkStorer::TestDeleteChunk(int chunk_index) {
   if (!DeleteOneChunk(chunk_list_[chunk_index]))
     ThrowError(CommonErrors::invalid_parameter);
+  std::cout << "Chunk "<< HexSubstr(chunk_list_[chunk_index].name().value)
+            << " deleted and verified" << std::endl;
 }
 
 bool DataChunkStorer::Done(int32_t quantity, int32_t rounds) const {

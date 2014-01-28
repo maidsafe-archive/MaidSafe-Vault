@@ -138,10 +138,11 @@ po::options_description Commander::AddGenericOptions(const std::string& title) {
 po::options_description Commander::AddConfigurationOptions(const std::string& title) {
   po::options_description config_file_options(title);
   boost::system::error_code error_code;
-  config_file_options.add_options()("peer", po::value<std::string>(),
-                                    "Endpoint of bootstrap node, if attaching to running network.")(
+  config_file_options.add_options()(
+      "peer", po::value<std::string>(),
+              "Endpoint of bootstrap node, if attaching to running network.")(
       "pmids_count,n", po::value<size_t>(&pmids_count_)->default_value(pmids_count_),
-      "Number of keys to create")(
+                       "Number of keys to create")(
       "keys_path", po::value<std::string>()->default_value(fs::path(
                        fs::temp_directory_path(error_code) / "key_directory.dat").string()),
       "Path to keys file")(
@@ -149,11 +150,11 @@ po::options_description Commander::AddConfigurationOptions(const std::string& ti
                         fs::path(fs::temp_directory_path(error_code) / "keys_chunks").string()),
       "Path to chunk directory")(
       "key_index,k", po::value<int>(&key_index_)->default_value(key_index_),
-      "The index of key to be used as client during chunk store test")(
+                     "The index of key to be used as client during chunk store test")(
       "chunk_set_count", po::value<int>(&chunk_set_count_)->default_value(chunk_set_count_),
-      "Num of rounds for chunk store test, default is infinite; Or num of chunks to be generated")(
+                         "Num of test rounds(default is infinite);Or num of generate chunks")(
       "chunk_index", po::value<int>(&chunk_index_)->default_value(chunk_index_),
-      "Index of the chunk to be used during tests, default is 0");
+                     "Index of the chunk to be used during tests, default is 0");
   return config_file_options;
 }
 
@@ -249,7 +250,7 @@ void Commander::HandleSetupBootstraps() {
 
 void Commander::HandleStorePublicKeys(size_t client_index) {
   try {
-    boost::system::error_code error_code;
+//     boost::system::error_code error_code;
 //     fs::path target_key_file(fs::current_path(error_code) / keys_path_.filename());
 //     KeyChainVector keys_to_store = maidsafe::passport::detail::ReadKeyChainList(target_key_file);
     KeyStorer storer(all_keychains_.at(client_index), peer_endpoints_,

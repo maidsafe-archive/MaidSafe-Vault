@@ -119,7 +119,7 @@ class KeyStorer : public ClientTester {
   KeyStorer(const passport::detail::AnmaidToPmid& key_chain,
             const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints,
             const std::vector<passport::PublicPmid>& public_pmids_from_file,
-            const KeyChainVector& key_chain_list_in);
+            const KeyChainVector& key_chain_list);
   void Store();
 
  private:
@@ -127,7 +127,7 @@ class KeyStorer : public ClientTester {
   void StoreKey(const Data& key) {
     client_nfs_->Put(key);
   }
-  KeyChainVector key_chain_list;
+  KeyChainVector key_chain_list_;
 };
 
 class KeyVerifier : public ClientTester {
