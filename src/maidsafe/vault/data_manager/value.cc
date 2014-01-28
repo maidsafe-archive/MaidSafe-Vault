@@ -90,6 +90,7 @@ void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
 
 int64_t DataManagerValue::DecrementSubscribers() {
   --subscribers_;
+  LOG(kInfo) << "now having " << subscribers_ << " subscribers";
   return subscribers_;
 }
 

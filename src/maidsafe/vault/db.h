@@ -125,9 +125,8 @@ std::unique_ptr<Value> Db<Key, Value>::Commit(const Key& key,
     LOG(kInfo) << "Db<Key, Value>::Commit deleting entry";
     assert(value);
     Delete(key);
-    return value;
   }
-  return nullptr;
+  return value;
 }
 
 // option 1 : Fire functor here with check_holder_result.new_holder & the corresponding value
@@ -203,9 +202,11 @@ Value Db<Key, Value>::Get(const Key& key) {
 
 template <typename Key, typename Value>
 void Db<Key, Value>::Put(const KvPair& key_value_pair) {
+  LOG(kVerbose) << "Db<Key, Value>::Put before put";
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
                                        key_value_pair.first.ToFixedWidthString().string(),
                                        key_value_pair.second.Serialise()));
+  LOG(kVerbose) << "Db<Key, Value>::Put after put";
   if (!status.ok()) {
     LOG(kError) << "Db<Key, Value>::Put incorrect leveldb::Status";
     ThrowError(VaultErrors::failed_to_handle_request);

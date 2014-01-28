@@ -440,7 +440,16 @@ void MaidManagerService::HandleSyncedDelete(
   nfs_vault::DataName data_name(synced_action_delete->key.type,
                                 synced_action_delete->key.name);
   ObfuscateKey(synced_action_delete->key);
-  group_db_.Commit(synced_action_delete->key, synced_action_delete->action);
+  try {
+    group_db_.Commit(synced_action_delete->key, synced_action_delete->action);
+  } catch (const maidsafe_error& error) {
+    LOG(kError) << "MaidManagerService::HandleSyncedDelete commiting error: " << error.what();
+    if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
+      throw error;
+    else
+      // BEFORE_RELEASE trying to delete something not belongs to client shall get muted
+      return;
+  }
   dispatcher_.SendDeleteRequest(synced_action_delete->key.group_name(),
                                 data_name,
                                 synced_action_delete->action.kMessageId);

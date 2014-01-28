@@ -44,7 +44,10 @@ class DataManagerValue {
 
   void AddPmid(const PmidName& pmid_name);
   void RemovePmid(const PmidName& pmid_name);
-  void IncrementSubscribers() { ++subscribers_; }
+  void IncrementSubscribers() {
+    ++subscribers_;
+    LOG(kInfo) << "now having " << subscribers_ << " subscribers";
+  }
   int64_t DecrementSubscribers();
   void SetPmidOnline(const PmidName& pmid_name);
   void SetPmidOffline(const PmidName& pmid_name);

@@ -200,7 +200,7 @@ std::future<bool> ClientTester::RoutingJoin(const std::vector<UdpEndpoint>& peer
   std::once_flag join_promise_set_flag;
   std::shared_ptr<std::promise<bool>> join_promise(std::make_shared<std::promise<bool>>());
   functors_.network_status = [&join_promise_set_flag, join_promise, this](int result) {
-    std::cout << "Network health: " << result << std::endl;
+    LOG(kVerbose) << "Network health: " << result;
     if ((result == 100) && (!call_once_)) {
           call_once_ = true;
           join_promise->set_value(true);
