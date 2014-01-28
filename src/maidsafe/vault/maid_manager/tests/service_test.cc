@@ -36,17 +36,15 @@ namespace test {
 
 class MaidManagerServiceTest {
  public:
-  MaidManagerServiceTest() :
-      anmaid_(),
-      maid_(anmaid_),
-      pmid_(maid_),
-      public_maid_(maid_),
-      routing_(pmid_),
-      data_getter_(asio_service_, routing_, std::vector<passport::PublicPmid>()),
-      maid_manager_service_(pmid_, routing_, data_getter_),
-      asio_service_(2) {
-    asio_service_.Start();
-  }
+  MaidManagerServiceTest()
+      : anmaid_(),
+        maid_(anmaid_),
+        pmid_(maid_),
+        public_maid_(maid_),
+        routing_(pmid_),
+        data_getter_(asio_service_, routing_, std::vector<passport::PublicPmid>()),
+        maid_manager_service_(pmid_, routing_, data_getter_),
+        asio_service_(2) {}
 
   NodeId MaidNodeId() {
     return NodeId(maid_.name()->string());

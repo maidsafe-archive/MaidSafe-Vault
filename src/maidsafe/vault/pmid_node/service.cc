@@ -18,8 +18,9 @@
 
 #include "maidsafe/vault/pmid_node/service.h"
 
-#include <string>
 #include <chrono>
+#include <limits>
+#include <string>
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_store/data_buffer.h"
@@ -146,23 +147,25 @@ void PmidNodeService::HandleMessage(
   typedef GetPmidAccountResponseFromPmidManagerToPmidNode MessageType;
   auto add_request_predicate(
       [&](const std::vector<Messages>& requests_in) {
-        if (requests_in.size() < 2)
+        assert(requests_in.size() <= std::numeric_limits<uint16_t>::max());
+        const uint16_t requests_in_size(static_cast<uint16_t>(requests_in.size()));
+        if (requests_in_size < 2)
           return Accumulator<Messages>::AddResult::kWaiting;
-        int  valid_response_size(0);
+        uint16_t valid_response_size(0);
         for (auto& request : requests_in) {
           auto typed_request(boost::get<MessageType>(request));
           if (typed_request.contents->return_code.value.code() == CommonErrors::success)
-            valid_response_size++;
+            ++valid_response_size;
         }
-        if ((static_cast<uint16_t>(requests_in.size()) >=
-                (routing::Parameters::node_group_size / 2 + 1U)) &&
-            valid_response_size >= routing::Parameters::node_group_size / 2)
+        const uint16_t& group_size(routing::Parameters::node_group_size);
+        if (requests_in_size >= (group_size / 2 + 1U) && valid_response_size >= group_size / 2)
           return Accumulator<Messages>::AddResult::kSuccess;
-          if ((requests_in.size() == routing::Parameters::node_group_size) ||
-              (requests_in.size() - valid_response_size > routing::Parameters::node_group_size / 2))
-              return Accumulator<Messages>::AddResult::kFailure;
-            return Accumulator<Messages>::AddResult::kWaiting;
-          });
+        if (requests_in_size == group_size ||
+            (requests_in_size - valid_response_size) > group_size / 2) {
+          return Accumulator<Messages>::AddResult::kFailure;
+        }
+        return Accumulator<Messages>::AddResult::kWaiting;
+      });
 
   OperationHandlerWrapper<PmidNodeService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {

@@ -54,6 +54,7 @@ struct GetResponseOp {
         integrity_checks(std::move(integrity_checks_in)),
         data_name(std::move(data_name_in)),
         requestor_id(std::move(requestor_id_in)),
+        called_count(0),
         serialised_contents() {}
 
   std::mutex mutex;

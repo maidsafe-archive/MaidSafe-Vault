@@ -66,7 +66,6 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       sync_remove_pmids_(NodeId(pmid.name()->string())),
       sync_node_downs_(NodeId(pmid.name()->string())),
       sync_node_ups_(NodeId(pmid.name()->string())) {
-  asio_service_.Start();
 }
 
 // ==================== Put implementation =========================================================
@@ -75,7 +74,8 @@ void DataManagerService::HandleMessage(
     const PutRequestFromMaidManagerToDataManager& message,
     const typename PutRequestFromMaidManagerToDataManager::Sender& sender,
     const typename PutRequestFromMaidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage PutRequestFromMaidManagerToDataManager";
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutRequestFromMaidManagerToDataManager"
+                << message.id;
   typedef PutRequestFromMaidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -90,7 +90,8 @@ void DataManagerService::HandleMessage(
     const PutResponseFromPmidManagerToDataManager& message,
     const typename PutResponseFromPmidManagerToDataManager::Sender& sender,
     const typename PutResponseFromPmidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage PutResponseFromPmidManagerToDataManager";
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutResponseFromPmidManagerToDataManager"
+                <<  message.id;
   typedef PutResponseFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -105,7 +106,8 @@ void DataManagerService::HandleMessage(
     const PutFailureFromPmidManagerToDataManager& message,
     const typename PutFailureFromPmidManagerToDataManager::Sender& sender,
     const typename PutFailureFromPmidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage PutFailureFromPmidManagerToDataManager";
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutFailureFromPmidManagerToDataManager"
+                <<  message.id;
   typedef PutFailureFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -123,7 +125,8 @@ void DataManagerService::HandleMessage(
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
   LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromMaidNodeToDataManager"
                 << " from " << HexSubstr(sender.data.string())
-                << " for chunk " << HexSubstr(message.contents->raw_name.string());
+                << " for chunk " << HexSubstr(message.contents->raw_name.string())
+                <<  message.id;
   typedef nfs::GetRequestFromMaidNodeToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -140,7 +143,8 @@ void DataManagerService::HandleMessage(
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
   LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromDataGetterToDataManager"
                 << " from " << HexSubstr(sender.data.string())
-                << " for chunk " << HexSubstr(message.contents->raw_name.string());
+                << " for chunk " << HexSubstr(message.contents->raw_name.string())
+                <<  message.id;
   typedef nfs::GetRequestFromDataGetterToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -157,7 +161,8 @@ void DataManagerService::HandleMessage(
     const typename GetResponseFromPmidNodeToDataManager::Receiver& receiver) {
   LOG(kVerbose) << "DataManagerService::HandleMessage GetResponseFromPmidNodeToDataManager"
                 << " from " << HexSubstr(sender.data.string())
-                << " for chunk " << HexSubstr(message.contents->name.raw_name.string());
+                << " for chunk " << HexSubstr(message.contents->name.raw_name.string())
+                <<  message.id;
   typedef GetResponseFromPmidNodeToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -227,7 +232,8 @@ void DataManagerService::HandleMessage(
     const DeleteRequestFromMaidManagerToDataManager& message,
     const typename DeleteRequestFromMaidManagerToDataManager::Sender& sender,
     const typename DeleteRequestFromMaidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage DeleteRequestFromMaidManagerToDataManager";
+  LOG(kVerbose) << "DataManagerService::HandleMessage DeleteRequestFromMaidManagerToDataManager"
+                <<  message.id;
   typedef DeleteRequestFromMaidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -282,12 +288,13 @@ void DataManagerService::HandleMessage(
                    << "resolved for chunk " << HexSubstr(resolved_action->key.name.string());
         auto value(db_.Commit(resolved_action->key, resolved_action->action));
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete "
-                   << "the chunk " << HexSubstr(resolved_action->key.name.string())
-                   << " has " << value->Subscribers() << " Subscribers";
-        assert(value->Subscribers() >= 0);
-        if (value->Subscribers() == 0) {
-          LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
-          SendDeleteRequests(resolved_action->key, value->AllPmids(), message.id);
+                   << "the chunk " << HexSubstr(resolved_action->key.name.string());
+        if (value) {
+          assert(value->Subscribers() >= 0);
+          if (value->Subscribers() == 0) {
+            LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
+            SendDeleteRequests(resolved_action->key, value->AllPmids(), message.id);
+          }
         }
       }
       break;
@@ -300,7 +307,9 @@ void DataManagerService::HandleMessage(
                     << " and pmid_node " << HexSubstr(unresolved_action.action.kPmidName->string());
       auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
-        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit add pmid to db";
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit add pmid to db"
+                   << " for chunk " << HexSubstr(unresolved_action.key.name.string())
+                   << " and pmid_node " << HexSubstr(unresolved_action.action.kPmidName->string());
         db_.Commit(resolved_action->key, resolved_action->action);
       }
       break;
@@ -350,7 +359,7 @@ void DataManagerService::HandleMessage(
     }
     default: {
       LOG(kError) << "SynchroniseFromDataManagerToDataManager Unhandled action type";
-      assert(false);
+      assert(false && "Unhandled action type");
     }
   }
 }

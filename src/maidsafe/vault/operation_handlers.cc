@@ -37,7 +37,7 @@ void DoOperation(MaidManagerService* service,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation CreateAccountRequestFromMaidNodeToMaidManager";
+  LOG(kVerbose) << "DoOperation CreateAccountRequestFromMaidNodeToMaidManager" << message.id;
   service->HandleCreateMaidAccount(message.contents->public_maid(),
                                    message.contents->public_anmaid(), message.id);
 }
@@ -182,7 +182,7 @@ void DoOperation(DataManagerService* service,
                  const PutResponseFromPmidManagerToDataManager::Receiver& /*receiver*/) {
   LOG(kVerbose) << "DoOperation PutResponseFromPmidManagerToDataManager received from sender "
                 << HexSubstr(sender.sender_id.data.string()) << " regarding the group of "
-                << HexSubstr(sender.group_id.data.string());
+                << HexSubstr(sender.group_id.data.string()) << " msg id: " << message.id;
   auto data_name(GetNameVariant(*message.contents));
   DataManagerPutResponseVisitor<DataManagerService> put_response_visitor(
       service, PmidName(Identity(sender.group_id.data.string())), message.contents->size,

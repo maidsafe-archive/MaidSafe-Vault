@@ -24,6 +24,7 @@
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/test.h"
+#include "maidsafe/nfs/client/maid_node_nfs.h"
 #include "maidsafe/vault/vault.h"
 
 namespace fs = boost::filesystem;
@@ -34,29 +35,82 @@ namespace vault {
 
 namespace test {
 
-const int kNetworkSize(50);
+typedef boost::asio::ip::udp::endpoint UdpEndpoint;
+const int kNetworkSize(25);
 
-class VaultNetwork : public testing::Test{
+#ifndef MAIDSAFE_WIN32
+const int kLimitsFiles(2048);
+#endif
+
+struct KeyChain {
+  explicit KeyChain(size_t size = 1);
+  std::vector<passport::detail::AnmaidToPmid> keys;
+  passport::detail::AnmaidToPmid Add();
+};
+
+class Client {
+ public:
+  Client(const passport::detail::AnmaidToPmid& keys, const std::vector<UdpEndpoint>& endpoints,
+         const std::vector<passport::PublicPmid>& public_pmids,
+         bool register_pmid_for_client = true);
+  std::future<bool> RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints);
+
+ public:
+  void OnPublicKeyRequested(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key);
+
+  AsioService asio_service_;
+  routing::Functors functors_;
+  routing::Routing routing_;
+  std::unique_ptr<nfs_client::MaidNodeNfs> nfs_;
+  nfs_client::DataGetter data_getter_;
+};
+
+class VaultNetwork : public testing::Test {
  public:
   typedef std::shared_ptr<Vault> VaultPtr;
+  typedef std::shared_ptr<Client> ClientPtr;
 
   VaultNetwork();
-  void Bootstrap();
+  virtual void SetUp();
   virtual void TearDown();
-  void Create(size_t index);
+  bool Add();
+  bool AddClient(bool register_pmid = true);
+
+  template <typename Data>
+  Data Get(const typename Data::Name& data_name);
 
  protected:
+  void Bootstrap();
+  bool Create(size_t index);
+
   AsioService asio_service_;
-  std::mutex mutex_;  
+  std::mutex mutex_;
   std::condition_variable bootstrap_condition_, network_up_condition_;
   bool bootstrap_done_, network_up_;
   std::vector<VaultPtr> vaults_;
-  std::vector<boost::asio::ip::udp::endpoint> endpoints_;
+  std::vector<ClientPtr> clients_;
+  std::vector<UdpEndpoint> endpoints_;
   std::vector<passport::PublicPmid> public_pmids_;
-  std::vector<passport::Pmid> pmids_;
+  KeyChain key_chains_;
   fs::path chunk_store_path_;
   size_t network_size_;
+#ifndef MAIDSAFE_WIN32
+  long kUlimitFileSize;
+#endif
 };
+
+template <typename Data>
+Data VaultNetwork::Get(const typename Data::Name& data_name) {
+  assert(!clients_.empty() && "At least one client should exist to perform get operation");
+  size_t index(RandomUint32() % clients_.size());
+  auto future(clients_[index]->nfs_->Get<ImmutableData::Name>(data_name));
+  try {
+    return future.get();
+  }
+  catch (const std::exception& error) {
+    throw error;
+  }
+}
 
 }  // namespace test
 

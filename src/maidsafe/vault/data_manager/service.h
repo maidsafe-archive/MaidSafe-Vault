@@ -381,10 +381,15 @@ template <typename Data>
 bool DataManagerService::EntryExist(const typename Data::Name& name) {
   try {
     db_.Get(DataManager::Key(name.value, Data::Tag::kValue));
+    LOG(kInfo) << "Entry does not exist";
     return true;
   }
   catch (const maidsafe_error& /*error*/) {
+    LOG(kInfo) << "Entry does not exist";
     return false;
+  }
+  catch (...) {
+    assert(0 && "DataManagerService::EntryExist");
   }
 }
 
@@ -662,6 +667,8 @@ void DataManagerService::AssessIntegrityCheckResults(
       // all the others, as the PmidNode side has to accumulate enough delete requests before
       // deploy the action, send out false delete request won't cause problem as long as no more
       // than half PmidNodes containing false data.
+      LOG(kVerbose) << DebugId(NodeId(itr.second.result().string())) << " and total: "
+                    << DebugId(NodeId(IntegrityCheckData::Result().string()));
       if (itr.second.result() != IntegrityCheckData::Result()) {
         LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
                       << HexSubstr(itr.first->string()) << " returned invalid data for "

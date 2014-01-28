@@ -129,10 +129,15 @@ template <typename Key, typename Action>
 UnresolvedAction<Key, Action>::UnresolvedAction(const UnresolvedAction& other)
     : key(other.key),
       action(other.action),
-      this_node_and_entry_id(other.this_node_and_entry_id),
+      this_node_and_entry_id(),
       peer_and_entry_ids(other.peer_and_entry_ids),
       sync_counter(other.sync_counter),
-      seen_list(other.seen_list) {}
+      seen_list(other.seen_list) {
+  if (other.this_node_and_entry_id)
+    this_node_and_entry_id = std::make_shared<std::pair<NodeId, int32_t>>(
+                                 other.this_node_and_entry_id->first,
+                                 other.this_node_and_entry_id->second);
+}
 
 template <typename Key, typename Action>
 UnresolvedAction<Key, Action>::UnresolvedAction(UnresolvedAction&& other)
