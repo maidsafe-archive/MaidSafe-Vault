@@ -145,7 +145,7 @@ void VaultNetwork::SetUp() {
   bootstrap.get();
   for (size_t index(0); index < network_size_; ++index) {
     try {
-      futures[index].get();
+      EXPECT_TRUE(futures[index].get());
     }
     catch (const std::exception& e) {
       LOG(kError) << "Exception getting future from creating vault " << index << ": " << e.what();
