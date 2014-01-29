@@ -72,7 +72,7 @@ namespace detail {
 
 }  // namespace detail
 
-VersionHandlerService::VersionHandlerService(const passport::Pmid& /*pmid*/,
+VersionHandlerService::VersionHandlerService(const passport::Pmid& pmid,
                                              routing::Routing& routing)
     : routing_(routing),
       dispatcher_(routing),
@@ -80,8 +80,8 @@ VersionHandlerService::VersionHandlerService(const passport::Pmid& /*pmid*/,
       accumulator_(),
       db_(),
       kThisNodeId_(routing_.kNodeId()),
-      sync_put_versions_(),
-      sync_delete_branche_until_forks_() {}
+      sync_put_versions_(NodeId(pmid.name()->string())),
+      sync_delete_branche_until_forks_(NodeId(pmid.name()->string())) {}
 
 template<>
 void VersionHandlerService::HandleMessage(

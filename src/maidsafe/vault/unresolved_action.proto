@@ -22,6 +22,7 @@ message UnresolvedAction {
   required bytes serialised_key = 1;
   required bytes serialised_action = 2;
   required int32 entry_id = 3;
+  repeated bytes seen_list = 4;
 }
 
 

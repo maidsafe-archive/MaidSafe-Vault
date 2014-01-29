@@ -125,8 +125,9 @@ std::unique_ptr<Value> Db<Key, Value>::Commit(const Key& key,
     LOG(kInfo) << "Db<Key, Value>::Commit deleting entry";
     assert(value);
     Delete(key);
+    return value;
   }
-  return value;
+  return nullptr;
 }
 
 // option 1 : Fire functor here with check_holder_result.new_holder & the corresponding value

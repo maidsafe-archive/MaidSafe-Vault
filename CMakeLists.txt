@@ -68,7 +68,14 @@ set(VaultTestsAllFiles ${PmidNodeTestsAllFiles}
                        ${MaidManagerTestsAllFiles}
                        ${VaultSourcesDir}/tests/db_test.cc)
 
+set(VaultNetworkTestFiles ${VaultSourcesDir}/tests/vault_network.h
+                          ${VaultSourcesDir}/tests/vault_network.cc
+                          ${VaultSourcesDir}/tests/vault_network_test.cc)
+
 list(REMOVE_ITEM VaultGTestsAllFiles ${VaultTestsAllFiles})
+list(REMOVE_ITEM VaultGTestsAllFiles ${VaultNetworkTestFiles})
+list(APPEND VaultNetworkTestFiles ${TestsMain}  ${VaultSourcesDir}/tests/tests_utils.h
+                                                ${VaultSourcesDir}/tests/tests_utils.cc )
 list(APPEND VaultTestsAllFiles ${TestsMain}  ${VaultSourcesDir}/tests/tests_utils.h
                                              ${VaultSourcesDir}/tests/tests_utils.cc )
 
@@ -120,6 +127,11 @@ if(MaidsafeTesting)
   ms_add_executable(TESTvault "Tests/Vault" ${VaultGTestsAllFiles})
   target_include_directories(TESTvault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
   target_link_libraries(TESTvault maidsafe_vault)
+  ms_add_executable(TESTvault_network "Tests/Vault" ${VaultNetworkTestFiles})
+  target_include_directories(TESTvault_network PRIVATE ${PROJECT_SOURCE_DIR}/src
+                                                       ${PROJECT_BINARY_DIR}/generated_message_types
+                                                       ${VaultSourcesDir}/tests)
+  target_link_libraries(TESTvault_network maidsafe_vault)
   ms_add_executable(vault_key_helper "Tools/Vault" ${VaultToolsAllFiles})
   target_include_directories(vault_key_helper PRIVATE ${PROJECT_SOURCE_DIR}/src)
   target_link_libraries(vault_key_helper maidsafe_routing maidsafe_nfs_vault maidsafe_private)
@@ -135,7 +147,7 @@ ms_rename_outdated_built_exes()
 include(standard_flags)
 
 if(MSVC AND MaidsafeTesting)
-  set_property(TARGET maidsafe_vault TESTvault maidsafe_vault_mal APPEND PROPERTY COMPILE_FLAGS "/bigobj")
+  set_property(TARGET maidsafe_vault TESTvault TESTvault_network maidsafe_vault_mal APPEND PROPERTY COMPILE_FLAGS "/bigobj")
 endif()
 
 
@@ -146,6 +158,7 @@ if(MaidsafeTesting)
   ms_add_style_test()
   ms_add_catch_tests(test_vault)
   ms_add_gtests(TESTvault)
+  ms_add_gtests(TESTvault_network)
   ms_add_project_experimental()
   ms_test_summary_output()
 endif()

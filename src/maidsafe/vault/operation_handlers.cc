@@ -37,7 +37,7 @@ void DoOperation(MaidManagerService* service,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation CreateAccountRequestFromMaidNodeToMaidManager";
+  LOG(kVerbose) << "DoOperation CreateAccountRequestFromMaidNodeToMaidManager" << message.id;
   service->HandleCreateMaidAccount(message.contents->public_maid(),
                                    message.contents->public_anmaid(), message.id);
 }

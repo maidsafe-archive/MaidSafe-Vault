@@ -340,7 +340,7 @@ template <typename Persona>
 void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
   try {
     DeleteGroupEntries(FindGroup(group_name));
-  } catch (const vault_error& error) {
+  } catch (const maidsafe_error& error) {
     LOG(kInfo) << "account doesn't exist for group "
                << HexSubstr(group_name->string()) << ", error : " << error.what();
   }

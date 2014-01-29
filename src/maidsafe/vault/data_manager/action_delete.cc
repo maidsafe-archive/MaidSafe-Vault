@@ -44,7 +44,7 @@ detail::DbAction ActionDataManagerDelete::operator()(std::unique_ptr<DataManager
   if (value) {
     LOG(kWarning) << "ActionDataManagerDelete::operator() value->DecrementSubscribers()";
     value->DecrementSubscribers();
-    assert(value->Subscribers() >= 0);
+    assert((value->Subscribers() >= 0) && "Subscribers quantity may not be less than zero");
     if (value->Subscribers() == 0)
       return detail::DbAction::kDelete;
     else
