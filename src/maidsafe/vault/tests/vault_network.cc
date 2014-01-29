@@ -113,10 +113,7 @@ void VaultNetwork::Bootstrap() {
   {
     std::lock_guard<std::mutex> lock(mutex_);
     endpoints_.clear();
-    boost::asio::ip::udp::endpoint live;
-    live.address(maidsafe::GetLocalIp());
-    live.port(5483);
-    endpoints_.push_back(live);
+    endpoints_.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(), 5483));
   }
 }
 
@@ -170,6 +167,7 @@ bool VaultNetwork::Create(size_t index) {
   auto path(chunk_store_path_/path_str);
   fs::create_directory(path);
   try {
+    LOG(kSuccess) << "port: " << endpoints_.front();
     vaults_.emplace_back(new Vault(key_chains_.keys[index].pmid, path,
                                    [](const boost::asio::ip::udp::endpoint&) {}, public_pmids_,
                                    endpoints_));
@@ -235,7 +233,7 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
       LOG(kError) << "can't join routing network";
       ThrowError(RoutingErrors::not_connected);
     }
-    LOG(kInfo) << "Client node joined routing network";
+    LOG(kSuccess) << "Client node joined routing network";
   }
   {
     passport::PublicMaid public_maid(keys.maid);
@@ -248,7 +246,7 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
     }
     // waiting for syncs resolved
     boost::this_thread::sleep_for(boost::chrono::seconds(2));
-    LOG(kInfo) << "Account created for maid " << HexSubstr(public_maid.name()->string());
+    LOG(kSuccess) << "Account created for maid " << HexSubstr(public_maid.name()->string());
   }
   {
     try {
@@ -275,7 +273,7 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
     }
     // waiting for the GetPmidHealth updating corresponding accounts
     boost::this_thread::sleep_for(boost::chrono::seconds(5));
-    LOG(kInfo) << "Pmid Registered created for the client node to store chunks";
+    LOG(kSuccess) << "Pmid Registered created for the client node to store chunks";
   }
 }
 
