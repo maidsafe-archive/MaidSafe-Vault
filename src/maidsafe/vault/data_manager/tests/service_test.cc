@@ -294,7 +294,7 @@ TEST_CASE_METHOD(DataManagerServiceTest,
     Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
     CHECK(Get(key).Subscribers() == 1);
     // key value is in db
-    ActionDataManagerDelete action_delete;
+    ActionDataManagerDelete action_delete((nfs::MessageId(RandomInt32())));
     auto group_unresolved_action(
              CreateGroupUnresolvedAction<DataManager::UnresolvedDelete>(key, action_delete,
                                                                       group_source));
