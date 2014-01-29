@@ -187,7 +187,7 @@ bool VaultNetwork::Add() {
   auto node_keys(key_chains_.Add());
   public_pmids_.push_back(passport::PublicPmid(node_keys.pmid));
   for (size_t index(0); index < vaults_.size(); ++index) {
-    vaults_[index]->data_getter_.AddPublicPmid(passport::PublicPmid(node_keys.pmid));
+    vaults_[index]->AddPublicPmid(passport::PublicPmid(node_keys.pmid));
   }
   auto future(std::async(std::launch::async,
                          [this] {
@@ -223,10 +223,11 @@ bool VaultNetwork::AddClient(bool register_pmid) {
 
 Client::Client(const passport::detail::AnmaidToPmid& keys,
                const std::vector<UdpEndpoint>& endpoints,
-               const std::vector<passport::PublicPmid>& public_pmids,
+               std::vector<passport::PublicPmid>& public_pmids,
                bool register_pmid_for_client)
     : asio_service_(2), functors_(), routing_(keys.maid), nfs_(),
-      data_getter_(asio_service_, routing_, public_pmids) {
+      data_getter_(asio_service_, routing_),
+      public_pmids_(public_pmids) {
   nfs_.reset(new nfs_client::MaidNodeNfs(
       asio_service_, routing_, passport::PublicPmid::Name(Identity(keys.pmid.name().value))));
   {
@@ -312,16 +313,29 @@ std::future<bool> Client::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpo
 
 void Client::OnPublicKeyRequested(const NodeId& node_id,
                                   const routing::GivePublicKeyFunctor& give_key) {
-  asio_service_.service().post([=] {
-                                 passport::PublicPmid::Name name(Identity(node_id.string()));
-                                 try {
-                                   auto future(data_getter_.Get(name));
-                                   give_key(future.get().public_key());
-                                 } catch (const std::exception& ex) {
-                                   LOG(kError) << "Failed to get key for " << DebugId(name)
-                                               << " : " << ex.what();
-                                 }
-                               });
+  passport::PublicPmid::Name name(Identity(node_id.string()));
+  if (!public_pmids_.empty()) {
+    LOG(kVerbose) << "fetch from local list containing "
+                  << public_pmids_.size() << " pmids";
+    try {
+      auto itr(std::find_if(
+               std::begin(public_pmids_), std::end(public_pmids_),
+               [&name](const passport::PublicPmid& pmid) {
+                 return pmid.name() == name;
+               }));
+      if (itr == std::end(public_pmids_)) {
+        LOG(kWarning) << "can't Get PublicPmid " << HexSubstr(name.value)
+                      << " from local";
+      } else {
+        LOG(kVerbose) << "DataGetter Get PublicPmid " << HexSubstr(name.value);
+        give_key((*itr).public_key());
+        return;
+      }
+    } catch (...) {
+      LOG(kError) << "Having problem when tring to Get PublicPmid "
+                  << HexSubstr(name.value) << " from local";
+    }
+  }
 }
 
 KeyChain::KeyChain(size_t size) {

@@ -77,13 +77,12 @@ void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_keys) {
   all_public_pmids.reserve(all_keys.size());
   for (auto& pmid : all_keys)
     all_public_pmids.push_back(passport::PublicPmid(pmid));
-  nfs_client::DataGetter public_key_getter(asio_service_, *bootstrap_data.routing1,
-                                           all_public_pmids);
+  nfs_client::DataGetter public_key_getter(asio_service_, *bootstrap_data.routing1);
   routing::Functors functors1, functors2;
   std::vector<std::future<void>> getting_keys;
   functors1.request_public_key = functors2.request_public_key =
       [&public_key_getter, &all_public_pmids, &getting_keys](NodeId node_id,
-           const routing::GivePublicKeyFunctor & give_key) {
+           const routing::GivePublicKeyFunctor& give_key) {
         nfs::DoGetPublicKey(public_key_getter, node_id, give_key,
                             all_public_pmids, getting_keys);
       };

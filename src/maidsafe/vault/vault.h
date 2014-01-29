@@ -67,6 +67,11 @@ class Vault {
             std::vector<boost::asio::ip::udp::endpoint>());
   ~Vault();  // must issue StopSending() to all identity objects (MM etc.)
              // Then ensure routing is destroyed next then all others in any order at this time
+
+#ifdef TESTING
+  void AddPublicPmid(const passport::PublicPmid& public_pmid);
+#endif
+
  private:
 #ifdef TESTING
   friend class test::VaultNetwork;
@@ -106,6 +111,10 @@ class Vault {
   Demultiplexer demux_;
   AsioService asio_service_;
   std::vector<std::future<void>> getting_keys_;
+#ifdef TESTING
+  std::mutex pmids_mutex_;
+#endif
+
 };
 
 template <typename T>

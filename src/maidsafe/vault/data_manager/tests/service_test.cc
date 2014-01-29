@@ -39,7 +39,7 @@ class DataManagerServiceTest {
   DataManagerServiceTest() :
       pmid_(MakePmid()),
       routing_(pmid_),
-      data_getter_(asio_service_, routing_, std::vector<passport::PublicPmid>()),
+      data_getter_(asio_service_, routing_),
       data_manager_service_(pmid_, routing_, data_getter_),
       asio_service_(2) {}
 

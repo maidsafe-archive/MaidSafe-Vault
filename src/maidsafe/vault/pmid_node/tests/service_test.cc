@@ -40,7 +40,7 @@ class PmidNodeServiceTest {
       kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
       vault_root_dir_(*kTestRoot_ / RandomAlphaNumericString(8)),
       routing_(pmid_),
-      data_getter_(asio_service_, routing_, std::vector<passport::PublicPmid>()),
+      data_getter_(asio_service_, routing_),
       pmid_node_service_(pmid_, routing_, data_getter_, vault_root_dir_),
       asio_service_(2) {
     boost::filesystem::create_directory(vault_root_dir_);

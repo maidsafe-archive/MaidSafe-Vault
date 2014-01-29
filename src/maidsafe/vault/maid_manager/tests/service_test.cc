@@ -42,7 +42,7 @@ class MaidManagerServiceTest {
         pmid_(maid_),
         public_maid_(maid_),
         routing_(pmid_),
-        data_getter_(asio_service_, routing_, std::vector<passport::PublicPmid>()),
+        data_getter_(asio_service_, routing_),
         maid_manager_service_(pmid_, routing_, data_getter_),
         asio_service_(2) {}
 

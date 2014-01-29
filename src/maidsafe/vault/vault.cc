@@ -54,7 +54,12 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
              pmid_manager_service_, pmid_node_service_, data_getter_),
       asio_service_(2),
-      getting_keys_() {
+      getting_keys_()
+#ifdef TESTING
+      ,
+      pmids_mutex_()
+#endif
+{
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
   InitRouting(peer_endpoints);
 }
@@ -63,6 +68,13 @@ Vault::~Vault() {
   // call stop on all components
   routing_.reset();
 }
+
+#ifdef TESTING
+void Vault::AddPublicPmid(const passport::PublicPmid& public_pmid) {
+  std::lock_guard<std::mutex> lock(pmids_mutex_);
+  pmids_from_file_.push_back(public_pmid);
+}
+#endif
 
 void Vault::InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
   routing::Functors functors(InitialiseRoutingCallbacks());

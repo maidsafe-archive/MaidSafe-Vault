@@ -51,8 +51,7 @@ struct KeyChain {
 class Client {
  public:
   Client(const passport::detail::AnmaidToPmid& keys, const std::vector<UdpEndpoint>& endpoints,
-         const std::vector<passport::PublicPmid>& public_pmids,
-         bool register_pmid_for_client = true);
+         std::vector<passport::PublicPmid>& public_pmids, bool register_pmid_for_client = true);
   std::future<bool> RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints);
 
  public:
@@ -63,6 +62,7 @@ class Client {
   routing::Routing routing_;
   std::unique_ptr<nfs_client::MaidNodeNfs> nfs_;
   nfs_client::DataGetter data_getter_;
+  std::vector<passport::PublicPmid>& public_pmids_;
 };
 
 class VaultNetwork : public testing::Test {
