@@ -27,6 +27,7 @@
 
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/error.h"
+#include "maidsafe/common/utils.h"
 
 #include "maidsafe/vault/unresolved_action.pb.h"
 
@@ -101,7 +102,7 @@ struct UnresolvedAction {
 };
 
 template <typename Key, typename Action>
-int32_t UnresolvedAction<Key, Action>::entry_id_sequence_number;
+int32_t UnresolvedAction<Key, Action>::entry_id_sequence_number = maidsafe::RandomUint32();
 
 // ==================== Implementation =============================================================
 template <typename Key, typename Action>
