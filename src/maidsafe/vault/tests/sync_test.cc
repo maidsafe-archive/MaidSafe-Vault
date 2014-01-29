@@ -283,7 +283,7 @@ TEST(SyncTest, BEH_MultipleRandomAction) {
     }
   }
   EXPECT_TRUE(resolved_vector.size() ==
-                  (kActionCount * routing::Parameters::node_group_size)) << resolved_vector.size();
+                  static_cast<size_t>(kActionCount * routing::Parameters::node_group_size)) << resolved_vector.size();
   int count(0);
   for (auto& key : keys) {
     int matches(0);
