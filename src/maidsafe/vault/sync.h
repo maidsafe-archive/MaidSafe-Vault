@@ -39,7 +39,7 @@ namespace vault {
 template <typename UnresolvedAction>
 class Sync {
  public:
-  Sync();
+  Sync(NodeId node_id);
   // This is called when receiving a Sync message from a peer or this node. If the
   // unresolved_action becomes resolved then it is returned, otherwise the return is null.
   std::unique_ptr<UnresolvedAction> AddUnresolvedAction(const UnresolvedAction& unresolved_action);
@@ -74,6 +74,7 @@ class Sync {
 
   mutable std::mutex mutex_;
   std::vector<std::unique_ptr<UnresolvedAction>> unresolved_actions_;
+  NodeId node_id_;
   static const int32_t kSyncCounterMax_ = 10;  // TODO(dirvine) decide how to decide on this number.
 };
 
@@ -121,7 +122,8 @@ bool IsResolvedOnAllPeers(const UnresolvedAction& unresolved_action) {
   bool result(unresolved_action.this_node_and_entry_id &&
               (unresolved_action.peer_and_entry_ids.size() ==
                  (routing::Parameters::node_group_size - 1U)));
-  LOG(kVerbose) << "IsResolvedOnAllPeers " << result;
+  LOG(kVerbose) << "IsResolvedOnAllPeers " << result << " peer_and_entry_ids.size() : "
+                << unresolved_action.peer_and_entry_ids.size();
   return result;
 }
 
@@ -167,8 +169,8 @@ template <typename UnresolvedAction>
 const nfs::MessageAction Sync<UnresolvedAction>::kActionId;
 
 template <typename UnresolvedAction>
-Sync<UnresolvedAction>::Sync()
-    : mutex_(), unresolved_actions_() {}
+Sync<UnresolvedAction>::Sync(NodeId node_id)
+    : mutex_(), unresolved_actions_(), node_id_(node_id) {}
 
 template <typename UnresolvedAction>
 std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddUnresolvedAction(
@@ -183,6 +185,10 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddUnresolvedAction(
                                      (test->action == unresolved_action.action));
                          });
     if (found == std::end(unresolved_actions_)) {  // not found
+      if (unresolved_action.WasSeen(node_id_)) {
+        LOG(kWarning) << "AddAction " << kActionId << " received an async msg for erased entry";
+        break;  // done here
+      }
       LOG(kVerbose) << "AddAction " << kActionId << " inserted as first entry of unresolved";
       detail::AddNewUnresolvedAction(unresolved_action, unresolved_actions_);
       break;  // done here

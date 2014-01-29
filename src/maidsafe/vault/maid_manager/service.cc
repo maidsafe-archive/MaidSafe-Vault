@@ -154,12 +154,13 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
       accumulator_mutex_(),
       accumulator_(),
       dispatcher_(routing_, pmid),
-      sync_create_accounts_(),
-      sync_remove_accounts_(),
-      sync_puts_(),
-      sync_deletes_(),
-      sync_register_pmids_(),
-      sync_unregister_pmids_(),
+      sync_create_accounts_(NodeId(pmid.name()->string())),
+      sync_remove_accounts_(NodeId(pmid.name()->string())),
+      sync_puts_(NodeId(pmid.name()->string())),
+      sync_deletes_(NodeId(pmid.name()->string())),
+      sync_register_pmids_(NodeId(pmid.name()->string())),
+      sync_unregister_pmids_(NodeId(pmid.name()->string())),
+      sync_update_pmid_healths_(NodeId(pmid.name()->string())),
       pending_account_mutex_(),
       pending_account_map_() {}
 
@@ -178,11 +179,10 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& pub
                                           maidsafe_error(VaultErrors::account_already_exists),
                                           message_id);
     return;
-
-  } catch (const vault_error& error) {
+  } catch (const maidsafe_error& error) {
     if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
-      LOG(kError) << "db errors";
-      throw error;  // For db errors
+      LOG(kError) << "db errors" << error.what();
+      throw error;
     }
   }
 

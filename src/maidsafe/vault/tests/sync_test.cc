@@ -58,7 +58,7 @@ namespace test {
 
 template <typename UnresolvedActionType>
 struct PersonaNode {
-  PersonaNode() : sync(), node_id(NodeId::kRandomId), resolved_count(0) {}
+  PersonaNode() : node_id(NodeId::kRandomId), sync(node_id), resolved_count(0) {}
 
   UnresolvedActionType CreateUnresolvedAction(const typename UnresolvedActionType::KeyType& key) const {
     typename UnresolvedActionType::ActionType action(100);
@@ -75,8 +75,8 @@ struct PersonaNode {
     return std::move(resolved);
   }
 
-  Sync<UnresolvedActionType> sync;
   NodeId node_id;
+  Sync<UnresolvedActionType> sync;
   std::atomic<int> resolved_count;
 
  private:
@@ -105,11 +105,13 @@ std::vector<MaidManager::Key> CreateKeys(int count, int group_count = 20) {
 
 
 TEST(SyncTest, BEH_Constructor) {
-  Sync<MaidManager::UnresolvedPut> maid_manager_sync_puts;
-  Sync<MaidManager::UnresolvedCreateAccount> maid_manager_sync_create_account;
-  Sync<PmidManager::UnresolvedPut> pmid_manager_sync_puts;
-  Sync<PmidManager::UnresolvedSetPmidHealth> pmid_manager_sync_set_pmid_health;
-  Sync<DataManager::UnresolvedPut> data_manager_sync_puts;
+  Sync<MaidManager::UnresolvedPut> maid_manager_sync_puts((NodeId(NodeId::kRandomId)));
+  Sync<MaidManager::UnresolvedCreateAccount> maid_manager_sync_create_account(
+                                                 (NodeId(NodeId::kRandomId)));
+  Sync<PmidManager::UnresolvedPut> pmid_manager_sync_puts((NodeId(NodeId::kRandomId)));
+  Sync<PmidManager::UnresolvedSetPmidHealth> pmid_manager_sync_set_pmid_health(
+                                                (NodeId(NodeId::kRandomId)));
+  Sync<DataManager::UnresolvedPut> data_manager_sync_puts((NodeId(NodeId::kRandomId)));
 }
 
 TEST(SyncTest, BEH_SingleAction) {

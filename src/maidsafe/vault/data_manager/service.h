@@ -388,10 +388,15 @@ template <typename Data>
 bool DataManagerService::EntryExist(const typename Data::Name& name) {
   try {
     db_.Get(DataManager::Key(name.value, Data::Tag::kValue));
+    LOG(kInfo) << "Entry does not exist";
     return true;
   }
   catch (const maidsafe_error& /*error*/) {
+    LOG(kInfo) << "Entry does not exist";
     return false;
+  }
+  catch (...) {
+    assert(0 && "DataManagerService::EntryExist");
   }
 }
 
