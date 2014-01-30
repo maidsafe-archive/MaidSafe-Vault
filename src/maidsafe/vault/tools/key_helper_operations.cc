@@ -79,12 +79,12 @@ void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_keys) {
     all_public_pmids.push_back(passport::PublicPmid(pmid));
   nfs_client::DataGetter public_key_getter(asio_service_, *bootstrap_data.routing1);
   routing::Functors functors1, functors2;
-  std::vector<std::future<void>> getting_keys;
+  nfs::detail::PublicPmidHelper public_pmid_helper;
   functors1.request_public_key = functors2.request_public_key =
-      [&public_key_getter, &all_public_pmids, &getting_keys](NodeId node_id,
+      [&public_key_getter, &all_public_pmids, &public_pmid_helper](NodeId node_id,
            const routing::GivePublicKeyFunctor& give_key) {
         nfs::DoGetPublicKey(public_key_getter, node_id, give_key,
-                            all_public_pmids, getting_keys);
+                            all_public_pmids, public_pmid_helper);
       };
   functors1.typed_message_and_caching.group_to_group.message_received =
       functors2.typed_message_and_caching.group_to_group.message_received =
@@ -142,7 +142,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
       functors_(),
       client_nfs_(),
       kAllPmids_(public_pmids_from_file),
-      getting_keys_(),
+      public_pmid_helper_(),
       call_once_(false) {
   passport::PublicPmid::Name pmid_name(Identity(key_chain.pmid.name().value));
   client_nfs_.reset(new nfs_client::MaidNodeNfs(asio_service_, client_routing_, pmid_name));
@@ -215,7 +215,7 @@ std::future<bool> ClientTester::RoutingJoin(const std::vector<UdpEndpoint>& peer
       [&](const routing::SingleToSingleMessage &msg) { client_nfs_->HandleMessage(msg); };
   functors_.request_public_key =
       [&](const NodeId & node_id, const routing::GivePublicKeyFunctor & give_key) {
-        nfs::DoGetPublicKey(*client_nfs_, node_id, give_key, kAllPmids_, getting_keys_); };
+        nfs::DoGetPublicKey(*client_nfs_, node_id, give_key, kAllPmids_, public_pmid_helper_); };
   client_routing_.Join(functors_, peer_endpoints);
   return std::move(join_promise->get_future());
 }
