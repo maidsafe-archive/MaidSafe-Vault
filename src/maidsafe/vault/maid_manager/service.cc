@@ -451,18 +451,26 @@ void MaidManagerService::HandleSyncedDelete(
                                 synced_action_delete->key.name);
   ObfuscateKey(synced_action_delete->key);
   try {
-    group_db_.Commit(synced_action_delete->key, synced_action_delete->action);
+    auto value(group_db_.Commit(synced_action_delete->key, synced_action_delete->action));
+    // nullptr will be returned in case of reducing count only
+    if (value)
+      dispatcher_.SendDeleteRequest(synced_action_delete->key.group_name(),
+                                    data_name,
+                                    synced_action_delete->action.kMessageId);
+    else
+      std::cout << "DeleteRequest not passed down to DataManager" << std::endl;
   } catch (const maidsafe_error& error) {
     LOG(kError) << "MaidManagerService::HandleSyncedDelete commiting error: " << error.what();
-    if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
+    if (error.code().value() != static_cast<int>(CommonErrors::no_such_element)) {
+      LOG(kError) << "DeleteRequest encounter error : " << error.what();
       throw error;
-    else
+    } else {
+      std::cout << "DeleteRequest for chunk " << HexSubstr(data_name.raw_name.string())
+                << " from non-owner is blocked." << std::endl;
       // BEFORE_RELEASE trying to delete something not belongs to client shall get muted
       return;
+    }
   }
-  dispatcher_.SendDeleteRequest(synced_action_delete->key.group_name(),
-                                data_name,
-                                synced_action_delete->action.kMessageId);
 }
 
 // =============== Account transfer ================================================================
