@@ -406,6 +406,7 @@ bool DataManagerService::EntryExist(const typename Data::Name& name) {
   }
   catch (...) {
     assert(0 && "DataManagerService::EntryExist");
+    return false;
   }
 }
 
