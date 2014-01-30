@@ -186,13 +186,7 @@ TEST_F(VaultNetworkTest, FUNC_PutMultipleCopies) {
 
   LOG(kVerbose) << "2nd Delete the chunk";
 
-  try {
-    Get<ImmutableData>(data.name());
-    EXPECT_TRUE(false) << "Retrieval expected to fail";
-  }
-  catch (...) {
-    LOG(kVerbose) << "Retrieval failed as expected: " << DebugId(NodeId(data.name()->string()));
-  }
+  EXPECT_THROW(Get<ImmutableData>(data.name()), maidsafe_error) << "Should have failed to retreive";
 
   LOG(kVerbose) << "PutMultipleCopies Succeeds";
 }
