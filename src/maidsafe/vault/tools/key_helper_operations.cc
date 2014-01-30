@@ -340,9 +340,12 @@ void DataChunkStorer::TestFetchChunk(int chunk_index) {
 
 void DataChunkStorer::TestDeleteChunk(int chunk_index) {
   if (!DeleteOneChunk(chunk_list_[chunk_index]))
-    ThrowError(CommonErrors::invalid_parameter);
-  std::cout << "Chunk "<< HexSubstr(chunk_list_[chunk_index].name().value)
-            << " deleted and verified" << std::endl;
+    std::cout << "Chunk "<< HexSubstr(chunk_list_[chunk_index].name().value)
+              << " still exists on network" << std::endl;
+//     ThrowError(CommonErrors::invalid_parameter);
+  else
+    std::cout << "Chunk "<< HexSubstr(chunk_list_[chunk_index].name().value)
+              << " deleted and verified" << std::endl;
 }
 
 bool DataChunkStorer::Done(int32_t quantity, int32_t rounds) const {
