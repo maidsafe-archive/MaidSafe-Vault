@@ -29,6 +29,8 @@
 
 #include "maidsafe/routing/parameters.h"
 
+#include "maidsafe/nfs/public_pmid_helper.h"
+
 namespace maidsafe {
 
 namespace vault {
