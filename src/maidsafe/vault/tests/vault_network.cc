@@ -34,8 +34,36 @@ namespace vault {
 
 namespace test {
 
+PublicKeyGetter Client::public_key_getter_;
+
+void PublicKeyGetter::operator()(const NodeId& node_id,
+                                 const routing::GivePublicKeyFunctor& give_key,
+                                 const std::vector<passport::PublicPmid>& public_pmids) {
+  passport::PublicPmid::Name name(Identity(node_id.string()));
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (!public_pmids.empty()) {
+    LOG(kVerbose) << "Local list contains " << public_pmids.size() << " pmids";
+    try {
+      auto itr(std::find_if(
+               std::begin(public_pmids), std::end(public_pmids),
+               [&name](const passport::PublicPmid& pmid) {
+                 return pmid.name() == name;
+               }));
+      if (itr == std::end(public_pmids)) {
+        LOG(kWarning) << "PublicPmid not found locally" << HexSubstr(name.value) << " from local";
+      } else {
+        LOG(kVerbose) << "Success in retreiving PublicPmid locally" << HexSubstr(name.value);
+        give_key((*itr).public_key());
+        return;
+      }
+    } catch (...) {
+      LOG(kError) << "Failed to get PublicPmid " << HexSubstr(name.value) << " locally";
+    }
+  }
+}
+
 VaultNetwork::VaultNetwork()
-    : asio_service_(4), mutex_(), bootstrap_condition_(), network_up_condition_(),
+    : asio_service_(2), mutex_(), bootstrap_condition_(), network_up_condition_(),
       bootstrap_done_(false), network_up_(false), vaults_(), clients_(), endpoints_(),
       public_pmids_(), key_chains_(kNetworkSize + 2),
       chunk_store_path_(fs::unique_path((fs::temp_directory_path()))), network_size_(kNetworkSize)
@@ -47,7 +75,7 @@ VaultNetwork::VaultNetwork()
                           return current_size;
                         }())
 #endif
-       {
+{
   for (const auto& key : key_chains_.keys)
     public_pmids_.push_back(passport::PublicPmid(key.pmid));
 }
@@ -170,7 +198,6 @@ bool VaultNetwork::Create(size_t index) {
   auto path(chunk_store_path_/path_str);
   fs::create_directory(path);
   try {
-    LOG(kSuccess) << "port: " << endpoints_.front();
     vaults_.emplace_back(new Vault(key_chains_.keys[index].pmid, path,
                                    [](const boost::asio::ip::udp::endpoint&) {}, public_pmids_,
                                    endpoints_));
@@ -306,36 +333,10 @@ std::future<bool> Client::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpo
 //      [&](const routing::SingleToGroupRelayMessage &msg) { nfs_->HandleMessage(msg); };
   functors_.request_public_key =
       [&, this](const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key) {
-        this->OnPublicKeyRequested(node_id, give_key); };
+        public_key_getter_(node_id, give_key, public_pmids_);
+      };
   routing_.Join(functors_, peer_endpoints);
   return std::move(join_promise->get_future());
-}
-
-void Client::OnPublicKeyRequested(const NodeId& node_id,
-                                  const routing::GivePublicKeyFunctor& give_key) {
-  passport::PublicPmid::Name name(Identity(node_id.string()));
-  if (!public_pmids_.empty()) {
-    LOG(kVerbose) << "fetch from local list containing "
-                  << public_pmids_.size() << " pmids";
-    try {
-      auto itr(std::find_if(
-               std::begin(public_pmids_), std::end(public_pmids_),
-               [&name](const passport::PublicPmid& pmid) {
-                 return pmid.name() == name;
-               }));
-      if (itr == std::end(public_pmids_)) {
-        LOG(kWarning) << "can't Get PublicPmid " << HexSubstr(name.value)
-                      << " from local";
-      } else {
-        LOG(kVerbose) << "DataGetter Get PublicPmid " << HexSubstr(name.value);
-        give_key((*itr).public_key());
-        return;
-      }
-    } catch (...) {
-      LOG(kError) << "Having problem when tring to Get PublicPmid "
-                  << HexSubstr(name.value) << " from local";
-    }
-  }
 }
 
 KeyChain::KeyChain(size_t size) {

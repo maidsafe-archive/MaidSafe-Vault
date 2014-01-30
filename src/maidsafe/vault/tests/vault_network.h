@@ -42,6 +42,16 @@ const int kNetworkSize(25);
 const int kLimitsFiles(2048);
 #endif
 
+class PublicKeyGetter {
+ public:
+  PublicKeyGetter() : mutex_() {}
+
+ void operator()(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key,
+                 const std::vector<passport::PublicPmid>& public_pmids);
+ private:
+  std::mutex mutex_;
+};
+
 struct KeyChain {
   explicit KeyChain(size_t size = 1);
   std::vector<passport::detail::AnmaidToPmid> keys;
@@ -55,14 +65,13 @@ class Client {
   std::future<bool> RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints);
 
  public:
-  void OnPublicKeyRequested(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key);
-
   AsioService asio_service_;
   routing::Functors functors_;
   routing::Routing routing_;
   std::unique_ptr<nfs_client::MaidNodeNfs> nfs_;
   nfs_client::DataGetter data_getter_;
   std::vector<passport::PublicPmid>& public_pmids_;
+  static PublicKeyGetter public_key_getter_;
 };
 
 class VaultNetwork : public testing::Test {
