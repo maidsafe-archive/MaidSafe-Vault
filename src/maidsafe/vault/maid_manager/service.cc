@@ -487,7 +487,6 @@ void MaidManagerService::HandleSyncedDelete(
     else
       // BEFORE_RELEASE trying to delete something not belongs to client shall get muted
       return;
-    }
   }
 }
 
