@@ -174,7 +174,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
         future.get();
       } catch (const maidsafe_error& error) {
         LOG(kError) << "caught a maidsafe_error : " << error.what();
-        if (error.code().value() == static_cast<int>(VaultErrors::account_already_exists))
+        if (error.code() == make_error_code(VaultErrors::account_already_exists))
           account_exists = true;
       } catch (...) {
         LOG(kError) << "caught an unknown exception";
@@ -349,7 +349,7 @@ void DataChunkStorer::TestStoreChunk(int chunk_index) {
   StoreOneChunk(chunk_list_[chunk_index]);
   LOG(kInfo) << "Sleeping for network handling storing ... "
              << HexSubstr(chunk_list_[chunk_index].name().value);
-  boost::this_thread::sleep_for(boost::chrono::seconds(2));
+  boost::this_thread::sleep_for(boost::chrono::seconds(3));
   if (!GetOneChunk(chunk_list_[chunk_index]))
     ThrowError(CommonErrors::invalid_parameter);
   std::cout << "Chunk "<< HexSubstr(chunk_list_[chunk_index].name().value)
