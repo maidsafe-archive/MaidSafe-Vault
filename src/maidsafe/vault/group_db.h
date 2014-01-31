@@ -223,7 +223,7 @@ void GroupDb<Persona>::Commit(
     value.reset(new Value(Get(key, it->second.first)));
   } catch (const maidsafe_error& error) {
     LOG(kError) << "GroupDb<Persona>::Commit encountered error " << error.what();
-    if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
+    if (error.code() != make_error_code(CommonErrors::no_such_element))
       throw error;  // throw only for db errors
   }
 

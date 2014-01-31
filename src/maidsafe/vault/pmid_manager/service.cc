@@ -71,7 +71,7 @@ void PmidManagerService::HandleSyncedPut(
     if (error.code().value() == static_cast<int>(VaultErrors::data_already_exists))
       LOG(kWarning) << "Possibly different DM chose same pmid_node for the same chunk";
     else
-      throw error;
+      throw;
   }
   auto data_name(GetDataNameVariant(synced_action->key.type, synced_action->key.name));
   SendPutResponse(data_name, synced_action->key.group_name(),
@@ -335,8 +335,8 @@ void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_
         PmidManager::MetadataKey(pmid_node), ActionPmidManagerSetPmidHealth(available_size),
         routing_.kNodeId()));
   } catch (const maidsafe_error& error) {
-    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
-      throw error;
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
     dispatcher_.SendPmidAccount(pmid_node, data_names,
                                 nfs_client::ReturnCode(VaultErrors::no_such_account));
   }
@@ -415,10 +415,10 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
                << contents.kv_pairs.size() << " kv_pair entries";
 #endif
   } catch(const maidsafe_error& error) {
-    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
+    if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest vault error : "
                   << error.what();
-      throw error;
+      throw;
     }
     LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest no_such_element";
     // Once synced, check whether account exists or not, if not exist then shall create an account

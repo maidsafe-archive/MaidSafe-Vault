@@ -180,9 +180,9 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& pub
                                           message_id);
     return;
   } catch (const maidsafe_error& error) {
-    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
+    if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "db errors" << error.what();
-      throw error;
+      throw;
     }
   }
 
@@ -285,8 +285,8 @@ void MaidManagerService::HandleSyncedCreateMaidAccount(
     group_db_.AddGroup(synced_action->key.group_name(), metadata);
   }
   catch (const maidsafe_error& error) {
-    if (error.code().value() != static_cast<int>(VaultErrors::account_already_exists)) {
-      throw error;
+    if (error.code() != make_error_code(VaultErrors::account_already_exists)) {
+      throw;
     } else {
       LOG(kVerbose) << "HandleSyncedCreateMaidAccount:already exist "
                     << DebugId(synced_action->key.group_name());
@@ -395,8 +395,8 @@ void MaidManagerService::HandleSyncedPmidUnregistration(
   }
   catch (const maidsafe_error& error) {
     LOG(kWarning) << "MaidManagerService::HandleSyncedPmidUnregistration failed";
-    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
-      throw error;
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
   }
 }
 
@@ -444,8 +444,8 @@ void MaidManagerService::HandleSyncedUpdatePmidHealth(
   }
   catch (const maidsafe_error& error) {
     LOG(kWarning) << "MaidManagerService::HandleSyncedUpdatePmidHealth failed";
-    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
-      throw error;
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
   }
 }
 
@@ -459,8 +459,8 @@ void MaidManagerService::HandleSyncedPutResponse(
   }
   catch (const maidsafe_error& error) {
     LOG(kWarning) << "MaidManagerService::HandleSyncedPutResponse failed";
-    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
-      throw error;
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
   }
 }
 
@@ -474,9 +474,9 @@ void MaidManagerService::HandleSyncedDelete(
     group_db_.Commit(synced_action_delete->key, synced_action_delete->action);
   } catch (const maidsafe_error& error) {
     LOG(kError) << "MaidManagerService::HandleSyncedDelete commiting error: " << error.what();
-    if (error.code().value() != static_cast<int>(CommonErrors::no_such_element) &&
-        error.code().value() != static_cast<int>(VaultErrors::no_such_account))
-      throw error;
+    if (error.code() != make_error_code(CommonErrors::no_such_element) &&
+        error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
     else
       // BEFORE_RELEASE trying to delete something not belongs to client shall get muted
       return;
