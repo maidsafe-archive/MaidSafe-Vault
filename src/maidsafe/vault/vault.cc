@@ -38,6 +38,7 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
       routing_(new routing::Routing(pmid)),
       pmids_from_file_(pmids_from_file),
       data_getter_(asio_service_, *routing_),
+      public_pmid_helper_(),
       maid_manager_service_(
           std::move(std::unique_ptr<MaidManagerService>(new MaidManagerService(pmid, *routing_,
                                                                                data_getter_)))),
@@ -131,7 +132,7 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
   functors.request_public_key = [this](
     const NodeId& node_id,
     const routing::GivePublicKeyFunctor& give_key) {
-      nfs::DoGetPublicKey(data_getter_, node_id, give_key, pmids_from_file_, getting_keys_);
+      nfs::detail::DoGetPublicKey(data_getter_, node_id, give_key, pmids_from_file_, public_pmid_helper_);
     };
   functors.new_bootstrap_endpoint = [this](const boost::asio::ip::udp::endpoint& endpoint) {
                                         OnNewBootstrapEndpoint(endpoint);

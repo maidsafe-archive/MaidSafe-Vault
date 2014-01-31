@@ -110,7 +110,7 @@ class ClientTester {
 
  private:
   std::vector<passport::PublicPmid> kAllPmids_;
-  std::vector<std::future<void>> getting_keys_;
+  nfs::detail::PublicPmidHelper public_pmid_helper_;
   std::atomic<bool> call_once_;
 };
 
