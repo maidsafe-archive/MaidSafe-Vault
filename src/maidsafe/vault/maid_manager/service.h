@@ -396,8 +396,8 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
     }
   } catch(const maidsafe_error& error) {
     LOG(kError) << "MaidManagerService::HandlePut getting metadata has error : " << error.what();
-    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
-      throw error;
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
   }
 }
 

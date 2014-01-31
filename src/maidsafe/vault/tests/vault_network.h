@@ -117,7 +117,7 @@ Data VaultNetwork::Get(const typename Data::Name& data_name) {
     return future.get();
   }
   catch (const std::exception& error) {
-    throw error;
+    throw;
   }
 }
 

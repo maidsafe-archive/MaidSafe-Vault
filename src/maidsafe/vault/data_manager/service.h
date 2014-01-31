@@ -438,7 +438,7 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
       auto value(db_.Get(key));
       pmids_to_avoid = std::move(value.AllPmids());
     } catch (const common_error& error) {
-      if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
+      if (error.code() != make_error_code(CommonErrors::no_such_element))
         LOG(kError) << "HandlePutFailure db error";
         throw error;  // For db errors
     }
@@ -489,7 +489,7 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   } catch (const maidsafe_error& error) {
     LOG(kWarning) << "Getting " << HexSubstr(data_name.value)
                   << " causes a maidsafe_error " << error.what();
-    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
+    if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "db error";
       throw error;  // For db errors
     }

@@ -109,7 +109,7 @@ std::unique_ptr<Value> Db<Key, Value>::Commit(const Key& key,
   try {
     value.reset(new Value(Get(key)));
   } catch (const maidsafe_error& error) {
-    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
+    if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "Db<Key, Value>::Commit unknown db error " << error.what();
       throw error;  // For db errors
     }
@@ -175,7 +175,7 @@ void Db<Key, Value>::HandleTransfer(const std::vector<std::pair<Key, Value>>& co
     try {
       Get(kv_pair.first);
     } catch (const common_error& error) {
-      if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
+      if (error.code() != make_error_code(CommonErrors::no_such_element))
         throw error;  // For db errors
       else
         Put(kv_pair);
