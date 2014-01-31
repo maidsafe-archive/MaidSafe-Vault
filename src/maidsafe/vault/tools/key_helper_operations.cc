@@ -29,6 +29,8 @@
 
 #include "maidsafe/routing/parameters.h"
 
+#include "maidsafe/nfs/public_pmid_helper.h"
+
 namespace maidsafe {
 
 namespace vault {
@@ -79,12 +81,12 @@ void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_keys) {
     all_public_pmids.push_back(passport::PublicPmid(pmid));
   nfs_client::DataGetter public_key_getter(asio_service_, *bootstrap_data.routing1);
   routing::Functors functors1, functors2;
-  std::vector<std::future<void>> getting_keys;
+  nfs::detail::PublicPmidHelper public_pmid_helper;
   functors1.request_public_key = functors2.request_public_key =
-      [&public_key_getter, &all_public_pmids, &getting_keys](NodeId node_id,
+      [&public_key_getter, &all_public_pmids, &public_pmid_helper](NodeId node_id,
            const routing::GivePublicKeyFunctor& give_key) {
-        nfs::DoGetPublicKey(public_key_getter, node_id, give_key,
-                            all_public_pmids, getting_keys);
+        nfs::detail::DoGetPublicKey(public_key_getter, node_id, give_key, all_public_pmids,
+                                    public_pmid_helper);
       };
   functors1.typed_message_and_caching.group_to_group.message_received =
       functors2.typed_message_and_caching.group_to_group.message_received =
@@ -142,7 +144,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
       functors_(),
       client_nfs_(),
       kAllPmids_(public_pmids_from_file),
-      getting_keys_(),
+      public_pmid_helper_(),
       call_once_(false) {
   passport::PublicPmid::Name pmid_name(Identity(key_chain.pmid.name().value));
   client_nfs_.reset(new nfs_client::MaidNodeNfs(asio_service_, client_routing_, pmid_name));
@@ -155,8 +157,9 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
     }
     LOG(kInfo) << "Client node joined routing network";
   }
+  bool account_exists(false);
+  passport::PublicMaid public_maid(key_chain.maid);
   {
-    passport::PublicMaid public_maid(key_chain.maid);
     passport::PublicAnmaid public_anmaid(key_chain.anmaid);
     auto future(client_nfs_->CreateAccount(nfs_vault::AccountCreation(public_maid,
                                                                       public_anmaid)));
@@ -165,19 +168,37 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
       LOG(kError) << "can't create account";
       ThrowError(VaultErrors::failed_to_handle_request);
     }
+    if (future.has_exception()) {
+      LOG(kError) << "having error during create account";
+      try {
+        future.get();
+      } catch (const maidsafe_error& error) {
+        LOG(kError) << "caught a maidsafe_error : " << error.what();
+        if (error.code() == make_error_code(VaultErrors::account_already_exists))
+          account_exists = true;
+      } catch (...) {
+        LOG(kError) << "caught an unknown exception";
+      }
+    }
+  }
+  if (account_exists) {
+    std::cout << "Account exists for maid " << HexSubstr(public_maid.name()->string())
+              << std::endl;
+    register_pmid_for_client = false;
+  } else {
     // waiting for syncs resolved
     boost::this_thread::sleep_for(boost::chrono::seconds(2));
     std::cout << "Account created for maid " << HexSubstr(public_maid.name()->string())
               << std::endl;
+    // before register pmid, need to store pmid to network first
+    client_nfs_->Put(passport::PublicPmid(key_chain.pmid));
+    boost::this_thread::sleep_for(boost::chrono::seconds(2));
   }
-  // before register pmid, need to store pmid to network first
-  client_nfs_->Put(passport::PublicPmid(key_chain.pmid));
-  boost::this_thread::sleep_for(boost::chrono::seconds(2));
 
   if (register_pmid_for_client) {
     {
       client_nfs_->RegisterPmid(nfs_vault::PmidRegistration(key_chain.maid, key_chain.pmid, false));
-      boost::this_thread::sleep_for(boost::chrono::seconds(5));
+      boost::this_thread::sleep_for(boost::chrono::seconds(3));
       auto future(client_nfs_->GetPmidHealth(pmid_name));
       auto status(future.wait_for(boost::chrono::seconds(10)));
       if (status == boost::future_status::timeout) {
@@ -188,7 +209,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
                 << " is " << future.get() << std::endl;
     }
     // waiting for the GetPmidHealth updating corresponding accounts
-    boost::this_thread::sleep_for(boost::chrono::seconds(5));
+    boost::this_thread::sleep_for(boost::chrono::seconds(3));
     LOG(kInfo) << "Pmid Registered created for the client node to store chunks";
   }
 }
@@ -215,7 +236,9 @@ std::future<bool> ClientTester::RoutingJoin(const std::vector<UdpEndpoint>& peer
       [&](const routing::SingleToSingleMessage &msg) { client_nfs_->HandleMessage(msg); };
   functors_.request_public_key =
       [&](const NodeId & node_id, const routing::GivePublicKeyFunctor & give_key) {
-        nfs::DoGetPublicKey(*client_nfs_, node_id, give_key, kAllPmids_, getting_keys_); };
+        nfs::detail::DoGetPublicKey(*client_nfs_, node_id, give_key,
+                                    kAllPmids_, public_pmid_helper_);
+      };
   client_routing_.Join(functors_, peer_endpoints);
   return std::move(join_promise->get_future());
 }
@@ -326,7 +349,7 @@ void DataChunkStorer::TestStoreChunk(int chunk_index) {
   StoreOneChunk(chunk_list_[chunk_index]);
   LOG(kInfo) << "Sleeping for network handling storing ... "
              << HexSubstr(chunk_list_[chunk_index].name().value);
-  boost::this_thread::sleep_for(boost::chrono::seconds(5));
+  boost::this_thread::sleep_for(boost::chrono::seconds(3));
   if (!GetOneChunk(chunk_list_[chunk_index]))
     ThrowError(CommonErrors::invalid_parameter);
   std::cout << "Chunk "<< HexSubstr(chunk_list_[chunk_index].name().value)
@@ -362,7 +385,7 @@ void DataChunkStorer::OneChunkRun(size_t& num_chunks, size_t& num_store, size_t&
 
   StoreOneChunk(chunk_data);
   LOG(kInfo) << "Sleeping for network handling storing ... " << HexSubstr(name.value);
-  boost::this_thread::sleep_for(boost::chrono::seconds(5));
+  boost::this_thread::sleep_for(boost::chrono::seconds(2));
   if (GetOneChunk(chunk_data)) {
     std::cout << "Stored chunk " << HexSubstr(name.value) << std::endl;
     ++num_store;
@@ -393,7 +416,7 @@ void DataChunkStorer::OneChunkRunWithDelete(size_t& num_chunks, size_t& num_stor
 
   StoreOneChunk(chunk_data);
   LOG(kInfo) << "Sleeping for network handling storing ... " << HexSubstr(name.value);
-  boost::this_thread::sleep_for(boost::chrono::seconds(5));
+  boost::this_thread::sleep_for(boost::chrono::seconds(2));
   if (GetOneChunk(chunk_data)) {
     std::cout << "Stored chunk " << HexSubstr(name.value) << std::endl;
     ++num_store;
@@ -403,7 +426,7 @@ void DataChunkStorer::OneChunkRunWithDelete(size_t& num_chunks, size_t& num_stor
     return;
   }
   LOG(kInfo) << "Sleeping for network finalise getting ... " << HexSubstr(name.value);
-  boost::this_thread::sleep_for(boost::chrono::seconds(5));
+  boost::this_thread::sleep_for(boost::chrono::seconds(2));
   std::cout << "Going to delete the stored chunk" << std::endl;
   if (DeleteOneChunk(chunk_data)) {
     std::cout << "Delete chunk " << HexSubstr(name.value) << std::endl;
@@ -438,7 +461,7 @@ bool DataChunkStorer::DeleteOneChunk(const ImmutableData& chunk_data) {
   LOG(kInfo) << "Deleting chunk " << HexSubstr(chunk_data.name().value) << " ...";
   client_nfs_->Delete(chunk_data.name());
   LOG(kInfo) << "Sleeping for network handling deleting ... " << HexSubstr(chunk_data.name().value);
-  boost::this_thread::sleep_for(boost::chrono::seconds(5));
+  boost::this_thread::sleep_for(boost::chrono::seconds(2));
   LOG(kInfo) << "Going to retrieve the deleted chunk";
   return !GetOneChunk(chunk_data);
 }

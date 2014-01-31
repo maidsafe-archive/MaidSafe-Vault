@@ -139,7 +139,7 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
     LOG(kVerbose) << "Accumulator::AddPendingRequest has " << pending_requests_.size()
                   << " pending requests, allowing " << kMaxPendingRequestsCount_ << " requests";
     if (pending_requests_.size() > kMaxPendingRequestsCount_)
-      handled_requests_.pop_front();
+      pending_requests_.pop_front();
   } else {
     LOG(kInfo) << "Accumulator::AddPendingRequest request already existed";
   }

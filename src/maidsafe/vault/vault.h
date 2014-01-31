@@ -29,7 +29,9 @@
 #include "maidsafe/common/asio_service.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
+
 #include "maidsafe/nfs/client/data_getter.h"
+#include "maidsafe/nfs/public_pmid_helper.h"
 #include "maidsafe/nfs/service.h"
 
 #include "maidsafe/vault/pmid_node/service.h"
@@ -102,6 +104,7 @@ class Vault {
   std::unique_ptr<routing::Routing> routing_;
   std::vector<passport::PublicPmid> pmids_from_file_;
   nfs_client::DataGetter data_getter_;
+  nfs::detail::PublicPmidHelper public_pmid_helper_;
   nfs::Service<MaidManagerService> maid_manager_service_;
   nfs::Service<VersionHandlerService> version_handler_service_;
   nfs::Service<DataManagerService> data_manager_service_;

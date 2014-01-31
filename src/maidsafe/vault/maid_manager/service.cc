@@ -180,9 +180,9 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& pub
                                           message_id);
     return;
   } catch (const maidsafe_error& error) {
-    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account)) {
+    if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "db errors" << error.what();
-      throw error;
+      throw;
     }
   }
 
@@ -285,8 +285,8 @@ void MaidManagerService::HandleSyncedCreateMaidAccount(
     group_db_.AddGroup(synced_action->key.group_name(), metadata);
   }
   catch (const maidsafe_error& error) {
-    if (error.code().value() != static_cast<int>(VaultErrors::account_already_exists)) {
-      throw error;
+    if (error.code() != make_error_code(VaultErrors::account_already_exists)) {
+      throw;
     } else {
       LOG(kVerbose) << "HandleSyncedCreateMaidAccount:already exist "
                     << DebugId(synced_action->key.group_name());
@@ -390,9 +390,15 @@ void MaidManagerService::HandleSyncedPmidRegistration(
 void MaidManagerService::HandleSyncedPmidUnregistration(
     std::unique_ptr<MaidManager::UnresolvedUnregisterPmid>&& synced_action) {
 // BEFORE_RELEASE : This may require more actions to complete (unregister pmidnode from pmidmanager)
-  group_db_.Commit(synced_action->key.group_name(), synced_action->action);
+  try {
+    group_db_.Commit(synced_action->key.group_name(), synced_action->action);
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kWarning) << "MaidManagerService::HandleSyncedPmidUnregistration failed";
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
+  }
 }
-
 
 void MaidManagerService::FinalisePmidRegistration(
     std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
@@ -432,8 +438,15 @@ void MaidManagerService::FinalisePmidRegistration(
 void MaidManagerService::HandleSyncedUpdatePmidHealth(
     std::unique_ptr<MaidManager::UnresolvedUpdatePmidHealth>&& synced_action_update_pmid_health) {
   LOG(kVerbose) << "MaidManagerService::HandleSyncedUpdatePmidHealth";
-  group_db_.Commit(synced_action_update_pmid_health->key.group_name(),
-                   synced_action_update_pmid_health->action);
+  try {
+    group_db_.Commit(synced_action_update_pmid_health->key.group_name(),
+                     synced_action_update_pmid_health->action);
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kWarning) << "MaidManagerService::HandleSyncedUpdatePmidHealth failed";
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
+  }
 }
 
 // =============== Put/Delete data =================================================================
@@ -441,7 +454,14 @@ void MaidManagerService::HandleSyncedPutResponse(
     std::unique_ptr<MaidManager::UnresolvedPut>&& synced_action_put) {
   // BEFORE_RELEASE difference process for account_transfer (avoiding double hash)
   ObfuscateKey(synced_action_put->key);
-  group_db_.Commit(synced_action_put->key, synced_action_put->action);
+  try {
+    group_db_.Commit(synced_action_put->key, synced_action_put->action);
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kWarning) << "MaidManagerService::HandleSyncedPutResponse failed";
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
+  }
 }
 
 void MaidManagerService::HandleSyncedDelete(
@@ -461,12 +481,10 @@ void MaidManagerService::HandleSyncedDelete(
       std::cout << "DeleteRequest not passed down to DataManager" << std::endl;
   } catch (const maidsafe_error& error) {
     LOG(kError) << "MaidManagerService::HandleSyncedDelete commiting error: " << error.what();
-    if (error.code().value() != static_cast<int>(CommonErrors::no_such_element)) {
-      LOG(kError) << "DeleteRequest encounter error : " << error.what();
-      throw error;
-    } else {
-      std::cout << "DeleteRequest for chunk " << HexSubstr(data_name.raw_name.string())
-                << " from non-owner is blocked." << std::endl;
+    if (error.code() != make_error_code(CommonErrors::no_such_element) &&
+        error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
+    else
       // BEFORE_RELEASE trying to delete something not belongs to client shall get muted
       return;
     }

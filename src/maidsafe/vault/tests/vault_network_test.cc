@@ -191,6 +191,41 @@ TEST_F(VaultNetworkTest, FUNC_PutMultipleCopies) {
   LOG(kVerbose) << "PutMultipleCopies Succeeds";
 }
 
+TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
+  int clients(10);
+  for (int index(0); index < clients; ++index)
+    EXPECT_TRUE(AddClient(true));
+  LOG(kVerbose) << "Clients joined...";
+  const size_t kIterations(10);
+  std::vector<ImmutableData> chunks;
+  for (auto index(kIterations); index > 0; --index)
+    chunks.emplace_back(NonEmptyString(RandomString(1024)));
+
+  for (const auto& chunk : chunks) {
+    clients_[RandomInt32() % clients]->nfs_->Put(chunk);
+  }
+
+  LOG(kVerbose) << "Chunks are sent to be stored...";
+  Sleep(std::chrono::seconds(10));
+  LOG(kVerbose) << "After sleep";
+
+  std::vector<boost::future<ImmutableData>> get_futures;
+  for (const auto& chunk : chunks)
+    get_futures.emplace_back(
+        clients_[RandomInt32() % clients]->nfs_->Get<ImmutableData::Name>(chunk.name()));
+
+  for (size_t index(0); index < kIterations; ++index) {
+    try {
+      auto retrieved(get_futures[index].get());
+      EXPECT_EQ(retrieved.data(), chunks[index].data());
+    }
+    catch (const std::exception& ex) {
+      LOG(kError) << "Failed to retrieve chunk: " << DebugId(chunks[index].name())
+                  << " because: " << ex.what();
+    }
+  }
+}
+
 }  // namespace test
 
 }  // namespace vault
