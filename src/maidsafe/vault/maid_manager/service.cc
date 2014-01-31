@@ -390,9 +390,15 @@ void MaidManagerService::HandleSyncedPmidRegistration(
 void MaidManagerService::HandleSyncedPmidUnregistration(
     std::unique_ptr<MaidManager::UnresolvedUnregisterPmid>&& synced_action) {
 // BEFORE_RELEASE : This may require more actions to complete (unregister pmidnode from pmidmanager)
-  group_db_.Commit(synced_action->key.group_name(), synced_action->action);
+  try {
+    group_db_.Commit(synced_action->key.group_name(), synced_action->action);
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kWarning) << "MaidManagerService::HandleSyncedPmidUnregistration failed";
+    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
+      throw error;
+  }
 }
-
 
 void MaidManagerService::FinalisePmidRegistration(
     std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
@@ -432,8 +438,15 @@ void MaidManagerService::FinalisePmidRegistration(
 void MaidManagerService::HandleSyncedUpdatePmidHealth(
     std::unique_ptr<MaidManager::UnresolvedUpdatePmidHealth>&& synced_action_update_pmid_health) {
   LOG(kVerbose) << "MaidManagerService::HandleSyncedUpdatePmidHealth";
-  group_db_.Commit(synced_action_update_pmid_health->key.group_name(),
-                   synced_action_update_pmid_health->action);
+  try {
+    group_db_.Commit(synced_action_update_pmid_health->key.group_name(),
+                     synced_action_update_pmid_health->action);
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kWarning) << "MaidManagerService::HandleSyncedUpdatePmidHealth failed";
+    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
+      throw error;
+  }
 }
 
 // =============== Put/Delete data =================================================================
@@ -441,7 +454,14 @@ void MaidManagerService::HandleSyncedPutResponse(
     std::unique_ptr<MaidManager::UnresolvedPut>&& synced_action_put) {
   // BEFORE_RELEASE difference process for account_transfer (avoiding double hash)
   ObfuscateKey(synced_action_put->key);
-  group_db_.Commit(synced_action_put->key, synced_action_put->action);
+  try {
+    group_db_.Commit(synced_action_put->key, synced_action_put->action);
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kWarning) << "MaidManagerService::HandleSyncedPutResponse failed";
+    if (error.code().value() != static_cast<int>(VaultErrors::no_such_account))
+      throw error;
+  }
 }
 
 void MaidManagerService::HandleSyncedDelete(
@@ -454,7 +474,8 @@ void MaidManagerService::HandleSyncedDelete(
     group_db_.Commit(synced_action_delete->key, synced_action_delete->action);
   } catch (const maidsafe_error& error) {
     LOG(kError) << "MaidManagerService::HandleSyncedDelete commiting error: " << error.what();
-    if (error.code().value() != static_cast<int>(CommonErrors::no_such_element))
+    if (error.code().value() != static_cast<int>(CommonErrors::no_such_element) &&
+        error.code().value() != static_cast<int>(VaultErrors::no_such_account))
       throw error;
     else
       // BEFORE_RELEASE trying to delete something not belongs to client shall get muted
