@@ -1,4 +1,4 @@
-/*  Copyright 2009 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,45 +16,43 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/action_account_transfer.h"
+#ifndef MAIDSAFE_VAULT_ACCOUNT_TRANSFER_H_
+#define MAIDSAFE_VAULT_ACCOUNT_TRANSFER_H_
 
-#include "maidsafe/common/log.h"
-#include "maidsafe/common/test.h"
-#include "maidsafe/common/utils.h"
+#include <algorithm>
+#include <cstdint>
+#include <memory>
+#include <mutex>
+#include <utility>
+#include <vector>
 
-#include "maidsafe/routing/parameters.h"
-
-#include "maidsafe/nfs/types.h"
-
-#include "maidsafe/vault/sync.h"
-#include "maidsafe/vault/unresolved_action.h"
-#include "maidsafe/vault/data_manager/data_manager.h"
-
-
+#include "maidsafe/common/node_id.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-namespace test {
+template <typename UnresolvedAction>
+class AccountTransfer {
+ public:
+  AccountTransfer(NodeId node_id);
+  std::vector<UnresolvedAction> AddUnresolvedAction(
+      std::vector<UnresolvedAction>&& unresolved_actions);
 
-TEST(AccountTransferTest, BEH_Constructor) {
-  typedef vault::UnresolvedAction<DataManager::Key, ActionAccountTransfer<std::string>>
-       UnresolvedAccountTransfer;
-  Sync<UnresolvedAccountTransfer> sync_account_transfer((NodeId(NodeId::kRandomId)));
-  ActionAccountTransfer<std::string> action("value");
-  DataManager::Key key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue);
+  void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
 
-  UnresolvedAccountTransfer unresolved_action(key, action, NodeId(NodeId::kRandomId));
-  sync_account_transfer.AddUnresolvedAction(unresolved_action);
-  sync_account_transfer.AddUnresolvedAction(unresolved_action);
+ private:
+  AccountTransfer(AccountTransfer&&);
+  AccountTransfer(const AccountTransfer&);
+  AccountTransfer& operator=(AccountTransfer other);
 
-}
-
-
-
-}  // test
+  mutable std::mutex mutex_;
+  std::vector<std::unique_ptr<UnresolvedAction>> unresolved_actions_;
+  NodeId node_id_;
+};
 
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_ACCOUNT_TRANSFER_H_
