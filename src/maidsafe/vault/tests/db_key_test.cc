@@ -1,4 +1,4 @@
-///*  Copyright 2013 MaidSafe.net limited
+// /*  Copyright 2013 MaidSafe.net limited
 
 //    This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
 //    version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -17,13 +17,13 @@
 //    use of the MaidSafe Software.
 // */
 
-//#include "maidsafe/common/test.h"
-//#include "maidsafe/common/utils.h"
+// #include "maidsafe/common/test.h"
+// #include "maidsafe/common/utils.h"
 
-//#include "maidsafe/data_types/immutable_data.h"
-//#include "maidsafe/data_types/data_name_variant.h"
+// #include "maidsafe/data_types/immutable_data.h"
+// #include "maidsafe/data_types/data_name_variant.h"
 
-//#include "maidsafe/vault/utils-inl.h"
+// #include "maidsafe/vault/utils-inl.h"
 
 // namespace maidsafe {
 
