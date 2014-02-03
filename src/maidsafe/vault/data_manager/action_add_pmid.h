@@ -22,8 +22,6 @@
 #include <cstdint>
 #include <string>
 
-#include "boost/optional/optional.hpp"
-
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/types.h"

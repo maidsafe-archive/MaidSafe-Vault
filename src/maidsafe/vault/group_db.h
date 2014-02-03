@@ -32,7 +32,6 @@
 
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
-#include "boost/optional/optional.hpp"
 #include "leveldb/db.h"
 
 #include "maidsafe/common/error.h"
