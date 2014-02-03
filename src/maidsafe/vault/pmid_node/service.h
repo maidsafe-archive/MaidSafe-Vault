@@ -321,7 +321,7 @@ void PmidNodeService::HandlePut(const Data& data, nfs::MessageId message_id) {
 template <typename Data>
 void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
   try {
-    LOG(kVerbose) << "PmidNodeService::HandleDelete delete " << HexSubstr(data_name.value);
+    LOG(kGraph) << "PmidNode deleting chunk " << HexSubstr(data_name.value);
     handler_.Delete(GetDataNameVariant(Data::Tag::kValue, data_name.value));
   } catch (const maidsafe_error& error) {
     LOG(kError) << "Failed to delete data : " << HexSubstr(data_name.value) << " , "
