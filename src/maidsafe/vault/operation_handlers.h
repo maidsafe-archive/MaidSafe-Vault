@@ -426,4 +426,4 @@ int RequiredRequests(const Message&) {
 }  // namespace maidsafe
 
 
-#endif // MAIDSAFE_VAULT_OPERATION_HANDLERS_H_
+#endif  // MAIDSAFE_VAULT_OPERATION_HANDLERS_H_

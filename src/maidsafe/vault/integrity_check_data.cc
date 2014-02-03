@@ -59,7 +59,7 @@ IntegrityCheckData& IntegrityCheckData::operator=(IntegrityCheckData other) {
 void IntegrityCheckData::SetResult(const Result& result) {
   if (random_input_.empty() || result_.IsInitialised()) {
     LOG(kError) << "SetResult requires !random_input_.empty() && !result_->IsInitialised()";
-    ThrowError(CommonErrors::uninitialised);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
   result_ = result;
 }
@@ -69,7 +69,7 @@ bool IntegrityCheckData::Validate(const NonEmptyString& serialised_value) const 
     LOG(kWarning) << "Uninitialised IntegrityCheckData may caused by failure in getting chunk "
                   << " or failed in fetching check_result";
     return false;
-//     ThrowError(CommonErrors::uninitialised);
+//     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
   return GetResult(serialised_value, random_input_) == result_;
 }

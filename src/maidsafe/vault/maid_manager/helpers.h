@@ -37,12 +37,13 @@ namespace maidsafe {
 namespace vault {
 
 struct PmidRegistrationOp {
-  PmidRegistrationOp(std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action_in)
-      : mutex(),
-        synced_action(std::move(synced_action_in)),
-        public_maid(),
-        public_pmid(),
-        count(0) {}
+  explicit PmidRegistrationOp(
+      std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action_in)
+          : mutex(),
+            synced_action(std::move(synced_action_in)),
+            public_maid(),
+            public_pmid(),
+            count(0) {}
   template <typename PublicFobType>
   void SetPublicFob(std::unique_ptr<PublicFobType>&&);
   std::mutex mutex;

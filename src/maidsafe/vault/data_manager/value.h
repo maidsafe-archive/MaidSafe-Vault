@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <set>
+#include <string>
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/data_types/data_name_variant.h"
@@ -62,6 +63,7 @@ class DataManagerValue {
       : subscribers_(other.subscribers_), size_(other.size_), online_pmids_(other.online_pmids_),
         offline_pmids_(other.offline_pmids_) {}
 #else
+
  private:
   DataManagerValue(const DataManagerValue&);
 #endif

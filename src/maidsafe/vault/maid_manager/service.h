@@ -20,6 +20,7 @@
 #define MAIDSAFE_VAULT_MAID_MANAGER_SERVICE_H_
 
 #include <exception>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -62,7 +63,6 @@
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 #include "maidsafe/vault/operation_visitors.h"
 #include "maidsafe/vault/sync.h"
-#include "maidsafe/vault/accumulator.h"
 
 namespace maidsafe {
 
@@ -177,7 +177,7 @@ class MaidManagerService {
   void HandleSyncedUpdatePmidHealth(std::unique_ptr<MaidManager::UnresolvedUpdatePmidHealth>&&
                                         synced_action_update_pmid_health);
 
-  void HandleHealthResponse(const MaidName& maid_node, const PmidName& pmid_node,
+  void HandleHealthResponse(const MaidName& maid_name, const PmidName& pmid_node,
                             const std::string &serialised_pmid_health,
                             nfs_client::ReturnCode& return_code, nfs::MessageId message_id);
 
@@ -208,6 +208,7 @@ class MaidManagerService {
   typedef boost::mpl::insert_range<IntermediateType,
                                    boost::mpl::end<IntermediateType>::type,
                                    MaidManagerServiceMessages::types>::type FinalType;
+
  public:
   typedef boost::make_variant_over<FinalType>::type Messages;
 
@@ -356,8 +357,8 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidName& maid_name,
-   const typename passport::PublicAnmaid::Name& data_name, int32_t,
-   nfs::MessageId message_id);
+    const typename passport::PublicAnmaid::Name& data_name, int32_t,
+    nfs::MessageId message_id);
 
 // ==================== Implementation =============================================================
 namespace detail {
@@ -455,8 +456,8 @@ void MaidManagerService::HandleDelete(const MaidName& account_name,
                                       nfs::MessageId message_id) {
   // Only need to ensure that account exist in db. Data name availability in db is not guaranteed
   // because related put data action may be still syncing
-  LOG(kVerbose) << "MaidManagerService::HandleDelete for account " << HexSubstr(account_name->string())
-                << " of chunk " << HexSubstr(data_name.value);
+  LOG(kVerbose) << "MaidManagerService::HandleDelete for account "
+                << HexSubstr(account_name->string()) << " of chunk " << HexSubstr(data_name.value);
   group_db_.GetMetadata(account_name);  // throws
   typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
                                       data_name, Data::Tag::kValue);

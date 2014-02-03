@@ -47,9 +47,9 @@
 //      lhs.signature() != rhs.signature())
 //    return false;
 //  return true;
-//}
+// }
 
-//}  // namespace nfs
+// }  // namespace nfs
 //*/
 
 // namespace vault {
@@ -66,7 +66,7 @@
 // private:
 //  MockMaidManager &operator=(const MockMaidManager&);
 //  MockMaidManager(const MockMaidManager&);
-//};
+// };
 
 // class MockDataManager : public DataManagerService {
 // public:
@@ -78,7 +78,7 @@
 // private:
 //  MockDataManager &operator=(const MockDataManager&);
 //  MockDataManager(const MockDataManager&);
-//};
+// };
 
 // class MockPmidManager : public PmidManager {
 // public:
@@ -90,7 +90,7 @@
 // private:
 //  MockPmidManager &operator=(const MockPmidManager&);
 //  MockPmidManager(const MockPmidManager&);
-//};
+// };
 
 // class MockDataHolder : public DataHolderService {
 // public:
@@ -102,7 +102,7 @@
 // private:
 //  MockDataHolder &operator=(const MockDataHolder&);
 //  MockDataHolder(const MockDataHolder&);
-//};
+// };
 //*/
 
 // namespace test {
@@ -211,7 +211,7 @@
 //  MockPmidManager pmid_manager_;
 //  MockDataHolder pmid_node_;
 //  Demultiplexer demultiplexer_;
-//};
+// };
 
 // TEST_F(DemultiplexerTest, FUNC_MaidManager) {
 //  nfs::Message message(GenerateValidMessage(nfs::Persona::kMaidManager));
@@ -222,7 +222,7 @@
 //  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
 
 //  demultiplexer_.HandleMessage(SerialiseAsString(message));
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_MaidManagerRepeat) {
 //  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(100);
@@ -234,7 +234,7 @@
 //    nfs::Message message(GenerateValidMessage(nfs::Persona::kMaidManager));
 //    demultiplexer_.HandleMessage(SerialiseAsString(message));
 //  }
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_DataManager) {
 //  nfs::Message message(GenerateValidMessage(nfs::Persona::kDataManager));
@@ -245,7 +245,7 @@
 //  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
 
 //  demultiplexer_.HandleMessage(SerialiseAsString(message));
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_DataManagerRepeat) {
 //  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
@@ -257,7 +257,7 @@
 //    nfs::Message message(GenerateValidMessage(nfs::Persona::kDataManager));
 //    demultiplexer_.HandleMessage(SerialiseAsString(message));
 //  }
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_PmidManager) {
 //  nfs::Message message(GenerateValidMessage(nfs::Persona::kPmidManager));
@@ -268,7 +268,7 @@
 //  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(1);
 
 //  demultiplexer_.HandleMessage(SerialiseAsString(message));
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_PmidManagerRepeat) {
 //  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
@@ -280,7 +280,7 @@
 //    nfs::Message message(GenerateValidMessage(nfs::Persona::kPmidManager));
 //    demultiplexer_.HandleMessage(SerialiseAsString(message));
 //  }
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_DataHolder) {
 //  nfs::Message message(GenerateValidMessage(nfs::Persona::kDataHolder));
@@ -291,7 +291,7 @@
 //  EXPECT_CALL(pmid_node_, HandleMessage(message)).Times(1);
 
 //  demultiplexer_.HandleMessage(SerialiseAsString(message));
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_DataHolderRepeat) {
 //  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
@@ -303,7 +303,7 @@
 //    nfs::Message message(GenerateValidMessage(nfs::Persona::kDataHolder));
 //    demultiplexer_.HandleMessage(SerialiseAsString(message));
 //  }
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_Scrambled) {
 //  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
@@ -312,7 +312,7 @@
 //  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
 
 //  demultiplexer_.HandleMessage(RandomAlphaNumericString(1 + (RandomUint32() % 100)));
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_ScrambledRepeat) {
 //  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
@@ -324,7 +324,7 @@
 //    std::string scrambled_message(RandomAlphaNumericString(1 + (RandomUint32() % 100)));
 //    demultiplexer_.HandleMessage(scrambled_message);
 //  }
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_EmptyMessage) {
 //  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
@@ -334,7 +334,7 @@
 
 //  std::string empty_message;
 //  demultiplexer_.HandleMessage(empty_message);
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_ValidMessages) {
 //  std::vector<nfs::Message> messages;
@@ -372,7 +372,7 @@
 //    EXPECT_TRUE(VerifyAndClearAllExpectations());
 //    messages.erase(messages.begin() + index);
 //  }
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_ValidMessagesRepeat) {
 //  uint16_t expect_mah(0),
@@ -392,7 +392,7 @@
 
 //  for (auto message : messages)
 //    demultiplexer_.HandleMessage(SerialiseAsString(message));
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_ValidMessagesParallel) {
 //  uint16_t num_messages = 4 + (RandomUint32() % 7);
@@ -420,7 +420,7 @@
 //  }
 //  for (boost::thread& thread : threads)
 //    thread.join();
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_MixedMessagesRepeat) {
 //  uint16_t num_messages(100);
@@ -447,7 +447,7 @@
 //    }
 //    demultiplexer_.HandleMessage(SerialiseAsString(messages.at(i)));
 //  }
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_MixedMessagesParallel) {
 //  uint16_t num_messages = 4 + (RandomUint32() % 7);
@@ -484,14 +484,14 @@
 //    thread.join();
 //  for (boost::thread& thread : threads)
 //    thread.join();
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_BadMessageHaveCache) {
 //  std::string bad_message(RandomAlphaNumericString(1 + RandomUint32() % 50));
 //  std::string bad_message_passed(bad_message);
 //  EXPECT_FALSE(demultiplexer_.HaveCache(bad_message_passed));
 //  EXPECT_EQ(bad_message, bad_message_passed);
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_ValidMessageHaveCache) {
 //  nfs::Message message(GenerateValidMessage());
@@ -499,7 +499,7 @@
 //  std::string passed_string(string);
 //  EXPECT_FALSE(demultiplexer_.HaveCache(passed_string));
 //  EXPECT_EQ(string, passed_string);
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_StoreCacheHaveCache) {
 //  for (uint16_t i(0); i < 20; ++i) {
@@ -515,7 +515,7 @@
 //      EXPECT_EQ(string, passed_string);
 //    }
 //  }
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_RepeatStoreCache) {
 //  nfs::Message message(GenerateValidMessage(nfs::Persona::kDataHolder));
@@ -530,7 +530,7 @@
 //  demultiplexer_.StoreCache(string);
 //  EXPECT_TRUE(demultiplexer_.HaveCache(passed_string));
 //  // TODO(Alison) - relationship between string and passed string?
-//}
+// }
 
 // TEST_F(DemultiplexerTest, FUNC_RetrieveOldCache) {
 //  int buffer_size(10);  // TODO(Alison) - get real buffer size
@@ -553,11 +553,11 @@
 //  passed_string = string;
 //  EXPECT_FALSE(demultiplexer_.HaveCache(passed_string));
 //  EXPECT_EQ(string, passed_string);
-//}
+// }
 //*/
 
-//}  // namespace test
+// }  // namespace test
 
-//}  // namespace vault
+// }  // namespace vault
 
-//}  // namespace maidsafe
+// }  // namespace maidsafe

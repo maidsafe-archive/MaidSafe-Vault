@@ -45,8 +45,7 @@ detail::DbAction ActionDataManagerPut::operator()(std::unique_ptr<DataManagerVal
     return detail::DbAction::kPut;
   }
   LOG(kWarning) << "ActionDataManagerPut::operator() no_such_element";
-  ThrowError(CommonErrors::no_such_element);
-  return detail::DbAction::kDelete;
+  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 }
 
 bool operator==(const ActionDataManagerPut& /*lhs*/, const ActionDataManagerPut& /*rhs*/) {

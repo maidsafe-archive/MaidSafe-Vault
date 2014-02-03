@@ -80,7 +80,7 @@ void MetadataHandler::ApplySyncData(const NonEmptyString& serialised_unresolved_
 void MetadataHandler::ApplyRecordTransfer(const NonEmptyString& serialised_unresolved_entries) {
   protobuf::UnresolvedEntries proto_unresolved_entries;
   if (!proto_unresolved_entries.ParseFromString(serialised_unresolved_entries.string()))
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
 
   for (int i(0); i != proto_unresolved_entries.serialised_unresolved_entry_size(); ++i) {
     DataManagerUnresolvedEntry entry(DataManagerUnresolvedEntry::serialised_type(
@@ -112,14 +112,14 @@ MetadataHandler::serialised_record_type MetadataHandler::GetSerialisedRecord(
 //      proto_metadata.size() < 1 ||
 //      proto_metadata.subscribers() < 1) {
 //    LOG(kError) << "Copied an invalid metadata file";
-//    ThrowError(CommonErrors::invalid_parameter);
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
 //  }
 //  auto path(detail::GetPath(proto_metadata.name(), proto_metadata.type(), kMetadataRoot_));
 //  std::string serialised_content(proto_metadata.SerializeAsString());
 //  assert(!serialised_content.empty());
 //  if (!WriteFile(path, serialised_content)) {
 //    LOG(kError) << "Failed to write metadata file " << path;
-//    ThrowError(CommonErrors::filesystem_io_error);
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
 //  }
 //}
 
@@ -297,7 +297,7 @@ MetadataHandler::serialised_record_type MetadataHandler::GetSerialisedRecord(
 //  void MetadataHandler::CheckDataElementExists(const Identity& data_name) {
 //    if (!boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_name))) {
 //      LOG(kError) << "Failed to find data ID: " << Base64Substr(data_name);
-//      ThrowError(CommonErrors::no_such_element);
+//      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 //    }
 //  }
 

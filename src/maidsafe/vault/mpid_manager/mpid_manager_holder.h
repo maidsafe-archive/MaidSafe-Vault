@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
-#define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_HOLDER_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_HOLDER_H_
 
 #include <utility>
 
@@ -47,4 +47,4 @@ typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidAccountHolder;
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_HOLDER_H_

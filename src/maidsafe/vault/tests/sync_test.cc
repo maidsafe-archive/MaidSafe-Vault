@@ -60,7 +60,8 @@ template <typename UnresolvedActionType>
 struct PersonaNode {
   PersonaNode() : node_id(NodeId::kRandomId), sync(node_id), resolved_count(0) {}
 
-  UnresolvedActionType CreateUnresolvedAction(const typename UnresolvedActionType::KeyType& key) const {
+  UnresolvedActionType CreateUnresolvedAction(
+      const typename UnresolvedActionType::KeyType& key) const {
     typename UnresolvedActionType::ActionType action(100);
     return UnresolvedActionType(key, action, node_id);
   }
@@ -225,7 +226,7 @@ TEST(SyncTest, BEH_MultipleSequentialAction) {
   std::generate(std::begin(persona_nodes), std::end(persona_nodes),
                 [] { return PersonaNodePtr(new PersonaNodePtr::element_type); });
 
-  for(auto count(0U); count != 100; ++count) {
+  for (auto count(0U); count != 100; ++count) {
     MaidManager::Key key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
                              DataTagValue::kMaidValue);
     std::vector<MaidManager::UnresolvedPut> unresolved_actions;
@@ -237,7 +238,8 @@ TEST(SyncTest, BEH_MultipleSequentialAction) {
         auto resolved = persona_nodes[i]->ReceiveUnresolvedAction(unresolved_actions[j]);
         if (resolved) {
           ++resolved_count;
-          EXPECT_TRUE(j >= routing::Parameters::node_group_size -2U) << "i = " << i << " , j = " << j;
+          EXPECT_TRUE(j >= routing::Parameters::node_group_size -2U)
+              << "i = " << i << " , j = " << j;
           EXPECT_TRUE(resolved->key == key);
           EXPECT_TRUE(resolved->action == unresolved_actions[0].action);
         }
@@ -262,7 +264,7 @@ TEST(SyncTest, BEH_MultipleRandomAction) {
 
   std::vector<MaidManager::Key> keys;
   std::vector<std::unique_ptr<MaidManager::UnresolvedPut>> unresolved_actions;
-  for(auto count(0); count != kActionCount; ++count) { // FIXME add random DataTagValue types
+  for (auto count(0); count != kActionCount; ++count) {  // FIXME add random DataTagValue types
     keys.push_back(MaidManager::Key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
                                     DataTagValue::kMaidValue));
     for (const auto& persona_node : persona_nodes) {
@@ -282,8 +284,9 @@ TEST(SyncTest, BEH_MultipleRandomAction) {
         resolved_vector.push_back(std::move(resolved));
     }
   }
-  EXPECT_TRUE(resolved_vector.size() ==
-                  static_cast<size_t>(kActionCount * routing::Parameters::node_group_size)) << resolved_vector.size();
+  EXPECT_EQ(resolved_vector.size(),
+            static_cast<size_t>(kActionCount * routing::Parameters::node_group_size))
+            << resolved_vector.size();
   int count(0);
   for (auto& key : keys) {
     int matches(0);
@@ -327,7 +330,7 @@ TEST(SyncTest, BEH_MultipleParallelRandomAction) {
   ApplySyncToPersona(persona_node, keys);
 }
 
-}  // test
+}  // namespace test
 
 }  // namespace vault
 

@@ -35,7 +35,7 @@ ActionDataManagerRemovePmid::ActionDataManagerRemovePmid(const std::string& seri
     : kPmidName([&serialised_action]()->PmidName {
         protobuf::ActionDataManagerRemovePmid action_remove_pmid_proto;
         if (!action_remove_pmid_proto.ParseFromString(serialised_action))
-          ThrowError(CommonErrors::parsing_error);
+          BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
         return PmidName(Identity(action_remove_pmid_proto.pmid_name()));
       }()) {}
 
@@ -56,8 +56,7 @@ detail::DbAction ActionDataManagerRemovePmid::operator()(std::unique_ptr<DataMan
     value->RemovePmid(kPmidName);
     return detail::DbAction::kPut;
   }
-  ThrowError(CommonErrors::no_such_element);
-  return detail::DbAction::kDelete;
+  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 }
 
 bool operator==(const ActionDataManagerRemovePmid& lhs, const ActionDataManagerRemovePmid& rhs) {

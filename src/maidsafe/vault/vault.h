@@ -117,7 +117,6 @@ class Vault {
 #ifdef TESTING
   std::mutex pmids_mutex_;
 #endif
-
 };
 
 template <typename T>

@@ -30,16 +30,14 @@ namespace vault {
 
 namespace detail {
 
-namespace {
-  typedef std::true_type IsCacheable, IsGroupSource;
-  typedef std::false_type IsNotCacheable, IsSingleSource;
+typedef std::true_type IsCacheable, IsGroupSource;
+typedef std::false_type IsNotCacheable, IsSingleSource;
 
-  template <typename T>
-  struct is_group_source : public std::false_type {};
+template <typename T>
+struct is_group_source : public std::false_type {};
 
-  template <>
-  struct is_group_source<routing::GroupSource> : public std::true_type {};
-}
+template <>
+struct is_group_source<routing::GroupSource> : public std::true_type {};
 
 template <typename RequestorType>
 class GetFromCacheVisitor : public boost::static_visitor<bool> {

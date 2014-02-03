@@ -77,7 +77,6 @@ class NetworkGenerator {
       return node;
     }
   };
-
 };
 
 class ClientTester {

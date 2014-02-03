@@ -36,7 +36,7 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace {
+namespace detail {
 
 class MessageIdRequestVisitor : public boost::static_visitor<nfs::MessageId> {
  public:
@@ -47,18 +47,20 @@ class MessageIdRequestVisitor : public boost::static_visitor<nfs::MessageId> {
   }
 };
 
+/*
 class ContentEraseVisitor : public boost::static_visitor<> {
  public:
   template <typename ContentType>
-  void operator()(ContentType& /*content*/) {}
+  void operator()(ContentType& content) {}
 };
 
 template <>
 void ContentEraseVisitor::operator()(nfs_vault::DataNameAndContent& name_and_content) {
   name_and_content.content = NonEmptyString(std::string("NA"));
 }
+*/
 
-}  // noname namespace
+}  // namespace detail
 
 template <typename T>
 class Accumulator {
@@ -155,11 +157,11 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
 
 template <typename T>
 bool Accumulator<T>::CheckHandled(const T& request) {
-  auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
+  auto request_message_id(boost::apply_visitor(detail::MessageIdRequestVisitor(), request));
   nfs::MessageId message_id;
   for (auto handled_request : handled_requests_) {
     if (handled_request.which() == request.which()) {
-      message_id = boost::apply_visitor(MessageIdRequestVisitor(), handled_request);
+      message_id = boost::apply_visitor(detail::MessageIdRequestVisitor(), handled_request);
       if (message_id == request_message_id)
         return true;
     }
@@ -171,11 +173,11 @@ bool Accumulator<T>::CheckHandled(const T& request) {
 // void Accumulator<T>::SetHandled(const T& request, const routing::GroupSource& source) {
 //    assert(!CheckHandled(request) && "Request has already been set as handled");
 //    nfs::MessageId message_id;
-//    auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
-//    boost::apply_visitor(ContentEraseVisitor(), request);
+//    auto request_message_id(boost::apply_visitor(detail::MessageIdRequestVisitor(), request));
+//    boost::apply_visitor(detail::ContentEraseVisitor(), request);
 //    for (auto itr(std::begin(pending_requests_)); itr != std::end(pending_requests_);) {
 //        if (itr->request.which() == request.which()) {
-//            message_id = boost::apply_visitor(MessageIdRequestVisitor(), itr->request);
+//            message_id = boost::apply_visitor(detail::MessageIdRequestVisitor(), itr->request);
 //            if ((message_id == request_message_id) && (source.group_id == itr->source.group_id))
 //                pending_requests_.erase(itr);
 //            else
@@ -184,20 +186,20 @@ bool Accumulator<T>::CheckHandled(const T& request) {
 //            ++itr;
 //        }
 //    }
-//    boost::apply_visitor(ContentEraseVisitor(), request);
+//    boost::apply_visitor(detail::ContentEraseVisitor(), request);
 //    handled_requests_.push_back(request);
 //    if (handled_requests_.size() > kMaxHandledRequestsCount_)
 //        handled_requests_.pop_front();
-//}
+// }
 
 template <typename T>
 std::vector<T> Accumulator<T>::Get(const T& request, const routing::GroupSource& source) {
   std::vector<T> requests;
   nfs::MessageId message_id;
-  auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
+  auto request_message_id(boost::apply_visitor(detail::MessageIdRequestVisitor(), request));
   for (auto pending_request : pending_requests_) {
     if (pending_request.request.which() == request.which()) {
-      message_id = boost::apply_visitor(MessageIdRequestVisitor(), pending_request.request);
+      message_id = boost::apply_visitor(detail::MessageIdRequestVisitor(), pending_request.request);
       if (((message_id == request_message_id)) &&
           (source.group_id == pending_request.source.group_id))
         requests.push_back(pending_request.request);
@@ -210,10 +212,10 @@ std::vector<T> Accumulator<T>::Get(const T& request, const routing::GroupSource&
 
 template <typename T>
 bool Accumulator<T>::RequestExists(const T& request, const routing::GroupSource& source) {
-  auto request_message_id(boost::apply_visitor(MessageIdRequestVisitor(), request));
+  auto request_message_id(boost::apply_visitor(detail::MessageIdRequestVisitor(), request));
   for (auto pending_request : pending_requests_)
     if (request_message_id ==
-            boost::apply_visitor(MessageIdRequestVisitor(), pending_request.request)
+            boost::apply_visitor(detail::MessageIdRequestVisitor(), pending_request.request)
         && source == pending_request.source && pending_request.request == request) {
       LOG(kWarning) << "Accumulator<T>::RequestExists,  reguest with message id "
                     << request_message_id.data << " from sender "

@@ -26,17 +26,16 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionPmidManagerSetPmidHealth::ActionPmidManagerSetPmidHealth(
-    const int64_t& disk_available_size) : kDiskAvailableSize(disk_available_size) {}
+ActionPmidManagerSetPmidHealth::ActionPmidManagerSetPmidHealth(int64_t disk_available_size)
+    : kDiskAvailableSize(disk_available_size) {}
 
-ActionPmidManagerSetPmidHealth::ActionPmidManagerSetPmidHealth(
-    const std::string& serialised_action)
-        : kDiskAvailableSize([&serialised_action]() {
-                               protobuf::ActionPmidManagerSetPmidHealth action_disk_size_proto;
-                               if (!action_disk_size_proto.ParseFromString(serialised_action))
-                                 ThrowError(CommonErrors::parsing_error);
-                               return action_disk_size_proto.disk_available_size();
-                             }()) {}
+ActionPmidManagerSetPmidHealth::ActionPmidManagerSetPmidHealth(const std::string& serialised_action)
+    : kDiskAvailableSize([&serialised_action]() {
+                            protobuf::ActionPmidManagerSetPmidHealth action_disk_size_proto;
+                            if (!action_disk_size_proto.ParseFromString(serialised_action))
+                              BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+                            return action_disk_size_proto.disk_available_size();
+                          }()) {}
 
 ActionPmidManagerSetPmidHealth::ActionPmidManagerSetPmidHealth(
     const ActionPmidManagerSetPmidHealth& other)

@@ -35,7 +35,7 @@ Key::Key(const Identity& name_in, DataTagValue type_in) : name(name_in), type(ty
 Key::Key(const std::string& serialised_key) : name(), type(DataTagValue::kMutableDataValue) {
   protobuf::Key key_proto;
   if (!key_proto.ParseFromString(serialised_key))
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   name = Identity(key_proto.name());
   type = static_cast<DataTagValue>(key_proto.type());
 }

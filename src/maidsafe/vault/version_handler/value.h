@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "maidsafe/data_types/structured_data_versions.h"
 #include "maidsafe/vault/version_handler/version_handler.h"
@@ -32,7 +33,7 @@ namespace vault {
 class VersionHandlerValue {
  public:
   explicit VersionHandlerValue(const std::string& serialised_version_handler_value);
-  VersionHandlerValue(uint32_t max_versions = 100, uint32_t max_branches = 100); // BEFORE_RELEASE
+  VersionHandlerValue(uint32_t max_versions = 100, uint32_t max_branches = 100);  // BEFORE_RELEASE
   VersionHandlerValue(VersionHandlerValue&& other);
   VersionHandlerValue& operator=(VersionHandlerValue other);
   std::string Serialise() const;
@@ -56,6 +57,7 @@ class VersionHandlerValue {
  private:
   typedef std::shared_ptr<StructuredDataVersions> StructuredDataVersionsPtr;
 #else
+
  private:
   typedef std::unique_ptr<StructuredDataVersions> StructuredDataVersionsPtr;
   VersionHandlerValue(const VersionHandlerValue&);
@@ -70,4 +72,4 @@ void swap(VersionHandlerValue& lhs, VersionHandlerValue& rhs);
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_VALUE_H_

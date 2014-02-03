@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_VERSION_HANDLER_DISPATCHER_H_
 #define MAIDSAFE_VAULT_VERSION_HANDLER_DISPATCHER_H_
 
+#include <vector>
+
 #include "maidsafe/data_types/structured_data_versions.h"
 
 #include "maidsafe/routing/routing_api.h"
@@ -32,7 +34,7 @@ namespace vault {
 
 class VersionHandlerDispatcher {
  public:
-  VersionHandlerDispatcher(routing::Routing& routing);
+  explicit VersionHandlerDispatcher(routing::Routing& routing);
 
   template <typename RequestorType>
   void SendGetVersionsResponse(

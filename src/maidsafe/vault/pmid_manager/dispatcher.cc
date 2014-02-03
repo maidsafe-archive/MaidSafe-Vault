@@ -18,7 +18,6 @@
 
 #include "maidsafe/vault/pmid_manager/dispatcher.h"
 
-
 namespace maidsafe {
 
 namespace vault {
@@ -36,7 +35,7 @@ PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing) : routin
 //                                            routing::SingleId(routing_.kNodeId())),
 //                         NfsMessage::Receiver(NodeId(data_name->string())));
 //  routing_.Send(message);
-//}
+// }
 
 // void PmidManagerDispatcher::SendAccountTransfer(const PmidName& destination_peer,
 //                                                const PmidName& pmid_node,
@@ -50,7 +49,7 @@ PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing) : routin
 //                                            routing::SingleId(routing_.kNodeId())),
 //                         NfsMessage::Receiver(routing::GroupId(destination_peer)));
 //  routing_.Send(message);
-//}
+// }
 
 void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
                                             const std::vector<nfs_vault::DataName>& data_names,
@@ -80,7 +79,8 @@ void PmidManagerDispatcher::SendHealthResponse(const MaidName& maid_node,
   VaultMessage vault_message(message_id, nfs_client::PmidHealthAndReturnCode(
                                              nfs_vault::PmidHealth(pmid_health.Serialise()),
                                              nfs_client::ReturnCode(error)));
-  LOG(kVerbose) << "Send PmidHealthResponse to group around " << HexSubstr(maid_node.value.string());
+  LOG(kVerbose) << "Send PmidHealthResponse to group around "
+                << HexSubstr(maid_node.value.string());
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
                                               routing::SingleId(routing_.kNodeId())),

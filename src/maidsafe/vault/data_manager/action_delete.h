@@ -34,7 +34,7 @@ class DataManagerValue;
 
 struct ActionDataManagerDelete {
  public:
-  ActionDataManagerDelete(nfs::MessageId message_id);
+  explicit ActionDataManagerDelete(nfs::MessageId message_id);
   explicit ActionDataManagerDelete(const std::string& serialised_action);
   detail::DbAction operator()(std::unique_ptr<DataManagerValue>& value);
   std::string Serialise() const;

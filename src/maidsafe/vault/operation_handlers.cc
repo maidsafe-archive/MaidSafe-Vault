@@ -16,6 +16,9 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#include <set>
+#include <string>
+#include <vector>
 
 #include "boost/variant.hpp"
 

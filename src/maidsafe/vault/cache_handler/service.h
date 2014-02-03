@@ -102,7 +102,7 @@ typename CacheHandlerService::HandleMessageReturnType CacheHandlerService::Handl
     const typename MessageType::Sender& /*sender*/,
     const typename MessageType::Receiver& /*receiver*/) {
   // BEFORE_RELEASE uncomment below line
-  //MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
+  // MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
   return false;
 }
 

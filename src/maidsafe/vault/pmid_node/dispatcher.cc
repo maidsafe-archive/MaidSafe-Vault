@@ -31,7 +31,7 @@ void PmidNodeDispatcher::SendGetOrIntegrityCheckResponse(
   typedef GetResponseFromPmidNodeToDataManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  VaultMessage vault_message(message_id,data_or_check_result);
+  VaultMessage vault_message(message_id, data_or_check_result);
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
                          VaultMessage::Receiver(routing::SingleId(data_manager_node_id)));

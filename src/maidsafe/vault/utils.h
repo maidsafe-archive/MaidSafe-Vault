@@ -19,6 +19,9 @@
 #ifndef MAIDSAFE_VAULT_UTILS_H_
 #define MAIDSAFE_VAULT_UTILS_H_
 
+#include <string>
+#include <vector>
+
 #include "leveldb/db.h"
 
 #include "maidsafe/common/node_id.h"

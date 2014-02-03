@@ -206,7 +206,7 @@ TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are
       Store(key, ActionVersionHandlerPut(put.first, put.second, sender_id, message_id));
     }
 
-   CHECK_NOTHROW(Get(key).GetBranch(v4_iii));
+    CHECK_NOTHROW(Get(key).GetBranch(v4_iii));
 
     ActionVersionHandlerDeleteBranchUntilFork action_delete_branch(v4_iii);
     auto group_source(CreateGroupSource(NodeId(NodeId::kRandomId)));

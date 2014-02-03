@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_MAID_MANAGER_DISPATCHER_H_
 #define MAIDSAFE_VAULT_MAID_MANAGER_DISPATCHER_H_
 
+#include <string>
+
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
@@ -95,6 +97,7 @@ class MaidManagerDispatcher {
 
   void SendCreatePmidAccountRequest(const passport::PublicMaid& account_name,
                                     const passport::PublicPmid& pmid_name);
+
  private:
   MaidManagerDispatcher();
   MaidManagerDispatcher(const MaidManagerDispatcher&);
@@ -109,7 +112,6 @@ class MaidManagerDispatcher {
   routing::Routing& routing_;
   const passport::Pmid kSigningFob_;
   static const nfs::Persona kSourcePersona_ = nfs::Persona::kMaidManager;
-
 };
 
 // ==================== Implementation =============================================================
@@ -195,7 +197,7 @@ void MaidManagerDispatcher::SendDeleteBranchUntilFork(
 //  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionHandler);
 //  static const DataTagValue kDataEnumValue(OwnerDirectory::Tag::kValue);
 // TODO(Fraser#5#): 2013-08-03 - Handle
-//}
+// }
 
 // template<>
 // void MaidManagerDispatcher::SendPutRequest<GroupDirectory>(const MaidName& /*account_name*/,
@@ -209,7 +211,7 @@ void MaidManagerDispatcher::SendDeleteBranchUntilFork(
 //  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionHandler);
 //  static const DataTagValue kDataEnumValue(GroupDirectory::Tag::kValue);
 // TODO(Fraser#5#): 2013-08-03 - Handle
-//}
+// }
 
 // template<>
 // void MaidManagerDispatcher::SendPutRequest<WorldDirectory>(const MaidName& /*account_name*/,
@@ -223,7 +225,7 @@ void MaidManagerDispatcher::SendDeleteBranchUntilFork(
 //  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionHandler);
 //  static const DataTagValue kDataEnumValue(WorldDirectory::Tag::kValue);
 // TODO(Fraser#5#): 2013-08-03 - Handle
-//}
+// }
 
 // template<typename Data>
 // void MaidManagerDispatcher::SendPutResponse(const MaidName& account_name,
@@ -244,7 +246,7 @@ void MaidManagerDispatcher::SendDeleteBranchUntilFork(
 //  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
 //                         routing::SingleId(NodeId(account_name->string())), cacheable);
 //  routing_.Send(message);
-//}
+// }
 
 
 template <typename KeyType>

@@ -18,6 +18,7 @@
 
 #include "maidsafe/vault/maid_manager/pmid_totals.h"
 
+#include <string>
 #include <utility>
 
 namespace maidsafe {

@@ -36,7 +36,7 @@ ActionMaidManagerRegisterPmid::ActionMaidManagerRegisterPmid(
     : kPmidRegistration([&serialised_action]()->std::string {
         protobuf::ActionMaidManagerRegisterPmid action_register_pmid_proto;
         if (!action_register_pmid_proto.ParseFromString(serialised_action))
-          ThrowError(CommonErrors::parsing_error);
+          BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
         return action_register_pmid_proto.serialised_pmid_registration();
       }()) {}
 

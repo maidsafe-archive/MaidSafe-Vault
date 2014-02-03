@@ -23,12 +23,10 @@
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/types.h"
-#include "maidsafe/nfs/types.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/data_types/data_type_values.h"
 #include "maidsafe/routing/message.h"
 #include "maidsafe/routing/routing_api.h"
-
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/message_types_partial.h"
 #include "maidsafe/nfs/types.h"
@@ -140,8 +138,8 @@ class DataManagerDispatcher {
 template <typename Data>
 void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name, const Data& data,
                                            nfs::MessageId message_id) {
-  LOG(kVerbose) << "DataManager::SendPutRequest to pmid_name " << HexSubstr(pmid_name.value.string())
-                << " with message_id " << message_id.data;
+  LOG(kVerbose) << "DataManager::SendPutRequest to pmid_name "
+                << HexSubstr(pmid_name.value.string()) << " with message_id " << message_id.data;
   typedef PutRequestFromDataManagerToPmidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
@@ -181,10 +179,11 @@ void DataManagerDispatcher::SendPutFailure(
   VaultMessage vault_message(message_id,
                              nfs_client::DataNameAndReturnCode(data_name,
                                                                nfs_client::ReturnCode(error)));
-  RoutingMessage message(vault_message.Serialise(),
-                         routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
-                                              routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(routing::GroupId(NodeId(maid_node.value.string()))));
+  RoutingMessage message(
+      vault_message.Serialise(),
+      routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
+                           routing::SingleId(routing_.kNodeId())),
+      VaultMessage::Receiver(routing::GroupId(NodeId(maid_node.value.string()))));
   routing_.Send(message);
 }
 
@@ -279,10 +278,11 @@ void DataManagerDispatcher::SendGetResponseSuccess(const RequestorIdType& reques
   static const routing::Cacheable kCacheable(is_cacheable<Data>::value ? routing::Cacheable::kPut :
                                                                          routing::Cacheable::kNone);
   NfsMessage nfs_message(message_id, typename NfsMessage::Contents(data));
-  RoutingMessage message(nfs_message.Serialise(),
-                         routing::GroupSource(routing::GroupId(NodeId(data.name().value.string())),
-                                              routing::SingleId(routing_.kNodeId())),
-                         typename NfsMessage::Receiver(detail::GetDestination(requestor_id)), kCacheable);
+  RoutingMessage message(
+      nfs_message.Serialise(),
+      routing::GroupSource(routing::GroupId(NodeId(data.name().value.string())),
+                           routing::SingleId(routing_.kNodeId())),
+      typename NfsMessage::Receiver(detail::GetDestination(requestor_id)), kCacheable);
   LOG(kVerbose) << "DataManagerDispatcher::SendGetResponseSuccess routing send msg to "
 //                << HexSubstr(requestor_id.node_id.string())
                 << " regarding chunk of "

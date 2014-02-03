@@ -1,21 +1,20 @@
-///*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2012 MaidSafe.net limited
 
-//    This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
-//    version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
-//    licence you accepted on initial access to the Software (the "Licences").
+    This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
+    version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
+    licence you accepted on initial access to the Software (the "Licences").
 
-//    By contributing code to the MaidSafe Software, or to this project generally, you agree to be
-//    bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
-//    directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also
-//    available at: http://www.maidsafe.net/licenses
+    By contributing code to the MaidSafe Software, or to this project generally, you agree to be
+    bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
+    directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also
+    available at: http://www.maidsafe.net/licenses
 
-//    Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
-//    under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
-//    OF ANY KIND, either express or implied.
+    Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
+    under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+    OF ANY KIND, either express or implied.
 
-//    See the Licences for the specific language governing permissions and limitations relating to
-//    use of the MaidSafe Software.
-// */
+    See the Licences for the specific language governing permissions and limitations relating to
+    use of the MaidSafe Software.                                                                 */
 
 //#include "maidsafe/vault/maid_manager/handler.h"
 
@@ -154,7 +153,7 @@
 //  maidsafe::test::TestPath vault_root_directory_;
 ////  Db db_;
 ////  MaidAccountHandler maid_account_handler_;
-//};
+// };
 
 ////TEST_F(MaidAccountHandlerTest, BEH_AddAccount) {
 ////  std::vector<MaidName> account_names;
@@ -170,7 +169,7 @@
 ////  EXPECT_FALSE(maid_account_handler_.AddAccount(std::move(duplicate)));
 ////  account_names = maid_account_handler_.GetAccountNames();
 ////  EXPECT_EQ(1, account_names.size());
-////}
+//// }
 
 ////TEST_F(MaidAccountHandlerTest, BEH_DeleteAccount) {
 ////  std::vector<MaidName> account_names;
@@ -185,7 +184,7 @@
 ////  EXPECT_TRUE(maid_account_handler_.DeleteAccount(account_name));
 ////  account_names = maid_account_handler_.GetAccountNames();
 ////  EXPECT_EQ(0, account_names.size());
-////}
+//// }
 
 ////TEST_F(MaidAccountHandlerTest, BEH_RegisterPmid) {
 ////  MaidName account_name(GenerateMaidName());
@@ -214,7 +213,7 @@
 ////  EXPECT_NO_THROW(maid_account_handler_.RegisterPmid(account_name, registration));
 ////  pmids = GetPmids(account_name);
 ////  EXPECT_EQ(total_pre_duplicate_register, pmids.size());
-////}
+//// }
 
 ////TEST_F(MaidAccountHandlerTest, BEH_UnregisterPmid) {
 ////  MaidName account_name(GenerateMaidName());
@@ -232,7 +231,7 @@
 ////                                      [&pmid_name](const PmidTotals record) {
 ////                                        return pmid_name == record.pmid_record.pmid_name;
 ////                                      }));
-////}
+//// }
 
 ////TEST_F(MaidAccountHandlerTest, BEH_UpdatePmidTotals) {
 ////  MaidName account_name(GenerateMaidName());
@@ -270,7 +269,7 @@
 ////    EXPECT_EQ(1, pmidtotals.pmid_record.lost_count);
 ////    EXPECT_EQ(1000, pmidtotals.pmid_record.lost_total_size);
 ////  }
-////}
+//// }
 
 ////TEST_F(MaidAccountHandlerTest, BEH_GetAccountNames) {
 ////  std::vector<MaidName> generated_account_names, retrieved_account_names, removed_account_names;
@@ -302,7 +301,7 @@
 ////                                                          [&account] (const MaidName& name) {
 ////                                                            return account == name;
 ////                                                          }));
-////}
+//// }
 
 ////TEST_F(MaidAccountHandlerTest, BEH_GetSerialisedAccount) {
 ////  MaidName account_name(GenerateMaidName());
@@ -343,7 +342,7 @@
 ////    EXPECT_EQ(generated_pmid->pmid_record.claimed_available_size,
 ////              pmid.pmid_record.claimed_available_size);
 ////  }
-////}
+//// }
 
 ////TEST_F(MaidAccountHandlerTest, BEH_GetArchiveFileNames) {
 ////  MaidName account_name(GenerateMaidName());
@@ -363,10 +362,10 @@
 //////  }
 
 ////  //  to finish.....
-////}
+//// }
 
 ////TEST_F(MaidAccountHandlerTest, BEH_GetArchiveFile) {
-////}
+//// }
 
 ////TEST_F(MaidAccountHandlerTest, BEH_PutArchiveFile) {
 ////  MaidName account_name(GenerateMaidName());
@@ -380,7 +379,7 @@
 ////  EXPECT_NO_THROW(maid_account_handler_.PutArchiveFile(account_name, filename, content));
 
 ////  //  to finish.....
-////}
+//// }
 
 ////template <typename Data>
 ////class MaidAccountHandlerTypedTest : public MaidAccountHandlerTest {
@@ -422,7 +421,7 @@
 ////    if (itr != put_details.end())
 ////      EXPECT_EQ(itr->cost, cost);
 ////  }
-////};
+//// };
 
 ////TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest);
 
@@ -443,7 +442,7 @@
 ////  EXPECT_NO_THROW(this->PutData(account_name, data_name, cost));
 ////  EXPECT_EQ(cost, this->GetTotalPutData(account_name));
 ////  this->CheckPutDetails(account_name, data_name, cost, 1);
-////}
+//// }
 
 ////TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_DeleteData) {
 ////  typename TypeParam::Name data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
@@ -464,7 +463,7 @@
 ////  EXPECT_NO_THROW(this->DeleteData(account_name, data_name));
 ////  this->CheckPutDetails(account_name, data_name, 0, 0);
 ////  EXPECT_EQ(0, this->GetTotalPutData(account_name));
-////}
+//// }
 
 ////TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_Adjust) {
 ////  typename TypeParam::Name data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
@@ -494,7 +493,7 @@
 ////  this->SetTotalAvailable(account_name, new_cost_large);
 ////  EXPECT_NO_THROW(this->Adjust(account_name, data_name, new_cost_large));
 ////  this->CheckPutDetails(account_name, data_name, new_cost_large, 1);
-////}
+//// }
 
 ////REGISTER_TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest, BEH_PutData, BEH_DeleteData,
 ///BEH_Adjust);
@@ -517,8 +516,8 @@
 
 ////INSTANTIATE_TYPED_TEST_CASE_P(All, MaidAccountHandlerTypedTest, AllTypes);
 
-//}  //  namespace test
+// }  //  namespace test
 
-//}  //  namespace vault
+// }  //  namespace vault
 
-//}  //  namespace maidsafe
+// }  //  namespace maidsafe

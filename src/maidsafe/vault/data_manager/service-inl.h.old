@@ -170,7 +170,7 @@ void DataManagerService::HandlePutResult(const nfs::Message& message) {
                           accumulator_, accumulator_mutex_, kPutRequestsRequired_)) {
       protobuf::PutResult proto_put_result;
       if (!proto_put_result.ParseFromString(message.data().content.string()))
-        ThrowError(CommonErrors::parsing_error);
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
       if (proto_put_result.result()) {
         // Create record
         int32_t data_size(proto_put_result.data_size());
@@ -223,12 +223,12 @@ void DataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_handl
     if (reply.IsSuccess()) {
       if (!data_or_proof.ParseFromString(reply.data().string()) ||
           !data_or_proof.has_serialised_data())
-        ThrowError(CommonErrors::parsing_error);
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
       protobuf::DataOrProof::Data proto_data;
       if (!proto_data.ParseFromString(data_or_proof.serialised_data()))
-        ThrowError(CommonErrors::parsing_error);
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
       if (proto_data.type() != static_cast<uint32_t>(Data::type_enum_value()))
-        ThrowError(CommonErrors::parsing_error);
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
       Data data(typename Data::Name(Identity(proto_data.name())),
                 typename Data::serialised_type(NonEmptyString(proto_data.content())));
       std::lock_guard<std::mutex> lock(get_handler->mutex);
@@ -247,7 +247,7 @@ void DataManagerService::OnHandleGet(std::shared_ptr<GetHandler<Data>> get_handl
     } else if (reply.error().code() == MakeError(VaultErrors::data_available_not_given).code()) {
       if (!data_or_proof.ParseFromString(reply.data().string()) ||
           !data_or_proof.has_serialised_data())
-        ThrowError(CommonErrors::parsing_error);
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     }
   }
   catch(...) {

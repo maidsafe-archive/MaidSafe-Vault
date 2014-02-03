@@ -49,7 +49,7 @@ struct ActionVersionHandlerPut {
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPutVersionRequest;
   StructuredDataVersions::VersionName old_version, new_version;
   boost::optional<StructuredDataVersions::VersionName> tip_of_tree;
-  NodeId sender; // sender is required to be notified of potential failures on put
+  NodeId sender;  // sender is required to be notified of potential failures on put
   nfs::MessageId message_id;
 
  private:

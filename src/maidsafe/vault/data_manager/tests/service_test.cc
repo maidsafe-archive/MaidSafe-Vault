@@ -78,14 +78,14 @@ class DataManagerServiceTest {
 template <typename UnresolvedActionType>
 void  DataManagerServiceTest::SendSync(
     const std::vector<UnresolvedActionType>& /*unresolved_actions*/,
-   const std::vector<routing::GroupSource>& /*group_source*/) {
+    const std::vector<routing::GroupSource>& /*group_source*/) {
   UnresolvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
 }
 
 template <>
 void DataManagerServiceTest::SendSync<DataManager::UnresolvedPut>(
-         const std::vector<DataManager::UnresolvedPut>& unresolved_actions,
-         const std::vector<routing::GroupSource>& group_source) {
+    const std::vector<DataManager::UnresolvedPut>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedPut,
                                     SynchroniseFromDataManagerToDataManager>(
       &data_manager_service_, data_manager_service_.sync_puts_, unresolved_actions, group_source);
@@ -93,8 +93,8 @@ void DataManagerServiceTest::SendSync<DataManager::UnresolvedPut>(
 
 template <>
 void DataManagerServiceTest::SendSync<DataManager::UnresolvedDelete>(
-         const std::vector<DataManager::UnresolvedDelete>& unresolved_actions,
-         const std::vector<routing::GroupSource>& group_source) {
+    const std::vector<DataManager::UnresolvedDelete>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedDelete,
                                     SynchroniseFromDataManagerToDataManager>(
       &data_manager_service_, data_manager_service_.sync_deletes_, unresolved_actions,
@@ -103,8 +103,8 @@ void DataManagerServiceTest::SendSync<DataManager::UnresolvedDelete>(
 
 template <>
 void DataManagerServiceTest::SendSync<DataManager::UnresolvedAddPmid>(
-         const std::vector<DataManager::UnresolvedAddPmid>& unresolved_actions,
-         const std::vector<routing::GroupSource>& group_source) {
+    const std::vector<DataManager::UnresolvedAddPmid>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedAddPmid,
                                     SynchroniseFromDataManagerToDataManager>(
       &data_manager_service_, data_manager_service_.sync_add_pmids_, unresolved_actions,
@@ -113,8 +113,8 @@ void DataManagerServiceTest::SendSync<DataManager::UnresolvedAddPmid>(
 
 template <>
 void DataManagerServiceTest::SendSync<DataManager::UnresolvedRemovePmid>(
-         const std::vector<DataManager::UnresolvedRemovePmid>& unresolved_actions,
-         const std::vector<routing::GroupSource>& group_source) {
+    const std::vector<DataManager::UnresolvedRemovePmid>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedRemovePmid,
                                     SynchroniseFromDataManagerToDataManager>(
       &data_manager_service_, data_manager_service_.sync_remove_pmids_, unresolved_actions,
@@ -123,8 +123,8 @@ void DataManagerServiceTest::SendSync<DataManager::UnresolvedRemovePmid>(
 
 template <>
 void DataManagerServiceTest::SendSync<DataManager::UnresolvedNodeDown>(
-         const std::vector<DataManager::UnresolvedNodeDown>& unresolved_actions,
-         const std::vector<routing::GroupSource>& group_source) {
+    const std::vector<DataManager::UnresolvedNodeDown>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedNodeDown,
                                     SynchroniseFromDataManagerToDataManager>(
       &data_manager_service_, data_manager_service_.sync_node_downs_, unresolved_actions,
@@ -133,8 +133,8 @@ void DataManagerServiceTest::SendSync<DataManager::UnresolvedNodeDown>(
 
 template <>
 void DataManagerServiceTest::SendSync<DataManager::UnresolvedNodeUp>(
-         const std::vector<DataManager::UnresolvedNodeUp>& unresolved_actions,
-         const std::vector<routing::GroupSource>& group_source) {
+    const std::vector<DataManager::UnresolvedNodeUp>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedNodeUp,
                                     SynchroniseFromDataManagerToDataManager>(
       &data_manager_service_, data_manager_service_.sync_node_ups_, unresolved_actions,

@@ -44,7 +44,7 @@
 //            maidsafe::vault::detail::ToFixedWidthString<1>(static_cast<uint32_t>(result.first)));
 
 //  EXPECT_EQ(simulated, db_key.Serialise());
-//}
+// }
 
 // TEST(DbKeyTest, BEH_All) {
 //  DataNameVariant name(ImmutableData::Name(Identity(
@@ -72,10 +72,10 @@
 //  auto serialised_db_key(db_key.Serialise());
 //  DbKey parsed_db_key(serialised_db_key);
 //  EXPECT_EQ(db_key, parsed_db_key);
-//}
+// }
 
-//}  // namespace test
+// }  // namespace test
 
-//}  // namespace vault
+// }  // namespace vault
 
-//}  // namespace maidsafe
+// }  // namespace maidsafe

@@ -21,6 +21,7 @@
 
 #include <mutex>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
@@ -130,8 +131,10 @@ class PmidManagerService {
 
   void HandleSyncedPut(std::unique_ptr<PmidManager::UnresolvedPut>&& synced_action);
   void HandleSyncedDelete(std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action);
-  void HandleSyncedSetPmidHealth(std::unique_ptr<PmidManager::UnresolvedSetPmidHealth>&& synced_action);
-  void HandleSyncedCreatePmidAccount(std::unique_ptr<PmidManager::UnresolvedCreateAccount>&& synced_action);
+  void HandleSyncedSetPmidHealth(
+      std::unique_ptr<PmidManager::UnresolvedSetPmidHealth>&& synced_action);
+  void HandleSyncedCreatePmidAccount(
+      std::unique_ptr<PmidManager::UnresolvedCreateAccount>&& synced_action);
 
   void DoHandleHealthResponse(const PmidName& pmid_node,
       const MaidName& maid_node, const PmidManagerMetadata& pmid_health, nfs::MessageId message_id);
@@ -234,7 +237,8 @@ void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
 //     if (reply.claimed_available_size <
 //         static_cast<uint32_t>(data.Serialise().data.string().size())) {
 //       dispatcher_.SendPutFailure<Data>(data.name(), pmid_node,
-//                                        maidsafe_error(VaultErrors::not_enough_space), message_id);
+//                                        maidsafe_error(VaultErrors::not_enough_space),
+//                                        message_id);
 //       return;
 //     }
 //   } catch(...) {
