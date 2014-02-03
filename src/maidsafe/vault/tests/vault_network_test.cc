@@ -87,19 +87,23 @@ TEST_F(VaultNetworkTest, FUNC_PutGetDelete) {
 
 TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
   EXPECT_TRUE(AddClient(true));
-  const size_t kIterations(5);
+  const size_t kIterations(500);
   std::vector<ImmutableData> chunks;
   for (auto index(kIterations); index > 0; --index)
     chunks.emplace_back(NonEmptyString(RandomString(1024)));
 
-  for (const auto& chunk : chunks)
+  for (const auto& chunk : chunks) {
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     clients_[0]->nfs_->Put(chunk);
+  }
 
   Sleep(std::chrono::seconds(10));
 
   std::vector<boost::future<ImmutableData>> get_futures;
-  for (const auto& chunk : chunks)
+  for (const auto& chunk : chunks) {
     get_futures.emplace_back(clients_[0]->nfs_->Get<ImmutableData::Name>(chunk.name()));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+  }
 
   for (size_t index(0); index < kIterations; ++index) {
     try {
@@ -197,7 +201,7 @@ TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
   for (int index(0); index < clients; ++index)
     EXPECT_TRUE(AddClient(true));
   LOG(kVerbose) << "Clients joined...";
-  const size_t kIterations(10);
+  const size_t kIterations(50);
   std::vector<ImmutableData> chunks;
   for (auto index(kIterations); index > 0; --index)
     chunks.emplace_back(NonEmptyString(RandomString(1024)));
@@ -225,6 +229,23 @@ TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
                   << " because: " << ex.what();
     }
   }
+}
+
+TEST_F(VaultNetworkTest, FUNC_UnauthorisedDelete) {
+  EXPECT_TRUE(AddClient(true));
+  EXPECT_TRUE(AddClient(true));
+
+  ImmutableData chunk(NonEmptyString(RandomString(2^10)));
+  clients_.front()->nfs_->Put<ImmutableData>(chunk);
+  Sleep(std::chrono::seconds(2));
+  EXPECT_NO_THROW(Get<ImmutableData>(chunk.name()));
+  LOG(kVerbose) << "Chunk is verified to be in the network";
+  clients_.back()->nfs_->Delete(chunk.name());
+  Sleep(std::chrono::seconds(2));
+  EXPECT_NO_THROW(Get<ImmutableData>(chunk.name())) << "Delete must have failed";
+  clients_.front()->nfs_->Delete(chunk.name());
+  Sleep(std::chrono::seconds(2));
+  EXPECT_THROW(Get<ImmutableData>(chunk.name()), maidsafe_error)  << "Delete must have succeeded";
 }
 
 }  // namespace test
