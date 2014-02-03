@@ -16,12 +16,13 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/tests/vault_network.h"
+
 
 #include <algorithm>
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/vault/tests/tests_utils.h"
+#include "maidsafe/vault/tests/vault_network.h"
 
 namespace maidsafe {
 
