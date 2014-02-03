@@ -99,12 +99,12 @@
 //  const NodeId kThisNodeId_;
 //  mutable std::mutex mutex_;
 //  std::map<typename MaidAccount::Name, std::unique_ptr<MaidAccount>> maid_accounts_;
-//};
+// };
 
-//}  // namespace vault
+// }  // namespace vault
 
-//}  // namespace maidsafe
+// }  // namespace maidsafe
 
-//#include "maidsafe/vault/maid_manager/handler-inl.h"
+// #include "maidsafe/vault/maid_manager/handler-inl.h"
 
 #endif  // MAIDSAFE_VAULT_MAID_MANAGER_HANDLER_H_

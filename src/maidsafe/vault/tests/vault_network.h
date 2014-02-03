@@ -46,8 +46,8 @@ class PublicKeyGetter {
  public:
   PublicKeyGetter() : mutex_() {}
 
- void operator()(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key,
-                 const std::vector<passport::PublicPmid>& public_pmids);
+  void operator()(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key,
+                  const std::vector<passport::PublicPmid>& public_pmids);
  private:
   std::mutex mutex_;
 };
@@ -104,7 +104,7 @@ class VaultNetwork : public testing::Test {
   fs::path chunk_store_path_;
   size_t network_size_;
 #ifndef MAIDSAFE_WIN32
-  long kUlimitFileSize;
+  long kUlimitFileSize;  // NOLINT
 #endif
 };
 
@@ -116,7 +116,7 @@ Data VaultNetwork::Get(const typename Data::Name& data_name) {
   try {
     return future.get();
   }
-  catch (const std::exception& error) {
+  catch (const std::exception&) {
     throw;
   }
 }

@@ -36,7 +36,7 @@ PmidManagerValue::PmidManagerValue(const std::string& serialised_pmid_manager_va
   protobuf::PmidManagerValue value_proto;
   if (!value_proto.ParseFromString(serialised_pmid_manager_value)) {
     LOG(kError) << "Failed to read or parse serialised pmid manager value.";
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   } else {
     size_ = value_proto.size();
   }

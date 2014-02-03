@@ -33,7 +33,7 @@ ActionMaidManagerDelete::ActionMaidManagerDelete(const std::string& serialised_a
     : kMessageId([&serialised_action]()->int32_t {
         protobuf::ActionMaidManagerDelete action_delete_proto;
         if (!action_delete_proto.ParseFromString(serialised_action))
-          ThrowError(CommonErrors::parsing_error);
+          BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
         return action_delete_proto.message_id();
       }()) {}
 
@@ -52,7 +52,7 @@ std::string ActionMaidManagerDelete::Serialise() const {
 detail::DbAction ActionMaidManagerDelete::operator()(
     MaidManagerMetadata& metadata, std::unique_ptr<MaidManagerValue>& value) const {
   if (!value)
-    ThrowError(CommonErrors::no_such_element);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 
   metadata.DeleteData(value->Delete());
   assert(value->count() >= 0);

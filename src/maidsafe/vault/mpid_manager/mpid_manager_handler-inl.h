@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_ACCOUNT_HANDLER_INL_H_
-#define MAIDSAFE_VAULT_MPID_MANAGER_MPID_ACCOUNT_HANDLER_INL_H_
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_HANDLER_INL_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_HANDLER_INL_H_
 
 namespace maidsafe {
 
@@ -42,7 +42,7 @@ namespace vault {
 
 //  accounts_.push_back(account);
 //  return true;
-//}
+// }
 
 // template<typename Account, typename ModifyPolicy>
 // bool AccountHandler<Account, ModifyPolicy>::DeleteAccount(
@@ -54,7 +54,7 @@ namespace vault {
 
 //  accounts_.erase(itr);
 //  return true;
-//}
+// }
 
 // template<typename Account, typename ModifyPolicy>
 // Account AccountHandler<Account, ModifyPolicy>::GetAccount(
@@ -65,7 +65,7 @@ namespace vault {
 //    return Account();
 
 //  return *itr;
-//}
+// }
 
 // template<typename Account, typename ModifyPolicy>
 //  std::vector<typename Account::Name> AccountHandler<Account, ModifyPolicy>::GetAccountNames()
@@ -75,7 +75,7 @@ namespace vault {
 //  for (auto& account : accounts_)
 //    account_names.push_back(account.name());
 //  return account_names;
-//}
+// }
 
 // template<typename Account, typename ModifyPolicy>
 // template<typename Data>
@@ -83,7 +83,7 @@ namespace vault {
 //    const typename Account::Name& account_name,
 //    const typename Data::Name& data_name,
 //    int32_t data_version) {
-//}
+// }
 
 // template<typename Account, typename ModifyPolicy>
 // template<typename Data>
@@ -93,7 +93,7 @@ namespace vault {
 //    int32_t data_version,
 //    const typename Account::structure& account_structure,
 //    std::function<void(std::string&)> modify_functor) {
-//}
+// }
 
 // template<typename Account, typename ModifyPolicy>
 // typename std::vector<Account>::iterator AccountHandler<Account, ModifyPolicy>::FindAccount(
@@ -103,7 +103,7 @@ namespace vault {
 //                      [&account_name](const Account& account) {
 //                        return account_name == account.name();
 //                      });
-//}
+// }
 
 // template<typename Account, typename ModifyPolicy>
 // typename std::vector<Account>::const_iterator AccountHandler<Account, ModifyPolicy>::FindAccount(
@@ -113,10 +113,10 @@ namespace vault {
 //                      [&account_name](const Account& account) {
 //                        return account_name == account.name();
 //                      });
-//}
+// }
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_ACCOUNT_HANDLER_INL_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_HANDLER_INL_H_

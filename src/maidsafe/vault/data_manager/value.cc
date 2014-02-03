@@ -20,8 +20,6 @@
 
 #include <string>
 
-//#include "maidsafe/vault/utils.h"
-
 namespace maidsafe {
 
 namespace vault {
@@ -31,11 +29,11 @@ DataManagerValue::DataManagerValue(const std::string &serialised_metadata_value)
   protobuf::DataManagerValue metadata_value_proto;
   if (!metadata_value_proto.ParseFromString(serialised_metadata_value)) {
     LOG(kError) << "Failed to read or parse serialised metadata value";
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   } else {
     if ((metadata_value_proto.subscribers() < 1) || (metadata_value_proto.size() <= 0)) {
       LOG(kError) << "Invalid parameters";
-      ThrowError(CommonErrors::invalid_parameter);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
     subscribers_ = metadata_value_proto.subscribers();
     size_ = metadata_value_proto.size();
@@ -46,7 +44,7 @@ DataManagerValue::DataManagerValue(const std::string &serialised_metadata_value)
       offline_pmids_.insert(PmidName(Identity(i)));
     if (online_pmids_.size() + offline_pmids_.size() < 1) {
       LOG(kError) << "Invalid online/offline pmids";
-      ThrowError(CommonErrors::invalid_parameter);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
   }
 }
@@ -81,7 +79,8 @@ void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
   LOG(kVerbose) << "DataManagerValue::RemovePmid removing " << HexSubstr(pmid_name->string());
 //  if (online_pmids_.size() + offline_pmids_.size() < 4) {
 //    LOG(kError) << "RemovePmid not allowed";
-//    ThrowError(CommonErrors::invalid_parameter);  // TODO add error - not_allowed
+//    // TODO add error - not_allowed
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
 //  }
   online_pmids_.erase(pmid_name);
   offline_pmids_.erase(pmid_name);
@@ -101,7 +100,7 @@ void DataManagerValue::SetPmidOnline(const PmidName& pmid_name) {
     online_pmids_.insert(pmid_name);
   } else {
     LOG(kError) << "Invalid Pmid reported";
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   PrintRecords();
 }
@@ -113,7 +112,7 @@ void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
     offline_pmids_.insert(pmid_name);
   } else {
     LOG(kError) << "Invalid Pmid reported";
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   PrintRecords();
 }
@@ -121,7 +120,7 @@ void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
 std::string DataManagerValue::Serialise() const {
   if (subscribers_ < 1 || size_ <= 0) {
     LOG(kError) << "DataManagerValue::Serialise Cannot serialise if not a complete db value";
-    ThrowError(CommonErrors::uninitialised);  // Cannot serialise if not a complete db value
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
   assert(!(online_pmids_.empty() && offline_pmids_.empty()));
   protobuf::DataManagerValue metadata_value_proto;

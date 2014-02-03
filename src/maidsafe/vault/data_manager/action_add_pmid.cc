@@ -36,13 +36,13 @@ ActionDataManagerAddPmid::ActionDataManagerAddPmid(const std::string& serialised
     : kPmidName([&serialised_action]()->PmidName {
         protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
         if (!action_add_pmid_proto.ParseFromString(serialised_action))
-          ThrowError(CommonErrors::parsing_error);
+          BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
         return PmidName(Identity(action_add_pmid_proto.pmid_name()));
       }()),
       kSize([&serialised_action]()->int32_t {
         protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
         if (!action_add_pmid_proto.ParseFromString(serialised_action))
-          ThrowError(CommonErrors::parsing_error);
+          BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
         return action_add_pmid_proto.size();
       }()) {}
 

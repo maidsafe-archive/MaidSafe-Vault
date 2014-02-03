@@ -110,7 +110,7 @@ DataNameVariant GetNameVariant(const nfs_vault::DataNameAndRandomString& data) {
 void InitialiseDirectory(const boost::filesystem::path& directory) {
   if (fs::exists(directory)) {
     if (!fs::is_directory(directory))
-      ThrowError(CommonErrors::not_a_directory);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::not_a_directory));
   } else {
     fs::create_directory(directory);
   }
@@ -132,7 +132,7 @@ std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db
   options.error_if_exists = true;
   leveldb::Status status(leveldb::DB::Open(options, db_path.string(), &db));
   if (!status.ok())
-    ThrowError(CommonErrors::filesystem_io_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
   assert(db);
   return std::move(std::unique_ptr<leveldb::DB>(db));
 }

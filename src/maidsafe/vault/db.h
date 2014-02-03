@@ -77,7 +77,7 @@ Db<Key, Value>::Db()
   options.error_if_exists = true;
   leveldb::Status status(leveldb::DB::Open(options, kDbPath_.string(), &db));
   if (!status.ok())
-    ThrowError(CommonErrors::filesystem_io_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
   leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
   assert(leveldb_);
 #if defined(__GNUC__) && (!defined(MAIDSAFE_APPLE) && !(defined(_MSC_VER) && _MSC_VER == 1700))
@@ -117,7 +117,7 @@ std::unique_ptr<Value> Db<Key, Value>::Commit(const Key& key,
   if (detail::DbAction::kPut == functor(value)) {
     assert(value);
     if (!value)
-      ThrowError(CommonErrors::null_pointer);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::null_pointer));
 
     LOG(kInfo) << "Db<Key, Value>::Commit putting entry";
     Put(KvPair(key, Value(std::move(*value))));
@@ -195,10 +195,9 @@ Value Db<Key, Value>::Get(const Key& key) {
     assert(!value_string.empty());
     return Value(value_string);
   } else if (status.IsNotFound()) {
-    ThrowError(VaultErrors::no_such_account);
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
   }
-  ThrowError(VaultErrors::failed_to_handle_request);
-  return Value("");
+  BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
 }
 
 template <typename Key, typename Value>
@@ -208,7 +207,7 @@ void Db<Key, Value>::Put(const KvPair& key_value_pair) {
                                        key_value_pair.second.Serialise()));
   if (!status.ok()) {
     LOG(kError) << "Db<Key, Value>::Put incorrect leveldb::Status";
-    ThrowError(VaultErrors::failed_to_handle_request);
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
   }
 }
 
@@ -218,7 +217,7 @@ void Db<Key, Value>::Delete(const Key& key) {
       leveldb_->Delete(leveldb::WriteOptions(), key.ToFixedWidthString().string()));
   if (!status.ok()) {
     LOG(kError) << "Db<Key, Value>::Delete incorrect leveldb::Status";
-    ThrowError(VaultErrors::failed_to_handle_request);
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
   }
 }
 

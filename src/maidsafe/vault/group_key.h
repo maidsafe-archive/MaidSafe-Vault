@@ -81,7 +81,7 @@ GroupKey<GroupName>::GroupKey(const std::string& serialised_group_key)
     : metadata_key(), name(), type(DataTagValue::kMutableDataValue) {
   protobuf::GroupKey group_key_proto;
   if (!group_key_proto.ParseFromString(serialised_group_key))
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   metadata_key = MetadataKey<GroupName>(GroupName(Identity(group_key_proto.group_name())));
   name = Identity(group_key_proto.name());
   type = static_cast<DataTagValue>(group_key_proto.type());

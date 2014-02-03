@@ -20,6 +20,7 @@
 #define MAIDSAFE_VAULT_PMID_MANAGER_METADATA_H_
 
 #include <cstdint>
+#include <string>
 
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
@@ -28,6 +29,7 @@
 #include "maidsafe/vault/types.h"
 
 namespace maidsafe {
+
 namespace vault {
 
 struct PmidManagerMetadata {
@@ -57,6 +59,7 @@ struct PmidManagerMetadata {
 bool operator==(const PmidManagerMetadata& lhs, const PmidManagerMetadata& rhs);
 
 }  // namespace vault
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_PMID_MANAGER_METADATA_H_

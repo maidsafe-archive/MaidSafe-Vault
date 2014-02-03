@@ -171,7 +171,7 @@ typename GroupDb<Persona>::GroupMap::iterator GroupDb<Persona>::AddGroupToMap(
     const GroupName& group_name, const Metadata& metadata) {
   static const uint64_t kGroupsLimit(static_cast<GroupId>(std::pow(256, kPrefixWidth_)));
   if (group_map_.size() == kGroupsLimit - 1)
-    ThrowError(VaultErrors::failed_to_handle_request);
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
   GroupId group_id(RandomInt32() % kGroupsLimit);
   while (std::any_of(std::begin(group_map_), std::end(group_map_),
                      [&group_id](const std::pair<GroupName, std::pair<GroupId, Metadata>>&
@@ -183,7 +183,7 @@ typename GroupDb<Persona>::GroupMap::iterator GroupDb<Persona>::AddGroupToMap(
   auto ret_val = group_map_.insert(std::make_pair(group_name, std::make_pair(group_id, metadata)));
   if (!ret_val.second) {
     LOG(kError) << "account already exists in the group map";
-    ThrowError(VaultErrors::account_already_exists);
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::account_already_exists));
   }
   LOG(kInfo) << "group inserting succeeded for group_name "
              << HexSubstr(group_name->string());
@@ -232,7 +232,7 @@ void GroupDb<Persona>::Commit(
       LOG(kInfo) << "detail::DbAction::kPut";
       assert(value);
       if (!value)
-        ThrowError(CommonErrors::null_pointer);
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::null_pointer));
       Put(std::make_pair(key, std::move(*value)), it->second.first);
     } else {
       LOG(kInfo) << "detail::DbAction::kDelete";
@@ -363,7 +363,7 @@ void GroupDb<Persona>::DeleteGroupEntries(typename GroupMap::iterator it) {
   for (const auto& key : group_db_keys) {
     leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), key));
     if (!status.ok())
-      ThrowError(VaultErrors::failed_to_handle_request);
+      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
   }
   group_map_.erase(it);
   leveldb_->CompactRange(nullptr, nullptr);
@@ -382,11 +382,10 @@ typename GroupDb<Persona>::Value GroupDb<Persona>::Get(const Key& key, const Gro
     return Value(value_string);
   } else if (status.IsNotFound()) {
     LOG(kWarning) << "cann't find such element for get, throwing error";
-    ThrowError(CommonErrors::no_such_element);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
   }
   LOG(kError) << "unknown error";
-  ThrowError(VaultErrors::failed_to_handle_request);
-  return Value();
+  BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
 }
 
 template <typename Persona>
@@ -395,7 +394,7 @@ void GroupDb<Persona>::Put(const KvPair& key_value_pair, const GroupId& group_id
                                        MakeLevelDbKey(group_id, key_value_pair.first),
                                        key_value_pair.second.Serialise()));
   if (!status.ok())
-    ThrowError(VaultErrors::failed_to_handle_request);
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
 }
 
 template <typename Persona>
@@ -403,7 +402,7 @@ void GroupDb<Persona>::Delete(const Key& key, const GroupId& group_id) {
   leveldb::Status status(
       leveldb_->Delete(leveldb::WriteOptions(), MakeLevelDbKey(group_id, key)));
   if (!status.ok())
-    ThrowError(VaultErrors::failed_to_handle_request);
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
 }
 
 template <typename Persona>
@@ -430,7 +429,7 @@ typename GroupDb<Persona>::GroupMap::iterator GroupDb<Persona>::FindGroup(
     const GroupName& group_name) {
   auto it(group_map_.find(group_name));
   if (it == group_map_.end())
-    ThrowError(VaultErrors::no_such_account);
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
   return it;
 }
 

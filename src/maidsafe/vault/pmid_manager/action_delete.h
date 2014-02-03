@@ -35,7 +35,7 @@ class PmidManagerValue;
 
 struct ActionPmidManagerDelete {
   ActionPmidManagerDelete(bool pmid_node_available_in, bool data_failure);
-  ActionPmidManagerDelete(const std::string& serialised_action);
+  explicit ActionPmidManagerDelete(const std::string& serialised_action);
   detail::DbAction operator()(PmidManagerMetadata& metadata,
                               std::unique_ptr<PmidManagerValue>& value) const;
   std::string Serialise() const;

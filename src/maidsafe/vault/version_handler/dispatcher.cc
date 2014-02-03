@@ -18,6 +18,9 @@
 
 
 #include "maidsafe/vault/version_handler/dispatcher.h"
+
+#include <string>
+
 #include "maidsafe/vault/version_handler/version_handler.h"
 #include "maidsafe/vault/utils.h"
 

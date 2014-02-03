@@ -123,7 +123,7 @@ bool DoCacheOperation(
     const typename GetFromCacheFromDataManagerToCacheHandler::Sender& sender,
     const typename GetFromCacheFromDataManagerToCacheHandler::Receiver& receiver);
 
-}  // detail
+}  // namespace detail
 
 template <typename MessageType>
 struct CacheOperationHandlerWrapper {
@@ -148,6 +148,4 @@ struct CacheOperationHandlerWrapper {
 
 }  // namespace maidsafe
 
-
-#endif // MAIDSAFE_VAULT_CACHE_HANDLER_OPERATION_HANDLERS_H_
-
+#endif  // MAIDSAFE_VAULT_CACHE_HANDLER_OPERATION_HANDLERS_H_

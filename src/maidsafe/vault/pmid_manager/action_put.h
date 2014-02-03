@@ -36,9 +36,6 @@ namespace maidsafe {
 
 namespace vault {
 
-//class PmidManagerMetadata;
-//class PmidManagerValue;
-
 struct ActionPmidManagerPut {
   ActionPmidManagerPut(int32_t size, nfs::MessageId message_id);
   explicit ActionPmidManagerPut(const std::string& serialised_action);

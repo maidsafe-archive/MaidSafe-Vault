@@ -38,7 +38,7 @@ class DataManagerValue;
 
 struct ActionDataManagerAddPmid {
   ActionDataManagerAddPmid(const PmidName& pmid_name, int32_t size);
-  ActionDataManagerAddPmid(const std::string& serialised_action);
+  explicit ActionDataManagerAddPmid(const std::string& serialised_action);
   ActionDataManagerAddPmid(const ActionDataManagerAddPmid& other);
   ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other);
   std::string Serialise() const;

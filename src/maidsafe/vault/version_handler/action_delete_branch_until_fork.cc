@@ -30,7 +30,7 @@ ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntil
         : version_name([&serialised_action]() {
             protobuf::ActionDeleteBranchUntilFork action_delete_branch_until_fork_proto;
             if (!action_delete_branch_until_fork_proto.ParseFromString(serialised_action))
-              ThrowError(CommonErrors::parsing_error);
+              BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
             return StructuredDataVersions::VersionName(
                        action_delete_branch_until_fork_proto.serialised_version());
           }()) {}
@@ -57,7 +57,7 @@ detail::DbAction ActionVersionHandlerDeleteBranchUntilFork::operator()(
     std::unique_ptr<VersionHandlerValue>& value) {
   if (!value) {
     LOG(kError) << "ActionVersionHandlerDeleteBranchUntilFork::operator() value uninitialised";
-    ThrowError(CommonErrors::uninitialised);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
   value->DeleteBranchUntilFork(version_name);
   return detail::DbAction::kDelete;

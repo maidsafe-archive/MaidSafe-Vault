@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_PMID_NODE_DISPATCHER_H_
 #define MAIDSAFE_VAULT_PMID_NODE_DISPATCHER_H_
 
+#include <string>
+
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message_types.h"
 
@@ -32,7 +34,7 @@ namespace vault {
 
 class PmidNodeDispatcher {
  public:
-  PmidNodeDispatcher(routing::Routing& routing);
+  explicit PmidNodeDispatcher(routing::Routing& routing);
 
   void SendGetRequest(const nfs_vault::DataName& data_name);
   void SendGetOrIntegrityCheckResponse(

@@ -33,7 +33,7 @@ ActionPmidManagerPut::ActionPmidManagerPut(const std::string& serialised_action)
   : kSize([&serialised_action]()->int32_t {
             protobuf::ActionPmidManagerPut action_put_proto;
             if (!action_put_proto.ParseFromString(serialised_action))
-              ThrowError(CommonErrors::parsing_error);
+              BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
             return action_put_proto.size();
           }()),
     kMessageId([&serialised_action]()->int32_t {
@@ -61,7 +61,7 @@ detail::DbAction ActionPmidManagerPut::operator()(PmidManagerMetadata& metadata,
     value.reset(new PmidManagerValue(kSize));
   } else {
     LOG(kError) << "data already exists in the group";
-    ThrowError(VaultErrors::data_already_exists);
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::data_already_exists));
   }
 
   metadata.PutData(value->size());

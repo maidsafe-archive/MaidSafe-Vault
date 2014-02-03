@@ -32,7 +32,7 @@ ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(
         : kPmidHealth([&serialised_action]()->PmidManagerMetadata {
             protobuf::ActionMaidManagerUpdatePmidHealth action_proto;
             if (!action_proto.ParseFromString(serialised_action))
-              ThrowError(CommonErrors::parsing_error);
+              BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
             return PmidManagerMetadata(action_proto.serialised_pmid_health());
           }()) {}
 

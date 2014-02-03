@@ -73,7 +73,7 @@ class PmidManagerServiceTest {
 template <typename UnresolvedActionType>
 void PmidManagerServiceTest::SendSync(
     const std::vector<UnresolvedActionType>& /*unresolved_actions*/,
-   const std::vector<routing::GroupSource>& /*group_source*/) {
+    const std::vector<routing::GroupSource>& /*group_source*/) {
   UnresolvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
 }
 
@@ -92,7 +92,8 @@ void PmidManagerServiceTest::SendSync<PmidManager::UnresolvedDelete>(
          const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<PmidManagerService, PmidManager::UnresolvedDelete,
                                     SynchroniseFromPmidManagerToPmidManager>(
-      &pmid_manager_service_, pmid_manager_service_.sync_deletes_, unresolved_actions, group_source);
+      &pmid_manager_service_, pmid_manager_service_.sync_deletes_,
+      unresolved_actions, group_source);
 }
 
 template <typename UnresolvedActionType>

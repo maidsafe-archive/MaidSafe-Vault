@@ -19,6 +19,7 @@
 #include "maidsafe/vault/tests/vault_network.h"
 
 #include <algorithm>
+#include <string>
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/vault/tests/tests_utils.h"

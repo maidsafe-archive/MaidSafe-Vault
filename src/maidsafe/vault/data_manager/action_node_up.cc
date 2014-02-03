@@ -34,7 +34,7 @@ ActionDataManagerNodeUp::ActionDataManagerNodeUp(const std::string& serialised_a
     : kPmidName([&serialised_action]()->PmidName {
         protobuf::ActionDataManagerNodeUp action_set_pmid_online_proto;
         if (!action_set_pmid_online_proto.ParseFromString(serialised_action))
-          ThrowError(CommonErrors::parsing_error);
+          BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
         return PmidName(Identity(action_set_pmid_online_proto.pmid_name()));
       }()) {}
 
@@ -55,9 +55,7 @@ detail::DbAction ActionDataManagerNodeUp::operator()(std::unique_ptr<DataManager
     value->SetPmidOnline(kPmidName);
     return detail::DbAction::kPut;
   }
-
-  ThrowError(CommonErrors::no_such_element);
-  return detail::DbAction::kDelete;
+  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 }
 
 bool operator==(const ActionDataManagerNodeUp& lhs, const ActionDataManagerNodeUp& rhs) {

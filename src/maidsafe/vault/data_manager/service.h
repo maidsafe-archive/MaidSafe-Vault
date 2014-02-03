@@ -20,8 +20,10 @@
 #define MAIDSAFE_VAULT_DATA_MANAGER_SERVICE_H_
 
 #include <algorithm>
+#include <map>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -205,6 +207,7 @@ class DataManagerService {
   typedef boost::mpl::insert_range<IntermediateType,
                                    boost::mpl::end<IntermediateType>::type,
                                    DataManagerServiceMessages::types>::type FinalType;
+
  public:
   typedef boost::make_variant_over<FinalType>::type Messages;
 
@@ -744,8 +747,9 @@ void DataManagerService::SendFalseDataNotification(
 // ==================== Node up / Node down implementation =========================================
 template <typename DataName>
 void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName& name) {
-  LOG(kWarning) << "DataManagerService::MarkNodeDown marking node " << HexSubstr(pmid_node->string())
-                << " down for chunk " << HexSubstr(name.value.string());
+  LOG(kWarning) << "DataManagerService::MarkNodeDown marking node "
+                << HexSubstr(pmid_node->string()) << " down for chunk "
+                << HexSubstr(name.value.string());
   typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
   DoSync(DataManager::UnresolvedNodeDown(key,
              ActionDataManagerNodeDown(pmid_node), routing_.kNodeId()));
