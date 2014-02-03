@@ -16,7 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/group_db.h"
+
 
 #include <atomic>
 #include <algorithm>
@@ -28,6 +28,7 @@
 
 #include "leveldb/status.h"
 
+#include "maidsafe/vault/group_db.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
