@@ -29,12 +29,12 @@ namespace vault {
 
 namespace test {
 
-class VersionHandlerkTest : public VaultNetwork  {
+class VersionHandlerTest : public VaultNetwork  {
  public:
-  VersionHandlerkTest() {}
+  VersionHandlerTest() {}
 };
 
-TEST_F(VersionHandlerkTest, FUNC_PutGet) {
+TEST_F(VersionHandlerTest, FUNC_PutGet) {
   EXPECT_TRUE(AddClient(true));
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
