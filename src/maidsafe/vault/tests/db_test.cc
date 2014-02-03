@@ -40,7 +40,7 @@ namespace vault {
 
 namespace test {
 
-//DataNameVariant GetRandomKey() {
+// DataNameVariant GetRandomKey() {
 //  // Currently 15 types are defined, but...
 //  uint32_t number_of_types = boost::mpl::size<typename DataNameVariant::types>::type::value,
 //           type_number;
@@ -65,7 +65,7 @@ namespace test {
 //    default:
 //      return DataNameVariant();
 //  }
-//}
+// }
 
 struct TestDbValue {
   TestDbValue() : value("original_value") {}
@@ -115,7 +115,8 @@ detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
 template <typename Key, typename Value>
 void PopulateDbValues(Db<Key, Value>& db, const int& count) {
   for (auto i(0); i != count; ++i) {
-    Key key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue); // need Random type
+// need Random type
+    Key key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue);
     db.Commit(key, TestDbActionPutValue("new_value"));
     CHECK(db.Get(key).value == "new_value");
   }
