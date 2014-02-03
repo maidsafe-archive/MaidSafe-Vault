@@ -121,14 +121,7 @@ TEST_F(VaultNetworkTest, FUNC_FailingGet) {
   EXPECT_TRUE(AddClient(true));
   LOG(kVerbose) << "Client joins";
   ImmutableData data(NonEmptyString(RandomString(1024)));
-
-  try {
-    Get<ImmutableData>(data.name());
-    EXPECT_TRUE(false) << "Expected to fail.";
-  }
-  catch (...) {
-    LOG(kVerbose) << "Retrieval failed as expected.";
-  }
+  EXPECT_THROW(Get<ImmutableData>(data.name()), maidsafe_error) << "must have failed";
 }
 
 TEST_F(VaultNetworkTest, FUNC_PutMultipleCopies) {
