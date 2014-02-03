@@ -70,7 +70,8 @@ set(VaultTestsAllFiles ${PmidNodeTestsAllFiles}
 
 set(VaultNetworkTestFiles ${VaultSourcesDir}/tests/vault_network.h
                           ${VaultSourcesDir}/tests/vault_network.cc
-                          ${VaultSourcesDir}/tests/vault_network_test.cc)
+                          ${VaultSourcesDir}/tests/vault_network_test.cc
+                          ${VaultSourcesDir}/version_handler/tests/verion_handler_test.cc)
 
 list(REMOVE_ITEM VaultGTestsAllFiles ${VaultTestsAllFiles})
 list(REMOVE_ITEM VaultGTestsAllFiles ${VaultNetworkTestFiles})

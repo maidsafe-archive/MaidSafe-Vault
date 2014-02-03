@@ -284,7 +284,8 @@ void VersionHandlerService::DoSync() {
 //  return NonEmptyString(proto_unresolved_entries.SerializeAsString());
 // }
 
-void VersionHandlerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {
+void VersionHandlerService::HandleChurnEvent(
+    std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {
 //  auto record_names(version_handler_db_.GetKeys());
 //  auto itr(std::begin(record_names));
 //  while (itr != std::end(record_names)) {
