@@ -96,8 +96,8 @@ ms_add_static_library(maidsafe_vault ${VaultAllFiles}
 target_include_directories(maidsafe_vault
   PUBLIC ${PROJECT_SOURCE_DIR}/include
   PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
-  # TODO - Investigate why boost variant requires this warning to be disabled.
-target_compile_options(maidsafe_vault PUBLIC $<$<AND:${MSVC},$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>:/wd4702>)
+# TODO - Investigate why boost variant requires this warning to be disabled.
+target_compile_options(maidsafe_vault PUBLIC $<$<AND:$<BOOL:${MSVC}>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>:/wd4702>)
 
 ms_add_executable(vault Production ${VaultSourcesDir}/vault_main.cc)
 target_include_directories(vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
