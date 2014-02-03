@@ -1,4 +1,4 @@
-///*  Copyright 2012 MaidSafe.net limited
+// /*  Copyright 2012 MaidSafe.net limited
 
 //    This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
 //    version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -17,23 +17,23 @@
 //    use of the MaidSafe Software.
 // */
 
-//#include "maidsafe/vault/demultiplexer.h"
+// #include "maidsafe/vault/demultiplexer.h"
 
-//#include "maidsafe/common/log.h"
-//#include "maidsafe/common/utils.h"
-//#include "maidsafe/common/test.h"
-//#include "maidsafe/nfs/message.h"
+// #include "maidsafe/common/log.h"
+// #include "maidsafe/common/utils.h"
+// #include "maidsafe/common/test.h"
+// #include "maidsafe/nfs/message.h"
 
-//#include "maidsafe/vault/maid_manager/service.h"
-//#include "maidsafe/vault/data_manager/service.h"
-//#include "maidsafe/vault/pmid_manager/service.h"
-//#include "maidsafe/vault/pmid_node/service.h"
+// #include "maidsafe/vault/maid_manager/service.h"
+// #include "maidsafe/vault/data_manager/service.h"
+// #include "maidsafe/vault/pmid_manager/service.h"
+// #include "maidsafe/vault/pmid_node/service.h"
 
 //// TODO(Qi) - redesign tests to not use Mocks for personas
 
 // namespace maidsafe {
 
-///*
+// /*
 // namespace nfs {
 
 // bool operator==(const nfs::Message& lhs, const nfs::Message& rhs) {
@@ -50,11 +50,11 @@
 // }
 
 // }  // namespace nfs
-//*/
+// */
 
 // namespace vault {
 
-///*
+// /*
 //// TODO(Qi) - move mocks to separate file?
 // class MockMaidManager : public MaidManager {
 // public:
@@ -103,11 +103,11 @@
 //  MockDataHolder &operator=(const MockDataHolder&);
 //  MockDataHolder(const MockDataHolder&);
 // };
-//*/
+// */
 
 // namespace test {
 
-///*
+// /*
 // class DemultiplexerTest : public testing::Test {
 // public:
 //  DemultiplexerTest()
@@ -554,7 +554,7 @@
 //  EXPECT_FALSE(demultiplexer_.HaveCache(passed_string));
 //  EXPECT_EQ(string, passed_string);
 // }
-//*/
+// */
 
 // }  // namespace test
 

@@ -16,11 +16,11 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-//#include "maidsafe/vault/maid_manager/handler.h"
+// #include "maidsafe/vault/maid_manager/handler.h"
 
-//#include <vector>
+// #include <vector>
 
-//#include "maidsafe/common/test.h"
+// #include "maidsafe/common/test.h"
 
 // namespace maidsafe {
 
@@ -155,11 +155,11 @@
 ////  MaidAccountHandler maid_account_handler_;
 // };
 
-////TEST_F(MaidAccountHandlerTest, BEH_AddAccount) {
+//// TEST_F(MaidAccountHandlerTest, BEH_AddAccount) {
 ////  std::vector<MaidName> account_names;
 ////  MaidName account_name(GenerateMaidName());
 ////  std::unique_ptr<MaidAccount> new_account(new MaidAccount(account_name,
-///*vault_root_directory_));
+/// *vault_root_directory_));
 ////  std::unique_ptr<MaidAccount> duplicate(new MaidAccount(account_name, *vault_root_directory_));
 
 ////  AddAccount(std::move(new_account));
@@ -171,11 +171,11 @@
 ////  EXPECT_EQ(1, account_names.size());
 //// }
 
-////TEST_F(MaidAccountHandlerTest, BEH_DeleteAccount) {
+//// TEST_F(MaidAccountHandlerTest, BEH_DeleteAccount) {
 ////  std::vector<MaidName> account_names;
 ////  MaidName account_name(GenerateMaidName());
 ////  std::unique_ptr<MaidAccount> new_account(new MaidAccount(account_name,
-///*vault_root_directory_));
+/// *vault_root_directory_));
 
 ////  EXPECT_TRUE(maid_account_handler_.DeleteAccount(account_name));
 
@@ -186,10 +186,10 @@
 ////  EXPECT_EQ(0, account_names.size());
 //// }
 
-////TEST_F(MaidAccountHandlerTest, BEH_RegisterPmid) {
+//// TEST_F(MaidAccountHandlerTest, BEH_RegisterPmid) {
 ////  MaidName account_name(GenerateMaidName());
 ////  std::unique_ptr<MaidAccount> new_account(new MaidAccount(account_name,
-///*vault_root_directory_));
+/// *vault_root_directory_));
 ////  nfs::PmidRegistration registration(GenerateRegistration(false));
 ////  std::vector<PmidTotals> pmids;
 
@@ -215,7 +215,7 @@
 ////  EXPECT_EQ(total_pre_duplicate_register, pmids.size());
 //// }
 
-////TEST_F(MaidAccountHandlerTest, BEH_UnregisterPmid) {
+//// TEST_F(MaidAccountHandlerTest, BEH_UnregisterPmid) {
 ////  MaidName account_name(GenerateMaidName());
 ////  std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, *vault_root_directory_));
 ////  PmidName pmid_name(Identity(RandomAlphaNumericString(64)));
@@ -233,7 +233,7 @@
 ////                                      }));
 //// }
 
-////TEST_F(MaidAccountHandlerTest, BEH_UpdatePmidTotals) {
+//// TEST_F(MaidAccountHandlerTest, BEH_UpdatePmidTotals) {
 ////  MaidName account_name(GenerateMaidName());
 ////  std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, *vault_root_directory_));
 
@@ -271,7 +271,7 @@
 ////  }
 //// }
 
-////TEST_F(MaidAccountHandlerTest, BEH_GetAccountNames) {
+//// TEST_F(MaidAccountHandlerTest, BEH_GetAccountNames) {
 ////  std::vector<MaidName> generated_account_names, retrieved_account_names, removed_account_names;
 ////  int total_accounts(15);
 ////  for (int i(0); i < total_accounts; ++i) {
@@ -303,7 +303,7 @@
 ////                                                          }));
 //// }
 
-////TEST_F(MaidAccountHandlerTest, BEH_GetSerialisedAccount) {
+//// TEST_F(MaidAccountHandlerTest, BEH_GetSerialisedAccount) {
 ////  MaidName account_name(GenerateMaidName());
 ////  int num_pmid_totals(10);
 ////  int64_t total_space_used(0), total_space_available(0);
@@ -311,7 +311,7 @@
 ////  EXPECT_THROW(maid_account_handler_.GetSerialisedAccount(account_name), vault_error);
 
 ////  std::vector<PmidTotals> generated_pmids(SetupAndRegisterAccount(account_name,
-///num_pmid_totals));
+/// num_pmid_totals));
 ////  for (auto& pmid : generated_pmids) {
 ////    total_space_used += pmid.pmid_record.stored_total_size;
 ////    total_space_available += pmid.pmid_record.claimed_available_size;
@@ -336,7 +336,7 @@
 ////    EXPECT_EQ(generated_pmid->serialised_pmid_registration, pmid.serialised_pmid_registration);
 ////    EXPECT_EQ(generated_pmid->pmid_record.stored_count, pmid.pmid_record.stored_count);
 ////    EXPECT_EQ(generated_pmid->pmid_record.stored_total_size,
-///pmid.pmid_record.stored_total_size);
+/// pmid.pmid_record.stored_total_size);
 ////    EXPECT_EQ(generated_pmid->pmid_record.lost_count, pmid.pmid_record.lost_count);
 ////    EXPECT_EQ(generated_pmid->pmid_record.lost_total_size, pmid.pmid_record.lost_total_size);
 ////    EXPECT_EQ(generated_pmid->pmid_record.claimed_available_size,
@@ -344,7 +344,7 @@
 ////  }
 //// }
 
-////TEST_F(MaidAccountHandlerTest, BEH_GetArchiveFileNames) {
+//// TEST_F(MaidAccountHandlerTest, BEH_GetArchiveFileNames) {
 ////  MaidName account_name(GenerateMaidName());
 ////  int num_entries(20);
 ////  std::vector<boost::filesystem::path> retrieved_archive_entries,
@@ -364,25 +364,25 @@
 ////  //  to finish.....
 //// }
 
-////TEST_F(MaidAccountHandlerTest, BEH_GetArchiveFile) {
+//// TEST_F(MaidAccountHandlerTest, BEH_GetArchiveFile) {
 //// }
 
-////TEST_F(MaidAccountHandlerTest, BEH_PutArchiveFile) {
+//// TEST_F(MaidAccountHandlerTest, BEH_PutArchiveFile) {
 ////  MaidName account_name(GenerateMaidName());
 ////  std::unique_ptr<MaidAccount> account(new MaidAccount(account_name, *vault_root_directory_));
 ////  boost::filesystem::path filename;
 ////  NonEmptyString content;
 
 ////  EXPECT_THROW(maid_account_handler_.PutArchiveFile(account_name, filename, content),
-///vault_error);
+/// vault_error);
 ////  AddAccount(std::move(account));
 ////  EXPECT_NO_THROW(maid_account_handler_.PutArchiveFile(account_name, filename, content));
 
 ////  //  to finish.....
 //// }
 
-////template <typename Data>
-////class MaidAccountHandlerTypedTest : public MaidAccountHandlerTest {
+//// template <typename Data>
+//// class MaidAccountHandlerTypedTest : public MaidAccountHandlerTest {
 //// public:
 ////  MaidAccountHandlerTypedTest()
 ////    : MaidAccountHandlerTest() {}
@@ -423,9 +423,9 @@
 ////  }
 //// };
 
-////TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest);
+//// TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest);
 
-////TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_PutData) {
+//// TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_PutData) {
 ////  typename TypeParam::Name data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
 ////  MaidName account_name(this->GenerateMaidName());
 ////  int32_t cost(1000);
@@ -444,7 +444,7 @@
 ////  this->CheckPutDetails(account_name, data_name, cost, 1);
 //// }
 
-////TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_DeleteData) {
+//// TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_DeleteData) {
 ////  typename TypeParam::Name data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
 ////  int32_t cost(1000);
 ////  MaidName account_name(this->GenerateMaidName());
@@ -465,7 +465,7 @@
 ////  EXPECT_EQ(0, this->GetTotalPutData(account_name));
 //// }
 
-////TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_Adjust) {
+//// TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_Adjust) {
 ////  typename TypeParam::Name data_name((Identity(RandomString(crypto::SHA512::DIGESTSIZE))));
 ////  int32_t old_cost(1000), new_cost_small(500), new_cost_large(20000);
 ////  MaidName account_name(this->GenerateMaidName());
@@ -495,10 +495,10 @@
 ////  this->CheckPutDetails(account_name, data_name, new_cost_large, 1);
 //// }
 
-////REGISTER_TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest, BEH_PutData, BEH_DeleteData,
-///BEH_Adjust);
+//// REGISTER_TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest, BEH_PutData, BEH_DeleteData,
+/// BEH_Adjust);
 
-////typedef testing::Types<passport::PublicAnmid,
+//// typedef testing::Types<passport::PublicAnmid,
 ////                       passport::PublicAnsmid,
 ////                       passport::PublicAntmid,
 ////                       passport::PublicAnmaid,
@@ -514,7 +514,7 @@
 ////                       GroupDirectory,
 ////                       WorldDirectory> AllTypes;
 
-////INSTANTIATE_TYPED_TEST_CASE_P(All, MaidAccountHandlerTypedTest, AllTypes);
+//// INSTANTIATE_TYPED_TEST_CASE_P(All, MaidAccountHandlerTypedTest, AllTypes);
 
 // }  //  namespace test
 
