@@ -55,7 +55,7 @@ void MetadataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
   } else if (unresolved_entry.key.second == nfs::MessageAction::kAccountTransfer) {
     MergeRecordTransfer(unresolved_entry);
   } else {
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 }
 
@@ -78,14 +78,14 @@ int MetadataMergePolicy::GetDataSize(
   }
 
   if (all_data_size.empty())
-    ThrowError(CommonErrors::unknown);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
   assert(all_data_size.size() == 1);
   if (most_frequent > static_cast<size_t>(routing::Parameters::node_group_size / 2))
     return most_frequent_itr->value.get().data_size;
 
   if (unresolved_entry.messages_contents.size() == routing::Parameters::node_group_size) {
     assert(false && "Invalid datasize from peers");
-    ThrowError(CommonErrors::unknown);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
   }
 
   return 0;

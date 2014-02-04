@@ -82,7 +82,7 @@ void GetIdentityAndEndpoints(po::variables_map& variables_map,
 
   if (variables_map.count("identity_index") == 0) {
     std::cout << "No identity selected\n";
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   {
     auto keys_path(maidsafe::GetPathFromProgramOptions("keys_path", variables_map, false, false));
@@ -91,7 +91,7 @@ void GetIdentityAndEndpoints(po::variables_map& variables_map,
     size_t identity_index(variables_map.at("identity_index").as<int>());
     if (identity_index >= key_chains.size()) {
       std::cout << "Identity selected out of bounds\n";
-      ThrowError(CommonErrors::invalid_parameter);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
     pmid.reset(new passport::Pmid(key_chains.at(identity_index).pmid));
   }
@@ -131,7 +131,7 @@ void RunVault(po::variables_map& variables_map) {
   });
   if (vmid != "test" && !vault_controller.GetIdentity(pmid, peer_endpoints)) {
     std::cout << "Failed to get ID from VC" << std::endl;
-    ThrowError(CommonErrors::uninitialised);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
 
 #ifndef MAIDSAFE_WIN32
@@ -229,7 +229,7 @@ void ActOnOptions(int argc, char* argv[]) {
     std::cout << cmdline_options << std::endl;
     if (invalid_options) {
       std::cout << "invalid options" << std::endl;
-      ThrowError(CommonErrors::invalid_parameter);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
   }
 

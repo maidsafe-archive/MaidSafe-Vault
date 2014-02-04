@@ -52,7 +52,7 @@ void MaidManagerMergePolicy::Merge(const UnresolvedAction& unresolved_action) {
   } else if (unresolved_action.key.second == nfs::MessageAction::kDelete) {
     MergeDelete(unresolved_action.key.first, serialised_db_value);
   } else {
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 }
 
@@ -75,7 +75,7 @@ MaidManagerMergePolicy::UnresolvedAction::Value MaidManagerMergePolicy::MergedCo
   }
 
   if (all_costs.empty())
-    ThrowError(CommonErrors::unknown);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
   // This will always return here if all_costs.size() == 1, or if == 2 and both costs are the same.
   if (most_frequent > all_costs.size() / 2)
     return *(*most_frequent_itr).value;
@@ -142,7 +142,7 @@ MaidManagerMergePolicy::DbValue MaidManagerMergePolicy::ParseDbValue(
     NonEmptyString serialised_db_value) const {
   protobuf::MaidManagerDbValue proto_db_value;
   if (!proto_db_value.ParseFromString(serialised_db_value.string()))
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   return std::make_pair(AverageCost(proto_db_value.average_cost()), Count(proto_db_value.count()));
 }
 

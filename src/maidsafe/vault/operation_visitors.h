@@ -19,13 +19,16 @@
 #ifndef MAIDSAFE_VAULT_OPERATION_VISITORS_H_
 #define MAIDSAFE_VAULT_OPERATION_VISITORS_H_
 
+#include <string>
+
 #include "maidsafe/common/types.h"
-#include "maidsafe/nfs/types.h"
-#include "maidsafe/vault/types.h"
 #include "maidsafe/common/node_id.h"
-#include "maidsafe/vault/version_handler/key.h"
-#include"maidsafe/vault/version_handler/service.h"
+#include "maidsafe/nfs/types.h"
+
+#include "maidsafe/vault/types.h"
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/version_handler/key.h"
+#include "maidsafe/vault/version_handler/service.h"
 
 namespace maidsafe {
 
@@ -331,7 +334,7 @@ class PmidNodeIntegrityCheckVisitor : public boost::static_visitor<> {
 template<typename ServiceHandlerType>
 class PmidNodeDeleteVisitor : public boost::static_visitor<> {
  public:
-  PmidNodeDeleteVisitor(ServiceHandlerType* service) : kService_(service) {}
+  explicit PmidNodeDeleteVisitor(ServiceHandlerType* service) : kService_(service) {}
 
   template<typename Name>
   void operator()(const Name& data_name) {
@@ -599,8 +602,7 @@ class VersionHandlerDeleteBranchVisitor : public boost::static_visitor<> {
 
 class CheckDataNameVisitor : public boost::static_visitor<bool> {
  public:
-  CheckDataNameVisitor(const NonEmptyString& content)
-      : kContent_(content) {}
+  explicit CheckDataNameVisitor(const NonEmptyString& content) : kContent_(content) {}
 
   template <typename DataNameType>
   result_type operator()(const DataNameType& data_name) {

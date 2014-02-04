@@ -196,7 +196,6 @@ void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedUpdatePmidHealth>(
 
 TEST_CASE_METHOD(MaidManagerServiceTest, "maid manager: check handlers availability",
                 "[Handler][MaidManager][Service][Behavioural]") {
-
   SECTION("PutRequestFromMaidNodeToMaidManager") {
     CreateAccount();
     auto content(CreateContent<nfs::PutRequestFromMaidNodeToMaidManager::Contents>());
@@ -264,12 +263,13 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "maid manager: check handlers availabil
     auto register_pmid(CreateMessage<nfs::RegisterPmidRequestFromMaidNodeToMaidManager>(content));
     CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, register_pmid,
                     routing::SingleSource(MaidNodeId()), routing::GroupId(MaidNodeId())));
- }
+  }
 
   SECTION("nfs::UnregisterPmidRequestFromMaidNodeToMaidManager") {
     nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Contents content(
       nfs_vault::DataName(DataTagValue::kPmidValue, Identity(pmid_.name()->string())));
-    auto unregister_pmid(CreateMessage<nfs::UnregisterPmidRequestFromMaidNodeToMaidManager>(content));
+    auto unregister_pmid(
+        CreateMessage<nfs::UnregisterPmidRequestFromMaidNodeToMaidManager>(content));
     CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, unregister_pmid,
                     routing::SingleSource(MaidNodeId()), routing::GroupId(MaidNodeId())));
   }
@@ -355,7 +355,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
                  metadata_key, action_register_pmid, group_source));
     SendSync<MaidManager::UnresolvedRegisterPmid>(group_unresolved_action, group_source);
     MaidManager::Metadata metadata(GetMetadata(public_maid_.name()));
-    CHECK(MetadataPmidTotals(metadata).size() == 1); // FAILS BECAUSE DATAGETTER GET NEVER SUCCEEDS
+    CHECK(MetadataPmidTotals(metadata).size() == 1);  // FAILS BECAUSE DATAGETTER GET NEVER SUCCEEDS
   }
 
   SECTION("UnregistedPmid") {

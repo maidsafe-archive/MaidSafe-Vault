@@ -49,17 +49,18 @@ MaidManagerMetadata::MaidManagerMetadata(const std::string& serialised_metadata_
   protobuf::MaidManagerMetadata maid_manager_metadata_proto;
   if (!maid_manager_metadata_proto.ParseFromString(serialised_metadata_value)) {
     LOG(kError) << "Failed to read or parse serialised maid manager value";
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
   total_put_data_ = maid_manager_metadata_proto.total_put_data();
   for (auto index(0); index < maid_manager_metadata_proto.pmid_totals_size(); ++index) {
     pmid_totals_.emplace_back(
         maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_registration()),
-        PmidManagerMetadata(maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_metadata());
+        PmidManagerMetadata(
+            maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_metadata());
   }
   if (total_put_data_ < 0) {
     LOG(kError) << "negative total_put_data_ " << total_put_data_;
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 }
 
@@ -69,23 +70,26 @@ void MaidManagerMetadata::DeleteData(int32_t cost) {
   total_put_data_ -= cost;
   if (total_put_data_ < 0) {
     LOG(kError) << "negative total_put_data_ " << total_put_data_;
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 }
 
 template <>
-MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(const passport::PublicPmid& /*data*/) const {
+MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(
+    const passport::PublicPmid& /*data*/) const {
   return Status::kOk;
 }
 
 template <>
-MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(const passport::PublicMaid& /*data*/) const {
+MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(
+    const passport::PublicMaid& /*data*/) const {
   assert(false && "Storing PublicMaid is not allowed on existing Account");
   return Status::kNoSpace;
 }
 
 template <>
-MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(const passport::PublicAnmaid& /*data*/) const {
+MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(
+    const passport::PublicAnmaid& /*data*/) const {
   assert(false && "Storing PublicMaid is not allowed on existing Account");
   return Status::kNoSpace;
 }
@@ -110,7 +114,7 @@ void MaidManagerMetadata::UpdatePmidTotals(const PmidManagerMetadata& pmid_metad
   if (itr == std::end(pmid_totals_)) {
     LOG(kError) << "MaidManagerMetadata::UpdatePmidTotals can't find record for "
                 << HexSubstr(pmid_metadata.pmid_name->string());
-    ThrowError(CommonErrors::no_such_element);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
   }
   LOG(kInfo) << "MaidManagerMetadata::UpdatePmidTotals updating record "
              << HexSubstr(pmid_metadata.pmid_name->string()) << " with new avaiable_size "

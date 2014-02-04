@@ -1,40 +1,40 @@
-///*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2012 MaidSafe.net limited
 
-//    This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
-//    version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
-//    licence you accepted on initial access to the Software (the "Licences").
+    This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
+    version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
+    licence you accepted on initial access to the Software (the "Licences").
 
-//    By contributing code to the MaidSafe Software, or to this project generally, you agree to be
-//    bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
-//    directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also
-//    available at: http://www.maidsafe.net/licenses
+    By contributing code to the MaidSafe Software, or to this project generally, you agree to be
+    bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
+    directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also
+    available at: http://www.maidsafe.net/licenses
 
-//    Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
-//    under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
-//    OF ANY KIND, either express or implied.
+    Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
+    under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+    OF ANY KIND, either express or implied.
 
-//    See the Licences for the specific language governing permissions and limitations relating to
-//    use of the MaidSafe Software.
-// */
+    See the Licences for the specific language governing permissions and limitations relating to
+    use of the MaidSafe Software.
+ */
 
-//#include "maidsafe/vault/pmid_node/service.h"
+// #include "maidsafe/vault/pmid_node/service.h"
 
-//#include <memory>
+// #include <memory>
 
-//#include "boost/filesystem/operations.hpp"
-//#include "boost/filesystem/path.hpp"
+// #include "boost/filesystem/operations.hpp"
+// #include "boost/filesystem/path.hpp"
 
-//#include "maidsafe/common/log.h"
-//#include "maidsafe/common/utils.h"
-//#include "maidsafe/common/test.h"
+// #include "maidsafe/common/log.h"
+// #include "maidsafe/common/utils.h"
+// #include "maidsafe/common/test.h"
 
-//#include "maidsafe/passport/passport.h"
+// #include "maidsafe/passport/passport.h"
 
-//#include "maidsafe/data_types/data_type_values.h"
-//#include "maidsafe/data_types/immutable_data.h"
-//#include "maidsafe/data_types/owner_directory.h"
-//#include "maidsafe/data_types/group_directory.h"
-//#include "maidsafe/data_types/world_directory.h"
+// #include "maidsafe/data_types/data_type_values.h"
+// #include "maidsafe/data_types/immutable_data.h"
+// #include "maidsafe/data_types/owner_directory.h"
+// #include "maidsafe/data_types/group_directory.h"
+// #include "maidsafe/data_types/world_directory.h"
 
 // namespace maidsafe {
 // namespace vault {
@@ -47,38 +47,38 @@
 // std::pair<Identity, NonEmptyString> MakeNameAndContentPair(const Fob& fob) {
 //  maidsafe::passport::detail::PublicFob<typename Fob::Name::tag_type> public_fob(fob);
 //  return std::make_pair(public_fob.name().data, public_fob.Serialise().data);
-//}
+// }
 
 // template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnmid>() {
 //  passport::Anmid anmid;
 //  return MakeNameAndContentPair(anmid);
-//}
+// }
 
 // template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnsmid>() {
 //  passport::Ansmid ansmid;
 //  return MakeNameAndContentPair(ansmid);
-//}
+// }
 
 // template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAntmid>() {
 //  passport::Antmid antmid;
 //  return MakeNameAndContentPair(antmid);
-//}
+// }
 
 // template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnmaid>() {
 //  passport::Anmaid anmaid;
 //  return MakeNameAndContentPair(anmaid);
-//}
+// }
 
 // template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicMaid>() {
 //  passport::Anmaid anmaid;
 //  passport::Maid maid(anmaid);
 //  return MakeNameAndContentPair(maid);
-//}
+// }
 
 // template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicPmid>() {
@@ -86,20 +86,20 @@
 //  passport::Maid maid(anmaid);
 //  passport::Pmid pmid(maid);
 //  return MakeNameAndContentPair(pmid);
-//}
+// }
 
 // template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnmpid>() {
 //  passport::Anmpid anmpid;
 //  return MakeNameAndContentPair(anmpid);
-//}
+// }
 
 // template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicMpid>() {
 //  passport::Anmpid anmpid;
 //  passport::Mpid mpid(NonEmptyString("Test"), anmpid);
 //  return MakeNameAndContentPair(mpid);
-//}
+// }
 
 // template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<passport::Mid>() {
@@ -116,7 +116,7 @@
 //                    passport::EncryptTmidName(kKeyword, kPin, tmid.name()),
 //                    anmid);
 //  return std::make_pair(mid.name().data, mid.Serialise().data);
-//}
+// }
 
 // template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<passport::Smid>() {
@@ -133,7 +133,7 @@
 //                      passport::EncryptTmidName(kKeyword, kPin, tmid.name()),
 //                      ansmid);
 //  return std::make_pair(smid.name().data, smid.Serialise().data);
-//}
+// }
 
 // template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<passport::Tmid>() {
@@ -145,14 +145,14 @@
 //  passport::Antmid antmid;
 //  passport::Tmid tmid(encrypted_session, antmid);
 //  return std::make_pair(tmid.name().data, tmid.Serialise().data);
-//}
+// }
 
 // template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<ImmutableData>() {
 //  NonEmptyString value(RandomString(RandomUint32() % 10000 + 10));
 //  ImmutableData immutable(value);
 //  return std::make_pair(immutable.name().data, immutable.Serialise().data);
-//}
+// }
 
 // template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<OwnerDirectory>() {
@@ -160,7 +160,7 @@
 //  Identity name(crypto::Hash<crypto::SHA512>(value));
 //  OwnerDirectory owner_directory(OwnerDirectory::Name(name), value);
 //  return std::make_pair(owner_directory.name().data, owner_directory.Serialise().data);
-//}
+// }
 
 // template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<GroupDirectory>() {
@@ -168,7 +168,7 @@
 //  Identity name(crypto::Hash<crypto::SHA512>(value));
 //  GroupDirectory group_directory(GroupDirectory::Name(name), value);
 //  return std::make_pair(group_directory.name().data, group_directory.Serialise().data);
-//}
+// }
 
 // template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<WorldDirectory>() {
@@ -176,7 +176,7 @@
 //  Identity name(crypto::Hash<crypto::SHA512>(value));
 //  WorldDirectory world_directory(WorldDirectory::Name(name), value);
 //  return std::make_pair(world_directory.name().data, world_directory.Serialise().data);
-//}
+// }
 
 // template<class T>
 // class DataHolderTest : public testing::Test {
@@ -216,7 +216,7 @@
 //  passport::Passport passport_;
 //  std::unique_ptr<routing::Routing> routing_;
 //  std::unique_ptr<PmidNodeService> pmid_node_;
-//};
+// };
 
 // TYPED_TEST_CASE_P(DataHolderTest);
 
@@ -235,7 +235,7 @@
 //                                      retrieved = result;
 //                                  });
 //  EXPECT_NE(retrieved.find(name_and_content.second.string()), -1);
-//}
+// }
 
 // TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
 //  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
@@ -251,7 +251,7 @@
 //                                  });
 //  EXPECT_EQ(retrieved, nfs::Reply(CommonErrors::unknown,
 // message.Serialise().data).Serialise()->string());
-//}
+// }
 
 // TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
 //  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
@@ -284,7 +284,7 @@
 //                                  });
 //  EXPECT_EQ(retrieved, nfs::Reply(CommonErrors::unknown,
 // message.Serialise().data).Serialise()->string());
-//}
+// }
 
 // TYPED_TEST_P(DataHolderTest, BEH_RandomAsync) {
 //  typedef std::vector<std::pair<Identity, NonEmptyString>> NameContentContainer;
@@ -415,7 +415,7 @@
 //      LOG(kError) << msg;
 //    }
 //  }
-//}
+// }
 
 // REGISTER_TYPED_TEST_CASE_P(DataHolderTest,
 //                           BEH_HandlePutMessage,
@@ -451,7 +451,7 @@
 //  void StoreInCache(const nfs::Message& message) {
 //    this->pmid_node_->template StoreInCache<T>(message);
 //  }
-//};
+// };
 
 // TYPED_TEST_CASE_P(DataHolderCacheableTest);
 
@@ -466,7 +466,7 @@
 //  EXPECT_THROW(this->GetFromCache(message), maidsafe_error);
 //  this->StoreInCache(message);
 //  EXPECT_EQ(message.data().content, this->GetFromCache(message));
-//}
+// }
 
 // REGISTER_TYPED_TEST_CASE_P(DataHolderCacheableTest, BEH_StoreInCache);
 
@@ -485,6 +485,6 @@
 
 // INSTANTIATE_TYPED_TEST_CASE_P(Cache, DataHolderCacheableTest, CacheableTypes);
 
-//}  // namespace test
-//}  // namespace vault
-//}  // namespace maidsafe
+// }  // namespace test
+// }  // namespace vault
+// }  // namespace maidsafe

@@ -55,7 +55,7 @@ PmidAccount::PmidAccount(const PmidName& pmid_name,
   //protobuf::PmidAccount pmid_account;
   //if (!pmid_account.ParseFromString(serialised_pmid_account_details->string())) {
   //  LOG(kError) << "Failed to parse pmid_account.";
-  //  ThrowError(CommonErrors::parsing_error);
+  //  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   //}
   ////for (auto& recent_data : pmid_account.recent_data_stored()) {
   ////  DataElement data_element(GetDataNameVariant(static_cast<DataTagValue>(recent_data.type()),
@@ -104,7 +104,7 @@ PmidAccount::serialised_type PmidAccount::Serialise() {
     proto_db_entry->set_name(type_and_name.second.string());
     protobuf::PmidAccountDbValue proto_db_value;
     if (!proto_db_value.ParseFromString(db_entry.second.string()))
-      ThrowError(CommonErrors::parsing_error);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     proto_db_entry->mutable_value()->CopyFrom(proto_db_value);
   }
 
@@ -130,11 +130,11 @@ bool PmidAccount::ApplyAccountTransfer(const NodeId& source_id,
 
   protobuf::PmidAccountDetails proto_pmid_account_details;
   if (!proto_pmid_account_details.ParseFromString(serialised_pmid_account_details->string()))
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
 
   protobuf::PmidManagerMetadata proto_pmid_record;
   if (!proto_pmid_record.ParseFromString(proto_pmid_account_details.serialised_pmid_record()))
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   metadata_.pmid_name.data = Identity(proto_pmid_record.pmid_name());
   metadata_.stored_count = proto_pmid_record.stored_count();
   metadata_.stored_total_size = proto_pmid_record.stored_total_size();
@@ -186,7 +186,7 @@ NonEmptyString PmidAccount::GetSyncData() {
 void PmidAccount::ApplySyncData(const NonEmptyString& serialised_unresolved_entries) {
   protobuf::UnresolvedEntries proto_unresolved_entries;
   if (!proto_unresolved_entries.ParseFromString(serialised_unresolved_entries.string()))
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
 
   for (int i(0); i != proto_unresolved_entries.serialised_unresolved_entry_size(); ++i) {
     PmidManagerUnresolvedEntry entry(PmidManagerUnresolvedEntry::serialised_type(

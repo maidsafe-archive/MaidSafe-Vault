@@ -40,11 +40,11 @@ PmidManagerMetadata::PmidManagerMetadata(const std::string &serialised_metadata)
   protobuf::PmidManagerMetadata proto_metadata;
   if (!proto_metadata.ParseFromString(serialised_metadata)) {
     LOG(kError) << "Failed to parse pmid metadata.";
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
   if (!proto_metadata.IsInitialized()) {
     LOG(kError) << "Failed to construct pmid metadata.";
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   pmid_name = PmidName(Identity(proto_metadata.pmid_name()));
   stored_count = proto_metadata.stored_count();
@@ -93,7 +93,7 @@ void PmidManagerMetadata::DeleteData(int32_t size) {
   if ((stored_total_size < 0) || (stored_count < 0)) {
     LOG(kError) << "invalid stored_total_size " << stored_total_size
                 << " or stored_count " << stored_count;
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 }
 

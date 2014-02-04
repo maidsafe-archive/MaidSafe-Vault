@@ -18,6 +18,7 @@
 
 #include "maidsafe/vault/data_manager/service.h"
 
+#include <set>
 #include <type_traits>
 
 #include "maidsafe/common/log.h"
@@ -300,7 +301,7 @@ void DataManagerService::HandleMessage(
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.contents->data)) {
     LOG(kError) << "SynchroniseFromDataManagerToDataManager can't parse content";
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
 
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
@@ -333,7 +334,6 @@ void DataManagerService::HandleMessage(
             SendDeleteRequests(resolved_action->key, value->AllPmids(),
                                resolved_action->action.MessageId());
           }
-
         }
       }
       break;
@@ -469,7 +469,7 @@ void DataManagerService::HandleMessage(
 //  }
 //  // TODO(Prakash):  modify ReplaceNodeInSyncList to be called once with vector of tuple/struct
 //  // containing record name, old_holders, new_holders.
-//}
+// }
 
 }  // namespace vault
 

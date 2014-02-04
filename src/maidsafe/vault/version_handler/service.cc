@@ -27,17 +27,15 @@
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/data_types/data_name_variant.h"
 #include "maidsafe/nfs/utils.h"
-
-#include "maidsafe/vault/utils.h"
-
 #include "maidsafe/nfs/vault/pmid_registration.h"
-#include "maidsafe/vault/sync.h"
-#include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/version_handler/key.h"
-#include "maidsafe/vault/unresolved_action.pb.h"
+
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/operation_handlers.h"
+#include "maidsafe/vault/sync.h"
+#include "maidsafe/vault/unresolved_action.pb.h"
+#include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/version_handler/action_put.h"
+#include "maidsafe/vault/version_handler/key.h"
 
 namespace maidsafe {
 
@@ -63,12 +61,12 @@ namespace detail {
 //  // test message content is valid only
 //  protobuf::VersionHandlerUnresolvedEntry entry_proto;
 //  if (!entry_proto.ParseFromString(message.data().content.string()))
-//    ThrowError(CommonErrors::parsing_error);
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
 //  // this is the only code line really required
 //  return VersionHandlerUnresolvedEntry(
 //                         VersionHandlerUnresolvedEntry::serialised_type(message.data().content));
 
-//}
+// }
 
 }  // namespace detail
 
@@ -176,7 +174,7 @@ void VersionHandlerService::HandleMessage(
   LOG(kVerbose) << "VersionHandler::HandleMessage SynchroniseFromVersionHandlerToVersionHandler";
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.contents->data))
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
 
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
     case ActionVersionHandlerPut::kActionId: {
@@ -249,23 +247,23 @@ void VersionHandlerService::DoSync() {
 
 // void VersionHandlerService::ValidateClientSender(const nfs::Message& message) const {
 //  if (!routing_.IsConnectedClient(message.source().node_id))
-//    ThrowError(VaultErrors::permission_denied);
+//    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::permission_denied));
 //  if (!(FromClientMaid(message) || FromClientMpid(message)) || !ForThisPersona(message))
-//    ThrowError(CommonErrors::invalid_parameter);
-//}
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+// }
 
 // void VersionHandlerService::ValidateSyncSender(const nfs::Message& message) const {
 //  if (!routing_.IsConnectedVault(message.source().node_id))
-//    ThrowError(VaultErrors::permission_denied);
+//    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::permission_denied));
 //  if (!FromVersionHandler(message) || !ForThisPersona(message))
-//    ThrowError(CommonErrors::invalid_parameter);
-//}
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+// }
 
 // std::vector<StructuredDataVersions::VersionName>
 //    VersionHandlerService::GetVersionsFromMessage(const nfs::Message& msg) const {
 //   return
 // nfs::StructuredData(nfs::StructuredData::serialised_type(msg.data().content)).versions();
-//}
+// }
 
 // NonEmptyString VersionHandlerService::GetSerialisedRecord(
 //    const VersionHandler::DbKey& db_key) {
@@ -284,10 +282,10 @@ void VersionHandlerService::DoSync() {
 //  //}
 //  //assert(proto_unresolved_entries.IsInitialized());
 //  return NonEmptyString(proto_unresolved_entries.SerializeAsString());
-//}
+// }
 
-
-void VersionHandlerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {
+void VersionHandlerService::HandleChurnEvent(
+    std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {
 //  auto record_names(version_handler_db_.GetKeys());
 //  auto itr(std::begin(record_names));
 //  while (itr != std::end(record_names)) {
@@ -335,7 +333,7 @@ void VersionHandlerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChan
 //    //    // for each db record the new node should have, send it to him (AccountNameFromKey)
 //    //  }
 //    //}
-//}
+// }
 
 }  // namespace vault
 

@@ -123,7 +123,7 @@
   options.error_if_exists = true;
   leveldb::Status status(leveldb::DB::Open(options, vault_root_directory_.string(), &db));
   if (!status.ok())
-    ThrowError(VaultErrors::failed_to_handle_request);
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
   std::unique_ptr<leveldb::DB> leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
   assert(leveldb_);
   std::vector<std::string> nodes1, nodes2, nodes3;
@@ -134,13 +134,13 @@
 
     leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(), nodes1.back(), nodes1.back()));
     if (!status.ok())
-      ThrowError(VaultErrors::failed_to_handle_request);
+      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
     status = leveldb_->Put(leveldb::WriteOptions(), nodes2.back(), nodes2.back());
     if (!status.ok())
-      ThrowError(VaultErrors::failed_to_handle_request);
+      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
     status = leveldb_->Put(leveldb::WriteOptions(), nodes3.back(), nodes3.back());
     if (!status.ok())
-      ThrowError(VaultErrors::failed_to_handle_request);
+      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
   }
 
   {

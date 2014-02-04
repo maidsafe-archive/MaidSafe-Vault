@@ -18,6 +18,8 @@
 
 #include "maidsafe/vault/maid_manager/dispatcher.h"
 
+#include <string>
+
 #include "maidsafe/nfs/client/messages.h"
 
 namespace maidsafe {

@@ -21,8 +21,6 @@
 
 #include <string>
 
-#include "boost/optional/optional.hpp"
-
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
@@ -35,9 +33,6 @@
 namespace maidsafe {
 
 namespace vault {
-
-//class PmidManagerMetadata;
-//class PmidManagerValue;
 
 struct ActionPmidManagerPut {
   ActionPmidManagerPut(int32_t size, nfs::MessageId message_id);

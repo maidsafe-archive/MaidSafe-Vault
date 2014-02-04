@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_MAID_MANAGER_ACTION_CREATE_REMOVE_ACCOUNT_H_
 #define MAIDSAFE_VAULT_MAID_MANAGER_ACTION_CREATE_REMOVE_ACCOUNT_H_
 
+#include <string>
+
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/maid_manager/action_create_remove_account.pb.h"
 
@@ -75,7 +77,7 @@ ActionCreateRemoveAccount<Remove>::ActionCreateRemoveAccount(const std::string& 
     : kMessageId([&serialised_action]()->int32_t {
         protobuf::ActionMaidManagerCreateRemoveAccount action_proto;
         if (!action_proto.ParseFromString(serialised_action))
-          ThrowError(CommonErrors::parsing_error);
+          BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
         return action_proto.message_id();
       }()) {}
 

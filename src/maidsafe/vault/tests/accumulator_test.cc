@@ -52,14 +52,14 @@ class ContentStringVisitor : public boost::static_visitor<std::string> {
   }
 };
 
-//bool errors_eq(maidsafe_error l_e, maidsafe_error r_e) {
+// bool errors_eq(maidsafe_error l_e, maidsafe_error r_e) {
 //  return l_e.code() == r_e.code();
-//}
+// }
 
 // nfs::MessageAction GenerateAction() {
 //  return static_cast<nfs::MessageAction>(RandomUint32() % 3);
 // }
-// 
+//
 // nfs::PersonaId GenerateSource() {
 //  nfs::PersonaId source;
 //  // matches Persona enum in types.h
@@ -94,7 +94,7 @@ TEST(AccumulatorTest, BEH_AddSingleResult) {
 //         for (auto& request : requests_in) {
 //           std::string content_string(boost::apply_visitor(ContentStringVisitor(), request));
 //           maidsafe::nfs_client::ReturnCode return_code(content_string);
-//           maidsafe_error expected_error(MakeError(maidsafe::VaultErrors::failed_to_handle_request));
+//        maidsafe_error expected_error(MakeError(maidsafe::VaultErrors::failed_to_handle_request));
 //           if (errors_eq(expected_error, return_code.value))
 //             return Accumulator<PmidNodeServiceMessages>::AddResult::kFailure;
 //           else
@@ -120,7 +120,7 @@ TEST(AccumulatorTest, BEH_AddSingleResult) {
 //  accumulator.SetHandled(message, reply);
 //  EXPECT_EQ(accumulator.pending_requests_.size(), 0);
 //  EXPECT_TRUE(accumulator.CheckHandled(message, reply));
-//}
+// }
 
 // TEST(AccumulatorTest, BEH_PushSingleResultThreaded) {
 //  maidsafe::test::RunInParallel(10, [] {
@@ -135,7 +135,7 @@ TEST(AccumulatorTest, BEH_AddSingleResult) {
 //      EXPECT_EQ(accumulator.pending_requests_.size(), 0);
 //      EXPECT_TRUE(accumulator.CheckHandled(message, reply));
 //    });
-//}
+// }
 
 // TEST(AccumulatorTest, BEH_CheckPendingRequestsLimit) {
 //  Accumulator<passport::PublicPmid::Name> accumulator;
@@ -154,7 +154,7 @@ TEST(AccumulatorTest, BEH_AddSingleResult) {
 //  nfs::Reply reply(CommonErrors::success);
 //  accumulator.PushSingleResult(message, [](const std::string&) {}, reply);
 //  EXPECT_EQ(accumulator.pending_requests_.size(), pending_request_max_limit);
-//}
+// }
 
 // TEST(AccumulatorTest, BEH_CheckHandled) {
 //  nfs::Message message = MakeMessage();
@@ -164,7 +164,7 @@ TEST(AccumulatorTest, BEH_AddSingleResult) {
 //  accumulator.PushSingleResult(message, [](const std::string&) {}, reply);
 //  accumulator.SetHandled(message, reply);
 //  EXPECT_TRUE(accumulator.CheckHandled(message, reply));
-//}
+// }
 
 // TEST(AccumulatorTest, BEH_SetHandled) {
 //  nfs::Message message = MakeMessage();
@@ -178,7 +178,7 @@ TEST(AccumulatorTest, BEH_AddSingleResult) {
 //  accumulator.SetHandled(message, reply);
 //  EXPECT_EQ(accumulator.handled_requests_.size(), 2);
 //  EXPECT_TRUE(accumulator.pending_requests_.empty());
-//}
+// }
 
 // TEST(AccumulatorTest, BEH_FindHandled) {
 //  nfs::Message message = MakeMessage();
@@ -191,7 +191,7 @@ TEST(AccumulatorTest, BEH_AddSingleResult) {
 //  EXPECT_EQ(accumulator.handled_requests_.size(), 1);
 //  itr_handle = accumulator.FindHandled(message);
 //  EXPECT_TRUE(itr_handle != accumulator.handled_requests_.end());
-//}
+// }
 
 }  // namespace test
 

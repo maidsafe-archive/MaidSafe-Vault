@@ -21,8 +21,6 @@
 
 #include <string>
 
-#include "boost/optional/optional.hpp"
-
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/maid_manager/action_unregister_pmid.pb.h"

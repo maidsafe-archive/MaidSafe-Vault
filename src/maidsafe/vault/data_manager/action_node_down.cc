@@ -34,7 +34,7 @@ ActionDataManagerNodeDown::ActionDataManagerNodeDown(const std::string& serialis
     : kPmidName([&serialised_action]()->PmidName {
         protobuf::ActionDataManagerNodeDown action_node_down_proto;
         if (!action_node_down_proto.ParseFromString(serialised_action))
-          ThrowError(CommonErrors::parsing_error);
+          BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
         return PmidName(Identity(action_node_down_proto.pmid_name()));
       }()) {}
 
@@ -50,13 +50,13 @@ std::string ActionDataManagerNodeDown::Serialise() const {
   return action_node_down_proto.SerializeAsString();
 }
 
-detail::DbAction ActionDataManagerNodeDown::operator()(std::unique_ptr<DataManagerValue>& value) const {
+detail::DbAction ActionDataManagerNodeDown::operator()(
+    std::unique_ptr<DataManagerValue>& value) const {
   if (value) {
     value->SetPmidOffline(kPmidName);
     return detail::DbAction::kPut;
   }
-  ThrowError(CommonErrors::no_such_element);
-  return detail::DbAction::kDelete;
+  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 }
 
 bool operator==(const ActionDataManagerNodeDown& lhs, const ActionDataManagerNodeDown& rhs) {

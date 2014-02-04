@@ -77,8 +77,7 @@ struct TestGroupDbActionModifyValue {
       metadata.PutData(100);
       return detail::DbAction::kPut;
     }
-      ThrowError(CommonErrors::no_such_element);
-      return detail::DbAction::kDelete;
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
     }
   };
 
@@ -99,7 +98,7 @@ struct TestGroupDbActionDeleteValue {
   detail::DbAction operator()(MaidManagerMetadata& metadata,
                               std::unique_ptr<MaidManagerValue>& value) {
     if (!value)
-      ThrowError(CommonErrors::no_such_element);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 
     metadata.DeleteData(value->Delete());
     assert(value->count() >= 0);
@@ -122,7 +121,7 @@ struct TestPmidGroupDbActionPutValue {
       value.reset(new PmidManagerValue(100));
     } else {
       LOG(kError) << "data already exists";
-      ThrowError(VaultErrors::data_already_exists);
+      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::data_already_exists));
     }
 
     metadata.PutData(value->size());
@@ -135,8 +134,7 @@ struct TestPmidGroupDbActionDeleteValue {
   detail::DbAction operator()(PmidManagerMetadata& metadata,
                               std::unique_ptr<PmidManagerValue>& value) {
     if (!value) {
-      ThrowError(CommonErrors::no_such_element);
-      return detail::DbAction::kDelete;
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
     }
     metadata.DeleteData(value->size());
 //    if (!pmid_node_available)

@@ -44,7 +44,7 @@ bool SelectedOperationsContainer::InvalidOptions(
     const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
   do_create = variables_map.count("create") != 0;
   do_load = variables_map.count("load") != 0;
-  if (!do_create && !do_load) 
+  if (!do_create && !do_load)
     do_load = variables_map.at("key_index").as<int>() != -1;
   do_delete = variables_map.count("delete") != 0;
   do_bootstrap = variables_map.count("bootstrap") != 0;
@@ -172,7 +172,7 @@ void Commander::CheckOptionValidity(po::options_description& cmdline_options, in
     std::cout << cmdline_options << "Options order: [c|l|d] p [b|(s|v)|t]" << std::endl;
     if (!variables_map.count("help")) {
       std::cout << "Invalid command line options.\n";
-      ThrowError(CommonErrors::invalid_parameter);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
   }
 }
@@ -212,7 +212,7 @@ void Commander::CreateKeys() {
     std::cout << "Wrote keys to " << keys_path_ << '\n';
   } else {
     std::cout << "Could not write keys to " << keys_path_ << '\n';
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 }
 
@@ -258,7 +258,7 @@ void Commander::HandleStorePublicKeys(size_t client_index) {
     storer.Store();
   } catch (const std::exception& e) {
     std::cout << "Failed storing key chain : " << e.what() << std::endl;
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   std::cout << "Keys Stored" << std::endl;
 }
@@ -279,7 +279,7 @@ void Commander::HandleVerifyStoredPublicKeys(size_t /*client_index*/) {
   if (failures) {
     std::cout << "Could not verify " << std::to_string(failures) << " out of "
               << std::to_string(all_keychains_.size()) << '\n';
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 }
 
@@ -326,7 +326,7 @@ void Commander::HandleGenerateChunks() {
   if (!fs::exists(store_path, error_code)) {
     if (!fs::create_directories(store_path, error_code)) {
       LOG(kError) << "Can't create store path at " << store_path << ": " << error_code.message();
-      ThrowError(CommonErrors::uninitialised);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
       return;
     }
   }

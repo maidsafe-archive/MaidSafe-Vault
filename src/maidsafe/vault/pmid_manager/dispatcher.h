@@ -19,6 +19,9 @@
 #ifndef MAIDSAFE_VAULT_PMID_MANAGER_DISPATCHER_H_
 #define MAIDSAFE_VAULT_PMID_MANAGER_DISPATCHER_H_
 
+#include <string>
+#include <vector>
+
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
@@ -42,7 +45,7 @@ namespace vault {
 
 class PmidManagerDispatcher {
  public:
-  PmidManagerDispatcher(routing::Routing& routing);
+  explicit PmidManagerDispatcher(routing::Routing& routing);
 
   template <typename Data>
   void SendPutRequest(const Data& data, const PmidName& pmid_node,

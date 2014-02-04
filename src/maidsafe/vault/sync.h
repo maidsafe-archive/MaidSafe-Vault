@@ -39,7 +39,7 @@ namespace vault {
 template <typename UnresolvedAction>
 class Sync {
  public:
-  Sync(NodeId node_id);
+  explicit Sync(NodeId node_id);
   // This is called when receiving a Sync message from a peer or this node. If the
   // unresolved_action becomes resolved then it is returned, otherwise the return is null.
   std::unique_ptr<UnresolvedAction> AddUnresolvedAction(const UnresolvedAction& unresolved_action);
@@ -228,7 +228,8 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddUnresolvedAction(
 }
 
 template <typename UnresolvedAction>
-std::vector<std::unique_ptr<UnresolvedAction>> Sync<UnresolvedAction>::GetUnresolvedActions() const {
+std::vector<std::unique_ptr<UnresolvedAction>>
+    Sync<UnresolvedAction>::GetUnresolvedActions() const {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<std::unique_ptr<UnresolvedAction>> result;
   for (const auto& unresolved_action : unresolved_actions_) {

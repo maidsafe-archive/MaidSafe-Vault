@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,35 +16,9 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_HOLDER_H_
-#define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_HOLDER_H_
+package maidsafe.vault.protobuf;
 
-#include <utility>
-
-#include "maidsafe/common/types.h"
-#include "maidsafe/nfs/types.h"
-
-namespace maidsafe {
-
-namespace nfs {
-
-template <>
-struct PersonaTypes<Persona::kMpidManager> {
-  typedef DataNameVariant DbKey;
-  typedef NonEmptyString DbValue;
-  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-  typedef DbValue UnresolvedEntryValue;
-  static const Persona persona = Persona::kMpidManager;
-};
-
-}  // namespace nfs
-
-namespace vault {
-
-typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidAccountHolder;
-
-}  // namespace vault
-
-}  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_HOLDER_H_
+message AccountTransfer {
+  repeated bytes serialised_unresolved_db_action = 1;
+  repeated bytes serialised_unresolved_metadata_action = 2;
+}

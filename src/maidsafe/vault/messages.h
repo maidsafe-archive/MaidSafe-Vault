@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MESSAGE_H_
-#define MAIDSAFE_VAULT_MESSAGE_H_
+#ifndef MAIDSAFE_VAULT_MESSAGES_H_
+#define MAIDSAFE_VAULT_MESSAGES_H_
 
 #include "maidsafe/data_types/data_type_values.h"
 
@@ -30,4 +30,4 @@ namespace vault {}  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MESSAGE_H_
+#endif  // MAIDSAFE_VAULT_MESSAGES_H_

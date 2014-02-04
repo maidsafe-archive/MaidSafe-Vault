@@ -1,4 +1,4 @@
-/*  Copyright 2013 MaidSafe.net limited
+/*  Copyright 2012 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,41 +16,34 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACTION_DELETE_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_ACTION_DELETE_H_
+#include "maidsafe/vault/tests/vault_network.h"
 
-#include <string>
+#include <algorithm>
 
-#include "maidsafe/common/error.h"
-#include "maidsafe/common/log.h"
-
-#include "maidsafe/vault/config.h"
-#include "maidsafe/vault/types.h"
+#include "maidsafe/common/test.h"
+#include "maidsafe/vault/tests/tests_utils.h"
 
 namespace maidsafe {
+
 namespace vault {
 
-class DataManagerValue;
+namespace test {
 
-struct ActionDataManagerDelete {
+class VersionHandlerkTest : public VaultNetwork  {
  public:
-  explicit ActionDataManagerDelete(nfs::MessageId message_id);
-  explicit ActionDataManagerDelete(const std::string& serialised_action);
-  detail::DbAction operator()(std::unique_ptr<DataManagerValue>& value);
-  std::string Serialise() const;
-  nfs::MessageId MessageId() { return message_id_; }
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kDecrementSubscribers;
-
- private:
-  ActionDataManagerDelete& operator=(ActionDataManagerDelete other);
-
-  nfs::MessageId message_id_;
+  VersionHandlerkTest() {}
 };
 
-bool operator==(const ActionDataManagerDelete& lhs, const ActionDataManagerDelete& rhs);
-bool operator!=(const ActionDataManagerDelete& lhs, const ActionDataManagerDelete& rhs);
+TEST_F(VersionHandlerkTest, FUNC_PutGet) {
+  EXPECT_TRUE(AddClient(true));
+  ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
+  StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
+  clients_.front()->nfs_->PutVersion(chunk.name(), StructuredDataVersions::VersionName(), v_aaa);
+}
+
+}  // namespace test
 
 }  // namespace vault
+
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_DELETE_H_

@@ -29,7 +29,6 @@ class CacheHandlerService;
 
 namespace detail {
 
-
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
@@ -139,8 +138,7 @@ bool DoCacheOperation(
   return boost::apply_visitor(get_from_cache, data_name);
 }
 
-
-}  // detail
+}  // namespace detail
 
 }  // namespace vault
 

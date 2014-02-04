@@ -33,7 +33,7 @@ template <typename GroupName>
 class MetadataKey {
  public:
   MetadataKey();
-  MetadataKey(const GroupName& group_name_in);
+  explicit MetadataKey(const GroupName& group_name_in);
   explicit MetadataKey(const std::string& serialised_key);
   MetadataKey(const MetadataKey& other);
   MetadataKey(MetadataKey&& other);
@@ -77,7 +77,7 @@ MetadataKey<GroupName>::MetadataKey(const std::string& serialised_key)
     : group_name_() {
   protobuf::MetadataKey metadata_key_proto;
   if (!metadata_key_proto.ParseFromString(serialised_key))
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   group_name_ = GroupName(Identity(metadata_key_proto.group_name()));
 }
 

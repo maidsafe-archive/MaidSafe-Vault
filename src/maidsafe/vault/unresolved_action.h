@@ -90,7 +90,7 @@ struct UnresolvedAction {
       const std::string& serialised_copy) const {
     protobuf::UnresolvedAction proto_unresolved_action;
     if (!proto_unresolved_action.ParseFromString(serialised_copy))
-      ThrowError(CommonErrors::parsing_error);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     return T(proto_unresolved_action.serialised_action());
   }
 
@@ -154,8 +154,8 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const Key& key_in, const Action&
                                                 const NodeId& this_node_id)
     : key(key_in),
       action(action_in),
-      this_node_and_entry_id(std::make_shared<std::pair<NodeId, int32_t>>(this_node_id,
-                                                                          ++entry_id_sequence_number)),
+      this_node_and_entry_id(
+          std::make_shared<std::pair<NodeId, int32_t>>(this_node_id, ++entry_id_sequence_number)),
       peer_and_entry_ids(),
       sync_counter(0),
       seen_list() {}

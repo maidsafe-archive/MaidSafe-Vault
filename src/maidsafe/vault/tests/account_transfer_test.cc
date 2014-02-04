@@ -1,4 +1,4 @@
-/*  Copyright 2013 MaidSafe.net limited
+/*  Copyright 2009 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,41 +16,45 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACTION_DELETE_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_ACTION_DELETE_H_
+#include "maidsafe/vault/action_account_transfer.h"
 
-#include <string>
-
-#include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/test.h"
+#include "maidsafe/common/utils.h"
 
-#include "maidsafe/vault/config.h"
-#include "maidsafe/vault/types.h"
+#include "maidsafe/routing/parameters.h"
+
+#include "maidsafe/nfs/types.h"
+
+#include "maidsafe/vault/sync.h"
+#include "maidsafe/vault/unresolved_action.h"
+#include "maidsafe/vault/data_manager/data_manager.h"
+
+
 
 namespace maidsafe {
+
 namespace vault {
 
-class DataManagerValue;
+namespace test {
 
-struct ActionDataManagerDelete {
- public:
-  explicit ActionDataManagerDelete(nfs::MessageId message_id);
-  explicit ActionDataManagerDelete(const std::string& serialised_action);
-  detail::DbAction operator()(std::unique_ptr<DataManagerValue>& value);
-  std::string Serialise() const;
-  nfs::MessageId MessageId() { return message_id_; }
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kDecrementSubscribers;
+TEST(AccountTransferTest, BEH_Constructor) {
+  typedef vault::UnresolvedAction<DataManager::Key, ActionAccountTransfer<std::string>>
+       UnresolvedAccountTransfer;
+  Sync<UnresolvedAccountTransfer> sync_account_transfer((NodeId(NodeId::kRandomId)));
+  ActionAccountTransfer<std::string> action("value");
+  DataManager::Key key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue);
 
- private:
-  ActionDataManagerDelete& operator=(ActionDataManagerDelete other);
+  UnresolvedAccountTransfer unresolved_action(key, action, NodeId(NodeId::kRandomId));
+  sync_account_transfer.AddUnresolvedAction(unresolved_action);
+  sync_account_transfer.AddUnresolvedAction(unresolved_action);
 
-  nfs::MessageId message_id_;
-};
+}
 
-bool operator==(const ActionDataManagerDelete& lhs, const ActionDataManagerDelete& rhs);
-bool operator!=(const ActionDataManagerDelete& lhs, const ActionDataManagerDelete& rhs);
+
+
+}  // test
 
 }  // namespace vault
-}  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_DELETE_H_
+}  // namespace maidsafe

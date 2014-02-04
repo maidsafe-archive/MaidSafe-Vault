@@ -40,7 +40,7 @@ namespace vault {
 
 namespace test {
 
-//DataNameVariant GetRandomKey() {
+// DataNameVariant GetRandomKey() {
 //  // Currently 15 types are defined, but...
 //  uint32_t number_of_types = boost::mpl::size<typename DataNameVariant::types>::type::value,
 //           type_number;
@@ -65,12 +65,12 @@ namespace test {
 //    default:
 //      return DataNameVariant();
 //  }
-//}
+// }
 
 struct TestDbValue {
   TestDbValue() : value("original_value") {}
   TestDbValue(TestDbValue&& other) : value(std::move(other.value)) {}
-  TestDbValue(const std::string& serialised_value) : value(serialised_value) {}
+  explicit TestDbValue(const std::string& serialised_value) : value(serialised_value) {}
   std::string Serialise() const { return value; }
   std::string value;
 
@@ -80,21 +80,20 @@ struct TestDbValue {
 
 // change value
 struct TestDbActionModifyValue {
-  TestDbActionModifyValue(const std::string& value) : kValue(value) {}
+  explicit TestDbActionModifyValue(const std::string& value) : kValue(value) {}
   detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
     if (value) {
       value->value = "modified_value";
       return detail::DbAction::kPut;
     }
-    ThrowError(CommonErrors::no_such_element);
-    return detail::DbAction::kDelete;
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
   }
   const std::string kValue;
 };
 
 // put value
 struct TestDbActionPutValue {
-  TestDbActionPutValue(const std::string& value) : kValue(value) {}
+  explicit TestDbActionPutValue(const std::string& value) : kValue(value) {}
   detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
     if (!value)
       value.reset(new TestDbValue());
@@ -108,15 +107,16 @@ struct TestDbActionPutValue {
 struct TestDbActionDeleteValue {
 detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
   if (!value)
-    ThrowError(CommonErrors::no_such_element);
-   return detail::DbAction::kDelete;
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+    return detail::DbAction::kDelete;
   }
 };
 
 template <typename Key, typename Value>
 void PopulateDbValues(Db<Key, Value>& db, const int& count) {
   for (auto i(0); i != count; ++i) {
-    Key key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue); // need Random type
+// need Random type
+    Key key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue);
     db.Commit(key, TestDbActionPutValue("new_value"));
     CHECK(db.Get(key).value == "new_value");
   }
@@ -147,7 +147,7 @@ TEST_CASE("Db commit", "[Db][Unit]") {
   Key key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue);
   for (auto i(0); i != 100; ++i)
     DbTests(db, key);
-  // TODO (Prakash) Extend to all data types
+  // TODO(Prakash): Extend to all data types
   PopulateDbValues(db, 10000);
   for (auto i(0); i != 100; ++i) {
     DbTests(db, Key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue));
@@ -166,8 +166,8 @@ TEST_CASE("Db transfer info", "[Db][Unit]") {
 
 
 
-//TEST_CASE("Db Poc", "[Db][Unit]") {
-//  const maidsafe::test::TestPath kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
+// TEST_CASE("Db Poc", "[Db][Unit]") {
+// const maidsafe::test::TestPath kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
 //  boost::filesystem::path vault_root_directory_(*kTestRoot_ / RandomAlphaNumericString(8));
 //  leveldb::DB* db;
 //  leveldb::Options options;
@@ -175,7 +175,7 @@ TEST_CASE("Db transfer info", "[Db][Unit]") {
 //  options.error_if_exists = true;
 //  leveldb::Status status(leveldb::DB::Open(options, vault_root_directory_.string(), &db));
 //  if (!status.ok())
-//    ThrowError(VaultErrors::failed_to_handle_request);
+//    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
 //  std::unique_ptr<leveldb::DB> leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
 //  assert(leveldb_);
 //  std::vector<std::string> nodes1, nodes2, nodes3;
@@ -186,13 +186,13 @@ TEST_CASE("Db transfer info", "[Db][Unit]") {
 
 //    leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(), nodes1.back(), nodes1.back()));
 //    if (!status.ok())
-//      ThrowError(VaultErrors::failed_to_handle_request);
+//      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
 //    status = leveldb_->Put(leveldb::WriteOptions(), nodes2.back(), nodes2.back());
 //    if (!status.ok())
-//      ThrowError(VaultErrors::failed_to_handle_request);
+//      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
 //    status = leveldb_->Put(leveldb::WriteOptions(), nodes3.back(), nodes3.back());
 //    if (!status.ok())
-//      ThrowError(VaultErrors::failed_to_handle_request);
+//      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
 //  }
 
 //  {
@@ -201,7 +201,7 @@ TEST_CASE("Db transfer info", "[Db][Unit]") {
 //    for (iter->Seek("1");
 //         iter->Valid() && iter->key().ToString() < "2";
 //         iter->Next()) {
-//        REQUIRE(std::find(nodes1.begin(), nodes1.end(), iter->value().ToString()) != nodes1.end());
+//       REQUIRE(std::find(nodes1.begin(), nodes1.end(), iter->value().ToString()) != nodes1.end());
 //        ++count;
 //    }
 //    REQUIRE(10000 == count);
@@ -213,7 +213,7 @@ TEST_CASE("Db transfer info", "[Db][Unit]") {
 //    for (iter->Seek("2");
 //         iter->Valid() && iter->key().ToString() < "3";
 //         iter->Next()) {
-//        REQUIRE(std::find(nodes2.begin(), nodes2.end(), iter->value().ToString()) != nodes2.end());
+//       REQUIRE(std::find(nodes2.begin(), nodes2.end(), iter->value().ToString()) != nodes2.end());
 //        ++count;
 //    }
 //    REQUIRE(10000 == count);
@@ -225,15 +225,15 @@ TEST_CASE("Db transfer info", "[Db][Unit]") {
 //    for (iter->Seek("3");
 //         iter->Valid();
 //         iter->Next()) {
-//        REQUIRE(std::find(nodes3.begin(), nodes3.end(), iter->value().ToString()) != nodes3.end());
+//       REQUIRE(std::find(nodes3.begin(), nodes3.end(), iter->value().ToString()) != nodes3.end());
 //        ++count;
 //    }
 //    REQUIRE(10000 == count);
 //    delete iter;
 //  }
-//}
+// }
 
-}  // test
+}  // namespace test
 
 }  // namespace vault
 

@@ -20,6 +20,7 @@
 
 #include <chrono>
 #include <limits>
+#include <map>
 #include <string>
 
 #include "maidsafe/common/types.h"
@@ -40,11 +41,11 @@ namespace {
 // inline bool SenderIsConnectedVault(const nfs::Message& message, routing::Routing& routing) {
 //  return routing.IsConnectedVault(message.source().node_id) &&
 //         routing.EstimateInGroup(message.source().node_id, routing.kNodeId());
-//}
+// }
 
 // inline bool SenderInGroupForMetadata(const nfs::Message& message, routing::Routing& routing) {
 //  return routing.EstimateInGroup(message.source().node_id, NodeId(message.data().name.string()));
-//}
+// }
 
 template <typename Message>
 inline bool ForThisPersona(const Message& message) {

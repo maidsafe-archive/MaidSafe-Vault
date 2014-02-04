@@ -16,41 +16,43 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACTION_DELETE_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_ACTION_DELETE_H_
+#ifndef MAIDSAFE_VAULT_ACCOUNT_TRANSFER_H_
+#define MAIDSAFE_VAULT_ACCOUNT_TRANSFER_H_
 
-#include <string>
+#include <algorithm>
+#include <cstdint>
+#include <memory>
+#include <mutex>
+#include <utility>
+#include <vector>
 
-#include "maidsafe/common/error.h"
-#include "maidsafe/common/log.h"
-
-#include "maidsafe/vault/config.h"
-#include "maidsafe/vault/types.h"
+#include "maidsafe/common/node_id.h"
 
 namespace maidsafe {
+
 namespace vault {
 
-class DataManagerValue;
-
-struct ActionDataManagerDelete {
+template <typename UnresolvedAction>
+class AccountTransfer {
  public:
-  explicit ActionDataManagerDelete(nfs::MessageId message_id);
-  explicit ActionDataManagerDelete(const std::string& serialised_action);
-  detail::DbAction operator()(std::unique_ptr<DataManagerValue>& value);
-  std::string Serialise() const;
-  nfs::MessageId MessageId() { return message_id_; }
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kDecrementSubscribers;
+  AccountTransfer(NodeId node_id);
+  std::vector<UnresolvedAction> AddUnresolvedAction(
+      std::vector<UnresolvedAction>&& unresolved_actions);
+
+  void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
 
  private:
-  ActionDataManagerDelete& operator=(ActionDataManagerDelete other);
+  AccountTransfer(AccountTransfer&&);
+  AccountTransfer(const AccountTransfer&);
+  AccountTransfer& operator=(AccountTransfer other);
 
-  nfs::MessageId message_id_;
+  mutable std::mutex mutex_;
+  std::vector<std::unique_ptr<UnresolvedAction>> unresolved_actions_;
+  NodeId node_id_;
 };
 
-bool operator==(const ActionDataManagerDelete& lhs, const ActionDataManagerDelete& rhs);
-bool operator!=(const ActionDataManagerDelete& lhs, const ActionDataManagerDelete& rhs);
-
 }  // namespace vault
+
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_DELETE_H_
+#endif  // MAIDSAFE_VAULT_ACCOUNT_TRANSFER_H_

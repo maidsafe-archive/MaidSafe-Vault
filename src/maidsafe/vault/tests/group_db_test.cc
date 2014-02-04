@@ -73,15 +73,13 @@ MaidManagerMetadata CreateMaidManagerMetadata(const passport::Maid& maid) {
 struct TestGroupDbActionModifyValue {
   detail::DbAction operator()(MaidManagerMetadata& metadata,
                               std::unique_ptr<MaidManagerValue>& value) {
-    if (value) {
-      value->Put(100);
-      metadata.PutData(100);
-      return detail::DbAction::kPut;
-    }
-      ThrowError(CommonErrors::no_such_element);
-      return detail::DbAction::kDelete;
-    }
-  };
+    if (!value)
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+    value->Put(100);
+    metadata.PutData(100);
+    return detail::DbAction::kPut;
+  }
+};
 
 // put value
 struct TestGroupDbActionPutValue {
@@ -100,7 +98,7 @@ struct TestGroupDbActionDeleteValue {
   detail::DbAction operator()(MaidManagerMetadata& metadata,
                               std::unique_ptr<MaidManagerValue>& value) {
     if (!value)
-      ThrowError(CommonErrors::no_such_element);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 
     metadata.DeleteData(value->Delete());
     assert(value->count() >= 0);
@@ -123,7 +121,7 @@ struct TestPmidGroupDbActionPutValue {
       value.reset(new PmidManagerValue(100));
     } else {
       LOG(kError) << "data already exists";
-      ThrowError(VaultErrors::data_already_exists);
+      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::data_already_exists));
     }
 
     metadata.PutData(value->size());
@@ -135,10 +133,8 @@ struct TestPmidGroupDbActionPutValue {
 struct TestPmidGroupDbActionDeleteValue {
   detail::DbAction operator()(PmidManagerMetadata& metadata,
                               std::unique_ptr<PmidManagerValue>& value) {
-    if (!value) {
-      ThrowError(CommonErrors::no_such_element);
-      return detail::DbAction::kDelete;
-    }
+    if (!value)
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
     metadata.DeleteData(value->size());
 //    if (!pmid_node_available)
 //      metadata.SetAvailableSize(0);
@@ -151,7 +147,7 @@ struct TestPmidGroupDbActionDeleteValue {
 void RunDbTestInParallel(int thread_count, std::function<void()> functor) {
   std::vector<std::thread> threads;
   for (int i = 0; i < thread_count; ++i)
-    threads.push_back(std::move(std::thread([functor]() { functor(); } )));
+    threads.push_back(std::move(std::thread([functor]() { functor(); })));
   for (auto& thread : threads)
     thread.join();
 }
@@ -216,19 +212,19 @@ void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
   for (auto i(0); i < 1000; ++i)
     key_vector.push_back(GroupKey<MaidName>(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
                                             DataTagValue::kMaidValue));
-  for (const auto& key_n: key_vector) {
+  for (const auto& key_n : key_vector) {
     expected_metadata.PutData(100);
     maid_group_db.Commit(key_n, TestGroupDbActionPutValue());
   }
 
   EXPECT_TRUE(maid_group_db.GetMetadata(maid_name) == expected_metadata);
 
-  for (const auto& key_n: key_vector) {
+  for (const auto& key_n : key_vector) {
     EXPECT_TRUE(maid_group_db.GetValue(key_n) == expected_value);
   }
 
   auto contents(maid_group_db.GetContents(maid_name));
-  for (const auto& key_n: key_vector) {
+  for (const auto& key_n : key_vector) {
     auto itr = std::find_if(contents.kv_pairs.begin(),
                              contents.kv_pairs.end(),
                              [&key_n](const GroupDb<MaidManager>::KvPair& kv_pair) {
@@ -290,18 +286,18 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
   for (auto i(0); i < 1000; ++i)
     key_vector.push_back(GroupKey<PmidName>(pmid_name, Identity(NodeId(NodeId::kRandomId).string()),
                                             DataTagValue::kPmidValue));
-  for (const auto& key_n: key_vector) {
+  for (const auto& key_n : key_vector) {
     expected_metadata.PutData(100);
     pmid_group_db.Commit(key_n, TestPmidGroupDbActionPutValue());
   }
 
   EXPECT_TRUE(pmid_group_db.GetMetadata(pmid_name) == expected_metadata);
 
-  for (const auto& key_n: key_vector) {
+  for (const auto& key_n : key_vector) {
     EXPECT_TRUE(pmid_group_db.GetValue(key_n) == expected_value);
   }
   auto contents(pmid_group_db.GetContents(pmid_name));
-  for (const auto& key_n: key_vector) {
+  for (const auto& key_n : key_vector) {
     auto itr = std::find_if(contents.kv_pairs.begin(),
                              contents.kv_pairs.end(),
                              [&key_n](const GroupDb<PmidManager>::KvPair& kv_pair) {
@@ -336,7 +332,6 @@ TEST(GroupDbTest, FUNC_MaidManagerGroupDb) {
   RunDbTestInParallel(10, [&] {
     RunMaidManagerGroupDbTest(maid_group_db);
   });
-
 }
 
 TEST(GroupDbTest, FUNC_PmidManagerGroupDb) {
@@ -347,7 +342,6 @@ TEST(GroupDbTest, FUNC_PmidManagerGroupDb) {
   RunDbTestInParallel(10, [&] {
     RunPmidManagerGroupDbTest(pmid_group_db);
   });
-
 }
 
 TEST(GroupDbTest, BEH_TransferInfo) {
@@ -358,7 +352,7 @@ TEST(GroupDbTest, BEH_TransferInfo) {
   pmid_group_db.GetTransferInfo(matrix_change);
 }
 
-}  // test
+}  // namespace test
 
 }  // namespace vault
 

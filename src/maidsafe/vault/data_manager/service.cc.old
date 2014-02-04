@@ -69,17 +69,17 @@ namespace detail {
 
 //void DataManagerService::ValidatePutSender(const nfs::Message& message) const {
 //  if (!SenderInGroupForClientMaid(message, routing_) || !ThisVaultInGroupForData(message)) {
-//    ThrowError(VaultErrors::permission_denied);
+//    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::permission_denied));
 //  }
 
 //  if (!FromMaidManager(message) || !ForThisPersona(message))
-//    ThrowError(CommonErrors::invalid_parameter);
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
 //}
 
 //void DataManagerService::ValidatePutResultSender(const nfs::Message& message) const {
 //  // FIXME(Prakash) Need to pass PmidName in message to validate
 //  if (!FromPmidManager(message) || !ForThisPersona(message))
-//    ThrowError(CommonErrors::invalid_parameter);
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
 //}
 
 //void DataManagerService::ValidateGetSender(const nfs::Message& message) const {
@@ -90,22 +90,22 @@ namespace detail {
 //          FromGroupDirectoryManager(message) ||
 //          FromWorldDirectoryManager(message)) ||
 //      !ForThisPersona(message)) {
-//    ThrowError(CommonErrors::invalid_parameter);
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
 //  }
 //}
 
 //void DataManagerService::ValidateDeleteSender(const nfs::Message& message) const {
 //  if (!SenderInGroupForClientMaid(message, routing_))
-//    ThrowError(VaultErrors::permission_denied);
+//    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::permission_denied));
 
 //  if (!FromMaidManager(message) || !ForThisPersona(message))
-//    ThrowError(CommonErrors::invalid_parameter);
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
 //}
 
 //void DataManagerService::ValidatePostSender(const nfs::Message& message) const {
 //  if (!(FromDataManager(message) || FromPmidManager(message)) ||
 //      !ForThisPersona(message)) {
-//    ThrowError(CommonErrors::invalid_parameter);
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
 //  }
 //}
 

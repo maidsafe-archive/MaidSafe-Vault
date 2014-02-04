@@ -16,8 +16,10 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_HANDLER_INL_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_HANDLER_INL_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_HANDLER_INL_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_HANDLER_INL_H_
+
+#include <string>
 
 #include "maidsafe/passport/types.h"
 #include "maidsafe/vault/utils.h"
@@ -62,4 +64,4 @@ void MaidAccountHandler::DeleteData(const MaidName& account_name,
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_MAID_ACCOUNT_HANDLER_INL_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_HANDLER_INL_H_

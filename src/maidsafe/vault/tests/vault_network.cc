@@ -23,6 +23,7 @@
 #endif
 
 #include <algorithm>
+#include <string>
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/log.h"
@@ -68,8 +69,8 @@ VaultNetwork::VaultNetwork()
       public_pmids_(), key_chains_(kNetworkSize + 2),
       chunk_store_path_(fs::unique_path((fs::temp_directory_path()))), network_size_(kNetworkSize)
 #ifndef MAIDSAFE_WIN32
-      , kUlimitFileSize([]()->long {
-                          long current_size(ulimit(UL_GETFSIZE));
+      , kUlimitFileSize([]()->long {  // NOLINT
+                          long current_size(ulimit(UL_GETFSIZE));  // NOLINT
                           if (current_size < kLimitsFiles)
                             ulimit(UL_SETFSIZE, kLimitsFiles);
                           return current_size;
@@ -98,19 +99,19 @@ void VaultNetwork::Bootstrap() {
 
   functors1.typed_message_and_caching.group_to_group.message_received =
       functors2.typed_message_and_caching.group_to_group.message_received =
-      [&](const routing::GroupToGroupMessage&) {};
+      [&](const routing::GroupToGroupMessage&) {};  // NOLINT
   functors1.typed_message_and_caching.group_to_single.message_received =
       functors2.typed_message_and_caching.group_to_single.message_received =
-      [&](const routing::GroupToSingleMessage&) {};
+      [&](const routing::GroupToSingleMessage&) {};  // NOLINT
   functors1.typed_message_and_caching.single_to_group.message_received =
       functors2.typed_message_and_caching.single_to_group.message_received =
-      [&](const routing::SingleToGroupMessage&) {};
+      [&](const routing::SingleToGroupMessage&) {};  // NOLINT
   functors1.typed_message_and_caching.single_to_single.message_received =
       functors2.typed_message_and_caching.single_to_single.message_received =
-      [&](const routing::SingleToSingleMessage&) {};
+      [&](const routing::SingleToSingleMessage&) {};  // NOLINT
   functors1.typed_message_and_caching.single_to_group_relay.message_received =
       functors2.typed_message_and_caching.single_to_group_relay.message_received =
-      [&](const routing::SingleToGroupRelayMessage&) {};
+      [&](const routing::SingleToGroupRelayMessage&) {};  // NOLINT
 
   endpoints_.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(),
                        maidsafe::test::GetRandomPort()));
@@ -126,7 +127,7 @@ void VaultNetwork::Bootstrap() {
   });
   if (a1.get() != 0 || a2.get() != 0) {
     LOG(kError) << "SetupNetwork - Could not start bootstrap nodes.";
-    ThrowError(RoutingErrors::not_connected);
+    BOOST_THROW_EXCEPTION(MakeError(RoutingErrors::not_connected));
   }
   bootstrap_done_ = true;
   bootstrap_condition_.notify_one();
@@ -262,7 +263,7 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
     auto status(future.wait_for(std::chrono::seconds(10)));
     if (status == std::future_status::timeout || !future.get()) {
       LOG(kError) << "can't join routing network";
-      ThrowError(RoutingErrors::not_connected);
+      BOOST_THROW_EXCEPTION(MakeError(RoutingErrors::not_connected));
     }
     LOG(kSuccess) << "Client node joined routing network";
   }
@@ -273,7 +274,7 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
     auto status(future.wait_for(boost::chrono::seconds(10)));
     if (status == boost::future_status::timeout) {
       LOG(kError) << "can't create account";
-      ThrowError(VaultErrors::failed_to_handle_request);
+      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
     }
     // waiting for syncs resolved
     boost::this_thread::sleep_for(boost::chrono::seconds(2));
@@ -284,7 +285,7 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
       nfs_->Put(passport::PublicPmid(keys.pmid));
     }
     catch (...) {
-      ThrowError(CommonErrors::unknown);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
     }
     Sleep(std::chrono::seconds(2));
   }
@@ -297,7 +298,7 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
       auto status(future.wait_for(boost::chrono::seconds(10)));
       if (status == boost::future_status::timeout) {
         LOG(kError) << "can't fetch pmid health";
-        ThrowError(VaultErrors::failed_to_handle_request);
+        BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
       }
       LOG(kVerbose) << "The fetched PmidHealth for pmid_name "
                     << HexSubstr(pmid_name.value.string()) << " is " << future.get();
@@ -322,13 +323,13 @@ std::future<bool> Client::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpo
                                             });
   };
   functors_.typed_message_and_caching.group_to_group.message_received =
-      [&](const routing::GroupToGroupMessage &msg) { nfs_->HandleMessage(msg); };
+      [&](const routing::GroupToGroupMessage &msg) { nfs_->HandleMessage(msg); };  // NOLINT
   functors_.typed_message_and_caching.group_to_single.message_received =
-      [&](const routing::GroupToSingleMessage &msg) { nfs_->HandleMessage(msg); };
+      [&](const routing::GroupToSingleMessage &msg) { nfs_->HandleMessage(msg); };  // NOLINT
   functors_.typed_message_and_caching.single_to_group.message_received =
-      [&](const routing::SingleToGroupMessage &msg) { nfs_->HandleMessage(msg); };
+      [&](const routing::SingleToGroupMessage &msg) { nfs_->HandleMessage(msg); };  // NOLINT
   functors_.typed_message_and_caching.single_to_single.message_received =
-      [&](const routing::SingleToSingleMessage &msg) { nfs_->HandleMessage(msg); };
+      [&](const routing::SingleToSingleMessage &msg) { nfs_->HandleMessage(msg); };  // NOLINT
 //  functors_.typed_message_and_caching.single_to_group_relay.message_received =
 //      [&](const routing::SingleToGroupRelayMessage &msg) { nfs_->HandleMessage(msg); };
   functors_.request_public_key =

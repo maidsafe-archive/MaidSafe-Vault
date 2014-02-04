@@ -36,13 +36,13 @@ MaidManagerValue::MaidManagerValue(const std::string& serialised_maid_manager_va
   protobuf::MaidManagerValue maid_manager_value_proto;
   if (!maid_manager_value_proto.ParseFromString(serialised_maid_manager_value)) {
     LOG(kError) << "Failed to read or parse serialised maid manager value.";
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
   count_ = maid_manager_value_proto.count();
   total_cost_ = maid_manager_value_proto.total_cost();
   if (count_ < 0 || total_cost_ < 0) {
     LOG(kError) << "invalid count_ " << count_ << " or total_cost_ " << total_cost_;
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 }
 
@@ -59,7 +59,7 @@ MaidManagerValue& MaidManagerValue::operator=(MaidManagerValue other) {
 std::string MaidManagerValue::Serialise() const {
   if (count_ == 0 || total_cost_ == 0) {
     LOG(kError) << "MaidManagerValue::Serialise Cannot serialise if not a complete db value";
-    ThrowError(CommonErrors::uninitialised);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
 
   protobuf::MaidManagerValue maid_manager_value_proto;
@@ -76,7 +76,7 @@ void MaidManagerValue::Put(int32_t cost) {
 
 int32_t MaidManagerValue::Delete() {
   if (count_ < 0 || total_cost_ < 0)
-    ThrowError(CommonErrors::unknown);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
   auto average_cost(total_cost_ / count_);
   --count_;
   total_cost_ -= average_cost;

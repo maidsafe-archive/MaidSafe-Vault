@@ -36,7 +36,7 @@ ActionPmidManagerDelete::ActionPmidManagerDelete(const std::string& serialised_a
   protobuf::ActionPmidManagerDelete action_delete_proto;
   if (!action_delete_proto.ParseFromString(serialised_action)) {
     LOG(kError) << "Can't parse ActionPmidManagerDelete from serialised string";
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
   pmid_node_available = action_delete_proto.pmid_node_available();
   data_failure = action_delete_proto.data_failure();
@@ -44,10 +44,8 @@ ActionPmidManagerDelete::ActionPmidManagerDelete(const std::string& serialised_a
 
 detail::DbAction ActionPmidManagerDelete::operator()(PmidManagerMetadata& metadata,
     std::unique_ptr<PmidManagerValue>& value) const {
-  if (!value) {
-    ThrowError(CommonErrors::no_such_element);
-    return detail::DbAction::kDelete;
-  }
+  if (!value)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
   if (pmid_node_available) {
     if (data_failure)
       metadata.HandleLostData(value->size());

@@ -32,13 +32,14 @@
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
+
 namespace vault {
 
 namespace detail {
 
 // PmidName GetPmidAccountName(const nfs::Message& message) {
 //  return PmidName(Identity(message.data().name));
-//}
+// }
 
 template <typename Message>
 inline bool ForThisPersona(const Message& message) {
@@ -192,7 +193,7 @@ void PmidManagerService::HandleMessage(
     const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << "PmidManagerService::HandleMessage GetPmidAccountRequestFromPmidNodeToPmidManager";
+  LOG(kVerbose) << message;
   typedef GetPmidAccountRequestFromPmidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
@@ -207,8 +208,7 @@ void PmidManagerService::HandleMessage(
     const CreatePmidAccountRequestFromMaidManagerToPmidManager& message,
     const typename CreatePmidAccountRequestFromMaidManagerToPmidManager::Sender& sender,
     const typename CreatePmidAccountRequestFromMaidManagerToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << "PmidManagerService::HandleMessage "
-                << "CreatePmidAccountRequestFromMaidManagerToPmidManager";
+  LOG(kVerbose) << message;
   typedef CreatePmidAccountRequestFromMaidManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
@@ -243,11 +243,11 @@ void PmidManagerService::HandleMessage(
     const SynchroniseFromPmidManagerToPmidManager& message,
     const typename SynchroniseFromPmidManagerToPmidManager::Sender& sender,
     const typename SynchroniseFromPmidManagerToPmidManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "PmidManagerService::HandleMessage SynchroniseFromPmidManagerToPmidManager";
+  LOG(kVerbose) << message;
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.contents->data)) {
     LOG(kError) << "SynchroniseFromPmidManagerToPmidManager can't parse content";
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
     case ActionPmidManagerPut::kActionId: {
@@ -306,7 +306,7 @@ void PmidManagerService::HandleMessage(
     const AccountTransferFromPmidManagerToPmidManager& /*message*/,
     const typename AccountTransferFromPmidManagerToPmidManager::Sender& /*sender*/,
     const typename AccountTransferFromPmidManagerToPmidManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "PmidManagerService::HandleMessage AccountTransferFromPmidManagerToPmidManager";
+  // LOG(kVerbose) << message;
   assert(0);
 }
 
@@ -447,7 +447,7 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
 //  catch(...) {
 //    LOG(kWarning) << "Unknown error.";
 //  }
-//}
+// }
 
 // void PmidManagerService::GetPmidAccount(const nfs::Message& message) {
 //  try {
@@ -475,9 +475,10 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
 //  catch(...) {
 //    LOG(kWarning) << "Unknown error.";
 //  }
-//}
+// }
 
-void PmidManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {
+void PmidManagerService::HandleChurnEvent(
+    std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {
 //  auto account_names(pmid_account_handler_.GetAccountNames());
 //  auto itr(std::begin(account_names));
 //  while (itr != std::end(account_names)) {
@@ -505,20 +506,20 @@ void PmidManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange>
 //  if (!message.HasDataHolder()
 //      || !routing_.IsConnectedVault(NodeId(message.pmid_node()->string()))
 //      || routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
-//    ThrowError(VaultErrors::permission_denied);
+//    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::permission_denied));
 
 //  if (!FromDataManager(message) || !detail::ForThisPersona(message))
-//    ThrowError(CommonErrors::invalid_parameter);
-//}
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+// }
 
 // void PmidManagerService::ValidateGenericSender(const nfs::Message& message) const {
 //  if (!routing_.IsConnectedVault(message.source().node_id)
 //      || routing_.EstimateInGroup(message.source().node_id, NodeId(message.data().name)))
-//    ThrowError(VaultErrors::permission_denied);
+//    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::permission_denied));
 
 //  if (!FromDataManager(message) || !FromPmidNode(message) || !detail::ForThisPersona(message))
-//    ThrowError(CommonErrors::invalid_parameter);
-//}
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+// }
 
 // =============== Account transfer ===============================================================
 
@@ -529,7 +530,7 @@ void PmidManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange>
 //    serialised_account_details(pmid_account_handler_.GetSerialisedAccount(account_name, true));
 //  pmid_account.set_serialised_account_details(serialised_account_details.data.string());
 //  nfs_.TransferAccount(new_node, NonEmptyString(pmid_account.SerializeAsString()));
-//}
+// }
 
 // void PmidManagerService::HandleAccountTransfer(const nfs::Message& message) {
 //  protobuf::PmidAccount pmid_account;
@@ -540,10 +541,11 @@ void PmidManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange>
 //  PmidName account_name(Identity(pmid_account.pmid_name()));
 //  bool finished_all_transfers(
 //      pmid_account_handler_.ApplyAccountTransfer(account_name, source_id,
-//         PmidAccount::serialised_type(NonEmptyString(pmid_account.serialised_account_details()))));
+//        PmidAccount::serialised_type(NonEmptyString(pmid_account.serialised_account_details()))));
 //  if (finished_all_transfers)
 //    return;    // TODO(Team) Implement whatever else is required here?
-//}
+// }
 
 }  // namespace vault
+
 }  // namespace maidsafe

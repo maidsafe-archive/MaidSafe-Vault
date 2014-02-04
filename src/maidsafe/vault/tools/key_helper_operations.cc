@@ -48,13 +48,13 @@ typedef std::future<passport::PublicPmid> PublicPmidFuture;
 // (dirvine) unused function
 // nfs::Reply GetReply(const std::string& response) {
 //  return nfs::Reply(nfs::Reply::serialised_type(NonEmptyString(response)));
-//}
+// }
 
 // asymm::PublicKey GetPublicKeyFromReply(const passport::PublicPmid::Name& name,
 //                                       const passport::PublicPmid& pmid) {
 //  passport::PublicPmid pmid(name, passport::PublicPmid::serialised_type(reply.data()));
 //  return pmid.public_key();
-//}
+// }
 
 std::mutex g_mutex;
 std::condition_variable g_cond_var;
@@ -90,19 +90,19 @@ void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_keys) {
       };
   functors1.typed_message_and_caching.group_to_group.message_received =
       functors2.typed_message_and_caching.group_to_group.message_received =
-      [&](const routing::GroupToGroupMessage &) {};
+      [&](const routing::GroupToGroupMessage &) {};  // NOLINT
   functors1.typed_message_and_caching.group_to_single.message_received =
       functors2.typed_message_and_caching.group_to_single.message_received =
-      [&](const routing::GroupToSingleMessage &) {};
+      [&](const routing::GroupToSingleMessage &) {};  // NOLINT
   functors1.typed_message_and_caching.single_to_group.message_received =
       functors2.typed_message_and_caching.single_to_group.message_received =
-      [&](const routing::SingleToGroupMessage &) {};
+      [&](const routing::SingleToGroupMessage &) {};  // NOLINT
   functors1.typed_message_and_caching.single_to_single.message_received =
       functors2.typed_message_and_caching.single_to_single.message_received =
-      [&](const routing::SingleToSingleMessage &) {};
+      [&](const routing::SingleToSingleMessage &) {};  // NOLINT
   functors1.typed_message_and_caching.single_to_group_relay.message_received =
       functors2.typed_message_and_caching.single_to_group_relay.message_received =
-      [&](const routing::SingleToGroupRelayMessage &) {};
+      [&](const routing::SingleToGroupRelayMessage &) {};  // NOLINT
 
   endpoint1_ = UdpEndpoint(GetLocalIp(), test::GetRandomPort());
   endpoint2_ = UdpEndpoint(GetLocalIp(), test::GetRandomPort());
@@ -116,7 +116,7 @@ void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_keys) {
   });
   if (a1.get() != 0 || a2.get() != 0) {
     LOG(kError) << "SetupNetwork - Could not start bootstrap nodes.";
-    ThrowError(RoutingErrors::not_connected);
+    BOOST_THROW_EXCEPTION(MakeError(RoutingErrors::not_connected));
   }
 
   // just wait till process receives termination signal
@@ -153,7 +153,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
     auto status(future.wait_for(std::chrono::seconds(10)));
     if (status == std::future_status::timeout || !future.get()) {
       LOG(kError) << "can't join routing network";
-      ThrowError(RoutingErrors::not_connected);
+      BOOST_THROW_EXCEPTION(MakeError(RoutingErrors::not_connected));
     }
     LOG(kInfo) << "Client node joined routing network";
   }
@@ -166,7 +166,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
     auto status(future.wait_for(boost::chrono::seconds(10)));
     if (status == boost::future_status::timeout) {
       LOG(kError) << "can't create account";
-      ThrowError(VaultErrors::failed_to_handle_request);
+      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
     }
     if (future.has_exception()) {
       LOG(kError) << "having error during create account";
@@ -203,7 +203,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
       auto status(future.wait_for(boost::chrono::seconds(10)));
       if (status == boost::future_status::timeout) {
         LOG(kError) << "can't fetch pmid health";
-        ThrowError(VaultErrors::failed_to_handle_request);
+        BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
       }
       std::cout << "The fetched PmidHealth for pmid_name " << HexSubstr(pmid_name.value.string())
                 << " is " << future.get() << std::endl;
@@ -227,13 +227,13 @@ std::future<bool> ClientTester::RoutingJoin(const std::vector<UdpEndpoint>& peer
     }
   };
   functors_.typed_message_and_caching.group_to_group.message_received =
-      [&](const routing::GroupToGroupMessage &msg) { client_nfs_->HandleMessage(msg); };
+      [&](const routing::GroupToGroupMessage &msg) { client_nfs_->HandleMessage(msg); };  // NOLINT
   functors_.typed_message_and_caching.group_to_single.message_received =
-      [&](const routing::GroupToSingleMessage &msg) { client_nfs_->HandleMessage(msg); };
+      [&](const routing::GroupToSingleMessage &msg) { client_nfs_->HandleMessage(msg); };  // NOLINT
   functors_.typed_message_and_caching.single_to_group.message_received =
-      [&](const routing::SingleToGroupMessage &msg) { client_nfs_->HandleMessage(msg); };
+      [&](const routing::SingleToGroupMessage &msg) { client_nfs_->HandleMessage(msg); };  // NOLINT
   functors_.typed_message_and_caching.single_to_single.message_received =
-      [&](const routing::SingleToSingleMessage &msg) { client_nfs_->HandleMessage(msg); };
+      [&](const routing::SingleToSingleMessage &msg) { client_nfs_->HandleMessage(msg); };  // NOLINT
   functors_.request_public_key =
       [&](const NodeId & node_id, const routing::GivePublicKeyFunctor & give_key) {
         nfs::detail::DoGetPublicKey(*client_nfs_, node_id, give_key,
@@ -269,7 +269,7 @@ void KeyStorer::Store() {
   if (failures) {
     std::cout << "Could not store " << std::to_string(failures) << " out of "
               << std::to_string(key_chain_list_.size()) << std::endl;
-    ThrowError(VaultErrors::failed_to_handle_request);
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
   }
 
   boost::this_thread::sleep_for(boost::chrono::seconds(5));
@@ -326,7 +326,7 @@ void DataChunkStorer::Test(int32_t quantity) {
   if (num_chunks != num_get) {
     LOG(kError) << "Error during storing or getting chunk. num_chunks : " << num_chunks
                 << " num_stored : " << num_store << " num_get : " << num_get;
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   boost::this_thread::sleep_for(boost::chrono::seconds(3));
 }
@@ -341,7 +341,7 @@ void DataChunkStorer::TestWithDelete(int32_t quantity) {
   if (num_chunks != num_get) {
     LOG(kError) << "Error during storing or getting chunk. num_chunks : " << num_chunks
                 << " num_stored : " << num_store << " num_get : " << num_get;
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 }
 
@@ -351,21 +351,21 @@ void DataChunkStorer::TestStoreChunk(int chunk_index) {
              << HexSubstr(chunk_list_[chunk_index].name().value);
   boost::this_thread::sleep_for(boost::chrono::seconds(3));
   if (!GetOneChunk(chunk_list_[chunk_index]))
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   std::cout << "Chunk "<< HexSubstr(chunk_list_[chunk_index].name().value)
             << " stored and verified" << std::endl;
 }
 
 void DataChunkStorer::TestFetchChunk(int chunk_index) {
   if (!GetOneChunk(chunk_list_[chunk_index]))
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
 }
 
 void DataChunkStorer::TestDeleteChunk(int chunk_index) {
   if (!DeleteOneChunk(chunk_list_[chunk_index]))
     std::cout << "Chunk "<< HexSubstr(chunk_list_[chunk_index].name().value)
               << " still exists on network" << std::endl;
-//     ThrowError(CommonErrors::invalid_parameter);
+//     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   else
     std::cout << "Chunk "<< HexSubstr(chunk_list_[chunk_index].name().value)
               << " deleted and verified" << std::endl;
@@ -432,7 +432,7 @@ void DataChunkStorer::OneChunkRunWithDelete(size_t& num_chunks, size_t& num_stor
     std::cout << "Delete chunk " << HexSubstr(name.value) << std::endl;
   } else {
     LOG(kError) << "Failed to delete chunk " << HexSubstr(name.value);
-    ThrowError(VaultErrors::failed_to_handle_request);
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
   }
 }
 

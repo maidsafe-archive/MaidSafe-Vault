@@ -46,7 +46,6 @@ struct ActionCreatePmidAccount {
 
  private:
   ActionCreatePmidAccount& operator=(ActionCreatePmidAccount other);
-
 };
 
 bool operator==(const ActionCreatePmidAccount& lhs,

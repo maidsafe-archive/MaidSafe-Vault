@@ -34,7 +34,7 @@ ActionMaidManagerPut::ActionMaidManagerPut(const std::string& serialised_action)
     : kCost([&serialised_action]()->int32_t {
         protobuf::ActionMaidManagerPut action_put_proto;
         if (!action_put_proto.ParseFromString(serialised_action))
-          ThrowError(CommonErrors::parsing_error);
+          BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
         return action_put_proto.cost();
       }()) {}
 

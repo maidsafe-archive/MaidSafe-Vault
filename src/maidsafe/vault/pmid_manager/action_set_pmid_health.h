@@ -21,8 +21,6 @@
 
 #include <string>
 
-#include "boost/optional/optional.hpp"
-
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
@@ -37,7 +35,7 @@ namespace maidsafe {
 namespace vault {
 
 struct ActionPmidManagerSetPmidHealth {
-  ActionPmidManagerSetPmidHealth(const int64_t& disk_available_size);
+  explicit ActionPmidManagerSetPmidHealth(int64_t disk_available_size);
   explicit ActionPmidManagerSetPmidHealth(const std::string& serialised_action);
   ActionPmidManagerSetPmidHealth(const ActionPmidManagerSetPmidHealth& other);
   ActionPmidManagerSetPmidHealth(ActionPmidManagerSetPmidHealth&& other);
@@ -63,4 +61,4 @@ bool operator!=(const ActionPmidManagerSetPmidHealth& lhs,
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_ACTION_SET_AVAILABLE_SIZE_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_ACTION_SET_PMID_HEALTH_H_

@@ -121,8 +121,8 @@ class SendResponse <detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona:
 
 class CacheHandlerDispatcher {
  public:
-  CacheHandlerDispatcher(routing::Routing& routing);
-  
+  explicit CacheHandlerDispatcher(routing::Routing& routing);
+
   template <typename Data, typename RequestorType>
   void SendGetResponse(const Data& data, const RequestorType& requestor);
 

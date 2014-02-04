@@ -53,7 +53,7 @@ class CacheHandlerServiceTest {
   boost::optional<Data> Get(const typename Data::Name& data_name) {
     auto data(cache_handler_service_.CacheGet<Data>(data_name, is_long_term_cacheable<Data>()));
     if (!data)
-      ThrowError(CommonErrors::no_such_element);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
     return data;
   }
 

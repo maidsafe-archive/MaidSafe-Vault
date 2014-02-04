@@ -48,7 +48,7 @@ namespace detail {
 //                                        Identity(message.data().name)), Action),
 //      static_cast<int32_t>(message.data().content.string().size()),
 //      this_id);
-//}
+// }
 
 // PmidName GetPmidAccountName(const nfs::Message& message);
 
@@ -76,7 +76,7 @@ namespace detail {
 //  catch(...) {
 //    LOG(kWarning) << "Unknown error.";
 //  }
-//}
+// }
 
 // Commented by Mahmoud on 7 Sep.
 // template<typename Data>
@@ -90,7 +90,7 @@ namespace detail {
 //  } else {
 //    SendPutResult<Data>(message, false);
 //  }
-//}
+// }
 
 // Commented by Mahmoud on 7 Sep.
 // template<typename Data>
@@ -107,7 +107,7 @@ namespace detail {
 //  }
 //  nfs_.SendPutResult<Data>(Data::Name(message.data().name),
 //                           NonEmptyString(proto_put_result.SerializeAsString()));
-//}
+// }
 
 // Commented by Mahmoud on 7 Sep.
 // template<typename Data, nfs::MessageAction Action>
@@ -116,9 +116,10 @@ namespace detail {
 //  auto unresolved_entry(detail::CreateUnresolvedEntry<Data, Action>(message, routing_.kNodeId()));
 //  pmid_account_handler_.AddLocalUnresolvedEntry(account_name, unresolved_entry);
 //  Sync(account_name);
-//}
+// }
 
 }  // namespace vault
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_PMID_MANAGER_SERVICE_INL_H_

@@ -120,6 +120,7 @@ class VersionHandlerService {
   typedef boost::mpl::insert_range<IntermediateType,
                                    boost::mpl::end<IntermediateType>::type,
                                    VersionHandlerServiceMessages::types>::type FinalType;
+
  public:
   typedef boost::make_variant_over<FinalType>::type Messages;
 

@@ -35,7 +35,7 @@ ActionMaidManagerUnregisterPmid::ActionMaidManagerUnregisterPmid(
     : kPmidName([&serialised_action]()->PmidName {
         protobuf::ActionMaidManagerUnregisterPmid action_unregister_pmid_proto;
         if (!action_unregister_pmid_proto.ParseFromString(serialised_action))
-          ThrowError(CommonErrors::parsing_error);
+          BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
         return PmidName(Identity(action_unregister_pmid_proto.pmid_name()));
       }()) {
 }

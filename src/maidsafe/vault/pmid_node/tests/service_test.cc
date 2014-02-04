@@ -118,7 +118,6 @@ TEST_CASE_METHOD(PmidNodeServiceTest, "pmid node: checking handlers availablity"
     CHECK_NOTHROW(GroupSendToSingle(&pmid_node_service_, pmid_account_response, group_source,
                                     routing::SingleId(routing_.kNodeId())));
   }
-
 }
 
 }  //  namespace test

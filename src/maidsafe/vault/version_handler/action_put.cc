@@ -35,7 +35,7 @@ ActionVersionHandlerPut::ActionVersionHandlerPut(
 ActionVersionHandlerPut::ActionVersionHandlerPut(const std::string& serialised_action) {
   protobuf::ActionPut action_put_version_proto;
   if (!action_put_version_proto.ParseFromString(serialised_action))
-    ThrowError(CommonErrors::parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     old_version = StructuredDataVersions::VersionName(
                       action_put_version_proto.serialised_old_version());
     new_version = StructuredDataVersions::VersionName(

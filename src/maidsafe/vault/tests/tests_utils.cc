@@ -31,7 +31,7 @@ passport::Maid MakeMaid() {
 }
 
 passport::Pmid MakePmid() {
- return passport::Pmid(MakeMaid());
+  return passport::Pmid(MakeMaid());
 }
 
 passport::PublicPmid MakePublicPmid() {

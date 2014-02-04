@@ -50,7 +50,7 @@
 //  } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
 //    MergeDelete(unresolved_entry.key.first, serialised_db_value);
 //  } else {
-//    ThrowError(CommonErrors::invalid_parameter);
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
 //  }
 //}
 
@@ -81,7 +81,7 @@
 //    NonEmptyString serialised_db_value) const {
 //  protobuf::PmidAccountDbValue proto_db_value;
 //  if (!proto_db_value.ParseFromString(serialised_db_value.string()))
-//    ThrowError(CommonErrors::parsing_error);
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
 //  return Size(proto_db_value.size());
 //}
 
