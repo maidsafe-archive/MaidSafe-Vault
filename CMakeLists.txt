@@ -117,6 +117,8 @@ if(MaidsafeTesting)
   target_include_directories(maidsafe_vault_mal
     PUBLIC ${PROJECT_SOURCE_DIR}/include
     PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
+  # TODO - Investigate why boost variant requires this warning to be disabled.
+  target_compile_options(maidsafe_vault_mal PUBLIC $<$<AND:$<BOOL:${MSVC}>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>:/wd4702>)
   target_link_libraries(maidsafe_vault_mal maidsafe_nfs_vault maidsafe_routing maidsafe_common maidsafe_private leveldb)
   target_compile_definitions(maidsafe_vault_mal PRIVATE USE_MAL_BEHAVIOUR)
   ms_add_executable(vault_mal Production ${VaultSourcesDir}/vault_main.cc)
