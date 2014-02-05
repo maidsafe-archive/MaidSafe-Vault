@@ -73,12 +73,12 @@ set(VaultNetworkTestFiles ${VaultSourcesDir}/tests/vault_network.h
                           ${VaultSourcesDir}/tests/vault_network_test.cc
                           ${VaultSourcesDir}/version_handler/tests/verion_handler_test.cc)
 
-list(REMOVE_ITEM VaultGTestsAllFiles ${VaultTestsAllFiles})
-list(REMOVE_ITEM VaultGTestsAllFiles ${VaultNetworkTestFiles})
-list(APPEND VaultNetworkTestFiles ${TestsMain}  ${VaultSourcesDir}/tests/tests_utils.h
-                                                ${VaultSourcesDir}/tests/tests_utils.cc )
-list(APPEND VaultTestsAllFiles ${TestsMain}  ${VaultSourcesDir}/tests/tests_utils.h
-                                             ${VaultSourcesDir}/tests/tests_utils.cc )
+list(REMOVE_ITEM VaultTestsAllFiles ${VaultNetworkTestFiles})
+list(REMOVE_ITEM VaultGTestsAllFiles ${VaultTestsAllFiles} ${VaultNetworkTestFiles})
+list(APPEND VaultNetworkTestFiles ${TestsMain} ${VaultSourcesDir}/tests/tests_utils.h
+                                               ${VaultSourcesDir}/tests/tests_utils.cc )
+list(APPEND VaultTestsAllFiles ${TestsMain} ${VaultSourcesDir}/tests/tests_utils.h
+                                            ${VaultSourcesDir}/tests/tests_utils.cc )
 
 
 #==================================================================================================#
@@ -96,6 +96,8 @@ ms_add_static_library(maidsafe_vault ${VaultAllFiles}
 target_include_directories(maidsafe_vault
   PUBLIC ${PROJECT_SOURCE_DIR}/include
   PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
+# TODO - Investigate why boost variant requires this warning to be disabled.
+target_compile_options(maidsafe_vault PUBLIC $<$<AND:$<BOOL:${MSVC}>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>:/wd4702>)
 
 ms_add_executable(vault Production ${VaultSourcesDir}/vault_main.cc)
 target_include_directories(vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
@@ -115,6 +117,8 @@ if(MaidsafeTesting)
   target_include_directories(maidsafe_vault_mal
     PUBLIC ${PROJECT_SOURCE_DIR}/include
     PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
+  # TODO - Investigate why boost variant requires this warning to be disabled.
+  target_compile_options(maidsafe_vault_mal PUBLIC $<$<AND:$<BOOL:${MSVC}>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>:/wd4702>)
   target_link_libraries(maidsafe_vault_mal maidsafe_nfs_vault maidsafe_routing maidsafe_common maidsafe_private leveldb)
   target_compile_definitions(maidsafe_vault_mal PRIVATE USE_MAL_BEHAVIOUR)
   ms_add_executable(vault_mal Production ${VaultSourcesDir}/vault_main.cc)

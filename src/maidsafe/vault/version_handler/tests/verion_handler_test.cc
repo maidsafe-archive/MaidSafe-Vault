@@ -16,12 +16,13 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/tests/vault_network.h"
+
 
 #include <algorithm>
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/vault/tests/tests_utils.h"
+#include "maidsafe/vault/tests/vault_network.h"
 
 namespace maidsafe {
 
@@ -29,12 +30,12 @@ namespace vault {
 
 namespace test {
 
-class VersionHandlerkTest : public VaultNetwork  {
+class VersionHandlerTest : public VaultNetwork  {
  public:
-  VersionHandlerkTest() {}
+  VersionHandlerTest() {}
 };
 
-TEST_F(VersionHandlerkTest, FUNC_PutGet) {
+TEST_F(VersionHandlerTest, FUNC_PutGet) {
   EXPECT_TRUE(AddClient(true));
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
