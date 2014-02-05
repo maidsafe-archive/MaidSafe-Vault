@@ -483,12 +483,13 @@ void PmidManagerService::HandleChurnEvent(
   auto lost_nodes(matrix_change->lost_nodes());
   for (auto& node : lost_nodes) {
     try {
-      auto contents(group_db_.GetContents(PmidName(Identity(node.string()))));
-      std::vector<nfs_vault::DataName> data_names;
+      auto pmid_node(PmidName(Identity(node.string())));
+      auto contents(group_db_.GetContents(pmid_node));
       for (const auto& kv_pair : contents.kv_pairs) {
         LOG(kGraph) << "PmidManager node " << HexSubstr(node.string())
                     << " holding data " << HexSubstr(kv_pair.first.name) << " dropped";
-        data_names.push_back(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
+        auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
+        dispatcher_.SendSetPmidOffline(data_name, pmid_node);
       }
     } catch (const maidsafe_error& error) {
       if (error.code() != make_error_code(VaultErrors::no_such_account))
@@ -498,12 +499,13 @@ void PmidManagerService::HandleChurnEvent(
   auto new_nodes(matrix_change->new_nodes());
   for (auto& node : new_nodes) {
     try {
+      auto pmid_node(PmidName(Identity(node.string())));
       auto contents(group_db_.GetContents(PmidName(Identity(node.string()))));
-      std::vector<nfs_vault::DataName> data_names;
       for (const auto& kv_pair : contents.kv_pairs) {
         LOG(kGraph) << "PmidManager node " << HexSubstr(node.string())
                     << " holding data " << HexSubstr(kv_pair.first.name) << " re-joined";
-        data_names.push_back(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
+        auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
+        dispatcher_.SendSetPmidOnline(data_name, pmid_node);
       }
     } catch (const maidsafe_error& error) {
       if (error.code() != make_error_code(VaultErrors::no_such_account))
