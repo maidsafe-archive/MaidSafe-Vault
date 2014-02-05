@@ -32,13 +32,19 @@ namespace maidsafe {
 
 namespace vault {
 
-template <typename UnresolvedAction>
+
+template <typename UnresolvedAccountTransfer, typename UnresolvedStaticMetadata>
 class AccountTransfer {
  public:
-  AccountTransfer(NodeId node_id);
-  std::vector<UnresolvedAction> AddUnresolvedAction(
-      std::vector<UnresolvedAction>&& unresolved_actions);
-
+  AccountTransfer(const NodeId& node_id);
+  // For Data manager like personas
+  std::vector<UnresolvedAccountTransfer> AddUnresolved(
+          std::vector<UnresolvedAccountTransfer>&& unresolved_actions);
+  // For MaidManager like personas
+  std::pair<UnresolvedStaticMetadata, std::vector<UnresolvedAccountTransfer>> AddUnresolved(
+      const UnresolvedStaticMetadata& metadata,
+      std::vector<UnresolvedAccountTransfer>&& unresolved_actions);
+  // To handle double churn situations
   void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
 
  private:
@@ -47,8 +53,9 @@ class AccountTransfer {
   AccountTransfer& operator=(AccountTransfer other);
 
   mutable std::mutex mutex_;
-  std::vector<std::unique_ptr<UnresolvedAction>> unresolved_actions_;
-  NodeId node_id_;
+  std::vector<std::unique_ptr<UnresolvedAccountTransfer>> unresolved_actions_;
+  std::vector<std::unique_ptr<UnresolvedMetadata>> unresolved_metdata_;
+  const NodeId kNodeId_;
 };
 
 }  // namespace vault
