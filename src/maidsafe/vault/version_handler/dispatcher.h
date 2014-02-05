@@ -50,6 +50,11 @@ class VersionHandlerDispatcher {
                               const VersionHandler::VersionName& tip_of_tree,
                               const maidsafe_error& return_code, nfs::MessageId message_id);
 
+  void SendSync(const VersionHandler::Key& key, const std::string& serialised_sync);
+
+  template <typename Message>
+  void CheckSourcePersonaType() const;
+
  private:
   routing::Routing& routing_;
 };
@@ -90,6 +95,12 @@ void VersionHandlerDispatcher::SendGetBranchResponse(
     const VersionHandler::Key& key, const std::vector<VersionHandler::VersionName>& versions,
     const detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona::kMaidNode>>& requestor,
     const maidsafe_error& result, nfs::MessageId message_id);
+
+template<typename Message>
+void VersionHandlerDispatcher::CheckSourcePersonaType() const {
+  static_assert(Message::SourcePersona::value == nfs::Persona::kVersionHandler,
+                "The source Persona must be kDataManager.");
+}
 
 }  // namespace vault
 
