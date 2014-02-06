@@ -55,7 +55,7 @@ detail::DbAction ActionMaidManagerDelete::operator()(
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 
   metadata.DeleteData(value->Delete());
-  LOG(kGraph) << "MaidManager decrease count to " << value->count();
+  GLOG() << "MaidManager decrease count to " << value->count();
   assert(value->count() >= 0);
   if (value->count() == 0)
     return detail::DbAction::kDelete;

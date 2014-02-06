@@ -488,8 +488,8 @@ void MaidManagerService::HandleSyncedDelete(
       throw;
     } else {
       // BEFORE_RELEASE trying to delete something not belongs to client shall get muted
-      LOG(kGraph) << "MaidManager blocked DeleteRequest of chunk "
-                  << HexSubstr(data_name.raw_name.string()) << " from non-owner";
+      GLOG() << "MaidManager blocked DeleteRequest of chunk "
+             << HexSubstr(data_name.raw_name.string()) << " from non-owner";
       return;
     }
   }

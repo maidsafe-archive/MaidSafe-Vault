@@ -89,7 +89,7 @@ void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
 
 int64_t DataManagerValue::DecrementSubscribers() {
   --subscribers_;
-  LOG(kGraph) << "DataManager decrease subscribers to " << subscribers_;
+  GLOG() << "DataManager decrease subscribers to " << subscribers_;
   return subscribers_;
 }
 

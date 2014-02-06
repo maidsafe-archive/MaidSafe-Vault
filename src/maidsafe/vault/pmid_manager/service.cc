@@ -486,8 +486,8 @@ void PmidManagerService::HandleChurnEvent(
       auto pmid_node(PmidName(Identity(node.string())));
       auto contents(group_db_.GetContents(pmid_node));
       for (const auto& kv_pair : contents.kv_pairs) {
-        LOG(kGraph) << "PmidManager dropping pmid_node " << HexSubstr(node.string())
-                    << " holding chunk " << HexSubstr(kv_pair.first.name);
+        GLOG() << "PmidManager dropping pmid_node " << HexSubstr(node.string())
+               << " holding chunk " << HexSubstr(kv_pair.first.name);
         auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
         dispatcher_.SendSetPmidOffline(data_name, pmid_node);
       }
@@ -502,8 +502,8 @@ void PmidManagerService::HandleChurnEvent(
       auto pmid_node(PmidName(Identity(node.string())));
       auto contents(group_db_.GetContents(PmidName(Identity(node.string()))));
       for (const auto& kv_pair : contents.kv_pairs) {
-        LOG(kGraph) << "PmidManager joining pmid_node " << HexSubstr(node.string())
-                    << " holding data " << HexSubstr(kv_pair.first.name);
+        GLOG() << "PmidManager joining pmid_node " << HexSubstr(node.string())
+               << " holding data " << HexSubstr(kv_pair.first.name);
         auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
         dispatcher_.SendSetPmidOnline(data_name, pmid_node);
       }

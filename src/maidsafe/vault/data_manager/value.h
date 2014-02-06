@@ -47,7 +47,7 @@ class DataManagerValue {
   void RemovePmid(const PmidName& pmid_name);
   void IncrementSubscribers() {
     ++subscribers_;
-    LOG(kGraph) << "DataManager increase subscribers to " << subscribers_;
+    GLOG() << "DataManager increase subscribers to " << subscribers_;
   }
   int64_t DecrementSubscribers();
   void SetPmidOnline(const PmidName& pmid_name);
