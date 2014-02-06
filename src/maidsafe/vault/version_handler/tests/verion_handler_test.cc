@@ -41,8 +41,14 @@ TEST_F(VersionHandlerTest, FUNC_PutGet) {
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
   EXPECT_NO_THROW(clients_.front()->nfs_->PutVersion(
                       chunk.name(), StructuredDataVersions::VersionName(), v_aaa));
-  Sleep(std::chrono::seconds(10));
-//  EXPECT_NO_THROW(clients_.front()->nfs_->GetVersions(chunk.name()));
+  Sleep(std::chrono::seconds(2));
+  try {
+    auto future(clients_.front()->nfs_->GetVersions(chunk.name()));
+    auto versions(future.get());
+    EXPECT_EQ(versions.front().id, v_aaa.id);
+  } catch(const maidsafe_error& error) {
+    EXPECT_TRUE(false) << "Failed to retrieve version: " << error.what();
+  }
 }
 
 }  // namespace test
