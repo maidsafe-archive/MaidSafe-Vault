@@ -21,8 +21,6 @@
 
 #include <string>
 
-#include "boost/optional/optional.hpp"
-
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 

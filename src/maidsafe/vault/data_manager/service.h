@@ -226,6 +226,8 @@ class DataManagerService {
   friend class detail::DataManagerDeleteVisitor<DataManagerService>;
   friend class detail::DataManagerSendDeleteVisitor<DataManagerService>;
   friend class detail::PutResponseFailureVisitor<DataManagerService>;
+  friend class detail::DataManagerSetPmidOnlineVisitor<DataManagerService>;
+  friend class detail::DataManagerSetPmidOfflineVisitor<DataManagerService>;
   friend class test::DataManagerServiceTest;
 
   routing::Routing& routing_;

@@ -22,8 +22,6 @@
 #include <cstdint>
 #include <string>
 
-#include "boost/optional/optional.hpp"
-
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/config.h"
 #include "maidsafe/vault/maid_manager/metadata.h"

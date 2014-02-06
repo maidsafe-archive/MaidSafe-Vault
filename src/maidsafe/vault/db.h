@@ -27,7 +27,6 @@
 #include <map>
 
 #include "boost/filesystem.hpp"
-#include "boost/optional/optional.hpp"
 
 #include "leveldb/db.h"
 

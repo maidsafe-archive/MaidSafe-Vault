@@ -270,6 +270,30 @@ void DoOperation(DataManagerService* service,
   }
 }
 
+template <>
+void DoOperation(DataManagerService* service,
+                 const SetPmidOnlineFromPmidManagerToDataManager& message,
+                 const SetPmidOnlineFromPmidManagerToDataManager::Sender& sender,
+                 const SetPmidOnlineFromPmidManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation SetPmidOnlineFromPmidManagerToDataManager";
+  auto data_name(GetNameVariant(*message.contents));
+  DataManagerSetPmidOnlineVisitor<DataManagerService> set_pmid_online_visitor(service,
+      PmidName(Identity(sender.group_id.data.string())), message.id);
+  boost::apply_visitor(set_pmid_online_visitor, data_name);
+}
+
+template <>
+void DoOperation(DataManagerService* service,
+                 const SetPmidOfflineFromPmidManagerToDataManager& message,
+                 const SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
+                 const SetPmidOfflineFromPmidManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation SetPmidOfflineFromPmidManagerToDataManager";
+  auto data_name(GetNameVariant(*message.contents));
+  DataManagerSetPmidOfflineVisitor<DataManagerService> set_pmid_offline_visitor(service,
+      PmidName(Identity(sender.group_id.data.string())), message.id);
+  boost::apply_visitor(set_pmid_offline_visitor, data_name);
+}
+
 //=============================== To PmidManager ===================================================
 
 template <>

@@ -473,19 +473,26 @@ void MaidManagerService::HandleSyncedDelete(
                                 synced_action_delete->key.name);
   ObfuscateKey(synced_action_delete->key);
   try {
-    group_db_.Commit(synced_action_delete->key, synced_action_delete->action);
+    auto value(group_db_.Commit(synced_action_delete->key, synced_action_delete->action));
+    // nullptr will be returned in case of reducing count only
+    if (value)
+      dispatcher_.SendDeleteRequest(synced_action_delete->key.group_name(),
+                                    data_name,
+                                    synced_action_delete->action.kMessageId);
+    else
+      LOG(kInfo) << "DeleteRequest not passed down to DataManager";
   } catch (const maidsafe_error& error) {
     LOG(kError) << "MaidManagerService::HandleSyncedDelete commiting error: " << error.what();
     if (error.code() != make_error_code(CommonErrors::no_such_element) &&
-        error.code() != make_error_code(VaultErrors::no_such_account))
+        error.code() != make_error_code(VaultErrors::no_such_account)) {
       throw;
-    else
+    } else {
       // BEFORE_RELEASE trying to delete something not belongs to client shall get muted
+      GLOG() << "MaidManager blocked DeleteRequest of chunk "
+             << HexSubstr(data_name.raw_name.string()) << " from non-owner";
       return;
+    }
   }
-  dispatcher_.SendDeleteRequest(synced_action_delete->key.group_name(),
-                                data_name,
-                                synced_action_delete->action.kMessageId);
 }
 
 // =============== Account transfer ================================================================

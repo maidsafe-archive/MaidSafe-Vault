@@ -32,7 +32,6 @@
 
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
-#include "boost/optional/optional.hpp"
 #include "leveldb/db.h"
 
 #include "maidsafe/common/error.h"
@@ -82,7 +81,7 @@ class GroupDb {
   // For atomically updating metadata only
   void Commit(const GroupName& group_name, std::function<void(Metadata& metadata)> functor);
   // For atomically updating metadata and value
-  void Commit(const Key& key,
+  std::unique_ptr<Value> Commit(const Key& key,
       std::function<detail::DbAction(Metadata& metadata, std::unique_ptr<Value>& value)> functor);
   TransferInfo GetTransferInfo(std::shared_ptr<routing::MatrixChange> matrix_change);
   void HandleTransfer(const std::vector<Contents>& contents);
@@ -209,7 +208,7 @@ void GroupDb<Persona>::Commit(const GroupName& group_name,
 }
 
 template <typename Persona>
-void GroupDb<Persona>::Commit(
+std::unique_ptr<typename Persona::Value> GroupDb<Persona>::Commit(
     const Key& key,
     std::function<detail::DbAction(Metadata& metadata, std::unique_ptr<Value>& value)> functor) {
   LOG(kVerbose) << "GroupDb<Persona>::Commit update metadata and value for account "
@@ -236,15 +235,18 @@ void GroupDb<Persona>::Commit(
       Put(std::make_pair(key, std::move(*value)), it->second.first);
     } else {
       LOG(kInfo) << "detail::DbAction::kDelete";
-      if (value)
+      if (value) {
         Delete(key, it->second.first);
-      else
+        return value;
+      } else {
         LOG(kError) << "value is not initialised";
+      }
     }
   } catch (const maidsafe_error& error) {
     LOG(kError) << "GroupDb<Persona>::Commit encountered error " << error.what();
     throw error;
   }
+  return nullptr;
 }
 
 template <typename Persona>
