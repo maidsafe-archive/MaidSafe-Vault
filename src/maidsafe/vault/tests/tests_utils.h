@@ -161,7 +161,7 @@ void AddLocalActionAndSendGroupActions(
     const std::vector<UnresolvedActionType>& unresolved_actions,
     const std::vector<routing::GroupSource>& group_source) {
 //  sync.AddLocalAction(unresolved_actions[0]);
-  for (uint32_t index(1); index < unresolved_actions.size(); ++index) {
+  for (uint32_t index(0); index < unresolved_actions.size(); ++index) {
     auto proto_sync(CreateProtoSync(UnresolvedActionType::ActionType::kActionId,
                                     unresolved_actions[index].Serialise()));
     auto sync_message(CreateMessage<PersonaSyncType>(
