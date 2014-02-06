@@ -19,8 +19,8 @@
 package maidsafe.vault.protobuf;
 
 message ActionPut {
-  required bytes serialised_old_version = 1;
-  required bytes serialised_new_version = 2;
-  required bytes sender_id = 3;
-  required int32 message_id = 4;
+  required bytes serialised_new_version = 1;
+  required bytes sender_id = 2;
+  required int32 message_id = 3;
+  optional bytes serialised_old_version = 4;
 }

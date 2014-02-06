@@ -36,8 +36,9 @@ ActionVersionHandlerPut::ActionVersionHandlerPut(const std::string& serialised_a
   protobuf::ActionPut action_put_version_proto;
   if (!action_put_version_proto.ParseFromString(serialised_action))
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-    old_version = StructuredDataVersions::VersionName(
-                      action_put_version_proto.serialised_old_version());
+    if (action_put_version_proto.has_serialised_old_version())
+      old_version = StructuredDataVersions::VersionName(
+                        action_put_version_proto.serialised_old_version());
     new_version = StructuredDataVersions::VersionName(
                       action_put_version_proto.serialised_new_version());
     sender = NodeId(action_put_version_proto.sender_id());
@@ -55,7 +56,8 @@ ActionVersionHandlerPut::ActionVersionHandlerPut(ActionVersionHandlerPut&& other
 
 std::string ActionVersionHandlerPut::Serialise() const {
   protobuf::ActionPut action_put_version_proto;
-  action_put_version_proto.set_serialised_old_version(old_version.Serialise());
+  if (old_version.id->IsInitialised())
+    action_put_version_proto.set_serialised_old_version(old_version.Serialise());
   action_put_version_proto.set_serialised_new_version(new_version.Serialise());
   action_put_version_proto.set_sender_id(sender.string());
   action_put_version_proto.set_message_id(message_id.data);

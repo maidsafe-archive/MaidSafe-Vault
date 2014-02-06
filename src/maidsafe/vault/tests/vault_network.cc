@@ -242,9 +242,11 @@ bool VaultNetwork::AddClient(bool register_pmid) {
   }
   try {
     clients_.emplace_back(new Client(node_keys, endpoints_, public_pmids_, register_pmid));
+    LOG(kVerbose) << "Client joined: " << clients_.size();
     return true;
   }
-  catch (...) {
+  catch (const std::exception& error) {
+    LOG(kVerbose) << "Client failed to join: " << clients_.size() << " " << error.what();
     return false;
   }
 }

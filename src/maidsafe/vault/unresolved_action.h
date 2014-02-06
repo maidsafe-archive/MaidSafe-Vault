@@ -56,7 +56,6 @@ struct UnresolvedAction {
  private:
   UnresolvedAction& operator=(UnresolvedAction other);
   std::vector<NodeId> seen_list;
-  static int32_t entry_id_sequence_number;
 
   // Helpers to handle Action class with/without Serialise() member function.
   template <typename T, typename Signature>
@@ -101,9 +100,6 @@ struct UnresolvedAction {
   }
 };
 
-template <typename Key, typename Action>
-int32_t UnresolvedAction<Key, Action>::entry_id_sequence_number = maidsafe::RandomUint32();
-
 // ==================== Implementation =============================================================
 template <typename Key, typename Action>
 UnresolvedAction<Key, Action>::UnresolvedAction(const std::string& serialised_copy,
@@ -117,11 +113,12 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const std::string& serialised_co
   protobuf::UnresolvedAction proto_unresolved_action;
   proto_unresolved_action.ParseFromString(serialised_copy);
   key = Key(proto_unresolved_action.serialised_key());
-  if (sender_id == this_node_id)
-    this_node_and_entry_id = std::make_shared<std::pair<NodeId,
-        int32_t>>(this_node_id, proto_unresolved_action.entry_id());
-  else
+  if (sender_id == this_node_id) {
+    this_node_and_entry_id = std::make_shared<std::pair<NodeId, int32_t>>(
+        this_node_id, proto_unresolved_action.entry_id());
+  } else {
     peer_and_entry_ids.push_back(std::make_pair(sender_id, proto_unresolved_action.entry_id()));
+  }
   for (auto& i : proto_unresolved_action.seen_list())
     seen_list.push_back(NodeId(Identity(i)));
 }
@@ -154,8 +151,11 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const Key& key_in, const Action&
                                                 const NodeId& this_node_id)
     : key(key_in),
       action(action_in),
-      this_node_and_entry_id(
-          std::make_shared<std::pair<NodeId, int32_t>>(this_node_id, ++entry_id_sequence_number)),
+      this_node_and_entry_id(std::make_shared<std::pair<NodeId, int32_t>>(
+          [this_node_id]()->std::pair<NodeId, int32_t> {
+            static int32_t entry_id_sequence_number(RandomInt32());
+            return std::make_pair(this_node_id, ++entry_id_sequence_number);
+          }())),
       peer_and_entry_ids(),
       sync_counter(0),
       seen_list() {}

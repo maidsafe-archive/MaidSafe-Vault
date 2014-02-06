@@ -168,6 +168,7 @@ TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are
   SECTION("PutVersion") {
     NodeId sender_id(NodeId::kRandomId), originator(NodeId::kRandomId);
     auto content(CreateContent<nfs_vault::DataNameOldNewVersion>());
+    content.old_version_name = StructuredDataVersions::VersionName();
     nfs::MessageId message_id(RandomInt32());
     VersionHandler::Key key(content.data_name.raw_name, ImmutableData::Tag::kValue,
                             Identity(originator.string()));
@@ -185,7 +186,7 @@ TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are
     NodeId sender_id(NodeId::kRandomId), originator(NodeId::kRandomId);
     VersionHandler::Key key(Identity(RandomString(64)), ImmutableData::Tag::kValue,
                             Identity(originator.string()));
-    nfs::MessageId message_id;
+    nfs::MessageId message_id(RandomUint32());
     VersionName v0_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
     VersionName v1_bbb(1, ImmutableData::Name(Identity(std::string(64, 'b'))));
     VersionName v2_ccc(2, ImmutableData::Name(Identity(std::string(64, 'c'))));
@@ -194,12 +195,13 @@ TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are
     VersionName v4_iii(4, ImmutableData::Name(Identity(std::string(64, 'i'))));
 
     std::vector<std::pair<VersionName, VersionName>> puts;
-    puts.push_back(std::make_pair(VersionName(), v0_aaa));
     puts.push_back(std::make_pair(v0_aaa, v1_bbb));
     puts.push_back(std::make_pair(v1_bbb, v2_ccc));
     puts.push_back(std::make_pair(v2_ccc, v3_fff));
     puts.push_back(std::make_pair(v1_bbb, v2_ddd));
     puts.push_back(std::make_pair(v3_fff, v4_iii));
+
+    Store(key, ActionVersionHandlerPut(VersionName(), v0_aaa, sender_id, message_id));
 
     for (const auto& put : puts) {
       message_id = nfs::MessageId(RandomUint32());
@@ -207,6 +209,7 @@ TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are
     }
 
     CHECK_NOTHROW(Get(key).GetBranch(v4_iii));
+    CHECK_NOTHROW(Get(key).GetBranch(v2_ddd));
 
     ActionVersionHandlerDeleteBranchUntilFork action_delete_branch(v4_iii);
     auto group_source(CreateGroupSource(NodeId(NodeId::kRandomId)));
@@ -215,8 +218,8 @@ TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are
                  key, action_delete_branch, group_source));
     SendSync<VersionHandler::UnresolvedDeleteBranchUntilFork>(group_unresolved_action,
                                                               group_source);
-    CHECK_THROWS(Get(key).GetBranch(v4_iii));
     CHECK_NOTHROW(Get(key).GetBranch(v2_ddd));
+    CHECK_THROWS(Get(key).GetBranch(v4_iii));
   }
 }
 

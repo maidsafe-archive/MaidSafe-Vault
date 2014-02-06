@@ -89,7 +89,8 @@ class VersionHandlerService {
   VersionHandlerService(VersionHandlerService&&);
   VersionHandlerService& operator=(VersionHandlerService&&);
 
-  void DoSync();
+  template <typename UnresolvedAction>
+  void DoSync(const UnresolvedAction& unresolved_action);
 
   template <typename MessageType>
   bool ValidateSender(const MessageType& message, const typename MessageType::Sender& sender) const;
@@ -145,7 +146,7 @@ void VersionHandlerService::HandleMessage(const MessageType& /*message*/,
 template <typename MessageType>
 bool VersionHandlerService::ValidateSender(const MessageType& /*message*/,
                                            const typename MessageType::Sender& /*sender*/) const {
-  return false;
+  return true;  // BEFORE RELEASE
 }
 
 template<>

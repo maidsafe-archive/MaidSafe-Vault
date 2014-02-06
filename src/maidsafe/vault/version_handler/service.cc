@@ -55,20 +55,6 @@ inline bool FromVersionHandler(const Message& message) {
 
 }  // unnamed namespace
 
-namespace detail {
-
-// VersionHandlerUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message) {
-//  // test message content is valid only
-//  protobuf::VersionHandlerUnresolvedEntry entry_proto;
-//  if (!entry_proto.ParseFromString(message.data().content.string()))
-//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-//  // this is the only code line really required
-//  return VersionHandlerUnresolvedEntry(
-//                         VersionHandlerUnresolvedEntry::serialised_type(message.data().content));
-
-// }
-
-}  // namespace detail
 
 VersionHandlerService::VersionHandlerService(const passport::Pmid& pmid,
                                              routing::Routing& routing)
@@ -87,6 +73,7 @@ void VersionHandlerService::HandleMessage(
     const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Sender& sender,
     const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Receiver& receiver) {
   typedef nfs::GetVersionsRequestFromMaidNodeToVersionHandler MessageType;
+  LOG(kVerbose) << "GetVersionsRequestFromMaidNodeToVersionHandler: " << message.id;
   OperationHandlerWrapper<VersionHandlerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
@@ -143,6 +130,7 @@ void VersionHandlerService::HandleMessage(
     const typename PutVersionRequestFromMaidManagerToVersionHandler::Sender& sender,
     const typename PutVersionRequestFromMaidManagerToVersionHandler::Receiver& receiver) {
   typedef PutVersionRequestFromMaidManagerToVersionHandler MessageType;
+  LOG(kVerbose) << "PutVersionRequestFromMaidManagerToVersionHandler: " << message.id;
   OperationHandlerWrapper<VersionHandlerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
@@ -157,6 +145,7 @@ void VersionHandlerService::HandleMessage(
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Sender& sender,
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Receiver&
        receiver) {
+  LOG(kVerbose) << "DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler: " << message.id;
   typedef DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler MessageType;
   OperationHandlerWrapper<VersionHandlerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -181,9 +170,11 @@ void VersionHandlerService::HandleMessage(
       VersionHandler::UnresolvedPutVersion unresolved_action(
                                                proto_sync.serialised_unresolved_action(),
                                                sender.sender_id, routing_.kNodeId());
+      LOG(kVerbose) << "VersionHandlerSync: " << message.id;
       auto resolved_action(sync_put_versions_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         try {
+          LOG(kInfo) << "VersionHandlerSync-Commit: " << message.id;
           db_.Commit(resolved_action->key, resolved_action->action);
           if (resolved_action->action.tip_of_tree) {
             dispatcher_.SendPutVersionResponse(
@@ -192,6 +183,7 @@ void VersionHandlerService::HandleMessage(
           }
         }
         catch (const maidsafe_error& error) {
+          LOG(kError) << message.id << " Failed to put version: " << error.what() ;
           dispatcher_.SendPutVersionResponse(resolved_action->key, VersionHandler::VersionName(),
                                              error, resolved_action->action.message_id);
         }
@@ -221,28 +213,31 @@ void VersionHandlerService::HandleMessage(
 }
 
 void VersionHandlerService::HandlePutVersion(
-    const VersionHandler::Key& /*key*/, const VersionHandler::VersionName& /*old_version*/,
-    const VersionHandler::VersionName& /*new_version*/, const NodeId& /*sender*/,
-    nfs::MessageId /*message_id*/) {
-//  sync_put_versions_.AddLocalAction(VersionHandler::UnresolvedPutVersion(
-//      key, ActionVersionHandlerPut(old_version, new_version, sender, message_id),
-//      routing_.kNodeId()));
-  DoSync();
+    const VersionHandler::Key& key,
+    const VersionHandler::VersionName& old_version,
+    const VersionHandler::VersionName& new_version, const NodeId& sender,
+    nfs::MessageId message_id) {
+  LOG(kVerbose) << "VersionHandlerService::HandlePutVersion: " << message_id;
+  DoSync(typename VersionHandler::UnresolvedPutVersion(
+                      key, ActionVersionHandlerPut(old_version, new_version, sender, message_id),
+                      routing_.kNodeId()));
 }
 
 void VersionHandlerService::HandleDeleteBranchUntilFork(
-    const VersionHandler::Key& /*key*/, const VersionHandler::VersionName& /*branch_tip*/,
+    const VersionHandler::Key& key, const VersionHandler::VersionName& branch_tip,
     const NodeId& /*sender*/) {
-//  sync_delete_branche_until_forks_.AddLocalAction(
-//      VersionHandler::UnresolvedDeleteBranchUntilFork(
-//          key, ActionVersionHandlerDeleteBranchUntilFork(branch_tip), routing_.kNodeId()));
-  DoSync();
+  LOG(kVerbose) << "VersionHandlerService::HandleDeleteBranchUntilFork: ";
+  DoSync(typename VersionHandler::UnresolvedDeleteBranchUntilFork(
+                      key, ActionVersionHandlerDeleteBranchUntilFork(branch_tip),
+                      routing_.kNodeId()));
 }
 
 
-void VersionHandlerService::DoSync() {
-  // TODO(Mahmoud): Implement me
-  assert(0);
+template <typename UnresolvedAction>
+void VersionHandlerService::DoSync(const UnresolvedAction& unresolved_action) {
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_put_versions_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_delete_branche_until_forks_,
+                                       unresolved_action);
 }
 
 // void VersionHandlerService::ValidateClientSender(const nfs::Message& message) const {

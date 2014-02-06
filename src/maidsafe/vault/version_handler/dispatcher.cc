@@ -23,6 +23,7 @@
 
 #include "maidsafe/vault/version_handler/version_handler.h"
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/message_types.h"
 
 namespace maidsafe {
 
@@ -42,8 +43,9 @@ void VersionHandlerDispatcher::SendGetVersionsResponse(
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   NfsMessage nfs_message;
   nfs_message.id = message_id;
+  nfs_message.contents.reset(new nfs_client::StructuredDataNameAndContentOrReturnCode());
   if (return_code.code() == CommonErrors::success) {
-    nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
+    nfs_message.contents->structured_data.reset(nfs_client::StructuredData(versions));
   } else {
     nfs_message.contents->data_name_and_return_code =
         nfs_client::DataNameAndReturnCode(nfs_vault::DataName(key.type, key.name),
@@ -65,8 +67,9 @@ void VersionHandlerDispatcher::SendGetVersionsResponse(
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   NfsMessage nfs_message;
   nfs_message.id = message_id;
+  nfs_message.contents.reset(new nfs_client::StructuredDataNameAndContentOrReturnCode());
   if (return_code.code() == CommonErrors::success) {
-    nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
+    nfs_message.contents->structured_data.reset(nfs_client::StructuredData(versions));
   } else {
     nfs_message.contents->data_name_and_return_code =
         nfs_client::DataNameAndReturnCode(nfs_vault::DataName(key.type, key.name),
@@ -143,6 +146,15 @@ void VersionHandlerDispatcher::SendPutVersionResponse(
                                             routing::SingleId(routing_.kNodeId())),
                          NfsMessage::Receiver(NodeId(key.originator.string())));
   routing_.Send(message);
+}
+
+// ==================== Sync / AccountTransfer implementation ======================================
+void VersionHandlerDispatcher::SendSync(const VersionHandler::Key& key,
+                                        const std::string& serialised_sync) {
+  typedef SynchroniseFromVersionHandlerToVersionHandler VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  SendSyncMessage<VaultMessage> sync_sender;
+  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), key);
 }
 
 }  // namespace vault
