@@ -183,7 +183,7 @@ void VersionHandlerService::HandleMessage(
           }
         }
         catch (const maidsafe_error& error) {
-          LOG(kError) << message.id << " Failed to put version: " << error.what() ;
+          LOG(kError) << message.id << " Failed to put version: " << error.what();
           dispatcher_.SendPutVersionResponse(resolved_action->key, VersionHandler::VersionName(),
                                              error, resolved_action->action.message_id);
         }
@@ -218,7 +218,7 @@ void VersionHandlerService::HandlePutVersion(
     const VersionHandler::VersionName& new_version, const NodeId& sender,
     nfs::MessageId message_id) {
   LOG(kVerbose) << "VersionHandlerService::HandlePutVersion: " << message_id;
-  DoSync(typename VersionHandler::UnresolvedPutVersion(
+  DoSync(VersionHandler::UnresolvedPutVersion(
                       key, ActionVersionHandlerPut(old_version, new_version, sender, message_id),
                       routing_.kNodeId()));
 }

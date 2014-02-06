@@ -63,7 +63,7 @@ TEST_F(VersionHandlerTest, FUNC_PutGet) {
   }
 }
 
-TEST_F(VersionHandlerTest,FUNC_DeleteBranchUntilFork) {
+TEST_F(VersionHandlerTest, FUNC_DeleteBranchUntilFork) {
   EXPECT_TRUE(AddClient(true));
   ImmutableData::Name name(Identity(RandomAlphaNumericString(64)));
   VersionName v0_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));

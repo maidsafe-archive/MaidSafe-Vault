@@ -19,6 +19,7 @@
 #ifndef MAIDSAFE_VAULT_VERSION_HANDLER_DISPATCHER_H_
 #define MAIDSAFE_VAULT_VERSION_HANDLER_DISPATCHER_H_
 
+#include <string>
 #include <vector>
 
 #include "maidsafe/data_types/structured_data_versions.h"
