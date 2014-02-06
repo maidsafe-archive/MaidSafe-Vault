@@ -19,6 +19,6 @@
 package maidsafe.vault.protobuf;
 
 message AccountTransfer {
-  repeated bytes serialised_unresolved_db_action = 1;
-  repeated bytes serialised_unresolved_metadata_action = 2;
+  required bytes serialised_unresolved_metadata = 1;
+  repeated bytes serialised_unresolved_account_transfer = 2;
 }

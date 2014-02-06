@@ -33,17 +33,17 @@ namespace maidsafe {
 namespace vault {
 
 
-template <typename UnresolvedAccountTransfer, typename UnresolvedStaticMetadata>
+template <typename UnresolvedDbAction, typename UnresolvedMetadataAction>
 class AccountTransfer {
  public:
   AccountTransfer(const NodeId& node_id);
   // For Data manager like personas
-  std::vector<UnresolvedAccountTransfer> AddUnresolved(
-          std::vector<UnresolvedAccountTransfer>&& unresolved_actions);
+  std::vector<UnresolvedDbAction> AddUnresolved(
+          std::vector<UnresolvedDbAction>&& unresolved_db_actions);
   // For MaidManager like personas
-  std::pair<UnresolvedStaticMetadata, std::vector<UnresolvedAccountTransfer>> AddUnresolved(
-      const UnresolvedStaticMetadata& metadata,
-      std::vector<UnresolvedAccountTransfer>&& unresolved_actions);
+  std::pair<UnresolvedMetadataAction, std::vector<UnresolvedDbAction>> AddUnresolved(
+      const UnresolvedMetadataAction& metadata_action,
+      std::vector<UnresolvedAccountTransferAction>&& unresolved_db_actions);
   // To handle double churn situations
   void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
 
@@ -52,11 +52,85 @@ class AccountTransfer {
   AccountTransfer(const AccountTransfer&);
   AccountTransfer& operator=(AccountTransfer other);
 
+  std::vector<UnresolvedDbAction> Add(
+          std::vector<UnresolvedDbAction>&& unresolved_actions);
+
+  UnresolvedMetadataAction Add(const UnresolvedMetadataAction& unresolved_metadata_action);
   mutable std::mutex mutex_;
-  std::vector<std::unique_ptr<UnresolvedAccountTransfer>> unresolved_actions_;
-  std::vector<std::unique_ptr<UnresolvedMetadata>> unresolved_metdata_;
+  std::vector<std::unique_ptr<UnresolvedDbAction>> unresolved_db_actions_;
+  std::vector<std::unique_ptr<UnresolvedMetadataAction>> unresolved_metdata_actions_;
   const NodeId kNodeId_;
 };
+
+
+// Implementation
+
+
+template <typename UnresolvedDbAction, typename UnresolvedMetadataAction>
+AccountTransfer::AccountTransfer(const NodeId& node_id)
+    : mutex_(),
+      unresolved_db_actions_(),
+      unresolved_metdata_actions_(),
+      kNodeId_(node_id) {}
+
+
+
+template <typename UnresolvedDbAction, typename UnresolvedMetadataAction>
+std::vector<UnresolvedDbAction>
+    AccountTransfer<UnresolvedDbAction, UnresolvedMetadataAction>::AddUnresolved(
+        std::vector<UnresolvedDbAction>&& unresolved_db_actions) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return Add(std::move(unresolved_db_actions));
+}
+
+
+template <typename UnresolvedDbAction, typename UnresolvedMetadataAction>
+    std::pair<UnresolvedMetadataAction, std::vector<UnresolvedDbAction>>
+    AccountTransfer<UnresolvedDbAction, UnresolvedMetadataAction>::AddUnresolved(
+    const UnresolvedMetadataAction& unresolved_metadata_action,
+    std::vector<UnresolvedDbAction>&& unresolved_db_actions) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto resolved_db_actions(Add(std::move(unresolved_db_actions)));
+  auto resolved_metadata_action(Add(std::move(unresolved_metadata_action)));
+  return std::make_pair(resolved_db_actions, resolved_metadata_action);
+}
+
+template <typename UnresolvedDbAction, typename UnresolvedMetadataAction>
+std::vector<UnresolvedDbAction>
+    AccountTransfer<UnresolvedDbAction, UnresolvedMetadataAction>::Add(
+        std::vector<UnresolvedDbAction>&& unresolved_db_actions) {
+  auto found = std::find_if(found, std::end(unresolved_db_actions_),
+                       [&unresolved_db_actions](const std::unique_ptr<UnresolvedAction>& test) {
+                           return ((test->key == unresolved_db_actions.key) &&
+                                   (test->action == unresolved_db_actions.action));
+                       });
+  if (found == std::end(unresolved_db_actions_)) {  // not found
+
+  } else {
+
+  }
+}
+
+
+template <typename UnresolvedDbAction, typename UnresolvedMetadataAction>
+UnresolvedMetadataAction
+    AccountTransfer<UnresolvedDbAction, UnresolvedMetadataAction>::Add(
+        const UnresolvedMetadataAction& unresolved_metadata_action) {
+  auto found = std::find_if(found, std::end(unresolved_metdata_),
+                       [&unresolved_metadata_action](const std::unique_ptr<UnresolvedAction>& test) {
+                           return ((test->key == unresolved_metdata_actions_.key) &&
+                                   (test->action == unresolved_metdata_actions_.action));
+                       });
+  if (found == std::end(unresolved_metdata_)) {  // not found
+
+  } else {  // found
+
+  }
+}
+
+
+
+
 
 }  // namespace vault
 
