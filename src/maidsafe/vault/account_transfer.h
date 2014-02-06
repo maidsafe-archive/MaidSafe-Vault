@@ -63,8 +63,26 @@ class AccountTransfer {
 };
 
 
-// Implementation
+// ==================== Implementation =============================================================
 
+namespace detail {
+// use for both db_action and metadata
+template <typename UnresolvedAction>
+void AddNewUnresolvedAction(const UnresolvedAction& new_action,
+    std::vector<std::unique_ptr<UnresolvedAction>>& unresolved_actions) {
+
+
+}
+
+
+template <typename UnresolvedAction>
+void AppendUnresolvedActionEntry(const UnresolvedAction& new_action,
+                                 UnresolvedAction& existing_action,
+                                 std::unique_ptr<UnresolvedAction>& resolved_action){
+
+}
+
+}  // namespace detail
 
 template <typename UnresolvedDbAction, typename UnresolvedMetadataAction>
 AccountTransfer::AccountTransfer(const NodeId& node_id)
@@ -121,7 +139,7 @@ UnresolvedMetadataAction
                            return ((test->key == unresolved_metdata_actions_.key) &&
                                    (test->action == unresolved_metdata_actions_.action));
                        });
-  if (found == std::end(unresolved_metdata_)) {  // not found
+  if (found == std::end(unresolved_metdata_actions_)) {  // not found
 
   } else {  // found
 
