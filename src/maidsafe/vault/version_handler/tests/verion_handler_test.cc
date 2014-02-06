@@ -39,7 +39,10 @@ TEST_F(VersionHandlerTest, FUNC_PutGet) {
   EXPECT_TRUE(AddClient(true));
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
-  clients_.front()->nfs_->PutVersion(chunk.name(), StructuredDataVersions::VersionName(), v_aaa);
+  EXPECT_NO_THROW(clients_.front()->nfs_->PutVersion(
+                      chunk.name(), StructuredDataVersions::VersionName(), v_aaa));
+  Sleep(std::chrono::seconds(10));
+//  EXPECT_NO_THROW(clients_.front()->nfs_->GetVersions(chunk.name()));
 }
 
 }  // namespace test

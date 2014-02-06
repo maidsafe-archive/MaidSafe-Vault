@@ -23,6 +23,7 @@
 
 #include "maidsafe/vault/version_handler/version_handler.h"
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/message_types.h"
 
 namespace maidsafe {
 
@@ -143,6 +144,15 @@ void VersionHandlerDispatcher::SendPutVersionResponse(
                                             routing::SingleId(routing_.kNodeId())),
                          NfsMessage::Receiver(NodeId(key.originator.string())));
   routing_.Send(message);
+}
+
+// ==================== Sync / AccountTransfer implementation ======================================
+void VersionHandlerDispatcher::SendSync(const VersionHandler::Key& key,
+                                        const std::string& serialised_sync) {
+  typedef SynchroniseFromVersionHandlerToVersionHandler VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  SendSyncMessage<VaultMessage> sync_sender;
+  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), key);
 }
 
 }  // namespace vault
