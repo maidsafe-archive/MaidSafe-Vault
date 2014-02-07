@@ -393,7 +393,7 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
       auto obfuscated_key(group_key);
       ObfuscateKey(obfuscated_key);
       try {
-//        auto value(group_db_.GetValue(obfuscated_key));
+        group_db_.GetValue(obfuscated_key);
         // BEFORE_RELEASE putting a duplicated chunk, cost set to the size of the data
         LOG(kInfo) << "MaidManagerService::HandlePut duplicated PutRequest";
         DoSync(typename MaidManager::UnresolvedPut(group_key,
