@@ -65,8 +65,7 @@ Data PmidNodeHandler::Get(const typename Data::Name& data_name) {
 
 template <typename Data>
 void PmidNodeHandler::Put(const Data& data) {
-  GLOG() << "PmidNode storing chunk " << HexSubstr(data.name().value.string())
-         << " with content " << HexSubstr(data.Serialise().data);
+  GLOG() << "PmidNode storing chunk " << HexSubstr(data.name().value.string());
   permanent_data_store_.Put(DataNameVariant(data.name()), data.Serialise().data);
 }
 
