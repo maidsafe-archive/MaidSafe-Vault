@@ -227,7 +227,7 @@ void VersionHandlerService::HandleDeleteBranchUntilFork(
     const VersionHandler::Key& key, const VersionHandler::VersionName& branch_tip,
     const NodeId& /*sender*/) {
   LOG(kVerbose) << "VersionHandlerService::HandleDeleteBranchUntilFork: ";
-  DoSync(typename VersionHandler::UnresolvedDeleteBranchUntilFork(
+  DoSync(VersionHandler::UnresolvedDeleteBranchUntilFork(
                       key, ActionVersionHandlerDeleteBranchUntilFork(branch_tip),
                       routing_.kNodeId()));
 }

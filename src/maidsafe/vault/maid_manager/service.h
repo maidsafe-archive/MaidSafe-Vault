@@ -397,10 +397,12 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
         // BEFORE_RELEASE putting a duplicated chunk, cost set to the size of the data
         LOG(kInfo) << "MaidManagerService::HandlePut duplicated PutRequest";
         DoSync(typename MaidManager::UnresolvedPut(group_key,
-            ActionMaidManagerPut(data.Serialise().data.string().size()), routing_.kNodeId()));
+            ActionMaidManagerPut(static_cast<int32_t>(data.Serialise().data.string().size())),
+            routing_.kNodeId()));
         return;
       } catch(const maidsafe_error& error) {
-        LOG(kInfo) << "MaidManagerService::HandlePut first PutRequest, passing to DataManager";
+        LOG(kInfo) << "MaidManagerService::HandlePut first PutRequest, passing to DataManager: "
+                   << error.what();
       }
       dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
     } else {

@@ -298,7 +298,7 @@ class DataManagerSetPmidOnlineVisitor : public boost::static_visitor<> {
                   << HexSubstr(kPmidNode_->string()) << " for chunk "
                   << HexSubstr(data_name.value.string())
                   << " bearing message id " << kMessageId_.data;
-    kService_->template MarkNodeUp(kPmidNode_, data_name);
+    kService_->MarkNodeUp(kPmidNode_, data_name);
   }
 
  private:
@@ -320,7 +320,7 @@ class DataManagerSetPmidOfflineVisitor : public boost::static_visitor<> {
                   << HexSubstr(kPmidNode_->string()) << " for chunk "
                   << HexSubstr(data_name.value.string())
                   << " bearing message id " << kMessageId_.data;
-    kService_->template MarkNodeDown(kPmidNode_, data_name);
+    kService_->MarkNodeDown(kPmidNode_, data_name);
   }
 
  private:
