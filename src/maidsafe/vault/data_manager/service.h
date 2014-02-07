@@ -114,6 +114,9 @@ class DataManagerService {
   void HandleGet(const typename Data::Name& data_name, const RequestorIdType& requestor,
                  nfs::MessageId message_id);
 
+  template <typename Data>
+  void GetForNodeDown(const PmidName& pmid_name, const typename Data::Name& data_name);
+
   void HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
                          const GetResponseContents& contents);
 
@@ -124,6 +127,8 @@ class DataManagerService {
   template <typename DataName>
   PmidName ChoosePmidNodeToGetFrom(std::set<PmidName>& online_pmids,
                                    const DataName& data_name) const;
+  template <typename Data>
+  std::set<PmidName> GetOnlinePmids(const typename Data::Name& data_name);
 
   template <typename Data, typename RequestorIdType>
   void DoHandleGetResponse(
@@ -134,6 +139,10 @@ class DataManagerService {
   void DoHandleGetCachedResponse(
       const GetCachedResponseContents& contents,
       std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
+
+  template <typename Data>
+  void DoGetForNodeDownResponse(const PmidName& pmid_node, const typename Data::Name& data_name,
+                                const GetResponseContents& contents);
 
   template <typename Data, typename RequestorIdType>
   bool SendGetResponse(
@@ -487,22 +496,7 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
                                    nfs::MessageId message_id) {
   LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value);
   // Get all pmid nodes that are online.
-  std::set<PmidName> online_pmids;
-  try {
-    auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue)));
-    online_pmids = std::move(value.online_pmids());
-  } catch (const maidsafe_error& error) {
-    LOG(kWarning) << "Getting " << HexSubstr(data_name.value)
-                  << " causes a maidsafe_error " << error.what();
-    if (error.code() != make_error_code(VaultErrors::no_such_account)) {
-      LOG(kError) << "db error";
-      throw error;  // For db errors
-    }
-    // TODO(Fraser#5#): 2013-10-03 - Request for non-existent data should possibly generate an alert
-    LOG(kWarning) << "Entry for " << HexSubstr(data_name.value) << " doesn't exist.";
-    return;
-  }
-
+  std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
   int expected_response_count(static_cast<int>(online_pmids.size()));
 
   // Choose the one we're going to ask for actual data, and set up the others for integrity checks.
@@ -541,6 +535,33 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   }
 }
 
+template <typename Data>
+void DataManagerService::GetForNodeDown(const PmidName& pmid_name,
+                                        const typename Data::Name& data_name) {
+  LOG(kVerbose) << "DataManagerService::GetForNodeDown chunk " << HexSubstr(data_name.value);
+  std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
+  online_pmids.erase(pmid_name);
+  // Only trigger the recovery procedure when not enough online_pmids.
+  if (online_pmids.size() > 3)  // routing::Parameters::node_group_size / 2
+    return;
+  // Just get, don't do integrity check
+  auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
+    LOG(kVerbose) << "DataManagerService::GetForNodeDown " << HexSubstr(data_name.value)
+                  << " task called from timer to DoGetForNodeDownResponse";
+    this->DoGetForNodeDownResponse<Data>(pmid_node_and_contents.first,
+                                         data_name,
+                                         pmid_node_and_contents.second);
+  });
+  nfs::MessageId message_id(get_timer_.NewTaskId());
+  get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, 1, message_id);
+  for (auto& pmid_node : online_pmids) {
+    LOG(kVerbose) << "DataManagerService::GetForNodeDown " << HexSubstr(data_name.value)
+                  << " SendGetRequest with message_id " << message_id.data
+                  << " to picked up pmid_node " << HexSubstr(pmid_node->string());
+    dispatcher_.SendGetRequest<Data>(pmid_node, data_name, message_id);
+  }
+}
+
 template <typename DataName>
 PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_pmids,
                                                      const DataName& data_name) const {
@@ -568,6 +589,27 @@ PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_
   LOG(kVerbose) << "PmidNode : " << HexSubstr(chosen->string()) << " is chosen by this DataManager";
   return chosen;
 }
+
+template <typename Data>
+std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name& data_name) {
+  std::set<PmidName> online_pmids;
+  try {
+    auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue)));
+    online_pmids = std::move(value.online_pmids());
+  } catch (const maidsafe_error& error) {
+    LOG(kWarning) << "Getting " << HexSubstr(data_name.value)
+                  << " causes a maidsafe_error " << error.what();
+    if (error.code() != make_error_code(VaultErrors::no_such_account)) {
+      LOG(kError) << "db error";
+      throw;  // For db errors
+    }
+    // TODO(Fraser#5#): 2013-10-03 - Request for non-existent data should possibly generate an alert
+    LOG(kWarning) << "Entry for " << HexSubstr(data_name.value) << " doesn't exist.";
+    throw VaultErrors::no_such_account;
+  }
+  return online_pmids;
+}
+
 
 template <typename Data, typename RequestorIdType>
 void DataManagerService::DoHandleGetResponse(
@@ -628,6 +670,37 @@ void DataManagerService::DoHandleGetCachedResponse(
     get_response_op->serialised_contents =
         typename Data::serialised_type(NonEmptyString(contents.content->data));
     AssessIntegrityCheckResults<Data, RequestorIdType>(get_response_op);
+  }
+}
+
+template <typename Data>
+void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
+                                                  const typename Data::Name& data_name,
+                                                  const GetResponseContents& contents) {
+  // Note: if 'pmid_node' and 'contents' is default-constructed, it's probably a result of this
+  // function being invoked by the timer after timeout.
+  if (contents.content && pmid_node.value.IsInitialised())
+    LOG(kVerbose) << "DataManagerService::DoGetForNodeDownResponse received response from "
+                  << HexSubstr(pmid_node->string()) << " for chunk "
+                  << HexSubstr(contents.name.raw_name) << " with content "
+                  << HexSubstr(contents.content->string());
+
+  if (contents.content) {
+    std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
+    PmidName pmid_name;
+    bool already_picked(false);
+    do {
+      pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
+      auto itr(online_pmids.find(pmid_name));
+      already_picked = (itr != online_pmids.end());
+    } while (pmid_node->string() == data_name.value.string() && already_picked);
+
+    Data data(Data(data_name, typename Data::serialised_type(*contents.content)));
+    nfs::MessageId message_id(static_cast<nfs::MessageId::value_type>(
+        HashStringToInt(data_name.value.string())));
+    GLOG() << "DataManager re-put chunk " << HexSubstr(contents.name.raw_name)
+           << " to new pmid_node " << HexSubstr(pmid_name->string());
+    dispatcher_.SendPutRequest(pmid_name, data, message_id);
   }
 }
 
@@ -749,18 +822,18 @@ void DataManagerService::SendFalseDataNotification(
 // ==================== Node up / Node down implementation =========================================
 template <typename DataName>
 void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName& name) {
-  LOG(kWarning) << "DataManagerService::MarkNodeDown marking node "
-                << HexSubstr(pmid_node->string()) << " down for chunk "
-                << HexSubstr(name.value.string());
+  LOG(kWarning) << "DataManager marking node " << HexSubstr(pmid_node->string())
+                << " down for chunk " << HexSubstr(name.value.string());
   typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
   DoSync(DataManager::UnresolvedNodeDown(key,
              ActionDataManagerNodeDown(pmid_node), routing_.kNodeId()));
+  GetForNodeDown<typename DataName::data_type>(pmid_node, name);
 }
 
 template <typename DataName>
 void DataManagerService::MarkNodeUp(const PmidName& pmid_node, const DataName& name) {
-  LOG(kInfo) << "DataManagerService::MarkNodeUp marking node " << HexSubstr(pmid_node->string())
-             << " up for chunk " << HexSubstr(name.value.string());
+  GLOG() << "DataManager marking node " << HexSubstr(pmid_node->string())
+         << " up for chunk " << HexSubstr(name.value.string());
   typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
   DoSync(DataManager::UnresolvedNodeUp(key,
              ActionDataManagerNodeUp(pmid_node), routing_.kNodeId()));
