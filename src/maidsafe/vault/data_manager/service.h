@@ -542,7 +542,7 @@ void DataManagerService::GetForNodeDown(const PmidName& pmid_name,
   std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
   online_pmids.erase(pmid_name);
   // Only trigger the recovery procedure when not enough online_pmids.
-  if (online_pmids.size() > 3)  // routing::Parameters::node_group_size / 2
+  if (online_pmids.size() > (routing::Parameters::node_group_size / 2))
     return;
   // Just get, don't do integrity check
   auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
@@ -693,7 +693,7 @@ void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
       pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
       auto itr(online_pmids.find(pmid_name));
       already_picked = (itr != online_pmids.end());
-    } while (pmid_node->string() == data_name.value.string() && already_picked);
+    } while (pmid_name->string() == data_name.value.string() && already_picked);
 
     Data data(Data(data_name, typename Data::serialised_type(*contents.content)));
     nfs::MessageId message_id(static_cast<nfs::MessageId::value_type>(
