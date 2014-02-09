@@ -478,28 +478,40 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
 // }
 
 void PmidManagerService::HandleChurnEvent(
-    std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {
-//  auto account_names(pmid_account_handler_.GetAccountNames());
-//  auto itr(std::begin(account_names));
-//  while (itr != std::end(account_names)) {
-//    auto check_holders_result(matrix_change->CheckHolders(NodeId((*itr)->string())));
-//    // Delete accounts for which this node is no longer responsible.
-//    if (check_holders_result.proximity_status != routing::GroupRangeStatus::kInRange) {
-//      pmid_account_handler_.DeleteAccount(*itr);
-//      itr = account_names.erase(itr);
-//      continue;
-//    }
-//    // Replace old_node(s) in sync object and send AccountTransfer to new node(s).
-//    assert(check_holders_result.old_holders.size() == check_holders_result.new_holders.size());
-//    for (auto i(0U); i != check_holders_result.old_holders.size(); ++i) {
-//      pmid_account_handler_.ReplaceNodeInSyncList(*itr, check_holders_result.old_holders[i],
-//                                                  check_holders_result.new_holders[i]);
-//      TransferAccount(*itr, check_holders_result.new_holders[i]);
-//    }
-
-//    ++itr;
-//  }
-  assert(0);
+    std::shared_ptr<routing::MatrixChange> matrix_change) {
+  LOG(kVerbose) << "PmidManager HandleChurnEvent";
+  auto lost_nodes(matrix_change->lost_nodes());
+  for (auto& node : lost_nodes) {
+    try {
+      auto pmid_node(PmidName(Identity(node.string())));
+      auto contents(group_db_.GetContents(pmid_node));
+      for (const auto& kv_pair : contents.kv_pairs) {
+        GLOG() << "PmidManager dropping pmid_node " << HexSubstr(node.string())
+               << " holding chunk " << HexSubstr(kv_pair.first.name);
+        auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
+        dispatcher_.SendSetPmidOffline(data_name, pmid_node);
+      }
+    } catch (const maidsafe_error& error) {
+      if (error.code() != make_error_code(VaultErrors::no_such_account))
+        throw;
+    }
+  }
+  auto new_nodes(matrix_change->new_nodes());
+  for (auto& node : new_nodes) {
+    try {
+      auto pmid_node(PmidName(Identity(node.string())));
+      auto contents(group_db_.GetContents(PmidName(Identity(node.string()))));
+      for (const auto& kv_pair : contents.kv_pairs) {
+        GLOG() << "PmidManager joining pmid_node " << HexSubstr(node.string())
+               << " holding data " << HexSubstr(kv_pair.first.name);
+        auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
+        dispatcher_.SendSetPmidOnline(data_name, pmid_node);
+      }
+    } catch (const maidsafe_error& error) {
+      if (error.code() != make_error_code(VaultErrors::no_such_account))
+        throw;
+    }
+  }
 }
 
 // void PmidManagerService::ValidateDataSender(const nfs::Message& message) const {

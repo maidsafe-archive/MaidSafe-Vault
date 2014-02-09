@@ -70,6 +70,7 @@ std::string MaidManagerValue::Serialise() const {
 
 void MaidManagerValue::Put(int32_t cost) {
   ++count_;
+  GLOG() << "MaidManager increase count to " << count_;
   total_cost_ += cost;
 }
 

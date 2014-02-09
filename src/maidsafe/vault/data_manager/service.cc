@@ -427,20 +427,34 @@ void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange>
 // ==================== General implementation =====================================================
 template <>
 void DataManagerService::HandleMessage(
-    const SetPmidOnlineFromPmidManagerToDataManager& /*message*/,
-    const typename SetPmidOnlineFromPmidManagerToDataManager::Sender& /*sender*/,
-    const typename SetPmidOnlineFromPmidManagerToDataManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage SetPmidOnlineFromPmidManagerToDataManager";
-  assert(0);
+    const SetPmidOnlineFromPmidManagerToDataManager& message,
+    const typename SetPmidOnlineFromPmidManagerToDataManager::Sender& sender,
+    const typename SetPmidOnlineFromPmidManagerToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage SetPmidOnlineFromPmidManagerToDataManager"
+                << " with message_id " << message.id.data;
+  typedef SetPmidOnlineFromPmidManagerToDataManager MessageType;
+  OperationHandlerWrapper<DataManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
 }
 
 template <>
 void DataManagerService::HandleMessage(
-    const SetPmidOfflineFromPmidManagerToDataManager& /*message*/,
-    const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& /*sender*/,
-    const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage SetPmidOfflineFromPmidManagerToDataManager";
-  assert(0);
+    const SetPmidOfflineFromPmidManagerToDataManager& message,
+    const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
+    const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "DataManagerService::HandleMessage SetPmidOfflineFromPmidManagerToDataManager"
+                << " with message_id " << message.id.data;
+  typedef SetPmidOfflineFromPmidManagerToDataManager MessageType;
+  OperationHandlerWrapper<DataManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
 }
 
 

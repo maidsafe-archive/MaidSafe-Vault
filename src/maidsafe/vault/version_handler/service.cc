@@ -55,20 +55,6 @@ inline bool FromVersionHandler(const Message& message) {
 
 }  // unnamed namespace
 
-namespace detail {
-
-// VersionHandlerUnresolvedEntry UnresolvedEntryFromMessage(const nfs::Message& message) {
-//  // test message content is valid only
-//  protobuf::VersionHandlerUnresolvedEntry entry_proto;
-//  if (!entry_proto.ParseFromString(message.data().content.string()))
-//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-//  // this is the only code line really required
-//  return VersionHandlerUnresolvedEntry(
-//                         VersionHandlerUnresolvedEntry::serialised_type(message.data().content));
-
-// }
-
-}  // namespace detail
 
 VersionHandlerService::VersionHandlerService(const passport::Pmid& pmid,
                                              routing::Routing& routing)
@@ -87,6 +73,7 @@ void VersionHandlerService::HandleMessage(
     const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Sender& sender,
     const typename nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Receiver& receiver) {
   typedef nfs::GetVersionsRequestFromMaidNodeToVersionHandler MessageType;
+  LOG(kVerbose) << "GetVersionsRequestFromMaidNodeToVersionHandler: " << message.id;
   OperationHandlerWrapper<VersionHandlerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
@@ -158,6 +145,7 @@ void VersionHandlerService::HandleMessage(
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Sender& sender,
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Receiver&
        receiver) {
+  LOG(kVerbose) << "DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler: " << message.id;
   typedef DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler MessageType;
   OperationHandlerWrapper<VersionHandlerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -195,7 +183,7 @@ void VersionHandlerService::HandleMessage(
           }
         }
         catch (const maidsafe_error& error) {
-          LOG(kError) << message.id << " Failed to put version: " << error.what() ;
+          LOG(kError) << message.id << " Failed to put version: " << error.what();
           dispatcher_.SendPutVersionResponse(resolved_action->key, VersionHandler::VersionName(),
                                              error, resolved_action->action.message_id);
         }
@@ -230,18 +218,18 @@ void VersionHandlerService::HandlePutVersion(
     const VersionHandler::VersionName& new_version, const NodeId& sender,
     nfs::MessageId message_id) {
   LOG(kVerbose) << "VersionHandlerService::HandlePutVersion: " << message_id;
-  DoSync(typename VersionHandler::UnresolvedPutVersion(
+  DoSync(VersionHandler::UnresolvedPutVersion(
                       key, ActionVersionHandlerPut(old_version, new_version, sender, message_id),
                       routing_.kNodeId()));
 }
 
 void VersionHandlerService::HandleDeleteBranchUntilFork(
-    const VersionHandler::Key& /*key*/, const VersionHandler::VersionName& /*branch_tip*/,
+    const VersionHandler::Key& key, const VersionHandler::VersionName& branch_tip,
     const NodeId& /*sender*/) {
-//  sync_delete_branche_until_forks_.AddLocalAction(
-//      VersionHandler::UnresolvedDeleteBranchUntilFork(
-//          key, ActionVersionHandlerDeleteBranchUntilFork(branch_tip), routing_.kNodeId()));
-//  DoSync();
+  LOG(kVerbose) << "VersionHandlerService::HandleDeleteBranchUntilFork: ";
+  DoSync(VersionHandler::UnresolvedDeleteBranchUntilFork(
+                      key, ActionVersionHandlerDeleteBranchUntilFork(branch_tip),
+                      routing_.kNodeId()));
 }
 
 

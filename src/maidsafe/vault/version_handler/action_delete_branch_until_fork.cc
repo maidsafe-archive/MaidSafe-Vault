@@ -60,7 +60,7 @@ detail::DbAction ActionVersionHandlerDeleteBranchUntilFork::operator()(
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
   value->DeleteBranchUntilFork(version_name);
-  return detail::DbAction::kDelete;
+  return detail::DbAction::kPut;
 }
 
 bool operator==(const ActionVersionHandlerDeleteBranchUntilFork& lhs,

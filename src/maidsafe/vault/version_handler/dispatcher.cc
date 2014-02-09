@@ -43,8 +43,9 @@ void VersionHandlerDispatcher::SendGetVersionsResponse(
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   NfsMessage nfs_message;
   nfs_message.id = message_id;
+  nfs_message.contents.reset(new nfs_client::StructuredDataNameAndContentOrReturnCode());
   if (return_code.code() == CommonErrors::success) {
-    nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
+    nfs_message.contents->structured_data.reset(nfs_client::StructuredData(versions));
   } else {
     nfs_message.contents->data_name_and_return_code =
         nfs_client::DataNameAndReturnCode(nfs_vault::DataName(key.type, key.name),
@@ -66,8 +67,9 @@ void VersionHandlerDispatcher::SendGetVersionsResponse(
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   NfsMessage nfs_message;
   nfs_message.id = message_id;
+  nfs_message.contents.reset(new nfs_client::StructuredDataNameAndContentOrReturnCode());
   if (return_code.code() == CommonErrors::success) {
-    nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
+    nfs_message.contents->structured_data.reset(nfs_client::StructuredData(versions));
   } else {
     nfs_message.contents->data_name_and_return_code =
         nfs_client::DataNameAndReturnCode(nfs_vault::DataName(key.type, key.name),

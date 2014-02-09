@@ -388,6 +388,22 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
     auto metadata(group_db_.GetMetadata(account_name));
     if (metadata.AllowPut(data) != MaidManagerMetadata::Status::kNoSpace) {
       LOG(kInfo) << "MaidManagerService::HandlePut allowing put";
+      typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
+                                          data.name(), Data::Tag::kValue);
+      auto obfuscated_key(group_key);
+      ObfuscateKey(obfuscated_key);
+      try {
+        group_db_.GetValue(obfuscated_key);
+        // BEFORE_RELEASE putting a duplicated chunk, cost set to the size of the data
+        LOG(kInfo) << "MaidManagerService::HandlePut duplicated PutRequest";
+        DoSync(typename MaidManager::UnresolvedPut(group_key,
+            ActionMaidManagerPut(static_cast<int32_t>(data.Serialise().data.string().size())),
+            routing_.kNodeId()));
+        return;
+      } catch(const maidsafe_error& error) {
+        LOG(kInfo) << "MaidManagerService::HandlePut first PutRequest, passing to DataManager: "
+                   << error.what();
+      }
       dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
     } else {
       LOG(kWarning) << "MaidManagerService::HandlePut disallowing put";
@@ -428,7 +444,15 @@ void MaidManagerService::HandlePutVersion(
     const MaidName& maid_name, const DataNameType& data_name,
     const StructuredDataVersions::VersionName& old_version,
     const StructuredDataVersions::VersionName& new_version, nfs::MessageId message_id) {
-  dispatcher_.SendPutVersion(maid_name, data_name, old_version, new_version, message_id);
+  try {
+    group_db_.GetMetadata(maid_name);
+    dispatcher_.SendPutVersion(maid_name, data_name, old_version, new_version, message_id);
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kError) << "MaidManagerService::HandlePutVersion faied to get metadata" << error.what();
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
+  }
 }
 
 template <typename DataNameType>

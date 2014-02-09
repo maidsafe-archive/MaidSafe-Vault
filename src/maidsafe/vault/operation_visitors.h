@@ -286,6 +286,50 @@ class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
 };
 
 template<typename ServiceHandlerType>
+class DataManagerSetPmidOnlineVisitor : public boost::static_visitor<> {
+ public:
+  DataManagerSetPmidOnlineVisitor(ServiceHandlerType* service, const PmidName& pmid_node,
+                                  nfs::MessageId message_id)
+      : kService_(service), kPmidNode_(pmid_node), kMessageId_(message_id) {}
+
+  template<typename Name>
+  void operator()(const Name& data_name) {
+    LOG(kWarning) << "DataManagerSetPmidOnlineVisitor::operator() set pmid_node online "
+                  << HexSubstr(kPmidNode_->string()) << " for chunk "
+                  << HexSubstr(data_name.value.string())
+                  << " bearing message id " << kMessageId_.data;
+    kService_->MarkNodeUp(kPmidNode_, data_name);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const PmidName kPmidNode_;
+  nfs::MessageId kMessageId_;
+};
+
+template<typename ServiceHandlerType>
+class DataManagerSetPmidOfflineVisitor : public boost::static_visitor<> {
+ public:
+  DataManagerSetPmidOfflineVisitor(ServiceHandlerType* service, const PmidName& pmid_node,
+                                  nfs::MessageId message_id)
+      : kService_(service), kPmidNode_(pmid_node), kMessageId_(message_id) {}
+
+  template<typename Name>
+  void operator()(const Name& data_name) {
+    LOG(kWarning) << "DataManagerSetPmidOfflineVisitor::operator() set pmid_node offline "
+                  << HexSubstr(kPmidNode_->string()) << " for chunk "
+                  << HexSubstr(data_name.value.string())
+                  << " bearing message id " << kMessageId_.data;
+    kService_->MarkNodeDown(kPmidNode_, data_name);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const PmidName kPmidNode_;
+  nfs::MessageId kMessageId_;
+};
+
+template<typename ServiceHandlerType>
 class PmidNodeGetVisitor : public boost::static_visitor<> {
  public:
   PmidNodeGetVisitor(ServiceHandlerType* service, const routing::SingleId& data_manager_node_id,

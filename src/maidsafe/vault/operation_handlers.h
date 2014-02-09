@@ -279,6 +279,18 @@ void DoOperation(DataManagerService* service,
                  const GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
                  const GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver);
 
+template <>
+void DoOperation(DataManagerService* service,
+                 const SetPmidOnlineFromPmidManagerToDataManager& message,
+                 const SetPmidOnlineFromPmidManagerToDataManager::Sender& sender,
+                 const SetPmidOnlineFromPmidManagerToDataManager::Receiver& receiver);
+
+template <>
+void DoOperation(DataManagerService* service,
+                 const SetPmidOfflineFromPmidManagerToDataManager& message,
+                 const SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
+                 const SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver);
+
 //=============================== To PmidManager ===================================================
 template <>
 void DoOperation(PmidManagerService* service,
