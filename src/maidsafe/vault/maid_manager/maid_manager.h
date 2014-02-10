@@ -30,6 +30,7 @@
 #include "maidsafe/vault/maid_manager/action_update_pmid_health.h"
 #include "maidsafe/vault/maid_manager/action_register_pmid.h"
 #include "maidsafe/vault/maid_manager/action_unregister_pmid.h"
+#include "maidsafe/vault/maid_manager/action_reference_counts.h"
 
 
 namespace maidsafe {
@@ -69,6 +70,10 @@ struct PersonaTypes<Persona::kMaidManager> {
               UnresolvedRegisterPmid;
   typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerUnregisterPmid>
               UnresolvedUnregisterPmid;
+  typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerIncrementReferenceCounts>
+              UnresolvedIncrementReferenceCounts;
+  typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerDecrementReferenceCounts>
+              UnresolvedDecrementReferenceCounts;
 };
 
 }  // namespace nfs

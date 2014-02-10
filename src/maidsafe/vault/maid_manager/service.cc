@@ -32,12 +32,14 @@
 #include "maidsafe/vault/operation_handlers.h"
 #include "maidsafe/vault/maid_manager/action_put.h"
 #include "maidsafe/vault/maid_manager/action_update_pmid_health.h"
+#include "maidsafe/vault/maid_manager/action_reference_counts.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/helpers.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
+#include "maidsafe/vault/maid_manager/action_reference_count.h"
 
 namespace maidsafe {
 
@@ -163,6 +165,8 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
       sync_register_pmids_(NodeId(pmid.name()->string())),
       sync_unregister_pmids_(NodeId(pmid.name()->string())),
       sync_update_pmid_healths_(NodeId(pmid.name()->string())),
+      sync_increment_reference_counts_(NodeId(pmid.name()->string())),
+      sync_decrement_reference_counts_(NodeId(pmid.name()->string())),
       pending_account_mutex_(),
       pending_account_map_() {}
 
@@ -734,6 +738,36 @@ void MaidManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+template <>
+void MaidManagerService::HandleMessage(
+    const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager& message,
+    const typename nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << message;
+  typedef nfs::IncrementReferenceCountsFromMaidNodeToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template <>
+void MaidManagerService::HandleMessage(
+    const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager& message,
+    const typename nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << message;
+  typedef nfs::DecrementReferenceCountsFromMaidNodeToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
 // =============== Sync ============================================================================
 
 // TODO(team): Once all sync messages are implemented, consider specialising HandleSyncedAction for
@@ -828,6 +862,28 @@ void MaidManagerService::HandleMessage(
       }
       break;
     }
+    case ActionMaidManagerIncrementReferenceCounts::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager IncrementReferenceCounts";
+      MaidManager::UnresolvedIncrementReferenceCounts unresolved_action(
+        proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_increment_reference_counts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedIncReferenceCounts";
+        HandleSyncedIncrementReferenceCounts(std::move(resolved_action));
+      }
+      break;
+    }
+    case ActionMaidManagerDecrementReferenceCounts::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager DecrementReferenceCounts";
+      MaidManager::UnresolvedDecrementReferenceCounts unresolved_action(
+        proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_decrement_reference_counts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager SyncedDecReferenceCounts";
+        HandleSyncedDecrementReferenceCounts(std::move(resolved_action));
+      }
+      break;
+    }
     default: {
       LOG(kError) << "Unhandled action type " << proto_sync.action_type();
       assert(false);
@@ -839,6 +895,35 @@ void MaidManagerService::HandleRemoveAccount(const MaidName& maid_name, nfs::Mes
   DoSync(MaidManager::UnresolvedRemoveAccount(MaidManager::MetadataKey(maid_name),
       ActionRemoveAccount(mesage_id), routing_.kNodeId()));
 }
+
+void MaidManagerService::HandleIncrementReferenceCounts(const MaidName& maid_name,
+                                      const nfs_vault::DataNames& data_names) {
+  DoSync(MaidManager::UnresolvedIncrementReferenceCounts(
+      MaidManager::MetadataKey(maid_name),
+      ActionMaidManagerIncrementReferenceCounts(data_names),routing_.kNodeId()));
+}
+
+void MaidManagerService::HandleDecrementReferenceCounts(const MaidName& maid_name,
+                                      const nfs_vault::DataNames& data_names) {
+  DoSync(MaidManager::UnresolvedDecrementReferenceCounts(
+      MaidManager::MetadataKey(maid_name),
+      ActionMaidManagerDecrementReferenceCounts(data_names),routing_.kNodeId()));
+}
+
+void MaidManagerService::HandleSyncedIncrementReferenceCounts(
+    std::unique_ptr<MaidManager::UnresolvedIncrementReferenceCounts>&&
+        synced_action_increment_reference_counts) {
+  MaidManager::MetadataKey metadata_key(synced_action_increment_reference_counts->key);
+  for (const auto& data_name : synced_action_increment_reference_counts->action.kDataNames.data_names_) {
+    MaidManager::Key key(MaidManager::GroupName(metadata_key.group_name()), data_name.raw_name,
+                         ImmutableData::Tag::kValue);
+    group_db_.Commit(key, ActionMaidManagerIncrementReferenceCount);
+  }
+}
+
+void MaidManagerService::HandleSyncedDecrementReferenceCounts(
+    std::unique_ptr<MaidManager::UnresolvedDecrementReferenceCounts>&&
+        /*synced_action_decrement_reference_counts*/) {}
 
 template <>
 void MaidManagerService::HandleMessage(
