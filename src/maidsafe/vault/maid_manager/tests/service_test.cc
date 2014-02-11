@@ -27,6 +27,7 @@
 #include "maidsafe/vault/maid_manager/service.h"
 #include "maidsafe/vault/tests/tests_utils.h"
 #include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/maid_manager/action_reference_count.h"
 
 namespace maidsafe {
 
@@ -194,6 +195,28 @@ void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedUpdatePmidHealth>(
       group_source);
 }
 
+template <>
+void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedIncrementReferenceCounts>(
+         const std::vector<MaidManager::UnresolvedIncrementReferenceCounts>& unresolved_actions,
+         const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<MaidManagerService,
+                                    MaidManager::UnresolvedIncrementReferenceCounts,
+                                    SynchroniseFromMaidManagerToMaidManager>(
+      &maid_manager_service_, maid_manager_service_.sync_increment_reference_counts_,
+      unresolved_actions, group_source);
+}
+
+template <>
+void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedDecrementReferenceCounts>(
+         const std::vector<MaidManager::UnresolvedDecrementReferenceCounts>& unresolved_actions,
+         const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<MaidManagerService,
+                                    MaidManager::UnresolvedDecrementReferenceCounts,
+                                    SynchroniseFromMaidManagerToMaidManager>(
+      &maid_manager_service_, maid_manager_service_.sync_decrement_reference_counts_,
+      unresolved_actions, group_source);
+}
+
 TEST_CASE_METHOD(MaidManagerServiceTest, "maid manager: check handlers availability",
                 "[Handler][MaidManager][Service][Behavioural]") {
   SECTION("PutRequestFromMaidNodeToMaidManager") {
@@ -287,6 +310,22 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "maid manager: check handlers availabil
     auto group_source(CreateGroupSource(NodeId(pmid_name->string())));
     CHECK_NOTHROW(GroupSendToGroup(&maid_manager_service_, pmid_health_response, group_source,
                                      routing::GroupId(MaidNodeId())));
+  }
+
+  SECTION("nfs::IncrementReferenceCountsFromMaidNodeToMaidManager") {
+    nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Contents content;
+    auto increment_reference(
+        CreateMessage<nfs::IncrementReferenceCountsFromMaidNodeToMaidManager>(content));
+    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, increment_reference,
+                    routing::SingleSource(MaidNodeId()), routing::GroupId(MaidNodeId())));
+  }
+
+  SECTION("nfs::DecrementReferenceCountsFromMaidNodeToMaidManager") {
+    nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Contents content;
+    auto decrement_reference(
+        CreateMessage<nfs::DecrementReferenceCountsFromMaidNodeToMaidManager>(content));
+    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, decrement_reference,
+                    routing::SingleSource(MaidNodeId()), routing::GroupId(MaidNodeId())));
   }
 }
 
@@ -401,6 +440,71 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
     SendSync<MaidManager::UnresolvedUpdatePmidHealth>(group_unresolved_action, group_source);
     MaidManager::Metadata stored_metadata(GetMetadata(public_maid_.name()));
     CHECK(Equal(stored_metadata, updated_metadata));
+  }
+
+  SECTION("IncrementReferenceCounts") {
+    const size_t kChunksCount(10);
+    std::vector <ImmutableData::Name> chunks_list;
+    std::vector <MaidManager::Key> keys_list;
+    CreateAccount();
+    MaidManager::MetadataKey metadata_key(public_maid_.name());
+    for (size_t index(0); index < kChunksCount; ++index) {
+      Identity data_name_id(RandomString(64));
+      MaidManager::Key key(public_maid_.name(), data_name_id, ImmutableData::Tag::kValue);
+      Commit(key, ActionMaidManagerPut(kTestChunkSize));
+      CHECK_NOTHROW(Get(key));
+      chunks_list.push_back(ImmutableData::Name(data_name_id));
+      keys_list.push_back(key);
+    }
+    ActionMaidManagerIncrementReferenceCounts action_increment_reference(
+        (nfs_vault::DataNames(chunks_list)));
+    auto group_source(CreateGroupSource(MaidNodeId()));
+    auto group_unresolved_action(
+             CreateGroupUnresolvedAction<MaidManager::UnresolvedIncrementReferenceCounts>(
+                 metadata_key, action_increment_reference, group_source));
+    SendSync<MaidManager::UnresolvedIncrementReferenceCounts>(group_unresolved_action,
+                                                              group_source);
+    for (size_t index(0); index < kChunksCount; ++index) {
+      auto value(Get(keys_list[index]));
+      CHECK(value.count() == 2);
+    }
+  }
+
+  SECTION("DecrementReferenceCounts") {
+    const size_t kChunksCount(10);
+    std::vector <ImmutableData::Name> chunks_list;
+    std::vector <MaidManager::Key> keys_list;
+    CreateAccount();
+    MaidManager::MetadataKey metadata_key(public_maid_.name());
+    for (size_t index(0); index < kChunksCount; ++index) {
+      Identity data_name_id(RandomString(64));
+      MaidManager::Key key(public_maid_.name(), data_name_id, ImmutableData::Tag::kValue);
+      Commit(key, ActionMaidManagerPut(kTestChunkSize));
+      CHECK_NOTHROW(Get(key));
+      chunks_list.push_back(ImmutableData::Name(data_name_id));
+      keys_list.push_back(key);
+    }
+
+    for (size_t index(0); index < kChunksCount; ++index)
+      Commit(keys_list[index], ActionMaidManagerIncrementReferenceCount());
+
+    for (size_t index(0); index < kChunksCount; ++index) {
+      auto value(Get(keys_list[index]));
+      CHECK(value.count() == 2);
+    }
+
+    ActionMaidManagerDecrementReferenceCounts action_decrement_reference(
+        (nfs_vault::DataNames(chunks_list)));
+    auto group_source(CreateGroupSource(MaidNodeId()));
+    auto group_unresolved_action(
+             CreateGroupUnresolvedAction<MaidManager::UnresolvedDecrementReferenceCounts>(
+                 metadata_key, action_decrement_reference, group_source));
+    SendSync<MaidManager::UnresolvedDecrementReferenceCounts>(group_unresolved_action,
+                                                              group_source);
+    for (size_t index(0); index < kChunksCount; ++index) {
+      auto value(Get(keys_list[index]));
+      CHECK(value.count() == 1);
+    }
   }
 }
 
