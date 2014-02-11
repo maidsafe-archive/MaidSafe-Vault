@@ -162,8 +162,8 @@ void Vault::DoOnNetworkStatusChange(int network_health) {
   {
     std::lock_guard<std::mutex> lock(network_health_mutex_);
     network_health_ = network_health;
-    network_health_condition_variable_.notify_one();
   }
+  network_health_condition_variable_.notify_one();
   // TODO(Team) : actions when network is down/up per persona
 }
 
