@@ -16,42 +16,33 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_ACTION_REFERENCE_COUNT_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_ACTION_REFERENCE_COUNT_H_
+#include "maidsafe/vault/maid_manager/action_reference_count.h"
 
-#include <string>
-
-#include "maidsafe/nfs/types.h"
-#include "maidsafe/nfs/vault/messages.h"
-
-#include "maidsafe/vault/config.h"
-#include "maidsafe/vault/maid_manager/metadata.h"
+#include "maidsafe/vault/maid_manager/value.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-class MaidManagerValue;
-
-template <bool Increment>
-struct ActionMaidManagerReferenceCount {
-  detail::DbAction operator()(MaidManagerMetadata& metadata,
-                              std::unique_ptr<MaidManagerValue>& value);
-};
-
 template <>
 detail::DbAction ActionMaidManagerReferenceCount<true>::operator()(
-    MaidManagerMetadata& metadata, std::unique_ptr<MaidManagerValue>& value);
+    MaidManagerMetadata& /*metadata*/,std::unique_ptr<MaidManagerValue>& value) {
+  if (!value)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+  value->IncrementCount();
+  return detail::DbAction::kPut;
+}
 
 template <>
 detail::DbAction ActionMaidManagerReferenceCount<false>::operator()(
-    MaidManagerMetadata& metadata, std::unique_ptr<MaidManagerValue>& value);
-
-typedef ActionMaidManagerReferenceCount<true> ActionMaidManagerIncrementReferenceCount;
-typedef ActionMaidManagerReferenceCount<false> ActionMaidManagerDecrementReferenceCount;
+    MaidManagerMetadata& /*metadata*/, std::unique_ptr<MaidManagerValue>& value) {
+  if (!value)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+  assert((value->count() > 0));
+  value->DecrementCount();
+  return detail::DbAction::kPut;
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_ACTION_REFERENCE_COUNT_H_

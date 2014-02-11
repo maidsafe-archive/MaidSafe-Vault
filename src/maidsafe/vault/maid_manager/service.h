@@ -231,6 +231,8 @@ class MaidManagerService {
     key.name = Identity(crypto::Hash<crypto::SHA512>(key.name));
   }
 
+  bool CheckDataNamesExist(const MaidName& maid_name, const nfs_vault::DataNames& data_names);
+
   struct MaidAccountCreationStatus {
     MaidAccountCreationStatus(passport::PublicMaid::Name maid_name_in,
                               passport::PublicAnmaid::Name anmaid_name_in)

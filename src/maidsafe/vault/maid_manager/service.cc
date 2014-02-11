@@ -898,32 +898,61 @@ void MaidManagerService::HandleRemoveAccount(const MaidName& maid_name, nfs::Mes
 
 void MaidManagerService::HandleIncrementReferenceCounts(const MaidName& maid_name,
                                       const nfs_vault::DataNames& data_names) {
-  DoSync(MaidManager::UnresolvedIncrementReferenceCounts(
-      MaidManager::MetadataKey(maid_name),
-      ActionMaidManagerIncrementReferenceCounts(data_names),routing_.kNodeId()));
+  if (CheckDataNamesExist(maid_name, data_names)) {
+    DoSync(MaidManager::UnresolvedIncrementReferenceCounts(
+        MaidManager::MetadataKey(maid_name),
+        ActionMaidManagerIncrementReferenceCounts(data_names), routing_.kNodeId()));
+  }
 }
 
 void MaidManagerService::HandleDecrementReferenceCounts(const MaidName& maid_name,
                                       const nfs_vault::DataNames& data_names) {
-  DoSync(MaidManager::UnresolvedDecrementReferenceCounts(
-      MaidManager::MetadataKey(maid_name),
-      ActionMaidManagerDecrementReferenceCounts(data_names),routing_.kNodeId()));
+  if (CheckDataNamesExist(maid_name, data_names)) {
+    DoSync(MaidManager::UnresolvedDecrementReferenceCounts(
+        MaidManager::MetadataKey(maid_name),
+        ActionMaidManagerDecrementReferenceCounts(data_names), routing_.kNodeId()));
+  }
+}
+
+bool MaidManagerService::CheckDataNamesExist(const MaidName& maid_name,
+                                             const nfs_vault::DataNames& data_names) {
+  try {
+    for (const auto& data_name : data_names.data_names_) {
+      MaidManager::Key key(MaidManager::GroupName(maid_name), data_name.raw_name, data_name.type);
+      group_db_.GetValue(key);
+    }
+  }
+  catch (const maidsafe_error& error) {
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
+     return false;
+  }
+  return true;
 }
 
 void MaidManagerService::HandleSyncedIncrementReferenceCounts(
     std::unique_ptr<MaidManager::UnresolvedIncrementReferenceCounts>&&
         synced_action_increment_reference_counts) {
   MaidManager::MetadataKey metadata_key(synced_action_increment_reference_counts->key);
-  for (const auto& data_name : synced_action_increment_reference_counts->action.kDataNames.data_names_) {
+  for (const auto& data_name :
+           synced_action_increment_reference_counts->action.kDataNames.data_names_) {
     MaidManager::Key key(MaidManager::GroupName(metadata_key.group_name()), data_name.raw_name,
                          ImmutableData::Tag::kValue);
-    group_db_.Commit(key, ActionMaidManagerIncrementReferenceCount);
+    group_db_.Commit(key, ActionMaidManagerIncrementReferenceCount());
   }
 }
 
 void MaidManagerService::HandleSyncedDecrementReferenceCounts(
     std::unique_ptr<MaidManager::UnresolvedDecrementReferenceCounts>&&
-        /*synced_action_decrement_reference_counts*/) {}
+        synced_action_decrement_reference_counts) {
+  MaidManager::MetadataKey metadata_key(synced_action_decrement_reference_counts->key);
+  for (const auto& data_name :
+           synced_action_decrement_reference_counts->action.kDataNames.data_names_) {
+    MaidManager::Key key(MaidManager::GroupName(metadata_key.group_name()), data_name.raw_name,
+                         ImmutableData::Tag::kValue);
+    group_db_.Commit(key, ActionMaidManagerDecrementReferenceCount());
+  }
+}
 
 template <>
 void MaidManagerService::HandleMessage(
