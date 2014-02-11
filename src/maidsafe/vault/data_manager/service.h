@@ -361,7 +361,7 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
                 << " with pmid_name_in " << HexSubstr(pmid_name_in->string());
   int32_t cost(static_cast<int32_t>(data.Serialise().data.string().size()));
   if (!EntryExist<Data>(data.name())) {
-    cost *= routing::Parameters::node_group_size;
+    cost *= routing::Parameters::group_size;
     PmidName pmid_name;
     if (routing_.ClosestToId(NodeId(data.name().value)) &&
         (pmid_name_in.value.string() != NodeId().string()) &&
@@ -474,7 +474,7 @@ bool DataManagerService::SendPutRetryRequired(const DataName& data_name) {
   try {
     // mutex is required
     auto value(db_.Get(DataManager::Key(data_name.value, DataName::data_type::Tag::kValue)));
-    return value.AllPmids().size() < routing::Parameters::node_group_size;
+    return value.AllPmids().size() < routing::Parameters::group_size;
   }
   catch (const maidsafe_error& /*error*/) {}
   return false;

@@ -103,7 +103,7 @@ bool IsDataElement(const typename Data::Name& name, const DataNameVariant& data_
 //      return false;
 
 //    auto result(nfs::GetSuccessOrMostFrequentReply(pending_results, requests_required));
-//    if (!result.second && pending_results.size() < routing::Parameters::node_group_size)
+//    if (!result.second && pending_results.size() < routing::Parameters::group_size)
 //      return false;
 
 //    overall_return_code = (*result.first).error();
