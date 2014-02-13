@@ -26,7 +26,7 @@ namespace vault {
 
 template <>
 detail::DbAction ActionMaidManagerReferenceCount<true>::operator()(
-    MaidManagerMetadata& /*metadata*/, std::unique_ptr<MaidManagerValue>& value) {
+    MaidManagerMetadata& /*metadata*/,std::unique_ptr<MaidManagerValue>& value) {
   if (!value)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
   value->IncrementCount();
