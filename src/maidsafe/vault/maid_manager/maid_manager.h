@@ -69,6 +69,10 @@ struct PersonaTypes<Persona::kMaidManager> {
               UnresolvedRegisterPmid;
   typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerUnregisterPmid>
               UnresolvedUnregisterPmid;
+  typedef vault::UnresolvedAccountTransferAction<MetadataKey, vault::ActionMaidManagerAccountTransferMetadata>
+              UnresolvedAccountTransferMetadata;
+  typedef vault::UnresolvedAccountTransferAction<Key, vault::ActionMaidManagerAccountTransferDb>
+              UnresolvedAccountTransferDb;
 };
 
 }  // namespace nfs

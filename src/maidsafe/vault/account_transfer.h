@@ -33,17 +33,17 @@ namespace maidsafe {
 namespace vault {
 
 
-template <typename UnresolvedDbAction, typename UnresolvedMetadataAction>
+template <typename UnresolvedAction>
 class AccountTransfer {
  public:
   AccountTransfer(const NodeId& node_id);
-  // For Data manager like personas
-  std::vector<UnresolvedDbAction> AddUnresolved(
-          std::vector<UnresolvedDbAction>&& unresolved_db_actions);
-  // For MaidManager like personas
-  std::pair<UnresolvedMetadataAction, std::vector<UnresolvedDbAction>> AddUnresolved(
-      const UnresolvedMetadataAction& metadata_action,
-      std::vector<UnresolvedAccountTransferAction>&& unresolved_db_actions);
+  // For single unresolved action (eg. datamanager key/value and maid manager static metadata)
+  std::unique_ptr<UnresolvedAction> AddUnresolvedAction(const UnresolvedAction& unresolved_action);
+
+  // For multiple unresolved actions (eg. maid manager key value pairs)
+  std::vector<std::unique_ptr<UnresolvedAction>> AddUnresolvedActions(
+      std::vector<UnresolvedDbAction>&& unresolved_actions);
+
   // To handle double churn situations
   void ReplaceNode(const NodeId& old_node, const NodeId& new_node);
 
@@ -52,13 +52,8 @@ class AccountTransfer {
   AccountTransfer(const AccountTransfer&);
   AccountTransfer& operator=(AccountTransfer other);
 
-  std::vector<UnresolvedDbAction> Add(
-          std::vector<UnresolvedDbAction>&& unresolved_actions);
-
-  UnresolvedMetadataAction Add(const UnresolvedMetadataAction& unresolved_metadata_action);
   mutable std::mutex mutex_;
-  std::vector<std::unique_ptr<UnresolvedDbAction>> unresolved_db_actions_;
-  std::vector<std::unique_ptr<UnresolvedMetadataAction>> unresolved_metdata_actions_;
+  std::vector<std::unique_ptr<UnresolvedAction>> unresolved_actions_;
   const NodeId kNodeId_;
 };
 
@@ -66,19 +61,18 @@ class AccountTransfer {
 // ==================== Implementation =============================================================
 
 namespace detail {
-// use for both db_action and metadata
 template <typename UnresolvedAction>
 std::unique_ptr<UnresolvedAction> AddAction(const UnresolvedAction& unresolved_action,
-                           std::vector<std::unique_ptr<UnresolvedAction>>& unresolved_actions) {
+    std::vector<std::unique_ptr<UnresolvedAction>>& unresolved_actions) {
   auto found = std::find_if(found, std::end(unresolved_actions),
                        [&unresolved_action](const std::unique_ptr<UnresolvedAction>& test) {
                            return ((test->key == unresolved_action.key) &&
                                    (test->action == unresolved_action.action));
                        });
   if (found == std::end(unresolved_actions)) {  // not found
-
+    // AddNewUnresolvedAction
   } else {  // found
-
+    // AppendUnresolvedActionEntry
   }
 }
 
@@ -95,51 +89,32 @@ void AppendUnresolvedActionEntry(const UnresolvedAction& new_action,
 
 }  // namespace detail
 
-template <typename UnresolvedDbAction, typename UnresolvedMetadataAction>
+template <typename UnresolvedAction>
 AccountTransfer::AccountTransfer(const NodeId& node_id)
     : mutex_(),
-      unresolved_db_actions_(),
-      unresolved_metdata_actions_(),
+      unresolved_actions_(),
       kNodeId_(node_id) {}
 
-
-
-template <typename UnresolvedDbAction, typename UnresolvedMetadataAction>
-std::vector<UnresolvedDbAction>
-    AccountTransfer<UnresolvedDbAction, UnresolvedMetadataAction>::AddUnresolved(
-        std::vector<UnresolvedDbAction>&& unresolved_db_actions) {
+template <typename UnresolvedAction>
+std::vector<std::unique_ptr<UnresolvedAction>>
+    AccountTransfer<UnresolvedAction>::AddUnresolvedActions(
+        std::vector<UnresolvedAction>&& unresolved_actions) {
   std::lock_guard<std::mutex> lock(mutex_);
-  std::vector<UnresolvedDbAction> resolved_db_actions;
-  for (const auto& unresolved_db_action : unresolved_db_actions) {
-    auto resolved(detail::AddAction(unresolved_db_action, unresolved_db_actions_));
+  std::vector<std::unique_ptr<UnresolvedAction>> resolved_actions;
+  for (const auto& unresolved_action : unresolved_actions) {
+    auto resolved(detail::AddAction(unresolved_action, unresolved_actions_));
     if (resolved) {
-      resolved_db_actions.push_back(std::move(*resolved));
+      resolved_actions.push_back(std::move(*resolved));
     }
   }
-  return resolved_db_actions;
+  return resolved_actions;
 }
 
-
-template <typename UnresolvedDbAction, typename UnresolvedMetadataAction>
-    std::pair<UnresolvedMetadataAction, std::vector<UnresolvedDbAction>>
-    AccountTransfer<UnresolvedDbAction, UnresolvedMetadataAction>::AddUnresolved(
-    const UnresolvedMetadataAction& unresolved_metadata_action,
-    std::vector<UnresolvedDbAction>&& unresolved_db_actions) {
+template <typename UnresolvedAction>
+std::unique_ptr<UnresolvedAction> AccountTransfer<UnresolvedAction>::AddUnresolvedAction(
+    const UnresolvedAction& unresolved_action) {
   std::lock_guard<std::mutex> lock(mutex_);
-  std::vector<UnresolvedDbAction> resolved_db_actions;
-  for (const auto& unresolved_db_action : unresolved_db_actions) {
-    auto resolved(detail::AddAction(unresolved_db_action, unresolved_db_actions_));
-    if (resolved) {
-      resolved_db_actions.push_back(std::move(*resolved));
-    }
-  }
-  auto resolved_metadata_action(detail::AddAction(unresolved_metadata_action,
-                                                  unresolved_metdata_actions_));
-  // FIXME this should not return nullptr if resolved_db_actions has any entry
-  // may be need to break metadata actions in furthe small units
-  // but this means separate account_transfer objects will be required to merge them.
-  // (resulting in locking issues)
-  return std::make_pair(resolved_db_actions, resolved_metadata_action);
+  return detail::AddAction(unresolved_action, unresolved_actions_);
 }
 
 }  // namespace vault

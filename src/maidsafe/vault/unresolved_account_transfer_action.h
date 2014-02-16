@@ -42,12 +42,14 @@ struct UnresolvedAccountTransferAction {
   typedef Action ActionType;
   typedef Key KeyType;
 
-  UnresolvedAccountTransferAction(const std::string& serialised_copy, const NodeId& sender_id,
-                            const NodeId& this_node_id);
+  // To create unresolved action from received key value and metadata combination from peer
+  UnresolvedAccountTransferAction(const key& key_in, const Action& action_in,
+                                  const NodeId& sender_id);
+
   UnresolvedAccountTransferAction(const UnresolvedAction& other);
   UnresolvedAccountTransferAction(UnresolvedAccountTransfer&& other);
-  UnresolvedAccountTransferAction(const Key& key_in, const Action& action_in, const NodeId& this_node_id);
-  std::string Serialise() const;
+
+//  std::string Serialise() const; // not required as it is created on destination node
 
   Key key;
   Action action;
@@ -59,6 +61,12 @@ struct UnresolvedAccountTransferAction {
 
 
 // TODO extend to unresolved static metadata action and unresolved db action
+
+
+// Discuss If its good to send unresolved action from the source or a bulk of
+// key/value/metadata in a specilaised container.
+// Sending in form of repeated unresolved action is a good for generalisation but wasteful, as
+// in case of maid manager type persona half of the db key string will be same for a given account.
 
 }  // namespace vault
 
