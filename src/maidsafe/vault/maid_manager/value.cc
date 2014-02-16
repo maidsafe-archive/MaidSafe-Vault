@@ -84,6 +84,17 @@ int32_t MaidManagerValue::Delete() {
   return static_cast<int32_t>(average_cost);
 }
 
+void MaidManagerValue::IncrementCount() {
+  ++count_;
+  GLOG() << "MaidManager increase count to " << count_;
+}
+
+void MaidManagerValue::DecrementCount() {
+  assert((count_ > 0) && "Reference count must be > 0 for Decrement operation");
+  --count_;
+  GLOG() << "MaidManager increase count to " << count_;
+}
+
 void swap(MaidManagerValue& lhs, MaidManagerValue& rhs) {
   using std::swap;
   swap(lhs.count_, rhs.count_);

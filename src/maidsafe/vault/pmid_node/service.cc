@@ -158,7 +158,7 @@ void PmidNodeService::HandleMessage(
           if (typed_request.contents->return_code.value.code() == CommonErrors::success)
             ++valid_response_size;
         }
-        const uint16_t& group_size(routing::Parameters::node_group_size);
+        const uint16_t& group_size(routing::Parameters::group_size);
         if (requests_in_size >= (group_size / 2 + 1U) && valid_response_size >= group_size / 2)
           return Accumulator<Messages>::AddResult::kSuccess;
         if (requests_in_size == group_size ||
@@ -196,8 +196,8 @@ void PmidNodeService::HandlePmidAccountResponses(
   }
 
   for (auto iter(chunks_expectation.begin()); iter != chunks_expectation.end();) {
-    if ((iter->second >= routing::Parameters::node_group_size / 2 + 1U) ||
-        ((iter->second == routing::Parameters::node_group_size / 2) &&
+    if ((iter->second >= routing::Parameters::group_size / 2 + 1U) ||
+        ((iter->second == routing::Parameters::group_size / 2) &&
              (total_responses > responses.size())))
       expected_chunks.push_back(GetDataNameVariant(iter->first.type, iter->first.raw_name));
   }

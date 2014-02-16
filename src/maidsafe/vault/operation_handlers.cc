@@ -163,6 +163,41 @@ void DoOperation(MaidManagerService* service,
   service->HandlePmidUnregistration(MaidName(Identity(sender.data.string())),
                                     PmidName(message.contents->raw_name));
 }
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager& message,
+                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Receiver&) {
+  try {
+    for (const auto& data_name : message.contents->data_names_)
+      GetNameVariant(data_name);
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kError) << "Failed to cast to accepted type " << error.what();
+    return;
+  }
+  service->HandleIncrementReferenceCounts(MaidName(Identity(sender.data.string())),
+                                          *message.contents);
+}
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager& message,
+                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Receiver&) {
+  try {
+    for (const auto& data_name : message.contents->data_names_)
+      GetNameVariant(data_name);
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kError) << "Failed to cast to accepted type " << error.what();
+    return;
+  }
+  service->HandleDecrementReferenceCounts(MaidName(Identity(sender.data.string())),
+                                          *message.contents);
+}
+
 //=============================== To DataManager ===================================================
 
 template <>

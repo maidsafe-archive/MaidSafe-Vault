@@ -136,7 +136,7 @@ nfs_vault::DataNameOldNewVersion CreateContent<nfs_vault::DataNameOldNewVersion>
 template <>
 std::vector<routing::GroupSource> CreateGroupSource(const NodeId& group_id) {
   std::vector<routing::GroupSource> group_source;
-  for (auto index(0); index < routing::Parameters::node_group_size; ++index)
+  for (auto index(0); index < routing::Parameters::group_size; ++index)
     group_source.push_back(routing::GroupSource(routing::GroupId(group_id),
                                                 routing::SingleId(NodeId(NodeId::kRandomId))));
   return group_source;

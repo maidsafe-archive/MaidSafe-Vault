@@ -52,7 +52,7 @@ struct RequiredValue<routing::SingleSource> {
 
 template <>
 struct RequiredValue<routing::GroupSource> {
-  int operator()() const { return routing::Parameters::node_group_size - 1; }
+  int operator()() const { return routing::Parameters::group_size - 1; }
 };
 
 template <typename ValidateSender, typename AccumulatorType, typename Checker,
@@ -229,6 +229,18 @@ void DoOperation(MaidManagerService* service,
                  const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
                  const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager& message,
+                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager& message,
+                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
 
 //=============================== To DataManager ===================================================
 template <>

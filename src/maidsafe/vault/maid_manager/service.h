@@ -172,6 +172,19 @@ class MaidManagerService {
                                    const StructuredDataVersions::VersionName& version,
                                    nfs::MessageId message_id);
 
+  void HandleIncrementReferenceCounts(const MaidName& maid_name,
+                                      const nfs_vault::DataNames& data_names);
+  void HandleDecrementReferenceCounts(const MaidName& maid_name,
+                                      const nfs_vault::DataNames& data_names);
+
+  void HandleSyncedIncrementReferenceCounts(
+      std::unique_ptr<MaidManager::UnresolvedIncrementReferenceCounts>&&
+          synced_action_increment_reference_counts);
+
+  void HandleSyncedDecrementReferenceCounts(
+      std::unique_ptr<MaidManager::UnresolvedDecrementReferenceCounts>&&
+          synced_action_decrement_reference_counts);
+
   // ===============================================================================================
 
   void HandleSyncedUpdatePmidHealth(std::unique_ptr<MaidManager::UnresolvedUpdatePmidHealth>&&
@@ -218,6 +231,8 @@ class MaidManagerService {
     key.name = Identity(crypto::Hash<crypto::SHA512>(key.name));
   }
 
+  bool CheckDataNamesExist(const MaidName& maid_name, const nfs_vault::DataNames& data_names);
+
   struct MaidAccountCreationStatus {
     MaidAccountCreationStatus(passport::PublicMaid::Name maid_name_in,
                               passport::PublicAnmaid::Name anmaid_name_in)
@@ -258,6 +273,8 @@ class MaidManagerService {
   Sync<MaidManager::UnresolvedRegisterPmid> sync_register_pmids_;
   Sync<MaidManager::UnresolvedUnregisterPmid> sync_unregister_pmids_;
   Sync<MaidManager::UnresolvedUpdatePmidHealth> sync_update_pmid_healths_;
+  Sync<MaidManager::UnresolvedIncrementReferenceCounts> sync_increment_reference_counts_;
+  Sync<MaidManager::UnresolvedDecrementReferenceCounts> sync_decrement_reference_counts_;
   static const int kDefaultPaymentFactor_;
   std::mutex pending_account_mutex_;
   std::map<nfs::MessageId, MaidAccountCreationStatus> pending_account_map_;
@@ -349,6 +366,18 @@ void MaidManagerService::HandleMessage(
     const AccountTransferFromMaidManagerToMaidManager& message,
     const typename AccountTransferFromMaidManagerToMaidManager::Sender& sender,
     const typename AccountTransferFromMaidManagerToMaidManager::Receiver& receiver);
+
+template <>
+void MaidManagerService::HandleMessage(
+    const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager& message,
+    const typename nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void MaidManagerService::HandleMessage(
+    const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager& message,
+    const typename nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
@@ -518,6 +547,10 @@ void MaidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_register_pmids_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_update_pmid_healths_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_increment_reference_counts_,
+                                       unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_decrement_reference_counts_,
+                                       unresolved_action);
 }
 
 }  // namespace vault

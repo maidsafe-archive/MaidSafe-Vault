@@ -35,6 +35,8 @@ class MaidManagerValue {
   std::string Serialise() const;
 
   void Put(int32_t cost);
+  void IncrementCount();
+  void DecrementCount();
   // Returns amount which was subtracted from 'total_cost'.
   int32_t Delete();
   int32_t count() const { return count_; }

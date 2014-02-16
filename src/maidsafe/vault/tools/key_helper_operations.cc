@@ -62,8 +62,10 @@ bool g_ctrlc_pressed;
 
 void CtrlCHandler(int /*signum*/) {
   //   LOG(kInfo) << " Signal received: " << signum;
-  std::lock_guard<std::mutex> lock(g_mutex);
-  g_ctrlc_pressed = true;
+  {
+    std::lock_guard<std::mutex> lock(g_mutex);
+    g_ctrlc_pressed = true;
+  }
   g_cond_var.notify_one();
 }
 
