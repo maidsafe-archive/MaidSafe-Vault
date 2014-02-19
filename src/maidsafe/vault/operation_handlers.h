@@ -242,6 +242,12 @@ void DoOperation(MaidManagerService* service,
                  const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
 
+template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::CreateVersionTreeFromMaidNodeToMaidManager& message,
+                 const nfs::CreateVersionTreeFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::CreateVersionTreeFromMaidNodeToMaidManager::Receiver& receiver);
+
 //=============================== To DataManager ===================================================
 template <>
 void DoOperation(DataManagerService* service,
@@ -413,6 +419,12 @@ void DoOperation(VersionHandlerService* service,
     const DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler& message,
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Sender& sender,
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Receiver& receiver);
+
+template<>
+void DoOperation(VersionHandlerService* service,
+    const CreateVersionTreeFromMaidManagerToVersionHandler& message,
+    const typename CreateVersionTreeFromMaidManagerToVersionHandler::Sender& sender,
+    const typename CreateVersionTreeFromMaidManagerToVersionHandler::Receiver& receiver);
 
 }  // namespace detail
 

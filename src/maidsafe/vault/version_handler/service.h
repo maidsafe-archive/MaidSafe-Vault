@@ -54,6 +54,7 @@ namespace detail {
   template <typename SourcePersonaType> class VersionHandlerGetBranchVisitor;
   class VersionHandlerPutVisitor;
   class VersionHandlerDeleteBranchVisitor;
+  class VersionHandlerCreateVersionTreeVisitor;
 }
 
 namespace test {
@@ -81,6 +82,7 @@ class VersionHandlerService {
   template <typename SourcePersonaType> friend class detail::VersionHandlerGetBranchVisitor;
   friend class detail::VersionHandlerPutVisitor;
   friend class detail::VersionHandlerDeleteBranchVisitor;
+  friend class detail::VersionHandlerCreateVersionTreeVisitor;
   friend test::VersionHandlerServiceTest;
 
  private:
@@ -112,6 +114,11 @@ class VersionHandlerService {
   void HandleDeleteBranchUntilFork(const VersionHandler::Key& key,
                                    const VersionHandler::VersionName& branch_tip,
                                    const NodeId& sender);
+
+  void HandleCreateVersionTree(const VersionHandler::Key& key,
+                               const VersionHandler::VersionName& version,
+                               uint32_t max_versions, uint32_t max_branches,
+                               nfs::MessageId message_id);
 
   typedef boost::mpl::vector<> InitialType;
   typedef boost::mpl::insert_range<InitialType,
@@ -184,6 +191,12 @@ void VersionHandlerService::HandleMessage(
     const DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler& message,
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Sender& sender,
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Receiver& receiver);
+
+template<>
+void VersionHandlerService::HandleMessage(
+    const CreateVersionTreeFromMaidManagerToVersionHandler & message,
+    const typename CreateVersionTreeFromMaidManagerToVersionHandler::Sender& sender,
+    const typename CreateVersionTreeFromMaidManagerToVersionHandler::Receiver& receiver);
 
 template<>
 void VersionHandlerService::HandleMessage(

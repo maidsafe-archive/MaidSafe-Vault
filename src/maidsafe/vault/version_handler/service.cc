@@ -157,6 +157,21 @@ void VersionHandlerService::HandleMessage(
 
 template<>
 void VersionHandlerService::HandleMessage(
+    const CreateVersionTreeFromMaidManagerToVersionHandler & message,
+    const typename CreateVersionTreeFromMaidManagerToVersionHandler::Sender& sender,
+    const typename CreateVersionTreeFromMaidManagerToVersionHandler::Receiver& receiver) {
+  LOG(kVerbose) << "CreateVersionTreeFromMaidManagerToVersionHandler: " << message.id;
+  typedef CreateVersionTreeFromMaidManagerToVersionHandler MessageType;
+  OperationHandlerWrapper<VersionHandlerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)), this,
+      accumulator_mutex_)(message, sender, receiver);
+}
+
+template<>
+void VersionHandlerService::HandleMessage(
     const SynchroniseFromVersionHandlerToVersionHandler& message,
     const typename SynchroniseFromVersionHandlerToVersionHandler::Sender& sender,
     const typename SynchroniseFromVersionHandlerToVersionHandler::Receiver& /*receiver*/) {
@@ -232,6 +247,10 @@ void VersionHandlerService::HandleDeleteBranchUntilFork(
                       routing_.kNodeId()));
 }
 
+void VersionHandlerService::HandleCreateVersionTree(
+    const VersionHandler::Key& /*key*/, const VersionHandler::VersionName& /*version*/,
+    uint32_t /*max_versions*/, uint32_t /*max_branches*/, nfs::nfs::MessageId /*message_id*/) {
+}
 
 template <typename UnresolvedAction>
 void VersionHandlerService::DoSync(const UnresolvedAction& unresolved_action) {

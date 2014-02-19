@@ -83,6 +83,9 @@ DataNameVariant GetNameVariant(const nfs_vault::DataNameOldNewVersion& data);
 template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndRandomString& data);
 
+template <>
+DataNameVariant GetNameVariant(const nfs_vault::VersionTreeCreation& data);
+
 template <typename MessageType>
 struct ValidateSenderType {
   typedef std::function<bool(const MessageType&, const typename MessageType::Sender&)> type;
