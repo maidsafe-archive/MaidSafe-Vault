@@ -29,44 +29,73 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/vault/unresolved_action.pb.h"
+#include "maidsafe/nfs/types.h"
+
+#include "maidsafe/routing/message.h"
+
+#include "maidsafe/vault/unresolved_account_transfer_action.pb.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-
-
 template <typename Key, typename Action>
 struct UnresolvedAccountTransferAction {
-  typedef Action ActionType;
-  typedef Key KeyType;
+ public:
+  UnresolvedAccountTransferAction(
+     const Key& key_in, const nfs::MessageId& id_in, const std::vector<Action>& actions_in);
+  UnresolvedAccountTransferAction(const std::string& serialised_copy);
+//   UnresolvedAccountTransferAction(const UnresolvedAction& other);
+//   UnresolvedAccountTransferAction(UnresolvedAccountTransfer&& other);
 
-  // To create unresolved action from received key value and metadata combination from peer
-  UnresolvedAccountTransferAction(const key& key_in, const Action& action_in,
-                                  const NodeId& sender_id);
+  void Merge(const UnresolvedAccountTransferAction& other);
 
-  UnresolvedAccountTransferAction(const UnresolvedAction& other);
-  UnresolvedAccountTransferAction(UnresolvedAccountTransfer&& other);
-
-//  std::string Serialise() const; // not required as it is created on destination node
+  std::string Serialise() const;
 
   Key key;
-  Action action;
-  std::vector<NodeId> peers_;
+  nfs::MessageId id;
+  std::vector<Action> actions;
 
- private:
-  UnresolvedAccountTransferAction& operator=(UnresolvedAction other);
+//   UnresolvedAccountTransferAction& operator=(UnresolvedAction other);
 };
 
+template <typename Key, typename Action>
+UnresolvedAccountTransferAction<Key, Action>::UnresolvedAccountTransferAction(
+    const Key& key_in, const nfs::MessageId& id_in, const std::vector<Action>& actions_in)
+  : key(key_in), id(id_in), actions(actions_in) {}
 
-// TODO extend to unresolved static metadata action and unresolved db action
+template <typename Key, typename Action>
+UnresolvedAccountTransferAction<Key, Action>::UnresolvedAccountTransferAction(
+      const std::string& serialised_copy)
+    : key(), id(), actions() {
+  protobuf::UnresolvedAccountTransferAction proto_unresolved_action;
+  proto_unresolved_action.ParseFromString(serialised_copy);
+  key = Key(Identity(proto_unresolved_action.serialised_key()));
+  id = nfs::MessageId(proto_unresolved_action.message_id());
+  for (auto& action : proto_unresolved_action.action_list())
+    actions.push_back(action);
+}
 
+template <typename Key, typename Action>
+void UnresolvedAccountTransferAction<Key, Action>::Merge(
+    const UnresolvedAccountTransferAction& other) {
+  std::vector<Action> merged;
+  std::set_intersection(actions.begin(), actions.end(),
+                        other.actions.begin(), other.actions.end(),
+                        std::back_inserter(merged));
+  actions.clear();
+  std::copy(merged.begin(), merged.end(), std::back_inserter(actions));
+}
 
-// Discuss If its good to send unresolved action from the source or a bulk of
-// key/value/metadata in a specilaised container.
-// Sending in form of repeated unresolved action is a good for generalisation but wasteful, as
-// in case of maid manager type persona half of the db key string will be same for a given account.
+template <typename Key, typename Action>
+std::string UnresolvedAccountTransferAction<Key, Action>::Serialise() const {
+  protobuf::UnresolvedAccountTransferAction proto_unresolved_action;
+  proto_unresolved_action.set_serialised_key(key->string());
+  proto_unresolved_action.set_message_id(id.data);
+  for (const auto& action : actions)
+    proto_unresolved_action.add_action_list(action);
+  return proto_unresolved_action.SerializeAsString();
+}
 
 }  // namespace vault
 

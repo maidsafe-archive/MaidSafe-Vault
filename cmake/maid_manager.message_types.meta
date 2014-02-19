@@ -1,5 +1,5 @@
 Action:PutResponse            Source:DataManager:Group      Destination:MaidManager:Group      Contents:struct:maidsafe::nfs_vault::DataNameAndCost
 Action:PutFailure             Source:DataManager:Group      Destination:MaidManager:Group      Contents:struct:maidsafe::nfs_client::DataNameAndReturnCode
 Action:Synchronise            Source:MaidManager:Group      Destination:MaidManager:Group      Contents:struct:maidsafe::nfs_vault::Content
-Action:AccountTransfer        Source:MaidManager:Group      Destination:MaidManager:Single     Contents:struct:maidsafe::nfs_vault::DataNameAndContent
+Action:AccountTransfer        Source:MaidManager:Group      Destination:MaidManager:Single     Contents:struct:maidsafe::nfs_vault::Content
 Action:PmidHealthResponse     Source:PmidManager:Group      Destination:MaidManager:Group      Contents:struct:maidsafe::nfs_client::PmidHealthAndReturnCode

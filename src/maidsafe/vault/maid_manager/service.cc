@@ -167,6 +167,7 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
       sync_update_pmid_healths_(NodeId(pmid.name()->string())),
       sync_increment_reference_counts_(NodeId(pmid.name()->string())),
       sync_decrement_reference_counts_(NodeId(pmid.name()->string())),
+      account_transfer_(),
       pending_account_mutex_(),
       pending_account_map_() {}
 
@@ -548,29 +549,30 @@ void MaidManagerService::HandleHealthResponse(const MaidName& maid_name,
 }
 
 void MaidManagerService::HandleChurnEvent(
-    std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {
-//  auto account_names(maid_account_handler_.GetAccountNames());
-//  auto itr(std::begin(account_names));
-//  while (itr != std::end(account_names)) {
-//    auto check_holders_result(matrix_change->CheckHolders(NodeId((*itr)->string())));
-//    // Delete accounts for which this node is no longer responsible.
-//    if (check_holders_result.proximity_status != routing::GroupRangeStatus::kInRange) {
-//      maid_account_handler_.DeleteAccount(*itr);
-//      itr = account_names.erase(itr);
-//      continue;
-//    }
+    std::shared_ptr<routing::MatrixChange> matrix_change) {
+  GroupDb<MaidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(matrix_change));
+  for (auto& transfer : transfer_info)
+    TransferAccount(transfer.first, transfer.second);
+}
 
-//    // Replace old_node(s) in sync object and send AccountTransfer to new node(s).
-//    assert(check_holders_result.old_holders.size() == check_holders_result.new_holders.size());
-//    for (auto i(0U); i != check_holders_result.old_holders.size(); ++i) {
-//      maid_account_handler_.ReplaceNodeInSyncList(*itr, check_holders_result.old_holders[i],
-//                                                  check_holders_result.new_holders[i]);
-//      TransferAccount(*itr, check_holders_result.new_holders[i]);
-//    }
-
-//    ++itr;
-//  }
-  assert(0);
+void MaidManagerService::TransferAccount(const NodeId& dest,
+    const std::vector<GroupDb<MaidManager>::Contents>& accounts) {
+  for (auto& account : accounts) {
+    std::vector<std::string> actions;
+    actions.push_back(account.metadata.Serialise());
+    for (auto& kv : account.kv_pairs) {
+      protobuf::MaidManagerKeyValuePair kv_msg;
+        kv_msg.set_key(kv.first.name.string());
+        kv_msg.set_value(kv.second.Serialise());
+        actions.push_back(kv_msg.SerializeAsString());
+    }
+    nfs::MessageId message_id(static_cast<nfs::MessageId::value_type>(
+        HashStringToInt(account.group_name->string())));
+    MaidManager::UnresolvedAccountTransfer account_transfer(
+        account.group_name, message_id, actions);
+    dispatcher_.SendAccountTransfer(dest, account.group_name,
+                                    message_id, account_transfer.Serialise());
+  }
 }
 
 template <>
@@ -956,10 +958,42 @@ void MaidManagerService::HandleSyncedDecrementReferenceCounts(
 
 template <>
 void MaidManagerService::HandleMessage(
-    const AccountTransferFromMaidManagerToMaidManager& /*message*/,
-    const typename AccountTransferFromMaidManagerToMaidManager::Sender& /*sender*/,
+    const AccountTransferFromMaidManagerToMaidManager& message,
+    const typename AccountTransferFromMaidManagerToMaidManager::Sender& sender,
     const typename AccountTransferFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
-  assert(0);
+  MaidManager::UnresolvedAccountTransfer unresolved_account_transfer(message.contents->data);
+  auto resolved_action(account_transfer_.AddUnresolvedAction(
+      unresolved_account_transfer, sender,
+      AccountTransfer<MaidManager::UnresolvedAccountTransfer>::AddRequestChecker(
+          routing::Parameters::group_size - 1)));
+  if (resolved_action) {
+    LOG(kInfo) << "AccountTransferFromMaidManagerToMaidManager handle account transfer";
+    this->HandleAccountTransfer(std::move(resolved_action));
+  }
+}
+
+void MaidManagerService::HandleAccountTransfer(
+    std::unique_ptr<MaidManager::UnresolvedAccountTransfer>&& resolved_action) {
+  GroupDb<MaidManager>::Contents content;
+  content.group_name = resolved_action->key;
+  for (auto& action : resolved_action->actions) {
+    try {
+      protobuf::MaidManagerKeyValuePair kv_msg;
+      if (kv_msg.ParseFromString(action)) {
+        LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
+        MaidManager::Key key(kv_msg.key());
+        MaidManagerValue value(kv_msg.value());
+        content.kv_pairs.push_back(std::make_pair(key, std::move(value)));
+      } else {
+        LOG(kVerbose) << "HandleAccountTransfer handle metadata";
+        MaidManagerMetadata meta_data(action);
+        content.metadata = meta_data;
+      }
+    } catch(...) {
+      LOG(kError) << "HandleAccountTransfer can't parse the action";
+    }
+  }
+  group_db_.HandleTransfer(content);
 }
 
 }  // namespace vault

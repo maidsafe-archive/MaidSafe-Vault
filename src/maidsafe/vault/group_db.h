@@ -84,7 +84,7 @@ class GroupDb {
   std::unique_ptr<Value> Commit(const Key& key,
       std::function<detail::DbAction(Metadata& metadata, std::unique_ptr<Value>& value)> functor);
   TransferInfo GetTransferInfo(std::shared_ptr<routing::MatrixChange> matrix_change);
-  void HandleTransfer(const std::vector<Contents>& contents);
+  void HandleTransfer(const Contents& content);
 
   // returns metadata if group_name exists in db
   Metadata GetMetadata(const GroupName& group_name);
@@ -306,11 +306,9 @@ typename GroupDb<Persona>::TransferInfo GroupDb<Persona>::GetTransferInfo(
 
 // FIXME (Prakash)
 template <typename Persona>
-void GroupDb<Persona>::HandleTransfer(const std::vector<Contents>& contents_vector) {
+void GroupDb<Persona>::HandleTransfer(const Contents& content) {
   std::lock_guard<std::mutex> lock(mutex_);
-  for (const auto& contents : contents_vector) {
-    ApplyTransfer(contents);
-  }
+  ApplyTransfer(content);
 }
 
 // Ignores values which are already in db ?
