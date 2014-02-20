@@ -285,6 +285,7 @@ void VersionHandlerService::HandleCreateVersionTree(const VersionHandler::Key& k
 
 template <typename UnresolvedAction>
 void VersionHandlerService::DoSync(const UnresolvedAction& unresolved_action) {
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_version_tree_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_put_versions_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_delete_branche_until_forks_,
                                        unresolved_action);

@@ -212,6 +212,7 @@ TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are
                             Identity(originator.string()));
     Store(key, ActionVersionHandlerCreateVersionTree(content.old_version_name, 10, 20,
                                                      message_id));
+    CHECK_NOTHROW(Get(key));
     ActionVersionHandlerPut action_put_version(content.old_version_name, content.new_version_name,
                                                sender_id, message_id);
     auto group_source(CreateGroupSource(NodeId(content.data_name.raw_name.string())));
