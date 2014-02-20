@@ -139,6 +139,7 @@ class VersionHandlerService {
   Accumulator<Messages> accumulator_;
   Db<VersionHandler::Key, VersionHandler::Value> db_;
   const NodeId kThisNodeId_;
+  Sync<VersionHandler::UnresolvedCreateVersionTree> sync_create_version_tree_;
   Sync<VersionHandler::UnresolvedPutVersion> sync_put_versions_;
   Sync<VersionHandler::UnresolvedDeleteBranchUntilFork> sync_delete_branche_until_forks_;
 };
@@ -194,9 +195,9 @@ void VersionHandlerService::HandleMessage(
 
 template<>
 void VersionHandlerService::HandleMessage(
-    const CreateVersionTreeFromMaidManagerToVersionHandler & message,
-    const typename CreateVersionTreeFromMaidManagerToVersionHandler::Sender& sender,
-    const typename CreateVersionTreeFromMaidManagerToVersionHandler::Receiver& receiver);
+    const CreateVersionTreeRequestFromMaidManagerToVersionHandler & message,
+    const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Sender& sender,
+    const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Receiver& receiver);
 
 template<>
 void VersionHandlerService::HandleMessage(

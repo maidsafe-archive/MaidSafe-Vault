@@ -388,9 +388,9 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
-    const nfs::CreateVersionTreeFromMaidNodeToMaidManager& message,
-    const typename nfs::CreateVersionTreeFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::CreateVersionTreeFromMaidNodeToMaidManager::Receiver& receiver);
+    const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
@@ -488,8 +488,8 @@ void MaidManagerService::HandleCreateVersionTree(
     uint32_t max_branches, nfs::MessageId message_id) {
   try {
     group_db_.GetMetadata(maid_name);
-    dispatcher_.SendCreateVersionTree(maid_name, data_name, version, max_versions, max_branches,
-                                      message_id);
+    dispatcher_.SendCreateVersionTreeRequest(maid_name, data_name, version, max_versions,
+                                             max_branches, message_id);
   }
   catch (const maidsafe_error& error) {
     LOG(kError) << "MaidManagerService::HandleCreateVersionTree faied: " << error.what();

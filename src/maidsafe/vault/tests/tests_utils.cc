@@ -134,6 +134,14 @@ nfs_vault::DataNameOldNewVersion CreateContent<nfs_vault::DataNameOldNewVersion>
 }
 
 template <>
+nfs_vault::VersionTreeCreation CreateContent<nfs_vault::VersionTreeCreation>() {
+  ImmutableData::Name name(Identity(RandomString(64)));
+  return nfs_vault::VersionTreeCreation(nfs_vault::DataName(name),
+                                        StructuredDataVersions::VersionName(1, name), 30, 40);
+}
+
+
+template <>
 std::vector<routing::GroupSource> CreateGroupSource(const NodeId& group_id) {
   std::vector<routing::GroupSource> group_source;
   for (auto index(0); index < routing::Parameters::group_size; ++index)

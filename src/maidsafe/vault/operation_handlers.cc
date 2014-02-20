@@ -200,10 +200,10 @@ void DoOperation(MaidManagerService* service,
 
 template <>
 void DoOperation(MaidManagerService* service,
-                 const nfs::CreateVersionTreeFromMaidNodeToMaidManager& message,
-                 const nfs::CreateVersionTreeFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::CreateVersionTreeFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation CreateVersionTreeFromMaidNodeToMaidManager";
+                 const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager &message,
+                 const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver&) {
+  LOG(kVerbose) << "DoOperation CreateVersionTreeRequestFromMaidNodeToMaidManager";
   auto data_name(GetNameVariant(*message.contents));
   MaidManagerCreateVersionTreeVisitor<MaidManagerService> delete_version_visitor(
       service, MaidName(Identity(sender.data.string())), message.contents->version_name,
@@ -578,10 +578,10 @@ void DoOperation(VersionHandlerService* service,
 
 template<>
 void DoOperation(VersionHandlerService* service,
-    const CreateVersionTreeFromMaidManagerToVersionHandler& message,
-    const typename CreateVersionTreeFromMaidManagerToVersionHandler::Sender& sender,
-    const typename CreateVersionTreeFromMaidManagerToVersionHandler::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "CreateVersionTreeFromMaidManagerToVersionHandler";
+    const CreateVersionTreeRequestFromMaidManagerToVersionHandler &message,
+    const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Sender& sender,
+    const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Receiver&) {
+  LOG(kVerbose) << "CreateVersionTreeRequestFromMaidManagerToVersionHandler";
   auto data_name(GetNameVariant(*message.contents));
   VersionHandlerCreateVersionTreeVisitor create_version_tree_visitor(
       service, sender.group_id.data, message.contents->version_name, message.contents->max_versions,

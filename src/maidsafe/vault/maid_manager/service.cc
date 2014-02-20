@@ -770,11 +770,11 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
-    const nfs::CreateVersionTreeFromMaidNodeToMaidManager& message,
-    const typename nfs::CreateVersionTreeFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::CreateVersionTreeFromMaidNodeToMaidManager::Receiver& receiver) {
+    const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager &message,
+    const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;
-  typedef nfs::CreateVersionTreeFromMaidNodeToMaidManager MessageType;
+  typedef nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);

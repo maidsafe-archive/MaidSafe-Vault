@@ -99,7 +99,7 @@ class MaidManagerDispatcher {
                                     const passport::PublicPmid& pmid_name);
 
   template <typename DataNameType>
-  void SendCreateVersionTree(const MaidName& maid_name, const DataNameType& data_name,
+  void SendCreateVersionTreeRequest(const MaidName& maid_name, const DataNameType& data_name,
       const StructuredDataVersions::VersionName& version, uint32_t max_versions,
       uint32_t max_branches, nfs::MessageId message_id);
 
@@ -191,17 +191,19 @@ void MaidManagerDispatcher::SendDeleteBranchUntilFork(
 }
 
 template <typename DataNameType>
-void SendCreateVersionTree(const MaidName& /*maid_name*/, const DataNameType& /*data_name*/,
-    const StructuredDataVersions::VersionName& /*version*/, uint32_t /*max_versions*/,
-    uint32_t /*max_branches*/, nfs::MessageId /*message_id*/) {
-//  typedef DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler VaultMessage;
-//  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-//  CheckSourcePersonaType<VaultMessage>();
-//  VaultMessage valut_message(message_id, nfs_vault::DataNameAndVersion(data_name, version));
-//  RoutingMessage message(valut_message.Serialise(),
-//                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
-//                         VaultMessage::Receiver(NodeId(data_name->string())));
-//  routing_.Send(message);
+void MaidManagerDispatcher::SendCreateVersionTreeRequest(const MaidName& maid_name,
+    const DataNameType& data_name, const StructuredDataVersions::VersionName& version,
+    uint32_t max_versions, uint32_t max_branches, nfs::MessageId message_id) {
+  typedef CreateVersionTreeRequestFromMaidManagerToVersionHandler VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  VaultMessage valut_message(message_id,
+                             nfs_vault::VersionTreeCreation(data_name, version, max_versions,
+                                                             max_branches));
+  RoutingMessage message(valut_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
+                         VaultMessage::Receiver(NodeId(data_name->string())));
+  routing_.Send(message);
 }
 
 
