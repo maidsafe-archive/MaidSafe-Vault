@@ -550,6 +550,10 @@ void MaidManagerService::HandleHealthResponse(const MaidName& maid_name,
 
 void MaidManagerService::HandleChurnEvent(
     std::shared_ptr<routing::MatrixChange> matrix_change) {
+  if (matrix_change->lost_nodes().size() != 0) {
+    LOG(kVerbose) << "MaidManagerService::HandleChurnEvent";
+    matrix_change->Print();
+  }
   GroupDb<MaidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(matrix_change));
   for (auto& transfer : transfer_info)
     TransferAccount(transfer.first, transfer.second);
@@ -558,11 +562,21 @@ void MaidManagerService::HandleChurnEvent(
 void MaidManagerService::TransferAccount(const NodeId& dest,
     const std::vector<GroupDb<MaidManager>::Contents>& accounts) {
   for (auto& account : accounts) {
+    // If account just received, shall not pass it out as may under a startup procedure
+    // i.e. existing MM will be seen as new_node in matrix_change
+    if (account_transfer_.CheckHandled(routing::GroupId(NodeId(account.group_name->string())))) {
+      LOG(kInfo) << "MaidManager account " << HexSubstr(account.group_name->string())
+                 << " just received";
+      continue;
+    }
+    GLOG() << "MaidManager transfer account " << HexSubstr(account.group_name->string())
+           << " to " << DebugId(dest);
     std::vector<std::string> actions;
     actions.push_back(account.metadata.Serialise());
+    LOG(kVerbose) << "MaidManagerService::TransferAccount metadata serialised";
     for (auto& kv : account.kv_pairs) {
       protobuf::MaidManagerKeyValuePair kv_msg;
-        kv_msg.set_key(kv.first.name.string());
+        kv_msg.set_key(kv.first.Serialise());
         kv_msg.set_value(kv.second.Serialise());
         actions.push_back(kv_msg.SerializeAsString());
     }
@@ -570,6 +584,7 @@ void MaidManagerService::TransferAccount(const NodeId& dest,
         HashStringToInt(account.group_name->string())));
     MaidManager::UnresolvedAccountTransfer account_transfer(
         account.group_name, message_id, actions);
+    LOG(kVerbose) << "MaidManagerService::TransferAccount send account_transfer";
     dispatcher_.SendAccountTransfer(dest, account.group_name,
                                     message_id, account_transfer.Serialise());
   }
@@ -962,6 +977,8 @@ void MaidManagerService::HandleMessage(
     const typename AccountTransferFromMaidManagerToMaidManager::Sender& sender,
     const typename AccountTransferFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
   MaidManager::UnresolvedAccountTransfer unresolved_account_transfer(message.contents->data);
+  LOG(kInfo) << "MaidManager received account " << DebugId(sender.group_id)
+             << " from " << DebugId(sender.sender_id);
   auto resolved_action(account_transfer_.AddUnresolvedAction(
       unresolved_account_transfer, sender,
       AccountTransfer<MaidManager::UnresolvedAccountTransfer>::AddRequestChecker(
@@ -974,6 +991,7 @@ void MaidManagerService::HandleMessage(
 
 void MaidManagerService::HandleAccountTransfer(
     std::unique_ptr<MaidManager::UnresolvedAccountTransfer>&& resolved_action) {
+  GLOG() << "MaidManager HandleAccountTransfer " << HexSubstr(resolved_action->key->string());
   GroupDb<MaidManager>::Contents content;
   content.group_name = resolved_action->key;
   for (auto& action : resolved_action->actions) {
@@ -982,7 +1000,9 @@ void MaidManagerService::HandleAccountTransfer(
       if (kv_msg.ParseFromString(action)) {
         LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
         MaidManager::Key key(kv_msg.key());
+        LOG(kVerbose) << "HandleAccountTransfer key parsed";
         MaidManagerValue value(kv_msg.value());
+        LOG(kVerbose) << "HandleAccountTransfer vaule parsed";
         content.kv_pairs.push_back(std::make_pair(key, std::move(value)));
       } else {
         LOG(kVerbose) << "HandleAccountTransfer handle metadata";

@@ -128,6 +128,7 @@ std::string MaidManagerMetadata::Serialise() const {
   for (const auto& pmid_total : pmid_totals_) {
     auto pmid_total_proto(maid_manager_metadata_proto.add_pmid_totals());
     pmid_total_proto->set_serialised_pmid_registration(pmid_total.serialised_pmid_registration);
+    pmid_total_proto->set_serialised_pmid_metadata(pmid_total.pmid_metadata.Serialise());
   }
   return maid_manager_metadata_proto.SerializeAsString();
 }

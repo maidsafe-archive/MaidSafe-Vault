@@ -280,25 +280,33 @@ typename GroupDb<Persona>::TransferInfo GroupDb<Persona>::GetTransferInfo(
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<GroupName> prune_vector;
   TransferInfo transfer_info;
+  LOG(kVerbose) << "GroupDb<Persona>::GetTransferInfo group_map_.size() " << group_map_.size();
   for (auto group_itr(group_map_.begin()); group_itr != group_map_.end(); ++group_itr) {
     auto check_holder_result = matrix_change->CheckHolders(NodeId(group_itr->first->string()));
-    if (check_holder_result.proximity_status != routing::GroupRangeStatus::kInRange) {
+    if (check_holder_result.proximity_status == routing::GroupRangeStatus::kInRange) {
+      LOG(kVerbose) << "GroupDb<Persona>::GetTransferInfo in range ";
       if (check_holder_result.new_holders.size() != 0) {
+        LOG(kVerbose) << "GroupDb<Persona>::GetTransferInfo having new node "
+                      << DebugId(check_holder_result.new_holders.at(0));
         assert(check_holder_result.new_holders.size() == 1);
         auto found_itr = transfer_info.find(check_holder_result.new_holders.at(0));
         if (found_itr != transfer_info.end()) {  // Add to map
           found_itr->second.push_back(GetContents(group_itr));
         } else {  // create contents add to map
+          LOG(kVerbose) << "GroupDb<Persona>::GetTransferInfo transfering account "
+                        << HexSubstr(group_itr->first->string()) << " to "
+                        << DebugId(check_holder_result.new_holders.at(0));
           std::vector<Contents>  contents_vector;
           contents_vector.push_back(std::move(GetContents(group_itr)));
           transfer_info[check_holder_result.new_holders.at(0)] = std::move(contents_vector);
         }
       }
     } else {  // Prune group
+      LOG(kInfo) << "GroupDb<Persona>::GetTransferInfo removing " << DebugId(group_itr->first);
       prune_vector.push_back(group_itr->first);
     }
   }
-
+  LOG(kVerbose) << "GroupDb<Persona>::GetTransferInfo prune_vector.size() " << prune_vector.size();
   for (const auto& i : prune_vector)
     DeleteGroupEntries(i);
   return transfer_info;
@@ -316,6 +324,8 @@ void GroupDb<Persona>::HandleTransfer(const Contents& content) {
 // put action. This means a valid account transfer will be ignored.
 template <typename Persona>
 void GroupDb<Persona>::ApplyTransfer(const Contents& contents) {
+  // BEFORE_RELEASE what if metadata can't got resolved ? i.e. metadata is empty
+  //                create an empty account only for group_name?
   auto itr = AddGroupToMap(contents.group_name, contents.metadata);
   for (const auto& kv_pair : contents.kv_pairs)
     Put(kv_pair, itr->second.first);

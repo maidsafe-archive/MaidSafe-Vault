@@ -80,11 +80,16 @@ template <typename Key, typename Action>
 void UnresolvedAccountTransferAction<Key, Action>::Merge(
     const UnresolvedAccountTransferAction& other) {
   std::vector<Action> merged;
+  LOG(kVerbose) << "UnresolvedAccountTransferAction<Key, Action>::Merge before having "
+                << actions.size() << " actions, target having "
+                << other.actions.size() << " actions";
   std::set_intersection(actions.begin(), actions.end(),
                         other.actions.begin(), other.actions.end(),
                         std::back_inserter(merged));
   actions.clear();
   std::copy(merged.begin(), merged.end(), std::back_inserter(actions));
+  LOG(kVerbose) << "UnresolvedAccountTransferAction<Key, Action>::Merge after having "
+                << actions.size() << " actions";
 }
 
 template <typename Key, typename Action>

@@ -107,7 +107,7 @@ class AccountTransfer {
       const UnresolvedAccountTransferAction& request,
       const routing::GroupSource& source,
       AddRequestChecker checker);
-  bool CheckHandled(const routing::GroupSource& source);
+  bool CheckHandled(const routing::GroupId& source);
 
  private:
   AccountTransfer(const AccountTransfer&);
@@ -121,6 +121,7 @@ class AccountTransfer {
   std::deque<PendingRequest> pending_requests_;
   std::deque<routing::GroupId> handled_requests_;
   const size_t kMaxPendingRequestsCount_, kMaxHandledRequestsCount_;
+  mutable std::mutex mutex_;
 };
 
 // ==================== Implementation =============================================================
@@ -130,7 +131,8 @@ AccountTransfer<UnresolvedAccountTransferAction>::AccountTransfer()
     : pending_requests_(),
       handled_requests_(),
       kMaxPendingRequestsCount_(100),
-      kMaxHandledRequestsCount_(100) {}
+      kMaxHandledRequestsCount_(100),
+      mutex_() {}
 
 template <typename UnresolvedAccountTransferAction>
 std::unique_ptr<UnresolvedAccountTransferAction>
@@ -142,42 +144,54 @@ std::unique_ptr<UnresolvedAccountTransferAction>
                 << HexSubstr(source.group_id.data.string()) << " sent from "
                 << HexSubstr(source.sender_id->string());
   std::unique_ptr<UnresolvedAccountTransferAction> resolved_action;
-  auto itr(pending_requests_.begin());
-  if (CheckHandled(source)) {
+  if (CheckHandled(source.group_id)) {
     LOG(kInfo) << "AccountTransfer::AddUnresolvedAction request has been handled";
     return resolved_action;
   }
-
-  if (!RequestExists(request, source)) {
-    pending_requests_.push_back(PendingRequest(request, source));
-    LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction has " << pending_requests_.size()
-                  << " pending requests, allowing " << kMaxPendingRequestsCount_ << " requests";
-    if (pending_requests_.size() > kMaxPendingRequestsCount_)
-      pending_requests_.pop_front();
-  } else {
-    LOG(kInfo) << "AccountTransfer::AddUnresolvedAction request already existed";
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (RequestExists(request, source)) {
+    LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction request already existed";
+    auto itr(pending_requests_.begin());
     while (itr != pending_requests_.end()) {
       if (itr->GetGroupId() == source.group_id) {
+        LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction merge request before having "
+                      << itr->GetSenders().size() << " senders";
         itr->MergePendingRequest(request, source);
+        LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction merge request after having "
+                      << itr->GetSenders().size() << " senders";
         if (checker(itr->GetSenders()) == AddResult::kSuccess) {
           resolved_action.reset(new UnresolvedAccountTransferAction(itr->Getrequest()));
           handled_requests_.push_back(itr->GetGroupId());
+          LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction put "
+                        << DebugId(handled_requests_.back()) << " into handled list";
           pending_requests_.erase(itr);
         }
         break;
       }
       ++itr;
     }
+  } else {
+    pending_requests_.push_back(PendingRequest(request, source));
+    LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction has " << pending_requests_.size()
+                  << " pending requests, allowing " << kMaxPendingRequestsCount_ << " requests";
+    if (pending_requests_.size() > kMaxPendingRequestsCount_)
+      pending_requests_.pop_front();
   }
   return std::move(resolved_action);
 }
 
 template <typename UnresolvedAccountTransferAction>
 bool AccountTransfer<UnresolvedAccountTransferAction>::CheckHandled(
-    const routing::GroupSource& source) {
-  for (auto& group_id : handled_requests_)
-    if (group_id == source.group_id)
+    const routing::GroupId& source_group_id) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  LOG(kVerbose) << "AccountTransfer::CheckHandled handled_requests_.size() "
+                << handled_requests_.size();
+  for (auto& group_id : handled_requests_) {
+    LOG(kVerbose) << "AccountTransfer::CheckHandled check " << DebugId(source_group_id)
+                  << " against " << DebugId(group_id);
+    if (group_id == source_group_id)
       return true;
+  }
   return false;
 }
 

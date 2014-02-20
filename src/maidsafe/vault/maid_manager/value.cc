@@ -40,6 +40,7 @@ MaidManagerValue::MaidManagerValue(const std::string& serialised_maid_manager_va
   }
   count_ = maid_manager_value_proto.count();
   total_cost_ = maid_manager_value_proto.total_cost();
+  LOG(kVerbose) << "parsed count_ " << count_ << " or total_cost_ " << total_cost_;
   if (count_ < 0 || total_cost_ < 0) {
     LOG(kError) << "invalid count_ " << count_ << " or total_cost_ " << total_cost_;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
