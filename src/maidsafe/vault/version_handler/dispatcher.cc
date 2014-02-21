@@ -138,7 +138,7 @@ void VersionHandlerDispatcher::SendPutVersionResponse(
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   NfsMessage nfs_message;
   nfs_message.id = message_id;
-  nfs_message.contents.reset( new nfs_client::DataNameAndTipOfTreeOrReturnCode());
+  nfs_message.contents.reset(new nfs_client::DataNameAndTipOfTreeOrReturnCode());
   nfs_message.contents->data_name = nfs_vault::DataName(key.type, key.name);
   if (return_code.code() == CommonErrors::success) {
     nfs_message.contents->tip_of_tree = tip_of_tree;
