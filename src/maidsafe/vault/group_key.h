@@ -26,7 +26,7 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/types.h"
-#include "maidsafe/data_types/data_type_values.h"
+#include "maidsafe/common/data_types/data_type_values.h"
 
 #include "maidsafe/vault/metadata_key.h"
 #include "maidsafe/vault/group_key.pb.h"

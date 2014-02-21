@@ -23,11 +23,10 @@
 
 #include "boost/thread/future.hpp"
 
+#include "maidsafe/common/data_types/mutable_data.h"
 #include "maidsafe/nfs/vault/messages.h"
 #include "maidsafe/nfs/vault/pmid_registration.h"
-#include "maidsafe/data_types/mutable_data.h"
 #include "maidsafe/passport/types.h"
-
 
 #include "maidsafe/vault/operation_handlers.h"
 #include "maidsafe/vault/maid_manager/action_put.h"

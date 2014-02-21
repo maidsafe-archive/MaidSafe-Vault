@@ -21,8 +21,8 @@
 
 #include <type_traits>
 
-#include "maidsafe/data_store/data_store.h"
-#include "maidsafe/data_store/memory_buffer.h"
+#include "maidsafe/common/data_stores/data_store.h"
+#include "maidsafe/common/data_stores/memory_buffer.h"
 
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message_wrapper.h"

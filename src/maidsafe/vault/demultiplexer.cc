@@ -19,9 +19,9 @@
 #include "maidsafe/vault/demultiplexer.h"
 
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/data_types/data_type_values.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/passport/types.h"
-#include "maidsafe/data_types/data_type_values.h"
-#include "maidsafe/data_types/data_name_variant.h"
 
 namespace maidsafe {
 

@@ -30,11 +30,11 @@
 
 // #include "maidsafe/passport/passport.h"
 
-// #include "maidsafe/data_types/data_type_values.h"
-// #include "maidsafe/data_types/immutable_data.h"
-// #include "maidsafe/data_types/owner_directory.h"
-// #include "maidsafe/data_types/group_directory.h"
-// #include "maidsafe/data_types/world_directory.h"
+// #include "maidsafe/common/data_types/data_type_values.h"
+// #include "maidsafe/common/data_types/immutable_data.h"
+// #include "maidsafe/common/data_types/owner_directory.h"
+// #include "maidsafe/common/data_types/group_directory.h"
+// #include "maidsafe/common/data_types/world_directory.h"
 
 // namespace maidsafe {
 // namespace vault {

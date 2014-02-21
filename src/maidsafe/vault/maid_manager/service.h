@@ -36,7 +36,7 @@
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
 

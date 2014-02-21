@@ -25,7 +25,7 @@
 #include "leveldb/db.h"
 
 #include "maidsafe/common/node_id.h"
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/vault/key.h"

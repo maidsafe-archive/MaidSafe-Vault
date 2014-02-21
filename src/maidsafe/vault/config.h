@@ -21,7 +21,7 @@
 
 #include <functional>
 
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 
 namespace maidsafe {
 

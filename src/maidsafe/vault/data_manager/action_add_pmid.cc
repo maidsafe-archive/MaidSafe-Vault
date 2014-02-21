@@ -19,8 +19,7 @@
 #include "maidsafe/vault/data_manager/action_add_pmid.h"
 
 #include "maidsafe/common/error.h"
-
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 
 #include "maidsafe/vault/data_manager/action_add_pmid.pb.h"
 #include "maidsafe/vault/data_manager/value.h"

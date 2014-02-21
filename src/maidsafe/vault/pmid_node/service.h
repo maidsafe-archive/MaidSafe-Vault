@@ -31,8 +31,8 @@
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/active.h"
-#include "maidsafe/data_types/data_type_values.h"
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_type_values.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/client/data_getter.h"

@@ -22,7 +22,7 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/data_types/data_type_values.h"
+#include "maidsafe/common/data_types/data_type_values.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/nfs/client/messages.pb.h"
 #include "maidsafe/vault/message_types.h"

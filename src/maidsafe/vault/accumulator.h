@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/nfs/utils.h"
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/types.h"

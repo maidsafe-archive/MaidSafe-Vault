@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#include "maidsafe/data_types/structured_data_versions.h"
+#include "maidsafe/common/data_types/structured_data_versions.h"
 
 #include "maidsafe/routing/routing_api.h"
 

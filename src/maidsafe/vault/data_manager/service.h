@@ -33,7 +33,7 @@
 #include "boost/mpl/insert_range.hpp"
 #include "boost/mpl/end.hpp"
 
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/routing/api_config.h"
 #include "maidsafe/routing/message.h"
 #include "maidsafe/routing/routing_api.h"

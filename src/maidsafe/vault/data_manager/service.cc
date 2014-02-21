@@ -22,7 +22,7 @@
 #include <type_traits>
 
 #include "maidsafe/common/log.h"
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/routing/parameters.h"
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/utils.h"

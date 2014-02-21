@@ -109,8 +109,8 @@ target_compile_options(maidsafe_vault PUBLIC $<$<AND:$<BOOL:${MSVC}>,$<OR:$<CONF
 ms_add_executable(vault Production ${VaultSourcesDir}/vault_main.cc)
 target_include_directories(vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
 
-target_link_libraries(maidsafe_vault maidsafe_nfs_vault maidsafe_routing maidsafe_common maidsafe_private leveldb)
-target_link_libraries(vault maidsafe_vault maidsafe_client_manager)
+target_link_libraries(maidsafe_vault maidsafe_nfs_vault leveldb)
+target_link_libraries(vault maidsafe_vault)
 if(MaidsafeTesting)
   ms_add_static_library(maidsafe_vault_mal ${VaultAllFiles}
                                            ${CacheHandlerAllFiles}
@@ -126,7 +126,7 @@ if(MaidsafeTesting)
     PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
   # TODO - Investigate why boost variant requires this warning to be disabled.
   target_compile_options(maidsafe_vault_mal PUBLIC $<$<AND:$<BOOL:${MSVC}>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>:/wd4702>)
-  target_link_libraries(maidsafe_vault_mal maidsafe_nfs_vault maidsafe_routing maidsafe_common maidsafe_private leveldb)
+  target_link_libraries(maidsafe_vault_mal maidsafe_nfs_vault leveldb)
   target_compile_definitions(maidsafe_vault_mal PRIVATE USE_MAL_BEHAVIOUR)
   ms_add_executable(vault_mal Production ${VaultSourcesDir}/vault_main.cc)
   target_include_directories(vault_mal PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
@@ -146,7 +146,7 @@ if(MaidsafeTesting)
   target_link_libraries(TESTvault_network maidsafe_vault)
   ms_add_executable(vault_key_helper "Tools/Vault" ${VaultToolsAllFiles})
   target_include_directories(vault_key_helper PRIVATE ${PROJECT_SOURCE_DIR}/src)
-  target_link_libraries(vault_key_helper maidsafe_routing maidsafe_nfs_vault maidsafe_private)
+  target_link_libraries(vault_key_helper maidsafe_nfs_vault)
   set_target_properties(maidsafe_vault_mal vault_mal PROPERTIES EXCLUDE_FROM_ALL ON EXCLUDE_FROM_DEFAULT_BUILD ON)
 endif()
 

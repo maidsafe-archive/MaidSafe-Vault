@@ -22,10 +22,10 @@
 #include <string>
 #include <vector>
 
-#include "maidsafe/data_store/data_store.h"
-#include "maidsafe/data_store/permanent_store.h"
-#include "maidsafe/data_store/data_buffer.h"
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_stores/data_store.h"
+#include "maidsafe/common/data_stores/permanent_store.h"
+#include "maidsafe/common/data_stores/data_buffer.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 
 namespace maidsafe {
 namespace vault {
