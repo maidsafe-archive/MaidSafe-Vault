@@ -51,7 +51,7 @@ TEST_F(VersionHandlerTest, FUNC_CreateVersionTree) {
   EXPECT_TRUE(AddClient(true));
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
-  EXPECT_NO_THROW(clients_.front()->nfs_->CreateVersionTree(chunk.name(), v_aaa, 10, 20));
+//EXPECT_NO_THROW(clients_.front()->nfs_->CreateVersionTree(chunk.name(), v_aaa, 10, 20));
   Sleep(std::chrono::seconds(2));
   try {
     auto future(clients_.front()->nfs_->GetVersions(chunk.name()));
