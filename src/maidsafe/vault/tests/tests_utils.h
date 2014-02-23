@@ -96,6 +96,9 @@ nfs_vault::DataNameAndVersion CreateContent<nfs_vault::DataNameAndVersion>();
 template <>
 nfs_vault::DataNameOldNewVersion CreateContent<nfs_vault::DataNameOldNewVersion>();
 
+template <>
+nfs_vault::VersionTreeCreation CreateContent<nfs_vault::VersionTreeCreation>();
+
 template <typename MessageType>
 MessageType CreateMessage(const typename MessageType::Contents& contents) {
   nfs::MessageId message_id(RandomUint32());

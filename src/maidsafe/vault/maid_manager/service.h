@@ -162,6 +162,12 @@ class MaidManagerService {
   // ================================== Version Handlers ===========================================
 
   template <typename DataNameType>
+  void HandleCreateVersionTree(const MaidName& maid_name, const DataNameType& data_name,
+                               const StructuredDataVersions::VersionName& version,
+                               uint32_t max_versions, uint32_t max_branches,
+                               nfs::MessageId message_id);
+
+  template <typename DataNameType>
   void HandlePutVersion(const MaidName& maid_name, const DataNameType& data_name,
                         const StructuredDataVersions::VersionName& old_version,
                         const StructuredDataVersions::VersionName& new_version,
@@ -258,6 +264,7 @@ class MaidManagerService {
   friend class detail::MaidManagerDeleteVisitor<MaidManagerService>;
   friend class detail::MaidManagerPutVersionVisitor<MaidManagerService>;
   friend class detail::MaidManagerDeleteBranchUntilForkVisitor<MaidManagerService>;
+  friend class detail::MaidManagerCreateVersionTreeVisitor<MaidManagerService>;
   friend class test::MaidManagerServiceTest;
 
   routing::Routing& routing_;
@@ -285,7 +292,7 @@ void MaidManagerService::HandleMessage(const MessageType& /*message*/,
                                        const typename MessageType::Sender& /*sender*/,
                                        const typename MessageType::Receiver& /*receiver*/) {
   LOG(kError) << "invalid function call because of un-specialised templated method";
-  MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
+  MessageType::No_generic_handler_is_available__Specialisation_required;
 }
 
 template <>
@@ -380,6 +387,12 @@ void MaidManagerService::HandleMessage(
     const typename nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
 
 template <>
+void MaidManagerService::HandleMessage(
+    const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
     const typename passport::PublicMaid::Name& data_name, int32_t,
     nfs::MessageId message_id);
@@ -466,6 +479,23 @@ void MaidManagerService::HandlePutFailure(
     const MaidName& maid_name, const typename Data::Name& data_name,
     const maidsafe_error& error, nfs::MessageId message_id) {
   dispatcher_.SendPutFailure<Data>(maid_name, data_name, error, message_id);
+}
+
+template <typename DataNameType>
+void MaidManagerService::HandleCreateVersionTree(
+    const MaidName& maid_name, const DataNameType& data_name,
+    const StructuredDataVersions::VersionName& version, uint32_t max_versions,
+    uint32_t max_branches, nfs::MessageId message_id) {
+  try {
+    group_db_.GetMetadata(maid_name);
+    dispatcher_.SendCreateVersionTreeRequest(maid_name, data_name, version, max_versions,
+                                             max_branches, message_id);
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kError) << "MaidManagerService::HandleCreateVersionTree faied: " << error.what();
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
+  }
 }
 
 template <typename DataNameType>

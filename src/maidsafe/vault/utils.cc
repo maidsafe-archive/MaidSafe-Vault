@@ -107,6 +107,11 @@ DataNameVariant GetNameVariant(const nfs_vault::DataNameAndRandomString& data) {
   return GetNameVariant(data.name);
 }
 
+template <>
+DataNameVariant GetNameVariant(const nfs_vault::VersionTreeCreation& data) {
+  return GetNameVariant(data.data_name);
+}
+
 void InitialiseDirectory(const boost::filesystem::path& directory) {
   if (fs::exists(directory)) {
     if (!fs::is_directory(directory))

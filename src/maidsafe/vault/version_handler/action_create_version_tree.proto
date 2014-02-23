@@ -16,33 +16,11 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/maid_manager/action_reference_count.h"
+package maidsafe.vault.protobuf;
 
-#include "maidsafe/vault/maid_manager/value.h"
-
-namespace maidsafe {
-
-namespace vault {
-
-template <>
-detail::DbAction ActionMaidManagerReferenceCount<true>::operator()(
-    MaidManagerMetadata& /*metadata*/, std::unique_ptr<MaidManagerValue>& value) {
-  if (!value)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
-  value->IncrementCount();
-  return detail::DbAction::kPut;
+message ActionCreateVersionTree {
+  required bytes serialised_version = 1;
+  required int32 max_versions = 2;
+  required int32 max_branches = 3;
+  required int32 message_id = 4;
 }
-
-template <>
-detail::DbAction ActionMaidManagerReferenceCount<false>::operator()(
-    MaidManagerMetadata& /*metadata*/, std::unique_ptr<MaidManagerValue>& value) {
-  if (!value)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
-  assert((value->count() > 0));
-  value->DecrementCount();
-  return detail::DbAction::kPut;
-}
-
-}  // namespace vault
-
-}  // namespace maidsafe

@@ -98,6 +98,11 @@ class MaidManagerDispatcher {
   void SendCreatePmidAccountRequest(const passport::PublicMaid& account_name,
                                     const passport::PublicPmid& pmid_name);
 
+  template <typename DataNameType>
+  void SendCreateVersionTreeRequest(const MaidName& maid_name, const DataNameType& data_name,
+      const StructuredDataVersions::VersionName& version, uint32_t max_versions,
+      uint32_t max_branches, nfs::MessageId message_id);
+
  private:
   MaidManagerDispatcher();
   MaidManagerDispatcher(const MaidManagerDispatcher&);
@@ -184,6 +189,23 @@ void MaidManagerDispatcher::SendDeleteBranchUntilFork(
                          VaultMessage::Receiver(NodeId(data_name->string())));
   routing_.Send(message);
 }
+
+template <typename DataNameType>
+void MaidManagerDispatcher::SendCreateVersionTreeRequest(const MaidName& maid_name,
+    const DataNameType& data_name, const StructuredDataVersions::VersionName& version,
+    uint32_t max_versions, uint32_t max_branches, nfs::MessageId message_id) {
+  typedef CreateVersionTreeRequestFromMaidManagerToVersionHandler VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  VaultMessage valut_message(message_id,
+                             nfs_vault::VersionTreeCreation(data_name, version, max_versions,
+                                                             max_branches));
+  RoutingMessage message(valut_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
+                         VaultMessage::Receiver(NodeId(data_name->string())));
+  routing_.Send(message);
+}
+
 
 // template<>
 // void MaidManagerDispatcher::SendPutRequest<OwnerDirectory>(const MaidName& /*account_name*/,

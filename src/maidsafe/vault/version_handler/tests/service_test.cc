@@ -50,7 +50,8 @@ class VersionHandlerServiceTest {
     return version_handler_service_.db_.Get(key);
   }
 
-  void Store(const VersionHandler::Key& key, const ActionVersionHandlerPut& action) {
+  template <typename ActionVersionHandlerAction>
+  void Store(const VersionHandler::Key& key, const ActionVersionHandlerAction& action) {
     version_handler_service_.db_.Commit(key, action);
   }
 
@@ -70,6 +71,17 @@ void VersionHandlerServiceTest::SendSync(
     const std::vector<UnresolvedActionType>& /*unresolved_actions*/,
     const std::vector<routing::GroupSource>& /*group_source*/) {
   UnresolvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
+}
+
+template <>
+void VersionHandlerServiceTest::SendSync<VersionHandler::UnresolvedCreateVersionTree>(
+         const std::vector<VersionHandler::UnresolvedCreateVersionTree>& unresolved_actions,
+         const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<VersionHandlerService,
+                                    VersionHandler::UnresolvedCreateVersionTree,
+                                    SynchroniseFromVersionHandlerToVersionHandler>(
+      &version_handler_service_, version_handler_service_.sync_create_version_tree_,
+      unresolved_actions, group_source);
 }
 
 template <>
@@ -132,6 +144,17 @@ TEST_CASE_METHOD(VersionHandlerServiceTest,
                                      version_group_id));
   }
 
+  SECTION("CreateVersioTreenRequestFromMaidManagerToVersionHandler") {
+    auto group_source(CreateGroupSource((NodeId(NodeId::kRandomId))));
+    routing::GroupId version_group_id((NodeId(NodeId::kRandomId)));
+    auto content(
+        CreateContent<CreateVersionTreeRequestFromMaidManagerToVersionHandler::Contents>());
+    auto create_version(
+        CreateMessage<CreateVersionTreeRequestFromMaidManagerToVersionHandler>(content));
+    CHECK_NOTHROW(GroupSendToGroup(&version_handler_service_, create_version, group_source,
+                                   version_group_id));
+  }
+
   SECTION("PutVersionRequestFromMaidManagerToVersionHandler") {
     auto group_source(CreateGroupSource((NodeId(NodeId::kRandomId))));
     routing::GroupId version_group_id((NodeId(NodeId::kRandomId)));
@@ -165,13 +188,31 @@ TEST_CASE_METHOD(VersionHandlerServiceTest,
 
 TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are handled",
                  "[Sync][VersionHandler][Service][Behavioural]") {
-  SECTION("PutVersion") {
+  SECTION("CreateVersionTree") {
     NodeId sender_id(NodeId::kRandomId), originator(NodeId::kRandomId);
-    auto content(CreateContent<nfs_vault::DataNameOldNewVersion>());
-    content.old_version_name = StructuredDataVersions::VersionName();
+    auto content(CreateContent<nfs_vault::VersionTreeCreation>());
     nfs::MessageId message_id(RandomInt32());
     VersionHandler::Key key(content.data_name.raw_name, ImmutableData::Tag::kValue,
                             Identity(originator.string()));
+    ActionVersionHandlerCreateVersionTree action_create_version(
+        content.version_name, content.max_versions, content.max_branches, message_id);
+    auto group_source(CreateGroupSource(NodeId(content.data_name.raw_name.string())));
+    auto group_unresolved_action(
+             CreateGroupUnresolvedAction<VersionHandler::UnresolvedCreateVersionTree>(
+                 key, action_create_version, group_source));
+    SendSync<VersionHandler::UnresolvedCreateVersionTree>(group_unresolved_action, group_source);
+    CHECK_NOTHROW(Get(key));
+  }
+
+  SECTION("PutVersion") {
+    NodeId sender_id(NodeId::kRandomId), originator(NodeId::kRandomId);
+    auto content(CreateContent<nfs_vault::DataNameOldNewVersion>());
+    nfs::MessageId message_id(RandomInt32());
+    VersionHandler::Key key(content.data_name.raw_name, ImmutableData::Tag::kValue,
+                            Identity(originator.string()));
+    Store(key, ActionVersionHandlerCreateVersionTree(content.old_version_name, 10, 20,
+                                                     message_id));
+    CHECK_NOTHROW(Get(key));
     ActionVersionHandlerPut action_put_version(content.old_version_name, content.new_version_name,
                                                sender_id, message_id);
     auto group_source(CreateGroupSource(NodeId(content.data_name.raw_name.string())));
@@ -201,7 +242,7 @@ TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are
     puts.push_back(std::make_pair(v1_bbb, v2_ddd));
     puts.push_back(std::make_pair(v3_fff, v4_iii));
 
-    Store(key, ActionVersionHandlerPut(VersionName(), v0_aaa, sender_id, message_id));
+    Store(key, ActionVersionHandlerCreateVersionTree(v0_aaa, 10, 20, message_id));
 
     for (const auto& put : puts) {
       message_id = nfs::MessageId(RandomUint32());

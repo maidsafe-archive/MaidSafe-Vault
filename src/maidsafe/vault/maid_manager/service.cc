@@ -767,6 +767,22 @@ void MaidManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+template <>
+void MaidManagerService::HandleMessage(
+    const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager &message,
+    const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << message;
+  typedef nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+
 // =============== Sync ============================================================================
 
 // TODO(team): Once all sync messages are implemented, consider specialising HandleSyncedAction for

@@ -198,6 +198,19 @@ void DoOperation(MaidManagerService* service,
                                           *message.contents);
 }
 
+template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager &message,
+                 const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver&) {
+  LOG(kVerbose) << "DoOperation CreateVersionTreeRequestFromMaidNodeToMaidManager";
+  auto data_name(GetNameVariant(*message.contents));
+  MaidManagerCreateVersionTreeVisitor<MaidManagerService> delete_version_visitor(
+      service, MaidName(Identity(sender.data.string())), message.contents->version_name,
+      message.contents->max_versions, message.contents->max_branches, message.id);
+  boost::apply_visitor(delete_version_visitor, data_name);
+}
+
 //=============================== To DataManager ===================================================
 
 template <>
@@ -561,6 +574,19 @@ void DoOperation(VersionHandlerService* service,
   VersionHandlerDeleteBranchVisitor delete_version_visitor(service, message.contents->version_name,
                                                      sender.group_id.data);
   boost::apply_visitor(delete_version_visitor, data_name);
+}
+
+template<>
+void DoOperation(VersionHandlerService* service,
+    const CreateVersionTreeRequestFromMaidManagerToVersionHandler &message,
+    const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Sender& sender,
+    const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Receiver&) {
+  LOG(kVerbose) << "CreateVersionTreeRequestFromMaidManagerToVersionHandler";
+  auto data_name(GetNameVariant(*message.contents));
+  VersionHandlerCreateVersionTreeVisitor create_version_tree_visitor(
+      service, sender.group_id.data, message.contents->version_name, message.contents->max_versions,
+      message.contents->max_branches, message.id);
+  boost::apply_visitor(create_version_tree_visitor, data_name);
 }
 
 // ================================================================================================
