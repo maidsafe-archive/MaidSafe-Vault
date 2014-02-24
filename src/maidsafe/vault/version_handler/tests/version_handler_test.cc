@@ -63,72 +63,73 @@ TEST_F(VersionHandlerTest, FUNC_CreateVersionTree) {
 }
 
 TEST_F(VersionHandlerTest, FUNC_PutGet) {
-//  EXPECT_TRUE(AddClient(true));
-//  ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
-//  StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
-//  EXPECT_NO_THROW(clients_.front()->nfs_->PutVersion(
-//                      chunk.name(), StructuredDataVersions::VersionName(), v_aaa));
-//  Sleep(std::chrono::seconds(2));
-//  try {
-//    auto future(clients_.front()->nfs_->GetVersions(chunk.name()));
-//    auto versions(future.get());
-//    EXPECT_EQ(versions.front().id, v_aaa.id);
-//  } catch(const maidsafe_error& error) {
-//    EXPECT_TRUE(false) << "Failed to retrieve version: " << error.what();
-//  }
+  EXPECT_TRUE(AddClient(true));
+  ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
+  StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
+  auto put_version_future(clients_.front()->nfs_->PutVersion(
+                          chunk.name(), StructuredDataVersions::VersionName(), v_aaa));
+  EXPECT_NO_THROW(put_version_future.get());
+  Sleep(std::chrono::seconds(2));
+  try {
+    auto future(clients_.front()->nfs_->GetVersions(chunk.name()));
+    auto versions(future.get());
+    EXPECT_EQ(versions.front().id, v_aaa.id);
+  } catch(const maidsafe_error& error) {
+    EXPECT_TRUE(false) << "Failed to retrieve version: " << error.what();
+  }
 }
 
 TEST_F(VersionHandlerTest, FUNC_DeleteBranchUntilFork) {
-//  EXPECT_TRUE(AddClient(true));
-//  ImmutableData::Name name(Identity(RandomAlphaNumericString(64)));
-//  VersionName v0_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
-//  VersionName v1_bbb(1, ImmutableData::Name(Identity(std::string(64, 'b'))));
-//  VersionName v2_ccc(2, ImmutableData::Name(Identity(std::string(64, 'c'))));
-//  VersionName v2_ddd(2, ImmutableData::Name(Identity(std::string(64, 'd'))));
-//  VersionName v3_fff(3, ImmutableData::Name(Identity(std::string(64, 'f'))));
-//  VersionName v4_iii(4, ImmutableData::Name(Identity(std::string(64, 'i'))));
+  EXPECT_TRUE(AddClient(true));
+  ImmutableData::Name name(Identity(RandomAlphaNumericString(64)));
+  VersionName v0_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
+  VersionName v1_bbb(1, ImmutableData::Name(Identity(std::string(64, 'b'))));
+  VersionName v2_ccc(2, ImmutableData::Name(Identity(std::string(64, 'c'))));
+  VersionName v2_ddd(2, ImmutableData::Name(Identity(std::string(64, 'd'))));
+  VersionName v3_fff(3, ImmutableData::Name(Identity(std::string(64, 'f'))));
+  VersionName v4_iii(4, ImmutableData::Name(Identity(std::string(64, 'i'))));
 
-//  std::vector<std::pair<VersionName, VersionName>> puts;
-//  puts.push_back(std::make_pair(v0_aaa, v1_bbb));
-//  puts.push_back(std::make_pair(v1_bbb, v2_ccc));
-//  puts.push_back(std::make_pair(v2_ccc, v3_fff));
-//  puts.push_back(std::make_pair(v1_bbb, v2_ddd));
-//  puts.push_back(std::make_pair(v3_fff, v4_iii));
+  std::vector<std::pair<VersionName, VersionName>> puts;
+  puts.push_back(std::make_pair(v0_aaa, v1_bbb));
+  puts.push_back(std::make_pair(v1_bbb, v2_ccc));
+  puts.push_back(std::make_pair(v2_ccc, v3_fff));
+  puts.push_back(std::make_pair(v1_bbb, v2_ddd));
+  puts.push_back(std::make_pair(v3_fff, v4_iii));
 
-//  EXPECT_NO_THROW(clients_.front()->nfs_->PutVersion(name, VersionName(), v0_aaa));
-//  Sleep(std::chrono::seconds(2));
+  auto put_version_future(clients_.front()->nfs_->PutVersion(name, VersionName(), v0_aaa));
+  EXPECT_NO_THROW(put_version_future.get());
 
-//  for (const auto& put : puts) {
-//    EXPECT_NO_THROW(clients_.front()->nfs_->PutVersion(name, put.first, put.second));
-//    Sleep(std::chrono::seconds(2));
-//  }
+  for (const auto& put : puts) {
+    auto put_version_future(clients_.front()->nfs_->PutVersion(name, put.first, put.second));
+    EXPECT_NO_THROW(put_version_future.get());
+  }
 
-//  try {
-//    auto versions(GetVersions(name));
-//    for (const auto& version : versions)
-//      LOG(kVerbose) << version.id->string();
-//    EXPECT_NE(std::find(std::begin(versions), std::end(versions), v4_iii), std::end(versions));
-//    EXPECT_NE(std::find(std::begin(versions), std::end(versions), v2_ddd), std::end(versions));
-//  }
-//  catch (const std::exception& error) {
-//    EXPECT_TRUE(false) << "Version should have existed " << error.what();
-//  }
+  try {
+    auto versions(GetVersions(name));
+    for (const auto& version : versions)
+      LOG(kVerbose) << version.id->string();
+    EXPECT_NE(std::find(std::begin(versions), std::end(versions), v4_iii), std::end(versions));
+    EXPECT_NE(std::find(std::begin(versions), std::end(versions), v2_ddd), std::end(versions));
+  }
+  catch (const std::exception& error) {
+    EXPECT_TRUE(false) << "Version should have existed " << error.what();
+  }
 
-//  EXPECT_NO_THROW(clients_.front()->nfs_->DeleteBranchUntilFork(name, v4_iii));
-//  Sleep(std::chrono::seconds(4));
-//  LOG(kVerbose) << "After delete";
+  EXPECT_NO_THROW(clients_.front()->nfs_->DeleteBranchUntilFork(name, v4_iii));
+  Sleep(std::chrono::seconds(4));
+  LOG(kVerbose) << "After delete";
 
-//  try {
-//    auto versions(GetVersions(name));
-//    LOG(kVerbose) << "versions.size: " << versions.size();
-//    for (const auto& version : versions)
-//      LOG(kVerbose) << version.id->string();
-//    EXPECT_EQ(std::find(std::begin(versions), std::end(versions), v4_iii), std::end(versions));
-//    EXPECT_NE(std::find(std::begin(versions), std::end(versions), v2_ddd), std::end(versions));
-//  }
-//  catch (const std::exception& error) {
-//    EXPECT_TRUE(false) << error.what();
-//  }
+  try {
+    auto versions(GetVersions(name));
+    LOG(kVerbose) << "versions.size: " << versions.size();
+    for (const auto& version : versions)
+      LOG(kVerbose) << version.id->string();
+    EXPECT_EQ(std::find(std::begin(versions), std::end(versions), v4_iii), std::end(versions));
+    EXPECT_NE(std::find(std::begin(versions), std::end(versions), v2_ddd), std::end(versions));
+  }
+  catch (const std::exception& error) {
+    EXPECT_TRUE(false) << error.what();
+  }
 }
 
 }  // namespace test

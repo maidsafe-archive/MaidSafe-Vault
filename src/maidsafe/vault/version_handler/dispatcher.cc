@@ -153,7 +153,7 @@ void VersionHandlerDispatcher::SendPutVersionResponse(
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message;
   vault_message.id = message_id;
-  vault_message.contents.reset(new nfs_client::DataNameAndTipOfTreeOrReturnCode());
+  vault_message.contents.reset(new nfs_client::DataNameAndTipOfTreeAndReturnCode());
   vault_message.contents->data_name = nfs_vault::DataName(key.type, key.name);
   vault_message.contents->return_code = nfs_client::ReturnCode(return_code);
   if (tip_of_tree != VersionHandler::VersionName())
