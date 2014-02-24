@@ -51,7 +51,7 @@ class PmidNodeHandler {
   boost::filesystem::space_info space_info_;
   DiskUsage disk_total_;
   DiskUsage permanent_size_;
-  data_store::PermanentStore permanent_data_store_;
+  data_stores::PermanentStore permanent_data_store_;
 };
 
 template <typename Data>
