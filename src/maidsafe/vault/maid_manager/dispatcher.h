@@ -103,6 +103,9 @@ class MaidManagerDispatcher {
       const StructuredDataVersions::VersionName& version, uint32_t max_versions,
       uint32_t max_branches, nfs::MessageId message_id);
 
+  void SendCreateVersionTreeResponse(const MaidName& maid_name, const maidsafe_error& error,
+                                     nfs::MessageId message_id);
+
  private:
   MaidManagerDispatcher();
   MaidManagerDispatcher(const MaidManagerDispatcher&);
@@ -205,7 +208,6 @@ void MaidManagerDispatcher::SendCreateVersionTreeRequest(const MaidName& maid_na
                          VaultMessage::Receiver(NodeId(data_name->string())));
   routing_.Send(message);
 }
-
 
 // template<>
 // void MaidManagerDispatcher::SendPutRequest<OwnerDirectory>(const MaidName& /*account_name*/,

@@ -167,6 +167,9 @@ class MaidManagerService {
                                uint32_t max_versions, uint32_t max_branches,
                                nfs::MessageId message_id);
 
+  void HandleCreateVersionTreeResponse(const MaidName& maid_name, const maidsafe_error& error,
+                                       nfs::MessageId message_id);
+
   template <typename DataNameType>
   void HandlePutVersion(const MaidName& maid_name, const DataNameType& data_name,
                         const StructuredDataVersions::VersionName& old_version,
@@ -388,9 +391,21 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
+    const PutVersionResponseFromVersionHandlerToMaidManager& message,
+    const typename PutVersionResponseFromVersionHandlerToMaidManager::Sender& sender,
+    const typename PutVersionResponseFromVersionHandlerToMaidManager::Receiver& receiver);
+
+template <>
+void MaidManagerService::HandleMessage(
     const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager& message,
     const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void MaidManagerService::HandleMessage(
+    const CreateVersionTreeResponseFromVersionHandlerToMaidManager& message,
+    const typename CreateVersionTreeResponseFromVersionHandlerToMaidManager::Sender& sender,
+    const typename CreateVersionTreeResponseFromVersionHandlerToMaidManager::Receiver& receiver);
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,

@@ -166,38 +166,38 @@ void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/
 template <>
 void DoOperation(MaidManagerService* service,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
-                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
-                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/);
+                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
 template <>
 void DoOperation(MaidManagerService* service,
                  const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/);
+                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
 template <>
 void DoOperation(MaidManagerService* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager& message,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::PutRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/);
+                 const nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
 template <>
 void DoOperation(MaidManagerService* service,
                  const PutResponseFromDataManagerToMaidManager& message,
-                 const PutResponseFromDataManagerToMaidManager::Sender& /*sender*/,
+                 const PutResponseFromDataManagerToMaidManager::Sender& sender,
                  const PutResponseFromDataManagerToMaidManager::Receiver& receiver);
 
 template <>
 void DoOperation(MaidManagerService* service,
                  const PutFailureFromDataManagerToMaidManager& message,
                  const PutFailureFromDataManagerToMaidManager::Sender& sender,
-                 const PutFailureFromDataManagerToMaidManager::Receiver& /*receiver*/);
+                 const PutFailureFromDataManagerToMaidManager::Receiver& receiver);
 
 template <>
 void DoOperation(MaidManagerService* service,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/);
+                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
 template <>
 void DoOperation(MaidManagerService* service,
@@ -244,9 +244,21 @@ void DoOperation(MaidManagerService* service,
 
 template <>
 void DoOperation(MaidManagerService* service,
+                 const PutVersionResponseFromVersionHandlerToMaidManager& message,
+                 const PutVersionResponseFromVersionHandlerToMaidManager::Sender& sender,
+                 const PutVersionResponseFromVersionHandlerToMaidManager::Receiver& receiver);
+
+template <>
+void DoOperation(MaidManagerService* service,
                  const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager& message,
                  const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const CreateVersionTreeResponseFromVersionHandlerToMaidManager& message,
+                 const CreateVersionTreeResponseFromVersionHandlerToMaidManager::Sender& sender,
+                 const CreateVersionTreeResponseFromVersionHandlerToMaidManager::Receiver&);
 
 //=============================== To DataManager ===================================================
 template <>

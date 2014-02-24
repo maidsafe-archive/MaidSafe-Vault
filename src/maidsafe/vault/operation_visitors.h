@@ -475,6 +475,27 @@ class MaidManagerCreateVersionTreeVisitor : public boost::static_visitor<> {
 };
 
 template<typename ServiceHandlerType>
+class MaidManagerCreateVersionTreeResponseVisitor : public boost::static_visitor<> {
+ public:
+  MaidManagerCreateVersionTreeResponseVisitor(
+      ServiceHandlerType* service, const MaidName& maid_name, const maidsafe_error& return_code,
+      nfs::MessageId message_id)
+      : kService_(service), kMaidName_(maid_name), kReturnCode_(return_code),
+        kMessageId_(message_id) {}
+
+  template<typename DataNameType>
+  void operator()(const DataNameType& data_name) {
+    kService_->HandleCreateVersionTreeResponse(kMaidName_, data_name, kReturnCode_, kMessageId_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const MaidName kMaidName_;
+  const maidsafe_error kReturnCode_;
+  const nfs::MessageId kMessageId_;
+};
+
+template<typename ServiceHandlerType>
 class DataManagerDeleteVisitor : public boost::static_visitor<> {
  public:
   DataManagerDeleteVisitor(ServiceHandlerType* service, nfs::MessageId message_id)

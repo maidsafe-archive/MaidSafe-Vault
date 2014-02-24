@@ -61,6 +61,18 @@ void MaidManagerDispatcher::SendCreateAccountResponse(const MaidName& account_na
   routing_.Send(message);
 }
 
+void MaidManagerDispatcher::SendCreateVersionTreeResponse(
+    const MaidName& maid_name, const maidsafe_error& error, nfs::MessageId message_id) {
+  typedef nfs::CreateVersionTreeResponseFromMaidManagerToMaidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<NfsMessage>();
+  NfsMessage valut_message(message_id, nfs_client::ReturnCode(error));
+  RoutingMessage message(valut_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
+                         NfsMessage::Receiver(NodeId(maid_name->string())));
+  routing_.Send(message);
+}
+
 void MaidManagerDispatcher::SendRemoveAccountResponse(const MaidName& /*account_name*/,
                                                       const maidsafe_error& /*result*/,
                                                       nfs::MessageId /*message_id*/) {

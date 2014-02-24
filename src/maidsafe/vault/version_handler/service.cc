@@ -192,16 +192,14 @@ void VersionHandlerService::HandleMessage(
         try {
           LOG(kInfo) << "VersionHandlerSync -- CreateVersionTree -Commit: " << message.id;
           db_.Commit(resolved_action->key, resolved_action->action);
-//          if (resolved_action->action.tip_of_tree) {
-//            dispatcher_.SendPutVersionResponse(
-//                resolved_action->key, *resolved_action->action.tip_of_tree,
-//                maidsafe_error(CommonErrors::success), resolved_action->action.message_id);
-//          }
+          dispatcher_.SendCreateVersionTreeResponse(
+              resolved_action->key.originator,  maidsafe_error(CommonErrors::success),
+              resolved_action->action.message_id);
         }
         catch (const maidsafe_error& error) {
           LOG(kError) << message.id << " Failed to create version: " << error.what();
-//          dispatcher_.SendPutVersionResponse(resolved_action->key, VersionHandler::VersionName(),
-//                                             error, resolved_action->action.message_id);
+          dispatcher_.SendCreateVersionTreeResponse(
+              resolved_action->key.originator,  error, resolved_action->action.message_id);
         }
       }
       break;
@@ -216,10 +214,12 @@ void VersionHandlerService::HandleMessage(
         try {
           LOG(kInfo) << "VersionHandlerSync-Commit: " << message.id;
           db_.Commit(resolved_action->key, resolved_action->action);
+          StructuredDataVersions::VersionName tip_of_tree;
           if (resolved_action->action.tip_of_tree) {
+            tip_of_tree = *resolved_action->action.tip_of_tree;
             dispatcher_.SendPutVersionResponse(
-                resolved_action->key, *resolved_action->action.tip_of_tree,
-                maidsafe_error(CommonErrors::success), resolved_action->action.message_id);
+                resolved_action->key, tip_of_tree,  maidsafe_error(CommonErrors::success),
+                resolved_action->action.message_id);
           }
         }
         catch (const maidsafe_error& error) {

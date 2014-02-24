@@ -769,6 +769,21 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
+    const PutVersionResponseFromVersionHandlerToMaidManager& message,
+    const typename PutVersionResponseFromVersionHandlerToMaidManager::Sender& sender,
+    const typename PutVersionResponseFromVersionHandlerToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << message;
+  typedef PutVersionResponseFromVersionHandlerToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template <>
+void MaidManagerService::HandleMessage(
     const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager &message,
     const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver& receiver) {
@@ -782,6 +797,20 @@ void MaidManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+template <>
+void MaidManagerService::HandleMessage(
+    const CreateVersionTreeResponseFromVersionHandlerToMaidManager& message,
+    const typename CreateVersionTreeResponseFromVersionHandlerToMaidManager::Sender& sender,
+    const typename CreateVersionTreeResponseFromVersionHandlerToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << message;
+  typedef CreateVersionTreeResponseFromVersionHandlerToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
 
 // =============== Sync ============================================================================
 
@@ -904,6 +933,11 @@ void MaidManagerService::HandleMessage(
       assert(false);
     }
   }
+}
+
+void MaidManagerService::HandleCreateVersionTreeResponse(
+    const MaidName& maid_name, const maidsafe_error& error , nfs::MessageId message_id) {
+    dispatcher_.SendCreateVersionTreeResponse(maid_name, error, message_id);
 }
 
 void MaidManagerService::HandleRemoveAccount(const MaidName& maid_name, nfs::MessageId mesage_id) {

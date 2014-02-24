@@ -199,16 +199,34 @@ void DoOperation(MaidManagerService* service,
 }
 
 template <>
+void DoOperation(MaidManagerService* /*service*/,
+                 const PutVersionResponseFromVersionHandlerToMaidManager& /*message*/,
+                 const PutVersionResponseFromVersionHandlerToMaidManager::Sender& /*sender*/,
+                 const PutVersionResponseFromVersionHandlerToMaidManager::Receiver& /*receiver*/) {
+}
+
+template <>
 void DoOperation(MaidManagerService* service,
                  const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager &message,
                  const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver&) {
   LOG(kVerbose) << "DoOperation CreateVersionTreeRequestFromMaidNodeToMaidManager";
   auto data_name(GetNameVariant(*message.contents));
-  MaidManagerCreateVersionTreeVisitor<MaidManagerService> delete_version_visitor(
+  MaidManagerCreateVersionTreeVisitor<MaidManagerService> create_version_visitor(
       service, MaidName(Identity(sender.data.string())), message.contents->version_name,
       message.contents->max_versions, message.contents->max_branches, message.id);
-  boost::apply_visitor(delete_version_visitor, data_name);
+  boost::apply_visitor(create_version_visitor, data_name);
+}
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const CreateVersionTreeResponseFromVersionHandlerToMaidManager& message,
+                 const CreateVersionTreeResponseFromVersionHandlerToMaidManager::Sender& /*sender*/,
+                 const CreateVersionTreeResponseFromVersionHandlerToMaidManager::Receiver&
+                           receiver) {
+  LOG(kVerbose) << "DoOperation CreateVersionTreeResponseFromVersionHandlerToMaidManager";
+  service->HandleCreateVersionTreeResponse(MaidName(Identity(receiver.data.string())),
+                                           message.contents->value,  message.id);
 }
 
 //=============================== To DataManager ===================================================
