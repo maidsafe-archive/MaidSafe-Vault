@@ -258,6 +258,13 @@ void VersionHandlerService::HandlePutVersion(
     const VersionHandler::VersionName& new_version, const NodeId& sender,
     nfs::MessageId message_id) {
   LOG(kVerbose) << "VersionHandlerService::HandlePutVersion: " << message_id;
+  try {
+    db_.Get(key);
+  }
+  catch (const maidsafe_error& error) {
+    dispatcher_.SendPutVersionResponse(key, VersionHandler::VersionName(), error, message_id);
+    return;
+  }
   DoSync(VersionHandler::UnresolvedPutVersion(
                       key, ActionVersionHandlerPut(old_version, new_version, sender, message_id),
                       routing_.kNodeId()));
@@ -277,6 +284,15 @@ void VersionHandlerService::HandleCreateVersionTree(const VersionHandler::Key& k
                                                     uint32_t max_versions, uint32_t max_branches,
                                                     nfs::MessageId message_id) {
   LOG(kVerbose) << "VersionHandlerService::HandleCreateVersionTree: " << message_id;
+  try {
+    db_.Get(key);
+  }
+  catch (const maidsafe_error& error) {
+    if (error.code() != make_error_code(VaultErrors::no_such_account)) {
+      dispatcher_.SendCreateVersionTreeResponse(key.originator, error, message_id);
+      return;
+    }
+  }
   DoSync(VersionHandler::UnresolvedCreateVersionTree(
                       key, ActionVersionHandlerCreateVersionTree(version, max_versions,
                                                                  max_branches, message_id),

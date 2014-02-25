@@ -127,7 +127,7 @@ void DoOperation(MaidManagerService* service,
                  const nfs::PutVersionRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
   LOG(kVerbose) << "DoOperation PutVersionRequestFromMaidNodeToMaidManager";
   auto data_name(GetNameVariant(*message.contents));
-  MaidManagerPutVersionVisitor<MaidManagerService> put_version_visitor(
+  MaidManagerPutVersionRequestVisitor<MaidManagerService> put_version_visitor(
       service, MaidName(Identity(sender.data.string())), message.contents->old_version_name,
       message.contents->new_version_name, message.id);
   boost::apply_visitor(put_version_visitor, data_name);
@@ -139,7 +139,7 @@ void DoOperation(
     const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager& message,
     const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Sender& sender,
     const nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation PutVersionRequestFromMaidNodeToMaidManager";
+  LOG(kVerbose) << "DoOperation DeleteBranchUntilForkRequestFromMaidNodeToMaidManager";
   auto data_name(GetNameVariant(*message.contents));
   MaidManagerDeleteBranchUntilForkVisitor<MaidManagerService> delete_version_visitor(
       service, MaidName(Identity(sender.data.string())), message.contents->version_name,
@@ -199,23 +199,30 @@ void DoOperation(MaidManagerService* service,
 }
 
 template <>
-void DoOperation(MaidManagerService* /*service*/,
-                 const PutVersionResponseFromVersionHandlerToMaidManager& /*message*/,
+void DoOperation(MaidManagerService* service,
+                 const PutVersionResponseFromVersionHandlerToMaidManager& message,
                  const PutVersionResponseFromVersionHandlerToMaidManager::Sender& /*sender*/,
-                 const PutVersionResponseFromVersionHandlerToMaidManager::Receiver& /*receiver*/) {
+                 const PutVersionResponseFromVersionHandlerToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << "DoOperation PutVersionResponseFromVersionHandlerToMaidManager";
+  std::unique_ptr<StructuredDataVersions::VersionName> tip_of_tree;
+  if (message.contents->tip_of_tree)
+    tip_of_tree.reset(new StructuredDataVersions::VersionName(*message.contents->tip_of_tree));
+  service->HandlePutVersionResponse(MaidName(Identity(receiver.data.string())),
+                                    message.contents->return_code.value, std::move(tip_of_tree),
+                                    message.id);
 }
 
 template <>
 void DoOperation(MaidManagerService* service,
-                 const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager &message,
+                 const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager& message,
                  const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver&) {
   LOG(kVerbose) << "DoOperation CreateVersionTreeRequestFromMaidNodeToMaidManager";
   auto data_name(GetNameVariant(*message.contents));
-  MaidManagerCreateVersionTreeVisitor<MaidManagerService> create_version_visitor(
+  MaidManagerCreateVersionTreeRequestVisitor<MaidManagerService> create_version_tree_visitor(
       service, MaidName(Identity(sender.data.string())), message.contents->version_name,
       message.contents->max_versions, message.contents->max_branches, message.id);
-  boost::apply_visitor(create_version_visitor, data_name);
+  boost::apply_visitor(create_version_tree_visitor, data_name);
 }
 
 template <>

@@ -162,19 +162,23 @@ class MaidManagerService {
   // ================================== Version Handlers ===========================================
 
   template <typename DataNameType>
-  void HandleCreateVersionTree(const MaidName& maid_name, const DataNameType& data_name,
-                               const StructuredDataVersions::VersionName& version,
-                               uint32_t max_versions, uint32_t max_branches,
-                               nfs::MessageId message_id);
+  void HandleCreateVersionTreeRequest(const MaidName& maid_name, const DataNameType& data_name,
+                                      const StructuredDataVersions::VersionName& version,
+                                      uint32_t max_versions, uint32_t max_branches,
+                                      nfs::MessageId message_id);
 
   void HandleCreateVersionTreeResponse(const MaidName& maid_name, const maidsafe_error& error,
                                        nfs::MessageId message_id);
 
   template <typename DataNameType>
-  void HandlePutVersion(const MaidName& maid_name, const DataNameType& data_name,
-                        const StructuredDataVersions::VersionName& old_version,
-                        const StructuredDataVersions::VersionName& new_version,
-                        nfs::MessageId message_id);
+  void HandlePutVersionRequest(const MaidName& maid_name, const DataNameType& data_name,
+                               const StructuredDataVersions::VersionName& old_version,
+                               const StructuredDataVersions::VersionName& new_version,
+                               nfs::MessageId message_id);
+
+  void HandlePutVersionResponse(const MaidName& maid_name, const maidsafe_error& return_code,
+                                std::unique_ptr<StructuredDataVersions::VersionName> tip_of_tree,
+                                nfs::MessageId message_id);
 
   template <typename DataNameType>
   void HandleDeleteBranchUntilFork(const MaidName& maid_name, const DataNameType& data_name,
@@ -265,9 +269,9 @@ class MaidManagerService {
   friend class detail::MaidManagerPutResponseVisitor<MaidManagerService>;
   friend class detail::MaidManagerPutResponseFailureVisitor<MaidManagerService>;
   friend class detail::MaidManagerDeleteVisitor<MaidManagerService>;
-  friend class detail::MaidManagerPutVersionVisitor<MaidManagerService>;
+  friend class detail::MaidManagerPutVersionRequestVisitor<MaidManagerService>;
   friend class detail::MaidManagerDeleteBranchUntilForkVisitor<MaidManagerService>;
-  friend class detail::MaidManagerCreateVersionTreeVisitor<MaidManagerService>;
+  friend class detail::MaidManagerCreateVersionTreeRequestVisitor<MaidManagerService>;
   friend class test::MaidManagerServiceTest;
 
   routing::Routing& routing_;
@@ -497,7 +501,7 @@ void MaidManagerService::HandlePutFailure(
 }
 
 template <typename DataNameType>
-void MaidManagerService::HandleCreateVersionTree(
+void MaidManagerService::HandleCreateVersionTreeRequest(
     const MaidName& maid_name, const DataNameType& data_name,
     const StructuredDataVersions::VersionName& version, uint32_t max_versions,
     uint32_t max_branches, nfs::MessageId message_id) {
@@ -507,20 +511,20 @@ void MaidManagerService::HandleCreateVersionTree(
                                              max_branches, message_id);
   }
   catch (const maidsafe_error& error) {
-    LOG(kError) << "MaidManagerService::HandleCreateVersionTree faied: " << error.what();
+    LOG(kError) << "MaidManagerService::HandleCreateVersionTreeRequest faied: " << error.what();
     if (error.code() != make_error_code(VaultErrors::no_such_account))
       throw;
   }
 }
 
 template <typename DataNameType>
-void MaidManagerService::HandlePutVersion(
+void MaidManagerService::HandlePutVersionRequest(
     const MaidName& maid_name, const DataNameType& data_name,
     const StructuredDataVersions::VersionName& old_version,
     const StructuredDataVersions::VersionName& new_version, nfs::MessageId message_id) {
   try {
     group_db_.GetMetadata(maid_name);
-    dispatcher_.SendPutVersion(maid_name, data_name, old_version, new_version, message_id);
+    dispatcher_.SendPutVersionRequest(maid_name, data_name, old_version, new_version, message_id);
   }
   catch (const maidsafe_error& error) {
     LOG(kError) << "MaidManagerService::HandlePutVersion faied to get metadata" << error.what();

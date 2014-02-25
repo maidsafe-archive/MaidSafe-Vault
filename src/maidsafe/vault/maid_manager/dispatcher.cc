@@ -61,13 +61,30 @@ void MaidManagerDispatcher::SendCreateAccountResponse(const MaidName& account_na
   routing_.Send(message);
 }
 
+void MaidManagerDispatcher::SendPutVersionResponse(
+    const MaidName& maid_name, const maidsafe_error& return_code,
+    std::unique_ptr<StructuredDataVersions::VersionName> tip_of_tree, nfs::MessageId message_id) {
+  typedef nfs::PutVersionResponseFromMaidManagerToMaidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<NfsMessage>();
+  NfsMessage::Contents content((nfs_client::ReturnCode(return_code)));
+  if (tip_of_tree)
+    content.tip_of_tree = *tip_of_tree;
+  NfsMessage nfs_message(message_id, content);
+
+  RoutingMessage message(nfs_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
+                         NfsMessage::Receiver(NodeId(maid_name->string())));
+  routing_.Send(message);
+}
+
 void MaidManagerDispatcher::SendCreateVersionTreeResponse(
     const MaidName& maid_name, const maidsafe_error& error, nfs::MessageId message_id) {
   typedef nfs::CreateVersionTreeResponseFromMaidManagerToMaidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<NfsMessage>();
-  NfsMessage valut_message(message_id, nfs_client::ReturnCode(error));
-  RoutingMessage message(valut_message.Serialise(),
+  NfsMessage nfs_message(message_id, nfs_client::ReturnCode(error));
+  RoutingMessage message(nfs_message.Serialise(),
                          GroupOrKeyHelper::GroupSender(routing_, maid_name),
                          NfsMessage::Receiver(NodeId(maid_name->string())));
   routing_.Send(message);

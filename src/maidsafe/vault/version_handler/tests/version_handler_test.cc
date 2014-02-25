@@ -51,8 +51,9 @@ TEST_F(VersionHandlerTest, FUNC_CreateVersionTree) {
   EXPECT_TRUE(AddClient(true));
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
-  EXPECT_NO_THROW(clients_.front()->nfs_->CreateVersionTree(chunk.name(), v_aaa, 10, 20));
-  Sleep(std::chrono::seconds(2));
+  auto create_version_future(clients_.front()->nfs_->CreateVersionTree(chunk.name(), v_aaa, 10,
+                                                                       20));
+  EXPECT_NO_THROW(create_version_future.get());
   try {
     auto future(clients_.front()->nfs_->GetVersions(chunk.name()));
     auto versions(future.get());
@@ -60,20 +61,34 @@ TEST_F(VersionHandlerTest, FUNC_CreateVersionTree) {
   } catch(const maidsafe_error& error) {
     EXPECT_TRUE(false) << "Failed to retrieve version: " << error.what();
   }
+  LOG(kVerbose) << "Version Created";
+}
+
+TEST_F(VersionHandlerTest, FUNC_FailingPut) {
+  EXPECT_TRUE(AddClient(true));
+  ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
+  StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
+  auto put_version_future(clients_.front()->nfs_->PutVersion(
+                          chunk.name(), StructuredDataVersions::VersionName(), v_aaa));
+  EXPECT_THROW(put_version_future.get(), maidsafe_error) << "should have failed";
 }
 
 TEST_F(VersionHandlerTest, FUNC_PutGet) {
   EXPECT_TRUE(AddClient(true));
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
-  auto put_version_future(clients_.front()->nfs_->PutVersion(
-                          chunk.name(), StructuredDataVersions::VersionName(), v_aaa));
-  EXPECT_NO_THROW(put_version_future.get());
-  Sleep(std::chrono::seconds(2));
+  StructuredDataVersions::VersionName v_bbb(0, ImmutableData::Name(Identity(std::string(64, 'b'))));
+  auto create_version_future(clients_.front()->nfs_->CreateVersionTree(chunk.name(), v_aaa, 10,
+                                                                       20));
+  EXPECT_NO_THROW(create_version_future.get()) << "failure to create version";
+
+  auto put_version_future(clients_.front()->nfs_->PutVersion(chunk.name(), v_aaa, v_bbb));
+  EXPECT_NO_THROW(put_version_future.get()) << "failure to put version";
+  LOG(kVerbose) << "Put Version Succeeded";
   try {
     auto future(clients_.front()->nfs_->GetVersions(chunk.name()));
     auto versions(future.get());
-    EXPECT_EQ(versions.front().id, v_aaa.id);
+    EXPECT_EQ(versions.front().id, v_bbb.id);
   } catch(const maidsafe_error& error) {
     EXPECT_TRUE(false) << "Failed to retrieve version: " << error.what();
   }

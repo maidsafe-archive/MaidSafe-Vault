@@ -64,10 +64,14 @@ class MaidManagerDispatcher {
                          nfs::MessageId message_id);
 
   template <typename DataNameType>
-  void SendPutVersion(const MaidName& maid_name, const DataNameType& data_name,
-                      const StructuredDataVersions::VersionName&  old_name,
-                      const StructuredDataVersions::VersionName&  new_name,
-                      nfs::MessageId message_id);
+  void SendPutVersionRequest(const MaidName& maid_name, const DataNameType& data_name,
+                             const StructuredDataVersions::VersionName&  old_name,
+                             const StructuredDataVersions::VersionName&  new_name,
+                             nfs::MessageId message_id);
+
+  void SendPutVersionResponse(const MaidName& maid_name, const maidsafe_error& return_code,
+                              std::unique_ptr<StructuredDataVersions::VersionName> tip_of_tree,
+                              nfs::MessageId message_id);
 
   template <typename DataNameType>
   void SendDeleteBranchUntilFork(const MaidName& maid_name, const DataNameType& data_name,
@@ -164,10 +168,10 @@ void MaidManagerDispatcher::SendPutFailure(
 }
 
 template <typename DataNameType>
-void MaidManagerDispatcher::SendPutVersion(const MaidName& maid_name, const DataNameType& data_name,
-                                           const StructuredDataVersions::VersionName& old_version,
-                                           const StructuredDataVersions::VersionName& new_version,
-                                           nfs::MessageId message_id) {
+void MaidManagerDispatcher::SendPutVersionRequest(
+    const MaidName& maid_name, const DataNameType& data_name,
+    const StructuredDataVersions::VersionName& old_version,
+    const StructuredDataVersions::VersionName& new_version, nfs::MessageId message_id) {
   typedef PutVersionRequestFromMaidManagerToVersionHandler VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();

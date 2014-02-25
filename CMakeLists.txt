@@ -130,7 +130,7 @@ if(MaidsafeTesting)
   target_compile_definitions(maidsafe_vault_mal PRIVATE USE_MAL_BEHAVIOUR)
   ms_add_executable(vault_mal Production ${VaultSourcesDir}/vault_main.cc)
   target_include_directories(vault_mal PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
-  target_link_libraries(vault_mal maidsafe_vault_mal maidsafe_client_manager)
+  target_link_libraries(vault_mal maidsafe_vault_mal)
   target_compile_definitions(vault_mal PRIVATE USE_MAL_BEHAVIOUR)
 
   ms_add_executable(test_vault "Tests/Vault" ${VaultTestsAllFiles})

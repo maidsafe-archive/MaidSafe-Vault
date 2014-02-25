@@ -935,6 +935,12 @@ void MaidManagerService::HandleMessage(
   }
 }
 
+void MaidManagerService::HandlePutVersionResponse(
+    const MaidName& maid_name, const maidsafe_error& return_code,
+    std::unique_ptr<StructuredDataVersions::VersionName> tip_of_tree, nfs::MessageId message_id) {
+  dispatcher_.SendPutVersionResponse(maid_name, return_code, std::move(tip_of_tree), message_id);
+}
+
 void MaidManagerService::HandleCreateVersionTreeResponse(
     const MaidName& maid_name, const maidsafe_error& error , nfs::MessageId message_id) {
     dispatcher_.SendCreateVersionTreeResponse(maid_name, error, message_id);
