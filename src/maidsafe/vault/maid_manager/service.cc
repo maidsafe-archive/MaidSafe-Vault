@@ -550,10 +550,10 @@ void MaidManagerService::HandleHealthResponse(const MaidName& maid_name,
 
 void MaidManagerService::HandleChurnEvent(
     std::shared_ptr<routing::MatrixChange> matrix_change) {
-  if (matrix_change->lost_nodes().size() != 0) {
-    LOG(kVerbose) << "MaidManagerService::HandleChurnEvent";
-    matrix_change->Print();
-  }
+//   if (matrix_change->lost_nodes().size() != 0) {
+//     LOG(kVerbose) << "MaidManagerService::HandleChurnEvent";
+//     matrix_change->Print();
+//   }
   GroupDb<MaidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(matrix_change));
   for (auto& transfer : transfer_info)
     TransferAccount(transfer.first, transfer.second);
@@ -991,7 +991,7 @@ void MaidManagerService::HandleMessage(
 
 void MaidManagerService::HandleAccountTransfer(
     std::unique_ptr<MaidManager::UnresolvedAccountTransfer>&& resolved_action) {
-  GLOG() << "MaidManager HandleAccountTransfer " << HexSubstr(resolved_action->key->string());
+  GLOG() << "MaidManager got account " << HexSubstr(resolved_action->key->string());
   GroupDb<MaidManager>::Contents content;
   content.group_name = resolved_action->key;
   for (auto& action : resolved_action->actions) {

@@ -51,6 +51,21 @@ PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing) : routin
 //  routing_.Send(message);
 // }
 
+void PmidManagerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
+                                                const PmidName& account_name,
+                                                nfs::MessageId message_id,
+                                                const std::string& serialised_account) {
+  typedef AccountTransferFromPmidManagerToPmidManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message(message_id, nfs_vault::Content(serialised_account));
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(routing::SingleId(destination_peer)));
+  routing_.Send(message);
+}
+
 void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
                                             const std::vector<nfs_vault::DataName>& data_names,
                                             const nfs_client::ReturnCode& return_code) {

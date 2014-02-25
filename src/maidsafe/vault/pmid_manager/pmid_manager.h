@@ -25,6 +25,7 @@
 #include "maidsafe/vault/group_key.h"
 #include "maidsafe/vault/metadata_key.h"
 #include "maidsafe/vault/unresolved_action.h"
+#include "maidsafe/vault/unresolved_account_transfer_action.h"
 #include "maidsafe/vault/pmid_manager/action_put.h"
 #include "maidsafe/vault/pmid_manager/action_set_pmid_health.h"
 #include "maidsafe/vault/pmid_manager/action_create_account.h"
@@ -61,6 +62,7 @@ struct PersonaTypes<Persona::kPmidManager> {
               MetadataKey, vault::ActionPmidManagerSetPmidHealth> UnresolvedSetPmidHealth;
   typedef vault::UnresolvedAction<
               MetadataKey, vault::ActionCreatePmidAccount> UnresolvedCreateAccount;
+  typedef vault::UnresolvedAccountTransferAction<GroupName, std::string> UnresolvedAccountTransfer;
 };
 
 }  // namespace nfs
