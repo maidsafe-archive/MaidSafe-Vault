@@ -25,6 +25,11 @@ message DataManagerValue {
   repeated bytes offline_pmid_name = 5;
 }
 
+message DataManagerKeyValuePair {
+  required bytes key = 1;
+  required bytes value = 2;
+}
+
 message DataOrProof {
   message Data {
     required uint32 type = 1;

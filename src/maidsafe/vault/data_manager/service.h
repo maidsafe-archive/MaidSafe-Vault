@@ -42,6 +42,7 @@
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/message_types_partial.h"
 
+#include "maidsafe/vault/account_transfer.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/message_types.h"
@@ -191,6 +192,12 @@ class DataManagerService {
   template <typename UnresolvedAction>
   void DoSync(const UnresolvedAction& unresolved_action);
 
+  void TransferAccount(const NodeId& dest,
+                       const std::vector<Db<DataManager::Key,
+                                         DataManager::Value>::KvPair>& accounts);
+
+  void HandleAccountTransfer(
+      std::unique_ptr<DataManager::UnresolvedAccountTransfer>&& resolved_action);
   // =========================== General functions =================================================
   void HandleDataIntegrityResponse(const GetResponseContents& response, nfs::MessageId message_id);
 
@@ -255,6 +262,7 @@ class DataManagerService {
   Sync<DataManager::UnresolvedRemovePmid> sync_remove_pmids_;
   Sync<DataManager::UnresolvedNodeDown> sync_node_downs_;
   Sync<DataManager::UnresolvedNodeUp> sync_node_ups_;
+  AccountTransfer<DataManager::UnresolvedAccountTransfer> account_transfer_;
 
  protected:
   std::mutex lock_guard;
@@ -498,6 +506,12 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   // Get all pmid nodes that are online.
   std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
   int expected_response_count(static_cast<int>(online_pmids.size()));
+  // if there is no online_pmids in record, means :
+  //   this DM doesn't have the record for the requested data
+  //   or no pmid can given the data (shall not happen)
+  // BEFORE_RELEASE In any case, shall return silently or send back a failure?
+  if (expected_response_count == 0)
+    return;
 
   // Choose the one we're going to ask for actual data, and set up the others for integrity checks.
   auto pmid_node_to_get_from(ChoosePmidNodeToGetFrom(online_pmids, data_name));
@@ -605,7 +619,7 @@ std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name&
     }
     // TODO(Fraser#5#): 2013-10-03 - Request for non-existent data should possibly generate an alert
     LOG(kWarning) << "Entry for " << HexSubstr(data_name.value) << " doesn't exist.";
-    throw VaultErrors::no_such_account;
+//     throw VaultErrors::no_such_account;
   }
   return online_pmids;
 }

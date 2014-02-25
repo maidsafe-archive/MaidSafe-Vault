@@ -302,7 +302,7 @@ typename GroupDb<Persona>::TransferInfo GroupDb<Persona>::GetTransferInfo(
         }
       }
     } else {  // Prune group
-      LOG(kInfo) << "GroupDb<Persona>::GetTransferInfo removing " << DebugId(group_itr->first);
+      GLOG() << "GroupDb removing account" << DebugId(group_itr->first);
       prune_vector.push_back(group_itr->first);
     }
   }
