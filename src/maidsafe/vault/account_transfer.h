@@ -119,6 +119,7 @@ class AccountTransfer {
 
   bool RequestExists(const UnresolvedAccountTransferAction& request,
                      const routing::GroupSource& source);
+  void CleanUpHandledRequests();
 
   std::deque<PendingRequest> pending_requests_;
   std::map<routing::GroupId, boost::posix_time::ptime> handled_requests_;
@@ -167,6 +168,8 @@ std::unique_ptr<UnresolvedAccountTransferAction>
               boost::posix_time::microsec_clock::universal_time();
           LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction put "
                         << DebugId(itr->GetGroupId()) << " into handled list";
+          if (handled_requests_.size() > kMaxHandledRequestsCount_)
+            CleanUpHandledRequests();
           pending_requests_.erase(itr);
         }
         break;
@@ -217,6 +220,18 @@ bool AccountTransfer<UnresolvedAccountTransferAction>::RequestExists(
              << " with group_id " << HexSubstr(source.group_id->string())
              << " doesn't exists in the pending requests list";
   return false;
+}
+
+template <typename UnresolvedAccountTransferAction>
+void AccountTransfer<UnresolvedAccountTransferAction>::CleanUpHandledRequests() {
+  auto itr(handled_requests_.begin());
+  auto cur_time(boost::posix_time::microsec_clock::universal_time());
+  while (itr != handled_requests_.end()) {
+    if ((cur_time - itr->second).total_seconds() > 60)
+      itr = handled_requests_.erase(itr);
+    else
+      ++itr;
+  }
 }
 
 }  // namespace vault
