@@ -203,9 +203,12 @@ class MaidManagerService {
   void HandleSyncedUpdatePmidHealth(std::unique_ptr<MaidManager::UnresolvedUpdatePmidHealth>&&
                                         synced_action_update_pmid_health);
 
-  void HandleHealthResponse(const MaidName& maid_name, const PmidName& pmid_node,
-                            const std::string &serialised_pmid_health,
-                            nfs_client::ReturnCode& return_code, nfs::MessageId message_id);
+  void HandlePmidHealthRequest(const MaidName& maid_name, const PmidName& pmid_node,
+                               nfs::MessageId message_id);
+
+  void HandlePmidHealthResponse(const MaidName& maid_name, const PmidName& pmid_node,
+                                const std::string &serialised_pmid_health,
+                                nfs_client::ReturnCode& return_code, nfs::MessageId message_id);
 
 //  MaidManagerMetadata::Status AllowPut(const MaidName& account_name, int32_t cost);
 
@@ -362,6 +365,12 @@ void MaidManagerService::HandleMessage(
     const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
     const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void MaidManagerService::HandleMessage(
+    const nfs::PmidHealthRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::PmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
 template <>
 void MaidManagerService::HandleMessage(
