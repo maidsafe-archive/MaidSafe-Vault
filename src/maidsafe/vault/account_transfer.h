@@ -26,6 +26,8 @@
 #include <utility>
 #include <vector>
 
+#include "boost/date_time/posix_time/posix_time.hpp"
+
 #include "maidsafe/common/node_id.h"
 
 #include "maidsafe/routing/parameters.h"
@@ -119,7 +121,7 @@ class AccountTransfer {
                      const routing::GroupSource& source);
 
   std::deque<PendingRequest> pending_requests_;
-  std::deque<routing::GroupId> handled_requests_;
+  std::map<routing::GroupId, boost::posix_time::ptime> handled_requests_;
   const size_t kMaxPendingRequestsCount_, kMaxHandledRequestsCount_;
   mutable std::mutex mutex_;
 };
@@ -161,9 +163,10 @@ std::unique_ptr<UnresolvedAccountTransferAction>
                       << itr->GetSenders().size() << " senders";
         if (checker(itr->GetSenders()) == AddResult::kSuccess) {
           resolved_action.reset(new UnresolvedAccountTransferAction(itr->Getrequest()));
-          handled_requests_.push_back(itr->GetGroupId());
+          handled_requests_[itr->GetGroupId()] =
+              boost::posix_time::microsec_clock::universal_time();
           LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction put "
-                        << DebugId(handled_requests_.back()) << " into handled list";
+                        << DebugId(itr->GetGroupId()) << " into handled list";
           pending_requests_.erase(itr);
         }
         break;
@@ -186,13 +189,15 @@ bool AccountTransfer<UnresolvedAccountTransferAction>::CheckHandled(
   std::lock_guard<std::mutex> lock(mutex_);
   LOG(kVerbose) << "AccountTransfer::CheckHandled handled_requests_.size() "
                 << handled_requests_.size();
-  for (auto& group_id : handled_requests_) {
-    LOG(kVerbose) << "AccountTransfer::CheckHandled check " << DebugId(source_group_id)
-                  << " against " << DebugId(group_id);
-    if (group_id == source_group_id)
-      return true;
+  auto handled_entry(handled_requests_.find(source_group_id));
+  if (handled_entry == handled_requests_.end())
+    return false;
+  auto cur_time(boost::posix_time::microsec_clock::universal_time());
+  if ((cur_time - handled_entry->second).total_seconds() > 60) {
+    handled_requests_.erase(handled_entry);
+    return false;
   }
-  return false;
+  return true;
 }
 
 template <typename UnresolvedAccountTransferAction>
