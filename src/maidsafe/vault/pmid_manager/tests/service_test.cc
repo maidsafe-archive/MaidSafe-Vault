@@ -160,13 +160,13 @@ TEST_CASE_METHOD(PmidManagerServiceTest,
   }
 
   SECTION("PmidHealthRequestFromMaidNodeToPmidManager") {
-    auto content(CreateContent<PmidHealthRequestFromMaidNodeToPmidManager::Contents>());
-    auto get_pmid_account_request(CreateMessage<PmidHealthRequestFromMaidNodeToPmidManager>(
+    auto content(CreateContent<PmidHealthRequestFromMaidManagerToPmidManager::Contents>());
+    auto get_pmid_account_request(CreateMessage<PmidHealthRequestFromMaidManagerToPmidManager>(
                                       content));
     NodeId maid_node(NodeId::kRandomId);
-    CHECK_NOTHROW(SingleSendsToGroup(&pmid_manager_service_, get_pmid_account_request,
-                                     routing::SingleSource(maid_node),
-                                     routing::GroupId(NodeId(pmid_.name()->string()))));
+    auto group_source(CreateGroupSource(maid_node));
+    CHECK_NOTHROW(GroupSendToGroup(&pmid_manager_service_, get_pmid_account_request, group_source,
+                                   routing::GroupId(NodeId(pmid_.name()->string()))));
   }
 }
 

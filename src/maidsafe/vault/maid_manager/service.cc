@@ -524,7 +524,21 @@ void MaidManagerService::HandleSyncedDelete(
 // }
 
 // =============== PMID totals =====================================================================
-void MaidManagerService::HandleHealthResponse(const MaidName& maid_name,
+
+void MaidManagerService::HandlePmidHealthRequest(
+    const MaidName& maid_name, const PmidName& pmid_node, nfs::MessageId message_id) {
+  try {
+    group_db_.GetMetadata(maid_name);
+    dispatcher_.SendPmidHealthRequest(maid_name, pmid_node, message_id);
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kError) << "MaidManagerService::HandlePmidHealthRequest faied: " << error.what();
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
+  }
+}
+
+void MaidManagerService::HandlePmidHealthResponse(const MaidName& maid_name,
     const PmidName& /*pmid_node*/, const std::string& serialised_pmid_health,
     nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
   LOG(kVerbose) << "MaidManagerService::HandleHealthResponse to " << HexSubstr(maid_name->string());
@@ -532,14 +546,11 @@ void MaidManagerService::HandleHealthResponse(const MaidName& maid_name,
     PmidManagerMetadata pmid_health(serialised_pmid_health);
     LOG(kVerbose) << "PmidManagerMetadata available size " << pmid_health.claimed_available_size;
     if (return_code.value.code() == CommonErrors::success) {
-//      sync_update_pmid_healths_.AddLocalAction(
-//          MaidManager::UnresolvedUpdatePmidHealth(
-//              maid_name, ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
       DoSync(MaidManager::UnresolvedUpdatePmidHealth(MaidManager::MetadataKey(maid_name),
           ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
     }
-    dispatcher_.SendHealthResponse(maid_name, pmid_health.claimed_available_size,
-                                  return_code, message_id);
+    dispatcher_.SendPmidHealthResponse(maid_name, pmid_health.claimed_available_size,
+                                       return_code, message_id);
   } catch(std::exception& e) {
     LOG(kError) << "Error handling Health Response to " << HexSubstr(maid_name->string())
                 << " with exception of " << e.what();
@@ -714,6 +725,21 @@ void MaidManagerService::HandleMessage(
     const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;
   typedef nfs::UnregisterPmidRequestFromMaidNodeToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template <>
+void MaidManagerService::HandleMessage(
+    const nfs::PmidHealthRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::PmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << message;
+  typedef nfs::PmidHealthRequestFromMaidNodeToMaidManager MessageType;
   OperationHandlerWrapper<MaidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);

@@ -96,8 +96,11 @@ class MaidManagerDispatcher {
   void SendPutFailure(const MaidName& maid_node, const typename Data::Name& data_name,
                       const maidsafe_error& error,  nfs::MessageId message_id);
 
-  void SendHealthResponse(const MaidName& maid_name, int64_t available_size,
-                          const nfs_client::ReturnCode& return_code, nfs::MessageId message_id);
+  void SendPmidHealthRequest(const MaidName& maid_name, const PmidName& pmid_node,
+                             nfs::MessageId message_id);
+
+  void SendPmidHealthResponse(const MaidName& maid_name, int64_t available_size,
+                              const nfs_client::ReturnCode& return_code, nfs::MessageId message_id);
 
   void SendCreatePmidAccountRequest(const passport::PublicMaid& account_name,
                                     const passport::PublicPmid& pmid_name);

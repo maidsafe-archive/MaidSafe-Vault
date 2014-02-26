@@ -142,9 +142,25 @@ void MaidManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer
   //  routing_.Send(message);
 }
 
-void MaidManagerDispatcher::SendHealthResponse(const MaidName& maid_name, int64_t available_size,
-    const nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
-  LOG(kVerbose) << "MaidManagerDispatcher::SendHealthResponse for maid "
+void MaidManagerDispatcher::SendPmidHealthRequest(const MaidName& maid_name,
+                                                  const PmidName& pmid_node,
+                                                  nfs::MessageId message_id) {
+  typedef PmidHealthRequestFromMaidManagerToPmidManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
+
+  VaultMessage vault_message;
+  vault_message.id = message_id;
+  RoutingMessage message(vault_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
+                         VaultMessage::Receiver(NodeId(pmid_node->string())));
+  routing_.Send(message);
+}
+
+
+void MaidManagerDispatcher::SendPmidHealthResponse(const MaidName& maid_name,
+    int64_t available_size, const nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
+  LOG(kVerbose) << "MaidManagerDispatcher::SendPmidHealthResponse for maid "
                 << HexSubstr(maid_name->string()) << " . available_size " << available_size
                 << " and return code : " << return_code.value.what();
   typedef nfs::PmidHealthResponseFromMaidManagerToMaidNode NfsMessage;
@@ -168,7 +184,8 @@ void MaidManagerDispatcher::SendCreatePmidAccountRequest(const passport::PublicM
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
 
-  VaultMessage vault_message(nfs_vault::DataName(DataTagValue::kPmidValue, pmid_name.name().value));
+  VaultMessage vault_message(nfs::MessageId(HashStringToInt(pmid_name.name()->string())),
+                             nfs_vault::DataName(DataTagValue::kPmidValue, pmid_name.name().value));
   RoutingMessage message(vault_message.Serialise(),
                          GroupOrKeyHelper::GroupSender(routing_, account_name.name()),
                          VaultMessage::Receiver(NodeId(pmid_name.name()->string())));

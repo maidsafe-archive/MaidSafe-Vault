@@ -144,11 +144,11 @@ void PmidManagerService::HandleMessage(
 
 template <>
 void PmidManagerService::HandleMessage(
-    const nfs::PmidHealthRequestFromMaidNodeToPmidManager& message,
-    const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
-    const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << "PmidManagerService::HandleMessage PmidHealthRequestFromMaidNodeToPmidManager";
-  typedef nfs::PmidHealthRequestFromMaidNodeToPmidManager MessageType;
+    const PmidHealthRequestFromMaidManagerToPmidManager& message,
+    const typename PmidHealthRequestFromMaidManagerToPmidManager::Sender& sender,
+    const typename PmidHealthRequestFromMaidManagerToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "PmidManagerService:HandleMessage PmidHealthRequestFromMaidManagerToPmidManager";
+  typedef PmidHealthRequestFromMaidManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
@@ -341,8 +341,7 @@ void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_
   }
 }
 
-void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node,
-                                             const MaidName& maid_node,
+void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node, const MaidName& maid_node,
                                              nfs::MessageId message_id) {
   LOG(kVerbose) << "PmidManagerService::HandleHealthRequest from maid_node "
                 << HexSubstr(maid_node.value.string()) << " for pmid_node "
@@ -353,7 +352,7 @@ void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node,
                   << " task called from timer to DoHandleGetHealthResponse";
     this->DoHandleHealthResponse(pmid_node, maid_node, pmid_health, message_id);
   });
-  get_health_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, 1,
+  get_health_timer_.AddTask(detail::Parameters::kDefaultTimeout / 2, functor, 1,
                             message_id.data);
   dispatcher_.SendHealthRequest(pmid_node, message_id);
 }
@@ -392,7 +391,7 @@ void PmidManagerService::DoHandleHealthResponse(const PmidName& pmid_node,
     dispatcher_.SendHealthResponse(maid_node, pmid_node, reply,
                                    message_id, maidsafe_error(CommonErrors::success));
   }
-  catch(...) {
+  catch (...) {
     LOG(kInfo) << "PmidManagerService::DoHandleHealthResponse no_such_element";
     dispatcher_.SendHealthResponse(maid_node, pmid_node, PmidManagerMetadata(), message_id,
                                    maidsafe_error(CommonErrors::no_such_element));
