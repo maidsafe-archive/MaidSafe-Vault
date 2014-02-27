@@ -415,7 +415,7 @@ void DataManagerService::HandleMessage(
   auto resolved_action(account_transfer_.AddUnresolvedAction(
       unresolved_account_transfer, sender,
       AccountTransfer<DataManager::UnresolvedAccountTransfer>::AddRequestChecker(
-          routing::Parameters::group_size - 1)));
+          routing::Parameters::group_size / 2)));
   if (resolved_action) {
     LOG(kInfo) << "AccountTransferFromDataManagerToDataManager handle account transfer";
     this->HandleAccountTransfer(std::move(resolved_action));
