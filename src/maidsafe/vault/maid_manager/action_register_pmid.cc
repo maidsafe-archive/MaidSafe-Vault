@@ -28,37 +28,43 @@ namespace maidsafe {
 namespace vault {
 
 ActionMaidManagerRegisterPmid::ActionMaidManagerRegisterPmid(
-    const nfs_vault::PmidRegistration& pmid_registration_in)
-        : kPmidRegistration(pmid_registration_in) {}
+    const nfs_vault::PmidRegistration& pmid_registration_in, nfs::MessageId message_id_in)
+        : pmid_registration(pmid_registration_in),
+          message_id(message_id_in) {}
 
 ActionMaidManagerRegisterPmid::ActionMaidManagerRegisterPmid(
     const std::string& serialised_action)
-    : kPmidRegistration([&serialised_action]()->std::string {
-        protobuf::ActionMaidManagerRegisterPmid action_register_pmid_proto;
-        if (!action_register_pmid_proto.ParseFromString(serialised_action))
-          BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-        return action_register_pmid_proto.serialised_pmid_registration();
-      }()) {}
+        : pmid_registration(), message_id() {
+  protobuf::ActionMaidManagerRegisterPmid action_register_pmid_proto;
+  if (!action_register_pmid_proto.ParseFromString(serialised_action))
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+   pmid_registration = nfs_vault::PmidRegistration(
+                           action_register_pmid_proto.serialised_pmid_registration());
+   message_id = nfs::MessageId(action_register_pmid_proto.message_id());
+}
 
 ActionMaidManagerRegisterPmid::ActionMaidManagerRegisterPmid(
     const ActionMaidManagerRegisterPmid& other)
-    : kPmidRegistration(other.kPmidRegistration) {}
+    : pmid_registration(other.pmid_registration), message_id(other.message_id) {}
 
 ActionMaidManagerRegisterPmid::ActionMaidManagerRegisterPmid(
     ActionMaidManagerRegisterPmid&& other)
-    : kPmidRegistration(std::move(other.kPmidRegistration)) {}
+    : pmid_registration(std::move(other.pmid_registration)),
+      message_id(std::move(other.message_id)) {}
 
 std::string ActionMaidManagerRegisterPmid::Serialise() const {
   protobuf::ActionMaidManagerRegisterPmid action_register_pmid_proto;
-  action_register_pmid_proto.set_serialised_pmid_registration(kPmidRegistration.Serialise());
+  action_register_pmid_proto.set_serialised_pmid_registration(pmid_registration.Serialise());
+  action_register_pmid_proto.set_message_id(message_id);
   return action_register_pmid_proto.SerializeAsString();
 }
 
 bool operator==(const ActionMaidManagerRegisterPmid& lhs,
                 const ActionMaidManagerRegisterPmid& rhs) {
-  return lhs.kPmidRegistration.maid_name() == rhs.kPmidRegistration.maid_name() &&
-         lhs.kPmidRegistration.pmid_name() == rhs.kPmidRegistration.pmid_name() &&
-         lhs.kPmidRegistration.unregister() == rhs.kPmidRegistration.unregister();
+  return lhs.pmid_registration.maid_name() == rhs.pmid_registration.maid_name() &&
+         lhs.pmid_registration.pmid_name() == rhs.pmid_registration.pmid_name() &&
+         lhs.pmid_registration.unregister() == rhs.pmid_registration.unregister() &&
+         lhs.message_id == rhs.message_id;
 }
 
 bool operator!=(const ActionMaidManagerRegisterPmid& lhs,
@@ -68,7 +74,7 @@ bool operator!=(const ActionMaidManagerRegisterPmid& lhs,
 
 void ActionMaidManagerRegisterPmid::operator()(
     MaidManagerMetadata& metadata) const {
-  metadata.RegisterPmid(kPmidRegistration);
+  metadata.RegisterPmid(pmid_registration);
 }
 
 }  // namespace vault

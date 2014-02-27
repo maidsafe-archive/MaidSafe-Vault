@@ -90,6 +90,18 @@ void MaidManagerDispatcher::SendCreateVersionTreeResponse(
   routing_.Send(message);
 }
 
+void MaidManagerDispatcher::SendRegisterPmidResponse(
+    const MaidName& maid_name, const maidsafe_error& error, nfs::MessageId message_id) {
+  typedef nfs::RegisterPmidResponseFromMaidManagerToMaidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<NfsMessage>();
+  NfsMessage nfs_message(message_id, nfs_client::ReturnCode(error));
+  RoutingMessage message(nfs_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
+                         NfsMessage::Receiver(NodeId(maid_name->string())));
+  routing_.Send(message);
+}
+
 void MaidManagerDispatcher::SendRemoveAccountResponse(const MaidName& /*account_name*/,
                                                       const maidsafe_error& /*result*/,
                                                       nfs::MessageId /*message_id*/) {

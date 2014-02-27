@@ -51,7 +51,8 @@ void DoOperation(MaidManagerService* service,
                  const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
                  const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
   LOG(kVerbose) << "DoOperation RegisterPmidRequestFromMaidNodeToMaidManager";
-  service->HandlePmidRegistration(nfs_vault::PmidRegistration(message.contents->Serialise()));
+  service->HandlePmidRegistration(nfs_vault::PmidRegistration(message.contents->Serialise()),
+                                  message.id);
 }
 
 template <>
@@ -110,10 +111,10 @@ template <>
 void DoOperation(MaidManagerService* service,
                  const nfs::PmidHealthRequestFromMaidNodeToMaidManager& message,
                  const nfs::PmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
   LOG(kVerbose) << "nfs::PmidHealthRequestFromMaidNodeToMaidManager";
-  service->HandlePmidHealthRequest(MaidName(Identity(receiver.data.string())),
-                                   PmidName(Identity(sender.data.string())), message.id);
+  service->HandlePmidHealthRequest(MaidName(Identity(sender.data.string())),
+                                   PmidName(message.contents->raw_name), message.id);
 }
 
 template <>

@@ -126,7 +126,8 @@ class MaidManagerService {
   void HandleSyncedRemoveMaidAccount(
       std::unique_ptr<MaidManager::UnresolvedRemoveAccount>&& synced_action);
 
-  void HandlePmidRegistration(const nfs_vault::PmidRegistration& pmid_registration);
+  void HandlePmidRegistration(const nfs_vault::PmidRegistration& pmid_registration,
+                              nfs::MessageId message_id);
   void HandlePmidUnregistration(const MaidName& maid_name, const PmidName& pmid_name);
 
   void HandleSyncedPmidRegistration(
@@ -137,7 +138,8 @@ class MaidManagerService {
 
   template<typename PublicFobType>
   void ValidatePmidRegistration(PublicFobType public_fob,
-                                std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
+                                std::shared_ptr<PmidRegistrationOp> pmid_registration_op,
+                                nfs::MessageId message_id);
   // =============== Put/Delete data ===============================================================
   template <typename Data>
   void HandlePut(const MaidName& account_name, const Data& data, const PmidName& pmid_node_hint,
@@ -219,7 +221,8 @@ class MaidManagerService {
   void CreateAccount(const MaidName& account_name, AllowedAccountCreationType);
   template <typename Data>
   void CreateAccount(const MaidName& /*account_name*/, DisallowedAccountCreationType) {}
-  void FinalisePmidRegistration(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
+  void FinalisePmidRegistration(std::shared_ptr<PmidRegistrationOp> pmid_registration_op,
+                                nfs::MessageId message_id);
 
   void HandleRemoveAccount(const MaidName& maid_name, nfs::MessageId mesage_id);
 
@@ -580,8 +583,8 @@ void MaidManagerService::HandleDelete(const MaidName& account_name,
 
 template<typename PublicFobType>
 void MaidManagerService::ValidatePmidRegistration(
-    PublicFobType public_fob,
-    std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
+    PublicFobType public_fob, std::shared_ptr<PmidRegistrationOp> pmid_registration_op,
+    nfs::MessageId message_id) {
   LOG(kVerbose) << "MaidManagerService::ValidatePmidRegistration";
   bool finalise(false);
   {
@@ -593,7 +596,7 @@ void MaidManagerService::ValidatePmidRegistration(
                   << " finalised " << finalise;
   }
   if (finalise)
-    FinalisePmidRegistration(pmid_registration_op);
+    FinalisePmidRegistration(pmid_registration_op, message_id);
 }
 
 template <typename UnresolvedAction>

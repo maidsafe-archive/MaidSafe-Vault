@@ -113,6 +113,9 @@ class MaidManagerDispatcher {
   void SendCreateVersionTreeResponse(const MaidName& maid_name, const maidsafe_error& error,
                                      nfs::MessageId message_id);
 
+  void SendRegisterPmidResponse(const MaidName& maid_name, const maidsafe_error& error,
+                                nfs::MessageId message_id);
+
  private:
   MaidManagerDispatcher();
   MaidManagerDispatcher(const MaidManagerDispatcher&);

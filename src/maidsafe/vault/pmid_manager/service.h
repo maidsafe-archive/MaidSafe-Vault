@@ -317,6 +317,4 @@ void PmidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
 
 }  // namespace maidsafe
 
-#include "maidsafe/vault/pmid_manager/service-inl.h"
-
 #endif  // MAIDSAFE_VAULT_PMID_MANAGER_SERVICE_H_

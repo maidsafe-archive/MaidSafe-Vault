@@ -312,7 +312,7 @@ void MaidManagerService::HandleSyncedRemoveMaidAccount(
 // =============== Pmid registration ===============================================================
 
 void MaidManagerService::HandlePmidRegistration(
-    const nfs_vault::PmidRegistration& pmid_registration) {
+    const nfs_vault::PmidRegistration& pmid_registration, nfs::MessageId message_id) {
 // FIXME This should be implemented in validate method
 //  if (pmid_registration.maid_name() != source_maid_name)
 //    return;
@@ -321,7 +321,7 @@ void MaidManagerService::HandlePmidRegistration(
 //          ActionMaidManagerRegisterPmid(pmid_registration), routing_.kNodeId()));
   DoSync(MaidManager::UnresolvedRegisterPmid(
       MaidManager::MetadataKey(pmid_registration.maid_name()),
-      ActionMaidManagerRegisterPmid(pmid_registration), routing_.kNodeId()));
+      ActionMaidManagerRegisterPmid(pmid_registration, message_id), routing_.kNodeId()));
 }
 
 void MaidManagerService::HandlePmidUnregistration(const MaidName& maid_name,
@@ -373,9 +373,10 @@ void MaidManagerService::HandleSyncedPmidRegistration(
 //       });
 //   boost::wait_for_all(maid_future_then, pmid_future_then);
   LOG(kVerbose) << "MaidManagerService::HandleSyncedPmidRegistration";
-  auto maid_future = data_getter_.Get(synced_action->action.kPmidRegistration.maid_name(),
+  nfs::MessageId message_id(synced_action->action.message_id);
+  auto maid_future = data_getter_.Get(synced_action->action.pmid_registration.maid_name(),
                                       std::chrono::seconds(10));
-  auto pmid_future = data_getter_.Get(synced_action->action.kPmidRegistration.pmid_name(),
+  auto pmid_future = data_getter_.Get(synced_action->action.pmid_registration.pmid_name(),
                                       std::chrono::seconds(10));
 
   auto pmid_registration_op(std::make_shared<PmidRegistrationOp>(std::move(synced_action)));
@@ -383,10 +384,10 @@ void MaidManagerService::HandleSyncedPmidRegistration(
   try {
     std::unique_ptr<passport::PublicPmid> public_pmid(new passport::PublicPmid(pmid_future.get()));
     LOG(kVerbose) << "MaidManagerService::HandleSyncedPmidRegistration got public_pmid";
-    ValidatePmidRegistration(std::move(public_pmid), pmid_registration_op);
+    ValidatePmidRegistration(std::move(public_pmid), pmid_registration_op, message_id);
     std::unique_ptr<passport::PublicMaid> public_maid(new passport::PublicMaid(maid_future.get()));
     LOG(kVerbose) << "MaidManagerService::HandleSyncedPmidRegistration got public_maid";
-    ValidatePmidRegistration(std::move(public_maid), pmid_registration_op);
+    ValidatePmidRegistration(std::move(public_maid), pmid_registration_op, message_id);
   } catch(const std::exception& e) {
     LOG(kError) << "MaidManagerService::HandleSyncedPmidRegistration raised exception " << e.what();
   }
@@ -406,8 +407,9 @@ void MaidManagerService::HandleSyncedPmidUnregistration(
 }
 
 void MaidManagerService::FinalisePmidRegistration(
-    std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
+    std::shared_ptr<PmidRegistrationOp> pmid_registration_op, nfs::MessageId message_id) {
   assert(pmid_registration_op->count == 2);
+  maidsafe_error return_code(CommonErrors::success);
 
   if (!pmid_registration_op->public_maid || !pmid_registration_op->public_pmid) {
     LOG(kWarning) << "Failed to retrieve one or both of MAID and PMID";
@@ -415,13 +417,13 @@ void MaidManagerService::FinalisePmidRegistration(
   }
 
   try {
-    if (!pmid_registration_op->synced_action->action.kPmidRegistration.Validate(
+    if (!pmid_registration_op->synced_action->action.pmid_registration.Validate(
             *pmid_registration_op->public_maid, *pmid_registration_op->public_pmid)) {
       LOG(kWarning) << "Failed to validate PmidRegistration";
       return;
     }
 
-    if (pmid_registration_op->synced_action->action.kPmidRegistration.unregister()) {
+    if (pmid_registration_op->synced_action->action.pmid_registration.unregister()) {
       group_db_.Commit(pmid_registration_op->synced_action->key.group_name(),
                        pmid_registration_op->synced_action->action);
     } else {
@@ -432,11 +434,15 @@ void MaidManagerService::FinalisePmidRegistration(
     }
   }
   catch(const maidsafe_error& error) {
+    return_code = error;
     LOG(kWarning) << "Failed to register new PMID: " << error.what();
   }
   catch(const std::exception& ex) {
+    return_code = MakeError(CommonErrors::unknown);
     LOG(kWarning) << "Failed to register new PMID: " << ex.what();
   }
+  dispatcher_.SendRegisterPmidResponse(pmid_registration_op->public_maid->name(), return_code,
+                                       message_id);
   LOG(kInfo) << "PmidRegistration Finalised";
 }
 
