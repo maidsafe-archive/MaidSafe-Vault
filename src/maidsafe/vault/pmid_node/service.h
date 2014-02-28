@@ -161,6 +161,12 @@ class PmidNodeService {
                                   int failures);
 
  private:
+  template<typename ServiceHandlerType, typename MessageType>
+  friend void detail::DoOperation(
+      ServiceHandlerType* service, const MessageType& message,
+      const typename MessageType::Sender& sender,
+      const typename MessageType::Receiver& receiver);
+
   friend class detail::PmidNodeDeleteVisitor<PmidNodeService>;
   friend class detail::PmidNodePutVisitor<PmidNodeService>;
   friend class detail::PmidNodeGetVisitor<PmidNodeService>;
@@ -188,6 +194,8 @@ class PmidNodeService {
   void HandleIntegrityCheck(const typename Data::Name& data_name,
                             const NonEmptyString& random_string, const NodeId& sender,
                             nfs::MessageId message_id);
+
+  void HandleHealthRequest(const NodeId& pmid_manager_node_id, nfs::MessageId message_id);
 
   // ================================ Sender Validation =========================================
   template <typename T>

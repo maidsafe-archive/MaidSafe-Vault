@@ -201,6 +201,12 @@ void DoOperation(MaidManagerService* service,
 
 template <>
 void DoOperation(MaidManagerService* service,
+                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager& message,
+                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void DoOperation(MaidManagerService* service,
                  const PmidHealthResponseFromPmidManagerToMaidManager& message,
                  const PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
                  const PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver);
@@ -348,9 +354,9 @@ void DoOperation(PmidManagerService* service,
 
 template <>
 void DoOperation(PmidManagerService* service,
-                 const PmidHealthRequestFromMaidNodeToPmidManager& message,
-                 const PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
-                 const PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver);
+                 const PmidHealthRequestFromMaidManagerToPmidManager& message,
+                 const PmidHealthRequestFromMaidManagerToPmidManager::Sender& sender,
+                 const PmidHealthRequestFromMaidManagerToPmidManager::Receiver& receiver);
 
 template <>
 void DoOperation(PmidManagerService* service,
@@ -393,6 +399,12 @@ void DoOperation(PmidNodeService* service,
                  const IntegrityCheckRequestFromDataManagerToPmidNode& message,
                  const IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
                  const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver);
+
+template <>
+void DoOperation(PmidNodeService* service,
+                 const PmidHealthRequestFromPmidManagerToPmidNode& message,
+                 const PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
+                 const PmidHealthRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
 //====================================== To VersionHandler =========================================
 

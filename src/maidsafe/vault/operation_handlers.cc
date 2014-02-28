@@ -51,7 +51,8 @@ void DoOperation(MaidManagerService* service,
                  const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
                  const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
   LOG(kVerbose) << "DoOperation RegisterPmidRequestFromMaidNodeToMaidManager";
-  service->HandlePmidRegistration(nfs_vault::PmidRegistration(message.contents->Serialise()));
+  service->HandlePmidRegistration(nfs_vault::PmidRegistration(message.contents->Serialise()),
+                                  message.id);
 }
 
 template <>
@@ -105,19 +106,28 @@ void DoOperation(MaidManagerService* service,
   boost::apply_visitor(delete_visitor, data_name);
 }
 
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager& message,
+                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "nfs::PmidHealthRequestFromMaidNodeToMaidManager";
+  service->HandlePmidHealthRequest(MaidName(Identity(sender.data.string())),
+                                   PmidName(message.contents->raw_name), message.id);
+}
+
 template <>
 void DoOperation(MaidManagerService* service,
                  const PmidHealthResponseFromPmidManagerToMaidManager& message,
-                 const PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
+                 const PmidHealthResponseFromPmidManagerToMaidManager::Sender& /*sender*/,
                  const PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << "DoOperation PmidHealthResponseFromPmidManagerToMaidManager "
                 << "message.contents->pmid_health.serialised_pmid_health "
                 << HexSubstr(message.contents->pmid_health.serialised_pmid_health);
-  service->HandleHealthResponse(MaidName(Identity(receiver.data.string())),
-                                PmidName(Identity(sender.group_id.data.string())),
-                                message.contents->pmid_health.serialised_pmid_health,
-                                message.contents->return_code,
-                                message.id);
+  service->HandlePmidHealthResponse(MaidName(Identity(receiver.data.string())),
+                                    message.contents->pmid_health.serialised_pmid_health,
+                                    message.contents->return_code.value, message.id);
 }
 
 template <>
@@ -420,13 +430,12 @@ void DoOperation(PmidManagerService* service,
 
 template <>
 void DoOperation(PmidManagerService* service,
-                 const PmidHealthRequestFromMaidNodeToPmidManager& message,
-                 const PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
-                 const PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << "DoOperation PmidHealthRequestFromMaidNodeToPmidManager";
+                 const PmidHealthRequestFromMaidManagerToPmidManager& message,
+                 const PmidHealthRequestFromMaidManagerToPmidManager::Sender& sender,
+                 const PmidHealthRequestFromMaidManagerToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "DoOperation PmidHealthRequestFromMaidManagerToPmidManager";
   service->HandleHealthRequest(PmidName(Identity(receiver.data.string())),
-                               MaidName(Identity(sender.data.string())),
-                               message.id);
+                               MaidName(Identity(sender.group_id.data.string())), message.id);
 }
 
 template <>
@@ -518,6 +527,15 @@ void DoOperation(PmidNodeService* service,
   PmidNodeIntegrityCheckVisitor<PmidNodeService> integrity_check_visitor(service,
       message.contents->random_string, sender, message.id);
   boost::apply_visitor(integrity_check_visitor, data_name);
+}
+
+template <>
+void DoOperation(PmidNodeService* service,
+                 const PmidHealthRequestFromPmidManagerToPmidNode& message,
+                 const PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
+                 const PmidHealthRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
+  LOG(kVerbose) << "DoOperation IntegrityCheckRequestFromDataManagerToPmidNode";
+  service->HandleHealthRequest(sender.data, message.id);
 }
 
 //====================================== To VersionHandler =========================================

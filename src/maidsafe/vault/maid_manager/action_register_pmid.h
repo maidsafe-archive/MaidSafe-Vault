@@ -36,7 +36,8 @@ class MaidManagerMetadata;
 
 struct ActionMaidManagerRegisterPmid {
   explicit ActionMaidManagerRegisterPmid(
-               const nfs_vault::PmidRegistration& pmid_registration);
+               const nfs_vault::PmidRegistration& pmid_registration_in,
+               nfs::MessageId message_id_in);
   explicit ActionMaidManagerRegisterPmid(const std::string& serialised_action);
   ActionMaidManagerRegisterPmid(const ActionMaidManagerRegisterPmid& other);
   ActionMaidManagerRegisterPmid(ActionMaidManagerRegisterPmid&& other);
@@ -44,7 +45,8 @@ struct ActionMaidManagerRegisterPmid {
 
   void operator()(MaidManagerMetadata& metadata) const;
 
-  const nfs_vault::PmidRegistration kPmidRegistration;
+  nfs_vault::PmidRegistration pmid_registration;
+  nfs::MessageId message_id;
   static const nfs::MessageAction kActionId = nfs::MessageAction::kRegisterPmidRequest;
 
  private:

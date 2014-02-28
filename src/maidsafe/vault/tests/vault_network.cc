@@ -27,6 +27,8 @@
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/log.h"
+#include "maidsafe/passport/detail/fob.h"
+
 #include "maidsafe/vault/tests/tests_utils.h"
 
 namespace maidsafe {
@@ -164,7 +166,7 @@ void VaultNetwork::SetUp() {
   for (size_t index(2); index < network_size_ + 2; ++index) {
     futures.push_back(std::async(std::launch::async,
                       [index, this] {
-                        return this->Create(index);
+                        return this->Create(key_chains_.keys.at(index).pmid);
                       }));
     Sleep(std::chrono::seconds(std::min(index / 10 + 1, size_t(3))));
   }
@@ -194,19 +196,19 @@ void VaultNetwork::TearDown() {
 #endif
 }
 
-bool VaultNetwork::Create(size_t index) {
+bool VaultNetwork::Create(const passport::detail::Fob<passport::detail::PmidTag>& pmid) {
   std::string path_str("vault" + RandomAlphaNumericString(6));
   auto path(chunk_store_path_/path_str);
   fs::create_directory(path);
   try {
-    vaults_.emplace_back(new Vault(key_chains_.keys[index].pmid, path,
-                                   [](const boost::asio::ip::udp::endpoint&) {}, public_pmids_,
-                                   endpoints_));
-    LOG(kSuccess) << "vault joined: " << index;
+    vaults_.emplace_back(new Vault(pmid, path, [](const boost::asio::ip::udp::endpoint&) {},
+                                   public_pmids_, endpoints_));
+    LOG(kSuccess) << "vault joined: " << vaults_.size() << " id: "
+                  << DebugId(NodeId(pmid.name()->string()));
     return true;
   }
   catch (const std::exception& ex) {
-    LOG(kError) << "vault failed to join: " << index << " because: " << ex.what();
+    LOG(kError) << "vault failed to join: " << vaults_.size() << " because: " << ex.what();
     return false;
   }
 }
@@ -219,7 +221,7 @@ bool VaultNetwork::Add() {
   }
   auto future(std::async(std::launch::async,
                          [this] {
-                           return this->Create(this->key_chains_.keys.size() -1);
+                           return this->Create(this->key_chains_.keys.back().pmid);
                          }));
   Sleep(std::chrono::seconds(std::min(vaults_.size() / 10 + 1, size_t(3))));
   try {
@@ -234,7 +236,7 @@ bool VaultNetwork::Add() {
 bool VaultNetwork::AddClient(bool register_pmid) {
   passport::detail::AnmaidToPmid node_keys;
   if (register_pmid) {
-    Add();
+    EXPECT_TRUE(Add());
     node_keys = *key_chains_.keys.rbegin();
   } else {
     node_keys = key_chains_.Add();
@@ -292,21 +294,28 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
     Sleep(std::chrono::seconds(2));
   }
   if (register_pmid_for_client) {
-    {
-      nfs_->RegisterPmid(nfs_vault::PmidRegistration(keys.maid, keys.pmid, false));
-      boost::this_thread::sleep_for(boost::chrono::seconds(5));
-      passport::PublicPmid::Name pmid_name(Identity(keys.pmid.name().value));
-      auto future(nfs_->GetPmidHealth(pmid_name));
-      auto status(future.wait_for(boost::chrono::seconds(10)));
-      if (status == boost::future_status::timeout) {
-        LOG(kError) << "can't fetch pmid health";
-        BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
-      }
+    try {
+      auto register_pmid_future(nfs_->RegisterPmid(
+                                    nfs_vault::PmidRegistration(keys.maid, keys.pmid, false)));
+      register_pmid_future.get();
+    }
+    catch (const maidsafe_error& error) {
+      LOG(kError) << "Pmid Registration Failed " << error.what();
+      throw;
+    }
+    passport::PublicPmid::Name pmid_name(Identity(keys.pmid.name().value));
+
+    try {
+      auto get_health_future(nfs_->GetPmidHealth(pmid_name));
       LOG(kVerbose) << "The fetched PmidHealth for pmid_name "
-                    << HexSubstr(pmid_name.value.string()) << " is " << future.get();
+                    << HexSubstr(pmid_name.value.string()) << " is " << get_health_future.get();
+    }
+    catch (const maidsafe_error& error) {
+      LOG(kError) << "Pmid Health Retreival Failed " << error.what();
+      throw;
     }
     // waiting for the GetPmidHealth updating corresponding accounts
-    boost::this_thread::sleep_for(boost::chrono::seconds(5));
+    boost::this_thread::sleep_for(boost::chrono::seconds(2));
     LOG(kSuccess) << "Pmid Registered created for the client node to store chunks";
   }
 }

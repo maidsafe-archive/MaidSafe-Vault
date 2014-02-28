@@ -81,8 +81,9 @@ class MaidManagerServiceTest {
 
   void RegisterPmid() {
     nfs_vault::PmidRegistration pmid_registration(maid_, pmid_, false);
-    maid_manager_service_.group_db_.Commit(public_maid_.name(),
-                                           ActionMaidManagerRegisterPmid(pmid_registration));
+    maid_manager_service_.group_db_.Commit(
+        public_maid_.name(), ActionMaidManagerRegisterPmid(pmid_registration,
+                                                           nfs::MessageId(RandomInt32())));
   }
 
   template <typename UnresolvedActionType>
@@ -386,7 +387,8 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
   SECTION("RegistedPmid") {
     CreateAccount();
     nfs_vault::PmidRegistration pmid_registration(maid_, pmid_, false);
-    ActionMaidManagerRegisterPmid action_register_pmid(pmid_registration);
+    ActionMaidManagerRegisterPmid action_register_pmid(pmid_registration,
+                                                       nfs::MessageId(RandomUint32()));
     MaidManager::MetadataKey metadata_key(public_maid_.name());
     auto group_source(CreateGroupSource(MaidNodeId()));
     auto group_unresolved_action(

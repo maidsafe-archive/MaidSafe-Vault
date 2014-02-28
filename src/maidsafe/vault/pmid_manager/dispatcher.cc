@@ -95,7 +95,8 @@ void PmidManagerDispatcher::SendHealthRequest(const PmidName& pmid_node,
   typedef PmidHealthRequestFromPmidManagerToPmidNode VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
-  VaultMessage vault_message(message_id, nfs_vault::Empty());
+  VaultMessage vault_message;
+  vault_message.id = message_id;
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing_.kNodeId()),
                          VaultMessage::Receiver(NodeId(pmid_node->string())));
