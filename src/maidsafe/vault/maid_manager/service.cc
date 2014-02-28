@@ -747,11 +747,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;
   typedef nfs::PmidHealthRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+  OperationHandlerWrapper<MaidManagerService, MessageType, NfsAccumulator>(
+      nfs_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                          return this->ValidateSender(message, sender);
+                        },
+      NfsAccumulator::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 

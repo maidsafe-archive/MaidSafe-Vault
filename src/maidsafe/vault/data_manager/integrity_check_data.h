@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_INTEGRITY_CHECK_DATA_H_
-#define MAIDSAFE_VAULT_INTEGRITY_CHECK_DATA_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_INTEGRITY_CHECK_DATA_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_INTEGRITY_CHECK_DATA_H_
 
 #include <cstdint>
 #include <string>
@@ -62,4 +62,4 @@ class IntegrityCheckData {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_INTEGRITY_CHECK_DATA_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_INTEGRITY_CHECK_DATA_H_

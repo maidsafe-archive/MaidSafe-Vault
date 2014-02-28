@@ -114,7 +114,7 @@ void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
     LOG(kError) << "Invalid Pmid reported";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
-  PrintRecords();
+//  PrintRecords();
 }
 
 std::string DataManagerValue::Serialise() const {
