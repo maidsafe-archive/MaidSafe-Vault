@@ -33,7 +33,7 @@ class PmidManagerTest : public VaultNetwork  {
 
 TEST_F(PmidManagerTest, FUNC_GetPmidHealth) {
   EXPECT_TRUE(AddClient(true));
-  auto get_pmid_health_future(clients_.front()->nfs_->GetPmidHealth(public_pmids_.at(5).name()));
+  auto get_pmid_health_future(clients_.front()->nfs_->GetPmidHealth(public_pmids_.back().name()));
   EXPECT_NO_THROW(get_pmid_health_future.get());
   LOG(kVerbose) << "Pmid Health Retrieved";
 }

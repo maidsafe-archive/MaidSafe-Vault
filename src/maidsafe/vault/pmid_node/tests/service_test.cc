@@ -120,7 +120,8 @@ TEST_CASE_METHOD(PmidNodeServiceTest, "pmid node: checking handlers availablity"
   }
 
   SECTION("PmidHealthRequestFromPmidManagerToPmidNode") {
-    auto health_request(CreateMessage<PmidHealthRequestFromPmidManagerToPmidNode>(nfs_vault::Empty()));
+    auto health_request(
+             CreateMessage<PmidHealthRequestFromPmidManagerToPmidNode>(nfs_vault::Empty()));
     auto group_source(CreateGroupSource(routing_.kNodeId()));
     CHECK_NOTHROW(SingleSendsToSingle(&pmid_node_service_, health_request,
                                       routing::SingleSource(NodeId(NodeId::kRandomId)),

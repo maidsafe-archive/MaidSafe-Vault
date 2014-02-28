@@ -38,9 +38,9 @@ ActionMaidManagerRegisterPmid::ActionMaidManagerRegisterPmid(
   protobuf::ActionMaidManagerRegisterPmid action_register_pmid_proto;
   if (!action_register_pmid_proto.ParseFromString(serialised_action))
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-   pmid_registration = nfs_vault::PmidRegistration(
-                           action_register_pmid_proto.serialised_pmid_registration());
-   message_id = nfs::MessageId(action_register_pmid_proto.message_id());
+  pmid_registration = nfs_vault::PmidRegistration(
+                          action_register_pmid_proto.serialised_pmid_registration());
+  message_id = nfs::MessageId(action_register_pmid_proto.message_id());
 }
 
 ActionMaidManagerRegisterPmid::ActionMaidManagerRegisterPmid(

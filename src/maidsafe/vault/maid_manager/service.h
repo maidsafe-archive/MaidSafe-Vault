@@ -208,9 +208,9 @@ class MaidManagerService {
   void HandlePmidHealthRequest(const MaidName& maid_name, const PmidName& pmid_node,
                                nfs::MessageId message_id);
 
-  void HandlePmidHealthResponse(const MaidName& maid_name, const PmidName& pmid_node,
+  void HandlePmidHealthResponse(const MaidName& maid_name,
                                 const std::string &serialised_pmid_health,
-                                nfs_client::ReturnCode& return_code, nfs::MessageId message_id);
+                                maidsafe_error& return_code, nfs::MessageId message_id);
 
 //  MaidManagerMetadata::Status AllowPut(const MaidName& account_name, int32_t cost);
 

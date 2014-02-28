@@ -169,18 +169,19 @@ void MaidManagerDispatcher::SendPmidHealthRequest(const MaidName& maid_name,
   routing_.Send(message);
 }
 
-
 void MaidManagerDispatcher::SendPmidHealthResponse(const MaidName& maid_name,
-    int64_t available_size, const nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
+    int64_t available_size, const maidsafe_error& return_code, nfs::MessageId message_id) {
   LOG(kVerbose) << "MaidManagerDispatcher::SendPmidHealthResponse for maid "
                 << HexSubstr(maid_name->string()) << " . available_size " << available_size
-                << " and return code : " << return_code.value.what();
+                << " and return code : " << return_code.code();
   typedef nfs::PmidHealthResponseFromMaidManagerToMaidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<NfsMessage>();
 
-  NfsMessage nfs_message(message_id, nfs_client::AvailableSizeAndReturnCode(available_size,
-                                                                            return_code));
+  NfsMessage nfs_message(message_id,
+                         nfs_client::AvailableSizeAndReturnCode(available_size,
+                                                                nfs_client::ReturnCode(
+                                                                    return_code)));
   RoutingMessage message(nfs_message.Serialise(),
                          GroupOrKeyHelper::GroupSender(routing_, maid_name),
                          NfsMessage::Receiver(NodeId(maid_name.value.string())));

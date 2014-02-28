@@ -294,22 +294,28 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
     Sleep(std::chrono::seconds(2));
   }
   if (register_pmid_for_client) {
-    {
+    try {
       auto register_pmid_future(nfs_->RegisterPmid(
                                     nfs_vault::PmidRegistration(keys.maid, keys.pmid, false)));
       register_pmid_future.get();
-      passport::PublicPmid::Name pmid_name(Identity(keys.pmid.name().value));
-      auto future(nfs_->GetPmidHealth(pmid_name));
-      auto status(future.wait_for(boost::chrono::seconds(10)));
-      if (status == boost::future_status::timeout) {
-        LOG(kError) << "can't fetch pmid health";
-        BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
-      }
+    }
+    catch (const maidsafe_error& error) {
+      LOG(kError) << "Pmid Registration Failed " << error.what();
+      throw;
+    }
+    passport::PublicPmid::Name pmid_name(Identity(keys.pmid.name().value));
+
+    try {
+      auto get_health_future(nfs_->GetPmidHealth(pmid_name));
       LOG(kVerbose) << "The fetched PmidHealth for pmid_name "
-                    << HexSubstr(pmid_name.value.string()) << " is " << future.get();
+                    << HexSubstr(pmid_name.value.string()) << " is " << get_health_future.get();
+    }
+    catch (const maidsafe_error& error) {
+      LOG(kError) << "Pmid Health Retreival Failed " << error.what();
+      throw;
     }
     // waiting for the GetPmidHealth updating corresponding accounts
-    boost::this_thread::sleep_for(boost::chrono::seconds(5));
+    boost::this_thread::sleep_for(boost::chrono::seconds(2));
     LOG(kSuccess) << "Pmid Registered created for the client node to store chunks";
   }
 }
