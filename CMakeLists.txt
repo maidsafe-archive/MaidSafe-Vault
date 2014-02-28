@@ -101,13 +101,22 @@ ms_add_static_library(maidsafe_vault_pmid_node ${PmidNodeAllFiles} ${OutputFile}
 ms_add_static_library(maidsafe_vault_version_handler ${VersionHandlerAllFiles} ${OutputFile} ${InputFile})
 
 # Add custom target to trigger atomic generation of protobuf files
+set(AllProtos
+    ${VaultProtos}
+    ${CacheHandlerProtos}
+    ${DataManagerProtos}
+    ${MaidManagerProtos}
+    ${MpidManagerProtos}
+    ${PmidManagerProtos}
+    ${PmidNodeProtos}
+    ${VersionHandlerProtos})
 if(MSVC OR CMAKE_GENERATOR STREQUAL Xcode)
-  add_custom_target(vault_protobuf_files_generator DEPENDS ${VaultProtos} SOURCES ${VaultProtos}
-                    COMMENT "Generated all root vault level protocol buffer files.")
+  add_custom_target(vault_protobuf_files_generator DEPENDS ${AllProtos} SOURCES ${AllProtos}
+                    COMMENT "Generated all vault protocol buffer files.")
 else()
   # Need to avoid use of SOURCES arg here - CMake bug.
-  add_custom_target(vault_protobuf_files_generator DEPENDS ${VaultProtos}
-                    COMMENT "Generated all root vault level protocol buffer files.")
+  add_custom_target(vault_protobuf_files_generator DEPENDS ${AllProtos}
+                    COMMENT "Generated all vault protocol buffer files.")
 endif()
 set_target_properties(vault_protobuf_files_generator PROPERTIES LABELS Vault FOLDER "MaidSafe/Libraries")
 
