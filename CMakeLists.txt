@@ -99,6 +99,12 @@ ms_add_static_library(maidsafe_vault_mpid_manager ${MpidManagerAllFiles} ${Outpu
 ms_add_static_library(maidsafe_vault_pmid_manager ${PmidManagerAllFiles} ${OutputFile} ${InputFile})
 ms_add_static_library(maidsafe_vault_pmid_node ${PmidNodeAllFiles} ${OutputFile} ${InputFile})
 ms_add_static_library(maidsafe_vault_version_handler ${VersionHandlerAllFiles} ${OutputFile} ${InputFile})
+
+# Add custom target to trigger atomic generation of protobuf files
+add_custom_target(vault_protobuf_files_generator DEPENDS ${VaultProtos} SOURCES ${VaultProtos}
+                  COMMENT "Generated all root vault level protocol buffer files.")
+set_target_properties(vault_protobuf_files_generator PROPERTIES LABELS Vault FOLDER "MaidSafe/Libraries")
+
 set(VaultPersonaLibs
     maidsafe_vault_cache_handler
     maidsafe_vault_data_manager
@@ -113,6 +119,7 @@ foreach(VaultLib maidsafe_vault ${VaultPersonaLibs})
     PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
   target_compile_options(${VaultLib} PRIVATE $<$<BOOL:${MSVC}>:/bigobj>)
   target_link_libraries(${VaultLib} maidsafe_nfs_vault leveldb)
+  add_dependencies(${VaultLib} vault_protobuf_files_generator)
 endforeach()
 # TODO - Investigate why boost variant requires this warning to be disabled.
 target_compile_options(maidsafe_vault PUBLIC $<$<AND:$<BOOL:${MSVC}>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>:/wd4702>)
