@@ -91,25 +91,36 @@ list(APPEND VaultTestsAllFiles ${TestsMain} ${VaultSourcesDir}/tests/tests_utils
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
-ms_add_static_library(maidsafe_vault ${VaultAllFiles}
-                                     ${CacheHandlerAllFiles}
-                                     ${DataManagerAllFiles}
-                                     ${MaidManagerAllFiles}
-                                     ${MpidManagerAllFiles}
-                                     ${PmidManagerAllFiles}
-                                     ${PmidNodeAllFiles}
-                                     ${VersionHandlerAllFiles}
-                                     ${OutputFile} ${InputFile} ${MetaFiles})
-target_include_directories(maidsafe_vault
-  PUBLIC ${PROJECT_SOURCE_DIR}/include
-  PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
+ms_add_static_library(maidsafe_vault ${VaultAllFiles} ${OutputFile} ${InputFile} ${MetaFiles})
+ms_add_static_library(maidsafe_vault_cache_handler ${CacheHandlerAllFiles} ${OutputFile} ${InputFile})
+ms_add_static_library(maidsafe_vault_data_manager ${DataManagerAllFiles} ${OutputFile} ${InputFile})
+ms_add_static_library(maidsafe_vault_maid_manager ${MaidManagerAllFiles} ${OutputFile} ${InputFile})
+ms_add_static_library(maidsafe_vault_mpid_manager ${MpidManagerAllFiles} ${OutputFile} ${InputFile})
+ms_add_static_library(maidsafe_vault_pmid_manager ${PmidManagerAllFiles} ${OutputFile} ${InputFile})
+ms_add_static_library(maidsafe_vault_pmid_node ${PmidNodeAllFiles} ${OutputFile} ${InputFile})
+ms_add_static_library(maidsafe_vault_version_handler ${VersionHandlerAllFiles} ${OutputFile} ${InputFile})
+set(VaultPersonaLibs
+    maidsafe_vault_cache_handler
+    maidsafe_vault_data_manager
+    maidsafe_vault_maid_manager
+    maidsafe_vault_mpid_manager
+    maidsafe_vault_pmid_manager
+    maidsafe_vault_pmid_node
+    maidsafe_vault_version_handler)
+foreach(VaultLib maidsafe_vault ${VaultPersonaLibs})
+  target_include_directories(${VaultLib}
+    PUBLIC ${PROJECT_SOURCE_DIR}/include
+    PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
+  target_compile_options(${VaultLib} PRIVATE $<$<BOOL:${MSVC}>:/bigobj>)
+  target_link_libraries(${VaultLib} maidsafe_nfs_vault leveldb)
+endforeach()
 # TODO - Investigate why boost variant requires this warning to be disabled.
 target_compile_options(maidsafe_vault PUBLIC $<$<AND:$<BOOL:${MSVC}>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>:/wd4702>)
 
 ms_add_executable(vault Production ${VaultSourcesDir}/vault_main.cc)
 target_include_directories(vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
 
-target_link_libraries(maidsafe_vault maidsafe_nfs_vault leveldb)
+target_link_libraries(maidsafe_vault ${VaultPersonaLibs})
 target_link_libraries(vault maidsafe_vault)
 if(MaidsafeTesting)
   ms_add_static_library(maidsafe_vault_mal ${VaultAllFiles}

@@ -440,9 +440,10 @@ void DoOperation(VersionHandlerService* service,
 
 }  // namespace detail
 
-template <typename ServiceHandler, typename MessageType>
+template <typename ServiceHandler, typename MessageType,
+          typename AccumulatorT = Accumulator<typename ServiceHandler::Messages>>
 struct OperationHandlerWrapper {
-  typedef Accumulator<typename ServiceHandler::Messages> AccumulatorType;
+  typedef AccumulatorT AccumulatorType;
   typedef detail::OperationHandler<typename detail::ValidateSenderType<MessageType>::type,
                                    AccumulatorType,
                                    typename AccumulatorType::AddCheckerFunctor,

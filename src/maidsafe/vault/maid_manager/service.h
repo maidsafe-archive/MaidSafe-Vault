@@ -239,6 +239,9 @@ class MaidManagerService {
   typedef boost::make_variant_over<FinalType>::type Messages;
 
  private:
+  typedef Accumulator<nfs::MaidManagerServiceMessages> NfsAccumulator;
+  typedef Accumulator<MaidManagerServiceMessages> VaultAccumulator;
+
   void ObfuscateKey(MaidManager::Key& key) {
     // Hash the data name to obfuscate the list of chunks associated with the client.
     key.name = Identity(crypto::Hash<crypto::SHA512>(key.name));
@@ -278,7 +281,8 @@ class MaidManagerService {
   nfs_client::DataGetter& data_getter_;
   GroupDb<MaidManager> group_db_;
   std::mutex accumulator_mutex_;
-  Accumulator<Messages> accumulator_;
+  NfsAccumulator nfs_accumulator_;
+  VaultAccumulator vault_accumulator_;
   MaidManagerDispatcher dispatcher_;
   Sync<MaidManager::UnresolvedCreateAccount> sync_create_accounts_;
   Sync<MaidManager::UnresolvedRemoveAccount> sync_remove_accounts_;
