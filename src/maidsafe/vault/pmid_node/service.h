@@ -40,7 +40,7 @@
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/integrity_check_data.h"
+#include "maidsafe/vault/data_manager/integrity_check_data.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 #include "maidsafe/vault/pmid_node/handler.h"
 #include "maidsafe/vault/pmid_node/dispatcher.h"

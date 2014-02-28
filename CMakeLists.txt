@@ -133,9 +133,14 @@ foreach(VaultLib maidsafe_vault ${VaultPersonaLibs})
     PUBLIC ${PROJECT_SOURCE_DIR}/include
     PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
   target_compile_options(${VaultLib} PRIVATE $<$<BOOL:${MSVC}>:/bigobj>)
-  target_link_libraries(${VaultLib} maidsafe_nfs_vault leveldb)
+  if(VaultLib STREQUAL "maidsafe_vault")
+    target_link_libraries(${VaultLib} maidsafe_nfs_vault leveldb)
+  else()
+    target_link_libraries(${VaultLib} maidsafe_vault maidsafe_nfs_vault leveldb)
+  endif()
   add_dependencies(${VaultLib} vault_protobuf_files_generator)
 endforeach()
+
 # TODO - Investigate why boost variant requires this warning to be disabled.
 target_compile_options(maidsafe_vault PUBLIC $<$<AND:$<BOOL:${MSVC}>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>:/wd4702>)
 

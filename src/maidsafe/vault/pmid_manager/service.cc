@@ -21,6 +21,7 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
 
+#include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 #include "maidsafe/vault/pmid_manager/metadata.h"
 #include "maidsafe/vault/operation_handlers.h"
