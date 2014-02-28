@@ -95,6 +95,15 @@ class DataManagerService {
   template <typename Data>
   bool EntryExist(const typename Data::Name& name);
 
+  typedef std::true_type EntryMustBeUnique;
+  typedef std::false_type EntryNeedNotBeUnique;
+  template <typename Data>
+  void HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
+                                 nfs::MessageId message_id, int32_t cost, EntryMustBeUnique);
+  template <typename Data>
+  void HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
+                                 nfs::MessageId message_id, int32_t cost, EntryNeedNotBeUnique);
+
   template <typename Data>
   void HandlePutResponse(const typename Data::Name& data_name, const PmidName& pmid_node,
                          int32_t size, nfs::MessageId message_id);
@@ -379,23 +388,13 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
                << " . SendPutRequest with message_id " << message_id.data
                << " to picked up pmid_node " << HexSubstr(pmid_name->string());
     dispatcher_.SendPutRequest(pmid_name, data, message_id);
-  } else if (is_unique_on_network<Data>::value) {
     LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-               << " from maid_node " << HexSubstr(maid_name->string())
-               << " . SendPutFailure with message_id " << message_id.data;
-    dispatcher_.SendPutFailure<Data>(maid_name, data.name(),
-                                     maidsafe_error(VaultErrors::unique_data_clash), message_id);
-    return;
+                << " from maid_node " << HexSubstr(maid_name->string())
+                << " . SendPutResponse with message_id " << message_id.data;
+    dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);
   } else {
-    LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-               << " from maid_node " << HexSubstr(maid_name->string()) << " syncing";
-    typename DataManager::Key key(data.name().value, Data::Tag::kValue);
-    DoSync(DataManager::UnresolvedPut(key, ActionDataManagerPut(), routing_.kNodeId()));
+    HandlePutWhereEntryExists(data, maid_name, message_id, cost, is_unique_on_network<Data>());
   }
-  LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-              << " from maid_node " << HexSubstr(maid_name->string())
-              << " . SendPutResponse with message_id " << message_id.data;
-  dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);  // NOT IN FAILURE
 }
 
 template <typename Data>
@@ -413,6 +412,31 @@ bool DataManagerService::EntryExist(const typename Data::Name& name) {
     assert(0 && "DataManagerService::EntryExist");
     return false;
   }
+}
+
+template <typename Data>
+void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
+                                                   nfs::MessageId message_id, int32_t /*cost*/,
+                                                   EntryMustBeUnique) {
+  LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
+              << " from maid_node " << HexSubstr(maid_name->string())
+              << " . SendPutFailure with message_id " << message_id.data;
+  dispatcher_.SendPutFailure<Data>(maid_name, data.name(),
+                                   maidsafe_error(VaultErrors::unique_data_clash), message_id);
+}
+
+template <typename Data>
+void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
+                                                   nfs::MessageId message_id, int32_t cost,
+                                                   EntryNeedNotBeUnique) {
+  LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
+              << " from maid_node " << HexSubstr(maid_name->string()) << " syncing";
+  typename DataManager::Key key(data.name().value, Data::Tag::kValue);
+  DoSync(DataManager::UnresolvedPut(key, ActionDataManagerPut(), routing_.kNodeId()));
+  LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
+              << " from maid_node " << HexSubstr(maid_name->string())
+              << " . SendPutResponse with message_id " << message_id.data;
+  dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);
 }
 
 template <typename Data>
