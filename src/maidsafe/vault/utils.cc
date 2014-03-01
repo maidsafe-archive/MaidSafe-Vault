@@ -142,6 +142,11 @@ std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db
   return std::move(std::unique_ptr<leveldb::DB>(db));
 }
 
+nfs::MessageId HashStringToMessageId(const std::string& input) {
+  std::hash<std::string> hash_fn;
+  return nfs::MessageId(static_cast<nfs::MessageId::value_type>(hash_fn(input)));
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

@@ -187,8 +187,9 @@ struct GroupOrKeyType<PersonaType, typename ToVoid<typename PersonaType::GroupNa
 }  // namespace detail
 
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path);
-// ============================ sync utils =========================================================
 
+
+// ============================ sync utils =========================================================
 namespace detail {
 template <typename Dispatcher, typename UnresolvedAction>
 void SendSync(Dispatcher& dispatcher,
@@ -233,7 +234,11 @@ void IncrementAttemptsAndSendSync(Dispatcher& dispatcher,
 }
 
 }  // namespace detail
+
+
 // ============================ dispatcher utils ===================================================
+nfs::MessageId HashStringToMessageId(const std::string& input);
+
 template <typename MessageType>
 struct SendSyncMessage {
   typedef routing::Message<typename MessageType::Sender,
