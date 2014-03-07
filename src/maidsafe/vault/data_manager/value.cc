@@ -72,7 +72,7 @@ void DataManagerValue::AddPmid(const PmidName& pmid_name) {
   LOG(kVerbose) << "DataManagerValue::AddPmid adding " << HexSubstr(pmid_name->string());
   online_pmids_.insert(pmid_name);
   offline_pmids_.erase(pmid_name);
-  PrintRecords();
+//  PrintRecords();
 }
 
 void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
@@ -112,7 +112,7 @@ void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
     offline_pmids_.insert(pmid_name);
   } else {
     LOG(kError) << "Invalid Pmid reported";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 //  PrintRecords();
 }

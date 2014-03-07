@@ -124,7 +124,7 @@ TEST_CASE_METHOD(PmidManagerServiceTest,
     auto group_source(CreateGroupSource(NodeId(put_request.contents->name.raw_name.string())));
     CHECK_NOTHROW(GroupSendToGroup(&pmid_manager_service_, put_request, group_source,
                                    routing::GroupId(this->routing_.kNodeId())));
-    CHECK(GetUnresolvedActions<PmidManager::UnresolvedPut>().size() == 1);
+    CHECK(GetUnresolvedActions<PmidManager::UnresolvedPut>().size() == 0);
   }
 
   SECTION("PutFailureFromPmidNodeToPmidManager") {
@@ -136,7 +136,7 @@ TEST_CASE_METHOD(PmidManagerServiceTest,
     CHECK_NOTHROW(SingleSendsToGroup(&pmid_manager_service_, put_failure,
                                      routing::SingleSource(NodeId(NodeId::kRandomId)),
                                      routing::GroupId(NodeId(pmid_.name()->string()))));
-    CHECK(GetUnresolvedActions<PmidManager::UnresolvedDelete>().size() == 1);
+    CHECK(GetUnresolvedActions<PmidManager::UnresolvedDelete>().size() == 0);
     metadata = GetMetadata(PmidName(pmid_.name()));
     CHECK(metadata.claimed_available_size == 0);
   }
@@ -147,7 +147,7 @@ TEST_CASE_METHOD(PmidManagerServiceTest,
     auto group_source(CreateGroupSource(NodeId(content.raw_name.string())));
     CHECK_NOTHROW(GroupSendToGroup(&pmid_manager_service_, delete_request, group_source,
                                    routing::GroupId(NodeId(pmid_.name()->string()))));
-    CHECK(GetUnresolvedActions<PmidManager::UnresolvedDelete>().size() == 1);
+    CHECK(GetUnresolvedActions<PmidManager::UnresolvedDelete>().size() == 0);
   }
 
   SECTION("GetPmidAccountRequestFromPmidNodeToPmidManager") {
@@ -159,7 +159,7 @@ TEST_CASE_METHOD(PmidManagerServiceTest,
                                      routing::GroupId(NodeId(pmid_.name()->string()))));
   }
 
-  SECTION("PmidHealthRequestFromMaidNodeToPmidManager") {
+  SECTION("PmidHealthRequestFromMaidManagerToPmidManager") {
     auto content(CreateContent<PmidHealthRequestFromMaidManagerToPmidManager::Contents>());
     auto get_pmid_account_request(CreateMessage<PmidHealthRequestFromMaidManagerToPmidManager>(
                                       content));

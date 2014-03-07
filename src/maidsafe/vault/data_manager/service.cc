@@ -349,7 +349,13 @@ void DataManagerService::HandleMessage(
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit add pmid to db"
                    << " for chunk " << HexSubstr(unresolved_action.key.name.string())
                    << " and pmid_node " << HexSubstr(unresolved_action.action.kPmidName->string());
-        db_.Commit(resolved_action->key, resolved_action->action);
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+        }
+        catch (const maidsafe_error& error) {
+          if (error.code() != make_error_code(VaultErrors::account_already_exists))
+            throw;
+        }
       }
       break;
     }
@@ -392,7 +398,13 @@ void DataManagerService::HandleMessage(
       auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit pmid goes offline";
-        db_.Commit(resolved_action->key, resolved_action->action);
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+        }
+        catch (const maidsafe_error& error) {
+          if (error.code() != make_error_code(CommonErrors::no_such_element))
+            throw;
+        }
       }
       break;
     }

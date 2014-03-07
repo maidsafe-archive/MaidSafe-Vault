@@ -111,8 +111,8 @@ TEST_F(VersionHandlerTest, FUNC_DeleteBranchUntilFork) {
   puts.push_back(std::make_pair(v1_bbb, v2_ddd));
   puts.push_back(std::make_pair(v3_fff, v4_iii));
 
-  auto put_version_future(clients_.front()->nfs_->PutVersion(name, VersionName(), v0_aaa));
-  EXPECT_NO_THROW(put_version_future.get());
+  auto create_version_future(clients_.front()->nfs_->CreateVersionTree(name, v0_aaa, 10, 20));
+  EXPECT_NO_THROW(create_version_future.get());
 
   for (const auto& put : puts) {
     auto put_version_future(clients_.front()->nfs_->PutVersion(name, put.first, put.second));
@@ -143,7 +143,7 @@ TEST_F(VersionHandlerTest, FUNC_DeleteBranchUntilFork) {
     EXPECT_NE(std::find(std::begin(versions), std::end(versions), v2_ddd), std::end(versions));
   }
   catch (const std::exception& error) {
-    EXPECT_TRUE(false) << error.what();
+    EXPECT_TRUE(false) << boost::diagnostic_information(error);
   }
 }
 

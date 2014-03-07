@@ -88,6 +88,7 @@ TEST_CASE_METHOD(PmidNodeServiceTest, "pmid node: checking handlers availablity"
   SECTION("IntegrityCheckRequestFromDataManagerToPmidNode") {
     ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
     NonEmptyString random_string(RandomString(64));
+    Store(data);
     nfs_vault::DataNameAndRandomString content(data.name(), random_string);
     auto integrity_check_request(
              CreateMessage<IntegrityCheckRequestFromDataManagerToPmidNode>(content));

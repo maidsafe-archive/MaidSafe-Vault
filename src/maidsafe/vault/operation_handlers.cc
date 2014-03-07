@@ -84,12 +84,12 @@ void DoOperation(MaidManagerService* service,
 template <>
 void DoOperation(MaidManagerService* service,
                  const PutFailureFromDataManagerToMaidManager& message,
-                 const PutFailureFromDataManagerToMaidManager::Sender& sender,
-                 const PutFailureFromDataManagerToMaidManager::Receiver& /*receiver*/) {
+                 const PutFailureFromDataManagerToMaidManager::Sender& /*sender*/,
+                 const PutFailureFromDataManagerToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << "DoOperation PutFailureFromDataManagerToMaidManager";
   auto data_name(GetNameVariant(*message.contents));
   MaidManagerPutResponseFailureVisitor<MaidManagerService> put_visitor(
-      service, MaidName(Identity(sender.sender_id.data.string())),
+      service, MaidName(Identity(receiver.data.string())),
       message.contents->return_code.value, message.id);
   boost::apply_visitor(put_visitor, data_name);
 }
