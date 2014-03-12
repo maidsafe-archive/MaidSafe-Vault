@@ -40,7 +40,8 @@ class MaidManagerServiceTest {
   MaidManagerServiceTest()
       : anmaid_(),
         maid_(anmaid_),
-        pmid_(maid_),
+        anpmid_(),
+        pmid_(anpmid_),
         public_maid_(maid_),
         routing_(pmid_),
         data_getter_(asio_service_, routing_),
@@ -111,6 +112,7 @@ class MaidManagerServiceTest {
  protected:
   passport::Anmaid anmaid_;
   passport::Maid maid_;
+  passport::Anpmid anpmid_;
   passport::Pmid pmid_;
   passport::PublicMaid public_maid_;
   routing::Routing routing_;

@@ -359,8 +359,9 @@ KeyChain::KeyChain(size_t size) {
 passport::detail::AnmaidToPmid KeyChain::Add() {
   passport::Anmaid anmaid;
   passport::Maid maid(anmaid);
-  passport::Pmid pmid(maid);
-  passport::detail::AnmaidToPmid node_keys(anmaid, maid, pmid);
+  passport::Anpmid anpmid;
+  passport::Pmid pmid(anpmid);
+  passport::detail::AnmaidToPmid node_keys(anmaid, maid, anpmid, pmid);
   keys.push_back(node_keys);
   return node_keys;
 }

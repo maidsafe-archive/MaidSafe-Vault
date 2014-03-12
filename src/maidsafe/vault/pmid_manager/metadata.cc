@@ -19,6 +19,7 @@
 #include "maidsafe/vault/pmid_manager/metadata.h"
 
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/utils.h"
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 

@@ -52,7 +52,10 @@ class VaultTest : public testing::Test {
     return passport::Maid(anmaid);
   }
 
-  passport::Pmid MakePmid() { return passport::Pmid(MakeMaid()); }
+  passport::Pmid MakePmid() {
+    passport::Anpmid anpmid;
+    return passport::Pmid(anpmid);
+  }
 
   passport::PublicPmid MakePublicPmid() {
     passport::Pmid pmid(MakePmid());

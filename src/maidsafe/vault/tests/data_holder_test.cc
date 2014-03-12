@@ -50,24 +50,6 @@
 // }
 
 // template<>
-// std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnmid>() {
-//  passport::Anmid anmid;
-//  return MakeNameAndContentPair(anmid);
-// }
-
-// template<>
-// std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnsmid>() {
-//  passport::Ansmid ansmid;
-//  return MakeNameAndContentPair(ansmid);
-// }
-
-// template<>
-// std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAntmid>() {
-//  passport::Antmid antmid;
-//  return MakeNameAndContentPair(antmid);
-// }
-
-// template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnmaid>() {
 //  passport::Anmaid anmaid;
 //  return MakeNameAndContentPair(anmaid);
@@ -81,10 +63,15 @@
 // }
 
 // template<>
+// std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicAnpmid>() {
+//  passport::Anpmid anpmid;
+//  return MakeNameAndContentPair(anpmid);
+// }
+
+// template<>
 // std::pair<Identity, NonEmptyString> GetNameAndContent<passport::PublicPmid>() {
-//  passport::Anmaid anmaid;
-//  passport::Maid maid(anmaid);
-//  passport::Pmid pmid(maid);
+//  passport::Anpmid anpmid;
+//  passport::Pmid pmid(anpmid);
 //  return MakeNameAndContentPair(pmid);
 // }
 
@@ -423,21 +410,14 @@
 //                           BEH_HandleDeleteMessage,
 //                           BEH_RandomAsync);
 
-// typedef testing::Types<passport::PublicAnmid,
-//                       passport::PublicAnsmid,
-//                       passport::PublicAntmid,
-//                       passport::PublicAnmaid,
+// typedef testing::Types<passport::PublicAnmaid,
 //                       passport::PublicMaid,
+//                       passport::PublicAnpmid,
 //                       passport::PublicPmid,
-//                       passport::Mid,
-//                       passport::Smid,
-//                       passport::Tmid,
 //                       passport::PublicAnmpid,
 //                       passport::PublicMpid,
 //                       ImmutableData,
-//                       OwnerDirectory,
-//                       GroupDirectory,
-//                       WorldDirectory> AllTypes;
+//                       MutableData> AllTypes;
 
 // INSTANTIATE_TYPED_TEST_CASE_P(NoCache, DataHolderTest, AllTypes);
 
@@ -470,18 +450,14 @@
 
 // REGISTER_TYPED_TEST_CASE_P(DataHolderCacheableTest, BEH_StoreInCache);
 
-// typedef testing::Types<passport::PublicAnmid,
-//                       passport::PublicAnsmid,
-//                       passport::PublicAntmid,
-//                       passport::PublicAnmaid,
+// typedef testing::Types<passport::PublicAnmaid,
 //                       passport::PublicMaid,
+//                       passport::PublicAnpmid,
 //                       passport::PublicPmid,
 //                       passport::PublicAnmpid,
 //                       passport::PublicMpid,
 //                       ImmutableData,
-//                       OwnerDirectory,
-//                       GroupDirectory,
-//                       WorldDirectory> CacheableTypes;
+//                       MutableData> CacheableTypes;
 
 // INSTANTIATE_TYPED_TEST_CASE_P(Cache, DataHolderCacheableTest, CacheableTypes);
 

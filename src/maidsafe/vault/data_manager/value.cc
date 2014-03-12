@@ -20,6 +20,8 @@
 
 #include <string>
 
+#include "maidsafe/common/utils.h"
+
 namespace maidsafe {
 
 namespace vault {
