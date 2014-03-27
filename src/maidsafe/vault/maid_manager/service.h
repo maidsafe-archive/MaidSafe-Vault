@@ -36,7 +36,7 @@
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
 
@@ -126,7 +126,8 @@ class MaidManagerService {
   void HandleSyncedRemoveMaidAccount(
       std::unique_ptr<MaidManager::UnresolvedRemoveAccount>&& synced_action);
 
-  void HandlePmidRegistration(const nfs_vault::PmidRegistration& pmid_registration);
+  void HandlePmidRegistration(const nfs_vault::PmidRegistration& pmid_registration,
+                              nfs::MessageId message_id);
   void HandlePmidUnregistration(const MaidName& maid_name, const PmidName& pmid_name);
 
   void HandleSyncedPmidRegistration(
@@ -137,7 +138,8 @@ class MaidManagerService {
 
   template<typename PublicFobType>
   void ValidatePmidRegistration(PublicFobType public_fob,
-                                std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
+                                std::shared_ptr<PmidRegistrationOp> pmid_registration_op,
+                                nfs::MessageId message_id);
   // =============== Put/Delete data ===============================================================
   template <typename Data>
   void HandlePut(const MaidName& account_name, const Data& data, const PmidName& pmid_node_hint,
@@ -162,24 +164,53 @@ class MaidManagerService {
   // ================================== Version Handlers ===========================================
 
   template <typename DataNameType>
-  void HandlePutVersion(const MaidName& maid_name, const DataNameType& data_name,
-                        const StructuredDataVersions::VersionName& old_version,
-                        const StructuredDataVersions::VersionName& new_version,
-                        nfs::MessageId message_id);
+  void HandleCreateVersionTreeRequest(const MaidName& maid_name, const DataNameType& data_name,
+                                      const StructuredDataVersions::VersionName& version,
+                                      uint32_t max_versions, uint32_t max_branches,
+                                      nfs::MessageId message_id);
+
+  void HandleCreateVersionTreeResponse(const MaidName& maid_name, const maidsafe_error& error,
+                                       nfs::MessageId message_id);
+
+  template <typename DataNameType>
+  void HandlePutVersionRequest(const MaidName& maid_name, const DataNameType& data_name,
+                               const StructuredDataVersions::VersionName& old_version,
+                               const StructuredDataVersions::VersionName& new_version,
+                               nfs::MessageId message_id);
+
+  void HandlePutVersionResponse(const MaidName& maid_name, const maidsafe_error& return_code,
+                                std::unique_ptr<StructuredDataVersions::VersionName> tip_of_tree,
+                                nfs::MessageId message_id);
 
   template <typename DataNameType>
   void HandleDeleteBranchUntilFork(const MaidName& maid_name, const DataNameType& data_name,
                                    const StructuredDataVersions::VersionName& version,
                                    nfs::MessageId message_id);
 
+  void HandleIncrementReferenceCounts(const MaidName& maid_name,
+                                      const nfs_vault::DataNames& data_names);
+  void HandleDecrementReferenceCounts(const MaidName& maid_name,
+                                      const nfs_vault::DataNames& data_names);
+
+  void HandleSyncedIncrementReferenceCounts(
+      std::unique_ptr<MaidManager::UnresolvedIncrementReferenceCounts>&&
+          synced_action_increment_reference_counts);
+
+  void HandleSyncedDecrementReferenceCounts(
+      std::unique_ptr<MaidManager::UnresolvedDecrementReferenceCounts>&&
+          synced_action_decrement_reference_counts);
+
   // ===============================================================================================
 
   void HandleSyncedUpdatePmidHealth(std::unique_ptr<MaidManager::UnresolvedUpdatePmidHealth>&&
                                         synced_action_update_pmid_health);
 
-  void HandleHealthResponse(const MaidName& maid_name, const PmidName& pmid_node,
-                            const std::string &serialised_pmid_health,
-                            nfs_client::ReturnCode& return_code, nfs::MessageId message_id);
+  void HandlePmidHealthRequest(const MaidName& maid_name, const PmidName& pmid_node,
+                               nfs::MessageId message_id);
+
+  void HandlePmidHealthResponse(const MaidName& maid_name,
+                                const std::string &serialised_pmid_health,
+                                maidsafe_error& return_code, nfs::MessageId message_id);
 
 //  MaidManagerMetadata::Status AllowPut(const MaidName& account_name, int32_t cost);
 
@@ -190,7 +221,8 @@ class MaidManagerService {
   void CreateAccount(const MaidName& account_name, AllowedAccountCreationType);
   template <typename Data>
   void CreateAccount(const MaidName& /*account_name*/, DisallowedAccountCreationType) {}
-  void FinalisePmidRegistration(std::shared_ptr<PmidRegistrationOp> pmid_registration_op);
+  void FinalisePmidRegistration(std::shared_ptr<PmidRegistrationOp> pmid_registration_op,
+                                nfs::MessageId message_id);
 
   void HandleRemoveAccount(const MaidName& maid_name, nfs::MessageId mesage_id);
 
@@ -213,10 +245,15 @@ class MaidManagerService {
   typedef boost::make_variant_over<FinalType>::type Messages;
 
  private:
+  typedef Accumulator<nfs::MaidManagerServiceMessages> NfsAccumulator;
+  typedef Accumulator<MaidManagerServiceMessages> VaultAccumulator;
+
   void ObfuscateKey(MaidManager::Key& key) {
     // Hash the data name to obfuscate the list of chunks associated with the client.
     key.name = Identity(crypto::Hash<crypto::SHA512>(key.name));
   }
+
+  bool CheckDataNamesExist(const MaidName& maid_name, const nfs_vault::DataNames& data_names);
 
   struct MaidAccountCreationStatus {
     MaidAccountCreationStatus(passport::PublicMaid::Name maid_name_in,
@@ -241,15 +278,17 @@ class MaidManagerService {
   friend class detail::MaidManagerPutResponseVisitor<MaidManagerService>;
   friend class detail::MaidManagerPutResponseFailureVisitor<MaidManagerService>;
   friend class detail::MaidManagerDeleteVisitor<MaidManagerService>;
-  friend class detail::MaidManagerPutVersionVisitor<MaidManagerService>;
+  friend class detail::MaidManagerPutVersionRequestVisitor<MaidManagerService>;
   friend class detail::MaidManagerDeleteBranchUntilForkVisitor<MaidManagerService>;
+  friend class detail::MaidManagerCreateVersionTreeRequestVisitor<MaidManagerService>;
   friend class test::MaidManagerServiceTest;
 
   routing::Routing& routing_;
   nfs_client::DataGetter& data_getter_;
   GroupDb<MaidManager> group_db_;
   std::mutex accumulator_mutex_;
-  Accumulator<Messages> accumulator_;
+  NfsAccumulator nfs_accumulator_;
+  VaultAccumulator vault_accumulator_;
   MaidManagerDispatcher dispatcher_;
   Sync<MaidManager::UnresolvedCreateAccount> sync_create_accounts_;
   Sync<MaidManager::UnresolvedRemoveAccount> sync_remove_accounts_;
@@ -258,6 +297,8 @@ class MaidManagerService {
   Sync<MaidManager::UnresolvedRegisterPmid> sync_register_pmids_;
   Sync<MaidManager::UnresolvedUnregisterPmid> sync_unregister_pmids_;
   Sync<MaidManager::UnresolvedUpdatePmidHealth> sync_update_pmid_healths_;
+  Sync<MaidManager::UnresolvedIncrementReferenceCounts> sync_increment_reference_counts_;
+  Sync<MaidManager::UnresolvedDecrementReferenceCounts> sync_decrement_reference_counts_;
   static const int kDefaultPaymentFactor_;
   std::mutex pending_account_mutex_;
   std::map<nfs::MessageId, MaidAccountCreationStatus> pending_account_map_;
@@ -268,7 +309,7 @@ void MaidManagerService::HandleMessage(const MessageType& /*message*/,
                                        const typename MessageType::Sender& /*sender*/,
                                        const typename MessageType::Receiver& /*receiver*/) {
   LOG(kError) << "invalid function call because of un-specialised templated method";
-  MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
+  MessageType::No_generic_handler_is_available__Specialisation_required;
 }
 
 template <>
@@ -334,6 +375,12 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
+    const nfs::PmidHealthRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::PmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void MaidManagerService::HandleMessage(
     const PmidHealthResponseFromPmidManagerToMaidManager& message,
     const typename PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
     const typename PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver);
@@ -349,6 +396,36 @@ void MaidManagerService::HandleMessage(
     const AccountTransferFromMaidManagerToMaidManager& message,
     const typename AccountTransferFromMaidManagerToMaidManager::Sender& sender,
     const typename AccountTransferFromMaidManagerToMaidManager::Receiver& receiver);
+
+template <>
+void MaidManagerService::HandleMessage(
+    const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager& message,
+    const typename nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void MaidManagerService::HandleMessage(
+    const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager& message,
+    const typename nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void MaidManagerService::HandleMessage(
+    const PutVersionResponseFromVersionHandlerToMaidManager& message,
+    const typename PutVersionResponseFromVersionHandlerToMaidManager::Sender& sender,
+    const typename PutVersionResponseFromVersionHandlerToMaidManager::Receiver& receiver);
+
+template <>
+void MaidManagerService::HandleMessage(
+    const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void MaidManagerService::HandleMessage(
+    const CreateVersionTreeResponseFromVersionHandlerToMaidManager& message,
+    const typename CreateVersionTreeResponseFromVersionHandlerToMaidManager::Sender& sender,
+    const typename CreateVersionTreeResponseFromVersionHandlerToMaidManager::Receiver& receiver);
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
@@ -440,11 +517,36 @@ void MaidManagerService::HandlePutFailure(
 }
 
 template <typename DataNameType>
-void MaidManagerService::HandlePutVersion(
+void MaidManagerService::HandleCreateVersionTreeRequest(
+    const MaidName& maid_name, const DataNameType& data_name,
+    const StructuredDataVersions::VersionName& version, uint32_t max_versions,
+    uint32_t max_branches, nfs::MessageId message_id) {
+  try {
+    group_db_.GetMetadata(maid_name);
+    dispatcher_.SendCreateVersionTreeRequest(maid_name, data_name, version, max_versions,
+                                             max_branches, message_id);
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kError) << "MaidManagerService::HandleCreateVersionTreeRequest faied: " << error.what();
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
+  }
+}
+
+template <typename DataNameType>
+void MaidManagerService::HandlePutVersionRequest(
     const MaidName& maid_name, const DataNameType& data_name,
     const StructuredDataVersions::VersionName& old_version,
     const StructuredDataVersions::VersionName& new_version, nfs::MessageId message_id) {
-  dispatcher_.SendPutVersion(maid_name, data_name, old_version, new_version, message_id);
+  try {
+    group_db_.GetMetadata(maid_name);
+    dispatcher_.SendPutVersionRequest(maid_name, data_name, old_version, new_version, message_id);
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kError) << "MaidManagerService::HandlePutVersion faied to get metadata" << error.what();
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
+  }
 }
 
 template <typename DataNameType>
@@ -485,8 +587,8 @@ void MaidManagerService::HandleDelete(const MaidName& account_name,
 
 template<typename PublicFobType>
 void MaidManagerService::ValidatePmidRegistration(
-    PublicFobType public_fob,
-    std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
+    PublicFobType public_fob, std::shared_ptr<PmidRegistrationOp> pmid_registration_op,
+    nfs::MessageId message_id) {
   LOG(kVerbose) << "MaidManagerService::ValidatePmidRegistration";
   bool finalise(false);
   {
@@ -498,7 +600,7 @@ void MaidManagerService::ValidatePmidRegistration(
                   << " finalised " << finalise;
   }
   if (finalise)
-    FinalisePmidRegistration(pmid_registration_op);
+    FinalisePmidRegistration(pmid_registration_op, message_id);
 }
 
 template <typename UnresolvedAction>
@@ -510,6 +612,10 @@ void MaidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_register_pmids_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_update_pmid_healths_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_increment_reference_counts_,
+                                       unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_decrement_reference_counts_,
+                                       unresolved_action);
 }
 
 }  // namespace vault

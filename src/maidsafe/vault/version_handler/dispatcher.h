@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#include "maidsafe/data_types/structured_data_versions.h"
+#include "maidsafe/common/data_types/structured_data_versions.h"
 
 #include "maidsafe/routing/routing_api.h"
 
@@ -46,6 +46,9 @@ class VersionHandlerDispatcher {
   void SendGetBranchResponse(
       const VersionHandler::Key& key, const std::vector<VersionHandler::VersionName>& versions,
       const RequestorType& requestor, const maidsafe_error& result, nfs::MessageId message_id);
+
+  void SendCreateVersionTreeResponse(const Identity& originator,
+                                     const maidsafe_error& return_code, nfs::MessageId message_id);
 
   void SendPutVersionResponse(const VersionHandler::Key& key,
                               const VersionHandler::VersionName& tip_of_tree,

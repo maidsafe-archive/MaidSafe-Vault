@@ -16,35 +16,31 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_CONFIG_H_
-#define MAIDSAFE_VAULT_CONFIG_H_
-
-#include <functional>
-
-#include "maidsafe/common/data_types/data_name_variant.h"
+#include "maidsafe/common/test.h"
+#include "maidsafe/vault/tests/tests_utils.h"
+#include "maidsafe/vault/tests/vault_network.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-typedef std::function<void(const DataNameVariant&)> IntegrityCheckFunctor;
+namespace test {
 
-namespace detail {
-
-enum class DbAction {
-  kPut,
-  kDelete
+class PmidManagerTest : public VaultNetwork  {
+ public:
+  PmidManagerTest() {}
 };
 
-enum class GroupDbMetaDataStatus {
-  kGroupEmpty,
-  kGroupNonEmpty
-};
+TEST_F(PmidManagerTest, FUNC_GetPmidHealth) {
+  EXPECT_TRUE(AddClient(true));
+  auto get_pmid_health_future(clients_.front()->nfs_->GetPmidHealth(public_pmids_.back().name()));
+  EXPECT_NO_THROW(get_pmid_health_future.get());
+  LOG(kVerbose) << "Pmid Health Retrieved";
+}
 
-}  // namespace detail
+}  // namespace test
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_CONFIG_H_

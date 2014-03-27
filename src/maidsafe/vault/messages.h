@@ -19,7 +19,7 @@
 #ifndef MAIDSAFE_VAULT_MESSAGES_H_
 #define MAIDSAFE_VAULT_MESSAGES_H_
 
-#include "maidsafe/data_types/data_type_values.h"
+#include "maidsafe/common/data_types/data_type_values.h"
 
 #include "maidsafe/nfs/client/messages.h"
 #include "maidsafe/nfs/vault/messages.h"

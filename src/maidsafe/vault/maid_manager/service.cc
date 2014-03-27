@@ -23,21 +23,22 @@
 
 #include "boost/thread/future.hpp"
 
+#include "maidsafe/common/data_types/mutable_data.h"
 #include "maidsafe/nfs/vault/messages.h"
 #include "maidsafe/nfs/vault/pmid_registration.h"
-#include "maidsafe/data_types/mutable_data.h"
 #include "maidsafe/passport/types.h"
-
 
 #include "maidsafe/vault/operation_handlers.h"
 #include "maidsafe/vault/maid_manager/action_put.h"
 #include "maidsafe/vault/maid_manager/action_update_pmid_health.h"
+#include "maidsafe/vault/maid_manager/action_reference_counts.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/helpers.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
+#include "maidsafe/vault/maid_manager/action_reference_count.h"
 
 namespace maidsafe {
 
@@ -154,7 +155,8 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
       data_getter_(data_getter),
       group_db_(),
       accumulator_mutex_(),
-      accumulator_(),
+      nfs_accumulator_(),
+      vault_accumulator_(),
       dispatcher_(routing_, pmid),
       sync_create_accounts_(NodeId(pmid.name()->string())),
       sync_remove_accounts_(NodeId(pmid.name()->string())),
@@ -163,6 +165,8 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
       sync_register_pmids_(NodeId(pmid.name()->string())),
       sync_unregister_pmids_(NodeId(pmid.name()->string())),
       sync_update_pmid_healths_(NodeId(pmid.name()->string())),
+      sync_increment_reference_counts_(NodeId(pmid.name()->string())),
+      sync_decrement_reference_counts_(NodeId(pmid.name()->string())),
       pending_account_mutex_(),
       pending_account_map_() {}
 
@@ -309,7 +313,7 @@ void MaidManagerService::HandleSyncedRemoveMaidAccount(
 // =============== Pmid registration ===============================================================
 
 void MaidManagerService::HandlePmidRegistration(
-    const nfs_vault::PmidRegistration& pmid_registration) {
+    const nfs_vault::PmidRegistration& pmid_registration, nfs::MessageId message_id) {
 // FIXME This should be implemented in validate method
 //  if (pmid_registration.maid_name() != source_maid_name)
 //    return;
@@ -318,7 +322,7 @@ void MaidManagerService::HandlePmidRegistration(
 //          ActionMaidManagerRegisterPmid(pmid_registration), routing_.kNodeId()));
   DoSync(MaidManager::UnresolvedRegisterPmid(
       MaidManager::MetadataKey(pmid_registration.maid_name()),
-      ActionMaidManagerRegisterPmid(pmid_registration), routing_.kNodeId()));
+      ActionMaidManagerRegisterPmid(pmid_registration, message_id), routing_.kNodeId()));
 }
 
 void MaidManagerService::HandlePmidUnregistration(const MaidName& maid_name,
@@ -370,9 +374,10 @@ void MaidManagerService::HandleSyncedPmidRegistration(
 //       });
 //   boost::wait_for_all(maid_future_then, pmid_future_then);
   LOG(kVerbose) << "MaidManagerService::HandleSyncedPmidRegistration";
-  auto maid_future = data_getter_.Get(synced_action->action.kPmidRegistration.maid_name(),
+  nfs::MessageId message_id(synced_action->action.message_id);
+  auto maid_future = data_getter_.Get(synced_action->action.pmid_registration.maid_name(),
                                       std::chrono::seconds(10));
-  auto pmid_future = data_getter_.Get(synced_action->action.kPmidRegistration.pmid_name(),
+  auto pmid_future = data_getter_.Get(synced_action->action.pmid_registration.pmid_name(),
                                       std::chrono::seconds(10));
 
   auto pmid_registration_op(std::make_shared<PmidRegistrationOp>(std::move(synced_action)));
@@ -380,10 +385,10 @@ void MaidManagerService::HandleSyncedPmidRegistration(
   try {
     std::unique_ptr<passport::PublicPmid> public_pmid(new passport::PublicPmid(pmid_future.get()));
     LOG(kVerbose) << "MaidManagerService::HandleSyncedPmidRegistration got public_pmid";
-    ValidatePmidRegistration(std::move(public_pmid), pmid_registration_op);
+    ValidatePmidRegistration(std::move(public_pmid), pmid_registration_op, message_id);
     std::unique_ptr<passport::PublicMaid> public_maid(new passport::PublicMaid(maid_future.get()));
     LOG(kVerbose) << "MaidManagerService::HandleSyncedPmidRegistration got public_maid";
-    ValidatePmidRegistration(std::move(public_maid), pmid_registration_op);
+    ValidatePmidRegistration(std::move(public_maid), pmid_registration_op, message_id);
   } catch(const std::exception& e) {
     LOG(kError) << "MaidManagerService::HandleSyncedPmidRegistration raised exception " << e.what();
   }
@@ -403,8 +408,9 @@ void MaidManagerService::HandleSyncedPmidUnregistration(
 }
 
 void MaidManagerService::FinalisePmidRegistration(
-    std::shared_ptr<PmidRegistrationOp> pmid_registration_op) {
+    std::shared_ptr<PmidRegistrationOp> pmid_registration_op, nfs::MessageId message_id) {
   assert(pmid_registration_op->count == 2);
+  maidsafe_error return_code(CommonErrors::success);
 
   if (!pmid_registration_op->public_maid || !pmid_registration_op->public_pmid) {
     LOG(kWarning) << "Failed to retrieve one or both of MAID and PMID";
@@ -412,13 +418,13 @@ void MaidManagerService::FinalisePmidRegistration(
   }
 
   try {
-    if (!pmid_registration_op->synced_action->action.kPmidRegistration.Validate(
+    if (!pmid_registration_op->synced_action->action.pmid_registration.Validate(
             *pmid_registration_op->public_maid, *pmid_registration_op->public_pmid)) {
       LOG(kWarning) << "Failed to validate PmidRegistration";
       return;
     }
 
-    if (pmid_registration_op->synced_action->action.kPmidRegistration.unregister()) {
+    if (pmid_registration_op->synced_action->action.pmid_registration.unregister()) {
       group_db_.Commit(pmid_registration_op->synced_action->key.group_name(),
                        pmid_registration_op->synced_action->action);
     } else {
@@ -429,11 +435,15 @@ void MaidManagerService::FinalisePmidRegistration(
     }
   }
   catch(const maidsafe_error& error) {
+    return_code = error;
     LOG(kWarning) << "Failed to register new PMID: " << error.what();
   }
   catch(const std::exception& ex) {
+    return_code = MakeError(CommonErrors::unknown);
     LOG(kWarning) << "Failed to register new PMID: " << ex.what();
   }
+  dispatcher_.SendRegisterPmidResponse(pmid_registration_op->public_maid->name(), return_code,
+                                       message_id);
   LOG(kInfo) << "PmidRegistration Finalised";
 }
 
@@ -521,22 +531,33 @@ void MaidManagerService::HandleSyncedDelete(
 // }
 
 // =============== PMID totals =====================================================================
-void MaidManagerService::HandleHealthResponse(const MaidName& maid_name,
-    const PmidName& /*pmid_node*/, const std::string& serialised_pmid_health,
-    nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
+
+void MaidManagerService::HandlePmidHealthRequest(
+    const MaidName& maid_name, const PmidName& pmid_node, nfs::MessageId message_id) {
+  try {
+    group_db_.GetMetadata(maid_name);
+    dispatcher_.SendPmidHealthRequest(maid_name, pmid_node, message_id);
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kError) << "MaidManagerService::HandlePmidHealthRequest faied: " << error.what();
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
+  }
+}
+
+void MaidManagerService::HandlePmidHealthResponse(const MaidName& maid_name,
+    const std::string& serialised_pmid_health, maidsafe_error& return_code,
+    nfs::MessageId message_id) {
   LOG(kVerbose) << "MaidManagerService::HandleHealthResponse to " << HexSubstr(maid_name->string());
   try {
     PmidManagerMetadata pmid_health(serialised_pmid_health);
     LOG(kVerbose) << "PmidManagerMetadata available size " << pmid_health.claimed_available_size;
-    if (return_code.value.code() == CommonErrors::success) {
-//      sync_update_pmid_healths_.AddLocalAction(
-//          MaidManager::UnresolvedUpdatePmidHealth(
-//              maid_name, ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
+    if (return_code.code() == make_error_code(CommonErrors::success)) {
       DoSync(MaidManager::UnresolvedUpdatePmidHealth(MaidManager::MetadataKey(maid_name),
           ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
     }
-    dispatcher_.SendHealthResponse(maid_name, pmid_health.claimed_available_size,
-                                  return_code, message_id);
+    dispatcher_.SendPmidHealthResponse(maid_name, pmid_health.claimed_available_size,
+                                       return_code, message_id);
   } catch(std::exception& e) {
     LOG(kError) << "Error handling Health Response to " << HexSubstr(maid_name->string())
                 << " with exception of " << e.what();
@@ -576,11 +597,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;
   typedef nfs::PutRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+  OperationHandlerWrapper<MaidManagerService, MessageType, NfsAccumulator>(
+      nfs_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                          return this->ValidateSender(message, sender);
+                        },
+      NfsAccumulator::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -591,11 +612,11 @@ void MaidManagerService::HandleMessage(
     const typename PutResponseFromDataManagerToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;
   typedef PutResponseFromDataManagerToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+  OperationHandlerWrapper<MaidManagerService, MessageType, VaultAccumulator>(
+      vault_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                            return this->ValidateSender(message, sender);
+                          },
+      VaultAccumulator::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -606,11 +627,11 @@ void MaidManagerService::HandleMessage(
     const typename PutFailureFromDataManagerToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;
   typedef PutFailureFromDataManagerToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+  OperationHandlerWrapper<MaidManagerService, MessageType, VaultAccumulator>(
+      vault_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                            return this->ValidateSender(message, sender);
+                          },
+      VaultAccumulator::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -621,11 +642,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;
   typedef nfs::DeleteRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+  OperationHandlerWrapper<MaidManagerService, MessageType, NfsAccumulator>(
+      nfs_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                          return this->ValidateSender(message, sender);
+                        },
+      NfsAccumulator::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -636,11 +657,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::PutVersionRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;
   typedef nfs::PutVersionRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+  OperationHandlerWrapper<MaidManagerService, MessageType, NfsAccumulator>(
+      nfs_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                          return this->ValidateSender(message, sender);
+                        },
+      NfsAccumulator::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -651,11 +672,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;
   typedef nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+  OperationHandlerWrapper<MaidManagerService, MessageType, NfsAccumulator>(
+      nfs_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                          return this->ValidateSender(message, sender);
+                        },
+      NfsAccumulator::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -666,11 +687,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;
   typedef nfs::CreateAccountRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+  OperationHandlerWrapper<MaidManagerService, MessageType, NfsAccumulator>(
+      nfs_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                          return this->ValidateSender(message, sender);
+                        },
+      NfsAccumulator::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -681,11 +702,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;
   typedef nfs::RemoveAccountRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+  OperationHandlerWrapper<MaidManagerService, MessageType, NfsAccumulator>(
+      nfs_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                          return this->ValidateSender(message, sender);
+                        },
+      NfsAccumulator::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -696,11 +717,11 @@ void MaidManagerService::HandleMessage(
     const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;
   typedef nfs::RegisterPmidRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+  OperationHandlerWrapper<MaidManagerService, MessageType, NfsAccumulator>(
+      nfs_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                          return this->ValidateSender(message, sender);
+                        },
+      NfsAccumulator::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -711,11 +732,26 @@ void MaidManagerService::HandleMessage(
     const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;
   typedef nfs::UnregisterPmidRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+  OperationHandlerWrapper<MaidManagerService, MessageType, NfsAccumulator>(
+      nfs_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                          return this->ValidateSender(message, sender);
+                        },
+      NfsAccumulator::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template <>
+void MaidManagerService::HandleMessage(
+    const nfs::PmidHealthRequestFromMaidNodeToMaidManager& message,
+    const typename nfs::PmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << message;
+  typedef nfs::PmidHealthRequestFromMaidNodeToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType, NfsAccumulator>(
+      nfs_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                          return this->ValidateSender(message, sender);
+                        },
+      NfsAccumulator::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -726,11 +762,86 @@ void MaidManagerService::HandleMessage(
     const typename PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;
   typedef PmidHealthResponseFromPmidManagerToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+  OperationHandlerWrapper<MaidManagerService, MessageType, VaultAccumulator>(
+      vault_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                            return this->ValidateSender(message, sender);
+                          },
+      VaultAccumulator::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template <>
+void MaidManagerService::HandleMessage(
+    const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager& message,
+    const typename nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << message;
+  typedef nfs::IncrementReferenceCountsFromMaidNodeToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType, NfsAccumulator>(
+      nfs_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                          return this->ValidateSender(message, sender);
+                        },
+      NfsAccumulator::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template <>
+void MaidManagerService::HandleMessage(
+    const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager& message,
+    const typename nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << message;
+  typedef nfs::DecrementReferenceCountsFromMaidNodeToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType, NfsAccumulator>(
+      nfs_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                          return this->ValidateSender(message, sender);
+                        },
+      NfsAccumulator::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template <>
+void MaidManagerService::HandleMessage(
+    const PutVersionResponseFromVersionHandlerToMaidManager& message,
+    const typename PutVersionResponseFromVersionHandlerToMaidManager::Sender& sender,
+    const typename PutVersionResponseFromVersionHandlerToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << message;
+  typedef PutVersionResponseFromVersionHandlerToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType, VaultAccumulator>(
+      vault_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                            return this->ValidateSender(message, sender);
+                          },
+      VaultAccumulator::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template <>
+void MaidManagerService::HandleMessage(
+    const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager &message,
+    const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
+    const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << message;
+  typedef nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType, NfsAccumulator>(
+      nfs_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                          return this->ValidateSender(message, sender);
+                        },
+      NfsAccumulator::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template <>
+void MaidManagerService::HandleMessage(
+    const CreateVersionTreeResponseFromVersionHandlerToMaidManager& message,
+    const typename CreateVersionTreeResponseFromVersionHandlerToMaidManager::Sender& sender,
+    const typename CreateVersionTreeResponseFromVersionHandlerToMaidManager::Receiver& receiver) {
+  LOG(kVerbose) << message;
+  typedef CreateVersionTreeResponseFromVersionHandlerToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType, VaultAccumulator>(
+      vault_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                            return this->ValidateSender(message, sender);
+                          },
+      VaultAccumulator::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
@@ -828,6 +939,28 @@ void MaidManagerService::HandleMessage(
       }
       break;
     }
+    case ActionMaidManagerIncrementReferenceCounts::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager IncrementReferenceCounts";
+      MaidManager::UnresolvedIncrementReferenceCounts unresolved_action(
+        proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_increment_reference_counts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedIncReferenceCounts";
+        HandleSyncedIncrementReferenceCounts(std::move(resolved_action));
+      }
+      break;
+    }
+    case ActionMaidManagerDecrementReferenceCounts::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager DecrementReferenceCounts";
+      MaidManager::UnresolvedDecrementReferenceCounts unresolved_action(
+        proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_decrement_reference_counts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager SyncedDecReferenceCounts";
+        HandleSyncedDecrementReferenceCounts(std::move(resolved_action));
+      }
+      break;
+    }
     default: {
       LOG(kError) << "Unhandled action type " << proto_sync.action_type();
       assert(false);
@@ -835,9 +968,78 @@ void MaidManagerService::HandleMessage(
   }
 }
 
+void MaidManagerService::HandlePutVersionResponse(
+    const MaidName& maid_name, const maidsafe_error& return_code,
+    std::unique_ptr<StructuredDataVersions::VersionName> tip_of_tree, nfs::MessageId message_id) {
+  dispatcher_.SendPutVersionResponse(maid_name, return_code, std::move(tip_of_tree), message_id);
+}
+
+void MaidManagerService::HandleCreateVersionTreeResponse(
+    const MaidName& maid_name, const maidsafe_error& error , nfs::MessageId message_id) {
+    dispatcher_.SendCreateVersionTreeResponse(maid_name, error, message_id);
+}
+
 void MaidManagerService::HandleRemoveAccount(const MaidName& maid_name, nfs::MessageId mesage_id) {
   DoSync(MaidManager::UnresolvedRemoveAccount(MaidManager::MetadataKey(maid_name),
       ActionRemoveAccount(mesage_id), routing_.kNodeId()));
+}
+
+void MaidManagerService::HandleIncrementReferenceCounts(const MaidName& maid_name,
+                                      const nfs_vault::DataNames& data_names) {
+  if (CheckDataNamesExist(maid_name, data_names)) {
+    DoSync(MaidManager::UnresolvedIncrementReferenceCounts(
+        MaidManager::MetadataKey(maid_name),
+        ActionMaidManagerIncrementReferenceCounts(data_names), routing_.kNodeId()));
+  }
+}
+
+void MaidManagerService::HandleDecrementReferenceCounts(const MaidName& maid_name,
+                                      const nfs_vault::DataNames& data_names) {
+  if (CheckDataNamesExist(maid_name, data_names)) {
+    DoSync(MaidManager::UnresolvedDecrementReferenceCounts(
+        MaidManager::MetadataKey(maid_name),
+        ActionMaidManagerDecrementReferenceCounts(data_names), routing_.kNodeId()));
+  }
+}
+
+bool MaidManagerService::CheckDataNamesExist(const MaidName& maid_name,
+                                             const nfs_vault::DataNames& data_names) {
+  try {
+    for (const auto& data_name : data_names.data_names_) {
+      MaidManager::Key key(MaidManager::GroupName(maid_name), data_name.raw_name, data_name.type);
+      group_db_.GetValue(key);
+    }
+  }
+  catch (const maidsafe_error& error) {
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
+     return false;
+  }
+  return true;
+}
+
+void MaidManagerService::HandleSyncedIncrementReferenceCounts(
+    std::unique_ptr<MaidManager::UnresolvedIncrementReferenceCounts>&&
+        synced_action_increment_reference_counts) {
+  MaidManager::MetadataKey metadata_key(synced_action_increment_reference_counts->key);
+  for (const auto& data_name :
+           synced_action_increment_reference_counts->action.kDataNames.data_names_) {
+    MaidManager::Key key(MaidManager::GroupName(metadata_key.group_name()), data_name.raw_name,
+                         ImmutableData::Tag::kValue);
+    group_db_.Commit(key, ActionMaidManagerIncrementReferenceCount());
+  }
+}
+
+void MaidManagerService::HandleSyncedDecrementReferenceCounts(
+    std::unique_ptr<MaidManager::UnresolvedDecrementReferenceCounts>&&
+        synced_action_decrement_reference_counts) {
+  MaidManager::MetadataKey metadata_key(synced_action_decrement_reference_counts->key);
+  for (const auto& data_name :
+           synced_action_decrement_reference_counts->action.kDataNames.data_names_) {
+    MaidManager::Key key(MaidManager::GroupName(metadata_key.group_name()), data_name.raw_name,
+                         ImmutableData::Tag::kValue);
+    group_db_.Commit(key, ActionMaidManagerDecrementReferenceCount());
+  }
 }
 
 template <>

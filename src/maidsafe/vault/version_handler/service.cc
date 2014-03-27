@@ -25,7 +25,7 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/on_scope_exit.h"
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/nfs/utils.h"
 #include "maidsafe/nfs/vault/pmid_registration.h"
 
@@ -64,6 +64,7 @@ VersionHandlerService::VersionHandlerService(const passport::Pmid& pmid,
       accumulator_(),
       db_(),
       kThisNodeId_(routing_.kNodeId()),
+      sync_create_version_tree_(NodeId(pmid.name()->string())),
       sync_put_versions_(NodeId(pmid.name()->string())),
       sync_delete_branche_until_forks_(NodeId(pmid.name()->string())) {}
 
@@ -157,6 +158,21 @@ void VersionHandlerService::HandleMessage(
 
 template<>
 void VersionHandlerService::HandleMessage(
+    const CreateVersionTreeRequestFromMaidManagerToVersionHandler & message,
+    const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Sender& sender,
+    const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Receiver& receiver) {
+  LOG(kVerbose) << "CreateVersionTreeRequestFromMaidManagerToVersionHandler: " << message.id;
+  typedef CreateVersionTreeRequestFromMaidManagerToVersionHandler MessageType;
+  OperationHandlerWrapper<VersionHandlerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)), this,
+      accumulator_mutex_)(message, sender, receiver);
+}
+
+template<>
+void VersionHandlerService::HandleMessage(
     const SynchroniseFromVersionHandlerToVersionHandler& message,
     const typename SynchroniseFromVersionHandlerToVersionHandler::Sender& sender,
     const typename SynchroniseFromVersionHandlerToVersionHandler::Receiver& /*receiver*/) {
@@ -166,6 +182,28 @@ void VersionHandlerService::HandleMessage(
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
 
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
+    case ActionVersionHandlerCreateVersionTree::kActionId: {
+      VersionHandler::UnresolvedCreateVersionTree unresolved_action(
+                                                      proto_sync.serialised_unresolved_action(),
+                                                      sender.sender_id, routing_.kNodeId());
+      LOG(kVerbose) << "VersionHandlerSync -- CreateVersionTree: " << message.id;
+      auto resolved_action(sync_create_version_tree_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        try {
+          LOG(kInfo) << "VersionHandlerSync -- CreateVersionTree -Commit: " << message.id;
+          db_.Commit(resolved_action->key, resolved_action->action);
+          dispatcher_.SendCreateVersionTreeResponse(
+              resolved_action->key.originator,  maidsafe_error(CommonErrors::success),
+              resolved_action->action.message_id);
+        }
+        catch (const maidsafe_error& error) {
+          LOG(kError) << message.id << " Failed to create version: " << error.what();
+          dispatcher_.SendCreateVersionTreeResponse(
+              resolved_action->key.originator,  error, resolved_action->action.message_id);
+        }
+      }
+      break;
+    }
     case ActionVersionHandlerPut::kActionId: {
       VersionHandler::UnresolvedPutVersion unresolved_action(
                                                proto_sync.serialised_unresolved_action(),
@@ -176,10 +214,12 @@ void VersionHandlerService::HandleMessage(
         try {
           LOG(kInfo) << "VersionHandlerSync-Commit: " << message.id;
           db_.Commit(resolved_action->key, resolved_action->action);
+          StructuredDataVersions::VersionName tip_of_tree;
           if (resolved_action->action.tip_of_tree) {
+            tip_of_tree = *resolved_action->action.tip_of_tree;
             dispatcher_.SendPutVersionResponse(
-                resolved_action->key, *resolved_action->action.tip_of_tree,
-                maidsafe_error(CommonErrors::success), resolved_action->action.message_id);
+                resolved_action->key, tip_of_tree,  maidsafe_error(CommonErrors::success),
+                resolved_action->action.message_id);
           }
         }
         catch (const maidsafe_error& error) {
@@ -218,6 +258,13 @@ void VersionHandlerService::HandlePutVersion(
     const VersionHandler::VersionName& new_version, const NodeId& sender,
     nfs::MessageId message_id) {
   LOG(kVerbose) << "VersionHandlerService::HandlePutVersion: " << message_id;
+  try {
+    db_.Get(key);
+  }
+  catch (const maidsafe_error& error) {
+    dispatcher_.SendPutVersionResponse(key, VersionHandler::VersionName(), error, message_id);
+    return;
+  }
   DoSync(VersionHandler::UnresolvedPutVersion(
                       key, ActionVersionHandlerPut(old_version, new_version, sender, message_id),
                       routing_.kNodeId()));
@@ -232,9 +279,29 @@ void VersionHandlerService::HandleDeleteBranchUntilFork(
                       routing_.kNodeId()));
 }
 
+void VersionHandlerService::HandleCreateVersionTree(const VersionHandler::Key& key,
+                                                    const VersionHandler::VersionName& version,
+                                                    uint32_t max_versions, uint32_t max_branches,
+                                                    nfs::MessageId message_id) {
+  LOG(kVerbose) << "VersionHandlerService::HandleCreateVersionTree: " << message_id;
+  try {
+    db_.Get(key);
+  }
+  catch (const maidsafe_error& error) {
+    if (error.code() != make_error_code(VaultErrors::no_such_account)) {
+      dispatcher_.SendCreateVersionTreeResponse(key.originator, error, message_id);
+      return;
+    }
+  }
+  DoSync(VersionHandler::UnresolvedCreateVersionTree(
+                      key, ActionVersionHandlerCreateVersionTree(version, max_versions,
+                                                                 max_branches, message_id),
+                      routing_.kNodeId()));
+}
 
 template <typename UnresolvedAction>
 void VersionHandlerService::DoSync(const UnresolvedAction& unresolved_action) {
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_version_tree_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_put_versions_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_delete_branche_until_forks_,
                                        unresolved_action);

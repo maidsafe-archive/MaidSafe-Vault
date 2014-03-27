@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,35 +16,42 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_CONFIG_H_
-#define MAIDSAFE_VAULT_CONFIG_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_ACTION_REFERENCE_COUNT_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_ACTION_REFERENCE_COUNT_H_
 
-#include <functional>
+#include <string>
 
-#include "maidsafe/common/data_types/data_name_variant.h"
+#include "maidsafe/nfs/types.h"
+#include "maidsafe/nfs/vault/messages.h"
+
+#include "maidsafe/vault/config.h"
+#include "maidsafe/vault/maid_manager/metadata.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-typedef std::function<void(const DataNameVariant&)> IntegrityCheckFunctor;
+class MaidManagerValue;
 
-namespace detail {
-
-enum class DbAction {
-  kPut,
-  kDelete
+template <bool Increment>
+struct ActionMaidManagerReferenceCount {
+  detail::DbAction operator()(MaidManagerMetadata& metadata,
+                              std::unique_ptr<MaidManagerValue>& value);
 };
 
-enum class GroupDbMetaDataStatus {
-  kGroupEmpty,
-  kGroupNonEmpty
-};
+template <>
+detail::DbAction ActionMaidManagerReferenceCount<true>::operator()(
+    MaidManagerMetadata& metadata, std::unique_ptr<MaidManagerValue>& value);
 
-}  // namespace detail
+template <>
+detail::DbAction ActionMaidManagerReferenceCount<false>::operator()(
+    MaidManagerMetadata& metadata, std::unique_ptr<MaidManagerValue>& value);
+
+typedef ActionMaidManagerReferenceCount<true> ActionMaidManagerIncrementReferenceCount;
+typedef ActionMaidManagerReferenceCount<false> ActionMaidManagerDecrementReferenceCount;
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_CONFIG_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_ACTION_REFERENCE_COUNT_H_

@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,35 +16,33 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_CONFIG_H_
-#define MAIDSAFE_VAULT_CONFIG_H_
+#include "maidsafe/vault/maid_manager/action_reference_count.h"
 
-#include <functional>
-
-#include "maidsafe/common/data_types/data_name_variant.h"
+#include "maidsafe/vault/maid_manager/value.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-typedef std::function<void(const DataNameVariant&)> IntegrityCheckFunctor;
+template <>
+detail::DbAction ActionMaidManagerReferenceCount<true>::operator()(
+    MaidManagerMetadata& /*metadata*/, std::unique_ptr<MaidManagerValue>& value) {
+  if (!value)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+  value->IncrementCount();
+  return detail::DbAction::kPut;
+}
 
-namespace detail {
-
-enum class DbAction {
-  kPut,
-  kDelete
-};
-
-enum class GroupDbMetaDataStatus {
-  kGroupEmpty,
-  kGroupNonEmpty
-};
-
-}  // namespace detail
+template <>
+detail::DbAction ActionMaidManagerReferenceCount<false>::operator()(
+    MaidManagerMetadata& /*metadata*/, std::unique_ptr<MaidManagerValue>& value) {
+  if (!value)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+  assert((value->count() > 0));
+  value->DecrementCount();
+  return detail::DbAction::kPut;
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_CONFIG_H_

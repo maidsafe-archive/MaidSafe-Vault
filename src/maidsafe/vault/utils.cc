@@ -107,6 +107,11 @@ DataNameVariant GetNameVariant(const nfs_vault::DataNameAndRandomString& data) {
   return GetNameVariant(data.name);
 }
 
+template <>
+DataNameVariant GetNameVariant(const nfs_vault::VersionTreeCreation& data) {
+  return GetNameVariant(data.data_name);
+}
+
 void InitialiseDirectory(const boost::filesystem::path& directory) {
   if (fs::exists(directory)) {
     if (!fs::is_directory(directory))
@@ -135,6 +140,11 @@ std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
   assert(db);
   return std::move(std::unique_ptr<leveldb::DB>(db));
+}
+
+nfs::MessageId HashStringToMessageId(const std::string& input) {
+  std::hash<std::string> hash_fn;
+  return nfs::MessageId(static_cast<nfs::MessageId::value_type>(hash_fn(input)));
 }
 
 }  // namespace vault

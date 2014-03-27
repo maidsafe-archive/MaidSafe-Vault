@@ -114,14 +114,14 @@ bool IsResolved(const UnresolvedAction& unresolved_action) {
   uint16_t total_received = static_cast<uint16_t>(unresolved_action.peer_and_entry_ids.size() +
            (unresolved_action.this_node_and_entry_id ? 1U : 0U));
   LOG(kVerbose) << "IsResolved  total_received : " << total_received;
-  return (total_received == ((routing::Parameters::node_group_size / 2) + 1U));
+  return (total_received == ((routing::Parameters::group_size / 2) + 1U));
 }
 
 template <typename UnresolvedAction>
 bool IsResolvedOnAllPeers(const UnresolvedAction& unresolved_action) {
   bool result(unresolved_action.this_node_and_entry_id &&
               (unresolved_action.peer_and_entry_ids.size() ==
-                 (routing::Parameters::node_group_size - 1U)));
+                 (routing::Parameters::group_size - 1U)));
   LOG(kVerbose) << "IsResolvedOnAllPeers " << result << " peer_and_entry_ids.size() : "
                 << unresolved_action.peer_and_entry_ids.size();
   return result;
@@ -133,7 +133,7 @@ void AppendUnresolvedActionEntry(const UnresolvedAction& new_action,
                                  std::unique_ptr<UnresolvedAction>& resolved_action) {
   assert(IsFromThisNode(new_action)
          ? !existing_action.this_node_and_entry_id
-         : existing_action.peer_and_entry_ids.size() < (routing::Parameters::node_group_size -1U));
+         : existing_action.peer_and_entry_ids.size() < (routing::Parameters::group_size -1U));
 
   if (IsFromThisNode(new_action)) {
     existing_action.this_node_and_entry_id =
@@ -215,7 +215,7 @@ std::unique_ptr<UnresolvedAction> Sync<UnresolvedAction>::AddUnresolvedAction(
     }
 
     // check if already received 3 entries from other nodes if not then add or else continue
-    if (((*found)->peer_and_entry_ids.size() < (routing::Parameters::node_group_size - 1U)) &&
+    if (((*found)->peer_and_entry_ids.size() < (routing::Parameters::group_size - 1U)) &&
             !detail::HaveEntryFromPeer(unresolved_action, **found)) {
       LOG(kVerbose) << "AddAction " << kActionId << " appended to unresolved";
       detail::AppendUnresolvedActionEntry(unresolved_action, **found, resolved_action);
@@ -257,7 +257,7 @@ void Sync<UnresolvedAction>::IncrementSyncAttempts() {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr = std::begin(unresolved_actions_);
   while (itr != std::end(unresolved_actions_)) {
-    assert((*itr)->peer_and_entry_ids.size() <= routing::Parameters::node_group_size - 1U);
+    assert((*itr)->peer_and_entry_ids.size() <= routing::Parameters::group_size - 1U);
     ++(*itr)->sync_counter;
     if (CanBeErased(**itr))
       itr = unresolved_actions_.erase(itr);

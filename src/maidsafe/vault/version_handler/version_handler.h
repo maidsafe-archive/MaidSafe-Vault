@@ -21,19 +21,21 @@
 
 #include <cstdint>
 
-#include "maidsafe/data_types/structured_data_versions.h"
+#include "maidsafe/common/data_types/structured_data_versions.h"
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/version_handler/key.h"
-#include "maidsafe/vault/version_handler/action_delete_branch_until_fork.h"
+#include "maidsafe/vault/version_handler/action_create_version_tree.h"
 #include "maidsafe/vault/version_handler/action_put.h"
+#include "maidsafe/vault/version_handler/action_delete_branch_until_fork.h"
 #include "maidsafe/vault/version_handler/value.h"
 
 namespace maidsafe {
 
 namespace vault {
 
+struct ActionVersionHandlerCreateVersionTree;
 struct ActionVersionHandlerPut;
 struct ActionVersionHandlerDeleteBranchUntilFork;
 
@@ -47,6 +49,8 @@ struct PersonaTypes<Persona::kVersionHandler> {
   typedef vault::VersionHandlerKey Key;
   typedef vault::VersionHandlerValue Value;
   typedef StructuredDataVersions::VersionName VersionName;
+  typedef vault::UnresolvedAction<Key, vault::ActionVersionHandlerCreateVersionTree>
+      UnresolvedCreateVersionTree;
   typedef vault::UnresolvedAction<Key, vault::ActionVersionHandlerPut> UnresolvedPutVersion;
   typedef vault::UnresolvedAction<Key, vault::ActionVersionHandlerDeleteBranchUntilFork>
       UnresolvedDeleteBranchUntilFork;

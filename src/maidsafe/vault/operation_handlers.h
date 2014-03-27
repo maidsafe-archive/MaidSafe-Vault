@@ -52,7 +52,7 @@ struct RequiredValue<routing::SingleSource> {
 
 template <>
 struct RequiredValue<routing::GroupSource> {
-  int operator()() const { return routing::Parameters::node_group_size - 1; }
+  int operator()() const { return routing::Parameters::group_size - 1; }
 };
 
 template <typename ValidateSender, typename AccumulatorType, typename Checker,
@@ -166,38 +166,44 @@ void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/
 template <>
 void DoOperation(MaidManagerService* service,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
-                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
-                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/);
+                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
 template <>
 void DoOperation(MaidManagerService* service,
                  const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/);
+                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
 template <>
 void DoOperation(MaidManagerService* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager& message,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::PutRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/);
+                 const nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
 template <>
 void DoOperation(MaidManagerService* service,
                  const PutResponseFromDataManagerToMaidManager& message,
-                 const PutResponseFromDataManagerToMaidManager::Sender& /*sender*/,
+                 const PutResponseFromDataManagerToMaidManager::Sender& sender,
                  const PutResponseFromDataManagerToMaidManager::Receiver& receiver);
 
 template <>
 void DoOperation(MaidManagerService* service,
                  const PutFailureFromDataManagerToMaidManager& message,
                  const PutFailureFromDataManagerToMaidManager::Sender& sender,
-                 const PutFailureFromDataManagerToMaidManager::Receiver& /*receiver*/);
+                 const PutFailureFromDataManagerToMaidManager::Receiver& receiver);
 
 template <>
 void DoOperation(MaidManagerService* service,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager& message,
                  const nfs::DeleteRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/);
+                 const nfs::DeleteRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager& message,
+                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
 template <>
 void DoOperation(MaidManagerService* service,
@@ -229,6 +235,36 @@ void DoOperation(MaidManagerService* service,
                  const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
                  const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager& message,
+                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager& message,
+                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const PutVersionResponseFromVersionHandlerToMaidManager& message,
+                 const PutVersionResponseFromVersionHandlerToMaidManager::Sender& sender,
+                 const PutVersionResponseFromVersionHandlerToMaidManager::Receiver& receiver);
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager& message,
+                 const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
+                 const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver& receiver);
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const CreateVersionTreeResponseFromVersionHandlerToMaidManager& message,
+                 const CreateVersionTreeResponseFromVersionHandlerToMaidManager::Sender& sender,
+                 const CreateVersionTreeResponseFromVersionHandlerToMaidManager::Receiver&);
 
 //=============================== To DataManager ===================================================
 template <>
@@ -318,9 +354,9 @@ void DoOperation(PmidManagerService* service,
 
 template <>
 void DoOperation(PmidManagerService* service,
-                 const PmidHealthRequestFromMaidNodeToPmidManager& message,
-                 const PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
-                 const PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver);
+                 const PmidHealthRequestFromMaidManagerToPmidManager& message,
+                 const PmidHealthRequestFromMaidManagerToPmidManager::Sender& sender,
+                 const PmidHealthRequestFromMaidManagerToPmidManager::Receiver& receiver);
 
 template <>
 void DoOperation(PmidManagerService* service,
@@ -364,6 +400,12 @@ void DoOperation(PmidNodeService* service,
                  const IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
                  const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver);
 
+template <>
+void DoOperation(PmidNodeService* service,
+                 const PmidHealthRequestFromPmidManagerToPmidNode& message,
+                 const PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
+                 const PmidHealthRequestFromPmidManagerToPmidNode::Receiver& receiver);
+
 //====================================== To VersionHandler =========================================
 
 template<>
@@ -402,11 +444,18 @@ void DoOperation(VersionHandlerService* service,
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Sender& sender,
     const typename DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Receiver& receiver);
 
+template<>
+void DoOperation(VersionHandlerService* service,
+    const CreateVersionTreeRequestFromMaidManagerToVersionHandler& message,
+    const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Sender& sender,
+    const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Receiver& receiver);
+
 }  // namespace detail
 
-template <typename ServiceHandler, typename MessageType>
+template <typename ServiceHandler, typename MessageType,
+          typename AccumulatorT = Accumulator<typename ServiceHandler::Messages>>
 struct OperationHandlerWrapper {
-  typedef Accumulator<typename ServiceHandler::Messages> AccumulatorType;
+  typedef AccumulatorT AccumulatorType;
   typedef detail::OperationHandler<typename detail::ValidateSenderType<MessageType>::type,
                                    AccumulatorType,
                                    typename AccumulatorType::AddCheckerFunctor,

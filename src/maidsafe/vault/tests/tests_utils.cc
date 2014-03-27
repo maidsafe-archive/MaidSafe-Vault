@@ -31,7 +31,8 @@ passport::Maid MakeMaid() {
 }
 
 passport::Pmid MakePmid() {
-  return passport::Pmid(MakeMaid());
+  passport::Anpmid anpmid;
+  return passport::Pmid(anpmid);
 }
 
 passport::PublicPmid MakePublicPmid() {
@@ -134,9 +135,17 @@ nfs_vault::DataNameOldNewVersion CreateContent<nfs_vault::DataNameOldNewVersion>
 }
 
 template <>
+nfs_vault::VersionTreeCreation CreateContent<nfs_vault::VersionTreeCreation>() {
+  ImmutableData::Name name(Identity(RandomString(64)));
+  return nfs_vault::VersionTreeCreation(nfs_vault::DataName(name),
+                                        StructuredDataVersions::VersionName(1, name), 30, 40);
+}
+
+
+template <>
 std::vector<routing::GroupSource> CreateGroupSource(const NodeId& group_id) {
   std::vector<routing::GroupSource> group_source;
-  for (auto index(0); index < routing::Parameters::node_group_size; ++index)
+  for (auto index(0); index < routing::Parameters::group_size; ++index)
     group_source.push_back(routing::GroupSource(routing::GroupId(group_id),
                                                 routing::SingleId(NodeId(NodeId::kRandomId))));
   return group_source;

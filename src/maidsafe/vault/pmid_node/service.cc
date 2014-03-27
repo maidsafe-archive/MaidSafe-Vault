@@ -24,7 +24,7 @@
 #include <string>
 
 #include "maidsafe/common/types.h"
-#include "maidsafe/data_store/data_buffer.h"
+#include "maidsafe/common/data_stores/data_buffer.h"
 #include "maidsafe/nfs/client/messages.pb.h"
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
@@ -158,7 +158,7 @@ void PmidNodeService::HandleMessage(
           if (typed_request.contents->return_code.value.code() == CommonErrors::success)
             ++valid_response_size;
         }
-        const uint16_t& group_size(routing::Parameters::node_group_size);
+        const uint16_t& group_size(routing::Parameters::group_size);
         if (requests_in_size >= (group_size / 2 + 1U) && valid_response_size >= group_size / 2)
           return Accumulator<Messages>::AddResult::kSuccess;
         if (requests_in_size == group_size ||
@@ -179,10 +179,22 @@ template <>
 void PmidNodeService::HandleMessage(
     const PmidHealthRequestFromPmidManagerToPmidNode& message,
     const typename PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
-    const typename PmidHealthRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "PmidNodeService::HandleMessage PmidHealthRequestFromPmidManagerToPmidNode "
-                << " from " << HexSubstr(sender.data.string());
-  dispatcher_.SendHealthResponse(handler_.AvailableSpace(), NodeId(sender.data), message.id);
+    const typename PmidHealthRequestFromPmidManagerToPmidNode::Receiver& receiver) {
+  LOG(kVerbose) << "PmidNodeService::HandleMessage DeleteRequestFromPmidManagerToPmidNode "
+                << message.id;
+  typedef PmidHealthRequestFromPmidManagerToPmidNode MessageType;
+  OperationHandlerWrapper<PmidNodeService, MessageType>(
+      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)), this,
+      accumulator_mutex_)(message, sender, receiver);
+}
+
+void PmidNodeService::HandleHealthRequest(const NodeId& pmid_manager_node_id,
+                                          nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidNodeService::HandleHealthRequest " << message_id;
+  dispatcher_.SendHealthResponse(handler_.AvailableSpace(), pmid_manager_node_id, message_id);
 }
 
 void PmidNodeService::HandlePmidAccountResponses(
@@ -196,8 +208,8 @@ void PmidNodeService::HandlePmidAccountResponses(
   }
 
   for (auto iter(chunks_expectation.begin()); iter != chunks_expectation.end();) {
-    if ((iter->second >= routing::Parameters::node_group_size / 2 + 1U) ||
-        ((iter->second == routing::Parameters::node_group_size / 2) &&
+    if ((iter->second >= routing::Parameters::group_size / 2 + 1U) ||
+        ((iter->second == routing::Parameters::group_size / 2) &&
              (total_responses > responses.size())))
       expected_chunks.push_back(GetDataNameVariant(iter->first.type, iter->first.raw_name));
   }

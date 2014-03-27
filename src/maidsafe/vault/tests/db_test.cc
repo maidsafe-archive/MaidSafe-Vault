@@ -40,33 +40,6 @@ namespace vault {
 
 namespace test {
 
-// DataNameVariant GetRandomKey() {
-//  // Currently 15 types are defined, but...
-//  uint32_t number_of_types = boost::mpl::size<typename DataNameVariant::types>::type::value,
-//           type_number;
-//  std::cout << number_of_types;
-//  type_number = RandomUint32() % number_of_types;
-//  switch (type_number) {
-//    case  0: return passport::Anmid::Name();
-////    case  1: return passport::Ansmid::Name();
-////    case  2: return passport::Antmid::Name();
-////    case  3: return passport::Anmaid::Name();
-////    case  4: return passport::Maid::Name();
-////    case  5: return passport::Pmid::Name();
-////    case  6: return passport::Mid::Name();
-////    case  7: return passport::Smid::Name();
-////    case  8: return passport::Tmid::Name();
-////    case  9: return passport::Anmpid::Name();
-////    case 10: return passport::Mpid::Name();
-////    case 11: return ImmutableData::Name();
-////    case 12: return OwnerDirectory::Name();
-////    case 13: return GroupDirectory::Name();
-////    case 14: return WorldDirectory::Name();
-//    default:
-//      return DataNameVariant();
-//  }
-// }
-
 struct TestDbValue {
   TestDbValue() : value("original_value") {}
   TestDbValue(TestDbValue&& other) : value(std::move(other.value)) {}

@@ -204,8 +204,9 @@ void Commander::CreateKeys() {
   for (size_t i = 0; i < pmids_count_; ++i) {
     passport::Anmaid anmaid;
     passport::Maid maid(anmaid);
-    passport::Pmid pmid(maid);
-    all_keychains_.push_back(passport::detail::AnmaidToPmid(anmaid, maid, pmid));
+    passport::Anpmid anpmid;
+    passport::Pmid pmid(anpmid);
+    all_keychains_.push_back(passport::detail::AnmaidToPmid(anmaid, maid, anpmid, pmid));
   }
   LOG(kInfo) << "Created " << all_keychains_.size() << " pmids.";
   if (maidsafe::passport::detail::WriteKeyChainList(keys_path_, all_keychains_)) {

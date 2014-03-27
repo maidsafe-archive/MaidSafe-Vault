@@ -38,7 +38,7 @@ class PmidNodeServiceTest {
   PmidNodeServiceTest() :
       pmid_(MakePmid()),
       kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
-      vault_root_dir_(*kTestRoot_ / RandomAlphaNumericString(8)),
+      vault_root_dir_(*kTestRoot_/* / RandomAlphaNumericString(8)*/),
       routing_(pmid_),
       data_getter_(asio_service_, routing_),
       pmid_node_service_(pmid_, routing_, data_getter_, vault_root_dir_),
@@ -88,6 +88,7 @@ TEST_CASE_METHOD(PmidNodeServiceTest, "pmid node: checking handlers availablity"
   SECTION("IntegrityCheckRequestFromDataManagerToPmidNode") {
     ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
     NonEmptyString random_string(RandomString(64));
+    Store(data);
     nfs_vault::DataNameAndRandomString content(data.name(), random_string);
     auto integrity_check_request(
              CreateMessage<IntegrityCheckRequestFromDataManagerToPmidNode>(content));
@@ -117,6 +118,15 @@ TEST_CASE_METHOD(PmidNodeServiceTest, "pmid node: checking handlers availablity"
     auto group_source(CreateGroupSource(routing_.kNodeId()));
     CHECK_NOTHROW(GroupSendToSingle(&pmid_node_service_, pmid_account_response, group_source,
                                     routing::SingleId(routing_.kNodeId())));
+  }
+
+  SECTION("PmidHealthRequestFromPmidManagerToPmidNode") {
+    auto health_request(
+             CreateMessage<PmidHealthRequestFromPmidManagerToPmidNode>(nfs_vault::Empty()));
+    auto group_source(CreateGroupSource(routing_.kNodeId()));
+    CHECK_NOTHROW(SingleSendsToSingle(&pmid_node_service_, health_request,
+                                      routing::SingleSource(NodeId(NodeId::kRandomId)),
+                                      routing::SingleId(routing_.kNodeId())));
   }
 }
 

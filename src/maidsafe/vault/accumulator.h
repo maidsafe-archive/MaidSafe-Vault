@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/nfs/utils.h"
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/types.h"
@@ -77,7 +77,7 @@ class Accumulator {
    public:
     explicit AddRequestChecker(size_t required_requests)
         : required_requests_(required_requests) {
-      assert((required_requests <= routing::Parameters::node_group_size) &&
+      assert((required_requests <= routing::Parameters::group_size) &&
              "Invalid number of requests");
     }
 
@@ -238,9 +238,9 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddRequestChecker::operator()
                 << required_requests_ << " , checking against " << requests.size()
                 << " requests";
   // BEFORE_RELEASE the following commented out code shall be reviewed
-//   if (requests.size() > routing::Parameters::node_group_size) {
+//   if (requests.size() > routing::Parameters::group_size) {
 //     LOG(kError) << "Invalid number of requests, already have " << requests.size()
-//                 << " requests with a group size of " << routing::Parameters::node_group_size;
+//                 << " requests with a group size of " << routing::Parameters::group_size;
 //     return AddResult::kFailure;
 //   }
   if (requests.size() < required_requests_) {

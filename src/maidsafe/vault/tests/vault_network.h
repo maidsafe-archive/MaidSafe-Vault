@@ -90,7 +90,7 @@ class VaultNetwork : public testing::Test {
 
  protected:
   void Bootstrap();
-  bool Create(size_t index);
+  bool Create(const passport::detail::Fob<passport::detail::PmidTag>& pmid);
 
   AsioService asio_service_;
   std::mutex mutex_;

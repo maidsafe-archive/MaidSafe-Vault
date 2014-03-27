@@ -96,6 +96,9 @@ nfs_vault::DataNameAndVersion CreateContent<nfs_vault::DataNameAndVersion>();
 template <>
 nfs_vault::DataNameOldNewVersion CreateContent<nfs_vault::DataNameOldNewVersion>();
 
+template <>
+nfs_vault::VersionTreeCreation CreateContent<nfs_vault::VersionTreeCreation>();
+
 template <typename MessageType>
 MessageType CreateMessage(const typename MessageType::Contents& contents) {
   nfs::MessageId message_id(RandomUint32());
@@ -160,7 +163,6 @@ void AddLocalActionAndSendGroupActions(
     ServiceType* service, Sync<UnresolvedActionType>& /*sync*/,
     const std::vector<UnresolvedActionType>& unresolved_actions,
     const std::vector<routing::GroupSource>& group_source) {
-//  sync.AddLocalAction(unresolved_actions[0]);
   for (uint32_t index(0); index < unresolved_actions.size(); ++index) {
     auto proto_sync(CreateProtoSync(UnresolvedActionType::ActionType::kActionId,
                                     unresolved_actions[index].Serialise()));

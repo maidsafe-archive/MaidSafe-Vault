@@ -23,9 +23,9 @@
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/common/data_types/data_type_values.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/passport/types.h"
-#include "maidsafe/data_types/data_type_values.h"
 #include "maidsafe/routing/message.h"
 #include "maidsafe/routing/routing_api.h"
 
@@ -64,10 +64,14 @@ class MaidManagerDispatcher {
                          nfs::MessageId message_id);
 
   template <typename DataNameType>
-  void SendPutVersion(const MaidName& maid_name, const DataNameType& data_name,
-                      const StructuredDataVersions::VersionName&  old_name,
-                      const StructuredDataVersions::VersionName&  new_name,
-                      nfs::MessageId message_id);
+  void SendPutVersionRequest(const MaidName& maid_name, const DataNameType& data_name,
+                             const StructuredDataVersions::VersionName&  old_name,
+                             const StructuredDataVersions::VersionName&  new_name,
+                             nfs::MessageId message_id);
+
+  void SendPutVersionResponse(const MaidName& maid_name, const maidsafe_error& return_code,
+                              std::unique_ptr<StructuredDataVersions::VersionName> tip_of_tree,
+                              nfs::MessageId message_id);
 
   template <typename DataNameType>
   void SendDeleteBranchUntilFork(const MaidName& maid_name, const DataNameType& data_name,
@@ -92,11 +96,25 @@ class MaidManagerDispatcher {
   void SendPutFailure(const MaidName& maid_node, const typename Data::Name& data_name,
                       const maidsafe_error& error,  nfs::MessageId message_id);
 
-  void SendHealthResponse(const MaidName& maid_name, int64_t available_size,
-                          const nfs_client::ReturnCode& return_code, nfs::MessageId message_id);
+  void SendPmidHealthRequest(const MaidName& maid_name, const PmidName& pmid_node,
+                             nfs::MessageId message_id);
+
+  void SendPmidHealthResponse(const MaidName& maid_name, int64_t available_size,
+                              const maidsafe_error& return_code, nfs::MessageId message_id);
 
   void SendCreatePmidAccountRequest(const passport::PublicMaid& account_name,
                                     const passport::PublicPmid& pmid_name);
+
+  template <typename DataNameType>
+  void SendCreateVersionTreeRequest(const MaidName& maid_name, const DataNameType& data_name,
+      const StructuredDataVersions::VersionName& version, uint32_t max_versions,
+      uint32_t max_branches, nfs::MessageId message_id);
+
+  void SendCreateVersionTreeResponse(const MaidName& maid_name, const maidsafe_error& error,
+                                     nfs::MessageId message_id);
+
+  void SendRegisterPmidResponse(const MaidName& maid_name, const maidsafe_error& error,
+                                nfs::MessageId message_id);
 
  private:
   MaidManagerDispatcher();
@@ -156,10 +174,10 @@ void MaidManagerDispatcher::SendPutFailure(
 }
 
 template <typename DataNameType>
-void MaidManagerDispatcher::SendPutVersion(const MaidName& maid_name, const DataNameType& data_name,
-                                           const StructuredDataVersions::VersionName& old_version,
-                                           const StructuredDataVersions::VersionName& new_version,
-                                           nfs::MessageId message_id) {
+void MaidManagerDispatcher::SendPutVersionRequest(
+    const MaidName& maid_name, const DataNameType& data_name,
+    const StructuredDataVersions::VersionName& old_version,
+    const StructuredDataVersions::VersionName& new_version, nfs::MessageId message_id) {
   typedef PutVersionRequestFromMaidManagerToVersionHandler VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
@@ -179,6 +197,22 @@ void MaidManagerDispatcher::SendDeleteBranchUntilFork(
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
   VaultMessage valut_message(message_id, nfs_vault::DataNameAndVersion(data_name, version));
+  RoutingMessage message(valut_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
+                         VaultMessage::Receiver(NodeId(data_name->string())));
+  routing_.Send(message);
+}
+
+template <typename DataNameType>
+void MaidManagerDispatcher::SendCreateVersionTreeRequest(const MaidName& maid_name,
+    const DataNameType& data_name, const StructuredDataVersions::VersionName& version,
+    uint32_t max_versions, uint32_t max_branches, nfs::MessageId message_id) {
+  typedef CreateVersionTreeRequestFromMaidManagerToVersionHandler VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  VaultMessage valut_message(message_id,
+                             nfs_vault::VersionTreeCreation(data_name, version, max_versions,
+                                                             max_branches));
   RoutingMessage message(valut_message.Serialise(),
                          GroupOrKeyHelper::GroupSender(routing_, maid_name),
                          VaultMessage::Receiver(NodeId(data_name->string())));

@@ -54,7 +54,6 @@ class PmidManagerServiceTest;
 
 }
 
-
 class PmidManagerService {
  public:
   typedef void PublicMessages;
@@ -185,10 +184,10 @@ void PmidManagerService::HandleMessage(
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver);
 
 template <>
-void PmidManagerService::HandleMessage<nfs::PmidHealthRequestFromMaidNodeToPmidManager>(
-    const nfs::PmidHealthRequestFromMaidNodeToPmidManager& message,
-    const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
-    const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver);
+void PmidManagerService::HandleMessage(
+    const PmidHealthRequestFromMaidManagerToPmidManager& message,
+    const typename PmidHealthRequestFromMaidManagerToPmidManager::Sender& sender,
+    const typename PmidHealthRequestFromMaidManagerToPmidManager::Receiver& receiver);
 
 template <>
 void PmidManagerService::HandleMessage(
@@ -317,7 +316,5 @@ void PmidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#include "maidsafe/vault/pmid_manager/service-inl.h"
 
 #endif  // MAIDSAFE_VAULT_PMID_MANAGER_SERVICE_H_

@@ -31,7 +31,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/vault/messages.h"
 
-#include "maidsafe/vault/integrity_check_data.h"
+#include "maidsafe/vault/data_manager/integrity_check_data.h"
 #include "maidsafe/vault/types.h"
 
 

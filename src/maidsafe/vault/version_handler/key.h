@@ -24,7 +24,7 @@
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/types.h"
-#include "maidsafe/data_types/data_type_values.h"
+#include "maidsafe/common/data_types/data_type_values.h"
 
 #include "maidsafe/vault/key_utils.h"
 
