@@ -67,6 +67,8 @@ std::string ActionVersionHandlerPut::Serialise() const {
 detail::DbAction ActionVersionHandlerPut::operator()(std::unique_ptr<VersionHandlerValue>& value) {
   if (!value)
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+  GLOG() << "Old version " << HexSubstr(old_version.id.value)
+         << " updated to " << HexSubstr(new_version.id.value);
   tip_of_tree = value->Put(old_version, new_version);
   return detail::DbAction::kPut;
 }
