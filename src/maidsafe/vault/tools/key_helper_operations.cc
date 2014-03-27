@@ -373,6 +373,43 @@ void DataChunkStorer::TestDeleteChunk(int chunk_index) {
               << " deleted and verified" << std::endl;
 }
 
+void DataChunkStorer::TestVersion() {
+  ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
+  std::cout << "SDV "<< HexSubstr(chunk.name().value) << std::endl;
+//   StoreOneChunk(chunk_list_[0]);
+//   boost::this_thread::sleep_for(boost::chrono::seconds(1));
+//   StoreOneChunk(chunk_list_[1]);
+  StructuredDataVersions::VersionName v_aaa(0, chunk_list_[0].name());
+  std::cout << "Version 0 "<< HexSubstr(chunk_list_[0].name().value) << std::endl;
+  StructuredDataVersions::VersionName v_bbb(1, chunk_list_[1].name());
+  std::cout << "Version 1 "<< HexSubstr(chunk_list_[1].name().value) << std::endl;
+  auto create_version_future(client_nfs_->CreateVersionTree(chunk.name(), v_aaa, 10, 20));
+  try {
+    create_version_future.get();
+  } catch (const maidsafe_error& error) {
+    std::cout << "error when create version tree : " << error.what() << std::endl;
+    return;
+  }
+
+  auto put_version_future(client_nfs_->PutVersion(chunk.name(), v_aaa, v_bbb));
+  try {
+    put_version_future.get();
+  } catch (const maidsafe_error& error) {
+    std::cout << "error when put version : " << error.what() << std::endl;
+    return;
+  }
+  try {
+    auto future(client_nfs_->GetVersions(chunk.name()));
+    auto versions(future.get());
+    std::cout << "fetched latest version "<< HexSubstr(versions.front().id.value) << std::endl;
+    if (versions.front().id != v_bbb.id) {
+      std::cout << "version tip is wrong" << std::endl;
+    }
+  } catch(const maidsafe_error& error) {
+    std::cout << "Failed to retrieve version: " << error.what() << std::endl;
+  }
+}
+
 bool DataChunkStorer::Done(int32_t quantity, int32_t rounds) const {
   return quantity < 1 ? run_.load() : rounds >= quantity;
 }
