@@ -104,8 +104,8 @@ void PmidManagerDispatcher::SendHealthRequest(const PmidName& pmid_node,
 
 void PmidManagerDispatcher::SendSetPmidOnline(const nfs_vault::DataName& data_name,
                                               const PmidName& pmid_node) {
-  nfs::MessageId message_id(static_cast<nfs::MessageId::value_type>(
-      HashStringToInt(pmid_node->string() + data_name.raw_name.string())));
+  nfs::MessageId message_id(HashStringToMessageId(pmid_node->string() +
+                                                  data_name.raw_name.string()));
   typedef SetPmidOnlineFromPmidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
@@ -120,8 +120,8 @@ void PmidManagerDispatcher::SendSetPmidOnline(const nfs_vault::DataName& data_na
 
 void PmidManagerDispatcher::SendSetPmidOffline(const nfs_vault::DataName& data_name,
                                                const PmidName& pmid_node) {
-  nfs::MessageId message_id(static_cast<nfs::MessageId::value_type>(
-      HashStringToInt(pmid_node->string() + data_name.raw_name.string())));
+  nfs::MessageId message_id(HashStringToMessageId(pmid_node->string() +
+                                                  data_name.raw_name.string()));
   typedef SetPmidOfflineFromPmidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
