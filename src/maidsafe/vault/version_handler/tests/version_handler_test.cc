@@ -73,6 +73,22 @@ TEST_F(VersionHandlerTest, FUNC_FailingPut) {
   EXPECT_THROW(put_version_future.get(), maidsafe_error) << "should have failed";
 }
 
+TEST_F(VersionHandlerTest, FUNC_CreateGet) {
+  EXPECT_TRUE(AddClient(true));
+  ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
+  StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
+  auto create_version_future(clients_.front()->nfs_->CreateVersionTree(chunk.name(), v_aaa, 10,
+                                                                       20));
+  EXPECT_NO_THROW(create_version_future.get()) << "failure to create version";
+  try {
+    auto future(clients_.front()->nfs_->GetVersions(chunk.name()));
+    auto versions(future.get());
+    EXPECT_EQ(versions.front().id, v_aaa.id);
+  } catch(const maidsafe_error& error) {
+    EXPECT_TRUE(false) << "Failed to retrieve version: " << error.what();
+  }
+}
+
 TEST_F(VersionHandlerTest, FUNC_PutGet) {
   EXPECT_TRUE(AddClient(true));
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));

@@ -103,6 +103,7 @@ void VersionHandlerService::HandleMessage(
     const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Sender& sender,
     const typename nfs::GetVersionsRequestFromDataGetterToVersionHandler::Receiver& receiver) {
   typedef nfs::GetVersionsRequestFromDataGetterToVersionHandler MessageType;
+  LOG(kVerbose) << "GetVersionsRequestFromDataGetterToVersionHandler: " << message.id;
   OperationHandlerWrapper<VersionHandlerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
