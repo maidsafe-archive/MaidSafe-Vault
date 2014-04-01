@@ -72,7 +72,7 @@ detail::DbAction ActionVersionHandlerCreateVersionTree::operator()(
 
 bool operator==(const ActionVersionHandlerCreateVersionTree& lhs,
                 const ActionVersionHandlerCreateVersionTree& rhs) {
-  return lhs.version == rhs.version &&  lhs.max_versions == rhs.max_versions &&
+  return lhs.version == rhs.version && lhs.max_versions == rhs.max_versions &&
          lhs.max_branches == rhs.max_branches && lhs.message_id == rhs.message_id;
 }
 

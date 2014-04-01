@@ -141,7 +141,7 @@ class VersionHandlerService {
   const NodeId kThisNodeId_;
   Sync<VersionHandler::UnresolvedCreateVersionTree> sync_create_version_tree_;
   Sync<VersionHandler::UnresolvedPutVersion> sync_put_versions_;
-  Sync<VersionHandler::UnresolvedDeleteBranchUntilFork> sync_delete_branche_until_forks_;
+  Sync<VersionHandler::UnresolvedDeleteBranchUntilFork> sync_delete_branch_until_fork_;
 };
 
 template <typename MessageType>

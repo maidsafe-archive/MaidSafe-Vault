@@ -817,7 +817,7 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
-    const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager &message,
+    const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager& message,
     const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;

@@ -210,10 +210,10 @@ void MaidManagerDispatcher::SendCreateVersionTreeRequest(const MaidName& maid_na
   typedef CreateVersionTreeRequestFromMaidManagerToVersionHandler VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
-  VaultMessage valut_message(message_id,
+  VaultMessage vault_message(message_id,
                              nfs_vault::VersionTreeCreation(data_name, version, max_versions,
-                                                             max_branches));
-  RoutingMessage message(valut_message.Serialise(),
+                                                            max_branches));
+  RoutingMessage message(vault_message.Serialise(),
                          GroupOrKeyHelper::GroupSender(routing_, maid_name),
                          VaultMessage::Receiver(NodeId(data_name->string())));
   routing_.Send(message);

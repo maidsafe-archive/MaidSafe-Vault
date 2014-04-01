@@ -243,7 +243,7 @@ void DoOperation(MaidManagerService* service,
                            receiver) {
   LOG(kVerbose) << "DoOperation CreateVersionTreeResponseFromVersionHandlerToMaidManager";
   service->HandleCreateVersionTreeResponse(MaidName(Identity(receiver.data.string())),
-                                           message.contents->value,  message.id);
+                                           message.contents->value, message.id);
 }
 
 //=============================== To DataManager ===================================================
