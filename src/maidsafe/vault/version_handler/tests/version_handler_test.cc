@@ -59,7 +59,7 @@ TEST_F(VersionHandlerTest, FUNC_CreateVersionTree) {
     auto versions(future.get());
     EXPECT_EQ(versions.front().id, v_aaa.id);
   } catch(const maidsafe_error& error) {
-    EXPECT_TRUE(false) << "Failed to retrieve version: " << error.what();
+    EXPECT_TRUE(false) << "Failed to retrieve version: " << boost::diagnostic_information(error);
   }
   LOG(kVerbose) << "Version Created";
 }
@@ -85,7 +85,7 @@ TEST_F(VersionHandlerTest, FUNC_CreateGet) {
     auto versions(future.get());
     EXPECT_EQ(versions.front().id, v_aaa.id);
   } catch(const maidsafe_error& error) {
-    EXPECT_TRUE(false) << "Failed to retrieve version: " << error.what();
+    EXPECT_TRUE(false) << "Failed to retrieve version: " << boost::diagnostic_information(error);
   }
 }
 
@@ -106,7 +106,7 @@ TEST_F(VersionHandlerTest, FUNC_PutGet) {
     auto versions(future.get());
     EXPECT_EQ(versions.front().id, v_bbb.id);
   } catch(const maidsafe_error& error) {
-    EXPECT_TRUE(false) << "Failed to retrieve version: " << error.what();
+    EXPECT_TRUE(false) << "Failed to retrieve version: " << boost::diagnostic_information(error);
   }
 }
 
@@ -143,7 +143,7 @@ TEST_F(VersionHandlerTest, FUNC_DeleteBranchUntilFork) {
     EXPECT_NE(std::find(std::begin(versions), std::end(versions), v2_ddd), std::end(versions));
   }
   catch (const std::exception& error) {
-    EXPECT_TRUE(false) << "Version should have existed " << error.what();
+    EXPECT_TRUE(false) << "Version should have existed " << boost::diagnostic_information(error);
   }
 
   EXPECT_NO_THROW(clients_.front()->nfs_->DeleteBranchUntilFork(name, v4_iii));

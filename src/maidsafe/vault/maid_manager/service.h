@@ -479,7 +479,7 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
         return;
       } catch(const maidsafe_error& error) {
         LOG(kInfo) << "MaidManagerService::HandlePut first PutRequest, passing to DataManager: "
-                   << error.what();
+                   << boost::diagnostic_information(error);
       }
       dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
     } else {
@@ -489,7 +489,8 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
                                       message_id);
     }
   } catch(const maidsafe_error& error) {
-    LOG(kError) << "MaidManagerService::HandlePut getting metadata has error : " << error.what();
+    LOG(kError) << "MaidManagerService::HandlePut getting metadata has error : "
+                << boost::diagnostic_information(error);
     if (error.code() != make_error_code(VaultErrors::no_such_account))
       throw;
   }
@@ -527,7 +528,8 @@ void MaidManagerService::HandleCreateVersionTreeRequest(
                                              max_branches, message_id);
   }
   catch (const maidsafe_error& error) {
-    LOG(kError) << "MaidManagerService::HandleCreateVersionTreeRequest faied: " << error.what();
+    LOG(kError) << "MaidManagerService::HandleCreateVersionTreeRequest faied: "
+                << boost::diagnostic_information(error);
     if (error.code() != make_error_code(VaultErrors::no_such_account))
       throw;
   }
@@ -543,7 +545,8 @@ void MaidManagerService::HandlePutVersionRequest(
     dispatcher_.SendPutVersionRequest(maid_name, data_name, old_version, new_version, message_id);
   }
   catch (const maidsafe_error& error) {
-    LOG(kError) << "MaidManagerService::HandlePutVersion faied to get metadata" << error.what();
+    LOG(kError) << "MaidManagerService::HandlePutVersion faied to get metadata"
+                << boost::diagnostic_information(error);
     if (error.code() != make_error_code(VaultErrors::no_such_account))
       throw;
   }

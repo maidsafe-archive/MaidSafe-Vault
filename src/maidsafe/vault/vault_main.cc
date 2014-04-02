@@ -250,12 +250,12 @@ int main(int argc, char* argv[]) {
   try {
     maidsafe::vault::ActOnOptions(argc, argv);
   }
-  catch (const maidsafe::maidsafe_error& e) {
-    LOG(kError) << "Maidsafe exception: " << e.what();
+  catch (const maidsafe::maidsafe_error& error) {
+    LOG(kError) << "Maidsafe exception: " << boost::diagnostic_information(error);
     return -1;
   }
-  catch (const std::exception& e) {
-    LOG(kError) << "Standard exception: " << e.what();
+  catch (const std::exception& error) {
+    LOG(kError) << "Standard exception: " << boost::diagnostic_information(error);
     return -2;
   }
   catch (...) {

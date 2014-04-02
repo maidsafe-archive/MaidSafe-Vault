@@ -72,7 +72,7 @@ void PmidManagerDispatcher::SendHealthResponse(const MaidName& maid_node,
   LOG(kVerbose) << "PmidManagerDispatcher::SendHealthResponse for maid "
                 << HexSubstr(maid_node->string()) << " and pmid " << HexSubstr(pmid_node->string())
                 << " . PmidManagerMetadata serialised as " << HexSubstr(pmid_health.Serialise())
-                << " and return code : " << error.what();
+                << " and return code : " << boost::diagnostic_information(error);
   typedef PmidHealthResponseFromPmidManagerToMaidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();

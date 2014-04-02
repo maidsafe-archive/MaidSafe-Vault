@@ -37,7 +37,7 @@ VersionHandlerValue::VersionHandlerValue(const std::string& serialised_version_h
             protobuf::VersionHandlerValue version_handler_value_proto;
             if (!version_handler_value_proto.ParseFromString(serialised_version_handler_value)) {
               LOG(kError) << "Failed to read or parse serialised maid manager value.";
-             BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+              BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
             }
             return StructuredDataVersionsPtr(new StructuredDataVersions(
                 StructuredDataVersions::serialised_type(NonEmptyString(

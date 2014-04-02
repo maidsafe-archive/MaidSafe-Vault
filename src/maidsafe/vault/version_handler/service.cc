@@ -198,7 +198,8 @@ void VersionHandlerService::HandleMessage(
               resolved_action->action.message_id);
         }
         catch (const maidsafe_error& error) {
-          LOG(kError) << message.id << " Failed to create version: " << error.what();
+          LOG(kError) << message.id << " Failed to create version: "
+                      << boost::diagnostic_information(error);
           dispatcher_.SendCreateVersionTreeResponse(
               resolved_action->key.originator,  error, resolved_action->action.message_id);
         }
@@ -224,7 +225,8 @@ void VersionHandlerService::HandleMessage(
           }
         }
         catch (const maidsafe_error& error) {
-          LOG(kError) << message.id << " Failed to put version: " << error.what();
+          LOG(kError) << message.id << " Failed to put version: "
+                      << boost::diagnostic_information(error);
           dispatcher_.SendPutVersionResponse(resolved_action->key, VersionHandler::VersionName(),
                                              error, resolved_action->action.message_id);
         }

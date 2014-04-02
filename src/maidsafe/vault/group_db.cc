@@ -30,7 +30,8 @@ GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup
     return FindGroup(group_name);
   } catch (const maidsafe_error& error) {
     LOG(kInfo) << "Account doesn't exist for group "
-               << HexSubstr(group_name->string()) << ", error : " << error.what()
+               << HexSubstr(group_name->string()) << ", error : "
+               << boost::diagnostic_information(error)
                << ". -- Creating Account --";
     return AddGroupToMap(group_name, Metadata(group_name));
   }

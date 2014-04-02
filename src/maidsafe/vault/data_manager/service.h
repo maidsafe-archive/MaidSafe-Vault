@@ -517,7 +517,7 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
     online_pmids = std::move(value.online_pmids());
   } catch (const maidsafe_error& error) {
     LOG(kWarning) << "Getting " << HexSubstr(data_name.value)
-                  << " causes a maidsafe_error " << error.what();
+                  << " causes a maidsafe_error " << boost::diagnostic_information(error);
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "db error";
       throw error;  // For db errors
@@ -669,9 +669,9 @@ bool DataManagerService::SendGetResponse(
     return true;
   } catch(const maidsafe_error& e) {
     error = e;
-    LOG(kError) << "DataManagerService::SendGetResponse " << e.what();
+    LOG(kError) << "DataManagerService::SendGetResponse " << boost::diagnostic_information(e);
   } catch(const std::exception& e) {
-    LOG(kError) << "DataManagerService::SendGetResponse " << e.what();
+    LOG(kError) << "DataManagerService::SendGetResponse " << boost::diagnostic_information(e);
   } catch(...) {
     LOG(kError) << "DataManagerService::SendGetResponse Unexpected exception type.";
   }

@@ -211,10 +211,12 @@ void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& key,
                                               nfs::MessageId message_id) {
   try {
     auto value(std::move(db_.Get(key)));
+    LOG(kError) << "HandleGetVersions  msg id" << message_id << "Get from db passed";
     dispatcher_.SendGetVersionsResponse(key, value.Get(), requestor_type,
                                         maidsafe_error(CommonErrors::success), message_id);
   }
   catch (const maidsafe_error& error) {
+    LOG(kError) << "HandleGetVersions  msg id" << message_id << boost::diagnostic_information(error);
     dispatcher_.SendGetVersionsResponse(key, std::vector<StructuredDataVersions::VersionName>(),
                                         requestor_type, error, message_id);
   }
