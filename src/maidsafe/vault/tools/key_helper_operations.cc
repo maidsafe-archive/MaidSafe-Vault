@@ -152,7 +152,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
   client_nfs_.reset(new nfs_client::MaidNodeNfs(asio_service_, client_routing_, pmid_name));
   {
     auto future(RoutingJoin(peer_endpoints));
-    auto status(future.wait_for(std::chrono::seconds(10)));
+    auto status(future.wait_for(std::chrono::minutes(1)));
     if (status == std::future_status::timeout || !future.get()) {
       LOG(kError) << "can't join routing network";
       BOOST_THROW_EXCEPTION(MakeError(RoutingErrors::not_connected));
