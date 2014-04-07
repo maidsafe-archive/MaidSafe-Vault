@@ -30,12 +30,12 @@
 #include "maidsafe/nfs/vault/pmid_registration.h"
 
 #include "maidsafe/vault/db.h"
+#include "maidsafe/vault/key.h"
 #include "maidsafe/vault/operation_handlers.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/unresolved_action.pb.h"
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/version_handler/action_put.h"
-#include "maidsafe/vault/version_handler/key.h"
 
 namespace maidsafe {
 

@@ -27,7 +27,7 @@
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/version_handler/key.h"
+#include "maidsafe/vault/key.h"
 #include "maidsafe/vault/version_handler/service.h"
 
 namespace maidsafe {
@@ -609,10 +609,8 @@ class VersionHandlerGetVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->HandleGetVersions(
-        VersionHandlerKey(data_name, Name::data_type::Tag::kValue,
-                          Identity(kRequestor_.node_id.string())),
-        kRequestor_, kMessageId_);
+    kService_->HandleGetVersions(Key(data_name, Name::data_type::Tag::kValue), kRequestor_,
+                                 kMessageId_);
   }
 
  private:
@@ -632,10 +630,8 @@ class VersionHandlerGetBranchVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->HandleGetBranch(
-        VersionHandlerKey(data_name, Name::data_type::Tag::kValue,
-                          Identity(kRequestor_.node_id.string())),
-        kVersionName_, kRequestor_, kMessageId_);
+    kService_->HandleGetBranch(Key(data_name, Name::data_type::Tag::kValue), kVersionName_,
+                               kRequestor_, kMessageId_);
   }
 
  private:
@@ -657,9 +653,8 @@ class VersionHandlerPutVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->HandlePutVersion(VersionHandlerKey(data_name, Name::data_type::Tag::kValue,
-                          Identity(kSender_.string())),
-        kOldVersion_, kNewVersion_, kSender_, kMessageId_);
+    kService_->HandlePutVersion(Key(data_name, Name::data_type::Tag::kValue), kOldVersion_,
+                                kNewVersion_, kSender_, kMessageId_);
   }
 
  private:
@@ -679,9 +674,8 @@ class VersionHandlerDeleteBranchVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->HandleDeleteBranchUntilFork(
-        VersionHandlerKey(data_name, Name::data_type::Tag::kValue, Identity(kSender_.string())),
-        kVersionName_, kSender_);
+    kService_->HandleDeleteBranchUntilFork(Key(data_name, Name::data_type::Tag::kValue),
+                                               kVersionName_, kSender_);
   }
 
  private:
@@ -701,10 +695,8 @@ class VersionHandlerCreateVersionTreeVisitor : public boost::static_visitor<> {
 
   template<typename DataNameType>
   void operator()(const DataNameType& data_name) {
-    kService_->HandleCreateVersionTree(
-      VersionHandlerKey(data_name, DataNameType::data_type::Tag::kValue,
-                        Identity(kSender_.string())),
-      kVersion_, kMaxVersions_, kMaxBranches_, kMessageId_);
+    kService_->HandleCreateVersionTree(Key(data_name, DataNameType::data_type::Tag::kValue),
+                                       kVersion_, kMaxVersions_, kMaxBranches_, kMessageId_);
   }
 
  private:

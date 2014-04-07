@@ -31,7 +31,6 @@
 
 #include "maidsafe/vault/data_manager/value.h"
 #include "maidsafe/vault/key.h"
-#include "maidsafe/vault/version_handler/key.h"
 #include "maidsafe/vault/version_handler/value.h"
 
 namespace maidsafe {
@@ -112,7 +111,7 @@ void DbTests(Db<Key, Value>& db, const Key& key) {
 
 TEST_CASE("Db constructor", "[Db][Unit]") {
   Db<Key, DataManagerValue> data_manager_db;
-  Db<VersionHandlerKey, VersionHandlerValue> version_handler_db;
+  Db<Key, VersionHandlerValue> version_handler_db;
 }
 
 TEST_CASE("Db commit", "[Db][Unit]") {
@@ -129,7 +128,7 @@ TEST_CASE("Db commit", "[Db][Unit]") {
 
 TEST_CASE("Db transfer info", "[Db][Unit]") {
   Db<Key, DataManagerValue> data_manager_db;
-  Db<VersionHandlerKey, VersionHandlerValue> version_handler_db;
+  Db<Key, VersionHandlerValue> version_handler_db;
   std::shared_ptr<routing::MatrixChange> matrix_change;
   data_manager_db.GetTransferInfo(matrix_change);
   version_handler_db.GetTransferInfo(matrix_change);

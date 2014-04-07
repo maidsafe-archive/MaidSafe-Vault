@@ -147,8 +147,11 @@ void VersionHandlerDispatcher::SendCreateVersionTreeResponse(
 }
 
 void VersionHandlerDispatcher::SendPutVersionResponse(
-    const VersionHandler::Key& key, const VersionHandler::VersionName& tip_of_tree,
-    const maidsafe_error& return_code, nfs::MessageId message_id) {
+    const MaidName& maid_name,
+    const VersionHandler::Key& key,
+    const VersionHandler::VersionName& tip_of_tree,
+    const maidsafe_error& return_code,
+    nfs::MessageId message_id) {
   typedef PutVersionResponseFromVersionHandlerToMaidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message;
@@ -160,7 +163,7 @@ void VersionHandlerDispatcher::SendPutVersionResponse(
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(key.name.string())),
                                             routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(key.originator.string())));
+                         VaultMessage::Receiver(NodeId(maid_name.value.string())));
   routing_.Send(message);
 }
 
