@@ -467,9 +467,10 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
       auto value(db_.Get(key));
       pmids_to_avoid = std::move(value.AllPmids());
     } catch (const common_error& error) {
-      if (error.code() != make_error_code(CommonErrors::no_such_element))
+      if (error.code() != make_error_code(CommonErrors::no_such_element)) {
         LOG(kError) << "HandlePutFailure db error";
         throw error;  // For db errors
+      }
     }
 
     pmids_to_avoid.insert(attempted_pmid_node);
