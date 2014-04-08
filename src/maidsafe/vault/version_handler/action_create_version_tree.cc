@@ -26,10 +26,10 @@ namespace maidsafe {
 namespace vault {
 
 ActionVersionHandlerCreateVersionTree::ActionVersionHandlerCreateVersionTree(
-    const StructuredDataVersions::VersionName& version_in, uint32_t max_versions_in,
-    uint32_t max_branches_in, nfs::MessageId message_id_in)
+    const StructuredDataVersions::VersionName& version_in, const Identity& originator_in,
+    uint32_t max_versions_in, uint32_t max_branches_in, nfs::MessageId message_id_in)
         : version(version_in), max_versions(max_versions_in),
-          max_branches(max_branches_in), message_id(message_id_in) {}
+          max_branches(max_branches_in), message_id(message_id_in), originator(originator_in) {}
 
 ActionVersionHandlerCreateVersionTree::ActionVersionHandlerCreateVersionTree(
     const std::string& serialised_action) {
@@ -40,17 +40,20 @@ ActionVersionHandlerCreateVersionTree::ActionVersionHandlerCreateVersionTree(
   max_versions = action_create_version_proto.max_versions();
   max_branches = action_create_version_proto.max_branches();
   message_id = nfs::MessageId(action_create_version_proto.message_id());
+  originator = Identity(action_create_version_proto.originator());
 }
 
 ActionVersionHandlerCreateVersionTree::ActionVersionHandlerCreateVersionTree(
     const ActionVersionHandlerCreateVersionTree& other)
         : version(other.version), max_versions(other.max_versions),
-          max_branches(other.max_branches), message_id(other.message_id) {}
+          max_branches(other.max_branches), message_id(other.message_id),
+          originator(other.originator) {}
 
 ActionVersionHandlerCreateVersionTree::ActionVersionHandlerCreateVersionTree(
     ActionVersionHandlerCreateVersionTree&& other)
         : version(std::move(other.version)), max_versions(std::move(other.max_versions)),
-          max_branches(std::move(other.max_branches)), message_id(std::move(other.message_id)) {}
+          max_branches(std::move(other.max_branches)), message_id(std::move(other.message_id)),
+          originator(std::move(other.originator)) {}
 
 std::string ActionVersionHandlerCreateVersionTree::Serialise() const {
   protobuf::ActionCreateVersionTree action_create_version_proto;
@@ -58,6 +61,7 @@ std::string ActionVersionHandlerCreateVersionTree::Serialise() const {
   action_create_version_proto.set_max_versions(max_versions);
   action_create_version_proto.set_max_branches(max_branches);
   action_create_version_proto.set_message_id(message_id.data);
+  action_create_version_proto.set_originator(originator.string());
   return action_create_version_proto.SerializeAsString();
 }
 
@@ -73,7 +77,8 @@ detail::DbAction ActionVersionHandlerCreateVersionTree::operator()(
 bool operator==(const ActionVersionHandlerCreateVersionTree& lhs,
                 const ActionVersionHandlerCreateVersionTree& rhs) {
   return lhs.version == rhs.version && lhs.max_versions == rhs.max_versions &&
-         lhs.max_branches == rhs.max_branches && lhs.message_id == rhs.message_id;
+         lhs.max_branches == rhs.max_branches && lhs.message_id == rhs.message_id &&
+         lhs.originator == rhs.originator;
 }
 
 bool operator!=(const ActionVersionHandlerCreateVersionTree& lhs,

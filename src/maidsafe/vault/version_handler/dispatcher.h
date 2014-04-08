@@ -47,10 +47,11 @@ class VersionHandlerDispatcher {
       const VersionHandler::Key& key, const std::vector<VersionHandler::VersionName>& versions,
       const RequestorType& requestor, const maidsafe_error& result, nfs::MessageId message_id);
 
-  void SendCreateVersionTreeResponse(const Identity& originator,
-                                     const maidsafe_error& return_code, nfs::MessageId message_id);
+  void SendCreateVersionTreeResponse(const Identity& requestor, const VersionHandler::Key& key,
+                                     const maidsafe_error& return_code,
+                                     nfs::MessageId message_id);
 
-  void SendPutVersionResponse(const VersionHandler::Key& key,
+  void SendPutVersionResponse(const Identity& originator, const VersionHandler::Key& key,
                               const VersionHandler::VersionName& tip_of_tree,
                               const maidsafe_error& return_code, nfs::MessageId message_id);
 

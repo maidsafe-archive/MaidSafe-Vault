@@ -35,6 +35,7 @@ class VersionHandlerValue;
 
 struct ActionVersionHandlerCreateVersionTree {
   ActionVersionHandlerCreateVersionTree(const StructuredDataVersions::VersionName& version_in,
+                                        const Identity& originator_in,
                                         uint32_t max_versions_in, uint32_t max_branches_in,
                                         nfs::MessageId message_id_in);
 
@@ -48,9 +49,9 @@ struct ActionVersionHandlerCreateVersionTree {
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kCreateVersionTreeRequest;
   StructuredDataVersions::VersionName version;
-  NodeId sender;  // sender is required to be notified of potential failures on put
   uint32_t max_versions, max_branches;
   nfs::MessageId message_id;
+  Identity originator;
 
  private:
   ActionVersionHandlerCreateVersionTree();

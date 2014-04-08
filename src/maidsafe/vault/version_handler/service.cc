@@ -194,14 +194,15 @@ void VersionHandlerService::HandleMessage(
           LOG(kInfo) << "VersionHandlerSync -- CreateVersionTree -Commit: " << message.id;
           db_.Commit(resolved_action->key, resolved_action->action);
           dispatcher_.SendCreateVersionTreeResponse(
-              resolved_action->key.originator,  maidsafe_error(CommonErrors::success),
-              resolved_action->action.message_id);
+              resolved_action->action.originator, resolved_action->key,
+              maidsafe_error(CommonErrors::success), resolved_action->action.message_id);
         }
         catch (const maidsafe_error& error) {
           LOG(kError) << message.id << " Failed to create version: "
                       << boost::diagnostic_information(error);
           dispatcher_.SendCreateVersionTreeResponse(
-              resolved_action->key.originator,  error, resolved_action->action.message_id);
+              resolved_action->action.originator, resolved_action->key, error,
+                      resolved_action->action.message_id);
         }
       }
       break;
@@ -220,15 +221,16 @@ void VersionHandlerService::HandleMessage(
           if (resolved_action->action.tip_of_tree) {
             tip_of_tree = *resolved_action->action.tip_of_tree;
             dispatcher_.SendPutVersionResponse(
-                resolved_action->key, tip_of_tree,  maidsafe_error(CommonErrors::success),
-                resolved_action->action.message_id);
+                resolved_action->action.originator, resolved_action->key, tip_of_tree,
+                maidsafe_error(CommonErrors::success), resolved_action->action.message_id);
           }
         }
         catch (const maidsafe_error& error) {
           LOG(kError) << message.id << " Failed to put version: "
                       << boost::diagnostic_information(error);
-          dispatcher_.SendPutVersionResponse(resolved_action->key, VersionHandler::VersionName(),
-                                             error, resolved_action->action.message_id);
+          dispatcher_.SendPutVersionResponse(
+              resolved_action->action.originator, resolved_action->key,
+              VersionHandler::VersionName(), error, resolved_action->action.message_id);
         }
       }
       break;
@@ -258,24 +260,27 @@ void VersionHandlerService::HandleMessage(
 void VersionHandlerService::HandlePutVersion(
     const VersionHandler::Key& key,
     const VersionHandler::VersionName& old_version,
-    const VersionHandler::VersionName& new_version, const NodeId& sender,
+    const VersionHandler::VersionName& new_version,
+    const Identity& originator,
     nfs::MessageId message_id) {
   LOG(kVerbose) << "VersionHandlerService::HandlePutVersion: " << message_id;
   try {
     db_.Get(key);
   }
   catch (const maidsafe_error& error) {
-    dispatcher_.SendPutVersionResponse(key, VersionHandler::VersionName(), error, message_id);
+    dispatcher_.SendPutVersionResponse(originator, key, VersionHandler::VersionName(), error,
+                                       message_id);
     return;
   }
   DoSync(VersionHandler::UnresolvedPutVersion(
-                      key, ActionVersionHandlerPut(old_version, new_version, sender, message_id),
+                      key, ActionVersionHandlerPut(old_version, new_version, originator,
+                                                   message_id),
                       routing_.kNodeId()));
 }
 
 void VersionHandlerService::HandleDeleteBranchUntilFork(
     const VersionHandler::Key& key, const VersionHandler::VersionName& branch_tip,
-    const NodeId& /*sender*/) {
+    const Identity& /*originator*/) {
   LOG(kVerbose) << "VersionHandlerService::HandleDeleteBranchUntilFork: ";
   DoSync(VersionHandler::UnresolvedDeleteBranchUntilFork(
                       key, ActionVersionHandlerDeleteBranchUntilFork(branch_tip),
@@ -284,6 +289,7 @@ void VersionHandlerService::HandleDeleteBranchUntilFork(
 
 void VersionHandlerService::HandleCreateVersionTree(const VersionHandler::Key& key,
                                                     const VersionHandler::VersionName& version,
+                                                    const Identity& originator,
                                                     uint32_t max_versions, uint32_t max_branches,
                                                     nfs::MessageId message_id) {
   LOG(kVerbose) << "VersionHandlerService::HandleCreateVersionTree: " << message_id;
@@ -292,12 +298,12 @@ void VersionHandlerService::HandleCreateVersionTree(const VersionHandler::Key& k
   }
   catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
-      dispatcher_.SendCreateVersionTreeResponse(key.originator, error, message_id);
+      dispatcher_.SendCreateVersionTreeResponse(originator, key, error, message_id);
       return;
     }
   }
   DoSync(VersionHandler::UnresolvedCreateVersionTree(
-                      key, ActionVersionHandlerCreateVersionTree(version, max_versions,
+                      key, ActionVersionHandlerCreateVersionTree(version, originator, max_versions,
                                                                  max_branches, message_id),
                       routing_.kNodeId()));
 }

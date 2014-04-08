@@ -602,7 +602,7 @@ class PmidManagerFalseNotificationVisitor : public boost::static_visitor<> {
 template <typename SourcePersonaType>
 class VersionHandlerGetVisitor : public boost::static_visitor<> {
  public:
-  VersionHandlerGetVisitor(VersionHandlerService* service, Identity originator,
+  VersionHandlerGetVisitor(VersionHandlerService* service, const Identity& originator,
                            nfs::MessageId message_id)
       : kService_(service), kRequestor_(NodeId(std::move(originator.string()))),
         kMessageId_(message_id) {}
@@ -624,7 +624,7 @@ class VersionHandlerGetBranchVisitor : public boost::static_visitor<> {
  public:
   VersionHandlerGetBranchVisitor(VersionHandlerService* service,
                                  const StructuredDataVersions::VersionName version_name,
-                                 Identity originator, nfs::MessageId message_id)
+                                 const Identity& originator, nfs::MessageId message_id)
       : kService_(service), kVersionName_(std::move(version_name)),
         kRequestor_(NodeId(std::move(originator.string()))), kMessageId_(std::move(message_id)) {}
 
@@ -644,67 +644,69 @@ class VersionHandlerGetBranchVisitor : public boost::static_visitor<> {
 class VersionHandlerPutVisitor : public boost::static_visitor<> {
  public:
   VersionHandlerPutVisitor(VersionHandlerService* service,
-                           StructuredDataVersions::VersionName old_version,
-                           StructuredDataVersions::VersionName new_version, NodeId sender,
+                           const StructuredDataVersions::VersionName& old_version,
+                           const StructuredDataVersions::VersionName& new_version,
+                           const Identity& originator,
                            nfs::MessageId message_id)
-      : kService_(service), kOldVersion_(std::move(old_version)),
-        kNewVersion_(std::move(new_version)), kSender_(std::move(sender)),
-        kMessageId_(message_id) {}
+      : kService_(service), kOldVersion_(old_version), kNewVersion_(new_version),
+        kMessageId_(message_id), kOriginator_(std::move(originator)) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->HandlePutVersion(Key(data_name, Name::data_type::Tag::kValue), kOldVersion_,
-                                kNewVersion_, kSender_, kMessageId_);
+                                kNewVersion_, kOriginator_, kMessageId_);
   }
 
  private:
   VersionHandlerService* const kService_;
   StructuredDataVersions::VersionName kOldVersion_, kNewVersion_;
-  NodeId kSender_;
   nfs::MessageId kMessageId_;
+  const Identity kOriginator_;
 };
 
 class VersionHandlerDeleteBranchVisitor : public boost::static_visitor<> {
  public:
   VersionHandlerDeleteBranchVisitor(VersionHandlerService* service,
-                                    const StructuredDataVersions::VersionName version_name,
-                                    NodeId sender)
-      : kService_(service), kVersionName_(std::move(version_name)),
-        kSender_(std::move(sender)) {}
+                                    const StructuredDataVersions::VersionName& version_name,
+                                    const Identity& originator)
+      : kService_(service), kVersionName_(version_name),
+        kOriginator_(std::move(originator)) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->HandleDeleteBranchUntilFork(Key(data_name, Name::data_type::Tag::kValue),
-                                               kVersionName_, kSender_);
+                                               kVersionName_, kOriginator_);
   }
 
  private:
   VersionHandlerService* const kService_;
-  StructuredDataVersions::VersionName kVersionName_;
-  NodeId kSender_;
+  const StructuredDataVersions::VersionName kVersionName_;
+  const Identity kOriginator_;
 };
 
 class VersionHandlerCreateVersionTreeVisitor : public boost::static_visitor<> {
  public:
-  VersionHandlerCreateVersionTreeVisitor(VersionHandlerService* service, NodeId sender,
-                                         StructuredDataVersions::VersionName version,
+  VersionHandlerCreateVersionTreeVisitor(VersionHandlerService* service,
+                                         const StructuredDataVersions::VersionName& version,
+                                         const Identity& originator,
                                          uint32_t max_versions, uint32_t max_branches,
                                          nfs::MessageId message_id)
-      : kService_(service), kSender_(sender), kVersion_(std::move(version)),
-        kMaxVersions_(max_versions), kMaxBranches_(max_branches), kMessageId_(message_id) {}
+      : kService_(service), kVersion_(version), kMaxVersions_(max_versions),
+        kMaxBranches_(max_branches), kMessageId_(message_id), kOriginator_(Identity(originator)) {}
 
   template<typename DataNameType>
   void operator()(const DataNameType& data_name) {
     kService_->HandleCreateVersionTree(Key(data_name, DataNameType::data_type::Tag::kValue),
-                                       kVersion_, kMaxVersions_, kMaxBranches_, kMessageId_);
+                                       kVersion_, kOriginator_, kMaxVersions_, kMaxBranches_,
+                                       kMessageId_);
   }
 
  private:
   VersionHandlerService* const kService_;
-  NodeId kSender_;
   const StructuredDataVersions::VersionName kVersion_;
   const uint32_t kMaxVersions_, kMaxBranches_;
   const nfs::MessageId kMessageId_;
+  const Identity kOriginator_;
 };
 
 class CheckDataNameVisitor : public boost::static_visitor<bool> {

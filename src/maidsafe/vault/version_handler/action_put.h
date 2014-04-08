@@ -36,7 +36,8 @@ class VersionHandlerValue;
 struct ActionVersionHandlerPut {
   ActionVersionHandlerPut(const StructuredDataVersions::VersionName& old_version,
                           const StructuredDataVersions::VersionName& new_version,
-                          const NodeId& sender, nfs::MessageId message_id_in);
+                          const Identity& originator_in,
+                          nfs::MessageId message_id_in);
 
   explicit ActionVersionHandlerPut(const std::string& serialised_action);
   ActionVersionHandlerPut(const ActionVersionHandlerPut& other);
@@ -49,8 +50,8 @@ struct ActionVersionHandlerPut {
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPutVersionRequest;
   StructuredDataVersions::VersionName old_version, new_version;
   boost::optional<StructuredDataVersions::VersionName> tip_of_tree;
-  NodeId sender;  // sender is required to be notified of potential failures on put
   nfs::MessageId message_id;
+  Identity originator;
 
  private:
   ActionVersionHandlerPut();

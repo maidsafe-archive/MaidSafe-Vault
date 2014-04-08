@@ -603,7 +603,7 @@ void DoOperation(VersionHandlerService* service,
   auto data_name(GetNameVariant(*message.contents));
   VersionHandlerPutVisitor put_version_visitor(service, message.contents->old_version_name,
                                                message.contents->new_version_name,
-                                               sender.group_id.data, message.id);
+                                               Identity(sender.group_id.data.string()), message.id);
   boost::apply_visitor(put_version_visitor, data_name);
 }
 
@@ -615,7 +615,7 @@ void DoOperation(VersionHandlerService* service,
   LOG(kVerbose) << "DoOperation DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler";
   auto data_name(GetNameVariant(*message.contents));
   VersionHandlerDeleteBranchVisitor delete_version_visitor(service, message.contents->version_name,
-                                                     sender.group_id.data);
+                                                           Identity(sender.group_id.data.string()));
   boost::apply_visitor(delete_version_visitor, data_name);
 }
 
@@ -627,8 +627,8 @@ void DoOperation(VersionHandlerService* service,
   LOG(kVerbose) << "CreateVersionTreeRequestFromMaidManagerToVersionHandler";
   auto data_name(GetNameVariant(*message.contents));
   VersionHandlerCreateVersionTreeVisitor create_version_tree_visitor(
-      service, sender.group_id.data, message.contents->version_name, message.contents->max_versions,
-      message.contents->max_branches, message.id);
+      service, message.contents->version_name, Identity(sender.group_id.data.string()),
+      message.contents->max_versions, message.contents->max_branches, message.id);
   boost::apply_visitor(create_version_tree_visitor, data_name);
 }
 
