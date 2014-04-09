@@ -416,7 +416,7 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
   } catch(const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest vault error : "
-                  << error.what();
+                  << boost::diagnostic_information(error);
       throw;
     }
     LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest no_such_element";

@@ -152,7 +152,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
   client_nfs_.reset(new nfs_client::MaidNodeNfs(asio_service_, client_routing_, pmid_name));
   {
     auto future(RoutingJoin(peer_endpoints));
-    auto status(future.wait_for(std::chrono::seconds(10)));
+    auto status(future.wait_for(std::chrono::minutes(1)));
     if (status == std::future_status::timeout || !future.get()) {
       LOG(kError) << "can't join routing network";
       BOOST_THROW_EXCEPTION(MakeError(RoutingErrors::not_connected));
@@ -175,7 +175,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
       try {
         future.get();
       } catch (const maidsafe_error& error) {
-        LOG(kError) << "caught a maidsafe_error : " << error.what();
+        LOG(kError) << "caught a maidsafe_error : " << boost::diagnostic_information(error);
         if (error.code() == make_error_code(VaultErrors::account_already_exists))
           account_exists = true;
       } catch (...) {
@@ -264,7 +264,7 @@ void KeyStorer::Store() {
                   << " PublicPmidKey stored and verified " << std::endl;
     } catch (const std::exception& e) {
       std::cout << "Failed storing key chain of PMID " << HexSubstr(keychain.pmid.name().value)
-                << ": " << e.what() << std::endl;
+                << ": " << boost::diagnostic_information(e) << std::endl;
       ++failures;
     }
   }
@@ -299,7 +299,7 @@ void KeyVerifier::Verify() {
     std::cout << "VerifyKeys - Verified all " << verified_keys << " keys.\n";
   }
   catch (const std::exception& ex) {
-    LOG(kError) << "Failed to verify keys " << ex.what();
+    LOG(kError) << "Failed to verify keys " << boost::diagnostic_information(ex);
   }
 }
 
@@ -387,7 +387,8 @@ void DataChunkStorer::TestVersion() {
   try {
     create_version_future.get();
   } catch (const maidsafe_error& error) {
-    std::cout << "error when create version tree : " << error.what() << std::endl;
+    std::cout << "error when create version tree : " << boost::diagnostic_information(error)
+              << std::endl;
     return;
   }
 
@@ -395,7 +396,7 @@ void DataChunkStorer::TestVersion() {
   try {
     put_version_future.get();
   } catch (const maidsafe_error& error) {
-    std::cout << "error when put version : " << error.what() << std::endl;
+    std::cout << "error when put version : " << boost::diagnostic_information(error) << std::endl;
     return;
   }
   try {
@@ -406,7 +407,8 @@ void DataChunkStorer::TestVersion() {
       std::cout << "version tip is wrong" << std::endl;
     }
   } catch(const maidsafe_error& error) {
-    std::cout << "Failed to retrieve version: " << error.what() << std::endl;
+    std::cout << "Failed to retrieve version: " << boost::diagnostic_information(error)
+              << std::endl;
   }
 }
 
@@ -491,7 +493,7 @@ bool DataChunkStorer::GetOneChunk(const ImmutableData& chunk_data) {
   try {
     result = chunk_data.data() == future.get().data();
   } catch (const maidsafe_error& error) {
-    LOG(kError) << "Encounter error when getting chunk : " << error.what();
+    LOG(kError) << "Encounter error when getting chunk : " << boost::diagnostic_information(error);
   }
   return result;
 }

@@ -179,7 +179,8 @@ void VaultNetwork::SetUp() {
       EXPECT_TRUE(futures[index].get());
     }
     catch (const std::exception& e) {
-      LOG(kError) << "Exception getting future from creating vault " << index << ": " << e.what();
+      LOG(kError) << "Exception getting future from creating vault " << index << ": "
+                  << boost::diagnostic_information(e);
     }
     LOG(kVerbose) << index << " returns.";
   }
@@ -208,7 +209,8 @@ bool VaultNetwork::Create(const passport::detail::Fob<passport::detail::PmidTag>
     return true;
   }
   catch (const std::exception& ex) {
-    LOG(kError) << "vault failed to join: " << vaults_.size() << " because: " << ex.what();
+    LOG(kError) << "vault failed to join: " << vaults_.size() << " because: "
+                << boost::diagnostic_information(ex);
     return false;
   }
 }
@@ -228,7 +230,8 @@ bool VaultNetwork::Add() {
     return future.get();
   }
   catch (const std::exception& e) {
-    LOG(kError) << "Exception getting future from creating vault " << e.what();
+    LOG(kError) << "Exception getting future from creating vault "
+                << boost::diagnostic_information(e);
     return false;
   }
 }
@@ -248,7 +251,8 @@ bool VaultNetwork::AddClient(bool register_pmid) {
     return true;
   }
   catch (const std::exception& error) {
-    LOG(kVerbose) << "Client failed to join: " << clients_.size() << " " << error.what();
+    LOG(kVerbose) << "Client failed to join: " << clients_.size() << " "
+                  << boost::diagnostic_information(error);
     return false;
   }
 }
@@ -300,7 +304,7 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
       register_pmid_future.get();
     }
     catch (const maidsafe_error& error) {
-      LOG(kError) << "Pmid Registration Failed " << error.what();
+      LOG(kError) << "Pmid Registration Failed " << boost::diagnostic_information(error);
       throw;
     }
     passport::PublicPmid::Name pmid_name(Identity(keys.pmid.name().value));
@@ -311,7 +315,7 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
                     << HexSubstr(pmid_name.value.string()) << " is " << get_health_future.get();
     }
     catch (const maidsafe_error& error) {
-      LOG(kError) << "Pmid Health Retreival Failed " << error.what();
+      LOG(kError) << "Pmid Health Retreival Failed " << boost::diagnostic_information(error);
       throw;
     }
     // waiting for the GetPmidHealth updating corresponding accounts

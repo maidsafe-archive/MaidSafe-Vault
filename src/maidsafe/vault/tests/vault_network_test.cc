@@ -112,7 +112,7 @@ TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
     }
     catch (const std::exception& ex) {
       LOG(kError) << "Failed to retrieve chunk: " << DebugId(chunks[index].name())
-                  << " because: " << ex.what() << " "  << index;
+                  << " because: " << boost::diagnostic_information(ex) << " "  << index;
     }
   }
   LOG(kVerbose) << "Multiple puts is finished successfully";
@@ -221,7 +221,7 @@ TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
     }
     catch (const std::exception& ex) {
       LOG(kError) << "Failed to retrieve chunk: " << DebugId(chunks[index].name())
-                  << " because: " << ex.what();
+                  << " because: " << boost::diagnostic_information(ex);
     }
   }
 }

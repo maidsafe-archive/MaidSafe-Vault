@@ -101,7 +101,7 @@ void VersionHandlerServiceTest::SendSync<VersionHandler::UnresolvedDeleteBranchU
   AddLocalActionAndSendGroupActions<VersionHandlerService,
                                     VersionHandler::UnresolvedDeleteBranchUntilFork,
                                     SynchroniseFromVersionHandlerToVersionHandler>(
-      &version_handler_service_, version_handler_service_.sync_delete_branche_until_forks_,
+      &version_handler_service_, version_handler_service_.sync_delete_branch_until_fork_,
       unresolved_actions, group_source);
 }
 

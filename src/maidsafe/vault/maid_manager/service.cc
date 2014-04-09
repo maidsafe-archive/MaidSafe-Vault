@@ -187,7 +187,7 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& pub
     return;
   } catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
-      LOG(kError) << "db errors" << error.what();
+      LOG(kError) << "db errors" << boost::diagnostic_information(error);
       throw;
     }
   }
@@ -390,7 +390,8 @@ void MaidManagerService::HandleSyncedPmidRegistration(
     LOG(kVerbose) << "MaidManagerService::HandleSyncedPmidRegistration got public_maid";
     ValidatePmidRegistration(std::move(public_maid), pmid_registration_op, message_id);
   } catch(const std::exception& e) {
-    LOG(kError) << "MaidManagerService::HandleSyncedPmidRegistration raised exception " << e.what();
+    LOG(kError) << "MaidManagerService::HandleSyncedPmidRegistration raised exception "
+                << boost::diagnostic_information(e);
   }
 }
 
@@ -436,11 +437,11 @@ void MaidManagerService::FinalisePmidRegistration(
   }
   catch(const maidsafe_error& error) {
     return_code = error;
-    LOG(kWarning) << "Failed to register new PMID: " << error.what();
+    LOG(kWarning) << "Failed to register new PMID: " << boost::diagnostic_information(error);
   }
   catch(const std::exception& ex) {
     return_code = MakeError(CommonErrors::unknown);
-    LOG(kWarning) << "Failed to register new PMID: " << ex.what();
+    LOG(kWarning) << "Failed to register new PMID: " << boost::diagnostic_information(ex);
   }
   dispatcher_.SendRegisterPmidResponse(pmid_registration_op->public_maid->name(), return_code,
                                        message_id);
@@ -492,7 +493,8 @@ void MaidManagerService::HandleSyncedDelete(
     else
       LOG(kInfo) << "DeleteRequest not passed down to DataManager";
   } catch (const maidsafe_error& error) {
-    LOG(kError) << "MaidManagerService::HandleSyncedDelete commiting error: " << error.what();
+    LOG(kError) << "MaidManagerService::HandleSyncedDelete commiting error: "
+                << boost::diagnostic_information(error);
     if (error.code() != make_error_code(CommonErrors::no_such_element) &&
         error.code() != make_error_code(VaultErrors::no_such_account)) {
       throw;
@@ -539,7 +541,8 @@ void MaidManagerService::HandlePmidHealthRequest(
     dispatcher_.SendPmidHealthRequest(maid_name, pmid_node, message_id);
   }
   catch (const maidsafe_error& error) {
-    LOG(kError) << "MaidManagerService::HandlePmidHealthRequest faied: " << error.what();
+    LOG(kError) << "MaidManagerService::HandlePmidHealthRequest faied: "
+                << boost::diagnostic_information(error);
     if (error.code() != make_error_code(VaultErrors::no_such_account))
       throw;
   }
@@ -560,7 +563,7 @@ void MaidManagerService::HandlePmidHealthResponse(const MaidName& maid_name,
                                        return_code, message_id);
   } catch(std::exception& e) {
     LOG(kError) << "Error handling Health Response to " << HexSubstr(maid_name->string())
-                << " with exception of " << e.what();
+                << " with exception of " << boost::diagnostic_information(e);
   }
 }
 
@@ -817,7 +820,7 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
-    const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager &message,
+    const nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager& message,
     const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::CreateVersionTreeRequestFromMaidNodeToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << message;

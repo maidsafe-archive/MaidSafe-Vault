@@ -29,8 +29,8 @@ int main(int argc, char* argv[]) {
     maidsafe::vault::tools::Commander commander(12);
     commander.AnalyseCommandLineOptions(argc, argv);
   }
-  catch (const maidsafe::maidsafe_error& exception) {
-    std::cout << "Error: " << exception.what() << std::endl;
+  catch (const maidsafe::maidsafe_error& error) {
+    std::cout << "Error: " << boost::diagnostic_information(error) << std::endl;
     return -1;
   }
   catch (...) {

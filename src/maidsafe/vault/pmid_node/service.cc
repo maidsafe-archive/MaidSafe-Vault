@@ -248,7 +248,8 @@ void PmidNodeService::UpdateLocalStorage(const std::vector<DataNameVariant>& to_
       handler_.Delete(file_name);
     }
     catch(const maidsafe_error& error) {
-      LOG(kWarning) << "Error in deletion: " << error.code() << " - " << error.what();
+      LOG(kWarning) << "Error in deletion: " << error.code() << " - "
+                    << boost::diagnostic_information(error);
     }
   }
 
@@ -268,7 +269,8 @@ void PmidNodeService::UpdateLocalStorage(const std::vector<DataNameVariant>& to_
       iter->wait();
     }
     catch(const maidsafe_error& error) {
-      LOG(kWarning) << "Error in retreivel: " << error.code() << " - " << error.what();
+      LOG(kWarning) << "Error in retreivel: " << error.code() << " - "
+                    << boost::diagnostic_information(error);
     }
   }
 }

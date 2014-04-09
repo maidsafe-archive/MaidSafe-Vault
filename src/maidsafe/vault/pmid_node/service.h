@@ -301,10 +301,10 @@ void PmidNodeService::HandleGet(const typename Data::Name& data_name,
     // Not sending error here as timeout will happen anyway at Datamanager.
     // This case should be least frequent.
     LOG(kError) << "Failed to get data : " << DebugId(data_name.value) << " , "
-                << error.what();
+                << boost::diagnostic_information(error);
   } catch (const std::exception& e) {
     LOG(kError) << "Failed to get data : " << DebugId(data_name.value) << " , "
-                << e.what();
+                << boost::diagnostic_information(e);
   }
 }
 
@@ -318,11 +318,11 @@ void PmidNodeService::HandlePut(const Data& data, nfs::MessageId message_id) {
   } catch (const maidsafe_error& error) {
     LOG(kWarning) << "PmidNodeService::HandlePut send put failure " << HexSubstr(data.name().value)
                   << " with AvailableSpace " << handler_.AvailableSpace()
-                  << " and error " << error.what();
+                  << " and error " << boost::diagnostic_information(error);
     dispatcher_.SendPutFailure<Data>(data.name(), handler_.AvailableSpace(), error, message_id);
   } catch (const std::exception& e) {
     LOG(kError) << "Failed to put data : " << HexSubstr(data.name().value) << " , "
-                << e.what();
+                << boost::diagnostic_information(e);
   }
 }
 
@@ -333,10 +333,10 @@ void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
     handler_.Delete(GetDataNameVariant(Data::Tag::kValue, data_name.value));
   } catch (const maidsafe_error& error) {
     LOG(kError) << "Failed to delete data : " << HexSubstr(data_name.value) << " , "
-                << error.what();
+                << boost::diagnostic_information(error);
   } catch (const std::exception& e) {
     LOG(kError) << "Failed to delete data : " << HexSubstr(data_name.value) << " , "
-                << e.what();
+                << boost::diagnostic_information(e);
   }
 }
 
@@ -368,7 +368,7 @@ void PmidNodeService::HandleIntegrityCheck(const typename Data::Name& data_name,
     // Not sending error here as timeout will happen anyway at Datamanager.
     // This case should be least frequent.
     LOG(kError) << "Failed to do integrity check for data : " << DebugId(data_name.value) << " , "
-                << error.what();
+                << boost::diagnostic_information(error);
   }
 }
 

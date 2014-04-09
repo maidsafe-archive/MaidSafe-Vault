@@ -248,7 +248,8 @@ void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::Messa
     // So the task will be cleaned out before the time-out response from responder
     // arrived. The policy shall change to keep timer muted instead of throwing.
     // BEFORE_RELEASE handle
-    LOG(kError) << "Caught an error when received a get response " << error.what();
+    LOG(kError) << "Caught an error when received a get response "
+                << boost::diagnostic_information(error);
   }
 }
 
@@ -375,7 +376,7 @@ void DataManagerService::HandleMessage(
           db_.Commit(resolved_action->key, resolved_action->action);
         } catch(maidsafe_error& error) {
           LOG(kWarning) << "having error when trying to commit remove pmid to db : "
-                        << error.what();
+                        << boost::diagnostic_information(error);
         }
       }
       break;

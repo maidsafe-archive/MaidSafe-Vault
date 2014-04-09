@@ -66,7 +66,7 @@ VersionHandlerService::VersionHandlerService(const passport::Pmid& pmid,
       kThisNodeId_(routing_.kNodeId()),
       sync_create_version_tree_(NodeId(pmid.name()->string())),
       sync_put_versions_(NodeId(pmid.name()->string())),
-      sync_delete_branche_until_forks_(NodeId(pmid.name()->string())) {}
+      sync_delete_branch_until_fork_(NodeId(pmid.name()->string())) {}
 
 template<>
 void VersionHandlerService::HandleMessage(
@@ -159,7 +159,7 @@ void VersionHandlerService::HandleMessage(
 
 template<>
 void VersionHandlerService::HandleMessage(
-    const CreateVersionTreeRequestFromMaidManagerToVersionHandler & message,
+    const CreateVersionTreeRequestFromMaidManagerToVersionHandler& message,
     const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Sender& sender,
     const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Receiver& receiver) {
   LOG(kVerbose) << "CreateVersionTreeRequestFromMaidManagerToVersionHandler: " << message.id;
@@ -198,7 +198,8 @@ void VersionHandlerService::HandleMessage(
               resolved_action->action.message_id);
         }
         catch (const maidsafe_error& error) {
-          LOG(kError) << message.id << " Failed to create version: " << error.what();
+          LOG(kError) << message.id << " Failed to create version: "
+                      << boost::diagnostic_information(error);
           dispatcher_.SendCreateVersionTreeResponse(
               resolved_action->key.originator,  error, resolved_action->action.message_id);
         }
@@ -224,7 +225,8 @@ void VersionHandlerService::HandleMessage(
           }
         }
         catch (const maidsafe_error& error) {
-          LOG(kError) << message.id << " Failed to put version: " << error.what();
+          LOG(kError) << message.id << " Failed to put version: "
+                      << boost::diagnostic_information(error);
           dispatcher_.SendPutVersionResponse(resolved_action->key, VersionHandler::VersionName(),
                                              error, resolved_action->action.message_id);
         }
@@ -234,7 +236,7 @@ void VersionHandlerService::HandleMessage(
     case ActionVersionHandlerDeleteBranchUntilFork::kActionId: {
       VersionHandler::UnresolvedDeleteBranchUntilFork unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_delete_branche_until_forks_.AddUnresolvedAction(unresolved_action));
+      auto resolved_action(sync_delete_branch_until_fork_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         try {
           db_.Commit(resolved_action->key, resolved_action->action);
@@ -304,7 +306,7 @@ template <typename UnresolvedAction>
 void VersionHandlerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_version_tree_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_put_versions_, unresolved_action);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_delete_branche_until_forks_,
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_delete_branch_until_fork_,
                                        unresolved_action);
 }
 

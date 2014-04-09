@@ -184,7 +184,7 @@ void DoOperation(MaidManagerService* service,
       GetNameVariant(data_name);
   }
   catch (const maidsafe_error& error) {
-    LOG(kError) << "Failed to cast to accepted type " << error.what();
+    LOG(kError) << "Failed to cast to accepted type " << boost::diagnostic_information(error);
     return;
   }
   service->HandleIncrementReferenceCounts(MaidName(Identity(sender.data.string())),
@@ -201,7 +201,7 @@ void DoOperation(MaidManagerService* service,
       GetNameVariant(data_name);
   }
   catch (const maidsafe_error& error) {
-    LOG(kError) << "Failed to cast to accepted type " << error.what();
+    LOG(kError) << "Failed to cast to accepted type " << boost::diagnostic_information(error);
     return;
   }
   service->HandleDecrementReferenceCounts(MaidName(Identity(sender.data.string())),
@@ -243,7 +243,7 @@ void DoOperation(MaidManagerService* service,
                            receiver) {
   LOG(kVerbose) << "DoOperation CreateVersionTreeResponseFromVersionHandlerToMaidManager";
   service->HandleCreateVersionTreeResponse(MaidName(Identity(receiver.data.string())),
-                                           message.contents->value,  message.id);
+                                           message.contents->value, message.id);
 }
 
 //=============================== To DataManager ===================================================

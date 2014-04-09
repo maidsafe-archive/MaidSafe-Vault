@@ -263,7 +263,7 @@ void Commander::HandleStorePublicKeys(size_t client_index) {
                      pmids_from_file_, all_keychains_);
     storer.Store();
   } catch (const std::exception& e) {
-    std::cout << "Failed storing key chain : " << e.what() << std::endl;
+    std::cout << "Failed storing key chain : " << boost::diagnostic_information(e) << std::endl;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   std::cout << "Keys Stored" << std::endl;
@@ -278,7 +278,7 @@ void Commander::HandleVerifyStoredPublicKeys(size_t /*client_index*/) {
     }
     catch (const std::exception& e) {
       std::cout << "Failed verifying key chain with PMID " << HexSubstr(keychain.pmid.name().value)
-                << ": " << e.what() << '\n';
+                << ": " << boost::diagnostic_information(e) << '\n';
       ++failures;
     }
   }
