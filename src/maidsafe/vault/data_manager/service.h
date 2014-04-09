@@ -707,27 +707,32 @@ void DataManagerService::AssessGetContentRequestedPmidNode(
 template <typename Data, typename RequestorIdType>
 void DataManagerService::AssessIntegrityCheckResults(
     std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
-  for (const auto& itr : get_response_op->integrity_checks) {
-    if (!itr.second.Validate(get_response_op->serialised_contents)) {
-      // In case the pmid_node_to_get_from returned with a false content, which in-validated
-      // all the others, as the PmidNode side has to accumulate enough delete requests before
-      // deploy the action, send out false delete request won't cause problem as long as no more
-      // than half PmidNodes containing false data.
-      LOG(kVerbose) << DebugId(NodeId(itr.second.result().string())) << " and total: "
-                    << DebugId(NodeId(IntegrityCheckData::Result().string()));
-      if (itr.second.result() != IntegrityCheckData::Result()) {
-        LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
-                      << HexSubstr(itr.first->string()) << " returned invalid data for "
-                      << HexSubstr(get_response_op->data_name.value.string());
-        DerankPmidNode<Data>(itr.first, get_response_op->data_name, get_response_op->message_id);
-        DeletePmidNodeAsHolder<Data>(itr.first, get_response_op->data_name,
-                                     get_response_op->message_id);
-        SendFalseDataNotification<Data>(itr.first, get_response_op->data_name,
-                                        get_response_op->message_id);
-      } else {
-        MarkNodeDown(itr.first, get_response_op->data_name);
+  try {
+    for (const auto& itr : get_response_op->integrity_checks) {
+      if (!itr.second.Validate(get_response_op->serialised_contents)) {
+        // In case the pmid_node_to_get_from returned with a false content, which in-validated
+        // all the others, as the PmidNode side has to accumulate enough delete requests before
+        // deploy the action, send out false delete request won't cause problem as long as no more
+        // than half PmidNodes containing false data.
+        if (itr.second.result() != IntegrityCheckData::Result()) {
+          LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
+                        << HexSubstr(itr.first->string()) << " returned invalid data for "
+                        << HexSubstr(get_response_op->data_name.value.string());
+          DerankPmidNode<Data>(itr.first, get_response_op->data_name, get_response_op->message_id);
+          DeletePmidNodeAsHolder<Data>(itr.first, get_response_op->data_name,
+                                      get_response_op->message_id);
+          SendFalseDataNotification<Data>(itr.first, get_response_op->data_name,
+                                          get_response_op->message_id);
+        } else {
+          LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
+                        << HexSubstr(itr.first->string()) << " holding data "
+                        << HexSubstr(get_response_op->data_name.value.string()) << " is down";
+          MarkNodeDown(itr.first, get_response_op->data_name);
+        }
       }
     }
+  }catch(...) {
+    LOG(kWarning) << "caught exception in DataManagerService::AssessIntegrityCheckResults";
   }
 }
 
