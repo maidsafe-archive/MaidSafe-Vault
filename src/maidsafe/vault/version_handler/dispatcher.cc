@@ -132,7 +132,8 @@ void VersionHandlerDispatcher::SendGetBranchResponse(
 }
 
 void VersionHandlerDispatcher::SendCreateVersionTreeResponse(
-    const Identity& originator, const maidsafe_error& return_code, nfs::MessageId message_id) {
+    const Identity& originator, const VersionHandler::Key& key, const maidsafe_error& return_code,
+        nfs::MessageId message_id) {
   typedef CreateVersionTreeResponseFromVersionHandlerToMaidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message;
@@ -140,15 +141,18 @@ void VersionHandlerDispatcher::SendCreateVersionTreeResponse(
   vault_message.contents.reset(new nfs_client::ReturnCode(return_code));
 
   RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(NodeId(originator.string())),
+                         VaultMessage::Sender(routing::GroupId(NodeId(key.name.string())),
                                             routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(originator)));
+                         VaultMessage::Receiver(NodeId(originator.string())));
   routing_.Send(message);
 }
 
 void VersionHandlerDispatcher::SendPutVersionResponse(
-    const VersionHandler::Key& key, const VersionHandler::VersionName& tip_of_tree,
-    const maidsafe_error& return_code, nfs::MessageId message_id) {
+    const Identity& originator,
+    const VersionHandler::Key& key,
+    const VersionHandler::VersionName& tip_of_tree,
+    const maidsafe_error& return_code,
+    nfs::MessageId message_id) {
   typedef PutVersionResponseFromVersionHandlerToMaidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message;
@@ -160,7 +164,7 @@ void VersionHandlerDispatcher::SendPutVersionResponse(
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(key.name.string())),
                                             routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(key.originator.string())));
+                         VaultMessage::Receiver(NodeId(originator.string())));
   routing_.Send(message);
 }
 

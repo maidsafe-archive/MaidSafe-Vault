@@ -24,8 +24,8 @@
 #include "maidsafe/common/data_types/structured_data_versions.h"
 #include "maidsafe/nfs/types.h"
 
+#include "maidsafe/vault/key.h"
 #include "maidsafe/vault/unresolved_action.h"
-#include "maidsafe/vault/version_handler/key.h"
 #include "maidsafe/vault/version_handler/action_create_version_tree.h"
 #include "maidsafe/vault/version_handler/action_put.h"
 #include "maidsafe/vault/version_handler/action_delete_branch_until_fork.h"
@@ -46,7 +46,7 @@ namespace nfs {
 template <>
 struct PersonaTypes<Persona::kVersionHandler> {
   static const Persona persona = Persona::kVersionHandler;
-  typedef vault::VersionHandlerKey Key;
+  typedef vault::Key Key;
   typedef vault::VersionHandlerValue Value;
   typedef StructuredDataVersions::VersionName VersionName;
   typedef vault::UnresolvedAction<Key, vault::ActionVersionHandlerCreateVersionTree>

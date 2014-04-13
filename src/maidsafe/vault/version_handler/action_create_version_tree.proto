@@ -23,4 +23,5 @@ message ActionCreateVersionTree {
   required int32 max_versions = 2;
   required int32 max_branches = 3;
   required int32 message_id = 4;
+  required bytes originator = 5;
 }

@@ -108,15 +108,17 @@ class VersionHandlerService {
 
   void HandlePutVersion(const VersionHandler::Key& key,
                         const VersionHandler::VersionName& old_version,
-                        const VersionHandler::VersionName& new_version, const NodeId& sender,
+                        const VersionHandler::VersionName& new_version,
+                        const Identity& originator,
                         nfs::MessageId message_id);
 
   void HandleDeleteBranchUntilFork(const VersionHandler::Key& key,
                                    const VersionHandler::VersionName& branch_tip,
-                                   const NodeId& sender);
+                                   const Identity& originator);
 
   void HandleCreateVersionTree(const VersionHandler::Key& key,
                                const VersionHandler::VersionName& version,
+                               const Identity& originator,
                                uint32_t max_versions, uint32_t max_branches,
                                nfs::MessageId message_id);
 
@@ -211,7 +213,7 @@ void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& key,
                                               nfs::MessageId message_id) {
   try {
     auto value(std::move(db_.Get(key)));
-    LOG(kError) << "HandleGetVersions  msg id" << message_id << "Get from db passed";
+    LOG(kInfo) << "HandleGetVersions  msg id" << message_id << "Get from db passed";
     dispatcher_.SendGetVersionsResponse(key, value.Get(), requestor_type,
                                         maidsafe_error(CommonErrors::success), message_id);
   }
