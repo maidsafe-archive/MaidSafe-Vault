@@ -189,13 +189,13 @@ TEST_CASE_METHOD(VersionHandlerServiceTest,
 TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are handled",
                  "[Sync][VersionHandler][Service][Behavioural]") {
   SECTION("CreateVersionTree") {
-    NodeId sender_id(NodeId::kRandomId), originator(NodeId::kRandomId);
+    NodeId sender_id(NodeId::kRandomId);
+    Identity originator(NodeId(NodeId::kRandomId).string());
     auto content(CreateContent<nfs_vault::VersionTreeCreation>());
     nfs::MessageId message_id(RandomInt32());
-    VersionHandler::Key key(content.data_name.raw_name, ImmutableData::Tag::kValue,
-                            Identity(originator.string()));
+    VersionHandler::Key key(content.data_name.raw_name, ImmutableData::Tag::kValue);
     ActionVersionHandlerCreateVersionTree action_create_version(
-        content.version_name, content.max_versions, content.max_branches, message_id);
+        content.version_name, originator, content.max_versions, content.max_branches, message_id);
     auto group_source(CreateGroupSource(NodeId(content.data_name.raw_name.string())));
     auto group_unresolved_action(
              CreateGroupUnresolvedAction<VersionHandler::UnresolvedCreateVersionTree>(
@@ -205,16 +205,16 @@ TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are
   }
 
   SECTION("PutVersion") {
-    NodeId sender_id(NodeId::kRandomId), originator(NodeId::kRandomId);
+    NodeId sender_id(NodeId::kRandomId);
+    Identity originator(NodeId(NodeId::kRandomId).string());
     auto content(CreateContent<nfs_vault::DataNameOldNewVersion>());
     nfs::MessageId message_id(RandomInt32());
-    VersionHandler::Key key(content.data_name.raw_name, ImmutableData::Tag::kValue,
-                            Identity(originator.string()));
-    Store(key, ActionVersionHandlerCreateVersionTree(content.old_version_name, 10, 20,
+    VersionHandler::Key key(content.data_name.raw_name, ImmutableData::Tag::kValue);
+    Store(key, ActionVersionHandlerCreateVersionTree(content.old_version_name, originator, 10, 20,
                                                      message_id));
     CHECK_NOTHROW(Get(key));
     ActionVersionHandlerPut action_put_version(content.old_version_name, content.new_version_name,
-                                               sender_id, message_id);
+                                               originator, message_id);
     auto group_source(CreateGroupSource(NodeId(content.data_name.raw_name.string())));
     auto group_unresolved_action(
              CreateGroupUnresolvedAction<VersionHandler::UnresolvedPutVersion>(
@@ -224,9 +224,9 @@ TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are
   }
 
   SECTION("DeleteBranchUntilFork") {
-    NodeId sender_id(NodeId::kRandomId), originator(NodeId::kRandomId);
-    VersionHandler::Key key(Identity(RandomString(64)), ImmutableData::Tag::kValue,
-                            Identity(originator.string()));
+    NodeId sender_id(NodeId::kRandomId);
+    Identity originator(NodeId(NodeId::kRandomId).string());
+    VersionHandler::Key key(Identity(RandomString(64)), ImmutableData::Tag::kValue);
     nfs::MessageId message_id(RandomUint32());
     VersionName v0_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
     VersionName v1_bbb(1, ImmutableData::Name(Identity(std::string(64, 'b'))));
@@ -242,11 +242,11 @@ TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are
     puts.push_back(std::make_pair(v1_bbb, v2_ddd));
     puts.push_back(std::make_pair(v3_fff, v4_iii));
 
-    Store(key, ActionVersionHandlerCreateVersionTree(v0_aaa, 10, 20, message_id));
+    Store(key, ActionVersionHandlerCreateVersionTree(v0_aaa, originator, 10, 20, message_id));
 
     for (const auto& put : puts) {
       message_id = nfs::MessageId(RandomUint32());
-      Store(key, ActionVersionHandlerPut(put.first, put.second, sender_id, message_id));
+      Store(key, ActionVersionHandlerPut(put.first, put.second, originator, message_id));
     }
 
     CHECK_NOTHROW(Get(key).GetBranch(v4_iii));
