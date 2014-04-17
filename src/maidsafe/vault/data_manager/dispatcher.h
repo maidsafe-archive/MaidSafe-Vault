@@ -253,10 +253,10 @@ struct GetResponseMessage<PartialRequestor<nfs::SourcePersona<nfs::Persona::kDat
 };
 
 routing::SingleIdRelay GetDestination(
-        const PartialRequestor<nfs::SourcePersona<nfs::Persona::kDataGetter>> &requestor);
+        const PartialRequestor<nfs::SourcePersona<nfs::Persona::kDataGetter>>& requestor);
 
 routing::SingleIdRelay GetDestination(
-        const PartialRequestor<nfs::SourcePersona<nfs::Persona::kMaidNode>> &requestor);
+        const PartialRequestor<nfs::SourcePersona<nfs::Persona::kMaidNode>>& requestor);
 
 // FIXME after changing requestor in vaults to hold exact sender type
 routing::SingleId GetDestination(

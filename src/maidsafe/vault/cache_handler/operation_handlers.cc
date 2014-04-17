@@ -112,17 +112,17 @@ bool DoCacheOperation(
   return boost::apply_visitor(get_from_cache, data_name);
 }
 
-template <>
-bool DoCacheOperation(
-    CacheHandlerService* service,
-    const PutToCacheFromDataManagerToDataManager& message,
-    const typename PutToCacheFromDataManagerToDataManager::Sender& /*sender*/,
-    const typename PutToCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
-  auto data_name(detail::GetNameVariant(*message.contents));
-  PutToCacheVisitor put_to_cache(service, message.contents->content);
-  boost::apply_visitor(put_to_cache, data_name);
-  return true;
-}
+//template <>
+//bool DoCacheOperation(
+//    CacheHandlerService* service,
+//    const PutToCacheFromDataManagerToDataManager& message,
+//    const typename PutToCacheFromDataManagerToDataManager::Sender& /*sender*/,
+//    const typename PutToCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
+//  auto data_name(detail::GetNameVariant(*message.contents));
+//  PutToCacheVisitor put_to_cache(service, message.contents->content);
+//  boost::apply_visitor(put_to_cache, data_name);
+//  return true;
+//}
 
 template <>
 bool DoCacheOperation(

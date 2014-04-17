@@ -732,7 +732,7 @@ void DataManagerService::AssessIntegrityCheckResults(
         }
       }
     }
-  }catch(...) {
+  } catch(...) {
     LOG(kWarning) << "caught exception in DataManagerService::AssessIntegrityCheckResults";
   }
 }

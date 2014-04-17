@@ -156,12 +156,12 @@ CacheHandlerService::HandleMessage(
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
 
-template <>
-CacheHandlerService::HandleMessageReturnType
-CacheHandlerService::HandleMessage(
-    const PutToCacheFromDataManagerToDataManager& message,
-    const typename PutToCacheFromDataManagerToDataManager::Sender& sender,
-    const typename PutToCacheFromDataManagerToDataManager::Receiver& receiver);
+//template <>
+//CacheHandlerService::HandleMessageReturnType
+//CacheHandlerService::HandleMessage(
+//    const PutToCacheFromDataManagerToDataManager& message,
+//    const typename PutToCacheFromDataManagerToDataManager::Sender& sender,
+//    const typename PutToCacheFromDataManagerToDataManager::Receiver& receiver);
 
 template <>
 CacheHandlerService::HandleMessageReturnType

@@ -62,9 +62,12 @@ class SendResponse <detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona:
   void operator()(const Data& data) {
     typedef nfs::GetCachedResponseFromCacheHandlerToMaidNode NfsMessage;
     typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+    static const routing::Cacheable kCacheable(
+                                        is_cacheable<Data>::value ? routing::Cacheable::kPut:
+                                                                    routing::Cacheable::kNone);
     NfsMessage nfs_message((nfs_client::DataNameAndContentOrReturnCode(data)));
     RoutingMessage message(nfs_message.Serialise(), NfsMessage::Sender(routing_.kNodeId()),
-                           NfsMessage::Receiver(requestor_.node_id));
+                           NfsMessage::Receiver(requestor_.node_id), kCacheable);
     routing_.Send(message);
   }
 
@@ -84,9 +87,12 @@ class SendResponse <detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona:
   void operator()(const Data& data) {
     typedef nfs::GetCachedResponseFromCacheHandlerToDataGetter NfsMessage;
     typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+    static const routing::Cacheable kCacheable(
+                                        is_cacheable<Data>::value ? routing::Cacheable::kPut:
+                                                                    routing::Cacheable::kNone);
     NfsMessage nfs_message((nfs_client::DataNameAndContentOrReturnCode(data)));
     RoutingMessage message(nfs_message.Serialise(), NfsMessage::Sender(routing_.kNodeId()),
-                            NfsMessage::Receiver(requestor_.node_id));
+                           NfsMessage::Receiver(requestor_.node_id), kCacheable);
     routing_.Send(message);
   }
 
@@ -106,9 +112,12 @@ class SendResponse <detail::Requestor<nfs::SourcePersona<maidsafe::nfs::Persona:
   void operator()(const Data& data) {
     typedef GetCachedResponseFromCacheHandlerToDataManager VaultMessage;
     typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+    static const routing::Cacheable kCacheable(
+                                        is_cacheable<Data>::value ? routing::Cacheable::kPut:
+                                                                    routing::Cacheable::kNone);
     VaultMessage nfs_message((nfs_client::DataNameAndContentOrReturnCode(data)));
     RoutingMessage message(nfs_message.Serialise(), VaultMessage::Sender(routing_.kNodeId()),
-                           VaultMessage::Receiver(requestor_.node_id));
+                           VaultMessage::Receiver(requestor_.node_id), kCacheable);
     routing_.Send(message);
   }
 
