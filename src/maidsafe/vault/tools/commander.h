@@ -53,11 +53,12 @@ class SelectedOperationsContainer {
         do_test_store_chunk(false),
         do_test_fetch_chunk(false),
         do_test_delete_chunk(false),
+        do_test_version(false),
         do_delete(false),
         do_print(false) {}
   bool do_create, do_load, do_bootstrap, do_store, do_verify, do_test, do_test_with_delete,
-      do_generate_chunks, do_test_store_chunk, do_test_fetch_chunk, do_test_delete_chunk, do_delete,
-      do_print;
+      do_generate_chunks, do_test_store_chunk, do_test_fetch_chunk, do_test_delete_chunk,
+      do_test_version, do_delete, do_print;
   bool InvalidOptions(const boost::program_options::variables_map& variables_map,
                       const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
 
@@ -102,6 +103,8 @@ class Commander {
   void HandleFetchChunk(size_t client_index);
   void HandleDeleteChunk(size_t client_index);
   void HandleGenerateChunks();
+
+  void HandleTestVersion(size_t client_index);
 
   void HandleStorePublicKeys(size_t client_index);
   void HandleVerifyStoredPublicKeys(size_t client_index);

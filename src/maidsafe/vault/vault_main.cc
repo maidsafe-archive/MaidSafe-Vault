@@ -39,7 +39,7 @@
 #include "maidsafe/routing/parameters.h"
 #include "maidsafe/routing/return_codes.h"
 
-#include "maidsafe/client_manager/vault_controller.h"
+// #include "maidsafe/client_manager/vault_controller.h"
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/vault.h"
@@ -125,14 +125,14 @@ void RunVault(po::variables_map& variables_map) {
 #endif
   std::string vmid(variables_map.count("vmid") == 0 ? "test"
                                                     : variables_map.at("vmid").as<std::string>());
-  client_manager::VaultController vault_controller(vmid, [] {
-    g_ctrlc_pressed.store(true);
-    g_cond_var.notify_one();
-  });
-  if (vmid != "test" && !vault_controller.GetIdentity(pmid, peer_endpoints)) {
-    std::cout << "Failed to get ID from VC" << std::endl;
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-  }
+  // client_manager::VaultController vault_controller(vmid, [] {
+  //  g_ctrlc_pressed.store(true);
+  //  g_cond_var.notify_one();
+  // });
+  // if (vmid != "test" && !vault_controller.GetIdentity(pmid, peer_endpoints)) {
+  //  std::cout << "Failed to get ID from VC" << std::endl;
+  //  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  // }
 
 #ifndef MAIDSAFE_WIN32
   signal(SIGHUP, SigHandler);
@@ -250,12 +250,12 @@ int main(int argc, char* argv[]) {
   try {
     maidsafe::vault::ActOnOptions(argc, argv);
   }
-  catch (const maidsafe::maidsafe_error& e) {
-    LOG(kError) << "Maidsafe exception: " << e.what();
+  catch (const maidsafe::maidsafe_error& error) {
+    LOG(kError) << "Maidsafe exception: " << boost::diagnostic_information(error);
     return -1;
   }
-  catch (const std::exception& e) {
-    LOG(kError) << "Standard exception: " << e.what();
+  catch (const std::exception& error) {
+    LOG(kError) << "Standard exception: " << boost::diagnostic_information(error);
     return -2;
   }
   catch (...) {

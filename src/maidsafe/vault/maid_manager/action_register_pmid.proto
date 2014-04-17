@@ -20,4 +20,5 @@ package maidsafe.vault.protobuf;
 
 message ActionMaidManagerRegisterPmid {
   required bytes serialised_pmid_registration = 1;
+  required int32 message_id = 2;
 }

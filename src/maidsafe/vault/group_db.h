@@ -155,7 +155,7 @@ GroupDb<Persona>::~GroupDb() {
     leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
     boost::filesystem::remove_all(kDbPath_);
   } catch (const std::exception& e) {
-    LOG (kError) << "Failed to remove db : " << e.what();
+    LOG (kError) << "Failed to remove db : " << boost::diagnostic_information(e);
   }
 }
 
@@ -221,7 +221,8 @@ std::unique_ptr<typename Persona::Value> GroupDb<Persona>::Commit(
   try {
     value.reset(new Value(Get(key, it->second.first)));
   } catch (const maidsafe_error& error) {
-    LOG(kError) << "GroupDb<Persona>::Commit encountered error " << error.what();
+    LOG(kError) << "GroupDb<Persona>::Commit encountered error "
+                << boost::diagnostic_information(error);
     if (error.code() != make_error_code(CommonErrors::no_such_element))
       throw error;  // throw only for db errors
   }
@@ -243,7 +244,8 @@ std::unique_ptr<typename Persona::Value> GroupDb<Persona>::Commit(
       }
     }
   } catch (const maidsafe_error& error) {
-    LOG(kError) << "GroupDb<Persona>::Commit encountered error " << error.what();
+    LOG(kError) << "GroupDb<Persona>::Commit encountered error "
+                << boost::diagnostic_information(error);
     throw error;
   }
   return nullptr;
@@ -352,7 +354,8 @@ void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
     DeleteGroupEntries(FindGroup(group_name));
   } catch (const maidsafe_error& error) {
     LOG(kInfo) << "account doesn't exist for group "
-               << HexSubstr(group_name->string()) << ", error : " << error.what();
+               << HexSubstr(group_name->string()) << ", error : "
+               << boost::diagnostic_information(error);
   }
 }
 

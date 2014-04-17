@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,35 +16,12 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_CONFIG_H_
-#define MAIDSAFE_VAULT_CONFIG_H_
+package maidsafe.vault.protobuf;
 
-#include <functional>
-
-#include "maidsafe/common/data_types/data_name_variant.h"
-
-namespace maidsafe {
-
-namespace vault {
-
-typedef std::function<void(const DataNameVariant&)> IntegrityCheckFunctor;
-
-namespace detail {
-
-enum class DbAction {
-  kPut,
-  kDelete
-};
-
-enum class GroupDbMetaDataStatus {
-  kGroupEmpty,
-  kGroupNonEmpty
-};
-
-}  // namespace detail
-
-}  // namespace vault
-
-}  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_CONFIG_H_
+message ActionCreateVersionTree {
+  required bytes serialised_version = 1;
+  required int32 max_versions = 2;
+  required int32 max_branches = 3;
+  required int32 message_id = 4;
+  required bytes originator = 5;
+}

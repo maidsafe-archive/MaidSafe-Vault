@@ -40,7 +40,8 @@ class MaidManagerServiceTest {
   MaidManagerServiceTest()
       : anmaid_(),
         maid_(anmaid_),
-        pmid_(maid_),
+        anpmid_(),
+        pmid_(anpmid_),
         public_maid_(maid_),
         routing_(pmid_),
         data_getter_(asio_service_, routing_),
@@ -81,8 +82,9 @@ class MaidManagerServiceTest {
 
   void RegisterPmid() {
     nfs_vault::PmidRegistration pmid_registration(maid_, pmid_, false);
-    maid_manager_service_.group_db_.Commit(public_maid_.name(),
-                                           ActionMaidManagerRegisterPmid(pmid_registration));
+    maid_manager_service_.group_db_.Commit(
+        public_maid_.name(), ActionMaidManagerRegisterPmid(pmid_registration,
+                                                           nfs::MessageId(RandomInt32())));
   }
 
   template <typename UnresolvedActionType>
@@ -110,6 +112,7 @@ class MaidManagerServiceTest {
  protected:
   passport::Anmaid anmaid_;
   passport::Maid maid_;
+  passport::Anpmid anpmid_;
   passport::Pmid pmid_;
   passport::PublicMaid public_maid_;
   routing::Routing routing_;
@@ -386,7 +389,8 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
   SECTION("RegistedPmid") {
     CreateAccount();
     nfs_vault::PmidRegistration pmid_registration(maid_, pmid_, false);
-    ActionMaidManagerRegisterPmid action_register_pmid(pmid_registration);
+    ActionMaidManagerRegisterPmid action_register_pmid(pmid_registration,
+                                                       nfs::MessageId(RandomUint32()));
     MaidManager::MetadataKey metadata_key(public_maid_.name());
     auto group_source(CreateGroupSource(MaidNodeId()));
     auto group_unresolved_action(

@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-#include "maidsafe/data_types/structured_data_versions.h"
+#include "maidsafe/common/data_types/structured_data_versions.h"
 #include "maidsafe/vault/version_handler/version_handler.h"
 
 namespace maidsafe {
@@ -33,7 +33,7 @@ namespace vault {
 class VersionHandlerValue {
  public:
   explicit VersionHandlerValue(const std::string& serialised_version_handler_value);
-  VersionHandlerValue(uint32_t max_versions = 100, uint32_t max_branches = 100);  // BEFORE_RELEASE
+  VersionHandlerValue(uint32_t max_versions, uint32_t max_branches);  // BEFORE_RELEASE
   VersionHandlerValue(VersionHandlerValue&& other);
   VersionHandlerValue& operator=(VersionHandlerValue other);
   std::string Serialise() const;

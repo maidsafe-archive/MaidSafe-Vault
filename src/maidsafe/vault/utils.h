@@ -25,7 +25,7 @@
 #include "leveldb/db.h"
 
 #include "maidsafe/common/node_id.h"
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/vault/key.h"
@@ -82,6 +82,9 @@ DataNameVariant GetNameVariant(const nfs_vault::DataNameOldNewVersion& data);
 
 template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndRandomString& data);
+
+template <>
+DataNameVariant GetNameVariant(const nfs_vault::VersionTreeCreation& data);
 
 template <typename MessageType>
 struct ValidateSenderType {
@@ -184,8 +187,9 @@ struct GroupOrKeyType<PersonaType, typename ToVoid<typename PersonaType::GroupNa
 }  // namespace detail
 
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path);
-// ============================ sync utils =========================================================
 
+
+// ============================ sync utils =========================================================
 namespace detail {
 template <typename Dispatcher, typename UnresolvedAction>
 void SendSync(Dispatcher& dispatcher,
@@ -230,7 +234,11 @@ void IncrementAttemptsAndSendSync(Dispatcher& dispatcher,
 }
 
 }  // namespace detail
+
+
 // ============================ dispatcher utils ===================================================
+nfs::MessageId HashStringToMessageId(const std::string& input);
+
 template <typename MessageType>
 struct SendSyncMessage {
   typedef routing::Message<typename MessageType::Sender,

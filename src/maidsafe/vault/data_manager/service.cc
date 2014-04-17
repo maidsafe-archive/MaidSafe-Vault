@@ -22,7 +22,7 @@
 #include <type_traits>
 
 #include "maidsafe/common/log.h"
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/routing/parameters.h"
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/utils.h"
@@ -250,7 +250,8 @@ void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::Messa
     // So the task will be cleaned out before the time-out response from responder
     // arrived. The policy shall change to keep timer muted instead of throwing.
     // BEFORE_RELEASE handle
-    LOG(kError) << "Caught an error when received a get response " << error.what();
+    LOG(kError) << "Caught an error when received a get response "
+                << boost::diagnostic_information(error);
   }
 }
 
@@ -351,7 +352,13 @@ void DataManagerService::HandleMessage(
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit add pmid to db"
                    << " for chunk " << HexSubstr(unresolved_action.key.name.string())
                    << " and pmid_node " << HexSubstr(unresolved_action.action.kPmidName->string());
-        db_.Commit(resolved_action->key, resolved_action->action);
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+        }
+        catch (const maidsafe_error& error) {
+          if (error.code() != make_error_code(VaultErrors::account_already_exists))
+            throw;
+        }
       }
       break;
     }
@@ -371,7 +378,7 @@ void DataManagerService::HandleMessage(
           db_.Commit(resolved_action->key, resolved_action->action);
         } catch(maidsafe_error& error) {
           LOG(kWarning) << "having error when trying to commit remove pmid to db : "
-                        << error.what();
+                        << boost::diagnostic_information(error);
         }
       }
       break;
@@ -394,7 +401,13 @@ void DataManagerService::HandleMessage(
       auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit pmid goes offline";
-        db_.Commit(resolved_action->key, resolved_action->action);
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+        }
+        catch (const maidsafe_error& error) {
+          if (error.code() != make_error_code(CommonErrors::no_such_element))
+            throw;
+        }
       }
       break;
     }
@@ -479,8 +492,7 @@ void DataManagerService::TransferAccount(const NodeId& dest,
     kv_msg.set_value(account.second.Serialise());
     actions.push_back(kv_msg.SerializeAsString());
   }
-  nfs::MessageId message_id(static_cast<nfs::MessageId::value_type>(
-      HashStringToInt(dest.string())));
+  nfs::MessageId message_id(HashStringToMessageId(dest.string()));
   DataManager::UnresolvedAccountTransfer account_transfer(
       passport::PublicPmid::Name(Identity(dest.string())), message_id, actions);
   LOG(kVerbose) << "DataManagerService::TransferAccount send account_transfer";

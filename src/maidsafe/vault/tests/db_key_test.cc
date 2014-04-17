@@ -20,8 +20,8 @@
 // #include "maidsafe/common/test.h"
 // #include "maidsafe/common/utils.h"
 
-// #include "maidsafe/data_types/immutable_data.h"
-// #include "maidsafe/data_types/data_name_variant.h"
+// #include "maidsafe/common/data_types/immutable_data.h"
+// #include "maidsafe/common/data_types/data_name_variant.h"
 
 // #include "maidsafe/vault/utils-inl.h"
 

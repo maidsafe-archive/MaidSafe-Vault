@@ -152,7 +152,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
   client_nfs_.reset(new nfs_client::MaidNodeNfs(asio_service_, client_routing_, pmid_name));
   {
     auto future(RoutingJoin(peer_endpoints));
-    auto status(future.wait_for(std::chrono::seconds(10)));
+    auto status(future.wait_for(std::chrono::minutes(1)));
     if (status == std::future_status::timeout || !future.get()) {
       LOG(kError) << "can't join routing network";
       BOOST_THROW_EXCEPTION(MakeError(RoutingErrors::not_connected));
@@ -175,7 +175,7 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
       try {
         future.get();
       } catch (const maidsafe_error& error) {
-        LOG(kError) << "caught a maidsafe_error : " << error.what();
+        LOG(kError) << "caught a maidsafe_error : " << boost::diagnostic_information(error);
         if (error.code() == make_error_code(VaultErrors::account_already_exists))
           account_exists = true;
       } catch (...) {
@@ -264,7 +264,7 @@ void KeyStorer::Store() {
                   << " PublicPmidKey stored and verified " << std::endl;
     } catch (const std::exception& e) {
       std::cout << "Failed storing key chain of PMID " << HexSubstr(keychain.pmid.name().value)
-                << ": " << e.what() << std::endl;
+                << ": " << boost::diagnostic_information(e) << std::endl;
       ++failures;
     }
   }
@@ -299,7 +299,7 @@ void KeyVerifier::Verify() {
     std::cout << "VerifyKeys - Verified all " << verified_keys << " keys.\n";
   }
   catch (const std::exception& ex) {
-    LOG(kError) << "Failed to verify keys " << ex.what();
+    LOG(kError) << "Failed to verify keys " << boost::diagnostic_information(ex);
   }
 }
 
@@ -371,6 +371,45 @@ void DataChunkStorer::TestDeleteChunk(int chunk_index) {
   else
     std::cout << "Chunk "<< HexSubstr(chunk_list_[chunk_index].name().value)
               << " deleted and verified" << std::endl;
+}
+
+void DataChunkStorer::TestVersion() {
+  ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
+  std::cout << "SDV "<< HexSubstr(chunk.name().value) << std::endl;
+//   StoreOneChunk(chunk_list_[0]);
+//   boost::this_thread::sleep_for(boost::chrono::seconds(1));
+//   StoreOneChunk(chunk_list_[1]);
+  StructuredDataVersions::VersionName v_aaa(0, chunk_list_[0].name());
+  std::cout << "Version 0 "<< HexSubstr(chunk_list_[0].name().value) << std::endl;
+  StructuredDataVersions::VersionName v_bbb(1, chunk_list_[1].name());
+  std::cout << "Version 1 "<< HexSubstr(chunk_list_[1].name().value) << std::endl;
+  auto create_version_future(client_nfs_->CreateVersionTree(chunk.name(), v_aaa, 10, 20));
+  try {
+    create_version_future.get();
+  } catch (const maidsafe_error& error) {
+    std::cout << "error when create version tree : " << boost::diagnostic_information(error)
+              << std::endl;
+    return;
+  }
+
+  auto put_version_future(client_nfs_->PutVersion(chunk.name(), v_aaa, v_bbb));
+  try {
+    put_version_future.get();
+  } catch (const maidsafe_error& error) {
+    std::cout << "error when put version : " << boost::diagnostic_information(error) << std::endl;
+    return;
+  }
+  try {
+    auto future(client_nfs_->GetVersions(chunk.name()));
+    auto versions(future.get());
+    std::cout << "fetched latest version "<< HexSubstr(versions.front().id.value) << std::endl;
+    if (versions.front().id != v_bbb.id) {
+      std::cout << "version tip is wrong" << std::endl;
+    }
+  } catch(const maidsafe_error& error) {
+    std::cout << "Failed to retrieve version: " << boost::diagnostic_information(error)
+              << std::endl;
+  }
 }
 
 bool DataChunkStorer::Done(int32_t quantity, int32_t rounds) const {
@@ -454,7 +493,7 @@ bool DataChunkStorer::GetOneChunk(const ImmutableData& chunk_data) {
   try {
     result = chunk_data.data() == future.get().data();
   } catch (const maidsafe_error& error) {
-    LOG(kError) << "Encounter error when getting chunk : " << error.what();
+    LOG(kError) << "Encounter error when getting chunk : " << boost::diagnostic_information(error);
   }
   return result;
 }

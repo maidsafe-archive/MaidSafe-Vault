@@ -56,6 +56,7 @@ bool SelectedOperationsContainer::InvalidOptions(
   do_test_store_chunk = variables_map.count("test_store_chunk") != 0;
   do_test_fetch_chunk = variables_map.count("test_fetch_chunk") != 0;
   do_test_delete_chunk = variables_map.count("test_delete_chunk") != 0;
+  do_test_version = variables_map.count("version_test") != 0;
   do_print = variables_map.count("print") != 0;
 
   return NoOptionsSelected() || ConflictedOptions(peer_endpoints);
@@ -86,7 +87,7 @@ bool SelectedOperationsContainer::ConflictedOptions(
 bool SelectedOperationsContainer::NoOptionsSelected() const {
   return !(do_create || do_load || do_bootstrap || do_store || do_verify || do_test || do_delete ||
            do_test_with_delete || do_generate_chunks || do_test_store_chunk ||
-           do_test_fetch_chunk || do_test_delete_chunk || do_print);
+           do_test_fetch_chunk || do_test_delete_chunk || do_test_version || do_print);
 }
 
 Commander::Commander(size_t pmids_count)
@@ -125,13 +126,15 @@ po::options_description Commander::AddGenericOptions(const std::string& title) {
       "create,c", "Create keys and write to file.")("load,l", "Load keys from file.")(
       "delete,d", "Delete keys file.")("print,p", "Print the list of keys available.")(
       "bootstrap,b", "Run boostrap nodes only, using first 2 keys.")(
-      "store,s", "Store keys on network.")("verify,v", "Verify keys are available on network.")(
+      "store,s", "Store keys on network.")(
+      "verify,v", "Verify keys are available on network.")(
       "test,t", "Run simple test that stores and retrieves chunks.")(
       "test_with_delete,w", "Run simple test that stores and deletes chunks.")(
       "generate_chunks,g", "Generate a set of chunks for later on tests")(
       "test_store_chunk,1", "Run a simple test that stores a chunk from file")(
       "test_fetch_chunk,2", "Run a simple test that retrieves a chunk(recorded in file)")(
-      "test_delete_chunk,3", "Run a simple test that removes a chunk(recorded in file)");
+      "test_delete_chunk,3", "Run a simple test that removes a chunk(recorded in file)")(
+      "version_test,4", "Run a simple test about handling version)");
   return generic_options;
 }
 
@@ -197,6 +200,8 @@ void Commander::ChooseOperations() {
     HandleFetchChunk(key_index_);
   if (selected_ops_.do_test_delete_chunk)
     HandleDeleteChunk(key_index_);
+  if (selected_ops_.do_test_version)
+    HandleTestVersion(key_index_);
 }
 
 void Commander::CreateKeys() {
@@ -204,8 +209,9 @@ void Commander::CreateKeys() {
   for (size_t i = 0; i < pmids_count_; ++i) {
     passport::Anmaid anmaid;
     passport::Maid maid(anmaid);
-    passport::Pmid pmid(maid);
-    all_keychains_.push_back(passport::detail::AnmaidToPmid(anmaid, maid, pmid));
+    passport::Anpmid anpmid;
+    passport::Pmid pmid(anpmid);
+    all_keychains_.push_back(passport::detail::AnmaidToPmid(anmaid, maid, anpmid, pmid));
   }
   LOG(kInfo) << "Created " << all_keychains_.size() << " pmids.";
   if (maidsafe::passport::detail::WriteKeyChainList(keys_path_, all_keychains_)) {
@@ -257,7 +263,7 @@ void Commander::HandleStorePublicKeys(size_t client_index) {
                      pmids_from_file_, all_keychains_);
     storer.Store();
   } catch (const std::exception& e) {
-    std::cout << "Failed storing key chain : " << e.what() << std::endl;
+    std::cout << "Failed storing key chain : " << boost::diagnostic_information(e) << std::endl;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   std::cout << "Keys Stored" << std::endl;
@@ -272,7 +278,7 @@ void Commander::HandleVerifyStoredPublicKeys(size_t /*client_index*/) {
     }
     catch (const std::exception& e) {
       std::cout << "Failed verifying key chain with PMID " << HexSubstr(keychain.pmid.name().value)
-                << ": " << e.what() << '\n';
+                << ": " << boost::diagnostic_information(e) << '\n';
       ++failures;
     }
   }
@@ -318,6 +324,13 @@ void Commander::HandleDeleteChunk(size_t client_index) {
   DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_,
                                pmids_from_file_, true);
   chunk_storer.TestDeleteChunk(chunk_index_);
+}
+
+void Commander::HandleTestVersion(size_t client_index) {
+  assert(client_index > 1);
+  DataChunkStorer chunk_storer(all_keychains_.at(client_index), peer_endpoints_,
+                               pmids_from_file_, true);
+  chunk_storer.TestVersion();
 }
 
 void Commander::HandleGenerateChunks() {

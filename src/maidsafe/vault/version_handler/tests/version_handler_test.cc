@@ -47,19 +47,66 @@ class VersionHandlerTest : public VaultNetwork  {
   }
 };
 
-TEST_F(VersionHandlerTest, FUNC_PutGet) {
+TEST_F(VersionHandlerTest, FUNC_CreateVersionTree) {
   EXPECT_TRUE(AddClient(true));
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
-  EXPECT_NO_THROW(clients_.front()->nfs_->PutVersion(
-                      chunk.name(), StructuredDataVersions::VersionName(), v_aaa));
-  Sleep(std::chrono::seconds(2));
+  auto create_version_future(clients_.front()->nfs_->CreateVersionTree(chunk.name(), v_aaa, 10,
+                                                                       20));
+  EXPECT_NO_THROW(create_version_future.get());
   try {
     auto future(clients_.front()->nfs_->GetVersions(chunk.name()));
     auto versions(future.get());
     EXPECT_EQ(versions.front().id, v_aaa.id);
   } catch(const maidsafe_error& error) {
-    EXPECT_TRUE(false) << "Failed to retrieve version: " << error.what();
+    EXPECT_TRUE(false) << "Failed to retrieve version: " << boost::diagnostic_information(error);
+  }
+  LOG(kVerbose) << "Version Created";
+}
+
+TEST_F(VersionHandlerTest, FUNC_FailingPut) {
+  EXPECT_TRUE(AddClient(true));
+  ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
+  StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
+  auto put_version_future(clients_.front()->nfs_->PutVersion(
+                          chunk.name(), StructuredDataVersions::VersionName(), v_aaa));
+  EXPECT_THROW(put_version_future.get(), maidsafe_error) << "should have failed";
+}
+
+TEST_F(VersionHandlerTest, FUNC_CreateGet) {
+  EXPECT_TRUE(AddClient(true));
+  ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
+  StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
+  auto create_version_future(clients_.front()->nfs_->CreateVersionTree(chunk.name(), v_aaa, 10,
+                                                                       20));
+  EXPECT_NO_THROW(create_version_future.get()) << "failure to create version";
+  try {
+    auto future(clients_.front()->nfs_->GetVersions(chunk.name()));
+    auto versions(future.get());
+    EXPECT_EQ(versions.front().id, v_aaa.id);
+  } catch(const maidsafe_error& error) {
+    EXPECT_TRUE(false) << "Failed to retrieve version: " << boost::diagnostic_information(error);
+  }
+}
+
+TEST_F(VersionHandlerTest, FUNC_PutGet) {
+  EXPECT_TRUE(AddClient(true));
+  ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
+  StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
+  StructuredDataVersions::VersionName v_bbb(0, ImmutableData::Name(Identity(std::string(64, 'b'))));
+  auto create_version_future(clients_.front()->nfs_->CreateVersionTree(chunk.name(), v_aaa, 10,
+                                                                       20));
+  EXPECT_NO_THROW(create_version_future.get()) << "failure to create version";
+
+  auto put_version_future(clients_.front()->nfs_->PutVersion(chunk.name(), v_aaa, v_bbb));
+  EXPECT_NO_THROW(put_version_future.get()) << "failure to put version";
+  LOG(kVerbose) << "Put Version Succeeded";
+  try {
+    auto future(clients_.front()->nfs_->GetVersions(chunk.name()));
+    auto versions(future.get());
+    EXPECT_EQ(versions.front().id, v_bbb.id);
+  } catch(const maidsafe_error& error) {
+    EXPECT_TRUE(false) << "Failed to retrieve version: " << boost::diagnostic_information(error);
   }
 }
 
@@ -80,12 +127,12 @@ TEST_F(VersionHandlerTest, FUNC_DeleteBranchUntilFork) {
   puts.push_back(std::make_pair(v1_bbb, v2_ddd));
   puts.push_back(std::make_pair(v3_fff, v4_iii));
 
-  EXPECT_NO_THROW(clients_.front()->nfs_->PutVersion(name, VersionName(), v0_aaa));
-  Sleep(std::chrono::seconds(2));
+  auto create_version_future(clients_.front()->nfs_->CreateVersionTree(name, v0_aaa, 10, 20));
+  EXPECT_NO_THROW(create_version_future.get());
 
   for (const auto& put : puts) {
-    EXPECT_NO_THROW(clients_.front()->nfs_->PutVersion(name, put.first, put.second));
-    Sleep(std::chrono::seconds(2));
+    auto put_version_future(clients_.front()->nfs_->PutVersion(name, put.first, put.second));
+    EXPECT_NO_THROW(put_version_future.get());
   }
 
   try {
@@ -96,7 +143,7 @@ TEST_F(VersionHandlerTest, FUNC_DeleteBranchUntilFork) {
     EXPECT_NE(std::find(std::begin(versions), std::end(versions), v2_ddd), std::end(versions));
   }
   catch (const std::exception& error) {
-    EXPECT_TRUE(false) << "Version should have existed " << error.what();
+    EXPECT_TRUE(false) << "Version should have existed " << boost::diagnostic_information(error);
   }
 
   EXPECT_NO_THROW(clients_.front()->nfs_->DeleteBranchUntilFork(name, v4_iii));
@@ -112,7 +159,7 @@ TEST_F(VersionHandlerTest, FUNC_DeleteBranchUntilFork) {
     EXPECT_NE(std::find(std::begin(versions), std::end(versions), v2_ddd), std::end(versions));
   }
   catch (const std::exception& error) {
-    EXPECT_TRUE(false) << error.what();
+    EXPECT_TRUE(false) << boost::diagnostic_information(error);
   }
 }
 

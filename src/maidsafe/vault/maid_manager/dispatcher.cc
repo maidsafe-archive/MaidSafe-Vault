@@ -61,6 +61,47 @@ void MaidManagerDispatcher::SendCreateAccountResponse(const MaidName& account_na
   routing_.Send(message);
 }
 
+void MaidManagerDispatcher::SendPutVersionResponse(
+    const MaidName& maid_name, const maidsafe_error& return_code,
+    std::unique_ptr<StructuredDataVersions::VersionName> tip_of_tree, nfs::MessageId message_id) {
+  typedef nfs::PutVersionResponseFromMaidManagerToMaidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<NfsMessage>();
+  NfsMessage::Contents content((nfs_client::ReturnCode(return_code)));
+  if (tip_of_tree)
+    content.tip_of_tree = *tip_of_tree;
+  NfsMessage nfs_message(message_id, content);
+
+  RoutingMessage message(nfs_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
+                         NfsMessage::Receiver(NodeId(maid_name->string())));
+  routing_.Send(message);
+}
+
+void MaidManagerDispatcher::SendCreateVersionTreeResponse(
+    const MaidName& maid_name, const maidsafe_error& error, nfs::MessageId message_id) {
+  typedef nfs::CreateVersionTreeResponseFromMaidManagerToMaidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<NfsMessage>();
+  NfsMessage nfs_message(message_id, nfs_client::ReturnCode(error));
+  RoutingMessage message(nfs_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
+                         NfsMessage::Receiver(NodeId(maid_name->string())));
+  routing_.Send(message);
+}
+
+void MaidManagerDispatcher::SendRegisterPmidResponse(
+    const MaidName& maid_name, const maidsafe_error& error, nfs::MessageId message_id) {
+  typedef nfs::RegisterPmidResponseFromMaidManagerToMaidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<NfsMessage>();
+  NfsMessage nfs_message(message_id, nfs_client::ReturnCode(error));
+  RoutingMessage message(nfs_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
+                         NfsMessage::Receiver(NodeId(maid_name->string())));
+  routing_.Send(message);
+}
+
 void MaidManagerDispatcher::SendRemoveAccountResponse(const MaidName& /*account_name*/,
                                                       const maidsafe_error& /*result*/,
                                                       nfs::MessageId /*message_id*/) {
@@ -110,17 +151,34 @@ void MaidManagerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
   routing_.Send(message);
 }
 
-void MaidManagerDispatcher::SendHealthResponse(const MaidName& maid_name, int64_t available_size,
-    const nfs_client::ReturnCode& return_code, nfs::MessageId message_id) {
-  LOG(kVerbose) << "MaidManagerDispatcher::SendHealthResponse for maid "
+void MaidManagerDispatcher::SendPmidHealthRequest(const MaidName& maid_name,
+                                                  const PmidName& pmid_node,
+                                                  nfs::MessageId message_id) {
+  typedef PmidHealthRequestFromMaidManagerToPmidManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<VaultMessage>();
+
+  VaultMessage vault_message;
+  vault_message.id = message_id;
+  RoutingMessage message(vault_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
+                         VaultMessage::Receiver(NodeId(pmid_node->string())));
+  routing_.Send(message);
+}
+
+void MaidManagerDispatcher::SendPmidHealthResponse(const MaidName& maid_name,
+    int64_t available_size, const maidsafe_error& return_code, nfs::MessageId message_id) {
+  LOG(kVerbose) << "MaidManagerDispatcher::SendPmidHealthResponse for maid "
                 << HexSubstr(maid_name->string()) << " . available_size " << available_size
-                << " and return code : " << return_code.value.what();
+                << " and return code : " << return_code.code();
   typedef nfs::PmidHealthResponseFromMaidManagerToMaidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<NfsMessage>();
 
-  NfsMessage nfs_message(message_id, nfs_client::AvailableSizeAndReturnCode(available_size,
-                                                                            return_code));
+  NfsMessage nfs_message(message_id,
+                         nfs_client::AvailableSizeAndReturnCode(available_size,
+                                                                nfs_client::ReturnCode(
+                                                                    return_code)));
   RoutingMessage message(nfs_message.Serialise(),
                          GroupOrKeyHelper::GroupSender(routing_, maid_name),
                          NfsMessage::Receiver(NodeId(maid_name.value.string())));
@@ -136,7 +194,8 @@ void MaidManagerDispatcher::SendCreatePmidAccountRequest(const passport::PublicM
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
 
-  VaultMessage vault_message(nfs_vault::DataName(DataTagValue::kPmidValue, pmid_name.name().value));
+  VaultMessage vault_message(HashStringToMessageId(pmid_name.name()->string()),
+                             nfs_vault::DataName(DataTagValue::kPmidValue, pmid_name.name().value));
   RoutingMessage message(vault_message.Serialise(),
                          GroupOrKeyHelper::GroupSender(routing_, account_name.name()),
                          VaultMessage::Receiver(NodeId(pmid_name.name()->string())));

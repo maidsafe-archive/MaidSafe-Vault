@@ -31,8 +31,7 @@
 
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/utils.h"
-
-#include "maidsafe/data_types/immutable_data.h"
+#include "maidsafe/common/data_types/immutable_data.h"
 
 #include "maidsafe/passport/types.h"
 
@@ -150,6 +149,7 @@ class DataChunkStorer : public ClientTester {
   void TestStoreChunk(int chunk_index);
   void TestFetchChunk(int chunk_index);
   void TestDeleteChunk(int chunk_index);
+  void TestVersion();
 
  private:
   std::atomic<bool> run_;

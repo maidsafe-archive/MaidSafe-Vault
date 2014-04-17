@@ -16,7 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/integrity_check_data.h"
+#include "maidsafe/vault/data_manager/integrity_check_data.h"
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"

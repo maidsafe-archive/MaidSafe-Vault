@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_PUT_H_
-#define MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_PUT_H_
+#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_CREATE_VERSION_TREE_H_
+#define MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_CREATE_VERSION_TREE_H_
 
 #include <string>
 
@@ -33,36 +33,38 @@ namespace vault {
 
 class VersionHandlerValue;
 
-struct ActionVersionHandlerPut {
-  ActionVersionHandlerPut(const StructuredDataVersions::VersionName& old_version,
-                          const StructuredDataVersions::VersionName& new_version,
-                          const Identity& originator_in,
-                          nfs::MessageId message_id_in);
+struct ActionVersionHandlerCreateVersionTree {
+  ActionVersionHandlerCreateVersionTree(const StructuredDataVersions::VersionName& version_in,
+                                        const Identity& originator_in,
+                                        uint32_t max_versions_in, uint32_t max_branches_in,
+                                        nfs::MessageId message_id_in);
 
-  explicit ActionVersionHandlerPut(const std::string& serialised_action);
-  ActionVersionHandlerPut(const ActionVersionHandlerPut& other);
-  ActionVersionHandlerPut(ActionVersionHandlerPut&& other);
+  explicit ActionVersionHandlerCreateVersionTree(const std::string& serialised_action);
+  ActionVersionHandlerCreateVersionTree(const ActionVersionHandlerCreateVersionTree& other);
+  ActionVersionHandlerCreateVersionTree(ActionVersionHandlerCreateVersionTree&& other);
 
   detail::DbAction operator()(std::unique_ptr<VersionHandlerValue>& value);
 
   std::string Serialise() const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kPutVersionRequest;
-  StructuredDataVersions::VersionName old_version, new_version;
-  boost::optional<StructuredDataVersions::VersionName> tip_of_tree;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kCreateVersionTreeRequest;
+  StructuredDataVersions::VersionName version;
+  uint32_t max_versions, max_branches;
   nfs::MessageId message_id;
   Identity originator;
 
  private:
-  ActionVersionHandlerPut();
-  ActionVersionHandlerPut& operator=(ActionVersionHandlerPut other);
+  ActionVersionHandlerCreateVersionTree();
+  ActionVersionHandlerCreateVersionTree& operator=(ActionVersionHandlerCreateVersionTree other);
 };
 
-bool operator==(const ActionVersionHandlerPut& lhs, const ActionVersionHandlerPut& rhs);
-bool operator!=(const ActionVersionHandlerPut& lhs, const ActionVersionHandlerPut& rhs);
+bool operator==(const ActionVersionHandlerCreateVersionTree& lhs,
+                const ActionVersionHandlerCreateVersionTree& rhs);
+bool operator!=(const ActionVersionHandlerCreateVersionTree& lhs,
+                const ActionVersionHandlerCreateVersionTree& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_PUT_H_
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_ACTION_CREATE_VERSION_TREE_H_

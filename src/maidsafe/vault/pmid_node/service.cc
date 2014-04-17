@@ -24,7 +24,7 @@
 #include <string>
 
 #include "maidsafe/common/types.h"
-#include "maidsafe/data_store/data_buffer.h"
+#include "maidsafe/common/data_stores/data_buffer.h"
 #include "maidsafe/nfs/client/messages.pb.h"
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
@@ -179,10 +179,22 @@ template <>
 void PmidNodeService::HandleMessage(
     const PmidHealthRequestFromPmidManagerToPmidNode& message,
     const typename PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
-    const typename PmidHealthRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "PmidNodeService::HandleMessage PmidHealthRequestFromPmidManagerToPmidNode "
-                << " from " << HexSubstr(sender.data.string());
-  dispatcher_.SendHealthResponse(handler_.AvailableSpace(), NodeId(sender.data), message.id);
+    const typename PmidHealthRequestFromPmidManagerToPmidNode::Receiver& receiver) {
+  LOG(kVerbose) << "PmidNodeService::HandleMessage DeleteRequestFromPmidManagerToPmidNode "
+                << message.id;
+  typedef PmidHealthRequestFromPmidManagerToPmidNode MessageType;
+  OperationHandlerWrapper<PmidNodeService, MessageType>(
+      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)), this,
+      accumulator_mutex_)(message, sender, receiver);
+}
+
+void PmidNodeService::HandleHealthRequest(const NodeId& pmid_manager_node_id,
+                                          nfs::MessageId message_id) {
+  LOG(kVerbose) << "PmidNodeService::HandleHealthRequest " << message_id;
+  dispatcher_.SendHealthResponse(handler_.AvailableSpace(), pmid_manager_node_id, message_id);
 }
 
 void PmidNodeService::HandlePmidAccountResponses(
@@ -236,7 +248,8 @@ void PmidNodeService::UpdateLocalStorage(const std::vector<DataNameVariant>& to_
       handler_.Delete(file_name);
     }
     catch(const maidsafe_error& error) {
-      LOG(kWarning) << "Error in deletion: " << error.code() << " - " << error.what();
+      LOG(kWarning) << "Error in deletion: " << error.code() << " - "
+                    << boost::diagnostic_information(error);
     }
   }
 
@@ -256,7 +269,8 @@ void PmidNodeService::UpdateLocalStorage(const std::vector<DataNameVariant>& to_
       iter->wait();
     }
     catch(const maidsafe_error& error) {
-      LOG(kWarning) << "Error in retreivel: " << error.code() << " - " << error.what();
+      LOG(kWarning) << "Error in retreivel: " << error.code() << " - "
+                    << boost::diagnostic_information(error);
     }
   }
 }

@@ -33,7 +33,7 @@
 #include "boost/mpl/insert_range.hpp"
 #include "boost/mpl/end.hpp"
 
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/routing/api_config.h"
 #include "maidsafe/routing/message.h"
 #include "maidsafe/routing/routing_api.h"
@@ -95,6 +95,15 @@ class DataManagerService {
 
   template <typename Data>
   bool EntryExist(const typename Data::Name& name);
+
+  typedef std::true_type EntryMustBeUnique;
+  typedef std::false_type EntryNeedNotBeUnique;
+  template <typename Data>
+  void HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
+                                 nfs::MessageId message_id, int32_t cost, EntryMustBeUnique);
+  template <typename Data>
+  void HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
+                                 nfs::MessageId message_id, int32_t cost, EntryNeedNotBeUnique);
 
   template <typename Data>
   void HandlePutResponse(const typename Data::Name& data_name, const PmidName& pmid_node,
@@ -396,23 +405,13 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
                << " . SendPutRequest with message_id " << message_id.data
                << " to picked up pmid_node " << HexSubstr(pmid_name->string());
     dispatcher_.SendPutRequest(pmid_name, data, message_id);
-  } else if (is_unique_on_network<Data>::value) {
     LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-               << " from maid_node " << HexSubstr(maid_name->string())
-               << " . SendPutFailure with message_id " << message_id.data;
-    dispatcher_.SendPutFailure<Data>(maid_name, data.name(),
-                                     maidsafe_error(VaultErrors::unique_data_clash), message_id);
-    return;
+                << " from maid_node " << HexSubstr(maid_name->string())
+                << " . SendPutResponse with message_id " << message_id.data;
+    dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);
   } else {
-    LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-               << " from maid_node " << HexSubstr(maid_name->string()) << " syncing";
-    typename DataManager::Key key(data.name().value, Data::Tag::kValue);
-    DoSync(DataManager::UnresolvedPut(key, ActionDataManagerPut(), routing_.kNodeId()));
+    HandlePutWhereEntryExists(data, maid_name, message_id, cost, is_unique_on_network<Data>());
   }
-  LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-              << " from maid_node " << HexSubstr(maid_name->string())
-              << " . SendPutResponse with message_id " << message_id.data;
-  dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);  // NOT IN FAILURE
 }
 
 template <typename Data>
@@ -430,6 +429,31 @@ bool DataManagerService::EntryExist(const typename Data::Name& name) {
     assert(0 && "DataManagerService::EntryExist");
     return false;
   }
+}
+
+template <typename Data>
+void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
+                                                   nfs::MessageId message_id, int32_t /*cost*/,
+                                                   EntryMustBeUnique) {
+  LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
+              << " from maid_node " << HexSubstr(maid_name->string())
+              << " . SendPutFailure with message_id " << message_id.data;
+  dispatcher_.SendPutFailure<Data>(maid_name, data.name(),
+                                   maidsafe_error(VaultErrors::unique_data_clash), message_id);
+}
+
+template <typename Data>
+void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
+                                                   nfs::MessageId message_id, int32_t cost,
+                                                   EntryNeedNotBeUnique) {
+  LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
+              << " from maid_node " << HexSubstr(maid_name->string()) << " syncing";
+  typename DataManager::Key key(data.name().value, Data::Tag::kValue);
+  DoSync(DataManager::UnresolvedPut(key, ActionDataManagerPut(), routing_.kNodeId()));
+  LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
+              << " from maid_node " << HexSubstr(maid_name->string())
+              << " . SendPutResponse with message_id " << message_id.data;
+  dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);
 }
 
 template <typename Data>
@@ -460,9 +484,10 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
       auto value(db_.Get(key));
       pmids_to_avoid = std::move(value.AllPmids());
     } catch (const common_error& error) {
-      if (error.code() != make_error_code(CommonErrors::no_such_element))
+      if (error.code() != make_error_code(CommonErrors::no_such_element)) {
         LOG(kError) << "HandlePutFailure db error";
         throw error;  // For db errors
+      }
     }
 
     pmids_to_avoid.insert(attempted_pmid_node);
@@ -612,7 +637,7 @@ std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name&
     online_pmids = std::move(value.online_pmids());
   } catch (const maidsafe_error& error) {
     LOG(kWarning) << "Getting " << HexSubstr(data_name.value)
-                  << " causes a maidsafe_error " << error.what();
+                  << " causes a maidsafe_error " << boost::diagnostic_information(error);
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "db error";
       throw;  // For db errors
@@ -710,8 +735,7 @@ void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
     } while (pmid_name->string() == data_name.value.string() && already_picked);
 
     Data data(Data(data_name, typename Data::serialised_type(*contents.content)));
-    nfs::MessageId message_id(static_cast<nfs::MessageId::value_type>(
-        HashStringToInt(data_name.value.string())));
+    nfs::MessageId message_id(HashStringToMessageId(data_name.value.string()));
     GLOG() << "DataManager re-put chunk " << HexSubstr(contents.name.raw_name)
            << " to new pmid_node " << HexSubstr(pmid_name->string());
     dispatcher_.SendPutRequest(pmid_name, data, message_id);
@@ -732,9 +756,9 @@ bool DataManagerService::SendGetResponse(
     return true;
   } catch(const maidsafe_error& e) {
     error = e;
-    LOG(kError) << "DataManagerService::SendGetResponse " << e.what();
+    LOG(kError) << "DataManagerService::SendGetResponse " << boost::diagnostic_information(e);
   } catch(const std::exception& e) {
-    LOG(kError) << "DataManagerService::SendGetResponse " << e.what();
+    LOG(kError) << "DataManagerService::SendGetResponse " << boost::diagnostic_information(e);
   } catch(...) {
     LOG(kError) << "DataManagerService::SendGetResponse Unexpected exception type.";
   }
@@ -770,27 +794,32 @@ void DataManagerService::AssessGetContentRequestedPmidNode(
 template <typename Data, typename RequestorIdType>
 void DataManagerService::AssessIntegrityCheckResults(
     std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
-  for (const auto& itr : get_response_op->integrity_checks) {
-    if (!itr.second.Validate(get_response_op->serialised_contents)) {
-      // In case the pmid_node_to_get_from returned with a false content, which in-validated
-      // all the others, as the PmidNode side has to accumulate enough delete requests before
-      // deploy the action, send out false delete request won't cause problem as long as no more
-      // than half PmidNodes containing false data.
-      LOG(kVerbose) << DebugId(NodeId(itr.second.result().string())) << " and total: "
-                    << DebugId(NodeId(IntegrityCheckData::Result().string()));
-      if (itr.second.result() != IntegrityCheckData::Result()) {
-        LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
-                      << HexSubstr(itr.first->string()) << " returned invalid data for "
-                      << HexSubstr(get_response_op->data_name.value.string());
-        DerankPmidNode<Data>(itr.first, get_response_op->data_name, get_response_op->message_id);
-        DeletePmidNodeAsHolder<Data>(itr.first, get_response_op->data_name,
-                                     get_response_op->message_id);
-        SendFalseDataNotification<Data>(itr.first, get_response_op->data_name,
-                                        get_response_op->message_id);
-      } else {
-        MarkNodeDown(itr.first, get_response_op->data_name);
+  try {
+    for (const auto& itr : get_response_op->integrity_checks) {
+      if (!itr.second.Validate(get_response_op->serialised_contents)) {
+        // In case the pmid_node_to_get_from returned with a false content, which in-validated
+        // all the others, as the PmidNode side has to accumulate enough delete requests before
+        // deploy the action, send out false delete request won't cause problem as long as no more
+        // than half PmidNodes containing false data.
+        if (itr.second.result() != IntegrityCheckData::Result()) {
+          LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
+                        << HexSubstr(itr.first->string()) << " returned invalid data for "
+                        << HexSubstr(get_response_op->data_name.value.string());
+          DerankPmidNode<Data>(itr.first, get_response_op->data_name, get_response_op->message_id);
+          DeletePmidNodeAsHolder<Data>(itr.first, get_response_op->data_name,
+                                      get_response_op->message_id);
+          SendFalseDataNotification<Data>(itr.first, get_response_op->data_name,
+                                          get_response_op->message_id);
+        } else {
+          LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
+                        << HexSubstr(itr.first->string()) << " holding data "
+                        << HexSubstr(get_response_op->data_name.value.string()) << " is down";
+          MarkNodeDown(itr.first, get_response_op->data_name);
+        }
       }
     }
+  }catch(...) {
+    LOG(kWarning) << "caught exception in DataManagerService::AssessIntegrityCheckResults";
   }
 }
 

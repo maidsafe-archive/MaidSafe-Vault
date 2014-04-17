@@ -95,7 +95,7 @@ Db<Key, Value>::~Db() {
     leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
     boost::filesystem::remove_all(kDbPath_);
   } catch (const std::exception& e) {
-    LOG (kError) << "Failed to remove db : " << e.what();
+    LOG (kError) << "Failed to remove db : " << boost::diagnostic_information(e);
   }
 }
 
@@ -109,7 +109,8 @@ std::unique_ptr<Value> Db<Key, Value>::Commit(const Key& key,
     value.reset(new Value(Get(key)));
   } catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
-      LOG(kError) << "Db<Key, Value>::Commit unknown db error " << error.what();
+      LOG(kError) << "Db<Key, Value>::Commit unknown db error "
+                  << boost::diagnostic_information(error);
       throw error;  // For db errors
     }
   }

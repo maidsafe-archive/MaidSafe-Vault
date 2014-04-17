@@ -91,6 +91,7 @@ void VersionHandlerDispatcher::SendGetBranchResponse(
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   NfsMessage nfs_message;
   nfs_message.id = message_id;
+  nfs_message.contents.reset(new nfs_client::StructuredDataNameAndContentOrReturnCode());
   if (return_code.code() == CommonErrors::success) {
     nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
   } else {
@@ -114,9 +115,11 @@ void VersionHandlerDispatcher::SendGetBranchResponse(
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   NfsMessage nfs_message;
   nfs_message.id = message_id;
+  nfs_message.contents.reset(new nfs_client::StructuredDataNameAndContentOrReturnCode());
   if (return_code.code() == CommonErrors::success) {
     nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
   } else {
+    nfs_message.contents->data_name_and_return_code.reset();
     nfs_message.contents->data_name_and_return_code =
         nfs_client::DataNameAndReturnCode(nfs_vault::DataName(key.type, key.name),
                                           nfs_client::ReturnCode(return_code));
@@ -128,23 +131,40 @@ void VersionHandlerDispatcher::SendGetBranchResponse(
   routing_.Send(message);
 }
 
-void VersionHandlerDispatcher::SendPutVersionResponse(
-    const VersionHandler::Key& key, const VersionHandler::VersionName& tip_of_tree,
-    const maidsafe_error& return_code, nfs::MessageId message_id) {
-  typedef nfs::PutVersionResponseFromVersionHandlerToMaidNode NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  NfsMessage nfs_message;
-  nfs_message.id = message_id;
-  nfs_message.contents->data_name = nfs_vault::DataName(key.type, key.name);
-  if (return_code.code() == CommonErrors::success) {
-    nfs_message.contents->tip_of_tree = tip_of_tree;
-  } else {
-    nfs_message.contents->return_code = nfs_client::ReturnCode(return_code);
-  }
-  RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(routing::GroupId(NodeId(key.name.string())),
+void VersionHandlerDispatcher::SendCreateVersionTreeResponse(
+    const Identity& originator, const VersionHandler::Key& key, const maidsafe_error& return_code,
+        nfs::MessageId message_id) {
+  typedef CreateVersionTreeResponseFromVersionHandlerToMaidManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message;
+  vault_message.id = message_id;
+  vault_message.contents.reset(new nfs_client::ReturnCode(return_code));
+
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(key.name.string())),
                                             routing::SingleId(routing_.kNodeId())),
-                         NfsMessage::Receiver(NodeId(key.originator.string())));
+                         VaultMessage::Receiver(NodeId(originator.string())));
+  routing_.Send(message);
+}
+
+void VersionHandlerDispatcher::SendPutVersionResponse(
+    const Identity& originator,
+    const VersionHandler::Key& key,
+    const VersionHandler::VersionName& tip_of_tree,
+    const maidsafe_error& return_code,
+    nfs::MessageId message_id) {
+  typedef PutVersionResponseFromVersionHandlerToMaidManager VaultMessage;
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message;
+  vault_message.id = message_id;
+  vault_message.contents.reset(new nfs_client::TipOfTreeAndReturnCode());
+  vault_message.contents->return_code = nfs_client::ReturnCode(return_code);
+  if (tip_of_tree != VersionHandler::VersionName())
+    vault_message.contents->tip_of_tree = tip_of_tree;
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(key.name.string())),
+                                            routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(originator.string())));
   routing_.Send(message);
 }
 

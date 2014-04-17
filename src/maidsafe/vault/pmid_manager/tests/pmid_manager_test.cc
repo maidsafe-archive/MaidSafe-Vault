@@ -1,4 +1,4 @@
-/*  Copyright 2013 MaidSafe.net limited
+/*  Copyright 2012 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,10 +16,31 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-package maidsafe.vault.protobuf;
+#include "maidsafe/common/test.h"
+#include "maidsafe/vault/tests/tests_utils.h"
+#include "maidsafe/vault/tests/vault_network.h"
 
-message VersionHandlerKey {
-  required bytes name = 1;
-  required int32 type = 2;
-  required bytes originator = 3;
+namespace maidsafe {
+
+namespace vault {
+
+namespace test {
+
+class PmidManagerTest : public VaultNetwork  {
+ public:
+  PmidManagerTest() {}
+};
+
+TEST_F(PmidManagerTest, FUNC_GetPmidHealth) {
+  EXPECT_TRUE(AddClient(true));
+  auto get_pmid_health_future(clients_.front()->nfs_->GetPmidHealth(public_pmids_.back().name()));
+  EXPECT_NO_THROW(get_pmid_health_future.get());
+  LOG(kVerbose) << "Pmid Health Retrieved";
 }
+
+}  // namespace test
+
+}  // namespace vault
+
+}  // namespace maidsafe
+

@@ -55,7 +55,6 @@ class PmidManagerServiceTest;
 
 }
 
-
 class PmidManagerService {
  public:
   typedef void PublicMessages;
@@ -193,10 +192,10 @@ void PmidManagerService::HandleMessage(
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver);
 
 template <>
-void PmidManagerService::HandleMessage<nfs::PmidHealthRequestFromMaidNodeToPmidManager>(
-    const nfs::PmidHealthRequestFromMaidNodeToPmidManager& message,
-    const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Sender& sender,
-    const typename nfs::PmidHealthRequestFromMaidNodeToPmidManager::Receiver& receiver);
+void PmidManagerService::HandleMessage(
+    const PmidHealthRequestFromMaidManagerToPmidManager& message,
+    const typename PmidHealthRequestFromMaidManagerToPmidManager::Sender& sender,
+    const typename PmidHealthRequestFromMaidManagerToPmidManager::Receiver& receiver);
 
 template <>
 void PmidManagerService::HandleMessage(
@@ -267,7 +266,7 @@ void PmidManagerService::HandlePutFailure(
                 << HexSubstr(pmid_node.value.string())
                 << " , with message_id -- " << message_id.data
                 << " . available_space -- " << available_space << " , error_code -- "
-                << error_code.what();
+                << boost::diagnostic_information(error_code);
   dispatcher_.SendPutFailure<Data>(name, pmid_node, error_code, message_id);
   PmidManager::Key group_key(PmidManager::GroupName(pmid_node), name.value, Data::Tag::kValue);
   DoSync(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(false, true),
@@ -325,7 +324,5 @@ void PmidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#include "maidsafe/vault/pmid_manager/service-inl.h"
 
 #endif  // MAIDSAFE_VAULT_PMID_MANAGER_SERVICE_H_

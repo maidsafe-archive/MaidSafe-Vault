@@ -31,8 +31,8 @@
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/active.h"
-#include "maidsafe/data_types/data_type_values.h"
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_type_values.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/client/data_getter.h"
@@ -40,7 +40,7 @@
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/integrity_check_data.h"
+#include "maidsafe/vault/data_manager/integrity_check_data.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 #include "maidsafe/vault/pmid_node/handler.h"
 #include "maidsafe/vault/pmid_node/dispatcher.h"
@@ -161,6 +161,12 @@ class PmidNodeService {
                                   int failures);
 
  private:
+  template<typename ServiceHandlerType, typename MessageType>
+  friend void detail::DoOperation(
+      ServiceHandlerType* service, const MessageType& message,
+      const typename MessageType::Sender& sender,
+      const typename MessageType::Receiver& receiver);
+
   friend class detail::PmidNodeDeleteVisitor<PmidNodeService>;
   friend class detail::PmidNodePutVisitor<PmidNodeService>;
   friend class detail::PmidNodeGetVisitor<PmidNodeService>;
@@ -188,6 +194,8 @@ class PmidNodeService {
   void HandleIntegrityCheck(const typename Data::Name& data_name,
                             const NonEmptyString& random_string, const NodeId& sender,
                             nfs::MessageId message_id);
+
+  void HandleHealthRequest(const NodeId& pmid_manager_node_id, nfs::MessageId message_id);
 
   // ================================ Sender Validation =========================================
   template <typename T>
@@ -293,10 +301,10 @@ void PmidNodeService::HandleGet(const typename Data::Name& data_name,
     // Not sending error here as timeout will happen anyway at Datamanager.
     // This case should be least frequent.
     LOG(kError) << "Failed to get data : " << DebugId(data_name.value) << " , "
-                << error.what();
+                << boost::diagnostic_information(error);
   } catch (const std::exception& e) {
     LOG(kError) << "Failed to get data : " << DebugId(data_name.value) << " , "
-                << e.what();
+                << boost::diagnostic_information(e);
   }
 }
 
@@ -310,11 +318,11 @@ void PmidNodeService::HandlePut(const Data& data, nfs::MessageId message_id) {
   } catch (const maidsafe_error& error) {
     LOG(kWarning) << "PmidNodeService::HandlePut send put failure " << HexSubstr(data.name().value)
                   << " with AvailableSpace " << handler_.AvailableSpace()
-                  << " and error " << error.what();
+                  << " and error " << boost::diagnostic_information(error);
     dispatcher_.SendPutFailure<Data>(data.name(), handler_.AvailableSpace(), error, message_id);
   } catch (const std::exception& e) {
     LOG(kError) << "Failed to put data : " << HexSubstr(data.name().value) << " , "
-                << e.what();
+                << boost::diagnostic_information(e);
   }
 }
 
@@ -325,10 +333,10 @@ void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
     handler_.Delete(GetDataNameVariant(Data::Tag::kValue, data_name.value));
   } catch (const maidsafe_error& error) {
     LOG(kError) << "Failed to delete data : " << HexSubstr(data_name.value) << " , "
-                << error.what();
+                << boost::diagnostic_information(error);
   } catch (const std::exception& e) {
     LOG(kError) << "Failed to delete data : " << HexSubstr(data_name.value) << " , "
-                << e.what();
+                << boost::diagnostic_information(e);
   }
 }
 
@@ -360,7 +368,7 @@ void PmidNodeService::HandleIntegrityCheck(const typename Data::Name& data_name,
     // Not sending error here as timeout will happen anyway at Datamanager.
     // This case should be least frequent.
     LOG(kError) << "Failed to do integrity check for data : " << DebugId(data_name.value) << " , "
-                << error.what();
+                << boost::diagnostic_information(error);
   }
 }
 

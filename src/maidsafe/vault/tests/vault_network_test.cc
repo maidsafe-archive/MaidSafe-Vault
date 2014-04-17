@@ -87,22 +87,22 @@ TEST_F(VaultNetworkTest, FUNC_PutGetDelete) {
 
 TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
   EXPECT_TRUE(AddClient(true));
-  const size_t kIterations(500);
+  const size_t kIterations(50);
   std::vector<ImmutableData> chunks;
   for (auto index(kIterations); index > 0; --index)
     chunks.emplace_back(NonEmptyString(RandomString(1024)));
 
+  int index(0);
   for (const auto& chunk : chunks) {
-    std::this_thread::sleep_for(std::chrono::seconds(1));
     clients_[0]->nfs_->Put(chunk);
+    Sleep(std::chrono::seconds(2));
+    LOG(kVerbose) << DebugId(NodeId(chunk.name()->string())) << " stored: " << index++;
   }
-
-  Sleep(std::chrono::seconds(10));
 
   std::vector<boost::future<ImmutableData>> get_futures;
   for (const auto& chunk : chunks) {
     get_futures.emplace_back(clients_[0]->nfs_->Get<ImmutableData::Name>(chunk.name()));
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    Sleep(std::chrono::seconds(1));
   }
 
   for (size_t index(0); index < kIterations; ++index) {
@@ -112,9 +112,10 @@ TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
     }
     catch (const std::exception& ex) {
       LOG(kError) << "Failed to retrieve chunk: " << DebugId(chunks[index].name())
-                  << " because: " << ex.what();
+                  << " because: " << boost::diagnostic_information(ex) << " "  << index;
     }
   }
+  LOG(kVerbose) << "Multiple puts is finished successfully";
 }
 
 TEST_F(VaultNetworkTest, FUNC_FailingGet) {
@@ -201,6 +202,7 @@ TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
 
   for (const auto& chunk : chunks) {
     clients_[RandomInt32() % clients]->nfs_->Put(chunk);
+    Sleep(std::chrono::milliseconds(500));
   }
 
   LOG(kVerbose) << "Chunks are sent to be stored...";
@@ -219,7 +221,7 @@ TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
     }
     catch (const std::exception& ex) {
       LOG(kError) << "Failed to retrieve chunk: " << DebugId(chunks[index].name())
-                  << " because: " << ex.what();
+                  << " because: " << boost::diagnostic_information(ex);
     }
   }
 }

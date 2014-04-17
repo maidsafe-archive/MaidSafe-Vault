@@ -21,8 +21,8 @@
 
 #include <type_traits>
 
-#include "maidsafe/data_store/data_store.h"
-#include "maidsafe/data_store/memory_buffer.h"
+#include "maidsafe/common/data_stores/data_store.h"
+#include "maidsafe/common/data_stores/memory_buffer.h"
 
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message_wrapper.h"
@@ -92,8 +92,8 @@ class CacheHandlerService {
   routing::Routing& routing_;
   CacheHandlerDispatcher dispatcher_;
   DiskUsage cache_size_;
-  data_store::DataStore<data_store::DataBuffer<DataNameVariant>> cache_data_store_;
-  data_store::MemoryBuffer mem_only_cache_;
+  data_stores::DataStore<data_stores::DataBuffer<DataNameVariant>> cache_data_store_;
+  data_stores::MemoryBuffer mem_only_cache_;
 };
 
 template <typename MessageType>

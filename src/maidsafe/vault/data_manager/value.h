@@ -24,7 +24,7 @@
 #include <string>
 
 #include "maidsafe/common/types.h"
-#include "maidsafe/data_types/data_name_variant.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/types.h"
