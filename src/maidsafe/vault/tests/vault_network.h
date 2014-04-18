@@ -36,7 +36,7 @@ namespace vault {
 namespace test {
 
 typedef boost::asio::ip::udp::endpoint UdpEndpoint;
-const int kNetworkSize(25);
+const int kNetworkSize(16);
 
 #ifndef MAIDSAFE_WIN32
 const int kLimitsFiles(2048);
