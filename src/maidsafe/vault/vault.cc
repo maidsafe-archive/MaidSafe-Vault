@@ -83,15 +83,8 @@ void Vault::InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_
   routing_->Join(functors, peer_endpoints);
 
   std::unique_lock<std::mutex> lock(network_health_mutex_);
-#ifdef TESTING
-  if (!network_health_condition_variable_.wait_for(lock, std::chrono::minutes(5), [this] {
-         return network_health_ >= detail::Parameters::kMinNetworkHealth;
-       }))
-    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_join_network));
-#else
   network_health_condition_variable_.wait(
       lock, [this] { return network_health_ >= detail::Parameters::kMinNetworkHealth; });
-#endif
 }
 
 routing::Functors Vault::InitialiseRoutingCallbacks() {
@@ -147,23 +140,8 @@ void Vault::OnNetworkStatusChange(int network_health) {
 }
 
 void Vault::DoOnNetworkStatusChange(int network_health) {
-  if (network_health >= 0) {
-    if (network_health >= network_health_)
-      LOG(kVerbose) << "Init - " << DebugId(routing_->kNodeId()) << " - Network health is "
-                    << network_health << "% (was " << network_health_ << "%)";
-    else
-      LOG(kWarning) << "Init - " << DebugId(routing_->kNodeId()) << " - Network health is "
-                    << network_health << "% (was " << network_health_ << "%)";
-  } else {
-    LOG(kWarning) << "Init - " << DebugId(routing_->kNodeId()) << " - Network is down ("
-                  << network_health << ")";
-  }
-
-  {
-    std::lock_guard<std::mutex> lock(network_health_mutex_);
-    network_health_ = network_health;
-  }
-  network_health_condition_variable_.notify_one();
+  routing::UpdateNetworkHealth(network_health, network_health_, network_health_mutex_,
+                               network_health_condition_variable_, routing_->kNodeId());
   // TODO(Team) : actions when network is down/up per persona
 }
 
