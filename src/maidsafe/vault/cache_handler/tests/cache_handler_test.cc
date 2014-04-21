@@ -40,17 +40,21 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCache) {
   typedef routing::Message<typename NfsMessage::Sender, typename NfsMessage::Receiver>
       RoutingMessage;
 
+  LOG(kVerbose) << "Before send: ";
+  Sleep(std::chrono::seconds(1));
+
   NfsMessage nfs_message(message_id, typename NfsMessage::Contents(data));
   RoutingMessage message(
       nfs_message.Serialise(),
       routing::GroupSource(routing::GroupId(NodeId(data.name().value.string())),
                            routing::SingleId(kNodeId(0))),
-      typename NfsMessage::Receiver(random_id), routing::Cacheable::kPut);
-  LOG(kVerbose) << "DataManagerDispatcher::SendGetResponseSuccess routing send msg to "
-                << " regarding chunk of "
-                << HexSubstr(data.name().value.string());
+      NfsMessage::Receiver(random_id), routing::Cacheable::kPut);
+  LOG(kVerbose) << "To be cashed: " << HexSubstr(data.name().value.string())
+                << " id" << message_id;
   Send(0, message);
   Sleep(std::chrono::seconds(3));
+
+  LOG(kVerbose) << "Get attempt";
 
   auto future(clients_[0]->nfs_->Get<ImmutableData::Name>(data.name(), std::chrono::seconds(5)));
   try {
