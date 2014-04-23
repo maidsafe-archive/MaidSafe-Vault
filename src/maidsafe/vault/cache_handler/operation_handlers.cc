@@ -94,7 +94,8 @@ bool DoCacheOperation(
   typedef nfs::GetRequestFromDataGetterToDataManager::SourcePersona SourcePersonaType;
   auto data_name(detail::GetNameVariant(*message.contents));
   detail::Requestor<SourcePersonaType> requestor(sender.data);
-  GetFromCacheVisitor<detail::Requestor<SourcePersonaType>> get_from_cache(service, requestor);
+  GetFromCacheVisitor<detail::Requestor<SourcePersonaType>>
+      get_from_cache(service, requestor, message.id);
   return boost::apply_visitor(get_from_cache, data_name);
 }
 
@@ -107,8 +108,9 @@ bool DoCacheOperation(
   typedef nfs::GetRequestFromMaidNodeToDataManager::SourcePersona SourcePersonaType;
   auto data_name(detail::GetNameVariant(*message.contents));
   detail::Requestor<SourcePersonaType> requestor(sender.data);
-  detail::GetFromCacheVisitor<detail::Requestor<SourcePersonaType>> get_from_cache(service,
-                                                                                   requestor);
+  detail::GetFromCacheVisitor<detail::Requestor<SourcePersonaType>>
+      get_from_cache(service, requestor, message.id);
+  LOG(kVerbose) << "DoCacheOperation :" << message.id;
   return boost::apply_visitor(get_from_cache, data_name);
 }
 
@@ -133,8 +135,8 @@ bool DoCacheOperation(
   typedef GetFromCacheFromDataManagerToCacheHandler::SourcePersona SourcePersonaType;
   auto data_name(detail::GetNameVariant(*message.contents));
   detail::Requestor<SourcePersonaType> requestor(sender.data);
-  detail::GetFromCacheVisitor<detail::Requestor<SourcePersonaType>> get_from_cache(service,
-                                                                                   requestor);
+  detail::GetFromCacheVisitor<detail::Requestor<SourcePersonaType>>
+      get_from_cache(service, requestor, message.id);
   return boost::apply_visitor(get_from_cache, data_name);
 }
 

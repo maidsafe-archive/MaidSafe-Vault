@@ -53,7 +53,7 @@ namespace test {
 class CacheHandlerService {
  public:
   typedef nfs::CacheableMessages PublicMessages;
-  typedef CacheableMessages VaultMessages;
+  typedef CacheHandlerServiceMessages VaultMessages;
   typedef bool HandleMessageReturnType;
 
   CacheHandlerService(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
@@ -84,7 +84,8 @@ class CacheHandlerService {
   void CacheStore(const Data& data, IsShortTermCacheable);
 
   template <typename Data, typename RequestorType>
-  void SendGetResponse(const Data& data, const RequestorType& requestor);
+  void SendGetResponse(const Data& data,  const nfs::MessageId message_id,
+                       const RequestorType& requestor);
 
   template <typename MessageType>
   bool ValidateSender(const MessageType& message, const typename MessageType::Sender& sender) const;
@@ -199,8 +200,10 @@ boost::optional<Data> CacheHandlerService::CacheGet(const typename Data::Name& d
 }
 
 template <typename Data, typename RequestorType>
-void CacheHandlerService::SendGetResponse(const Data& data, const RequestorType& requestor) {
-  dispatcher_.SendGetResponse(data, requestor);
+void CacheHandlerService::SendGetResponse(const Data& data, const nfs::MessageId message_id,
+                                          const RequestorType& requestor) {
+  LOG(kVerbose) << "CacheHandlerService::SendGetResponse";
+  dispatcher_.SendGetResponse(data, message_id, requestor);
 }
 
 template <typename Data>

@@ -666,7 +666,7 @@ bool DataManagerService::SendGetResponse(
     dispatcher_.SendGetResponseSuccess(get_response_op->requestor_id, data,
                                        get_response_op->message_id);
     // Put to the CacheHandler in this vault.
-    dispatcher_.SendPutToCache(data);
+//    dispatcher_.SendPutToCache(data);
     return true;
   } catch(const maidsafe_error& e) {
     error = e;
