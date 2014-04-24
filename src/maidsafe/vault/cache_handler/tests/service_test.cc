@@ -117,8 +117,8 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put",
     CHECK_NOTHROW(Get<ImmutableData>(data.name()));
   }
 
-  SECTION("PutToCacheFromDataManagerToDataManager") {
-    auto cache_put(CreateMessage<PutToCacheFromDataManagerToDataManager>(
+  SECTION("PutToCacheFromDataManagerToCacheHandler") {
+    auto cache_put(CreateMessage<PutToCacheFromDataManagerToCacheHandler>(
       nfs_vault::DataNameAndContent(content.name.type, content.name.raw_name,
                                     NonEmptyString(content.content->data))));
     routing::SingleSource source((NodeId(NodeId::kRandomId)));

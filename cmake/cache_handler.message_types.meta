@@ -1,1 +1,3 @@
 Action:GetFromCache           Source:DataManager:Single     Destination:CacheHandler:Group      Contents:struct:maidsafe::nfs_vault::DataName                          Cacheable
+Action:PutToCache             Source:DataManager:Single     Destination:CacheHandler:Single     Contents:struct:maidsafe::nfs_vault::DataNameAndContent                Cacheable
+

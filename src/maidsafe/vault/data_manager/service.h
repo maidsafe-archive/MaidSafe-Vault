@@ -321,12 +321,6 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
-    const PutToCacheFromDataManagerToDataManager& message,
-    const typename PutToCacheFromDataManagerToDataManager::Sender& sender,
-    const typename PutToCacheFromDataManagerToDataManager::Receiver& receiver);
-
-template <>
-void DataManagerService::HandleMessage(
     const GetCachedResponseFromCacheHandlerToDataManager& message,
     const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
     const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver);
@@ -662,11 +656,12 @@ bool DataManagerService::SendGetResponse(
     std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
   maidsafe_error error(MakeError(CommonErrors::unknown));
   try {
-    LOG(kInfo) << "DataManagerService::SendGetResponse SendGetResponseSuccess and put to cache";
+    LOG(kInfo) << "DataManagerService::SendGetResponse SendGetResponseSuccess and put to cache"
+               << get_response_op->message_id;
     dispatcher_.SendGetResponseSuccess(get_response_op->requestor_id, data,
                                        get_response_op->message_id);
     // Put to the CacheHandler in this vault.
-//    dispatcher_.SendPutToCache(data);
+    dispatcher_.SendPutToCache(data);
     return true;
   } catch(const maidsafe_error& e) {
     error = e;

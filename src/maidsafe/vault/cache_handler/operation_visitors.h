@@ -107,6 +107,7 @@ class PutToCacheVisitor : public boost::static_visitor<> {
  private:
   template <typename Data>
   void PutToCache(const Data& data, IsCacheable) {
+    LOG(kVerbose) << "PutToCacheVisitor :";
     cache_handler_service_->CacheStore(data, is_long_term_cacheable<Data>());
   }
 

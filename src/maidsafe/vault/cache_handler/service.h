@@ -53,7 +53,7 @@ namespace test {
 class CacheHandlerService {
  public:
   typedef nfs::CacheableMessages PublicMessages;
-  typedef CacheHandlerServiceMessages VaultMessages;
+  typedef CacheableMessages VaultMessages;
   typedef bool HandleMessageReturnType;
 
   CacheHandlerService(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
@@ -157,12 +157,12 @@ CacheHandlerService::HandleMessage(
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
 
-//template <>
-//CacheHandlerService::HandleMessageReturnType
-//CacheHandlerService::HandleMessage(
-//    const PutToCacheFromDataManagerToDataManager& message,
-//    const typename PutToCacheFromDataManagerToDataManager::Sender& sender,
-//    const typename PutToCacheFromDataManagerToDataManager::Receiver& receiver);
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const PutToCacheFromDataManagerToCacheHandler& message,
+    const typename PutToCacheFromDataManagerToCacheHandler::Sender& sender,
+    const typename PutToCacheFromDataManagerToCacheHandler::Receiver& receiver);
 
 template <>
 CacheHandlerService::HandleMessageReturnType
@@ -209,6 +209,7 @@ void CacheHandlerService::SendGetResponse(const Data& data, const nfs::MessageId
 template <typename Data>
 void CacheHandlerService::CacheStore(const Data& data, IsLongTermCacheable) {
   try {
+    LOG(kVerbose) << "CacheHandlerService::CacheStore: cache_data_store";
     cache_data_store_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
                             data.Serialise().data);
   }
@@ -220,6 +221,7 @@ void CacheHandlerService::CacheStore(const Data& data, IsLongTermCacheable) {
 template <typename Data>
 void CacheHandlerService::CacheStore(const Data& data, IsShortTermCacheable) {
   try {
+    LOG(kVerbose) << "CacheHandlerService::CacheStore: mem_only_cache";
     mem_only_cache_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
                           data.Serialise().data);
   }

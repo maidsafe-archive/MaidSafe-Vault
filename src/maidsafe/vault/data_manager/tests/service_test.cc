@@ -240,15 +240,6 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
                                         routing::SingleId(routing_.kNodeId())));
   }
 
-  SECTION("PutToCacheFromDataManagerToDataManager") {
-    NodeId data_manager_id(NodeId::kRandomId);
-    auto content(CreateContent<PutToCacheFromDataManagerToDataManager::Contents>());
-    auto put_to_cache(CreateMessage<PutToCacheFromDataManagerToDataManager>(content));
-    CHECK_NOTHROW(SingleSendsToSingle(&data_manager_service_, put_to_cache,
-                                        routing::SingleSource(data_manager_id),
-                                        routing::SingleId(routing_.kNodeId())));
-  }
-
   SECTION("GetCachedResponseFromCacheHandlerToDataManager") {
     NodeId cache_handler_id(NodeId::kRandomId);
     auto content(CreateContent<GetCachedResponseFromCacheHandlerToDataManager::Contents>());
