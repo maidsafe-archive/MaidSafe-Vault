@@ -117,11 +117,11 @@ bool DoCacheOperation(
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
-    const PutToCacheFromDataManagerToCacheHandler& message,
-    const typename PutToCacheFromDataManagerToCacheHandler::Sender& /*sender*/,
-    const typename PutToCacheFromDataManagerToCacheHandler::Receiver& /*receiver*/) {
+    const PutRequestFromDataManagerToCacheHandler& message,
+    const typename PutRequestFromDataManagerToCacheHandler::Sender& /*sender*/,
+    const typename PutRequestFromDataManagerToCacheHandler::Receiver& /*receiver*/) {
   auto data_name(detail::GetNameVariant(*message.contents));
-  LOG(kVerbose) << "DoCacheOperation : PutToCacheFromDataManagerToCacheHandler" << message.id;
+  LOG(kVerbose) << "DoCacheOperation : PutRequestFromDataManagerToCacheHandler" << message.id;
   PutToCacheVisitor put_to_cache(service, message.contents->content);
   boost::apply_visitor(put_to_cache, data_name);
   return true;
@@ -130,10 +130,10 @@ bool DoCacheOperation(
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
-    const GetFromCacheFromDataManagerToCacheHandler& message,
-    const typename GetFromCacheFromDataManagerToCacheHandler::Sender& sender,
-    const typename GetFromCacheFromDataManagerToCacheHandler::Receiver& /*receiver*/) {
-  typedef GetFromCacheFromDataManagerToCacheHandler::SourcePersona SourcePersonaType;
+    const GetRequestFromDataManagerToCacheHandler& message,
+    const typename GetRequestFromDataManagerToCacheHandler::Sender& sender,
+    const typename GetRequestFromDataManagerToCacheHandler::Receiver& /*receiver*/) {
+  typedef GetRequestFromDataManagerToCacheHandler::SourcePersona SourcePersonaType;
   auto data_name(detail::GetNameVariant(*message.contents));
   detail::Requestor<SourcePersonaType> requestor(sender.data);
   detail::GetFromCacheVisitor<detail::Requestor<SourcePersonaType>>

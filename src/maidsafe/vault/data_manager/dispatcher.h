@@ -321,7 +321,7 @@ void DataManagerDispatcher::SendPutToCache(const Data& data) {
 
 template<typename Data>
 void DataManagerDispatcher::DoSendPutToCache(const Data& data, IsCacheable) {
-  typedef PutToCacheFromDataManagerToCacheHandler VaultMessage;
+  typedef PutRequestFromDataManagerToCacheHandler VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
@@ -339,7 +339,7 @@ void DataManagerDispatcher::SendGetFromCache(const DataName& data_name) {
 
 template<typename DataName>
 void DataManagerDispatcher::DoSendGetFromCache(const DataName& data_name, IsCacheable) {
-  typedef GetFromCacheFromDataManagerToCacheHandler VaultMessage;
+  typedef GetRequestFromDataManagerToCacheHandler VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message((VaultMessage::Contents(data_name)));

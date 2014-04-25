@@ -481,7 +481,6 @@ int RequiredRequests(const Message&) {
   return detail::RequiredValue<typename Message::Sender>()();
 }
 
-
 }  // namespace vault
 
 }  // namespace maidsafe

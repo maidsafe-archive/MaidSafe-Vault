@@ -49,8 +49,10 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCache) {
       routing::GroupSource(routing::GroupId(NodeId(data.name().value.string())),
                            routing::SingleId(kNodeId(0))),
       NfsMessage::Receiver(random_id), routing::Cacheable::kPut);
-  LOG(kVerbose) << "To be cashed: " << HexSubstr(data.name().value.string())
+  LOG(kVerbose) << "To be cached: " << HexSubstr(data.name().value.string())
                 << " id" << message_id;
+  // Caching on all nodes in the network.
+  routing::Parameters::max_route_history = kNetworkSize;
   Send(0, message);
   Sleep(std::chrono::seconds(3));
 

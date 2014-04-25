@@ -102,8 +102,7 @@ typename CacheHandlerService::HandleMessageReturnType CacheHandlerService::Handl
     const MessageType& /*message*/,
     const typename MessageType::Sender& /*sender*/,
     const typename MessageType::Receiver& /*receiver*/) {
-  // BEFORE_RELEASE uncomment below line
-  // MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
+  MessageType::No_genereic_handler_is_available__Specialisation_is_required;
   return false;
 }
 
@@ -160,16 +159,16 @@ CacheHandlerService::HandleMessage(
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const PutToCacheFromDataManagerToCacheHandler& message,
-    const typename PutToCacheFromDataManagerToCacheHandler::Sender& sender,
-    const typename PutToCacheFromDataManagerToCacheHandler::Receiver& receiver);
+    const PutRequestFromDataManagerToCacheHandler& message,
+    const typename PutRequestFromDataManagerToCacheHandler::Sender& sender,
+    const typename PutRequestFromDataManagerToCacheHandler::Receiver& receiver);
 
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const GetFromCacheFromDataManagerToCacheHandler& message,
-    const typename GetFromCacheFromDataManagerToCacheHandler::Sender& sender,
-    const typename GetFromCacheFromDataManagerToCacheHandler::Receiver& receiver);
+    const GetRequestFromDataManagerToCacheHandler& message,
+    const typename GetRequestFromDataManagerToCacheHandler::Sender& sender,
+    const typename GetRequestFromDataManagerToCacheHandler::Receiver& receiver);
 
 template <typename Data>
 boost::optional<Data> CacheHandlerService::CacheGet(const typename Data::Name& data_name,

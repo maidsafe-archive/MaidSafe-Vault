@@ -132,10 +132,10 @@ CacheHandlerService::HandleMessage(
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const PutToCacheFromDataManagerToCacheHandler &message,
-    const typename PutToCacheFromDataManagerToCacheHandler::Sender& sender,
-    const typename PutToCacheFromDataManagerToCacheHandler::Receiver& receiver) {
-  typedef PutToCacheFromDataManagerToCacheHandler MessageType;
+    const PutRequestFromDataManagerToCacheHandler &message,
+    const typename PutRequestFromDataManagerToCacheHandler::Sender& sender,
+    const typename PutRequestFromDataManagerToCacheHandler::Receiver& receiver) {
+  typedef PutRequestFromDataManagerToCacheHandler MessageType;
   LOG(kVerbose) << message;
   return CacheOperationHandlerWrapper<MessageType>(
              this, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -146,10 +146,10 @@ CacheHandlerService::HandleMessage(
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const GetFromCacheFromDataManagerToCacheHandler& message,
-    const typename GetFromCacheFromDataManagerToCacheHandler::Sender& sender,
-    const typename GetFromCacheFromDataManagerToCacheHandler::Receiver& receiver) {
-  typedef GetFromCacheFromDataManagerToCacheHandler MessageType;
+    const GetRequestFromDataManagerToCacheHandler& message,
+    const typename GetRequestFromDataManagerToCacheHandler::Sender& sender,
+    const typename GetRequestFromDataManagerToCacheHandler::Receiver& receiver) {
+  typedef GetRequestFromDataManagerToCacheHandler MessageType;
   LOG(kVerbose) << message;
   return CacheOperationHandlerWrapper<MessageType>(
              this, [this](const MessageType& message, const MessageType::Sender& sender) {
