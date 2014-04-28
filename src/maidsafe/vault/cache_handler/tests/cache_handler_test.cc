@@ -173,6 +173,43 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToDataGetter) {
   }
 }
 
+TEST_F(CacheHandlerTest, FUNC_NonCacheableData) {
+  EXPECT_TRUE(AddClient(true));
+  passport::Anmaid anmaid;
+  passport::PublicAnmaid public_anmaid(anmaid);
+  NodeId random_id(NodeId::kRandomId);
+  nfs::MessageId message_id(RandomUint32());
+  typedef nfs::GetCachedResponseFromCacheHandlerToDataGetter NfsMessage;
+  typedef routing::Message<typename NfsMessage::Sender, typename NfsMessage::Receiver>
+      RoutingMessage;
+
+  Sleep(std::chrono::seconds(1));
+
+  NfsMessage nfs_message(message_id, typename NfsMessage::Contents(public_anmaid));
+  RoutingMessage message(
+      nfs_message.Serialise(),
+      routing::SingleSource(routing::SingleId(kNodeId(0))),
+      NfsMessage::Receiver(random_id), routing::Cacheable::kPut);
+  LOG(kVerbose) << "To be cached: " << HexSubstr(anmaid.name().value.string())
+                << " id" << message_id;
+  // Caching on all nodes in the network.
+  routing::Parameters::max_route_history = kNetworkSize;
+  Send(0, message);
+  Sleep(std::chrono::seconds(3));
+
+  LOG(kVerbose) << "Get attempt";
+
+  auto future(clients_[0]->nfs_->Get<passport::PublicAnmaid::Name>(public_anmaid.name(),
+                                                                   std::chrono::seconds(5)));
+  try {
+    future.get();
+    EXPECT_TRUE(false) << "Should have thrown: " << DebugId(NodeId(anmaid.name()->string()));
+  }
+  catch (...) {
+    EXPECT_TRUE(true) << "Should have thrown: " << DebugId(NodeId(anmaid.name()->string()));
+  }
+}
+
 }  // namespace test
 
 }  // namespace vault

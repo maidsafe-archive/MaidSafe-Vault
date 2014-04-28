@@ -59,9 +59,11 @@ class GetFromCacheVisitor : public boost::static_visitor<bool> {
     auto cache_data(GetFromCache(data_name, is_cacheable<typename DataName::data_type>()));
     if (cache_data) {
       LOG(kVerbose) << "DoGetFromCache";
-      cache_handler_service_->SendGetResponse<typename DataName::data_type,
-                                               RequestorType>(*cache_data, kMessageId_,
-                                                              kRequestor_);
+      std::thread thread([&]() {
+                           cache_handler_service_->
+                               SendGetResponse<typename DataName::data_type,RequestorType>(
+                                   *cache_data, kMessageId_, kRequestor_); });
+      thread.join();
       return true;
     }
     return false;
