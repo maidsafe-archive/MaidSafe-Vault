@@ -206,7 +206,7 @@ TEST_F(CacheHandlerTest, FUNC_NonCacheableData) {
     EXPECT_TRUE(false) << "Should have thrown: " << DebugId(NodeId(anmaid.name()->string()));
   }
   catch (...) {
-    EXPECT_TRUE(true) << "Should have thrown: " << DebugId(NodeId(anmaid.name()->string()));
+    EXPECT_TRUE(true);
   }
 }
 

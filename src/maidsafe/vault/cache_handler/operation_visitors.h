@@ -61,7 +61,7 @@ class GetFromCacheVisitor : public boost::static_visitor<bool> {
       LOG(kVerbose) << "DoGetFromCache";
       std::thread thread([&]() {
                            cache_handler_service_->
-                               SendGetResponse<typename DataName::data_type,RequestorType>(
+                               SendGetResponse<typename DataName::data_type, RequestorType>(
                                    *cache_data, kMessageId_, kRequestor_); });
       thread.join();
       return true;
