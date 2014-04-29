@@ -42,11 +42,14 @@ struct is_group_source<routing::GroupSource> : public std::true_type {};
 template <typename RequestorType>
 class GetFromCacheVisitor : public boost::static_visitor<bool> {
  public:
-  GetFromCacheVisitor(CacheHandlerService* cache_handler_service, const RequestorType& requestor)
-      : cache_handler_service_(cache_handler_service), kRequestor_(requestor) {}
+  GetFromCacheVisitor(CacheHandlerService* cache_handler_service, const RequestorType& requestor,
+                      const nfs::MessageId message_id)
+      : cache_handler_service_(cache_handler_service), kRequestor_(requestor),
+        kMessageId_(message_id) {}
 
   template <typename DataName>
   result_type operator()(const DataName& data_name) {
+    LOG(kVerbose) << "GetFromCacheVisitor!";
     return DoGetFromCache(data_name, is_group_source<typename RequestorType::SourcePersonaType>());
   }
 
@@ -55,8 +58,12 @@ class GetFromCacheVisitor : public boost::static_visitor<bool> {
   bool DoGetFromCache(const DataName& data_name, IsSingleSource) {
     auto cache_data(GetFromCache(data_name, is_cacheable<typename DataName::data_type>()));
     if (cache_data) {
-      cache_handler_service_->SendGetResponse<typename DataName::data_type,
-                                               RequestorType>(*cache_data, kRequestor_);
+      LOG(kVerbose) << "DoGetFromCache";
+      std::thread thread([&]() {
+                           cache_handler_service_->
+                               SendGetResponse<typename DataName::data_type, RequestorType>(
+                                   *cache_data, kMessageId_, kRequestor_); });
+      thread.join();
       return true;
     }
     return false;
@@ -83,6 +90,7 @@ class GetFromCacheVisitor : public boost::static_visitor<bool> {
 
   CacheHandlerService* const cache_handler_service_;
   RequestorType kRequestor_;
+  const nfs::MessageId kMessageId_;
 };
 
 class PutToCacheVisitor : public boost::static_visitor<> {
@@ -101,6 +109,7 @@ class PutToCacheVisitor : public boost::static_visitor<> {
  private:
   template <typename Data>
   void PutToCache(const Data& data, IsCacheable) {
+    LOG(kVerbose) << "PutToCacheVisitor :";
     cache_handler_service_->CacheStore(data, is_long_term_cacheable<Data>());
   }
 

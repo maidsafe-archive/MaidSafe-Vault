@@ -212,14 +212,6 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
-    const PutToCacheFromDataManagerToDataManager& /*message*/,
-    const typename PutToCacheFromDataManagerToDataManager::Sender& /*sender*/,
-    const typename PutToCacheFromDataManagerToDataManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage PutToCacheFromDataManagerToDataManager";
-}  // No-op
-
-template <>
-void DataManagerService::HandleMessage(
     const GetCachedResponseFromCacheHandlerToDataManager& message,
     const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
     const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver) {

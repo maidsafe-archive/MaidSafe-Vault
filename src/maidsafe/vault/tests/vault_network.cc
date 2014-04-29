@@ -338,13 +338,13 @@ std::future<bool> Client::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpo
                                             });
   };
   functors_.typed_message_and_caching.group_to_group.message_received =
-      [&](const routing::GroupToGroupMessage &msg) { nfs_->HandleMessage(msg); };  // NOLINT
+      [&](const routing::GroupToGroupMessage& msg) { nfs_->HandleMessage(msg); };  // NOLINT
   functors_.typed_message_and_caching.group_to_single.message_received =
-      [&](const routing::GroupToSingleMessage &msg) { nfs_->HandleMessage(msg); };  // NOLINT
+      [&](const routing::GroupToSingleMessage& msg) { nfs_->HandleMessage(msg); };  // NOLINT
   functors_.typed_message_and_caching.single_to_group.message_received =
-      [&](const routing::SingleToGroupMessage &msg) { nfs_->HandleMessage(msg); };  // NOLINT
+      [&](const routing::SingleToGroupMessage& msg) { nfs_->HandleMessage(msg); };  // NOLINT
   functors_.typed_message_and_caching.single_to_single.message_received =
-      [&](const routing::SingleToSingleMessage &msg) { nfs_->HandleMessage(msg); };  // NOLINT
+      [&](const routing::SingleToSingleMessage& msg) { nfs_->HandleMessage(msg); };  // NOLINT
 //  functors_.typed_message_and_caching.single_to_group_relay.message_received =
 //      [&](const routing::SingleToGroupRelayMessage &msg) { nfs_->HandleMessage(msg); };
   functors_.request_public_key =

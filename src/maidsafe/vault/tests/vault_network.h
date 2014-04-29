@@ -36,7 +36,7 @@ namespace vault {
 namespace test {
 
 typedef boost::asio::ip::udp::endpoint UdpEndpoint;
-const int kNetworkSize(25);
+const int kNetworkSize(16);
 
 #ifndef MAIDSAFE_WIN32
 const int kLimitsFiles(2048);
@@ -87,6 +87,15 @@ class VaultNetwork : public testing::Test {
 
   template <typename Data>
   Data Get(const typename Data::Name& data_name);
+
+  template <typename Messagetype>
+  void Send(size_t sender_index, const Messagetype message) {
+    vaults_[sender_index]->routing_->Send(message);
+  }
+
+  NodeId kNodeId(size_t index) {
+    return vaults_[index]->routing_->kNodeId();
+  }
 
  protected:
   void Bootstrap();

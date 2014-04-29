@@ -126,6 +126,7 @@ void Vault::OnMessageReceived(const T& message) {
 
 template <typename T>
 CacheHandlerService::HandleMessageReturnType Vault::OnGetFromCache(const T& message) {
+  LOG(kVerbose) << "Vault::OnGetFromCache: ";
   auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
   return cache_service_.HandleMessage(wrapper_tuple, message.sender, message.receiver);
 }
@@ -134,11 +135,13 @@ template <typename T>
 void Vault::OnStoreInCache(const T& message) {
   // TODO(Team): To investigate the cost of running in new thread (as below) versus allowing
   //             the operation to continue on caller (routing) thread.
+  LOG(kVerbose) << "Vault::OnStoreInCache: ";
   asio_service_.service().post([=] {
+                                 LOG(kVerbose) << "Vault::OnStoreInCache2: ";
                                  auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
-                                 return cache_service_.HandleMessage(
+                                 cache_service_.HandleMessage(
                                             wrapper_tuple, message.sender, message.receiver);
-                               });
+                             });
 }
 
 }  // namespace vault
