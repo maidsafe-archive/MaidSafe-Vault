@@ -16,7 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/tools/key_helper_operations.h"
+#include "maidsafe/vault/tools/operations.h"
 
 #include <csignal>
 #include <future>
@@ -74,7 +74,7 @@ void CtrlCHandler(int /*signum*/) {
 NetworkGenerator::NetworkGenerator() : asio_service_(1) {}
 
 void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_keys) {
-  std::cout << "Creating zero state routing network..." << std::endl;
+  TLOG(kDefaultColour) << "Creating zero state routing network...\n";
   BootstrapData bootstrap_data(all_keys.at(0), all_keys.at(1));
 
   std::vector<passport::PublicPmid> all_public_pmids;
@@ -122,8 +122,8 @@ void NetworkGenerator::SetupBootstrapNodes(const PmidVector& all_keys) {
   }
 
   // just wait till process receives termination signal
-  std::cout << "Bootstrap nodes are running, press Ctrl+C to terminate." << std::endl
-            << "Endpoints: " << endpoint1_ << " and " << endpoint2_ << std::endl;
+  TLOG(kDefaultColour) << "Bootstrap nodes are running, press Ctrl+C to terminate.\n"
+                       << "Endpoints: " << endpoint1_ << " and " << endpoint2_ << '\n';
   signal(SIGINT, CtrlCHandler);
   std::unique_lock<std::mutex> lock(g_mutex);
   g_cond_var.wait(lock, [this] { return g_ctrlc_pressed; });  // NOLINT
@@ -184,34 +184,32 @@ ClientTester::ClientTester(const passport::detail::AnmaidToPmid& key_chain,
     }
   }
   if (account_exists) {
-    std::cout << "Account exists for maid " << HexSubstr(public_maid.name()->string())
-              << std::endl;
+    TLOG(kDefaultColour) << "Account exists for maid " << DebugId(public_maid.name()) << '\n';
     register_pmid_for_client = false;
   } else {
     // waiting for syncs resolved
-    boost::this_thread::sleep_for(boost::chrono::seconds(2));
-    std::cout << "Account created for maid " << HexSubstr(public_maid.name()->string())
-              << std::endl;
+    Sleep(std::chrono::seconds(2));
+    TLOG(kDefaultColour) << "Account created for maid " << DebugId(public_maid.name()) << '\n';
     // before register pmid, need to store pmid to network first
     client_nfs_->Put(passport::PublicPmid(key_chain.pmid));
-    boost::this_thread::sleep_for(boost::chrono::seconds(2));
+    Sleep(std::chrono::seconds(2));
   }
 
   if (register_pmid_for_client) {
     {
       client_nfs_->RegisterPmid(nfs_vault::PmidRegistration(key_chain.maid, key_chain.pmid, false));
-      boost::this_thread::sleep_for(boost::chrono::seconds(3));
+      Sleep(std::chrono::seconds(3));
       auto future(client_nfs_->GetPmidHealth(pmid_name));
       auto status(future.wait_for(boost::chrono::seconds(10)));
       if (status == boost::future_status::timeout) {
         LOG(kError) << "can't fetch pmid health";
         BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
       }
-      std::cout << "The fetched PmidHealth for pmid_name " << HexSubstr(pmid_name.value.string())
-                << " is " << future.get() << std::endl;
+      TLOG(kDefaultColour) << "The fetched PmidHealth for pmid_name " << DebugId(pmid_name)
+                           << " is " << future.get() << '\n';
     }
     // waiting for the GetPmidHealth updating corresponding accounts
-    boost::this_thread::sleep_for(boost::chrono::seconds(3));
+    Sleep(std::chrono::seconds(3));
     LOG(kInfo) << "Pmid Registered created for the client node to store chunks";
   }
 }
@@ -257,24 +255,24 @@ void KeyStorer::Store() {
   for (auto& keychain : key_chain_list_) {
     try {
       StoreKey(passport::PublicPmid(keychain.pmid));
-      boost::this_thread::sleep_for(boost::chrono::seconds(2));
+      Sleep(std::chrono::seconds(2));
       auto pmid_future(client_nfs_->Get(passport::PublicPmid::Name(keychain.pmid.name())));
       if (EqualKeys<passport::PublicPmid>(passport::PublicPmid(keychain.pmid), pmid_future.get()))
-        std::cout << "Pmid " << HexSubstr(keychain.pmid.name().value)
-                  << " PublicPmidKey stored and verified " << std::endl;
+        TLOG(kDefaultColour) << "Pmid " << DebugId(keychain.pmid.name())
+                             << " PublicPmidKey stored and verified\n";
     } catch (const std::exception& e) {
-      std::cout << "Failed storing key chain of PMID " << HexSubstr(keychain.pmid.name().value)
-                << ": " << boost::diagnostic_information(e) << std::endl;
+      TLOG(kRed) << "Failed storing key chain of PMID " << DebugId(keychain.pmid.name())
+                 << ": " << boost::diagnostic_information(e) << '\n';
       ++failures;
     }
   }
   if (failures) {
-    std::cout << "Could not store " << std::to_string(failures) << " out of "
-              << std::to_string(key_chain_list_.size()) << std::endl;
+    TLOG(kRed) << "Could not store " << std::to_string(failures) << " out of "
+               << std::to_string(key_chain_list_.size()) << '\n';
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
   }
 
-  boost::this_thread::sleep_for(boost::chrono::seconds(5));
+  Sleep(std::chrono::seconds(5));
 }
 
 KeyVerifier::KeyVerifier(const passport::detail::AnmaidToPmid& key_chain,
@@ -296,10 +294,10 @@ void KeyVerifier::Verify() {
       ++verified_keys;
     if (EqualKeys<passport::PublicPmid>(passport::PublicPmid(key_chain_.pmid), pmid_future.get()))
       ++verified_keys;
-    std::cout << "VerifyKeys - Verified all " << verified_keys << " keys.\n";
+    TLOG(kGreen) << "VerifyKeys - Verified all " << verified_keys << " keys.\n";
   }
   catch (const std::exception& ex) {
-    LOG(kError) << "Failed to verify keys " << boost::diagnostic_information(ex);
+    TLOG(kRed) << "Failed to verify keys " << boost::diagnostic_information(ex) << '\n';
   }
 }
 
@@ -330,7 +328,7 @@ void DataChunkStorer::Test(int32_t quantity) {
                 << " num_stored : " << num_store << " num_get : " << num_get;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
-  boost::this_thread::sleep_for(boost::chrono::seconds(3));
+  Sleep(std::chrono::seconds(3));
 }
 
 void DataChunkStorer::TestWithDelete(int32_t quantity) {
@@ -350,12 +348,11 @@ void DataChunkStorer::TestWithDelete(int32_t quantity) {
 void DataChunkStorer::TestStoreChunk(int chunk_index) {
   StoreOneChunk(chunk_list_[chunk_index]);
   LOG(kInfo) << "Sleeping for network handling storing ... "
-             << HexSubstr(chunk_list_[chunk_index].name().value);
-  boost::this_thread::sleep_for(boost::chrono::seconds(3));
+             << DebugId(chunk_list_[chunk_index].name());
+  Sleep(std::chrono::seconds(3));
   if (!GetOneChunk(chunk_list_[chunk_index]))
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  std::cout << "Chunk "<< HexSubstr(chunk_list_[chunk_index].name().value)
-            << " stored and verified" << std::endl;
+  TLOG(kGreen) << "Chunk "<< DebugId(chunk_list_[chunk_index].name()) << " stored and verified\n";
 }
 
 void DataChunkStorer::TestFetchChunk(int chunk_index) {
@@ -364,31 +361,30 @@ void DataChunkStorer::TestFetchChunk(int chunk_index) {
 }
 
 void DataChunkStorer::TestDeleteChunk(int chunk_index) {
-  if (!DeleteOneChunk(chunk_list_[chunk_index]))
-    std::cout << "Chunk "<< HexSubstr(chunk_list_[chunk_index].name().value)
-              << " still exists on network" << std::endl;
-//     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  else
-    std::cout << "Chunk "<< HexSubstr(chunk_list_[chunk_index].name().value)
-              << " deleted and verified" << std::endl;
+  if (!DeleteOneChunk(chunk_list_[chunk_index])) {
+    TLOG(kRed) << "Chunk " << DebugId(chunk_list_[chunk_index].name())
+               << " still exists on network\n";
+    //     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+  } else {
+    TLOG(kGreen) << "Chunk " << DebugId(chunk_list_[chunk_index].name()) << " verified deleted\n";
+  }
 }
 
 void DataChunkStorer::TestVersion() {
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
-  std::cout << "SDV "<< HexSubstr(chunk.name().value) << std::endl;
+  LOG(kVerbose) << "SDV "<< DebugId(chunk.name()) << '\n';
 //   StoreOneChunk(chunk_list_[0]);
-//   boost::this_thread::sleep_for(boost::chrono::seconds(1));
+//   Sleep(std::chrono::seconds(1));
 //   StoreOneChunk(chunk_list_[1]);
   StructuredDataVersions::VersionName v_aaa(0, chunk_list_[0].name());
-  std::cout << "Version 0 "<< HexSubstr(chunk_list_[0].name().value) << std::endl;
+  LOG(kVerbose) << "Version 0 " << DebugId(chunk_list_[0].name());
   StructuredDataVersions::VersionName v_bbb(1, chunk_list_[1].name());
-  std::cout << "Version 1 "<< HexSubstr(chunk_list_[1].name().value) << std::endl;
+  LOG(kVerbose) << "Version 1 " << DebugId(chunk_list_[1].name());
   auto create_version_future(client_nfs_->CreateVersionTree(chunk.name(), v_aaa, 10, 20));
   try {
     create_version_future.get();
-  } catch (const maidsafe_error& error) {
-    std::cout << "error when create version tree : " << boost::diagnostic_information(error)
-              << std::endl;
+  } catch (const maidsafe_error& e) {
+    TLOG(kRed) << "Error when creating version tree: " << boost::diagnostic_information(e) << '\n';
     return;
   }
 
@@ -396,19 +392,18 @@ void DataChunkStorer::TestVersion() {
   try {
     put_version_future.get();
   } catch (const maidsafe_error& error) {
-    std::cout << "error when put version : " << boost::diagnostic_information(error) << std::endl;
+    TLOG(kRed) << "Error when putting version: " << boost::diagnostic_information(error) << '\n';
     return;
   }
   try {
     auto future(client_nfs_->GetVersions(chunk.name()));
     auto versions(future.get());
-    std::cout << "fetched latest version "<< HexSubstr(versions.front().id.value) << std::endl;
+    TLOG(kDefaultColour) << "Fetched latest version " << DebugId(versions.front().id) << '\n';
     if (versions.front().id != v_bbb.id) {
-      std::cout << "version tip is wrong" << std::endl;
+      TLOG(kRed) << "Version tip is wrong\n";
     }
   } catch(const maidsafe_error& error) {
-    std::cout << "Failed to retrieve version: " << boost::diagnostic_information(error)
-              << std::endl;
+    TLOG(kRed) << "Failed to retrieve version: " << boost::diagnostic_information(error) << '\n';
   }
 }
 
@@ -419,30 +414,30 @@ bool DataChunkStorer::Done(int32_t quantity, int32_t rounds) const {
 void DataChunkStorer::OneChunkRun(size_t& num_chunks, size_t& num_store, size_t& num_get) {
   ImmutableData::serialised_type content(NonEmptyString(RandomString(1 << 18)));  // 256 KB
   ImmutableData::Name name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
-  std::cout << "Generated chunk name : " << HexSubstr(name.value) << " with content : "
-            << HexSubstr(content->string()) << std::endl;
+  TLOG(kDefaultColour) << "Generated chunk name : " << HexSubstr(name.value) << " with content: "
+                       << HexSubstr(content->string()) << '\n';
   ImmutableData chunk_data(name, content);
   ++num_chunks;
 
   StoreOneChunk(chunk_data);
-  LOG(kInfo) << "Sleeping for network handling storing ... " << HexSubstr(name.value);
-  boost::this_thread::sleep_for(boost::chrono::seconds(2));
+  LOG(kInfo) << "Sleeping for network handling storing... " << HexSubstr(name.value);
+  Sleep(std::chrono::seconds(2));
   if (GetOneChunk(chunk_data)) {
-    std::cout << "Stored chunk " << HexSubstr(name.value) << std::endl;
+    TLOG(kGreen) << "Stored chunk " << HexSubstr(name.value) << '\n';
     ++num_store;
     ++num_get;
   } else {
-    LOG(kError) << "Failed to store chunk " << HexSubstr(name.value);
+    TLOG(kRed) << "Failed to store chunk " << HexSubstr(name.value) << '\n';
     return;
   }
 
 //  // The current client is anonymous, which incurs a 10 mins faded out for stored data
 //  LOG(kInfo) << "Going to retrieve the stored chunk";
 //  if (GetOneChunk(chunk_data)) {
-//    LOG(kInfo) << "Got chunk " << HexSubstr(name.value);
+//    TLOG(kGreen) << "Got chunk " << HexSubstr(name.value) << '\n';
 //    ++num_get;
 //  } else {
-//    LOG(kError) << "Failed to store chunk " << HexSubstr(name.value);
+//    TLOG(kRed) << "Failed to store chunk " << HexSubstr(name.value) << '\n';
 //  }
 }
 
@@ -450,29 +445,29 @@ void DataChunkStorer::OneChunkRunWithDelete(size_t& num_chunks, size_t& num_stor
                                             size_t& num_get) {
   ImmutableData::serialised_type content(NonEmptyString(RandomString(1 << 18)));  // 256 KB
   ImmutableData::Name name(Identity(crypto::Hash<crypto::SHA512>(content.data)));
-  std::cout << "Generated chunk name : " << HexSubstr(name.value) << " with content : "
-            << HexSubstr(content->string()) << std::endl;
+  TLOG(kDefaultColour) << "Generated chunk name : " << HexSubstr(name.value) << " with content: "
+                       << HexSubstr(content->string()) << '\n';
   ImmutableData chunk_data(name, content);
   ++num_chunks;
 
   StoreOneChunk(chunk_data);
-  LOG(kInfo) << "Sleeping for network handling storing ... " << HexSubstr(name.value);
-  boost::this_thread::sleep_for(boost::chrono::seconds(2));
+  LOG(kInfo) << "Sleeping for network handling storing... " << HexSubstr(name.value);
+  Sleep(std::chrono::seconds(2));
   if (GetOneChunk(chunk_data)) {
-    std::cout << "Stored chunk " << HexSubstr(name.value) << std::endl;
+    TLOG(kDefaultColour) << "Stored chunk " << HexSubstr(name.value) << '\n';
     ++num_store;
     ++num_get;
   } else {
-    LOG(kError) << "Failed to store chunk " << HexSubstr(name.value);
+    TLOG(kRed) << "Failed to store chunk " << HexSubstr(name.value) << '\n';
     return;
   }
-  LOG(kInfo) << "Sleeping for network finalise getting ... " << HexSubstr(name.value);
-  boost::this_thread::sleep_for(boost::chrono::seconds(2));
-  std::cout << "Going to delete the stored chunk" << std::endl;
+  LOG(kInfo) << "Sleeping for network to finalise getting... " << HexSubstr(name.value);
+  Sleep(std::chrono::seconds(2));
+  TLOG(kDefaultColour) << "Going to delete the stored chunk\n";
   if (DeleteOneChunk(chunk_data)) {
-    std::cout << "Delete chunk " << HexSubstr(name.value) << std::endl;
+    TLOG(kGreen) << "Deleted chunk " << HexSubstr(name.value) << '\n';
   } else {
-    LOG(kError) << "Failed to delete chunk " << HexSubstr(name.value);
+    TLOG(kRed) << "Failed to delete chunk " << HexSubstr(name.value) << '\n';
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
   }
 }
@@ -485,7 +480,7 @@ bool DataChunkStorer::GetOneChunk(const ImmutableData& chunk_data) {
   auto future = client_nfs_->Get(chunk_data.name());
   auto status(future.wait_for(boost::chrono::seconds(15)));
   if (status == boost::future_status::timeout) {
-    LOG(kWarning) << "Failed when trying to get chunk " << HexSubstr(chunk_data.name().value);
+    LOG(kWarning) << "Failed when trying to get chunk " << DebugId(chunk_data.name());
     return false;
   }
   LOG(kVerbose) << "Compare fetched data";
@@ -499,10 +494,10 @@ bool DataChunkStorer::GetOneChunk(const ImmutableData& chunk_data) {
 }
 
 bool DataChunkStorer::DeleteOneChunk(const ImmutableData& chunk_data) {
-  LOG(kInfo) << "Deleting chunk " << HexSubstr(chunk_data.name().value) << " ...";
+  LOG(kInfo) << "Deleting chunk " << DebugId(chunk_data.name()) << " ...";
   client_nfs_->Delete(chunk_data.name());
-  LOG(kInfo) << "Sleeping for network handling deleting ... " << HexSubstr(chunk_data.name().value);
-  boost::this_thread::sleep_for(boost::chrono::seconds(2));
+  LOG(kInfo) << "Sleeping for network handling deleting ... " << DebugId(chunk_data.name());
+  Sleep(std::chrono::seconds(2));
   LOG(kInfo) << "Going to retrieve the deleted chunk";
   return !GetOneChunk(chunk_data);
 }
@@ -532,13 +527,13 @@ void DataChunkStorer::LoadChunksFromFiles() {
 //   std::vector<test::TestPath> client_paths;
 //   std::vector<std::unique_ptr<pcs::RemoteChunkStore>> rcs;
 //   for (size_t i = 2; i < 2 + kNumClients; ++i) {
-//     std::cout << "Setting up client " << (i - 1) << " ..." << std::endl;
+//     std::cout << "Setting up client " << (i - 1) << " ...\n";
 //     std::unique_ptr<pd::Node> client(new pd::Node);
 //     client_paths.push_back(test::CreateTestPath("MaidSafe_Test_KeysHelper"));
 //     client->set_account_name(all_keys[i].first.identity);
 //     client->set_fob(all_keys[i].first);
 //     if (client->Start(*client_paths.back(), peer_endpoints) != 0) {
-//       std::cout << "Failed to start client " << (i - 1) << std::endl;
+//       std::cout << "Failed to start client " << (i - 1) << '\n';
 //       return false;
 //     }
 //     rcs.push_back(std::move(std::unique_ptr<pcs::RemoteChunkStore>(new pcs::RemoteChunkStore(
@@ -665,7 +660,7 @@ void DataChunkStorer::LoadChunksFromFiles() {
 //   }();
 //   for (int stage = 0; stage < 9; ++stage) {
 //     std::cout << "Processing test stage " << (stage + 1) << ": " << kStageDescriptions[stage]
-//               << "..." << std::endl;
+//               << "...\n";
 //     for (auto& rcs_it : rcs)
 //       rcs_it->Clear();
 //     auto start_time = boost::posix_time::microsec_clock::local_time();
@@ -716,7 +711,7 @@ void DataChunkStorer::LoadChunksFromFiles() {
 //     size_t ops_diff = total_ops - succeeded_ops;
 //     std::cout << "Stage " << (stage + 1) << ": " << kStageDescriptions[stage] << " - "
 //               << (ops_diff == prev_ops_diff ? "SUCCEEDED" : "FAILED") << " ("
-//               << (end_time - start_time) << ")" << std::endl;
+//               << (end_time - start_time) << ")\n";
 //     prev_ops_diff = ops_diff;
 //   }
 //
@@ -724,7 +719,7 @@ void DataChunkStorer::LoadChunksFromFiles() {
 //     client->Stop();
 //
 //   std::cout << "Extended test completed " << succeeded_ops << " of " << total_ops
-//             << " operations for " << kNumChunks << " chunks successfully." << std::endl;
+//             << " operations for " << kNumChunks << " chunks successfully.\n";
 //   return succeeded_ops == total_ops;
 // }
 

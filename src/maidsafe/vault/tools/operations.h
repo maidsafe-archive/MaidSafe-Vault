@@ -86,12 +86,6 @@ class ClientTester {
                bool register_pmid_for_client);
 
  protected:
-  // TODO(Dan): Remove the typedefs
-  // I've put these because the Qt Creator parser is still missing >> recognition except when
-  // it refers to the operator and that invalidates the parsing moving forward, which is annoying.
-  typedef std::promise<bool> BoolPromise;
-  typedef std::future<bool> BoolFuture;
-
   template <typename SigningData>
   bool EqualKeys(const SigningData& lhs, const SigningData& rhs) {
     return lhs.name() == rhs.name() && asymm::MatchingKeys(lhs.public_key(), rhs.public_key());

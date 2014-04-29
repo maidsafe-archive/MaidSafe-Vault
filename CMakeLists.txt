@@ -64,6 +64,7 @@ ms_glob_dir(PmidManagerTests ${VaultSourcesDir}/pmid_manager/tests "Tests")
 ms_glob_dir(PmidNodeTests ${VaultSourcesDir}/pmid_node/tests "Tests")
 ms_glob_dir(VersionHandlerTests ${VaultSourcesDir}/version_handler/tests "Tests")
 ms_glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
+
 set(TestsMain ${VaultSourcesDir}/tests/tests_main.cc)
 
 set(VaultGTestsAllFiles ${VaultTestsAllFiles})
@@ -119,7 +120,7 @@ else()
   add_custom_target(vault_protobuf_files_generator DEPENDS ${AllProtos}
                     COMMENT "Generated all vault protocol buffer files.")
 endif()
-set_target_properties(vault_protobuf_files_generator PROPERTIES LABELS Vault FOLDER "MaidSafe/Libraries")
+set_target_properties(vault_protobuf_files_generator PROPERTIES LABELS Vault FOLDER "MaidSafe/Libraries/Vault")
 
 set(VaultPersonaLibs
     maidsafe_vault_cache_handler
@@ -167,26 +168,30 @@ if(MaidsafeTesting)
   target_compile_options(maidsafe_vault_mal PUBLIC $<$<AND:$<BOOL:${MSVC}>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>:/wd4702>)
   target_link_libraries(maidsafe_vault_mal maidsafe_nfs_vault leveldb)
   target_compile_definitions(maidsafe_vault_mal PRIVATE USE_MAL_BEHAVIOUR)
-  ms_add_executable(vault_mal Production ${VaultSourcesDir}/vault_main.cc)
+
+  ms_add_executable(vault_mal "Tools/Vault" ${VaultSourcesDir}/vault_main.cc)
   target_include_directories(vault_mal PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
   target_link_libraries(vault_mal maidsafe_vault_mal)
   target_compile_definitions(vault_mal PRIVATE USE_MAL_BEHAVIOUR)
+  set_target_properties(maidsafe_vault_mal vault_mal PROPERTIES EXCLUDE_FROM_ALL ON EXCLUDE_FROM_DEFAULT_BUILD ON)
 
   ms_add_executable(test_vault "Tests/Vault" ${VaultTestsAllFiles})
   target_include_directories(test_vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
   target_link_libraries(test_vault maidsafe_vault)
+
   ms_add_executable(TESTvault "Tests/Vault" ${VaultGTestsAllFiles})
   target_include_directories(TESTvault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
   target_link_libraries(TESTvault maidsafe_vault)
+
   ms_add_executable(TESTvault_network "Tests/Vault" ${VaultNetworkTestFiles})
   target_include_directories(TESTvault_network PRIVATE ${PROJECT_SOURCE_DIR}/src
                                                        ${PROJECT_BINARY_DIR}/generated_message_types
                                                        ${VaultSourcesDir}/tests)
   target_link_libraries(TESTvault_network maidsafe_vault)
-  ms_add_executable(vault_key_helper "Tools/Vault" ${VaultToolsAllFiles})
-  target_include_directories(vault_key_helper PRIVATE ${PROJECT_SOURCE_DIR}/src)
-  target_link_libraries(vault_key_helper maidsafe_nfs_vault)
-  set_target_properties(maidsafe_vault_mal vault_mal PROPERTIES EXCLUDE_FROM_ALL ON EXCLUDE_FROM_DEFAULT_BUILD ON)
+
+  ms_add_executable(local_network_controller "Tools/Vault" ${VaultToolsAllFiles})
+  target_include_directories(local_network_controller PRIVATE ${PROJECT_SOURCE_DIR}/src)
+  target_link_libraries(local_network_controller maidsafe_nfs_vault)
 endif()
 
 ms_rename_outdated_built_exes()

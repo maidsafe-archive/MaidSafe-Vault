@@ -17,24 +17,25 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/common/error.h"
+#include "maidsafe/common/log.h"
 
 #include "maidsafe/vault/tools/commander.h"
 
 int main(int argc, char* argv[]) {
   maidsafe::log::Logging::Instance().Initialise(argc, argv);
 
-  std::cout << maidsafe::vault::tools::kHelperVersion << std::endl;
+  TLOG(kDefaultColour) << maidsafe::vault::tools::kHelperVersion << '\n';
 
   try {
     maidsafe::vault::tools::Commander commander(12);
     commander.AnalyseCommandLineOptions(argc, argv);
   }
   catch (const maidsafe::maidsafe_error& error) {
-    std::cout << "Error: " << boost::diagnostic_information(error) << std::endl;
+    TLOG(kDefaultColour) << "Error: " << boost::diagnostic_information(error) << '\n';
     return -1;
   }
   catch (...) {
-    std::cout << "Unexpected exception." << std::endl;
+    TLOG(kDefaultColour) << "Unexpected exception.\n";
     return -2;
   }
 

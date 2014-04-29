@@ -172,9 +172,9 @@ void Commander::CheckOptionValidity(po::options_description& cmdline_options, in
     peer_endpoints_.push_back(GetBootstrapEndpoint(variables_map.at("peer").as<std::string>()));
 
   if (variables_map.count("help") || selected_ops_.InvalidOptions(variables_map, peer_endpoints_)) {
-    std::cout << cmdline_options << "Options order: [c|l|d] p [b|(s|v)|t]" << std::endl;
+    TLOG(kDefaultColour) << cmdline_options << "Options order: [c|l|d] p [b|(s|v)|t]\n";
     if (!variables_map.count("help")) {
-      std::cout << "Invalid command line options.\n";
+      TLOG(kRed) << "Invalid command line options.\n";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
   }
@@ -215,9 +215,9 @@ void Commander::CreateKeys() {
   }
   LOG(kInfo) << "Created " << all_keychains_.size() << " pmids.";
   if (maidsafe::passport::detail::WriteKeyChainList(keys_path_, all_keychains_)) {
-    std::cout << "Wrote keys to " << keys_path_ << '\n';
+    TLOG(kDefaultColour) << "Wrote keys to " << keys_path_ << '\n';
   } else {
-    std::cout << "Could not write keys to " << keys_path_ << '\n';
+    TLOG(kRed) << "Could not write keys to " << keys_path_ << '\n';
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 }
@@ -235,11 +235,12 @@ void Commander::HandleKeyOperations() {
   }
 
   if (selected_ops_.do_print) {
-    for (size_t i(0); i < all_keychains_.size(); ++i)
-      std::cout << '\t' << i << "\t ANMAID " << HexSubstr(all_keychains_.at(i).anmaid.name().value)
-                << "\t MAID " << HexSubstr(all_keychains_.at(i).maid.name().value) << "\t PMID "
-                << HexSubstr(all_keychains_.at(i).pmid.name().value)
-                << (i < 2 ? " (bootstrap)" : "") << std::endl;
+    for (size_t i(0); i < all_keychains_.size(); ++i) {
+      TLOG(kDefaultColour) << '\t' << i << "\t ANMAID "
+          << DebugId(all_keychains_.at(i).anmaid.name()) << "\t MAID "
+          << DebugId(all_keychains_.at(i).maid.name()) << "\t PMID "
+          << DebugId(all_keychains_.at(i).pmid.name()) << (i < 2 ? " (bootstrap)\n" : "\n");
+    }
   }
 }
 
@@ -263,10 +264,10 @@ void Commander::HandleStorePublicKeys(size_t client_index) {
                      pmids_from_file_, all_keychains_);
     storer.Store();
   } catch (const std::exception& e) {
-    std::cout << "Failed storing key chain : " << boost::diagnostic_information(e) << std::endl;
+    TLOG(kRed) << "Failed storing key chain : " << boost::diagnostic_information(e) << '\n';
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
-  std::cout << "Keys Stored" << std::endl;
+  TLOG(kDefaultColour) << "Keys Stored\n";
 }
 
 void Commander::HandleVerifyStoredPublicKeys(size_t /*client_index*/) {
@@ -277,14 +278,14 @@ void Commander::HandleVerifyStoredPublicKeys(size_t /*client_index*/) {
       verifier.Verify();
     }
     catch (const std::exception& e) {
-      std::cout << "Failed verifying key chain with PMID " << HexSubstr(keychain.pmid.name().value)
-                << ": " << boost::diagnostic_information(e) << '\n';
+      TLOG(kRed) << "Failed verifying key chain with PMID " << DebugId(keychain.pmid.name())
+                 << ": " << boost::diagnostic_information(e) << '\n';
       ++failures;
     }
   }
   if (failures) {
-    std::cout << "Could not verify " << std::to_string(failures) << " out of "
-              << std::to_string(all_keychains_.size()) << '\n';
+    TLOG(kRed) << "Could not verify " << std::to_string(failures) << " out of "
+               << std::to_string(all_keychains_.size()) << '\n';
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 }
@@ -358,7 +359,7 @@ void Commander::HandleGenerateChunks() {
 
 void Commander::HandleDeleteKeyFile() {
   if (fs::remove(keys_path_))
-    std::cout << "Deleted " << keys_path_ << std::endl;
+    TLOG(kDefaultColour) << "Deleted " << keys_path_ << '\n';
 }
 
 }  // namespace tools

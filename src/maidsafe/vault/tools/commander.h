@@ -29,7 +29,7 @@
 
 #include "maidsafe/common/config.h"
 
-#include "maidsafe/vault/tools/key_helper_operations.h"
+#include "maidsafe/vault/tools/operations.h"
 
 namespace maidsafe {
 

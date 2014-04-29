@@ -39,7 +39,7 @@
 #include "maidsafe/routing/parameters.h"
 #include "maidsafe/routing/return_codes.h"
 
-// #include "maidsafe/client_manager/vault_controller.h"
+// #include "maidsafe/vault_manager/vault_interface.h"
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/vault.h"
@@ -125,11 +125,11 @@ void RunVault(po::variables_map& variables_map) {
 #endif
   std::string vmid(variables_map.count("vmid") == 0 ? "test"
                                                     : variables_map.at("vmid").as<std::string>());
-  // client_manager::VaultController vault_controller(vmid, [] {
+  // vault_manager::VaultInterface vault_interface(vmid, [] {
   //  g_ctrlc_pressed.store(true);
   //  g_cond_var.notify_one();
   // });
-  // if (vmid != "test" && !vault_controller.GetIdentity(pmid, peer_endpoints)) {
+  // if (vmid != "test" && !vault_interface.GetIdentity(pmid, peer_endpoints)) {
   //  std::cout << "Failed to get ID from VC" << std::endl;
   //  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   // }
@@ -241,7 +241,7 @@ void ActOnOptions(int argc, char* argv[]) {
 }  // namespace maidsafe
 
 // this should
-// 1: Start a vault_controller
+// 1: Start a vault_interface
 // 2: start vault object
 // All additional code should be refactored to the 40 line limit and
 // placed behind ifdef TESTING
