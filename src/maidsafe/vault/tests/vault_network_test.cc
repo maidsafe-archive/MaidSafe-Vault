@@ -74,6 +74,8 @@ TEST_F(VaultNetworkTest, FUNC_PutGetDelete) {
   clients_[0]->nfs_->Delete<ImmutableData::Name>(data.name());
   Sleep(std::chrono::seconds(2));
 
+  routing::Parameters::caching = false;
+
   future = clients_[0]->nfs_->Get<ImmutableData::Name>(data.name(), std::chrono::seconds(5));
   try {
     future.get();
@@ -185,6 +187,8 @@ TEST_F(VaultNetworkTest, FUNC_PutMultipleCopies) {
 
   LOG(kVerbose) << "2nd Delete the chunk";
 
+  routing::Parameters::caching = false;
+
   EXPECT_THROW(Get<ImmutableData>(data.name()), maidsafe_error) << "Should have failed to retreive";
 
   LOG(kVerbose) << "PutMultipleCopies Succeeds";
@@ -195,18 +199,19 @@ TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
   for (int index(0); index < clients; ++index)
     EXPECT_TRUE(AddClient(true));
   LOG(kVerbose) << "Clients joined...";
-  const size_t kIterations(50);
+  const size_t kIterations(10);
   std::vector<ImmutableData> chunks;
   for (auto index(kIterations); index > 0; --index)
     chunks.emplace_back(NonEmptyString(RandomString(1024)));
 
   for (const auto& chunk : chunks) {
+    LOG(kVerbose) << "Storing: " << DebugId(chunk.name());
     clients_[RandomInt32() % clients]->nfs_->Put(chunk);
     Sleep(std::chrono::milliseconds(500));
   }
 
   LOG(kVerbose) << "Chunks are sent to be stored...";
-  Sleep(std::chrono::seconds(10));
+  Sleep(std::chrono::seconds(2));
   LOG(kVerbose) << "After sleep";
 
   std::vector<boost::future<ImmutableData>> get_futures;
