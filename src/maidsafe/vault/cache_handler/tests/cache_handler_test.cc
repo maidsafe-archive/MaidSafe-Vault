@@ -42,7 +42,7 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToMaidNode) {
 
   Sleep(std::chrono::seconds(1));
 
-  NfsMessage nfs_message(message_id, typename NfsMessage::Contents(data));
+  NfsMessage nfs_message(message_id, NfsMessage::Contents(data));
   RoutingMessage message(
       nfs_message.Serialise(),
       routing::GroupSource(routing::GroupId(NodeId(data.name().value.string())),
@@ -78,7 +78,7 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToMaidNode) {
 
   Sleep(std::chrono::seconds(1));
 
-  NfsMessage nfs_message(message_id, typename NfsMessage::Contents(data));
+  NfsMessage nfs_message(message_id, NfsMessage::Contents(data));
   RoutingMessage message(
       nfs_message.Serialise(),
       routing::SingleSource(routing::SingleId(kNodeId(0))),
@@ -113,7 +113,7 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToDataGetter) {
 
   Sleep(std::chrono::seconds(1));
 
-  NfsMessage nfs_message(message_id, typename NfsMessage::Contents(data));
+  NfsMessage nfs_message(message_id, NfsMessage::Contents(data));
   RoutingMessage message(
       nfs_message.Serialise(),
       routing::GroupSource(routing::GroupId(NodeId(data.name().value.string())),
@@ -149,7 +149,7 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToDataGetter) {
 
   Sleep(std::chrono::seconds(1));
 
-  NfsMessage nfs_message(message_id, typename NfsMessage::Contents(data));
+  NfsMessage nfs_message(message_id, NfsMessage::Contents(data));
   RoutingMessage message(
       nfs_message.Serialise(),
       routing::SingleSource(routing::SingleId(kNodeId(0))),
@@ -185,7 +185,7 @@ TEST_F(CacheHandlerTest, FUNC_NonCacheableData) {
 
   Sleep(std::chrono::seconds(1));
 
-  NfsMessage nfs_message(message_id, typename NfsMessage::Contents(public_anmaid));
+  NfsMessage nfs_message(message_id, NfsMessage::Contents(public_anmaid));
   RoutingMessage message(
       nfs_message.Serialise(),
       routing::SingleSource(routing::SingleId(kNodeId(0))),
