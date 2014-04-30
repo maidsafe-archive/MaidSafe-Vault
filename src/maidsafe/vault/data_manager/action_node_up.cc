@@ -52,9 +52,10 @@ std::string ActionDataManagerNodeUp::Serialise() const {
 
 detail::DbAction ActionDataManagerNodeUp::operator()(std::unique_ptr<DataManagerValue>& value) {
   if (value) {
-    value->SetPmidOnline(kPmidName);
+    value->AddPmid(kPmidName);
     return detail::DbAction::kPut;
   }
+//   LOG(kError) << "ActionDataManagerNodeUp::operator() no element";
   BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 }
 

@@ -389,8 +389,15 @@ void DataManagerService::HandleMessage(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
-        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit pmid goes online";
-        db_.Commit(resolved_action->key, resolved_action->action);
+        LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager commit pmid goes online "
+                      << " for chunk " << HexSubstr(resolved_action->key.name.string())
+                      << " and pmid_node " << HexSubstr(resolved_action->action.kPmidName->string());
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+        } catch(maidsafe_error& error) {
+          LOG(kWarning) << "having error when trying to commit set pmid up to db : "
+                        << boost::diagnostic_information(error);
+        }
       }
       break;
     }

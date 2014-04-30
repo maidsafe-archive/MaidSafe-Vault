@@ -290,7 +290,10 @@ typename GroupDb<Persona>::TransferInfo GroupDb<Persona>::GetTransferInfo(
       if (check_holder_result.new_holders.size() != 0) {
         LOG(kVerbose) << "GroupDb<Persona>::GetTransferInfo having new node "
                       << DebugId(check_holder_result.new_holders.at(0));
-        assert(check_holder_result.new_holders.size() == 1);
+//         assert(check_holder_result.new_holders.size() == 1);
+        if (check_holder_result.new_holders.size() != 1)
+          LOG(kError) << "having " << check_holder_result.new_holders.size()
+                      << " new holders, only the first one got processed";
         auto found_itr = transfer_info.find(check_holder_result.new_holders.at(0));
         if (found_itr != transfer_info.end()) {  // Add to map
           found_itr->second.push_back(GetContents(group_itr));
