@@ -35,6 +35,7 @@
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/nfs/message_types.h"
 
+#include "maidsafe/vault/account_transfer.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/sync.h"
@@ -122,6 +123,14 @@ class VersionHandlerService {
                                uint32_t max_versions, uint32_t max_branches,
                                nfs::MessageId message_id);
 
+  void TransferAccount(const NodeId& dest,
+                       const std::vector<Db<VersionHandler::Key,
+                                            VersionHandler::Value>::KvPair>& accounts);
+
+  void HandleAccountTransfer(
+      std::unique_ptr<VersionHandler::UnresolvedAccountTransfer>&& resolved_action);
+
+
   typedef boost::mpl::vector<> InitialType;
   typedef boost::mpl::insert_range<InitialType,
                                    boost::mpl::end<InitialType>::type,
@@ -137,13 +146,15 @@ class VersionHandlerService {
  private:
   routing::Routing& routing_;
   VersionHandlerDispatcher dispatcher_;
-  std::mutex accumulator_mutex_;
+  std::mutex accumulator_mutex_, matrix_change_mutex_;
   Accumulator<Messages> accumulator_;
+  routing::MatrixChange matrix_change_;
   Db<VersionHandler::Key, VersionHandler::Value> db_;
   const NodeId kThisNodeId_;
   Sync<VersionHandler::UnresolvedCreateVersionTree> sync_create_version_tree_;
   Sync<VersionHandler::UnresolvedPutVersion> sync_put_versions_;
   Sync<VersionHandler::UnresolvedDeleteBranchUntilFork> sync_delete_branch_until_fork_;
+  AccountTransfer<VersionHandler::UnresolvedAccountTransfer> account_transfer_;
 };
 
 template <typename MessageType>
@@ -206,6 +217,13 @@ void VersionHandlerService::HandleMessage(
     const SynchroniseFromVersionHandlerToVersionHandler& message,
     const typename SynchroniseFromVersionHandlerToVersionHandler::Sender& sender,
     const typename SynchroniseFromVersionHandlerToVersionHandler::Receiver& receiver);
+
+template <>
+void VersionHandlerService::HandleMessage(
+    const AccountTransferFromVersionHandlerToVersionHandler& message,
+    const typename AccountTransferFromVersionHandlerToVersionHandler::Sender& sender,
+    const typename AccountTransferFromVersionHandlerToVersionHandler::Receiver& receiver);
+
 
 template <typename RequestorType>
 void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& key,

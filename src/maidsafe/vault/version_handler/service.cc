@@ -36,6 +36,7 @@
 #include "maidsafe/vault/unresolved_action.pb.h"
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/version_handler/action_put.h"
+#include "maidsafe/vault/version_handler/version_handler.pb.h"
 
 namespace maidsafe {
 
@@ -61,12 +62,15 @@ VersionHandlerService::VersionHandlerService(const passport::Pmid& pmid,
     : routing_(routing),
       dispatcher_(routing),
       accumulator_mutex_(),
+      matrix_change_mutex_(),
       accumulator_(),
+      matrix_change_(),
       db_(),
       kThisNodeId_(routing_.kNodeId()),
       sync_create_version_tree_(NodeId(pmid.name()->string())),
       sync_put_versions_(NodeId(pmid.name()->string())),
-      sync_delete_branch_until_fork_(NodeId(pmid.name()->string())) {}
+      sync_delete_branch_until_fork_(NodeId(pmid.name()->string())),
+      account_transfer_() {}
 
 template<>
 void VersionHandlerService::HandleMessage(
@@ -355,8 +359,63 @@ void VersionHandlerService::DoSync(const UnresolvedAction& unresolved_action) {
 //  return NonEmptyString(proto_unresolved_entries.SerializeAsString());
 // }
 
+template <>
+void VersionHandlerService::HandleMessage(
+    const AccountTransferFromVersionHandlerToVersionHandler& message,
+    const typename AccountTransferFromVersionHandlerToVersionHandler::Sender& sender,
+    const typename AccountTransferFromVersionHandlerToVersionHandler::Receiver& /*receiver*/) {
+  LOG(kInfo) << "VersionHandler received account from " << DebugId(sender.sender_id);
+  VersionHandler::UnresolvedAccountTransfer unresolved_account_transfer(message.contents->data);
+  auto resolved_action(account_transfer_.AddUnresolvedAction(
+      unresolved_account_transfer, sender,
+      AccountTransfer<VersionHandler::UnresolvedAccountTransfer>::AddRequestChecker(
+          routing::Parameters::group_size / 2)));
+  if (resolved_action) {
+    LOG(kInfo) << "AccountTransferFromVersionHandlerToVersionHandler handle account transfer";
+    this->HandleAccountTransfer(std::move(resolved_action));
+  }
+}
+
+void VersionHandlerService::HandleAccountTransfer(
+    std::unique_ptr<VersionHandler::UnresolvedAccountTransfer>&& resolved_action) {
+  std::vector<std::pair<VersionHandler::Key, VersionHandler::Value>> kv_pairs;
+  for (auto& action : resolved_action->actions) {
+    try {
+      protobuf::VersionHandlerKeyValuePair kv_msg;
+      if (kv_msg.ParseFromString(action)) {
+        LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
+        VersionHandler::Key key(kv_msg.key());
+        GLOG() << "VersionHandler got account " << HexSubstr(key.name.string())
+               << " transferred";
+        LOG(kVerbose) << "HandleAccountTransfer key parsed";
+        VersionHandlerValue value(kv_msg.value());
+        LOG(kVerbose) << "HandleAccountTransfer vaule parsed";
+        kv_pairs.push_back(std::make_pair(key, std::move(value)));
+      }
+    } catch(...) {
+      LOG(kError) << "HandleAccountTransfer can't parse the action";
+    }
+  }
+  db_.HandleTransfer(kv_pairs);
+}
+
 void VersionHandlerService::HandleChurnEvent(
-    std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {
+    std::shared_ptr<routing::MatrixChange> matrix_change) {
+//   LOG(kVerbose) << "HandleChurnEvent matrix_change_ containing following info before : ";
+//   matrix_change_.Print();
+  std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+//   LOG(kVerbose) << "HandleChurnEvent matrix_change containing following info : ";
+//   matrix_change->Print();
+  matrix_change_ = *matrix_change;
+
+  Db<VersionHandler::Key, VersionHandler::Value>::TransferInfo transfer_info(
+      db_.GetTransferInfo(matrix_change));
+  for (auto& transfer : transfer_info)
+    TransferAccount(transfer.first, transfer.second);
+//   LOG(kVerbose) << "HandleChurnEvent matrix_change_ containing following info after : ";
+//   matrix_change_.Print();
+
+
 //  auto record_names(version_handler_db_.GetKeys());
 //  auto itr(std::begin(record_names));
 //  while (itr != std::end(record_names)) {
@@ -383,7 +442,30 @@ void VersionHandlerService::HandleChurnEvent(
 //  }
 // TODO(Prakash):  modify ReplaceNodeInSyncList to be called once with vector of tuple/struct
 // containing record name, old_holders, new_holders.
-  assert(0);
+}
+
+void VersionHandlerService::TransferAccount(const NodeId& dest,
+    const std::vector<Db<VersionHandler::Key, VersionHandler::Value>::KvPair>& accounts) {
+  // If account just received, shall not pass it out as may under a startup procedure
+  // i.e. existing DM will be seen as new_node in matrix_change
+  if (account_transfer_.CheckHandled(routing::GroupId(routing_.kNodeId()))) {
+    LOG(kWarning) << "VersionHandler account just received";
+    return;
+  }
+  std::vector<std::string> actions;
+  for (auto& account : accounts) {
+    GLOG() << "VersionHandler transfer account " << HexSubstr(account.first.name.string())
+           << " to " << DebugId(dest);
+    protobuf::DataManagerKeyValuePair kv_msg;
+    kv_msg.set_key(account.first.Serialise());
+    kv_msg.set_value(account.second.Serialise());
+    actions.push_back(kv_msg.SerializeAsString());
+  }
+  nfs::MessageId message_id(HashStringToMessageId(dest.string()));
+  VersionHandler::UnresolvedAccountTransfer account_transfer(
+      passport::PublicPmid::Name(Identity(dest.string())), message_id, actions);
+  LOG(kVerbose) << "VersionHandlerService::TransferAccount send account_transfer";
+  dispatcher_.SendAccountTransfer(dest, message_id, account_transfer.Serialise());
 }
 
 // void VersionHandlerService::HandleChurnEvent(const NodeId& /*old_node*/,

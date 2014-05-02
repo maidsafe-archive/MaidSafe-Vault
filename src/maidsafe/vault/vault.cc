@@ -174,7 +174,7 @@ void Vault::OnMatrixChanged(std::shared_ptr<routing::MatrixChange> matrix_change
 //   matrix_change->Print();
 //   data_manager_service_.HandleChurnEvent(matrix_change);
   asio_service_.service().post([=] { maid_manager_service_.HandleChurnEvent(matrix_change); });
-//  asio_service_.service().post([=] { version_handler_service_.HandleChurnEvent(matrix_change); });
+  asio_service_.service().post([=] { version_handler_service_.HandleChurnEvent(matrix_change); });
   asio_service_.service().post([=] { data_manager_service_.HandleChurnEvent(matrix_change); });
   asio_service_.service().post([=] { pmid_manager_service_.HandleChurnEvent(matrix_change); });
 }
