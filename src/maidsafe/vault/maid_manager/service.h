@@ -500,11 +500,12 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
 template <typename Data>
 void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
                                            const typename Data::Name& data_name,
-                                           int32_t cost, nfs::MessageId /*message_id*/) {
+                                           int32_t cost, nfs::MessageId message_id) {
   LOG(kVerbose) << "MaidManagerService::HandlePutResponse to maid "
                 << HexSubstr(maid_name->string())
                 << " for data name " << HexSubstr(data_name.value)
                 << " taking cost of " << cost;
+  dispatcher_.SendPutResponse(maid_name, maidsafe_error(CommonErrors::success), message_id);
   typename MaidManager::Key group_key(typename MaidManager::GroupName(maid_name.value),
                                       data_name, Data::Tag::kValue);
   DoSync(typename MaidManager::UnresolvedPut(group_key,

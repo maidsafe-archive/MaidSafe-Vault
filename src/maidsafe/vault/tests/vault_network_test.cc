@@ -59,9 +59,16 @@ TEST_F(VaultNetworkTest, FUNC_MultipleClientsJoin) {
 TEST_F(VaultNetworkTest, FUNC_PutGetDelete) {
   EXPECT_TRUE(AddClient(true));
   ImmutableData data(NonEmptyString(RandomString(1024)));
-  clients_[0]->nfs_->Put(data);
-  Sleep(std::chrono::seconds(2));
+  LOG(kVerbose) << "Before put";
+  auto put_future(clients_[0]->nfs_->Put(data));
+  try {
+    put_future.get();
+  }
+  catch (...) {
+    EXPECT_TRUE(false) << "Failed to put: " << DebugId(NodeId(data.name()->string()));
+  }
 
+  LOG(kVerbose) << "After put";
   auto future(clients_[0]->nfs_->Get<ImmutableData::Name>(data.name(), std::chrono::seconds(5)));
   try {
     auto retrieved(future.get());

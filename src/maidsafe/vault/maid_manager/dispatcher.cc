@@ -30,6 +30,19 @@ MaidManagerDispatcher::MaidManagerDispatcher(routing::Routing& routing,
                                              const passport::Pmid& signing_fob)
     : routing_(routing), kSigningFob_(signing_fob) {}
 
+void MaidManagerDispatcher::SendPutResponse(const MaidName& maid_name,
+                                            const maidsafe_error& result,
+                                            nfs::MessageId message_id) {
+  typedef nfs::PutResponseFromMaidManagerToMaidNode NfsMessage;
+  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
+  CheckSourcePersonaType<NfsMessage>();
+  NfsMessage nfs_message(message_id, nfs_client::ReturnCode(result));
+  RoutingMessage message(nfs_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
+                         NfsMessage::Receiver(NodeId(maid_name)));
+  routing_.Send(message);
+}
+
 void MaidManagerDispatcher::SendDeleteRequest(const MaidName& account_name,
                                               const nfs_vault::DataName &data_name,
                                               nfs::MessageId message_id) {
