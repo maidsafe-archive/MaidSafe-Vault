@@ -519,6 +519,8 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
     }
     // TODO(Fraser#5#): 2013-10-03 - Request for non-existent data should possibly generate an alert
     LOG(kWarning) << "Entry for " << HexSubstr(data_name.value) << " doesn't exist.";
+    dispatcher_.SendGetResponseFailure(requestor, data_name,
+                                       maidsafe_error(CommonErrors::no_such_element), message_id);
     return;
   }
 
