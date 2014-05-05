@@ -24,7 +24,10 @@
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/visualiser_log.h"
+#include "maidsafe/nfs/types.h"
 
+#include "maidsafe/vault/types.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 
 namespace maidsafe {
@@ -70,7 +73,8 @@ std::string MaidManagerValue::Serialise() const {
 
 void MaidManagerValue::Put(int32_t cost) {
   ++count_;
-  GLOG() << "MaidManager increase count to " << count_;
+  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kIncreaseCount, Identity{})
+      << "Increase to " << count_;
   total_cost_ += cost;
 }
 
@@ -79,6 +83,8 @@ int32_t MaidManagerValue::Delete() {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
   auto average_cost(total_cost_ / count_);
   --count_;
+  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kDecreaseCount, Identity{})
+      << "Decrease to " << count_;
   total_cost_ -= average_cost;
   assert(std::numeric_limits<int32_t>::max() >= average_cost);
   return static_cast<int32_t>(average_cost);
@@ -86,13 +92,15 @@ int32_t MaidManagerValue::Delete() {
 
 void MaidManagerValue::IncrementCount() {
   ++count_;
-  GLOG() << "MaidManager increase count to " << count_;
+  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kIncreaseCount, Identity{})
+      << "Increase to " << count_;
 }
 
 void MaidManagerValue::DecrementCount() {
   assert((count_ > 0) && "Reference count must be > 0 for Decrement operation");
   --count_;
-  GLOG() << "MaidManager increase count to " << count_;
+  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kDecreaseCount, Identity{})
+      << "Decrease to " << count_;
 }
 
 void swap(MaidManagerValue& lhs, MaidManagerValue& rhs) {

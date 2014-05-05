@@ -18,6 +18,7 @@
 
 #include "maidsafe/vault/vault.h"
 
+#include "maidsafe/common/log.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/routing/node_info.h"
 
@@ -64,6 +65,7 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
 {
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
   InitRouting(peer_endpoints);
+  log::Logging::Instance().SetVlogPrefix(DebugId(pmid.name().value));
 }
 
 Vault::~Vault() {

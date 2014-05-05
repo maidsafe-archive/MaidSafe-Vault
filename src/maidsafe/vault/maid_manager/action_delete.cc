@@ -18,6 +18,8 @@
 
 #include "maidsafe/vault/maid_manager/action_delete.h"
 
+#include "maidsafe/common/visualiser_log.h"
+
 #include "maidsafe/vault/maid_manager/action_delete.pb.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/value.h"
@@ -55,7 +57,8 @@ detail::DbAction ActionMaidManagerDelete::operator()(
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 
   metadata.DeleteData(value->Delete());
-  GLOG() << "MaidManager decrease count to " << value->count();
+  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kDecreaseCount, Identity{})
+      << "Decrease to " << value->count();
   assert(value->count() >= 0);
   if (value->count() == 0)
     return detail::DbAction::kDelete;

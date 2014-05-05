@@ -24,6 +24,7 @@
 #include <string>
 
 #include "maidsafe/common/types.h"
+#include "maidsafe/common/visualiser_log.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
 
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
@@ -47,7 +48,8 @@ class DataManagerValue {
   void RemovePmid(const PmidName& pmid_name);
   void IncrementSubscribers() {
     ++subscribers_;
-    GLOG() << "DataManager increase subscribers to " << subscribers_;
+    VLOG(nfs::Persona::kDataManager, VisualiserAction::kIncreaseSubscribers, Identity{})
+        << "Increase to " << subscribers_;
   }
   int64_t DecrementSubscribers();
   void SetPmidOnline(const PmidName& pmid_name);

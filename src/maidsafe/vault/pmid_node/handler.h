@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 
+#include "maidsafe/common/visualiser_log.h"
 #include "maidsafe/common/data_stores/data_store.h"
 #include "maidsafe/common/data_stores/permanent_store.h"
 #include "maidsafe/common/data_stores/data_buffer.h"
@@ -65,7 +66,7 @@ Data PmidNodeHandler::Get(const typename Data::Name& data_name) {
 
 template <typename Data>
 void PmidNodeHandler::Put(const Data& data) {
-  GLOG() << "PmidNode storing chunk " << HexSubstr(data.name().value.string());
+  VLOG(nfs::Persona::kPmidNode, VisualiserAction::kStoreChunk, data.name().value);
   permanent_data_store_.Put(DataNameVariant(data.name()), data.Serialise().data);
 }
 
