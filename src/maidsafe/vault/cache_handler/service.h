@@ -84,7 +84,8 @@ class CacheHandlerService {
   void CacheStore(const Data& data, IsShortTermCacheable);
 
   template <typename Data, typename RequestorType>
-  void SendGetResponse(const Data& data, const RequestorType& requestor);
+  void SendGetResponse(const Data& data,  const nfs::MessageId message_id,
+                       const RequestorType& requestor);
 
   template <typename MessageType>
   bool ValidateSender(const MessageType& message, const typename MessageType::Sender& sender) const;
@@ -101,8 +102,7 @@ typename CacheHandlerService::HandleMessageReturnType CacheHandlerService::Handl
     const MessageType& /*message*/,
     const typename MessageType::Sender& /*sender*/,
     const typename MessageType::Receiver& /*receiver*/) {
-  // BEFORE_RELEASE uncomment below line
-  // MessageType::invalid_message_type_passed___should_be_one_of_the_specialisations_defined_below;
+  MessageType::No_genereic_handler_is_available__Specialisation_is_required;
   return false;
 }
 
@@ -159,16 +159,16 @@ CacheHandlerService::HandleMessage(
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const PutToCacheFromDataManagerToDataManager& message,
-    const typename PutToCacheFromDataManagerToDataManager::Sender& sender,
-    const typename PutToCacheFromDataManagerToDataManager::Receiver& receiver);
+    const PutRequestFromDataManagerToCacheHandler& message,
+    const typename PutRequestFromDataManagerToCacheHandler::Sender& sender,
+    const typename PutRequestFromDataManagerToCacheHandler::Receiver& receiver);
 
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const GetFromCacheFromDataManagerToCacheHandler& message,
-    const typename GetFromCacheFromDataManagerToCacheHandler::Sender& sender,
-    const typename GetFromCacheFromDataManagerToCacheHandler::Receiver& receiver);
+    const GetRequestFromDataManagerToCacheHandler& message,
+    const typename GetRequestFromDataManagerToCacheHandler::Sender& sender,
+    const typename GetRequestFromDataManagerToCacheHandler::Receiver& receiver);
 
 template <typename Data>
 boost::optional<Data> CacheHandlerService::CacheGet(const typename Data::Name& data_name,
@@ -199,13 +199,16 @@ boost::optional<Data> CacheHandlerService::CacheGet(const typename Data::Name& d
 }
 
 template <typename Data, typename RequestorType>
-void CacheHandlerService::SendGetResponse(const Data& data, const RequestorType& requestor) {
-  dispatcher_.SendGetResponse(data, requestor);
+void CacheHandlerService::SendGetResponse(const Data& data, const nfs::MessageId message_id,
+                                          const RequestorType& requestor) {
+  LOG(kVerbose) << "CacheHandlerService::SendGetResponse";
+  dispatcher_.SendGetResponse(data, message_id, requestor);
 }
 
 template <typename Data>
 void CacheHandlerService::CacheStore(const Data& data, IsLongTermCacheable) {
   try {
+    LOG(kVerbose) << "CacheHandlerService::CacheStore: cache_data_store";
     cache_data_store_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
                             data.Serialise().data);
   }
@@ -217,6 +220,7 @@ void CacheHandlerService::CacheStore(const Data& data, IsLongTermCacheable) {
 template <typename Data>
 void CacheHandlerService::CacheStore(const Data& data, IsShortTermCacheable) {
   try {
+    LOG(kVerbose) << "CacheHandlerService::CacheStore: mem_only_cache";
     mem_only_cache_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
                           data.Serialise().data);
   }

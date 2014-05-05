@@ -75,9 +75,7 @@ void PmidNodeService::HandleMessage(
     const PutRequestFromPmidManagerToPmidNode& message,
     const typename PutRequestFromPmidManagerToPmidNode::Sender& sender,
     const typename PutRequestFromPmidManagerToPmidNode::Receiver& receiver) {
-  LOG(kVerbose) << "PmidNodeService::HandleMessage PutRequestFromPmidManagerToPmidNode "
-                << " for chunk " << HexSubstr(message.contents->name.raw_name.string())
-                << " from " << HexSubstr(sender.sender_id.data.string());
+  LOG(kVerbose) << message;
   typedef PutRequestFromPmidManagerToPmidNode MessageType;
   OperationHandlerWrapper<PmidNodeService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -92,9 +90,7 @@ void PmidNodeService::HandleMessage(
     const GetRequestFromDataManagerToPmidNode& message,
     const typename GetRequestFromDataManagerToPmidNode::Sender& sender,
     const typename GetRequestFromDataManagerToPmidNode::Receiver& receiver) {
-  LOG(kVerbose) << "PmidNodeService::HandleMessage GetRequestFromDataManagerToPmidNode "
-                << " for chunk " << HexSubstr(message.contents->raw_name.string())
-                << " from " << HexSubstr(sender.sender_id.data.string());
+  LOG(kVerbose) << message;
   typedef GetRequestFromDataManagerToPmidNode MessageType;
   OperationHandlerWrapper<PmidNodeService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -109,9 +105,7 @@ void PmidNodeService::HandleMessage(
     const IntegrityCheckRequestFromDataManagerToPmidNode& message,
     const typename IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
     const typename IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver) {
-  LOG(kVerbose) << "PmidNodeService::HandleMessage IntegrityCheckRequestFromDataManagerToPmidNode "
-                << " for chunk " << HexSubstr(message.contents->name.raw_name.string())
-                << " from " << HexSubstr(sender.data.string());
+  LOG(kVerbose) << message;
   typedef IntegrityCheckRequestFromDataManagerToPmidNode MessageType;
   OperationHandlerWrapper<PmidNodeService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -126,9 +120,7 @@ void PmidNodeService::HandleMessage(
   const DeleteRequestFromPmidManagerToPmidNode& message,
   const typename DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
   const typename DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver) {
-  LOG(kVerbose) << "PmidNodeService::HandleMessage DeleteRequestFromPmidManagerToPmidNode "
-                << " for chunk " << HexSubstr(message.contents->raw_name.string())
-                << " from " << HexSubstr(sender.sender_id.data.string());
+  LOG(kVerbose) << message;
   typedef DeleteRequestFromPmidManagerToPmidNode MessageType;
   OperationHandlerWrapper<PmidNodeService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -143,8 +135,7 @@ void PmidNodeService::HandleMessage(
     const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
     const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
     const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver) {
-  LOG(kVerbose) << "PmidNodeService::HandleMessage GetPmidAccountResponseFromPmidManagerToPmidNode "
-                << " from " << HexSubstr(sender.sender_id.data.string());
+  LOG(kVerbose) << message;
   typedef GetPmidAccountResponseFromPmidManagerToPmidNode MessageType;
   auto add_request_predicate(
       [&](const std::vector<Messages>& requests_in) {
@@ -180,8 +171,7 @@ void PmidNodeService::HandleMessage(
     const PmidHealthRequestFromPmidManagerToPmidNode& message,
     const typename PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
     const typename PmidHealthRequestFromPmidManagerToPmidNode::Receiver& receiver) {
-  LOG(kVerbose) << "PmidNodeService::HandleMessage DeleteRequestFromPmidManagerToPmidNode "
-                << message.id;
+  LOG(kVerbose) << message;
   typedef PmidHealthRequestFromPmidManagerToPmidNode MessageType;
   OperationHandlerWrapper<PmidNodeService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {

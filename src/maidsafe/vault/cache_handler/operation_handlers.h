@@ -112,16 +112,16 @@ bool DoCacheOperation(
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
-    const PutToCacheFromDataManagerToDataManager& message,
-    const typename PutToCacheFromDataManagerToDataManager::Sender& sender,
-    const typename PutToCacheFromDataManagerToDataManager::Receiver& receiver);
+    const PutRequestFromDataManagerToCacheHandler& message,
+    const typename PutRequestFromDataManagerToCacheHandler::Sender& sender,
+    const typename PutRequestFromDataManagerToCacheHandler::Receiver& receiver);
 
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
-    const GetFromCacheFromDataManagerToCacheHandler& message,
-    const typename GetFromCacheFromDataManagerToCacheHandler::Sender& sender,
-    const typename GetFromCacheFromDataManagerToCacheHandler::Receiver& receiver);
+    const GetRequestFromDataManagerToCacheHandler& message,
+    const typename GetRequestFromDataManagerToCacheHandler::Sender& sender,
+    const typename GetRequestFromDataManagerToCacheHandler::Receiver& receiver);
 
 }  // namespace detail
 

@@ -253,10 +253,10 @@ struct GetResponseMessage<PartialRequestor<nfs::SourcePersona<nfs::Persona::kDat
 };
 
 routing::SingleIdRelay GetDestination(
-        const PartialRequestor<nfs::SourcePersona<nfs::Persona::kDataGetter>> &requestor);
+        const PartialRequestor<nfs::SourcePersona<nfs::Persona::kDataGetter>>& requestor);
 
 routing::SingleIdRelay GetDestination(
-        const PartialRequestor<nfs::SourcePersona<nfs::Persona::kMaidNode>> &requestor);
+        const PartialRequestor<nfs::SourcePersona<nfs::Persona::kMaidNode>>& requestor);
 
 // FIXME after changing requestor in vaults to hold exact sender type
 routing::SingleId GetDestination(
@@ -321,7 +321,7 @@ void DataManagerDispatcher::SendPutToCache(const Data& data) {
 
 template<typename Data>
 void DataManagerDispatcher::DoSendPutToCache(const Data& data, IsCacheable) {
-  typedef PutToCacheFromDataManagerToDataManager VaultMessage;
+  typedef PutRequestFromDataManagerToCacheHandler VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
@@ -339,7 +339,7 @@ void DataManagerDispatcher::SendGetFromCache(const DataName& data_name) {
 
 template<typename DataName>
 void DataManagerDispatcher::DoSendGetFromCache(const DataName& data_name, IsCacheable) {
-  typedef GetFromCacheFromDataManagerToCacheHandler VaultMessage;
+  typedef GetRequestFromDataManagerToCacheHandler VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message((VaultMessage::Contents(data_name)));

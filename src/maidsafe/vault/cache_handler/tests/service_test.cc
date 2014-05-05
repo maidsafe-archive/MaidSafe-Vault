@@ -117,8 +117,8 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put",
     CHECK_NOTHROW(Get<ImmutableData>(data.name()));
   }
 
-  SECTION("PutToCacheFromDataManagerToDataManager") {
-    auto cache_put(CreateMessage<PutToCacheFromDataManagerToDataManager>(
+  SECTION("PutRequestFromDataManagerToCacheHandler") {
+    auto cache_put(CreateMessage<PutRequestFromDataManagerToCacheHandler>(
       nfs_vault::DataNameAndContent(content.name.type, content.name.raw_name,
                                     NonEmptyString(content.content->data))));
     routing::SingleSource source((NodeId(NodeId::kRandomId)));
@@ -149,8 +149,8 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving get",
     CHECK(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
   }
 
-  SECTION("GetFromCacheFromDataManagerToCacheHandler") {
-    auto get_request(CreateMessage<GetFromCacheFromDataManagerToCacheHandler>(content));
+  SECTION("GetRequestFromDataManagerToCacheHandler") {
+    auto get_request(CreateMessage<GetRequestFromDataManagerToCacheHandler>(content));
     CHECK_FALSE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
     Store(data);
     CHECK(cache_handler_service_.HandleMessage(get_request, source_node, group_id));

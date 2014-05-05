@@ -69,10 +69,12 @@ void PmidManagerService::HandleSyncedPut(
   try {
     group_db_.Commit(synced_action->key, synced_action->action);
   } catch (const maidsafe_error& error) {
-    if (error.code().value() == static_cast<int>(VaultErrors::data_already_exists))
+    if (error.code().value() == static_cast<int>(VaultErrors::data_already_exists)) {
       LOG(kWarning) << "Possibly different DM chose same pmid_node for the same chunk";
-    else
+      return;
+    } else {
       throw;
+    }
   }
   auto data_name(GetDataNameVariant(synced_action->key.type, synced_action->key.name));
   SendPutResponse(data_name, synced_action->key.group_name(),
