@@ -27,8 +27,10 @@
 #include "maidsafe/common/data_stores/permanent_store.h"
 #include "maidsafe/common/data_stores/data_buffer.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
+#include "maidsafe/nfs/types.h"
 
 namespace maidsafe {
+
 namespace vault {
 
 class PmidNodeHandler {
@@ -76,6 +78,7 @@ void PmidNodeHandler::Delete(const DataName& data_name) {
 }
 
 }  // namespace vault
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_PMID_NODE_HANDLER_H_
