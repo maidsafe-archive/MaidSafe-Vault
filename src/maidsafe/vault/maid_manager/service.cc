@@ -23,6 +23,7 @@
 
 #include "boost/thread/future.hpp"
 
+#include "maidsafe/common/visualiser_log.h"
 #include "maidsafe/common/data_types/mutable_data.h"
 #include "maidsafe/nfs/vault/messages.h"
 #include "maidsafe/nfs/vault/pmid_registration.h"
@@ -500,9 +501,8 @@ void MaidManagerService::HandleSyncedDelete(
       throw;
     } else {
       // BEFORE_RELEASE trying to delete something not belongs to client shall get muted
-      GLOG() << "MaidManager blocked DeleteRequest of chunk "
-             << HexSubstr(data_name.raw_name.string()) << " from non-owner";
-      return;
+      VLOG(nfs::Persona::kMaidManager, VisualiserAction::kBlockDeleteRequest, data_name.raw_name)
+          << " from non-owner";
     }
   }
 }

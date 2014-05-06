@@ -24,6 +24,7 @@
 #include <set>
 
 #include "maidsafe/common/tagged_value.h"
+#include "maidsafe/common/type_macros.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/nfs/types.h"
@@ -31,6 +32,18 @@
 namespace maidsafe {
 
 namespace vault {
+
+DEFINE_OSTREAMABLE_ENUM_VALUES(VisualiserAction, int,
+    (IncreaseSubscribers)
+    (DecreaseSubscribers)
+    (IncreaseCount)
+    (DecreaseCount)
+    (BlockDeleteRequest)
+    (JoinPmidNode)
+    (DropPmidNode)
+    (StoreChunk)
+    (DeleteChunk)
+    (ChangeVersion))
 
 namespace detail {
 

@@ -19,6 +19,7 @@
 #include "maidsafe/vault/pmid_manager/service.h"
 
 #include "maidsafe/common/error.h"
+#include "maidsafe/common/visualiser_log.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
 
 #include "maidsafe/vault/parameters.h"
@@ -487,8 +488,8 @@ void PmidManagerService::HandleChurnEvent(
       auto pmid_node(PmidName(Identity(node.string())));
       auto contents(group_db_.GetContents(pmid_node));
       for (const auto& kv_pair : contents.kv_pairs) {
-        GLOG() << "PmidManager dropping pmid_node " << HexSubstr(node.string())
-               << " holding chunk " << HexSubstr(kv_pair.first.name);
+        VLOG(nfs::Persona::kPmidManager, VisualiserAction::kDropPmidNode, Identity{ node.string() })
+            << " holding chunk " << HexSubstr(kv_pair.first.name);
         auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
         dispatcher_.SendSetPmidOffline(data_name, pmid_node);
       }
@@ -503,8 +504,8 @@ void PmidManagerService::HandleChurnEvent(
       auto pmid_node(PmidName(Identity(node.string())));
       auto contents(group_db_.GetContents(PmidName(Identity(node.string()))));
       for (const auto& kv_pair : contents.kv_pairs) {
-        GLOG() << "PmidManager joining pmid_node " << HexSubstr(node.string())
-               << " holding data " << HexSubstr(kv_pair.first.name);
+        VLOG(nfs::Persona::kPmidManager, VisualiserAction::kJoinPmidNode, Identity{ node.string() })
+            << " holding chunk " << HexSubstr(kv_pair.first.name);
         auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
         dispatcher_.SendSetPmidOnline(data_name, pmid_node);
       }

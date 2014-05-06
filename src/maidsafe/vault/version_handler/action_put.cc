@@ -17,8 +17,11 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/vault/version_handler/action_put.h"
-#include "maidsafe/vault/version_handler/action_put.pb.h"
 
+#include "maidsafe/common/visualiser_log.h"
+
+#include "maidsafe/vault/types.h"
+#include "maidsafe/vault/version_handler/action_put.pb.h"
 #include "maidsafe/vault/version_handler/value.h"
 
 namespace maidsafe {
@@ -69,8 +72,9 @@ std::string ActionVersionHandlerPut::Serialise() const {
 detail::DbAction ActionVersionHandlerPut::operator()(std::unique_ptr<VersionHandlerValue>& value) {
   if (!value)
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
-  GLOG() << "Old version " << HexSubstr(old_version.id.value)
-         << " updated to " << HexSubstr(new_version.id.value);
+  VLOG(nfs::Persona::kVersionHandler, VisualiserAction::kChangeVersion, Identity{})
+      << "Old version " << HexSubstr(old_version.id.value) << " updated to "
+      << HexSubstr(new_version.id.value);
   tip_of_tree = value->Put(old_version, new_version);
   return detail::DbAction::kPut;
 }

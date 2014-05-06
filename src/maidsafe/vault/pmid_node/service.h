@@ -31,6 +31,7 @@
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/active.h"
+#include "maidsafe/common/visualiser_log.h"
 #include "maidsafe/common/data_types/data_type_values.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
@@ -329,7 +330,7 @@ void PmidNodeService::HandlePut(const Data& data, nfs::MessageId message_id) {
 template <typename Data>
 void PmidNodeService::HandleDelete(const typename Data::Name& data_name) {
   try {
-    GLOG() << "PmidNode deleting chunk " << HexSubstr(data_name.value);
+    VLOG(nfs::Persona::kPmidNode, VisualiserAction::kDeleteChunk, data_name.value);
     handler_.Delete(GetDataNameVariant(Data::Tag::kValue, data_name.value));
   } catch (const maidsafe_error& error) {
     LOG(kError) << "Failed to delete data : " << HexSubstr(data_name.value) << " , "
