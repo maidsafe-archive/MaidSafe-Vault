@@ -28,6 +28,7 @@
 #include "maidsafe/common/data_stores/data_buffer.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/nfs/types.h"
+#include "maidsafe/vault/types.h"
 
 namespace maidsafe {
 
