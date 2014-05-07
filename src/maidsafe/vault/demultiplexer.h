@@ -73,6 +73,7 @@ template <typename T>
 void Demultiplexer::HandleMessage(const T& routing_message) {
   auto wrapper_tuple(nfs::ParseMessageWrapper(routing_message.contents));
   const auto& destination_persona(std::get<2>(wrapper_tuple));
+  LOG(kVerbose) << "Demultiplexer::HandleMessage Persona data : " << destination_persona.data;
   static_assert(std::is_same<decltype(destination_persona),
                              const nfs::detail::DestinationTaggedValue&>::value,
                 "The value retrieved from the tuple isn't the destination type, but should be.");

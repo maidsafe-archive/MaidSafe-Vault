@@ -202,7 +202,7 @@ void DataManagerService::HandleMessage(
   LOG(kVerbose) << "DataManagerService::HandleMessage GetResponseFromPmidNodeToDataManager"
                 << " from " << HexSubstr(sender.data.string())
                 << " for chunk " << HexSubstr(message.contents->name.raw_name.string())
-                <<  message.id;
+                << " with message_id " << message.id;
   typedef GetResponseFromPmidNodeToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
