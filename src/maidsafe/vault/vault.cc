@@ -29,13 +29,13 @@ namespace maidsafe {
 namespace vault {
 
 Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_root_dir,
-             std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint,
+             std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact,
              const std::vector<passport::PublicPmid>& pmids_from_file,
-             const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints)
+             const routing::BootstrapContacts& bootstrap_contacts)
     : network_health_mutex_(),
       network_health_condition_variable_(),
       network_health_(-1),
-      on_new_bootstrap_endpoint_(on_new_bootstrap_endpoint),
+      on_new_bootstrap_contact_(on_new_bootstrap_contact),
       routing_(new routing::Routing(pmid)),
       pmids_from_file_(pmids_from_file),
       data_getter_(asio_service_, *routing_),
@@ -64,7 +64,7 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
 #endif
 {
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
-  InitRouting(peer_endpoints);
+  InitRouting(bootstrap_contacts);
   log::Logging::Instance().SetVlogPrefix(DebugId(pmid.name().value));
 }
 
@@ -80,9 +80,9 @@ void Vault::AddPublicPmid(const passport::PublicPmid& public_pmid) {
 }
 #endif
 
-void Vault::InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints) {
+void Vault::InitRouting(const routing::BootstrapContacts& bootstrap_contacts) {
   routing::Functors functors(InitialiseRoutingCallbacks());
-  routing_->Join(functors, peer_endpoints);
+  routing_->Join(functors, bootstrap_contacts);
 
   std::unique_lock<std::mutex> lock(network_health_mutex_);
   network_health_condition_variable_.wait(
@@ -131,8 +131,8 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
       nfs::detail::DoGetPublicKey(data_getter_, node_id, give_key, pmids_from_file_,
                                   public_pmid_helper_);
     };
-  functors.new_bootstrap_endpoint = [this](const boost::asio::ip::udp::endpoint& endpoint) {
-                                        OnNewBootstrapEndpoint(endpoint);
+  functors.new_bootstrap_contact = [this](const routing::BootstrapContact& bootstrap_contact) {
+                                        OnNewBootstrapContact(bootstrap_contact);
                                     };
   return functors;
 }
@@ -159,8 +159,8 @@ void Vault::OnMatrixChanged(std::shared_ptr<routing::MatrixChange> matrix_change
   asio_service_.service().post([=] { pmid_manager_service_.HandleChurnEvent(matrix_change); });
 }
 
-void Vault::OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint) {
-  asio_service_.service().post([=] { on_new_bootstrap_endpoint_(endpoint); });
+void Vault::OnNewBootstrapContact(const routing::BootstrapContact& bootstrap_contact) {
+  asio_service_.service().post([=] { on_new_bootstrap_contact_(bootstrap_contact); });
 }
 
 }  // namespace vault

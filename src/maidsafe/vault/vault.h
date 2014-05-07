@@ -34,6 +34,8 @@
 #include "maidsafe/nfs/public_pmid_helper.h"
 #include "maidsafe/nfs/service.h"
 
+#include "maidsafe/routing/bootstrap_file_operations.h"
+
 #include "maidsafe/vault/pmid_node/service.h"
 #include "maidsafe/vault/maid_manager/service.h"
 #include "maidsafe/vault/data_manager/service.h"
@@ -62,11 +64,10 @@ class Vault {
  public:
   // pmids_from_file must only be non-empty for zero-state network.
   Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_root_dir,
-        std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint,
+        std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact,
         const std::vector<passport::PublicPmid>& pmids_from_file =
             std::vector<passport::PublicPmid>(),
-        const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints =
-            std::vector<boost::asio::ip::udp::endpoint>());
+        const routing::BootstrapContacts& bootstrap_contacts = routing::BootstrapContacts());
   ~Vault();  // must issue StopSending() to all identity objects (MM etc.)
              // Then ensure routing is destroyed next then all others in any order at this time
 
@@ -78,7 +79,7 @@ class Vault {
 #ifdef TESTING
   friend class test::VaultNetwork;
 #endif
-  void InitRouting(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+  void InitRouting(const routing::BootstrapContacts& bootstrap_contacts);
   routing::Functors InitialiseRoutingCallbacks();
   template <typename T>
   void OnMessageReceived(const T& message);
@@ -92,7 +93,7 @@ class Vault {
   bool OnGetFromCache(const T& message);
   template <typename T>
   void OnStoreInCache(const T& message);
-  void OnNewBootstrapEndpoint(const boost::asio::ip::udp::endpoint& endpoint);
+  void OnNewBootstrapContact(const routing::BootstrapContact& bootstrap_contact);
   template <typename Sender, typename Receiver>
   bool HandleGetFromCache(const nfs::TypeErasedMessageWrapper message, const Sender& sender,
                           const Receiver& receiver);
@@ -100,7 +101,7 @@ class Vault {
   std::mutex network_health_mutex_;
   std::condition_variable network_health_condition_variable_;
   int network_health_;
-  std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint_;
+  std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact_;
   std::unique_ptr<routing::Routing> routing_;
   std::vector<passport::PublicPmid> pmids_from_file_;
   nfs_client::DataGetter data_getter_;
