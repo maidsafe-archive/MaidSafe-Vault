@@ -541,21 +541,26 @@ void PmidManagerService::TransferAccount(const NodeId& dest,
     }
     GLOG() << "PmidManager transfer account " << HexSubstr(account.group_name->string())
            << " to " << DebugId(dest);
-    std::vector<std::string> actions;
-    actions.push_back(account.metadata.Serialise());
-    LOG(kVerbose) << "PmidManagerService::TransferAccount metadata serialised";
-    for (auto& kv : account.kv_pairs) {
-      protobuf::PmidManagerKeyValuePair kv_msg;
-        kv_msg.set_key(kv.first.Serialise());
-        kv_msg.set_value(kv.second.Serialise());
-        actions.push_back(kv_msg.SerializeAsString());
+    try {
+      std::vector<std::string> actions;
+      actions.push_back(account.metadata.Serialise());
+      LOG(kVerbose) << "PmidManagerService::TransferAccount metadata serialised";
+      for (auto& kv : account.kv_pairs) {
+        protobuf::PmidManagerKeyValuePair kv_msg;
+          kv_msg.set_key(kv.first.Serialise());
+          kv_msg.set_value(kv.second.Serialise());
+          actions.push_back(kv_msg.SerializeAsString());
+      }
+      nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
+      PmidManager::UnresolvedAccountTransfer account_transfer(
+          account.group_name, message_id, actions);
+      LOG(kVerbose) << "PmidManagerService::TransferAccount send account_transfer";
+      dispatcher_.SendAccountTransfer(dest, account.group_name,
+                                      message_id, account_transfer.Serialise());
+    } catch(...) {
+      // normally, the problem is metadata hasn't populated
+      LOG(kError) << "PmidManagerService::TransferAccount account info error";
     }
-    nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
-    PmidManager::UnresolvedAccountTransfer account_transfer(
-        account.group_name, message_id, actions);
-    LOG(kVerbose) << "PmidManagerService::TransferAccount send account_transfer";
-    dispatcher_.SendAccountTransfer(dest, account.group_name,
-                                    message_id, account_transfer.Serialise());
   }
 }
 
