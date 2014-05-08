@@ -20,6 +20,7 @@
 #define MAIDSAFE_VAULT_VERSION_HANDLER_VERSION_HANDLER_H_
 
 #include <cstdint>
+#include <string>
 
 #include "maidsafe/common/data_types/structured_data_versions.h"
 #include "maidsafe/nfs/types.h"

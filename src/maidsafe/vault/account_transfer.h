@@ -21,8 +21,12 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <deque>
+#include <map>
 #include <memory>
 #include <mutex>
+#include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -97,6 +101,7 @@ class AccountTransfer {
     UnresolvedAccountTransferAction Getrequest() const {
       return request;
     }
+
    private:
     UnresolvedAccountTransferAction request;
     routing::GroupId group_id;

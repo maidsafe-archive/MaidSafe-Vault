@@ -542,8 +542,8 @@ void PmidManagerService::TransferAccount(const NodeId& dest,
                  << " just received";
       continue;
     }
-    GLOG() << "PmidManager transfer account " << HexSubstr(account.group_name->string())
-           << " to " << DebugId(dest);
+    VLOG(nfs::Persona::kPmidManager, VisualiserAction::kAccountTransfer, account.group_name)
+        << " sending to " << DebugId(dest);
     try {
       std::vector<std::string> actions;
       actions.push_back(account.metadata.Serialise());
@@ -587,7 +587,7 @@ void PmidManagerService::HandleMessage(
 
 void PmidManagerService::HandleAccountTransfer(
     std::unique_ptr<PmidManager::UnresolvedAccountTransfer>&& resolved_action) {
-  GLOG() << "PmidManager got account " << HexSubstr(resolved_action->key->string());
+  VLOG(nfs::Persona::kPmidManager, VisualiserAction::kAccountTransfer, resolved_action->key);
   GroupDb<PmidManager>::Contents content;
   content.group_name = resolved_action->key;
   for (auto& action : resolved_action->actions) {

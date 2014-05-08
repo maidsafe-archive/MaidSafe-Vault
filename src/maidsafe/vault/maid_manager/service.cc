@@ -589,8 +589,8 @@ void MaidManagerService::TransferAccount(const NodeId& dest,
                  << " just received";
       continue;
     }
-    GLOG() << "MaidManager transfer account " << HexSubstr(account.group_name->string())
-           << " to " << DebugId(dest);
+    VLOG(nfs::Persona::kMaidManager, VisualiserAction::kAccountTransfer, account.group_name)
+        << " sending to " << DebugId(dest);
     std::vector<std::string> actions;
     actions.push_back(account.metadata.Serialise());
     LOG(kVerbose) << "MaidManagerService::TransferAccount metadata serialised";
@@ -1081,7 +1081,7 @@ void MaidManagerService::HandleMessage(
 
 void MaidManagerService::HandleAccountTransfer(
     std::unique_ptr<MaidManager::UnresolvedAccountTransfer>&& resolved_action) {
-  GLOG() << "MaidManager got account " << HexSubstr(resolved_action->key->string());
+  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kAccountTransfer, resolved_action->key);
   GroupDb<MaidManager>::Contents content;
   content.group_name = resolved_action->key;
   for (auto& action : resolved_action->actions) {

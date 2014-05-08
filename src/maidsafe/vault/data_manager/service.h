@@ -730,8 +730,8 @@ void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
 
     Data data(Data(data_name, typename Data::serialised_type(*contents.content)));
     nfs::MessageId message_id(HashStringToMessageId(data_name.value.string()));
-    GLOG() << "DataManager re-put chunk " << HexSubstr(contents.name.raw_name)
-           << " to new pmid_node " << HexSubstr(pmid_name->string());
+    VLOG(nfs::Persona::kDataManager, VisualiserAction::kMoveChunk, contents.name.raw_name)
+        << " to new pmid_node " << HexSubstr(pmid_name->string());
     dispatcher_.SendPutRequest(pmid_name, data, message_id);
   }
 }
@@ -870,8 +870,8 @@ void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName&
 
 template <typename DataName>
 void DataManagerService::MarkNodeUp(const PmidName& pmid_node, const DataName& name) {
-  GLOG() << "DataManager marking node " << HexSubstr(pmid_node->string())
-         << " up for chunk " << HexSubstr(name.value.string());
+  VLOG(nfs::Persona::kDataManager, VisualiserAction::kMarkNodeUp, pmid_node)
+      << " for chunk " << HexSubstr(name.value.string());
   typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
   DoSync(DataManager::UnresolvedNodeUp(key,
              ActionDataManagerNodeUp(pmid_node), routing_.kNodeId()));

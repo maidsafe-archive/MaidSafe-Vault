@@ -167,7 +167,7 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
           }
         }
       } else {
-        GLOG() << "Db removing account " << HexSubstr(db_iter->key().data());
+//        VLOG() << "Db removing account " << HexSubstr(db_iter->key().data());
         prune_vector.push_back(db_iter->key().data());
       }
     }

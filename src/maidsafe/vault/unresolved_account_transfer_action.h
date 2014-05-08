@@ -19,6 +19,7 @@
 #ifndef MAIDSAFE_VAULT_UNRESOLVED_ACCOUNT_TRANSFER_ACTION_H_
 #define MAIDSAFE_VAULT_UNRESOLVED_ACCOUNT_TRANSFER_ACTION_H_
 
+#include <algorithm>
 #include <cstdint>
 #include <string>
 #include <type_traits>
@@ -44,7 +45,7 @@ struct UnresolvedAccountTransferAction {
  public:
   UnresolvedAccountTransferAction(
      const Key& key_in, const nfs::MessageId& id_in, const std::vector<Action>& actions_in);
-  UnresolvedAccountTransferAction(const std::string& serialised_copy);
+  explicit UnresolvedAccountTransferAction(const std::string& serialised_copy);
 //   UnresolvedAccountTransferAction(const UnresolvedAction& other);
 //   UnresolvedAccountTransferAction(UnresolvedAccountTransfer&& other);
 

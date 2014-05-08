@@ -20,6 +20,7 @@
 #define MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_H_
 
 #include <functional>
+#include <string>
 
 #include "maidsafe/nfs/types.h"
 

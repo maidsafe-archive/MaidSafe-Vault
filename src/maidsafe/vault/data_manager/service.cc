@@ -383,7 +383,8 @@ void DataManagerService::HandleMessage(
       if (resolved_action) {
         LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager commit pmid goes online "
                       << " for chunk " << HexSubstr(resolved_action->key.name.string())
-                      << " and pmid_node " << HexSubstr(resolved_action->action.kPmidName->string());
+                      << " and pmid_node "
+                      << HexSubstr(resolved_action->action.kPmidName->string());
         try {
           db_.Commit(resolved_action->key, resolved_action->action);
         } catch(maidsafe_error& error) {
@@ -443,8 +444,7 @@ void DataManagerService::HandleAccountTransfer(
       if (kv_msg.ParseFromString(action)) {
         LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
         DataManager::Key key(kv_msg.key());
-        GLOG() << "DataManager got account " << HexSubstr(key.name.string())
-               << " transferred";
+        VLOG(nfs::Persona::kDataManager, VisualiserAction::kAccountTransfer, key.name);
         LOG(kVerbose) << "HandleAccountTransfer key parsed";
         DataManagerValue value(kv_msg.value());
         LOG(kVerbose) << "HandleAccountTransfer vaule parsed";
@@ -484,8 +484,8 @@ void DataManagerService::TransferAccount(const NodeId& dest,
   }
   std::vector<std::string> actions;
   for (auto& account : accounts) {
-    GLOG() << "DataManager transfer account " << HexSubstr(account.first.name.string())
-           << " to " << DebugId(dest);
+    VLOG(nfs::Persona::kDataManager, VisualiserAction::kAccountTransfer, account.first.name)
+        << " sending to " << DebugId(dest);
     protobuf::DataManagerKeyValuePair kv_msg;
     kv_msg.set_key(account.first.Serialise());
     kv_msg.set_value(account.second.Serialise());

@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_H_
 #define MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_H_
 
+#include <string>
+
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/passport/types.h"
 
