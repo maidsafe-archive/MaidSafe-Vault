@@ -137,21 +137,18 @@ void MaidManagerDispatcher::SendUnregisterPmidResponse(const MaidName& /*account
   //  routing_.Send(message);
 }
 
-void MaidManagerDispatcher::SendAccountTransfer(const NodeId& /*destination_peer*/,
-                                                const MaidName& /*account_name*/,
-                                                const std::string& /*serialised_account*/) {
-  //  typedef routing::GroupToSingleMessage RoutingMessage;
-  //  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-  //  static const nfs::MessageAction kAction(nfs::MessageAction::kAccountTransfer);
-  //  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidManager);
-
-  //  nfs::Message::Data inner_data;
-  //  inner_data.content = NonEmptyString(serialised_account);
-  //  inner_data.action = kAction;
-  //  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-  //  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-  //                         routing::SingleId(destination_peer), cacheable);
-  //  routing_.Send(message);
+void MaidManagerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
+                                                const MaidName& account_name,
+                                                nfs::MessageId message_id,
+                                                const std::string& serialised_account) {
+  typedef AccountTransferFromMaidManagerToMaidManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message(message_id, nfs_vault::Content(serialised_account));
+  RoutingMessage message(vault_message.Serialise(),
+                         GroupOrKeyHelper::GroupSender(routing_, account_name),
+                         VaultMessage::Receiver(routing::SingleId(destination_peer)));
+  routing_.Send(message);
 }
 
 void MaidManagerDispatcher::SendPmidHealthRequest(const MaidName& maid_name,

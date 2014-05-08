@@ -25,6 +25,7 @@
 #include "maidsafe/vault/group_key.h"
 #include "maidsafe/vault/metadata_key.h"
 #include "maidsafe/vault/unresolved_action.h"
+#include "maidsafe/vault/unresolved_account_transfer_action.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/maid_manager/value.h"
 #include "maidsafe/vault/maid_manager/action_update_pmid_health.h"
@@ -74,6 +75,7 @@ struct PersonaTypes<Persona::kMaidManager> {
               UnresolvedIncrementReferenceCounts;
   typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerDecrementReferenceCounts>
               UnresolvedDecrementReferenceCounts;
+  typedef vault::UnresolvedAccountTransferAction<GroupName, std::string> UnresolvedAccountTransfer;
 };
 
 }  // namespace nfs

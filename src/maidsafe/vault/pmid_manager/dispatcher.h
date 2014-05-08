@@ -67,8 +67,8 @@ class PmidManagerDispatcher {
   //  void SendStateChange(const PmidName& pmid_node, const typename Data::Name& data_name);
   template <typename KeyType>
   void SendSync(const KeyType& key, const std::string& serialised_sync);
-  void SendAccountTransfer(const PmidName& destination_peer, const PmidName& pmid_node,
-                           const std::string& serialised_account);
+  void SendAccountTransfer(const NodeId& destination_peer, const PmidName& account_name,
+                           nfs::MessageId message_id, const std::string& serialised_account);
   void SendPmidAccount(const PmidName& pmid_node,
                        const std::vector<nfs_vault::DataName>& data_names,
                        const nfs_client::ReturnCode& return_code);

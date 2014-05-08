@@ -33,6 +33,7 @@
 
 #include "maidsafe/nfs/types.h"
 
+#include "maidsafe/vault/account_transfer.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/message_types.h"
@@ -138,6 +139,12 @@ class PmidManagerService {
   void DoHandleHealthResponse(const PmidName& pmid_node,
       const MaidName& maid_node, const PmidManagerMetadata& pmid_health, nfs::MessageId message_id);
 
+  void TransferAccount(const NodeId& dest,
+                       const std::vector<GroupDb<PmidManager>::Contents>& accounts);
+
+  void HandleAccountTransfer(
+      std::unique_ptr<PmidManager::UnresolvedAccountTransfer>&& resolved_action);
+
   routing::Routing& routing_;
   GroupDb<PmidManager> group_db_;
   std::mutex accumulator_mutex_;
@@ -149,6 +156,7 @@ class PmidManagerService {
   Sync<PmidManager::UnresolvedDelete> sync_deletes_;
   Sync<PmidManager::UnresolvedSetPmidHealth> sync_set_pmid_health_;
   Sync<PmidManager::UnresolvedCreateAccount> sync_create_account_;
+  AccountTransfer<PmidManager::UnresolvedAccountTransfer> account_transfer_;
 };
 
 // ============================= Handle Message Specialisations ===================================
