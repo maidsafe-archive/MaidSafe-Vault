@@ -72,35 +72,41 @@ class AccountTransfer {
    public:
     PendingRequest(const UnresolvedAccountTransferAction& request_in,
                    const routing::GroupSource& source_in)
-        : request(request_in), group_id(source_in.group_id), senders() {
-      senders.insert(source_in.sender_id);
+        : request(request_in), group_id(source_in.group_id) {
+      request.Merge(request_in, source_in.sender_id);
     }
-    bool HasSender(const routing::GroupSource& source_in) {
-      if (source_in.group_id != group_id)
-        return false;
-      auto itr(std::find(senders.begin(), senders.end(), source_in.sender_id));
-      if (itr == senders.end())
-        return false;
-      return true;
-    }
+
+//     bool HasSender(const routing::GroupSource& source_in) {
+//       if (source_in.group_id != group_id)
+//         return false;
+//       auto itr(std::find(senders.begin(), senders.end(), source_in.sender_id));
+//       if (itr == senders.end())
+//         return false;
+//       return true;
+//     }
     void MergePendingRequest(const UnresolvedAccountTransferAction& request_in,
                              const routing::GroupSource& source_in) {
-      senders.insert(source_in.sender_id);
-      request.Merge(request_in);
+      request.Merge(request_in, source_in.sender_id);
     }
     std::set<routing::SingleId> GetSenders() const {
-      return senders;
+      return request.GetSenders();
     }
     routing::GroupId GetGroupId() const {
       return group_id;
     }
-    UnresolvedAccountTransferAction Getrequest() const {
+    UnresolvedAccountTransferAction GetRequest() const {
       return request;
+    }
+    UnresolvedAccountTransferAction GetResolved(size_t resolve_num) {
+      return request.GetResolvedActions(resolve_num);
+    }
+    bool IsResolved() {
+      return request.IsResolved();
     }
    private:
     UnresolvedAccountTransferAction request;
     routing::GroupId group_id;
-    std::set<routing::SingleId> senders;
+//     std::set<routing::SingleId> senders;
   };
 
   AccountTransfer();
@@ -163,14 +169,17 @@ std::unique_ptr<UnresolvedAccountTransferAction>
         LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction merge request after having "
                       << itr->GetSenders().size() << " senders";
         if (checker(itr->GetSenders()) == AddResult::kSuccess) {
-          resolved_action.reset(new UnresolvedAccountTransferAction(itr->Getrequest()));
-          handled_requests_[itr->GetGroupId()] =
-              boost::posix_time::microsec_clock::universal_time();
-          LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction put "
-                        << DebugId(itr->GetGroupId()) << " into handled list";
-          if (handled_requests_.size() > kMaxHandledRequestsCount_)
-            CleanUpHandledRequests();
-          pending_requests_.erase(itr);
+          resolved_action.reset(new UnresolvedAccountTransferAction(
+              itr->GetResolved(routing::Parameters::group_size / 2)));
+          if (itr->IsResolved()) {
+            handled_requests_[itr->GetGroupId()] =
+                boost::posix_time::microsec_clock::universal_time();
+            LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction put "
+                          << DebugId(itr->GetGroupId()) << " into handled list";
+            if (handled_requests_.size() > kMaxHandledRequestsCount_)
+              CleanUpHandledRequests();
+            pending_requests_.erase(itr);
+          }
         }
         break;
       }
@@ -208,7 +217,7 @@ bool AccountTransfer<UnresolvedAccountTransferAction>::RequestExists(
     const UnresolvedAccountTransferAction& request, const routing::GroupSource& source) {
   auto request_message_id(request.id);
   for (auto& pending_request : pending_requests_)
-    if (request_message_id == pending_request.Getrequest().id) {
+    if (request_message_id == pending_request.GetRequest().id) {
       LOG(kWarning) << "AccountTransfer::RequestExists,  reguest with message id "
                     << request_message_id.data
                     << " with group_id " << HexSubstr(source.group_id->string())
