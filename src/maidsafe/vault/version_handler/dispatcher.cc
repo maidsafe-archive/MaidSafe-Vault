@@ -177,6 +177,20 @@ void VersionHandlerDispatcher::SendSync(const VersionHandler::Key& key,
   sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), key);
 }
 
+void VersionHandlerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
+                                                   nfs::MessageId message_id,
+                                                   const std::string& serialised_account) {
+  typedef AccountTransferFromVersionHandlerToVersionHandler VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message(message_id, nfs_vault::Content(serialised_account));
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(destination_peer),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(routing::SingleId(destination_peer)));
+  routing_.Send(message);
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

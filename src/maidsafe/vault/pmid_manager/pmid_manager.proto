@@ -27,6 +27,11 @@ message PmidManagerMetadata {
   required int64 claimed_available_size = 6;
 }
 
+message PmidManagerKeyValuePair {
+  required bytes key = 1;
+  required bytes value = 2;
+}
+
 message PmidManagerValue {
   required int32 size = 1;
 }

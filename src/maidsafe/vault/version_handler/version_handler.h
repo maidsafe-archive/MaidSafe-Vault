@@ -20,12 +20,14 @@
 #define MAIDSAFE_VAULT_VERSION_HANDLER_VERSION_HANDLER_H_
 
 #include <cstdint>
+#include <string>
 
 #include "maidsafe/common/data_types/structured_data_versions.h"
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/key.h"
 #include "maidsafe/vault/unresolved_action.h"
+#include "maidsafe/vault/unresolved_account_transfer_action.h"
 #include "maidsafe/vault/version_handler/action_create_version_tree.h"
 #include "maidsafe/vault/version_handler/action_put.h"
 #include "maidsafe/vault/version_handler/action_delete_branch_until_fork.h"
@@ -54,6 +56,8 @@ struct PersonaTypes<Persona::kVersionHandler> {
   typedef vault::UnresolvedAction<Key, vault::ActionVersionHandlerPut> UnresolvedPutVersion;
   typedef vault::UnresolvedAction<Key, vault::ActionVersionHandlerDeleteBranchUntilFork>
       UnresolvedDeleteBranchUntilFork;
+  typedef vault::UnresolvedAccountTransferAction<passport::PublicPmid::Name, std::string>
+      UnresolvedAccountTransfer;
 };
 
 }  // namespace nfs

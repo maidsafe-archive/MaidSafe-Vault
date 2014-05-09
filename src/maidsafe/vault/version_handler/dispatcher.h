@@ -57,6 +57,10 @@ class VersionHandlerDispatcher {
 
   void SendSync(const VersionHandler::Key& key, const std::string& serialised_sync);
 
+  void SendAccountTransfer(const NodeId& destination_peer,
+                           nfs::MessageId message_id,
+                           const std::string& serialised_account);
+
   template <typename Message>
   void CheckSourcePersonaType() const;
 

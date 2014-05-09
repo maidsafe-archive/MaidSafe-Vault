@@ -54,7 +54,8 @@ PmidManagerService::PmidManagerService(const passport::Pmid& pmid, routing::Rout
       asio_service_(2), get_health_timer_(asio_service_), sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),
       sync_set_pmid_health_(NodeId(pmid.name()->string())),
-      sync_create_account_(NodeId(pmid.name()->string())) {
+      sync_create_account_(NodeId(pmid.name()->string())),
+      account_transfer_() {
 }
 
 
@@ -304,15 +305,6 @@ void PmidManagerService::HandleMessage(
   }
 }
 
-template<>
-void PmidManagerService::HandleMessage(
-    const AccountTransferFromPmidManagerToPmidManager& /*message*/,
-    const typename AccountTransferFromPmidManagerToPmidManager::Sender& /*sender*/,
-    const typename AccountTransferFromPmidManagerToPmidManager::Receiver& /*receiver*/) {
-  // LOG(kVerbose) << message;
-  assert(0);
-}
-
 //=================================================================================================
 
 void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
@@ -514,6 +506,9 @@ void PmidManagerService::HandleChurnEvent(
         throw;
     }
   }
+  GroupDb<PmidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(matrix_change));
+  for (auto& transfer : transfer_info)
+    TransferAccount(transfer.first, transfer.second);
 }
 
 // void PmidManagerService::ValidateDataSender(const nfs::Message& message) const {
@@ -536,6 +531,86 @@ void PmidManagerService::HandleChurnEvent(
 // }
 
 // =============== Account transfer ===============================================================
+
+void PmidManagerService::TransferAccount(const NodeId& dest,
+    const std::vector<GroupDb<PmidManager>::Contents>& accounts) {
+  for (auto& account : accounts) {
+    // If account just received, shall not pass it out as may under a startup procedure
+    // i.e. existing PM will be seen as new_node in matrix_change
+    if (account_transfer_.CheckHandled(routing::GroupId(NodeId(account.group_name->string())))) {
+      LOG(kInfo) << "PmidManager account " << HexSubstr(account.group_name->string())
+                 << " just received";
+      continue;
+    }
+    VLOG(nfs::Persona::kPmidManager, VisualiserAction::kAccountTransfer, account.group_name)
+        << " sending to " << DebugId(dest);
+    try {
+      std::vector<std::string> actions;
+      actions.push_back(account.metadata.Serialise());
+      LOG(kVerbose) << "PmidManagerService::TransferAccount metadata serialised";
+      for (auto& kv : account.kv_pairs) {
+        protobuf::PmidManagerKeyValuePair kv_msg;
+          kv_msg.set_key(kv.first.Serialise());
+          kv_msg.set_value(kv.second.Serialise());
+          actions.push_back(kv_msg.SerializeAsString());
+      }
+      nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
+      PmidManager::UnresolvedAccountTransfer account_transfer(
+          account.group_name, message_id, actions);
+      LOG(kVerbose) << "PmidManagerService::TransferAccount send account_transfer";
+      dispatcher_.SendAccountTransfer(dest, account.group_name,
+                                      message_id, account_transfer.Serialise());
+    } catch(...) {
+      // normally, the problem is metadata hasn't populated
+      LOG(kError) << "PmidManagerService::TransferAccount account info error";
+    }
+  }
+}
+
+template <>
+void PmidManagerService::HandleMessage(
+    const AccountTransferFromPmidManagerToPmidManager& message,
+    const typename AccountTransferFromPmidManagerToPmidManager::Sender& sender,
+    const typename AccountTransferFromPmidManagerToPmidManager::Receiver& /*receiver*/) {
+  PmidManager::UnresolvedAccountTransfer unresolved_account_transfer(message.contents->data);
+  LOG(kInfo) << "PmidManager received account " << DebugId(sender.group_id)
+             << " from " << DebugId(sender.sender_id);
+  auto resolved_action(account_transfer_.AddUnresolvedAction(
+      unresolved_account_transfer, sender,
+      AccountTransfer<PmidManager::UnresolvedAccountTransfer>::AddRequestChecker(
+          routing::Parameters::group_size / 2)));
+  if (resolved_action) {
+    LOG(kInfo) << "AccountTransferFromPmidManagerToPmidManager handle account transfer";
+    this->HandleAccountTransfer(std::move(resolved_action));
+  }
+}
+
+void PmidManagerService::HandleAccountTransfer(
+    std::unique_ptr<PmidManager::UnresolvedAccountTransfer>&& resolved_action) {
+  VLOG(nfs::Persona::kPmidManager, VisualiserAction::kAccountTransfer, resolved_action->key);
+  GroupDb<PmidManager>::Contents content;
+  content.group_name = resolved_action->key;
+  for (auto& action : resolved_action->actions) {
+    try {
+      protobuf::PmidManagerKeyValuePair kv_msg;
+      if (kv_msg.ParseFromString(action)) {
+        LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
+        PmidManager::Key key(kv_msg.key());
+        LOG(kVerbose) << "HandleAccountTransfer key parsed";
+        PmidManagerValue value(kv_msg.value());
+        LOG(kVerbose) << "HandleAccountTransfer vaule parsed";
+        content.kv_pairs.push_back(std::make_pair(key, std::move(value)));
+      } else {
+        LOG(kVerbose) << "HandleAccountTransfer handle metadata";
+        PmidManagerMetadata meta_data(action);
+        content.metadata = meta_data;
+      }
+    } catch(...) {
+      LOG(kError) << "HandleAccountTransfer can't parse the action";
+    }
+  }
+  group_db_.HandleTransfer(content);
+}
 
 // void PmidManagerService::TransferAccount(const PmidName& account_name, const NodeId& new_node) {
 //  protobuf::PmidAccount pmid_account;

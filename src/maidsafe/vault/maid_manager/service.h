@@ -45,6 +45,7 @@
 #include "maidsafe/nfs/utils.h"
 #include "maidsafe/nfs/client/data_getter.h"
 
+#include "maidsafe/vault/account_transfer.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/message_types.h"
@@ -212,6 +213,9 @@ class MaidManagerService {
                                 const std::string &serialised_pmid_health,
                                 maidsafe_error& return_code, nfs::MessageId message_id);
 
+  void TransferAccount(const NodeId& dest,
+                       const std::vector<GroupDb<MaidManager>::Contents>& accounts);
+
 //  MaidManagerMetadata::Status AllowPut(const MaidName& account_name, int32_t cost);
 
   // Only Maid and Anmaid can create account; for all others this is a no-op.
@@ -252,6 +256,9 @@ class MaidManagerService {
     // Hash the data name to obfuscate the list of chunks associated with the client.
     key.name = Identity(crypto::Hash<crypto::SHA512>(key.name));
   }
+
+  void HandleAccountTransfer(
+      std::unique_ptr<MaidManager::UnresolvedAccountTransfer>&& resolved_action);
 
   bool CheckDataNamesExist(const MaidName& maid_name, const nfs_vault::DataNames& data_names);
 
@@ -299,6 +306,7 @@ class MaidManagerService {
   Sync<MaidManager::UnresolvedUpdatePmidHealth> sync_update_pmid_healths_;
   Sync<MaidManager::UnresolvedIncrementReferenceCounts> sync_increment_reference_counts_;
   Sync<MaidManager::UnresolvedDecrementReferenceCounts> sync_decrement_reference_counts_;
+  AccountTransfer<MaidManager::UnresolvedAccountTransfer> account_transfer_;
   static const int kDefaultPaymentFactor_;
   std::mutex pending_account_mutex_;
   std::map<nfs::MessageId, MaidAccountCreationStatus> pending_account_map_;

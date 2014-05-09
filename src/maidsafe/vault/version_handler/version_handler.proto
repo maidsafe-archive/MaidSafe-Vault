@@ -18,6 +18,11 @@
 
 package maidsafe.vault.protobuf;
 
+message VersionHandlerKeyValuePair {
+  required bytes key = 1;
+  required bytes value = 2;
+}
+
 message VersionHandlerValue {
   required bytes serialised_structured_data_versions = 1;
 }

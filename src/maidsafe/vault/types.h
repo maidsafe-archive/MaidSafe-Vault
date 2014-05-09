@@ -42,8 +42,11 @@ DEFINE_OSTREAMABLE_ENUM_VALUES(VisualiserAction, int,
     (JoinPmidNode)
     (DropPmidNode)
     (StoreChunk)
+    (MoveChunk)
     (DeleteChunk)
-    (ChangeVersion))
+    (ChangeVersion)
+    (MarkNodeUp)
+    (AccountTransfer))
 
 namespace detail {
 

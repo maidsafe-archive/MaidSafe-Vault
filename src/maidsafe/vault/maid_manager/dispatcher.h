@@ -89,7 +89,7 @@ class MaidManagerDispatcher {
   void SendSync(const KeyType& key, const std::string& serialised_sync);
 
   void SendAccountTransfer(const NodeId& destination_peer, const MaidName& account_name,
-                           const std::string& serialised_account);
+                           nfs::MessageId message_id, const std::string& serialised_account);
 
   template <typename Data>
   void SendPutFailure(const MaidName& maid_node, const typename Data::Name& data_name,
