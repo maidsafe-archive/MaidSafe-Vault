@@ -103,15 +103,14 @@ TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
 
   int index(0);
   for (const auto& chunk : chunks) {
-    clients_[0]->nfs_->Put(chunk);
-    Sleep(std::chrono::seconds(2));
+    EXPECT_NO_THROW(clients_[0]->nfs_->Put(chunk)) << "Store failure "
+                                                   << DebugId(NodeId(chunk.name()->string()));
     LOG(kVerbose) << DebugId(NodeId(chunk.name()->string())) << " stored: " << index++;
   }
 
   std::vector<boost::future<ImmutableData>> get_futures;
   for (const auto& chunk : chunks) {
     get_futures.emplace_back(clients_[0]->nfs_->Get<ImmutableData::Name>(chunk.name()));
-    Sleep(std::chrono::seconds(1));
   }
 
   for (size_t index(0); index < kIterations; ++index) {

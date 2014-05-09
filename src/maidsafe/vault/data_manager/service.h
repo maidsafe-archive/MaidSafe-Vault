@@ -521,37 +521,19 @@ template <typename Data, typename RequestorIdType>
 void DataManagerService::HandleGet(const typename Data::Name& data_name,
                                    const RequestorIdType& requestor,
                                    nfs::MessageId message_id) {
-  LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value);
+ LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value);
   // Get all pmid nodes that are online.
-<<<<<<< HEAD
-  std::set<PmidName> online_pmids;
-  try {
-    auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue)));
-    online_pmids = std::move(value.online_pmids());
-  } catch (const maidsafe_error& error) {
-    LOG(kWarning) << "Getting " << HexSubstr(data_name.value)
-                  << " causes a maidsafe_error " << boost::diagnostic_information(error);
-    if (error.code() != make_error_code(VaultErrors::no_such_account)) {
-      LOG(kError) << "db error";
-      throw error;  // For db errors
-    }
-    // TODO(Fraser#5#): 2013-10-03 - Request for non-existent data should possibly generate an alert
-    LOG(kWarning) << "Entry for " << HexSubstr(data_name.value) << " doesn't exist.";
-    dispatcher_.SendGetResponseFailure(requestor, data_name,
-                                       maidsafe_error(CommonErrors::no_such_element), message_id);
-    return;
-  }
-
-=======
   std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
->>>>>>> next
   int expected_response_count(static_cast<int>(online_pmids.size()));
   // if there is no online_pmids in record, means :
   //   this DM doesn't have the record for the requested data
   //   or no pmid can given the data (shall not happen)
   // BEFORE_RELEASE In any case, shall return silently or send back a failure?
-  if (expected_response_count == 0)
+  if (expected_response_count == 0) {
+    dispatcher_.SendGetResponseFailure(requestor, data_name,
+                                       maidsafe_error(CommonErrors::no_such_element), message_id);
     return;
+  }
 
   // Choose the one we're going to ask for actual data, and set up the others for integrity checks.
   auto pmid_node_to_get_from(ChoosePmidNodeToGetFrom(online_pmids, data_name));
