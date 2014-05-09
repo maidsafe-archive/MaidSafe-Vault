@@ -122,7 +122,10 @@ class Vault {
 
 template <typename T>
 void Vault::OnMessageReceived(const T& message) {
-  asio_service_.service().post([=] { demux_.HandleMessage(message); });
+  LOG(kVerbose) << "Vault::OnMessageReceived";
+  asio_service_.service().post([=] {
+    LOG(kVerbose) << "Vault::OnMessageReceived invoked task in asio_service";
+    demux_.HandleMessage(message); });
 }
 
 template <typename T>
