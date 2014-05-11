@@ -36,6 +36,7 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
       network_health_condition_variable_(),
       network_health_(-1),
       on_new_bootstrap_endpoint_(on_new_bootstrap_endpoint),
+      asio_service_(2),
       routing_(new routing::Routing(pmid)),
       pmids_from_file_(pmids_from_file),
       data_getter_(asio_service_, *routing_),
@@ -56,7 +57,6 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
           new CacheHandlerService(*routing_, vault_root_dir)))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
              pmid_manager_service_, pmid_node_service_, data_getter_),
-      asio_service_(2),
       getting_keys_()
 #ifdef TESTING
       ,
@@ -65,11 +65,12 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
 {
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
   InitRouting(peer_endpoints);
-  log::Logging::Instance().SetVlogPrefix(DebugId(pmid.name().value));
+//  log::Logging::Instance().SetVlogPrefix(DebugId(pmid.name().value));
 }
 
 Vault::~Vault() {
   // call stop on all components
+  asio_service_.Stop();
   routing_.reset();
 }
 

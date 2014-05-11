@@ -190,7 +190,7 @@ void VaultNetwork::SetUp() {
 void VaultNetwork::TearDown() {
   while (vaults_.size() > 0) {
     vaults_.erase(vaults_.begin());
-    Sleep(std::chrono::milliseconds(200));
+    Sleep(std::chrono::milliseconds(100));
   }
 #ifndef MAIDSAFE_WIN32
   ulimit(UL_SETFSIZE, kUlimitFileSize);

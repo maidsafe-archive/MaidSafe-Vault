@@ -101,6 +101,7 @@ class Vault {
   std::condition_variable network_health_condition_variable_;
   int network_health_;
   std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint_;
+  AsioService asio_service_;
   std::unique_ptr<routing::Routing> routing_;
   std::vector<passport::PublicPmid> pmids_from_file_;
   nfs_client::DataGetter data_getter_;
@@ -112,7 +113,6 @@ class Vault {
   nfs::Service<PmidNodeService> pmid_node_service_;
   nfs::Service<CacheHandlerService> cache_service_;
   Demultiplexer demux_;
-  AsioService asio_service_;
   std::vector<std::future<void>> getting_keys_;
 #ifdef TESTING
   std::mutex pmids_mutex_;

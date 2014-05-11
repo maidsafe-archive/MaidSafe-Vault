@@ -60,15 +60,14 @@ TEST_F(VaultNetworkTest, FUNC_PutGetDelete) {
   EXPECT_TRUE(AddClient(true));
   ImmutableData data(NonEmptyString(RandomString(1024)));
   LOG(kVerbose) << "Before put";
-  auto put_future(clients_[0]->nfs_->Put(data));
   try {
-    put_future.get();
+    EXPECT_NO_THROW(clients_[0]->nfs_->Put(data));
+    LOG(kVerbose) << "After put";
   }
   catch (...) {
     EXPECT_TRUE(false) << "Failed to put: " << DebugId(NodeId(data.name()->string()));
   }
 
-  LOG(kVerbose) << "After put";
   auto future(clients_[0]->nfs_->Get<ImmutableData::Name>(data.name(), std::chrono::seconds(5)));
   try {
     auto retrieved(future.get());
@@ -85,18 +84,21 @@ TEST_F(VaultNetworkTest, FUNC_PutGetDelete) {
 
   future = clients_[0]->nfs_->Get<ImmutableData::Name>(data.name(), std::chrono::seconds(5));
   try {
-    future.get();
-    EXPECT_TRUE(false) << "should have failed retreiveing data: "
-                       << DebugId(NodeId(data.name()->string()));
+    EXPECT_THROW(future.get(), std::exception) << "should have failed retreiveing data: "
+                                               << DebugId(NodeId(data.name()->string()));
   }
-  catch (...) {
-    LOG(kVerbose) << DebugId(NodeId(data.name()->string())) << " Deleted ";
+
+  catch (const std::exception& e) {
+    LOG(kVerbose) << DebugId(NodeId(data.name()->string())) << " Deleted "
+                  << boost::diagnostic_information(e);
   }
+
+  LOG(kVerbose) << "Put Get Delete done.";
 }
 
 TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
-  EXPECT_TRUE(AddClient(true));
-  const size_t kIterations(50);
+  ASSERT_TRUE(AddClient(true));
+  const size_t kIterations(2);
   std::vector<ImmutableData> chunks;
   for (auto index(kIterations); index > 0; --index)
     chunks.emplace_back(NonEmptyString(RandomString(1024)));
@@ -119,8 +121,8 @@ TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
       EXPECT_EQ(retrieved.data(), chunks[index].data());
     }
     catch (const std::exception& ex) {
-      LOG(kError) << "Failed to retrieve chunk: " << DebugId(chunks[index].name())
-                  << " because: " << boost::diagnostic_information(ex) << " "  << index;
+      EXPECT_TRUE(false) << "Failed to retrieve chunk: " << DebugId(chunks[index].name())
+                         << " because: " << boost::diagnostic_information(ex) << " "  << index;
     }
   }
   LOG(kVerbose) << "Multiple puts is finished successfully";
