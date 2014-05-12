@@ -25,6 +25,8 @@
 #include <utility>
 #include <vector>
 
+#include "boost/date_time/posix_time/posix_time.hpp"
+
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/utils.h"
@@ -61,7 +63,8 @@ struct UnresolvedAccountTransferAction {
   Key key;
   nfs::MessageId id;
   std::vector<Action> actions;
-  std::map<Action, std::set<routing::SingleId>> entries;
+  std::map<Action, std::pair<bool, std::set<routing::SingleId>>> entries;
+  boost::posix_time::ptime time_tag;
 
 //   UnresolvedAccountTransferAction& operator=(UnresolvedAction other);
 };
@@ -69,12 +72,14 @@ struct UnresolvedAccountTransferAction {
 template <typename Key, typename Action>
 UnresolvedAccountTransferAction<Key, Action>::UnresolvedAccountTransferAction(
     const Key& key_in, const nfs::MessageId& id_in, const std::vector<Action>& actions_in)
-  : key(key_in), id(id_in), actions(actions_in), entries() {}
+  : key(key_in), id(id_in), actions(actions_in), entries(),
+    time_tag(boost::posix_time::microsec_clock::universal_time()) {}
 
 template <typename Key, typename Action>
 UnresolvedAccountTransferAction<Key, Action>::UnresolvedAccountTransferAction(
       const std::string& serialised_copy)
-    : key(), id(), actions(), entries() {
+    : key(), id(), actions(), entries(),
+      time_tag(boost::posix_time::microsec_clock::universal_time()) {
   protobuf::UnresolvedAccountTransferAction proto_unresolved_action;
   proto_unresolved_action.ParseFromString(serialised_copy);
   key = Key(Identity(proto_unresolved_action.serialised_key()));
@@ -86,13 +91,19 @@ UnresolvedAccountTransferAction<Key, Action>::UnresolvedAccountTransferAction(
 template <typename Key, typename Action>
 void UnresolvedAccountTransferAction<Key, Action>::Merge(
     const UnresolvedAccountTransferAction& other, routing::SingleId sender) {
+  auto cur_time(boost::posix_time::microsec_clock::universal_time());
+  if ((cur_time - time_tag).total_seconds() > 30) {
+    time_tag = cur_time;
+    entries.clear();
+  }
   for (auto& action : other.actions) {
     auto entry(entries.find(action));
     if (entry == std::end(entries)) {
       std::set<routing::SingleId> senders;
-      entries[action] = senders;
+      entries[action] = std::make_pair(false, senders);
     }
-    entries[action].insert(sender);
+    if (!entries[action].first)
+      entries[action].second.insert(sender);
   }
 }
 
@@ -100,23 +111,24 @@ template <typename Key, typename Action>
 UnresolvedAccountTransferAction<Key, Action>
     UnresolvedAccountTransferAction<Key, Action>::GetResolvedActions(size_t resolve_num) {
   std::vector<Action> resolved;
-  for (auto entry : entries)
-    if (entry.second.size() >= resolve_num)
+  for (auto& entry : entries) {
+    LOG(kVerbose) << "before check isresolved = " << std::boolalpha << entry.second.first;
+    if ((!entry.second.first) && (entry.second.second.size() >= resolve_num)) {
+      entry.second.first = true;
+      LOG(kVerbose) << "after assignment isresolved = " << std::boolalpha << entry.second.first;
       resolved.push_back(entry.first);
-
-  for (auto& action : resolved)
-    entries.erase(action);
-
+    }
+  }
   return UnresolvedAccountTransferAction(key, id, resolved);
 }
 
 template <typename Key, typename Action>
 std::set<routing::SingleId> UnresolvedAccountTransferAction<Key, Action>::GetSenders() const {
   std::set<routing::SingleId> senders;
-  for (auto entry : entries)
-    if (entry.second.size() > senders.size()) {
+  for (auto& entry : entries)
+    if  ((!entry.second.first) && (entry.second.second.size() > senders.size())) {
       senders.clear();
-      for (auto& sender : entry.second)
+      for (auto& sender : entry.second.second)
         senders.insert(sender);
     }
   return senders;
@@ -124,7 +136,16 @@ std::set<routing::SingleId> UnresolvedAccountTransferAction<Key, Action>::GetSen
 
 template <typename Key, typename Action>
 bool UnresolvedAccountTransferAction<Key, Action>::IsResolved() {
-  return entries.empty();
+  auto cur_time(boost::posix_time::microsec_clock::universal_time());
+  if ((cur_time - time_tag).total_seconds() > 30) {
+    time_tag = cur_time;
+    entries.clear();
+    return true;
+  }
+  for (auto& entry : entries)
+    if (!entry.second.first)
+      return false;
+  return true;
 }
 
 template <typename Key, typename Action>
