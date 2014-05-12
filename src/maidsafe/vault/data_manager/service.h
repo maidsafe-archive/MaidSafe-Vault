@@ -575,7 +575,7 @@ void DataManagerService::GetForNodeDown(const PmidName& pmid_name,
   std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
   online_pmids.erase(pmid_name);
   // Only trigger the recovery procedure when not enough online_pmids.
-  if (online_pmids.size() > static_cast<size_t>(routing::Parameters::group_size / 2))
+  if (online_pmids.size() > (routing::Parameters::group_size / 2U))
     return;
   // Just get, don't do integrity check
   auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
