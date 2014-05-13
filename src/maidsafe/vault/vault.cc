@@ -147,16 +147,20 @@ void Vault::OnNetworkStatusChange(int network_health) {
 }
 
 void Vault::DoOnNetworkStatusChange(int network_health) {
-  if (network_health >= 0) {
-    if (network_health >= network_health_)
-      LOG(kVerbose) << "Init - " << DebugId(routing_->kNodeId()) << " - Network health is "
-                    << network_health << "% (was " << network_health_ << "%)";
-    else
-      LOG(kWarning) << "Init - " << DebugId(routing_->kNodeId()) << " - Network health is "
-                    << network_health << "% (was " << network_health_ << "%)";
+  if (routing_) {
+    if (network_health >= 0) {
+      if (network_health >= network_health_)
+        LOG(kVerbose) << "Init - " << DebugId(routing_->kNodeId()) << " - Network health is "
+                      << network_health << "% (was " << network_health_ << "%)";
+      else
+        LOG(kWarning) << "Init - " << DebugId(routing_->kNodeId()) << " - Network health is "
+                      << network_health << "% (was " << network_health_ << "%)";
+    } else {
+      LOG(kWarning) << "Init - " << DebugId(routing_->kNodeId()) << " - Network is down ("
+                    << network_health << ")";
+    }
   } else {
-    LOG(kWarning) << "Init - " << DebugId(routing_->kNodeId()) << " - Network is down ("
-                  << network_health << ")";
+    LOG(kError) << "routing_ is not initialized";
   }
 
   {
