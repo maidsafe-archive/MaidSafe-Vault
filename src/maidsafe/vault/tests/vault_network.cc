@@ -168,7 +168,7 @@ void VaultNetwork::SetUp() {
                       [index, this] {
                         return this->Create(key_chains_.keys.at(index).pmid);
                       }));
-    Sleep(std::chrono::seconds(std::min(index / 10 + 1, size_t(3))));
+    Sleep(std::chrono::seconds(std::min(index / 10 + 1, size_t(5))));
   }
 
   this->network_up_ = true;
@@ -184,6 +184,7 @@ void VaultNetwork::SetUp() {
     }
     LOG(kVerbose) << index << " returns.";
   }
+  Sleep(std::chrono::seconds(5));
   LOG(kVerbose) << "Network is up...";
 }
 
@@ -202,6 +203,8 @@ bool VaultNetwork::Create(const passport::detail::Fob<passport::detail::PmidTag>
   auto path(chunk_store_path_/path_str);
   fs::create_directory(path);
   try {
+    LOG(kVerbose) << "vault joining: " << vaults_.size() << " id: "
+                  << DebugId(NodeId(pmid.name()->string()));
     vaults_.emplace_back(new Vault(pmid, path, [](const boost::asio::ip::udp::endpoint&) {},
                                    public_pmids_, endpoints_));
     LOG(kSuccess) << "vault joined: " << vaults_.size() << " id: "
@@ -246,6 +249,7 @@ bool VaultNetwork::AddClient(bool register_pmid) {
     public_pmids_.push_back(passport::PublicPmid(node_keys.pmid));
   }
   try {
+    LOG(kVerbose) << "Client joining: " << clients_.size();
     clients_.emplace_back(new Client(node_keys, endpoints_, public_pmids_, register_pmid));
     LOG(kVerbose) << "Client joined: " << clients_.size();
     return true;
@@ -278,8 +282,9 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
   {
     passport::PublicMaid public_maid(keys.maid);
     passport::PublicAnmaid public_anmaid(keys.anmaid);
-    auto future(nfs_->CreateAccount(nfs_vault::AccountCreation(public_maid, public_anmaid)));
-    auto status(future.wait_for(boost::chrono::seconds(10)));
+    auto future(nfs_->CreateAccount(nfs_vault::AccountCreation(public_maid, public_anmaid),
+                                    std::chrono::seconds(20)));
+    auto status(future.wait_for(boost::chrono::seconds(20)));
     if (status == boost::future_status::timeout) {
       LOG(kError) << "can't create account";
       BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
@@ -307,6 +312,7 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
       LOG(kError) << "Pmid Registration Failed " << boost::diagnostic_information(error);
       throw;
     }
+    Sleep(std::chrono::seconds(2));
     passport::PublicPmid::Name pmid_name(Identity(keys.pmid.name().value));
 
     try {

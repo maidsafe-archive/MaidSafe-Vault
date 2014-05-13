@@ -244,15 +244,14 @@ TEST_F(VaultNetworkTest, FUNC_UnauthorisedDelete) {
   EXPECT_TRUE(AddClient(true));
 
   ImmutableData chunk(NonEmptyString(RandomString(2^10)));
-  clients_.front()->nfs_->Put<ImmutableData>(chunk);
-  Sleep(std::chrono::seconds(2));
+  EXPECT_NO_THROW(clients_.front()->nfs_->Put<ImmutableData>(chunk)) << "should have succeeded";
   EXPECT_NO_THROW(Get<ImmutableData>(chunk.name()));
   LOG(kVerbose) << "Chunk is verified to be in the network";
   clients_.back()->nfs_->Delete(chunk.name());
-  Sleep(std::chrono::seconds(2));
+  Sleep(std::chrono::seconds(3));
   EXPECT_NO_THROW(Get<ImmutableData>(chunk.name())) << "Delete must have failed";
   clients_.front()->nfs_->Delete(chunk.name());
-  Sleep(std::chrono::seconds(2));
+  Sleep(std::chrono::seconds(3));
   EXPECT_THROW(Get<ImmutableData>(chunk.name()), maidsafe_error)  << "Delete must have succeeded";
 }
 
