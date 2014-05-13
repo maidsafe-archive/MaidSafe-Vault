@@ -541,6 +541,9 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   // Choose the one we're going to ask for actual data, and set up the others for integrity checks.
   auto pmid_node_to_get_from(ChoosePmidNodeToGetFrom(online_pmids, data_name));
   std::map<PmidName, IntegrityCheckData> integrity_checks;
+  // TODO(Team): IntegrityCheck is temporarily disabled because of the performance concern
+  //             1, May only undertake IntegrityCheck for mutable data
+  //             2, The efficiency of the procedure shall be improved
 //   for (const auto& iter : online_pmids)
 //     integrity_checks.insert(
 //         std::make_pair(iter, IntegrityCheckData(IntegrityCheckData::GetRandomInput())));
