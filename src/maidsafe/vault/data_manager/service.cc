@@ -77,7 +77,7 @@ void DataManagerService::HandleMessage(
     const PutRequestFromMaidManagerToDataManager& message,
     const typename PutRequestFromMaidManagerToDataManager::Sender& sender,
     const typename PutRequestFromMaidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage PutRequestFromMaidManagerToDataManager"
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutRequestFromMaidManagerToDataManager "
                 << message.id;
   typedef PutRequestFromMaidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
@@ -93,7 +93,7 @@ void DataManagerService::HandleMessage(
     const PutResponseFromPmidManagerToDataManager& message,
     const typename PutResponseFromPmidManagerToDataManager::Sender& sender,
     const typename PutResponseFromPmidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage PutResponseFromPmidManagerToDataManager"
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutResponseFromPmidManagerToDataManager "
                 <<  message.id;
   typedef PutResponseFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
@@ -109,7 +109,7 @@ void DataManagerService::HandleMessage(
     const PutFailureFromPmidManagerToDataManager& message,
     const typename PutFailureFromPmidManagerToDataManager::Sender& sender,
     const typename PutFailureFromPmidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage PutFailureFromPmidManagerToDataManager"
+  LOG(kVerbose) << "DataManagerService::HandleMessage PutFailureFromPmidManagerToDataManager "
                 <<  message.id;
   typedef PutFailureFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
@@ -129,7 +129,7 @@ void DataManagerService::HandleMessage(
   LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromMaidNodeToDataManager"
                 << " from " << HexSubstr(sender.data.string())
                 << " for chunk " << HexSubstr(message.contents->raw_name.string())
-                <<  message.id;
+                <<  " with message id " << message.id;
   typedef nfs::GetRequestFromMaidNodeToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -146,7 +146,8 @@ void DataManagerService::HandleMessage(
     const typename nfs::GetRequestFromMaidNodePartialToDataManager::Receiver& /*receiver*/) {
   LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromMaidNodePartialToDataManager"
                 << " from " << HexSubstr(sender.node_id->string())
-                << " for chunk " << HexSubstr(message.contents->raw_name.string());
+                << " for chunk " << HexSubstr(message.contents->raw_name.string())
+                << " with message id " << message.id;
   auto data_name(detail::GetNameVariant(*message.contents));
   typedef nfs::GetRequestFromMaidNodePartialToDataManager::SourcePersona SourceType;
   detail::PartialRequestor<SourceType> requestor(sender);
@@ -163,7 +164,7 @@ void DataManagerService::HandleMessage(
   LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromDataGetterToDataManager"
                 << " from " << HexSubstr(sender.data.string())
                 << " for chunk " << HexSubstr(message.contents->raw_name.string())
-                <<  message.id;
+                << " with message id " << message.id;
   typedef nfs::GetRequestFromDataGetterToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -183,7 +184,8 @@ void DataManagerService::HandleMessage(
   LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromDataGetterPartialToDataManager"
                 << " from " << HexSubstr(sender.node_id->string())
                 << " relayed via : " << HexSubstr(sender.relay_node->string())
-                << " for chunk " << HexSubstr(message.contents->raw_name.string());
+                << " for chunk " << HexSubstr(message.contents->raw_name.string())
+                << " with message id " << message.id;
   if (!this->ValidateSender(message, sender))
     return;
   auto data_name(detail::GetNameVariant(*message.contents));
@@ -273,7 +275,7 @@ void DataManagerService::HandleMessage(
     const DeleteRequestFromMaidManagerToDataManager& message,
     const typename DeleteRequestFromMaidManagerToDataManager::Sender& sender,
     const typename DeleteRequestFromMaidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage DeleteRequestFromMaidManagerToDataManager"
+  LOG(kVerbose) << "DataManagerService::HandleMessage DeleteRequestFromMaidManagerToDataManager "
                 <<  message.id;
   typedef DeleteRequestFromMaidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
