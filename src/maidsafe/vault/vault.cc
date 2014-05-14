@@ -142,8 +142,11 @@ void Vault::OnNetworkStatusChange(int network_health) {
 }
 
 void Vault::DoOnNetworkStatusChange(int network_health) {
-  routing::UpdateNetworkHealth(network_health, network_health_, network_health_mutex_,
-                               network_health_condition_variable_, routing_->kNodeId());
+  if (routing_)
+    routing::UpdateNetworkHealth(network_health, network_health_, network_health_mutex_,
+                                 network_health_condition_variable_, routing_->kNodeId());
+  else
+    LOG(kError) << "routing_ is not initialized";
   // TODO(Team) : actions when network is down/up per persona
 }
 

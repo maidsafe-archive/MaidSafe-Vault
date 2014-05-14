@@ -26,6 +26,8 @@
 #include <utility>
 #include <vector>
 
+#include "boost/date_time/posix_time/posix_time.hpp"
+
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/utils.h"
@@ -49,13 +51,21 @@ struct UnresolvedAccountTransferAction {
 //   UnresolvedAccountTransferAction(const UnresolvedAction& other);
 //   UnresolvedAccountTransferAction(UnresolvedAccountTransfer&& other);
 
-  void Merge(const UnresolvedAccountTransferAction& other);
+  void Merge(const UnresolvedAccountTransferAction& other, routing::SingleId sender);
+
+  UnresolvedAccountTransferAction GetResolvedActions(size_t resolve_num);
+
+  std::set<routing::SingleId> GetSenders() const;
+
+  bool IsResolved();
 
   std::string Serialise() const;
 
   Key key;
   nfs::MessageId id;
   std::vector<Action> actions;
+  std::map<Action, std::pair<bool, std::set<routing::SingleId>>> entries;
+  boost::posix_time::ptime time_tag;
 
 //   UnresolvedAccountTransferAction& operator=(UnresolvedAction other);
 };
@@ -63,12 +73,14 @@ struct UnresolvedAccountTransferAction {
 template <typename Key, typename Action>
 UnresolvedAccountTransferAction<Key, Action>::UnresolvedAccountTransferAction(
     const Key& key_in, const nfs::MessageId& id_in, const std::vector<Action>& actions_in)
-  : key(key_in), id(id_in), actions(actions_in) {}
+  : key(key_in), id(id_in), actions(actions_in), entries(),
+    time_tag(boost::posix_time::microsec_clock::universal_time()) {}
 
 template <typename Key, typename Action>
 UnresolvedAccountTransferAction<Key, Action>::UnresolvedAccountTransferAction(
       const std::string& serialised_copy)
-    : key(), id(), actions() {
+    : key(), id(), actions(), entries(),
+      time_tag(boost::posix_time::microsec_clock::universal_time()) {
   protobuf::UnresolvedAccountTransferAction proto_unresolved_action;
   proto_unresolved_action.ParseFromString(serialised_copy);
   key = Key(Identity(proto_unresolved_action.serialised_key()));
@@ -79,18 +91,62 @@ UnresolvedAccountTransferAction<Key, Action>::UnresolvedAccountTransferAction(
 
 template <typename Key, typename Action>
 void UnresolvedAccountTransferAction<Key, Action>::Merge(
-    const UnresolvedAccountTransferAction& other) {
-  std::vector<Action> merged;
-  LOG(kVerbose) << "UnresolvedAccountTransferAction<Key, Action>::Merge before having "
-                << actions.size() << " actions, target having "
-                << other.actions.size() << " actions";
-  std::set_intersection(actions.begin(), actions.end(),
-                        other.actions.begin(), other.actions.end(),
-                        std::back_inserter(merged));
-  actions.clear();
-  std::copy(merged.begin(), merged.end(), std::back_inserter(actions));
-  LOG(kVerbose) << "UnresolvedAccountTransferAction<Key, Action>::Merge after having "
-                << actions.size() << " actions";
+    const UnresolvedAccountTransferAction& other, routing::SingleId sender) {
+  auto cur_time(boost::posix_time::microsec_clock::universal_time());
+  if ((cur_time - time_tag).total_seconds() > 30) {
+    time_tag = cur_time;
+    entries.clear();
+  }
+  for (auto& action : other.actions) {
+    auto entry(entries.find(action));
+    if (entry == std::end(entries)) {
+      std::set<routing::SingleId> senders;
+      entries[action] = std::make_pair(false, senders);
+    }
+    if (!entries[action].first)
+      entries[action].second.insert(sender);
+  }
+}
+
+template <typename Key, typename Action>
+UnresolvedAccountTransferAction<Key, Action>
+    UnresolvedAccountTransferAction<Key, Action>::GetResolvedActions(size_t resolve_num) {
+  std::vector<Action> resolved;
+  for (auto& entry : entries) {
+    LOG(kVerbose) << "before check isresolved = " << std::boolalpha << entry.second.first;
+    if ((!entry.second.first) && (entry.second.second.size() >= resolve_num)) {
+      entry.second.first = true;
+      LOG(kVerbose) << "after assignment isresolved = " << std::boolalpha << entry.second.first;
+      resolved.push_back(entry.first);
+    }
+  }
+  return UnresolvedAccountTransferAction(key, id, resolved);
+}
+
+template <typename Key, typename Action>
+std::set<routing::SingleId> UnresolvedAccountTransferAction<Key, Action>::GetSenders() const {
+  std::set<routing::SingleId> senders;
+  for (auto& entry : entries)
+    if  ((!entry.second.first) && (entry.second.second.size() > senders.size())) {
+      senders.clear();
+      for (auto& sender : entry.second.second)
+        senders.insert(sender);
+    }
+  return senders;
+}
+
+template <typename Key, typename Action>
+bool UnresolvedAccountTransferAction<Key, Action>::IsResolved() {
+  auto cur_time(boost::posix_time::microsec_clock::universal_time());
+  if ((cur_time - time_tag).total_seconds() > 30) {
+    time_tag = cur_time;
+    entries.clear();
+    return true;
+  }
+  for (auto& entry : entries)
+    if (!entry.second.first)
+      return false;
+  return true;
 }
 
 template <typename Key, typename Action>

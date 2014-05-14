@@ -325,17 +325,18 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
 }
 
 std::future<bool> Client::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints) {
-  std::once_flag join_promise_set_flag;
   std::shared_ptr<std::promise<bool>> join_promise(std::make_shared<std::promise<bool>>());
-  functors_.network_status = [&join_promise_set_flag, join_promise](int result) {
+  functors_.network_status = [join_promise](int result) {
     LOG(kVerbose) << "Network health: " << result;
-    if (result == 100)
-      std::call_once(join_promise_set_flag, [join_promise] {
-                                              try {
-                                                join_promise->set_value(true);
-                                              } catch (...) {
-                                              }
-                                            });
+    if (result == 100) {
+      LOG(kInfo) << "Connected to enough vaults";
+      try {
+        join_promise->set_value(true);
+        LOG(kInfo) << "join_promise set to true";
+      } catch (...) {
+        LOG(kError) << "can't set join_promise";
+      }
+    }
   };
   functors_.typed_message_and_caching.group_to_group.message_received =
       [&](const routing::GroupToGroupMessage& msg) { nfs_->HandleMessage(msg); };  // NOLINT

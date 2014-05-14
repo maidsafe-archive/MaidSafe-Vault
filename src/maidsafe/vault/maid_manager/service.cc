@@ -591,21 +591,26 @@ void MaidManagerService::TransferAccount(const NodeId& dest,
     }
     VLOG(nfs::Persona::kMaidManager, VisualiserAction::kAccountTransfer, account.group_name)
         << " sending to " << DebugId(dest);
-    std::vector<std::string> actions;
-    actions.push_back(account.metadata.Serialise());
-    LOG(kVerbose) << "MaidManagerService::TransferAccount metadata serialised";
-    for (auto& kv : account.kv_pairs) {
-      protobuf::MaidManagerKeyValuePair kv_msg;
-        kv_msg.set_key(kv.first.Serialise());
-        kv_msg.set_value(kv.second.Serialise());
-        actions.push_back(kv_msg.SerializeAsString());
+    try {
+      std::vector<std::string> actions;
+      actions.push_back(account.metadata.Serialise());
+      LOG(kVerbose) << "MaidManagerService::TransferAccount metadata serialised";
+      for (auto& kv : account.kv_pairs) {
+        protobuf::MaidManagerKeyValuePair kv_msg;
+          kv_msg.set_key(kv.first.Serialise());
+          kv_msg.set_value(kv.second.Serialise());
+          actions.push_back(kv_msg.SerializeAsString());
+      }
+      nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
+      MaidManager::UnresolvedAccountTransfer account_transfer(
+          account.group_name, message_id, actions);
+      LOG(kVerbose) << "MaidManagerService::TransferAccount send account_transfer";
+      dispatcher_.SendAccountTransfer(dest, account.group_name,
+                                      message_id, account_transfer.Serialise());
+    } catch(...) {
+      // the normal problem is metadata hasn't been populated
+      LOG(kError) << "MaidManagerService::TransferAccount account info error";
     }
-    nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
-    MaidManager::UnresolvedAccountTransfer account_transfer(
-        account.group_name, message_id, actions);
-    LOG(kVerbose) << "MaidManagerService::TransferAccount send account_transfer";
-    dispatcher_.SendAccountTransfer(dest, account.group_name,
-                                    message_id, account_transfer.Serialise());
   }
 }
 

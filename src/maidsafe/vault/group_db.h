@@ -331,9 +331,22 @@ template <typename Persona>
 void GroupDb<Persona>::ApplyTransfer(const Contents& contents) {
   // BEFORE_RELEASE what if metadata can't got resolved ? i.e. metadata is empty
   //                create an empty account only for group_name?
-  auto itr = AddGroupToMap(contents.group_name, contents.metadata);
-  for (const auto& kv_pair : contents.kv_pairs)
-    Put(kv_pair, itr->second.first);
+  typename GroupMap::iterator itr;
+  try {
+    itr = FindGroup(contents.group_name);
+  } catch(...) {
+    // During the transfer, there is chance one account's actions scattered across different vaults
+    // this will incur multiple AddGroupToMap attempts for the same account
+    LOG(kWarning) << "trying to transfer part of an already existed account";
+    itr = AddGroupToMap(contents.group_name, contents.metadata);
+  }
+  for (const auto& kv_pair : contents.kv_pairs) {
+    try {
+      Put(kv_pair, itr->second.first);
+    } catch(...) {
+      LOG(kError) << "trying to re-insert an existing entry";
+    }
+  }
 }
 
 template <typename Persona>
