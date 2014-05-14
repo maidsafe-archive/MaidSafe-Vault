@@ -25,6 +25,8 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <map>
+#include <set>
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 
