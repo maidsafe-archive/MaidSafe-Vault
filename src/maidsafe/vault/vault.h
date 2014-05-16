@@ -36,6 +36,8 @@
 
 #include "maidsafe/routing/bootstrap_file_operations.h"
 
+#include "maidsafe/vault_manager/vault_config.h"
+
 #include "maidsafe/vault/pmid_node/service.h"
 #include "maidsafe/vault/maid_manager/service.h"
 #include "maidsafe/vault/data_manager/service.h"
@@ -52,16 +54,14 @@ namespace maidsafe {
 namespace vault {
 
 #ifdef TESTING
-namespace test {
-
-class VaultNetwork;
-
-}
-
+namespace test { class VaultNetwork; }
 #endif
 
 class Vault {
  public:
+  Vault(const vault_manager::VaultConfig& vault_config,
+        std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact);
+
   // pmids_from_file must only be non-empty for zero-state network.
   Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_root_dir,
         std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact,
@@ -114,7 +114,6 @@ class Vault {
   nfs::Service<CacheHandlerService> cache_service_;
   Demultiplexer demux_;
   AsioService asio_service_;
-  std::vector<std::future<void>> getting_keys_;
 #ifdef TESTING
   std::mutex pmids_mutex_;
 #endif

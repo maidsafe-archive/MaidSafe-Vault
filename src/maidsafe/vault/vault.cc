@@ -23,10 +23,55 @@
 #include "maidsafe/routing/node_info.h"
 
 #include "maidsafe/vault/parameters.h"
+#include "maidsafe/vault/utils.h"
+
 
 namespace maidsafe {
 
 namespace vault {
+
+
+Vault::Vault(const vault_manager::VaultConfig& vault_config,
+             std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact)
+    : network_health_mutex_(),
+      network_health_condition_variable_(),
+      network_health_(-1),
+      on_new_bootstrap_contact_(on_new_bootstrap_contact),
+      routing_(new routing::Routing(vault_config.pmid)),
+      pmids_from_file_(vault_config.test_config.public_pmid_list),
+      data_getter_(asio_service_, *routing_),
+      public_pmid_helper_(),
+      maid_manager_service_(
+          std::move(std::unique_ptr<MaidManagerService>(new MaidManagerService(vault_config.pmid,
+                                                                               *routing_,
+                                                                               data_getter_)))),
+      version_handler_service_(std::move(
+          std::unique_ptr<VersionHandlerService>(new VersionHandlerService(vault_config.pmid,
+                                                                           *routing_)))),
+      data_manager_service_(std::move(std::unique_ptr<DataManagerService>(
+          new DataManagerService(vault_config.pmid, *routing_, data_getter_)))),
+      pmid_manager_service_(
+          std::move(std::unique_ptr<PmidManagerService>(new PmidManagerService(vault_config.pmid,
+                                                                               *routing_)))),
+      pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
+          new PmidNodeService(vault_config.pmid, *routing_, data_getter_,
+                              vault_config.chunkstore_path)))),
+      // FIXME need to specialise
+      cache_service_(std::move(std::unique_ptr<CacheHandlerService>(
+          new CacheHandlerService(*routing_, vault_config.chunkstore_path)))),
+      demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
+             pmid_manager_service_, pmid_node_service_, data_getter_),
+      asio_service_(2)
+#ifdef TESTING
+      ,
+      pmids_mutex_()
+#endif
+{
+  // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
+  InitRouting(vault_config.bootstrap_contacts);
+  log::Logging::Instance().SetVlogPrefix(DebugId(vault_config.pmid.name().value));
+}
+
 
 Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_root_dir,
              std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact,
@@ -56,8 +101,7 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
           new CacheHandlerService(*routing_, vault_root_dir)))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
              pmid_manager_service_, pmid_node_service_, data_getter_),
-      asio_service_(2),
-      getting_keys_()
+      asio_service_(2)
 #ifdef TESTING
       ,
       pmids_mutex_()
