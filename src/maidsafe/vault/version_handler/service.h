@@ -71,7 +71,8 @@ class VersionHandlerService {
   typedef void HandleMessageReturnType;
   typedef Identity VersionHandlerAccountName;
 
-  VersionHandlerService(const passport::Pmid& pmid, routing::Routing& routing);
+  VersionHandlerService(const passport::Pmid& pmid, routing::Routing& routing,
+                        const boost::filesystem::path& vault_root_dir);
 
   template <typename MessageType>
   void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,

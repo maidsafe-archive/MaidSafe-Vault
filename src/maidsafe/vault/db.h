@@ -44,7 +44,7 @@ class Db {
   typedef std::pair<Key, Value> KvPair;
   typedef std::map<NodeId, std::vector<KvPair>> TransferInfo;
 
-  Db();
+  Db(const boost::filesystem::path& db_path);
   ~Db();
 
   Value Get(const Key& key);
@@ -68,8 +68,9 @@ class Db {
 };
 
 template <typename Key, typename Value>
-Db<Key, Value>::Db()
-    : kDbPath_(boost::filesystem::unique_path()), mutex_(), leveldb_() {
+Db<Key, Value>::Db(const boost::filesystem::path& db_path)
+    : kDbPath_(db_path),
+      mutex_(), leveldb_() {
   leveldb::DB* db;
   leveldb::Options options;
   options.create_if_missing = true;

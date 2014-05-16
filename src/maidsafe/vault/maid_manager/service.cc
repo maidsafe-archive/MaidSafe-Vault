@@ -151,10 +151,11 @@ T Merge(std::vector<T> values) {
 }  // unnamed namespace
 
 MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
-                                       nfs_client::DataGetter& data_getter)
+                                       nfs_client::DataGetter& data_getter,
+                                       const boost::filesystem::path& vault_root_dir)
     : routing_(routing),
       data_getter_(data_getter),
-      group_db_(),
+      group_db_(UniqueDbPath(vault_root_dir)),
       accumulator_mutex_(),
       nfs_accumulator_(),
       vault_accumulator_(),

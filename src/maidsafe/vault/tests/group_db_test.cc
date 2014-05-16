@@ -47,7 +47,6 @@ namespace vault {
 
 namespace test {
 
-
 PmidManagerMetadata CreatePmidManagerMetadata(const PmidName& pmid_name) {
   PmidManagerMetadata metadata(pmid_name);
   metadata.SetAvailableSize(0);
@@ -319,12 +318,15 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
 
 
 TEST(GroupDbTest, BEH_Constructor) {
-  GroupDb<MaidManager> maid_group_db;
-  GroupDb<PmidManager> pmid_group_db;
+  maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_GroupDbTest"));
+
+  GroupDb<MaidManager> maid_group_db(UniqueDbPath(*test_path));
+  GroupDb<PmidManager> pmid_group_db(UniqueDbPath(*test_path));
 }
 
 TEST(GroupDbTest, FUNC_MaidManagerGroupDb) {
-  GroupDb<MaidManager> maid_group_db;
+  maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_GroupDbTest"));
+  GroupDb<MaidManager> maid_group_db(UniqueDbPath(*test_path));
   for (auto i(0); i < 5 ; ++i)
     RunMaidManagerGroupDbTest(maid_group_db);
 
@@ -334,7 +336,8 @@ TEST(GroupDbTest, FUNC_MaidManagerGroupDb) {
 }
 
 TEST(GroupDbTest, FUNC_PmidManagerGroupDb) {
-  GroupDb<PmidManager> pmid_group_db;
+  maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_GroupDbTest"));
+  GroupDb<PmidManager> pmid_group_db(UniqueDbPath(*test_path));
   for (auto i(0); i < 5 ; ++i)
     RunPmidManagerGroupDbTest(pmid_group_db);
 
@@ -344,8 +347,9 @@ TEST(GroupDbTest, FUNC_PmidManagerGroupDb) {
 }
 
 TEST(GroupDbTest, BEH_TransferInfo) {
-  GroupDb<MaidManager> maid_group_db;
-  GroupDb<PmidManager> pmid_group_db;
+  maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_GroupDbTest"));
+  GroupDb<MaidManager> maid_group_db(UniqueDbPath(*test_path));
+  GroupDb<PmidManager> pmid_group_db(UniqueDbPath(*test_path));
   std::shared_ptr<routing::MatrixChange> matrix_change;
   maid_group_db.GetTransferInfo(matrix_change);
   pmid_group_db.GetTransferInfo(matrix_change);

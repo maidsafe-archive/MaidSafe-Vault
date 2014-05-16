@@ -128,6 +128,12 @@ bool ShouldRetry(routing::Routing& routing, const NodeId& source_id, const NodeI
 
 }  // namespace detail
 
+boost::filesystem::path UniqueDbPath(const boost::filesystem::path& vault_root_dir) {
+  boost::filesystem::path db_root_path(vault_root_dir / "db");
+  detail::InitialiseDirectory(db_root_path);
+  return (db_root_path / boost::filesystem::unique_path());
+}
+
 std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path) {
   if (boost::filesystem::exists(db_path))
     boost::filesystem::remove_all(db_path);

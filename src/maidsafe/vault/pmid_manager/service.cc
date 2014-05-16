@@ -29,6 +29,7 @@
 #include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/sync.pb.h"
+#include "maidsafe/vault/utils.h"
 
 namespace fs = boost::filesystem;
 
@@ -49,9 +50,11 @@ inline bool ForThisPersona(const Message& message) {
 
 }  // namespace detail
 
-PmidManagerService::PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing)
-    : routing_(routing), group_db_(), accumulator_mutex_(), accumulator_(), dispatcher_(routing_),
-      asio_service_(2), get_health_timer_(asio_service_), sync_puts_(NodeId(pmid.name()->string())),
+PmidManagerService::PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
+                                       const boost::filesystem::path& vault_root_dir)
+    : routing_(routing), group_db_(UniqueDbPath(vault_root_dir)), accumulator_mutex_(),
+      accumulator_(), dispatcher_(routing_), asio_service_(2), get_health_timer_(asio_service_),
+      sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),
       sync_set_pmid_health_(NodeId(pmid.name()->string())),
       sync_create_account_(NodeId(pmid.name()->string())),

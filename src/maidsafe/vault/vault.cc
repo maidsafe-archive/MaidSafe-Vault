@@ -40,24 +40,19 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
       pmids_from_file_(vault_config.test_config.public_pmid_list),
       data_getter_(asio_service_, *routing_),
       public_pmid_helper_(),
-      maid_manager_service_(
-          std::move(std::unique_ptr<MaidManagerService>(new MaidManagerService(vault_config.pmid,
-                                                                               *routing_,
-                                                                               data_getter_)))),
-      version_handler_service_(std::move(
-          std::unique_ptr<VersionHandlerService>(new VersionHandlerService(vault_config.pmid,
-                                                                           *routing_)))),
-      data_manager_service_(std::move(std::unique_ptr<DataManagerService>(
-          new DataManagerService(vault_config.pmid, *routing_, data_getter_)))),
-      pmid_manager_service_(
-          std::move(std::unique_ptr<PmidManagerService>(new PmidManagerService(vault_config.pmid,
-                                                                               *routing_)))),
-      pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
-          new PmidNodeService(vault_config.pmid, *routing_, data_getter_,
-                              vault_config.vault_dir)))),
+      maid_manager_service_(std::move(std::unique_ptr<MaidManagerService>(new MaidManagerService(
+          vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir)))),
+      version_handler_service_(std::move(std::unique_ptr<VersionHandlerService>(
+          new VersionHandlerService(vault_config.pmid, *routing_, vault_config.vault_dir)))),
+      data_manager_service_(std::move(std::unique_ptr<DataManagerService>(new DataManagerService(
+          vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir)))),
+      pmid_manager_service_(std::move(std::unique_ptr<PmidManagerService>(new PmidManagerService(
+          vault_config.pmid, *routing_, vault_config.vault_dir)))),
+      pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(new PmidNodeService(
+          vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir)))),
       // FIXME need to specialise
-      cache_service_(std::move(std::unique_ptr<CacheHandlerService>(
-          new CacheHandlerService(*routing_, vault_config.vault_dir)))),
+      cache_service_(std::move(std::unique_ptr<CacheHandlerService>(new CacheHandlerService(
+          *routing_, vault_config.vault_dir)))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
              pmid_manager_service_, pmid_node_service_, data_getter_),
       asio_service_(2)
@@ -84,15 +79,14 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
       pmids_from_file_(pmids_from_file),
       data_getter_(asio_service_, *routing_),
       public_pmid_helper_(),
-      maid_manager_service_(
-          std::move(std::unique_ptr<MaidManagerService>(new MaidManagerService(pmid, *routing_,
-                                                                               data_getter_)))),
-      version_handler_service_(std::move(
-          std::unique_ptr<VersionHandlerService>(new VersionHandlerService(pmid, *routing_)))),
+      maid_manager_service_(std::move(std::unique_ptr<MaidManagerService>(new MaidManagerService(
+          pmid, *routing_, data_getter_, vault_root_dir)))),
+      version_handler_service_(std::move(std::unique_ptr<VersionHandlerService>(
+          new VersionHandlerService(pmid, *routing_, vault_root_dir)))),
       data_manager_service_(std::move(std::unique_ptr<DataManagerService>(
-          new DataManagerService(pmid, *routing_, data_getter_)))),
-      pmid_manager_service_(
-          std::move(std::unique_ptr<PmidManagerService>(new PmidManagerService(pmid, *routing_)))),
+          new DataManagerService(pmid, *routing_, data_getter_, vault_root_dir)))),
+      pmid_manager_service_(std::move(std::unique_ptr<PmidManagerService>(new PmidManagerService(
+          pmid, *routing_, vault_root_dir)))),
       pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
           new PmidNodeService(pmid, *routing_, data_getter_, vault_root_dir)))),
       // FIXME need to specialise

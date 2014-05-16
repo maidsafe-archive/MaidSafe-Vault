@@ -74,7 +74,8 @@ class DataManagerService {
   typedef void HandleMessageReturnType;
 
   DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
-                     nfs_client::DataGetter& data_getter);
+                     nfs_client::DataGetter& data_getter,
+                     const boost::filesystem::path& vault_root_dir);
 
   template <typename MessageType>
   void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,

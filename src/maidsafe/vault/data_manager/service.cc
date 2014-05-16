@@ -50,7 +50,8 @@ inline bool ForThisPersona(const Message& message) {
 }  // unnamed namespace
 
 DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
-                                       nfs_client::DataGetter& data_getter)
+                                       nfs_client::DataGetter& data_getter,
+                                       const boost::filesystem::path& vault_root_dir)
     : routing_(routing),
       asio_service_(2),
       data_getter_(data_getter),
@@ -61,7 +62,7 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       dispatcher_(routing_, pmid),
       get_timer_(asio_service_),
       get_cached_response_timer_(asio_service_),
-      db_(),
+      db_(UniqueDbPath(vault_root_dir)),
       sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),
       sync_add_pmids_(NodeId(pmid.name()->string())),

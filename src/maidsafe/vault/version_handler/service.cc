@@ -59,14 +59,15 @@ inline bool FromVersionHandler(const Message& message) {
 
 
 VersionHandlerService::VersionHandlerService(const passport::Pmid& pmid,
-                                             routing::Routing& routing)
+                                             routing::Routing& routing,
+                                             const boost::filesystem::path& vault_root_dir)
     : routing_(routing),
       dispatcher_(routing),
       accumulator_mutex_(),
       matrix_change_mutex_(),
       accumulator_(),
       matrix_change_(),
-      db_(),
+      db_(UniqueDbPath(vault_root_dir)),
       kThisNodeId_(routing_.kNodeId()),
       sync_create_version_tree_(NodeId(pmid.name()->string())),
       sync_put_versions_(NodeId(pmid.name()->string())),

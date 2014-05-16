@@ -72,7 +72,7 @@ class GroupDb {
     Contents(const Contents& other);
   };
 
-  GroupDb();
+  GroupDb(const boost::filesystem::path& db_path);
   ~GroupDb();
 
   void AddGroup(const GroupName& group_name, const Metadata& metadata);
@@ -131,8 +131,8 @@ template <>
 void GroupDb<PmidManager>::UpdateGroup(typename GroupMap::iterator itr);
 
 template <typename Persona>
-GroupDb<Persona>::GroupDb()
-    : kDbPath_(boost::filesystem::unique_path()),
+GroupDb<Persona>::GroupDb(const boost::filesystem::path& db_path)
+    : kDbPath_(db_path),
       mutex_(),
       leveldb_(InitialiseLevelDb(kDbPath_)),
       group_map_() {
