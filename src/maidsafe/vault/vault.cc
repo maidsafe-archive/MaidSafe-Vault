@@ -54,10 +54,10 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
                                                                                *routing_)))),
       pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
           new PmidNodeService(vault_config.pmid, *routing_, data_getter_,
-                              vault_config.chunkstore_path)))),
+                              vault_config.vault_dir)))),
       // FIXME need to specialise
       cache_service_(std::move(std::unique_ptr<CacheHandlerService>(
-          new CacheHandlerService(*routing_, vault_config.chunkstore_path)))),
+          new CacheHandlerService(*routing_, vault_config.vault_dir)))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
              pmid_manager_service_, pmid_node_service_, data_getter_),
       asio_service_(2)
