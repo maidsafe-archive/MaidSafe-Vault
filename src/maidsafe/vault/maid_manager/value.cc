@@ -75,7 +75,7 @@ std::string MaidManagerValue::Serialise() const {
 void MaidManagerValue::Put(int32_t cost) {
   ++count_;
   VLOG(nfs::Persona::kMaidManager, VisualiserAction::kIncreaseCount, Identity{})
-      << "Increase to " << count_;
+      << "MaidManager increase count to " << count_;
   total_cost_ += cost;
 }
 
@@ -85,7 +85,7 @@ int32_t MaidManagerValue::Delete() {
   auto average_cost(total_cost_ / count_);
   --count_;
   VLOG(nfs::Persona::kMaidManager, VisualiserAction::kDecreaseCount, Identity{})
-      << "Decrease to " << count_;
+      << "MaidManager decrease count to " << count_;
   total_cost_ -= average_cost;
   assert(std::numeric_limits<int32_t>::max() >= average_cost);
   return static_cast<int32_t>(average_cost);
@@ -94,14 +94,14 @@ int32_t MaidManagerValue::Delete() {
 void MaidManagerValue::IncrementCount() {
   ++count_;
   VLOG(nfs::Persona::kMaidManager, VisualiserAction::kIncreaseCount, Identity{})
-      << "Increase to " << count_;
+      << "MaidManager increase count to " << count_;
 }
 
 void MaidManagerValue::DecrementCount() {
   assert((count_ > 0) && "Reference count must be > 0 for Decrement operation");
   --count_;
   VLOG(nfs::Persona::kMaidManager, VisualiserAction::kDecreaseCount, Identity{})
-      << "Decrease to " << count_;
+      << "MaidManager decrease count to " << count_;
 }
 
 void swap(MaidManagerValue& lhs, MaidManagerValue& rhs) {

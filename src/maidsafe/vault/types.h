@@ -34,6 +34,8 @@ namespace maidsafe {
 namespace vault {
 
 DEFINE_OSTREAMABLE_ENUM_VALUES(VisualiserAction, int,
+    (VaultStarted)
+    (VaultStopping)
     (IncreaseSubscribers)
     (DecreaseSubscribers)
     (IncreaseCount)
@@ -46,7 +48,9 @@ DEFINE_OSTREAMABLE_ENUM_VALUES(VisualiserAction, int,
     (DeleteChunk)
     (ChangeVersion)
     (MarkNodeUp)
-    (AccountTransfer))
+    (AccountTransfer)
+    (GotAccountTransferred)
+    (RemoveAccount))
 
 namespace detail {
 

@@ -386,7 +386,9 @@ void VersionHandlerService::HandleAccountTransfer(
       if (kv_msg.ParseFromString(action)) {
         LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
         VersionHandler::Key key(kv_msg.key());
-        VLOG(nfs::Persona::kVersionHandler, VisualiserAction::kAccountTransfer, key.name);
+        VLOG(nfs::Persona::kVersionHandler, VisualiserAction::kGotAccountTransferred, key.name)
+            << "VersionHandler got account " << HexSubstr(key.name.string())
+            << " transferred";
         LOG(kVerbose) << "HandleAccountTransfer key parsed";
         VersionHandlerValue value(kv_msg.value());
         LOG(kVerbose) << "HandleAccountTransfer vaule parsed";
@@ -455,7 +457,8 @@ void VersionHandlerService::TransferAccount(const NodeId& dest,
   std::vector<std::string> actions;
   for (auto& account : accounts) {
     VLOG(nfs::Persona::kVersionHandler, VisualiserAction::kAccountTransfer, account.first.name)
-        << " sending to " << DebugId(dest);
+        << "VersionHandler transfer account " << HexSubstr(account.first.name.string())
+        << " to " << DebugId(dest);
     protobuf::DataManagerKeyValuePair kv_msg;
     kv_msg.set_key(account.first.Serialise());
     kv_msg.set_value(account.second.Serialise());
