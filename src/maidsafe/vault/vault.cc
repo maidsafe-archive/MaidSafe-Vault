@@ -23,7 +23,6 @@
 #include "maidsafe/routing/node_info.h"
 
 #include "maidsafe/vault/parameters.h"
-#include "maidsafe/vault/utils.h"
 
 
 namespace maidsafe {
