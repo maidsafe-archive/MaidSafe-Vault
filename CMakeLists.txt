@@ -63,7 +63,6 @@ ms_glob_dir(MaidManagerTests ${VaultSourcesDir}/maid_manager/tests "Tests")
 ms_glob_dir(PmidManagerTests ${VaultSourcesDir}/pmid_manager/tests "Tests")
 ms_glob_dir(PmidNodeTests ${VaultSourcesDir}/pmid_node/tests "Tests")
 ms_glob_dir(VersionHandlerTests ${VaultSourcesDir}/version_handler/tests "Tests")
-ms_glob_dir(VaultTools ${VaultSourcesDir}/tools "Tools")
 
 set(TestsMain ${VaultSourcesDir}/tests/tests_main.cc)
 
@@ -189,10 +188,6 @@ if(MaidsafeTesting)
                                                        ${PROJECT_BINARY_DIR}/generated_message_types
                                                        ${VaultSourcesDir}/tests)
   target_link_libraries(TESTvault_network maidsafe_vault)
-
-  ms_add_executable(local_network_controller "Tools/Vault" ${VaultToolsAllFiles})
-  target_include_directories(local_network_controller PRIVATE ${PROJECT_SOURCE_DIR}/src)
-  target_link_libraries(local_network_controller maidsafe_nfs_vault)
 endif()
 
 ms_rename_outdated_built_exes()
