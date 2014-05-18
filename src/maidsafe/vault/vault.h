@@ -46,7 +46,6 @@
 #include "maidsafe/vault/cache_handler/service.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/demultiplexer.h"
-#include "maidsafe/vault/utils.h"
 
 
 namespace maidsafe {

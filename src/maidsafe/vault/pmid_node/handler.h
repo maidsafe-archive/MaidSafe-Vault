@@ -36,7 +36,7 @@ namespace vault {
 
 class PmidNodeHandler {
  public:
-  explicit PmidNodeHandler(const boost::filesystem::path vault_root_dir);
+  explicit PmidNodeHandler(const boost::filesystem::path vault_root_dir, DiskUsage max_disk_usage);
 
   template <typename Data>
   Data Get(const typename Data::Name& data_name);

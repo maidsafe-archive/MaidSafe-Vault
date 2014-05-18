@@ -145,7 +145,8 @@ class PmidNodeService {
 
   PmidNodeService(const passport::Pmid& pmid, routing::Routing& routing,
                   nfs_client::DataGetter& data_getter,
-                  const boost::filesystem::path& vault_root_dir);
+                  const boost::filesystem::path& vault_root_dir,
+                  DiskUsage max_disk_usage);
 
   template <typename MessageType>
   void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,

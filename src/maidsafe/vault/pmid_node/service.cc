@@ -56,14 +56,14 @@ inline bool ForThisPersona(const Message& message) {
 
 PmidNodeService::PmidNodeService(const passport::Pmid& /*pmid*/, routing::Routing& routing,
                                  nfs_client::DataGetter& data_getter,
-                                 const fs::path& vault_root_dir)
+                                 const fs::path& vault_root_dir, DiskUsage max_disk_usage)
     : routing_(routing),
       accumulator_mutex_(),
 #ifdef USE_MAL_BEHAVIOUR
       malfunc_behaviour_seed_(RandomUint32()),
 #endif
       dispatcher_(routing_),
-      handler_(vault_root_dir),
+      handler_(vault_root_dir, max_disk_usage),
       active_(),
       data_getter_(data_getter) {
   StartUp();

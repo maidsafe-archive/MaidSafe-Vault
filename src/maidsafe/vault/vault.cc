@@ -49,7 +49,8 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
       pmid_manager_service_(std::move(std::unique_ptr<PmidManagerService>(new PmidManagerService(
           vault_config.pmid, *routing_, vault_config.vault_dir)))),
       pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(new PmidNodeService(
-          vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir)))),
+          vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir,
+          vault_config.max_disk_usage)))),
       // FIXME need to specialise
       cache_service_(std::move(std::unique_ptr<CacheHandlerService>(new CacheHandlerService(
           *routing_, vault_config.vault_dir)))),
@@ -88,7 +89,8 @@ Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_ro
       pmid_manager_service_(std::move(std::unique_ptr<PmidManagerService>(new PmidManagerService(
           pmid, *routing_, vault_root_dir)))),
       pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
-          new PmidNodeService(pmid, *routing_, data_getter_, vault_root_dir)))),
+          new PmidNodeService(pmid, *routing_, data_getter_, vault_root_dir,
+                              DiskUsage(10000000000))))),  // FIXME this additional c'tor will go after aligning tests
       // FIXME need to specialise
       cache_service_(std::move(std::unique_ptr<CacheHandlerService>(
           new CacheHandlerService(*routing_, vault_root_dir)))),
