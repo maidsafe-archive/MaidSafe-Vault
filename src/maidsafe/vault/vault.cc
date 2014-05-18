@@ -64,48 +64,9 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
 {
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
   InitRouting(vault_config.bootstrap_contacts);
-  log::Logging::Instance().SetVlogPrefix(DebugId(vault_config.pmid.name().value));
+//  log::Logging::Instance().SetVlogPrefix(DebugId(vault_config.pmid.name().value));
 }
 
-
-Vault::Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_root_dir,
-             std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact,
-             const std::vector<passport::PublicPmid>& pmids_from_file,
-             const routing::BootstrapContacts& bootstrap_contacts)
-    : network_health_mutex_(),
-      network_health_condition_variable_(),
-      network_health_(-1),
-      on_new_bootstrap_contact_(on_new_bootstrap_contact),
-      routing_(new routing::Routing(pmid)),
-      pmids_from_file_(pmids_from_file),
-      data_getter_(asio_service_, *routing_),
-      public_pmid_helper_(),
-      maid_manager_service_(std::move(std::unique_ptr<MaidManagerService>(new MaidManagerService(
-          pmid, *routing_, data_getter_, vault_root_dir)))),
-      version_handler_service_(std::move(std::unique_ptr<VersionHandlerService>(
-          new VersionHandlerService(pmid, *routing_, vault_root_dir)))),
-      data_manager_service_(std::move(std::unique_ptr<DataManagerService>(
-          new DataManagerService(pmid, *routing_, data_getter_, vault_root_dir)))),
-      pmid_manager_service_(std::move(std::unique_ptr<PmidManagerService>(new PmidManagerService(
-          pmid, *routing_, vault_root_dir)))),
-      pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
-          new PmidNodeService(pmid, *routing_, data_getter_, vault_root_dir,
-                              DiskUsage(10000000000))))),  // FIXME this additional c'tor will go after aligning tests
-      // FIXME need to specialise
-      cache_service_(std::move(std::unique_ptr<CacheHandlerService>(
-          new CacheHandlerService(*routing_, vault_root_dir)))),
-      demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
-             pmid_manager_service_, pmid_node_service_, data_getter_),
-      asio_service_(2)
-#ifdef TESTING
-      ,
-      pmids_mutex_()
-#endif
-{
-  // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
-  InitRouting(bootstrap_contacts);
-  log::Logging::Instance().SetVlogPrefix(DebugId(pmid.name().value));
-}
 
 Vault::~Vault() {
   // call stop on all components

@@ -41,7 +41,7 @@ class PmidNodeServiceTest {
       vault_root_dir_(*kTestRoot_/* / RandomAlphaNumericString(8)*/),
       routing_(pmid_),
       data_getter_(asio_service_, routing_),
-      pmid_node_service_(pmid_, routing_, data_getter_, vault_root_dir_),
+      pmid_node_service_(pmid_, routing_, data_getter_, vault_root_dir_, DiskUsage(100000000)),
       asio_service_(2) {
     boost::filesystem::create_directory(vault_root_dir_);
   }

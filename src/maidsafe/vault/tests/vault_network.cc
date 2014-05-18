@@ -29,6 +29,8 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/passport/detail/fob.h"
 
+#include "maidsafe/vault_manager/vault_config.h"
+
 #include "maidsafe/vault/tests/tests_utils.h"
 
 namespace maidsafe {
@@ -67,9 +69,9 @@ void PublicKeyGetter::operator()(const NodeId& node_id,
 
 VaultNetwork::VaultNetwork()
     : asio_service_(2), mutex_(), bootstrap_condition_(), network_up_condition_(),
-      bootstrap_done_(false), network_up_(false), vaults_(), clients_(), endpoints_(),
+      bootstrap_done_(false), network_up_(false), vaults_(), clients_(), bootstrap_contacts_(),
       public_pmids_(), key_chains_(kNetworkSize + 2),
-      chunk_store_path_(fs::unique_path((fs::temp_directory_path()))), network_size_(kNetworkSize)
+      vault_dir_(fs::unique_path((fs::temp_directory_path()))), network_size_(kNetworkSize)
 #ifndef MAIDSAFE_WIN32
       , kUlimitFileSize([]()->long {  // NOLINT
                           long current_size(ulimit(UL_GETFSIZE));  // NOLINT
@@ -115,17 +117,19 @@ void VaultNetwork::Bootstrap() {
       functors2.typed_message_and_caching.single_to_group_relay.message_received =
       [&](const routing::SingleToGroupRelayMessage&) {};  // NOLINT
 
-  endpoints_.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(),
+  bootstrap_contacts_.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(),
                        maidsafe::test::GetRandomPort()));
-  endpoints_.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(),
+  bootstrap_contacts_.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(),
                        maidsafe::test::GetRandomPort()));
   routing::Routing routing1(key_chains_.keys[0].pmid), routing2(key_chains_.keys[1].pmid);
 
   auto a1 = std::async(std::launch::async, [&, this] {
-    return routing1.ZeroStateJoin(functors1, endpoints_[0], endpoints_[1], node_info2);
+    return routing1.ZeroStateJoin(functors1, bootstrap_contacts_[0], bootstrap_contacts_[1],
+        node_info2);
   });
   auto a2 = std::async(std::launch::async, [&, this] {
-    return routing2.ZeroStateJoin(functors2, endpoints_[1], endpoints_[0], node_info1);
+    return routing2.ZeroStateJoin(functors2, bootstrap_contacts_[1], bootstrap_contacts_[0],
+            node_info1);
   });
   if (a1.get() != 0 || a2.get() != 0) {
     LOG(kError) << "SetupNetwork - Could not start bootstrap nodes.";
@@ -134,8 +138,8 @@ void VaultNetwork::Bootstrap() {
   bootstrap_done_ = true;
   bootstrap_condition_.notify_one();
   // just wait till process receives termination signal
-  LOG(kInfo) << "Bootstrap nodes are running"  << "Endpoints: " << endpoints_[0]
-             << " and " << endpoints_[1];
+  LOG(kInfo) << "Bootstrap nodes are running"  << "Endpoints: " << bootstrap_contacts_[0]
+             << " and " << bootstrap_contacts_[1];
   {
     std::mutex mutex;
     std::unique_lock<std::mutex> lock(mutex);
@@ -146,8 +150,8 @@ void VaultNetwork::Bootstrap() {
   }
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    endpoints_.clear();
-    endpoints_.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(), 5483));
+    bootstrap_contacts_.clear();
+    bootstrap_contacts_.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(), 5483));
   }
 }
 
@@ -199,11 +203,13 @@ void VaultNetwork::TearDown() {
 
 bool VaultNetwork::Create(const passport::detail::Fob<passport::detail::PmidTag>& pmid) {
   std::string path_str("vault" + RandomAlphaNumericString(6));
-  auto path(chunk_store_path_/path_str);
-  fs::create_directory(path);
+  auto vault_root_dir(vault_dir_ / path_str);
+  fs::create_directory(vault_root_dir);
   try {
-    vaults_.emplace_back(new Vault(pmid, path, [](const boost::asio::ip::udp::endpoint&) {},
-                                   public_pmids_, endpoints_));
+    vault_manager::VaultConfig vault_config(pmid, vault_root_dir, DiskUsage(1000000000),
+                                            bootstrap_contacts_);
+    vault_config.test_config.public_pmid_list = public_pmids_;
+    vaults_.emplace_back(new Vault(vault_config, [](const boost::asio::ip::udp::endpoint&) {}));
     LOG(kSuccess) << "vault joined: " << vaults_.size() << " id: "
                   << DebugId(NodeId(pmid.name()->string()));
     return true;
@@ -246,7 +252,7 @@ bool VaultNetwork::AddClient(bool register_pmid) {
     public_pmids_.push_back(passport::PublicPmid(node_keys.pmid));
   }
   try {
-    clients_.emplace_back(new Client(node_keys, endpoints_, public_pmids_, register_pmid));
+    clients_.emplace_back(new Client(node_keys, bootstrap_contacts_, public_pmids_, register_pmid));
     LOG(kVerbose) << "Client joined: " << clients_.size();
     return true;
   }

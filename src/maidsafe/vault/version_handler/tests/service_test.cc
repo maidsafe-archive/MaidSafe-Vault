@@ -42,8 +42,10 @@ class VersionHandlerServiceTest {
  public:
   VersionHandlerServiceTest() :
       pmid_(MakePmid()),
+      kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
+      vault_root_dir_(*kTestRoot_),
       routing_(pmid_),
-      version_handler_service_(pmid_, routing_),
+      version_handler_service_(pmid_, routing_, vault_root_dir_),
       asio_service_(2) {}
 
   VersionHandler::Value Get(const VersionHandler::Key& key) {
@@ -61,6 +63,8 @@ class VersionHandlerServiceTest {
 
  protected:
   passport::Pmid pmid_;
+  const maidsafe::test::TestPath kTestRoot_;
+  boost::filesystem::path vault_root_dir_;
   routing::Routing routing_;
   VersionHandlerService version_handler_service_;
   AsioService asio_service_;

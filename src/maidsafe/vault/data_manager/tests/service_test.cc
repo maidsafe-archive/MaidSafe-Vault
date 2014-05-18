@@ -38,9 +38,11 @@ class DataManagerServiceTest {
  public:
   DataManagerServiceTest() :
       pmid_(MakePmid()),
+      kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
+      vault_root_dir_(*kTestRoot_),
       routing_(pmid_),
       data_getter_(asio_service_, routing_),
-      data_manager_service_(pmid_, routing_, data_getter_),
+      data_manager_service_(pmid_, routing_, data_getter_, vault_root_dir_),
       asio_service_(2) {}
 
   typedef std::function<
@@ -69,6 +71,8 @@ class DataManagerServiceTest {
 
  protected:
   passport::Pmid pmid_;
+  const maidsafe::test::TestPath kTestRoot_;
+  boost::filesystem::path vault_root_dir_;
   routing::Routing routing_;
   nfs_client::DataGetter data_getter_;
   DataManagerService data_manager_service_;

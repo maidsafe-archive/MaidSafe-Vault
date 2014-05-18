@@ -43,9 +43,11 @@ class MaidManagerServiceTest {
         anpmid_(),
         pmid_(anpmid_),
         public_maid_(maid_),
+        kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
+        vault_root_dir_(*kTestRoot_),
         routing_(pmid_),
         data_getter_(asio_service_, routing_),
-        maid_manager_service_(pmid_, routing_, data_getter_),
+        maid_manager_service_(pmid_, routing_, data_getter_, vault_root_dir_),
         asio_service_(2) {}
 
   NodeId MaidNodeId() {
@@ -115,6 +117,8 @@ class MaidManagerServiceTest {
   passport::Anpmid anpmid_;
   passport::Pmid pmid_;
   passport::PublicMaid public_maid_;
+  const maidsafe::test::TestPath kTestRoot_;
+  boost::filesystem::path vault_root_dir_;
   routing::Routing routing_;
   nfs_client::DataGetter data_getter_;
   MaidManagerService maid_manager_service_;

@@ -24,6 +24,7 @@
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/test.h"
+#include "maidsafe/routing/bootstrap_file_operations.h"
 #include "maidsafe/nfs/client/maid_node_nfs.h"
 #include "maidsafe/vault/vault.h"
 
@@ -107,10 +108,10 @@ class VaultNetwork : public testing::Test {
   bool bootstrap_done_, network_up_;
   std::vector<VaultPtr> vaults_;
   std::vector<ClientPtr> clients_;
-  std::vector<UdpEndpoint> endpoints_;
+  routing::BootstrapContacts bootstrap_contacts_;
   std::vector<passport::PublicPmid> public_pmids_;
   KeyChain key_chains_;
-  fs::path chunk_store_path_;
+  fs::path vault_dir_;
   size_t network_size_;
 #ifndef MAIDSAFE_WIN32
   long kUlimitFileSize;  // NOLINT

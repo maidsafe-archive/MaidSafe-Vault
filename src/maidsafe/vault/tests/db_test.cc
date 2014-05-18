@@ -110,12 +110,15 @@ void DbTests(Db<Key, Value>& db, const Key& key) {
 }
 
 TEST_CASE("Db constructor", "[Db][Unit]") {
-  Db<Key, DataManagerValue> data_manager_db;
-  Db<Key, VersionHandlerValue> version_handler_db;
+  maidsafe::test::TestPath test_path1(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest1"));
+  Db<Key, DataManagerValue> data_manager_db(*test_path1);
+  maidsafe::test::TestPath test_path2(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest2"));
+  Db<Key, VersionHandlerValue> version_handler_db(*test_path2);
 }
 
 TEST_CASE("Db commit", "[Db][Unit]") {
-  Db<Key, TestDbValue> db;
+  maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest"));
+  Db<Key, TestDbValue> db(*test_path);
   Key key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue);
   for (auto i(0); i != 100; ++i)
     DbTests(db, key);
@@ -127,8 +130,10 @@ TEST_CASE("Db commit", "[Db][Unit]") {
 }
 
 TEST_CASE("Db transfer info", "[Db][Unit]") {
-  Db<Key, DataManagerValue> data_manager_db;
-  Db<Key, VersionHandlerValue> version_handler_db;
+  maidsafe::test::TestPath test_path1(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest1"));
+  Db<Key, DataManagerValue> data_manager_db(*test_path1);
+  maidsafe::test::TestPath test_path2(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest2"));
+  Db<Key, VersionHandlerValue> version_handler_db(*test_path2);
   std::shared_ptr<routing::MatrixChange> matrix_change;
   data_manager_db.GetTransferInfo(matrix_change);
   version_handler_db.GetTransferInfo(matrix_change);

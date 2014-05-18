@@ -36,8 +36,10 @@ class PmidManagerServiceTest {
  public:
   PmidManagerServiceTest() :
       pmid_(MakePmid()),
+      kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
+      vault_root_dir_(*kTestRoot_),
       routing_(pmid_),
-      pmid_manager_service_(pmid_, routing_) {}
+      pmid_manager_service_(pmid_, routing_, vault_root_dir_) {}
 
   template <typename UnresolvedActionType>
   std::vector<std::unique_ptr<UnresolvedActionType>> GetUnresolvedActions();
@@ -66,6 +68,8 @@ class PmidManagerServiceTest {
 
  protected:
   passport::Pmid pmid_;
+  const maidsafe::test::TestPath kTestRoot_;
+  boost::filesystem::path vault_root_dir_;
   routing::Routing routing_;
   PmidManagerService pmid_manager_service_;
 };

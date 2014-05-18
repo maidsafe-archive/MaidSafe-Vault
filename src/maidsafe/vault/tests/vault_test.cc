@@ -72,11 +72,13 @@ class VaultTest : public testing::Test {
 TEST_F(VaultTest, BEH_Constructor) {
   std::vector<passport::PublicPmid> public_pmids_from_file;
   public_pmids_from_file.push_back(MakePublicPmid());
-  std::vector<boost::asio::ip::udp::endpoint> peer_endpoints;
-  peer_endpoints.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(),
+  routing::BootstrapContacts bootstrap_contacts;
+  bootstrap_contacts.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(),
                                                           (RandomUint32() % 64511) + 2025));
-  EXPECT_THROW(vault_.reset(new Vault(pmid_, vault_root_directory_, on_new_bootstrap_endpoint_,
-                                      public_pmids_from_file, peer_endpoints)),
+  vault_manager::VaultConfig vault_config(pmid_, vault_root_directory_, DiskUsage(1000000000),
+                                          bootstrap_contacts);
+  vault_config.test_config.public_pmid_list = public_pmids_from_file;
+  EXPECT_THROW(vault_.reset(new Vault(vault_config, on_new_bootstrap_endpoint_)),
                vault_error);  // throws VaultErrors::failed_to_join_network
 }
 

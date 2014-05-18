@@ -61,12 +61,6 @@ class Vault {
   Vault(const vault_manager::VaultConfig& vault_config,
         std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact);
 
-  // pmids_from_file must only be non-empty for zero-state network.
-  Vault(const passport::Pmid& pmid, const boost::filesystem::path& vault_root_dir,
-        std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact,
-        const std::vector<passport::PublicPmid>& pmids_from_file =
-            std::vector<passport::PublicPmid>(),
-        const routing::BootstrapContacts& bootstrap_contacts = routing::BootstrapContacts());
   ~Vault();  // must issue StopSending() to all identity objects (MM etc.)
              // Then ensure routing is destroyed next then all others in any order at this time
 
