@@ -83,6 +83,11 @@ class DataManagerService {
 
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
+  void Stop() {
+    std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+    stopped_ = true;
+  }
+
  private:
   DataManagerService(const DataManagerService&);
   DataManagerService& operator=(const DataManagerService&);
@@ -260,6 +265,7 @@ class DataManagerService {
   AsioService asio_service_;
   nfs_client::DataGetter& data_getter_;
   mutable std::mutex accumulator_mutex_, matrix_change_mutex_;
+  bool stopped_;
   Accumulator<Messages> accumulator_;
   routing::MatrixChange matrix_change_;
   DataManagerDispatcher dispatcher_;

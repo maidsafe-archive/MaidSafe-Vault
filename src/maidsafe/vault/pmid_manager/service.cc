@@ -52,9 +52,9 @@ inline bool ForThisPersona(const Message& message) {
 
 PmidManagerService::PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                                        const boost::filesystem::path& vault_root_dir)
-    : routing_(routing), group_db_(UniqueDbPath(vault_root_dir)), accumulator_mutex_(),
-      accumulator_(), dispatcher_(routing_), asio_service_(2), get_health_timer_(asio_service_),
-      sync_puts_(NodeId(pmid.name()->string())),
+    : routing_(routing), group_db_(UniqueDbPath(vault_root_dir)), accumulator_mutex_(), mutex_(),
+      stopped_(false), accumulator_(), dispatcher_(routing_), asio_service_(2),
+      get_health_timer_(asio_service_), sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),
       sync_set_pmid_health_(NodeId(pmid.name()->string())),
       sync_create_account_(NodeId(pmid.name()->string())),
@@ -476,6 +476,9 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
 
 void PmidManagerService::HandleChurnEvent(
     std::shared_ptr<routing::MatrixChange> matrix_change) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (stopped_)
+    return;
   LOG(kVerbose) << "PmidManager HandleChurnEvent";
   auto lost_nodes(matrix_change->lost_nodes());
   for (auto& node : lost_nodes) {

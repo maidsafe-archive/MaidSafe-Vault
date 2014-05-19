@@ -80,6 +80,11 @@ class VersionHandlerService {
 
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
+  void Stop() {
+    std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+    stopped_ = true;
+  }
+
   template <typename SourcePersonaType> friend class detail::VersionHandlerGetVisitor;
   template <typename SourcePersonaType> friend class detail::VersionHandlerGetBranchVisitor;
   friend class detail::VersionHandlerPutVisitor;
@@ -148,6 +153,7 @@ class VersionHandlerService {
   routing::Routing& routing_;
   VersionHandlerDispatcher dispatcher_;
   std::mutex accumulator_mutex_, matrix_change_mutex_;
+  bool stopped_;
   Accumulator<Messages> accumulator_;
   routing::MatrixChange matrix_change_;
   Db<VersionHandler::Key, VersionHandler::Value> db_;

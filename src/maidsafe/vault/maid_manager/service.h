@@ -99,6 +99,10 @@ class MaidManagerService {
 
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
+  void Stop() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    stopped_ = true;
+  }
  private:
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
 
@@ -294,7 +298,8 @@ class MaidManagerService {
   routing::Routing& routing_;
   nfs_client::DataGetter& data_getter_;
   GroupDb<MaidManager> group_db_;
-  std::mutex accumulator_mutex_;
+  std::mutex accumulator_mutex_, mutex_;
+  bool stopped_;
   NfsAccumulator nfs_accumulator_;
   VaultAccumulator vault_accumulator_;
   MaidManagerDispatcher dispatcher_;

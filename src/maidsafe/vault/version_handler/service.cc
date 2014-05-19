@@ -65,6 +65,7 @@ VersionHandlerService::VersionHandlerService(const passport::Pmid& pmid,
       dispatcher_(routing),
       accumulator_mutex_(),
       matrix_change_mutex_(),
+      stopped_(false),
       accumulator_(),
       matrix_change_(),
       db_(UniqueDbPath(vault_root_dir)),
@@ -407,6 +408,8 @@ void VersionHandlerService::HandleChurnEvent(
 //   LOG(kVerbose) << "HandleChurnEvent matrix_change_ containing following info before : ";
 //   matrix_change_.Print();
   std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+  if (stopped_)
+    return;
 //   LOG(kVerbose) << "HandleChurnEvent matrix_change containing following info : ";
 //   matrix_change->Print();
   matrix_change_ = *matrix_change;

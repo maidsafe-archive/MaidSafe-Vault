@@ -71,6 +71,11 @@ class PmidManagerService {
 
   void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
 
+  void Stop() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    stopped_ = true;
+  }
+
   template <typename T>
   bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
     // BEFORE_RELEASE implementation missing
@@ -148,7 +153,8 @@ class PmidManagerService {
 
   routing::Routing& routing_;
   GroupDb<PmidManager> group_db_;
-  std::mutex accumulator_mutex_;
+  std::mutex accumulator_mutex_, mutex_;
+  bool stopped_;
   Accumulator<Messages> accumulator_;
   PmidManagerDispatcher dispatcher_;
   AsioService asio_service_;

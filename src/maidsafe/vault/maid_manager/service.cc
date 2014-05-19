@@ -157,6 +157,7 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
       data_getter_(data_getter),
       group_db_(UniqueDbPath(vault_root_dir)),
       accumulator_mutex_(),
+      mutex_(),
       nfs_accumulator_(),
       vault_accumulator_(),
       dispatcher_(routing_, pmid),
@@ -576,6 +577,9 @@ void MaidManagerService::HandleChurnEvent(
 //     LOG(kVerbose) << "MaidManagerService::HandleChurnEvent";
 //     matrix_change->Print();
 //   }
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (stopped_)
+    return;
   GroupDb<MaidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(matrix_change));
   for (auto& transfer : transfer_info)
     TransferAccount(transfer.first, transfer.second);
