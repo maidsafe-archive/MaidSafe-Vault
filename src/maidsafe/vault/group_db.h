@@ -72,7 +72,7 @@ class GroupDb {
     Contents(const Contents& other);
   };
 
-  GroupDb(const boost::filesystem::path& db_path);
+  explicit GroupDb(const boost::filesystem::path& db_path);
   ~GroupDb();
 
   void AddGroup(const GroupName& group_name, const Metadata& metadata);

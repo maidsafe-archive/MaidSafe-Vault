@@ -47,7 +47,7 @@ class Db {
   typedef std::pair<Key, Value> KvPair;
   typedef std::map<NodeId, std::vector<KvPair>> TransferInfo;
 
-  Db(const boost::filesystem::path& db_path);
+  explicit Db(const boost::filesystem::path& db_path);
   ~Db();
 
   Value Get(const Key& key);
