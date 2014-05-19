@@ -29,7 +29,6 @@
 
 #include "maidsafe/vault/vault.h"
 
-
 int main(int argc, char* argv[]) {
   using maidsafe::vault_manager::VaultConfig;
   using maidsafe::vault::Vault;
@@ -49,6 +48,9 @@ int main(int argc, char* argv[]) {
     Vault vault(vault_config, on_new_bootstrap_contact);
     std::cout << "Vault running as " << maidsafe::HexSubstr(vault_config.pmid.name().value)
               << std::endl;
+//    VLOG(nfs::Persona::kNA, VisualiserAction::kVaultStarted, Identity{})
+//    VLOG(nfs::Persona::kNA, VisualiserAction::kVaultStopping, Identity{})
+//        << "Vault stopping";
 
     return vault_interface.WaitForExit();
   }

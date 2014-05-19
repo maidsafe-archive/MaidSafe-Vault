@@ -504,7 +504,8 @@ void MaidManagerService::HandleSyncedDelete(
     } else {
       // BEFORE_RELEASE trying to delete something not belongs to client shall get muted
       VLOG(nfs::Persona::kMaidManager, VisualiserAction::kBlockDeleteRequest, data_name.raw_name)
-          << " from non-owner";
+          << "MaidManager blocked DeleteRequest of chunk "
+          << HexSubstr(data_name.raw_name.string()) << " from non-owner";
     }
   }
 }
@@ -591,22 +592,28 @@ void MaidManagerService::TransferAccount(const NodeId& dest,
       continue;
     }
     VLOG(nfs::Persona::kMaidManager, VisualiserAction::kAccountTransfer, account.group_name)
-        << " sending to " << DebugId(dest);
-    std::vector<std::string> actions;
-    actions.push_back(account.metadata.Serialise());
-    LOG(kVerbose) << "MaidManagerService::TransferAccount metadata serialised";
-    for (auto& kv : account.kv_pairs) {
-      protobuf::MaidManagerKeyValuePair kv_msg;
-        kv_msg.set_key(kv.first.Serialise());
-        kv_msg.set_value(kv.second.Serialise());
-        actions.push_back(kv_msg.SerializeAsString());
+        << "MaidManager transfer account " << HexSubstr(account.group_name->string())
+        << " to " << DebugId(dest);
+    try {
+      std::vector<std::string> actions;
+      actions.push_back(account.metadata.Serialise());
+      LOG(kVerbose) << "MaidManagerService::TransferAccount metadata serialised";
+      for (auto& kv : account.kv_pairs) {
+        protobuf::MaidManagerKeyValuePair kv_msg;
+          kv_msg.set_key(kv.first.Serialise());
+          kv_msg.set_value(kv.second.Serialise());
+          actions.push_back(kv_msg.SerializeAsString());
+      }
+      nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
+      MaidManager::UnresolvedAccountTransfer account_transfer(
+          account.group_name, message_id, actions);
+      LOG(kVerbose) << "MaidManagerService::TransferAccount send account_transfer";
+      dispatcher_.SendAccountTransfer(dest, account.group_name,
+                                      message_id, account_transfer.Serialise());
+    } catch(...) {
+      // the normal problem is metadata hasn't been populated
+      LOG(kError) << "MaidManagerService::TransferAccount account info error";
     }
-    nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
-    MaidManager::UnresolvedAccountTransfer account_transfer(
-        account.group_name, message_id, actions);
-    LOG(kVerbose) << "MaidManagerService::TransferAccount send account_transfer";
-    dispatcher_.SendAccountTransfer(dest, account.group_name,
-                                    message_id, account_transfer.Serialise());
   }
 }
 
@@ -1082,7 +1089,8 @@ void MaidManagerService::HandleMessage(
 
 void MaidManagerService::HandleAccountTransfer(
     std::unique_ptr<MaidManager::UnresolvedAccountTransfer>&& resolved_action) {
-  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kAccountTransfer, resolved_action->key);
+  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kGotAccountTransferred, resolved_action->key)
+      << "MaidManager got account " << HexSubstr(resolved_action->key->string());
   GroupDb<MaidManager>::Contents content;
   content.group_name = resolved_action->key;
   for (auto& action : resolved_action->actions) {

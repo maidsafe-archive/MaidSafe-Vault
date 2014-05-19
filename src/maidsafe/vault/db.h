@@ -30,8 +30,11 @@
 
 #include "leveldb/db.h"
 
+#include "maidsafe/common/types.h"
+#include "maidsafe/common/visualiser_log.h"
 #include "maidsafe/routing/matrix_change.h"
 #include "maidsafe/vault/config.h"
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
@@ -168,7 +171,8 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
           }
         }
       } else {
-//        VLOG() << "Db removing account " << HexSubstr(db_iter->key().data());
+        VLOG(maidsafe::nfs::Persona::kNA, VisualiserAction::kRemoveAccount, Identity{})
+            << "Db removing account " << HexSubstr(db_iter->key().data());
         prune_vector.push_back(db_iter->key().data());
       }
     }

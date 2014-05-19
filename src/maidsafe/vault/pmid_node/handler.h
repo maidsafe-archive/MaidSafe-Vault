@@ -69,7 +69,8 @@ Data PmidNodeHandler::Get(const typename Data::Name& data_name) {
 
 template <typename Data>
 void PmidNodeHandler::Put(const Data& data) {
-  VLOG(nfs::Persona::kPmidNode, VisualiserAction::kStoreChunk, data.name().value);
+  VLOG(nfs::Persona::kPmidNode, VisualiserAction::kStoreChunk, data.name().value)
+      << "PmidNode storing chunk " << HexSubstr(data.name().value.string());
   permanent_data_store_.Put(DataNameVariant(data.name()), data.Serialise().data);
 }
 

@@ -92,7 +92,7 @@ void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
 int64_t DataManagerValue::DecrementSubscribers() {
   --subscribers_;
   VLOG(nfs::Persona::kDataManager, VisualiserAction::kDecreaseSubscribers, Identity{})
-      << "Decrease to " << subscribers_;
+      << "DataManager decrease subscribers to " << subscribers_;
   return subscribers_;
 }
 

@@ -536,9 +536,12 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   // Choose the one we're going to ask for actual data, and set up the others for integrity checks.
   auto pmid_node_to_get_from(ChoosePmidNodeToGetFrom(online_pmids, data_name));
   std::map<PmidName, IntegrityCheckData> integrity_checks;
-  for (const auto& iter : online_pmids)
-    integrity_checks.insert(
-        std::make_pair(iter, IntegrityCheckData(IntegrityCheckData::GetRandomInput())));
+  // TODO(Team): IntegrityCheck is temporarily disabled because of the performance concern
+  //             1, May only undertake IntegrityCheck for mutable data
+  //             2, The efficiency of the procedure shall be improved
+//   for (const auto& iter : online_pmids)
+//     integrity_checks.insert(
+//         std::make_pair(iter, IntegrityCheckData(IntegrityCheckData::GetRandomInput())));
 
   // Create helper struct which holds the collection of responses, and add the task to the timer.
   auto get_response_op(
@@ -551,7 +554,7 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
                                                      pmid_node_and_contents.second,
                                                      get_response_op);
   });
-  get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, expected_response_count,
+  get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, 1/*expected_response_count*/,
                      message_id.data);
   LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value)
                 << " SendGetRequest with message_id " << message_id.data
@@ -559,14 +562,14 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   // Send requests
   dispatcher_.SendGetRequest<Data>(pmid_node_to_get_from, data_name, message_id);
 
-  LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value)
-                << " has " << integrity_checks.size() << " entries to check integrity";
+//   LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value)
+//                 << " has " << integrity_checks.size() << " entries to check integrity";
 
-  for (const auto& integrity_check : integrity_checks) {
-    dispatcher_.SendIntegrityCheck<Data>(data_name,
-                                         NonEmptyString(integrity_check.second.random_input()),
-                                         integrity_check.first, message_id);
-  }
+//   for (const auto& integrity_check : integrity_checks) {
+//     dispatcher_.SendIntegrityCheck<Data>(data_name,
+//                                          NonEmptyString(integrity_check.second.random_input()),
+//                                          integrity_check.first, message_id);
+//   }
 }
 
 template <typename Data>
@@ -576,7 +579,7 @@ void DataManagerService::GetForNodeDown(const PmidName& pmid_name,
   std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
   online_pmids.erase(pmid_name);
   // Only trigger the recovery procedure when not enough online_pmids.
-  if (online_pmids.size() > (routing::Parameters::group_size / 2))
+  if (online_pmids.size() > (routing::Parameters::group_size / 2U))
     return;
   // Just get, don't do integrity check
   auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
@@ -732,6 +735,7 @@ void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
     Data data(Data(data_name, typename Data::serialised_type(*contents.content)));
     nfs::MessageId message_id(HashStringToMessageId(data_name.value.string()));
     VLOG(nfs::Persona::kDataManager, VisualiserAction::kMoveChunk, contents.name.raw_name)
+        << "DataManager move chunk " << HexSubstr(contents.name.raw_name)
         << " to new pmid_node " << HexSubstr(pmid_name->string());
     dispatcher_.SendPutRequest(pmid_name, data, message_id);
   }
@@ -872,7 +876,8 @@ void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName&
 template <typename DataName>
 void DataManagerService::MarkNodeUp(const PmidName& pmid_node, const DataName& name) {
   VLOG(nfs::Persona::kDataManager, VisualiserAction::kMarkNodeUp, pmid_node)
-      << " for chunk " << HexSubstr(name.value.string());
+      << "DataManager marking node " << HexSubstr(pmid_node->string())
+      << " up for chunk " << HexSubstr(name.value.string());
   typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
   DoSync(DataManager::UnresolvedNodeUp(key,
              ActionDataManagerNodeUp(pmid_node), routing_.kNodeId()));
