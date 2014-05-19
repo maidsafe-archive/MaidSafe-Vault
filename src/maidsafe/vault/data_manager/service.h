@@ -402,6 +402,7 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
     LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
                 << " from maid_node " << HexSubstr(maid_name->string())
                 << " . SendPutResponse with message_id " << message_id.data;
+    dispatcher_.SendPutToCache(data);
     dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);
   } else {
     HandlePutWhereEntryExists(data, maid_name, message_id, cost, is_unique_on_network<Data>());
@@ -521,7 +522,7 @@ template <typename Data, typename RequestorIdType>
 void DataManagerService::HandleGet(const typename Data::Name& data_name,
                                    const RequestorIdType& requestor,
                                    nfs::MessageId message_id) {
- LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value);
+  LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value);
   // Get all pmid nodes that are online.
   std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
   int expected_response_count(static_cast<int>(online_pmids.size()));
