@@ -39,25 +39,35 @@ TEST_F(VaultNetworkTest, FUNC_BasicSetup) {
 }
 
 TEST_F(VaultNetworkTest, FUNC_VaultJoins) {
+  Sleep(std::chrono::seconds(2));
   LOG(kVerbose) << "Adding a vault";
   EXPECT_TRUE(Add());
 }
 
 TEST_F(VaultNetworkTest, FUNC_ClientJoins) {
+  Sleep(std::chrono::seconds(2));
   EXPECT_TRUE(AddClient(false));
+  Sleep(std::chrono::seconds(2));
 }
 
 TEST_F(VaultNetworkTest, FUNC_PmidRegisteringClientJoins) {
+  Sleep(std::chrono::seconds(2));
   EXPECT_TRUE(AddClient(true));
+  Sleep(std::chrono::seconds(2));
 }
 
 TEST_F(VaultNetworkTest, FUNC_MultipleClientsJoin) {
-  for (int index(0); index < 5; ++index)
+  for (int index(0); index < 5; ++index) {
+    Sleep(std::chrono::seconds(2));
     EXPECT_TRUE(AddClient(false));
+  }
+  Sleep(std::chrono::seconds(2));
 }
 
 TEST_F(VaultNetworkTest, FUNC_PutGetDelete) {
+  Sleep(std::chrono::seconds(2));
   EXPECT_TRUE(AddClient(true));
+  Sleep(std::chrono::seconds(2));
   ImmutableData data(NonEmptyString(RandomString(1024)));
   LOG(kVerbose) << "Before put";
   try {
@@ -67,7 +77,7 @@ TEST_F(VaultNetworkTest, FUNC_PutGetDelete) {
   catch (...) {
     EXPECT_TRUE(false) << "Failed to put: " << DebugId(NodeId(data.name()->string()));
   }
-
+  Sleep(std::chrono::seconds(5));
   auto future(clients_[0]->nfs_->Get<ImmutableData::Name>(data.name(), std::chrono::seconds(5)));
   try {
     auto retrieved(future.get());
@@ -78,7 +88,7 @@ TEST_F(VaultNetworkTest, FUNC_PutGetDelete) {
   }
 
   clients_[0]->nfs_->Delete<ImmutableData::Name>(data.name());
-  Sleep(std::chrono::seconds(2));
+  Sleep(std::chrono::seconds(5));
 
   routing::Parameters::caching = false;
 
@@ -91,12 +101,13 @@ TEST_F(VaultNetworkTest, FUNC_PutGetDelete) {
     LOG(kVerbose) << DebugId(NodeId(data.name()->string())) << " Deleted "
                   << boost::diagnostic_information(e);
   }
-  LOG(kVerbose) << "Put Get Delete done.";
 }
 
 TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
+  Sleep(std::chrono::seconds(2));
   ASSERT_TRUE(AddClient(true));
-  const size_t kIterations(150);
+  Sleep(std::chrono::seconds(2));
+  const size_t kIterations(50);
   std::vector<ImmutableData> chunks;
   for (auto index(kIterations); index > 0; --index)
     chunks.emplace_back(NonEmptyString(RandomString(1024)));
@@ -105,6 +116,7 @@ TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
   for (const auto& chunk : chunks) {
     EXPECT_NO_THROW(clients_[0]->nfs_->Put(chunk)) << "Store failure "
                                                    << DebugId(NodeId(chunk.name()->string()));
+    Sleep(std::chrono::seconds(1));
     LOG(kVerbose) << DebugId(NodeId(chunk.name()->string())) << " stored: " << index++;
   }
 
@@ -130,16 +142,21 @@ TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
 }
 
 TEST_F(VaultNetworkTest, FUNC_FailingGet) {
+  Sleep(std::chrono::seconds(2));
   EXPECT_TRUE(AddClient(true));
+  Sleep(std::chrono::seconds(2));
   LOG(kVerbose) << "Client joins";
   ImmutableData data(NonEmptyString(RandomString(1024)));
   EXPECT_THROW(Get<ImmutableData>(data.name()), std::exception) << "must have failed";
 }
 
 TEST_F(VaultNetworkTest, FUNC_PutMultipleCopies) {
+  Sleep(std::chrono::seconds(2));
   LOG(kVerbose) << "Clients joining";
   EXPECT_TRUE(AddClient(true));
+  Sleep(std::chrono::seconds(2));
   EXPECT_TRUE(AddClient(true));
+  Sleep(std::chrono::seconds(2));
   LOG(kVerbose) << "Clients joined";
 
   ImmutableData data(NonEmptyString(RandomString(1024)));
@@ -205,8 +222,11 @@ TEST_F(VaultNetworkTest, FUNC_PutMultipleCopies) {
 
 TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
   int clients(10);
-  for (int index(0); index < clients; ++index)
+  for (int index(0); index < clients; ++index) {
+    Sleep(std::chrono::seconds(2));
     EXPECT_TRUE(AddClient(true));
+  }
+  Sleep(std::chrono::seconds(2));
   LOG(kVerbose) << "Clients joined...";
   const size_t kIterations(10);
   std::vector<ImmutableData> chunks;
@@ -238,8 +258,11 @@ TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
 }
 
 TEST_F(VaultNetworkTest, FUNC_UnauthorisedDelete) {
+  Sleep(std::chrono::seconds(2));
   EXPECT_TRUE(AddClient(true));
+  Sleep(std::chrono::seconds(2));
   EXPECT_TRUE(AddClient(true));
+  Sleep(std::chrono::seconds(2));
 
   routing::Parameters::caching = false;
   ImmutableData chunk(NonEmptyString(RandomString(2^10)));
