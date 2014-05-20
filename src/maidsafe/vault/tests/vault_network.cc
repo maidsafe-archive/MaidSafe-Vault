@@ -150,6 +150,7 @@ void VaultNetwork::Bootstrap() {
   }
   {
     std::lock_guard<std::mutex> lock(mutex_);
+    LOG(kInfo) << "clean bootstrap endpoints and all boot from 5483";
     bootstrap_contacts_.clear();
     bootstrap_contacts_.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(), 5483));
   }
@@ -167,20 +168,33 @@ void VaultNetwork::SetUp() {
                                              }));
   LOG(kVerbose) << "Starting vaults...";
   std::vector<std::future<bool>> futures;
-  for (size_t index(2); index < network_size_ + 2; ++index) {
+  for (size_t index(2); index < 4; ++index) {
     futures.push_back(std::async(std::launch::async,
                       [index, this] {
+                        LOG(kInfo) << "starting vault " << index;
                         return this->Create(key_chains_.keys.at(index).pmid);
                       }));
-    Sleep(std::chrono::seconds(std::min(index / 10 + 1, size_t(5))));
+    Sleep(std::chrono::seconds(3));
   }
 
   this->network_up_ = true;
   this->network_up_condition_.notify_one();
   bootstrap.get();
+  Sleep(std::chrono::seconds(3));
+
+  for (size_t index(4); index < (network_size_ + 2); ++index) {
+    futures.push_back(std::async(std::launch::async,
+                      [index, this] {
+                        LOG(kInfo) << "starting vault " << index;
+                        return this->Create(key_chains_.keys.at(index).pmid);
+                      }));
+    Sleep(std::chrono::seconds(3));
+  }
+
   for (size_t index(0); index < network_size_; ++index) {
+    LOG(kInfo) << "checking vault " << index;
     try {
-      EXPECT_TRUE(futures[index].get());
+      EXPECT_TRUE(futures[index].get()) << " failing with index "<< index;
     }
     catch (const std::exception& e) {
       LOG(kError) << "Exception getting future from creating vault " << index << ": "
@@ -193,10 +207,23 @@ void VaultNetwork::SetUp() {
 }
 
 void VaultNetwork::TearDown() {
-  while (vaults_.size() > 0) {
-    vaults_.erase(vaults_.begin());
-    Sleep(std::chrono::milliseconds(100));
-  }
+  LOG(kInfo) << "VaultNetwork TearDown";
+  for (auto& client : clients_)
+    client.reset();
+  Sleep(std::chrono::seconds(1));
+  clients_.clear();
+  for (auto& vault : vaults_)
+    vault->Stop();
+  Sleep(std::chrono::seconds(1));
+  for (auto& vault : vaults_)
+    vault.reset();
+//   Sleep(std::chrono::seconds(3));
+  vaults_.clear();
+
+//   while (vaults_.size() > 0) {
+//     vaults_.erase(vaults_.begin());
+//     Sleep(std::chrono::milliseconds(200));
+//   }
 #ifndef MAIDSAFE_WIN32
   ulimit(UL_SETFSIZE, kUlimitFileSize);
 #endif

@@ -66,6 +66,12 @@ class Vault {
 
 #ifdef TESTING
   void AddPublicPmid(const passport::PublicPmid& public_pmid);
+  void Stop() {
+    maid_manager_service_.Stop();
+    version_handler_service_.Stop();
+    data_manager_service_.Stop();
+    pmid_manager_service_.Stop();
+  }
 #endif
 
  private:
