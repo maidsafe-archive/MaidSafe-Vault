@@ -56,7 +56,7 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
           *routing_, vault_config.vault_dir)))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
              pmid_manager_service_, pmid_node_service_, data_getter_),
-      asio_service_(2)
+      asio_service_(2),
       getting_keys_()
 #ifdef TESTING
       ,
