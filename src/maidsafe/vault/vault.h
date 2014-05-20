@@ -66,6 +66,12 @@ class Vault {
 
 #ifdef TESTING
   void AddPublicPmid(const passport::PublicPmid& public_pmid);
+  void Stop() {
+    maid_manager_service_.Stop();
+    version_handler_service_.Stop();
+    data_manager_service_.Stop();
+    pmid_manager_service_.Stop();
+  }
 #endif
 
  private:
@@ -107,6 +113,7 @@ class Vault {
   nfs::Service<CacheHandlerService> cache_service_;
   Demultiplexer demux_;
   AsioService asio_service_;
+  std::vector<std::future<void>> getting_keys_;
 #ifdef TESTING
   std::mutex pmids_mutex_;
 #endif

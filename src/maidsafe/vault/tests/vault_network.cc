@@ -150,6 +150,7 @@ void VaultNetwork::Bootstrap() {
   }
   {
     std::lock_guard<std::mutex> lock(mutex_);
+    LOG(kInfo) << "clean bootstrap endpoints and all boot from 5483";
     bootstrap_contacts_.clear();
     bootstrap_contacts_.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(), 5483));
   }
@@ -167,20 +168,33 @@ void VaultNetwork::SetUp() {
                                              }));
   LOG(kVerbose) << "Starting vaults...";
   std::vector<std::future<bool>> futures;
-  for (size_t index(2); index < network_size_ + 2; ++index) {
+  for (size_t index(2); index < 4; ++index) {
     futures.push_back(std::async(std::launch::async,
                       [index, this] {
+                        LOG(kInfo) << "starting vault " << index;
                         return this->Create(key_chains_.keys.at(index).pmid);
                       }));
-    Sleep(std::chrono::seconds(std::min(index / 10 + 1, size_t(3))));
+    Sleep(std::chrono::seconds(3));
   }
 
   this->network_up_ = true;
   this->network_up_condition_.notify_one();
   bootstrap.get();
+  Sleep(std::chrono::seconds(3));
+
+  for (size_t index(4); index < (network_size_ + 2); ++index) {
+    futures.push_back(std::async(std::launch::async,
+                      [index, this] {
+                        LOG(kInfo) << "starting vault " << index;
+                        return this->Create(key_chains_.keys.at(index).pmid);
+                      }));
+    Sleep(std::chrono::seconds(3));
+  }
+
   for (size_t index(0); index < network_size_; ++index) {
+    LOG(kInfo) << "checking vault " << index;
     try {
-      EXPECT_TRUE(futures[index].get());
+      EXPECT_TRUE(futures[index].get()) << " failing with index "<< index;
     }
     catch (const std::exception& e) {
       LOG(kError) << "Exception getting future from creating vault " << index << ": "
@@ -188,14 +202,28 @@ void VaultNetwork::SetUp() {
     }
     LOG(kVerbose) << index << " returns.";
   }
+  Sleep(std::chrono::seconds(5));
   LOG(kVerbose) << "Network is up...";
 }
 
 void VaultNetwork::TearDown() {
-  while (vaults_.size() > 0) {
-    vaults_.erase(vaults_.begin());
-    Sleep(std::chrono::milliseconds(200));
-  }
+  LOG(kInfo) << "VaultNetwork TearDown";
+  for (auto& client : clients_)
+    client.reset();
+  Sleep(std::chrono::seconds(1));
+  clients_.clear();
+  for (auto& vault : vaults_)
+    vault->Stop();
+  Sleep(std::chrono::seconds(1));
+  for (auto& vault : vaults_)
+    vault.reset();
+//   Sleep(std::chrono::seconds(3));
+  vaults_.clear();
+
+//   while (vaults_.size() > 0) {
+//     vaults_.erase(vaults_.begin());
+//     Sleep(std::chrono::milliseconds(200));
+//   }
 #ifndef MAIDSAFE_WIN32
   ulimit(UL_SETFSIZE, kUlimitFileSize);
 #endif
@@ -206,6 +234,8 @@ bool VaultNetwork::Create(const passport::detail::Fob<passport::detail::PmidTag>
   auto vault_root_dir(vault_dir_ / path_str);
   fs::create_directory(vault_root_dir);
   try {
+    LOG(kVerbose) << "vault joining: " << vaults_.size() << " id: "
+                  << DebugId(NodeId(pmid.name()->string()));
     vault_manager::VaultConfig vault_config(pmid, vault_root_dir, DiskUsage(1000000000),
                                             bootstrap_contacts_);
     vault_config.test_config.public_pmid_list = public_pmids_;
@@ -252,6 +282,7 @@ bool VaultNetwork::AddClient(bool register_pmid) {
     public_pmids_.push_back(passport::PublicPmid(node_keys.pmid));
   }
   try {
+    LOG(kVerbose) << "Client joining: " << clients_.size();
     clients_.emplace_back(new Client(node_keys, bootstrap_contacts_, public_pmids_, register_pmid));
     LOG(kVerbose) << "Client joined: " << clients_.size();
     return true;
@@ -284,8 +315,9 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
   {
     passport::PublicMaid public_maid(keys.maid);
     passport::PublicAnmaid public_anmaid(keys.anmaid);
-    auto future(nfs_->CreateAccount(nfs_vault::AccountCreation(public_maid, public_anmaid)));
-    auto status(future.wait_for(boost::chrono::seconds(10)));
+    auto future(nfs_->CreateAccount(nfs_vault::AccountCreation(public_maid, public_anmaid),
+                                    std::chrono::seconds(20)));
+    auto status(future.wait_for(boost::chrono::seconds(20)));
     if (status == boost::future_status::timeout) {
       LOG(kError) << "can't create account";
       BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
@@ -313,6 +345,7 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
       LOG(kError) << "Pmid Registration Failed " << boost::diagnostic_information(error);
       throw;
     }
+    Sleep(std::chrono::seconds(2));
     passport::PublicPmid::Name pmid_name(Identity(keys.pmid.name().value));
 
     try {
