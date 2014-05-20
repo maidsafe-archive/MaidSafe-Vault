@@ -209,6 +209,7 @@ template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
     const typename passport::PublicMaid::Name& data_name, int32_t ,
     nfs::MessageId message_id) {
+  dispatcher_.SendPutResponse(maid_name, maidsafe_error(CommonErrors::success), message_id);
   std::lock_guard<std::mutex> lock(pending_account_mutex_);
   auto pending_account_itr(pending_account_map_.find(message_id));
   if (pending_account_itr == pending_account_map_.end()) {
@@ -232,6 +233,7 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidName& maid_name,
     const typename passport::PublicAnmaid::Name& data_name, int32_t, nfs::MessageId message_id) {
+  dispatcher_.SendPutResponse(maid_name, maidsafe_error(CommonErrors::success), message_id);
   std::lock_guard<std::mutex> lock(pending_account_mutex_);
   auto pending_account_itr(pending_account_map_.find(message_id));
   if (pending_account_itr == pending_account_map_.end()) {

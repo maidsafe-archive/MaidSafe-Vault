@@ -57,6 +57,7 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
              pmid_manager_service_, pmid_node_service_, data_getter_),
       asio_service_(2)
+      getting_keys_()
 #ifdef TESTING
       ,
       pmids_mutex_()
@@ -70,10 +71,14 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
 
 Vault::~Vault() {
   // call stop on all components
+
   maid_manager_service_.Stop();
   version_handler_service_.Stop();
   data_manager_service_.Stop();
   pmid_manager_service_.Stop();
+
+  asio_service_.Stop();
+
   routing_.reset();
 }
 

@@ -107,6 +107,7 @@ class Vault {
   nfs::Service<CacheHandlerService> cache_service_;
   Demultiplexer demux_;
   AsioService asio_service_;
+  std::vector<std::future<void>> getting_keys_;
 #ifdef TESTING
   std::mutex pmids_mutex_;
 #endif

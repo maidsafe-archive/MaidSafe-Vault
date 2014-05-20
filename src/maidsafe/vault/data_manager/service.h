@@ -409,6 +409,7 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
     LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
                 << " from maid_node " << HexSubstr(maid_name->string())
                 << " . SendPutResponse with message_id " << message_id.data;
+    dispatcher_.SendPutToCache(data);
     dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);
   } else {
     HandlePutWhereEntryExists(data, maid_name, message_id, cost, is_unique_on_network<Data>());
@@ -536,8 +537,11 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   //   this DM doesn't have the record for the requested data
   //   or no pmid can given the data (shall not happen)
   // BEFORE_RELEASE In any case, shall return silently or send back a failure?
-  if (expected_response_count == 0)
+  if (expected_response_count == 0) {
+    dispatcher_.SendGetResponseFailure(requestor, data_name,
+                                       maidsafe_error(CommonErrors::no_such_element), message_id);
     return;
+  }
 
   // Choose the one we're going to ask for actual data, and set up the others for integrity checks.
   auto pmid_node_to_get_from(ChoosePmidNodeToGetFrom(online_pmids, data_name));

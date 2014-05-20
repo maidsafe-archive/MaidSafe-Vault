@@ -56,9 +56,8 @@ class MaidManagerDispatcher {
   void SendPutRequest(const MaidName& account_name, const Data& data,
                       const PmidName& pmid_node_hint, nfs::MessageId message_id);
 
-  template <typename Data>
-  void SendPutResponse(const MaidName& account_name, const typename Data::Name& data_name,
-                       const maidsafe_error& result, nfs::MessageId message_id);
+  void SendPutResponse(const MaidName& account_name, const maidsafe_error& result,
+                       nfs::MessageId message_id);
 
   void SendDeleteRequest(const MaidName& account_name, const nfs_vault::DataName& data_name,
                          nfs::MessageId message_id);
@@ -260,28 +259,6 @@ void MaidManagerDispatcher::SendCreateVersionTreeRequest(const MaidName& maid_na
 //  static const DataTagValue kDataEnumValue(WorldDirectory::Tag::kValue);
 // TODO(Fraser#5#): 2013-08-03 - Handle
 // }
-
-// template<typename Data>
-// void MaidManagerDispatcher::SendPutResponse(const MaidName& account_name,
-//                                            const typename Data::Name& data_name,
-//                                            const maidsafe_error& result,
-//                                            nfs::MessageId /*message_id*/) {
-//  typedef routing::GroupToSingleMessage RoutingMessage;
-//  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-//  static const nfs::MessageAction kAction(nfs::MessageAction::kPutResponse);
-//  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
-//  static const DataTagValue kDataEnumValue(Data::Tag::kValue);
-
-//  nfs::Message::Data inner_data(result);
-//  inner_data.type = kDataEnumValue;
-//  inner_data.name = data_name.data;
-//  inner_data.action = kAction;
-//  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-//  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-//                         routing::SingleId(NodeId(account_name->string())), cacheable);
-//  routing_.Send(message);
-// }
-
 
 template <typename KeyType>
 void MaidManagerDispatcher::SendSync(const KeyType& key, const std::string& serialised_sync) {
