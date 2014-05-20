@@ -66,7 +66,7 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
   InitRouting(vault_config.bootstrap_contacts);
   try {
-    log::Logging::Instance().SetVlogPrefix(DebugId(pmid.name().value));
+    log::Logging::Instance().SetVlogPrefix(DebugId(vault_config.pmid.name().value));
   } catch(...) {
     // Ignore the exception when running multiple vaults in one process during test
   }
