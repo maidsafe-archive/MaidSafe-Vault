@@ -62,6 +62,7 @@ TEST_F(VersionHandlerTest, FUNC_CreateVersionTree) {
     EXPECT_TRUE(false) << "Failed to retrieve version: " << boost::diagnostic_information(error);
   }
   LOG(kVerbose) << "Version Created";
+  Sleep(std::chrono::seconds(5));
 }
 
 TEST_F(VersionHandlerTest, FUNC_FailingPut) {
@@ -71,6 +72,7 @@ TEST_F(VersionHandlerTest, FUNC_FailingPut) {
   auto put_version_future(clients_.front()->nfs_->PutVersion(
                           chunk.name(), StructuredDataVersions::VersionName(), v_aaa));
   EXPECT_THROW(put_version_future.get(), maidsafe_error) << "should have failed";
+  Sleep(std::chrono::seconds(5));
 }
 
 TEST_F(VersionHandlerTest, FUNC_CreateGet) {
@@ -80,6 +82,7 @@ TEST_F(VersionHandlerTest, FUNC_CreateGet) {
   auto create_version_future(clients_.front()->nfs_->CreateVersionTree(chunk.name(), v_aaa, 10,
                                                                        20));
   EXPECT_NO_THROW(create_version_future.get()) << "failure to create version";
+  Sleep(std::chrono::seconds(3));
   try {
     auto future(clients_.front()->nfs_->GetVersions(chunk.name()));
     auto versions(future.get());
@@ -87,6 +90,7 @@ TEST_F(VersionHandlerTest, FUNC_CreateGet) {
   } catch(const maidsafe_error& error) {
     EXPECT_TRUE(false) << "Failed to retrieve version: " << boost::diagnostic_information(error);
   }
+  Sleep(std::chrono::seconds(5));
 }
 
 TEST_F(VersionHandlerTest, FUNC_PutGet) {
@@ -97,9 +101,10 @@ TEST_F(VersionHandlerTest, FUNC_PutGet) {
   auto create_version_future(clients_.front()->nfs_->CreateVersionTree(chunk.name(), v_aaa, 10,
                                                                        20));
   EXPECT_NO_THROW(create_version_future.get()) << "failure to create version";
-
+  Sleep(std::chrono::seconds(3));
   auto put_version_future(clients_.front()->nfs_->PutVersion(chunk.name(), v_aaa, v_bbb));
   EXPECT_NO_THROW(put_version_future.get()) << "failure to put version";
+  Sleep(std::chrono::seconds(2));
   LOG(kVerbose) << "Put Version Succeeded";
   try {
     auto future(clients_.front()->nfs_->GetVersions(chunk.name()));
@@ -161,6 +166,7 @@ TEST_F(VersionHandlerTest, FUNC_DeleteBranchUntilFork) {
   catch (const std::exception& error) {
     EXPECT_TRUE(false) << boost::diagnostic_information(error);
   }
+  Sleep(std::chrono::seconds(5));
 }
 
 }  // namespace test
