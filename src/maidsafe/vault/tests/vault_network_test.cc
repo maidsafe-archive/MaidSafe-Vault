@@ -108,7 +108,7 @@ TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
   Sleep(std::chrono::seconds(2));
   ASSERT_TRUE(AddClient(true));
   Sleep(std::chrono::seconds(2));
-  const size_t kIterations(50);
+  const size_t kIterations(10);
   std::vector<ImmutableData> chunks;
   for (auto index(kIterations); index > 0; --index)
     chunks.emplace_back(NonEmptyString(RandomString(1024)));
@@ -140,7 +140,7 @@ TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
     }
   }
 
-  Sleep(std::chrono::seconds(10));
+  Sleep(std::chrono::seconds(5));
   LOG(kVerbose) << "Multiple puts is finished successfully";
 }
 
@@ -219,14 +219,15 @@ TEST_F(VaultNetworkTest, FUNC_PutMultipleCopies) {
   routing::Parameters::caching = false;
 
   EXPECT_THROW(Get<ImmutableData>(data.name()), std::exception) << "Should have failed to retreive";
-
+  Sleep(std::chrono::seconds(5));
   LOG(kVerbose) << "PutMultipleCopies Succeeds";
 }
 
 TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
-  int clients(10);
+  int clients(5);
   for (int index(0); index < clients; ++index) {
     Sleep(std::chrono::seconds(2));
+    std::cout << "joining client " << index << std::endl;
     EXPECT_TRUE(AddClient(true));
   }
   Sleep(std::chrono::seconds(2));
@@ -239,14 +240,18 @@ TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
   for (const auto& chunk : chunks) {
     LOG(kVerbose) << "Storing: " << DebugId(chunk.name());
     EXPECT_NO_THROW(clients_[RandomInt32() % clients]->nfs_->Put(chunk));
+    Sleep(std::chrono::seconds(2));
   }
 
   LOG(kVerbose) << "Chunks are sent to be stored...";
 
   std::vector<boost::future<ImmutableData>> get_futures;
-  for (const auto& chunk : chunks)
+  for (const auto& chunk : chunks) {
+    LOG(kVerbose) << "geting chunk : " << DebugId(chunk.name());
     get_futures.emplace_back(
         clients_[RandomInt32() % clients]->nfs_->Get<ImmutableData::Name>(chunk.name()));
+    Sleep(std::chrono::seconds(2));
+  }
 
   for (size_t index(0); index < kIterations; ++index) {
     try {
@@ -258,6 +263,13 @@ TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
                   << " because: " << boost::diagnostic_information(ex);
     }
   }
+  Sleep(std::chrono::seconds(5));
+  for (auto& client : clients_)
+    client.reset();
+  Sleep(std::chrono::seconds(1));
+  clients_.clear();
+  LOG(kInfo) << "clients destructed";
+  Sleep(std::chrono::seconds(5));
 }
 
 TEST_F(VaultNetworkTest, FUNC_UnauthorisedDelete) {
@@ -270,14 +282,17 @@ TEST_F(VaultNetworkTest, FUNC_UnauthorisedDelete) {
   routing::Parameters::caching = false;
   ImmutableData chunk(NonEmptyString(RandomString(2^10)));
   EXPECT_NO_THROW(clients_.front()->nfs_->Put<ImmutableData>(chunk)) << "should have succeeded";
+  Sleep(std::chrono::seconds(3));
   EXPECT_NO_THROW(Get<ImmutableData>(chunk.name()));
   LOG(kVerbose) << "Chunk is verified to be in the network";
   clients_.back()->nfs_->Delete(chunk.name());
   Sleep(std::chrono::seconds(3));
   EXPECT_NO_THROW(Get<ImmutableData>(chunk.name())) << "Delete must have failed";
+  Sleep(std::chrono::seconds(3));
   clients_.front()->nfs_->Delete(chunk.name());
   Sleep(std::chrono::seconds(3));
   EXPECT_THROW(Get<ImmutableData>(chunk.name()), std::exception)  << "Delete must have succeeded";
+  Sleep(std::chrono::seconds(5));
 }
 
 }  // namespace test
