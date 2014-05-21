@@ -44,10 +44,9 @@ int main(int argc, char* argv[]) {
     });
     // Starting Vault
 
-    std::cout << "Starting vault..." << std::endl;
+    LOG(kVerbose) << "Starting vault...";
     Vault vault(vault_config, on_new_bootstrap_contact);
-    std::cout << "Vault running as " << maidsafe::HexSubstr(vault_config.pmid.name().value)
-              << std::endl;
+    LOG(kInfo) << "Vault running as " << maidsafe::HexSubstr(vault_config.pmid.name().value);
 //    VLOG(nfs::Persona::kNA, VisualiserAction::kVaultStarted, Identity{})
 //    VLOG(nfs::Persona::kNA, VisualiserAction::kVaultStopping, Identity{})
 //        << "Vault stopping";
