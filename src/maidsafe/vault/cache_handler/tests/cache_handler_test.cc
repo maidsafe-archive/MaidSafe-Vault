@@ -28,7 +28,9 @@ namespace test {
 
 class CacheHandlerTest : public VaultNetwork  {
  public:
-  CacheHandlerTest() {}
+  CacheHandlerTest() {
+    routing::Parameters::caching = true;
+  }
 };
 
 TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToMaidNode) {
