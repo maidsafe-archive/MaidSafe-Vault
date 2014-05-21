@@ -227,7 +227,7 @@ TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
   int clients(5);
   for (int index(0); index < clients; ++index) {
     Sleep(std::chrono::seconds(2));
-    std::cout << "joining client " << index << std::endl;
+    LOG(kVerbose) << "joining client " << index;
     EXPECT_TRUE(AddClient(true));
   }
   Sleep(std::chrono::seconds(2));
