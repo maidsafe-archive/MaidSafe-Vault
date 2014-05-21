@@ -101,6 +101,7 @@ TEST_F(VaultNetworkTest, FUNC_PutGetDelete) {
     LOG(kVerbose) << DebugId(NodeId(data.name()->string())) << " Deleted "
                   << boost::diagnostic_information(e);
   }
+  Sleep(std::chrono::seconds(5));
 }
 
 TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
@@ -138,6 +139,8 @@ TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
                          << " because: " << boost::diagnostic_information(ex) << " "  << index;
     }
   }
+
+  Sleep(std::chrono::seconds(10));
   LOG(kVerbose) << "Multiple puts is finished successfully";
 }
 
