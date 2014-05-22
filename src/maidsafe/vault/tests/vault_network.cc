@@ -209,6 +209,9 @@ void VaultNetwork::SetUp() {
 void VaultNetwork::TearDown() {
   LOG(kInfo) << "VaultNetwork TearDown";
   for (auto& client : clients_)
+    client->Stop();
+  Sleep(std::chrono::seconds(1));
+  for (auto& client : clients_)
     client.reset();
   Sleep(std::chrono::seconds(1));
   clients_.clear();

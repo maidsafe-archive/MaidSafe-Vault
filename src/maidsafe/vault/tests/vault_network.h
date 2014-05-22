@@ -65,6 +65,8 @@ class Client {
          std::vector<passport::PublicPmid>& public_pmids, bool register_pmid_for_client = true);
   std::future<bool> RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints);
 
+  void Stop() { asio_service_.Stop(); }
+
  public:
   AsioService asio_service_;
   routing::Functors functors_;
