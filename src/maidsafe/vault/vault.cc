@@ -36,6 +36,7 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
       network_health_condition_variable_(),
       network_health_(-1),
       on_new_bootstrap_contact_(on_new_bootstrap_contact),
+      asio_service_(2),
       routing_(new routing::Routing(vault_config.pmid)),
       pmids_from_file_(vault_config.test_config.public_pmid_list),
       data_getter_(asio_service_, *routing_),
@@ -56,7 +57,6 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
           *routing_, vault_config.vault_dir)))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
              pmid_manager_service_, pmid_node_service_, data_getter_),
-      asio_service_(2),
       getting_keys_()
 #ifdef TESTING
       ,
@@ -73,6 +73,7 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
 }
 
 Vault::~Vault() {
+  Stop();
   asio_service_.Stop();
   routing_.reset();
 }

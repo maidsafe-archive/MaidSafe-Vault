@@ -66,13 +66,14 @@ class Vault {
 
 #ifdef TESTING
   void AddPublicPmid(const passport::PublicPmid& public_pmid);
+#endif
   void Stop() {
+//     routing_->Stop();
     maid_manager_service_.Stop();
     version_handler_service_.Stop();
     data_manager_service_.Stop();
     pmid_manager_service_.Stop();
   }
-#endif
 
  private:
 #ifdef TESTING
@@ -101,6 +102,7 @@ class Vault {
   std::condition_variable network_health_condition_variable_;
   int network_health_;
   std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact_;
+  AsioService asio_service_;
   std::unique_ptr<routing::Routing> routing_;
   std::vector<passport::PublicPmid> pmids_from_file_;
   nfs_client::DataGetter data_getter_;
@@ -112,7 +114,6 @@ class Vault {
   nfs::Service<PmidNodeService> pmid_node_service_;
   nfs::Service<CacheHandlerService> cache_service_;
   Demultiplexer demux_;
-  AsioService asio_service_;
   std::vector<std::future<void>> getting_keys_;
 #ifdef TESTING
   std::mutex pmids_mutex_;
