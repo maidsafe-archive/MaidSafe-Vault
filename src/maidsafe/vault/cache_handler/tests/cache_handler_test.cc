@@ -55,18 +55,11 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToMaidNode) {
   // Caching on all nodes in the network.
   routing::Parameters::max_route_history = kNetworkSize;
   Send(0, message);
-  Sleep(std::chrono::seconds(3));
 
   LOG(kVerbose) << "Get attempt";
 
-  auto future(clients_[0]->nfs_->Get<ImmutableData::Name>(data.name(), std::chrono::seconds(5)));
-  try {
-    auto retrieved(future.get());
-    EXPECT_EQ(retrieved.data(), data.data());
-  }
-  catch (...) {
-    EXPECT_TRUE(false) << "Failed to retrieve: " << DebugId(NodeId(data.name()->string()));
-  }
+  EXPECT_NO_THROW(Get<ImmutableData>(data.name())) << "Failed to retrieve: "
+                                                   << DebugId(NodeId(data.name()->string()));
 }
 
 TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToMaidNode) {
@@ -90,18 +83,10 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToMaidNode) {
   // Caching on all nodes in the network.
   routing::Parameters::max_route_history = kNetworkSize;
   Send(0, message);
-  Sleep(std::chrono::seconds(3));
 
   LOG(kVerbose) << "Get attempt";
-
-  auto future(clients_[0]->nfs_->Get<ImmutableData::Name>(data.name(), std::chrono::seconds(5)));
-  try {
-    auto retrieved(future.get());
-    EXPECT_EQ(retrieved.data(), data.data());
-  }
-  catch (...) {
-    EXPECT_TRUE(false) << "Failed to retrieve: " << DebugId(NodeId(data.name()->string()));
-  }
+  EXPECT_NO_THROW(Get<ImmutableData>(data.name())) << "Failed to retrieve: "
+                                                   << DebugId(NodeId(data.name()->string()));
 }
 
 TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToDataGetter) {
@@ -126,18 +111,9 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToDataGetter) {
   // Caching on all nodes in the network.
   routing::Parameters::max_route_history = kNetworkSize;
   Send(0, message);
-  Sleep(std::chrono::seconds(3));
-
   LOG(kVerbose) << "Get attempt";
-
-  auto future(clients_[0]->nfs_->Get<ImmutableData::Name>(data.name(), std::chrono::seconds(5)));
-  try {
-    auto retrieved(future.get());
-    EXPECT_EQ(retrieved.data(), data.data());
-  }
-  catch (...) {
-    EXPECT_TRUE(false) << "Failed to retrieve: " << DebugId(NodeId(data.name()->string()));
-  }
+  EXPECT_NO_THROW(Get<ImmutableData>(data.name())) << "Failed to retrieve: "
+                                                   << DebugId(NodeId(data.name()->string()));
 }
 
 TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToDataGetter) {
@@ -161,18 +137,10 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToDataGetter) {
   // Caching on all nodes in the network.
   routing::Parameters::max_route_history = kNetworkSize;
   Send(0, message);
-  Sleep(std::chrono::seconds(3));
 
   LOG(kVerbose) << "Get attempt";
-
-  auto future(clients_[0]->nfs_->Get<ImmutableData::Name>(data.name(), std::chrono::seconds(5)));
-  try {
-    auto retrieved(future.get());
-    EXPECT_EQ(retrieved.data(), data.data());
-  }
-  catch (...) {
-    EXPECT_TRUE(false) << "Failed to retrieve: " << DebugId(NodeId(data.name()->string()));
-  }
+  EXPECT_NO_THROW(Get<ImmutableData>(data.name())) << "Failed to retrieve: "
+                                                   << DebugId(NodeId(data.name()->string()));
 }
 
 TEST_F(CacheHandlerTest, FUNC_NonCacheableData) {
@@ -197,19 +165,10 @@ TEST_F(CacheHandlerTest, FUNC_NonCacheableData) {
   // Caching on all nodes in the network.
   routing::Parameters::max_route_history = kNetworkSize;
   Send(0, message);
-  Sleep(std::chrono::seconds(3));
 
   LOG(kVerbose) << "Get attempt";
-
-  auto future(clients_[0]->nfs_->Get<passport::PublicAnmaid::Name>(public_anmaid.name(),
-                                                                   std::chrono::seconds(5)));
-  try {
-    future.get();
-    EXPECT_TRUE(false) << "Should have thrown: " << DebugId(NodeId(anmaid.name()->string()));
-  }
-  catch (...) {
-    EXPECT_TRUE(true);
-  }
+  EXPECT_THROW(Get<passport::PublicAnmaid>(public_anmaid.name()), std::exception)
+      << "Failed to retrieve: " << HexSubstr(public_anmaid.name()->string());
 }
 
 }  // namespace test

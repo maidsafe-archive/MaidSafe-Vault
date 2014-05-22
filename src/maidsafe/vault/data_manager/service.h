@@ -726,6 +726,14 @@ void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
                                                   const GetResponseContents& contents) {
   // Note: if 'pmid_node' and 'contents' is default-constructed, it's probably a result of this
   // function being invoked by the timer after timeout.
+  LOG(kVerbose) << "DataManagerService::DoGetForNodeDownResponse "
+                << HexSubstr(data_name->string());
+  {
+    std::lock_guard<std::mutex> lock(this->matrix_change_mutex_);
+    if (this->stopped_)
+      return;
+  }
+
   if (contents.content && pmid_node.value.IsInitialised())
     LOG(kVerbose) << "DataManagerService::DoGetForNodeDownResponse received response from "
                   << HexSubstr(pmid_node->string()) << " for chunk "

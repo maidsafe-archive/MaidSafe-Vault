@@ -73,6 +73,10 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
 }
 
 Vault::~Vault() {
+  maid_manager_service_.Stop();
+  version_handler_service_.Stop();
+  data_manager_service_.Stop();
+  pmid_manager_service_.Stop();
   asio_service_.Stop();
   routing_.reset();
 }

@@ -122,7 +122,7 @@ template <typename Data>
 Data VaultNetwork::Get(const typename Data::Name& data_name) {
   assert(!clients_.empty() && "At least one client should exist to perform get operation");
   size_t index(RandomUint32() % clients_.size());
-  auto future(clients_[index]->nfs_->Get<ImmutableData::Name>(data_name));
+  auto future(clients_[index]->nfs_->Get<typename Data::Name>(data_name));
   try {
     return future.get();
   }
