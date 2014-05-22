@@ -39,35 +39,25 @@ TEST_F(VaultNetworkTest, FUNC_BasicSetup) {
 }
 
 TEST_F(VaultNetworkTest, FUNC_VaultJoins) {
-  Sleep(std::chrono::seconds(2));
   LOG(kVerbose) << "Adding a vault";
   EXPECT_TRUE(Add());
 }
 
 TEST_F(VaultNetworkTest, FUNC_ClientJoins) {
-  Sleep(std::chrono::seconds(2));
   EXPECT_TRUE(AddClient(false));
-  Sleep(std::chrono::seconds(2));
 }
 
 TEST_F(VaultNetworkTest, FUNC_PmidRegisteringClientJoins) {
-  Sleep(std::chrono::seconds(2));
   EXPECT_TRUE(AddClient(true));
-  Sleep(std::chrono::seconds(2));
 }
 
 TEST_F(VaultNetworkTest, FUNC_MultipleClientsJoin) {
-  for (int index(0); index < 5; ++index) {
-    Sleep(std::chrono::seconds(2));
+  for (int index(0); index < 5; ++index)
     EXPECT_TRUE(AddClient(false));
-  }
-  Sleep(std::chrono::seconds(2));
 }
 
 TEST_F(VaultNetworkTest, FUNC_PutGetDelete) {
-  Sleep(std::chrono::seconds(2));
   EXPECT_TRUE(AddClient(true));
-  Sleep(std::chrono::seconds(2));
   ImmutableData data(NonEmptyString(RandomString(1024)));
   LOG(kVerbose) << "Before put";
   try {
@@ -77,7 +67,7 @@ TEST_F(VaultNetworkTest, FUNC_PutGetDelete) {
   catch (...) {
     EXPECT_TRUE(false) << "Failed to put: " << DebugId(NodeId(data.name()->string()));
   }
-  Sleep(std::chrono::seconds(5));
+
   auto future(clients_[0]->nfs_->Get<ImmutableData::Name>(data.name(), std::chrono::seconds(5)));
   try {
     auto retrieved(future.get());
@@ -87,28 +77,22 @@ TEST_F(VaultNetworkTest, FUNC_PutGetDelete) {
     EXPECT_TRUE(false) << "Failed to retrieve: " << DebugId(NodeId(data.name()->string()));
   }
 
+  Sleep(std::chrono::seconds(3));
   clients_[0]->nfs_->Delete<ImmutableData::Name>(data.name());
-  Sleep(std::chrono::seconds(5));
+  Sleep(std::chrono::seconds(3));
+
+  LOG(kVerbose) << "After delete:";
 
   routing::Parameters::caching = false;
 
-  future = clients_[0]->nfs_->Get<ImmutableData::Name>(data.name());
-  try {
-    EXPECT_THROW(future.get(), std::exception) << "should have failed retreiveing data: "
-                                               << DebugId(NodeId(data.name()->string()));
-  }
-  catch (const std::exception& e) {
-    LOG(kVerbose) << DebugId(NodeId(data.name()->string())) << " Deleted "
-                  << boost::diagnostic_information(e);
-  }
-  Sleep(std::chrono::seconds(5));
+  EXPECT_THROW(Get<ImmutableData>(data.name()), std::exception)
+      << "should have failed retreiveing data: " << DebugId(NodeId(data.name()->string()));
+  LOG(kVerbose) << "Put Get Delete done.";
 }
 
 TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
-  Sleep(std::chrono::seconds(2));
   ASSERT_TRUE(AddClient(true));
-  Sleep(std::chrono::seconds(2));
-  const size_t kIterations(10);
+  const size_t kIterations(100);
   std::vector<ImmutableData> chunks;
   for (auto index(kIterations); index > 0; --index)
     chunks.emplace_back(NonEmptyString(RandomString(1024)));
@@ -117,7 +101,6 @@ TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
   for (const auto& chunk : chunks) {
     EXPECT_NO_THROW(clients_[0]->nfs_->Put(chunk)) << "Store failure "
                                                    << DebugId(NodeId(chunk.name()->string()));
-    Sleep(std::chrono::seconds(1));
     LOG(kVerbose) << DebugId(NodeId(chunk.name()->string())) << " stored: " << index++;
   }
 
@@ -132,7 +115,7 @@ TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
     try {
       auto retrieved(get_futures[index].get());
       EXPECT_EQ(retrieved.data(), chunks[index].data());
-      LOG(kVerbose) << "Retrieved: " << index;
+      LOG(kVerbose) << "Cache enabled Retrieved: " << index;
     }
     catch (const std::exception& ex) {
       EXPECT_TRUE(false) << "Failed to retrieve chunk: " << DebugId(chunks[index].name())
@@ -140,26 +123,42 @@ TEST_F(VaultNetworkTest, FUNC_MultiplePuts) {
     }
   }
 
-  Sleep(std::chrono::seconds(5));
+  routing::Parameters::caching = false;
+  // allow time for any pending put
+  Sleep(std::chrono::seconds(10));
+  std::vector<boost::future<ImmutableData>> no_cache_get_futures;
+  for (const auto& chunk : chunks) {
+    no_cache_get_futures.emplace_back(
+        clients_[0]->nfs_->Get<ImmutableData::Name>(chunk.name(),
+                                                    std::chrono::seconds(kIterations)));
+  }
+
+  for (size_t index(0); index < kIterations; ++index) {
+    try {
+      auto retrieved(no_cache_get_futures[index].get());
+      EXPECT_EQ(retrieved.data(), chunks[index].data());
+      LOG(kVerbose) << "Cache disabled Retrieved: " << index;
+    }
+    catch (const std::exception& ex) {
+      EXPECT_TRUE(false) << "Failed to retrieve chunk: " << DebugId(chunks[index].name())
+                         << " because: " << boost::diagnostic_information(ex) << " "  << index;
+    }
+  }
+
   LOG(kVerbose) << "Multiple puts is finished successfully";
 }
 
 TEST_F(VaultNetworkTest, FUNC_FailingGet) {
-  Sleep(std::chrono::seconds(2));
   EXPECT_TRUE(AddClient(true));
-  Sleep(std::chrono::seconds(2));
   LOG(kVerbose) << "Client joins";
   ImmutableData data(NonEmptyString(RandomString(1024)));
   EXPECT_THROW(Get<ImmutableData>(data.name()), std::exception) << "must have failed";
 }
 
 TEST_F(VaultNetworkTest, FUNC_PutMultipleCopies) {
-  Sleep(std::chrono::seconds(2));
   LOG(kVerbose) << "Clients joining";
   EXPECT_TRUE(AddClient(true));
-  Sleep(std::chrono::seconds(2));
   EXPECT_TRUE(AddClient(true));
-  Sleep(std::chrono::seconds(2));
   LOG(kVerbose) << "Clients joined";
 
   ImmutableData data(NonEmptyString(RandomString(1024)));
@@ -219,18 +218,14 @@ TEST_F(VaultNetworkTest, FUNC_PutMultipleCopies) {
   routing::Parameters::caching = false;
 
   EXPECT_THROW(Get<ImmutableData>(data.name()), std::exception) << "Should have failed to retreive";
-  Sleep(std::chrono::seconds(5));
+
   LOG(kVerbose) << "PutMultipleCopies Succeeds";
 }
 
 TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
-  int clients(5);
-  for (int index(0); index < clients; ++index) {
-    Sleep(std::chrono::seconds(2));
-    LOG(kVerbose) << "joining client " << index;
+  int clients(10);
+  for (int index(0); index < clients; ++index)
     EXPECT_TRUE(AddClient(true));
-  }
-  Sleep(std::chrono::seconds(2));
   LOG(kVerbose) << "Clients joined...";
   const size_t kIterations(10);
   std::vector<ImmutableData> chunks;
@@ -240,18 +235,14 @@ TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
   for (const auto& chunk : chunks) {
     LOG(kVerbose) << "Storing: " << DebugId(chunk.name());
     EXPECT_NO_THROW(clients_[RandomInt32() % clients]->nfs_->Put(chunk));
-    Sleep(std::chrono::seconds(2));
   }
 
   LOG(kVerbose) << "Chunks are sent to be stored...";
 
   std::vector<boost::future<ImmutableData>> get_futures;
-  for (const auto& chunk : chunks) {
-    LOG(kVerbose) << "geting chunk : " << DebugId(chunk.name());
+  for (const auto& chunk : chunks)
     get_futures.emplace_back(
         clients_[RandomInt32() % clients]->nfs_->Get<ImmutableData::Name>(chunk.name()));
-    Sleep(std::chrono::seconds(2));
-  }
 
   for (size_t index(0); index < kIterations; ++index) {
     try {
@@ -263,36 +254,23 @@ TEST_F(VaultNetworkTest, FUNC_MultipleClientsPut) {
                   << " because: " << boost::diagnostic_information(ex);
     }
   }
-  Sleep(std::chrono::seconds(5));
-  for (auto& client : clients_)
-    client.reset();
-  Sleep(std::chrono::seconds(1));
-  clients_.clear();
-  LOG(kInfo) << "clients destructed";
-  Sleep(std::chrono::seconds(5));
 }
 
 TEST_F(VaultNetworkTest, FUNC_UnauthorisedDelete) {
-  Sleep(std::chrono::seconds(2));
   EXPECT_TRUE(AddClient(true));
-  Sleep(std::chrono::seconds(2));
   EXPECT_TRUE(AddClient(true));
-  Sleep(std::chrono::seconds(2));
 
   routing::Parameters::caching = false;
   ImmutableData chunk(NonEmptyString(RandomString(2^10)));
   EXPECT_NO_THROW(clients_.front()->nfs_->Put<ImmutableData>(chunk)) << "should have succeeded";
-  Sleep(std::chrono::seconds(3));
   EXPECT_NO_THROW(Get<ImmutableData>(chunk.name()));
   LOG(kVerbose) << "Chunk is verified to be in the network";
   clients_.back()->nfs_->Delete(chunk.name());
   Sleep(std::chrono::seconds(3));
   EXPECT_NO_THROW(Get<ImmutableData>(chunk.name())) << "Delete must have failed";
-  Sleep(std::chrono::seconds(3));
   clients_.front()->nfs_->Delete(chunk.name());
   Sleep(std::chrono::seconds(3));
   EXPECT_THROW(Get<ImmutableData>(chunk.name()), std::exception)  << "Delete must have succeeded";
-  Sleep(std::chrono::seconds(5));
 }
 
 }  // namespace test
@@ -300,4 +278,3 @@ TEST_F(VaultNetworkTest, FUNC_UnauthorisedDelete) {
 }  // namespace vault
 
 }  // namespace maidsafe
-
