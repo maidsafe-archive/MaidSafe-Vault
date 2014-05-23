@@ -70,9 +70,12 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
   } catch(...) {
     // Ignore the exception when running multiple vaults in one process during test
   }
+  VLOG(nfs::Persona::kNA, VisualiserAction::kVaultStarted, Identity{})
+    << "Vault running as " << maidsafe::HexSubstr(vault_config.pmid.name().value);
 }
 
 Vault::~Vault() {
+  VLOG(nfs::Persona::kNA, VisualiserAction::kVaultStopping, Identity{});
   Stop();
   asio_service_.Stop();
   routing_.reset();

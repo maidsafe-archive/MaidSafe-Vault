@@ -37,6 +37,7 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/common/visualiser_log.h"
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/config.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
@@ -307,7 +308,8 @@ typename GroupDb<Persona>::TransferInfo GroupDb<Persona>::GetTransferInfo(
         }
       }
     } else {  // Prune group
-//      GLOG() << "GroupDb removing account " << HexSubstr(group_itr->first->string());
+      VLOG(maidsafe::nfs::Persona::kNA, VisualiserAction::kRemoveAccount, Identity{})
+          << "GroupDb removing account " << HexSubstr(group_itr->first->string());
       prune_vector.push_back(group_itr->first);
     }
   }

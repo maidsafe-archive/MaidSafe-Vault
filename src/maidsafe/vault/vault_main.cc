@@ -47,10 +47,6 @@ int main(int argc, char* argv[]) {
     LOG(kVerbose) << "Starting vault...";
     Vault vault(vault_config, on_new_bootstrap_contact);
     LOG(kInfo) << "Vault running as " << maidsafe::HexSubstr(vault_config.pmid.name().value);
-//    VLOG(nfs::Persona::kNA, VisualiserAction::kVaultStarted, Identity{})
-//    VLOG(nfs::Persona::kNA, VisualiserAction::kVaultStopping, Identity{})
-//        << "Vault stopping";
-
     return vault_interface.WaitForExit();
   }
   catch (const maidsafe::maidsafe_error& error) {
