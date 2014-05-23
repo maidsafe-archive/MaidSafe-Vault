@@ -103,6 +103,7 @@ class MaidManagerService {
     std::lock_guard<std::mutex> lock(mutex_);
     stopped_ = true;
   }
+
  private:
   static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
 
