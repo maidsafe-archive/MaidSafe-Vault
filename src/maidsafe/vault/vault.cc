@@ -63,13 +63,13 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
       pmids_mutex_()
 #endif
 {
-  // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
-  InitRouting(vault_config.bootstrap_contacts);
   try {
     log::Logging::Instance().SetVlogPrefix(DebugId(vault_config.pmid.name().value));
   } catch(...) {
     // Ignore the exception when running multiple vaults in one process during test
   }
+  // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
+  InitRouting(vault_config.bootstrap_contacts);
   VLOG(nfs::Persona::kNA, VisualiserAction::kVaultStarted, Identity{})
     << "Vault running as " << maidsafe::HexSubstr(vault_config.pmid.name().value);
 }
@@ -146,6 +146,8 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
 }
 
 void Vault::OnNetworkStatusChange(int network_health) {
+  VLOG(maidsafe::nfs::Persona::kNA, VisualiserAction::kNetworkHealth, Identity{})
+    << "Network health: " << network_health;
   asio_service_.service().post([=] { DoOnNetworkStatusChange(network_health); });
 }
 

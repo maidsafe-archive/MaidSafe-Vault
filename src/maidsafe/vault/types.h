@@ -35,22 +35,24 @@ namespace vault {
 
 DEFINE_OSTREAMABLE_ENUM_VALUES(VisualiserAction, int,
     (VaultStarted)
-    (VaultStopping)
-    (IncreaseSubscribers)
-    (DecreaseSubscribers)
     (IncreaseCount)
     (DecreaseCount)
     (BlockDeleteRequest)
+    (AccountTransfer)
+    (GotAccountTransferred)
+    (IncreaseSubscribers)
+    (DecreaseSubscribers)
+    (MoveChunk)
+    (MarkNodeUp)
+    (MarkNodeDown)
     (JoinPmidNode)
     (DropPmidNode)
     (StoreChunk)
-    (MoveChunk)
     (DeleteChunk)
     (ChangeVersion)
-    (MarkNodeUp)
-    (AccountTransfer)
-    (GotAccountTransferred)
-    (RemoveAccount))
+    (RemoveAccount)
+    (NetworkHealth)
+    (VaultStopping))
 
 namespace detail {
 
