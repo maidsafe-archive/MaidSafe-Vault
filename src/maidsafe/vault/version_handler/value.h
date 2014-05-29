@@ -34,7 +34,7 @@ class VersionHandlerValue {
  public:
   explicit VersionHandlerValue(const std::string& serialised_version_handler_value);
   VersionHandlerValue(uint32_t max_versions, uint32_t max_branches);  // BEFORE_RELEASE
-  VersionHandlerValue(VersionHandlerValue&& other);
+  VersionHandlerValue(VersionHandlerValue&& other) BOOST_NOEXCEPT_OR_NOTHROW;
   VersionHandlerValue& operator=(VersionHandlerValue other);
   std::string Serialise() const;
 
@@ -49,19 +49,9 @@ class VersionHandlerValue {
   friend void swap(VersionHandlerValue& lhs, VersionHandlerValue& rhs);
   friend bool operator==(const VersionHandlerValue& lhs, const VersionHandlerValue& rhs);
 
-#ifdef MAIDSAFE_APPLE  // BEFORE_RELEASE This copy constructor definition is to allow building
-                       // on mac with clang 3.3, should be removed if clang is updated on mac.
-  VersionHandlerValue(const VersionHandlerValue& other)
-      : structured_data_versions_(other.structured_data_versions_) {}
-
- private:
-  typedef std::shared_ptr<StructuredDataVersions> StructuredDataVersionsPtr;
-#else
-
  private:
   typedef std::unique_ptr<StructuredDataVersions> StructuredDataVersionsPtr;
-  VersionHandlerValue(const VersionHandlerValue&);
-#endif
+  VersionHandlerValue(const VersionHandlerValue&) = delete;
 
   StructuredDataVersionsPtr structured_data_versions_;
 };

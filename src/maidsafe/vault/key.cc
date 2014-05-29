@@ -47,7 +47,7 @@ Key::Key(const FixedWidthString& fixed_width_string)
 
 Key::Key(const Key& other) : name(other.name), type(other.type) {}
 
-Key::Key(Key&& other) : name(std::move(other.name)), type(std::move(other.type)) {}
+Key::Key(Key&& other) BOOST_NOEXCEPT_OR_NOTHROW : name(std::move(other.name)), type(std::move(other.type)) {}
 
 Key& Key::operator=(Key other) {
   swap(*this, other);
