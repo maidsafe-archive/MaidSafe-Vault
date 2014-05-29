@@ -19,10 +19,10 @@
 #ifndef MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
 #define MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
 
-#include "maidsafe/common/config.h"
-
 #include <cstdint>
 #include <string>
+
+#include "maidsafe/common/config.h"
 
 namespace maidsafe {
 
