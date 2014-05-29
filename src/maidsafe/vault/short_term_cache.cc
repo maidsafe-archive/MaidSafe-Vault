@@ -16,7 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/common/data_stores/memory_buffer.h"
+#include "maidsafe/vault/short_term_cache.h"
 
 namespace maidsafe {
 
