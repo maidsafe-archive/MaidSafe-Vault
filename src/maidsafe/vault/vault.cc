@@ -64,7 +64,7 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
 #endif
 {
   try {
-    log::Logging::Instance().SetVlogPrefix(DebugId(vault_config.pmid.name().value));
+    log::Logging::Instance().SetVlogPrefix(HexEncode(vault_config.pmid.name().value.string()));
   } catch(...) {
     // Ignore the exception when running multiple vaults in one process during test
   }
