@@ -45,7 +45,7 @@ struct GroupKey {
   GroupKey(const GroupName& group_name_in, const Identity& name_in, DataTagValue type_in);
   explicit GroupKey(const std::string& serialised_group_key);
   GroupKey(const GroupKey& other);
-  GroupKey(GroupKey&& other);
+  GroupKey(GroupKey&& other) MAIDSAFE_NOEXCEPT;
   GroupKey& operator=(GroupKey other);
   std::string Serialise() const;
 
@@ -102,7 +102,7 @@ GroupKey<GroupName>::GroupKey(const GroupKey& other)
     : metadata_key(other.metadata_key), name(other.name), type(other.type) {}
 
 template <typename GroupName>
-GroupKey<GroupName>::GroupKey(GroupKey&& other)
+GroupKey<GroupName>::GroupKey(GroupKey&& other) MAIDSAFE_NOEXCEPT
     : metadata_key(std::move(other.metadata_key)),
       name(std::move(other.name)),
       type(std::move(other.type)) {}
