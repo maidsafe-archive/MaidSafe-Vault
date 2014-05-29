@@ -42,7 +42,7 @@ PmidManagerValue::PmidManagerValue(const std::string& serialised_pmid_manager_va
   }
 }
 
-PmidManagerValue::PmidManagerValue(PmidManagerValue&& other)
+PmidManagerValue::PmidManagerValue(PmidManagerValue&& other) MAIDSAFE_NOEXCEPT
     : size_(std::move(other.size_)) {}
 
 PmidManagerValue& PmidManagerValue::operator=(PmidManagerValue other) {

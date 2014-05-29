@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_
 #define MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_
 
+#include "maidsafe/common/config.h"
+
 #include <cstdint>
 #include <string>
 
@@ -30,7 +32,7 @@ class PmidManagerValue {
   PmidManagerValue();
   explicit PmidManagerValue(int32_t size);
   explicit PmidManagerValue(const std::string& serialised_pmid_manager_value);
-  PmidManagerValue(PmidManagerValue&& other);
+  PmidManagerValue(PmidManagerValue&& other) MAIDSAFE_NOEXCEPT;
   PmidManagerValue& operator=(PmidManagerValue other);
 
   std::string Serialise() const;
@@ -39,17 +41,8 @@ class PmidManagerValue {
   friend void swap(PmidManagerValue& lhs, PmidManagerValue& rhs);
   friend bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);
 
-#ifdef MAIDSAFE_APPLE  // BEFORE_RELEASE This copy constructor definition is to allow building
-                       // on mac with clang 3.3, should be removed if clang is updated on mac.
-  PmidManagerValue(const PmidManagerValue& other) : size_(other.size_) {}
-#elif (defined(_MSC_VER) && _MSC_VER == 1700)  // This copy constructor definition is to allow
-                                               // building with VC 2012.
-  PmidManagerValue(const PmidManagerValue& other) : size_(other.size_) {}
-#else
-
  private:
   PmidManagerValue(const PmidManagerValue&);
-#endif
 
  private:
   int32_t size_;

@@ -47,7 +47,7 @@ VersionHandlerValue::VersionHandlerValue(const std::string& serialised_version_h
 VersionHandlerValue::VersionHandlerValue(uint32_t max_versions, uint32_t max_branches)
     : structured_data_versions_(new StructuredDataVersions(max_versions, max_branches)) {}
 
-VersionHandlerValue::VersionHandlerValue(VersionHandlerValue&& other)
+VersionHandlerValue::VersionHandlerValue(VersionHandlerValue&& other) MAIDSAFE_NOEXCEPT
     : structured_data_versions_(std::move(other.structured_data_versions_)) {}
 
 VersionHandlerValue& VersionHandlerValue::operator=(VersionHandlerValue other) {
