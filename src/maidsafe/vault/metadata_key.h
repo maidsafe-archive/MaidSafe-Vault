@@ -36,7 +36,7 @@ class MetadataKey {
   explicit MetadataKey(const GroupName& group_name_in);
   explicit MetadataKey(const std::string& serialised_key);
   MetadataKey(const MetadataKey& other);
-  MetadataKey(MetadataKey&& other);
+  MetadataKey(MetadataKey&& other) MAIDSAFE_NOEXCEPT;
   MetadataKey& operator=(MetadataKey other);
   std::string Serialise() const;
 
@@ -65,7 +65,7 @@ MetadataKey<GroupName>::MetadataKey(const MetadataKey& other)
     : group_name_(other.group_name_) {}
 
 template <typename GroupName>
-MetadataKey<GroupName>::MetadataKey(MetadataKey&& other)
+MetadataKey<GroupName>::MetadataKey(MetadataKey&& other) MAIDSAFE_NOEXCEPT
     : group_name_(std::move(other.group_name_)) {}
 
 template <typename GroupName>

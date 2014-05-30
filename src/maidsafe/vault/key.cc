@@ -47,7 +47,9 @@ Key::Key(const FixedWidthString& fixed_width_string)
 
 Key::Key(const Key& other) : name(other.name), type(other.type) {}
 
-Key::Key(Key&& other) : name(std::move(other.name)), type(std::move(other.type)) {}
+Key::Key(Key&& other) MAIDSAFE_NOEXCEPT
+    : name(std::move(other.name)),
+      type(std::move(other.type)) {}
 
 Key& Key::operator=(Key other) {
   swap(*this, other);

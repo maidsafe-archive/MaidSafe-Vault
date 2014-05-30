@@ -52,7 +52,7 @@ MaidManagerValue::MaidManagerValue(const std::string& serialised_maid_manager_va
 
 MaidManagerValue::MaidManagerValue() : count_(0), total_cost_(0) {}
 
-MaidManagerValue::MaidManagerValue(MaidManagerValue&& other)
+MaidManagerValue::MaidManagerValue(MaidManagerValue&& other) MAIDSAFE_NOEXCEPT
     : count_(std::move(other.count_)), total_cost_(std::move(other.total_cost_)) {}
 
 MaidManagerValue& MaidManagerValue::operator=(MaidManagerValue other) {
