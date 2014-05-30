@@ -67,7 +67,10 @@ ms_glob_dir(VersionHandlerTests ${VaultSourcesDir}/version_handler/tests "Tests"
 set(TestsMain ${VaultSourcesDir}/tests/tests_main.cc)
 
 set(VaultGTestsAllFiles ${VaultTestsAllFiles})
-set(VaultTestsAllFiles ${PmidNodeTestsAllFiles}
+set(VaultTestsAllFiles ${VaultSourcesDir}/tests/chunk_store_test.cc
+                       ${VaultSourcesDir}/tests/chunk_store_test_utils.cc
+                       ${VaultSourcesDir}/tests/memory_fifo_test.cc
+                       ${PmidNodeTestsAllFiles}
                        ${PmidManagerTestsAllFiles}
                        ${DataManagerTestsAllFiles}
                        ${VersionHandlerTestsAllFiles}

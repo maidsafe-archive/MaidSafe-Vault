@@ -16,31 +16,31 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/common/data_stores/memory_buffer.h"
+#include "maidsafe/vault/memory_fifo.h"
 
 #include <memory>
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/common/data_stores/tests/test_utils.h"
+#include "maidsafe/vault/tests/chunk_store_test_utils.h"
 
 namespace maidsafe {
 
-namespace data_stores {
+namespace vault {
 
 namespace test {
 
 const uint64_t kDefaultMaxMemoryUsage(10);  // elements
 const uint64_t OneKB(1024);
 
-class MemoryBufferTest {
+class MemoryFIFOTest {
  public:
-  typedef MemoryBuffer::KeyType KeyType;
+  typedef MemoryFIFO::KeyType KeyType;
   typedef std::vector<std::pair<KeyType, NonEmptyString>> KeyValueContainer;
 
  protected:
-  MemoryBufferTest() : memory_buffer_(new MemoryBuffer(MemoryUsage(kDefaultMaxMemoryUsage))) {}
+  MemoryFIFOTest() : memory_fifo_(new MemoryFIFO(MemoryUsage(kDefaultMaxMemoryUsage))) {}
 
   struct GenerateKeyValuePair : public boost::static_visitor<NonEmptyString> {
     GenerateKeyValuePair() : size_(OneKB) {}
@@ -61,45 +61,45 @@ class MemoryBufferTest {
     return boost::apply_visitor(generate_key_value_pair_, key);
   }
 
-  std::unique_ptr<MemoryBuffer> memory_buffer_;
+  std::unique_ptr<MemoryFIFO> memory_fifo_;
 };
 
-TEST_CASE_METHOD(MemoryBufferTest, "Store", "[Behavioural]") {
+TEST_CASE_METHOD(MemoryFIFOTest, "Put", "[Behavioural]") {
   KeyType key(GetRandomDataNameType()), temp_key;
   NonEmptyString value = GenerateKeyValueData(key, OneKB), temp_value, recovered;
 
-  REQUIRE_NOTHROW(memory_buffer_->Store(key, value));
+  REQUIRE_NOTHROW(memory_fifo_->Store(key, value));
   // Get first value.
-  REQUIRE_NOTHROW(recovered = memory_buffer_->Get(key));
+  REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key));
   REQUIRE(recovered == value);
 
   for (uint32_t i = 0; i != kDefaultMaxMemoryUsage - 1; ++i) {
     temp_key = GetRandomDataNameType();
     temp_value = GenerateKeyValueData(temp_key, OneKB);
-    REQUIRE_NOTHROW(memory_buffer_->Store(temp_key, temp_value));
-    REQUIRE_NOTHROW(recovered = memory_buffer_->Get(temp_key));
+    REQUIRE_NOTHROW(memory_fifo_->Store(temp_key, temp_value));
+    REQUIRE_NOTHROW(recovered = memory_fifo_->Get(temp_key));
     REQUIRE(recovered == temp_value);
   }
 
   // Get first value again.
-  REQUIRE_NOTHROW(recovered = memory_buffer_->Get(key));
+  REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key));
   REQUIRE(recovered == value);
 
   // Store another value to replace first.
   temp_key = GetRandomDataNameType();
   temp_value = GenerateKeyValueData(temp_key, OneKB);
-  REQUIRE_NOTHROW(memory_buffer_->Store(temp_key, temp_value));
-  REQUIRE_NOTHROW(recovered = memory_buffer_->Get(temp_key));
+  REQUIRE_NOTHROW(memory_fifo_->Store(temp_key, temp_value));
+  REQUIRE_NOTHROW(recovered = memory_fifo_->Get(temp_key));
   REQUIRE(recovered == temp_value);
 
   // Try to get first value again.
-  REQUIRE_THROWS_AS(recovered = memory_buffer_->Get(key), maidsafe_error);
+  REQUIRE_THROWS_AS(recovered = memory_fifo_->Get(key), maidsafe_error);
   REQUIRE(recovered != value);
   // Should still equal last recovered value.
   REQUIRE(recovered == temp_value);
 }
 
-TEST_CASE_METHOD(MemoryBufferTest, "Delete", "[Behavioural]") {
+TEST_CASE_METHOD(MemoryFIFOTest, "Delete", "[Behavioural]") {
   KeyValueContainer key_value_pairs;
   KeyType key;
   NonEmptyString value, recovered, temp(RandomAlphaNumericString(301));
@@ -109,8 +109,8 @@ TEST_CASE_METHOD(MemoryBufferTest, "Delete", "[Behavioural]") {
     key = GetRandomDataNameType();
     value = GenerateKeyValueData(key, (RandomUint32() % 300) + 1);
     key_value_pairs.push_back(std::make_pair(key, value));
-    REQUIRE_NOTHROW(memory_buffer_->Store(key, value));
-    REQUIRE_NOTHROW(recovered = memory_buffer_->Get(key));
+    REQUIRE_NOTHROW(memory_fifo_->Store(key, value));
+    REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key));
     REQUIRE(recovered == value);
   }
 
@@ -118,15 +118,15 @@ TEST_CASE_METHOD(MemoryBufferTest, "Delete", "[Behavioural]") {
 
   // Delete stored key, value pairs and check they're gone.
   for (uint32_t i = 0; i != kDefaultMaxMemoryUsage; ++i) {
-    REQUIRE_NOTHROW(memory_buffer_->Delete(key_value_pairs[i].first));
-    REQUIRE_THROWS_AS(recovered = memory_buffer_->Get(key_value_pairs[i].first), maidsafe_error);
+    REQUIRE_NOTHROW(memory_fifo_->Delete(key_value_pairs[i].first));
+    REQUIRE_THROWS_AS(recovered = memory_fifo_->Get(key_value_pairs[i].first), maidsafe_error);
     REQUIRE(recovered != key_value_pairs[i].second);
   }
 
   // Re-store same key, value pairs.
   for (uint32_t i = 0; i != kDefaultMaxMemoryUsage; ++i) {
-    REQUIRE_NOTHROW(memory_buffer_->Store(key_value_pairs[i].first, key_value_pairs[i].second));
-    REQUIRE_NOTHROW(recovered = memory_buffer_->Get(key_value_pairs[i].first));
+    REQUIRE_NOTHROW(memory_fifo_->Store(key_value_pairs[i].first, key_value_pairs[i].second));
+    REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key_value_pairs[i].first));
     REQUIRE(recovered == key_value_pairs[i].second);
   }
 
@@ -137,8 +137,8 @@ TEST_CASE_METHOD(MemoryBufferTest, "Delete", "[Behavioural]") {
     key = GetRandomDataNameType();
     value = GenerateKeyValueData(key, (RandomUint32() % 300) + 1);
     key_value_pairs.push_back(std::make_pair(key, value));
-    REQUIRE_NOTHROW(memory_buffer_->Store(key, value));
-    REQUIRE_NOTHROW(recovered = memory_buffer_->Get(key));
+    REQUIRE_NOTHROW(memory_fifo_->Store(key, value));
+    REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key));
     REQUIRE(recovered == value);
   }
 
@@ -146,47 +146,47 @@ TEST_CASE_METHOD(MemoryBufferTest, "Delete", "[Behavioural]") {
 
   // Check none of the original key, value pairs are present.
   for (uint32_t i = 0; i != kDefaultMaxMemoryUsage; ++i) {
-    REQUIRE_THROWS_AS(recovered = memory_buffer_->Get(key_value_pairs[i].first), maidsafe_error);
+    REQUIRE_THROWS_AS(recovered = memory_fifo_->Get(key_value_pairs[i].first), maidsafe_error);
     REQUIRE(recovered != key_value_pairs[i].second);
   }
 
   // Delete stored key, value pairs and check they're gone.
   for (uint32_t i = kDefaultMaxMemoryUsage; i != 2 * kDefaultMaxMemoryUsage; ++i) {
-    REQUIRE_NOTHROW(memory_buffer_->Delete(key_value_pairs[i].first));
-    REQUIRE_THROWS_AS(recovered = memory_buffer_->Get(key_value_pairs[i].first), maidsafe_error);
+    REQUIRE_NOTHROW(memory_fifo_->Delete(key_value_pairs[i].first));
+    REQUIRE_THROWS_AS(recovered = memory_fifo_->Get(key_value_pairs[i].first), maidsafe_error);
     REQUIRE(recovered != key_value_pairs[i].second);
   }
 }
 
-TEST_CASE_METHOD(MemoryBufferTest, "RepeatedlyStoreUsingSameKey", "[Behavioural]") {
+TEST_CASE_METHOD(MemoryFIFOTest, "RepeatedlyStoreUsingSameKey", "[Behavioural]") {
   const uint32_t size(50);
   KeyType key(GetRandomDataNameType());
   NonEmptyString value = GenerateKeyValueData(key, (RandomUint32() % size) + 1), recovered,
                  last_value;
   auto async =
-      std::async(std::launch::async, [this, key, value] { memory_buffer_->Store(key, value); });
+      std::async(std::launch::async, [this, key, value] { memory_fifo_->Store(key, value); });
   REQUIRE_NOTHROW(async.wait());
   REQUIRE(async.valid());
   REQUIRE_NOTHROW(async.get());
-  REQUIRE_NOTHROW(recovered = memory_buffer_->Get(key));
+  REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key));
   REQUIRE(value == recovered);
 
   uint32_t events(RandomUint32() % (2 * size));
   for (uint32_t i = 0; i != events; ++i) {
     last_value = NonEmptyString(RandomAlphaNumericString((RandomUint32() % size) + 1));
     auto async = std::async(std::launch::async,
-                            [this, key, last_value] { memory_buffer_->Store(key, last_value); });
+                            [this, key, last_value] { memory_fifo_->Store(key, last_value); });
     REQUIRE_NOTHROW(async.wait());
     REQUIRE(async.valid());
     REQUIRE_NOTHROW(async.get());
   }
 
-  REQUIRE_NOTHROW(recovered = memory_buffer_->Get(key));
+  REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key));
   REQUIRE(value != recovered);
   REQUIRE(last_value == recovered);
 }
 
-TEST_CASE_METHOD(MemoryBufferTest, "RandomAsync", "[Behavioural]") {
+TEST_CASE_METHOD(MemoryFIFOTest, "RandomAsync", "[Behavioural]") {
   typedef KeyValueContainer::value_type value_type;
 
   KeyValueContainer key_value_pairs;
@@ -205,9 +205,9 @@ TEST_CASE_METHOD(MemoryBufferTest, "RandomAsync", "[Behavioural]") {
         if (!key_value_pairs.empty()) {
           KeyType event_key(key_value_pairs[RandomUint32() % key_value_pairs.size()].first);
           future_deletes.push_back(
-              std::async([this, event_key] { memory_buffer_->Delete(event_key); }));
+              std::async([this, event_key] { memory_fifo_->Delete(event_key); }));
         } else {
-          future_deletes.push_back(std::async([this, key] { memory_buffer_->Delete(key); }));
+          future_deletes.push_back(std::async([this, key] { memory_fifo_->Delete(key); }));
         }
         break;
       }
@@ -216,7 +216,7 @@ TEST_CASE_METHOD(MemoryBufferTest, "RandomAsync", "[Behavioural]") {
         KeyType event_key(key_value_pairs[index].first);
         NonEmptyString event_value(key_value_pairs[index].second);
         future_stores.push_back(std::async([this, event_key, event_value] {
-          memory_buffer_->Store(event_key, event_value);
+          memory_fifo_->Store(event_key, event_value);
         }));
         break;
       }
@@ -224,9 +224,9 @@ TEST_CASE_METHOD(MemoryBufferTest, "RandomAsync", "[Behavioural]") {
         if (!key_value_pairs.empty()) {
           KeyType event_key(key_value_pairs[RandomUint32() % key_value_pairs.size()].first);
           future_gets.push_back(
-              std::async([this, event_key] { return memory_buffer_->Get(event_key); }));
+              std::async([this, event_key] { return memory_fifo_->Get(event_key); }));
         } else {
-          future_gets.push_back(std::async([this, key] { return memory_buffer_->Get(key); }));
+          future_gets.push_back(std::async([this, key] { return memory_fifo_->Get(key); }));
         }
         break;
       }

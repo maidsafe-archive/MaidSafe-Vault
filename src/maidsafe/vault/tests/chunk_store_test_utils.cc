@@ -27,7 +27,7 @@
 
 namespace maidsafe {
 
-namespace data_stores {
+namespace vault {
 
 namespace test {
 
@@ -109,7 +109,7 @@ DataNameVariant GetRandomDataNameType() {
 
 }  // namespace test
 
-}  // namespace data_stores
+}  // namespace vault
 
 }  // namespace maidsafe
 

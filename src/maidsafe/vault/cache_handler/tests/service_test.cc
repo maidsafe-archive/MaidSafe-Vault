@@ -21,7 +21,7 @@
 #include "maidsafe/common/asio_service.h"
 
 #include "maidsafe/routing/routing_api.h"
-
+#include "boost/filesystem.hpp"
 #include "maidsafe/vault/cache_handler/service.h"
 #include "maidsafe/vault/tests/tests_utils.h"
 
