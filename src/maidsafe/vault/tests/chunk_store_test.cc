@@ -28,7 +28,6 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/common/data_stores/tests/test_utils.h"
 
 namespace fs = boost::filesystem;
 namespace pt = boost::posix_time;

@@ -21,11 +21,11 @@
 
 #include <string>
 #include <vector>
+#include "boost/filesystem.hpp"
 
 #include "maidsafe/common/visualiser_log.h"
-#include "maidsafe/vault/short_term_cache.h"
+#include "maidsafe/vault/memory_fifo.h"
 #include "maidsafe/vault/chunk_store.h"
-#include "maidsafe/common/data_buffer.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/types.h"

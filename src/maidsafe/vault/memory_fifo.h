@@ -16,8 +16,9 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_DATA_STORES_MEMORY_BUFFER_H_
-#define MAIDSAFE_COMMON_DATA_STORES_MEMORY_BUFFER_H_
+#ifndef MAIDSAFE_VAULT_MEMORY_FIFO_
+#define MAIDSAFE_VAULT_MEMORY_FIFO_
+
 
 #include <mutex>
 #include <utility>
@@ -29,39 +30,39 @@
 
 namespace maidsafe {
 
-namespace data_stores {
+namespace vault {
 
 namespace test {
 
-class MemoryBufferTest;
+class MemoryFIFOTest;
 
 }  // namespace test
 
-class MemoryBuffer {
+class MemoryFIFO {
  public:
   typedef DataNameVariant KeyType;
-  typedef boost::circular_buffer<std::pair<KeyType, NonEmptyString>> MemoryBufferType;
+  typedef boost::circular_buffer<std::pair<KeyType, NonEmptyString>> MemoryFIFOType;
 
-  explicit MemoryBuffer(MemoryUsage max_memory_usage);
-
-  ~MemoryBuffer();
+  explicit MemoryFIFO(MemoryUsage max_memory_usage);
+  MemoryFIFO(const MemoryFIFO&) = delete;
+  MemoryFIFO& operator=(const MemoryFIFO&) = delete;
+  ~MemoryFIFO() = default;
 
   void Store(const KeyType& key, const NonEmptyString& value);
   NonEmptyString Get(const KeyType& key);
   void Delete(const KeyType& key);
 
  private:
-  MemoryBuffer(const MemoryBuffer&);
-  MemoryBuffer& operator=(const MemoryBuffer&);
+  MemoryFIFOType::iterator Find(const KeyType& key);
 
-  MemoryBufferType::iterator Find(const KeyType& key);
-
-  MemoryBufferType memory_buffer_;
+  MemoryFIFOType memory_fifo_;
   mutable std::mutex mutex_;
 };
 
-}  // namespace data_stores
+}  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_DATA_STORES_MEMORY_BUFFER_H_
+#endif  // MAIDSAFE_VAULT_MEMORY_FIFO_
+
+

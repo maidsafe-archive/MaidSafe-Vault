@@ -51,6 +51,8 @@ class ChunkStore {
 
   ChunkStore(const boost::filesystem::path& disk_path, DiskUsage max_disk_usage);
   ~ChunkStore();
+  ChunkStore(const ChunkStore&) = delete;
+  ChunkStore& operator=(const ChunkStore&) = delete;
 
   void Put(const KeyType& key, const NonEmptyString& value);
   void Delete(const KeyType& key);
@@ -69,8 +71,6 @@ class ChunkStore {
   friend class test::ChunkStoreTest;
 
  private:
-  ChunkStore(const ChunkStore&);
-  ChunkStore& operator=(const ChunkStore&);
 
   boost::filesystem::path GetFilePath(const KeyType& key) const;
   bool HasDiskSpace(uint64_t required_space) const;

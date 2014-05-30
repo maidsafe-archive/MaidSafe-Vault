@@ -16,47 +16,48 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/short_term_cache.h"
+#include "maidsafe/vault/memory_fifo.h"
 
 namespace maidsafe {
 
-namespace data_stores {
+namespace vault {
 
-MemoryBuffer::MemoryBuffer(MemoryUsage max_memory_usage)
-    : memory_buffer_(static_cast<uint32_t>(max_memory_usage.data)), mutex_() {}
+MemoryFIFO::MemoryFIFO(MemoryUsage max_memory_usage)
+    : memory_fifo_(static_cast<uint32_t>(max_memory_usage.data)), mutex_() {}
 
-MemoryBuffer::~MemoryBuffer() {}
-
-void MemoryBuffer::Store(const KeyType& key, const NonEmptyString& value) {
+void MemoryFIFO::Store(const KeyType& key, const NonEmptyString& value) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(Find(key));
-  if (itr != memory_buffer_.end())
-    memory_buffer_.erase(itr);
-  memory_buffer_.push_back(std::make_pair(key, value));
+  if (itr != memory_fifo_.end())
+    memory_fifo_.erase(itr);
+  memory_fifo_.push_back(std::make_pair(key, value));
 }
 
-NonEmptyString MemoryBuffer::Get(const KeyType& key) {
+NonEmptyString MemoryFIFO::Get(const KeyType& key) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(Find(key));
-  if (itr == std::end(memory_buffer_))
+  if (itr == std::end(memory_fifo_))
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
-  return itr->second;
+  auto result = *itr;
+  memory_fifo_.push_back(result);  // last out
+  memory_fifo_.erase(itr);
+  return result.second;
 }
 
-void MemoryBuffer::Delete(const KeyType& key) {
+void MemoryFIFO::Delete(const KeyType& key) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(Find(key));
-  if (itr == std::end(memory_buffer_))
+  if (itr == std::end(memory_fifo_))
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
-  memory_buffer_.erase(itr);
+  memory_fifo_.erase(itr);
 }
 
-MemoryBuffer::MemoryBufferType::iterator MemoryBuffer::Find(const KeyType& key) {
+MemoryFIFO::MemoryFIFOType::iterator MemoryFIFO::Find(const KeyType& key) {
   return std::find_if(
-      std::begin(memory_buffer_), std::end(memory_buffer_),
-      [&key](const MemoryBufferType::value_type & key_value) { return key_value.first == key; });
+      std::begin(memory_fifo_), std::end(memory_fifo_),
+      [&key](const MemoryFIFOType::value_type & key_value) { return key_value.first == key; });
 }
 
-}  // namespace data_stores
+}  // namespace vault
 
 }  // namespace maidsafe
