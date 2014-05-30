@@ -17,30 +17,12 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/common/test.h"
-#include "maidsafe/vault/tests/tests_utils.h"
+
+#include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/tests/vault_network.h"
 
-namespace maidsafe {
-
-namespace vault {
-
-namespace test {
-
-class PmidManagerTest : public VaultNetwork, public testing::Test {
- public:
-  PmidManagerTest() {}
-};
-
-TEST_F(PmidManagerTest, FUNC_GetPmidHealth) {
-  EXPECT_TRUE(AddClient(true));
-  auto get_pmid_health_future(clients_.front()->nfs_->GetPmidHealth(public_pmids_.back().name()));
-  EXPECT_NO_THROW(get_pmid_health_future.get());
-  LOG(kVerbose) << "Pmid Health Retrieved";
+int main(int argc, char** argv) {
+  //  maidsafe::vault::detail::Parameters::set_file_element_count_limits(1000, 5000);
+  testing::AddGlobalTestEnvironment(new maidsafe::vault::test::VaultEnvironment());
+  return maidsafe::test::ExecuteMain(argc, argv);
 }
-
-}  // namespace test
-
-}  // namespace vault
-
-}  // namespace maidsafe
-

@@ -40,6 +40,8 @@ namespace vault {
 
 namespace test {
 
+std::shared_ptr<VaultNetwork> VaultEnvironment::g_env_ = std::shared_ptr<VaultNetwork>();
+
 PublicKeyGetter Client::public_key_getter_;
 
 void PublicKeyGetter::operator()(const NodeId& node_id,

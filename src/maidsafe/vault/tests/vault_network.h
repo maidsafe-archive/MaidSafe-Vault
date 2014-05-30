@@ -38,10 +38,13 @@ namespace test {
 
 typedef boost::asio::ip::udp::endpoint UdpEndpoint;
 const int kNetworkSize(16);
+const int kClientsSize(5);
 
 #ifndef MAIDSAFE_WIN32
 const int kLimitsFiles(2048);
 #endif
+
+class VaultTest;
 
 class PublicKeyGetter {
  public:
@@ -77,7 +80,7 @@ class Client {
   static PublicKeyGetter public_key_getter_;
 };
 
-class VaultNetwork : public testing::Test {
+class VaultNetwork {
  public:
   typedef std::shared_ptr<Vault> VaultPtr;
   typedef std::shared_ptr<Client> ClientPtr;
@@ -100,6 +103,7 @@ class VaultNetwork : public testing::Test {
     return vaults_[index]->routing_->kNodeId();
   }
 
+ friend class VaultTest;
  protected:
   void Bootstrap();
   bool Create(const passport::detail::Fob<passport::detail::PmidTag>& pmid);
@@ -132,6 +136,27 @@ Data VaultNetwork::Get(const typename Data::Name& data_name) {
     throw;
   }
 }
+
+class VaultEnvironment : public testing::Environment {
+ public:
+  VaultEnvironment() {}
+
+  void SetUp() override {
+    g_env_.reset(new VaultNetwork());
+    g_env_->SetUp();
+    for (int index(0); index < kClientsSize; ++index)
+      g_env_->AddClient(true);
+  }
+
+  void TearDown() override {
+    g_env_->TearDown();
+  }
+
+  static std::shared_ptr<VaultNetwork> g_environment() { return g_env_; }
+
+ public:
+  static std::shared_ptr<VaultNetwork> g_env_;
+};
 
 }  // namespace test
 

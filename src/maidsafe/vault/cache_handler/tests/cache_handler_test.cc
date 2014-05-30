@@ -26,7 +26,7 @@ namespace vault {
 
 namespace test {
 
-class CacheHandlerTest : public VaultNetwork  {
+class CacheHandlerTest : public VaultNetwork, public testing::Test {
  public:
   CacheHandlerTest() {
     routing::Parameters::caching = true;

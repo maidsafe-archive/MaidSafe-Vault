@@ -32,7 +32,7 @@ namespace test {
 
 typedef StructuredDataVersions::VersionName VersionName;
 
-class VersionHandlerTest : public VaultNetwork  {
+class VersionHandlerTest : public VaultNetwork, public testing::Test {
  public:
   VersionHandlerTest() {}
 
