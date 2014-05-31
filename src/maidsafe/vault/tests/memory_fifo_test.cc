@@ -93,10 +93,10 @@ TEST_CASE_METHOD(MemoryFIFOTest, "Put", "[Behavioural]") {
   REQUIRE(recovered == temp_value);
 
   // Try to get first value again.
-  REQUIRE_THROWS_AS(recovered = memory_fifo_->Get(key), maidsafe_error);
-  REQUIRE(recovered != value);
+  REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key));
+  REQUIRE(recovered == value);
   // Should still equal last recovered value.
-  REQUIRE(recovered == temp_value);
+  REQUIRE(recovered != temp_value);
 }
 
 TEST_CASE_METHOD(MemoryFIFOTest, "Delete", "[Behavioural]") {
@@ -158,7 +158,7 @@ TEST_CASE_METHOD(MemoryFIFOTest, "Delete", "[Behavioural]") {
   }
 }
 
-TEST_CASE_METHOD(MemoryFIFOTest, "RepeatedlyStoreUsingSameKey", "[Behavioural]") {
+TEST_CASE_METHOD(MemoryFIFOTest, "FifoRepeatedlyStoreUsingSameKey", "[Behavioural]") {
   const uint32_t size(50);
   KeyType key(GetRandomDataNameType());
   NonEmptyString value = GenerateKeyValueData(key, (RandomUint32() % size) + 1), recovered,

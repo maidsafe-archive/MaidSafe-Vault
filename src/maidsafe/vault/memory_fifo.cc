@@ -39,8 +39,8 @@ NonEmptyString MemoryFIFO::Get(const KeyType& key) {
   if (itr == std::end(memory_fifo_))
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
   auto result = *itr;
-  memory_fifo_.push_back(result);  // last out
   memory_fifo_.erase(itr);
+  memory_fifo_.push_back(result);  // last out
   return result.second;
 }
 
