@@ -48,8 +48,7 @@ class DataManagerValue {
   void RemovePmid(const PmidName& pmid_name);
   void IncrementSubscribers() {
     ++subscribers_;
-    VLOG(nfs::Persona::kDataManager, VisualiserAction::kIncreaseSubscribers, Identity{})
-        << "DataManager increase subscribers to " << subscribers_;
+    VLOG(nfs::Persona::kDataManager, VisualiserAction::kIncreaseSubscribers, subscribers_);
   }
   int64_t DecrementSubscribers();
   void SetPmidOnline(const PmidName& pmid_name);

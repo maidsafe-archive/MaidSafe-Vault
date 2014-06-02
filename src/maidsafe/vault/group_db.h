@@ -308,8 +308,7 @@ typename GroupDb<Persona>::TransferInfo GroupDb<Persona>::GetTransferInfo(
         }
       }
     } else {  // Prune group
-      VLOG(maidsafe::nfs::Persona::kNA, VisualiserAction::kRemoveAccount, Identity{})
-          << "GroupDb removing account " << HexSubstr(group_itr->first->string());
+      VLOG(VisualiserAction::kRemoveAccount, Identity{ group_itr->first->string() });
       prune_vector.push_back(group_itr->first);
     }
   }

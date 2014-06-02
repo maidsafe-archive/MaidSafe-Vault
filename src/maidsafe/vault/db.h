@@ -171,8 +171,7 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
           }
         }
       } else {
-        VLOG(maidsafe::nfs::Persona::kNA, VisualiserAction::kRemoveAccount, Identity{})
-            << "Db removing account " << HexSubstr(db_iter->key().data());
+        VLOG(VisualiserAction::kRemoveAccount, Identity{ db_iter->key().data() });
         prune_vector.push_back(db_iter->key().data());
       }
     }

@@ -448,8 +448,7 @@ void DataManagerService::HandleAccountTransfer(
       if (kv_msg.ParseFromString(action)) {
         LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
         DataManager::Key key(kv_msg.key());
-        VLOG(nfs::Persona::kDataManager, VisualiserAction::kGotAccountTransferred, key.name)
-            << "DataManager got account " << HexSubstr(key.name.string()) << " transferred";
+        VLOG(nfs::Persona::kDataManager, VisualiserAction::kGotAccountTransferred, key.name);
         LOG(kVerbose) << "HandleAccountTransfer key parsed";
         DataManagerValue value(kv_msg.value());
         LOG(kVerbose) << "HandleAccountTransfer vaule parsed";
@@ -491,9 +490,8 @@ void DataManagerService::TransferAccount(const NodeId& dest,
   }
   std::vector<std::string> actions;
   for (auto& account : accounts) {
-    VLOG(nfs::Persona::kDataManager, VisualiserAction::kAccountTransfer, account.first.name)
-        << "DataManager transfer account " << HexSubstr(account.first.name.string())
-        << " to " << DebugId(dest);
+    VLOG(nfs::Persona::kDataManager, VisualiserAction::kAccountTransfer, account.first.name,
+         Identity{ dest.string() });
     protobuf::DataManagerKeyValuePair kv_msg;
     kv_msg.set_key(account.first.Serialise());
     kv_msg.set_value(account.second.Serialise());

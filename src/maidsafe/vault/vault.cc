@@ -70,12 +70,11 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
   }
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
   InitRouting(vault_config.bootstrap_contacts);
-  VLOG(nfs::Persona::kNA, VisualiserAction::kVaultStarted, Identity{})
-    << "Vault running as " << maidsafe::HexSubstr(vault_config.pmid.name().value);
+  VLOG(VisualiserAction::kVaultStarted, Identity{ vault_config.pmid.name().value });
 }
 
 Vault::~Vault() {
-  VLOG(nfs::Persona::kNA, VisualiserAction::kVaultStopping, Identity{});
+  VLOG(VisualiserAction::kVaultStopping, 0);
   Stop();
   asio_service_.Stop();
   routing_.reset();
@@ -146,8 +145,7 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
 }
 
 void Vault::OnNetworkStatusChange(int network_health) {
-  VLOG(maidsafe::nfs::Persona::kNA, VisualiserAction::kNetworkHealth, Identity{})
-    << "Network health: " << network_health;
+  VLOG(VisualiserAction::kNetworkHealth, network_health);
   asio_service_.service().post([=] { DoOnNetworkStatusChange(network_health); });
 }
 

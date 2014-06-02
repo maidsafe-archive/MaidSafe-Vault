@@ -57,8 +57,7 @@ detail::DbAction ActionMaidManagerDelete::operator()(
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 
   metadata.DeleteData(value->Delete());
-  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kDecreaseCount, Identity{})
-      << "MaidManager decrease count to " << value->count();
+  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kDecreaseCount, value->count());
   assert(value->count() >= 0);
   if (value->count() == 0)
     return detail::DbAction::kDelete;
