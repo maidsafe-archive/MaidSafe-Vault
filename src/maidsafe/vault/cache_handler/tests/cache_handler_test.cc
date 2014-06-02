@@ -31,6 +31,15 @@ class CacheHandlerTest : public VaultNetwork, public testing::Test {
   CacheHandlerTest() {
     routing::Parameters::caching = true;
   }
+
+  ~CacheHandlerTest() {}
+
+  virtual void SetUp() {
+    VaultNetwork::SetUp();
+  }
+  virtual void TearDown() {
+    VaultNetwork::TearDown();
+  }
 };
 
 TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToMaidNode) {

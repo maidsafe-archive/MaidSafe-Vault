@@ -86,6 +86,7 @@ class VaultNetwork {
   typedef std::shared_ptr<Client> ClientPtr;
 
   VaultNetwork();
+  virtual ~VaultNetwork() {}
   virtual void SetUp();
   virtual void TearDown();
   bool Add();
@@ -103,7 +104,7 @@ class VaultNetwork {
     return vaults_[index]->routing_->kNodeId();
   }
 
- friend class VaultTest;
+  friend class VaultTest;
  protected:
   void Bootstrap();
   bool Create(const passport::detail::Fob<passport::detail::PmidTag>& pmid);

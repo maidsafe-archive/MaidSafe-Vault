@@ -30,9 +30,18 @@ namespace vault {
 
 namespace test {
 
-class VaultNetworkTest : public VaultNetwork, public testing::Test  {
+class VaultNetworkTest : public VaultNetwork, public testing::Test {
  public:
-  VaultNetworkTest() {}
+  VaultNetworkTest() : VaultNetwork() {}
+
+  virtual void SetUp() {
+    VaultNetwork::SetUp();
+  }
+  virtual void TearDown() {
+    VaultNetwork::TearDown();
+  }
+
+  virtual ~VaultNetworkTest() {}
 };
 
 TEST_F(VaultNetworkTest, FUNC_BasicSetup) {

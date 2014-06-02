@@ -36,6 +36,16 @@ class VersionHandlerTest : public VaultNetwork, public testing::Test {
  public:
   VersionHandlerTest() {}
 
+  ~VersionHandlerTest() {}
+
+  virtual void SetUp() {
+    VaultNetwork::SetUp();
+  }
+
+  virtual void TearDown() {
+    VaultNetwork::TearDown();
+  }
+
   template <typename DataName>
   std::vector<VersionName> GetVersions(const DataName& data_name) {
     try {

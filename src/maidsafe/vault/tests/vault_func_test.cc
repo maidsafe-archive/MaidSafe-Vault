@@ -257,7 +257,7 @@ TEST_F(VaultTest, FUNC_UnauthorisedDelete1) {
   EXPECT_NO_THROW(env_->Get<ImmutableData>(chunk.name())) << "Delete must have failed";
   GetClients().front()->nfs_->Delete(chunk.name());
   Sleep(std::chrono::seconds(3));
-  EXPECT_THROW(env_->Get<ImmutableData>(chunk.name()), std::exception)  << "Delete must have succeeded";
+  EXPECT_ANY_THROW(env_->Get<ImmutableData>(chunk.name()))  << "Delete must have succeeded";
 }
 
 }  // namespace test

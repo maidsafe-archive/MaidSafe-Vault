@@ -29,6 +29,14 @@ namespace test {
 class PmidManagerTest : public VaultNetwork, public testing::Test {
  public:
   PmidManagerTest() {}
+  ~PmidManagerTest() {}
+
+  virtual void SetUp() {
+    VaultNetwork::SetUp();
+  }
+  virtual void TearDown() {
+    VaultNetwork::TearDown();
+  }
 };
 
 TEST_F(PmidManagerTest, FUNC_GetPmidHealth) {
