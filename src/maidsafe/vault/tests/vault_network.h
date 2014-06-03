@@ -146,7 +146,7 @@ class VaultEnvironment : public testing::Environment {
     g_env_.reset(new VaultNetwork());
     g_env_->SetUp();
     for (int index(0); index < kClientsSize; ++index)
-      g_env_->AddClient(true);
+      ASSERT_TRUE(g_env_->AddClient(true));
   }
 
   void TearDown() override {

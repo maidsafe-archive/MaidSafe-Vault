@@ -45,17 +45,7 @@ class VaultTest : public testing::Test {
   std::shared_ptr<VaultNetwork> env_;
 };
 
-TEST_F(VaultTest, FUNC_VaultJoins1) {
-  LOG(kVerbose) << "Adding a vault";
-  EXPECT_TRUE(env_->Add());
-}
-
-TEST_F(VaultTest, FUNC_MultipleClientsJoin1) {
-  for (int index(0); index < 2; ++index)
-    EXPECT_TRUE(env_->AddClient(true));
-}
-
-TEST_F(VaultTest, FUNC_PutGetDelete1) {
+TEST_F(VaultTest, FUNC_PutGetDelete) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
   LOG(kVerbose) << "Before put";
   try {
@@ -66,8 +56,7 @@ TEST_F(VaultTest, FUNC_PutGetDelete1) {
     EXPECT_TRUE(false) << "Failed to put: " << DebugId(NodeId(data.name()->string()));
   }
 
-  auto future(GetClients().at(0)->nfs_->Get<ImmutableData::Name>(data.name(),
-              std::chrono::seconds(5)));
+  auto future(GetClients().at(0)->nfs_->Get<ImmutableData::Name>(data.name()));
   try {
     auto retrieved(future.get());
     EXPECT_EQ(retrieved.data(), data.data());
@@ -90,7 +79,7 @@ TEST_F(VaultTest, FUNC_PutGetDelete1) {
   LOG(kVerbose) << "Put Get Delete done.";
 }
 
-TEST_F(VaultTest, FUNC_MultiplePuts1) {
+TEST_F(VaultTest, FUNC_MultiplePuts) {
   const size_t kIterations(100);
   std::vector<ImmutableData> chunks;
   for (auto index(kIterations); index > 0; --index)
@@ -147,12 +136,12 @@ TEST_F(VaultTest, FUNC_MultiplePuts1) {
   LOG(kVerbose) << "Multiple puts is finished successfully";
 }
 
-TEST_F(VaultTest, FUNC_FailingGet1) {
+TEST_F(VaultTest, FUNC_FailingGet) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
   EXPECT_THROW(env_->Get<ImmutableData>(data.name()), std::exception) << "must have failed";
 }
 
-TEST_F(VaultTest, FUNC_PutMultipleCopies1) {
+TEST_F(VaultTest, FUNC_PutMultipleCopies) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
   boost::future<ImmutableData> future;
   GetClients().at(0)->nfs_->Put(data);
@@ -215,7 +204,7 @@ TEST_F(VaultTest, FUNC_PutMultipleCopies1) {
   LOG(kVerbose) << "PutMultipleCopies Succeeds";
 }
 
-TEST_F(VaultTest, FUNC_MultipleClientsPut1) {
+TEST_F(VaultTest, FUNC_MultipleClientsPut) {
   const size_t kIterations(10);
   std::vector<ImmutableData> chunks;
   for (auto index(kIterations); index > 0; --index)
@@ -244,20 +233,6 @@ TEST_F(VaultTest, FUNC_MultipleClientsPut1) {
                   << " because: " << boost::diagnostic_information(ex);
     }
   }
-}
-
-TEST_F(VaultTest, FUNC_UnauthorisedDelete1) {
-  routing::Parameters::caching = false;
-  ImmutableData chunk(NonEmptyString(RandomString(2^10)));
-  EXPECT_NO_THROW(GetClients().front()->nfs_->Put<ImmutableData>(chunk)) << "should have succeeded";
-  EXPECT_NO_THROW(env_->Get<ImmutableData>(chunk.name()));
-  LOG(kVerbose) << "Chunk is verified to be in the network";
-  GetClients().back()->nfs_->Delete(chunk.name());
-  Sleep(std::chrono::seconds(3));
-  EXPECT_NO_THROW(env_->Get<ImmutableData>(chunk.name())) << "Delete must have failed";
-  GetClients().front()->nfs_->Delete(chunk.name());
-  Sleep(std::chrono::seconds(3));
-  EXPECT_ANY_THROW(env_->Get<ImmutableData>(chunk.name()))  << "Delete must have succeeded";
 }
 
 }  // namespace test
