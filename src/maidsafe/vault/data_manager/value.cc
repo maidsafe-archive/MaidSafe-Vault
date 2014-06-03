@@ -64,7 +64,7 @@ DataManagerValue::DataManagerValue(const PmidName& pmid_name, int32_t size)
   AddPmid(pmid_name);
 }
 
-DataManagerValue::DataManagerValue(DataManagerValue&& other)
+DataManagerValue::DataManagerValue(DataManagerValue&& other) MAIDSAFE_NOEXCEPT
     : subscribers_(std::move(other.subscribers_)),
       size_(std::move(other.size_)),
       online_pmids_(std::move(other.online_pmids_)),
@@ -91,8 +91,7 @@ void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
 
 int64_t DataManagerValue::DecrementSubscribers() {
   --subscribers_;
-  VLOG(nfs::Persona::kDataManager, VisualiserAction::kDecreaseSubscribers, Identity{})
-      << "DataManager decrease subscribers to " << subscribers_;
+  VLOG(nfs::Persona::kDataManager, VisualiserAction::kDecreaseSubscribers, subscribers_);
   return subscribers_;
 }
 

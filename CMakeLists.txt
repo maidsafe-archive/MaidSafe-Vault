@@ -160,28 +160,28 @@ target_include_directories(vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BIN
 target_link_libraries(maidsafe_vault ${VaultPersonaLibs})
 target_link_libraries(vault maidsafe_vault)
 if(MaidsafeTesting)
-#  ms_add_static_library(maidsafe_vault_mal ${VaultAllFiles}
-#                                           ${CacheHandlerAllFiles}
-#                                           ${DataManagerAllFiles}
-#                                           ${MaidManagerAllFiles}
-#                                           ${MpidManagerAllFiles}
-#                                           ${PmidManagerAllFiles}
-#                                           ${PmidNodeAllFiles}
-#                                           ${VersionHandlerAllFiles}
-#                                           ${OutputFile} ${InputFile} ${MetaFiles})
-#  target_include_directories(maidsafe_vault_mal
-#    PUBLIC ${PROJECT_SOURCE_DIR}/include
-#    PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
+  ms_add_static_library(maidsafe_vault_mal ${VaultAllFiles}
+                                           ${CacheHandlerAllFiles}
+                                           ${DataManagerAllFiles}
+                                           ${MaidManagerAllFiles}
+                                           ${MpidManagerAllFiles}
+                                           ${PmidManagerAllFiles}
+                                           ${PmidNodeAllFiles}
+                                           ${VersionHandlerAllFiles}
+                                           ${OutputFile} ${InputFile} ${MetaFiles})
+  target_include_directories(maidsafe_vault_mal
+    PUBLIC ${PROJECT_SOURCE_DIR}/include
+    PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
   # TODO - Investigate why boost variant requires this warning to be disabled.
-#  target_compile_options(maidsafe_vault_mal PUBLIC $<$<AND:$<BOOL:${MSVC}>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>:/wd4702>)
-#  target_link_libraries(maidsafe_vault_mal maidsafe_vault_manager maidsafe_nfs_vault leveldb)
-#  target_compile_definitions(maidsafe_vault_mal PRIVATE USE_MAL_BEHAVIOUR)
+  target_compile_options(maidsafe_vault_mal PUBLIC $<$<AND:$<BOOL:${MSVC}>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>:/wd4702>)
+  target_link_libraries(maidsafe_vault_mal maidsafe_vault_manager maidsafe_nfs_vault leveldb)
+  target_compile_definitions(maidsafe_vault_mal PRIVATE USE_MAL_BEHAVIOUR)
 
-#  ms_add_executable(vault_mal "Tools/Vault" ${VaultSourcesDir}/vault_main.cc)
-#  target_include_directories(vault_mal PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
-#  target_link_libraries(vault_mal maidsafe_vault_mal)
-#  target_compile_definitions(vault_mal PRIVATE USE_MAL_BEHAVIOUR)
-#  set_target_properties(maidsafe_vault_mal vault_mal PROPERTIES EXCLUDE_FROM_ALL ON EXCLUDE_FROM_DEFAULT_BUILD ON)
+  ms_add_executable(vault_mal "Tools/Vault" ${VaultSourcesDir}/vault_main.cc)
+  target_include_directories(vault_mal PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
+  target_link_libraries(vault_mal maidsafe_vault_mal)
+  target_compile_definitions(vault_mal PRIVATE USE_MAL_BEHAVIOUR)
+  set_target_properties(maidsafe_vault_mal vault_mal PROPERTIES EXCLUDE_FROM_ALL ON EXCLUDE_FROM_DEFAULT_BUILD ON)
 
   ms_add_executable(test_vault "Tests/Vault" ${VaultTestsAllFiles})
   target_include_directories(test_vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
@@ -214,7 +214,7 @@ ms_rename_outdated_built_exes()
 include(standard_flags)
 
 if(MSVC AND MaidsafeTesting)
-  set_property(TARGET maidsafe_vault TESTvault TESTvault_network TESTvault_func APPEND PROPERTY COMPILE_FLAGS "/bigobj")
+  set_property(TARGET maidsafe_vault TESTvault TESTvault_network TESTvault_func maidsafe_vault_mal APPEND PROPERTY COMPILE_FLAGS "/bigobj")
 endif()
 
 

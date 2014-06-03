@@ -50,7 +50,7 @@ struct Key {
   explicit Key(const DataNameType& data_name)
       : name(data_name.value), type(DataNameType::data_type::Tag::kValue) {}
   Key(const Key& other);
-  Key(Key&& other) BOOST_NOEXCEPT_OR_NOTHROW;
+  Key(Key&& other) MAIDSAFE_NOEXCEPT;
   Key& operator=(Key other);
   std::string Serialise() const;
 

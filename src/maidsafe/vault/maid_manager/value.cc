@@ -52,7 +52,7 @@ MaidManagerValue::MaidManagerValue(const std::string& serialised_maid_manager_va
 
 MaidManagerValue::MaidManagerValue() : count_(0), total_cost_(0) {}
 
-MaidManagerValue::MaidManagerValue(MaidManagerValue&& other)
+MaidManagerValue::MaidManagerValue(MaidManagerValue&& other) MAIDSAFE_NOEXCEPT
     : count_(std::move(other.count_)), total_cost_(std::move(other.total_cost_)) {}
 
 MaidManagerValue& MaidManagerValue::operator=(MaidManagerValue other) {
@@ -74,8 +74,7 @@ std::string MaidManagerValue::Serialise() const {
 
 void MaidManagerValue::Put(int32_t cost) {
   ++count_;
-  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kIncreaseCount, Identity{})
-      << "MaidManager increase count to " << count_;
+  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kIncreaseCount, count_);
   total_cost_ += cost;
 }
 
@@ -84,8 +83,7 @@ int32_t MaidManagerValue::Delete() {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
   auto average_cost(total_cost_ / count_);
   --count_;
-  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kDecreaseCount, Identity{})
-      << "MaidManager decrease count to " << count_;
+  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kDecreaseCount, count_);
   total_cost_ -= average_cost;
   assert(std::numeric_limits<int32_t>::max() >= average_cost);
   return static_cast<int32_t>(average_cost);
@@ -93,15 +91,13 @@ int32_t MaidManagerValue::Delete() {
 
 void MaidManagerValue::IncrementCount() {
   ++count_;
-  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kIncreaseCount, Identity{})
-      << "MaidManager increase count to " << count_;
+  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kIncreaseCount, count_);
 }
 
 void MaidManagerValue::DecrementCount() {
   assert((count_ > 0) && "Reference count must be > 0 for Decrement operation");
   --count_;
-  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kDecreaseCount, Identity{})
-      << "MaidManager decrease count to " << count_;
+  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kDecreaseCount, count_);
 }
 
 void swap(MaidManagerValue& lhs, MaidManagerValue& rhs) {

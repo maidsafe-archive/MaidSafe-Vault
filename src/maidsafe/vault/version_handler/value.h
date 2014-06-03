@@ -34,7 +34,7 @@ class VersionHandlerValue {
  public:
   explicit VersionHandlerValue(const std::string& serialised_version_handler_value);
   VersionHandlerValue(uint32_t max_versions, uint32_t max_branches);  // BEFORE_RELEASE
-  VersionHandlerValue(VersionHandlerValue&& other) BOOST_NOEXCEPT_OR_NOTHROW;
+  VersionHandlerValue(VersionHandlerValue&& other) MAIDSAFE_NOEXCEPT;
   VersionHandlerValue& operator=(VersionHandlerValue other);
   std::string Serialise() const;
 

@@ -38,7 +38,7 @@ namespace vault {
 class DataManagerValue {
  public:
   explicit DataManagerValue(const std::string& serialised_metadata_value);
-  DataManagerValue(DataManagerValue&& other);
+  DataManagerValue(DataManagerValue&& other) MAIDSAFE_NOEXCEPT;
   DataManagerValue(const PmidName& pmid_name, int32_t size);
   std::string Serialise() const;
 
@@ -48,8 +48,7 @@ class DataManagerValue {
   void RemovePmid(const PmidName& pmid_name);
   void IncrementSubscribers() {
     ++subscribers_;
-    VLOG(nfs::Persona::kDataManager, VisualiserAction::kIncreaseSubscribers, Identity{})
-        << "DataManager increase subscribers to " << subscribers_;
+    VLOG(nfs::Persona::kDataManager, VisualiserAction::kIncreaseSubscribers, subscribers_);
   }
   int64_t DecrementSubscribers();
   void SetPmidOnline(const PmidName& pmid_name);
@@ -59,16 +58,9 @@ class DataManagerValue {
   std::set<PmidName> online_pmids() const { return online_pmids_; }
 
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
-#ifdef MAIDSAFE_APPLE  // BEFORE_RELEASE This copy constructor definition is to allow building
-                       // on mac with clang 3.3, should be removed if clang is updated on mac.
-  DataManagerValue(const DataManagerValue& other)
-      : subscribers_(other.subscribers_), size_(other.size_), online_pmids_(other.online_pmids_),
-        offline_pmids_(other.offline_pmids_) {}
-#else
 
  private:
   DataManagerValue(const DataManagerValue&);
-#endif
 
  private:
   void PrintRecords();

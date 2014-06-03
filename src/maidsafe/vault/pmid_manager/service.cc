@@ -486,9 +486,8 @@ void PmidManagerService::HandleChurnEvent(
       auto pmid_node(PmidName(Identity(node.string())));
       auto contents(group_db_.GetContents(pmid_node));
       for (const auto& kv_pair : contents.kv_pairs) {
-        VLOG(nfs::Persona::kPmidManager, VisualiserAction::kDropPmidNode, Identity{ node.string() })
-            << "PmidManager dropping pmid_node " << HexSubstr(node.string())
-            << " holding chunk " << HexSubstr(kv_pair.first.name);
+        VLOG(nfs::Persona::kPmidManager, VisualiserAction::kDropPmidNode, Identity{ node.string() },
+             kv_pair.first.name);
         auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
         dispatcher_.SendSetPmidOffline(data_name, pmid_node);
       }
@@ -503,9 +502,8 @@ void PmidManagerService::HandleChurnEvent(
       auto pmid_node(PmidName(Identity(node.string())));
       auto contents(group_db_.GetContents(PmidName(Identity(node.string()))));
       for (const auto& kv_pair : contents.kv_pairs) {
-        VLOG(nfs::Persona::kPmidManager, VisualiserAction::kJoinPmidNode, Identity{ node.string() })
-            << "PmidManager joining pmid_node " << HexSubstr(node.string())
-            << " holding chunk " << HexSubstr(kv_pair.first.name);
+        VLOG(nfs::Persona::kPmidManager, VisualiserAction::kJoinPmidNode, Identity{ node.string() },
+             kv_pair.first.name);
         auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
         dispatcher_.SendSetPmidOnline(data_name, pmid_node);
       }
@@ -550,9 +548,8 @@ void PmidManagerService::TransferAccount(const NodeId& dest,
                  << " just received";
       continue;
     }
-    VLOG(nfs::Persona::kPmidManager, VisualiserAction::kAccountTransfer, account.group_name)
-        << "PmidManager transfer account " << HexSubstr(account.group_name->string())
-        << " to " << DebugId(dest);
+    VLOG(nfs::Persona::kPmidManager, VisualiserAction::kAccountTransfer, account.group_name,
+         Identity{ dest.string() });
     try {
       std::vector<std::string> actions;
       actions.push_back(account.metadata.Serialise());
@@ -596,8 +593,7 @@ void PmidManagerService::HandleMessage(
 
 void PmidManagerService::HandleAccountTransfer(
     std::unique_ptr<PmidManager::UnresolvedAccountTransfer>&& resolved_action) {
-  VLOG(nfs::Persona::kPmidManager, VisualiserAction::kGotAccountTransferred, resolved_action->key)
-      << "PmidManager got account " << HexSubstr(resolved_action->key->string());
+  VLOG(nfs::Persona::kPmidManager, VisualiserAction::kGotAccountTransferred, resolved_action->key);
   GroupDb<PmidManager>::Contents content;
   content.group_name = resolved_action->key;
   for (auto& action : resolved_action->actions) {

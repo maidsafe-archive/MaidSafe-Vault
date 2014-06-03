@@ -22,6 +22,8 @@
 #include <cstdint>
 #include <string>
 
+#include "maidsafe/common/config.h"
+
 namespace maidsafe {
 
 namespace vault {
@@ -30,7 +32,7 @@ class MaidManagerValue {
  public:
   explicit MaidManagerValue(const std::string& serialised_maid_manager_value);
   MaidManagerValue();
-  MaidManagerValue(MaidManagerValue&& other);
+  MaidManagerValue(MaidManagerValue&& other) MAIDSAFE_NOEXCEPT;
   MaidManagerValue& operator=(MaidManagerValue other);
   std::string Serialise() const;
 
@@ -43,19 +45,9 @@ class MaidManagerValue {
   int64_t total_cost() const { return total_cost_; }
 
   friend void swap(MaidManagerValue& lhs, MaidManagerValue& rhs);
-#ifdef MAIDSAFE_APPLE  // BEFORE_RELEASE This copy constructor definition is to allow building
-                       // on mac with clang 3.3, should be removed if clang is updated on mac.
-  MaidManagerValue(const MaidManagerValue& other)
-      : count_(other.count_), total_cost_(other.total_cost_) {}
-#elif (defined(_MSC_VER) && _MSC_VER == 1700)  // This copy constructor definition is to allow
-                                               // building with VC 2012.
-  MaidManagerValue(const MaidManagerValue& other)
-      : count_(other.count_), total_cost_(other.total_cost_) {}
-#else
 
  private:
   MaidManagerValue(const MaidManagerValue&);
-#endif
 
  private:
   int32_t count_;
