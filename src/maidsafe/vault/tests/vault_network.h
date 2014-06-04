@@ -46,6 +46,8 @@ const int kLimitsFiles(2048);
 
 class VaultTest;
 class CacheHandlerTest;
+class VersionHandlerTest;
+class PmidManagerTest;
 
 class PublicKeyGetter {
  public:
@@ -107,6 +109,9 @@ class VaultNetwork {
 
   friend class VaultTest;
   friend class CacheHandlerTest;
+  friend class VersionHandlerTest;
+  friend class PmidManagerTest;
+
  protected:
   void Bootstrap();
   bool Create(const passport::detail::Fob<passport::detail::PmidTag>& pmid);

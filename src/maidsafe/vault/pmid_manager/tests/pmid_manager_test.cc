@@ -17,6 +17,7 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/common/test.h"
+
 #include "maidsafe/vault/tests/tests_utils.h"
 #include "maidsafe/vault/tests/vault_network.h"
 
@@ -26,24 +27,26 @@ namespace vault {
 
 namespace test {
 
-class PmidManagerTest : public VaultNetwork, public testing::Test {
+class PmidManagerTest : public testing::Test {
  public:
-  PmidManagerTest() {}
-  ~PmidManagerTest() {}
+  PmidManagerTest() : env_(VaultEnvironment::g_environment()) {}
 
-  virtual void SetUp() {
-    VaultNetwork::SetUp();
+  std::vector<VaultNetwork::ClientPtr>& GetClients() {
+    return env_->clients_;
   }
-  virtual void TearDown() {
-    VaultNetwork::TearDown();
+
+  std::vector<passport::PublicPmid>& GetPublicPmids() {
+    return env_->public_pmids_;
   }
+
+ protected:
+  std::shared_ptr<VaultNetwork> env_;
 };
 
 TEST_F(PmidManagerTest, FUNC_GetPmidHealth) {
-  EXPECT_TRUE(AddClient(true));
-  auto get_pmid_health_future(clients_.front()->nfs_->GetPmidHealth(public_pmids_.back().name()));
+  auto get_pmid_health_future(
+      GetClients().back()->nfs_->GetPmidHealth(GetPublicPmids().back().name()));
   EXPECT_NO_THROW(get_pmid_health_future.get());
-  LOG(kVerbose) << "Pmid Health Retrieved";
 }
 
 }  // namespace test

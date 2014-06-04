@@ -38,7 +38,6 @@ class CacheHandlerTest : public testing::Test {
   std::shared_ptr<VaultNetwork> env_;
 };
 
-
 TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToMaidNode) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
   NodeId random_id(NodeId::kRandomId);
