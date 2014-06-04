@@ -79,12 +79,12 @@ set(VaultTestsAllFiles ${PmidNodeTestsAllFiles}
 set(VaultNetworkTestFiles ${VaultSourcesDir}/tests/vault_network.h
                           ${VaultSourcesDir}/tests/vault_network.cc
                           ${VaultSourcesDir}/tests/vault_network_test.cc
-                          ${VaultSourcesDir}/cache_handler/tests/cache_handler_test.cc
                           ${VaultSourcesDir}/version_handler/tests/version_handler_test.cc
                           ${VaultSourcesDir}/pmid_manager/tests/pmid_manager_test.cc)
 
 set(VaultFunctionalTestFiles ${VaultSourcesDir}/tests/vault_network.h
                              ${VaultSourcesDir}/tests/vault_network.cc
+                             ${VaultSourcesDir}/cache_handler/tests/cache_handler_test.cc
                              ${VaultSourcesDir}/tests/vault_func_test.cc)
 
 list(REMOVE_ITEM VaultTestsAllFiles ${VaultNetworkTestFiles} ${VaultFunctionalTestFiles})
