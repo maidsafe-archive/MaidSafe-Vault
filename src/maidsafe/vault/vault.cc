@@ -64,7 +64,8 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
 #endif
 {
   try {
-    log::Logging::Instance().SetVlogPrefix(DebugId(vault_config.pmid.name()));
+    log::Logging::Instance().InitialiseVlog(DebugId(vault_config.pmid.name()), "128.199.223.97",
+                                            8080, "/log");
   } catch(...) {
     // Ignore the exception when running multiple vaults in one process during test
   }
