@@ -233,3 +233,26 @@ if(MaidsafeTesting)
   ms_add_project_experimental()
   ms_test_summary_output()
 endif()
+
+
+#==================================================================================================#
+# Package                                                                                          #
+#==================================================================================================#
+set(EXPORT_NAME maidsafe_vault)
+install(TARGETS maidsafe_vault EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault_cache_handler)
+install(TARGETS maidsafe_vault_cache_handler EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault_data_manager)
+install(TARGETS maidsafe_vault_data_manager EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault_maid_manager)
+install(TARGETS maidsafe_vault_maid_manager EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault_mpid_manager)
+install(TARGETS maidsafe_vault_mpid_manager EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault_pmid_manager)
+install(TARGETS maidsafe_vault_pmid_manager EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault_pmid_node)
+install(TARGETS maidsafe_vault_pmid_node EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault_version_handler)
+install(TARGETS maidsafe_vault_version_handler EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault)
+install(TARGETS vault EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
