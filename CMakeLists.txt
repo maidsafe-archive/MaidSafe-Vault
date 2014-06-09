@@ -159,6 +159,7 @@ target_include_directories(vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BIN
 
 target_link_libraries(maidsafe_vault ${VaultPersonaLibs})
 target_link_libraries(vault maidsafe_vault)
+
 if(MaidsafeTesting)
   ms_add_static_library(maidsafe_vault_mal ${VaultAllFiles}
                                            ${CacheHandlerAllFiles}
@@ -217,6 +218,9 @@ include(standard_flags)
 
 if(MSVC AND MaidsafeTesting)
   set_property(TARGET maidsafe_vault TESTvault TESTvault_network TESTvault_func maidsafe_vault_mal APPEND PROPERTY COMPILE_FLAGS "/bigobj")
+endif()
+if(MSVC)
+  target_compile_options(vault PUBLIC $<$<CONFIG:Release>: /bigobj>)
 endif()
 
 
