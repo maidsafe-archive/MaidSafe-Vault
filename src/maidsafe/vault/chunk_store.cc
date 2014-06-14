@@ -26,6 +26,7 @@
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
+#include "maidsafe/common/crypto.h"
 
 namespace fs = boost::filesystem;
 
@@ -118,9 +119,11 @@ void ChunkStore::Put(const KeyType& key, const NonEmptyString& value) {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
   }
 
-  fs::path file_path(KeyToFilePath(key));
+  auto key_tag_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
+  auto obfuscated_pair(crypto::ObfuscateData(key_tag_and_id.second, value));
+  auto file_path(KeyToFilePath(GetDataNameVariant(key_tag_and_id.first, obfuscated_pair.first)));
   LOG(kVerbose) << "ChunkStore::Put file_path " << file_path;
-  uint32_t value_size(static_cast<uint32_t>(value.string().size()));
+  uint32_t value_size(static_cast<uint32_t>(obfuscated_pair.second.data.string().size()));
   uint64_t file_size(0), size(0);
   bool increment(true);
   boost::system::error_code error_code;
@@ -157,7 +160,7 @@ void ChunkStore::Put(const KeyType& key, const NonEmptyString& value) {
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::cannot_exceed_limit));
     }
   }
-  if (!WriteFile(file_path, value.string())) {
+  if (!WriteFile(file_path, obfuscated_pair.second.data.string())) {
     LOG(kError) << "Failed to write "
                 << HexSubstr(boost::apply_visitor(get_identity_visitor_, key).string())
                 << " to disk.";
@@ -173,7 +176,9 @@ void ChunkStore::Put(const KeyType& key, const NonEmptyString& value) {
 
 void ChunkStore::Delete(const KeyType& key) {
   std::lock_guard<std::mutex> lock(mutex_);
-  fs::path path(KeyToFilePath(key));
+  auto key_tag_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
+  auto hash(crypto::Hash<crypto::SHA512>(key_tag_and_id.second));
+  auto path(KeyToFilePath(GetDataNameVariant(key_tag_and_id.first, hash)));
   boost::system::error_code error_code;
   uint64_t file_size(fs::file_size(path, error_code));
   if (error_code) {
@@ -189,7 +194,10 @@ void ChunkStore::Delete(const KeyType& key) {
 
 NonEmptyString ChunkStore::Get(const KeyType& key) const {
   std::lock_guard<std::mutex> lock(mutex_);
-  return ReadFile(KeyToFilePath(key));
+  auto key_tag_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
+  auto hash(crypto::Hash<crypto::SHA512>(key_tag_and_id.second));
+  auto content(ReadFile(KeyToFilePath(GetDataNameVariant(key_tag_and_id.first, hash))));
+  return crypto::DeobfuscateData(key_tag_and_id.second, crypto::CipherText(content));
 }
 
 void ChunkStore::SetMaxDiskUsage(DiskUsage max_disk_usage) {

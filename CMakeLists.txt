@@ -68,6 +68,7 @@ set(TestsMain ${VaultSourcesDir}/tests/tests_main.cc)
 
 set(VaultGTestsAllFiles ${VaultTestsAllFiles})
 set(VaultTestsAllFiles ${VaultSourcesDir}/tests/chunk_store_test.cc
+                       ${VaultSourcesDir}/tests/chunk_store_test_utils.h
                        ${VaultSourcesDir}/tests/chunk_store_test_utils.cc
                        ${VaultSourcesDir}/tests/memory_fifo_test.cc
                        ${PmidNodeTestsAllFiles}
