@@ -327,6 +327,8 @@ void DataManagerDispatcher::DoSendPutToCache(const Data& data, IsCacheable) {
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
   VaultMessage vault_message((VaultMessage::Contents(data)));
+  LOG(kVerbose) << "DataManagerDispatcher::DoSendPutToCache: " << vault_message.id
+                << " " << HexSubstr(data.name()->string());
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
                          VaultMessage::Receiver(routing_.kNodeId()), routing::Cacheable::kPut);

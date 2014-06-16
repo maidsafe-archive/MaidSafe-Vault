@@ -208,9 +208,10 @@ void CacheHandlerService::SendGetResponse(const Data& data, const nfs::MessageId
 template <typename Data>
 void CacheHandlerService::CacheStore(const Data& data, IsLongTermCacheable) {
   try {
-    LOG(kVerbose) << "CacheHandlerService::CacheStore: cache_data_store";
+    LOG(kVerbose) << "CacheHandlerService::CacheStore: cache_data_store: "
+                  << HexSubstr(data.name().value) << " on " << DebugId(routing_.kNodeId());
     cache_data_store_.Put(GetDataNameVariant(Data::Tag::kValue, data.name().value),
-                            data.Serialise().data);
+                          data.Serialise().data);
   }
   catch (const std::exception&) {
     LOG(kError) << "Failed to store data in to the cache";

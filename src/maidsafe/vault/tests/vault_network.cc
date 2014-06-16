@@ -40,6 +40,8 @@ namespace vault {
 
 namespace test {
 
+std::shared_ptr<VaultNetwork> VaultEnvironment::g_env_ = std::shared_ptr<VaultNetwork>();
+
 PublicKeyGetter Client::public_key_getter_;
 
 void PublicKeyGetter::operator()(const NodeId& node_id,
@@ -370,8 +372,7 @@ Client::Client(const passport::detail::AnmaidToPmid& keys,
 std::future<bool> Client::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints) {
   std::shared_ptr<std::promise<bool>> join_promise(std::make_shared<std::promise<bool>>());
   functors_.network_status = [join_promise](int result) {
-    VLOG(maidsafe::nfs::Persona::kNA, VisualiserAction::kNetworkHealth, Identity{})
-      << "Network health: " << result;
+    VLOG(VisualiserAction::kNetworkHealth, result);
     if (result == 100) {
       LOG(kInfo) << "Connected to enough vaults";
       try {

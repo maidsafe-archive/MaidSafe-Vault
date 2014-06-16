@@ -65,6 +65,7 @@ ms_glob_dir(PmidNodeTests ${VaultSourcesDir}/pmid_node/tests "Tests")
 ms_glob_dir(VersionHandlerTests ${VaultSourcesDir}/version_handler/tests "Tests")
 
 set(TestsMain ${VaultSourcesDir}/tests/tests_main.cc)
+set(TestsFunctionalMain ${VaultSourcesDir}/tests/tests_func_main.cc)
 
 set(VaultGTestsAllFiles ${VaultTestsAllFiles})
 set(VaultTestsAllFiles ${VaultSourcesDir}/tests/chunk_store_test.cc
@@ -81,15 +82,22 @@ set(VaultTestsAllFiles ${VaultSourcesDir}/tests/chunk_store_test.cc
 
 set(VaultNetworkTestFiles ${VaultSourcesDir}/tests/vault_network.h
                           ${VaultSourcesDir}/tests/vault_network.cc
-                          ${VaultSourcesDir}/tests/vault_network_test.cc
-                          ${VaultSourcesDir}/cache_handler/tests/cache_handler_test.cc
-                          ${VaultSourcesDir}/version_handler/tests/version_handler_test.cc
-                          ${VaultSourcesDir}/pmid_manager/tests/pmid_manager_test.cc)
+                          ${VaultSourcesDir}/tests/vault_network_test.cc)
 
-list(REMOVE_ITEM VaultTestsAllFiles ${VaultNetworkTestFiles})
-list(REMOVE_ITEM VaultGTestsAllFiles ${VaultTestsAllFiles} ${VaultNetworkTestFiles})
+set(VaultFunctionalTestFiles ${VaultSourcesDir}/tests/vault_network.h
+                             ${VaultSourcesDir}/tests/vault_network.cc
+                             ${VaultSourcesDir}/cache_handler/tests/cache_handler_test.cc
+                             ${VaultSourcesDir}/version_handler/tests/version_handler_test.cc
+                             ${VaultSourcesDir}/pmid_manager/tests/pmid_manager_test.cc
+                             ${VaultSourcesDir}/tests/vault_func_test.cc)
+
+list(REMOVE_ITEM VaultTestsAllFiles ${VaultNetworkTestFiles} ${VaultFunctionalTestFiles})
+list(REMOVE_ITEM VaultGTestsAllFiles ${VaultTestsAllFiles} ${VaultNetworkTestFiles}
+                                     ${VaultFunctionalTestFiles} ${TestsFunctionalMain})
 list(APPEND VaultNetworkTestFiles ${TestsMain} ${VaultSourcesDir}/tests/tests_utils.h
                                                ${VaultSourcesDir}/tests/tests_utils.cc )
+list(APPEND VaultFunctionalTestFiles ${TestsFunctionalMain} ${VaultSourcesDir}/tests/tests_utils.h
+                                     ${VaultSourcesDir}/tests/tests_utils.cc )
 list(APPEND VaultTestsAllFiles ${TestsMain} ${VaultSourcesDir}/tests/tests_utils.h
                                             ${VaultSourcesDir}/tests/tests_utils.cc )
 
@@ -155,6 +163,7 @@ target_include_directories(vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BIN
 
 target_link_libraries(maidsafe_vault ${VaultPersonaLibs})
 target_link_libraries(vault maidsafe_vault)
+
 if(MaidsafeTesting)
   ms_add_static_library(maidsafe_vault_mal ${VaultAllFiles}
                                            ${CacheHandlerAllFiles}
@@ -192,6 +201,15 @@ if(MaidsafeTesting)
                                                        ${PROJECT_BINARY_DIR}/generated_message_types
                                                        ${VaultSourcesDir}/tests)
   target_link_libraries(TESTvault_network maidsafe_vault)
+
+  ms_add_executable(TESTvault_func "Tests/Vault" ${VaultFunctionalTestFiles})
+  target_include_directories(TESTvault_func PRIVATE ${PROJECT_SOURCE_DIR}/src
+                                                       ${PROJECT_BINARY_DIR}/generated_message_types
+                                                       ${VaultSourcesDir}/tests)
+  target_link_libraries(TESTvault_func maidsafe_vault)
+
+  target_compile_definitions(TESTvault_func PRIVATE USE_GTEST)
+
 endif()
 
 ms_rename_outdated_built_exes()
@@ -203,7 +221,10 @@ ms_rename_outdated_built_exes()
 include(standard_flags)
 
 if(MSVC AND MaidsafeTesting)
-  set_property(TARGET maidsafe_vault TESTvault TESTvault_network maidsafe_vault_mal APPEND PROPERTY COMPILE_FLAGS "/bigobj")
+  set_property(TARGET maidsafe_vault TESTvault TESTvault_network TESTvault_func maidsafe_vault_mal APPEND PROPERTY COMPILE_FLAGS "/bigobj")
+endif()
+if(MSVC)
+  target_compile_options(vault PUBLIC $<$<CONFIG:Release>: /bigobj>)
 endif()
 
 
@@ -214,7 +235,32 @@ if(MaidsafeTesting)
   ms_add_style_test()
   ms_add_catch_tests(test_vault)
   ms_add_gtests(TESTvault)
+  add_test(NAME Vault_Functional_Tests COMMAND TESTvault_func)
+  set_property(TEST Vault_Functional_Tests PROPERTY LABELS Vault Functional)
   ms_add_gtests(TESTvault_network)
   ms_add_project_experimental()
   ms_test_summary_output()
 endif()
+
+
+#==================================================================================================#
+# Package                                                                                          #
+#==================================================================================================#
+set(EXPORT_NAME maidsafe_vault)
+install(TARGETS maidsafe_vault EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault_cache_handler)
+install(TARGETS maidsafe_vault_cache_handler EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault_data_manager)
+install(TARGETS maidsafe_vault_data_manager EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault_maid_manager)
+install(TARGETS maidsafe_vault_maid_manager EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault_mpid_manager)
+install(TARGETS maidsafe_vault_mpid_manager EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault_pmid_manager)
+install(TARGETS maidsafe_vault_pmid_manager EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault_pmid_node)
+install(TARGETS maidsafe_vault_pmid_node EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault_version_handler)
+install(TARGETS maidsafe_vault_version_handler EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_vault)
+install(TARGETS vault EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)

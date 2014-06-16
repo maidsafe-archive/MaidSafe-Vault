@@ -18,40 +18,11 @@
 
 #include "maidsafe/common/test.h"
 
-#include "maidsafe/vault/tests/tests_utils.h"
+#include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/tests/vault_network.h"
 
-namespace maidsafe {
-
-namespace vault {
-
-namespace test {
-
-class PmidManagerTest : public testing::Test {
- public:
-  PmidManagerTest() : env_(VaultEnvironment::g_environment()) {}
-
-  std::vector<VaultNetwork::ClientPtr>& GetClients() {
-    return env_->clients_;
-  }
-
-  std::vector<passport::PublicPmid>& GetPublicPmids() {
-    return env_->public_pmids_;
-  }
-
- protected:
-  std::shared_ptr<VaultNetwork> env_;
-};
-
-TEST_F(PmidManagerTest, FUNC_GetPmidHealth) {
-  auto get_pmid_health_future(
-      GetClients().back()->nfs_->GetPmidHealth(GetPublicPmids().back().name()));
-  EXPECT_NO_THROW(get_pmid_health_future.get());
+int main(int argc, char** argv) {
+  //  maidsafe::vault::detail::Parameters::set_file_element_count_limits(1000, 5000);
+  testing::AddGlobalTestEnvironment(new maidsafe::vault::test::VaultEnvironment());
+  return maidsafe::test::ExecuteMain(argc, argv);
 }
-
-}  // namespace test
-
-}  // namespace vault
-
-}  // namespace maidsafe
-
