@@ -186,26 +186,24 @@ if(MaidsafeTesting)
 
   ms_add_executable(test_vault "Tests/Vault" ${VaultTestsAllFiles})
   target_include_directories(test_vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
-  target_link_libraries(test_vault maidsafe_vault)
+  target_link_libraries(test_vault maidsafe_vault maidsafe_test)
 
   ms_add_executable(TESTvault "Tests/Vault" ${VaultGTestsAllFiles})
   target_include_directories(TESTvault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
-  target_link_libraries(TESTvault maidsafe_vault)
+  target_link_libraries(TESTvault maidsafe_vault maidsafe_test)
 
   ms_add_executable(TESTvault_network "Tests/Vault" ${VaultNetworkTestFiles})
   target_include_directories(TESTvault_network PRIVATE ${PROJECT_SOURCE_DIR}/src
                                                        ${PROJECT_BINARY_DIR}/generated_message_types
                                                        ${VaultSourcesDir}/tests)
-  target_link_libraries(TESTvault_network maidsafe_vault)
+  target_link_libraries(TESTvault_network maidsafe_vault maidsafe_test)
 
   ms_add_executable(TESTvault_func "Tests/Vault" ${VaultFunctionalTestFiles})
   target_include_directories(TESTvault_func PRIVATE ${PROJECT_SOURCE_DIR}/src
                                                        ${PROJECT_BINARY_DIR}/generated_message_types
                                                        ${VaultSourcesDir}/tests)
-  target_link_libraries(TESTvault_func maidsafe_vault)
-
+  target_link_libraries(TESTvault_func maidsafe_vault maidsafe_test)
   target_compile_definitions(TESTvault_func PRIVATE USE_GTEST)
-
 endif()
 
 ms_rename_outdated_built_exes()
@@ -242,21 +240,13 @@ endif()
 #==================================================================================================#
 # Package                                                                                          #
 #==================================================================================================#
-set(EXPORT_NAME maidsafe_vault)
-install(TARGETS maidsafe_vault EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
-set(EXPORT_NAME maidsafe_vault_cache_handler)
-install(TARGETS maidsafe_vault_cache_handler EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
-set(EXPORT_NAME maidsafe_vault_data_manager)
-install(TARGETS maidsafe_vault_data_manager EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
-set(EXPORT_NAME maidsafe_vault_maid_manager)
-install(TARGETS maidsafe_vault_maid_manager EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
-set(EXPORT_NAME maidsafe_vault_mpid_manager)
-install(TARGETS maidsafe_vault_mpid_manager EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
-set(EXPORT_NAME maidsafe_vault_pmid_manager)
-install(TARGETS maidsafe_vault_pmid_manager EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
-set(EXPORT_NAME maidsafe_vault_pmid_node)
-install(TARGETS maidsafe_vault_pmid_node EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
-set(EXPORT_NAME maidsafe_vault_version_handler)
-install(TARGETS maidsafe_vault_version_handler EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
-set(EXPORT_NAME maidsafe_vault)
-install(TARGETS vault EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
+# install(TARGETS maidsafe_vault maidsafe_vault_cache_handler maidsafe_vault_data_manager maidsafe_vault_maid_manager
+#                 maidsafe_vault_mpid_manager maidsafe_vault_pmid_manager maidsafe_vault_pmid_node maidsafe_vault_version_handler
+#                 COMPONENT Development CONFIGURATIONS Debug Release ARCHIVE DESTINATION lib)
+install(TARGETS vault COMPONENT Apps CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
+install(TARGETS vault COMPONENT Apps CONFIGURATIONS Release RUNTIME DESTINATION bin)
+
+if(MaidsafeTesting)
+  install(TARGETS test_vault TESTvault TESTvault_network TESTvault_func COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
+  install(TARGETS test_vault TESTvault TESTvault_network TESTvault_func COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
+endif()
