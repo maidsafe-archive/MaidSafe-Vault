@@ -24,7 +24,7 @@
 #include <string>
 
 #include "maidsafe/common/types.h"
-#include "maidsafe/common/data_stores/data_buffer.h"
+#include "maidsafe/common/data_buffer.h"
 #include "maidsafe/nfs/client/messages.pb.h"
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
