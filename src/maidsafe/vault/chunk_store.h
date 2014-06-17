@@ -71,7 +71,6 @@ class ChunkStore {
   friend class test::ChunkStoreTest;
 
  private:
-
   boost::filesystem::path GetFilePath(const KeyType& key) const;
   bool HasDiskSpace(uint64_t required_space) const;
   boost::filesystem::path KeyToFilePath(const KeyType& key) const;

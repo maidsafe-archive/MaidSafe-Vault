@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_CHUNK_STORE_TEST_UTILS_H_
-#define MAIDSAFE_VAULT_CHUNK_STORE_TEST_UTILS_H_
+#ifndef MAIDSAFE_VAULT_TESTS_CHUNK_STORE_TEST_UTILS_H_
+#define MAIDSAFE_VAULT_TESTS_CHUNK_STORE_TEST_UTILS_H_
 
 #include <cstdint>
 #include <utility>
@@ -43,4 +43,4 @@ DataNameVariant GetRandomDataNameType();
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_CHUNK_STORE_TEST_UTILS_H_
+#endif  // MAIDSAFE_VAULT_TESTS_CHUNK_STORE_TEST_UTILS_H_

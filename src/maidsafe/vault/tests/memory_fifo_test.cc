@@ -265,6 +265,6 @@ TEST_CASE_METHOD(MemoryFIFOTest, "RandomAsync", "[Behavioural]") {
 
 }  // namespace test
 
-}  // namespace data_stores
+}  // namespace vault
 
 }  // namespace maidsafe

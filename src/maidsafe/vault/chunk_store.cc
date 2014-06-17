@@ -20,6 +20,7 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #include "boost/filesystem/convenience.hpp"
 #include "boost/lexical_cast.hpp"
@@ -248,6 +249,6 @@ fs::path ChunkStore::KeyToFilePath(const KeyType& key) const {
   return fs::path(disk_path / file_name.string().substr(directory_depth));
 }
 
-}  // namespace vault 
+}  // namespace vault
 
 }  // namespace maidsafe

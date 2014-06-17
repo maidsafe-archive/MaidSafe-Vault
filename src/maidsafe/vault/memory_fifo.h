@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MEMORY_FIFO_
-#define MAIDSAFE_VAULT_MEMORY_FIFO_
+#ifndef MAIDSAFE_VAULT_MEMORY_FIFO_H_
+#define MAIDSAFE_VAULT_MEMORY_FIFO_H_
 
 
 #include <mutex>
@@ -63,6 +63,6 @@ class MemoryFIFO {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MEMORY_FIFO_
+#endif  // MAIDSAFE_VAULT_MEMORY_FIFO_H_
 
 
