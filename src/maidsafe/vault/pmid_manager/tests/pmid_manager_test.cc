@@ -45,7 +45,7 @@ class PmidManagerTest : public testing::Test {
 
 TEST_F(PmidManagerTest, FUNC_GetPmidHealth) {
   auto get_pmid_health_future(
-      GetClients().back()->nfs_->GetPmidHealth(GetPublicPmids().back().name()));
+      GetClients().back()->GetPmidHealth(GetPublicPmids().back().name()));
   EXPECT_NO_THROW(get_pmid_health_future.get());
 }
 

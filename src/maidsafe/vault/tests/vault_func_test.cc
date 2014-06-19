@@ -49,14 +49,14 @@ TEST_F(VaultTest, FUNC_PutGetDelete) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
   LOG(kVerbose) << "Before put";
   try {
-    EXPECT_NO_THROW(GetClients().at(0)->nfs_->Put(data));
+    EXPECT_NO_THROW(GetClients().at(0)->Put(data));
     LOG(kVerbose) << "After put";
   }
   catch (...) {
     EXPECT_TRUE(false) << "Failed to put: " << DebugId(NodeId(data.name()->string()));
   }
 
-  auto future(GetClients().at(0)->nfs_->Get<ImmutableData::Name>(data.name()));
+  auto future(GetClients().at(0)->Get<ImmutableData::Name>(data.name()));
   try {
     auto retrieved(future.get());
     EXPECT_EQ(retrieved.data(), data.data());
@@ -66,7 +66,7 @@ TEST_F(VaultTest, FUNC_PutGetDelete) {
   }
 
   Sleep(std::chrono::seconds(3));
-  GetClients().at(0)->nfs_->Delete<ImmutableData::Name>(data.name());
+  GetClients().at(0)->Delete<ImmutableData::Name>(data.name());
   Sleep(std::chrono::seconds(3));
 
   LOG(kVerbose) << "After delete:";
@@ -87,7 +87,7 @@ TEST_F(VaultTest, FUNC_MultiplePuts) {
 
   int index(0);
   for (const auto& chunk : chunks) {
-    EXPECT_NO_THROW(GetClients().at(0)->nfs_->Put(chunk))
+    EXPECT_NO_THROW(GetClients().at(0)->Put(chunk))
                         << "Store failure " << DebugId(NodeId(chunk.name()->string()));
     LOG(kVerbose) << DebugId(NodeId(chunk.name()->string())) << " stored: " << index++;
   }
@@ -95,7 +95,7 @@ TEST_F(VaultTest, FUNC_MultiplePuts) {
   std::vector<boost::future<ImmutableData>> get_futures;
   for (const auto& chunk : chunks) {
     get_futures.emplace_back(
-        GetClients().at(0)->nfs_->Get<ImmutableData::Name>(chunk.name(),
+        GetClients().at(0)->Get<ImmutableData::Name>(chunk.name(),
                                                            std::chrono::seconds(kIterations)));
   }
 
@@ -117,7 +117,7 @@ TEST_F(VaultTest, FUNC_MultiplePuts) {
   std::vector<boost::future<ImmutableData>> no_cache_get_futures;
   for (const auto& chunk : chunks) {
     no_cache_get_futures.emplace_back(
-        GetClients().at(0)->nfs_->Get<ImmutableData::Name>(chunk.name(),
+        GetClients().at(0)->Get<ImmutableData::Name>(chunk.name(),
                                                            std::chrono::seconds(kIterations)));
   }
 
@@ -144,14 +144,14 @@ TEST_F(VaultTest, FUNC_FailingGet) {
 TEST_F(VaultTest, FUNC_PutMultipleCopies) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
   boost::future<ImmutableData> future;
-  GetClients().at(0)->nfs_->Put(data);
+  GetClients().at(0)->Put(data);
   Sleep(std::chrono::seconds(2));
 
-  GetClients().at(1)->nfs_->Put(data);
+  GetClients().at(1)->Put(data);
   Sleep(std::chrono::seconds(2));
 
   {
-    future = GetClients().at(0)->nfs_->Get<ImmutableData::Name>(data.name());
+    future = GetClients().at(0)->Get<ImmutableData::Name>(data.name());
     try {
       auto retrieved(future.get());
       EXPECT_EQ(retrieved.data(), data.data());
@@ -164,7 +164,7 @@ TEST_F(VaultTest, FUNC_PutMultipleCopies) {
   LOG(kVerbose) << "1st successful put";
 
   {
-    future = GetClients().at(1)->nfs_->Get<ImmutableData::Name>(data.name());
+    future = GetClients().at(1)->Get<ImmutableData::Name>(data.name());
     try {
       auto retrieved(future.get());
       EXPECT_EQ(retrieved.data(), data.data());
@@ -176,7 +176,7 @@ TEST_F(VaultTest, FUNC_PutMultipleCopies) {
 
   LOG(kVerbose) << "2nd successful put";
 
-  GetClients().at(0)->nfs_->Delete<ImmutableData::Name>(data.name());
+  GetClients().at(0)->Delete<ImmutableData::Name>(data.name());
   Sleep(std::chrono::seconds(2));
 
   LOG(kVerbose) << "1st Delete the chunk";
@@ -191,7 +191,7 @@ TEST_F(VaultTest, FUNC_PutMultipleCopies) {
 
   LOG(kVerbose) << "Chunk still exist as expected";
 
-  GetClients().at(1)->nfs_->Delete<ImmutableData::Name>(data.name());
+  GetClients().at(1)->Delete<ImmutableData::Name>(data.name());
   Sleep(std::chrono::seconds(2));
 
   LOG(kVerbose) << "2nd Delete the chunk";
@@ -212,7 +212,7 @@ TEST_F(VaultTest, FUNC_MultipleClientsPut) {
 
   for (const auto& chunk : chunks) {
     LOG(kVerbose) << "Storing: " << DebugId(chunk.name());
-    EXPECT_NO_THROW(GetClients().at(RandomInt32() % kClientsSize)->nfs_->Put(chunk));
+    EXPECT_NO_THROW(GetClients().at(RandomInt32() % kClientsSize)->Put(chunk));
   }
 
   LOG(kVerbose) << "Chunks are sent to be stored...";
@@ -220,8 +220,7 @@ TEST_F(VaultTest, FUNC_MultipleClientsPut) {
   std::vector<boost::future<ImmutableData>> get_futures;
   for (const auto& chunk : chunks)
     get_futures.emplace_back(
-        GetClients().at(RandomInt32() % kClientsSize)->nfs_->Get<ImmutableData::Name>(
-            chunk.name()));
+        GetClients().at(RandomInt32() % kClientsSize)->Get<ImmutableData::Name>(chunk.name()));
 
   for (size_t index(0); index < kIterations; ++index) {
     try {

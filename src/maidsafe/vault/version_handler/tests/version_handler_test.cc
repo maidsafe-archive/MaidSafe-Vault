@@ -43,7 +43,7 @@ class VersionHandlerTest : public testing::Test {
   template <typename DataName>
   std::vector<VersionName> GetVersions(const DataName& data_name) {
     try {
-      auto future(env_->clients_.front()->nfs_->GetVersions(data_name));
+      auto future(env_->clients_.front()->GetVersions(data_name));
       return future.get();
     } catch(const maidsafe_error&) {
       throw;
@@ -58,11 +58,11 @@ class VersionHandlerTest : public testing::Test {
 TEST_F(VersionHandlerTest, FUNC_CreateVersionTree) {
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
-  auto create_version_future(GetClients().front()->nfs_->CreateVersionTree(chunk.name(), v_aaa, 10,
+  auto create_version_future(GetClients().front()->CreateVersionTree(chunk.name(), v_aaa, 10,
                                                                        20));
   EXPECT_NO_THROW(create_version_future.get());
   try {
-    auto future(GetClients().front()->nfs_->GetVersions(chunk.name()));
+    auto future(GetClients().front()->GetVersions(chunk.name()));
     auto versions(future.get());
     EXPECT_EQ(versions.front().id, v_aaa.id);
   } catch(const maidsafe_error& error) {
@@ -75,7 +75,7 @@ TEST_F(VersionHandlerTest, FUNC_CreateVersionTree) {
 TEST_F(VersionHandlerTest, FUNC_FailingPut) {
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
-  auto put_version_future(GetClients().front()->nfs_->PutVersion(
+  auto put_version_future(GetClients().front()->PutVersion(
                           chunk.name(), StructuredDataVersions::VersionName(), v_aaa));
   EXPECT_THROW(put_version_future.get(), maidsafe_error) << "should have failed";
   Sleep(std::chrono::seconds(5));
@@ -84,12 +84,12 @@ TEST_F(VersionHandlerTest, FUNC_FailingPut) {
 TEST_F(VersionHandlerTest, FUNC_CreateGet) {
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
-  auto create_version_future(GetClients().front()->nfs_->CreateVersionTree(chunk.name(), v_aaa, 10,
+  auto create_version_future(GetClients().front()->CreateVersionTree(chunk.name(), v_aaa, 10,
                                                                        20));
   EXPECT_NO_THROW(create_version_future.get()) << "failure to create version";
   Sleep(std::chrono::seconds(3));
   try {
-    auto future(GetClients().front()->nfs_->GetVersions(chunk.name()));
+    auto future(GetClients().front()->GetVersions(chunk.name()));
     auto versions(future.get());
     EXPECT_EQ(versions.front().id, v_aaa.id);
   } catch(const maidsafe_error& error) {
@@ -102,16 +102,16 @@ TEST_F(VersionHandlerTest, FUNC_PutGet) {
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
   StructuredDataVersions::VersionName v_bbb(0, ImmutableData::Name(Identity(std::string(64, 'b'))));
-  auto create_version_future(GetClients().front()->nfs_->CreateVersionTree(chunk.name(), v_aaa, 10,
+  auto create_version_future(GetClients().front()->CreateVersionTree(chunk.name(), v_aaa, 10,
                                                                        20));
   EXPECT_NO_THROW(create_version_future.get()) << "failure to create version";
   Sleep(std::chrono::seconds(3));
-  auto put_version_future(GetClients().front()->nfs_->PutVersion(chunk.name(), v_aaa, v_bbb));
+  auto put_version_future(GetClients().front()->PutVersion(chunk.name(), v_aaa, v_bbb));
   EXPECT_NO_THROW(put_version_future.get()) << "failure to put version";
   Sleep(std::chrono::seconds(2));
   LOG(kVerbose) << "Put Version Succeeded";
   try {
-    auto future(GetClients().front()->nfs_->GetVersions(chunk.name()));
+    auto future(GetClients().front()->GetVersions(chunk.name()));
     auto versions(future.get());
     EXPECT_EQ(versions.front().id, v_bbb.id);
   } catch(const maidsafe_error& error) {
@@ -135,11 +135,11 @@ TEST_F(VersionHandlerTest, FUNC_DeleteBranchUntilFork) {
   puts.push_back(std::make_pair(v1_bbb, v2_ddd));
   puts.push_back(std::make_pair(v3_fff, v4_iii));
 
-  auto create_version_future(GetClients().front()->nfs_->CreateVersionTree(name, v0_aaa, 10, 20));
+  auto create_version_future(GetClients().front()->CreateVersionTree(name, v0_aaa, 10, 20));
   EXPECT_NO_THROW(create_version_future.get());
 
   for (const auto& put : puts) {
-    auto put_version_future(GetClients().front()->nfs_->PutVersion(name, put.first, put.second));
+    auto put_version_future(GetClients().front()->PutVersion(name, put.first, put.second));
     EXPECT_NO_THROW(put_version_future.get());
   }
 
@@ -154,7 +154,7 @@ TEST_F(VersionHandlerTest, FUNC_DeleteBranchUntilFork) {
     EXPECT_TRUE(false) << "Version should have existed " << boost::diagnostic_information(error);
   }
 
-  EXPECT_NO_THROW(GetClients().front()->nfs_->DeleteBranchUntilFork(name, v4_iii));
+  EXPECT_NO_THROW(GetClients().front()->DeleteBranchUntilFork(name, v4_iii));
   Sleep(std::chrono::seconds(4));
   LOG(kVerbose) << "After delete";
 

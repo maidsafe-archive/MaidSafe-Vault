@@ -42,8 +42,6 @@ namespace test {
 
 std::shared_ptr<VaultNetwork> VaultEnvironment::g_env_ = std::shared_ptr<VaultNetwork>();
 
-PublicKeyGetter Client::public_key_getter_;
-
 void PublicKeyGetter::operator()(const NodeId& node_id,
                                  const routing::GivePublicKeyFunctor& give_key,
                                  const std::vector<passport::PublicPmid>& public_pmids) {
@@ -278,127 +276,20 @@ bool VaultNetwork::Add() {
   }
 }
 
-bool VaultNetwork::AddClient(bool register_pmid) {
-  passport::detail::AnmaidToPmid node_keys;
-  if (register_pmid) {
-    EXPECT_TRUE(Add());
-    node_keys = *key_chains_.keys.rbegin();
-  } else {
-    node_keys = key_chains_.Add();
-    public_pmids_.push_back(passport::PublicPmid(node_keys.pmid));
-  }
-  try {
-    LOG(kVerbose) << "Client joining: " << clients_.size();
-    clients_.emplace_back(new Client(node_keys, bootstrap_contacts_, public_pmids_, register_pmid));
-    LOG(kVerbose) << "Client joined: " << clients_.size();
-    return true;
-  }
-  catch (const std::exception& error) {
-    LOG(kVerbose) << "Client failed to join: " << clients_.size() << " "
-                  << boost::diagnostic_information(error);
-    return false;
-  }
+void VaultNetwork::AddClient() {
+  passport::Anmaid anmaid;
+  passport::Maid maid(anmaid);
+  AddClient(maid, bootstrap_contacts_);
 }
 
-Client::Client(const passport::detail::AnmaidToPmid& keys,
-               const std::vector<UdpEndpoint>& endpoints,
-               std::vector<passport::PublicPmid>& public_pmids,
-               bool register_pmid_for_client)
-    : asio_service_(2), functors_(), routing_(keys.maid), nfs_(),
-      data_getter_(asio_service_, routing_),
-      public_pmids_(public_pmids) {
-  nfs_.reset(new nfs_client::MaidNodeNfs(
-      asio_service_, routing_, passport::PublicPmid::Name(Identity(keys.pmid.name().value))));
-  {
-    auto future(RoutingJoin(endpoints));
-    auto status(future.wait_for(std::chrono::seconds(10)));
-    if (status == std::future_status::timeout || !future.get()) {
-      LOG(kError) << "can't join routing network";
-      BOOST_THROW_EXCEPTION(MakeError(RoutingErrors::not_connected));
-    }
-    LOG(kSuccess) << "Client node joined routing network";
-  }
-  {
-    passport::PublicMaid public_maid(keys.maid);
-    passport::PublicAnmaid public_anmaid(keys.anmaid);
-    auto future(nfs_->CreateAccount(nfs_vault::AccountCreation(public_maid, public_anmaid),
-                                    std::chrono::seconds(20)));
-    auto status(future.wait_for(boost::chrono::seconds(20)));
-    if (status == boost::future_status::timeout) {
-      LOG(kError) << "can't create account";
-      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
-    }
-    // waiting for syncs resolved
-    boost::this_thread::sleep_for(boost::chrono::seconds(2));
-    LOG(kSuccess) << "Account created for maid " << HexSubstr(public_maid.name()->string());
-  }
-  {
-    try {
-      nfs_->Put(passport::PublicPmid(keys.pmid));
-    }
-    catch (...) {
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
-    }
-    Sleep(std::chrono::seconds(2));
-  }
-  if (register_pmid_for_client) {
-    try {
-      auto register_pmid_future(nfs_->RegisterPmid(
-                                    nfs_vault::PmidRegistration(keys.maid, keys.pmid, false)));
-      register_pmid_future.get();
-    }
-    catch (const maidsafe_error& error) {
-      LOG(kError) << "Pmid Registration Failed " << boost::diagnostic_information(error);
-      throw;
-    }
-    Sleep(std::chrono::seconds(2));
-    passport::PublicPmid::Name pmid_name(Identity(keys.pmid.name().value));
-
-    try {
-      auto get_health_future(nfs_->GetPmidHealth(pmid_name));
-      LOG(kVerbose) << "The fetched PmidHealth for pmid_name "
-                    << HexSubstr(pmid_name.value.string()) << " is " << get_health_future.get();
-    }
-    catch (const maidsafe_error& error) {
-      LOG(kError) << "Pmid Health Retreival Failed " << boost::diagnostic_information(error);
-      throw;
-    }
-    // waiting for the GetPmidHealth updating corresponding accounts
-    boost::this_thread::sleep_for(boost::chrono::seconds(2));
-    LOG(kSuccess) << "Pmid Registered created for the client node to store chunks";
-  }
+void VaultNetwork::AddClient(const passport::Maid& maid,
+                             const routing::BootstrapContacts& bootstrap_contacts) {
+  clients_.emplace_back(nfs_client::MaidNodeNfs::MakeShared(maid, bootstrap_contacts));
 }
 
-std::future<bool> Client::RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints) {
-  std::shared_ptr<std::promise<bool>> join_promise(std::make_shared<std::promise<bool>>());
-  functors_.network_status = [join_promise](int result) {
-    VLOG(VisualiserAction::kNetworkHealth, result);
-    if (result == 100) {
-      LOG(kInfo) << "Connected to enough vaults";
-      try {
-        join_promise->set_value(true);
-        LOG(kInfo) << "join_promise set to true";
-      } catch (...) {
-        LOG(kError) << "can't set join_promise";
-      }
-    }
-  };
-  functors_.typed_message_and_caching.group_to_group.message_received =
-      [&](const routing::GroupToGroupMessage& msg) { nfs_->HandleMessage(msg); };  // NOLINT
-  functors_.typed_message_and_caching.group_to_single.message_received =
-      [&](const routing::GroupToSingleMessage& msg) { nfs_->HandleMessage(msg); };  // NOLINT
-  functors_.typed_message_and_caching.single_to_group.message_received =
-      [&](const routing::SingleToGroupMessage& msg) { nfs_->HandleMessage(msg); };  // NOLINT
-  functors_.typed_message_and_caching.single_to_single.message_received =
-      [&](const routing::SingleToSingleMessage& msg) { nfs_->HandleMessage(msg); };  // NOLINT
-//  functors_.typed_message_and_caching.single_to_group_relay.message_received =
-//      [&](const routing::SingleToGroupRelayMessage &msg) { nfs_->HandleMessage(msg); };
-  functors_.request_public_key =
-      [&, this](const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key) {
-        public_key_getter_(node_id, give_key, public_pmids_);
-      };
-  routing_.Join(functors_, peer_endpoints);
-  return std::move(join_promise->get_future());
+void VaultNetwork::AddClient(const passport::MaidAndSigner& maid_and_signer,
+                             const routing::BootstrapContacts& bootstrap_contacts) {
+  clients_.emplace_back(nfs_client::MaidNodeNfs::MakeShared(maid_and_signer, bootstrap_contacts));
 }
 
 KeyChain::KeyChain(size_t size) {

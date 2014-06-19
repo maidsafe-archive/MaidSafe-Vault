@@ -53,31 +53,31 @@ TEST_F(VaultNetworkTest, FUNC_VaultJoins) {
 }
 
 TEST_F(VaultNetworkTest, FUNC_ClientJoins) {
-  EXPECT_TRUE(AddClient(false));
+  AddClient();
 }
 
 TEST_F(VaultNetworkTest, FUNC_PmidRegisteringClientJoins) {
-  EXPECT_TRUE(AddClient(true));
+  AddClient();
 }
 
 TEST_F(VaultNetworkTest, FUNC_MultipleClientsJoin) {
   for (int index(0); index < 5; ++index)
-    EXPECT_TRUE(AddClient(false));
+    AddClient();
 }
 
 TEST_F(VaultNetworkTest, FUNC_UnauthorisedDelete) {
-  EXPECT_TRUE(AddClient(true));
-  EXPECT_TRUE(AddClient(true));
+  AddClient();
+  AddClient();
 
   routing::Parameters::caching = false;
   ImmutableData chunk(NonEmptyString(RandomString(2^10)));
-  EXPECT_NO_THROW(clients_.front()->nfs_->Put<ImmutableData>(chunk)) << "should have succeeded";
+  EXPECT_NO_THROW(clients_.front()->Put<ImmutableData>(chunk)) << "should have succeeded";
   EXPECT_NO_THROW(Get<ImmutableData>(chunk.name()));
   LOG(kVerbose) << "Chunk is verified to be in the network";
-  clients_.back()->nfs_->Delete(chunk.name());
+  clients_.back()->Delete(chunk.name());
   Sleep(std::chrono::seconds(3));
   EXPECT_NO_THROW(Get<ImmutableData>(chunk.name())) << "Delete must have failed";
-  clients_.front()->nfs_->Delete(chunk.name());
+  clients_.front()->Delete(chunk.name());
   Sleep(std::chrono::seconds(3));
   EXPECT_THROW(Get<ImmutableData>(chunk.name()), std::exception)  << "Delete must have succeeded";
 }

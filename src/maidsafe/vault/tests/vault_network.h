@@ -65,35 +65,21 @@ struct KeyChain {
   passport::detail::AnmaidToPmid Add();
 };
 
-class Client {
- public:
-  Client(const passport::detail::AnmaidToPmid& keys, const std::vector<UdpEndpoint>& endpoints,
-         std::vector<passport::PublicPmid>& public_pmids, bool register_pmid_for_client = true);
-  std::future<bool> RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints);
-
-  void Stop() { asio_service_.Stop(); }
-
- public:
-  AsioService asio_service_;
-  routing::Functors functors_;
-  routing::Routing routing_;
-  std::unique_ptr<nfs_client::MaidNodeNfs> nfs_;
-  nfs_client::DataGetter data_getter_;
-  std::vector<passport::PublicPmid>& public_pmids_;
-  static PublicKeyGetter public_key_getter_;
-};
-
 class VaultNetwork {
  public:
   typedef std::shared_ptr<Vault> VaultPtr;
-  typedef std::shared_ptr<Client> ClientPtr;
+  typedef std::shared_ptr<nfs_client::MaidNodeNfs> ClientPtr;
 
   VaultNetwork();
   virtual ~VaultNetwork() {}
   virtual void SetUp();
   virtual void TearDown();
   bool Add();
-  bool AddClient(bool register_pmid = true);
+
+  void AddClient();
+  void AddClient(const passport::Maid& maid, const routing::BootstrapContacts& bootstrap_contacts);
+  void AddClient(const passport::MaidAndSigner& maid_and_signer,
+                 const routing::BootstrapContacts& bootstrap_contacts);
 
   template <typename Data>
   Data Get(const typename Data::Name& data_name);
@@ -136,7 +122,7 @@ template <typename Data>
 Data VaultNetwork::Get(const typename Data::Name& data_name) {
   assert(!clients_.empty() && "At least one client should exist to perform get operation");
   size_t index(RandomUint32() % clients_.size());
-  auto future(clients_[index]->nfs_->Get<typename Data::Name>(data_name));
+  auto future(clients_[index]->Get<typename Data::Name>(data_name));
   try {
     return future.get();
   }
@@ -153,7 +139,7 @@ class VaultEnvironment : public testing::Environment {
     g_env_.reset(new VaultNetwork());
     g_env_->SetUp();
     for (int index(0); index < kClientsSize; ++index)
-      ASSERT_TRUE(g_env_->AddClient(true));
+      g_env_->AddClient();
   }
 
   void TearDown() override {
