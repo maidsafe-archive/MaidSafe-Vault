@@ -84,14 +84,14 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "long term put/get",
 
 TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put",
                                           "[CacheHandler][Put][Service][Behavioural]") {
-  routing::SingleId maid_node((NodeId(NodeId::kRandomId)));
+  routing::SingleId maid_node((NodeId(NodeId::IdType::kRandomId)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   nfs_client::DataNameAndContentOrReturnCode content(data);
 
   SECTION("GetCachedResponseFromCacheHandlerToDataGetter") {
     auto cached_response(
              CreateMessage<nfs::GetCachedResponseFromCacheHandlerToDataGetter>(content));
-    routing::SingleSource source((NodeId(NodeId::kRandomId)));
+    routing::SingleSource source((NodeId(NodeId::IdType::kRandomId)));
     CHECK(cache_handler_service_.HandleMessage(cached_response, source, maid_node));
     CHECK_NOTHROW(Get<ImmutableData>(data.name()));
   }
@@ -112,7 +112,7 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put",
 
   SECTION("GetCachedResponseFromCacheHandlerToMaidNode") {
     auto cached_response(CreateMessage<nfs::GetCachedResponseFromCacheHandlerToMaidNode>(content));
-    routing::SingleSource source((NodeId(NodeId::kRandomId)));
+    routing::SingleSource source((NodeId(NodeId::IdType::kRandomId)));
     CHECK(cache_handler_service_.HandleMessage(cached_response, source, maid_node));
     CHECK_NOTHROW(Get<ImmutableData>(data.name()));
   }
@@ -121,7 +121,7 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put",
     auto cache_put(CreateMessage<PutRequestFromDataManagerToCacheHandler>(
       nfs_vault::DataNameAndContent(content.name.type, content.name.raw_name,
                                     NonEmptyString(content.content->data))));
-    routing::SingleSource source((NodeId(NodeId::kRandomId)));
+    routing::SingleSource source((NodeId(NodeId::IdType::kRandomId)));
     CHECK(cache_handler_service_.HandleMessage(cache_put, source,
                                                routing::SingleId(routing_.kNodeId())));
     CHECK_NOTHROW(Get<ImmutableData>(data.name()));
@@ -131,7 +131,7 @@ TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put",
 TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving get",
                                           "[Handler][Get][Service][Behavioural]") {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-  routing::SingleSource source_node((NodeId(NodeId::kRandomId)));
+  routing::SingleSource source_node((NodeId(NodeId::IdType::kRandomId)));
   routing::GroupId group_id(NodeId(data.name()->string()));
   nfs_vault::DataName content(data.name());
 

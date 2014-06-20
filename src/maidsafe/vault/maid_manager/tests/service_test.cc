@@ -246,7 +246,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "maid manager: check handlers availabil
 
   SECTION("PutFailureFromDataManagerToMaidManager") {
     auto content(CreateContent<PutFailureFromDataManagerToMaidManager::Contents>());
-    NodeId data_name_id(content.name.raw_name.string()), maid_node_id(NodeId::kRandomId);
+    NodeId data_name_id(content.name.raw_name.string()), maid_node_id(NodeId::IdType::kRandomId);
     auto put_failure(CreateMessage<PutFailureFromDataManagerToMaidManager>(content));
     auto group_source(CreateGroupSource(data_name_id));
     CHECK_NOTHROW(GroupSendToGroup(&maid_manager_service_, put_failure, group_source,
