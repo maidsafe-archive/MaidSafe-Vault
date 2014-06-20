@@ -125,7 +125,8 @@ TEST_CASE("Db commit", "[Db][Unit]") {
   // TODO(Prakash): Extend to all data types
   PopulateDbValues(db, 10000);
   for (auto i(0); i != 100; ++i) {
-    DbTests(db, Key(Identity(NodeId(NodeId::IdType::kRandomId).string()), DataTagValue::kMaidValue));
+    DbTests(db, Key(Identity(NodeId(NodeId::IdType::kRandomId).string()),
+                    DataTagValue::kMaidValue));
   }
 }
 
