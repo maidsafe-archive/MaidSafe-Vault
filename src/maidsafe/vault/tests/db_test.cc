@@ -88,7 +88,7 @@ template <typename Key, typename Value>
 void PopulateDbValues(Db<Key, Value>& db, const int& count) {
   for (auto i(0); i != count; ++i) {
 // need Random type
-    Key key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue);
+    Key key(Identity(NodeId(NodeId::IdType::kRandomId).string()), DataTagValue::kMaidValue);
     db.Commit(key, TestDbActionPutValue("new_value"));
     CHECK(db.Get(key).value == "new_value");
   }
@@ -119,13 +119,13 @@ TEST_CASE("Db constructor", "[Db][Unit]") {
 TEST_CASE("Db commit", "[Db][Unit]") {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest"));
   Db<Key, TestDbValue> db(*test_path);
-  Key key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue);
+  Key key(Identity(NodeId(NodeId::IdType::kRandomId).string()), DataTagValue::kMaidValue);
   for (auto i(0); i != 100; ++i)
     DbTests(db, key);
   // TODO(Prakash): Extend to all data types
   PopulateDbValues(db, 10000);
   for (auto i(0); i != 100; ++i) {
-    DbTests(db, Key(Identity(NodeId(NodeId::kRandomId).string()), DataTagValue::kMaidValue));
+    DbTests(db, Key(Identity(NodeId(NodeId::IdType::kRandomId).string()), DataTagValue::kMaidValue));
   }
 }
 
@@ -157,9 +157,9 @@ TEST_CASE("Db transfer info", "[Db][Unit]") {
 //  assert(leveldb_);
 //  std::vector<std::string> nodes1, nodes2, nodes3;
 //  for (auto i(0U); i != 10000; ++i) {
-//    nodes1.push_back("1" + NodeId(NodeId::kRandomId).string());
-//    nodes2.push_back("2" + NodeId(NodeId::kRandomId).string());
-//    nodes3.push_back("3" + NodeId(NodeId::kRandomId).string());
+//    nodes1.push_back("1" + NodeId(NodeId::IdType::kRandomId).string());
+//    nodes2.push_back("2" + NodeId(NodeId::IdType::kRandomId).string());
+//    nodes3.push_back("3" + NodeId(NodeId::IdType::kRandomId).string());
 
 //    leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(), nodes1.back(), nodes1.back()));
 //    if (!status.ok())

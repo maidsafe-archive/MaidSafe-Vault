@@ -37,8 +37,8 @@ namespace vault {
 namespace test {
 
 typedef boost::asio::ip::udp::endpoint UdpEndpoint;
-const int kNetworkSize(16);
-const int kClientsSize(5);
+const int kNetworkSize(1);
+const int kClientsSize(2);
 
 #ifndef MAIDSAFE_WIN32
 const int kLimitsFiles(2048);
@@ -48,22 +48,6 @@ class VaultTest;
 class CacheHandlerTest;
 class VersionHandlerTest;
 class PmidManagerTest;
-
-class PublicKeyGetter {
- public:
-  PublicKeyGetter() : mutex_() {}
-
-  void operator()(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key,
-                  const std::vector<passport::PublicPmid>& public_pmids);
- private:
-  std::mutex mutex_;
-};
-
-struct KeyChain {
-  explicit KeyChain(size_t size = 1);
-  std::vector<passport::detail::AnmaidToPmid> keys;
-  passport::detail::AnmaidToPmid Add();
-};
 
 class VaultNetwork {
  public:
@@ -104,13 +88,10 @@ class VaultNetwork {
 
   AsioService asio_service_;
   std::mutex mutex_;
-  std::condition_variable bootstrap_condition_, network_up_condition_;
-  bool bootstrap_done_, network_up_;
   std::vector<VaultPtr> vaults_;
   std::vector<ClientPtr> clients_;
-  routing::BootstrapContacts bootstrap_contacts_;
   std::vector<passport::PublicPmid> public_pmids_;
-  KeyChain key_chains_;
+  routing::BootstrapContacts bootstrap_contacts_;
   fs::path vault_dir_;
   size_t network_size_;
 #ifndef MAIDSAFE_WIN32
@@ -137,9 +118,9 @@ class VaultEnvironment : public testing::Environment {
 
   void SetUp() override {
     g_env_.reset(new VaultNetwork());
-    g_env_->SetUp();
     for (int index(0); index < kClientsSize; ++index)
       g_env_->AddClient();
+    g_env_->SetUp();
   }
 
   void TearDown() override {

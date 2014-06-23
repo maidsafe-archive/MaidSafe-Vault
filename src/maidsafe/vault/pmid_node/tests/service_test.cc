@@ -93,7 +93,7 @@ TEST_CASE_METHOD(PmidNodeServiceTest, "pmid node: checking handlers availablity"
     auto integrity_check_request(
              CreateMessage<IntegrityCheckRequestFromDataManagerToPmidNode>(content));
     CHECK_NOTHROW(SingleSendsToSingle(&pmid_node_service_, integrity_check_request,
-                                      routing::SingleSource(NodeId(NodeId::kRandomId)),
+                                      routing::SingleSource(NodeId(NodeId::IdType::kRandomId)),
                                       routing::SingleId(routing_.kNodeId())));
   }
 
@@ -125,7 +125,7 @@ TEST_CASE_METHOD(PmidNodeServiceTest, "pmid node: checking handlers availablity"
              CreateMessage<PmidHealthRequestFromPmidManagerToPmidNode>(nfs_vault::Empty()));
     auto group_source(CreateGroupSource(routing_.kNodeId()));
     CHECK_NOTHROW(SingleSendsToSingle(&pmid_node_service_, health_request,
-                                      routing::SingleSource(NodeId(NodeId::kRandomId)),
+                                      routing::SingleSource(NodeId(NodeId::IdType::kRandomId)),
                                       routing::SingleId(routing_.kNodeId())));
   }
 }

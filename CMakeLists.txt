@@ -80,10 +80,6 @@ set(VaultTestsAllFiles ${VaultSourcesDir}/tests/chunk_store_test.cc
                        ${MaidManagerTestsAllFiles}
                        ${VaultSourcesDir}/tests/db_test.cc)
 
-set(VaultNetworkTestFiles ${VaultSourcesDir}/tests/vault_network.h
-                          ${VaultSourcesDir}/tests/vault_network.cc
-                          ${VaultSourcesDir}/tests/vault_network_test.cc)
-
 set(VaultFunctionalTestFiles ${VaultSourcesDir}/tests/vault_network.h
                              ${VaultSourcesDir}/tests/vault_network.cc
                              ${VaultSourcesDir}/cache_handler/tests/cache_handler_test.cc
@@ -91,11 +87,9 @@ set(VaultFunctionalTestFiles ${VaultSourcesDir}/tests/vault_network.h
                              ${VaultSourcesDir}/pmid_manager/tests/pmid_manager_test.cc
                              ${VaultSourcesDir}/tests/vault_func_test.cc)
 
-list(REMOVE_ITEM VaultTestsAllFiles ${VaultNetworkTestFiles} ${VaultFunctionalTestFiles})
-list(REMOVE_ITEM VaultGTestsAllFiles ${VaultTestsAllFiles} ${VaultNetworkTestFiles}
+list(REMOVE_ITEM VaultTestsAllFiles ${VaultFunctionalTestFiles})
+list(REMOVE_ITEM VaultGTestsAllFiles ${VaultTestsAllFiles}
                                      ${VaultFunctionalTestFiles} ${TestsFunctionalMain})
-list(APPEND VaultNetworkTestFiles ${TestsMain} ${VaultSourcesDir}/tests/tests_utils.h
-                                               ${VaultSourcesDir}/tests/tests_utils.cc )
 list(APPEND VaultFunctionalTestFiles ${TestsFunctionalMain} ${VaultSourcesDir}/tests/tests_utils.h
                                      ${VaultSourcesDir}/tests/tests_utils.cc )
 list(APPEND VaultTestsAllFiles ${TestsMain} ${VaultSourcesDir}/tests/tests_utils.h
@@ -196,12 +190,6 @@ if(MaidsafeTesting)
   target_include_directories(TESTvault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
   target_link_libraries(TESTvault maidsafe_vault maidsafe_test)
 
-  ms_add_executable(TESTvault_network "Tests/Vault" ${VaultNetworkTestFiles})
-  target_include_directories(TESTvault_network PRIVATE ${PROJECT_SOURCE_DIR}/src
-                                                       ${PROJECT_BINARY_DIR}/generated_message_types
-                                                       ${VaultSourcesDir}/tests)
-  target_link_libraries(TESTvault_network maidsafe_vault maidsafe_test)
-
   ms_add_executable(TESTvault_func "Tests/Vault" ${VaultFunctionalTestFiles})
   target_include_directories(TESTvault_func PRIVATE ${PROJECT_SOURCE_DIR}/src
                                                        ${PROJECT_BINARY_DIR}/generated_message_types
@@ -235,7 +223,6 @@ if(MaidsafeTesting)
   ms_add_gtests(TESTvault)
   add_test(NAME Vault_Functional_Tests COMMAND TESTvault_func)
   set_property(TEST Vault_Functional_Tests PROPERTY LABELS Vault Functional)
-  ms_add_gtests(TESTvault_network)
   ms_add_project_experimental()
   ms_test_summary_output()
 endif()
@@ -251,6 +238,6 @@ install(TARGETS vault COMPONENT Apps CONFIGURATIONS Debug RUNTIME DESTINATION bi
 install(TARGETS vault COMPONENT Apps CONFIGURATIONS Release RUNTIME DESTINATION bin)
 
 if(MaidsafeTesting)
-  install(TARGETS test_vault TESTvault TESTvault_network TESTvault_func COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
-  install(TARGETS test_vault TESTvault TESTvault_network TESTvault_func COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
+  install(TARGETS test_vault TESTvault TESTvault_func COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
+  install(TARGETS test_vault TESTvault TESTvault_func COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
 endif()

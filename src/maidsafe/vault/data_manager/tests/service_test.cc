@@ -178,7 +178,7 @@ DataManagerServiceTest::GetUnresolvedActions<DataManager::UnresolvedRemovePmid>(
 TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availability",
                  "[Handler][DataManager][Service][Behavioural]") {
   SECTION("PutRequestFromMaidManagerToDataManager") {
-    NodeId maid_node_id(NodeId::kRandomId), data_name_id;
+    NodeId maid_node_id(NodeId::IdType::kRandomId), data_name_id;
     auto content(CreateContent<PutRequestFromMaidManagerToDataManager::Contents>());
     data_name_id = NodeId(content.data.name.raw_name.string());
     auto put_request(CreateMessage<PutRequestFromMaidManagerToDataManager>(content));
@@ -189,7 +189,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
   }
 
   SECTION("PutResponseFromPmidManagerToDataManager") {
-    NodeId data_name_id, pmid_node_id(NodeId::kRandomId);
+    NodeId data_name_id, pmid_node_id(NodeId::IdType::kRandomId);
     auto content(CreateContent<PutResponseFromPmidManagerToDataManager::Contents>());
     data_name_id = NodeId(content.name.raw_name.string());
     auto group_source(CreateGroupSource(pmid_node_id));
@@ -200,7 +200,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
   }
 
   SECTION("PutFailureFromPmidManagerToDataManager") {
-    NodeId data_name_id, pmid_node_id(NodeId::kRandomId);
+    NodeId data_name_id, pmid_node_id(NodeId::IdType::kRandomId);
     auto content(CreateContent<PutFailureFromPmidManagerToDataManager::Contents>());
     data_name_id = NodeId(content.name.raw_name.string());
     auto group_source(CreateGroupSource(pmid_node_id));
@@ -211,7 +211,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
   }
 
   SECTION("nfs::GetRequestFromMaidNodeToDataManager") {
-    NodeId data_name_id, maid_node_id(NodeId::kRandomId);
+    NodeId data_name_id, maid_node_id(NodeId::IdType::kRandomId);
     auto content(CreateContent<nfs::GetRequestFromMaidNodeToDataManager::Contents>());
     data_name_id = NodeId(content.raw_name.string());
     auto get_request(CreateMessage<nfs::GetRequestFromMaidNodeToDataManager>(content));
@@ -221,7 +221,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
   }
 
   SECTION("nfs::GetRequestFromDataGetterToDataManager") {
-    NodeId data_name_id, maid_node_id(NodeId::kRandomId);
+    NodeId data_name_id, maid_node_id(NodeId::IdType::kRandomId);
     auto content(CreateContent<nfs::GetRequestFromDataGetterToDataManager::Contents>());
     data_name_id = NodeId(content.raw_name.string());
     auto get_request(CreateMessage<nfs::GetRequestFromDataGetterToDataManager>(content));
@@ -231,7 +231,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
   }
 
   SECTION("GetResponseFromPmidNodeToDataManager") {
-    NodeId pmid_node_id(NodeId::kRandomId);
+    NodeId pmid_node_id(NodeId::IdType::kRandomId);
     auto content(CreateContent<GetResponseFromPmidNodeToDataManager::Contents>());
     auto get_response(CreateMessage<GetResponseFromPmidNodeToDataManager>(content));
     auto functor([=](const std::pair<PmidName, GetResponseFromPmidNodeToDataManager::Contents>&) {
@@ -245,7 +245,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
   }
 
   SECTION("GetCachedResponseFromCacheHandlerToDataManager") {
-    NodeId cache_handler_id(NodeId::kRandomId);
+    NodeId cache_handler_id(NodeId::IdType::kRandomId);
     auto content(CreateContent<GetCachedResponseFromCacheHandlerToDataManager::Contents>());
     auto get_cache_response(CreateMessage<GetCachedResponseFromCacheHandlerToDataManager>(content));
     CHECK_NOTHROW(SingleSendsToSingle(&data_manager_service_, get_cache_response,
@@ -254,7 +254,7 @@ TEST_CASE_METHOD(DataManagerServiceTest, "data manager: check handlers availabil
   }
 
   SECTION("DeleteRequestFromMaidManagerToDataManager") {
-    NodeId maid_node_id(NodeId::kRandomId);
+    NodeId maid_node_id(NodeId::IdType::kRandomId);
     auto content(CreateContent<DeleteRequestFromMaidManagerToDataManager::Contents>());
     auto delete_request(CreateMessage<DeleteRequestFromMaidManagerToDataManager>(content));
     auto group_source(CreateGroupSource(maid_node_id));

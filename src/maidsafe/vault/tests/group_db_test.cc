@@ -156,7 +156,7 @@ void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
   EXPECT_THROW(maid_group_db.GetMetadata(maid_name), maidsafe_error);
   maid_group_db.DeleteGroup(maid_name);
   auto metadata = CreateMaidManagerMetadata(maid);
-  GroupKey<MaidName> key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
+  GroupKey<MaidName> key(maid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()),
                          DataTagValue::kMaidValue);
 
   EXPECT_THROW(maid_group_db.GetMetadata(maid_name), maidsafe_error);
@@ -174,8 +174,8 @@ void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
   EXPECT_THROW(maid_group_db.AddGroup(maid_name, metadata), maidsafe_error);
   EXPECT_TRUE(maid_group_db.GetContents(maid_name).kv_pairs.size() == 0U);
 
-  GroupKey<MaidName> unknown_key(MaidName(Identity(NodeId(NodeId::kRandomId).string())),
-                                 Identity(NodeId(NodeId::kRandomId).string()),
+  GroupKey<MaidName> unknown_key(MaidName(Identity(NodeId(NodeId::IdType::kRandomId).string())),
+                                 Identity(NodeId(NodeId::IdType::kRandomId).string()),
                                  DataTagValue::kMaidValue);
   EXPECT_THROW(maid_group_db.GetValue(unknown_key), maidsafe_error);
 
@@ -208,7 +208,7 @@ void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
   // Put many
   std::vector<GroupKey<MaidName>> key_vector;
   for (auto i(0); i < 1000; ++i)
-    key_vector.push_back(GroupKey<MaidName>(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
+    key_vector.push_back(GroupKey<MaidName>(maid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()),
                                             DataTagValue::kMaidValue));
   for (const auto& key_n : key_vector) {
     expected_metadata.PutData(100);
@@ -247,7 +247,7 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
   EXPECT_THROW(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
   pmid_group_db.DeleteGroup(pmid_name);
   auto metadata = CreatePmidManagerMetadata(pmid_name);
-  GroupKey<PmidName> key(pmid_name, Identity(NodeId(NodeId::kRandomId).string()),
+  GroupKey<PmidName> key(pmid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()),
                          DataTagValue::kPmidValue);
   EXPECT_THROW(pmid_group_db.Commit(key, TestPmidGroupDbActionDeleteValue()), maidsafe_error);
   EXPECT_THROW(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
@@ -262,8 +262,8 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
   EXPECT_TRUE(pmid_group_db.GetMetadata(pmid_name) == metadata);
   EXPECT_THROW(pmid_group_db.AddGroup(pmid_name, metadata), maidsafe_error);
   EXPECT_TRUE(pmid_group_db.GetContents(pmid_name).kv_pairs.size() == 0U);
-  GroupKey<PmidName> unknown_key(PmidName(Identity(NodeId(NodeId::kRandomId).string())),
-                                 Identity(NodeId(NodeId::kRandomId).string()),
+  GroupKey<PmidName> unknown_key(PmidName(Identity(NodeId(NodeId::IdType::kRandomId).string())),
+                                 Identity(NodeId(NodeId::IdType::kRandomId).string()),
                                  DataTagValue::kPmidValue);
   EXPECT_THROW(pmid_group_db.GetValue(unknown_key), maidsafe_error);
   EXPECT_THROW(pmid_group_db.GetValue(key), maidsafe_error);
@@ -282,7 +282,7 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
   // Put many
   std::vector<GroupKey<PmidName>> key_vector;
   for (auto i(0); i < 1000; ++i)
-    key_vector.push_back(GroupKey<PmidName>(pmid_name, Identity(NodeId(NodeId::kRandomId).string()),
+    key_vector.push_back(GroupKey<PmidName>(pmid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()),
                                             DataTagValue::kPmidValue));
   for (const auto& key_n : key_vector) {
     expected_metadata.PutData(100);

@@ -138,7 +138,7 @@ TEST_CASE_METHOD(PmidManagerServiceTest,
     auto content(CreateContent<PutFailureFromPmidNodeToPmidManager::Contents>());
     auto put_failure(CreateMessage<PutFailureFromPmidNodeToPmidManager>(content));
     CHECK_NOTHROW(SingleSendsToGroup(&pmid_manager_service_, put_failure,
-                                     routing::SingleSource(NodeId(NodeId::kRandomId)),
+                                     routing::SingleSource(NodeId(NodeId::IdType::kRandomId)),
                                      routing::GroupId(NodeId(pmid_.name()->string()))));
     CHECK(GetUnresolvedActions<PmidManager::UnresolvedDelete>().size() == 0);
     metadata = GetMetadata(PmidName(pmid_.name()));
@@ -167,7 +167,7 @@ TEST_CASE_METHOD(PmidManagerServiceTest,
     auto content(CreateContent<PmidHealthRequestFromMaidManagerToPmidManager::Contents>());
     auto get_pmid_account_request(CreateMessage<PmidHealthRequestFromMaidManagerToPmidManager>(
                                       content));
-    NodeId maid_node(NodeId::kRandomId);
+    NodeId maid_node(NodeId::IdType::kRandomId);
     auto group_source(CreateGroupSource(maid_node));
     CHECK_NOTHROW(GroupSendToGroup(&pmid_manager_service_, get_pmid_account_request, group_source,
                                    routing::GroupId(NodeId(pmid_.name()->string()))));
