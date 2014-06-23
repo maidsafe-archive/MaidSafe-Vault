@@ -207,9 +207,10 @@ void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
 
   // Put many
   std::vector<GroupKey<MaidName>> key_vector;
-  for (auto i(0); i < 1000; ++i)
-    key_vector.push_back(GroupKey<MaidName>(maid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()),
-                                            DataTagValue::kMaidValue));
+  for (auto i(0); i < 1000; ++i) {
+    key_vector.push_back(GroupKey<MaidName>(maid_name,
+        Identity(NodeId(NodeId::IdType::kRandomId).string()), DataTagValue::kMaidValue));
+  }
   for (const auto& key_n : key_vector) {
     expected_metadata.PutData(100);
     maid_group_db.Commit(key_n, TestGroupDbActionPutValue());
@@ -281,9 +282,10 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
 
   // Put many
   std::vector<GroupKey<PmidName>> key_vector;
-  for (auto i(0); i < 1000; ++i)
-    key_vector.push_back(GroupKey<PmidName>(pmid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()),
-                                            DataTagValue::kPmidValue));
+  for (auto i(0); i < 1000; ++i) {
+    key_vector.push_back(GroupKey<PmidName>(pmid_name,
+        Identity(NodeId(NodeId::IdType::kRandomId).string()), DataTagValue::kPmidValue));
+  }
   for (const auto& key_n : key_vector) {
     expected_metadata.PutData(100);
     pmid_group_db.Commit(key_n, TestPmidGroupDbActionPutValue());

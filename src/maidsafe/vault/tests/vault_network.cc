@@ -43,8 +43,8 @@ namespace test {
 std::shared_ptr<VaultNetwork> VaultEnvironment::g_env_ = std::shared_ptr<VaultNetwork>();
 
 VaultNetwork::VaultNetwork()
-    : asio_service_(2), mutex_(), vaults_(), clients_(), public_pmids_(), bootstrap_contacts_(),
-      vault_dir_(fs::unique_path((fs::temp_directory_path()))), network_size_(kNetworkSize)
+    : vaults_(), clients_(), public_pmids_(), bootstrap_contacts_(),
+      vault_dir_(fs::unique_path((fs::temp_directory_path())))
 #ifndef MAIDSAFE_WIN32
       , kUlimitFileSize([]()->long {  // NOLINT
                           long current_size(ulimit(UL_GETFSIZE));  // NOLINT
@@ -54,14 +54,12 @@ VaultNetwork::VaultNetwork()
                         }())
 #endif
 {
-//  for (const auto& key : key_chains_.keys)
-//    public_pmids_.push_back(passport::PublicPmid(key.pmid));
   routing::Parameters::append_local_live_port_endpoint = true;
 }
 
 void VaultNetwork::SetUp() {
   for (size_t index(0); index < kNetworkSize; ++index)
-    EXPECT_TRUE(Add());
+    EXPECT_TRUE(AddVault());
 }
 
 void VaultNetwork::TearDown() {
@@ -78,13 +76,8 @@ void VaultNetwork::TearDown() {
   Sleep(std::chrono::seconds(1));
   for (auto& vault : vaults_)
     vault.reset();
-//   Sleep(std::chrono::seconds(3));
   vaults_.clear();
 
-//   while (vaults_.size() > 0) {
-//     vaults_.erase(vaults_.begin());
-//     Sleep(std::chrono::milliseconds(200));
-//   }
 #ifndef MAIDSAFE_WIN32
   ulimit(UL_SETFSIZE, kUlimitFileSize);
 #endif
@@ -99,7 +92,6 @@ bool VaultNetwork::Create(const passport::detail::Fob<passport::detail::PmidTag>
                   << DebugId(NodeId(pmid.name()->string()));
     vault_manager::VaultConfig vault_config(pmid, vault_root_dir, DiskUsage(1000000000),
                                             bootstrap_contacts_);
-//    vault_config.test_config.public_pmid_list = public_pmids_;
     vaults_.emplace_back(new Vault(vault_config, [](const boost::asio::ip::udp::endpoint&) {}));
     LOG(kSuccess) << "vault joined: " << vaults_.size() << " id: "
                   << DebugId(NodeId(pmid.name()->string()));
@@ -114,7 +106,7 @@ bool VaultNetwork::Create(const passport::detail::Fob<passport::detail::PmidTag>
   return false;
 }
 
-bool VaultNetwork::Add() {
+bool VaultNetwork::AddVault() {
   passport::PmidAndSigner pmid_and_signer(passport::CreatePmidAndSigner());
   auto future(clients_.front()->Put(passport::PublicPmid(pmid_and_signer.first)));
   try {

@@ -58,8 +58,8 @@ class VaultNetwork {
   virtual ~VaultNetwork() {}
   virtual void SetUp();
   virtual void TearDown();
-  bool Add();
 
+  bool AddVault();
   void AddClient();
   void AddClient(const passport::Maid& maid, const routing::BootstrapContacts& bootstrap_contacts);
   void AddClient(const passport::MaidAndSigner& maid_and_signer,
@@ -86,8 +86,6 @@ class VaultNetwork {
   void Bootstrap();
   bool Create(const passport::detail::Fob<passport::detail::PmidTag>& pmid);
 
-  AsioService asio_service_;
-  std::mutex mutex_;
   std::vector<VaultPtr> vaults_;
   std::vector<ClientPtr> clients_;
   std::vector<passport::PublicPmid> public_pmids_;
