@@ -88,14 +88,13 @@ void PmidManagerMetadata::PutData(int32_t size) {
 }
 
 void PmidManagerMetadata::DeleteData(int32_t size) {
-  stored_total_size -= size;
-  --stored_count;
-
-  if ((stored_total_size < 0) || (stored_count < 0)) {
+  if ((stored_total_size < size) || (stored_count < 1)) {
     LOG(kError) << "invalid stored_total_size " << stored_total_size
                 << " or stored_count " << stored_count;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
+  stored_total_size -= size;
+  --stored_count;
 }
 
 void PmidManagerMetadata::HandleLostData(int32_t size) {
