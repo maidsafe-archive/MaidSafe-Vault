@@ -326,6 +326,7 @@ void MaidManagerService::HandlePmidRegistration(
 //  sync_register_pmids_.AddLocalAction(
 //      MaidManager::UnresolvedRegisterPmid(pmid_registration.maid_name(),
 //          ActionMaidManagerRegisterPmid(pmid_registration), routing_.kNodeId()));
+  LOG(kVerbose) << "MaidManagerService::HandlePmidRegistration id: " << message_id;
   DoSync(MaidManager::UnresolvedRegisterPmid(
       MaidManager::MetadataKey(pmid_registration.maid_name()),
       ActionMaidManagerRegisterPmid(pmid_registration, message_id), routing_.kNodeId()));
@@ -463,7 +464,7 @@ void MaidManagerService::HandleSyncedUpdatePmidHealth(
   }
   catch (const maidsafe_error& error) {
     LOG(kWarning) << "MaidManagerService::HandleSyncedUpdatePmidHealth failed";
-    if (error.code() != make_error_code(VaultErrors::no_such_account))
+    if (error.code() != make_error_code(CommonErrors::no_such_element))
       throw;
   }
 }

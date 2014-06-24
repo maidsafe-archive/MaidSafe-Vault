@@ -119,7 +119,30 @@ bool VaultNetwork::AddVault() {
     LOG(kVerbose) << "Failed to store pmid " << error.what();
     return false;
   }
-  return Create(pmid_and_signer.first);
+
+  auto signer_future(clients_.front()->Put(passport::PublicAnpmid(pmid_and_signer.second)));
+  try {
+    signer_future.get();
+  }
+  catch (const std::exception& error) {
+    LOG(kVerbose) << "Failed to store anpmid " << error.what();
+    return false;
+  }
+
+  bool result(Create(pmid_and_signer.first));
+  if (result) {
+    auto register_pmid_future(clients_.front()->RegisterPmid(pmid_and_signer.first));
+    try {
+      register_pmid_future.get();
+      LOG(kVerbose) << "Pmid regsitration succeeded";
+    }
+    catch (const maidsafe_error& error) {
+      LOG(kError) << "Pmid Registration Failed " << boost::diagnostic_information(error);
+      return false;
+    }
+  }
+  Sleep(std::chrono::seconds(2));
+  return true;
 }
 
 void VaultNetwork::AddClient() {
