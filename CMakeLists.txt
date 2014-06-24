@@ -207,7 +207,7 @@ ms_rename_outdated_built_exes()
 include(standard_flags)
 
 if(MSVC AND MaidsafeTesting)
-  set_property(TARGET maidsafe_vault TESTvault TESTvault_network TESTvault_func maidsafe_vault_mal APPEND PROPERTY COMPILE_FLAGS "/bigobj")
+  set_property(TARGET maidsafe_vault TESTvault TESTvault_func maidsafe_vault_mal APPEND PROPERTY COMPILE_FLAGS "/bigobj")
 endif()
 if(MSVC)
   target_compile_options(vault PUBLIC $<$<CONFIG:Release>: /bigobj>)
