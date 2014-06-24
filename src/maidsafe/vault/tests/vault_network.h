@@ -69,7 +69,7 @@ class VaultNetwork {
   Data Get(const typename Data::Name& data_name);
 
   template <typename Messagetype>
-  void Send(size_t sender_index, const Messagetype message) {
+  void Send(size_t sender_index, const Messagetype& message) {
     vaults_[sender_index]->routing_->Send(message);
   }
 
@@ -116,8 +116,6 @@ class VaultEnvironment : public testing::Environment {
 
   void SetUp() override {
     g_env_.reset(new VaultNetwork());
-    for (int index(0); index < kClientsSize; ++index)
-      g_env_->AddClient();
     g_env_->SetUp();
   }
 

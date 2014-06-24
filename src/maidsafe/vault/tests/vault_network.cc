@@ -58,6 +58,9 @@ VaultNetwork::VaultNetwork()
 }
 
 void VaultNetwork::SetUp() {
+  for (int index(0); index < kClientsSize; ++index)
+    AddClient();
+
   for (size_t index(0); index < kNetworkSize; ++index)
     EXPECT_TRUE(AddVault());
 }
@@ -131,7 +134,6 @@ void VaultNetwork::AddClient(const passport::Maid& maid,
 
 void VaultNetwork::AddClient(const passport::MaidAndSigner& maid_and_signer,
                              const routing::BootstrapContacts& bootstrap_contacts) {
-
   clients_.emplace_back(nfs_client::MaidNodeNfs::MakeShared(maid_and_signer, bootstrap_contacts));
 }
 

@@ -45,18 +45,18 @@ class VaultTest : public testing::Test {
   std::shared_ptr<VaultNetwork> env_;
 };
 
-TEST_F(VaultTest, FUNC_PutGetDelete) {
+TEST_F(VaultTest, FUNC_PutGet) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
   LOG(kVerbose) << "Before put";
   try {
-    EXPECT_NO_THROW(GetClients().at(0)->Put(data));
+    EXPECT_NO_THROW(GetClients().front()->Put(data));
     LOG(kVerbose) << "After put";
   }
   catch (...) {
     EXPECT_TRUE(false) << "Failed to put: " << DebugId(NodeId(data.name()->string()));
   }
 
-  auto future(GetClients().at(0)->Get<ImmutableData::Name>(data.name()));
+  auto future(GetClients().front()->Get<ImmutableData::Name>(data.name()));
   try {
     auto retrieved(future.get());
     EXPECT_EQ(retrieved.data(), data.data());
@@ -64,22 +64,10 @@ TEST_F(VaultTest, FUNC_PutGetDelete) {
   catch (...) {
     EXPECT_TRUE(false) << "Failed to retrieve: " << DebugId(NodeId(data.name()->string()));
   }
-
-  Sleep(std::chrono::seconds(3));
-  GetClients().at(0)->Delete<ImmutableData::Name>(data.name());
-  Sleep(std::chrono::seconds(3));
-
-  LOG(kVerbose) << "After delete:";
-
-  routing::Parameters::caching = false;
-
-  EXPECT_THROW(env_->Get<ImmutableData>(data.name()), std::exception)
-                   << "should have failed retreiveing data: "
-                   << DebugId(NodeId(data.name()->string()));
-  LOG(kVerbose) << "Put Get Delete done.";
 }
 
 TEST_F(VaultTest, FUNC_MultiplePuts) {
+  routing::Parameters::caching = true;
   const size_t kIterations(100);
   std::vector<ImmutableData> chunks;
   for (auto index(kIterations); index > 0; --index)
@@ -87,7 +75,7 @@ TEST_F(VaultTest, FUNC_MultiplePuts) {
 
   int index(0);
   for (const auto& chunk : chunks) {
-    EXPECT_NO_THROW(GetClients().at(0)->Put(chunk))
+    EXPECT_NO_THROW(GetClients().front()->Put(chunk))
                         << "Store failure " << DebugId(NodeId(chunk.name()->string()));
     LOG(kVerbose) << DebugId(NodeId(chunk.name()->string())) << " stored: " << index++;
   }
@@ -95,8 +83,8 @@ TEST_F(VaultTest, FUNC_MultiplePuts) {
   std::vector<boost::future<ImmutableData>> get_futures;
   for (const auto& chunk : chunks) {
     get_futures.emplace_back(
-        GetClients().at(0)->Get<ImmutableData::Name>(chunk.name(),
-                                                           std::chrono::seconds(kIterations)));
+        GetClients().front()->Get<ImmutableData::Name>(chunk.name(),
+                                                     std::chrono::seconds(kIterations * 2)));
   }
 
   for (size_t index(0); index < kIterations; ++index) {
@@ -117,7 +105,7 @@ TEST_F(VaultTest, FUNC_MultiplePuts) {
   std::vector<boost::future<ImmutableData>> no_cache_get_futures;
   for (const auto& chunk : chunks) {
     no_cache_get_futures.emplace_back(
-        GetClients().at(0)->Get<ImmutableData::Name>(chunk.name(),
+        GetClients().front()->Get<ImmutableData::Name>(chunk.name(),
                                                            std::chrono::seconds(kIterations)));
   }
 
@@ -132,7 +120,6 @@ TEST_F(VaultTest, FUNC_MultiplePuts) {
                          << " because: " << boost::diagnostic_information(ex) << " "  << index;
     }
   }
-
   LOG(kVerbose) << "Multiple puts is finished successfully";
 }
 
@@ -141,17 +128,18 @@ TEST_F(VaultTest, FUNC_FailingGet) {
   EXPECT_THROW(env_->Get<ImmutableData>(data.name()), std::exception) << "must have failed";
 }
 
-TEST_F(VaultTest, FUNC_PutMultipleCopies) {
+// The test below is disbaled as its proper operation assumes a delete funcion is in place
+TEST_F(VaultTest, DISABLED_FUNC_PutMultipleCopies) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
   boost::future<ImmutableData> future;
-  GetClients().at(0)->Put(data);
+  GetClients().front()->Put(data);
   Sleep(std::chrono::seconds(2));
 
-  GetClients().at(1)->Put(data);
+  GetClients().back()->Put(data);
   Sleep(std::chrono::seconds(2));
 
   {
-    future = GetClients().at(0)->Get<ImmutableData::Name>(data.name());
+    future = GetClients().front()->Get<ImmutableData::Name>(data.name());
     try {
       auto retrieved(future.get());
       EXPECT_EQ(retrieved.data(), data.data());
@@ -164,7 +152,7 @@ TEST_F(VaultTest, FUNC_PutMultipleCopies) {
   LOG(kVerbose) << "1st successful put";
 
   {
-    future = GetClients().at(1)->Get<ImmutableData::Name>(data.name());
+    future = GetClients().back()->Get<ImmutableData::Name>(data.name());
     try {
       auto retrieved(future.get());
       EXPECT_EQ(retrieved.data(), data.data());
@@ -176,7 +164,7 @@ TEST_F(VaultTest, FUNC_PutMultipleCopies) {
 
   LOG(kVerbose) << "2nd successful put";
 
-  GetClients().at(0)->Delete<ImmutableData::Name>(data.name());
+  GetClients().front()->Delete<ImmutableData::Name>(data.name());
   Sleep(std::chrono::seconds(2));
 
   LOG(kVerbose) << "1st Delete the chunk";
@@ -191,7 +179,7 @@ TEST_F(VaultTest, FUNC_PutMultipleCopies) {
 
   LOG(kVerbose) << "Chunk still exist as expected";
 
-  GetClients().at(1)->Delete<ImmutableData::Name>(data.name());
+  GetClients().back()->Delete<ImmutableData::Name>(data.name());
   Sleep(std::chrono::seconds(2));
 
   LOG(kVerbose) << "2nd Delete the chunk";
@@ -202,6 +190,7 @@ TEST_F(VaultTest, FUNC_PutMultipleCopies) {
                    << "Should have failed to retreive";
 
   LOG(kVerbose) << "PutMultipleCopies Succeeds";
+  routing::Parameters::caching = true;
 }
 
 TEST_F(VaultTest, FUNC_MultipleClientsPut) {
