@@ -246,8 +246,13 @@ void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::Messa
     // So the task will be cleaned out before the time-out response from responder
     // arrived. The policy shall change to keep timer muted instead of throwing.
     // BEFORE_RELEASE handle
-    LOG(kError) << "Caught an error when received a get response "
-                << boost::diagnostic_information(error);
+    if (error.code() == make_error_code(CommonErrors::no_such_element)) {
+      LOG(kInfo) << "DataManagerService::HandleGetResponse task has been removed due to timed out";
+    } else {
+      LOG(kError) << "DataManagerService::HandleGetResponse encountered unknown error : "
+                  << boost::diagnostic_information(error);
+      throw error;
+    }
   }
 }
 

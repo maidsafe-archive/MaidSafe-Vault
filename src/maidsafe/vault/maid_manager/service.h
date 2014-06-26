@@ -494,8 +494,13 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
             routing_.kNodeId()));
         return;
       } catch(const maidsafe_error& error) {
-        LOG(kInfo) << "MaidManagerService::HandlePut first PutRequest, passing to DataManager: "
-                   << boost::diagnostic_information(error);
+        if (error.code() == make_error_code(CommonErrors::no_such_element)) {
+          LOG(kInfo) << "MaidManagerService::HandlePut first PutRequest, passing to DataManager: ";
+        } else {
+          LOG(kError) << "MaidManagerService::HandlePut encountered unknown error : "
+                      << boost::diagnostic_information(error);
+          throw error;
+        }
       }
       dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
 //    } else {

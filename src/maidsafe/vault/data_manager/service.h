@@ -644,11 +644,10 @@ std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name&
     auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue)));
     online_pmids = std::move(value.online_pmids());
   } catch (const maidsafe_error& error) {
-    LOG(kWarning) << "Getting " << HexSubstr(data_name.value)
-                  << " causes a maidsafe_error " << boost::diagnostic_information(error);
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
-      LOG(kError) << "db error";
-      throw;  // For db errors
+      LOG(kError) << "DataManagerService::GetOnlinePmids encountered unknown error "
+                  << boost::diagnostic_information(error);
+      throw error;  // For db errors
     }
     // TODO(Fraser#5#): 2013-10-03 - Request for non-existent data should possibly generate an alert
     LOG(kWarning) << "Entry for " << HexSubstr(data_name.value) << " doesn't exist.";

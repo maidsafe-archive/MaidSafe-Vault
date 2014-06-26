@@ -222,10 +222,11 @@ std::unique_ptr<typename Persona::Value> GroupDb<Persona>::Commit(
   try {
     value.reset(new Value(Get(key, it->second.first)));
   } catch (const maidsafe_error& error) {
-    LOG(kError) << "GroupDb<Persona>::Commit encountered error "
-                << boost::diagnostic_information(error);
-    if (error.code() != make_error_code(CommonErrors::no_such_element))
+    if (error.code() != make_error_code(CommonErrors::no_such_element)) {
+      LOG(kInfo) << "GroupDb<Persona>::Commit encountered unknown error : "
+                 << boost::diagnostic_information(error);
       throw error;  // throw only for db errors
+    }
   }
 
   try {
@@ -245,8 +246,11 @@ std::unique_ptr<typename Persona::Value> GroupDb<Persona>::Commit(
       }
     }
   } catch (const maidsafe_error& error) {
-    LOG(kError) << "GroupDb<Persona>::Commit encountered error "
-                << boost::diagnostic_information(error);
+    if (error.code() == make_error_code(VaultErrors::data_already_exists))
+      LOG(kWarning) << "GroupDb<Persona>::Commit data already exists";
+    else
+      LOG(kError) << "GroupDb<Persona>::Commit encountered unknown error "
+                  << boost::diagnostic_information(error);
     throw error;
   }
   return nullptr;
@@ -335,10 +339,11 @@ void GroupDb<Persona>::ApplyTransfer(const Contents& contents) {
   typename GroupMap::iterator itr;
   try {
     itr = FindGroup(contents.group_name);
+    LOG(kWarning) << "trying to transfer part of an already existed account";
   } catch(...) {
     // During the transfer, there is chance one account's actions scattered across different vaults
     // this will incur multiple AddGroupToMap attempts for the same account
-    LOG(kWarning) << "trying to transfer part of an already existed account";
+    LOG(kInfo) << "Creating a new account";
     itr = AddGroupToMap(contents.group_name, contents.metadata);
   }
   for (const auto& kv_pair : contents.kv_pairs) {
@@ -402,6 +407,9 @@ void GroupDb<Persona>::DeleteGroupEntries(typename GroupMap::iterator it) {
 // throws
 template <typename Persona>
 typename GroupDb<Persona>::Value GroupDb<Persona>::Get(const Key& key, const GroupId& group_id) {
+  LOG(kVerbose) << "GroupDb<Persona>::Get group_id : " << group_id
+                << " group_name : " << HexSubstr(key.group_name()->string())
+                << " name : " << DebugId(key.name);
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
   std::string value_string;
@@ -411,7 +419,9 @@ typename GroupDb<Persona>::Value GroupDb<Persona>::Get(const Key& key, const Gro
     assert(!value_string.empty());
     return Value(value_string);
   } else if (status.IsNotFound()) {
-    LOG(kWarning) << "cann't find such element for get, throwing error";
+    LOG(kError) << "cann't find such element for get, group_id : " << group_id
+                << " group_name : " << HexSubstr(key.group_name()->string())
+                << " name : " << DebugId(key.name);
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
   }
   LOG(kError) << "unknown error";
@@ -420,11 +430,17 @@ typename GroupDb<Persona>::Value GroupDb<Persona>::Get(const Key& key, const Gro
 
 template <typename Persona>
 void GroupDb<Persona>::Put(const KvPair& key_value_pair, const GroupId& group_id) {
+  LOG(kVerbose) << "GroupDb<Persona>::Put group_id : " << group_id
+                << " group_name : " << HexSubstr(key_value_pair.first.group_name()->string())
+                << " name : " << DebugId(key_value_pair.first.name);
   leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
                                        MakeLevelDbKey(group_id, key_value_pair.first),
                                        key_value_pair.second.Serialise()));
-  if (!status.ok())
+  if (!status.ok()) {
+    LOG(kError) << "GroupDb<Persona>::Put failure in put group_id : " << group_id
+                << "key_value->key : " << HexSubstr(key_value_pair.first.group_name()->string());
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
+  }
 }
 
 template <typename Persona>
