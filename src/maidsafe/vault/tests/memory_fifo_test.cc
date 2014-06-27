@@ -171,7 +171,7 @@ TEST_CASE_METHOD(MemoryFIFOTest, "FifoRepeatedlyStoreUsingSameKey", "[Behavioura
   REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key));
   REQUIRE(value == recovered);
 
-  uint32_t events(RandomUint32() % (2 * size));
+  uint32_t events((RandomUint32() % (2 * size)) + 10);
   for (uint32_t i = 0; i != events; ++i) {
     last_value = NonEmptyString(RandomAlphaNumericString((RandomUint32() % size) + 1));
     auto async = std::async(std::launch::async,
@@ -190,7 +190,7 @@ TEST_CASE_METHOD(MemoryFIFOTest, "RandomAsync", "[Behavioural]") {
   typedef KeyValueContainer::value_type value_type;
 
   KeyValueContainer key_value_pairs;
-  uint32_t events(RandomUint32() % 500);
+  uint32_t events((RandomUint32() % 400) + 100);
   std::vector<std::future<void>> future_stores, future_deletes;
   std::vector<std::future<NonEmptyString>> future_gets;
 
