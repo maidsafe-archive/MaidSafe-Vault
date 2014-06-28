@@ -26,8 +26,7 @@
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-
-#include "maidsafe/passport/types.h"
+#include "maidsafe/passport/passport.h"
 
 namespace maidsafe {
 
@@ -40,28 +39,13 @@ class VaultTest : public testing::Test {
   VaultTest()
       : kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
         vault_root_directory_(*kTestRoot_ / RandomAlphaNumericString(8)),
-        pmid_(MakePmid()),
+        pmid_(passport::CreatePmidAndSigner().first),
         on_new_bootstrap_endpoint_([](boost::asio::ip::udp::endpoint /*endpoint*/) {}),
         vault_() {
     boost::filesystem::create_directory(vault_root_directory_);
   }
 
  protected:
-  passport::Maid MakeMaid() {
-    passport::Anmaid anmaid;
-    return passport::Maid(anmaid);
-  }
-
-  passport::Pmid MakePmid() {
-    passport::Anpmid anpmid;
-    return passport::Pmid(anpmid);
-  }
-
-  passport::PublicPmid MakePublicPmid() {
-    passport::Pmid pmid(MakePmid());
-    return passport::PublicPmid(pmid);
-  }
-
   const maidsafe::test::TestPath kTestRoot_;
   boost::filesystem::path vault_root_directory_;
   passport::Pmid pmid_;
@@ -71,7 +55,7 @@ class VaultTest : public testing::Test {
 
 TEST_F(VaultTest, BEH_Constructor) {
   std::vector<passport::PublicPmid> public_pmids_from_file;
-  public_pmids_from_file.push_back(MakePublicPmid());
+  public_pmids_from_file.push_back(passport::PublicPmid(passport::CreatePmidAndSigner().first));
   routing::BootstrapContacts bootstrap_contacts;
   bootstrap_contacts.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(),
                                                           (RandomUint32() % 64511) + 2025));

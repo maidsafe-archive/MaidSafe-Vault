@@ -19,7 +19,7 @@
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/asio_service.h"
-
+#include "maidsafe/passport/passport.h"
 #include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/vault/version_handler/service.h"
@@ -41,7 +41,7 @@ typedef StructuredDataVersions::VersionName VersionName;
 class VersionHandlerServiceTest {
  public:
   VersionHandlerServiceTest() :
-      pmid_(MakePmid()),
+      pmid_(passport::CreatePmidAndSigner().first),
       kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
       vault_root_dir_(*kTestRoot_),
       routing_(pmid_),

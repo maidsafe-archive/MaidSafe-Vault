@@ -91,9 +91,9 @@ list(REMOVE_ITEM VaultTestsAllFiles ${VaultFunctionalTestFiles})
 list(REMOVE_ITEM VaultGTestsAllFiles ${VaultTestsAllFiles}
                                      ${VaultFunctionalTestFiles} ${TestsFunctionalMain})
 list(APPEND VaultFunctionalTestFiles ${TestsFunctionalMain} ${VaultSourcesDir}/tests/tests_utils.h
-                                     ${VaultSourcesDir}/tests/tests_utils.cc )
+                                     ${VaultSourcesDir}/tests/tests_utils.cc)
 list(APPEND VaultTestsAllFiles ${TestsMain} ${VaultSourcesDir}/tests/tests_utils.h
-                                            ${VaultSourcesDir}/tests/tests_utils.cc )
+                                            ${VaultSourcesDir}/tests/tests_utils.cc)
 
 
 #==================================================================================================#

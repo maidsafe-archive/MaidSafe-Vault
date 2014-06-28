@@ -18,19 +18,14 @@
 
 #include "maidsafe/vault/group_db.h"
 
-#include "boost/progress.hpp"
-
 #include "leveldb/db.h"
 #include "leveldb/options.h"
-
 #include "leveldb/status.h"
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-
-#include "maidsafe/passport/types.h"
-
+#include "maidsafe/passport/passport.h"
 #include "maidsafe/nfs/vault/pmid_registration.h"
 
 #include "maidsafe/vault/group_key.h"
@@ -56,7 +51,7 @@ PmidManagerMetadata CreatePmidManagerMetadata(const PmidName& pmid_name) {
 MaidManagerMetadata CreateMaidManagerMetadata(const passport::Maid& maid) {
   std::vector<PmidTotals> pmid_totals_vector;
   for (auto i(0); i != 1; ++i) {
-    auto pmid(MakePmid());
+    auto pmid(passport::CreatePmidAndSigner().first);
     auto pmid_metadata(CreatePmidManagerMetadata(PmidName(pmid.name())));
     nfs_vault::PmidRegistration pmid_registration(maid, pmid, false);
     PmidTotals pmid_totals(pmid_registration.Serialise(), pmid_metadata);
@@ -151,7 +146,7 @@ void RunDbTestInParallel(int thread_count, std::function<void()> functor) {
 }
 
 void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
-  auto maid(MakeMaid());
+  auto maid(passport::CreateMaidAndSigner().first);
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
   EXPECT_THROW(maid_group_db.GetMetadata(maid_name), maidsafe_error);
   maid_group_db.DeleteGroup(maid_name);
@@ -243,7 +238,7 @@ void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
 }
 
 void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
-  auto pmid(MakePmid());
+  auto pmid(passport::CreatePmidAndSigner().first);
   passport::PublicPmid::Name pmid_name(PmidName(pmid.name()));
   EXPECT_THROW(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
   pmid_group_db.DeleteGroup(pmid_name);

@@ -19,9 +19,8 @@
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/asio_service.h"
-
+#include "maidsafe/passport/passport.h"
 #include "maidsafe/routing/routing_api.h"
-
 #include "maidsafe/nfs/client/data_getter.h"
 
 #include "maidsafe/vault/data_manager/service.h"
@@ -33,11 +32,10 @@ namespace vault {
 
 namespace test {
 
-
 class DataManagerServiceTest {
  public:
   DataManagerServiceTest() :
-      pmid_(MakePmid()),
+      pmid_(passport::CreatePmidAndSigner().first),
       kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
       vault_root_dir_(*kTestRoot_),
       routing_(pmid_),

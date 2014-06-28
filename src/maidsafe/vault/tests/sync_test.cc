@@ -33,7 +33,7 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/passport/types.h"
+#include "maidsafe/passport/passport.h"
 
 #include "maidsafe/nfs/vault/pmid_registration.h"
 #include "maidsafe/routing/parameters.h"
@@ -91,7 +91,7 @@ struct PersonaNode {
 std::vector<MaidManager::Key> CreateKeys(int count, int group_count = 20) {
   std::vector<passport::PublicMaid::Name> group_vector;
   for (auto i(0); i < group_count; ++i) {
-    auto maid(MakeMaid());
+    auto maid(passport::CreateMaidAndSigner().first);
     passport::PublicMaid::Name maid_name(MaidName(maid.name()));
     group_vector.push_back(maid_name);
   }
@@ -118,7 +118,7 @@ TEST(SyncTest, BEH_Constructor) {
 
 TEST(SyncTest, BEH_SingleAction) {
   typedef std::unique_ptr<PersonaNode<MaidManager::UnresolvedPut>> PersonaNodePtr;
-  auto maid(MakeMaid());
+  auto maid(passport::CreateMaidAndSigner().first);
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
   std::vector<PersonaNodePtr> persona_nodes(routing::Parameters::group_size);
   std::generate(std::begin(persona_nodes), std::end(persona_nodes),
@@ -150,7 +150,7 @@ TEST(SyncTest, BEH_SingleAction) {
 }
 
 TEST(SyncTest, BEH_SingleActionRepeatedMessages) {
-  auto maid(MakeMaid());
+  auto maid(passport::CreateMaidAndSigner().first);
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
   typedef std::unique_ptr<PersonaNode<MaidManager::UnresolvedPut>> PersonaNodePtr;
   std::vector<PersonaNodePtr> persona_nodes(routing::Parameters::group_size);
@@ -188,7 +188,7 @@ TEST(SyncTest, BEH_SingleActionRepeatedMessages) {
 }
 
 TEST(SyncTest, BEH_TwoActionSameKey) {
-  auto maid(MakeMaid());
+  auto maid(passport::CreateMaidAndSigner().first);
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
   typedef std::unique_ptr<PersonaNode<MaidManager::UnresolvedPut>> PersonaNodePtr;
   std::vector<PersonaNodePtr> persona_nodes(routing::Parameters::group_size);
@@ -220,7 +220,7 @@ TEST(SyncTest, BEH_TwoActionSameKey) {
 }
 
 TEST(SyncTest, BEH_MultipleSequentialAction) {
-  auto maid(MakeMaid());
+  auto maid(passport::CreateMaidAndSigner().first);
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
   typedef std::unique_ptr<PersonaNode<MaidManager::UnresolvedPut>> PersonaNodePtr;
   std::vector<PersonaNodePtr> persona_nodes(routing::Parameters::group_size);
@@ -256,7 +256,7 @@ TEST(SyncTest, BEH_MultipleSequentialAction) {
 
 TEST(SyncTest, BEH_MultipleRandomAction) {
   const int kActionCount(500);
-  auto maid(MakeMaid());
+  auto maid(passport::CreateMaidAndSigner().first);
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
   typedef std::unique_ptr<PersonaNode<MaidManager::UnresolvedPut>> PersonaNodePtr;
   std::vector<PersonaNodePtr> persona_nodes(routing::Parameters::group_size);

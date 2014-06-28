@@ -39,14 +39,10 @@ namespace vault {
 
 namespace test {
 
-static const size_t kTestChunkSize = 2U << 10;
+static const size_t kTestChunkSize = 2048U;
 static const size_t kAverageChunksStored = 1000;
 
-passport::Maid MakeMaid();
-passport::Pmid MakePmid();
-passport::PublicPmid MakePublicPmid();
 routing::NodeInfo MakeNodeInfo(const passport::Pmid& pmid);
-
 
 template <typename ContentType>
 ContentType CreateContent() {

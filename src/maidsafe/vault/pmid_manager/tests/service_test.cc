@@ -18,7 +18,7 @@
 */
 
 #include "maidsafe/common/test.h"
-
+#include "maidsafe/passport/passport.h"
 #include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/unresolved_action.h"
@@ -34,12 +34,12 @@ namespace test {
 
 class PmidManagerServiceTest {
  public:
-  PmidManagerServiceTest() :
-      pmid_(MakePmid()),
-      kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
-      vault_root_dir_(*kTestRoot_),
-      routing_(pmid_),
-      pmid_manager_service_(pmid_, routing_, vault_root_dir_) {}
+  PmidManagerServiceTest()
+      : pmid_(passport::CreatePmidAndSigner().first),
+        kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
+        vault_root_dir_(*kTestRoot_),
+        routing_(pmid_),
+        pmid_manager_service_(pmid_, routing_, vault_root_dir_) {}
 
   template <typename UnresolvedActionType>
   std::vector<std::unique_ptr<UnresolvedActionType>> GetUnresolvedActions();

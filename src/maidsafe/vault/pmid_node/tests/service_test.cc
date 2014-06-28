@@ -19,7 +19,7 @@
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/asio_service.h"
-
+#include "maidsafe/passport/passport.h"
 #include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/vault/pmid_node/service.h"
@@ -32,11 +32,10 @@ namespace vault {
 
 namespace test {
 
-
 class PmidNodeServiceTest {
  public:
   PmidNodeServiceTest() :
-      pmid_(MakePmid()),
+      pmid_(passport::CreatePmidAndSigner().first),
       kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
       vault_root_dir_(*kTestRoot_/* / RandomAlphaNumericString(8)*/),
       routing_(pmid_),

@@ -17,11 +17,13 @@
     use of the MaidSafe Software.
 */
 
+#include "boost/filesystem.hpp"
+
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/asio_service.h"
-
+#include "maidsafe/passport/passport.h"
 #include "maidsafe/routing/routing_api.h"
-#include "boost/filesystem.hpp"
+
 #include "maidsafe/vault/cache_handler/service.h"
 #include "maidsafe/vault/tests/tests_utils.h"
 
@@ -38,7 +40,7 @@ class CacheHandlerServiceTest {
   CacheHandlerServiceTest()
       : kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
         vault_root_dir_(*kTestRoot_ / RandomAlphaNumericString(8)),
-        routing_(MakePmid()),
+        routing_(passport::CreatePmidAndSigner().first),
         cache_handler_service_(routing_, vault_root_dir_),
         asio_service_(2) {
     boost::filesystem::create_directory(vault_root_dir_);

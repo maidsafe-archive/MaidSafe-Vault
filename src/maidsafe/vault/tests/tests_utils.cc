@@ -25,21 +25,6 @@ namespace vault {
 
 namespace test {
 
-passport::Maid MakeMaid() {
-  passport::Anmaid anmaid;
-  return passport::Maid(anmaid);
-}
-
-passport::Pmid MakePmid() {
-  passport::Anpmid anpmid;
-  return passport::Pmid(anpmid);
-}
-
-passport::PublicPmid MakePublicPmid() {
-  passport::Pmid pmid(MakePmid());
-  return passport::PublicPmid(pmid);
-}
-
 routing::NodeInfo MakeNodeInfo(const passport::Pmid& pmid) {
   routing::NodeInfo node;
   node.node_id = NodeId(pmid.name()->string());
