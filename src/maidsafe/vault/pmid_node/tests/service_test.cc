@@ -82,7 +82,7 @@ TEST_F(PmidNodeServiceTest, BEH_GetRequestFromDataManagerToPmidNode) {
         routing::SingleId(routing_.kNodeId())));
 }
 
-TEST_F(PmidNodeServiceTest, IntegrityCheckRequestFromDataManagerToPmidNode) {
+TEST_F(PmidNodeServiceTest, BEH_IntegrityCheckRequestFromDataManagerToPmidNode) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   NonEmptyString random_string(RandomString(64));
   Store(data);

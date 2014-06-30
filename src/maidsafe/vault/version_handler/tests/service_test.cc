@@ -108,7 +108,7 @@ void VersionHandlerServiceTest::SendSync<VersionHandler::UnresolvedDeleteBranchU
       unresolved_actions, group_source);
 }
 
-TEST_F(VersionHandlerServiceTest, GetVersionsRequestFromMaidNodeToVersionHandler) {
+TEST_F(VersionHandlerServiceTest, BEH_GetVersionsRequestFromMaidNodeToVersionHandler) {
   routing::SingleSource maid_node((NodeId(NodeId::IdType::kRandomId)));
   routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
   auto content(CreateContent<nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Contents>());
@@ -117,7 +117,7 @@ TEST_F(VersionHandlerServiceTest, GetVersionsRequestFromMaidNodeToVersionHandler
       SingleSendsToGroup(&version_handler_service_, get_version, maid_node, version_group_id));
 }
 
-TEST_F(VersionHandlerServiceTest, GetVersionsRequestFromDataGetterToVersionHandler) {
+TEST_F(VersionHandlerServiceTest, BEH_GetVersionsRequestFromDataGetterToVersionHandler) {
   routing::SingleSource data_getter_id((NodeId(NodeId::IdType::kRandomId)));
   routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
   auto content(CreateContent<nfs::GetVersionsRequestFromDataGetterToVersionHandler::Contents>());
@@ -126,7 +126,7 @@ TEST_F(VersionHandlerServiceTest, GetVersionsRequestFromDataGetterToVersionHandl
       SingleSendsToGroup(&version_handler_service_, get_version, data_getter_id, version_group_id));
 }
 
-TEST_F(VersionHandlerServiceTest, GetBranchRequestFromMaidNodeToVersionHandler) {
+TEST_F(VersionHandlerServiceTest, BEH_GetBranchRequestFromMaidNodeToVersionHandler) {
   routing::SingleSource maid_node((NodeId(NodeId::IdType::kRandomId)));
   routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
   auto content(CreateContent<nfs::GetBranchRequestFromMaidNodeToVersionHandler::Contents>());
@@ -135,7 +135,7 @@ TEST_F(VersionHandlerServiceTest, GetBranchRequestFromMaidNodeToVersionHandler) 
       SingleSendsToGroup(&version_handler_service_, get_branch, maid_node, version_group_id));
 }
 
-TEST_F(VersionHandlerServiceTest, GetBranchRequestFromDataGetterToVersionHandler) {
+TEST_F(VersionHandlerServiceTest, BEH_GetBranchRequestFromDataGetterToVersionHandler) {
   routing::SingleSource data_getter_id((NodeId(NodeId::IdType::kRandomId)));
   routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
   auto content(CreateContent<nfs::GetBranchRequestFromDataGetterToVersionHandler::Contents>());
@@ -144,7 +144,7 @@ TEST_F(VersionHandlerServiceTest, GetBranchRequestFromDataGetterToVersionHandler
       SingleSendsToGroup(&version_handler_service_, get_branch, data_getter_id, version_group_id));
 }
 
-TEST_F(VersionHandlerServiceTest, CreateVersioTreenRequestFromMaidManagerToVersionHandler) {
+TEST_F(VersionHandlerServiceTest, BEH_CreateVersioTreenRequestFromMaidManagerToVersionHandler) {
   auto group_source(CreateGroupSource((NodeId(NodeId::IdType::kRandomId))));
   routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
   auto content(CreateContent<CreateVersionTreeRequestFromMaidManagerToVersionHandler::Contents>());
@@ -154,7 +154,7 @@ TEST_F(VersionHandlerServiceTest, CreateVersioTreenRequestFromMaidManagerToVersi
       GroupSendToGroup(&version_handler_service_, create_version, group_source, version_group_id));
 }
 
-TEST_F(VersionHandlerServiceTest, PutVersionRequestFromMaidManagerToVersionHandler) {
+TEST_F(VersionHandlerServiceTest, BEH_PutVersionRequestFromMaidManagerToVersionHandler) {
   auto group_source(CreateGroupSource((NodeId(NodeId::IdType::kRandomId))));
   routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
   auto content(CreateContent<PutVersionRequestFromMaidManagerToVersionHandler::Contents>());
@@ -163,7 +163,7 @@ TEST_F(VersionHandlerServiceTest, PutVersionRequestFromMaidManagerToVersionHandl
       GroupSendToGroup(&version_handler_service_, put_version, group_source, version_group_id));
 }
 
-TEST_F(VersionHandlerServiceTest, DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler) {
+TEST_F(VersionHandlerServiceTest, BEH_DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler) {
   auto group_source(CreateGroupSource((NodeId(NodeId::IdType::kRandomId))));
   routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
   auto content(
@@ -174,7 +174,7 @@ TEST_F(VersionHandlerServiceTest, DeleteBranchUntilForkRequestFromMaidManagerToV
       GroupSendToGroup(&version_handler_service_, delete_branch, group_source, version_group_id));
 }
 
-TEST_F(VersionHandlerServiceTest, SynchroniseFromVersionHandlerToVersionHandler) {
+TEST_F(VersionHandlerServiceTest, BEH_SynchroniseFromVersionHandlerToVersionHandler) {
   NodeId group_id(NodeId::IdType::kRandomId);
   auto group_source(CreateGroupSource(group_id));
   routing::GroupId version_group_id(group_id);
@@ -183,7 +183,7 @@ TEST_F(VersionHandlerServiceTest, SynchroniseFromVersionHandlerToVersionHandler)
   EXPECT_ANY_THROW(GroupSendToGroup(&version_handler_service_, sync, group_source, version_group_id));
 }
 
-TEST_F(VersionHandlerServiceTest, CreateVersionTree) {
+TEST_F(VersionHandlerServiceTest, BEH_CreateVersionTree) {
   NodeId sender_id(NodeId::IdType::kRandomId);
   Identity originator(NodeId(NodeId::IdType::kRandomId).string());
   auto content(CreateContent<nfs_vault::VersionTreeCreation>());
@@ -199,7 +199,7 @@ TEST_F(VersionHandlerServiceTest, CreateVersionTree) {
   EXPECT_NO_THROW(Get(key));
 }
 
-TEST_F(VersionHandlerServiceTest, PutVersion) {
+TEST_F(VersionHandlerServiceTest, BEH_PutVersion) {
   NodeId sender_id(NodeId::IdType::kRandomId);
   Identity originator(NodeId(NodeId::IdType::kRandomId).string());
   auto content(CreateContent<nfs_vault::DataNameOldNewVersion>());
@@ -217,7 +217,7 @@ TEST_F(VersionHandlerServiceTest, PutVersion) {
   EXPECT_NO_THROW(Get(key));
 }
 
-TEST_F(VersionHandlerServiceTest, DeleteBranchUntilFork) {
+TEST_F(VersionHandlerServiceTest, BEH_DeleteBranchUntilFork) {
   NodeId sender_id(NodeId::IdType::kRandomId);
   Identity originator(NodeId(NodeId::IdType::kRandomId).string());
   VersionHandler::Key key(Identity(RandomString(64)), ImmutableData::Tag::kValue);

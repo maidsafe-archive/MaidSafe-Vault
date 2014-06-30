@@ -34,7 +34,6 @@ namespace vault {
 
 namespace test {
 
-
 class CacheHandlerServiceTest : public testing::Test {
  public:
   CacheHandlerServiceTest()
@@ -83,7 +82,7 @@ TEST_F(CacheHandlerServiceTest, BEH_LongTermPutGet) {
 }
 
 
-TEST_F(CacheHandlerServiceTest, GetCachedResponseFromCacheHandlerToDataGetter) {
+TEST_F(CacheHandlerServiceTest, BEH_GetCachedResponseFromCacheHandlerToDataGetter) {
   routing::SingleId maid_node((NodeId(NodeId::IdType::kRandomId)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   nfs_client::DataNameAndContentOrReturnCode content(data);
@@ -93,7 +92,7 @@ TEST_F(CacheHandlerServiceTest, GetCachedResponseFromCacheHandlerToDataGetter) {
   EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
 }
 
-TEST_F(CacheHandlerServiceTest, GetResponseFromDataManagerToDataGetter) {
+TEST_F(CacheHandlerServiceTest, BEH_GetResponseFromDataManagerToDataGetter) {
   routing::SingleId maid_node((NodeId(NodeId::IdType::kRandomId)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   nfs_client::DataNameAndContentOrReturnCode content(data);
@@ -103,7 +102,7 @@ TEST_F(CacheHandlerServiceTest, GetResponseFromDataManagerToDataGetter) {
   EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
 }
 
-TEST_F(CacheHandlerServiceTest, GetResponseFromDataManagerToMaidNode) {
+TEST_F(CacheHandlerServiceTest, BEH_GetResponseFromDataManagerToMaidNode) {
   routing::SingleId maid_node((NodeId(NodeId::IdType::kRandomId)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   nfs_client::DataNameAndContentOrReturnCode content(data);
@@ -113,7 +112,7 @@ TEST_F(CacheHandlerServiceTest, GetResponseFromDataManagerToMaidNode) {
   EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
 }
 
-TEST_F(CacheHandlerServiceTest, GetCachedResponseFromCacheHandlerToMaidNode) {
+TEST_F(CacheHandlerServiceTest, BEH_GetCachedResponseFromCacheHandlerToMaidNode) {
   routing::SingleId maid_node((NodeId(NodeId::IdType::kRandomId)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   nfs_client::DataNameAndContentOrReturnCode content(data);
@@ -123,7 +122,7 @@ TEST_F(CacheHandlerServiceTest, GetCachedResponseFromCacheHandlerToMaidNode) {
   EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
 }
 
-TEST_F(CacheHandlerServiceTest, PutRequestFromDataManagerToCacheHandler) {
+TEST_F(CacheHandlerServiceTest, BEH_PutRequestFromDataManagerToCacheHandler) {
   routing::SingleId maid_node((NodeId(NodeId::IdType::kRandomId)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   nfs_client::DataNameAndContentOrReturnCode content(data);
@@ -137,7 +136,7 @@ TEST_F(CacheHandlerServiceTest, PutRequestFromDataManagerToCacheHandler) {
 }
 
 
-TEST_F(CacheHandlerServiceTest, GetRequestFromMaidNodeToDataManager) {
+TEST_F(CacheHandlerServiceTest, BEH_GetRequestFromMaidNodeToDataManager) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   routing::SingleSource source_node((NodeId(NodeId::IdType::kRandomId)));
   routing::GroupId group_id(NodeId(data.name()->string()));
@@ -148,7 +147,7 @@ TEST_F(CacheHandlerServiceTest, GetRequestFromMaidNodeToDataManager) {
   EXPECT_TRUE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
 }
 
-TEST_F(CacheHandlerServiceTest, GetRequestFromDataGetterToDataManager) {
+TEST_F(CacheHandlerServiceTest, BEH_GetRequestFromDataGetterToDataManager) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   routing::SingleSource source_node((NodeId(NodeId::IdType::kRandomId)));
   routing::GroupId group_id(NodeId(data.name()->string()));
@@ -159,7 +158,7 @@ TEST_F(CacheHandlerServiceTest, GetRequestFromDataGetterToDataManager) {
   EXPECT_TRUE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
 }
 
-TEST_F(CacheHandlerServiceTest, GetRequestFromDataManagerToCacheHandler) {
+TEST_F(CacheHandlerServiceTest, BEH_GetRequestFromDataManagerToCacheHandler) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   routing::SingleSource source_node((NodeId(NodeId::IdType::kRandomId)));
   routing::GroupId group_id(NodeId(data.name()->string()));
