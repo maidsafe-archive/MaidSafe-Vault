@@ -64,11 +64,12 @@ class GroupDb {
     Contents(Contents&& other)
         : group_name(std::move(other.group_name)),
           metadata(std::move(other.metadata)),
-          kv_pairs(std::move(other.kv_pairs))  {}
+          kv_pairs(std::move(other.kv_pairs)) {}
 
     GroupName group_name;
     Metadata metadata;
     std::vector<KvPair> kv_pairs;
+
    private:
     Contents(const Contents& other);
   };
@@ -82,7 +83,8 @@ class GroupDb {
   // For atomically updating metadata only
   void Commit(const GroupName& group_name, std::function<void(Metadata& metadata)> functor);
   // For atomically updating metadata and value
-  std::unique_ptr<Value> Commit(const Key& key,
+  std::unique_ptr<Value> Commit(
+      const Key& key,
       std::function<detail::DbAction(Metadata& metadata, std::unique_ptr<Value>& value)> functor);
   TransferInfo GetTransferInfo(std::shared_ptr<routing::MatrixChange> matrix_change);
   void HandleTransfer(const Contents& content);
@@ -133,10 +135,7 @@ void GroupDb<PmidManager>::UpdateGroup(typename GroupMap::iterator itr);
 
 template <typename Persona>
 GroupDb<Persona>::GroupDb(const boost::filesystem::path& db_path)
-    : kDbPath_(db_path),
-      mutex_(),
-      leveldb_(InitialiseLevelDb(kDbPath_)),
-      group_map_() {
+    : kDbPath_(db_path), mutex_(), leveldb_(InitialiseLevelDb(kDbPath_)), group_map_() {
 #if defined(__GNUC__) && (!defined(MAIDSAFE_APPLE) && !(defined(_MSC_VER) && _MSC_VER == 1700))
   // Remove this assert if value needs to be copy constructible.
   // this is just a check to avoid copy constructor unless we require it
@@ -155,8 +154,9 @@ GroupDb<Persona>::~GroupDb() {
   try {
     leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
     boost::filesystem::remove_all(kDbPath_);
-  } catch (const std::exception& e) {
-    LOG (kError) << "Failed to remove db : " << boost::diagnostic_information(e);
+  }
+  catch (const std::exception& e) {
+    LOG(kError) << "Failed to remove db : " << boost::diagnostic_information(e);
   }
 }
 
@@ -173,9 +173,11 @@ typename GroupDb<Persona>::GroupMap::iterator GroupDb<Persona>::AddGroupToMap(
   if (group_map_.size() == kGroupsLimit - 1)
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
   GroupId group_id(RandomInt32() % kGroupsLimit);
-  while (std::any_of(std::begin(group_map_), std::end(group_map_),
-                     [&group_id](const std::pair<GroupName, std::pair<GroupId, Metadata>>&
-                                 element) { return group_id == element.second.first; })) {
+  while (
+      std::any_of(std::begin(group_map_), std::end(group_map_),
+                  [&group_id](const std::pair<GroupName, std::pair<GroupId, Metadata>>& element) {
+        return group_id == element.second.first;
+      })) {
     group_id = RandomInt32() % kGroupsLimit;
   }
   LOG(kVerbose) << "GroupDb<Persona>::AddGroupToMap size of group_map_ " << group_map_.size()
@@ -185,8 +187,7 @@ typename GroupDb<Persona>::GroupMap::iterator GroupDb<Persona>::AddGroupToMap(
     LOG(kError) << "account already exists in the group map";
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::account_already_exists));
   }
-  LOG(kInfo) << "group inserting succeeded for group_name "
-             << HexSubstr(group_name->string());
+  LOG(kInfo) << "group inserting succeeded for group_name " << HexSubstr(group_name->string());
   return ret_val.first;
 }
 
@@ -221,7 +222,8 @@ std::unique_ptr<typename Persona::Value> GroupDb<Persona>::Commit(
   std::unique_ptr<Value> value;
   try {
     value.reset(new Value(Get(key, it->second.first)));
-  } catch (const maidsafe_error& error) {
+  }
+  catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(CommonErrors::no_such_element)) {
       LOG(kInfo) << "GroupDb<Persona>::Commit encountered unknown error : "
                  << boost::diagnostic_information(error);
@@ -245,7 +247,8 @@ std::unique_ptr<typename Persona::Value> GroupDb<Persona>::Commit(
         LOG(kError) << "value is not initialised";
       }
     }
-  } catch (const maidsafe_error& error) {
+  }
+  catch (const maidsafe_error& error) {
     if (error.code() == make_error_code(VaultErrors::data_already_exists))
       LOG(kWarning) << "GroupDb<Persona>::Commit data already exists";
     else
@@ -274,8 +277,8 @@ typename GroupDb<Persona>::Contents GroupDb<Persona>::GetContents(typename Group
   const auto group_id_str = detail::ToFixedWidthString<kPrefixWidth_>(group_id);
   for (iter->Seek(group_id_str); (iter->Valid() && (GetGroupId(iter->key()) == group_id));
        iter->Next()) {
-    contents.kv_pairs.push_back(std::make_pair(MakeKey(contents.group_name, iter->key()),
-                                               Value(iter->value().ToString())));
+    contents.kv_pairs.push_back(
+        std::make_pair(MakeKey(contents.group_name, iter->key()), Value(iter->value().ToString())));
   }
   iter.reset();
   return contents;
@@ -295,7 +298,7 @@ typename GroupDb<Persona>::TransferInfo GroupDb<Persona>::GetTransferInfo(
       if (check_holder_result.new_holders.size() != 0) {
         LOG(kVerbose) << "GroupDb<Persona>::GetTransferInfo having new node "
                       << DebugId(check_holder_result.new_holders.at(0));
-//         assert(check_holder_result.new_holders.size() == 1);
+        //         assert(check_holder_result.new_holders.size() == 1);
         if (check_holder_result.new_holders.size() != 1)
           LOG(kError) << "having " << check_holder_result.new_holders.size()
                       << " new holders, only the first one got processed";
@@ -306,13 +309,13 @@ typename GroupDb<Persona>::TransferInfo GroupDb<Persona>::GetTransferInfo(
           LOG(kVerbose) << "GroupDb<Persona>::GetTransferInfo transfering account "
                         << HexSubstr(group_itr->first->string()) << " to "
                         << DebugId(check_holder_result.new_holders.at(0));
-          std::vector<Contents>  contents_vector;
+          std::vector<Contents> contents_vector;
           contents_vector.push_back(std::move(GetContents(group_itr)));
           transfer_info[check_holder_result.new_holders.at(0)] = std::move(contents_vector);
         }
       }
     } else {  // Prune group
-      VLOG(VisualiserAction::kRemoveAccount, Identity{ group_itr->first->string() });
+      VLOG(VisualiserAction::kRemoveAccount, Identity{group_itr->first->string()});
       prune_vector.push_back(group_itr->first);
     }
   }
@@ -340,7 +343,8 @@ void GroupDb<Persona>::ApplyTransfer(const Contents& contents) {
   try {
     itr = FindGroup(contents.group_name);
     LOG(kWarning) << "trying to transfer part of an already existed account";
-  } catch(...) {
+  }
+  catch (...) {
     // During the transfer, there is chance one account's actions scattered across different vaults
     // this will incur multiple AddGroupToMap attempts for the same account
     LOG(kInfo) << "Creating a new account";
@@ -349,7 +353,8 @@ void GroupDb<Persona>::ApplyTransfer(const Contents& contents) {
   for (const auto& kv_pair : contents.kv_pairs) {
     try {
       Put(kv_pair, itr->second.first);
-    } catch(...) {
+    }
+    catch (...) {
       LOG(kError) << "trying to re-insert an existing entry";
     }
   }
@@ -374,10 +379,10 @@ template <typename Persona>
 void GroupDb<Persona>::DeleteGroupEntries(const GroupName& group_name) {
   try {
     DeleteGroupEntries(FindGroup(group_name));
-  } catch (const maidsafe_error& error) {
-    LOG(kInfo) << "account doesn't exist for group "
-               << HexSubstr(group_name->string()) << ", error : "
-               << boost::diagnostic_information(error);
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kInfo) << "account doesn't exist for group " << HexSubstr(group_name->string())
+               << ", error : " << boost::diagnostic_information(error);
   }
 }
 
@@ -388,8 +393,7 @@ void GroupDb<Persona>::DeleteGroupEntries(typename GroupMap::iterator it) {
   const auto group_id = it->second.first;
   const auto group_id_str = detail::ToFixedWidthString<kPrefixWidth_>(group_id);
   std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
-  for (iter->Seek(group_id_str);
-       (iter->Valid() && (GetGroupId(iter->key()) == group_id));
+  for (iter->Seek(group_id_str); (iter->Valid() && (GetGroupId(iter->key()) == group_id));
        iter->Next())
     group_db_keys.push_back(iter->key().ToString());
 
@@ -413,8 +417,7 @@ typename GroupDb<Persona>::Value GroupDb<Persona>::Get(const Key& key, const Gro
   leveldb::ReadOptions read_options;
   read_options.verify_checksums = true;
   std::string value_string;
-  leveldb::Status status(
-              leveldb_->Get(read_options, MakeLevelDbKey(group_id, key), &value_string));
+  leveldb::Status status(leveldb_->Get(read_options, MakeLevelDbKey(group_id, key), &value_string));
   if (status.ok()) {
     assert(!value_string.empty());
     return Value(value_string);
@@ -445,8 +448,7 @@ void GroupDb<Persona>::Put(const KvPair& key_value_pair, const GroupId& group_id
 
 template <typename Persona>
 void GroupDb<Persona>::Delete(const Key& key, const GroupId& group_id) {
-  leveldb::Status status(
-      leveldb_->Delete(leveldb::WriteOptions(), MakeLevelDbKey(group_id, key)));
+  leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), MakeLevelDbKey(group_id, key)));
   if (!status.ok())
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
 }
@@ -460,7 +462,7 @@ template <typename Persona>
 typename Persona::Key GroupDb<Persona>::MakeKey(const GroupName group_name,
                                                 const leveldb::Slice& level_db_key) {
   return Key(group_name, typename Persona::Key::FixedWidthString(
-                 (level_db_key.ToString()).substr(kPrefixWidth_)));
+                             (level_db_key.ToString()).substr(kPrefixWidth_)));
 }
 
 template <typename Persona>

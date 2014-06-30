@@ -47,14 +47,14 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
           new VersionHandlerService(vault_config.pmid, *routing_, vault_config.vault_dir)))),
       data_manager_service_(std::move(std::unique_ptr<DataManagerService>(new DataManagerService(
           vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir)))),
-      pmid_manager_service_(std::move(std::unique_ptr<PmidManagerService>(new PmidManagerService(
-          vault_config.pmid, *routing_, vault_config.vault_dir)))),
-      pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(new PmidNodeService(
-          vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir,
-          vault_config.max_disk_usage)))),
+      pmid_manager_service_(std::move(std::unique_ptr<PmidManagerService>(
+          new PmidManagerService(vault_config.pmid, *routing_, vault_config.vault_dir)))),
+      pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
+          new PmidNodeService(vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir,
+                              vault_config.max_disk_usage)))),
       // FIXME need to specialise
-      cache_service_(std::move(std::unique_ptr<CacheHandlerService>(new CacheHandlerService(
-          *routing_, vault_config.vault_dir)))),
+      cache_service_(std::move(std::unique_ptr<CacheHandlerService>(
+          new CacheHandlerService(*routing_, vault_config.vault_dir)))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
              pmid_manager_service_, pmid_node_service_, data_getter_),
       getting_keys_()
@@ -66,12 +66,13 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
   try {
     log::Logging::Instance().InitialiseVlog(DebugId(vault_config.pmid.name()), "128.199.223.97",
                                             8080, "/log");
-  } catch(...) {
+  }
+  catch (...) {
     // Ignore the exception when running multiple vaults in one process during test
   }
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
   InitRouting(vault_config.bootstrap_contacts);
-  VLOG(VisualiserAction::kVaultStarted, Identity{ vault_config.pmid.name().value });
+  VLOG(VisualiserAction::kVaultStarted, Identity{vault_config.pmid.name().value});
 }
 
 Vault::~Vault() {
@@ -126,22 +127,23 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
   functors.typed_message_and_caching.group_to_group.put_cache_data = [this](
       const routing::GroupToGroupMessage& message) { OnStoreInCache(message); };  // NOLINT
 
-  functors.network_status = [this](const int&
-                                   network_health) { OnNetworkStatusChange(network_health); };  // NOLINT
-  functors.close_node_replaced = [this](const std::vector<routing::NodeInfo>&
-                                        new_close_nodes) { OnCloseNodeReplaced(new_close_nodes); };  // NOLINT
+  functors.network_status = [this](const int& network_health) {
+    OnNetworkStatusChange(network_health);
+  };  // NOLINT
+  functors.close_node_replaced = [this](const std::vector<routing::NodeInfo>& new_close_nodes) {
+    OnCloseNodeReplaced(new_close_nodes);
+  };  // NOLINT
   functors.matrix_changed = [this](std::shared_ptr<routing::MatrixChange> matrix_change) {
     OnMatrixChanged(matrix_change);
   };
-  functors.request_public_key = [this](
-    const NodeId& node_id,
-    const routing::GivePublicKeyFunctor& give_key) {
-      nfs::detail::DoGetPublicKey(data_getter_, node_id, give_key, pmids_from_file_,
-                                  public_pmid_helper_);
-    };
+  functors.request_public_key = [this](const NodeId& node_id,
+                                       const routing::GivePublicKeyFunctor& give_key) {
+    nfs::detail::DoGetPublicKey(data_getter_, node_id, give_key, pmids_from_file_,
+                                public_pmid_helper_);
+  };
   functors.new_bootstrap_contact = [this](const routing::BootstrapContact& bootstrap_contact) {
-                                        OnNewBootstrapContact(bootstrap_contact);
-                                    };
+    OnNewBootstrapContact(bootstrap_contact);
+  };
   return functors;
 }
 
@@ -162,9 +164,9 @@ void Vault::DoOnNetworkStatusChange(int network_health) {
 void Vault::OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& /*new_close_nodes*/) {}
 
 void Vault::OnMatrixChanged(std::shared_ptr<routing::MatrixChange> matrix_change) {
-//   LOG(kVerbose) << "OnMatrixChanged ";
-//   matrix_change->Print();
-//   data_manager_service_.HandleChurnEvent(matrix_change);
+  //   LOG(kVerbose) << "OnMatrixChanged ";
+  //   matrix_change->Print();
+  //   data_manager_service_.HandleChurnEvent(matrix_change);
   asio_service_.service().post([=] { maid_manager_service_.HandleChurnEvent(matrix_change); });
   asio_service_.service().post([=] { version_handler_service_.HandleChurnEvent(matrix_change); });
   asio_service_.service().post([=] { data_manager_service_.HandleChurnEvent(matrix_change); });

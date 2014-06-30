@@ -143,7 +143,6 @@ TEST(SyncTest, BEH_SingleAction) {
       auto unresolved_list = persona_nodes[i]->sync.GetUnresolvedActions();
       if ((j >= i) && (j < (routing::Parameters::group_size - 1U)))
         EXPECT_TRUE(unresolved_list.size() == 1U) << "i = " << i << " , j = " << j;
-      ;
     }
     EXPECT_TRUE(resolved_count == 1);
     EXPECT_TRUE(persona_nodes[i]->sync.GetUnresolvedActions().empty());

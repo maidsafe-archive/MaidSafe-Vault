@@ -123,7 +123,7 @@ TEST(DbTest, BEH_DbCommit) {
   for (auto i(0); i != 100; ++i)
     DbTests(db, key);
   // TODO(Prakash): Extend to all data types
-  PopulateDbValues(db, 10000);
+  PopulateDbValues(db, 1000);
   for (auto i(0); i != 100; ++i) {
     DbTests(db,
             Key(Identity(NodeId(NodeId::IdType::kRandomId).string()), DataTagValue::kMaidValue));

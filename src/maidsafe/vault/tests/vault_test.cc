@@ -53,7 +53,7 @@ class VaultTest : public testing::Test {
   std::unique_ptr<Vault> vault_;
 };
 
-TEST_F(VaultTest, FUNC_Constructor) {
+TEST_F(VaultTest, DISABLED_FUNC_Constructor) {
   std::vector<passport::PublicPmid> public_pmids_from_file;
   public_pmids_from_file.push_back(passport::PublicPmid(passport::CreatePmidAndSigner().first));
   routing::BootstrapContacts bootstrap_contacts;

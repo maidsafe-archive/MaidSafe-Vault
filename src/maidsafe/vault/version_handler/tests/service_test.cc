@@ -180,7 +180,8 @@ TEST_F(VersionHandlerServiceTest, BEH_SynchroniseFromVersionHandlerToVersionHand
   routing::GroupId version_group_id(group_id);
   SynchroniseFromVersionHandlerToVersionHandler::Contents content((std::string()));
   auto sync(CreateMessage<SynchroniseFromVersionHandlerToVersionHandler>(content));
-  EXPECT_ANY_THROW(GroupSendToGroup(&version_handler_service_, sync, group_source, version_group_id));
+  EXPECT_ANY_THROW(
+      GroupSendToGroup(&version_handler_service_, sync, group_source, version_group_id));
 }
 
 TEST_F(VersionHandlerServiceTest, BEH_CreateVersionTree) {

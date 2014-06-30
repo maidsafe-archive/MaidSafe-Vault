@@ -156,7 +156,9 @@ void DoOperation(ServiceHandlerType* service, const MessageType& message,
 
 // The following 3 structs are all helpers relating to SendSyncMessage below.
 template <typename T>
-struct ToVoid { typedef void type; };
+struct ToVoid {
+  typedef void type;
+};
 
 // This struct applies to personas which don't have a public type 'GroupName'.
 template <typename PersonaType, typename Enable = void>
@@ -197,44 +199,43 @@ std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db
 // ============================ sync utils =========================================================
 namespace detail {
 template <typename Dispatcher, typename UnresolvedAction>
-void SendSync(Dispatcher& dispatcher,
-              const std::vector<UnresolvedAction>& unresolved_actions) {
+void SendSync(Dispatcher& dispatcher, const std::vector<UnresolvedAction>& unresolved_actions) {
   protobuf::Sync proto_sync;
   for (const auto& unresolved_action : unresolved_actions) {
     proto_sync.Clear();
     proto_sync.set_serialised_unresolved_action(unresolved_action->Serialise());
     proto_sync.set_action_type(static_cast<int32_t>(unresolved_action->action.kActionId));
-//    LOG(kInfo) << "MaidManager send sync action " << proto_sync.action_type();
+    //    LOG(kInfo) << "MaidManager send sync action " << proto_sync.action_type();
     dispatcher.SendSync(unresolved_action->key, proto_sync.SerializeAsString());
   }
 }
 
 template <typename Dispatcher, typename UnresolvedAction, typename NewUnresolvedAction>
-void IncrementAttemptsAndSendSync(Dispatcher& dispatcher,
-                                  Sync<UnresolvedAction>& sync_type,
-                                  const NewUnresolvedAction& unresolved_action,
-                                  typename std::enable_if<std::is_same<UnresolvedAction,
-                                  NewUnresolvedAction>::value >::type* = 0) {
+void IncrementAttemptsAndSendSync(
+    Dispatcher& dispatcher, Sync<UnresolvedAction>& sync_type,
+    const NewUnresolvedAction& unresolved_action,
+    typename std::enable_if<std::is_same<UnresolvedAction, NewUnresolvedAction>::value>::type* =
+        0) {
   sync_type.IncrementSyncAttempts();
   auto unresolved_actions(sync_type.GetUnresolvedActions());
   std::unique_ptr<UnresolvedAction> unresolved_action_ptr(new UnresolvedAction(unresolved_action));
   unresolved_actions.push_back(std::move(unresolved_action_ptr));
-//  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has "
-//                << unresolved_actions.size() << " unresolved_actions";
+  //  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has "
+  //                << unresolved_actions.size() << " unresolved_actions";
   SendSync(dispatcher, unresolved_actions);
 }
 
 
 template <typename Dispatcher, typename UnresolvedAction, typename NewUnresolvedAction>
-void IncrementAttemptsAndSendSync(Dispatcher& dispatcher,
-                                  Sync<UnresolvedAction>& sync_type,
-                                  const NewUnresolvedAction& /*unresolved_action*/,
-                                  typename std::enable_if<!std::is_same<UnresolvedAction,
-                                  NewUnresolvedAction>::value >::type* = 0) {
+void IncrementAttemptsAndSendSync(
+    Dispatcher& dispatcher, Sync<UnresolvedAction>& sync_type,
+    const NewUnresolvedAction& /*unresolved_action*/,
+    typename std::enable_if<!std::is_same<UnresolvedAction, NewUnresolvedAction>::value>::type* =
+        0) {
   sync_type.IncrementSyncAttempts();
   auto unresolved_actions(sync_type.GetUnresolvedActions());
-//  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has "
-//                << unresolved_actions.size() << " unresolved_actions";
+  //  LOG(kVerbose) << "IncrementAttemptsAndSendSync, for MaidManagerSerive, has "
+  //                << unresolved_actions.size() << " unresolved_actions";
   SendSync(dispatcher, unresolved_actions);
 }
 
@@ -246,8 +247,8 @@ nfs::MessageId HashStringToMessageId(const std::string& input);
 
 template <typename MessageType>
 struct SendSyncMessage {
-  typedef routing::Message<typename MessageType::Sender,
-                           typename MessageType::Receiver> RoutingMessage;
+  typedef routing::Message<typename MessageType::Sender, typename MessageType::Receiver>
+      RoutingMessage;
   typedef nfs::PersonaTypes<MessageType::SourcePersona::value> PersonaType;
   typedef detail::GroupOrKeyType<PersonaType> GroupOrKeyHelper;
 

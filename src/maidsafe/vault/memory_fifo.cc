@@ -55,7 +55,7 @@ void MemoryFIFO::Delete(const KeyType& key) {
 MemoryFIFO::MemoryFIFOType::iterator MemoryFIFO::Find(const KeyType& key) {
   return std::find_if(
       std::begin(memory_fifo_), std::end(memory_fifo_),
-      [&key](const MemoryFIFOType::value_type & key_value) { return key_value.first == key; });
+      [&key](const MemoryFIFOType::value_type& key_value) { return key_value.first == key; });
 }
 
 }  // namespace vault

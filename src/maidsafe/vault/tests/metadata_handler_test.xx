@@ -208,7 +208,7 @@ namespace test {
 ////      return false;
 ////    }
 ////    NonEmptyString serialised_element(ReadFile(vault_metadata_dir_ /
-///EncodeToBase64(data_name)));
+/// EncodeToBase64(data_name)));
 ////    if (!element.ParseFromString(serialised_element.string())) {
 ////      LOG(kError) << "Data did not parse.";
 ////      return false;
@@ -592,7 +592,7 @@ namespace test {
 ////TEST_F(MetadataHandlerOneElementTest, DISABLED_BEH_AddChangedDataElement) {
 ////  // TODO(Alison) - this test currently check that, when two elements with the same data name
 ////  // are added, it is the first element that stays (the first element is added in the test
-///setup).
+/// setup).
 ////  // This test should be updated when it has been decided if this is the correct behaviour.
 ////  for (uint16_t i(0); i < 20; ++i) {
 ////    metadata_handler_.AddDataElement(data_name_,
@@ -817,7 +817,7 @@ namespace test {
 ////  // Check non-existence and existence
 ////  for (uint16_t i(0); i < max; i += 2)
 ////    EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ /
-///EncodeToBase64(data_names.at(i))));
+/// EncodeToBase64(data_names.at(i))));
 //
 ////  for (uint16_t i(1); i < max; i += 2) {
 ////    ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_names.at(i),
@@ -936,7 +936,7 @@ namespace test {
 //
 ////TEST_F(MetadataHandlerTest, BEH_ManyDataElementsExtensive) {
 ////  // TODO(Alison) - after the API has been finalised, this est can be made more thorough by
-///calling
+/// calling
 ////  // AddDataElement more than once with the same data_name_. The use of 'subscribers' will need
 ////  // to be updated accordingly.
 ////  int64_t subscribers(1);  // currently only have one for each element in this test
@@ -1051,7 +1051,7 @@ namespace test {
 ////  }
 //
 ////  // TODO(Alison) - Add some data elements that have already been added (see note at top of
-///test)
+/// test)
 //
 ////  // check data existence and integrity
 ////  for (uint16_t i(0); i < max; ++i) {
@@ -1067,7 +1067,7 @@ namespace test {
 ////TEST_F(MetadataHandlerTest, DISABLED_BEH_ManyDataElementsThreaded) {
 ////  // TODO(Alison) - once the API and behaviour of MetadataHandler has been confirmed, this test
 ////  // can be written by copying BEH_ManyDataElementsExtensive, and changing the operations
-///involving
+/// involving
 ////  // metadata_handler_ to be ran in threads.
 ////}
 

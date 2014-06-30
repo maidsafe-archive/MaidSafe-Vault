@@ -66,17 +66,11 @@ template <typename T>
 class Accumulator {
  public:
   typedef T type;
-  enum class AddResult {
-    kSuccess,
-    kWaiting,
-    kFailure,
-    kHandled
-  };
+  enum class AddResult { kSuccess, kWaiting, kFailure, kHandled };
   typedef std::function<AddResult(const std::vector<T>&)> AddCheckerFunctor;
   class AddRequestChecker {
    public:
-    explicit AddRequestChecker(size_t required_requests)
-        : required_requests_(required_requests) {
+    explicit AddRequestChecker(size_t required_requests) : required_requests_(required_requests) {
       assert((required_requests <= routing::Parameters::group_size) &&
              "Invalid number of requests");
     }
@@ -215,12 +209,12 @@ bool Accumulator<T>::RequestExists(const T& request, const routing::GroupSource&
   auto request_message_id(boost::apply_visitor(detail::MessageIdRequestVisitor(), request));
   for (auto pending_request : pending_requests_)
     if (request_message_id ==
-            boost::apply_visitor(detail::MessageIdRequestVisitor(), pending_request.request)
-        && source == pending_request.source && pending_request.request == request) {
+            boost::apply_visitor(detail::MessageIdRequestVisitor(), pending_request.request) &&
+        source == pending_request.source && pending_request.request == request) {
       LOG(kWarning) << "Accumulator<T>::RequestExists,  reguest with message id "
                     << request_message_id.data << " from sender "
-                    << HexSubstr(source.sender_id->string())
-                    << " with group_id " << HexSubstr(source.group_id->string())
+                    << HexSubstr(source.sender_id->string()) << " with group_id "
+                    << HexSubstr(source.group_id->string())
                     << " already exists in the pending requests list";
       return true;
     }
@@ -235,14 +229,13 @@ template <typename T>
 typename Accumulator<T>::AddResult Accumulator<T>::AddRequestChecker::operator()(
     const std::vector<T>& requests) {
   LOG(kVerbose) << "Accumulator<T>::AddRequestChecker operator(),  required_requests_ : "
-                << required_requests_ << " , checking against " << requests.size()
-                << " requests";
+                << required_requests_ << " , checking against " << requests.size() << " requests";
   // BEFORE_RELEASE the following commented out code shall be reviewed
-//   if (requests.size() > routing::Parameters::group_size) {
-//     LOG(kError) << "Invalid number of requests, already have " << requests.size()
-//                 << " requests with a group size of " << routing::Parameters::group_size;
-//     return AddResult::kFailure;
-//   }
+  //   if (requests.size() > routing::Parameters::group_size) {
+  //     LOG(kError) << "Invalid number of requests, already have " << requests.size()
+  //                 << " requests with a group size of " << routing::Parameters::group_size;
+  //     return AddResult::kFailure;
+  //   }
   if (requests.size() < required_requests_) {
     LOG(kInfo) << "Accumulator<T>::AddRequestChecke::operator() not enough pending requests";
     return AddResult::kWaiting;

@@ -133,8 +133,7 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const UnresolvedAction& other)
       seen_list(other.seen_list) {
   if (other.this_node_and_entry_id)
     this_node_and_entry_id = std::make_shared<std::pair<NodeId, int32_t>>(
-                                 other.this_node_and_entry_id->first,
-                                 other.this_node_and_entry_id->second);
+        other.this_node_and_entry_id->first, other.this_node_and_entry_id->second);
 }
 
 template <typename Key, typename Action>
@@ -151,11 +150,11 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const Key& key_in, const Action&
                                                 const NodeId& this_node_id)
     : key(key_in),
       action(action_in),
-      this_node_and_entry_id(std::make_shared<std::pair<NodeId, int32_t>>(
-          [this_node_id]()->std::pair<NodeId, int32_t> {
-            static int32_t entry_id_sequence_number(RandomInt32());
-            return std::make_pair(this_node_id, ++entry_id_sequence_number);
-          }())),
+      this_node_and_entry_id(std::make_shared<
+          std::pair<NodeId, int32_t>>([this_node_id]()->std::pair<NodeId, int32_t> {
+        static int32_t entry_id_sequence_number(RandomInt32());
+        return std::make_pair(this_node_id, ++entry_id_sequence_number);
+      }())),
       peer_and_entry_ids(),
       sync_counter(0),
       seen_list() {}

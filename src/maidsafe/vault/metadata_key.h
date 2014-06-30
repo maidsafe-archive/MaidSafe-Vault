@@ -58,7 +58,8 @@ class MetadataKey {
 
 // Implementation
 template <typename GroupName>
-MetadataKey<GroupName>::MetadataKey() : group_name_() {}
+MetadataKey<GroupName>::MetadataKey()
+    : group_name_() {}
 
 template <typename GroupName>
 MetadataKey<GroupName>::MetadataKey(const MetadataKey& other)

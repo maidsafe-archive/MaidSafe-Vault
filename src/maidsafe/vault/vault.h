@@ -53,7 +53,9 @@ namespace maidsafe {
 namespace vault {
 
 #ifdef TESTING
-namespace test { class VaultNetwork; }
+namespace test {
+class VaultNetwork;
+}
 #endif
 
 class Vault {
@@ -68,7 +70,7 @@ class Vault {
   void AddPublicPmid(const passport::PublicPmid& public_pmid);
 #endif
   void Stop() {
-//     routing_->Stop();
+    //     routing_->Stop();
     maid_manager_service_.Stop();
     version_handler_service_.Stop();
     data_manager_service_.Stop();
@@ -125,7 +127,8 @@ void Vault::OnMessageReceived(const T& message) {
   LOG(kVerbose) << "Vault::OnMessageReceived";
   asio_service_.service().post([=] {
     LOG(kVerbose) << "Vault::OnMessageReceived invoked task in asio_service";
-    demux_.HandleMessage(message); });
+    demux_.HandleMessage(message);
+  });
 }
 
 template <typename T>
@@ -141,11 +144,10 @@ void Vault::OnStoreInCache(const T& message) {
   //             the operation to continue on caller (routing) thread.
   LOG(kVerbose) << "Vault::OnStoreInCache: ";
   asio_service_.service().post([=] {
-                                 LOG(kVerbose) << "Vault::OnStoreInCache2: ";
-                                 auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
-                                 cache_service_.HandleMessage(
-                                            wrapper_tuple, message.sender, message.receiver);
-                             });
+    LOG(kVerbose) << "Vault::OnStoreInCache2: ";
+    auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
+    cache_service_.HandleMessage(wrapper_tuple, message.sender, message.receiver);
+  });
 }
 
 }  // namespace vault

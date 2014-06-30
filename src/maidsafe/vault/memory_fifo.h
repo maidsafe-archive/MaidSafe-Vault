@@ -64,5 +64,3 @@ class MemoryFIFO {
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_MEMORY_FIFO_H_
-
-

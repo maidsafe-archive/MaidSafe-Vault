@@ -33,32 +33,16 @@ namespace maidsafe {
 
 namespace vault {
 
-DEFINE_OSTREAMABLE_ENUM_VALUES(VisualiserAction, int,
-    (VaultStarted)
-    (IncreaseCount)
-    (DecreaseCount)
-    (BlockDeleteRequest)
-    (AccountTransfer)
-    (GotAccountTransferred)
-    (IncreaseSubscribers)
-    (DecreaseSubscribers)
-    (MoveChunk)
-    (MarkNodeUp)
-    (MarkNodeDown)
-    (JoinPmidNode)
-    (DropPmidNode)
-    (StoreChunk)
-    (DeleteChunk)
-    (ChangeVersion)
-    (RemoveAccount)
-    (NetworkHealth)
-    (VaultStopping))
+DEFINE_OSTREAMABLE_ENUM_VALUES(
+    VisualiserAction, int,
+    (VaultStarted)(IncreaseCount)(DecreaseCount)(BlockDeleteRequest)(AccountTransfer)(
+        GotAccountTransferred)(IncreaseSubscribers)(DecreaseSubscribers)(MoveChunk)(MarkNodeUp)(
+        MarkNodeDown)(JoinPmidNode)(DropPmidNode)(StoreChunk)(DeleteChunk)(ChangeVersion)(
+        RemoveAccount)(NetworkHealth)(VaultStopping))
 
 namespace detail {
 
-enum class DataType : int32_t {
-  kMetadata = 10000
-};
+enum class DataType : int32_t { kMetadata = 10000 };
 
 }  // namespace detail
 

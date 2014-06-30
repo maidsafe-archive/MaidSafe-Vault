@@ -96,8 +96,8 @@ void GetIdentityAndEndpoints(po::variables_map& variables_map,
     pmid.reset(new passport::Pmid(key_chains.at(identity_index).pmid));
   }
   {
-    auto keys_path(maidsafe::GetPathFromProgramOptions("bootstrap_keys_path", variables_map,
-                                                       false, false));
+    auto keys_path(
+        maidsafe::GetPathFromProgramOptions("bootstrap_keys_path", variables_map, false, false));
     std::vector<passport::detail::AnmaidToPmid> key_chains(
         passport::detail::ReadKeyChainList(keys_path));
     for (auto& key_chain : key_chains)
@@ -115,8 +115,8 @@ void RunVault(po::variables_map& variables_map) {
   boost::system::error_code ec;
   if (!boost::filesystem::exists(chunk_path))
     fs::create_directories(chunk_path, ec);
-  chunk_path = chunk_path / ("vault_" +
-                             std::to_string(variables_map.at("identity_index").as<int>()));
+  chunk_path =
+      chunk_path / ("vault_" + std::to_string(variables_map.at("identity_index").as<int>()));
   if (!boost::filesystem::exists(chunk_path))
     fs::create_directories(chunk_path, ec);
   if (!boost::filesystem::exists(chunk_path))
@@ -125,14 +125,14 @@ void RunVault(po::variables_map& variables_map) {
 #endif
   std::string vmid(variables_map.count("vmid") == 0 ? "test"
                                                     : variables_map.at("vmid").as<std::string>());
-  // vault_manager::VaultInterface vault_interface(vmid, [] {
-  //  g_ctrlc_pressed.store(true);
-  //  g_cond_var.notify_one();
-  // });
-  // if (vmid != "test" && !vault_interface.GetIdentity(pmid, peer_endpoints)) {
-  //  std::cout << "Failed to get ID from VC" << std::endl;
-  //  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-  // }
+// vault_manager::VaultInterface vault_interface(vmid, [] {
+//  g_ctrlc_pressed.store(true);
+//  g_cond_var.notify_one();
+// });
+// if (vmid != "test" && !vault_interface.GetIdentity(pmid, peer_endpoints)) {
+//  std::cout << "Failed to get ID from VC" << std::endl;
+//  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+// }
 
 #ifndef MAIDSAFE_WIN32
   signal(SIGHUP, SigHandler);
@@ -157,16 +157,16 @@ void RunVault(po::variables_map& variables_map) {
 
 #ifdef TESTING
 void AddTestingOptions(po::options_description& config_file_options) {
-  config_file_options.add_options()
-      ("peer", po::value<std::string>(), "Endpoint of bootstrap node")
-      ("keys_path", po::value<std::string>()->default_value(
+  config_file_options.add_options()("peer", po::value<std::string>(), "Endpoint of bootstrap node")(
+      "keys_path", po::value<std::string>()->default_value(
                        fs::path(fs::temp_directory_path() / "key_directory.dat").string()),
-                    "Path to keys file using as ID")
-      ("identity_index", po::value<int>(), "Entry from keys file to use as ID")
-      ("bootstrap_keys_path", po::value<std::string>()->default_value(
-                              fs::path(fs::temp_directory_path() / "key_directory.dat").string()),
-                              "Path to keys file for bootstrapping")
-      ("disable_ctrl_c", po::value<bool>()->default_value(false), "disable ctrl+c");
+      "Path to keys file using as ID")("identity_index", po::value<int>(),
+                                       "Entry from keys file to use as ID")(
+      "bootstrap_keys_path",
+      po::value<std::string>()->default_value(
+          fs::path(fs::temp_directory_path() / "key_directory.dat").string()),
+      "Path to keys file for bootstrapping")(
+      "disable_ctrl_c", po::value<bool>()->default_value(false), "disable ctrl+c");
 }
 #endif
 
@@ -198,9 +198,9 @@ po::options_description PopulateVariablesMap(int argc, char* argv[],
       ("plugins_path", po::value<std::string>(), "Path to statistics plugins (enables stats)")
 #endif
       ("chunk_path", po::value<std::string>()->default_value(
-                        fs::path(fs::temp_directory_path(error_code) / "vault_chunks").string()),
-          "Directory to store chunks in")(
-       "vmid", po::value<std::string>(), "ID to identify to vault manager");
+                         fs::path(fs::temp_directory_path(error_code) / "vault_chunks").string()),
+       "Directory to store chunks in")("vmid", po::value<std::string>(),
+                                       "ID to identify to vault manager");
 #ifdef TESTING
   AddTestingOptions(config_file_options);
 #endif

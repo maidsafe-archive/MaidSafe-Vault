@@ -131,7 +131,7 @@ TEST_F(CacheHandlerServiceTest, BEH_PutRequestFromDataManagerToCacheHandler) {
           content.name.type, content.name.raw_name, NonEmptyString(content.content->data))));
   routing::SingleSource source((NodeId(NodeId::IdType::kRandomId)));
   EXPECT_TRUE(cache_handler_service_.HandleMessage(cache_put, source,
-                                             routing::SingleId(routing_.kNodeId())));
+                                                   routing::SingleId(routing_.kNodeId())));
   EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
 }
 

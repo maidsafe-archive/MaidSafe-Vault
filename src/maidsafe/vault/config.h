@@ -31,15 +31,9 @@ typedef std::function<void(const DataNameVariant&)> IntegrityCheckFunctor;
 
 namespace detail {
 
-enum class DbAction {
-  kPut,
-  kDelete
-};
+enum class DbAction { kPut, kDelete };
 
-enum class GroupDbMetaDataStatus {
-  kGroupEmpty,
-  kGroupNonEmpty
-};
+enum class GroupDbMetaDataStatus { kGroupEmpty, kGroupNonEmpty };
 
 }  // namespace detail
 

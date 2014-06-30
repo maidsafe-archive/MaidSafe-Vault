@@ -34,14 +34,14 @@ namespace test {
 
 class PmidNodeServiceTest : public testing::Test {
  public:
-  PmidNodeServiceTest() :
-      pmid_(passport::CreatePmidAndSigner().first),
-      kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
-      vault_root_dir_(*kTestRoot_/* / RandomAlphaNumericString(8)*/),
-      routing_(pmid_),
-      data_getter_(asio_service_, routing_),
-      pmid_node_service_(pmid_, routing_, data_getter_, vault_root_dir_, DiskUsage(100000000)),
-      asio_service_(2) {
+  PmidNodeServiceTest()
+      : pmid_(passport::CreatePmidAndSigner().first),
+        kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
+        vault_root_dir_(*kTestRoot_ /* / RandomAlphaNumericString(8)*/),
+        routing_(pmid_),
+        data_getter_(asio_service_, routing_),
+        pmid_node_service_(pmid_, routing_, data_getter_, vault_root_dir_, DiskUsage(100000000)),
+        asio_service_(2) {
     boost::filesystem::create_directory(vault_root_dir_);
   }
 
@@ -70,7 +70,7 @@ TEST_F(PmidNodeServiceTest, BEH_PutRequestFromPmidManagerToPmidNode) {
   auto put_request(CreateMessage<PutRequestFromPmidManagerToPmidNode>(content));
   auto group_source(CreateGroupSource(routing_.kNodeId()));
   EXPECT_NO_THROW(GroupSendToSingle(&pmid_node_service_, put_request, group_source,
-        routing::SingleId(routing_.kNodeId())));
+                                    routing::SingleId(routing_.kNodeId())));
   EXPECT_NO_THROW(Get<ImmutableData>(ImmutableData::Name(content.name.raw_name)));
 }
 
@@ -79,7 +79,7 @@ TEST_F(PmidNodeServiceTest, BEH_GetRequestFromDataManagerToPmidNode) {
   auto get_request(CreateMessage<GetRequestFromDataManagerToPmidNode>(content));
   auto group_source(CreateGroupSource(NodeId(content.raw_name.string())));
   EXPECT_NO_THROW(GroupSendToSingle(&pmid_node_service_, get_request, group_source,
-        routing::SingleId(routing_.kNodeId())));
+                                    routing::SingleId(routing_.kNodeId())));
 }
 
 TEST_F(PmidNodeServiceTest, BEH_IntegrityCheckRequestFromDataManagerToPmidNode) {
@@ -90,8 +90,8 @@ TEST_F(PmidNodeServiceTest, BEH_IntegrityCheckRequestFromDataManagerToPmidNode) 
   auto integrity_check_request(
       CreateMessage<IntegrityCheckRequestFromDataManagerToPmidNode>(content));
   EXPECT_NO_THROW(SingleSendsToSingle(&pmid_node_service_, integrity_check_request,
-        routing::SingleSource(NodeId(NodeId::IdType::kRandomId)),
-        routing::SingleId(routing_.kNodeId())));
+                                      routing::SingleSource(NodeId(NodeId::IdType::kRandomId)),
+                                      routing::SingleId(routing_.kNodeId())));
 }
 
 TEST_F(PmidNodeServiceTest, BEH_DeleteRequestFromPmidManagerToPmidNode) {
@@ -101,7 +101,7 @@ TEST_F(PmidNodeServiceTest, BEH_DeleteRequestFromPmidManagerToPmidNode) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   Store(data);
   EXPECT_NO_THROW(GroupSendToSingle(&pmid_node_service_, delete_request, group_source,
-        routing::SingleId(routing_.kNodeId())));
+                                    routing::SingleId(routing_.kNodeId())));
   EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
 }
 
@@ -114,7 +114,7 @@ TEST_F(PmidNodeServiceTest, BEH_GetPmidAccountResponseFromPmidManagerToPmidNode)
       CreateMessage<GetPmidAccountResponseFromPmidManagerToPmidNode>(content));
   auto group_source(CreateGroupSource(routing_.kNodeId()));
   EXPECT_NO_THROW(GroupSendToSingle(&pmid_node_service_, pmid_account_response, group_source,
-        routing::SingleId(routing_.kNodeId())));
+                                    routing::SingleId(routing_.kNodeId())));
 }
 
 TEST_F(PmidNodeServiceTest, BEH_PmidHealthRequestFromPmidManagerToPmidNode) {
@@ -122,8 +122,8 @@ TEST_F(PmidNodeServiceTest, BEH_PmidHealthRequestFromPmidManagerToPmidNode) {
       CreateMessage<PmidHealthRequestFromPmidManagerToPmidNode>(nfs_vault::Empty()));
   auto group_source(CreateGroupSource(routing_.kNodeId()));
   EXPECT_NO_THROW(SingleSendsToSingle(&pmid_node_service_, health_request,
-        routing::SingleSource(NodeId(NodeId::IdType::kRandomId)),
-        routing::SingleId(routing_.kNodeId())));
+                                      routing::SingleSource(NodeId(NodeId::IdType::kRandomId)),
+                                      routing::SingleId(routing_.kNodeId())));
 }
 
 }  //  namespace test

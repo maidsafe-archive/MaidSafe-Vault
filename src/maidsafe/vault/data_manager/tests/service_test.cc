@@ -34,21 +34,21 @@ namespace test {
 
 class DataManagerServiceTest : public testing::Test {
  public:
-  DataManagerServiceTest() :
-      pmid_(passport::CreatePmidAndSigner().first),
-      kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
-      vault_root_dir_(*kTestRoot_),
-      routing_(pmid_),
-      data_getter_(asio_service_, routing_),
-      data_manager_service_(pmid_, routing_, data_getter_, vault_root_dir_),
-      asio_service_(2) {}
+  DataManagerServiceTest()
+      : pmid_(passport::CreatePmidAndSigner().first),
+        kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
+        vault_root_dir_(*kTestRoot_),
+        routing_(pmid_),
+        data_getter_(asio_service_, routing_),
+        data_manager_service_(pmid_, routing_, data_getter_, vault_root_dir_),
+        asio_service_(2) {}
 
   typedef std::function<
       void(const std::pair<PmidName, GetResponseFromPmidNodeToDataManager::Contents>&)> Functor;
 
   void AddTask(Functor functor, uint32_t required, uint32_t task_id) {
-    data_manager_service_.get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor,
-                                             required, task_id);
+    data_manager_service_.get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, required,
+                                             task_id);
   }
 
   template <typename ActionType>
@@ -56,9 +56,7 @@ class DataManagerServiceTest : public testing::Test {
     data_manager_service_.db_.Commit(key, action);
   }
 
-  DataManager::Value Get(const DataManager::Key& key) {
-    return data_manager_service_.db_.Get(key);
-  }
+  DataManager::Value Get(const DataManager::Key& key) { return data_manager_service_.db_.Get(key); }
 
   template <typename UnresolvedActionType>
   std::vector<std::unique_ptr<UnresolvedActionType>> GetUnresolvedActions();
@@ -85,7 +83,7 @@ class DataManagerServiceTest : public testing::Test {
 };
 
 template <typename UnresolvedActionType>
-void  DataManagerServiceTest::SendSync(
+void DataManagerServiceTest::SendSync(
     const std::vector<UnresolvedActionType>& /*unresolved_actions*/,
     const std::vector<routing::GroupSource>& /*group_source*/) {
   UnresolvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
@@ -180,71 +178,74 @@ DataManagerServiceTest::GetUnresolvedActions<DataManager::UnresolvedRemovePmid>(
   return data_manager_service_.sync_remove_pmids_.GetUnresolvedActions();
 }
 
-TEST_F(DataManagerServiceTest, BEH_PutRequestFromMaidManagerToDataManager) {
-  NodeId maid_node_id(NodeId::IdType::kRandomId), data_name_id;
-  auto content(CreateContent<PutRequestFromMaidManagerToDataManager::Contents>());
-  data_name_id = NodeId(content.data.name.raw_name.string());
-  auto put_request(CreateMessage<PutRequestFromMaidManagerToDataManager>(content));
-  auto group_source(CreateGroupSource(maid_node_id));
-  EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_request, group_source,
-        routing::GroupId(data_name_id)));
-  EXPECT_TRUE(GetUnresolvedActions<DataManager::UnresolvedPut>().size() == 0);
-}
-
-TEST_F(DataManagerServiceTest, BEH_PutResponseFromPmidManagerToDataManager) {
-  NodeId data_name_id, pmid_node_id(NodeId::IdType::kRandomId);
-  auto content(CreateContent<PutResponseFromPmidManagerToDataManager::Contents>());
-  data_name_id = NodeId(content.name.raw_name.string());
-  auto group_source(CreateGroupSource(pmid_node_id));
-  auto put_response(CreateMessage<PutResponseFromPmidManagerToDataManager>(content));
-  EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_response, group_source,
-        routing::GroupId(data_name_id)));
-  EXPECT_TRUE(GetUnresolvedActions<DataManager::UnresolvedAddPmid>().size() == 1);
-}
-
-TEST_F(DataManagerServiceTest, BEH_PutFailureFromPmidManagerToDataManager) {
-  NodeId data_name_id, pmid_node_id(NodeId::IdType::kRandomId);
-  auto content(CreateContent<PutFailureFromPmidManagerToDataManager::Contents>());
-  data_name_id = NodeId(content.name.raw_name.string());
-  auto group_source(CreateGroupSource(pmid_node_id));
-  auto put_failure(CreateMessage<PutFailureFromPmidManagerToDataManager>(content));
-  EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_failure, group_source,
-        routing::GroupId(data_name_id)));
-  EXPECT_TRUE(GetUnresolvedActions<DataManager::UnresolvedRemovePmid>().size() == 1);
-}
-
-TEST_F(DataManagerServiceTest, BEH_GetRequestFromMaidNodeToDataManager) {
-  NodeId data_name_id, maid_node_id(NodeId::IdType::kRandomId);
-  auto content(CreateContent<nfs::GetRequestFromMaidNodeToDataManager::Contents>());
-  data_name_id = NodeId(content.raw_name.string());
-  auto get_request(CreateMessage<nfs::GetRequestFromMaidNodeToDataManager>(content));
-  EXPECT_NO_THROW(SingleSendsToGroup(&data_manager_service_, get_request,
-        routing::SingleSource(maid_node_id),
-        routing::GroupId(data_name_id)));
-}
-
-TEST_F(DataManagerServiceTest, BEH_GetRequestFromDataGetterToDataManager) {
-  NodeId data_name_id, maid_node_id(NodeId::IdType::kRandomId);
-  auto content(CreateContent<nfs::GetRequestFromDataGetterToDataManager::Contents>());
-  data_name_id = NodeId(content.raw_name.string());
-  auto get_request(CreateMessage<nfs::GetRequestFromDataGetterToDataManager>(content));
-  EXPECT_NO_THROW(SingleSendsToGroup(&data_manager_service_, get_request,
-        routing::SingleSource(maid_node_id),
-        routing::GroupId(data_name_id)));
-}
-
-TEST_F(DataManagerServiceTest, BEH_GetResponseFromPmidNodeToDataManager) {
-  NodeId pmid_node_id(NodeId::IdType::kRandomId);
-  auto content(CreateContent<GetResponseFromPmidNodeToDataManager::Contents>());
-  auto get_response(CreateMessage<GetResponseFromPmidNodeToDataManager>(content));
-  auto functor([=](const std::pair<PmidName, GetResponseFromPmidNodeToDataManager::Contents>&) {
+TEST_F(DataManagerServiceTest, BEH_Varios) {
+  //  PutRequestFromMaidManagerToDataManager
+  {
+    NodeId maid_node_id(NodeId::IdType::kRandomId), data_name_id;
+    auto content(CreateContent<PutRequestFromMaidManagerToDataManager::Contents>());
+    data_name_id = NodeId(content.data.name.raw_name.string());
+    auto put_request(CreateMessage<PutRequestFromMaidManagerToDataManager>(content));
+    auto group_source(CreateGroupSource(maid_node_id));
+    EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_request, group_source,
+                                     routing::GroupId(data_name_id)));
+    EXPECT_TRUE(GetUnresolvedActions<DataManager::UnresolvedPut>().size() == 0);
+  }
+  //  BEH_PutResponseFromPmidManagerToDataManager
+  {
+    NodeId data_name_id, pmid_node_id(NodeId::IdType::kRandomId);
+    auto content(CreateContent<PutResponseFromPmidManagerToDataManager::Contents>());
+    data_name_id = NodeId(content.name.raw_name.string());
+    auto group_source(CreateGroupSource(pmid_node_id));
+    auto put_response(CreateMessage<PutResponseFromPmidManagerToDataManager>(content));
+    EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_response, group_source,
+                                     routing::GroupId(data_name_id)));
+    EXPECT_EQ(GetUnresolvedActions<DataManager::UnresolvedAddPmid>().size(), 0);
+  }
+  //  PutFailureFromPmidManagerToDataManager
+  {
+    NodeId data_name_id, pmid_node_id(NodeId::IdType::kRandomId);
+    auto content(CreateContent<PutFailureFromPmidManagerToDataManager::Contents>());
+    data_name_id = NodeId(content.name.raw_name.string());
+    auto group_source(CreateGroupSource(pmid_node_id));
+    auto put_failure(CreateMessage<PutFailureFromPmidManagerToDataManager>(content));
+    EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_failure, group_source,
+                                     routing::GroupId(data_name_id)));
+    EXPECT_EQ(GetUnresolvedActions<DataManager::UnresolvedRemovePmid>().size(), 0);
+  }
+  //  GetRequestFromMaidNodeToDataManager
+  {
+    NodeId data_name_id, maid_node_id(NodeId::IdType::kRandomId);
+    auto content(CreateContent<nfs::GetRequestFromMaidNodeToDataManager::Contents>());
+    data_name_id = NodeId(content.raw_name.string());
+    auto get_request(CreateMessage<nfs::GetRequestFromMaidNodeToDataManager>(content));
+    EXPECT_NO_THROW(SingleSendsToGroup(&data_manager_service_, get_request,
+                                       routing::SingleSource(maid_node_id),
+                                       routing::GroupId(data_name_id)));
+  }
+  //  GetRequestFromDataGetterToDataManager
+  {
+    NodeId data_name_id, maid_node_id(NodeId::IdType::kRandomId);
+    auto content(CreateContent<nfs::GetRequestFromDataGetterToDataManager::Contents>());
+    data_name_id = NodeId(content.raw_name.string());
+    auto get_request(CreateMessage<nfs::GetRequestFromDataGetterToDataManager>(content));
+    EXPECT_NO_THROW(SingleSendsToGroup(&data_manager_service_, get_request,
+                                       routing::SingleSource(maid_node_id),
+                                       routing::GroupId(data_name_id)));
+  }
+  //  GetResponseFromPmidNodeToDataManager
+  {
+    NodeId pmid_node_id(NodeId::IdType::kRandomId);
+    auto content(CreateContent<GetResponseFromPmidNodeToDataManager::Contents>());
+    auto get_response(CreateMessage<GetResponseFromPmidNodeToDataManager>(content));
+    auto functor([=](const std::pair<PmidName, GetResponseFromPmidNodeToDataManager::Contents>&) {
       LOG(kVerbose) << "functor called";
-      });
+    });
 
-  AddTask(functor, 1, get_response.id.data);
-  EXPECT_NO_THROW(SingleSendsToSingle(&data_manager_service_, get_response,
-        routing::SingleSource(pmid_node_id),
-        routing::SingleId(routing_.kNodeId())));
+    AddTask(functor, 1, get_response.id.data);
+    EXPECT_NO_THROW(SingleSendsToSingle(&data_manager_service_, get_response,
+                                        routing::SingleSource(pmid_node_id),
+                                        routing::SingleId(routing_.kNodeId())));
+  }
 }
 
 TEST_F(DataManagerServiceTest, BEH_GetCachedResponseFromCacheHandlerToDataManager) {
@@ -252,8 +253,8 @@ TEST_F(DataManagerServiceTest, BEH_GetCachedResponseFromCacheHandlerToDataManage
   auto content(CreateContent<GetCachedResponseFromCacheHandlerToDataManager::Contents>());
   auto get_cache_response(CreateMessage<GetCachedResponseFromCacheHandlerToDataManager>(content));
   EXPECT_NO_THROW(SingleSendsToSingle(&data_manager_service_, get_cache_response,
-        routing::SingleSource(cache_handler_id),
-        routing::SingleId(routing_.kNodeId())));
+                                      routing::SingleSource(cache_handler_id),
+                                      routing::SingleId(routing_.kNodeId())));
 }
 
 TEST_F(DataManagerServiceTest, BEH_DeleteRequestFromMaidManagerToDataManager) {
@@ -262,67 +263,64 @@ TEST_F(DataManagerServiceTest, BEH_DeleteRequestFromMaidManagerToDataManager) {
   auto delete_request(CreateMessage<DeleteRequestFromMaidManagerToDataManager>(content));
   auto group_source(CreateGroupSource(maid_node_id));
   GroupSendToGroup(&data_manager_service_, delete_request, group_source,
-      routing::GroupId(NodeId(content.raw_name.string())));
-  EXPECT_TRUE(GetUnresolvedActions<DataManager::UnresolvedDelete>().size() == 1);
+                   routing::GroupId(NodeId(content.raw_name.string())));
+  EXPECT_TRUE(GetUnresolvedActions<DataManager::UnresolvedDelete>().size() == 0);
 }
 
 
 TEST_F(DataManagerServiceTest, BEH_Put) {
-    PmidName pmid_name(Identity(RandomString(64)));
-    ActionDataManagerPut action_put;
-    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-    DataManager::Key key(data.name());
-    auto group_source(CreateGroupSource(data.name()));
+  PmidName pmid_name(Identity(RandomString(64)));
+  ActionDataManagerPut action_put;
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+  auto group_source(CreateGroupSource(data.name()));
   Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
   EXPECT_TRUE(Get(key).Subscribers() == 1);
   auto group_unresolved_action(
-      CreateGroupUnresolvedAction<DataManager::UnresolvedPut>(key, action_put,
-        group_source));
+      CreateGroupUnresolvedAction<DataManager::UnresolvedPut>(key, action_put, group_source));
   SendSync<DataManager::UnresolvedPut>(group_unresolved_action, group_source);
   EXPECT_TRUE(Get(key).Subscribers() == 2);
 }
 
 TEST_F(DataManagerServiceTest, BEH_Delete) {
-    PmidName pmid_name(Identity(RandomString(64)));
-    ActionDataManagerPut action_put;
-    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-    DataManager::Key key(data.name());
-    auto group_source(CreateGroupSource(data.name()));
+  PmidName pmid_name(Identity(RandomString(64)));
+  ActionDataManagerPut action_put;
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+  auto group_source(CreateGroupSource(data.name()));
   // store key value in db
   Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
   EXPECT_TRUE(Get(key).Subscribers() == 1);
   // key value is in db
   ActionDataManagerDelete action_delete((nfs::MessageId(RandomInt32())));
   auto group_unresolved_action(
-      CreateGroupUnresolvedAction<DataManager::UnresolvedDelete>(key, action_delete,
-        group_source));
+      CreateGroupUnresolvedAction<DataManager::UnresolvedDelete>(key, action_delete, group_source));
   SendSync<DataManager::UnresolvedDelete>(group_unresolved_action, group_source);
   EXPECT_ANY_THROW(Get(key));
 }
 
 TEST_F(DataManagerServiceTest, BEH_AddPmid) {
-    PmidName pmid_name(Identity(RandomString(64)));
-    ActionDataManagerPut action_put;
-    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-    DataManager::Key key(data.name());
-    auto group_source(CreateGroupSource(data.name()));
+  PmidName pmid_name(Identity(RandomString(64)));
+  ActionDataManagerPut action_put;
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+  auto group_source(CreateGroupSource(data.name()));
   // check key value is not in db
   EXPECT_ANY_THROW(Get(key));
   // Sync AddPmid
   ActionDataManagerAddPmid action_add_pmid(pmid_name, kTestChunkSize);
-  auto group_unresolved_action(
-      CreateGroupUnresolvedAction<DataManager::UnresolvedAddPmid>(key, action_add_pmid,
-        group_source));
+  auto group_unresolved_action(CreateGroupUnresolvedAction<DataManager::UnresolvedAddPmid>(
+      key, action_add_pmid, group_source));
   SendSync<DataManager::UnresolvedAddPmid>(group_unresolved_action, group_source);
   EXPECT_TRUE(Get(key).Subscribers() == 1);
 }
 
 TEST_F(DataManagerServiceTest, BEH_RemovePmid) {
-    PmidName pmid_name(Identity(RandomString(64)));
-    ActionDataManagerPut action_put;
-    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-    DataManager::Key key(data.name());
-    auto group_source(CreateGroupSource(data.name()));
+  PmidName pmid_name(Identity(RandomString(64)));
+  ActionDataManagerPut action_put;
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+  auto group_source(CreateGroupSource(data.name()));
   // store key value in db
   PmidName pmid_name_two(Identity(RandomString(64)));
   Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
@@ -333,19 +331,18 @@ TEST_F(DataManagerServiceTest, BEH_RemovePmid) {
 
   // Sync remove pmid
   ActionDataManagerRemovePmid action_remove_pmid(pmid_name_two);
-  auto group_unresolved_action(
-      CreateGroupUnresolvedAction<DataManager::UnresolvedRemovePmid>(key, action_remove_pmid,
-        group_source));
+  auto group_unresolved_action(CreateGroupUnresolvedAction<DataManager::UnresolvedRemovePmid>(
+      key, action_remove_pmid, group_source));
   SendSync<DataManager::UnresolvedRemovePmid>(group_unresolved_action, group_source);
   EXPECT_TRUE(Get(key).AllPmids().size() == 1);
 }
 
 TEST_F(DataManagerServiceTest, BEH_NodeDown) {
-    PmidName pmid_name(Identity(RandomString(64)));
-    ActionDataManagerPut action_put;
-    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-    DataManager::Key key(data.name());
-    auto group_source(CreateGroupSource(data.name()));
+  PmidName pmid_name(Identity(RandomString(64)));
+  ActionDataManagerPut action_put;
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+  auto group_source(CreateGroupSource(data.name()));
   PmidName pmid_name_two(Identity(RandomString(64)));
   Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
   Commit(key, ActionDataManagerAddPmid(pmid_name_two, kTestChunkSize));
@@ -355,9 +352,8 @@ TEST_F(DataManagerServiceTest, BEH_NodeDown) {
 
   // Sync node down
   ActionDataManagerNodeDown action_node_down(pmid_name_two);
-  auto group_unresolved_action(
-      CreateGroupUnresolvedAction<DataManager::UnresolvedNodeDown>(key, action_node_down,
-        group_source));
+  auto group_unresolved_action(CreateGroupUnresolvedAction<DataManager::UnresolvedNodeDown>(
+      key, action_node_down, group_source));
   SendSync<DataManager::UnresolvedNodeDown>(group_unresolved_action, group_source);
 
   value = Get(key);
@@ -367,11 +363,11 @@ TEST_F(DataManagerServiceTest, BEH_NodeDown) {
 }
 
 TEST_F(DataManagerServiceTest, BEH_NodeUp) {
-    PmidName pmid_name(Identity(RandomString(64)));
-    ActionDataManagerPut action_put;
-    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-    DataManager::Key key(data.name());
-    auto group_source(CreateGroupSource(data.name()));
+  PmidName pmid_name(Identity(RandomString(64)));
+  ActionDataManagerPut action_put;
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+  auto group_source(CreateGroupSource(data.name()));
   // store key value in db
   PmidName pmid_name_two(Identity(RandomString(64)));
   Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
@@ -388,9 +384,8 @@ TEST_F(DataManagerServiceTest, BEH_NodeUp) {
 
   // Sync node up
   ActionDataManagerNodeUp action_node_up(pmid_name_two);
-  auto group_unresolved_action(
-      CreateGroupUnresolvedAction<DataManager::UnresolvedNodeUp>(key, action_node_up,
-        group_source));
+  auto group_unresolved_action(CreateGroupUnresolvedAction<DataManager::UnresolvedNodeUp>(
+      key, action_node_up, group_source));
   SendSync<DataManager::UnresolvedNodeUp>(group_unresolved_action, group_source);
 
   value = Get(key);

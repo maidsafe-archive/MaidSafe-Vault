@@ -72,8 +72,7 @@ class Db {
 
 template <typename Key, typename Value>
 Db<Key, Value>::Db(const boost::filesystem::path& db_path)
-    : kDbPath_(db_path),
-      mutex_(), leveldb_() {
+    : kDbPath_(db_path), mutex_(), leveldb_() {
   leveldb::DB* db;
   leveldb::Options options;
   options.create_if_missing = true;
@@ -88,8 +87,7 @@ Db<Key, Value>::Db(const boost::filesystem::path& db_path)
   // this is just a check to avoid copy constructor unless we require it
   static_assert(!std::is_copy_constructible<Value>::value,
                 "value should not be copy constructible !");
-  static_assert(std::is_move_constructible<Value>::value,
-                "value should be move constructible !");
+  static_assert(std::is_move_constructible<Value>::value, "value should be move constructible !");
 #endif
 }
 
@@ -98,20 +96,22 @@ Db<Key, Value>::~Db() {
   try {
     leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
     boost::filesystem::remove_all(kDbPath_);
-  } catch (const std::exception& e) {
-    LOG (kError) << "Failed to remove db : " << boost::diagnostic_information(e);
+  }
+  catch (const std::exception& e) {
+    LOG(kError) << "Failed to remove db : " << boost::diagnostic_information(e);
   }
 }
 
 template <typename Key, typename Value>
-std::unique_ptr<Value> Db<Key, Value>::Commit(const Key& key,
-    std::function<detail::DbAction(std::unique_ptr<Value>& value)> functor) {
+std::unique_ptr<Value> Db<Key, Value>::Commit(
+    const Key& key, std::function<detail::DbAction(std::unique_ptr<Value>& value)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<Value> value;
   try {
     value.reset(new Value(Get(key)));
-  } catch (const maidsafe_error& error) {
+  }
+  catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "Db<Key, Value>::Commit unknown db error "
                   << boost::diagnostic_information(error);
@@ -153,7 +153,7 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
         if (check_holder_result.new_holders.size() != 0) {
           LOG(kVerbose) << "Db::GetTransferInfo having new node "
                         << DebugId(check_holder_result.new_holders.at(0));
-//           assert(check_holder_result.new_holders.size() == 1);
+          //           assert(check_holder_result.new_holders.size() == 1);
           if (check_holder_result.new_holders.size() != 1)
             LOG(kError) << "having " << check_holder_result.new_holders.size()
                         << " new holders, only the first one got processed";
@@ -161,13 +161,12 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
           if (found_itr != transfer_info.end()) {
             found_itr->second.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
           } else {  // create
-            LOG(kInfo) << "Db::GetTransferInfo transfering account "
-                       << HexSubstr(key.name.string()) << " to "
-                       << DebugId(check_holder_result.new_holders.at(0));
+            LOG(kInfo) << "Db::GetTransferInfo transfering account " << HexSubstr(key.name.string())
+                       << " to " << DebugId(check_holder_result.new_holders.at(0));
             std::vector<KvPair> kv_pair;
             kv_pair.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
-            transfer_info.insert(std::make_pair(check_holder_result.new_holders.at(0),
-                                                std::move(kv_pair)));
+            transfer_info.insert(
+                std::make_pair(check_holder_result.new_holders.at(0), std::move(kv_pair)));
           }
         }
       } else {
@@ -189,7 +188,8 @@ void Db<Key, Value>::HandleTransfer(const std::vector<std::pair<Key, Value>>& co
   for (const auto& kv_pair : contents) {
     try {
       Get(kv_pair.first);
-    } catch (const maidsafe_error& error) {
+    }
+    catch (const maidsafe_error& error) {
       LOG(kInfo) << error.what();
       if ((error.code() != make_error_code(CommonErrors::no_such_element)) &&
           (error.code() != make_error_code(VaultErrors::no_such_account)))

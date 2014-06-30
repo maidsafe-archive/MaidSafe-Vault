@@ -45,17 +45,11 @@ namespace vault {
 template <typename UnresolvedAccountTransferAction>
 class AccountTransfer {
  public:
-  enum class AddResult {
-    kSuccess,
-    kWaiting,
-    kFailure,
-    kHandled
-  };
+  enum class AddResult { kSuccess, kWaiting, kFailure, kHandled };
 
   class AddRequestChecker {
    public:
-    explicit AddRequestChecker(size_t required_requests)
-        : required_requests_(required_requests) {
+    explicit AddRequestChecker(size_t required_requests) : required_requests_(required_requests) {
       assert((required_requests <= routing::Parameters::group_size) &&
              "Invalid number of requests");
     }
@@ -80,46 +74,37 @@ class AccountTransfer {
       request.Merge(request_in, source_in.sender_id);
     }
 
-//     bool HasSender(const routing::GroupSource& source_in) {
-//       if (source_in.group_id != group_id)
-//         return false;
-//       auto itr(std::find(senders.begin(), senders.end(), source_in.sender_id));
-//       if (itr == senders.end())
-//         return false;
-//       return true;
-//     }
+    //     bool HasSender(const routing::GroupSource& source_in) {
+    //       if (source_in.group_id != group_id)
+    //         return false;
+    //       auto itr(std::find(senders.begin(), senders.end(), source_in.sender_id));
+    //       if (itr == senders.end())
+    //         return false;
+    //       return true;
+    //     }
     void MergePendingRequest(const UnresolvedAccountTransferAction& request_in,
                              const routing::GroupSource& source_in) {
       request.Merge(request_in, source_in.sender_id);
     }
-    std::set<routing::SingleId> GetSenders() const {
-      return request.GetSenders();
-    }
-    routing::GroupId GetGroupId() const {
-      return group_id;
-    }
-    UnresolvedAccountTransferAction GetRequest() const {
-      return request;
-    }
+    std::set<routing::SingleId> GetSenders() const { return request.GetSenders(); }
+    routing::GroupId GetGroupId() const { return group_id; }
+    UnresolvedAccountTransferAction GetRequest() const { return request; }
 
     UnresolvedAccountTransferAction GetResolved(size_t resolve_num) {
       return request.GetResolvedActions(resolve_num);
     }
-    bool IsResolved() {
-      return request.IsResolved();
-    }
+    bool IsResolved() { return request.IsResolved(); }
 
    private:
     UnresolvedAccountTransferAction request;
     routing::GroupId group_id;
-//     std::set<routing::SingleId> senders;
+    //     std::set<routing::SingleId> senders;
   };
 
   AccountTransfer();
 
   std::unique_ptr<UnresolvedAccountTransferAction> AddUnresolvedAction(
-      const UnresolvedAccountTransferAction& request,
-      const routing::GroupSource& source,
+      const UnresolvedAccountTransferAction& request, const routing::GroupSource& source,
       AddRequestChecker checker);
   bool CheckHandled(const routing::GroupId& source);
 
@@ -151,10 +136,9 @@ AccountTransfer<UnresolvedAccountTransferAction>::AccountTransfer()
 
 template <typename UnresolvedAccountTransferAction>
 std::unique_ptr<UnresolvedAccountTransferAction>
-    AccountTransfer<UnresolvedAccountTransferAction>::AddUnresolvedAction(
-        const UnresolvedAccountTransferAction& request,
-        const routing::GroupSource& source,
-        AddRequestChecker checker) {
+AccountTransfer<UnresolvedAccountTransferAction>::AddUnresolvedAction(
+    const UnresolvedAccountTransferAction& request, const routing::GroupSource& source,
+    AddRequestChecker checker) {
   LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction for GroupSource "
                 << HexSubstr(source.group_id.data.string()) << " sent from "
                 << HexSubstr(source.sender_id->string());
@@ -225,14 +209,13 @@ bool AccountTransfer<UnresolvedAccountTransferAction>::RequestExists(
   for (auto& pending_request : pending_requests_)
     if (request_message_id == pending_request.GetRequest().id) {
       LOG(kWarning) << "AccountTransfer::RequestExists,  reguest with message id "
-                    << request_message_id.data
-                    << " with group_id " << HexSubstr(source.group_id->string())
+                    << request_message_id.data << " with group_id "
+                    << HexSubstr(source.group_id->string())
                     << " already exists in the pending requests list";
       return true;
     }
   LOG(kInfo) << "AccountTransfer::RequestExists,  reguest with message id "
-             << request_message_id.data
-             << " with group_id " << HexSubstr(source.group_id->string())
+             << request_message_id.data << " with group_id " << HexSubstr(source.group_id->string())
              << " doesn't exists in the pending requests list";
   return false;
 }

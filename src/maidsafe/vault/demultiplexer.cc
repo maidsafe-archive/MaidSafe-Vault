@@ -38,13 +38,13 @@ void Demultiplexer::HandleMessage(const routing::SingleToGroupRelayMessage& rout
   switch (destination_persona.data) {
     case nfs::Persona::kDataManager:
       if (source_persona.data == nfs::Persona::kDataGetter) {
-        return data_manager_service_.
-                HandleMessage(nfs::GetRequestFromDataGetterPartialToDataManager(wrapper_tuple),
-                              routing_message.sender, routing_message.receiver);
+        return data_manager_service_.HandleMessage(
+            nfs::GetRequestFromDataGetterPartialToDataManager(wrapper_tuple),
+            routing_message.sender, routing_message.receiver);
       } else if (source_persona.data == nfs::Persona::kMaidNode) {
-        return data_manager_service_.
-                HandleMessage(nfs::GetRequestFromMaidNodePartialToDataManager(wrapper_tuple),
-                                  routing_message.sender, routing_message.receiver);
+        return data_manager_service_.HandleMessage(
+            nfs::GetRequestFromMaidNodePartialToDataManager(wrapper_tuple), routing_message.sender,
+            routing_message.receiver);
       }
       // This assert will happen if vault starts sending messages except Get() triggred
       // by routing's request for public key before having positive health.
