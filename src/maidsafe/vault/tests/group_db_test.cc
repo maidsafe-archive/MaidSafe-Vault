@@ -275,7 +275,7 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
 
   // Put many
   std::vector<GroupKey<PmidName>> key_vector;
-  for (auto i(0); i < 1000; ++i) {
+  for (auto i(0); i < 100; ++i) {
     key_vector.push_back(GroupKey<PmidName>(
         pmid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()), DataTagValue::kPmidValue));
   }
