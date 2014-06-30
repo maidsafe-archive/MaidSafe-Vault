@@ -39,7 +39,7 @@ namespace vault {
 
 namespace test {
 
-static const size_t kTestChunkSize = 2048U;
+static const size_t kTestChunkSize = 1024 * 1024;
 static const size_t kAverageChunksStored = 1000;
 
 routing::NodeInfo MakeNodeInfo(const passport::Pmid& pmid);
