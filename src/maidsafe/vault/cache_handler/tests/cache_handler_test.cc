@@ -39,7 +39,7 @@ class CacheHandlerTest : public testing::Test {
 };
 
 TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToMaidNode) {
-  ImmutableData data(NonEmptyString(RandomString(1024)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   NodeId random_id(NodeId::IdType::kRandomId);
   nfs::MessageId message_id(RandomUint32());
   typedef nfs::GetResponseFromDataManagerToMaidNode NfsMessage;
@@ -70,7 +70,7 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToMaidNode) {
 }
 
 TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToMaidNode) {
-  ImmutableData data(NonEmptyString(RandomString(1024)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   NodeId random_id(NodeId::IdType::kRandomId);
   nfs::MessageId message_id(RandomUint32());
   typedef nfs::GetCachedResponseFromCacheHandlerToMaidNode NfsMessage;
@@ -98,7 +98,7 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToMaidNode) {
 }
 
 TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToDataGetter) {
-  ImmutableData data(NonEmptyString(RandomString(1024)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   NodeId random_id(NodeId::IdType::kRandomId);
   nfs::MessageId message_id(RandomUint32());
   typedef nfs::GetResponseFromDataManagerToDataGetter NfsMessage;
@@ -127,7 +127,7 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToDataGetter) {
 }
 
 TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToDataGetter) {
-  ImmutableData data(NonEmptyString(RandomString(1024)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   NodeId random_id(NodeId::IdType::kRandomId);
   nfs::MessageId message_id(RandomUint32());
   typedef nfs::GetCachedResponseFromCacheHandlerToDataGetter NfsMessage;

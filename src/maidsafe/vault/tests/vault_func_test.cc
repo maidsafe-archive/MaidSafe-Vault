@@ -44,7 +44,7 @@ class VaultTest : public testing::Test {
 };
 
 TEST_F(VaultTest, FUNC_PutGet) {
-  ImmutableData data(NonEmptyString(RandomString(1024)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   LOG(kVerbose) << "Before put";
   try {
     EXPECT_NO_THROW(GetClients().front()->Put(data));
@@ -69,7 +69,7 @@ TEST_F(VaultTest, FUNC_MultiplePuts) {
   const size_t kIterations(100);
   std::vector<ImmutableData> chunks;
   for (auto index(kIterations); index > 0; --index)
-    chunks.emplace_back(NonEmptyString(RandomString(1024)));
+    chunks.emplace_back(NonEmptyString(RandomString(kTestChunkSize)));
 
   int index(0);
   for (const auto& chunk : chunks) {
@@ -120,13 +120,13 @@ TEST_F(VaultTest, FUNC_MultiplePuts) {
 }
 
 TEST_F(VaultTest, FUNC_FailingGet) {
-  ImmutableData data(NonEmptyString(RandomString(1024)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   EXPECT_THROW(env_->Get<ImmutableData>(data.name()), std::exception) << "must have failed";
 }
 
 // The test below is disbaled as its proper operation assumes a delete funcion is in place
 TEST_F(VaultTest, DISABLED_FUNC_PutMultipleCopies) {
-  ImmutableData data(NonEmptyString(RandomString(1024)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   boost::future<ImmutableData> future;
   GetClients().front()->Put(data);
   Sleep(std::chrono::seconds(2));
@@ -193,7 +193,7 @@ TEST_F(VaultTest, FUNC_MultipleClientsPut) {
   const size_t kIterations(10);
   std::vector<ImmutableData> chunks;
   for (auto index(kIterations); index > 0; --index)
-    chunks.emplace_back(NonEmptyString(RandomString(1024)));
+    chunks.emplace_back(NonEmptyString(RandomString(kTestChunkSize)));
 
   for (const auto& chunk : chunks) {
     LOG(kVerbose) << "Storing: " << DebugId(chunk.name());
