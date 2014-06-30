@@ -36,14 +36,14 @@ namespace vault {
 
 namespace test {
 
-//int kOnlinePmids(10);
-//int kOfflinePmids(20);
+// int kOnlinePmids(10);
+// int kOfflinePmids(20);
 //
-//Identity GenerateIdentity() {
+// Identity GenerateIdentity() {
 //  return Identity(RandomAlphaNumericString(crypto::SHA512::DIGESTSIZE));
 //}
 //
-//class MetadataHandlerTest : public testing::Test {
+// class MetadataHandlerTest : public testing::Test {
 // public:
 //  MetadataHandlerTest()
 //    : vault_root_dir_(maidsafe::test::CreateTestPath(("MaidSafe_Test_MetadataHandler"))),
@@ -72,7 +72,7 @@ namespace test {
 //  std::vector<Identity> online_pmids_, offline_pmids_;
 //};
 //
-//TEST_F(MetadataHandlerTest, BEH_Constructor) {
+// TEST_F(MetadataHandlerTest, BEH_Constructor) {
 //  fs::path vault_root(*vault_root_dir_ / "constructor_test");
 //  {
 //    try {
@@ -98,8 +98,8 @@ namespace test {
 //  EXPECT_TRUE(fs::is_directory(valid_root / "metadata"));
 //}
 //
-//template <typename Data>
-//class MetadataHandlerTypedTest : public MetadataHandlerTest {
+// template <typename Data>
+// class MetadataHandlerTypedTest : public MetadataHandlerTest {
 // public :
 //  MetadataHandlerTypedTest() : MetadataHandlerTest() {}
 //
@@ -207,7 +207,8 @@ namespace test {
 ////      LOG(kError) << "Data was not found.";
 ////      return false;
 ////    }
-////    NonEmptyString serialised_element(ReadFile(vault_metadata_dir_ / EncodeToBase64(data_name)));
+////    NonEmptyString serialised_element(ReadFile(vault_metadata_dir_ /
+///EncodeToBase64(data_name)));
 ////    if (!element.ParseFromString(serialised_element.string())) {
 ////      LOG(kError) << "Data did not parse.";
 ////      return false;
@@ -412,9 +413,9 @@ namespace test {
 ////  }
 //};
 //
-//TYPED_TEST_CASE_P(MetadataHandlerTypedTest);
+// TYPED_TEST_CASE_P(MetadataHandlerTypedTest);
 //
-//TYPED_TEST_P(MetadataHandlerTypedTest, BEH_IncrementSubscribers) {
+// TYPED_TEST_P(MetadataHandlerTypedTest, BEH_IncrementSubscribers) {
 //  typename TypeParam::name_type data_name(GenerateIdentity());
 //  int32_t data_size(10000);
 //  this->IncrementSubscribers(data_name, data_size);
@@ -424,7 +425,7 @@ namespace test {
 //  this->CompareMetadata(data_name, data_size, 1);
 //}
 //
-//TYPED_TEST_P(MetadataHandlerTypedTest, BEH_DecrementSubscribers) {
+// TYPED_TEST_P(MetadataHandlerTypedTest, BEH_DecrementSubscribers) {
 //  typename TypeParam::name_type data_name(GenerateIdentity());
 //  int32_t data_size(10000);
 //
@@ -439,7 +440,7 @@ namespace test {
 //  EXPECT_THROW(this->DecrementSubscribers(data_name), common_error);
 //}
 //
-//TYPED_TEST_P(MetadataHandlerTypedTest, BEH_PutMetadata) {
+// TYPED_TEST_P(MetadataHandlerTypedTest, BEH_PutMetadata) {
 //  protobuf::Metadata metadata, replacement_metadata;
 //  typename TypeParam::name_type data_name(GenerateIdentity());
 //  EXPECT_THROW(this->metadata_handler_.PutMetadata(metadata), common_error);
@@ -465,7 +466,7 @@ namespace test {
 //                        this->online_pmids_);
 //}
 //
-//TYPED_TEST_P(MetadataHandlerTypedTest, BEH_DeleteMetadata) {
+// TYPED_TEST_P(MetadataHandlerTypedTest, BEH_DeleteMetadata) {
 //  typename TypeParam::name_type data_name(GenerateIdentity());
 //  int32_t data_size(10000);
 //
@@ -491,26 +492,26 @@ namespace test {
 //  this->CompareMetadata(data_name, data_size+1, 3, this->offline_pmids_, this->online_pmids_);
 //}
 //
-//TYPED_TEST_P(MetadataHandlerTypedTest, BEH_MarkNodeDown) {
+// TYPED_TEST_P(MetadataHandlerTypedTest, BEH_MarkNodeDown) {
 //}
 //
-//TYPED_TEST_P(MetadataHandlerTypedTest, BEH_MarkNodeUp) {
+// TYPED_TEST_P(MetadataHandlerTypedTest, BEH_MarkNodeUp) {
 //}
 //
-//TYPED_TEST_P(MetadataHandlerTypedTest, BEH_AddDataHolder) {
+// TYPED_TEST_P(MetadataHandlerTypedTest, BEH_AddDataHolder) {
 //}
 //
-//TYPED_TEST_P(MetadataHandlerTypedTest, BEH_RemoveDataHolder) {
+// TYPED_TEST_P(MetadataHandlerTypedTest, BEH_RemoveDataHolder) {
 //}
 //
-//TYPED_TEST_P(MetadataHandlerTypedTest, BEH_GetOnlineDataHolders) {
+// TYPED_TEST_P(MetadataHandlerTypedTest, BEH_GetOnlineDataHolders) {
 //}
 //
-//TYPED_TEST_P(MetadataHandlerTypedTest, BEH_CheckMetadataExists) {
+// TYPED_TEST_P(MetadataHandlerTypedTest, BEH_CheckMetadataExists) {
 //}
 //
 //
-//REGISTER_TYPED_TEST_CASE_P(MetadataHandlerTypedTest,
+// REGISTER_TYPED_TEST_CASE_P(MetadataHandlerTypedTest,
 //                           BEH_IncrementSubscribers,
 //                           BEH_DecrementSubscribers,
 //                           BEH_PutMetadata,
@@ -522,7 +523,7 @@ namespace test {
 //                           BEH_GetOnlineDataHolders,
 //                           BEH_CheckMetadataExists);
 //
-//typedef testing::Types<passport::PublicAnmid,
+// typedef testing::Types<passport::PublicAnmid,
 //                       passport::PublicAnsmid,
 //                       passport::PublicAntmid,
 //                       passport::PublicAnmaid,
@@ -538,7 +539,7 @@ namespace test {
 //                       GroupDirectory,
 //                       WorldDirectory> AllTypes;
 //
-//INSTANTIATE_TYPED_TEST_CASE_P(All, MetadataHandlerTypedTest, AllTypes);
+// INSTANTIATE_TYPED_TEST_CASE_P(All, MetadataHandlerTypedTest, AllTypes);
 //
 ////class MetadataHandlerOneElementTest : public MetadataHandlerTest {
 //// public:
@@ -590,7 +591,8 @@ namespace test {
 //
 ////TEST_F(MetadataHandlerOneElementTest, DISABLED_BEH_AddChangedDataElement) {
 ////  // TODO(Alison) - this test currently check that, when two elements with the same data name
-////  // are added, it is the first element that stays (the first element is added in the test setup).
+////  // are added, it is the first element that stays (the first element is added in the test
+///setup).
 ////  // This test should be updated when it has been decided if this is the correct behaviour.
 ////  for (uint16_t i(0); i < 20; ++i) {
 ////    metadata_handler_.AddDataElement(data_name_,
@@ -814,7 +816,8 @@ namespace test {
 //
 ////  // Check non-existence and existence
 ////  for (uint16_t i(0); i < max; i += 2)
-////    EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ / EncodeToBase64(data_names.at(i))));
+////    EXPECT_FALSE(boost::filesystem::exists(vault_metadata_dir_ /
+///EncodeToBase64(data_names.at(i))));
 //
 ////  for (uint16_t i(1); i < max; i += 2) {
 ////    ASSERT_TRUE(CheckDataExistenceAndIntegrity(data_names.at(i),
@@ -932,7 +935,8 @@ namespace test {
 ////}
 //
 ////TEST_F(MetadataHandlerTest, BEH_ManyDataElementsExtensive) {
-////  // TODO(Alison) - after the API has been finalised, this est can be made more thorough by calling
+////  // TODO(Alison) - after the API has been finalised, this est can be made more thorough by
+///calling
 ////  // AddDataElement more than once with the same data_name_. The use of 'subscribers' will need
 ////  // to be updated accordingly.
 ////  int64_t subscribers(1);  // currently only have one for each element in this test
@@ -1046,7 +1050,8 @@ namespace test {
 ////                                          offline_pmid_name);
 ////  }
 //
-////  // TODO(Alison) - Add some data elements that have already been added (see note at top of test)
+////  // TODO(Alison) - Add some data elements that have already been added (see note at top of
+///test)
 //
 ////  // check data existence and integrity
 ////  for (uint16_t i(0); i < max; ++i) {
@@ -1061,7 +1066,8 @@ namespace test {
 //
 ////TEST_F(MetadataHandlerTest, DISABLED_BEH_ManyDataElementsThreaded) {
 ////  // TODO(Alison) - once the API and behaviour of MetadataHandler has been confirmed, this test
-////  // can be written by copying BEH_ManyDataElementsExtensive, and changing the operations involving
+////  // can be written by copying BEH_ManyDataElementsExtensive, and changing the operations
+///involving
 ////  // metadata_handler_ to be ran in threads.
 ////}
 

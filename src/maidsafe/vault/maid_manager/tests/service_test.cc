@@ -35,7 +35,7 @@ namespace vault {
 
 namespace test {
 
-class MaidManagerServiceTest {
+class MaidManagerServiceTest : public testing::Test {
  public:
   MaidManagerServiceTest()
       : anmaid_(),
@@ -224,87 +224,85 @@ void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedDecrementReferenceC
       unresolved_actions, group_source);
 }
 
-TEST_CASE_METHOD(MaidManagerServiceTest, "maid manager: check handlers availability",
-                "[Handler][MaidManager][Service][Behavioural]") {
-  SECTION("PutRequestFromMaidNodeToMaidManager") {
+  TEST_F(MaidManagerServiceTest, BEH_PutRequestFromMaidNodeToMaidManager) {
     CreateAccount();
     auto content(CreateContent<nfs::PutRequestFromMaidNodeToMaidManager::Contents>());
     auto put_request(CreateMessage<nfs::PutRequestFromMaidNodeToMaidManager>(content));
-    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, put_request,
+    EXPECT_NO_THROW(SingleSendsToGroup(&maid_manager_service_, put_request,
                                        routing::SingleSource(MaidNodeId()),
                                        routing::GroupId(MaidNodeId())));
   }
 
-  SECTION("PutResponseFromDataManagerToMaidManager") {
+  TEST_F(MaidManagerServiceTest, BEH_PutResponseFromDataManagerToMaidManager) {
     auto content(CreateContent<PutResponseFromDataManagerToMaidManager::Contents>());
     NodeId data_name_id(content.name.raw_name.string());
     auto put_response(CreateMessage<PutResponseFromDataManagerToMaidManager>(content));
     auto group_source(CreateGroupSource(data_name_id));
-    CHECK_NOTHROW(GroupSendToGroup(&maid_manager_service_, put_response, group_source,
+    EXPECT_NO_THROW(GroupSendToGroup(&maid_manager_service_, put_response, group_source,
                                      routing::GroupId(MaidNodeId())));
   }
 
-  SECTION("PutFailureFromDataManagerToMaidManager") {
+  TEST_F(MaidManagerServiceTest, BEH_PutFailureFromDataManagerToMaidManager) {
     auto content(CreateContent<PutFailureFromDataManagerToMaidManager::Contents>());
     NodeId data_name_id(content.name.raw_name.string()), maid_node_id(NodeId::IdType::kRandomId);
     auto put_failure(CreateMessage<PutFailureFromDataManagerToMaidManager>(content));
     auto group_source(CreateGroupSource(data_name_id));
-    CHECK_NOTHROW(GroupSendToGroup(&maid_manager_service_, put_failure, group_source,
+    EXPECT_NO_THROW(GroupSendToGroup(&maid_manager_service_, put_failure, group_source,
                                      routing::GroupId(maid_node_id)));
   }
 
-  SECTION("nfs::DeleteRequestFromMaidNodeToMaidManager") {
+  TEST_F(MaidManagerServiceTest, BEH_nfsDeleteRequestFromMaidNodeToMaidManager) {
     CreateAccount();
     auto content(CreateContent<nfs::DeleteRequestFromMaidNodeToMaidManager::Contents>());
     auto delete_request(CreateMessage<nfs::DeleteRequestFromMaidNodeToMaidManager>(content));
-    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, delete_request,
+    EXPECT_NO_THROW(SingleSendsToGroup(&maid_manager_service_, delete_request,
                                        routing::SingleSource(MaidNodeId()),
                                        routing::GroupId(MaidNodeId())));
   }
 
-  SECTION("nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager") {
+  TEST_F(MaidManagerServiceTest, BEH_nfsDeleteBranchUntilForkRequestFromMaidNodeToMaidManager) {
     auto content(
              CreateContent<nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager::Contents>());
     auto delete_branch(
              CreateMessage<nfs::DeleteBranchUntilForkRequestFromMaidNodeToMaidManager>(content));
-    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, delete_branch,
+    EXPECT_NO_THROW(SingleSendsToGroup(&maid_manager_service_, delete_branch,
                                        routing::SingleSource(MaidNodeId()),
                                        routing::GroupId(MaidNodeId())));
   }
 
-  SECTION("nfs::CreateAccountRequestFromMaidNodeToMaidManager") {
+  TEST_F(MaidManagerServiceTest, BEH_nfsCreateAccountRequestFromMaidNodeToMaidManager) {
     nfs::CreateAccountRequestFromMaidNodeToMaidManager::Contents content(
         (passport::PublicMaid(maid_)), (passport::PublicAnmaid(anmaid_)));
     auto create_account(CreateMessage<nfs::CreateAccountRequestFromMaidNodeToMaidManager>(content));
-    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, create_account,
+    EXPECT_NO_THROW(SingleSendsToGroup(&maid_manager_service_, create_account,
                                        routing::SingleSource(MaidNodeId()),
                                        routing::GroupId(MaidNodeId())));
   }
 
-  SECTION("nfs::RemoveAccountRequestFromMaidNodeToMaidManager") {
+  TEST_F(MaidManagerServiceTest, BEH_nfsRemoveAccountRequestFromMaidNodeToMaidManager) {
     nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Contents content(anmaid_);
     auto remove_account(CreateMessage<nfs::RemoveAccountRequestFromMaidNodeToMaidManager>(content));
-    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, remove_account,
+    EXPECT_NO_THROW(SingleSendsToGroup(&maid_manager_service_, remove_account,
                     routing::SingleSource(MaidNodeId()), routing::GroupId(MaidNodeId())));
   }
 
-  SECTION("nfs::RegisterPmidRequestFromMaidNodeToMaidManager") {
+  TEST_F(MaidManagerServiceTest, BEH_nfsRegisterPmidRequestFromMaidNodeToMaidManager) {
     nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Contents content(maid_, pmid_, true);
     auto register_pmid(CreateMessage<nfs::RegisterPmidRequestFromMaidNodeToMaidManager>(content));
-    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, register_pmid,
+    EXPECT_NO_THROW(SingleSendsToGroup(&maid_manager_service_, register_pmid,
                     routing::SingleSource(MaidNodeId()), routing::GroupId(MaidNodeId())));
   }
 
-  SECTION("nfs::UnregisterPmidRequestFromMaidNodeToMaidManager") {
+  TEST_F(MaidManagerServiceTest, BEH_nfsUnregisterPmidRequestFromMaidNodeToMaidManager) {
     nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Contents content(
       nfs_vault::DataName(DataTagValue::kPmidValue, Identity(pmid_.name()->string())));
     auto unregister_pmid(
         CreateMessage<nfs::UnregisterPmidRequestFromMaidNodeToMaidManager>(content));
-    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, unregister_pmid,
+    EXPECT_NO_THROW(SingleSendsToGroup(&maid_manager_service_, unregister_pmid,
                     routing::SingleSource(MaidNodeId()), routing::GroupId(MaidNodeId())));
   }
 
-  SECTION("PmidHealthResponseFromPmidManagerToMaidManager") {
+  TEST_F(MaidManagerServiceTest, BEH_PmidHealthResponseFromPmidManagerToMaidManager) {
     PmidName pmid_name(pmid_.name());
     PmidManagerMetadata pmid_manager_metadata(pmid_name);
     pmid_manager_metadata.SetAvailableSize(
@@ -315,31 +313,27 @@ TEST_CASE_METHOD(MaidManagerServiceTest, "maid manager: check handlers availabil
     auto pmid_health_response(
              CreateMessage<PmidHealthResponseFromPmidManagerToMaidManager>(content));
     auto group_source(CreateGroupSource(NodeId(pmid_name->string())));
-    CHECK_NOTHROW(GroupSendToGroup(&maid_manager_service_, pmid_health_response, group_source,
+    EXPECT_NO_THROW(GroupSendToGroup(&maid_manager_service_, pmid_health_response, group_source,
                                      routing::GroupId(MaidNodeId())));
   }
 
-  SECTION("nfs::IncrementReferenceCountsFromMaidNodeToMaidManager") {
+  TEST_F(MaidManagerServiceTest, BEH_nfsIncrementReferenceCountsFromMaidNodeToMaidManager) {
     nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Contents content;
     auto increment_reference(
         CreateMessage<nfs::IncrementReferenceCountsFromMaidNodeToMaidManager>(content));
-    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, increment_reference,
+    EXPECT_NO_THROW(SingleSendsToGroup(&maid_manager_service_, increment_reference,
                     routing::SingleSource(MaidNodeId()), routing::GroupId(MaidNodeId())));
   }
 
-  SECTION("nfs::DecrementReferenceCountsFromMaidNodeToMaidManager") {
+  TEST_F(MaidManagerServiceTest, BEH_nfsDecrementReferenceCountsFromMaidNodeToMaidManager) {
     nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Contents content;
     auto decrement_reference(
         CreateMessage<nfs::DecrementReferenceCountsFromMaidNodeToMaidManager>(content));
-    CHECK_NOTHROW(SingleSendsToGroup(&maid_manager_service_, decrement_reference,
+    EXPECT_NO_THROW(SingleSendsToGroup(&maid_manager_service_, decrement_reference,
                     routing::SingleSource(MaidNodeId()), routing::GroupId(MaidNodeId())));
   }
-}
 
-TEST_CASE_METHOD(MaidManagerServiceTest,
-                 "maid manager: checking all sync message types are handled",
-                 "[Sync][MaidManager][Service][Behavioural]") {
-  SECTION("CreateAccount") {
+  TEST_F(MaidManagerServiceTest, BEH_CreateAccount) {
     nfs::MessageId message_id(RandomInt32());
     ActionCreateAccount action_create_account(message_id);
     MaidManager::MetadataKey metadata_key(public_maid_.name());
@@ -348,10 +342,10 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
              CreateGroupUnresolvedAction<MaidManager::UnresolvedCreateAccount>(
                  metadata_key, action_create_account, group_source));
     SendSync<MaidManager::UnresolvedCreateAccount>(group_unresolved_action, group_source);
-    CHECK_NOTHROW(GetMetadata(public_maid_.name()));
+    EXPECT_NO_THROW(GetMetadata(public_maid_.name()));
   }
 
-  SECTION("RemoveAccount") {
+  TEST_F(MaidManagerServiceTest, BEH_RemoveAccount) {
     CreateAccount();
     ActionRemoveAccount action_remove_account((nfs::MessageId(RandomUint32())));
     MaidManager::MetadataKey metadata_key(public_maid_.name());
@@ -360,10 +354,10 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
              CreateGroupUnresolvedAction<MaidManager::UnresolvedRemoveAccount>(
                  metadata_key, action_remove_account, group_source));
     SendSync<MaidManager::UnresolvedRemoveAccount>(group_unresolved_action, group_source);
-    CHECK_THROWS(GetMetadata(public_maid_.name()));
+    EXPECT_ANY_THROW(GetMetadata(public_maid_.name()));
   }
 
-  SECTION("Put") {
+  TEST_F(MaidManagerServiceTest, BEH_Put) {
     CreateAccount();
     ActionMaidManagerPut action_put(kTestChunkSize);
     MaidManager::Key key(public_maid_.name(), Identity(RandomString(64)),
@@ -375,22 +369,22 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
     SendSync<MaidManager::UnresolvedPut>(group_unresolved_action, group_source);
   }
 
-  SECTION("Delete") {
+  TEST_F(MaidManagerServiceTest, BEH_Delete) {
     CreateAccount();
     ActionMaidManagerDelete action_delete((nfs::MessageId(RandomInt32())));
     Identity data_name_id(RandomString(64));
     MaidManager::Key key(public_maid_.name(), data_name_id, ImmutableData::Tag::kValue);
     Commit(key, ActionMaidManagerPut(kTestChunkSize));
-    CHECK_NOTHROW(Get(key));
+    EXPECT_NO_THROW(Get(key));
     auto group_source(CreateGroupSource(MaidNodeId()));
     auto group_unresolved_action(
              CreateGroupUnresolvedAction<MaidManager::UnresolvedDelete>(key, action_delete,
                                                                         group_source));
     SendSync<MaidManager::UnresolvedDelete>(group_unresolved_action, group_source);
-    CHECK_THROWS(Get(key));
+    EXPECT_ANY_THROW(Get(key));
   }
 
-  SECTION("RegistedPmid") {
+  TEST_F(MaidManagerServiceTest, BEH_RegistedPmid) {
     CreateAccount();
     nfs_vault::PmidRegistration pmid_registration(maid_, pmid_, false);
     ActionMaidManagerRegisterPmid action_register_pmid(pmid_registration,
@@ -402,14 +396,14 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
                  metadata_key, action_register_pmid, group_source));
     SendSync<MaidManager::UnresolvedRegisterPmid>(group_unresolved_action, group_source);
     MaidManager::Metadata metadata(GetMetadata(public_maid_.name()));
-    CHECK(MetadataPmidTotals(metadata).size() == 1);  // FAILS BECAUSE DATAGETTER GET NEVER SUCCEEDS
+    EXPECT_TRUE(MetadataPmidTotals(metadata).size() == 1);  // FAILS BECAUSE DATAGETTER GET NEVER SUCCEEDS
   }
 
-  SECTION("UnregistedPmid") {
+  TEST_F(MaidManagerServiceTest, BEH_UnregistedPmid) {
     CreateAccount();
     RegisterPmid();
     MaidManager::Metadata metadata(GetMetadata(public_maid_.name()));
-    CHECK(MetadataPmidTotals(metadata).size() == 1);
+    EXPECT_TRUE(MetadataPmidTotals(metadata).size() == 1);
     ActionMaidManagerUnregisterPmid action_unregister_pmid(
         PmidName(Identity(pmid_.name()->string())));
     MaidManager::MetadataKey metadata_key(public_maid_.name());
@@ -419,10 +413,10 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
                  metadata_key, action_unregister_pmid, group_source));
     SendSync<MaidManager::UnresolvedUnregisterPmid>(group_unresolved_action, group_source);
     metadata = GetMetadata(public_maid_.name());
-    CHECK(MetadataPmidTotals(metadata).empty());
+    EXPECT_TRUE(MetadataPmidTotals(metadata).empty());
   }
 
-  SECTION("UpdatePmid") {
+  TEST_F(MaidManagerServiceTest, BEH_UpdatePmid) {
     PmidManagerMetadata pmid_manager_metadata(PmidName(Identity(pmid_.name()->string())));
     pmid_manager_metadata.stored_count = 1;
     pmid_manager_metadata.stored_total_size = kTestChunkSize;
@@ -447,10 +441,10 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
                  metadata_key, action_update_pmid_health, group_source));
     SendSync<MaidManager::UnresolvedUpdatePmidHealth>(group_unresolved_action, group_source);
     MaidManager::Metadata stored_metadata(GetMetadata(public_maid_.name()));
-    CHECK(Equal(stored_metadata, updated_metadata));
+    EXPECT_TRUE(Equal(stored_metadata, updated_metadata));
   }
 
-  SECTION("IncrementReferenceCounts") {
+  TEST_F(MaidManagerServiceTest, BEH_IncrementReferenceCounts) {
     const size_t kChunksCount(10);
     std::vector <ImmutableData::Name> chunks_list;
     std::vector <MaidManager::Key> keys_list;
@@ -460,7 +454,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
       Identity data_name_id(RandomString(64));
       MaidManager::Key key(public_maid_.name(), data_name_id, ImmutableData::Tag::kValue);
       Commit(key, ActionMaidManagerPut(kTestChunkSize));
-      CHECK_NOTHROW(Get(key));
+      EXPECT_NO_THROW(Get(key));
       chunks_list.push_back(ImmutableData::Name(data_name_id));
       keys_list.push_back(key);
     }
@@ -474,11 +468,11 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
                                                               group_source);
     for (size_t index(0); index < kChunksCount; ++index) {
       auto value(Get(keys_list[index]));
-      CHECK(value.count() == 2);
+      EXPECT_TRUE(value.count() == 2);
     }
   }
 
-  SECTION("DecrementReferenceCounts") {
+  TEST_F(MaidManagerServiceTest, BEH_DecrementReferenceCounts) {
     const size_t kChunksCount(10);
     std::vector <ImmutableData::Name> chunks_list;
     std::vector <MaidManager::Key> keys_list;
@@ -488,7 +482,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
       Identity data_name_id(RandomString(64));
       MaidManager::Key key(public_maid_.name(), data_name_id, ImmutableData::Tag::kValue);
       Commit(key, ActionMaidManagerPut(kTestChunkSize));
-      CHECK_NOTHROW(Get(key));
+      EXPECT_NO_THROW(Get(key));
       chunks_list.push_back(ImmutableData::Name(data_name_id));
       keys_list.push_back(key);
     }
@@ -498,7 +492,7 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
 
     for (size_t index(0); index < kChunksCount; ++index) {
       auto value(Get(keys_list[index]));
-      CHECK(value.count() == 2);
+      EXPECT_TRUE(value.count() == 2);
     }
 
     ActionMaidManagerDecrementReferenceCounts action_decrement_reference(
@@ -511,16 +505,9 @@ TEST_CASE_METHOD(MaidManagerServiceTest,
                                                               group_source);
     for (size_t index(0); index < kChunksCount; ++index) {
       auto value(Get(keys_list[index]));
-      CHECK(value.count() == 1);
+      EXPECT_TRUE(value.count() == 1);
     }
   }
-}
-
-TEST_CASE_METHOD(MaidManagerServiceTest, "maid manager: account transfer",
-                 "[AccountTransfer][MaidManager][Service][Behavioural]") {
-  CHECK(false);
-  // Not implemented yet
-}
 
 }  //  namespace test
 

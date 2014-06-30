@@ -53,7 +53,7 @@ struct TestDbValue {
 // change value
 struct TestDbActionModifyValue {
   explicit TestDbActionModifyValue(const std::string& value) : kValue(value) {}
-  detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
+  detail::DbAction operator()(std::unique_ptr<TestDbValue>& value) {
     if (value) {
       value->value = "modified_value";
       return detail::DbAction::kPut;
@@ -66,7 +66,7 @@ struct TestDbActionModifyValue {
 // put value
 struct TestDbActionPutValue {
   explicit TestDbActionPutValue(const std::string& value) : kValue(value) {}
-  detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
+  detail::DbAction operator()(std::unique_ptr<TestDbValue>& value) {
     if (!value)
       value.reset(new TestDbValue());
     value->value = kValue;
@@ -77,9 +77,9 @@ struct TestDbActionPutValue {
 
 // delete value
 struct TestDbActionDeleteValue {
-detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
-  if (!value)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+  detail::DbAction operator()(std::unique_ptr<TestDbValue>& value) {
+    if (!value)
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
     return detail::DbAction::kDelete;
   }
 };
@@ -87,36 +87,36 @@ detail::DbAction operator ()(std::unique_ptr<TestDbValue>& value) {
 template <typename Key, typename Value>
 void PopulateDbValues(Db<Key, Value>& db, const int& count) {
   for (auto i(0); i != count; ++i) {
-// need Random type
+    // need Random type
     Key key(Identity(NodeId(NodeId::IdType::kRandomId).string()), DataTagValue::kMaidValue);
     db.Commit(key, TestDbActionPutValue("new_value"));
-    CHECK(db.Get(key).value == "new_value");
+    EXPECT_TRUE(db.Get(key).value == "new_value");
   }
 }
 
 template <typename Key, typename Value>
 void DbTests(Db<Key, Value>& db, const Key& key) {
-  CHECK_THROWS_AS(db.Get(key), maidsafe_error);
+  EXPECT_THROW(db.Get(key), maidsafe_error);
   db.Commit(key, TestDbActionPutValue("new_value"));
-  CHECK(db.Get(key).value == "new_value");
+  EXPECT_TRUE(db.Get(key).value == "new_value");
   db.Commit(key, TestDbActionModifyValue("modified_value"));
-  CHECK(db.Get(key).value == "modified_value");
+  EXPECT_TRUE(db.Get(key).value == "modified_value");
   db.Commit(key, TestDbActionPutValue("new_value"));
-  CHECK(db.Get(key).value == "new_value");
+  EXPECT_TRUE(db.Get(key).value == "new_value");
   db.Commit(key, TestDbActionDeleteValue());
-  CHECK_THROWS_AS(db.Get(key), maidsafe_error);
-  CHECK_THROWS_AS(db.Commit(key, TestDbActionModifyValue("modified_value")), maidsafe_error);
-  CHECK_THROWS_AS(db.Get(key), maidsafe_error);
+  EXPECT_THROW(db.Get(key), maidsafe_error);
+  EXPECT_THROW(db.Commit(key, TestDbActionModifyValue("modified_value")), maidsafe_error);
+  EXPECT_THROW(db.Get(key), maidsafe_error);
 }
 
-TEST_CASE("Db constructor", "[Db][Unit]") {
+TEST(DbTest, BEH_DbConstructor) {
   maidsafe::test::TestPath test_path1(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest1"));
   Db<Key, DataManagerValue> data_manager_db(*test_path1);
   maidsafe::test::TestPath test_path2(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest2"));
   Db<Key, VersionHandlerValue> version_handler_db(*test_path2);
 }
 
-TEST_CASE("Db commit", "[Db][Unit]") {
+TEST(DbTest, BEH_DbCommit) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest"));
   Db<Key, TestDbValue> db(*test_path);
   Key key(Identity(NodeId(NodeId::IdType::kRandomId).string()), DataTagValue::kMaidValue);
@@ -125,12 +125,12 @@ TEST_CASE("Db commit", "[Db][Unit]") {
   // TODO(Prakash): Extend to all data types
   PopulateDbValues(db, 10000);
   for (auto i(0); i != 100; ++i) {
-    DbTests(db, Key(Identity(NodeId(NodeId::IdType::kRandomId).string()),
-                    DataTagValue::kMaidValue));
+    DbTests(db,
+            Key(Identity(NodeId(NodeId::IdType::kRandomId).string()), DataTagValue::kMaidValue));
   }
 }
 
-TEST_CASE("Db transfer info", "[Db][Unit]") {
+TEST(DbTest, BEH_DbTransferInfo) {
   maidsafe::test::TestPath test_path1(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest1"));
   Db<Key, DataManagerValue> data_manager_db(*test_path1);
   maidsafe::test::TestPath test_path2(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest2"));
@@ -144,7 +144,7 @@ TEST_CASE("Db transfer info", "[Db][Unit]") {
 
 
 
-// TEST_CASE("Db Poc", "[Db][Unit]") {
+// TEST("Db Poc", "[Db][Unit]") {
 // const maidsafe::test::TestPath kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault"));
 //  boost::filesystem::path vault_root_directory_(*kTestRoot_ / RandomAlphaNumericString(8));
 //  leveldb::DB* db;
@@ -179,10 +179,11 @@ TEST_CASE("Db transfer info", "[Db][Unit]") {
 //    for (iter->Seek("1");
 //         iter->Valid() && iter->key().ToString() < "2";
 //         iter->Next()) {
-//       REQUIRE(std::find(nodes1.begin(), nodes1.end(), iter->value().ToString()) != nodes1.end());
+//       ASSERT_TRUE(std::find(nodes1.begin(), nodes1.end(), iter->value().ToString()) !=
+// nodes1.end());
 //        ++count;
 //    }
-//    REQUIRE(10000 == count);
+//    ASSERT_TRUE(10000 == count);
 //    delete iter;
 //  }
 //  {
@@ -191,10 +192,11 @@ TEST_CASE("Db transfer info", "[Db][Unit]") {
 //    for (iter->Seek("2");
 //         iter->Valid() && iter->key().ToString() < "3";
 //         iter->Next()) {
-//       REQUIRE(std::find(nodes2.begin(), nodes2.end(), iter->value().ToString()) != nodes2.end());
+//       ASSERT_TRUE(std::find(nodes2.begin(), nodes2.end(), iter->value().ToString()) !=
+// nodes2.end());
 //        ++count;
 //    }
-//    REQUIRE(10000 == count);
+//    ASSERT_TRUE(10000 == count);
 //    delete iter;
 //  }
 //  {
@@ -203,10 +205,11 @@ TEST_CASE("Db transfer info", "[Db][Unit]") {
 //    for (iter->Seek("3");
 //         iter->Valid();
 //         iter->Next()) {
-//       REQUIRE(std::find(nodes3.begin(), nodes3.end(), iter->value().ToString()) != nodes3.end());
+//       ASSERT_TRUE(std::find(nodes3.begin(), nodes3.end(), iter->value().ToString()) !=
+// nodes3.end());
 //        ++count;
 //    }
-//    REQUIRE(10000 == count);
+//    ASSERT_TRUE(10000 == count);
 //    delete iter;
 //  }
 // }

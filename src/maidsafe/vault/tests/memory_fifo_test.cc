@@ -34,7 +34,7 @@ namespace test {
 const uint64_t kDefaultMaxMemoryUsage(10);  // elements
 const uint64_t OneKB(1024);
 
-class MemoryFIFOTest {
+class MemoryFIFOTest : public testing::Test {
  public:
   typedef MemoryFIFO::KeyType KeyType;
   typedef std::vector<std::pair<KeyType, NonEmptyString>> KeyValueContainer;
@@ -64,42 +64,42 @@ class MemoryFIFOTest {
   std::unique_ptr<MemoryFIFO> memory_fifo_;
 };
 
-TEST_CASE_METHOD(MemoryFIFOTest, "Put", "[Behavioural]") {
+TEST_F(MemoryFIFOTest, BEH_Put) {
   KeyType key(GetRandomDataNameType()), temp_key;
   NonEmptyString value = GenerateKeyValueData(key, OneKB), temp_value, recovered;
 
-  REQUIRE_NOTHROW(memory_fifo_->Store(key, value));
+  ASSERT_NO_THROW(memory_fifo_->Store(key, value));
   // Get first value.
-  REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key));
-  REQUIRE(recovered == value);
+  ASSERT_NO_THROW(recovered = memory_fifo_->Get(key));
+  ASSERT_TRUE(recovered == value);
 
   for (uint32_t i = 0; i != kDefaultMaxMemoryUsage - 1; ++i) {
     temp_key = GetRandomDataNameType();
     temp_value = GenerateKeyValueData(temp_key, OneKB);
-    REQUIRE_NOTHROW(memory_fifo_->Store(temp_key, temp_value));
-    REQUIRE_NOTHROW(recovered = memory_fifo_->Get(temp_key));
-    REQUIRE(recovered == temp_value);
+    ASSERT_NO_THROW(memory_fifo_->Store(temp_key, temp_value));
+    ASSERT_NO_THROW(recovered = memory_fifo_->Get(temp_key));
+    ASSERT_TRUE(recovered == temp_value);
   }
 
   // Get first value again.
-  REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key));
-  REQUIRE(recovered == value);
+  ASSERT_NO_THROW(recovered = memory_fifo_->Get(key));
+  ASSERT_TRUE(recovered == value);
 
   // Store another value to replace first.
   temp_key = GetRandomDataNameType();
   temp_value = GenerateKeyValueData(temp_key, OneKB);
-  REQUIRE_NOTHROW(memory_fifo_->Store(temp_key, temp_value));
-  REQUIRE_NOTHROW(recovered = memory_fifo_->Get(temp_key));
-  REQUIRE(recovered == temp_value);
+  ASSERT_NO_THROW(memory_fifo_->Store(temp_key, temp_value));
+  ASSERT_NO_THROW(recovered = memory_fifo_->Get(temp_key));
+  ASSERT_TRUE(recovered == temp_value);
 
   // Try to get first value again.
-  REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key));
-  REQUIRE(recovered == value);
+  ASSERT_NO_THROW(recovered = memory_fifo_->Get(key));
+  ASSERT_TRUE(recovered == value);
   // Should still equal last recovered value.
-  REQUIRE(recovered != temp_value);
+  ASSERT_TRUE(recovered != temp_value);
 }
 
-TEST_CASE_METHOD(MemoryFIFOTest, "Delete", "[Behavioural]") {
+TEST_F(MemoryFIFOTest, BEH_Delete) {
   KeyValueContainer key_value_pairs;
   KeyType key;
   NonEmptyString value, recovered, temp(RandomAlphaNumericString(301));
@@ -109,25 +109,25 @@ TEST_CASE_METHOD(MemoryFIFOTest, "Delete", "[Behavioural]") {
     key = GetRandomDataNameType();
     value = GenerateKeyValueData(key, (RandomUint32() % 300) + 1);
     key_value_pairs.push_back(std::make_pair(key, value));
-    REQUIRE_NOTHROW(memory_fifo_->Store(key, value));
-    REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key));
-    REQUIRE(recovered == value);
+    ASSERT_NO_THROW(memory_fifo_->Store(key, value));
+    ASSERT_NO_THROW(recovered = memory_fifo_->Get(key));
+    ASSERT_TRUE(recovered == value);
   }
 
   recovered = temp;
 
   // Delete stored key, value pairs and check they're gone.
   for (uint32_t i = 0; i != kDefaultMaxMemoryUsage; ++i) {
-    REQUIRE_NOTHROW(memory_fifo_->Delete(key_value_pairs[i].first));
-    REQUIRE_THROWS_AS(recovered = memory_fifo_->Get(key_value_pairs[i].first), maidsafe_error);
-    REQUIRE(recovered != key_value_pairs[i].second);
+    ASSERT_NO_THROW(memory_fifo_->Delete(key_value_pairs[i].first));
+    EXPECT_THROW(recovered = memory_fifo_->Get(key_value_pairs[i].first), maidsafe_error);
+    ASSERT_TRUE(recovered != key_value_pairs[i].second);
   }
 
   // Re-store same key, value pairs.
   for (uint32_t i = 0; i != kDefaultMaxMemoryUsage; ++i) {
-    REQUIRE_NOTHROW(memory_fifo_->Store(key_value_pairs[i].first, key_value_pairs[i].second));
-    REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key_value_pairs[i].first));
-    REQUIRE(recovered == key_value_pairs[i].second);
+    ASSERT_NO_THROW(memory_fifo_->Store(key_value_pairs[i].first, key_value_pairs[i].second));
+    ASSERT_NO_THROW(recovered = memory_fifo_->Get(key_value_pairs[i].first));
+    ASSERT_TRUE(recovered == key_value_pairs[i].second);
   }
 
   recovered = temp;
@@ -137,56 +137,56 @@ TEST_CASE_METHOD(MemoryFIFOTest, "Delete", "[Behavioural]") {
     key = GetRandomDataNameType();
     value = GenerateKeyValueData(key, (RandomUint32() % 300) + 1);
     key_value_pairs.push_back(std::make_pair(key, value));
-    REQUIRE_NOTHROW(memory_fifo_->Store(key, value));
-    REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key));
-    REQUIRE(recovered == value);
+    ASSERT_NO_THROW(memory_fifo_->Store(key, value));
+    ASSERT_NO_THROW(recovered = memory_fifo_->Get(key));
+    ASSERT_TRUE(recovered == value);
   }
 
   recovered = temp;
 
   // Check none of the original key, value pairs are present.
   for (uint32_t i = 0; i != kDefaultMaxMemoryUsage; ++i) {
-    REQUIRE_THROWS_AS(recovered = memory_fifo_->Get(key_value_pairs[i].first), maidsafe_error);
-    REQUIRE(recovered != key_value_pairs[i].second);
+    EXPECT_THROW(recovered = memory_fifo_->Get(key_value_pairs[i].first), maidsafe_error);
+    ASSERT_TRUE(recovered != key_value_pairs[i].second);
   }
 
   // Delete stored key, value pairs and check they're gone.
   for (uint32_t i = kDefaultMaxMemoryUsage; i != 2 * kDefaultMaxMemoryUsage; ++i) {
-    REQUIRE_NOTHROW(memory_fifo_->Delete(key_value_pairs[i].first));
-    REQUIRE_THROWS_AS(recovered = memory_fifo_->Get(key_value_pairs[i].first), maidsafe_error);
-    REQUIRE(recovered != key_value_pairs[i].second);
+    ASSERT_NO_THROW(memory_fifo_->Delete(key_value_pairs[i].first));
+    EXPECT_THROW(recovered = memory_fifo_->Get(key_value_pairs[i].first), maidsafe_error);
+    ASSERT_TRUE(recovered != key_value_pairs[i].second);
   }
 }
 
-TEST_CASE_METHOD(MemoryFIFOTest, "FifoRepeatedlyStoreUsingSameKey", "[Behavioural]") {
+TEST_F(MemoryFIFOTest, BEH_FifoRepeatedlyStoreUsingSameKey) {
   const uint32_t size(50);
   KeyType key(GetRandomDataNameType());
   NonEmptyString value = GenerateKeyValueData(key, (RandomUint32() % size) + 1), recovered,
                  last_value;
   auto async =
       std::async(std::launch::async, [this, key, value] { memory_fifo_->Store(key, value); });
-  REQUIRE_NOTHROW(async.wait());
-  REQUIRE(async.valid());
-  REQUIRE_NOTHROW(async.get());
-  REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key));
-  REQUIRE(value == recovered);
+  ASSERT_NO_THROW(async.wait());
+  ASSERT_TRUE(async.valid());
+  ASSERT_NO_THROW(async.get());
+  ASSERT_NO_THROW(recovered = memory_fifo_->Get(key));
+  ASSERT_TRUE(value == recovered);
 
   uint32_t events((RandomUint32() % (2 * size)) + 10);
   for (uint32_t i = 0; i != events; ++i) {
     last_value = NonEmptyString(RandomAlphaNumericString((RandomUint32() % size) + 1));
     auto async = std::async(std::launch::async,
                             [this, key, last_value] { memory_fifo_->Store(key, last_value); });
-    REQUIRE_NOTHROW(async.wait());
-    REQUIRE(async.valid());
-    REQUIRE_NOTHROW(async.get());
+    ASSERT_NO_THROW(async.wait());
+    ASSERT_TRUE(async.valid());
+    ASSERT_NO_THROW(async.get());
   }
 
-  REQUIRE_NOTHROW(recovered = memory_fifo_->Get(key));
-  REQUIRE(value != recovered);
-  REQUIRE(last_value == recovered);
+  ASSERT_NO_THROW(recovered = memory_fifo_->Get(key));
+  ASSERT_TRUE(value != recovered);
+  ASSERT_TRUE(last_value == recovered);
 }
 
-TEST_CASE_METHOD(MemoryFIFOTest, "RandomAsync", "[Behavioural]") {
+TEST_F(MemoryFIFOTest, BEH_RandomAsync) {
   typedef KeyValueContainer::value_type value_type;
 
   KeyValueContainer key_value_pairs;
@@ -234,7 +234,7 @@ TEST_CASE_METHOD(MemoryFIFOTest, "RandomAsync", "[Behavioural]") {
   }
 
   for (auto& future_store : future_stores) {
-    REQUIRE_NOTHROW(future_store.get());
+    ASSERT_NO_THROW(future_store.get());
   }
 
   for (auto& future_delete : future_deletes) {
@@ -251,10 +251,10 @@ TEST_CASE_METHOD(MemoryFIFOTest, "RandomAsync", "[Behavioural]") {
     try {
       NonEmptyString value(future_get.get());
       auto it = std::find_if(key_value_pairs.begin(), key_value_pairs.end(),
-                             [this, &value](const value_type & key_value_pair) {
+                             [this, &value](const value_type& key_value_pair) {
         return key_value_pair.second == value;
       });
-      REQUIRE(key_value_pairs.end() != it);
+      ASSERT_TRUE(key_value_pairs.end() != it);
     }
     catch (const std::exception& e) {
       std::string msg(e.what());

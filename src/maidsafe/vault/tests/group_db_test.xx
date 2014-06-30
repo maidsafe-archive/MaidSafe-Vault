@@ -77,9 +77,9 @@ struct TestGroupDbActionModifyValue {
       metadata.PutData(100);
       return detail::DbAction::kPut;
     }
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
-    }
-  };
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+  }
+};
 
 // put value
 struct TestGroupDbActionPutValue {
@@ -127,7 +127,7 @@ struct TestPmidGroupDbActionPutValue {
     metadata.PutData(value->size());
     return detail::DbAction::kPut;
   }
- };
+};
 
 // delete value
 struct TestPmidGroupDbActionDeleteValue {
@@ -137,8 +137,8 @@ struct TestPmidGroupDbActionDeleteValue {
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
     }
     metadata.DeleteData(value->size());
-//    if (!pmid_node_available)
-//      metadata.SetAvailableSize(0);
+    //    if (!pmid_node_available)
+    //      metadata.SetAvailableSize(0);
     return detail::DbAction::kDelete;
   }
 };
@@ -148,7 +148,7 @@ struct TestPmidGroupDbActionDeleteValue {
 void RunDbTestInParallel(int thread_count, std::function<void()> functor) {
   std::vector<std::thread> threads;
   for (int i = 0; i < thread_count; ++i)
-    threads.push_back(std::move(std::thread([functor]() { functor(); } )));
+    threads.push_back(std::move(std::thread([functor]() { functor(); })));
   for (auto& thread : threads)
     thread.join();
 }
@@ -196,7 +196,7 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
   for (auto i(0); i < 1000; ++i)
     key_vector.push_back(GroupKey<PmidName>(pmid_name, Identity(NodeId(NodeId::kRandomId).string()),
                                             DataTagValue::kPmidValue));
-  for (const auto& key_n: key_vector) {
+  for (const auto& key_n : key_vector) {
     expected_metadata.PutData(100);
     expected_value = PmidManagerValue(100);
     pmid_group_db.Commit(key_n, TestPmidGroupDbActionPutValue());
@@ -204,16 +204,14 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
 
   CHECK(pmid_group_db.GetMetadata(pmid_name) == expected_metadata);
 
-  for (const auto& key_n: key_vector) {
+  for (const auto& key_n : key_vector) {
     CHECK(pmid_group_db.GetValue(key_n) == expected_value);
   }
   auto contents(pmid_group_db.GetContents(pmid_name));
-  for (const auto& key_n: key_vector) {
-    auto itr = std::find_if(contents.kv_pair.begin(),
-                             contents.kv_pair.end(),
-                             [&key_n](const GroupDb<PmidManager>::KvPair& kv_pair) {
-                                 return (kv_pair.first == key_n);
-                              });
+  for (const auto& key_n : key_vector) {
+    auto itr = std::find_if(
+        contents.kv_pair.begin(), contents.kv_pair.end(),
+        [&key_n](const GroupDb<PmidManager>::KvPair& kv_pair) { return (kv_pair.first == key_n); });
     CHECK(itr != contents.kv_pair.end());
   }
 
@@ -298,10 +296,8 @@ TEST_CASE("GroupDb MaidManager", "[GroupDb][Unit]") {
 
 TEST_CASE("GroupDb PmidManager", "[GroupDb][Unit]") {
   GroupDb<PmidManager> pmid_group_db;
-  for (auto i(0); i < 1 ; ++i) {
-    RunDbTestInParallel(1, [&] {
-      RunPmidManagerGroupDbTest(pmid_group_db);
-    });
+  for (auto i(0); i < 1; ++i) {
+    RunDbTestInParallel(1, [&] { RunPmidManagerGroupDbTest(pmid_group_db); });
   }
 }
 

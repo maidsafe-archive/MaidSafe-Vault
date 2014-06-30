@@ -35,18 +35,17 @@ namespace test {
 namespace {
 
 typedef StructuredDataVersions::VersionName VersionName;
-
 }
 
-class VersionHandlerServiceTest {
+class VersionHandlerServiceTest : public testing::Test {
  public:
-  VersionHandlerServiceTest() :
-      pmid_(passport::CreatePmidAndSigner().first),
-      kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
-      vault_root_dir_(*kTestRoot_),
-      routing_(pmid_),
-      version_handler_service_(pmid_, routing_, vault_root_dir_),
-      asio_service_(2) {}
+  VersionHandlerServiceTest()
+      : pmid_(passport::CreatePmidAndSigner().first),
+        kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
+        vault_root_dir_(*kTestRoot_),
+        routing_(pmid_),
+        version_handler_service_(pmid_, routing_, vault_root_dir_),
+        asio_service_(2) {}
 
   VersionHandler::Value Get(const VersionHandler::Key& key) {
     return version_handler_service_.db_.Get(key);
@@ -79,8 +78,8 @@ void VersionHandlerServiceTest::SendSync(
 
 template <>
 void VersionHandlerServiceTest::SendSync<VersionHandler::UnresolvedCreateVersionTree>(
-         const std::vector<VersionHandler::UnresolvedCreateVersionTree>& unresolved_actions,
-         const std::vector<routing::GroupSource>& group_source) {
+    const std::vector<VersionHandler::UnresolvedCreateVersionTree>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<VersionHandlerService,
                                     VersionHandler::UnresolvedCreateVersionTree,
                                     SynchroniseFromVersionHandlerToVersionHandler>(
@@ -90,8 +89,8 @@ void VersionHandlerServiceTest::SendSync<VersionHandler::UnresolvedCreateVersion
 
 template <>
 void VersionHandlerServiceTest::SendSync<VersionHandler::UnresolvedPutVersion>(
-         const std::vector<VersionHandler::UnresolvedPutVersion>& unresolved_actions,
-         const std::vector<routing::GroupSource>& group_source) {
+    const std::vector<VersionHandler::UnresolvedPutVersion>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<VersionHandlerService, VersionHandler::UnresolvedPutVersion,
                                     SynchroniseFromVersionHandlerToVersionHandler>(
       &version_handler_service_, version_handler_service_.sync_put_versions_, unresolved_actions,
@@ -100,8 +99,8 @@ void VersionHandlerServiceTest::SendSync<VersionHandler::UnresolvedPutVersion>(
 
 template <>
 void VersionHandlerServiceTest::SendSync<VersionHandler::UnresolvedDeleteBranchUntilFork>(
-         const std::vector<VersionHandler::UnresolvedDeleteBranchUntilFork>& unresolved_actions,
-         const std::vector<routing::GroupSource>& group_source) {
+    const std::vector<VersionHandler::UnresolvedDeleteBranchUntilFork>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<VersionHandlerService,
                                     VersionHandler::UnresolvedDeleteBranchUntilFork,
                                     SynchroniseFromVersionHandlerToVersionHandler>(
@@ -109,163 +108,152 @@ void VersionHandlerServiceTest::SendSync<VersionHandler::UnresolvedDeleteBranchU
       unresolved_actions, group_source);
 }
 
-TEST_CASE_METHOD(VersionHandlerServiceTest,
-                 "version handler: check handlers availability",
-                 "[Handler][VersionHandler][Service][Behavioural]") {
-  SECTION("GetVersionsRequestFromMaidNodeToVersionHandler") {
-    routing::SingleSource maid_node((NodeId(NodeId::IdType::kRandomId)));
-    routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
-    auto content(CreateContent<nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Contents>());
-    auto get_version(CreateMessage<nfs::GetVersionsRequestFromMaidNodeToVersionHandler>(content));
-    CHECK_NOTHROW(SingleSendsToGroup(&version_handler_service_, get_version, maid_node,
-                                     version_group_id));
-  }
-
-  SECTION("GetVersionsRequestFromDataGetterToVersionHandler") {
-    routing::SingleSource data_getter_id((NodeId(NodeId::IdType::kRandomId)));
-    routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
-    auto content(CreateContent<nfs::GetVersionsRequestFromDataGetterToVersionHandler::Contents>());
-    auto get_version(CreateMessage<nfs::GetVersionsRequestFromDataGetterToVersionHandler>(content));
-    CHECK_NOTHROW(SingleSendsToGroup(&version_handler_service_, get_version, data_getter_id,
-                                     version_group_id));
-  }
-
-  SECTION("GetBranchRequestFromMaidNodeToVersionHandler") {
-    routing::SingleSource maid_node((NodeId(NodeId::IdType::kRandomId)));
-    routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
-    auto content(CreateContent<nfs::GetBranchRequestFromMaidNodeToVersionHandler::Contents>());
-    auto get_branch(CreateMessage<nfs::GetBranchRequestFromMaidNodeToVersionHandler>(content));
-    CHECK_NOTHROW(SingleSendsToGroup(&version_handler_service_, get_branch, maid_node,
-                                     version_group_id));
-  }
-
-  SECTION("GetBranchRequestFromDataGetterToVersionHandler") {
-    routing::SingleSource data_getter_id((NodeId(NodeId::IdType::kRandomId)));
-    routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
-    auto content(CreateContent<nfs::GetBranchRequestFromDataGetterToVersionHandler::Contents>());
-    auto get_branch(CreateMessage<nfs::GetBranchRequestFromDataGetterToVersionHandler>(content));
-    CHECK_NOTHROW(SingleSendsToGroup(&version_handler_service_, get_branch, data_getter_id,
-                                     version_group_id));
-  }
-
-  SECTION("CreateVersioTreenRequestFromMaidManagerToVersionHandler") {
-    auto group_source(CreateGroupSource((NodeId(NodeId::IdType::kRandomId))));
-    routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
-    auto content(
-        CreateContent<CreateVersionTreeRequestFromMaidManagerToVersionHandler::Contents>());
-    auto create_version(
-        CreateMessage<CreateVersionTreeRequestFromMaidManagerToVersionHandler>(content));
-    CHECK_NOTHROW(GroupSendToGroup(&version_handler_service_, create_version, group_source,
-                                   version_group_id));
-  }
-
-  SECTION("PutVersionRequestFromMaidManagerToVersionHandler") {
-    auto group_source(CreateGroupSource((NodeId(NodeId::IdType::kRandomId))));
-    routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
-    auto content(CreateContent<PutVersionRequestFromMaidManagerToVersionHandler::Contents>());
-    auto put_version(CreateMessage<PutVersionRequestFromMaidManagerToVersionHandler>(content));
-    CHECK_NOTHROW(GroupSendToGroup(&version_handler_service_, put_version, group_source,
-                                   version_group_id));
-  }
-
-  SECTION("DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler") {
-    auto group_source(CreateGroupSource((NodeId(NodeId::IdType::kRandomId))));
-    routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
-    auto content(
-        CreateContent<DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Contents>());
-    auto delete_branch(
-        CreateMessage<DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler>(content));
-    CHECK_NOTHROW(GroupSendToGroup(&version_handler_service_, delete_branch, group_source,
-                                   version_group_id));
-  }
-
-  SECTION("SynchroniseFromVersionHandlerToVersionHandler") {
-    NodeId group_id(NodeId::IdType::kRandomId);
-    auto group_source(CreateGroupSource(group_id));
-    routing::GroupId version_group_id(group_id);
-    SynchroniseFromVersionHandlerToVersionHandler::Contents content((std::string()));
-    auto sync(CreateMessage<SynchroniseFromVersionHandlerToVersionHandler>(content));
-    CHECK_THROWS(GroupSendToGroup(&version_handler_service_, sync, group_source,
-                                    version_group_id));
-  }
+TEST_F(VersionHandlerServiceTest, GetVersionsRequestFromMaidNodeToVersionHandler) {
+  routing::SingleSource maid_node((NodeId(NodeId::IdType::kRandomId)));
+  routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
+  auto content(CreateContent<nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Contents>());
+  auto get_version(CreateMessage<nfs::GetVersionsRequestFromMaidNodeToVersionHandler>(content));
+  EXPECT_NO_THROW(
+      SingleSendsToGroup(&version_handler_service_, get_version, maid_node, version_group_id));
 }
 
-TEST_CASE_METHOD(VersionHandlerServiceTest, "checking all sync message types are handled",
-                 "[Sync][VersionHandler][Service][Behavioural]") {
-  SECTION("CreateVersionTree") {
-    NodeId sender_id(NodeId::IdType::kRandomId);
-    Identity originator(NodeId(NodeId::IdType::kRandomId).string());
-    auto content(CreateContent<nfs_vault::VersionTreeCreation>());
-    nfs::MessageId message_id(RandomInt32());
-    VersionHandler::Key key(content.data_name.raw_name, ImmutableData::Tag::kValue);
-    ActionVersionHandlerCreateVersionTree action_create_version(
-        content.version_name, originator, content.max_versions, content.max_branches, message_id);
-    auto group_source(CreateGroupSource(NodeId(content.data_name.raw_name.string())));
-    auto group_unresolved_action(
-             CreateGroupUnresolvedAction<VersionHandler::UnresolvedCreateVersionTree>(
-                 key, action_create_version, group_source));
-    SendSync<VersionHandler::UnresolvedCreateVersionTree>(group_unresolved_action, group_source);
-    CHECK_NOTHROW(Get(key));
+TEST_F(VersionHandlerServiceTest, GetVersionsRequestFromDataGetterToVersionHandler) {
+  routing::SingleSource data_getter_id((NodeId(NodeId::IdType::kRandomId)));
+  routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
+  auto content(CreateContent<nfs::GetVersionsRequestFromDataGetterToVersionHandler::Contents>());
+  auto get_version(CreateMessage<nfs::GetVersionsRequestFromDataGetterToVersionHandler>(content));
+  EXPECT_NO_THROW(
+      SingleSendsToGroup(&version_handler_service_, get_version, data_getter_id, version_group_id));
+}
+
+TEST_F(VersionHandlerServiceTest, GetBranchRequestFromMaidNodeToVersionHandler) {
+  routing::SingleSource maid_node((NodeId(NodeId::IdType::kRandomId)));
+  routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
+  auto content(CreateContent<nfs::GetBranchRequestFromMaidNodeToVersionHandler::Contents>());
+  auto get_branch(CreateMessage<nfs::GetBranchRequestFromMaidNodeToVersionHandler>(content));
+  EXPECT_NO_THROW(
+      SingleSendsToGroup(&version_handler_service_, get_branch, maid_node, version_group_id));
+}
+
+TEST_F(VersionHandlerServiceTest, GetBranchRequestFromDataGetterToVersionHandler) {
+  routing::SingleSource data_getter_id((NodeId(NodeId::IdType::kRandomId)));
+  routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
+  auto content(CreateContent<nfs::GetBranchRequestFromDataGetterToVersionHandler::Contents>());
+  auto get_branch(CreateMessage<nfs::GetBranchRequestFromDataGetterToVersionHandler>(content));
+  EXPECT_NO_THROW(
+      SingleSendsToGroup(&version_handler_service_, get_branch, data_getter_id, version_group_id));
+}
+
+TEST_F(VersionHandlerServiceTest, CreateVersioTreenRequestFromMaidManagerToVersionHandler) {
+  auto group_source(CreateGroupSource((NodeId(NodeId::IdType::kRandomId))));
+  routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
+  auto content(CreateContent<CreateVersionTreeRequestFromMaidManagerToVersionHandler::Contents>());
+  auto create_version(
+      CreateMessage<CreateVersionTreeRequestFromMaidManagerToVersionHandler>(content));
+  EXPECT_NO_THROW(
+      GroupSendToGroup(&version_handler_service_, create_version, group_source, version_group_id));
+}
+
+TEST_F(VersionHandlerServiceTest, PutVersionRequestFromMaidManagerToVersionHandler) {
+  auto group_source(CreateGroupSource((NodeId(NodeId::IdType::kRandomId))));
+  routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
+  auto content(CreateContent<PutVersionRequestFromMaidManagerToVersionHandler::Contents>());
+  auto put_version(CreateMessage<PutVersionRequestFromMaidManagerToVersionHandler>(content));
+  EXPECT_NO_THROW(
+      GroupSendToGroup(&version_handler_service_, put_version, group_source, version_group_id));
+}
+
+TEST_F(VersionHandlerServiceTest, DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler) {
+  auto group_source(CreateGroupSource((NodeId(NodeId::IdType::kRandomId))));
+  routing::GroupId version_group_id((NodeId(NodeId::IdType::kRandomId)));
+  auto content(
+      CreateContent<DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Contents>());
+  auto delete_branch(
+      CreateMessage<DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler>(content));
+  EXPECT_NO_THROW(
+      GroupSendToGroup(&version_handler_service_, delete_branch, group_source, version_group_id));
+}
+
+TEST_F(VersionHandlerServiceTest, SynchroniseFromVersionHandlerToVersionHandler) {
+  NodeId group_id(NodeId::IdType::kRandomId);
+  auto group_source(CreateGroupSource(group_id));
+  routing::GroupId version_group_id(group_id);
+  SynchroniseFromVersionHandlerToVersionHandler::Contents content((std::string()));
+  auto sync(CreateMessage<SynchroniseFromVersionHandlerToVersionHandler>(content));
+  EXPECT_ANY_THROW(GroupSendToGroup(&version_handler_service_, sync, group_source, version_group_id));
+}
+
+TEST_F(VersionHandlerServiceTest, CreateVersionTree) {
+  NodeId sender_id(NodeId::IdType::kRandomId);
+  Identity originator(NodeId(NodeId::IdType::kRandomId).string());
+  auto content(CreateContent<nfs_vault::VersionTreeCreation>());
+  nfs::MessageId message_id(RandomInt32());
+  VersionHandler::Key key(content.data_name.raw_name, ImmutableData::Tag::kValue);
+  ActionVersionHandlerCreateVersionTree action_create_version(
+      content.version_name, originator, content.max_versions, content.max_branches, message_id);
+  auto group_source(CreateGroupSource(NodeId(content.data_name.raw_name.string())));
+  auto group_unresolved_action(
+      CreateGroupUnresolvedAction<VersionHandler::UnresolvedCreateVersionTree>(
+          key, action_create_version, group_source));
+  SendSync<VersionHandler::UnresolvedCreateVersionTree>(group_unresolved_action, group_source);
+  EXPECT_NO_THROW(Get(key));
+}
+
+TEST_F(VersionHandlerServiceTest, PutVersion) {
+  NodeId sender_id(NodeId::IdType::kRandomId);
+  Identity originator(NodeId(NodeId::IdType::kRandomId).string());
+  auto content(CreateContent<nfs_vault::DataNameOldNewVersion>());
+  nfs::MessageId message_id(RandomInt32());
+  VersionHandler::Key key(content.data_name.raw_name, ImmutableData::Tag::kValue);
+  Store(key, ActionVersionHandlerCreateVersionTree(content.old_version_name, originator, 10, 20,
+                                                   message_id));
+  EXPECT_NO_THROW(Get(key));
+  ActionVersionHandlerPut action_put_version(content.old_version_name, content.new_version_name,
+                                             originator, message_id);
+  auto group_source(CreateGroupSource(NodeId(content.data_name.raw_name.string())));
+  auto group_unresolved_action(CreateGroupUnresolvedAction<VersionHandler::UnresolvedPutVersion>(
+      key, action_put_version, group_source));
+  SendSync<VersionHandler::UnresolvedPutVersion>(group_unresolved_action, group_source);
+  EXPECT_NO_THROW(Get(key));
+}
+
+TEST_F(VersionHandlerServiceTest, DeleteBranchUntilFork) {
+  NodeId sender_id(NodeId::IdType::kRandomId);
+  Identity originator(NodeId(NodeId::IdType::kRandomId).string());
+  VersionHandler::Key key(Identity(RandomString(64)), ImmutableData::Tag::kValue);
+  nfs::MessageId message_id(RandomUint32());
+  VersionName v0_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
+  VersionName v1_bbb(1, ImmutableData::Name(Identity(std::string(64, 'b'))));
+  VersionName v2_ccc(2, ImmutableData::Name(Identity(std::string(64, 'c'))));
+  VersionName v2_ddd(2, ImmutableData::Name(Identity(std::string(64, 'd'))));
+  VersionName v3_fff(3, ImmutableData::Name(Identity(std::string(64, 'f'))));
+  VersionName v4_iii(4, ImmutableData::Name(Identity(std::string(64, 'i'))));
+
+  std::vector<std::pair<VersionName, VersionName>> puts;
+  puts.push_back(std::make_pair(v0_aaa, v1_bbb));
+  puts.push_back(std::make_pair(v1_bbb, v2_ccc));
+  puts.push_back(std::make_pair(v2_ccc, v3_fff));
+  puts.push_back(std::make_pair(v1_bbb, v2_ddd));
+  puts.push_back(std::make_pair(v3_fff, v4_iii));
+
+  Store(key, ActionVersionHandlerCreateVersionTree(v0_aaa, originator, 10, 20, message_id));
+
+  for (const auto& put : puts) {
+    message_id = nfs::MessageId(RandomUint32());
+    Store(key, ActionVersionHandlerPut(put.first, put.second, originator, message_id));
   }
 
-  SECTION("PutVersion") {
-    NodeId sender_id(NodeId::IdType::kRandomId);
-    Identity originator(NodeId(NodeId::IdType::kRandomId).string());
-    auto content(CreateContent<nfs_vault::DataNameOldNewVersion>());
-    nfs::MessageId message_id(RandomInt32());
-    VersionHandler::Key key(content.data_name.raw_name, ImmutableData::Tag::kValue);
-    Store(key, ActionVersionHandlerCreateVersionTree(content.old_version_name, originator, 10, 20,
-                                                     message_id));
-    CHECK_NOTHROW(Get(key));
-    ActionVersionHandlerPut action_put_version(content.old_version_name, content.new_version_name,
-                                               originator, message_id);
-    auto group_source(CreateGroupSource(NodeId(content.data_name.raw_name.string())));
-    auto group_unresolved_action(
-             CreateGroupUnresolvedAction<VersionHandler::UnresolvedPutVersion>(
-                 key, action_put_version, group_source));
-    SendSync<VersionHandler::UnresolvedPutVersion>(group_unresolved_action, group_source);
-    CHECK_NOTHROW(Get(key));
-  }
+  EXPECT_NO_THROW(Get(key).GetBranch(v4_iii));
+  EXPECT_NO_THROW(Get(key).GetBranch(v2_ddd));
 
-  SECTION("DeleteBranchUntilFork") {
-    NodeId sender_id(NodeId::IdType::kRandomId);
-    Identity originator(NodeId(NodeId::IdType::kRandomId).string());
-    VersionHandler::Key key(Identity(RandomString(64)), ImmutableData::Tag::kValue);
-    nfs::MessageId message_id(RandomUint32());
-    VersionName v0_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
-    VersionName v1_bbb(1, ImmutableData::Name(Identity(std::string(64, 'b'))));
-    VersionName v2_ccc(2, ImmutableData::Name(Identity(std::string(64, 'c'))));
-    VersionName v2_ddd(2, ImmutableData::Name(Identity(std::string(64, 'd'))));
-    VersionName v3_fff(3, ImmutableData::Name(Identity(std::string(64, 'f'))));
-    VersionName v4_iii(4, ImmutableData::Name(Identity(std::string(64, 'i'))));
-
-    std::vector<std::pair<VersionName, VersionName>> puts;
-    puts.push_back(std::make_pair(v0_aaa, v1_bbb));
-    puts.push_back(std::make_pair(v1_bbb, v2_ccc));
-    puts.push_back(std::make_pair(v2_ccc, v3_fff));
-    puts.push_back(std::make_pair(v1_bbb, v2_ddd));
-    puts.push_back(std::make_pair(v3_fff, v4_iii));
-
-    Store(key, ActionVersionHandlerCreateVersionTree(v0_aaa, originator, 10, 20, message_id));
-
-    for (const auto& put : puts) {
-      message_id = nfs::MessageId(RandomUint32());
-      Store(key, ActionVersionHandlerPut(put.first, put.second, originator, message_id));
-    }
-
-    CHECK_NOTHROW(Get(key).GetBranch(v4_iii));
-    CHECK_NOTHROW(Get(key).GetBranch(v2_ddd));
-
-    ActionVersionHandlerDeleteBranchUntilFork action_delete_branch(v4_iii);
-    auto group_source(CreateGroupSource(NodeId(NodeId::IdType::kRandomId)));
-    auto group_unresolved_action(
-             CreateGroupUnresolvedAction<VersionHandler::UnresolvedDeleteBranchUntilFork>(
-                 key, action_delete_branch, group_source));
-    SendSync<VersionHandler::UnresolvedDeleteBranchUntilFork>(group_unresolved_action,
-                                                              group_source);
-    CHECK_NOTHROW(Get(key).GetBranch(v2_ddd));
-    CHECK_THROWS(Get(key).GetBranch(v4_iii));
-  }
+  ActionVersionHandlerDeleteBranchUntilFork action_delete_branch(v4_iii);
+  auto group_source(CreateGroupSource(NodeId(NodeId::IdType::kRandomId)));
+  auto group_unresolved_action(
+      CreateGroupUnresolvedAction<VersionHandler::UnresolvedDeleteBranchUntilFork>(
+          key, action_delete_branch, group_source));
+  SendSync<VersionHandler::UnresolvedDeleteBranchUntilFork>(group_unresolved_action, group_source);
+  EXPECT_NO_THROW(Get(key).GetBranch(v2_ddd));
+  EXPECT_ANY_THROW(Get(key).GetBranch(v4_iii));
 }
 
 }  //  namespace test

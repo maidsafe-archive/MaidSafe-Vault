@@ -67,11 +67,7 @@ ms_glob_dir(VersionHandlerTests ${VaultSourcesDir}/version_handler/tests "Tests"
 set(TestsMain ${VaultSourcesDir}/tests/tests_main.cc)
 set(TestsFunctionalMain ${VaultSourcesDir}/tests/tests_func_main.cc)
 
-set(VaultGTestsAllFiles ${VaultTestsAllFiles})
-set(VaultTestsAllFiles ${VaultSourcesDir}/tests/chunk_store_test.cc
-                       ${VaultSourcesDir}/tests/chunk_store_test_utils.h
-                       ${VaultSourcesDir}/tests/chunk_store_test_utils.cc
-                       ${VaultSourcesDir}/tests/memory_fifo_test.cc
+set(VaultTests         ${VaultTestsAllFiles} 
                        ${PmidNodeTestsAllFiles}
                        ${PmidManagerTestsAllFiles}
                        ${DataManagerTestsAllFiles}
@@ -87,13 +83,11 @@ set(VaultFunctionalTestFiles ${VaultSourcesDir}/tests/vault_network.h
                              ${VaultSourcesDir}/version_handler/tests/version_handler_test.cc
                              ${VaultSourcesDir}/pmid_manager/tests/pmid_manager_test.cc)
 
-list(REMOVE_ITEM VaultTestsAllFiles ${VaultFunctionalTestFiles})
-list(REMOVE_ITEM VaultGTestsAllFiles ${VaultTestsAllFiles}
-                                     ${VaultFunctionalTestFiles} ${TestsFunctionalMain})
+list(REMOVE_ITEM VaultTests ${VaultFunctionalTestFiles} ${TestsFunctionalMain})
 list(APPEND VaultFunctionalTestFiles ${TestsFunctionalMain} ${VaultSourcesDir}/tests/tests_utils.h
                                      ${VaultSourcesDir}/tests/tests_utils.cc)
-list(APPEND VaultTestsAllFiles ${TestsMain} ${VaultSourcesDir}/tests/tests_utils.h
-                                            ${VaultSourcesDir}/tests/tests_utils.cc)
+list(APPEND VaultTests ${TestsMain} ${VaultSourcesDir}/tests/tests_utils.h
+                                    ${VaultSourcesDir}/tests/tests_utils.cc)
 
 
 #==================================================================================================#
@@ -182,11 +176,7 @@ if(MaidsafeTesting)
   target_compile_definitions(vault_mal PRIVATE USE_MAL_BEHAVIOUR)
   set_target_properties(maidsafe_vault_mal vault_mal PROPERTIES EXCLUDE_FROM_ALL ON EXCLUDE_FROM_DEFAULT_BUILD ON)
 
-  ms_add_executable(test_vault "Tests/Vault" ${VaultTestsAllFiles})
-  target_include_directories(test_vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
-  target_link_libraries(test_vault maidsafe_vault maidsafe_test)
-
-  ms_add_executable(TESTvault "Tests/Vault" ${VaultGTestsAllFiles})
+  ms_add_executable(TESTvault "Tests/Vault" ${VaultTests})
   target_include_directories(TESTvault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
   target_link_libraries(TESTvault maidsafe_vault maidsafe_test)
 
@@ -219,7 +209,6 @@ endif()
 #==================================================================================================#
 if(MaidsafeTesting)
   ms_add_style_test()
-  ms_add_catch_tests(test_vault)
   ms_add_gtests(TESTvault)
   add_test(NAME Vault_Functional_Tests COMMAND TESTvault_func)
   set_property(TEST Vault_Functional_Tests PROPERTY LABELS Vault Functional)
@@ -238,6 +227,6 @@ install(TARGETS vault COMPONENT Apps CONFIGURATIONS Debug RUNTIME DESTINATION bi
 install(TARGETS vault COMPONENT Apps CONFIGURATIONS Release RUNTIME DESTINATION bin)
 
 if(MaidsafeTesting)
-  install(TARGETS test_vault TESTvault TESTvault_func COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
-  install(TARGETS test_vault TESTvault TESTvault_func COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
+  install(TARGETS TESTvault TESTvault_func COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
+  install(TARGETS TESTvault TESTvault_func COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
 endif()

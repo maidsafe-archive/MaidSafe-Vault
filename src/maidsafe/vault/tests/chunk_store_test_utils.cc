@@ -112,4 +112,3 @@ DataNameVariant GetRandomDataNameType() {
 }  // namespace vault
 
 }  // namespace maidsafe
-

@@ -73,9 +73,7 @@ class VaultNetwork {
     vaults_[sender_index]->routing_->Send(message);
   }
 
-  NodeId kNodeId(size_t index) {
-    return vaults_[index]->routing_->kNodeId();
-  }
+  NodeId kNodeId(size_t index) { return vaults_[index]->routing_->kNodeId(); }
 
   friend class VaultTest;
   friend class CacheHandlerTest;
@@ -119,9 +117,7 @@ class VaultEnvironment : public testing::Environment {
     g_env_->SetUp();
   }
 
-  void TearDown() override {
-    g_env_->TearDown();
-  }
+  void TearDown() override { g_env_->TearDown(); }
 
   static std::shared_ptr<VaultNetwork> g_environment() { return g_env_; }
 

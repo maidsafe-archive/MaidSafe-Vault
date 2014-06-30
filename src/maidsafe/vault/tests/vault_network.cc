@@ -43,15 +43,19 @@ namespace test {
 std::shared_ptr<VaultNetwork> VaultEnvironment::g_env_ = std::shared_ptr<VaultNetwork>();
 
 VaultNetwork::VaultNetwork()
-    : vaults_(), clients_(), public_pmids_(), bootstrap_contacts_(),
+    : vaults_(),
+      clients_(),
+      public_pmids_(),
+      bootstrap_contacts_(),
       vault_dir_(fs::unique_path((fs::temp_directory_path())))
 #ifndef MAIDSAFE_WIN32
-      , kUlimitFileSize([]()->long {  // NOLINT
-                          long current_size(ulimit(UL_GETFSIZE));  // NOLINT
-                          if (current_size < kLimitsFiles)
-                            ulimit(UL_SETFSIZE, kLimitsFiles);
-                          return current_size;
-                        }())
+      ,
+      kUlimitFileSize([]()->long {               // NOLINT
+        long current_size(ulimit(UL_GETFSIZE));  // NOLINT
+        if (current_size < kLimitsFiles)
+          ulimit(UL_SETFSIZE, kLimitsFiles);
+        return current_size;
+      }())
 #endif
 {
   routing::Parameters::append_local_live_port_endpoint = true;
@@ -91,19 +95,19 @@ bool VaultNetwork::Create(const passport::detail::Fob<passport::detail::PmidTag>
   auto vault_root_dir(vault_dir_ / path_str);
   fs::create_directory(vault_root_dir);
   try {
-    LOG(kVerbose) << "vault joining: " << vaults_.size() << " id: "
-                  << DebugId(NodeId(pmid.name()->string()));
+    LOG(kVerbose) << "vault joining: " << vaults_.size()
+                  << " id: " << DebugId(NodeId(pmid.name()->string()));
     vault_manager::VaultConfig vault_config(pmid, vault_root_dir, DiskUsage(1000000000),
                                             bootstrap_contacts_);
     vaults_.emplace_back(new Vault(vault_config, [](const boost::asio::ip::udp::endpoint&) {}));
-    LOG(kSuccess) << "vault joined: " << vaults_.size() << " id: "
-                  << DebugId(NodeId(pmid.name()->string()));
+    LOG(kSuccess) << "vault joined: " << vaults_.size()
+                  << " id: " << DebugId(NodeId(pmid.name()->string()));
     public_pmids_.push_back(passport::PublicPmid(pmid));
     return true;
   }
   catch (const std::exception& ex) {
-    LOG(kError) << "vault failed to join: " << vaults_.size() << " because: "
-                << boost::diagnostic_information(ex);
+    LOG(kError) << "vault failed to join: " << vaults_.size()
+                << " because: " << boost::diagnostic_information(ex);
     return false;
   }
   return false;
@@ -146,7 +150,7 @@ bool VaultNetwork::AddVault() {
 }
 
 void VaultNetwork::AddClient() {
-  passport::MaidAndSigner maid_and_signer{ passport::CreateMaidAndSigner() };
+  passport::MaidAndSigner maid_and_signer{passport::CreateMaidAndSigner()};
   AddClient(maid_and_signer, bootstrap_contacts_);
 }
 
@@ -165,4 +169,3 @@ void VaultNetwork::AddClient(const passport::MaidAndSigner& maid_and_signer,
 }  // namespace vault
 
 }  // namespace maidsafe
-

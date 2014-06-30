@@ -87,24 +87,25 @@ TEST(AccumulatorTest, BEH_AddSingleResult) {
   auto add_request_predicate([&](const std::vector<PmidNodeServiceMessages>&) {
     return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
   });
-//   auto add_request_predicate(
-//       [&](const std::vector<PmidNodeServiceMessages>& requests_in) {
-//         if (requests_in.size() < 2)
-//           return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-//         for (auto& request : requests_in) {
-//           std::string content_string(boost::apply_visitor(ContentStringVisitor(), request));
-//           maidsafe::nfs_client::ReturnCode return_code(content_string);
-//        maidsafe_error expected_error(MakeError(maidsafe::VaultErrors::failed_to_handle_request));
-//           if (errors_eq(expected_error, return_code.value))
-//             return Accumulator<PmidNodeServiceMessages>::AddResult::kFailure;
-//           else
-//             return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
-//        }
-//         return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-//       });
+  //   auto add_request_predicate(
+  //       [&](const std::vector<PmidNodeServiceMessages>& requests_in) {
+  //         if (requests_in.size() < 2)
+  //           return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
+  //         for (auto& request : requests_in) {
+  //           std::string content_string(boost::apply_visitor(ContentStringVisitor(), request));
+  //           maidsafe::nfs_client::ReturnCode return_code(content_string);
+  //        maidsafe_error
+  // expected_error(MakeError(maidsafe::VaultErrors::failed_to_handle_request));
+  //           if (errors_eq(expected_error, return_code.value))
+  //             return Accumulator<PmidNodeServiceMessages>::AddResult::kFailure;
+  //           else
+  //             return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
+  //        }
+  //         return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
+  //       });
   EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess,
             accumulator.AddPendingRequest(message, group_source, add_request_predicate));
-//   EXPECT_EQ(accumulator.pending_requests_.size(), 1);
+  //   EXPECT_EQ(accumulator.pending_requests_.size(), 1);
   EXPECT_FALSE(accumulator.CheckHandled(message));
 }
 
