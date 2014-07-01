@@ -185,7 +185,6 @@ if(MaidsafeTesting)
                                                        ${PROJECT_BINARY_DIR}/generated_message_types
                                                        ${VaultSourcesDir}/tests)
   target_link_libraries(TESTvault_func maidsafe_vault maidsafe_test)
-  target_compile_definitions(TESTvault_func PRIVATE USE_GTEST)
 endif()
 
 ms_rename_outdated_built_exes()
