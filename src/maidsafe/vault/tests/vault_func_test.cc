@@ -43,6 +43,14 @@ class VaultTest : public testing::Test {
   std::shared_ptr<VaultNetwork> env_;
 };
 
+TEST_F(VaultTest, FUNC_KeepsJoin) {
+  for (size_t i(0); i < 40; ++i) {
+    LOG(kVerbose) << "Joining vault number " << i;
+    EXPECT_TRUE(env_->AddVault()) << " Vault " << i << " failed in joining network";
+    Sleep(std::chrono::seconds(2));
+  }
+}
+
 TEST_F(VaultTest, FUNC_PutGet) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   LOG(kVerbose) << "Before put";
