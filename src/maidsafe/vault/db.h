@@ -149,14 +149,16 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
       Key key(typename Key::FixedWidthString(db_iter->key().ToString()));
       auto check_holder_result = matrix_change->CheckHolders(NodeId(key.name.string()));
       if (check_holder_result.proximity_status == routing::GroupRangeStatus::kInRange) {
-        LOG(kVerbose) << "Db::GetTransferInfo in range ";
+        LOG(kVerbose) << "Db::GetTransferInfo in range";
         if (check_holder_result.new_holders.size() != 0) {
-          LOG(kVerbose) << "Db::GetTransferInfo having new node "
-                        << DebugId(check_holder_result.new_holders.at(0));
-          //           assert(check_holder_result.new_holders.size() == 1);
-          if (check_holder_result.new_holders.size() != 1)
-            LOG(kError) << "having " << check_holder_result.new_holders.size()
-                        << " new holders, only the first one got processed";
+          for (size_t index(0); index < check_holder_result.new_holders.size(); ++index)
+            if (index == 0)
+              LOG(kVerbose) << "Db::GetTransferInfo having new node "
+                            << DebugId(check_holder_result.new_holders.at(index));
+            else
+              LOG(kError) << "Db::GetTransferInfo unprocessed new node "
+                          << DebugId(check_holder_result.new_holders.at(index));
+          // assert(check_holder_result.new_holders.size() == 1);
           auto found_itr = transfer_info.find(check_holder_result.new_holders.at(0));
           if (found_itr != transfer_info.end()) {
             found_itr->second.push_back(std::make_pair(key, Value(db_iter->value().ToString())));

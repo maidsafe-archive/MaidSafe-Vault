@@ -564,10 +564,13 @@ void MaidManagerService::HandlePutVersionRequest(
     const StructuredDataVersions::VersionName& new_version, nfs::MessageId message_id) {
   try {
     group_db_.GetMetadata(maid_name);
+    LOG(kVerbose) << "MaidManagerService::HandlePutVersionRequest put new version "
+                  << DebugId(new_version.id) << " after old version "
+                  << DebugId(old_version.id) << " for " << HexSubstr(data_name.value);
     dispatcher_.SendPutVersionRequest(maid_name, data_name, old_version, new_version, message_id);
   }
   catch (const maidsafe_error& error) {
-    LOG(kError) << "MaidManagerService::HandlePutVersion faied to get metadata"
+    LOG(kError) << "MaidManagerService::HandlePutVersion failed to get metadata"
                 << boost::diagnostic_information(error);
     if (error.code() != make_error_code(VaultErrors::no_such_account))
       throw;

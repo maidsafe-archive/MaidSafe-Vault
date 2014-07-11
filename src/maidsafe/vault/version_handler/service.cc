@@ -184,7 +184,8 @@ void VersionHandlerService::HandleMessage(
     const SynchroniseFromVersionHandlerToVersionHandler& message,
     const typename SynchroniseFromVersionHandlerToVersionHandler::Sender& sender,
     const typename SynchroniseFromVersionHandlerToVersionHandler::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "VersionHandler::HandleMessage SynchroniseFromVersionHandlerToVersionHandler";
+  LOG(kVerbose) << "VersionHandler::HandleMessage SynchroniseFromVersionHandlerToVersionHandler "
+                << message.id;
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.contents->data))
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
@@ -218,11 +219,11 @@ void VersionHandlerService::HandleMessage(
       VersionHandler::UnresolvedPutVersion unresolved_action(
                                                proto_sync.serialised_unresolved_action(),
                                                sender.sender_id, routing_.kNodeId());
-      LOG(kVerbose) << "VersionHandlerSync: " << message.id;
+      LOG(kVerbose) << "VersionHandlerSyncPut: " << message.id;
       auto resolved_action(sync_put_versions_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         try {
-          LOG(kInfo) << "VersionHandlerSync-Commit: " << message.id;
+          LOG(kInfo) << "VersionHandlerSyncPut-Commit: " << message.id;
           db_.Commit(resolved_action->key, resolved_action->action);
           StructuredDataVersions::VersionName tip_of_tree;
           if (resolved_action->action.tip_of_tree) {
@@ -270,11 +271,14 @@ void VersionHandlerService::HandlePutVersion(
     const VersionHandler::VersionName& new_version,
     const Identity& originator,
     nfs::MessageId message_id) {
-  LOG(kVerbose) << "VersionHandlerService::HandlePutVersion: " << message_id;
+  LOG(kVerbose) << "VersionHandlerService::HandlePutVersion put new version "
+                << DebugId(new_version.id) << " after old version " << DebugId(old_version.id)
+                << " with message ID : "  << message_id;
   try {
     db_.Get(key);
   }
   catch (const maidsafe_error& error) {
+    LOG(kWarning) << "error handling put version request " << message_id;
     dispatcher_.SendPutVersionResponse(originator, key, VersionHandler::VersionName(), error,
                                        message_id);
     return;
