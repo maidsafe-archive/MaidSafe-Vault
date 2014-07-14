@@ -18,6 +18,8 @@
 
 #include "maidsafe/vault/vault.h"
 
+#include "boost/asio/ip/host_name.hpp"
+
 #include "maidsafe/common/log.h"
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/routing/node_info.h"
@@ -72,7 +74,8 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
   }
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
   InitRouting(vault_config.bootstrap_contacts);
-  VLOG(VisualiserAction::kVaultStarted, Identity{vault_config.pmid.name().value});
+  VLOG(VisualiserAction::kVaultStarted, Identity{vault_config.pmid.name().value},
+       boost::asio::ip::host_name());
 }
 
 Vault::~Vault() {
