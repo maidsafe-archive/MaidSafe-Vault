@@ -86,7 +86,7 @@ class GroupDb {
   std::unique_ptr<Value> Commit(
       const Key& key,
       std::function<detail::DbAction(Metadata& metadata, std::unique_ptr<Value>& value)> functor);
-  TransferInfo GetTransferInfo(std::shared_ptr<routing::MatrixChange> matrix_change);
+  TransferInfo GetTransferInfo(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
   void HandleTransfer(const Contents& content);
 
   // returns metadata if group_name exists in db
@@ -286,13 +286,13 @@ typename GroupDb<Persona>::Contents GroupDb<Persona>::GetContents(typename Group
 
 template <typename Persona>
 typename GroupDb<Persona>::TransferInfo GroupDb<Persona>::GetTransferInfo(
-    std::shared_ptr<routing::MatrixChange> matrix_change) {
+    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<GroupName> prune_vector;
   TransferInfo transfer_info;
   LOG(kVerbose) << "GroupDb<Persona>::GetTransferInfo group_map_.size() " << group_map_.size();
   for (auto group_itr(group_map_.begin()); group_itr != group_map_.end(); ++group_itr) {
-    auto check_holder_result = matrix_change->CheckHolders(NodeId(group_itr->first->string()));
+    auto check_holder_result = close_nodes_change->CheckHolders(NodeId(group_itr->first->string()));
     if (check_holder_result.proximity_status == routing::GroupRangeStatus::kInRange) {
       LOG(kVerbose) << "GroupDb<Persona>::GetTransferInfo in range ";
       if (check_holder_result.new_holders.size() != 0) {

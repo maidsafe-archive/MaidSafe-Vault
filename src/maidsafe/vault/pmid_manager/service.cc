@@ -475,19 +475,19 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
 // }
 
 void PmidManagerService::HandleChurnEvent(
-    std::shared_ptr<routing::MatrixChange> matrix_change) {
+    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
   std::lock_guard<std::mutex> lock(mutex_);
   if (stopped_)
     return;
   LOG(kVerbose) << "PmidManager HandleChurnEvent";
-  auto lost_nodes(matrix_change->lost_nodes());
-  for (auto& node : lost_nodes) {
+  auto lost_node(close_nodes_change->lost_node());
+  if (!lost_node.IsZero()) {
     try {
-      auto pmid_node(PmidName(Identity(node.string())));
+      auto pmid_node(PmidName(Identity(lost_node.string())));
       auto contents(group_db_.GetContents(pmid_node));
       for (const auto& kv_pair : contents.kv_pairs) {
-        VLOG(nfs::Persona::kPmidManager, VisualiserAction::kDropPmidNode, Identity{ node.string() },
-             kv_pair.first.name);
+        VLOG(nfs::Persona::kPmidManager, VisualiserAction::kDropPmidNode,
+             Identity{ lost_node.string() }, kv_pair.first.name);
         auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
         dispatcher_.SendSetPmidOffline(data_name, pmid_node);
       }
@@ -496,14 +496,14 @@ void PmidManagerService::HandleChurnEvent(
         throw;
     }
   }
-  auto new_nodes(matrix_change->new_nodes());
-  for (auto& node : new_nodes) {
+  auto new_node(close_nodes_change->new_node());
+  if (!new_node.IsZero()) {
     try {
-      auto pmid_node(PmidName(Identity(node.string())));
-      auto contents(group_db_.GetContents(PmidName(Identity(node.string()))));
+      auto pmid_node(PmidName(Identity(new_node.string())));
+      auto contents(group_db_.GetContents(PmidName(Identity(new_node.string()))));
       for (const auto& kv_pair : contents.kv_pairs) {
-        VLOG(nfs::Persona::kPmidManager, VisualiserAction::kJoinPmidNode, Identity{ node.string() },
-             kv_pair.first.name);
+        VLOG(nfs::Persona::kPmidManager, VisualiserAction::kJoinPmidNode,
+             Identity{ new_node.string() }, kv_pair.first.name);
         auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
         dispatcher_.SendSetPmidOnline(data_name, pmid_node);
       }
@@ -512,7 +512,7 @@ void PmidManagerService::HandleChurnEvent(
         throw;
     }
   }
-  GroupDb<PmidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(matrix_change));
+  GroupDb<PmidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(close_nodes_change));
   for (auto& transfer : transfer_info)
     TransferAccount(transfer.first, transfer.second);
 }
@@ -542,7 +542,7 @@ void PmidManagerService::TransferAccount(const NodeId& dest,
     const std::vector<GroupDb<PmidManager>::Contents>& accounts) {
   for (auto& account : accounts) {
     // If account just received, shall not pass it out as may under a startup procedure
-    // i.e. existing PM will be seen as new_node in matrix_change
+    // i.e. existing PM will be seen as new_node in close_nodes_change
     if (account_transfer_.CheckHandled(routing::GroupId(NodeId(account.group_name->string())))) {
       LOG(kInfo) << "PmidManager account " << HexSubstr(account.group_name->string())
                  << " just received";

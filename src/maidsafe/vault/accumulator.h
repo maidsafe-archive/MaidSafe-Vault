@@ -66,7 +66,12 @@ template <typename T>
 class Accumulator {
  public:
   typedef T type;
-  enum class AddResult { kSuccess, kWaiting, kFailure, kHandled };
+  enum class AddResult {
+    kSuccess,
+    kWaiting,
+    kFailure,
+    kHandled
+  };
   typedef std::function<AddResult(const std::vector<T>&)> AddCheckerFunctor;
   class AddRequestChecker {
    public:

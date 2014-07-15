@@ -64,10 +64,10 @@ VersionHandlerService::VersionHandlerService(const passport::Pmid& pmid,
     : routing_(routing),
       dispatcher_(routing),
       accumulator_mutex_(),
-      matrix_change_mutex_(),
+      close_nodes_change_mutex_(),
       stopped_(false),
       accumulator_(),
-      matrix_change_(),
+      close_nodes_change_(),
       db_(UniqueDbPath(vault_root_dir)),
       kThisNodeId_(routing_.kNodeId()),
       sync_create_version_tree_(NodeId(pmid.name()->string())),
@@ -406,29 +406,29 @@ void VersionHandlerService::HandleAccountTransfer(
 }
 
 void VersionHandlerService::HandleChurnEvent(
-    std::shared_ptr<routing::MatrixChange> matrix_change) {
-//   LOG(kVerbose) << "HandleChurnEvent matrix_change_ containing following info before : ";
-//   matrix_change_.Print();
-  std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
+//   LOG(kVerbose) << "HandleChurnEvent close_nodes_change_ containing following info before : ";
+//   close_nodes_change_.Print();
+  std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
   if (stopped_)
     return;
-//   LOG(kVerbose) << "HandleChurnEvent matrix_change containing following info : ";
-//   matrix_change->Print();
-  matrix_change_ = *matrix_change;
+//   LOG(kVerbose) << "HandleChurnEvent close_nodes_change containing following info : ";
+//   close_nodes_change->Print();
+  close_nodes_change_ = *close_nodes_change;
 
   Db<VersionHandler::Key, VersionHandler::Value>::TransferInfo transfer_info(
-      db_.GetTransferInfo(matrix_change));
+      db_.GetTransferInfo(close_nodes_change));
   for (auto& transfer : transfer_info)
     TransferAccount(transfer.first, transfer.second);
-//   LOG(kVerbose) << "HandleChurnEvent matrix_change_ containing following info after : ";
-//   matrix_change_.Print();
+//   LOG(kVerbose) << "HandleChurnEvent close_nodes_change_ containing following info after : ";
+//   close_nodes_change_.Print();
 
 
 //  auto record_names(version_handler_db_.GetKeys());
 //  auto itr(std::begin(record_names));
 //  while (itr != std::end(record_names)) {
 //    auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), *itr));
-//    auto check_holders_result(CheckHolders(matrix_change, routing_.kNodeId(),
+//    auto check_holders_result(CheckHolders(close_nodes_change, routing_.kNodeId(),
 //                                           NodeId(result.second)));
 //    // Delete records for which this node is no longer responsible.
 //    if (check_holders_result.proximity_status != routing::GroupRangeStatus::kInRange) {
@@ -455,7 +455,7 @@ void VersionHandlerService::HandleChurnEvent(
 void VersionHandlerService::TransferAccount(const NodeId& dest,
     const std::vector<Db<VersionHandler::Key, VersionHandler::Value>::KvPair>& accounts) {
   // If account just received, shall not pass it out as may under a startup procedure
-  // i.e. existing DM will be seen as new_node in matrix_change
+  // i.e. existing DM will be seen as new_node in close_nodes_change
   if (account_transfer_.CheckHandled(routing::GroupId(routing_.kNodeId()))) {
     LOG(kWarning) << "VersionHandler account just received";
     return;

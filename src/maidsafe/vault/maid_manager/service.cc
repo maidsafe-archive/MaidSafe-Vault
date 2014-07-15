@@ -573,15 +573,15 @@ void MaidManagerService::HandlePmidHealthResponse(const MaidName& maid_name,
 }
 
 void MaidManagerService::HandleChurnEvent(
-    std::shared_ptr<routing::MatrixChange> matrix_change) {
-//   if (matrix_change->lost_nodes().size() != 0) {
+    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
+//   if (close_nodes_change->lost_nodes().size() != 0) {
 //     LOG(kVerbose) << "MaidManagerService::HandleChurnEvent";
-//     matrix_change->Print();
+//     close_nodes_change->Print();
 //   }
   std::lock_guard<std::mutex> lock(mutex_);
   if (stopped_)
     return;
-  GroupDb<MaidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(matrix_change));
+  GroupDb<MaidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(close_nodes_change));
   for (auto& transfer : transfer_info)
     TransferAccount(transfer.first, transfer.second);
 }
@@ -590,7 +590,7 @@ void MaidManagerService::TransferAccount(const NodeId& dest,
     const std::vector<GroupDb<MaidManager>::Contents>& accounts) {
   for (auto& account : accounts) {
     // If account just received, shall not pass it out as may under a startup procedure
-    // i.e. existing MM will be seen as new_node in matrix_change
+    // i.e. existing MM will be seen as new_node in close_nodes_change
     if (account_transfer_.CheckHandled(routing::GroupId(NodeId(account.group_name->string())))) {
       LOG(kInfo) << "MaidManager account " << HexSubstr(account.group_name->string())
                  << " just received";

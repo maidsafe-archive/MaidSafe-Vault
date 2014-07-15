@@ -81,10 +81,10 @@ class DataManagerService {
   void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,
                      const typename MessageType::Receiver& receiver);
 
-  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
+  void HandleChurnEvent(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
   void Stop() {
-    std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
     stopped_ = true;
   }
 
@@ -264,10 +264,10 @@ class DataManagerService {
   routing::Routing& routing_;
   AsioService asio_service_;
   nfs_client::DataGetter& data_getter_;
-  mutable std::mutex accumulator_mutex_, matrix_change_mutex_;
+  mutable std::mutex accumulator_mutex_, close_nodes_change_mutex_;
   bool stopped_;
   Accumulator<Messages> accumulator_;
-  routing::MatrixChange matrix_change_;
+  routing::CloseNodesChange close_nodes_change_;
   DataManagerDispatcher dispatcher_;
   routing::Timer<std::pair<PmidName, GetResponseContents>> get_timer_;
   routing::Timer<GetCachedResponseContents> get_cached_response_timer_;
@@ -625,11 +625,11 @@ PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_
 
   PmidName chosen;
   {
-    std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
 //     LOG(kVerbose) << "ChoosePmidNodeToGetFrom matrix containing following info : ";
-//     matrix_change_.Print();
+//     close_nodes_change_.Print();
     chosen = PmidName(Identity(
-        matrix_change_.ChoosePmidNode(online_node_ids, NodeId(data_name->string())).string()));
+        close_nodes_change_.ChoosePmidNode(online_node_ids, NodeId(data_name->string())).string()));
   }
 
   online_pmids.erase(chosen);
@@ -728,7 +728,7 @@ void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
   LOG(kVerbose) << "DataManagerService::DoGetForNodeDownResponse "
                 << HexSubstr(data_name->string());
   {
-    std::lock_guard<std::mutex> lock(this->matrix_change_mutex_);
+    std::lock_guard<std::mutex> lock(this->close_nodes_change_mutex_);
     if (this->stopped_)
       return;
   }
