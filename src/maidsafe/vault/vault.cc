@@ -71,7 +71,7 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
     // Ignore the exception when running multiple vaults in one process during test
   }
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
-  InitRouting(vault_config.bootstrap_contacts);
+  InitRouting();
   VLOG(VisualiserAction::kVaultStarted, Identity{vault_config.pmid.name().value});
 }
 
@@ -89,9 +89,9 @@ void Vault::AddPublicPmid(const passport::PublicPmid& public_pmid) {
 }
 #endif
 
-void Vault::InitRouting(const routing::BootstrapContacts& bootstrap_contacts) {
+void Vault::InitRouting() {
   routing::Functors functors(InitialiseRoutingCallbacks());
-  routing_->Join(functors, bootstrap_contacts);
+  routing_->Join(functors);
 
   std::unique_lock<std::mutex> lock(network_health_mutex_);
   network_health_condition_variable_.wait(

@@ -61,9 +61,8 @@ class VaultNetwork {
 
   bool AddVault();
   void AddClient();
-  void AddClient(const passport::Maid& maid, const routing::BootstrapContacts& bootstrap_contacts);
-  void AddClient(const passport::MaidAndSigner& maid_and_signer,
-                 const routing::BootstrapContacts& bootstrap_contacts);
+  void AddClient(const passport::Maid& maid);
+  void AddClient(const passport::MaidAndSigner& maid_and_signer);
 
   template <typename Data>
   Data Get(const typename Data::Name& data_name);

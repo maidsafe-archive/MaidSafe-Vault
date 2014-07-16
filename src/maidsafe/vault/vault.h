@@ -81,7 +81,7 @@ class Vault {
 #ifdef TESTING
   friend class test::VaultNetwork;
 #endif
-  void InitRouting(const routing::BootstrapContacts& bootstrap_contacts);
+  void InitRouting();
   routing::Functors InitialiseRoutingCallbacks();
   template <typename T>
   void OnMessageReceived(const T& message);

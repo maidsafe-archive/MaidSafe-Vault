@@ -140,14 +140,12 @@ void VaultNetwork::AddClient() {
   AddClient(maid_and_signer, bootstrap_contacts_);
 }
 
-void VaultNetwork::AddClient(const passport::Maid& maid,
-                             const routing::BootstrapContacts& bootstrap_contacts) {
-  clients_.emplace_back(nfs_client::MaidNodeNfs::MakeShared(maid, bootstrap_contacts));
+void VaultNetwork::AddClient(const passport::Maid& maid) {
+  clients_.emplace_back(nfs_client::MaidNodeNfs::MakeShared(maid));
 }
 
-void VaultNetwork::AddClient(const passport::MaidAndSigner& maid_and_signer,
-                             const routing::BootstrapContacts& bootstrap_contacts) {
-  clients_.emplace_back(nfs_client::MaidNodeNfs::MakeShared(maid_and_signer, bootstrap_contacts));
+void VaultNetwork::AddClient(const passport::MaidAndSigner& maid_and_signer) {
+  clients_.emplace_back(nfs_client::MaidNodeNfs::MakeShared(maid_and_signer));
 }
 
 }  // namespace test
