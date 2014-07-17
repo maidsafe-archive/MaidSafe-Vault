@@ -162,9 +162,8 @@ void AddTestingOptions(po::options_description& config_file_options) {
                        fs::path(fs::temp_directory_path() / "key_directory.dat").string()),
       "Path to keys file using as ID")("identity_index", po::value<int>(),
                                        "Entry from keys file to use as ID")(
-      "bootstrap_keys_path",
-      po::value<std::string>()->default_value(
-          fs::path(fs::temp_directory_path() / "key_directory.dat").string()),
+      "bootstrap_keys_path", po::value<std::string>()->default_value(fs::path(
+                                 fs::temp_directory_path() / "key_directory.dat").string()),
       "Path to keys file for bootstrapping")(
       "disable_ctrl_c", po::value<bool>()->default_value(false), "disable ctrl+c");
 }

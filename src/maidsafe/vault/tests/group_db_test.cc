@@ -339,9 +339,9 @@ TEST(GroupDbTest, BEH_TransferInfo) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_GroupDbTest"));
   GroupDb<MaidManager> maid_group_db(UniqueDbPath(*test_path));
   GroupDb<PmidManager> pmid_group_db(UniqueDbPath(*test_path));
-  std::shared_ptr<routing::MatrixChange> matrix_change;
-  maid_group_db.GetTransferInfo(matrix_change);
-  pmid_group_db.GetTransferInfo(matrix_change);
+  std::shared_ptr<routing::CloseNodesChange> close_nodes_change;
+  maid_group_db.GetTransferInfo(close_nodes_change);
+  pmid_group_db.GetTransferInfo(close_nodes_change);
 }
 
 }  // namespace test

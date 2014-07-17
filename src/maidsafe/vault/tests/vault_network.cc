@@ -103,14 +103,14 @@ bool VaultNetwork::Create(const passport::detail::Fob<passport::detail::PmidTag>
     LOG(kSuccess) << "vault joined: " << vaults_.size()
                   << " id: " << DebugId(NodeId(pmid.name()->string()));
     public_pmids_.push_back(passport::PublicPmid(pmid));
-    return true;
   }
   catch (const std::exception& ex) {
     LOG(kError) << "vault failed to join: " << vaults_.size()
                 << " because: " << boost::diagnostic_information(ex);
     return false;
   }
-  return false;
+  Sleep(std::chrono::seconds(2));
+  return true;
 }
 
 bool VaultNetwork::AddVault() {
@@ -132,21 +132,7 @@ bool VaultNetwork::AddVault() {
     LOG(kVerbose) << "Failed to store anpmid " << error.what();
     return false;
   }
-
-  bool result(Create(pmid_and_signer.first));
-  if (result) {
-    auto register_pmid_future(clients_.front()->RegisterPmid(pmid_and_signer.first));
-    try {
-      register_pmid_future.get();
-      LOG(kVerbose) << "Pmid regsitration succeeded";
-    }
-    catch (const maidsafe_error& error) {
-      LOG(kError) << "Pmid Registration Failed " << boost::diagnostic_information(error);
-      return false;
-    }
-  }
-  Sleep(std::chrono::seconds(2));
-  return true;
+  return Create(pmid_and_signer.first);
 }
 
 void VaultNetwork::AddClient() {

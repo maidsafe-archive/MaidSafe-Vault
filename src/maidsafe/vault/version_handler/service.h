@@ -78,10 +78,10 @@ class VersionHandlerService {
   void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,
                      const typename MessageType::Receiver& receiver);
 
-  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
+  void HandleChurnEvent(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
   void Stop() {
-    std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
     stopped_ = true;
   }
 
@@ -152,10 +152,10 @@ class VersionHandlerService {
  private:
   routing::Routing& routing_;
   VersionHandlerDispatcher dispatcher_;
-  std::mutex accumulator_mutex_, matrix_change_mutex_;
+  std::mutex accumulator_mutex_, close_nodes_change_mutex_;
   bool stopped_;
   Accumulator<Messages> accumulator_;
-  routing::MatrixChange matrix_change_;
+  routing::CloseNodesChange close_nodes_change_;
   Db<VersionHandler::Key, VersionHandler::Value> db_;
   const NodeId kThisNodeId_;
   Sync<VersionHandler::UnresolvedCreateVersionTree> sync_create_version_tree_;

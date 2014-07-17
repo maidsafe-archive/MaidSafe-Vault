@@ -152,7 +152,7 @@ class PmidNodeService {
   void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,
                      const typename MessageType::Receiver& receiver);
 
-  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> /*matrix_change*/) {}  // No-op
+  void HandleChurnEvent(std::shared_ptr<routing::CloseNodesChange> /*close_nodes_change*/) {}
 
   template <typename Data>
   void HandleDelete(const typename Data::Name& data_name);

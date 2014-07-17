@@ -32,7 +32,7 @@
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/visualiser_log.h"
-#include "maidsafe/routing/matrix_change.h"
+#include "maidsafe/routing/close_nodes_change.h"
 #include "maidsafe/vault/config.h"
 #include "maidsafe/vault/types.h"
 
@@ -54,7 +54,7 @@ class Db {
   // if functor returns DbAction::kDelete, the value is deleted from db
   std::unique_ptr<Value> Commit(
       const Key& key, std::function<detail::DbAction(std::unique_ptr<Value>& value)> functor);
-  TransferInfo GetTransferInfo(std::shared_ptr<routing::MatrixChange> matrix_change);
+  TransferInfo GetTransferInfo(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
   void HandleTransfer(const std::vector<KvPair>& contents);
 
  private:
@@ -138,7 +138,7 @@ std::unique_ptr<Value> Db<Key, Value>::Commit(
 // option 2 : create a map<NodeId, std::vector<std::pair<Key, value>>> and return after pruning
 template <typename Key, typename Value>
 typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
-    std::shared_ptr<routing::MatrixChange> matrix_change) {
+    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<std::string> prune_vector;
   TransferInfo transfer_info;
@@ -147,7 +147,7 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
     std::unique_ptr<leveldb::Iterator> db_iter(leveldb_->NewIterator(leveldb::ReadOptions()));
     for (db_iter->SeekToFirst(); db_iter->Valid(); db_iter->Next()) {
       Key key(typename Key::FixedWidthString(db_iter->key().ToString()));
-      auto check_holder_result = matrix_change->CheckHolders(NodeId(key.name.string()));
+      auto check_holder_result = close_nodes_change->CheckHolders(NodeId(key.name.string()));
       if (check_holder_result.proximity_status == routing::GroupRangeStatus::kInRange) {
         LOG(kVerbose) << "Db::GetTransferInfo in range";
         if (check_holder_result.new_holders.size() != 0) {

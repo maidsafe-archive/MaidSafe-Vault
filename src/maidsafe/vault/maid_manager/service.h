@@ -97,7 +97,7 @@ class MaidManagerService {
   void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,
                      const typename MessageType::Receiver& receiver);
 
-  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
+  void HandleChurnEvent(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
   void Stop() {
     std::lock_guard<std::mutex> lock(mutex_);

@@ -45,7 +45,12 @@ namespace vault {
 template <typename UnresolvedAccountTransferAction>
 class AccountTransfer {
  public:
-  enum class AddResult { kSuccess, kWaiting, kFailure, kHandled };
+  enum class AddResult {
+    kSuccess,
+    kWaiting,
+    kFailure,
+    kHandled
+  };
 
   class AddRequestChecker {
    public:

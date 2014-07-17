@@ -42,7 +42,9 @@ DEFINE_OSTREAMABLE_ENUM_VALUES(
 
 namespace detail {
 
-enum class DataType : int32_t { kMetadata = 10000 };
+enum class DataType : int32_t {
+  kMetadata = 10000
+};
 
 }  // namespace detail
 

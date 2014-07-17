@@ -135,9 +135,9 @@ TEST(DbTest, BEH_DbTransferInfo) {
   Db<Key, DataManagerValue> data_manager_db(*test_path1);
   maidsafe::test::TestPath test_path2(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest2"));
   Db<Key, VersionHandlerValue> version_handler_db(*test_path2);
-  std::shared_ptr<routing::MatrixChange> matrix_change;
-  data_manager_db.GetTransferInfo(matrix_change);
-  version_handler_db.GetTransferInfo(matrix_change);
+  std::shared_ptr<routing::CloseNodesChange> close_nodes_change;
+  data_manager_db.GetTransferInfo(close_nodes_change);
+  version_handler_db.GetTransferInfo(close_nodes_change);
 }
 
 // parallel test
