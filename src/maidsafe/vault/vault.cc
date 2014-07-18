@@ -73,7 +73,7 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
     // Ignore the exception when running multiple vaults in one process during test
   }
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
-  InitRouting(vault_config.bootstrap_contacts);
+  InitRouting();
   VLOG(VisualiserAction::kVaultStarted, Identity{vault_config.pmid.name().value},
        boost::asio::ip::host_name());
 }
