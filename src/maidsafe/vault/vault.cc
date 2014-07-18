@@ -72,8 +72,6 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
   catch (...) {
     // Ignore the exception when running multiple vaults in one process during test
   }
-  // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
-  InitRouting(vault_config.bootstrap_contacts);
 #ifdef TESTING
   if (vault_config.send_hostname_to_visualiser_server) {
     VLOG(VisualiserAction::kVaultStarted, Identity{ vault_config.pmid.name().value },
@@ -82,10 +80,12 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
   }
 #endif
   VLOG(VisualiserAction::kVaultStarted, Identity{ vault_config.pmid.name().value });
+
+  // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
+  InitRouting(vault_config.bootstrap_contacts);
 }
 
 Vault::~Vault() {
-  VLOG(VisualiserAction::kVaultStopping, 0);
   Stop();
   asio_service_.Stop();
   routing_.reset();
