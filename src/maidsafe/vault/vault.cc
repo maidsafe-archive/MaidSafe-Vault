@@ -66,16 +66,22 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
 #endif
 {
   try {
-    log::Logging::Instance().InitialiseVlog(DebugId(vault_config.pmid.name()), "128.199.223.97",
-                                            8080, "/log");
+    log::Logging::Instance().InitialiseVlog(DebugId(vault_config.pmid.name()),
+        vault_config.vlog_session_id, "128.199.223.97", 8080, "/log");
   }
   catch (...) {
     // Ignore the exception when running multiple vaults in one process during test
   }
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
   InitRouting(vault_config.bootstrap_contacts);
-  VLOG(VisualiserAction::kVaultStarted, Identity{vault_config.pmid.name().value},
-       boost::asio::ip::host_name());
+#ifdef TESTING
+  if (vault_config.send_hostname_to_visualiser_server) {
+    VLOG(VisualiserAction::kVaultStarted, Identity{ vault_config.pmid.name().value },
+         boost::asio::ip::host_name());
+    return;
+  }
+#endif
+  VLOG(VisualiserAction::kVaultStarted, Identity{ vault_config.pmid.name().value });
 }
 
 Vault::~Vault() {
