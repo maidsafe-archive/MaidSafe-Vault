@@ -290,7 +290,7 @@ TEST(SyncTest, BEH_MultipleRandomAction) {
       << resolved_vector.size();
   int count(0);
   for (auto& key : keys) {
-    int matches(0);
+    unsigned int matches(0);
     for (const auto& resolved : resolved_vector) {
       if (resolved->key == key)
         ++matches;

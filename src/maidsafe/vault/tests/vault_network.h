@@ -86,7 +86,6 @@ class VaultNetwork {
   std::vector<VaultPtr> vaults_;
   std::vector<ClientPtr> clients_;
   std::vector<passport::PublicPmid> public_pmids_;
-  routing::BootstrapContacts bootstrap_contacts_;
   fs::path vault_dir_;
   size_t network_size_;
 #ifndef MAIDSAFE_WIN32

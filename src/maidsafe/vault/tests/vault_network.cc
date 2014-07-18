@@ -46,7 +46,6 @@ VaultNetwork::VaultNetwork()
     : vaults_(),
       clients_(),
       public_pmids_(),
-      bootstrap_contacts_(),
       vault_dir_(fs::unique_path((fs::temp_directory_path())))
 #ifndef MAIDSAFE_WIN32
       ,
@@ -97,8 +96,7 @@ bool VaultNetwork::Create(const passport::detail::Fob<passport::detail::PmidTag>
   try {
     LOG(kVerbose) << "vault joining: " << vaults_.size()
                   << " id: " << DebugId(NodeId(pmid.name()->string()));
-    vault_manager::VaultConfig vault_config(pmid, vault_root_dir, DiskUsage(1000000000),
-                                            bootstrap_contacts_);
+    vault_manager::VaultConfig vault_config(pmid, vault_root_dir, DiskUsage(1000000000));
     vaults_.emplace_back(new Vault(vault_config, [](const boost::asio::ip::udp::endpoint&) {}));
     LOG(kSuccess) << "vault joined: " << vaults_.size()
                   << " id: " << DebugId(NodeId(pmid.name()->string()));
@@ -137,7 +135,7 @@ bool VaultNetwork::AddVault() {
 
 void VaultNetwork::AddClient() {
   passport::MaidAndSigner maid_and_signer{passport::CreateMaidAndSigner()};
-  AddClient(maid_and_signer, bootstrap_contacts_);
+  AddClient(maid_and_signer);
 }
 
 void VaultNetwork::AddClient(const passport::Maid& maid) {
