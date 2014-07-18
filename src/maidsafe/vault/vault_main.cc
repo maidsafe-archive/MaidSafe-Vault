@@ -39,9 +39,7 @@ int main(int argc, char* argv[]) {
     uint16_t port{static_cast<uint16_t>(std::stoi(std::string{&unuseds[1][0]}))};
     maidsafe::vault_manager::VaultInterface vault_interface{port};
     VaultConfig vault_config{vault_interface.GetConfiguration()};
-    auto on_new_bootstrap_contact([&](maidsafe::routing::BootstrapContact bootstrap_contact) {
-      vault_interface.SendBootstrapContactToVaultManager(bootstrap_contact);
-    });
+    auto on_new_bootstrap_contact([&](maidsafe::routing::BootstrapContact) {});                 // FIXME
     // Starting Vault
 
     LOG(kVerbose) << "Starting vault...";
