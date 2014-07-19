@@ -27,6 +27,7 @@
 #include "maidsafe/vault_manager/vault_config.h"
 #include "maidsafe/vault_manager/vault_interface.h"
 
+#include "maidsafe/vault/types.h"
 #include "maidsafe/vault/vault.h"
 
 int main(int argc, char* argv[]) {
@@ -55,8 +56,9 @@ int main(int argc, char* argv[]) {
   }
   catch (const std::exception& e) {
     LOG(kError) << "This is only designed to be invoked by VaultManager: " << e.what();
-    exit_code = maidsafe::ErrorToInt(maidsafe::MakeError(maidsafe::CommonErrors::invalid_parameter));
+    exit_code =
+        maidsafe::ErrorToInt(maidsafe::MakeError(maidsafe::CommonErrors::invalid_parameter));
   }
-  VLOG(VisualiserAction::kVaultStopped, exit_code);
+  VLOG(maidsafe::vault::VisualiserAction::kVaultStopped, exit_code);
   return exit_code;
 }
