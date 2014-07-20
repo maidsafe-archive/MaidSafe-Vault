@@ -65,21 +65,23 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
       pmids_mutex_()
 #endif
 {
-  try {
-    log::Logging::Instance().InitialiseVlog(DebugId(vault_config.pmid.name()), "128.199.223.97",
-                                            8080, "/log");
-  }
-  catch (...) {
-    // Ignore the exception when running multiple vaults in one process during test
-  }
+#ifdef USE_VLOGGING
+  log::Logging::Instance().InitialiseVlog(DebugId(vault_config.pmid.name()),
+      vault_config.vlog_session_id, "visualiser.maidsafe.net", 8080, "/log");
+# ifdef TESTING
+  if (vault_config.send_hostname_to_visualiser_server)
+    VLOG(VisualiserAction::kVaultStarted, Identity{ vault_config.pmid.name().value },
+         boost::asio::ip::host_name());
+  else
+# endif
+  VLOG(VisualiserAction::kVaultStarted, Identity{ vault_config.pmid.name().value });
+#endif
+
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
-  InitRouting();
-  VLOG(VisualiserAction::kVaultStarted, Identity{vault_config.pmid.name().value},
-       boost::asio::ip::host_name());
+  InitRouting(vault_config.bootstrap_contacts);
 }
 
 Vault::~Vault() {
-  VLOG(VisualiserAction::kVaultStopping, 0);
   Stop();
   asio_service_.Stop();
   routing_.reset();

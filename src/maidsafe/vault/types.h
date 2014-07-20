@@ -38,7 +38,7 @@ DEFINE_OSTREAMABLE_ENUM_VALUES(
     (VaultStarted)(IncreaseCount)(DecreaseCount)(BlockDeleteRequest)(AccountTransfer)(
         GotAccountTransferred)(IncreaseSubscribers)(DecreaseSubscribers)(MoveChunk)(MarkNodeUp)(
         MarkNodeDown)(JoinPmidNode)(DropPmidNode)(StoreChunk)(DeleteChunk)(ChangeVersion)(
-        RemoveAccount)(NetworkHealth)(VaultStopping))
+        RemoveAccount)(NetworkHealth)(VaultStopped))
 
 namespace detail {
 
