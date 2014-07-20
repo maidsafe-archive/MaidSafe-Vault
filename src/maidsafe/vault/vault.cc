@@ -78,7 +78,7 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config,
 #endif
 
   // TODO(Fraser#5#): 2013-03-29 - Prune all empty dirs.
-  InitRouting(vault_config.bootstrap_contacts);
+  InitRouting();
 }
 
 Vault::~Vault() {
