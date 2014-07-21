@@ -97,7 +97,7 @@ bool VaultNetwork::Create(const passport::detail::Fob<passport::detail::PmidTag>
     LOG(kVerbose) << "vault joining: " << vaults_.size()
                   << " id: " << DebugId(NodeId(pmid.name()->string()));
     vault_manager::VaultConfig vault_config(pmid, vault_root_dir, DiskUsage(1000000000));
-    vaults_.emplace_back(new Vault(vault_config, [](const boost::asio::ip::udp::endpoint&) {}));
+    vaults_.emplace_back(new Vault(vault_config));
     LOG(kSuccess) << "vault joined: " << vaults_.size()
                   << " id: " << DebugId(NodeId(pmid.name()->string()));
     public_pmids_.push_back(passport::PublicPmid(pmid));

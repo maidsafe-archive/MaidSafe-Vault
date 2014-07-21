@@ -32,12 +32,10 @@ namespace maidsafe {
 namespace vault {
 
 
-Vault::Vault(const vault_manager::VaultConfig& vault_config,
-             std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact)
+Vault::Vault(const vault_manager::VaultConfig& vault_config)
     : network_health_mutex_(),
       network_health_condition_variable_(),
       network_health_(-1),
-      on_new_bootstrap_contact_(on_new_bootstrap_contact),
       asio_service_(2),
       routing_(new routing::Routing(vault_config.pmid)),
       pmids_from_file_(vault_config.test_config.public_pmid_list),
@@ -144,9 +142,6 @@ routing::Functors Vault::InitialiseRoutingCallbacks() {
     nfs::detail::DoGetPublicKey(data_getter_, node_id, give_key, pmids_from_file_,
                                 public_pmid_helper_);
   };
-  functors.new_bootstrap_contact = [this](const routing::BootstrapContact& bootstrap_contact) {
-    OnNewBootstrapContact(bootstrap_contact);
-  };
   return functors;
 }
 
@@ -176,10 +171,6 @@ void Vault::OnMatrixChanged(std::shared_ptr<routing::CloseNodesChange> close_nod
   });
   asio_service_.service().post([=] { data_manager_service_.HandleChurnEvent(close_nodes_change); });
   asio_service_.service().post([=] { pmid_manager_service_.HandleChurnEvent(close_nodes_change); });
-}
-
-void Vault::OnNewBootstrapContact(const routing::BootstrapContact& bootstrap_contact) {
-  asio_service_.service().post([=] { on_new_bootstrap_contact_(bootstrap_contact); });
 }
 
 }  // namespace vault

@@ -60,8 +60,7 @@ class VaultNetwork;
 
 class Vault {
  public:
-  Vault(const vault_manager::VaultConfig& vault_config,
-        std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact);
+  explicit Vault(const vault_manager::VaultConfig& vault_config);
 
   ~Vault();  // must issue StopSending() to all identity objects (MM etc.)
              // Then ensure routing is destroyed next then all others in any order at this time
@@ -103,7 +102,6 @@ class Vault {
   std::mutex network_health_mutex_;
   std::condition_variable network_health_condition_variable_;
   int network_health_;
-  std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact_;
   AsioService asio_service_;
   std::unique_ptr<routing::Routing> routing_;
   std::vector<passport::PublicPmid> pmids_from_file_;

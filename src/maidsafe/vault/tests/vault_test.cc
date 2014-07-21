@@ -40,7 +40,6 @@ class VaultTest : public testing::Test {
       : kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
         vault_root_directory_(*kTestRoot_ / RandomAlphaNumericString(8)),
         pmid_(passport::CreatePmidAndSigner().first),
-        on_new_bootstrap_endpoint_([](boost::asio::ip::udp::endpoint /*endpoint*/) {}),
         vault_() {
     boost::filesystem::create_directory(vault_root_directory_);
   }
@@ -49,7 +48,6 @@ class VaultTest : public testing::Test {
   const maidsafe::test::TestPath kTestRoot_;
   boost::filesystem::path vault_root_directory_;
   passport::Pmid pmid_;
-  std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint_;
   std::unique_ptr<Vault> vault_;
 };
 
@@ -58,7 +56,7 @@ TEST_F(VaultTest, DISABLED_FUNC_Constructor) {
   public_pmids_from_file.push_back(passport::PublicPmid(passport::CreatePmidAndSigner().first));
   vault_manager::VaultConfig vault_config(pmid_, vault_root_directory_, DiskUsage(100000));
   vault_config.test_config.public_pmid_list = public_pmids_from_file;
-  EXPECT_THROW(vault_.reset(new Vault(vault_config, on_new_bootstrap_endpoint_)),
+  EXPECT_THROW(vault_.reset(new Vault(vault_config)),
                vault_error);  // throws VaultErrors::failed_to_join_network
 }
 
