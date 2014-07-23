@@ -88,7 +88,6 @@ class Vault {
   bool OnGetFromCache(const T& message);
   template <typename T>
   void OnStoreInCache(const T& message);
-  void OnNewBootstrapContact(const routing::BootstrapContact& bootstrap_contact);
   template <typename Sender, typename Receiver>
   bool HandleGetFromCache(const nfs::TypeErasedMessageWrapper message, const Sender& sender,
                           const Receiver& receiver);
