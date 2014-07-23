@@ -24,7 +24,6 @@
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/test.h"
-#include "maidsafe/routing/bootstrap_file_operations.h"
 #include "maidsafe/nfs/client/maid_node_nfs.h"
 #include "maidsafe/vault/vault.h"
 

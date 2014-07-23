@@ -29,13 +29,9 @@
 #include "maidsafe/common/asio_service.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
-
 #include "maidsafe/nfs/client/data_getter.h"
 #include "maidsafe/nfs/public_pmid_helper.h"
 #include "maidsafe/nfs/service.h"
-
-#include "maidsafe/routing/bootstrap_file_operations.h"
-
 #include "maidsafe/vault_manager/vault_config.h"
 
 #include "maidsafe/vault/pmid_node/service.h"
@@ -53,9 +49,7 @@ namespace maidsafe {
 namespace vault {
 
 #ifdef TESTING
-namespace test {
-class VaultNetwork;
-}
+namespace test { class VaultNetwork; }
 #endif
 
 class Vault {
