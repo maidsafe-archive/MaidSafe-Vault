@@ -207,11 +207,10 @@ endif()
 # Tests                                                                                            #
 #==================================================================================================#
 if(MaidsafeTesting)
-  ms_add_style_test()
+  ms_add_default_tests()
   ms_add_gtests(TESTvault)
   add_test(NAME Vault_Functional_Tests COMMAND TESTvault_func)
   set_property(TEST Vault_Functional_Tests PROPERTY LABELS Vault Functional)
-  ms_add_project_experimental()
   ms_test_summary_output()
 endif()
 
