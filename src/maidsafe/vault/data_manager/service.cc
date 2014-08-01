@@ -240,7 +240,7 @@ void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::Messa
   try {
     get_timer_.AddResponse(message_id.data, std::make_pair(pmid_name, contents));
   }
-  catch (maidsafe_error& error) {
+  catch (const maidsafe_error& error) {
     // There is scenario that during the procedure of Get, the request side will get timed out
     // earlier than the response side (when they use same time out parameter).
     // So the task will be cleaned out before the time-out response from responder
@@ -251,7 +251,7 @@ void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::Messa
     } else {
       LOG(kError) << "DataManagerService::HandleGetResponse encountered unknown error : "
                   << boost::diagnostic_information(error);
-      throw error;
+      throw;
     }
   }
 }
