@@ -390,12 +390,11 @@ void VersionHandlerService::HandleAccountTransfer(
     try {
       protobuf::VersionHandlerKeyValuePair kv_msg;
       if (kv_msg.ParseFromString(action)) {
-        LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
         VersionHandler::Key key(kv_msg.key());
         VLOG(nfs::Persona::kVersionHandler, VisualiserAction::kGotAccountTransferred, key.name);
-        LOG(kVerbose) << "HandleAccountTransfer key parsed";
         VersionHandlerValue value(kv_msg.value());
-        LOG(kVerbose) << "HandleAccountTransfer vaule parsed";
+        LOG(kVerbose) << "VersionHandlerService got account " << DebugId(key.name)
+                      << " transferred, having vaule " << value.Print();
         kv_pairs.push_back(std::make_pair(key, std::move(value)));
       }
     } catch(...) {
@@ -468,6 +467,9 @@ void VersionHandlerService::TransferAccount(const NodeId& dest,
     kv_msg.set_key(account.first.Serialise());
     kv_msg.set_value(account.second.Serialise());
     actions.push_back(kv_msg.SerializeAsString());
+    LOG(kVerbose) << "VersionHandler sent account " << DebugId(account.first.name)
+                  << " to " << HexSubstr(dest.string())
+                  << " with vaule " << account.second.Print();
   }
   nfs::MessageId message_id(HashStringToMessageId(dest.string()));
   VersionHandler::UnresolvedAccountTransfer account_transfer(

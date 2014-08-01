@@ -47,6 +47,7 @@ struct PmidManagerMetadata {
   void SetAvailableSize(const int64_t& available_size);
   std::string Serialise() const;
   detail::GroupDbMetaDataStatus GroupStatus();
+  std::string Print() const;
 
   PmidName pmid_name;
   int64_t stored_count;

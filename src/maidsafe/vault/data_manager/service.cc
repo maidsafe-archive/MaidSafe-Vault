@@ -451,12 +451,11 @@ void DataManagerService::HandleAccountTransfer(
     try {
       protobuf::DataManagerKeyValuePair kv_msg;
       if (kv_msg.ParseFromString(action)) {
-        LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
         DataManager::Key key(kv_msg.key());
         VLOG(nfs::Persona::kDataManager, VisualiserAction::kGotAccountTransferred, key.name);
-        LOG(kVerbose) << "HandleAccountTransfer key parsed";
         DataManagerValue value(kv_msg.value());
-        LOG(kVerbose) << "HandleAccountTransfer vaule parsed";
+        LOG(kVerbose) << "DataManager got account " << DebugId(key.name)
+                      << " transferred, having vaule " << value.Print();
         kv_pairs.push_back(std::make_pair(key, std::move(value)));
       }
     } catch(...) {
@@ -502,6 +501,9 @@ void DataManagerService::TransferAccount(const NodeId& dest,
     kv_msg.set_key(account.first.Serialise());
     kv_msg.set_value(account.second.Serialise());
     actions.push_back(kv_msg.SerializeAsString());
+    LOG(kVerbose) << "DataManager sent account " << DebugId(account.first.name)
+                  << " to " << HexSubstr(dest.string())
+                  << " with vaule " << account.second.Print();
   }
   nfs::MessageId message_id(HashStringToMessageId(dest.string()));
   DataManager::UnresolvedAccountTransfer account_transfer(

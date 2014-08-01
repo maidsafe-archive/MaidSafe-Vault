@@ -150,6 +150,14 @@ bool operator==(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs) 
   return lhs.total_put_data_ == rhs.total_put_data_ && lhs.pmid_totals_ == rhs.pmid_totals_;
 }
 
+std::string MaidManagerMetadata::Print() const {
+  std::stringstream stream;
+  stream << "\t[total_put_data_," << total_put_data_ << "] containing";
+  for (auto& pmid_total : pmid_totals_)
+      stream << "\n\t -- " << pmid_total.pmid_metadata.Print();
+  return stream.str();
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

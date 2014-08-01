@@ -563,9 +563,10 @@ void PmidManagerService::TransferAccount(const NodeId& dest,
       nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
       PmidManager::UnresolvedAccountTransfer account_transfer(
           account.group_name, message_id, actions);
-      LOG(kVerbose) << "PmidManagerService::TransferAccount send account_transfer";
       dispatcher_.SendAccountTransfer(dest, account.group_name,
                                       message_id, account_transfer.Serialise());
+      LOG(kVerbose) << "PmidManager sent to " << HexSubstr(dest.string())
+                    << " with account " << account.Print();
     } catch(...) {
       // normally, the problem is metadata hasn't populated
       LOG(kError) << "PmidManagerService::TransferAccount account info error";
@@ -600,11 +601,8 @@ void PmidManagerService::HandleAccountTransfer(
     try {
       protobuf::PmidManagerKeyValuePair kv_msg;
       if (kv_msg.ParseFromString(action)) {
-        LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
         PmidManager::Key key(kv_msg.key());
-        LOG(kVerbose) << "HandleAccountTransfer key parsed";
         PmidManagerValue value(kv_msg.value());
-        LOG(kVerbose) << "HandleAccountTransfer vaule parsed";
         content.kv_pairs.push_back(std::make_pair(key, std::move(value)));
       } else {
         LOG(kVerbose) << "HandleAccountTransfer handle metadata";
@@ -615,6 +613,7 @@ void PmidManagerService::HandleAccountTransfer(
       LOG(kError) << "HandleAccountTransfer can't parse the action";
     }
   }
+  LOG(kVerbose) << "PmidManagerService received account "<< content.Print();
   group_db_.HandleTransfer(content);
 }
 

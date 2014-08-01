@@ -599,7 +599,6 @@ void MaidManagerService::TransferAccount(const NodeId& dest,
     try {
       std::vector<std::string> actions;
       actions.push_back(account.metadata.Serialise());
-      LOG(kVerbose) << "MaidManagerService::TransferAccount metadata serialised";
       for (auto& kv : account.kv_pairs) {
         protobuf::MaidManagerKeyValuePair kv_msg;
           kv_msg.set_key(kv.first.Serialise());
@@ -609,9 +608,10 @@ void MaidManagerService::TransferAccount(const NodeId& dest,
       nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
       MaidManager::UnresolvedAccountTransfer account_transfer(
           account.group_name, message_id, actions);
-      LOG(kVerbose) << "MaidManagerService::TransferAccount send account_transfer";
       dispatcher_.SendAccountTransfer(dest, account.group_name,
                                       message_id, account_transfer.Serialise());
+      LOG(kVerbose) << "MaidManager sent to " << HexSubstr(dest.string())
+                    << " with account " << account.Print();
     } catch(...) {
       // the normal problem is metadata hasn't been populated
       LOG(kError) << "MaidManagerService::TransferAccount account info error";
@@ -1113,6 +1113,7 @@ void MaidManagerService::HandleAccountTransfer(
       LOG(kError) << "HandleAccountTransfer can't parse the action";
     }
   }
+  LOG(kVerbose) << "MaidManagerService received account "<< content.Print();
   group_db_.HandleTransfer(content);
 }
 

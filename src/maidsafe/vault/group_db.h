@@ -27,6 +27,7 @@
 #include <mutex>
 #include <set>
 #include <string>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -65,6 +66,8 @@ class GroupDb {
         : group_name(std::move(other.group_name)),
           metadata(std::move(other.metadata)),
           kv_pairs(std::move(other.kv_pairs)) {}
+
+    std::string Print() const;
 
     GroupName group_name;
     Metadata metadata;
@@ -125,6 +128,26 @@ class GroupDb {
   std::unique_ptr<leveldb::DB> leveldb_;
   GroupMap group_map_;
 };
+
+template <typename Persona>
+std::string GroupDb<Persona>::Contents::Print() const {
+  std::stringstream stream;
+  try {
+    stream << "\tGroup_Name : " << DebugId(group_name);
+    stream << "\nmetadata : " << metadata.Print();
+    for (auto& kv : kv_pairs) {
+      try {
+        stream << "\n\t\t " << DebugId(kv.first.group_name())
+               << " -- " << kv.second.Print();
+      } catch (const std::exception& e) {
+        stream << "\n" << boost::diagnostic_information(e);
+      }
+    }
+  } catch (const std::exception& e) {
+    stream << "\n" << boost::diagnostic_information(e);
+  }
+  return stream.str();
+}
 
 template <>
 GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup(

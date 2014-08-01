@@ -137,5 +137,14 @@ bool operator==(const PmidManagerMetadata& lhs, const PmidManagerMetadata& rhs) 
          lhs.claimed_available_size == rhs.claimed_available_size;
 }
 
+std::string PmidManagerMetadata::Print() const {
+  std::stringstream stream;
+  stream << "\t[pmid_name," << DebugId(pmid_name) << "] [stored_count," << stored_count
+         << "] [stored_total_size," << stored_total_size << "] [lost_count," << lost_count
+         << "] [lost_total_size," << lost_total_size << "] [claimed_available_size,"
+         << claimed_available_size << "]";
+  return stream.str();
+}
+
 }  // namespace vault
 }  // namespace maidsafe
