@@ -176,15 +176,15 @@ if(MaidsafeTesting)
   target_compile_definitions(vault_mal PRIVATE USE_MAL_BEHAVIOUR)
   set_target_properties(maidsafe_vault_mal vault_mal PROPERTIES EXCLUDE_FROM_ALL ON EXCLUDE_FROM_DEFAULT_BUILD ON)
 
-  ms_add_executable(TESTvault "Tests/Vault" ${VaultTests})
-  target_include_directories(TESTvault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
-  target_link_libraries(TESTvault maidsafe_vault maidsafe_test)
+  ms_add_executable(test_vault "Tests/Vault" ${VaultTests})
+  target_include_directories(test_vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
+  target_link_libraries(test_vault maidsafe_vault maidsafe_test)
 
-  ms_add_executable(TESTvault_func "Tests/Vault" ${VaultFunctionalTestFiles})
-  target_include_directories(TESTvault_func PRIVATE ${PROJECT_SOURCE_DIR}/src
-                                                       ${PROJECT_BINARY_DIR}/generated_message_types
-                                                       ${VaultSourcesDir}/tests)
-  target_link_libraries(TESTvault_func maidsafe_vault maidsafe_test)
+  ms_add_executable(network_test_vault "Tests/Vault" ${VaultFunctionalTestFiles})
+  target_include_directories(network_test_vault PRIVATE ${PROJECT_SOURCE_DIR}/src
+                                                        ${PROJECT_BINARY_DIR}/generated_message_types
+                                                        ${VaultSourcesDir}/tests)
+  target_link_libraries(network_test_vault maidsafe_vault maidsafe_test)
 endif()
 
 ms_rename_outdated_built_exes()
@@ -196,7 +196,7 @@ ms_rename_outdated_built_exes()
 include(standard_flags)
 
 if(MSVC AND MaidsafeTesting)
-  set_property(TARGET maidsafe_vault TESTvault TESTvault_func maidsafe_vault_mal APPEND PROPERTY COMPILE_FLAGS "/bigobj")
+  set_property(TARGET maidsafe_vault test_vault network_test_vault maidsafe_vault_mal APPEND PROPERTY COMPILE_FLAGS "/bigobj")
 endif()
 if(MSVC)
   target_compile_options(vault PUBLIC $<$<CONFIG:Release>: /bigobj>)
@@ -208,9 +208,8 @@ endif()
 #==================================================================================================#
 if(MaidsafeTesting)
   ms_add_default_tests()
-  ms_add_gtests(TESTvault)
-  add_test(NAME Vault_Functional_Tests COMMAND TESTvault_func)
-  set_property(TEST Vault_Functional_Tests PROPERTY LABELS Vault Functional)
+  ms_add_gtests(test_vault)
+  ms_add_network_gtests(network_test_vault)
   ms_test_summary_output()
 endif()
 
@@ -225,6 +224,6 @@ install(TARGETS vault COMPONENT Apps CONFIGURATIONS Debug RUNTIME DESTINATION bi
 install(TARGETS vault COMPONENT Apps CONFIGURATIONS Release RUNTIME DESTINATION bin)
 
 if(MaidsafeTesting)
-  install(TARGETS TESTvault TESTvault_func COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
-  install(TARGETS TESTvault TESTvault_func COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
+  install(TARGETS test_vault network_test_vault COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
+  install(TARGETS test_vault network_test_vault COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
 endif()
