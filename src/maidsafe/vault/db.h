@@ -150,25 +150,23 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
       auto check_holder_result = close_nodes_change->CheckHolders(NodeId(key.name.string()));
       if (check_holder_result.proximity_status == routing::GroupRangeStatus::kInRange) {
         LOG(kVerbose) << "Db::GetTransferInfo in range";
-        if (check_holder_result.new_holders.size() != 0) {
-          for (size_t index(0); index < check_holder_result.new_holders.size(); ++index)
-            if (index == 0)
-              LOG(kVerbose) << "Db::GetTransferInfo having new node "
-                            << DebugId(check_holder_result.new_holders.at(index));
-            else
-              LOG(kError) << "Db::GetTransferInfo unprocessed new node "
-                          << DebugId(check_holder_result.new_holders.at(index));
-          // assert(check_holder_result.new_holders.size() == 1);
-          auto found_itr = transfer_info.find(check_holder_result.new_holders.at(0));
+        if (check_holder_result.new_holder != NodeId()) {
+          LOG(kVerbose) << "Db::GetTransferInfo having new holder "
+                        << DebugId(check_holder_result.new_holder);
+          auto found_itr = transfer_info.find(check_holder_result.new_holder);
           if (found_itr != transfer_info.end()) {
+            LOG(kInfo) << "Db::GetTransferInfo add into transfering account "
+                       << HexSubstr(key.name.string())
+                       << " to " << DebugId(check_holder_result.new_holder);
             found_itr->second.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
           } else {  // create
-            LOG(kInfo) << "Db::GetTransferInfo transfering account " << HexSubstr(key.name.string())
-                       << " to " << DebugId(check_holder_result.new_holders.at(0));
+            LOG(kInfo) << "Db::GetTransferInfo create transfering account "
+                       << HexSubstr(key.name.string())
+                       << " to " << DebugId(check_holder_result.new_holder);
             std::vector<KvPair> kv_pair;
             kv_pair.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
             transfer_info.insert(
-                std::make_pair(check_holder_result.new_holders.at(0), std::move(kv_pair)));
+                std::make_pair(check_holder_result.new_holder, std::move(kv_pair)));
           }
         }
       } else {
