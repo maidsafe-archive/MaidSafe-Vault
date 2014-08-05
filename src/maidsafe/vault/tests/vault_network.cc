@@ -56,9 +56,7 @@ VaultNetwork::VaultNetwork()
         return current_size;
       }())
 #endif
-{
-  routing::Parameters::append_local_live_port_endpoint = true;
-}
+  {}
 
 void VaultNetwork::SetUp() {
   for (int index(0); index < kClientsSize; ++index)
