@@ -138,8 +138,8 @@ std::string GroupDb<Persona>::Contents::Print() const {
     stream << "\nmetadata : " << metadata.Print();
     for (auto& kv : kv_pairs) {
       try {
-        stream << "\n\t\t " << DebugId(kv.first.group_name())
-               << " -- " << kv.second.Print();
+        stream << "\n\t\t [ " << DebugId(kv.first.group_name()) << " , "
+               << DebugId(kv.first.name) << " ] --- " << kv.second.Print();
       } catch (const std::exception& e) {
         stream << "\n" << boost::diagnostic_information(e);
       }
@@ -153,7 +153,6 @@ std::string GroupDb<Persona>::Contents::Print() const {
 template <typename Persona>
 std::string GroupDb<Persona>::Print() const {
   std::stringstream stream;
-  typedef std::map<GroupName, std::pair<GroupId, Metadata>> GroupMap;
   for (auto& itr : group_map_) {
     stream << "\n\tGroup_Name : " << DebugId(itr.first)
            << " Group_Id : " << itr.second.first
