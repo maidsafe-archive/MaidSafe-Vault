@@ -477,56 +477,56 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
 void PmidManagerService::HandleChurnEvent(
     std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
   try {
-  std::lock_guard<std::mutex> lock(mutex_);
-  if (stopped_)
-    return;
-  LOG(kVerbose) << "PmidManager HandleChurnEvent processing lost node case";
-  auto lost_node(close_nodes_change->lost_node());
-  if (!lost_node.IsZero()) {
-    LOG(kVerbose) << "PmidManager HandleChurnEvent detected lost_node " << DebugId(lost_node);
-    try {
-      auto pmid_node(PmidName(Identity(lost_node.string())));
-      auto contents(group_db_.GetContents(pmid_node));
-      for (const auto& kv_pair : contents.kv_pairs) {
-        VLOG(nfs::Persona::kPmidManager, VisualiserAction::kDropPmidNode,
-             Identity{ lost_node.string() }, kv_pair.first.name);
-        auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
-        dispatcher_.SendSetPmidOffline(data_name, pmid_node);
-        LOG(kVerbose) << "Broadcasting pmid_node " << DebugId(pmid_node) << " holding data "
-                      << DebugId(kv_pair.first.name) << " is offline";
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (stopped_)
+      return;
+    LOG(kVerbose) << "PmidManager HandleChurnEvent processing lost node case";
+    auto lost_node(close_nodes_change->lost_node());
+    if (!lost_node.IsZero()) {
+      LOG(kVerbose) << "PmidManager HandleChurnEvent detected lost_node " << DebugId(lost_node);
+      try {
+        auto pmid_node(PmidName(Identity(lost_node.string())));
+        auto contents(group_db_.GetContents(pmid_node));
+        for (const auto& kv_pair : contents.kv_pairs) {
+          VLOG(nfs::Persona::kPmidManager, VisualiserAction::kDropPmidNode,
+               Identity{ lost_node.string() }, kv_pair.first.name);
+          auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
+          dispatcher_.SendSetPmidOffline(data_name, pmid_node);
+          LOG(kVerbose) << "Broadcasting pmid_node " << DebugId(pmid_node) << " holding data "
+                        << DebugId(kv_pair.first.name) << " is offline";
+        }
+      } catch (const maidsafe_error& error) {
+        LOG(kVerbose) << "error : " << boost::diagnostic_information(error) << "\n\n";
+        if (error.code() != make_error_code(VaultErrors::no_such_account))
+          throw;
       }
-    } catch (const maidsafe_error& error) {
-      LOG(kVerbose) << "error : " << boost::diagnostic_information(error) << "\n\n";
-      if (error.code() != make_error_code(VaultErrors::no_such_account))
-        throw;
     }
-  }
-  LOG(kVerbose) << "PmidManager HandleChurnEvent processing new_node case";
-  auto new_node(close_nodes_change->new_node());
-  if (!new_node.IsZero()) {
-    LOG(kVerbose) << "PmidManager HandleChurnEvent detected new_node " << DebugId(new_node);
-    try {
-      auto pmid_node(PmidName(Identity(new_node.string())));
-      auto contents(group_db_.GetContents(PmidName(Identity(new_node.string()))));
-      for (const auto& kv_pair : contents.kv_pairs) {
-        VLOG(nfs::Persona::kPmidManager, VisualiserAction::kJoinPmidNode,
-             Identity{ new_node.string() }, kv_pair.first.name);
-        auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
-        dispatcher_.SendSetPmidOnline(data_name, pmid_node);
-      }
-    } catch (const maidsafe_error& error) {
+    LOG(kVerbose) << "PmidManager HandleChurnEvent processing new_node case";
+    auto new_node(close_nodes_change->new_node());
+    if (!new_node.IsZero()) {
+      LOG(kVerbose) << "PmidManager HandleChurnEvent detected new_node " << DebugId(new_node);
+      try {
+        auto pmid_node(PmidName(Identity(new_node.string())));
+        auto contents(group_db_.GetContents(PmidName(Identity(new_node.string()))));
+        for (const auto& kv_pair : contents.kv_pairs) {
+          VLOG(nfs::Persona::kPmidManager, VisualiserAction::kJoinPmidNode,
+               Identity{ new_node.string() }, kv_pair.first.name);
+          auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
+          dispatcher_.SendSetPmidOnline(data_name, pmid_node);
+        }
+      } catch (const maidsafe_error& error) {
 //      LOG(kVerbose) << "error : " << boost::diagnostic_information(error) << "\n\n";
-      if (error.code() != make_error_code(VaultErrors::no_such_account))
-        throw;
+        if (error.code() != make_error_code(VaultErrors::no_such_account))
+          throw;
+      }
     }
-  }
-  LOG(kVerbose) << "PmidManager HandleChurnEvent processing account transfer";
-  GroupDb<PmidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(close_nodes_change));
-  for (auto& transfer : transfer_info)
-    TransferAccount(transfer.first, transfer.second);
-  LOG(kVerbose) << "PmidManager HandleChurnEvent completed";
+    LOG(kVerbose) << "PmidManager HandleChurnEvent processing account transfer";
+    GroupDb<PmidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(close_nodes_change));
+    for (auto& transfer : transfer_info)
+      TransferAccount(transfer.first, transfer.second);
+    LOG(kVerbose) << "PmidManager HandleChurnEvent completed";
   } catch (const std::exception& e) {
-  LOG(kVerbose) << "error : " << boost::diagnostic_information(e) << "\n\n";
+    LOG(kVerbose) << "error : " << boost::diagnostic_information(e) << "\n\n";
   }
 }
 
