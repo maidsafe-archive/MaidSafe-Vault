@@ -142,39 +142,34 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<std::string> prune_vector;
   TransferInfo transfer_info;
-  {
-    LOG(kVerbose) << "Db::GetTransferInfo";
-    std::unique_ptr<leveldb::Iterator> db_iter(leveldb_->NewIterator(leveldb::ReadOptions()));
-    for (db_iter->SeekToFirst(); db_iter->Valid(); db_iter->Next()) {
-      Key key(typename Key::FixedWidthString(db_iter->key().ToString()));
-      auto check_holder_result = close_nodes_change->CheckHolders(NodeId(key.name.string()));
-      if (check_holder_result.proximity_status == routing::GroupRangeStatus::kInRange) {
-        LOG(kVerbose) << "Db::GetTransferInfo in range";
-        if (check_holder_result.new_holder != NodeId()) {
-          LOG(kVerbose) << "Db::GetTransferInfo having new holder "
-                        << DebugId(check_holder_result.new_holder);
-          auto found_itr = transfer_info.find(check_holder_result.new_holder);
-          if (found_itr != transfer_info.end()) {
-            LOG(kInfo) << "Db::GetTransferInfo add into transfering account "
-                       << HexSubstr(key.name.string())
-                       << " to " << DebugId(check_holder_result.new_holder);
-            found_itr->second.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
-          } else {  // create
-            LOG(kInfo) << "Db::GetTransferInfo create transfering account "
-                       << HexSubstr(key.name.string())
-                       << " to " << DebugId(check_holder_result.new_holder);
-            std::vector<KvPair> kv_pair;
-            kv_pair.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
-            transfer_info.insert(
-                std::make_pair(check_holder_result.new_holder, std::move(kv_pair)));
-          }
-        }
-      } else {
-        VLOG(VisualiserAction::kRemoveAccount, key.name);
-        prune_vector.push_back(db_iter->key().data());
+  LOG(kVerbose) << "Db::GetTransferInfo";
+  std::unique_ptr<leveldb::Iterator> db_iter(leveldb_->NewIterator(leveldb::ReadOptions()));
+  for (db_iter->SeekToFirst(); db_iter->Valid(); db_iter->Next()) {
+    Key key(typename Key::FixedWidthString(db_iter->key().ToString()));
+    auto check_holder_result = close_nodes_change->CheckHolders(NodeId(key.name.string()));
+    if (check_holder_result.proximity_status == routing::GroupRangeStatus::kInRange) {
+      LOG(kVerbose) << "Db::GetTransferInfo in range";
+      if (check_holder_result.new_holder == NodeId())
+        continue;
+      LOG(kVerbose) << "Db::GetTransferInfo having new holder " << check_holder_result.new_holder;
+      auto found_itr = transfer_info.find(check_holder_result.new_holder);
+      if (found_itr != transfer_info.end()) {
+        LOG(kInfo) << "Db::GetTransferInfo add into transfering account "
+                   << HexSubstr(key.name.string()) << " to " << check_holder_result.new_holder;
+        found_itr->second.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
+      } else {  // create
+        LOG(kInfo) << "Db::GetTransferInfo create transfering account "
+                   << HexSubstr(key.name.string()) << " to " << check_holder_result.new_holder;
+        std::vector<KvPair> kv_pair;
+        kv_pair.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
+        transfer_info.insert(std::make_pair(check_holder_result.new_holder, std::move(kv_pair)));
       }
+    } else {
+      VLOG(VisualiserAction::kRemoveAccount, key.name);
+      prune_vector.push_back(db_iter->key().data());
     }
   }
+  db_iter.reset();
 
   for (const auto& key_string : prune_vector)
     leveldb_->Delete(leveldb::WriteOptions(), key_string);  // Ignore Delete failure here ?
@@ -193,7 +188,7 @@ void Db<Key, Value>::HandleTransfer(const std::vector<std::pair<Key, Value>>& co
       LOG(kInfo) << error.what();
       if ((error.code() != make_error_code(CommonErrors::no_such_element)) &&
           (error.code() != make_error_code(VaultErrors::no_such_account)))
-        throw error;  // For db errors
+        throw;  // For db errors
       else
         Put(kv_pair);
     }
