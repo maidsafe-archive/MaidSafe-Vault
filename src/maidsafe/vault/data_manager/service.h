@@ -398,7 +398,15 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
     } else {
       do {
         LOG(kInfo) << "pick from routing_.RandomConnectedNode()";
-        pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
+        // it is observed during the startup period, a vault may receive a request before
+        // it's routing_table having any entry.
+        auto picked_node(routing_.RandomConnectedNode());
+        if (picked_node != NodeId()) {
+          pmid_name = PmidName(Identity(picked_node.string()));
+        } else {
+          LOG(kError) << "no entry in routing_table";
+          return;
+        }
       } while (pmid_name->string() == data.name().value.string());
     }
     LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)

@@ -153,8 +153,13 @@ bool operator==(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs) 
 std::string MaidManagerMetadata::Print() const {
   std::stringstream stream;
   stream << "\t[total_put_data_," << total_put_data_ << "] containing";
-  for (auto& pmid_total : pmid_totals_)
+  for (auto& pmid_total : pmid_totals_) {
+    try {
       stream << "\n\t -- " << pmid_total.pmid_metadata.Print();
+    } catch (const std::exception& e) {
+      stream << "\n\t error: " << boost::diagnostic_information(e);
+    }
+  }
   return stream.str();
 }
 
