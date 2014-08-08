@@ -483,6 +483,7 @@ void PmidManagerService::HandleChurnEvent(
   LOG(kVerbose) << "PmidManager HandleChurnEvent processing lost node case";
   auto lost_node(close_nodes_change->lost_node());
   if (!lost_node.IsZero()) {
+    LOG(kVerbose) << "PmidManager HandleChurnEvent detected lost_node " << DebugId(lost_node);
     try {
       auto pmid_node(PmidName(Identity(lost_node.string())));
       auto contents(group_db_.GetContents(pmid_node));
@@ -503,6 +504,7 @@ void PmidManagerService::HandleChurnEvent(
   LOG(kVerbose) << "PmidManager HandleChurnEvent processing new_node case";
   auto new_node(close_nodes_change->new_node());
   if (!new_node.IsZero()) {
+    LOG(kVerbose) << "PmidManager HandleChurnEvent detected new_node " << DebugId(new_node);
     try {
       auto pmid_node(PmidName(Identity(new_node.string())));
       auto contents(group_db_.GetContents(PmidName(Identity(new_node.string()))));
