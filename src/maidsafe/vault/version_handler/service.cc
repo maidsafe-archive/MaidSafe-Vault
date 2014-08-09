@@ -228,10 +228,10 @@ void VersionHandlerService::HandleMessage(
           StructuredDataVersions::VersionName tip_of_tree;
           if (resolved_action->action.tip_of_tree) {
             tip_of_tree = *resolved_action->action.tip_of_tree;
-            dispatcher_.SendPutVersionResponse(
-                resolved_action->action.originator, resolved_action->key, tip_of_tree,
-                maidsafe_error(CommonErrors::success), resolved_action->action.message_id);
           }
+          dispatcher_.SendPutVersionResponse(
+              resolved_action->action.originator, resolved_action->key, tip_of_tree,
+              maidsafe_error(CommonErrors::success), resolved_action->action.message_id);
         }
         catch (const maidsafe_error& error) {
           LOG(kError) << message.id << " Failed to put version: "
