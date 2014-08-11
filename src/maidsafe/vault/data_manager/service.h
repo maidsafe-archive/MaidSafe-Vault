@@ -232,8 +232,13 @@ class DataManagerService {
   }
 
   typedef boost::mpl::vector<> InitialType;
+  typedef boost::variant<
+      nfs::GetRequestFromDataGetterPartialToDataManager> DataManagerServicePartialMessages;
   typedef boost::mpl::insert_range<InitialType,
                                    boost::mpl::end<InitialType>::type,
+                                   DataManagerServicePartialMessages::types>::type PartialType;
+  typedef boost::mpl::insert_range<PartialType,
+                                   boost::mpl::end<PartialType>::type,
                                    nfs::DataManagerServiceMessages::types>::type IntermediateType;
   typedef boost::mpl::insert_range<IntermediateType,
                                    boost::mpl::end<IntermediateType>::type,
