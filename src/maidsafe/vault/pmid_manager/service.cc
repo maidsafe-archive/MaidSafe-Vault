@@ -92,7 +92,12 @@ void PmidManagerService::HandleSyncedDelete(
     std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedDelete commit delete for chunk "
                 << HexSubstr(synced_action->key.name.string()) << " to group_db_ ";
-  group_db_.Commit(synced_action->key, synced_action->action);
+  try {
+    group_db_.Commit(synced_action->key, synced_action->action);
+  } catch (std::exception& e) {
+    // Delete action shall be exception free and no response expected
+    LOG(kWarning) << boost::diagnostic_information(e);
+  }
 }
 
 void PmidManagerService::HandleSyncedSetPmidHealth(
