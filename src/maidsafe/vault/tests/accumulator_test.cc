@@ -105,7 +105,6 @@ TEST(AccumulatorTest, BEH_AddSingleResult) {
   EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess,
             accumulator.AddPendingRequest(message, group_source, add_request_predicate));
   //   EXPECT_EQ(accumulator.pending_requests_.size(), 1);
-  EXPECT_FALSE(accumulator.CheckHandled(message));
 }
 
 
