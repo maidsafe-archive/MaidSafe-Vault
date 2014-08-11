@@ -639,8 +639,6 @@ operator()(const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
     return;
   {
     std::lock_guard<std::mutex> lock(mutex);
-    if (accumulator.CheckHandled(message))
-      return;
     auto result(accumulator.AddPendingRequest(message, sender, checker));
     if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess) {
       int failures(0);

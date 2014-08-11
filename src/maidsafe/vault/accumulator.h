@@ -100,8 +100,6 @@ class Accumulator {
   AddResult AddPendingRequest(const T& request, const routing::SingleSource& source,
                               AddCheckerFunctor checker);
 
-  bool CheckHandled(const T& request);
-  //  void SetHandled(const T& request, const routing::GroupSource& source);
   std::vector<T> Get(const T& request, const routing::GroupSource& source);
 
  private:
@@ -130,11 +128,6 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
   LOG(kVerbose) << "Accumulator::AddPendingRequest for GroupSource "
                 << HexSubstr(source.group_id.data.string()) << " sent from "
                 << HexSubstr(source.sender_id->string());
-  if (CheckHandled(request)) {
-    LOG(kInfo) << "Accumulator::AddPendingRequest request has been handled";
-    return Accumulator<T>::AddResult::kHandled;
-  }
-
   if (!RequestExists(request, source)) {
     pending_requests_.push_back(PendingRequest(request, source));
     LOG(kVerbose) << "Accumulator::AddPendingRequest has " << pending_requests_.size()
@@ -143,6 +136,7 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
       pending_requests_.pop_front();
   } else {
     LOG(kInfo) << "Accumulator::AddPendingRequest request already existed";
+    return AddResult::kWaiting;
   }
   return checker(Get(request, source));
 }
@@ -152,20 +146,6 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
     const T& /*request*/, const routing::SingleSource& /*source*/, AddCheckerFunctor /*checker*/) {
   LOG(kVerbose) << "Accumulator::AddPendingRequest for SingleSource -- Always return success";
   return AddResult::kSuccess;
-}
-
-template <typename T>
-bool Accumulator<T>::CheckHandled(const T& request) {
-  auto request_message_id(boost::apply_visitor(detail::MessageIdRequestVisitor(), request));
-  nfs::MessageId message_id;
-  for (auto handled_request : handled_requests_) {
-    if (handled_request.which() == request.which()) {
-      message_id = boost::apply_visitor(detail::MessageIdRequestVisitor(), handled_request);
-      if (message_id == request_message_id)
-        return true;
-    }
-  }
-  return false;
 }
 
 // template<typename T>
