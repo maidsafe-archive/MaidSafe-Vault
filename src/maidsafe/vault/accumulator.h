@@ -239,7 +239,7 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddRequestChecker::operator()
     while ((requests.size() - index) >= required_requests_) {
       if (std::count_if(std::begin(requests), std::end(requests), [&](const T& request) {
             if (requests.at(index) == request) {
-              LOG(kVerbose) << "requests match each other";
+//               LOG(kVerbose) << "requests match each other";
               return true;
             } else {
               LOG(kVerbose) << "requests don't match each other";
