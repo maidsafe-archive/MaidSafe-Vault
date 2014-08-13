@@ -65,7 +65,7 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config)
 {
 #ifdef USE_VLOGGING
   log::Logging::Instance().InitialiseVlog(DebugId(vault_config.pmid.name()),
-      vault_config.vlog_session_id, "visualiser.maidsafe.net", 8080, "/log");
+                                          vault_config.vlog_session_id);
 # ifdef TESTING
   if (vault_config.send_hostname_to_visualiser_server)
     VLOG(VisualiserAction::kVaultStarted, Identity{ vault_config.pmid.name().value },
