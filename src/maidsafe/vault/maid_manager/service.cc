@@ -212,7 +212,9 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
   std::lock_guard<std::mutex> lock(pending_account_mutex_);
   auto pending_account_itr(pending_account_map_.find(message_id));
   if (pending_account_itr == pending_account_map_.end()) {
-    assert(false && "not such a pending account request");
+    // The below assert should be removed as the message may be received by any joining vault
+    // assert(false && "not such a pending account request");
+    LOG(kInfo) << "unexpected PublicMaid put response";
     return;
   }
   // In case of a churn, drop it silently
