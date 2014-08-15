@@ -74,8 +74,8 @@ TEST_F(VersionHandlerTest, FUNC_CreateVersionTree) {
 TEST_F(VersionHandlerTest, FUNC_FailingPut) {
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
-  auto put_version_future(
-      GetClients().front()->PutVersion(chunk.name(), StructuredDataVersions::VersionName(), v_aaa));
+  StructuredDataVersions::VersionName v_bbb(1, ImmutableData::Name(Identity(std::string(64, 'b'))));
+  auto put_version_future(GetClients().front()->PutVersion(chunk.name(), v_aaa, v_bbb));
   EXPECT_THROW(put_version_future.get(), maidsafe_error) << "should have failed";
   Sleep(std::chrono::seconds(5));
 }
