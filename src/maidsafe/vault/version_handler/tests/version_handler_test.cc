@@ -65,7 +65,7 @@ TEST_F(VersionHandlerTest, FUNC_CreateVersionTree) {
     EXPECT_EQ(versions.front().id, v_aaa.id);
   }
   catch (const maidsafe_error& error) {
-    EXPECT_TRUE(false) << "Failed to retrieve version: " << boost::diagnostic_information(error);
+    GTEST_FAIL() << "Failed to retrieve version: " << boost::diagnostic_information(error);
   }
   LOG(kVerbose) << "Version Created";
   Sleep(std::chrono::seconds(5));
@@ -92,7 +92,7 @@ TEST_F(VersionHandlerTest, FUNC_CreateGet) {
     EXPECT_EQ(versions.front().id, v_aaa.id);
   }
   catch (const maidsafe_error& error) {
-    EXPECT_TRUE(false) << "Failed to retrieve version: " << boost::diagnostic_information(error);
+    GTEST_FAIL() << "Failed to retrieve version: " << boost::diagnostic_information(error);
   }
   Sleep(std::chrono::seconds(5));
 }
@@ -114,7 +114,7 @@ TEST_F(VersionHandlerTest, FUNC_PutGet) {
     EXPECT_EQ(versions.front().id, v_bbb.id);
   }
   catch (const maidsafe_error& error) {
-    EXPECT_TRUE(false) << "Failed to retrieve version: " << boost::diagnostic_information(error);
+    GTEST_FAIL() << "Failed to retrieve version: " << boost::diagnostic_information(error);
   }
 }
 
@@ -150,7 +150,7 @@ TEST_F(VersionHandlerTest, FUNC_DeleteBranchUntilFork) {
     EXPECT_NE(std::find(std::begin(versions), std::end(versions), v2_ddd), std::end(versions));
   }
   catch (const std::exception& error) {
-    EXPECT_TRUE(false) << "Version should have existed " << boost::diagnostic_information(error);
+    GTEST_FAIL() << "Version should have existed " << boost::diagnostic_information(error);
   }
 
   EXPECT_NO_THROW(GetClients().front()->DeleteBranchUntilFork(name, v4_iii));
@@ -166,7 +166,7 @@ TEST_F(VersionHandlerTest, FUNC_DeleteBranchUntilFork) {
     EXPECT_NE(std::find(std::begin(versions), std::end(versions), v2_ddd), std::end(versions));
   }
   catch (const std::exception& error) {
-    EXPECT_TRUE(false) << boost::diagnostic_information(error);
+    GTEST_FAIL() << boost::diagnostic_information(error);
   }
   Sleep(std::chrono::seconds(5));
 }

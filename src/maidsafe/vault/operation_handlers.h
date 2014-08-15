@@ -157,7 +157,7 @@ template <typename ServiceHandlerType, typename MessageType>
 void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/,
                  const typename MessageType::Sender& /*sender*/,
                  const typename MessageType::Receiver& /*receiver*/) {
-  MessageType::No_genereic_handler_is_available__Specialisation_is_required;
+  MessageType::No_generic_handler_is_available__Specialisation_is_required;
 }
 
 // TODO(Team) Consider moving these to respective persona
