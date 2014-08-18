@@ -485,7 +485,7 @@ void PmidManagerService::HandleChurnEvent(
     std::lock_guard<std::mutex> lock(mutex_);
     if (stopped_)
       return;
-    LOG(kVerbose) << "PmidManager HandleChurnEvent processing lost node case";
+//     LOG(kVerbose) << "PmidManager HandleChurnEvent processing lost node case";
     auto lost_node(close_nodes_change->lost_node());
     if (!lost_node.IsZero()) {
       LOG(kVerbose) << "PmidManager HandleChurnEvent detected lost_node " << DebugId(lost_node);
@@ -506,7 +506,7 @@ void PmidManagerService::HandleChurnEvent(
           throw;
       }
     }
-    LOG(kVerbose) << "PmidManager HandleChurnEvent processing new_node case";
+//     LOG(kVerbose) << "PmidManager HandleChurnEvent processing new_node case";
     auto new_node(close_nodes_change->new_node());
     if (!new_node.IsZero()) {
       LOG(kVerbose) << "PmidManager HandleChurnEvent detected new_node " << DebugId(new_node);
@@ -525,11 +525,11 @@ void PmidManagerService::HandleChurnEvent(
           throw;
       }
     }
-    LOG(kVerbose) << "PmidManager HandleChurnEvent processing account transfer";
+//     LOG(kVerbose) << "PmidManager HandleChurnEvent processing account transfer";
     GroupDb<PmidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(close_nodes_change));
     for (auto& transfer : transfer_info)
       TransferAccount(transfer.first, transfer.second);
-    LOG(kVerbose) << "PmidManager HandleChurnEvent completed";
+//     LOG(kVerbose) << "PmidManager HandleChurnEvent completed";
   } catch (const std::exception& e) {
     LOG(kVerbose) << "error : " << boost::diagnostic_information(e) << "\n\n";
   }

@@ -87,7 +87,7 @@ template <typename ValidateSender, typename AccumulatorType, typename Checker,
 template <typename MessageType, typename Sender, typename Receiver>
 void OperationHandler<ValidateSender, AccumulatorType, Checker, ServiceHandlerType>::operator()(
     const MessageType& message, const Sender& sender, const Receiver& receiver) {
-  LOG(kVerbose) << "OperationHandler::operator()";
+//   LOG(kVerbose) << "OperationHandler::operator()";
   if (!validate_sender(message, sender)) {
     LOG(kError) << "invalid sender";
     return;
