@@ -1,21 +1,20 @@
 /*  Copyright 2012 MaidSafe.net limited
 
-   This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
-   version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
-   licence you accepted on initial access to the Software (the "Licences").
+    This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
+    version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
+    licence you accepted on initial access to the Software (the "Licences").
 
-   By contributing code to the MaidSafe Software, or to this project generally, you agree to be
-   bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
-   directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also
-   available at: http://www.maidsafe.net/licenses
+    By contributing code to the MaidSafe Software, or to this project generally, you agree to be
+    bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
+    directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also
+    available at: http://www.maidsafe.net/licenses
 
-   Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
-   under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
-   OF ANY KIND, either express or implied.
+    Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
+    under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+    OF ANY KIND, either express or implied.
 
-   See the Licences for the specific language governing permissions and limitations relating to
-   use of the MaidSafe Software.
-*/
+    See the Licences for the specific language governing permissions and limitations relating to
+    use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/vault/accumulator.h"
 
@@ -64,7 +63,7 @@ class ContentStringVisitor : public boost::static_visitor<std::string> {
 //  nfs::PersonaId source;
 //  // matches Persona enum in types.h
 //  source.persona = static_cast<nfs::Persona>(RandomUint32() % 7);
-//  source.node_id = NodeId(NodeId::kRandomId);
+//  source.node_id = NodeId(NodeId::IdType::kRandomId);
 //  return source;
 // }
 // nfs::Message MakeMessage() {
@@ -87,25 +86,25 @@ TEST(AccumulatorTest, BEH_AddSingleResult) {
   auto add_request_predicate([&](const std::vector<PmidNodeServiceMessages>&) {
     return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
   });
-//   auto add_request_predicate(
-//       [&](const std::vector<PmidNodeServiceMessages>& requests_in) {
-//         if (requests_in.size() < 2)
-//           return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-//         for (auto& request : requests_in) {
-//           std::string content_string(boost::apply_visitor(ContentStringVisitor(), request));
-//           maidsafe::nfs_client::ReturnCode return_code(content_string);
-//        maidsafe_error expected_error(MakeError(maidsafe::VaultErrors::failed_to_handle_request));
-//           if (errors_eq(expected_error, return_code.value))
-//             return Accumulator<PmidNodeServiceMessages>::AddResult::kFailure;
-//           else
-//             return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
-//        }
-//         return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-//       });
+  //   auto add_request_predicate(
+  //       [&](const std::vector<PmidNodeServiceMessages>& requests_in) {
+  //         if (requests_in.size() < 2)
+  //           return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
+  //         for (auto& request : requests_in) {
+  //           std::string content_string(boost::apply_visitor(ContentStringVisitor(), request));
+  //           maidsafe::nfs_client::ReturnCode return_code(content_string);
+  //        maidsafe_error
+  // expected_error(MakeError(maidsafe::VaultErrors::failed_to_handle_request));
+  //           if (errors_eq(expected_error, return_code.value))
+  //             return Accumulator<PmidNodeServiceMessages>::AddResult::kFailure;
+  //           else
+  //             return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
+  //        }
+  //         return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
+  //       });
   EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess,
             accumulator.AddPendingRequest(message, group_source, add_request_predicate));
-//   EXPECT_EQ(accumulator.pending_requests_.size(), 1);
-  EXPECT_FALSE(accumulator.CheckHandled(message));
+  //   EXPECT_EQ(accumulator.pending_requests_.size(), 1);
 }
 
 

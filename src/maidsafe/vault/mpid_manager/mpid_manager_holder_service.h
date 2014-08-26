@@ -38,7 +38,7 @@ class MpidAccountHolder {
   //  void HandleMessage(const nfs::Message& message, const routing::ReplyFunctor& reply_functor);
       //  void HandleMessage(const nfs::Message& /*message*/, const routing::ReplyFunctor&
       // /*reply_functor*/) {}
-      void HandleChurnEvent(routing::MatrixChange matrix_change);
+      void HandleChurnEvent(routing::CloseNodesChange close_nodes_change);
 
  private:
   //  void HandlePutMessage(const Message& message);

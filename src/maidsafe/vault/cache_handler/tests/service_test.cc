@@ -14,12 +14,13 @@
     OF ANY KIND, either express or implied.
 
     See the Licences for the specific language governing permissions and limitations relating to
-    use of the MaidSafe Software.
-*/
+    use of the MaidSafe Software.                                                                 */
+
+#include "boost/filesystem.hpp"
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/asio_service.h"
-
+#include "maidsafe/passport/passport.h"
 #include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/vault/cache_handler/service.h"
@@ -32,13 +33,12 @@ namespace vault {
 
 namespace test {
 
-
-class CacheHandlerServiceTest {
+class CacheHandlerServiceTest : public testing::Test {
  public:
   CacheHandlerServiceTest()
       : kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
         vault_root_dir_(*kTestRoot_ / RandomAlphaNumericString(8)),
-        routing_(MakePmid()),
+        routing_(passport::CreatePmidAndSigner().first),
         cache_handler_service_(routing_, vault_root_dir_),
         asio_service_(2) {
     boost::filesystem::create_directory(vault_root_dir_);
@@ -65,96 +65,107 @@ class CacheHandlerServiceTest {
   AsioService asio_service_;
 };
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "short term put/get",
-                 "[CacheHandler][Service][Behavioural]") {
+TEST_F(CacheHandlerServiceTest, BEH_ShortTermPutGet) {
   passport::Anmaid anmaid;
   passport::PublicAnmaid public_anmaid(anmaid);
-  CHECK_THROWS(Get<passport::PublicAnmaid>(public_anmaid.name()));
+  EXPECT_ANY_THROW(Get<passport::PublicAnmaid>(public_anmaid.name()));
   Store(public_anmaid);
-  CHECK_NOTHROW(Get<passport::PublicAnmaid>(public_anmaid.name()));
+  EXPECT_NO_THROW(Get<passport::PublicAnmaid>(public_anmaid.name()));
 }
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "long term put/get",
-                 "[CacheHandler][Service][Behavioural]") {
+TEST_F(CacheHandlerServiceTest, BEH_LongTermPutGet) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-  CHECK_THROWS(Get<ImmutableData>(data.name()));
+  EXPECT_ANY_THROW(Get<ImmutableData>(data.name()));
   Store(data);
-  CHECK_NOTHROW(Get<ImmutableData>(data.name()));
+  EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
 }
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving put",
-                                          "[CacheHandler][Put][Service][Behavioural]") {
-  routing::SingleId maid_node((NodeId(NodeId::kRandomId)));
+
+TEST_F(CacheHandlerServiceTest, BEH_GetCachedResponseFromCacheHandlerToDataGetter) {
+  routing::SingleId maid_node((NodeId(NodeId::IdType::kRandomId)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   nfs_client::DataNameAndContentOrReturnCode content(data);
-
-  SECTION("GetCachedResponseFromCacheHandlerToDataGetter") {
-    auto cached_response(
-             CreateMessage<nfs::GetCachedResponseFromCacheHandlerToDataGetter>(content));
-    routing::SingleSource source((NodeId(NodeId::kRandomId)));
-    CHECK(cache_handler_service_.HandleMessage(cached_response, source, maid_node));
-    CHECK_NOTHROW(Get<ImmutableData>(data.name()));
-  }
-
-  SECTION("GetResponseFromDataManagerToDataGetter") {
-    auto response(CreateMessage<nfs::GetResponseFromDataManagerToDataGetter>(content));
-    auto group_source(CreateGroupSource(data.name()));
-    CHECK(cache_handler_service_.HandleMessage(response, *group_source.begin(), maid_node));
-    CHECK_NOTHROW(Get<ImmutableData>(data.name()));
-  }
-
-  SECTION("GetResponseFromDataManagerToMaidNode") {
-    auto response(CreateMessage<nfs::GetResponseFromDataManagerToMaidNode>(content));
-    auto group_source(CreateGroupSource(data.name()));
-    CHECK(cache_handler_service_.HandleMessage(response, *group_source.begin(), maid_node));
-    CHECK_NOTHROW(Get<ImmutableData>(data.name()));
-  }
-
-  SECTION("GetCachedResponseFromCacheHandlerToMaidNode") {
-    auto cached_response(CreateMessage<nfs::GetCachedResponseFromCacheHandlerToMaidNode>(content));
-    routing::SingleSource source((NodeId(NodeId::kRandomId)));
-    CHECK(cache_handler_service_.HandleMessage(cached_response, source, maid_node));
-    CHECK_NOTHROW(Get<ImmutableData>(data.name()));
-  }
-
-  SECTION("PutRequestFromDataManagerToCacheHandler") {
-    auto cache_put(CreateMessage<PutRequestFromDataManagerToCacheHandler>(
-      nfs_vault::DataNameAndContent(content.name.type, content.name.raw_name,
-                                    NonEmptyString(content.content->data))));
-    routing::SingleSource source((NodeId(NodeId::kRandomId)));
-    CHECK(cache_handler_service_.HandleMessage(cache_put, source,
-                                               routing::SingleId(routing_.kNodeId())));
-    CHECK_NOTHROW(Get<ImmutableData>(data.name()));
-  }
+  auto cached_response(CreateMessage<nfs::GetCachedResponseFromCacheHandlerToDataGetter>(content));
+  routing::SingleSource source((NodeId(NodeId::IdType::kRandomId)));
+  EXPECT_TRUE(cache_handler_service_.HandleMessage(cached_response, source, maid_node));
+  EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
 }
 
-TEST_CASE_METHOD(CacheHandlerServiceTest, "operations involving get",
-                                          "[Handler][Get][Service][Behavioural]") {
+TEST_F(CacheHandlerServiceTest, BEH_GetResponseFromDataManagerToDataGetter) {
+  routing::SingleId maid_node((NodeId(NodeId::IdType::kRandomId)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-  routing::SingleSource source_node((NodeId(NodeId::kRandomId)));
+  nfs_client::DataNameAndContentOrReturnCode content(data);
+  auto response(CreateMessage<nfs::GetResponseFromDataManagerToDataGetter>(content));
+  auto group_source(CreateGroupSource(data.name()));
+  EXPECT_TRUE(cache_handler_service_.HandleMessage(response, *group_source.begin(), maid_node));
+  EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
+}
+
+TEST_F(CacheHandlerServiceTest, BEH_GetResponseFromDataManagerToMaidNode) {
+  routing::SingleId maid_node((NodeId(NodeId::IdType::kRandomId)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  nfs_client::DataNameAndContentOrReturnCode content(data);
+  auto response(CreateMessage<nfs::GetResponseFromDataManagerToMaidNode>(content));
+  auto group_source(CreateGroupSource(data.name()));
+  EXPECT_TRUE(cache_handler_service_.HandleMessage(response, *group_source.begin(), maid_node));
+  EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
+}
+
+TEST_F(CacheHandlerServiceTest, BEH_GetCachedResponseFromCacheHandlerToMaidNode) {
+  routing::SingleId maid_node((NodeId(NodeId::IdType::kRandomId)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  nfs_client::DataNameAndContentOrReturnCode content(data);
+  auto cached_response(CreateMessage<nfs::GetCachedResponseFromCacheHandlerToMaidNode>(content));
+  routing::SingleSource source((NodeId(NodeId::IdType::kRandomId)));
+  EXPECT_TRUE(cache_handler_service_.HandleMessage(cached_response, source, maid_node));
+  EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
+}
+
+TEST_F(CacheHandlerServiceTest, BEH_PutRequestFromDataManagerToCacheHandler) {
+  routing::SingleId maid_node((NodeId(NodeId::IdType::kRandomId)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  nfs_client::DataNameAndContentOrReturnCode content(data);
+  auto cache_put(
+      CreateMessage<PutRequestFromDataManagerToCacheHandler>(nfs_vault::DataNameAndContent(
+          content.name.type, content.name.raw_name, NonEmptyString(content.content->data))));
+  routing::SingleSource source((NodeId(NodeId::IdType::kRandomId)));
+  EXPECT_TRUE(cache_handler_service_.HandleMessage(cache_put, source,
+                                                   routing::SingleId(routing_.kNodeId())));
+  EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
+}
+
+
+TEST_F(CacheHandlerServiceTest, BEH_GetRequestFromMaidNodeToDataManager) {
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  routing::SingleSource source_node((NodeId(NodeId::IdType::kRandomId)));
   routing::GroupId group_id(NodeId(data.name()->string()));
   nfs_vault::DataName content(data.name());
+  auto get_request(CreateMessage<nfs::GetRequestFromMaidNodeToDataManager>(content));
+  EXPECT_FALSE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
+  Store(data);
+  EXPECT_TRUE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
+}
 
-  SECTION("GetRequestFromMaidNodeToDataManager") {
-    auto get_request(CreateMessage<nfs::GetRequestFromMaidNodeToDataManager>(content));
-    CHECK_FALSE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
-    Store(data);
-    CHECK(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
-  }
+TEST_F(CacheHandlerServiceTest, BEH_GetRequestFromDataGetterToDataManager) {
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  routing::SingleSource source_node((NodeId(NodeId::IdType::kRandomId)));
+  routing::GroupId group_id(NodeId(data.name()->string()));
+  nfs_vault::DataName content(data.name());
+  auto get_request(CreateMessage<nfs::GetRequestFromDataGetterToDataManager>(content));
+  EXPECT_FALSE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
+  Store(data);
+  EXPECT_TRUE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
+}
 
-  SECTION("GetRequestFromDataGetterToDataManager") {
-    auto get_request(CreateMessage<nfs::GetRequestFromDataGetterToDataManager>(content));
-    CHECK_FALSE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
-    Store(data);
-    CHECK(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
-  }
-
-  SECTION("GetRequestFromDataManagerToCacheHandler") {
-    auto get_request(CreateMessage<GetRequestFromDataManagerToCacheHandler>(content));
-    CHECK_FALSE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
-    Store(data);
-    CHECK(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
-  }
+TEST_F(CacheHandlerServiceTest, BEH_GetRequestFromDataManagerToCacheHandler) {
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  routing::SingleSource source_node((NodeId(NodeId::IdType::kRandomId)));
+  routing::GroupId group_id(NodeId(data.name()->string()));
+  nfs_vault::DataName content(data.name());
+  auto get_request(CreateMessage<GetRequestFromDataManagerToCacheHandler>(content));
+  EXPECT_FALSE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
+  Store(data);
+  EXPECT_TRUE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
 }
 
 }  //  namespace test

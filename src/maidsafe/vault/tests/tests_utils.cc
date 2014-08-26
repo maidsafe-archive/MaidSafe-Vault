@@ -25,24 +25,9 @@ namespace vault {
 
 namespace test {
 
-passport::Maid MakeMaid() {
-  passport::Anmaid anmaid;
-  return passport::Maid(anmaid);
-}
-
-passport::Pmid MakePmid() {
-  passport::Anpmid anpmid;
-  return passport::Pmid(anpmid);
-}
-
-passport::PublicPmid MakePublicPmid() {
-  passport::Pmid pmid(MakePmid());
-  return passport::PublicPmid(pmid);
-}
-
 routing::NodeInfo MakeNodeInfo(const passport::Pmid& pmid) {
   routing::NodeInfo node;
-  node.node_id = NodeId(pmid.name()->string());
+  node.id = NodeId(pmid.name()->string());
   node.public_key = pmid.public_key();
   return node;
 }
@@ -69,7 +54,7 @@ nfs_vault::DataName CreateContent<nfs_vault::DataName>() {
 
 template <>
 nfs_vault::AvailableSize CreateContent<nfs_vault::AvailableSize>() {
-  return nfs_vault::AvailableSize(2^20);
+  return nfs_vault::AvailableSize(2 ^ 20);
 }
 
 template <>
@@ -92,17 +77,16 @@ nfs_vault::DataNameAndSize CreateContent<nfs_vault::DataNameAndSize>() {
 
 template <>
 nfs_client::DataNameAndReturnCode CreateContent<nfs_client::DataNameAndReturnCode>() {
-  return nfs_client::DataNameAndReturnCode(nfs_vault::DataName(DataTagValue::kImmutableDataValue,
-                                                               Identity(RandomString(64))),
-                                           nfs_client::ReturnCode(
-                                               CommonErrors::unable_to_handle_request));
+  return nfs_client::DataNameAndReturnCode(
+      nfs_vault::DataName(DataTagValue::kImmutableDataValue, Identity(RandomString(64))),
+      nfs_client::ReturnCode(CommonErrors::unable_to_handle_request));
 }
 
 template <>
 nfs_client::DataNameAndContentOrReturnCode
 CreateContent<nfs_client::DataNameAndContentOrReturnCode>() {
   return nfs_client::DataNameAndContentOrReturnCode(
-             ImmutableData(NonEmptyString(RandomString(2^10))));
+      ImmutableData(NonEmptyString(RandomString(2 ^ 10))));
 }
 
 template <>
@@ -121,9 +105,9 @@ nfs_vault::DataNameAndCost CreateContent<nfs_vault::DataNameAndCost>() {
 template <>
 nfs_vault::DataNameAndVersion CreateContent<nfs_vault::DataNameAndVersion>() {
   return nfs_vault::DataNameAndVersion(
-             nfs_vault::DataName(ImmutableData::Tag::kValue, Identity(RandomString(64))),
-             StructuredDataVersions::VersionName(RandomInt32(),
-                                                 ImmutableData::Name(Identity(RandomString(64)))));
+      nfs_vault::DataName(ImmutableData::Tag::kValue, Identity(RandomString(64))),
+      StructuredDataVersions::VersionName(RandomInt32(),
+                                          ImmutableData::Name(Identity(RandomString(64)))));
 }
 
 template <>
@@ -145,9 +129,10 @@ nfs_vault::VersionTreeCreation CreateContent<nfs_vault::VersionTreeCreation>() {
 template <>
 std::vector<routing::GroupSource> CreateGroupSource(const NodeId& group_id) {
   std::vector<routing::GroupSource> group_source;
-  for (auto index(0); index < routing::Parameters::group_size; ++index)
-    group_source.push_back(routing::GroupSource(routing::GroupId(group_id),
-                                                routing::SingleId(NodeId(NodeId::kRandomId))));
+  for (auto index(0U); index < routing::Parameters::group_size; ++index) {
+    group_source.push_back(routing::GroupSource(
+        routing::GroupId(group_id), routing::SingleId(NodeId(NodeId::IdType::kRandomId))));
+  }
   return group_source;
 }
 

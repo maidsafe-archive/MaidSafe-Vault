@@ -27,34 +27,35 @@
 #include "maidsafe/vault_manager/vault_config.h"
 #include "maidsafe/vault_manager/vault_interface.h"
 
+#include "maidsafe/vault/types.h"
 #include "maidsafe/vault/vault.h"
 
 int main(int argc, char* argv[]) {
   using maidsafe::vault_manager::VaultConfig;
   using maidsafe::vault::Vault;
+  int exit_code(0);
   try {
     auto unuseds(maidsafe::log::Logging::Instance().Initialise(argc, argv));
     if (unuseds.size() != 2U)
       BOOST_THROW_EXCEPTION(maidsafe::MakeError(maidsafe::CommonErrors::invalid_parameter));
-    uint16_t port{ static_cast<uint16_t>(std::stoi(std::string{ &unuseds[1][0] })) };
-    maidsafe::vault_manager::VaultInterface vault_interface{ port };
-    VaultConfig vault_config{ vault_interface.GetConfiguration() };
-    auto on_new_bootstrap_contact([&](maidsafe::routing::BootstrapContact bootstrap_contact) {
-        vault_interface.SendBootstrapContactToVaultManager(bootstrap_contact);
-    });
-    // Starting Vault
+    uint16_t port{static_cast<uint16_t>(std::stoi(std::string{&unuseds[1][0]}))};
+    maidsafe::vault_manager::VaultInterface vault_interface{port};
+    VaultConfig vault_config{vault_interface.GetConfiguration()};
 
     LOG(kVerbose) << "Starting vault...";
-    Vault vault(vault_config, on_new_bootstrap_contact);
+    Vault vault(vault_config);
     LOG(kInfo) << "Vault running as " << maidsafe::HexSubstr(vault_config.pmid.name().value);
-    return vault_interface.WaitForExit();
+    exit_code = vault_interface.WaitForExit();
   }
   catch (const maidsafe::maidsafe_error& error) {
     LOG(kError) << "This is only designed to be invoked by VaultManager.";
-    return maidsafe::ErrorToInt(error);
+    exit_code = maidsafe::ErrorToInt(error);
   }
   catch (const std::exception& e) {
     LOG(kError) << "This is only designed to be invoked by VaultManager: " << e.what();
-    return maidsafe::ErrorToInt(maidsafe::MakeError(maidsafe::CommonErrors::invalid_parameter));
+    exit_code =
+        maidsafe::ErrorToInt(maidsafe::MakeError(maidsafe::CommonErrors::invalid_parameter));
   }
+  VLOG(maidsafe::vault::VisualiserAction::kVaultStopped, exit_code);
+  return exit_code;
 }

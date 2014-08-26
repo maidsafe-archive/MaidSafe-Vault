@@ -92,7 +92,12 @@ void PmidManagerService::HandleSyncedDelete(
     std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedDelete commit delete for chunk "
                 << HexSubstr(synced_action->key.name.string()) << " to group_db_ ";
-  group_db_.Commit(synced_action->key, synced_action->action);
+  try {
+    group_db_.Commit(synced_action->key, synced_action->action);
+  } catch (std::exception& e) {
+    // Delete action shall be exception free and no response expected
+    LOG(kWarning) << boost::diagnostic_information(e);
+  }
 }
 
 void PmidManagerService::HandleSyncedSetPmidHealth(
@@ -475,46 +480,59 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
 // }
 
 void PmidManagerService::HandleChurnEvent(
-    std::shared_ptr<routing::MatrixChange> matrix_change) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  if (stopped_)
-    return;
-  LOG(kVerbose) << "PmidManager HandleChurnEvent";
-  auto lost_nodes(matrix_change->lost_nodes());
-  for (auto& node : lost_nodes) {
-    try {
-      auto pmid_node(PmidName(Identity(node.string())));
-      auto contents(group_db_.GetContents(pmid_node));
-      for (const auto& kv_pair : contents.kv_pairs) {
-        VLOG(nfs::Persona::kPmidManager, VisualiserAction::kDropPmidNode, Identity{ node.string() },
-             kv_pair.first.name);
-        auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
-        dispatcher_.SendSetPmidOffline(data_name, pmid_node);
+    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
+  try {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (stopped_)
+      return;
+    LOG(kVerbose) << "PmidManager HandleChurnEvent processing lost node case";
+    auto lost_node(close_nodes_change->lost_node());
+    if (!lost_node.IsZero()) {
+      LOG(kVerbose) << "PmidManager HandleChurnEvent detected lost_node " << DebugId(lost_node);
+      try {
+        auto pmid_node(PmidName(Identity(lost_node.string())));
+        auto contents(group_db_.GetContents(pmid_node));
+        for (const auto& kv_pair : contents.kv_pairs) {
+          VLOG(nfs::Persona::kPmidManager, VisualiserAction::kDropPmidNode,
+               Identity{ lost_node.string() }, kv_pair.first.name);
+          auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
+          dispatcher_.SendSetPmidOffline(data_name, pmid_node);
+          LOG(kVerbose) << "Broadcasting pmid_node " << DebugId(pmid_node) << " holding data "
+                        << DebugId(kv_pair.first.name) << " is offline";
+        }
+      } catch (const maidsafe_error& error) {
+        LOG(kVerbose) << "error : " << boost::diagnostic_information(error) << "\n\n";
+        if (error.code() != make_error_code(VaultErrors::no_such_account))
+          throw;
       }
-    } catch (const maidsafe_error& error) {
-      if (error.code() != make_error_code(VaultErrors::no_such_account))
-        throw;
     }
-  }
-  auto new_nodes(matrix_change->new_nodes());
-  for (auto& node : new_nodes) {
-    try {
-      auto pmid_node(PmidName(Identity(node.string())));
-      auto contents(group_db_.GetContents(PmidName(Identity(node.string()))));
-      for (const auto& kv_pair : contents.kv_pairs) {
-        VLOG(nfs::Persona::kPmidManager, VisualiserAction::kJoinPmidNode, Identity{ node.string() },
-             kv_pair.first.name);
-        auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
-        dispatcher_.SendSetPmidOnline(data_name, pmid_node);
+    LOG(kVerbose) << "PmidManager HandleChurnEvent processing new_node case";
+    auto new_node(close_nodes_change->new_node());
+    if (!new_node.IsZero()) {
+      LOG(kVerbose) << "PmidManager HandleChurnEvent detected new_node " << DebugId(new_node);
+      try {
+        auto pmid_node(PmidName(Identity(new_node.string())));
+        auto contents(group_db_.GetContents(PmidName(Identity(new_node.string()))));
+        for (const auto& kv_pair : contents.kv_pairs) {
+          VLOG(nfs::Persona::kPmidManager, VisualiserAction::kJoinPmidNode,
+               Identity{ new_node.string() }, kv_pair.first.name);
+          auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
+          dispatcher_.SendSetPmidOnline(data_name, pmid_node);
+        }
+      } catch (const maidsafe_error& error) {
+//      LOG(kVerbose) << "error : " << boost::diagnostic_information(error) << "\n\n";
+        if (error.code() != make_error_code(VaultErrors::no_such_account))
+          throw;
       }
-    } catch (const maidsafe_error& error) {
-      if (error.code() != make_error_code(VaultErrors::no_such_account))
-        throw;
     }
+    LOG(kVerbose) << "PmidManager HandleChurnEvent processing account transfer";
+    GroupDb<PmidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(close_nodes_change));
+    for (auto& transfer : transfer_info)
+      TransferAccount(transfer.first, transfer.second);
+    LOG(kVerbose) << "PmidManager HandleChurnEvent completed";
+  } catch (const std::exception& e) {
+    LOG(kVerbose) << "error : " << boost::diagnostic_information(e) << "\n\n";
   }
-  GroupDb<PmidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(matrix_change));
-  for (auto& transfer : transfer_info)
-    TransferAccount(transfer.first, transfer.second);
 }
 
 // void PmidManagerService::ValidateDataSender(const nfs::Message& message) const {
@@ -542,7 +560,7 @@ void PmidManagerService::TransferAccount(const NodeId& dest,
     const std::vector<GroupDb<PmidManager>::Contents>& accounts) {
   for (auto& account : accounts) {
     // If account just received, shall not pass it out as may under a startup procedure
-    // i.e. existing PM will be seen as new_node in matrix_change
+    // i.e. existing PM will be seen as new_node in close_nodes_change
     if (account_transfer_.CheckHandled(routing::GroupId(NodeId(account.group_name->string())))) {
       LOG(kInfo) << "PmidManager account " << HexSubstr(account.group_name->string())
                  << " just received";
@@ -563,9 +581,12 @@ void PmidManagerService::TransferAccount(const NodeId& dest,
       nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
       PmidManager::UnresolvedAccountTransfer account_transfer(
           account.group_name, message_id, actions);
-      LOG(kVerbose) << "PmidManagerService::TransferAccount send account_transfer";
       dispatcher_.SendAccountTransfer(dest, account.group_name,
                                       message_id, account_transfer.Serialise());
+#ifdef TESTING
+      LOG(kVerbose) << "PmidManager sent to " << HexSubstr(dest.string())
+                    << " with account " << account.Print();
+#endif
     } catch(...) {
       // normally, the problem is metadata hasn't populated
       LOG(kError) << "PmidManagerService::TransferAccount account info error";
@@ -600,11 +621,8 @@ void PmidManagerService::HandleAccountTransfer(
     try {
       protobuf::PmidManagerKeyValuePair kv_msg;
       if (kv_msg.ParseFromString(action)) {
-        LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
         PmidManager::Key key(kv_msg.key());
-        LOG(kVerbose) << "HandleAccountTransfer key parsed";
         PmidManagerValue value(kv_msg.value());
-        LOG(kVerbose) << "HandleAccountTransfer vaule parsed";
         content.kv_pairs.push_back(std::make_pair(key, std::move(value)));
       } else {
         LOG(kVerbose) << "HandleAccountTransfer handle metadata";
@@ -615,6 +633,9 @@ void PmidManagerService::HandleAccountTransfer(
       LOG(kError) << "HandleAccountTransfer can't parse the action";
     }
   }
+#ifdef TESTING
+  LOG(kVerbose) << "PmidManagerService received account "<< content.Print();
+#endif
   group_db_.HandleTransfer(content);
 }
 

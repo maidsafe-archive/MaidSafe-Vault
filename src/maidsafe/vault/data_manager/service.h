@@ -81,10 +81,10 @@ class DataManagerService {
   void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,
                      const typename MessageType::Receiver& receiver);
 
-  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
+  void HandleChurnEvent(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
   void Stop() {
-    std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
     stopped_ = true;
   }
 
@@ -232,8 +232,13 @@ class DataManagerService {
   }
 
   typedef boost::mpl::vector<> InitialType;
+  typedef boost::variant<
+      nfs::GetRequestFromDataGetterPartialToDataManager> DataManagerServicePartialMessages;
   typedef boost::mpl::insert_range<InitialType,
                                    boost::mpl::end<InitialType>::type,
+                                   DataManagerServicePartialMessages::types>::type PartialType;
+  typedef boost::mpl::insert_range<PartialType,
+                                   boost::mpl::end<PartialType>::type,
                                    nfs::DataManagerServiceMessages::types>::type IntermediateType;
   typedef boost::mpl::insert_range<IntermediateType,
                                    boost::mpl::end<IntermediateType>::type,
@@ -264,10 +269,10 @@ class DataManagerService {
   routing::Routing& routing_;
   AsioService asio_service_;
   nfs_client::DataGetter& data_getter_;
-  mutable std::mutex accumulator_mutex_, matrix_change_mutex_;
+  mutable std::mutex accumulator_mutex_, close_nodes_change_mutex_;
   bool stopped_;
   Accumulator<Messages> accumulator_;
-  routing::MatrixChange matrix_change_;
+  routing::CloseNodesChange close_nodes_change_;
   DataManagerDispatcher dispatcher_;
   routing::Timer<std::pair<PmidName, GetResponseContents>> get_timer_;
   routing::Timer<GetCachedResponseContents> get_cached_response_timer_;
@@ -398,7 +403,15 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
     } else {
       do {
         LOG(kInfo) << "pick from routing_.RandomConnectedNode()";
-        pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
+        // it is observed during the startup period, a vault may receive a request before
+        // it's routing_table having any entry.
+        auto picked_node(routing_.RandomConnectedNode());
+        if (picked_node != NodeId()) {
+          pmid_name = PmidName(Identity(picked_node.string()));
+        } else {
+          LOG(kError) << "no entry in routing_table";
+          return;
+        }
       } while (pmid_name->string() == data.name().value.string());
     }
     LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
@@ -625,11 +638,11 @@ PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_
 
   PmidName chosen;
   {
-    std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
 //     LOG(kVerbose) << "ChoosePmidNodeToGetFrom matrix containing following info : ";
-//     matrix_change_.Print();
+//     close_nodes_change_.Print();
     chosen = PmidName(Identity(
-        matrix_change_.ChoosePmidNode(online_node_ids, NodeId(data_name->string())).string()));
+        close_nodes_change_.ChoosePmidNode(online_node_ids, NodeId(data_name->string())).string()));
   }
 
   online_pmids.erase(chosen);
@@ -644,11 +657,10 @@ std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name&
     auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue)));
     online_pmids = std::move(value.online_pmids());
   } catch (const maidsafe_error& error) {
-    LOG(kWarning) << "Getting " << HexSubstr(data_name.value)
-                  << " causes a maidsafe_error " << boost::diagnostic_information(error);
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
-      LOG(kError) << "db error";
-      throw;  // For db errors
+      LOG(kError) << "DataManagerService::GetOnlinePmids encountered unknown error "
+                  << boost::diagnostic_information(error);
+      throw error;  // For db errors
     }
     // TODO(Fraser#5#): 2013-10-03 - Request for non-existent data should possibly generate an alert
     LOG(kWarning) << "Entry for " << HexSubstr(data_name.value) << " doesn't exist.";
@@ -729,7 +741,7 @@ void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
   LOG(kVerbose) << "DataManagerService::DoGetForNodeDownResponse "
                 << HexSubstr(data_name->string());
   {
-    std::lock_guard<std::mutex> lock(this->matrix_change_mutex_);
+    std::lock_guard<std::mutex> lock(this->close_nodes_change_mutex_);
     if (this->stopped_)
       return;
   }

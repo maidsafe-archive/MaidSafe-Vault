@@ -29,13 +29,9 @@
 #include "maidsafe/common/asio_service.h"
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/routing_api.h"
-
 #include "maidsafe/nfs/client/data_getter.h"
 #include "maidsafe/nfs/public_pmid_helper.h"
 #include "maidsafe/nfs/service.h"
-
-#include "maidsafe/routing/bootstrap_file_operations.h"
-
 #include "maidsafe/vault_manager/vault_config.h"
 
 #include "maidsafe/vault/pmid_node/service.h"
@@ -58,8 +54,7 @@ namespace test { class VaultNetwork; }
 
 class Vault {
  public:
-  Vault(const vault_manager::VaultConfig& vault_config,
-        std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact);
+  explicit Vault(const vault_manager::VaultConfig& vault_config);
 
   ~Vault();  // must issue StopSending() to all identity objects (MM etc.)
              // Then ensure routing is destroyed next then all others in any order at this time
@@ -68,7 +63,7 @@ class Vault {
   void AddPublicPmid(const passport::PublicPmid& public_pmid);
 #endif
   void Stop() {
-//     routing_->Stop();
+    //     routing_->Stop();
     maid_manager_service_.Stop();
     version_handler_service_.Stop();
     data_manager_service_.Stop();
@@ -79,7 +74,7 @@ class Vault {
 #ifdef TESTING
   friend class test::VaultNetwork;
 #endif
-  void InitRouting(const routing::BootstrapContacts& bootstrap_contacts);
+  void InitRouting();
   routing::Functors InitialiseRoutingCallbacks();
   template <typename T>
   void OnMessageReceived(const T& message);
@@ -87,13 +82,11 @@ class Vault {
   void DoOnNetworkStatusChange(int network_health);
   void OnPublicKeyRequested(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key);
   void DoOnPublicKeyRequested(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key);
-  void OnCloseNodeReplaced(const std::vector<routing::NodeInfo>& new_close_nodes);
-  void OnMatrixChanged(std::shared_ptr<routing::MatrixChange> matrix_change);
+  void OnCloseNodesChange(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
   template <typename T>
   bool OnGetFromCache(const T& message);
   template <typename T>
   void OnStoreInCache(const T& message);
-  void OnNewBootstrapContact(const routing::BootstrapContact& bootstrap_contact);
   template <typename Sender, typename Receiver>
   bool HandleGetFromCache(const nfs::TypeErasedMessageWrapper message, const Sender& sender,
                           const Receiver& receiver);
@@ -101,7 +94,6 @@ class Vault {
   std::mutex network_health_mutex_;
   std::condition_variable network_health_condition_variable_;
   int network_health_;
-  std::function<void(routing::BootstrapContact)> on_new_bootstrap_contact_;
   AsioService asio_service_;
   std::unique_ptr<routing::Routing> routing_;
   std::vector<passport::PublicPmid> pmids_from_file_;
@@ -125,7 +117,8 @@ void Vault::OnMessageReceived(const T& message) {
   LOG(kVerbose) << "Vault::OnMessageReceived";
   asio_service_.service().post([=] {
     LOG(kVerbose) << "Vault::OnMessageReceived invoked task in asio_service";
-    demux_.HandleMessage(message); });
+    demux_.HandleMessage(message);
+  });
 }
 
 template <typename T>
@@ -141,11 +134,10 @@ void Vault::OnStoreInCache(const T& message) {
   //             the operation to continue on caller (routing) thread.
   LOG(kVerbose) << "Vault::OnStoreInCache: ";
   asio_service_.service().post([=] {
-                                 LOG(kVerbose) << "Vault::OnStoreInCache2: ";
-                                 auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
-                                 cache_service_.HandleMessage(
-                                            wrapper_tuple, message.sender, message.receiver);
-                             });
+    LOG(kVerbose) << "Vault::OnStoreInCache2: ";
+    auto wrapper_tuple(nfs::ParseMessageWrapper(message.contents));
+    cache_service_.HandleMessage(wrapper_tuple, message.sender, message.receiver);
+  });
 }
 
 }  // namespace vault

@@ -24,7 +24,7 @@
 #include <string>
 
 #include "maidsafe/common/types.h"
-#include "maidsafe/common/data_stores/data_buffer.h"
+#include "maidsafe/common/data_buffer.h"
 #include "maidsafe/nfs/client/messages.pb.h"
 
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
@@ -149,11 +149,11 @@ void PmidNodeService::HandleMessage(
           if (typed_request.contents->return_code.value.code() == CommonErrors::success)
             ++valid_response_size;
         }
-        const uint16_t& group_size(routing::Parameters::group_size);
+        const unsigned& group_size(routing::Parameters::group_size);
         if (requests_in_size >= (group_size / 2 + 1U) && valid_response_size >= group_size / 2)
           return Accumulator<Messages>::AddResult::kSuccess;
         if (requests_in_size == group_size ||
-            (requests_in_size - valid_response_size) > group_size / 2) {
+            requests_in_size > (group_size / 2) + valid_response_size) {
           return Accumulator<Messages>::AddResult::kFailure;
         }
         return Accumulator<Messages>::AddResult::kWaiting;

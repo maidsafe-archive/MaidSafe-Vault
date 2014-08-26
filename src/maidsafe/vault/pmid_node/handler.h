@@ -21,11 +21,11 @@
 
 #include <string>
 #include <vector>
+#include "boost/filesystem.hpp"
 
 #include "maidsafe/common/visualiser_log.h"
-#include "maidsafe/common/data_stores/data_store.h"
-#include "maidsafe/common/data_stores/permanent_store.h"
-#include "maidsafe/common/data_stores/data_buffer.h"
+#include "maidsafe/vault/memory_fifo.h"
+#include "maidsafe/vault/chunk_store.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/types.h"
@@ -55,14 +55,14 @@ class PmidNodeHandler {
   boost::filesystem::space_info space_info_;
   DiskUsage disk_total_;
   DiskUsage permanent_size_;
-  data_stores::PermanentStore permanent_data_store_;
+  ChunkStore chunk_store_;
 };
 
 template <typename Data>
 Data PmidNodeHandler::Get(const typename Data::Name& data_name) {
   DataNameVariant data_name_variant(data_name);
   Data data(data_name,
-            typename Data::serialised_type(permanent_data_store_.Get(data_name_variant)));
+            typename Data::serialised_type(chunk_store_.Get(data_name_variant)));
   return data;
 }
 
@@ -70,12 +70,12 @@ Data PmidNodeHandler::Get(const typename Data::Name& data_name) {
 template <typename Data>
 void PmidNodeHandler::Put(const Data& data) {
   VLOG(nfs::Persona::kPmidNode, VisualiserAction::kStoreChunk, data.name().value);
-  permanent_data_store_.Put(DataNameVariant(data.name()), data.Serialise().data);
+  chunk_store_.Put(DataNameVariant(data.name()), data.Serialise().data);
 }
 
 template <typename DataName>
 void PmidNodeHandler::Delete(const DataName& data_name) {
-  permanent_data_store_.Delete(DataNameVariant(data_name));
+  chunk_store_.Delete(DataNameVariant(data_name));
 }
 
 }  // namespace vault

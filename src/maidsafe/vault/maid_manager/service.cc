@@ -209,7 +209,6 @@ template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
     const typename passport::PublicMaid::Name& data_name, int32_t ,
     nfs::MessageId message_id) {
-  dispatcher_.SendPutResponse(maid_name, maidsafe_error(CommonErrors::success), message_id);
   std::lock_guard<std::mutex> lock(pending_account_mutex_);
   auto pending_account_itr(pending_account_map_.find(message_id));
   if (pending_account_itr == pending_account_map_.end()) {
@@ -233,7 +232,6 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidName& maid_name,
     const typename passport::PublicAnmaid::Name& data_name, int32_t, nfs::MessageId message_id) {
-  dispatcher_.SendPutResponse(maid_name, maidsafe_error(CommonErrors::success), message_id);
   std::lock_guard<std::mutex> lock(pending_account_mutex_);
   auto pending_account_itr(pending_account_map_.find(message_id));
   if (pending_account_itr == pending_account_map_.end()) {
@@ -326,6 +324,7 @@ void MaidManagerService::HandlePmidRegistration(
 //  sync_register_pmids_.AddLocalAction(
 //      MaidManager::UnresolvedRegisterPmid(pmid_registration.maid_name(),
 //          ActionMaidManagerRegisterPmid(pmid_registration), routing_.kNodeId()));
+  LOG(kVerbose) << "MaidManagerService::HandlePmidRegistration id: " << message_id;
   DoSync(MaidManager::UnresolvedRegisterPmid(
       MaidManager::MetadataKey(pmid_registration.maid_name()),
       ActionMaidManagerRegisterPmid(pmid_registration, message_id), routing_.kNodeId()));
@@ -463,7 +462,7 @@ void MaidManagerService::HandleSyncedUpdatePmidHealth(
   }
   catch (const maidsafe_error& error) {
     LOG(kWarning) << "MaidManagerService::HandleSyncedUpdatePmidHealth failed";
-    if (error.code() != make_error_code(VaultErrors::no_such_account))
+    if (error.code() != make_error_code(CommonErrors::no_such_element))
       throw;
   }
 }
@@ -572,15 +571,15 @@ void MaidManagerService::HandlePmidHealthResponse(const MaidName& maid_name,
 }
 
 void MaidManagerService::HandleChurnEvent(
-    std::shared_ptr<routing::MatrixChange> matrix_change) {
-//   if (matrix_change->lost_nodes().size() != 0) {
+    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
+//   if (close_nodes_change->lost_nodes().size() != 0) {
 //     LOG(kVerbose) << "MaidManagerService::HandleChurnEvent";
-//     matrix_change->Print();
+//     close_nodes_change->Print();
 //   }
   std::lock_guard<std::mutex> lock(mutex_);
   if (stopped_)
     return;
-  GroupDb<MaidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(matrix_change));
+  GroupDb<MaidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(close_nodes_change));
   for (auto& transfer : transfer_info)
     TransferAccount(transfer.first, transfer.second);
 }
@@ -589,7 +588,7 @@ void MaidManagerService::TransferAccount(const NodeId& dest,
     const std::vector<GroupDb<MaidManager>::Contents>& accounts) {
   for (auto& account : accounts) {
     // If account just received, shall not pass it out as may under a startup procedure
-    // i.e. existing MM will be seen as new_node in matrix_change
+    // i.e. existing MM will be seen as new_node in close_nodes_change
     if (account_transfer_.CheckHandled(routing::GroupId(NodeId(account.group_name->string())))) {
       LOG(kInfo) << "MaidManager account " << HexSubstr(account.group_name->string())
                  << " just received";
@@ -600,7 +599,6 @@ void MaidManagerService::TransferAccount(const NodeId& dest,
     try {
       std::vector<std::string> actions;
       actions.push_back(account.metadata.Serialise());
-      LOG(kVerbose) << "MaidManagerService::TransferAccount metadata serialised";
       for (auto& kv : account.kv_pairs) {
         protobuf::MaidManagerKeyValuePair kv_msg;
           kv_msg.set_key(kv.first.Serialise());
@@ -610,9 +608,10 @@ void MaidManagerService::TransferAccount(const NodeId& dest,
       nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
       MaidManager::UnresolvedAccountTransfer account_transfer(
           account.group_name, message_id, actions);
-      LOG(kVerbose) << "MaidManagerService::TransferAccount send account_transfer";
       dispatcher_.SendAccountTransfer(dest, account.group_name,
                                       message_id, account_transfer.Serialise());
+      LOG(kVerbose) << "MaidManager sent to " << HexSubstr(dest.string())
+                    << " with account " << account.Print();
     } catch(...) {
       // the normal problem is metadata hasn't been populated
       LOG(kError) << "MaidManagerService::TransferAccount account info error";
@@ -1114,6 +1113,7 @@ void MaidManagerService::HandleAccountTransfer(
       LOG(kError) << "HandleAccountTransfer can't parse the action";
     }
   }
+  LOG(kVerbose) << "MaidManagerService received account "<< content.Print();
   group_db_.HandleTransfer(content);
 }
 

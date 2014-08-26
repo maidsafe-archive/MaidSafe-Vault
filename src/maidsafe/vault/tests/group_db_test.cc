@@ -18,19 +18,14 @@
 
 #include "maidsafe/vault/group_db.h"
 
-#include "boost/progress.hpp"
-
 #include "leveldb/db.h"
 #include "leveldb/options.h"
-
 #include "leveldb/status.h"
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-
-#include "maidsafe/passport/types.h"
-
+#include "maidsafe/passport/passport.h"
 #include "maidsafe/nfs/vault/pmid_registration.h"
 
 #include "maidsafe/vault/group_key.h"
@@ -56,7 +51,7 @@ PmidManagerMetadata CreatePmidManagerMetadata(const PmidName& pmid_name) {
 MaidManagerMetadata CreateMaidManagerMetadata(const passport::Maid& maid) {
   std::vector<PmidTotals> pmid_totals_vector;
   for (auto i(0); i != 1; ++i) {
-    auto pmid(MakePmid());
+    auto pmid(passport::CreatePmidAndSigner().first);
     auto pmid_metadata(CreatePmidManagerMetadata(PmidName(pmid.name())));
     nfs_vault::PmidRegistration pmid_registration(maid, pmid, false);
     PmidTotals pmid_totals(pmid_registration.Serialise(), pmid_metadata);
@@ -134,8 +129,8 @@ struct TestPmidGroupDbActionDeleteValue {
     if (!value)
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
     metadata.DeleteData(value->size());
-//    if (!pmid_node_available)
-//      metadata.SetAvailableSize(0);
+    //    if (!pmid_node_available)
+    //      metadata.SetAvailableSize(0);
     return detail::DbAction::kDelete;
   }
 };
@@ -151,12 +146,12 @@ void RunDbTestInParallel(int thread_count, std::function<void()> functor) {
 }
 
 void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
-  auto maid(MakeMaid());
+  auto maid(passport::CreateMaidAndSigner().first);
   passport::PublicMaid::Name maid_name(MaidName(maid.name()));
   EXPECT_THROW(maid_group_db.GetMetadata(maid_name), maidsafe_error);
   maid_group_db.DeleteGroup(maid_name);
   auto metadata = CreateMaidManagerMetadata(maid);
-  GroupKey<MaidName> key(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
+  GroupKey<MaidName> key(maid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()),
                          DataTagValue::kMaidValue);
 
   EXPECT_THROW(maid_group_db.GetMetadata(maid_name), maidsafe_error);
@@ -174,8 +169,8 @@ void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
   EXPECT_THROW(maid_group_db.AddGroup(maid_name, metadata), maidsafe_error);
   EXPECT_TRUE(maid_group_db.GetContents(maid_name).kv_pairs.size() == 0U);
 
-  GroupKey<MaidName> unknown_key(MaidName(Identity(NodeId(NodeId::kRandomId).string())),
-                                 Identity(NodeId(NodeId::kRandomId).string()),
+  GroupKey<MaidName> unknown_key(MaidName(Identity(NodeId(NodeId::IdType::kRandomId).string())),
+                                 Identity(NodeId(NodeId::IdType::kRandomId).string()),
                                  DataTagValue::kMaidValue);
   EXPECT_THROW(maid_group_db.GetValue(unknown_key), maidsafe_error);
 
@@ -207,9 +202,10 @@ void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
 
   // Put many
   std::vector<GroupKey<MaidName>> key_vector;
-  for (auto i(0); i < 1000; ++i)
-    key_vector.push_back(GroupKey<MaidName>(maid_name, Identity(NodeId(NodeId::kRandomId).string()),
-                                            DataTagValue::kMaidValue));
+  for (auto i(0); i < 1000; ++i) {
+    key_vector.push_back(GroupKey<MaidName>(
+        maid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()), DataTagValue::kMaidValue));
+  }
   for (const auto& key_n : key_vector) {
     expected_metadata.PutData(100);
     maid_group_db.Commit(key_n, TestGroupDbActionPutValue());
@@ -223,11 +219,9 @@ void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
 
   auto contents(maid_group_db.GetContents(maid_name));
   for (const auto& key_n : key_vector) {
-    auto itr = std::find_if(contents.kv_pairs.begin(),
-                             contents.kv_pairs.end(),
-                             [&key_n](const GroupDb<MaidManager>::KvPair& kv_pair) {
-                                 return (kv_pair.first == key_n);
-                              });
+    auto itr = std::find_if(
+        contents.kv_pairs.begin(), contents.kv_pairs.end(),
+        [&key_n](const GroupDb<MaidManager>::KvPair& kv_pair) { return (kv_pair.first == key_n); });
     EXPECT_TRUE(itr != contents.kv_pairs.end());
   }
 
@@ -242,12 +236,12 @@ void RunMaidManagerGroupDbTest(GroupDb<MaidManager>& maid_group_db) {
 }
 
 void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
-  auto pmid(MakePmid());
+  auto pmid(passport::CreatePmidAndSigner().first);
   passport::PublicPmid::Name pmid_name(PmidName(pmid.name()));
   EXPECT_THROW(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
   pmid_group_db.DeleteGroup(pmid_name);
   auto metadata = CreatePmidManagerMetadata(pmid_name);
-  GroupKey<PmidName> key(pmid_name, Identity(NodeId(NodeId::kRandomId).string()),
+  GroupKey<PmidName> key(pmid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()),
                          DataTagValue::kPmidValue);
   EXPECT_THROW(pmid_group_db.Commit(key, TestPmidGroupDbActionDeleteValue()), maidsafe_error);
   EXPECT_THROW(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
@@ -262,8 +256,8 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
   EXPECT_TRUE(pmid_group_db.GetMetadata(pmid_name) == metadata);
   EXPECT_THROW(pmid_group_db.AddGroup(pmid_name, metadata), maidsafe_error);
   EXPECT_TRUE(pmid_group_db.GetContents(pmid_name).kv_pairs.size() == 0U);
-  GroupKey<PmidName> unknown_key(PmidName(Identity(NodeId(NodeId::kRandomId).string())),
-                                 Identity(NodeId(NodeId::kRandomId).string()),
+  GroupKey<PmidName> unknown_key(PmidName(Identity(NodeId(NodeId::IdType::kRandomId).string())),
+                                 Identity(NodeId(NodeId::IdType::kRandomId).string()),
                                  DataTagValue::kPmidValue);
   EXPECT_THROW(pmid_group_db.GetValue(unknown_key), maidsafe_error);
   EXPECT_THROW(pmid_group_db.GetValue(key), maidsafe_error);
@@ -281,9 +275,10 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
 
   // Put many
   std::vector<GroupKey<PmidName>> key_vector;
-  for (auto i(0); i < 1000; ++i)
-    key_vector.push_back(GroupKey<PmidName>(pmid_name, Identity(NodeId(NodeId::kRandomId).string()),
-                                            DataTagValue::kPmidValue));
+  for (auto i(0); i < 100; ++i) {
+    key_vector.push_back(GroupKey<PmidName>(
+        pmid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()), DataTagValue::kPmidValue));
+  }
   for (const auto& key_n : key_vector) {
     expected_metadata.PutData(100);
     pmid_group_db.Commit(key_n, TestPmidGroupDbActionPutValue());
@@ -296,11 +291,9 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
   }
   auto contents(pmid_group_db.GetContents(pmid_name));
   for (const auto& key_n : key_vector) {
-    auto itr = std::find_if(contents.kv_pairs.begin(),
-                             contents.kv_pairs.end(),
-                             [&key_n](const GroupDb<PmidManager>::KvPair& kv_pair) {
-                                 return (kv_pair.first == key_n);
-                              });
+    auto itr = std::find_if(
+        contents.kv_pairs.begin(), contents.kv_pairs.end(),
+        [&key_n](const GroupDb<PmidManager>::KvPair& kv_pair) { return (kv_pair.first == key_n); });
     EXPECT_TRUE(itr != contents.kv_pairs.end());
   }
 
@@ -327,32 +320,28 @@ TEST(GroupDbTest, BEH_Constructor) {
 TEST(GroupDbTest, FUNC_MaidManagerGroupDb) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_GroupDbTest"));
   GroupDb<MaidManager> maid_group_db(UniqueDbPath(*test_path));
-  for (auto i(0); i < 5 ; ++i)
+  for (auto i(0); i < 5; ++i)
     RunMaidManagerGroupDbTest(maid_group_db);
 
-  RunDbTestInParallel(10, [&] {
-    RunMaidManagerGroupDbTest(maid_group_db);
-  });
+  RunDbTestInParallel(10, [&] { RunMaidManagerGroupDbTest(maid_group_db); });
 }
 
 TEST(GroupDbTest, FUNC_PmidManagerGroupDb) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_GroupDbTest"));
   GroupDb<PmidManager> pmid_group_db(UniqueDbPath(*test_path));
-  for (auto i(0); i < 5 ; ++i)
+  for (auto i(0); i < 5; ++i)
     RunPmidManagerGroupDbTest(pmid_group_db);
 
-  RunDbTestInParallel(10, [&] {
-    RunPmidManagerGroupDbTest(pmid_group_db);
-  });
+  RunDbTestInParallel(10, [&] { RunPmidManagerGroupDbTest(pmid_group_db); });
 }
 
 TEST(GroupDbTest, BEH_TransferInfo) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_GroupDbTest"));
   GroupDb<MaidManager> maid_group_db(UniqueDbPath(*test_path));
   GroupDb<PmidManager> pmid_group_db(UniqueDbPath(*test_path));
-  std::shared_ptr<routing::MatrixChange> matrix_change;
-  maid_group_db.GetTransferInfo(matrix_change);
-  pmid_group_db.GetTransferInfo(matrix_change);
+  std::shared_ptr<routing::CloseNodesChange> close_nodes_change;
+  maid_group_db.GetTransferInfo(close_nodes_change);
+  pmid_group_db.GetTransferInfo(close_nodes_change);
 }
 
 }  // namespace test

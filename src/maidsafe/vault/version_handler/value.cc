@@ -87,6 +87,14 @@ void swap(VersionHandlerValue& lhs, VersionHandlerValue& rhs) {
   swap(lhs.structured_data_versions_, rhs.structured_data_versions_);
 }
 
+std::string VersionHandlerValue::Print() const {
+  std::stringstream stream;
+  stream << "\n\t[max_versions," << structured_data_versions_->max_versions()
+         << "] [max_branches," << structured_data_versions_->max_branches()
+         << "] [current_versions," << structured_data_versions_->Get().size() << "]";
+  return stream.str();
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

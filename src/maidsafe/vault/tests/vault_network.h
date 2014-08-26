@@ -24,7 +24,6 @@
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/test.h"
-#include "maidsafe/routing/bootstrap_file_operations.h"
 #include "maidsafe/nfs/client/maid_node_nfs.h"
 #include "maidsafe/vault/vault.h"
 
@@ -37,8 +36,8 @@ namespace vault {
 namespace test {
 
 typedef boost::asio::ip::udp::endpoint UdpEndpoint;
-const int kNetworkSize(16);
-const int kClientsSize(5);
+const int kNetworkSize(1);
+const int kClientsSize(2);
 
 #ifndef MAIDSAFE_WIN32
 const int kLimitsFiles(2048);
@@ -49,63 +48,30 @@ class CacheHandlerTest;
 class VersionHandlerTest;
 class PmidManagerTest;
 
-class PublicKeyGetter {
- public:
-  PublicKeyGetter() : mutex_() {}
-
-  void operator()(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key,
-                  const std::vector<passport::PublicPmid>& public_pmids);
- private:
-  std::mutex mutex_;
-};
-
-struct KeyChain {
-  explicit KeyChain(size_t size = 1);
-  std::vector<passport::detail::AnmaidToPmid> keys;
-  passport::detail::AnmaidToPmid Add();
-};
-
-class Client {
- public:
-  Client(const passport::detail::AnmaidToPmid& keys, const std::vector<UdpEndpoint>& endpoints,
-         std::vector<passport::PublicPmid>& public_pmids, bool register_pmid_for_client = true);
-  std::future<bool> RoutingJoin(const std::vector<UdpEndpoint>& peer_endpoints);
-
-  void Stop() { asio_service_.Stop(); }
-
- public:
-  AsioService asio_service_;
-  routing::Functors functors_;
-  routing::Routing routing_;
-  std::unique_ptr<nfs_client::MaidNodeNfs> nfs_;
-  nfs_client::DataGetter data_getter_;
-  std::vector<passport::PublicPmid>& public_pmids_;
-  static PublicKeyGetter public_key_getter_;
-};
-
 class VaultNetwork {
  public:
   typedef std::shared_ptr<Vault> VaultPtr;
-  typedef std::shared_ptr<Client> ClientPtr;
+  typedef std::shared_ptr<nfs_client::MaidNodeNfs> ClientPtr;
 
   VaultNetwork();
   virtual ~VaultNetwork() {}
   virtual void SetUp();
   virtual void TearDown();
-  bool Add();
-  bool AddClient(bool register_pmid = true);
+
+  bool AddVault();
+  void AddClient();
+  void AddClient(const passport::Maid& maid);
+  void AddClient(const passport::MaidAndSigner& maid_and_signer);
 
   template <typename Data>
   Data Get(const typename Data::Name& data_name);
 
   template <typename Messagetype>
-  void Send(size_t sender_index, const Messagetype message) {
+  void Send(size_t sender_index, const Messagetype& message) {
     vaults_[sender_index]->routing_->Send(message);
   }
 
-  NodeId kNodeId(size_t index) {
-    return vaults_[index]->routing_->kNodeId();
-  }
+  NodeId kNodeId(size_t index) { return vaults_[index]->routing_->kNodeId(); }
 
   friend class VaultTest;
   friend class CacheHandlerTest;
@@ -116,15 +82,9 @@ class VaultNetwork {
   void Bootstrap();
   bool Create(const passport::detail::Fob<passport::detail::PmidTag>& pmid);
 
-  AsioService asio_service_;
-  std::mutex mutex_;
-  std::condition_variable bootstrap_condition_, network_up_condition_;
-  bool bootstrap_done_, network_up_;
   std::vector<VaultPtr> vaults_;
   std::vector<ClientPtr> clients_;
-  routing::BootstrapContacts bootstrap_contacts_;
   std::vector<passport::PublicPmid> public_pmids_;
-  KeyChain key_chains_;
   fs::path vault_dir_;
   size_t network_size_;
 #ifndef MAIDSAFE_WIN32
@@ -136,7 +96,7 @@ template <typename Data>
 Data VaultNetwork::Get(const typename Data::Name& data_name) {
   assert(!clients_.empty() && "At least one client should exist to perform get operation");
   size_t index(RandomUint32() % clients_.size());
-  auto future(clients_[index]->nfs_->Get<typename Data::Name>(data_name));
+  auto future(clients_[index]->Get<typename Data::Name>(data_name));
   try {
     return future.get();
   }
@@ -152,13 +112,9 @@ class VaultEnvironment : public testing::Environment {
   void SetUp() override {
     g_env_.reset(new VaultNetwork());
     g_env_->SetUp();
-    for (int index(0); index < kClientsSize; ++index)
-      ASSERT_TRUE(g_env_->AddClient(true));
   }
 
-  void TearDown() override {
-    g_env_->TearDown();
-  }
+  void TearDown() override { g_env_->TearDown(); }
 
   static std::shared_ptr<VaultNetwork> g_environment() { return g_env_; }
 

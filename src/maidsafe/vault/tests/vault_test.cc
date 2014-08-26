@@ -26,8 +26,7 @@
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-
-#include "maidsafe/passport/types.h"
+#include "maidsafe/passport/passport.h"
 
 namespace maidsafe {
 
@@ -40,45 +39,24 @@ class VaultTest : public testing::Test {
   VaultTest()
       : kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
         vault_root_directory_(*kTestRoot_ / RandomAlphaNumericString(8)),
-        pmid_(MakePmid()),
-        on_new_bootstrap_endpoint_([](boost::asio::ip::udp::endpoint /*endpoint*/) {}),
+        pmid_(passport::CreatePmidAndSigner().first),
         vault_() {
     boost::filesystem::create_directory(vault_root_directory_);
   }
 
  protected:
-  passport::Maid MakeMaid() {
-    passport::Anmaid anmaid;
-    return passport::Maid(anmaid);
-  }
-
-  passport::Pmid MakePmid() {
-    passport::Anpmid anpmid;
-    return passport::Pmid(anpmid);
-  }
-
-  passport::PublicPmid MakePublicPmid() {
-    passport::Pmid pmid(MakePmid());
-    return passport::PublicPmid(pmid);
-  }
-
   const maidsafe::test::TestPath kTestRoot_;
   boost::filesystem::path vault_root_directory_;
   passport::Pmid pmid_;
-  std::function<void(boost::asio::ip::udp::endpoint)> on_new_bootstrap_endpoint_;
   std::unique_ptr<Vault> vault_;
 };
 
-TEST_F(VaultTest, BEH_Constructor) {
+TEST_F(VaultTest, DISABLED_FUNC_Constructor) {
   std::vector<passport::PublicPmid> public_pmids_from_file;
-  public_pmids_from_file.push_back(MakePublicPmid());
-  routing::BootstrapContacts bootstrap_contacts;
-  bootstrap_contacts.push_back(boost::asio::ip::udp::endpoint(GetLocalIp(),
-                                                          (RandomUint32() % 64511) + 2025));
-  vault_manager::VaultConfig vault_config(pmid_, vault_root_directory_, DiskUsage(1000000000),
-                                          bootstrap_contacts);
+  public_pmids_from_file.push_back(passport::PublicPmid(passport::CreatePmidAndSigner().first));
+  vault_manager::VaultConfig vault_config(pmid_, vault_root_directory_, DiskUsage(100000));
   vault_config.test_config.public_pmid_list = public_pmids_from_file;
-  EXPECT_THROW(vault_.reset(new Vault(vault_config, on_new_bootstrap_endpoint_)),
+  EXPECT_THROW(vault_.reset(new Vault(vault_config)),
                vault_error);  // throws VaultErrors::failed_to_join_network
 }
 
