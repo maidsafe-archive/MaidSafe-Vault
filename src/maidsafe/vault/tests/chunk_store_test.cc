@@ -222,7 +222,7 @@ TEST_F(ChunkStoreTest, BEH_RepeatedlyStoreUsingSameKey) {
   ASSERT_NO_THROW(recovered = chunk_store_->Get(key));
   EXPECT_TRUE(recovered == value);
 
-  uint32_t events(RandomUint32() % 100);
+  uint32_t events((RandomUint32() % 100) + 1);
   for (uint32_t i = 0; i != events; ++i) {
     last_value = NonEmptyString(RandomAlphaNumericString((RandomUint32() % 30) + 1));
     ASSERT_NO_THROW(chunk_store_->Put(key, last_value));
