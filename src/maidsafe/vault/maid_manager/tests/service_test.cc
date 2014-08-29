@@ -42,6 +42,7 @@ class MaidManagerServiceTest : public testing::Test {
         anpmid_(),
         pmid_(anpmid_),
         public_maid_(maid_),
+        public_pmid_(pmid_),
         kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
         vault_root_dir_(*kTestRoot_),
         routing_(pmid_),
@@ -50,6 +51,20 @@ class MaidManagerServiceTest : public testing::Test {
         asio_service_(2) {}
 
   NodeId MaidNodeId() { return NodeId(maid_.name()->string()); }
+
+  routing::TaskId GetTaskId(const DataNameVariant& data_name) const {
+    for (auto iter(std::begin(maid_manager_service_.data_getter_.get_handler_.get_info_));
+         iter != std::end(maid_manager_service_.data_getter_.get_handler_.get_info_); ++iter) {
+      if (std::get<2>(iter->second) == data_name)
+        return std::get<1>(iter->second);
+    }
+    return 0;
+  }
+
+  void AddResponse(routing::TaskId task_id,
+                   const nfs_client::DataNameAndContentOrReturnCode& response) {
+    maid_manager_service_.data_getter_.get_handler_.AddResponse(task_id, response);
+  }
 
   MaidManager::Metadata GetMetadata(const MaidManager::GroupName& group_name) {
     return maid_manager_service_.group_db_.GetMetadata(group_name);
@@ -113,6 +128,7 @@ class MaidManagerServiceTest : public testing::Test {
   passport::Anpmid anpmid_;
   passport::Pmid pmid_;
   passport::PublicMaid public_maid_;
+  passport::PublicPmid public_pmid_;
   const maidsafe::test::TestPath kTestRoot_;
   boost::filesystem::path vault_root_dir_;
   routing::Routing routing_;
@@ -384,10 +400,20 @@ TEST_F(MaidManagerServiceTest, BEH_RegistedPmid) {
   auto group_source(CreateGroupSource(MaidNodeId()));
   auto group_unresolved_action(CreateGroupUnresolvedAction<MaidManager::UnresolvedRegisterPmid>(
       metadata_key, action_register_pmid, group_source));
-  SendSync<MaidManager::UnresolvedRegisterPmid>(group_unresolved_action, group_source);
+  auto future(std::async(std::launch::async,
+                         [=] {
+                           SendSync<MaidManager::UnresolvedRegisterPmid>(group_unresolved_action,
+                                                                         group_source);
+                         }));
+  Sleep(std::chrono::seconds(1));
+  AddResponse(GetTaskId(GetDataNameVariant(passport::PublicMaid::Tag::kValue, maid_.name())),
+              nfs_client::DataNameAndContentOrReturnCode(public_maid_));
+  AddResponse(GetTaskId(GetDataNameVariant(passport::PublicPmid::Tag::kValue, pmid_.name())),
+              nfs_client::DataNameAndContentOrReturnCode(public_pmid_));
+  future.get();
+  Sleep(std::chrono::seconds(1));
   MaidManager::Metadata metadata(GetMetadata(public_maid_.name()));
-  EXPECT_TRUE(MetadataPmidTotals(metadata).size() ==
-              1);  // FAILS BECAUSE DATAGETTER GET NEVER SUCCEEDS
+  EXPECT_TRUE(MetadataPmidTotals(metadata).size() == 1);
 }
 
 TEST_F(MaidManagerServiceTest, BEH_UnregistedPmid) {
